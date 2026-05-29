@@ -1,0 +1,228 @@
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Noto Sans KR',sans-serif;background:#f0f2f5;color:#1a1a2e}
+    .sidebar{position:fixed;left:0;top:0;width:240px;height:100vh;background:linear-gradient(180deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);display:flex;flex-direction:column;z-index:100;box-shadow:4px 0 20px rgba(0,0,0,.3)}
+    .sidebar-logo{padding:24px 20px 18px;border-bottom:1px solid rgba(255,255,255,.1)}
+    .sidebar-logo h1{color:#fff;font-size:14px;font-weight:700;line-height:1.5}
+    .sidebar-logo span{color:#e94560;font-size:10px;font-weight:600;letter-spacing:.5px}
+    .sidebar-menu{flex:1;padding:12px 0;overflow-y:auto}
+    .menu-section{padding:8px 16px 3px;color:rgba(255,255,255,.35);font-size:9.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+    .menu-item{display:flex;align-items:center;gap:10px;padding:10px 20px;color:rgba(255,255,255,.7);cursor:pointer;transition:all .2s;font-size:13px;border-left:3px solid transparent}
+    .menu-item:hover{background:rgba(255,255,255,.08);color:#fff;border-left-color:rgba(233,69,96,.5)}
+    .menu-item.active{background:rgba(233,69,96,.15);color:#fff;border-left-color:#e94560;font-weight:600}
+    .menu-item i{width:16px;text-align:center;font-size:13px;color:#e94560}
+    .sidebar-footer{padding:14px 20px;border-top:1px solid rgba(255,255,255,.1)}
+    .sidebar-footer p{color:rgba(255,255,255,.35);font-size:10.5px}
+    .main{margin-left:240px;min-height:100vh;display:flex;flex-direction:column}
+    .topbar{background:#fff;padding:0 28px;height:60px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,.06);position:sticky;top:0;z-index:50}
+    .topbar-title{font-size:15px;font-weight:700;color:#1a1a2e}
+    /* ══════════════════════════════════════════════
+       버튼 공통 기반
+    ══════════════════════════════════════════════ */
+    .btn{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:8px 16px;border-radius:8px;
+      font-size:12.5px;font-weight:600;
+      cursor:pointer;border:none;
+      font-family:inherit;
+      transition:background .18s cubic-bezier(.4,0,.2,1),
+                 color .18s cubic-bezier(.4,0,.2,1),
+                 box-shadow .18s cubic-bezier(.4,0,.2,1),
+                 transform .15s cubic-bezier(.4,0,.2,1),
+                 border-color .18s cubic-bezier(.4,0,.2,1),
+                 opacity .18s;
+      position:relative;overflow:hidden;
+      user-select:none;white-space:nowrap;
+    }
+    /* 클릭 누를 때 눌리는 효과 */
+    .btn:active:not(:disabled):not([disabled]){
+      transform:scale(.96) translateY(1px);
+    }
+    /* 키보드 포커스 링 */
+    .btn:focus-visible{
+      outline:2.5px solid currentColor;
+      outline-offset:2px;
+    }
+    /* 비활성화 */
+    .btn:disabled,.btn[disabled]{
+      opacity:.42;
+      cursor:not-allowed;
+      pointer-events:none;
+      box-shadow:none !important;
+      transform:none !important;
+    }
+    /* Ripple 레이어 — 리플이 적용되는 모든 버튼 공통 */
+    .btn .btn-ripple,
+    .btn-sb .btn-ripple,
+    .btn-renew .btn-ripple,
+    .btn-terminate .btn-ripple,
+    .btn-fixed-terminate .btn-ripple,
+    .btn-recontract .btn-ripple,
+    .btn-void .btn-ripple,
+    .btn-draft .btn-ripple,
+    .btn-draft-edit .btn-ripple,
+    .btn-amend .btn-ripple,
+    .btn-amend-complete .btn-ripple,
+    .btn-cft-confirm .btn-ripple,
+    .btn-docx .btn-ripple,
+    .btn-print .btn-ripple,
+    .btn-final-reg .btn-ripple,
+    .std-update-btn .btn-ripple,
+    .al-promo-btn .btn-ripple,
+    .cen-bulk-btn .btn-ripple{
+      position:absolute;border-radius:50%;
+      background:rgba(255,255,255,.35);
+      transform:scale(0);
+      animation:btnRipple .55s linear;
+      pointer-events:none;
+    }
+    @keyframes btnRipple{
+      to{transform:scale(4);opacity:0;}
+    }
+    /* 크기 변형 */
+    .btn-sm{padding:5px 10px;font-size:11.5px;border-radius:7px;}
+    .btn-lg{padding:10px 22px;font-size:14px;border-radius:9px;}
+    .btn-icon{padding:5px 9px;}
+    .btn-icon-sm{padding:4px 7px;font-size:11px;}
+
+    /* ══════════════════════════════════════════════
+       SOLID TYPE — 색상 채운 버튼
+    ══════════════════════════════════════════════ */
+    /* Primary (레드 — 주요 액션) */
+    .btn-primary{
+      background:#e94560;color:#fff;
+      box-shadow:0 1px 3px rgba(233,69,96,.28);
+    }
+    .btn-primary:hover:not(:disabled){
+      background:#d63651;
+      box-shadow:0 4px 14px rgba(233,69,96,.38);
+      transform:translateY(-1px);
+    }
+    .btn-primary:active:not(:disabled){
+      background:#c02e45;
+      box-shadow:0 1px 4px rgba(233,69,96,.3);
+    }
+    .btn-primary.selected,.btn-primary[aria-selected="true"]{
+      background:#b8283d;
+      box-shadow:inset 0 2px 6px rgba(0,0,0,.18);
+    }
+
+    /* Success (그린 — 완료/등록) */
+    .btn-success{
+      background:#10b981;color:#fff;
+      box-shadow:0 1px 3px rgba(16,185,129,.25);
+    }
+    .btn-success:hover:not(:disabled){
+      background:#059669;
+      box-shadow:0 4px 14px rgba(16,185,129,.35);
+      transform:translateY(-1px);
+    }
+    .btn-success:active:not(:disabled){
+      background:#047857;
+      box-shadow:0 1px 4px rgba(16,185,129,.28);
+    }
+    .btn-success.selected,.btn-success[aria-selected="true"]{
+      background:#065f46;
+      box-shadow:inset 0 2px 6px rgba(0,0,0,.18);
+    }
+
+    /* Warning (앰버 — 경고/수정/임시저장) */
+    .btn-warning{
+      background:#f59e0b;color:#fff;
+      box-shadow:0 1px 3px rgba(245,158,11,.25);
+    }
+    .btn-warning:hover:not(:disabled){
+      background:#d97706;
+      box-shadow:0 4px 14px rgba(245,158,11,.35);
+      transform:translateY(-1px);
+    }
+    .btn-warning:active:not(:disabled){
+      background:#b45309;
+      box-shadow:0 1px 4px rgba(245,158,11,.28);
+    }
+    .btn-warning.selected,.btn-warning[aria-selected="true"]{
+      background:#92400e;
+      box-shadow:inset 0 2px 6px rgba(0,0,0,.18);
+    }
+
+    /* Danger (딥 레드 — 삭제/위험) */
+    .btn-danger{
+      background:#ef4444;color:#fff;
+      box-shadow:0 1px 3px rgba(239,68,68,.25);
+    }
+    .btn-danger:hover:not(:disabled){
+      background:#dc2626;
+      box-shadow:0 4px 14px rgba(239,68,68,.35);
+      transform:translateY(-1px);
+    }
+    .btn-danger:active:not(:disabled){
+      background:#b91c1c;
+      box-shadow:0 1px 4px rgba(239,68,68,.28);
+    }
+    .btn-danger.selected,.btn-danger[aria-selected="true"]{
+      background:#991b1b;
+      box-shadow:inset 0 2px 6px rgba(0,0,0,.18);
+    }
+
+    /* Indigo (인디고 — 계약갱신/인디고 계열) */
+    .btn-indigo{
+      background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;
+      box-shadow:0 1px 4px rgba(99,102,241,.28);
+    }
+    .btn-indigo:hover:not(:disabled){
+      background:linear-gradient(135deg,#4f46e5,#4338ca);
+      box-shadow:0 4px 14px rgba(99,102,241,.38);
+      transform:translateY(-1px);
+    }
+    .btn-indigo:active:not(:disabled){
+      background:linear-gradient(135deg,#4338ca,#3730a3);
+      box-shadow:0 1px 4px rgba(99,102,241,.3);
+    }
+    .btn-indigo.selected,.btn-indigo[aria-selected="true"]{
+      background:#3730a3;
+      box-shadow:inset 0 2px 6px rgba(0,0,0,.2);
+    }
+
+    /* Teal (계약 재계약) */
+    .btn-teal{
+      background:linear-gradient(135deg,#10b981,#059669);color:#fff;
+      box-shadow:0 1px 4px rgba(16,185,129,.25);
+    }
+    .btn-teal:hover:not(:disabled){
+      background:linear-gradient(135deg,#059669,#047857);
+      box-shadow:0 4px 14px rgba(16,185,129,.35);
+      transform:translateY(-1px);
+    }
+    .btn-teal:active:not(:disabled){
+      background:linear-gradient(135deg,#047857,#065f46);
+    }
+
+    /* Slate (계약 무효/취소) */
+    .btn-slate{
+      background:linear-gradient(135deg,#64748b,#475569);color:#fff;
+      box-shadow:0 1px 4px rgba(100,116,139,.22);
+    }
+    .btn-slate:hover:not(:disabled){
+      background:linear-gradient(135deg,#475569,#334155);
+      box-shadow:0 4px 14px rgba(100,116,139,.3);
+      transform:translateY(-1px);
+    }
+    .btn-slate:active:not(:disabled){
+      background:linear-gradient(135deg,#334155,#1e293b);
+    }
+
+    /* Sky (수정재발행 — 파란 계열) */
+    .btn-sky{
+      background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#fff;
+      border:1px solid #0369a1;
+      box-shadow:0 1px 4px rgba(14,165,233,.22);
+    }
+    .btn-sky:hover:not(:disabled){
+      background:linear-gradient(135deg,#0284c7,#0369a1);
+      box-shadow:0 4px 14px rgba(14,165,233,.32);
+      transform:translateY(-1px);
+    }
+    .btn-sky:active:not(:disabled){
+      background:linear-gradient(135deg,#0369a1,#075985);
+    }
+
+    /* ══════════════════════════════════════════════

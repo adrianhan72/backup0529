@@ -1,0 +1,2818 @@
+// ══ STATE ══
+let currentCompany = null;
+let allEmployees = [], allPayrolls = [], allContracts = [], allBillings = [];
+let _clientSevTab = 'history'; // severance tab state
+let statsYear    = new Date().getFullYear();
+let statsMonth   = new Date().getMonth() + 1;
+let psEmpId = null;  // 명세서 모달용 (유지)
+let psCatFilter = 'all'; // 하위호환 유지
+let psGroup    = 'all'; // 1단계: all | cat | dept | rank
+let psSubVal   = '__all__'; // 2단계 세부 선택값 ('__all__' = 해당 그룹 전체)
+let psYear   = new Date().getFullYear(), psMonth   = new Date().getMonth() + 1;
+let billingYear  = new Date().getFullYear(), billingMonth  = new Date().getMonth() + 1;
+let distTab = 'emp';
+
+let distChart = null, distDonutChart = null, trendChart = null;
+
+const TREND_ITEMS = [
+  {key:'gross',  label:'총 지급액',    color:'#3b82f6', borderColor:'#3b82f6', bgColor:'#eff6ff', textColor:'#1d4ed8', def:true},
+  {key:'ded',    label:'공제 총액',    color:'#ef4444', borderColor:'#ef4444', bgColor:'#fef2f2', textColor:'#b91c1c', def:true},
+  {key:'net',    label:'실지급액',     color:'#10b981', borderColor:'#10b981', bgColor:'#f0fdf4', textColor:'#065f46', def:true},
+  {key:'extra',  label:'추가근로수당', color:'#f59e0b', borderColor:'#f59e0b', bgColor:'#fffbeb', textColor:'#92400e', def:false},
+  {key:'irreg',  label:'부정기지급',   color:'#8b5cf6', borderColor:'#8b5cf6', bgColor:'#f5f3ff', textColor:'#5b21b6', def:false},
+  {key:'tax',    label:'세금',         color:'#ec4899', borderColor:'#ec4899', bgColor:'#fdf2f8', textColor:'#9d174d', def:false},
+  {key:'ins',    label:'4대보험',      color:'#06b6d4', borderColor:'#06b6d4', bgColor:'#ecfeff', textColor:'#155e75', def:false},
+  {key:'adj',    label:'정산/추가공제',color:'#6b7280', borderColor:'#6b7280', bgColor:'#f9fafb', textColor:'#374151', def:false},
+];
+const trendOn = {};
+TREND_ITEMS.forEach(t => trendOn[t.key] = t.def);
+
+// ══ LOGIN ══
+const LS_CODE_KEY = 'gs_saved_access_code';
+
+// 페이지 로드 시 저장된 코드 자동 복원
+(function(){
+  const saved = localStorage.getItem(LS_CODE_KEY);
+  if(saved){
+    document.getElementById('login-code').value = saved;
+    document.getElementById('login-remember').checked = true;
+  }
+})();
+
+async function tryLogin(){
+  const code = document.getElementById('login-code').value.trim();
+  if(!code){ showErr('코드를 입력하세요.'); return; }
+  const res = await fetch('../tables/companies?limit=100');
+  const data = await res.json();
+  const found = (data.data||[]).find(c => c.access_code === code);
+  if(!found){ showErr('코드가 올바르지 않습니다. 담당 노무사에게 문의하세요.'); return; }
+  // 자동 입력 체크 여부에 따라 코드 저장/삭제
+  if(document.getElementById('login-remember').checked){
+    localStorage.setItem(LS_CODE_KEY, code);
+  } else {
+    localStorage.removeItem(LS_CODE_KEY);
+  }
+  currentCompany = found;
+  // loadData + 알림 동시 로드
+  await Promise.all([ loadData(), loadClientNotices() ]);
+  startApp();
+}
+function showErr(msg){ const e=document.getElementById('login-error'); e.textContent=msg; setTimeout(()=>e.textContent='',3000); }
+
+// ── 햄버거 메뉴 ──
+function toggleHamburgerMenu(){
+  const panel   = document.getElementById('hmenu-panel');
+  const backdrop = document.getElementById('hmenu-backdrop');
+  const isOpen  = panel.classList.contains('open');
+  if(isOpen){ closeHamburgerMenu(); }
+  else {
+    panel.classList.add('open');
+    backdrop.classList.add('open');
+  }
+}
+function closeHamburgerMenu(){
+  document.getElementById('hmenu-panel').classList.remove('open');
+  document.getElementById('hmenu-backdrop').classList.remove('open');
+}
+
+function logout(){
+  currentCompany=null; allEmployees=[]; allPayrolls=[]; allContracts=[]; allBillings=[];
+  psEmpId=null; psCatFilter='all'; psGroup='all'; psSubVal='__all__'; [distChart,distDonutChart,trendChart].forEach(c=>{if(c)c.destroy()}); distChart=distDonutChart=trendChart=null;
+  // 알림 상태 초기화
+  _clientNotices=[]; _notifDetailId=null;
+  closeNotifModal(); closeNotifDetail();
+  const badge=document.getElementById('notif-badge'); if(badge) badge.style.cssText='';
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('app').classList.remove('visible');
+  document.getElementById('login-code').value='';
+  showPage('stats', document.getElementById('nav-stats'));
+}
+
+// ══ DATA ══
+async function loadData(){
+  const [er,pr,cr,br] = await Promise.all([
+    fetch('../tables/employees?limit=300'),
+    fetch('../tables/payrolls?limit=1000'),
+    fetch('../tables/contracts?limit=300'),
+    fetch('../tables/billings?limit=200'),
+  ]);
+  const [ed,pd,cd,bd] = await Promise.all([er.json(),pr.json(),cr.json(),br.json()]);
+  allEmployees = (ed.data||[]).filter(e => e.company_id === currentCompany.id);
+  allPayrolls  = (pd.data||[]).filter(p => p.company_id === currentCompany.id);
+  allContracts = (cd.data||[]).filter(c => c.company_id === currentCompany.id);
+  allBillings  = (bd.data||[]).filter(b => b.company_id === currentCompany.id);
+}
+
+// ══ APP START ══
+function startApp(){
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app').classList.add('visible');
+  const subTxt = (currentCompany.industry||'') + ' · 급여일: ' + (currentCompany.pay_day||'-');
+  document.getElementById('app-company-name').textContent = currentCompany.company_name;
+  document.getElementById('app-company-sub').textContent  = subTxt;
+  // 햄버거 메뉴 회사 정보
+  document.getElementById('hmenu-company-name').textContent = currentCompany.company_name;
+  document.getElementById('hmenu-company-sub').textContent  = subTxt;
+  // 초기 탭(급여현황)에 맞게 헤더 월 네비 설정
+  _configHeaderMonth('stats');
+  renderStats();
+  renderBilling();
+  renderMyco();
+  // 로그인 시 loadClientNotices가 이미 완료되어 _clientNotices가 스토어됨 — 로드된 데이터로 즉시 업데이트
+  _updateNotifBadge();
+
+  // 중요공지(general) 중 미읽음 + 실제 발송 완료(gn_status === 'sent') 건만 강제 모달 표시
+  // scheduled(예약 대기) 는 아직 발송 전이므로 제외
+  // is_read: DB에서 boolean false / null / undefined / 문자열 "false" 모두 미읽음으로 처리
+  const unreadGenerals = _clientNotices.filter(
+    n => n.notice_type === 'general'
+      && !_isReadVal(n.is_read)
+      && (n.gn_status === 'sent' || !n.gn_status)  // sent 이거나 필드 없는 구형 데이터
+  );
+  if(unreadGenerals.length > 0){
+    // 살짝 딜레이 후 표시 (앱 화면 전환 애니메이션 완료 후)
+    setTimeout(() => showGnAlerts(unreadGenerals), 350);
+  }
+}
+
+// ══ PAGE NAVIGATION ══
+
+// 헤더 월 네비 표시/숨김 + 탭별 년월·버튼 콜백 설정
+function _configHeaderMonth(tab){
+  const row    = document.getElementById('header-month-row');
+  const label  = document.getElementById('hm-month-label');
+  const sub    = document.getElementById('hm-sub-label');
+  const prev   = document.getElementById('hm-prev-btn');
+  const next   = document.getElementById('hm-next-btn');
+  if(!row) return;
+
+  const TAB_META = {
+    stats:   { sub:'급여현황',  getY:()=>statsYear,   getM:()=>statsMonth,
+      fn: d => { statsMonth+=d; if(statsMonth>12){statsMonth=1;statsYear++;}if(statsMonth<1){statsMonth=12;statsYear--;} label.textContent=`${statsYear}년 ${statsMonth}월`; renderStats(); } },
+
+    payslip: { sub:'급여명세서', getY:()=>psYear,      getM:()=>psMonth,
+      fn: d => { psMonth+=d; if(psMonth>12){psMonth=1;psYear++;}if(psMonth<1){psMonth=12;psYear--;} label.textContent=`${psYear}년 ${psMonth}월`; renderPayslipList(); } },
+    billing: { sub:'사용료',    getY:()=>billingYear, getM:()=>billingMonth,
+      fn: d => { billingMonth+=d; if(billingMonth>12){billingMonth=1;billingYear++;}if(billingMonth<1){billingMonth=12;billingYear--;} label.textContent=`${billingYear}년 ${billingMonth}월`; renderBilling(); } },
+  };
+
+  const meta = TAB_META[tab];
+  if(!meta){ row.classList.add('hidden'); return; }
+
+  row.classList.remove('hidden');
+  label.textContent = `${meta.getY()}년 ${meta.getM()}월`;
+  sub.textContent   = meta.sub;
+
+  // 버튼 콜백 – 기존 리스너 제거 후 재등록
+  const newPrev = prev.cloneNode(true);
+  const newNext = next.cloneNode(true);
+  prev.parentNode.replaceChild(newPrev, prev);
+  next.parentNode.replaceChild(newNext, next);
+  newPrev.addEventListener('click', () => meta.fn(-1));
+  newNext.addEventListener('click', () => meta.fn(1));
+
+  // 년월 레이블 클릭 → 피커 열기
+  const wrap = document.getElementById('hm-label-wrap');
+  if(wrap){
+    const newWrap = wrap.cloneNode(true);
+    wrap.parentNode.replaceChild(newWrap, wrap);
+    newWrap.addEventListener('click', () => openYmPicker(tab));
+  }
+}
+
+// ══ 년월 피커 ══
+let _ymCurrentTab  = 'stats';  // 피커를 연 탭 이름
+let _ymPickerYear  = new Date().getFullYear(); // 피커 내 탐색 년도
+
+function openYmPicker(tab){
+  _ymCurrentTab = tab;
+  // 현재 탭 상태 년도를 초기값으로
+  if(tab==='stats') _ymPickerYear = statsYear;
+  if(tab==='payslip') _ymPickerYear = psYear;
+  if(tab==='billing') _ymPickerYear = billingYear;
+  _renderYmGrid();
+  document.getElementById('ym-picker').classList.add('open');
+}
+
+function closeYmPicker(){
+  document.getElementById('ym-picker').classList.remove('open');
+}
+
+function _renderYmGrid(){
+  const now = new Date();
+  const todayY = now.getFullYear(), todayM = now.getMonth()+1;
+  // 탭별 현재 선택된 년/월
+  const curY = _ymCurrentTab==='stats' ? statsYear : _ymCurrentTab==='payslip' ? psYear : billingYear;
+  const curM = _ymCurrentTab==='stats' ? statsMonth: _ymCurrentTab==='payslip' ? psMonth: billingMonth;
+
+  document.getElementById('ym-year-val').textContent = _ymPickerYear + '년';
+
+  // 년도 버튼 콜백 재등록 (중복 방지 cloneNode)
+  ['ym-prev-year','ym-next-year'].forEach((id, isNext) => {
+    const el = document.getElementById(id);
+    const clone = el.cloneNode(true);
+    el.parentNode.replaceChild(clone, el);
+    clone.addEventListener('click', () => { _ymPickerYear += (isNext ? 1 : -1); _renderYmGrid(); });
+  });
+
+  // 월 12칸 그리드
+  document.getElementById('ym-month-grid').innerHTML = Array.from({length:12}, (_,i) => {
+    const m = i+1;
+    const isCurrent = (_ymPickerYear===curY && m===curM);
+    const isToday   = (_ymPickerYear===todayY && m===todayM && !isCurrent);
+    const cls = ['ym-month-btn', isCurrent?'current':'', isToday?'today':''].filter(Boolean).join(' ');
+    return `<button class="${cls}" onclick="selectYmMonth(${m})">${m}월</button>`;
+  }).join('');
+}
+
+function selectYmMonth(month){
+  const label = document.getElementById('hm-month-label');
+  if(_ymCurrentTab==='stats')  { statsYear=_ymPickerYear;   statsMonth=month;   if(label) label.textContent=`${statsYear}년 ${statsMonth}월`;   renderStats(); }
+  
+  if(_ymCurrentTab==='payslip'){ psYear=_ymPickerYear;      psMonth=month;      if(label) label.textContent=`${psYear}년 ${psMonth}월`;         renderPayslipList(); }
+  if(_ymCurrentTab==='billing'){ billingYear=_ymPickerYear; billingMonth=month; if(label) label.textContent=`${billingYear}년 ${billingMonth}월`; renderBilling(); }
+  closeYmPicker();
+}
+
+function showPage(name, el){
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  if(el) el.classList.add('active');
+
+  // 헤더 월 네비 표시 탭 목록 (ct는 월 선택 불필요)
+  if(['stats','payslip','billing'].includes(name)){
+    _configHeaderMonth(name);
+    if(name === 'billing') renderBilling();
+    if(name === 'payslip') { renderPayslipList(); _adjustPsStickyTop(); }
+  } else {
+    const row = document.getElementById('header-month-row');
+    if(row) row.classList.add('hidden');
+  }
+  if(name === 'ct') renderCtContracts();
+  if(name === 'myco') renderMyco();
+  if(name === 'severance') renderClientSeverance();
+  if(name === 'annual-leave') renderClientAnnualLeave();
+}
+
+// ── 명세서 sticky 필터 top 위치 동적 조정 ──
+function _adjustPsStickyTop(){
+  requestAnimationFrame(() => {
+    const header = document.querySelector('.app-header');
+    const sf = document.querySelector('.ps-sticky-filters');
+    if(header && sf){
+      sf.style.top = header.offsetHeight + 'px';
+    }
+  });
+}
+
+// ══ 근로계약 서브페이지 ══
+
+// 카테고리별 설정 (배경색, 아이콘, 텍스트색 등)
+const CAT_CONFIG = {
+  '정규직':     { bg:'linear-gradient(135deg,#1d4ed8,#3b82f6)', icon:'👔', avatarBg:'#3b82f6', label:'정규직' },
+  '정규직 수습':{ bg:'linear-gradient(135deg,#047857,#10b981)', icon:'🌱', avatarBg:'#10b981', label:'정규직 (수습)' },
+  '계약직':     { bg:'linear-gradient(135deg,#92400e,#f59e0b)', icon:'📋', avatarBg:'#f59e0b', label:'계약직' },
+  '계약직 수습':{ bg:'linear-gradient(135deg,#c2410c,#f97316)', icon:'📌', avatarBg:'#f97316', label:'계약직 (수습)' },
+  '일용직':     { bg:'linear-gradient(135deg,#6d28d9,#a855f7)', icon:'🔧', avatarBg:'#a855f7', label:'일용직' },
+};
+
+let _contractsBackPage = 'stats'; // 뒤로가기 대상
+
+function showContractsByCategory(category){
+  _contractsBackPage = 'stats';
+
+  const cfg = CAT_CONFIG[category] || { bg:'linear-gradient(135deg,#374151,#6b7280)', icon:'👤', avatarBg:'#6b7280', label:category };
+
+  // 해당 카테고리 직원 필터 (재직 우선, 퇴직은 뒤로)
+  const emps = allEmployees
+    .filter(e => e.employment_category === category)
+    .sort((a,b) => {
+      const aActive = (a.status==='재직'||a.status==='active') ? 0 : 1;
+      const bActive = (b.status==='재직'||b.status==='active') ? 0 : 1;
+      if(aActive !== bActive) return aActive - bActive;
+      return (a.name||'').localeCompare(b.name||'', 'ko');
+    });
+
+  // 배지 텍스트
+  document.getElementById('contracts-page-badge').textContent = cfg.label + ' ' + emps.length + '명';
+
+  // 히어로 배너
+  const activeCount  = emps.filter(e => e.status==='재직'||e.status==='active').length;
+  const retiredCount = emps.length - activeCount;
+  document.getElementById('contracts-hero').innerHTML = `
+    <div class="cat-hero" style="background:${cfg.bg};">
+      <div class="cat-hero-icon" style="background:rgba(255,255,255,.15);">${cfg.icon}</div>
+      <div>
+        <div class="cat-hero-name">${cfg.label}</div>
+        <div class="cat-hero-sub">재직 ${activeCount}명 · 퇴직 ${retiredCount}명 · 탭하여 근로계약 조회</div>
+      </div>
+    </div>`;
+
+  // 직원 카드 목록
+  if(!emps.length){
+    document.getElementById('contracts-list').innerHTML = `
+      <div class="contracts-empty">
+        <i class="fas fa-users-slash"></i>
+        <p>${cfg.label} 직원이 없습니다</p>
+      </div>`;
+  } else {
+    document.getElementById('contracts-list').innerHTML = emps.map(emp => {
+      const isActive  = emp.status==='재직'||emp.status==='active';
+      const contracts = allContracts.filter(c => c.employee_id === emp.id)
+                        .sort((a,b) => {
+                          // 유효 계약 먼저, 그 다음 최신 계약일 순
+                          const aAct = (a.status==='active'||a.status==='활성'||a.status==='유효') ? 0 : 1;
+                          const bAct = (b.status==='active'||b.status==='활성'||b.status==='유효') ? 0 : 1;
+                          if(aAct !== bAct) return aAct - bAct;
+                          return (b.contract_start||'').localeCompare(a.contract_start||'');
+                        });
+      const activeContract = contracts.find(c => c.status==='active'||c.status==='활성'||c.status==='유효');
+      const hasContract    = contracts.length > 0;
+
+      // 계약 상태 뱃지
+      let statusHtml = '';
+      if(activeContract){
+        statusHtml = `<span class="ecc-contract-status" style="background:#d1fae5;color:#065f46;"><i class="fas fa-file-contract"></i>계약유효</span>`;
+      } else if(hasContract){
+        statusHtml = `<span class="ecc-contract-status" style="background:#fef3c7;color:#92400e;"><i class="fas fa-file-alt"></i>계약 ${contracts.length}건</span>`;
+      } else {
+        statusHtml = `<span class="ecc-contract-status" style="background:#fee2e2;color:#991b1b;"><i class="fas fa-exclamation-triangle"></i>계약 없음</span>`;
+      }
+
+      // 직원 아바타 (이름 첫글자)
+      const initial = (emp.name||'?').charAt(0);
+      const avatarBg = isActive ? cfg.avatarBg : '#9ca3af';
+
+      // 부서/직급 메타
+      const metaParts = [];
+      if(emp.department) metaParts.push(emp.department);
+      if(emp.position)   metaParts.push(emp.position);
+      if(!isActive)      metaParts.push('퇴직');
+
+      return `
+        <div class="emp-contract-card ${hasContract?'has-contract':'no-contract'}" onclick="openContractModal('${emp.id}')">
+          <div class="ecc-avatar" style="background:${avatarBg};">${initial}</div>
+          <div class="ecc-info">
+            <div class="ecc-name">${emp.name||'-'}${!isActive?'<span style="font-size:11px;color:#9ca3af;margin-left:5px;">퇴직</span>':''}</div>
+            <div class="ecc-meta">
+              ${metaParts.map(m=>`<span>${m}</span>`).join('<span style="color:#e5e7eb;">·</span>')}
+            </div>
+          </div>
+          ${statusHtml}
+          <i class="fas fa-chevron-right ecc-arrow"></i>
+        </div>`;
+    }).join('');
+  }
+
+  // 페이지 전환 (탭 네비 비활성화 상태로)
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-contracts').classList.add('active');
+  // 스크롤 최상단으로
+  document.getElementById('page-contracts').scrollTop = 0;
+}
+
+function goBackToStats(){
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-stats').classList.add('active');
+  document.getElementById('nav-stats').classList.add('active');
+  _configHeaderMonth('stats');
+}
+
+// 근로계약 상세 모달 열기
+function openContractModal(empId){
+  const emp = allEmployees.find(e => e.id === empId);
+  if(!emp) return;
+
+  const isActive   = emp.status==='재직'||emp.status==='active';
+  const category   = emp.employment_category || '-';
+  const cfg        = CAT_CONFIG[category] || { bg:'linear-gradient(135deg,#374151,#6b7280)', icon:'👤', avatarBg:'#6b7280', label:category };
+  const isDaily    = category === '일용직';
+
+  // 이 직원의 모든 계약 (유효→최신 순)
+  const contracts = allContracts
+    .filter(c => c.employee_id === empId)
+    .sort((a,b) => {
+      const aAct = (a.status==='active'||a.status==='활성'||a.status==='유효') ? 0 : 1;
+      const bAct = (b.status==='active'||b.status==='활성'||b.status==='유효') ? 0 : 1;
+      if(aAct !== bAct) return aAct - bAct;
+      return (b.contract_start||'').localeCompare(a.contract_start||'');
+    });
+
+  const initial    = (emp.name||'?').charAt(0);
+  const avatarBg   = isActive ? cfg.avatarBg : '#9ca3af';
+
+  // 직원 헤더
+  const empHeader = `
+    <div class="contract-modal-header" style="background:${cfg.bg};">
+      <div class="cm-emp-avatar" style="background:rgba(255,255,255,.15);">${initial}</div>
+      <div class="cm-emp-name">${emp.name||'-'}</div>
+      <div class="cm-emp-sub">
+        ${[emp.department, emp.position].filter(Boolean).join(' · ')}
+        ${emp.hire_date ? ' · 입사 ' + emp.hire_date : ''}
+      </div>
+      <div class="cm-status-badges">
+        <span class="cm-badge" style="background:rgba(255,255,255,.15);color:#fff;">
+          <i class="fas fa-id-badge"></i>${cfg.label}
+        </span>
+        <span class="cm-badge" style="background:${isActive?'rgba(16,185,129,.3)':'rgba(156,163,175,.3)'};color:#fff;">
+          <i class="fas fa-circle" style="font-size:7px;"></i>${isActive?'재직중':'퇴직'}
+        </span>
+        ${contracts.length > 0 ? `<span class="cm-badge" style="background:rgba(255,255,255,.12);color:rgba(255,255,255,.85);"><i class="fas fa-file-contract"></i>계약 ${contracts.length}건</span>` : ''}
+      </div>
+    </div>`;
+
+  // 계약 없음 안내
+  if(!contracts.length){
+    document.getElementById('contract-modal-content').innerHTML = empHeader + `
+      <div style="padding:20px 18px;">
+        <div class="no-contract-notice">
+          <i class="fas fa-file-excel"></i>
+          <p>등록된 근로계약서가 없습니다.<br>담당 노무사에게 문의하세요.</p>
+        </div>
+        ${emp.hire_date ? `
+        <div class="cm-section">
+          <div class="cm-section-title"><i class="fas fa-user"></i> 직원 기본 정보</div>
+          ${_cmRow('입사일', emp.hire_date)}
+          ${emp.resign_date ? _cmRow('퇴직일', emp.resign_date, 'red') : ''}
+          ${_cmRow('고용형태', category)}
+          ${emp.phone ? _cmRow('연락처', emp.phone) : ''}
+        </div>` : ''}
+      </div>`;
+    document.getElementById('contract-modal').classList.add('open');
+    return;
+  }
+
+  // 계약서 렌더링 (여러 건이면 모두 표시)
+  const contractSections = contracts.map((c, idx) => {
+    const isAct   = c.status==='active'||c.status==='활성'||c.status==='유효';
+    const catBadgeStyle = {
+      '정규직':       'background:#dbeafe;color:#1d4ed8;',
+      '정규직 수습':  'background:#d1fae5;color:#065f46;',
+      '계약직':       'background:#ede9fe;color:#6d28d9;',
+      '계약직 수습':  'background:#fce7f3;color:#be185d;',
+      '일용직':       'background:#ffedd5;color:#c2410c;',
+    }[category] || 'background:#f3f4f6;color:#374151;';
+    const contType = `<span style="display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;${catBadgeStyle}">${category}</span>`;
+
+    // 계약기간 텍스트
+    let periodTxt = '';
+    if(isDaily){
+      periodTxt = c.contract_start ? c.contract_start + ' ~ ' + (c.contract_end||'') : '-';
+    } else if(category==='정규직'||category==='정규직 수습'){
+      periodTxt = (c.contract_start||'-') + ' ~ ' + (emp.status==='퇴직' && emp.resign_date ? emp.resign_date : '계속근로');
+    } else {
+      periodTxt = (c.contract_start||'-') + ' ~ ' + (c.contract_end||'미정');
+    }
+
+    // 소정근로시간
+    const workTimeTxt = isDaily
+      ? '일용직 (시급 적용)'
+      : (c.work_hours_per_day ? `1일 ${c.work_hours_per_day}시간 / 주 ${c.work_days_per_week||'-'}일 (주 ${c.work_hours_per_day && c.work_days_per_week ? (c.work_hours_per_day * c.work_days_per_week)+'h' : '-'})` : '-');
+
+    const breakTxt = c.break_time ? c.break_time + '분' : '-';
+
+    // 임금 정보
+    const wageRows = isDaily ? `
+      ${_cmRow('시급', c.hourly_wage ? fmt(c.hourly_wage)+'원' : '-', 'highlight')}
+      ${c.base_salary ? _cmRow('일급 기준', fmt(c.base_salary)+'원', 'green') : ''}
+    ` : `
+      ${c.monthly_salary_agreed ? _cmRow('약정 월 급여', fmt(c.monthly_salary_agreed)+'원', 'highlight') : ''}
+      ${c.annual_salary ? _cmRow('연봉', fmt(c.annual_salary)+'원', 'blue') : ''}
+      ${c.hourly_wage ? _cmRow('통상시급', fmt(c.hourly_wage)+'원') : ''}
+      ${c.base_salary ? _cmRow('기본급', fmt(c.base_salary)+'원') : ''}
+      ${c.weekly_holiday_pay ? _cmRow('주휴수당', fmt(c.weekly_holiday_pay)+'원') : ''}
+      ${c.position_allowance ? _cmRow('직책수당', fmt(c.position_allowance)+'원') : ''}
+      ${c.meal_allowance ? _cmRow('식대', fmt(c.meal_allowance)+'원') : ''}
+      ${c.car_maintenance ? _cmRow('차량유지비', fmt(c.car_maintenance)+'원') : ''}
+      ${c.other_allowance ? _cmRow('기타수당', fmt(c.other_allowance)+'원') : ''}
+    `;
+
+    const statusBadgeHtml = isAct
+      ? `<span style="background:#d1fae5;color:#065f46;" class="cm-badge"><i class="fas fa-check-circle"></i>유효</span>`
+      : `<span style="background:#f3f4f6;color:#6b7280;" class="cm-badge"><i class="fas fa-history"></i>만료</span>`;
+
+    return `
+      <div style="margin-bottom:${idx < contracts.length-1 ? '8px' : '0'};">
+        ${contracts.length > 1 ? `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px 0;border-top:${idx>0?'6px solid #f0f2f5':'none'};">
+          <span style="font-size:12px;font-weight:700;color:#6b7280;">계약 ${idx+1}/${contracts.length}</span>
+          ${statusBadgeHtml}
+        </div>` : `
+        <div style="display:flex;justify-content:flex-end;padding:8px 18px 0;">
+          ${statusBadgeHtml}
+        </div>`}
+
+        <div class="cm-section">
+          <div class="cm-section-title"><i class="fas fa-file-signature"></i> 계약 기본</div>
+          ${_cmRow('계약 유형', contType)}
+          ${_cmRow('계약 기간', periodTxt)}
+          ${c.annual_leave_days ? _cmRow('연차일수', c.annual_leave_days+'일') : ''}
+        </div>
+
+        <div class="cm-section">
+          <div class="cm-section-title"><i class="fas fa-clock"></i> 근무 조건</div>
+          ${_cmRow('소정근로시간', workTimeTxt)}
+          ${_cmRow('휴게시간', breakTxt)}
+        </div>
+
+        <div class="cm-section">
+          <div class="cm-section-title"><i class="fas fa-won-sign"></i> 임금</div>
+          ${wageRows}
+        </div>
+
+        ${c.note ? `
+        <div class="cm-section">
+          <div class="cm-section-title"><i class="fas fa-sticky-note"></i> 메모</div>
+          <div style="padding:10px 18px;font-size:12.5px;color:#555;line-height:1.6;">${c.note}</div>
+        </div>` : ''}
+      </div>`;
+  }).join('');
+
+  // 직원 기본 정보 섹션 (헤더 아래 보조)
+  const empInfoSection = `
+    <div class="cm-section" style="border-top:6px solid #f0f2f5;margin-top:4px;">
+      <div class="cm-section-title"><i class="fas fa-user-circle"></i> 직원 기본 정보</div>
+      ${_cmRow('입사일', emp.hire_date||'-')}
+      ${emp.resign_date ? _cmRow('퇴직일', emp.resign_date, 'red') : ''}
+      ${emp.department ? _cmRow('부서', emp.department) : ''}
+      ${emp.position ? _cmRow('직급/직책', emp.position) : ''}
+      ${emp.phone ? _cmRow('연락처', emp.phone) : ''}
+    </div>`;
+
+  document.getElementById('contract-modal-content').innerHTML =
+    empHeader + `<div style="padding-bottom:8px;">` + contractSections + empInfoSection + `</div>`;
+
+  document.getElementById('contract-modal').classList.add('open');
+}
+
+// cm-row 헬퍼
+function _cmRow(label, value, cls){
+  return `<div class="cm-row"><span class="cm-label">${label}</span><span class="cm-value${cls?' '+cls:''}">${value}</span></div>`;
+}
+
+function closeContractModal(){
+  document.getElementById('contract-modal').classList.remove('open');
+}
+
+// ══ HELPERS ══
+const won  = n => ((n||0).toLocaleString('ko-KR')) + '원';
+const wonM = n => {
+  const v = Math.round((n||0)/10000);
+  return v.toLocaleString('ko-KR') + '만원';
+};
+const fmt = n => Math.round(n||0).toLocaleString('ko-KR');
+const empCatBadge = c => ({'정규직':'badge-blue','정규직 수습':'badge-cyan','계약직':'badge-purple','계약직 수습':'badge-pink','일용직':'badge-orange'}[c]||'badge-gray');
+const getEmpName = id => (allEmployees.find(e=>e.id===id)||{}).name || '알수없음';
+
+// ══ 1. STATS PAGE ══
+function changeMonth(d){
+  // 헤더 연동 콜백에서 호출되므로 여기서는 직접 상태만 변경
+  statsMonth += d;
+  if(statsMonth > 12){ statsMonth=1; statsYear++; }
+  if(statsMonth < 1){ statsMonth=12; statsYear--; }
+  renderStats();
+}
+
+function renderStats(){
+  // 헤더 연월 레이블 동기화
+  const hmLabel = document.getElementById('hm-month-label');
+  if(hmLabel) hmLabel.textContent = `${statsYear}년 ${statsMonth}월`;
+
+  const pays = allPayrolls.filter(p => p.pay_year==statsYear && p.pay_month==statsMonth);
+  const activeEmps = allEmployees.filter(e => e.status==='재직'||e.status==='active');
+  const retiredEmps = allEmployees.filter(e => e.status!=='재직'&&e.status!=='active');
+  const catCount = cat => allEmployees.filter(e => e.employment_category===cat).length;
+
+  // 직원 현황
+  document.getElementById('s-total-emp').textContent   = allEmployees.length;
+  document.getElementById('s-active-emp').textContent  = activeEmps.length;
+  document.getElementById('s-retired-emp').textContent = retiredEmps.length;
+  document.getElementById('s-cat-regular').textContent      = catCount('정규직');
+  document.getElementById('s-cat-regular-prob').textContent = catCount('정규직 수습')||catCount('정규직(수습)');
+  document.getElementById('s-cat-contract').textContent     = catCount('계약직');
+  document.getElementById('s-cat-contract-prob').textContent= catCount('계약직 수습')||catCount('계약직(수습)');
+  document.getElementById('s-cat-daily').textContent        = catCount('일용직');
+
+  // 급여 집계
+  const gross = pays.reduce((a,p) => a+(p.gross_pay||0), 0);
+  const net   = pays.reduce((a,p) => a+(p.net_pay||0), 0);
+  const ded   = gross - net;
+
+  const activeContracts = allContracts.filter(c => c.status==='active'||c.status==='활성'||c.status==='유효');
+  document.getElementById('s-active-contract').textContent = activeContracts.length;
+  document.getElementById('s-pay-month-badge').textContent = `${statsYear}년 ${statsMonth}월` + ' 기준';
+  document.getElementById('s-gross').textContent = fmt(gross).includes('0') && gross===0 ? '0원' : fmt(gross)+'원';
+  document.getElementById('s-ded').textContent   = fmt(ded)+'원';
+  document.getElementById('s-net').textContent   = fmt(net)+'원';
+  document.getElementById('s-count').textContent = pays.length+'명';
+  document.getElementById('s-ded-sub').textContent  = wonM(ded);
+  document.getElementById('s-net-sub').textContent  = wonM(net);
+
+  // (근로계약 현황은 별도 탭 page-ct에서 렌더)
+
+  // 차트는 다음 프레임에 그려 UI 블로킹 최소화
+  requestAnimationFrame(() => {
+    renderDistChart(pays);
+    renderTrendChart();
+  });
+}
+
+// ─ 분포 차트 ─
+function switchDistTab(tab, el){
+  distTab = tab;
+  document.querySelectorAll('.dist-tab-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  const pays = allPayrolls.filter(p => p.pay_year==statsYear && p.pay_month==statsMonth);
+  renderDistChart(pays);
+}
+
+function renderDistChart(pays){
+  const COLORS = ['#6366f1','#f59e0b','#10b981','#ef4444','#3b82f6','#8b5cf6','#ec4899','#14b8a6','#f97316','#a855f7','#06b6d4','#84cc16'];
+
+  // ── 데이터 집계 ──
+  let groups = [];
+  if(distTab==='emp'){
+    groups = pays.map(p => {
+      const e = allEmployees.find(x=>x.id===p.employee_id)||{};
+      return {label: e.name||'알수없음', gross: p.gross_pay||0, net: p.net_pay||0};
+    }).sort((a,b)=>b.gross-a.gross);
+  } else {
+    const map = {};
+    pays.forEach(p => {
+      const e = allEmployees.find(x=>x.id===p.employee_id)||{};
+      const k = distTab==='dept' ? (e.department||'미지정') : (e.position||e.rank||'미지정');
+      if(!map[k]) map[k]={label:k, gross:0, net:0};
+      map[k].gross += p.gross_pay||0; map[k].net += p.net_pay||0;
+    });
+    groups = Object.values(map).sort((a,b)=>b.gross-a.gross);
+  }
+
+  const totalGross = groups.reduce((a,g)=>a+g.gross, 0);
+  const totalNet   = groups.reduce((a,g)=>a+g.net,   0);
+  const totalDed   = totalGross - totalNet;
+
+  // ── 요약 배지 ──
+  document.getElementById('dist-summary').innerHTML = [
+    {label:'지급총액', val:fmt(totalGross)+'원', bg:'#eff6ff', color:'#1d4ed8', border:'#bfdbfe'},
+    {label:'공제합계', val:fmt(totalDed)+'원',   bg:'#fef2f2', color:'#dc2626', border:'#fecaca'},
+    {label:'실지급액', val:fmt(totalNet)+'원',   bg:'#f0fdf4', color:'#065f46', border:'#bbf7d0'},
+    {label:'지급인원', val:pays.length+'명',      bg:'#fdf4ff', color:'#7e22ce', border:'#e9d5ff'},
+  ].map(b=>`<div style="display:flex;flex-direction:column;gap:2px;padding:8px 10px;background:${b.bg};border:1px solid ${b.border};border-radius:10px;">
+    <span style="font-size:10px;color:#9ca3af;font-weight:500;">${b.label}</span>
+    <span style="font-size:13px;font-weight:800;color:${b.color};white-space:nowrap;letter-spacing:-0.3px;">${b.val}</span>
+  </div>`).join('');
+
+  const barWrap   = document.getElementById('dist-bar-wrap');
+  const donutWrap = document.getElementById('dist-donut-wrap');
+
+  // ════════════════════════════════════════
+  // 인원별 → 가로 막대 차트
+  // ════════════════════════════════════════
+  if(distTab === 'emp'){
+    barWrap.style.display   = '';
+    donutWrap.style.display = 'none';
+
+    const colors = groups.map((_,i)=>COLORS[i%COLORS.length]);
+
+    if(!groups.length){
+      barWrap.style.height = '60px';
+      document.getElementById('dist-chart').style.display = 'none';
+      return;
+    }
+    document.getElementById('dist-chart').style.display = '';
+    barWrap.style.height = Math.max(180, groups.length * 44) + 'px';
+
+    if(distChart){
+      distChart.data.labels = groups.map(g=>g.label);
+      distChart.data.datasets[0].data = groups.map(g=>g.gross);
+      distChart.data.datasets[0].backgroundColor = colors.map(c=>c+'cc');
+      distChart.data.datasets[1].data = groups.map(g=>g.net);
+      distChart.data.datasets[1].backgroundColor = colors.map(c=>c+'44');
+      distChart.update('none');
+    } else {
+      distChart = new Chart(document.getElementById('dist-chart'), {
+        type:'bar',
+        data:{
+          labels: groups.map(g=>g.label),
+          datasets:[
+            {label:'지급총액', data:groups.map(g=>g.gross), backgroundColor:colors.map(c=>c+'cc'), borderRadius:4},
+            {label:'실지급액', data:groups.map(g=>g.net),   backgroundColor:colors.map(c=>c+'44'), borderRadius:4},
+          ]
+        },
+        options:{
+          indexAxis:'y', responsive:true, maintainAspectRatio:false,
+          interaction:{mode:'index', intersect:false},
+          plugins:{
+            legend:{position:'top', align:'end', labels:{font:{size:10}, usePointStyle:true, boxWidth:8}},
+            tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${Math.round(c.raw).toLocaleString('ko-KR')}원`}}
+          },
+          scales:{
+            x:{beginAtZero:true, grid:{color:'rgba(0,0,0,.04)'}, ticks:{font:{size:9}, callback:v=>(v>=1000000?(v/10000).toFixed(0)+'만':v.toLocaleString())}},
+            y:{ticks:{font:{size:10}}, grid:{display:false}}
+          }
+        }
+      });
+    }
+    return;
+  }
+
+  // ════════════════════════════════════════
+  // 부서별 · 직급별 → 도넛 차트
+  // ════════════════════════════════════════
+  barWrap.style.display   = 'none';
+  donutWrap.style.display = '';
+
+  // 빈 데이터 처리
+  const centerEl = document.getElementById('dist-donut-center');
+  const legendEl = document.getElementById('dist-donut-legend');
+
+  if(!groups.length){
+    centerEl.innerHTML = `<div class="dist-donut-center-label">데이터 없음</div>`;
+    legendEl.innerHTML = '';
+    if(distDonutChart){ distDonutChart.data.labels=[]; distDonutChart.data.datasets[0].data=[]; distDonutChart.update('none'); }
+    return;
+  }
+
+  const colors = groups.map((_,i)=>COLORS[i%COLORS.length]);
+  const tabLabel = distTab==='dept' ? '부서별' : '직급별';
+
+  // 중앙 텍스트
+  centerEl.innerHTML = `
+    <div class="dist-donut-center-label">${tabLabel}<br>지급총액</div>
+    <div class="dist-donut-center-val">${wonM(totalGross)}</div>`;
+
+  // 범례
+  legendEl.innerHTML = groups.map((g, i) => {
+    const pct = totalGross > 0 ? (g.gross / totalGross * 100).toFixed(1) : '0.0';
+    const amtStr = (g.gross >= 10000000)
+      ? (g.gross/10000000).toFixed(1)+'천만'
+      : (g.gross >= 1000000)
+        ? (g.gross/10000).toFixed(0)+'만'
+        : g.gross.toLocaleString('ko-KR');
+    return `<div class="dist-donut-legend-item">
+      <div class="dist-donut-legend-dot" style="background:${colors[i]};"></div>
+      <div class="dist-donut-legend-name" title="${g.label}">${g.label}</div>
+      <div class="dist-donut-legend-pct">${pct}%</div>
+      <div class="dist-donut-legend-amt">${amtStr}원</div>
+    </div>`;
+  }).join('');
+
+  // 차트 업데이트 or 신규 생성
+  if(distDonutChart){
+    distDonutChart.data.labels = groups.map(g=>g.label);
+    distDonutChart.data.datasets[0].data = groups.map(g=>g.gross);
+    distDonutChart.data.datasets[0].backgroundColor = colors;
+    distDonutChart.update('none');
+  } else {
+    distDonutChart = new Chart(document.getElementById('dist-donut-chart'), {
+      type: 'doughnut',
+      data: {
+        labels: groups.map(g=>g.label),
+        datasets:[{
+          data: groups.map(g=>g.gross),
+          backgroundColor: colors,
+          borderWidth: 2,
+          borderColor: '#fff',
+          hoverBorderWidth: 3,
+          hoverOffset: 6,
+        }]
+      },
+      options:{
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '66%',
+        animation: {duration: 500, easing:'easeOutQuart'},
+        plugins:{
+          legend:{display:false},
+          tooltip:{callbacks:{
+            label: c => {
+              const pct = (totalGross>0 ? c.raw/totalGross*100 : 0).toFixed(1);
+              return ` ${c.label}: ${Math.round(c.raw).toLocaleString('ko-KR')}원 (${pct}%)`;
+            }
+          }}
+        }
+      }
+    });
+  }
+}
+
+// ─ Trend ─
+function renderTrendChart(){
+  const months = [];
+  for(let i=11;i>=0;i--){
+    let m = statsMonth-i, y = statsYear;
+    while(m<1){m+=12;y--;} while(m>12){m-=12;y++;}
+    months.push({y,m});
+  }
+  const startM = months[0], endM = months[11];
+  document.getElementById('trend-period-badge').textContent =
+    `${startM.y}.${String(startM.m).padStart(2,'0')} ~ ${endM.y}.${String(endM.m).padStart(2,'0')}`;
+
+  // 토글 버튼 초기화 (한 번만)
+  const togglesEl = document.getElementById('trend-toggles');
+  if(!togglesEl.children.length){
+    togglesEl.innerHTML = TREND_ITEMS.map(t =>
+      `<label class="tgl-chip ${trendOn[t.key]?'on':''}" style="border-color:${t.borderColor};${trendOn[t.key]?'background:'+t.color+';':'background:'+t.bgColor+';color:'+t.textColor+';'}"
+        onclick="trendOn['${t.key}']=!trendOn['${t.key}'];this.classList.toggle('on');this.style.background=trendOn['${t.key}']?'${t.color}':'${t.bgColor}';this.style.color=trendOn['${t.key}']?'#fff':'${t.textColor}';renderTrendChart()">
+        ${t.label}
+      </label>`
+    ).join('');
+  }
+
+  const labels = months.map(({y,m}) => `${y}.${String(m).padStart(2,'0')}`);
+  const agg = months.map(({y,m}) => {
+    const ps = allPayrolls.filter(p => p.pay_year==y && p.pay_month==m);
+    const gross = ps.reduce((a,p)=>a+(p.gross_pay||0),0);
+    const net   = ps.reduce((a,p)=>a+(p.net_pay||0),0);
+    return {
+      gross, net,
+      ded:   gross - net,
+      extra: ps.reduce((a,p)=>a+(p.overtime_pay||0)+(p.night_pay||0)+(p.holiday_pay||0),0),
+      irreg: ps.reduce((a,p)=>a+(p.annual_leave_pay||0)+(p.other_pay||0),0),
+      tax:   ps.reduce((a,p)=>a+(p.income_tax||0)+(p.local_income_tax||0),0),
+      ins:   ps.reduce((a,p)=>a+(p.health_insurance||0)+(p.long_term_care||0)+(p.national_pension||0)+(p.employment_insurance||0),0),
+      adj:   ps.reduce((a,p)=>a+(p.year_end_tax_adjust||0)+(p.health_insurance_adjust||0)+(p.advance_deduction||0),0),
+    };
+  });
+
+  const datasets = TREND_ITEMS.filter(t=>trendOn[t.key]).map(t=>({
+    label: t.label,
+    data: agg.map(a=>a[t.key]),
+    borderColor: t.color,
+    backgroundColor: t.color+'18',
+    borderWidth:2.5,
+    pointRadius:3,
+    pointHoverRadius:6,
+    pointBackgroundColor: t.color,
+    fill:false,
+    tension:.35
+  }));
+
+  const ctx = document.getElementById('trend-chart'); if(!ctx) return;
+  if(trendChart){
+    // 데이터셋 수가 바뀔 수 있으므로 교체 후 update
+    trendChart.data.labels = labels;
+    trendChart.data.datasets = datasets;
+    trendChart.update('none');
+    return;
+  }
+  trendChart = new Chart(ctx, {
+    type:'line',
+    data:{labels, datasets},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{position:'top',align:'end',labels:{font:{size:10},usePointStyle:true,boxWidth:8}},
+        tooltip:{callbacks:{
+          title:items=>`📅 ${items[0].label}`,
+          label:c=>` ${c.dataset.label}: ${Math.round(c.parsed.y).toLocaleString('ko-KR')}원`
+        }}
+      },
+      scales:{
+        x:{grid:{display:false},ticks:{font:{size:9},maxRotation:0,color:'#9ca3af'}},
+        y:{grid:{color:'rgba(0,0,0,.04)'},beginAtZero:true,ticks:{font:{size:9},color:'#9ca3af',callback:v=>(v>=1000000?(v/10000).toFixed(0)+'만':v.toLocaleString())}}
+      }
+    }
+  });
+}
+
+// ══ 계약현황 페이지 (하단 탭 nav-ct) ══
+
+let _ctStatusTab = 'all'; // 'all' | 'active' | 'expired'
+
+function setCtStatusTab(tab, el){
+  _ctStatusTab = tab;
+  // 탭 스타일 초기화
+  ['ct-stab-all','ct-stab-active','ct-stab-expired'].forEach(id => {
+    const btn = document.getElementById(id);
+    if(!btn) return;
+    btn.style.color = '#9ca3af';
+    btn.style.borderBottom = '2px solid transparent';
+    btn.style.fontWeight = '600';
+  });
+  if(el){
+    el.style.color = '#2563eb';
+    el.style.borderBottom = '2px solid #2563eb';
+    el.style.fontWeight = '700';
+  }
+  renderCtContracts();
+}
+
+function renderCtContracts(){
+  const badgesEl = document.getElementById('ct-summary-badges');
+  const listEl   = document.getElementById('ct-cards-list');
+  if(!listEl || !currentCompany) return;
+
+  const coId = currentCompany.id;
+  const today = new Date().toISOString().slice(0, 10);
+
+  // 계약 상태 판별 헬퍼
+  const isCtActive  = c => c.status==='active'||c.status==='활성'||c.status==='유효';
+  const isCtExpired = c => c.status==='만료'||c.status==='expired'||c.status==='해지'||c.status==='terminated'||c.status==='파기';
+
+  // 전체 계약 (임시저장 제외)
+  const allCts = allContracts.filter(c => !c.is_draft);
+  const activeCts  = allCts.filter(isCtActive);
+  const expiredCts = allCts.filter(isCtExpired);
+
+  // 필터 적용
+  let filtered;
+  if(_ctStatusTab === 'active')       filtered = activeCts;
+  else if(_ctStatusTab === 'expired') filtered = expiredCts;
+  else                                filtered = allCts;
+
+  // 정렬: 유효 → 만료/해지, 동일 상태 내 이름 가나다
+  filtered = [...filtered].sort((a,b) => {
+    const ao = isCtActive(a) ? 0 : 1;
+    const bo = isCtActive(b) ? 0 : 1;
+    if(ao !== bo) return ao - bo;
+    const ea = allEmployees.find(e=>e.id===a.employee_id)||{};
+    const eb = allEmployees.find(e=>e.id===b.employee_id)||{};
+    return (ea.name||'').localeCompare(eb.name||'','ko');
+  });
+
+  // 요약 뱃지
+  if(badgesEl){
+    badgesEl.innerHTML = `
+      <span style="font-size:11px;background:#d1fae5;color:#065f46;padding:3px 10px;border-radius:20px;font-weight:600;cursor:pointer;" onclick="setCtStatusTab('active',document.getElementById('ct-stab-active'))">
+        유효 ${activeCts.length}건
+      </span>
+      <span style="font-size:11px;background:#fee2e2;color:#991b1b;padding:3px 10px;border-radius:20px;font-weight:600;cursor:pointer;" onclick="setCtStatusTab('expired',document.getElementById('ct-stab-expired'))">
+        만료·해지 ${expiredCts.length}건
+      </span>
+      <span style="font-size:11px;background:#f3f4f6;color:#6b7280;padding:3px 10px;border-radius:20px;font-weight:600;cursor:pointer;" onclick="setCtStatusTab('all',document.getElementById('ct-stab-all'))">
+        전체 ${allCts.length}건
+      </span>`;
+  }
+
+  if(!filtered.length){
+    listEl.innerHTML = `<div style="text-align:center;padding:60px 20px;color:#9ca3af;">
+      <i class="fas fa-file-contract" style="font-size:36px;margin-bottom:12px;display:block;opacity:.4;"></i>
+      <div style="font-size:14px;font-weight:600;">해당하는 계약이 없습니다</div>
+    </div>`;
+    return;
+  }
+
+  listEl.innerHTML = filtered.map(c => {
+    const emp     = allEmployees.find(e=>e.id===c.employee_id) || {};
+    const empCat  = emp.employment_category || '-';
+    const isDaily = empCat === '일용직';
+    const active  = isCtActive(c);
+    const expired = c.status==='해지'||c.status==='terminated'||c.status==='파기';
+
+    // 계약 기간 표시
+    const period = (empCat==='정규직' && active)
+      ? `${c.contract_start||'-'} ~ 현재`
+      : `${c.contract_start||'-'} ~ ${c.contract_end||'미정'}`;
+
+    // 기본급/일급
+    const sal = isDaily
+      ? `일급 ${fmt(c.daily_wage||c.base_salary)}원`
+      : `기본급 ${fmt(c.base_salary)}원`;
+
+    // 약정임금
+    const agreed = c.monthly_salary_agreed
+      ? `약정 ${fmt(c.monthly_salary_agreed)}원/월`
+      : '';
+
+    // 소정근로
+    const workInfo = isDaily
+      ? '일용직'
+      : (c.work_hours_per_day ? `일 ${c.work_hours_per_day}h · 주 ${c.work_days_per_week||'-'}일` : '-');
+
+    // 상태 뱃지
+    const statusBadge = active
+      ? `<span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:12px;font-size:10.5px;font-weight:700;">유효</span>`
+      : expired
+        ? `<span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:12px;font-size:10.5px;font-weight:700;">해지</span>`
+        : `<span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:12px;font-size:10.5px;font-weight:700;">만료</span>`;
+
+    // 직원 상태 뱃지
+    const empStatusBadge = (emp.status==='재직'||emp.status==='active')
+      ? `<span style="background:#eff6ff;color:#2563eb;padding:1px 6px;border-radius:10px;font-size:10px;font-weight:600;margin-left:4px;">재직</span>`
+      : (emp.status==='퇴직'||emp.status==='resigned')
+        ? `<span style="background:#f3f4f6;color:#6b7280;padding:1px 6px;border-radius:10px;font-size:10px;font-weight:600;margin-left:4px;">퇴직</span>`
+        : '';
+
+    // 계약종료 D-day (만료 계약만)
+    let dday = '';
+    if(active && c.contract_end && empCat !== '정규직'){
+      const diff = Math.ceil((new Date(c.contract_end) - new Date(today)) / 86400000);
+      if(diff <= 30 && diff >= 0){
+        dday = `<span style="background:#fef3c7;color:#b45309;padding:1px 7px;border-radius:10px;font-size:10px;font-weight:700;">D-${diff===0?'day':diff}</span>`;
+      } else if(diff < 0){
+        dday = `<span style="background:#fee2e2;color:#dc2626;padding:1px 7px;border-radius:10px;font-size:10px;font-weight:700;">기간종료</span>`;
+      }
+    }
+
+    // 아바타 색
+    const avatarColors = {
+      '정규직':'#3b82f6','정규직 수습':'#22c55e',
+      '계약직':'#f59e0b','계약직 수습':'#f97316','일용직':'#a855f7'
+    };
+    const avatarColor = avatarColors[empCat] || '#6b7280';
+
+    return `<div style="background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.07);overflow:hidden;${active?'':'opacity:.78;'}">
+      <!-- 헤더 행 -->
+      <div style="padding:12px 14px 10px;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;gap:10px;">
+        <div style="width:36px;height:36px;border-radius:50%;background:${avatarColor}22;border:2px solid ${avatarColor}44;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:${avatarColor};flex-shrink:0;">${(emp.name||'?').charAt(0)}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;flex-wrap:wrap;gap:3px;">
+            <span style="font-size:14px;font-weight:800;color:#1a1a2e;">${emp.name||'-'}</span>
+            ${empStatusBadge}
+            ${dday}
+          </div>
+          <div style="font-size:11px;color:#6b7280;margin-top:1px;">${emp.department||''} ${emp.position||''} · ${empCat}</div>
+        </div>
+        ${statusBadge}
+      </div>
+      <!-- 계약 상세 -->
+      <div style="padding:10px 14px;display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+        <div style="background:#f9fafb;border-radius:8px;padding:7px 9px;">
+          <div style="font-size:10px;color:#9ca3af;margin-bottom:2px;">계약유형</div>
+          <div style="font-size:12px;font-weight:600;color:#374151;"><span class="badge ${empCatBadge(empCat)}" style="font-size:10px;">${empCat}</span></div>
+        </div>
+        <div style="background:#f9fafb;border-radius:8px;padding:7px 9px;">
+          <div style="font-size:10px;color:#9ca3af;margin-bottom:2px;">소정근로</div>
+          <div style="font-size:12px;font-weight:600;color:#374151;">${workInfo}</div>
+        </div>
+        <div style="background:#f9fafb;border-radius:8px;padding:7px 9px;grid-column:1/-1;">
+          <div style="font-size:10px;color:#9ca3af;margin-bottom:2px;">계약기간</div>
+          <div style="font-size:12px;font-weight:600;color:#374151;">${period}</div>
+        </div>
+      </div>
+      <!-- 임금 -->
+      <div style="padding:0 14px 12px;">
+        <div style="background:linear-gradient(135deg,#eff6ff,#dbeafe);border-radius:10px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <div style="font-size:10.5px;color:#1e40af;font-weight:600;">${agreed||sal}</div>
+            ${agreed ? `<div style="font-size:10px;color:#6b7280;margin-top:1px;">${sal}</div>` : ''}
+          </div>
+          <div style="font-size:10px;color:#3b82f6;font-weight:600;">계약 ID: <span style="color:#1d4ed8;">${c.id||'-'}</span></div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ══ 2. PAYSLIP PAGE ══
+
+// 고용형태 → 아바타 색상 매핑
+const PS_CAT_COLOR = {
+  '정규직':     '#3b82f6',
+  '정규직 수습':'#22c55e',
+  '계약직':     '#f59e0b',
+  '계약직 수습':'#f97316',
+  '일용직':     '#a855f7',
+};
+
+// ── 1단계 대분류 탭 선택 ──
+function setPsGroup(group, el){
+  psGroup  = group;
+  psSubVal = '__all__';
+  document.querySelectorAll('.ps-group-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  _buildPsSubChips();
+  renderPayslipList();
+}
+
+// ── 2단계 세부 칩 선택 ──
+function setPsSubVal(val){
+  psSubVal = val;
+  document.querySelectorAll('.ps-sub-chip').forEach(b=>{
+    b.classList.toggle('active', b.dataset.val === val);
+  });
+  renderPayslipList();
+}
+
+// ── 2단계 칩 목록 동적 생성 ──
+function _buildPsSubChips(){
+  const subBar   = document.getElementById('ps-sub-bar');
+  const chipsEl  = document.getElementById('ps-sub-chips');
+  const activeEmps = allEmployees.filter(e=>e.status==='재직'||e.status==='active');
+
+  if(psGroup === 'all'){
+    subBar.style.display = 'none';
+    chipsEl.innerHTML = '';
+    return;
+  }
+
+  // 세부 값 목록 추출
+  let values = [];
+  if(psGroup === 'cat'){
+    // 고용형태: 실제 데이터에 있는 것만, 정해진 순서로
+    const ORDER = ['정규직','정규직 수습','계약직','계약직 수습','일용직'];
+    const has = new Set(activeEmps.map(e=>e.employment_category).filter(Boolean));
+    values = ORDER.filter(v=>has.has(v));
+  } else if(psGroup === 'dept'){
+    values = [...new Set(activeEmps.map(e=>e.department||'미지정'))].sort((a,b)=>a.localeCompare(b,'ko'));
+  } else { // rank
+    values = [...new Set(activeEmps.map(e=>e.position||e.rank||'미지정'))].sort((a,b)=>a.localeCompare(b,'ko'));
+  }
+
+  subBar.style.display = '';
+
+  // 고용형태 색상 매핑 (칩 dot 표시용)
+  const catDotColor = {
+    '정규직':'#3b82f6','정규직 수습':'#10b981',
+    '계약직':'#f59e0b','계약직 수습':'#f97316','일용직':'#a855f7'
+  };
+
+  const makeChip = (val, label, isActive) => {
+    const dot = (psGroup === 'cat' && catDotColor[val])
+      ? `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${catDotColor[val]};margin-right:5px;flex-shrink:0;"></span>`
+      : '';
+    const cnt = val === '__all__'
+      ? activeEmps.length
+      : psGroup === 'cat'  ? activeEmps.filter(e=>(e.employment_category||'미지정')===val).length
+      : psGroup === 'dept' ? activeEmps.filter(e=>(e.department||'미지정')===val).length
+      : activeEmps.filter(e=>(e.position||e.rank||'미지정')===val).length;
+    return `<button class="ps-sub-chip${isActive?' active':''}" data-val="${val}" onclick="setPsSubVal('${val}')">${dot}${label}<span style="margin-left:4px;font-size:10px;opacity:.65;">${cnt}</span></button>`;
+  };
+
+  chipsEl.innerHTML = [
+    makeChip('__all__', '전체', true),
+    ...values.map(v => makeChip(v, v, false))
+  ].join('');
+}
+
+function changePsMonth(d){
+  psMonth += d;
+  if(psMonth>12){psMonth=1;psYear++;} if(psMonth<1){psMonth=12;psYear--;}
+  renderPayslipList();
+}
+
+function renderPayslipList(){
+  const el = document.getElementById('payslip-list-content');
+
+  // 재직 직원 기본 풀
+  let emps = allEmployees.filter(e=>e.status==='재직'||e.status==='active');
+
+  // 그룹·세부 필터 적용
+  if(psGroup !== 'all' && psSubVal !== '__all__'){
+    if(psGroup === 'cat')  emps = emps.filter(e=>(e.employment_category||'미지정')===psSubVal);
+    if(psGroup === 'dept') emps = emps.filter(e=>(e.department||'미지정')===psSubVal);
+    if(psGroup === 'rank') emps = emps.filter(e=>(e.position||e.rank||'미지정')===psSubVal);
+  }
+
+  if(!emps.length){
+    el.innerHTML='<div class="no-data"><i class="fas fa-user-slash"></i><p>해당 조건의 재직 직원이 없습니다</p></div>';
+    return;
+  }
+
+  // 선택 연월 급여 데이터
+  const monthPays = allPayrolls.filter(p=>Number(p.pay_year)===psYear && Number(p.pay_month)===psMonth);
+
+  // 정렬: 그룹에 따라 기준 다르게
+  let sorted;
+  if(psGroup === 'dept'){
+    sorted = [...emps].sort((a,b)=>{
+      const da=(a.department||'미지정'), db=(b.department||'미지정');
+      return da.localeCompare(db,'ko') || (a.name||'').localeCompare(b.name||'','ko');
+    });
+  } else if(psGroup === 'rank'){
+    sorted = [...emps].sort((a,b)=>{
+      const ra=(a.position||a.rank||'미지정'), rb=(b.position||b.rank||'미지정');
+      return ra.localeCompare(rb,'ko') || (a.name||'').localeCompare(b.name||'','ko');
+    });
+  } else {
+    sorted = [...emps].sort((a,b)=>(a.name||'').localeCompare(b.name||'','ko'));
+  }
+
+  // 그룹 헤더를 삽입할 기준 키
+  const groupKeyFn = emp =>
+    psGroup==='dept' ? (emp.department||'미지정') :
+    psGroup==='rank' ? (emp.position||emp.rank||'미지정') :
+    psGroup==='cat'  ? (emp.employment_category||'기타') : null;
+
+  let lastGroupKey = null;
+  const cards = sorted.map(emp => {
+    const p = monthPays.find(x=>x.employee_id===emp.id);
+    const avatarColor = PS_CAT_COLOR[emp.employment_category]||'#6366f1';
+    const initial = (emp.name||'?').charAt(0);
+    const catLabel = emp.employment_category||'기타';
+
+    // 그룹 헤더 (세부 전체 선택 or 그룹 모드일 때)
+    let groupHeader = '';
+    if(psSubVal === '__all__' && psGroup !== 'all'){
+      const gk = groupKeyFn(emp);
+      if(gk !== lastGroupKey){
+        lastGroupKey = gk;
+        const gCount = sorted.filter(e=>groupKeyFn(e)===gk).length;
+        const gInputed = sorted.filter(e=>groupKeyFn(e)===gk && monthPays.find(x=>x.employee_id===e.id)).length;
+        groupHeader = `<div class="ps-group-header">
+          <span class="ps-group-header-name">${gk}</span>
+          <span class="ps-group-header-badge">${gCount}명 중 ${gInputed}명 입력</span>
+        </div>`;
+      }
+    }
+
+    let payContent = '';
+    if(p){
+      const gross=p.gross_pay||0, net=p.net_pay||0, ded=gross-net;
+      payContent = `
+        <div class="ps-emp-rows">
+          <div class="ps-emp-row">
+            <span class="pr-label">지급총액</span>
+            <span class="pr-val">${gross.toLocaleString('ko-KR')}원</span>
+          </div>
+          <div class="ps-emp-row">
+            <span class="pr-label">공제합계</span>
+            <span class="pr-val minus">-${ded.toLocaleString('ko-KR')}원</span>
+          </div>
+          <div class="ps-emp-row" style="border-bottom:none;">
+            <span class="pr-label" style="font-weight:700;color:#1a1a2e;">실지급액</span>
+            <span class="pr-val" style="color:#059669;font-size:13px;">${net.toLocaleString('ko-KR')}원</span>
+          </div>
+          ${p.pay_date?`<div style="font-size:10.5px;color:#9ca3af;padding:4px 0 2px;text-align:right;"><i class="fas fa-calendar-check" style="margin-right:3px;color:#a5b4fc;"></i>${p.pay_date} 지급</div>`:''}
+        </div>`;
+    } else {
+      payContent = `<div class="ps-emp-no-pay"><i class="fas fa-file-invoice" style="color:#d1d5db;margin-right:5px;"></i>${psYear}년 ${psMonth}월 급여 미입력</div>`;
+    }
+
+    const card = `<div class="ps-emp-card${!p?' ps-emp-card--unpaid':''}" onclick="${p?`openPayslipModal('${p.id}')`:'void(0)'}" style="${!p?'cursor:default;':''}">
+      <div class="ps-emp-card-header">
+        <div class="ps-emp-avatar" style="background:${avatarColor};">${initial}</div>
+        <div class="ps-emp-info">
+          <div class="ps-emp-name">${emp.name||'-'}</div>
+          <div class="ps-emp-meta">${catLabel}${emp.position?` · ${emp.position}`:''}${emp.department?` · ${emp.department}`:''}</div>
+        </div>
+        ${p?`<div class="ps-emp-pay">
+          <div class="ps-emp-net">${(p.net_pay||0).toLocaleString('ko-KR')}원</div>
+          <div class="ps-emp-gross">총 ${(p.gross_pay||0).toLocaleString('ko-KR')}원</div>
+        </div>`:`<div class="ps-emp-unpaid-badge"><i class="fas fa-exclamation-circle"></i> 미입력</div>`}
+      </div>
+      ${payContent}
+    </div>`;
+
+    return groupHeader + card;
+  }).join('');
+
+  const inputCount = sorted.filter(emp=>monthPays.find(x=>x.employee_id===emp.id)).length;
+  const totalCount = sorted.length;
+
+  el.innerHTML = `
+    <div class="ps-list-summary">
+      <span class="ps-list-title">${psYear}년 ${psMonth}월 명세서</span>
+      <span class="ps-list-count">총 ${totalCount}명 중 <strong>${inputCount}명</strong> 입력됨</span>
+    </div>
+    ${cards}`;
+}
+
+// renderEmpChips / setPsFilter – 하위호환 유지
+function renderEmpChips(){ renderPayslipList(); }
+function setPsFilter(cat){ psGroup='all'; psSubVal='__all__'; renderPayslipList(); }
+
+// ─ Payslip Modal ─
+function openPayslipModal(payrollId){
+  const p = allPayrolls.find(x=>x.id===payrollId); if(!p) return;
+  const emp = allEmployees.find(x=>x.id===p.employee_id)||{};
+  const contract = allContracts.find(c=>c.employee_id===p.employee_id&&(c.status==='active'||c.status==='활성'));
+  const hw = contract?contract.hourly_wage:p.hourly_wage||0;
+  const gross=p.gross_pay||0, net=p.net_pay||0, ded=(p.total_deduction||(gross-net));
+
+  const payItems=[
+    {label:'기본급',val:p.base_salary},
+    {label:'주휴수당',val:p.weekly_holiday_pay},
+    {label:'자격(직책)수당',val:p.position_allowance},
+    {label:'연장근로수당',val:p.overtime_pay,sub:p.overtime_hours?`통상시급 ${won(hw)} × ${p.overtime_hours}h × 150%`:''},
+    {label:'야간근로수당',val:p.night_pay,sub:p.night_hours?`통상시급 × ${p.night_hours}h × 50%`:''},
+    {label:'휴일근로수당',val:p.holiday_pay,sub:p.holiday_hours?`통상시급 × ${p.holiday_hours}h × 150%`:''},
+    {label:'차량유지비',val:p.car_maintenance},
+    {label:'식대',val:p.meal_allowance},
+    {label:'연차수당',val:p.annual_leave_pay},
+    {label:'기타(상여·실비·통신비)',val:p.other_pay},
+  ];
+  const dedItems=[
+    {label:'소득세',val:p.income_tax,sub:'간이세액표 적용'},
+    {label:'주민세',val:p.local_income_tax,sub:'소득세 × 10%'},
+    {label:'건강보험',val:p.health_insurance,sub:`보수월액(${(p.standard_monthly_pay||0).toLocaleString('ko-KR')}) × 3.545%`},
+    {label:'장기요양보험',val:p.long_term_care,sub:'건강보험 × 12.95%'},
+    {label:'국민연금',val:p.national_pension,sub:'보수월액(상한 6,370,000) × 4.5%'},
+    {label:'고용보험',val:p.employment_insurance,sub:'보수월액 × 0.9%'},
+    ...(p.year_end_tax_adjust?[{label:'연말정산'+(p.year_end_tax_adjust<0?' (환급)':' (추가납부)'),val:p.year_end_tax_adjust}]:[]),
+    ...(p.health_insurance_adjust?[{label:'건강보험정산'+(p.health_insurance_adjust<0?' (환급)':' (추가납부)'),val:p.health_insurance_adjust}]:[]),
+    ...(p.advance_deduction?[{label:'기타(선지급) 공제',val:p.advance_deduction}]:[]),
+  ];
+
+  document.getElementById('payslip-modal-content').innerHTML = `
+    <div class="ps-header">
+      <div class="ps-month">${p.pay_year}년 ${p.pay_month}월 급여명세서</div>
+      <div class="ps-net">${won(net)}</div>
+      <div class="ps-emp">${emp.name||''} · ${emp.position||''} · ${emp.department||''}</div>
+      ${p.pay_date?`<div class="ps-date"><i class="fas fa-calendar-check"></i> ${p.pay_date} 지급</div>`:''}
+    </div>
+    <div class="ps-summary">
+      <div class="ps-sum-item"><div class="sl">지급합계</div><div class="sv plus">${won(gross)}</div></div>
+      <div class="ps-divider"></div>
+      <div class="ps-sum-item"><div class="sl">공제합계</div><div class="sv minus">-${won(ded)}</div></div>
+      <div class="ps-divider"></div>
+      <div class="ps-sum-item"><div class="sl">영수액</div><div class="sv net">${won(net)}</div></div>
+    </div>
+    ${(p.work_days||p.overtime_hours)?`
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);background:#f8f9fb;border-bottom:1px solid #f0f2f5;padding:10px 0;text-align:center;">
+      ${[['근로일수',(p.work_days||'-')+'일'],['총근로시간',(p.total_work_hours||'-')+'h'],['연장',(p.overtime_hours||0)+'h'],['야간',(p.night_hours||0)+'h'],['휴일',(p.holiday_hours||0)+'h']].map(([l,v])=>`<div><div style="font-size:9.5px;color:#aaa;">${l}</div><div style="font-size:12.5px;font-weight:700;margin-top:2px;">${v}</div></div>`).join('')}
+    </div>`:''}
+    <div class="ps-section">
+      <div class="ps-section-title blue"><i class="fas fa-plus-circle"></i> 지급 내역</div>
+      ${payItems.map(i=>`<div class="ps-row"><span class="pl">${i.label}</span><div style="text-align:right"><span class="pv ${!i.val?'zero':''}">${won(i.val)}</span>${i.sub&&i.val?`<div class="pv sub">${i.sub}</div>`:''}</div></div>`).join('')}
+    </div>
+    <div class="ps-total blue"><span>지급 합계</span><span>${won(gross)}</span></div>
+    <div class="ps-section">
+      <div class="ps-section-title red"><i class="fas fa-minus-circle"></i> 공제 내역</div>
+      ${dedItems.map(i=>`<div class="ps-row"><span class="pl">${i.label}</span><div style="text-align:right"><span class="pv ${!i.val?'zero':''}" style="${(i.val||0)<0?'color:#10b981':''}">${(i.val||0)<0?'-'+won(Math.abs(i.val)):won(i.val)}</span>${i.sub?`<div class="pv sub">${i.sub}</div>`:''}</div></div>`).join('')}
+    </div>
+    <div class="ps-total red"><span>공제 합계</span><span>${won(ded)}</span></div>
+    <div class="ps-net-row"><span>🏦 영수액 (실수령액)</span><span class="nv">${won(net)}</span></div>
+    ${p.note?`<div style="padding:12px 16px;font-size:12.5px;color:#666;border-top:1px solid #f0f2f5;"><i class="fas fa-sticky-note" style="color:#f59e0b;margin-right:5px;"></i>${p.note}</div>`:''}
+  `;
+  document.getElementById('payslip-modal').classList.add('open');
+}
+function closePayslipModal(){ document.getElementById('payslip-modal').classList.remove('open'); }
+
+// ══ 급여 항목별 비율 모달 ══
+let _prPayChart = null, _prDedChart = null;
+let _prCurrentTab = 'pay';
+
+const PAY_ITEMS_META = [
+  {key:'base_salary',        label:'기본급',        color:'#3b82f6'},
+  {key:'weekly_holiday_pay', label:'주휴수당',      color:'#60a5fa'},
+  {key:'position_allowance', label:'직책수당',      color:'#818cf8'},
+  {key:'overtime_pay',       label:'연장근로수당',  color:'#f59e0b'},
+  {key:'night_pay',          label:'야간근로수당',  color:'#f97316'},
+  {key:'holiday_pay',        label:'휴일근로수당',  color:'#fb923c'},
+  {key:'car_maintenance',    label:'차량유지비',    color:'#a5b4fc'},
+  {key:'meal_allowance',     label:'식대',          color:'#6ee7b7'},
+  {key:'annual_leave_pay',   label:'연차수당',      color:'#c084fc'},
+  {key:'other_pay',          label:'기타수당',      color:'#e879f9'},
+];
+const DED_ITEMS_META = [
+  {key:'income_tax',              label:'소득세',       color:'#ef4444'},
+  {key:'local_income_tax',        label:'지방소득세',   color:'#f87171'},
+  {key:'national_pension',        label:'국민연금',     color:'#3b82f6'},
+  {key:'health_insurance',        label:'건강보험',     color:'#06b6d4'},
+  {key:'long_term_care',          label:'장기요양',     color:'#22d3ee'},
+  {key:'employment_insurance',    label:'고용보험',     color:'#60a5fa'},
+  {key:'year_end_tax_adjust',     label:'연말정산',     color:'#f59e0b'},
+  {key:'health_insurance_adjust', label:'건보정산',     color:'#fbbf24'},
+  {key:'advance_deduction',       label:'기타공제',     color:'#a78bfa'},
+];
+
+function openPayRatioModal(){
+  const pays = allPayrolls.filter(p => p.pay_year==statsYear && p.pay_month==statsMonth);
+
+  // 헤더 정보
+  const gross = pays.reduce((s,p)=>s+(p.gross_pay||0),0);
+  const net   = pays.reduce((s,p)=>s+(p.net_pay||0),0);
+  const ded   = gross - net;
+  document.getElementById('pr-header-title').textContent = `${statsYear}년 ${statsMonth}월 · ${pays.length}명 급여`;
+  document.getElementById('pr-header-amount').textContent = won(gross);
+  document.getElementById('pr-header-meta').innerHTML = [
+    {label:'실지급액', val:won(net),  bg:'rgba(16,185,129,.25)', color:'#6ee7b7'},
+    {label:'공제합계', val:won(ded),  bg:'rgba(239,68,68,.25)',  color:'#fca5a5'},
+    {label:'지급인원', val:pays.length+'명', bg:'rgba(99,102,241,.25)', color:'#c7d2fe'},
+  ].map(b=>`<span class="pr-header-badge" style="background:${b.bg};color:${b.color};">${b.label} ${b.val}</span>`).join('');
+
+  // 데이터 집계
+  const sumByKey = (meta, arr) => meta.map(m => ({
+    ...m,
+    val: arr.reduce((s,p)=>s+(p[m.key]||0),0)
+  })).filter(m => m.val !== 0); // 0원 항목 제외
+
+  const payItems = sumByKey(PAY_ITEMS_META, pays);
+  const dedItems = sumByKey(DED_ITEMS_META, pays);
+
+  // 차트 & 리스트 렌더
+  _renderPrPanel('pay', payItems, gross, '지급 합계');
+  _renderPrPanel('ded', dedItems, ded,   '공제 합계');
+
+  // 탭 초기화
+  _prCurrentTab = 'pay';
+  document.getElementById('pr-tab-pay').classList.add('active');
+  document.getElementById('pr-tab-ded').classList.remove('active');
+  document.getElementById('pr-panel-pay').classList.add('active');
+  document.getElementById('pr-panel-ded').classList.remove('active');
+
+  document.getElementById('pay-ratio-modal').classList.add('open');
+  // 모달 열린 후 차트 크기 재계산 (애니메이션 완료 후)
+  setTimeout(() => {
+    if(_prPayChart) _prPayChart.resize();
+    if(_prDedChart) _prDedChart.resize();
+  }, 320);
+}
+
+function _renderPrPanel(type, items, total, centerLabel){
+  const canvasId   = `pr-${type}-canvas`;
+  const centerId   = `pr-${type}-center-val`;
+  const listId     = `pr-${type}-list`;
+  const chartRef   = type==='pay' ? _prPayChart : _prDedChart;
+
+  // 중앙 값
+  document.getElementById(centerId).textContent = wonM(total);
+
+  // 빈 데이터 처리
+  const safeItems = items.length ? items : [{label:'데이터 없음', val:1, color:'#e5e7eb'}];
+  const isEmpty   = !items.length;
+
+  // 도넛 차트: 있으면 update, 없으면 새로 생성
+  const ctx = document.getElementById(canvasId);
+  if(chartRef){
+    chartRef.data.labels = safeItems.map(i=>i.label);
+    chartRef.data.datasets[0].data  = safeItems.map(i=>i.val);
+    chartRef.data.datasets[0].backgroundColor = safeItems.map(i=>i.color);
+    chartRef.update('none');
+  } else {
+    const newChart = new Chart(ctx, {
+      type:'doughnut',
+      data:{
+        labels: safeItems.map(i=>i.label),
+        datasets:[{
+          data: safeItems.map(i=>i.val),
+          backgroundColor: safeItems.map(i=>i.color),
+          borderWidth: 2,
+          borderColor: '#fff',
+          hoverBorderWidth: 3,
+          hoverOffset: 6,
+        }]
+      },
+      options:{
+        responsive:false,
+        maintainAspectRatio:false,
+        cutout:'70%',
+        animation:{duration: 500, easing:'easeOutQuart'},
+        plugins:{
+          legend:{display:false},
+          tooltip:{callbacks:{
+            label: c => {
+              if(isEmpty) return '';
+              const pct = (total>0 ? c.raw/total*100 : 0).toFixed(1);
+              return ` ${c.label}: ${Math.round(c.raw).toLocaleString('ko-KR')}원 (${pct}%)`;
+            }
+          }}
+        }
+      }
+    });
+    if(type==='pay') _prPayChart = newChart;
+    else             _prDedChart = newChart;
+  }
+
+  // 항목 리스트
+  const listEl = document.getElementById(listId);
+  if(isEmpty){
+    listEl.innerHTML = `<div class="pr-empty"><i class="fas fa-inbox"></i><p>해당 월 데이터가 없습니다</p></div>`;
+    return;
+  }
+  // 금액 내림차순 정렬
+  const sorted = [...items].sort((a,b)=>b.val-a.val);
+  listEl.innerHTML = sorted.map(item => {
+    const pct    = total>0 ? (item.val/total*100) : 0;
+    const pctStr = pct.toFixed(1);
+    const barW   = Math.max(pct, pct>0?2:0).toFixed(1);
+    return `<div class="pr-item">
+      <div class="pr-item-dot" style="background:${item.color};"></div>
+      <div class="pr-item-name" title="${item.label}">${item.label}</div>
+      <div class="pr-item-bar-wrap">
+        <div class="pr-item-bar-bg">
+          <div class="pr-item-bar-fill" style="width:${barW}%;background:${item.color};"></div>
+        </div>
+      </div>
+      <div class="pr-item-right">
+        <div class="pr-item-pct">${pctStr}%</div>
+        <div class="pr-item-amt">${Math.round(item.val).toLocaleString('ko-KR')}원</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function switchPrTab(tab){
+  _prCurrentTab = tab;
+  ['pay','ded'].forEach(t => {
+    document.getElementById(`pr-tab-${t}`).classList.toggle('active', t===tab);
+    document.getElementById(`pr-panel-${t}`).classList.toggle('active', t===tab);
+  });
+  // 탭 전환 후 차트 크기 재계산 (숨겨진 상태에서 생성된 경우 대비)
+  requestAnimationFrame(() => {
+    const chart = tab==='pay' ? _prPayChart : _prDedChart;
+    if(chart) chart.resize();
+  });
+}
+
+function closePayRatioModal(){
+  document.getElementById('pay-ratio-modal').classList.remove('open');
+}
+
+// ══ 3. BILLING PAGE ══
+function renderBilling(){
+  const el = document.getElementById('billing-content');
+
+  // 전체 청구 없을 때
+  if(!allBillings.length){
+    el.innerHTML = `
+      <div class="bill-empty">
+        <div class="bill-empty-icon">💳</div>
+        <div class="bill-empty-title">아직 청구된 내역이 없습니다</div>
+        <div class="bill-empty-desc">
+          서비스 사용료 청구가 생성되면<br>
+          이 페이지에서 확인하실 수 있습니다.<br>
+          <span style="color:#a0aec0;font-size:12px;margin-top:6px;display:block;">문의: 담당 노무사에게 연락하세요</span>
+        </div>
+      </div>`;
+    return;
+  }
+
+  // 상태 정규화 헬퍼
+  const isPaid     = b => b.payment_status==='완납'||b.payment_status==='paid';
+  const isPartial  = b => b.payment_status==='일부납';
+  const isWait     = b => b.payment_status==='납부대기';
+  const isLoss     = b => !!(b.loss_amount && b.loss_amount > 0);
+  const getAmt     = b => b.total_amount||b.amount||0;
+  const getPaid    = b => isPaid(b) ? getAmt(b) : (isPartial(b) ? (b.partial_paid_amount||0) : 0);
+  const getRemain  = b => isPaid(b) ? 0 : (isPartial(b) ? (b.remaining_amount||getAmt(b)-(b.partial_paid_amount||0)) : getAmt(b));
+
+  // ── 선택 연월 기준 필터 ──
+  const monthBillings = allBillings.filter(b =>
+    Number(b.billing_year) === billingYear && Number(b.billing_month) === billingMonth
+  );
+
+  // 전체 집계 (요약 카드는 전체 기준)
+  const totalAmt    = allBillings.reduce((s,b)=>s+getAmt(b),0);
+  const totalPaidAmt= allBillings.reduce((s,b)=>s+getPaid(b),0);
+  const totalUnpaid = allBillings.reduce((s,b)=>s+getRemain(b),0);
+  // 미납 경고는 전체 미납 기준
+  const unpaidList  = allBillings.filter(b=>!isPaid(b)&&getRemain(b)>0&&!isLoss(b));
+
+  // 선택 연월 청구 건 정렬 (통상 1건이지만 복수 대비)
+  const sorted = [...monthBillings].sort((a,b)=>
+    (b.billing_year||0)-(a.billing_year||0) || (b.billing_month||0)-(a.billing_month||0)
+  );
+
+  // 상태 뱃지 헬퍼
+  function statusBadge(b){
+    if(isPaid(b))    return `<span class="bill-status-badge s-paid"><i class="fas fa-check-circle"></i>완납</span>`;
+    if(isPartial(b)) return `<span class="bill-status-badge s-partial"><i class="fas fa-adjust"></i>일부납</span>`;
+    if(isWait(b))    return `<span class="bill-status-badge s-wait"><i class="fas fa-clock"></i>납부대기</span>`;
+    if(isLoss(b))    return `<span class="bill-status-badge s-loss"><i class="fas fa-ban"></i>손실처리</span>`;
+    return             `<span class="bill-status-badge s-unpaid"><i class="fas fa-exclamation-circle"></i>미납</span>`;
+  }
+
+  // 금액 포맷
+  const moneyFmt  = n => Math.round(n||0).toLocaleString('ko-KR');
+  const moneyWon  = n => moneyFmt(n) + '원';
+  const moneyUnit = n => {
+    const v = Math.round((n||0)/10000);
+    return v > 0 ? v.toLocaleString('ko-KR')+'만원' : '0원';
+  };
+
+  // ── 미납 경고 배너 (미납금 있을 때만) ──
+  const alertBanner = (totalUnpaid > 0 && unpaidList.length > 0) ? `
+    <div class="bill-alert-banner">
+      <div class="bill-alert-icon"><i class="fas fa-exclamation"></i></div>
+      <div class="bill-alert-body">
+        <div class="bill-alert-title">미납 사용료가 있습니다</div>
+        <div class="bill-alert-amt">${moneyWon(totalUnpaid)}</div>
+        <div class="bill-alert-sub">${unpaidList.length}건 미납 · 담당 노무사에게 문의하세요</div>
+      </div>
+    </div>` : '';
+
+  // ── 요약 카드 3칸 (전체 기준) ──
+  const paidCount   = allBillings.filter(isPaid).length;
+  const unpaidCount = allBillings.filter(b=>!isPaid(b)).length;
+  const summaryGrid = `
+    <div class="bill-summary-grid">
+      <div class="bill-sum-card b-total">
+        <div class="bsc-label">전체 청구</div>
+        <div class="bsc-val">${moneyUnit(totalAmt)}</div>
+        <div class="bsc-sub">${allBillings.length}건</div>
+      </div>
+      <div class="bill-sum-card b-paid">
+        <div class="bsc-label">납부 완료</div>
+        <div class="bsc-val">${moneyUnit(totalPaidAmt)}</div>
+        <div class="bsc-sub">${paidCount}건</div>
+      </div>
+      <div class="bill-sum-card b-unpaid">
+        <div class="bsc-label">미납 잔액</div>
+        <div class="bsc-val">${moneyUnit(totalUnpaid)}</div>
+        <div class="bsc-sub">${unpaidCount}건</div>
+      </div>
+    </div>`;
+
+  // ── 선택 월 섹션 헤더 ──
+  const monthHeader = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin:14px 2px 8px;">
+      <div style="font-size:13px;font-weight:700;color:#1a1a2e;"><i class="fas fa-calendar-alt" style="color:#6366f1;margin-right:6px;"></i>${billingYear}년 ${billingMonth}월 청구 내역</div>
+      <span style="font-size:11px;background:#ede9fe;color:#4c1d95;padding:3px 9px;border-radius:20px;font-weight:600;">${sorted.length}건</span>
+    </div>`;
+
+  // ── 개별 청구 카드 ──
+  const billCards = sorted.map(b => {
+    const amt      = getAmt(b);
+    const paidAmt  = getPaid(b);
+    const remain   = getRemain(b);
+    const pct      = amt > 0 ? Math.round(paidAmt/amt*100) : 0;
+    const hasLoss  = isLoss(b);
+    const partialB = isPartial(b);
+
+    // 진행 바 (완납이 아닐 때 표시)
+    const progressBar = !isPaid(b) && amt > 0 ? `
+      <div class="bill-progress-wrap">
+        <div class="bill-progress-bar">
+          <div class="bill-progress-fill" style="width:${pct}%;background:${pct===100?'#10b981':pct>0?'#f59e0b':'#e5e7eb'};"></div>
+        </div>
+        <div class="bill-progress-labels">
+          <span style="color:${pct>0?'#d97706':'#9ca3af'};">납부 ${pct}%${paidAmt>0?' ('+moneyWon(paidAmt)+')':''}</span>
+          <span style="color:#dc2626;">잔여 ${moneyWon(remain)}</span>
+        </div>
+      </div>` : '';
+
+    // 상세 정보 그리드
+    const detailItems = [];
+    if(b.employee_count)       detailItems.push(['청구 인원', b.employee_count+'명', '']);
+    if(b.amount_per_employee)  detailItems.push(['인당 사용료', moneyWon(b.amount_per_employee), '']);
+    if(b.created_date)         detailItems.push(['청구일', b.created_date, '']);
+    if(b.due_date)             detailItems.push(['납부 마감일', b.due_date, isPaid(b)?'':'red']);
+    if(paidAmt > 0 && !isPaid(b)) detailItems.push(['납부된 금액', moneyWon(paidAmt), 'green']);
+    if(remain > 0 && !isPaid(b))  detailItems.push(['잔여 미납액', moneyWon(remain), 'red']);
+    if(b.payment_date)         detailItems.push(['납부 확인일', b.payment_date, 'green']);
+    if(b.note)                 detailItems.push(['메모', b.note, '']);
+
+    // 짝수 맞추기 (빈칸 채우기)
+    if(detailItems.length % 2 !== 0) detailItems.push(['', '', '']);
+
+    const detailGrid = detailItems.length > 0 ? `
+      <div class="bill-detail-grid">
+        ${detailItems.map(([l,v,cls])=>l ? `
+          <div class="bill-detail-item">
+            <div class="bill-detail-label">${l}</div>
+            <div class="bill-detail-value ${cls}">${v}</div>
+          </div>` : `<div class="bill-detail-item"></div>`
+        ).join('')}
+      </div>` : '';
+
+    // 손실 처리 표시
+    const lossBar = hasLoss ? `
+      <div class="bill-loss-bar">
+        <i class="fas fa-info-circle"></i>
+        손실 처리: ${moneyWon(b.loss_amount)}
+        ${b.loss_date ? ' · ' + b.loss_date : ''}
+      </div>` : '';
+
+    return `
+      <div class="bill-item">
+        <div class="bill-item-header">
+          <div>
+            <div class="bill-item-period">${b.billing_year||'-'}년 ${b.billing_month||'-'}월 사용료</div>
+            <div class="bill-item-date">
+              ${b.created_date ? '청구일 ' + b.created_date : ''}
+              ${b.due_date && !isPaid(b) ? ' · <span style="color:#ef4444;font-weight:600;">마감 '+b.due_date+'</span>' : ''}
+            </div>
+          </div>
+          ${statusBadge(b)}
+        </div>
+        <div class="bill-amount-row">
+          <div>
+            <div class="bill-amount-main">${moneyWon(amt)}</div>
+            <div class="bill-amount-per">
+              ${b.employee_count?b.employee_count+'명 × ':''} ${b.amount_per_employee?moneyWon(b.amount_per_employee)+'/인':''}
+            </div>
+          </div>
+          ${isPaid(b) && b.payment_date ? `<div style="text-align:right;"><div style="font-size:11px;color:#9ca3af;">납부확인</div><div style="font-size:12.5px;font-weight:700;color:#059669;">${b.payment_date}</div></div>` : ''}
+        </div>
+        ${progressBar}
+        ${detailGrid}
+        ${lossBar}
+      </div>`;
+  }).join('');
+
+  // 선택 월 청구 없을 때 안내
+  const noMonthData = sorted.length === 0 ? `
+    <div style="text-align:center;padding:32px 20px 20px;">
+      <div style="font-size:36px;margin-bottom:10px;">📭</div>
+      <div style="font-size:14px;font-weight:700;color:#374151;margin-bottom:6px;">${billingYear}년 ${billingMonth}월 청구 내역이 없습니다</div>
+      <div style="font-size:12.5px;color:#9ca3af;line-height:1.6;">다른 월을 선택하거나<br>담당 노무사에게 문의하세요</div>
+    </div>` : '';
+
+  el.innerHTML = alertBanner + summaryGrid + monthHeader + (noMonthData || billCards);
+}
+
+// ══ 4. MY COMPANY PAGE ══
+function renderMyco(){
+  const el = document.getElementById('myco-content');
+  const co = currentCompany;
+  const activeEmps = allEmployees.filter(e=>e.status==='재직'||e.status==='active');
+  const activeContracts = allContracts.filter(c=>c.status==='active'||c.status==='활성'||c.status==='유효');
+
+  el.innerHTML = `
+    <!-- 회사 헤더 -->
+    <div style="background:linear-gradient(135deg,#1a1a2e,#0f3460);border-radius:18px;padding:24px 20px;margin-bottom:14px;text-align:center;">
+      <div style="width:60px;height:60px;border-radius:16px;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:28px;">🏢</div>
+      <div style="color:#fff;font-size:19px;font-weight:800;">${co.company_name||'-'}</div>
+      <div style="color:rgba(255,255,255,.6);font-size:12px;margin-top:5px;">${co.industry||''} ${co.representative?'· 대표: '+co.representative:''}</div>
+      <div style="display:flex;gap:10px;justify-content:center;margin-top:14px;">
+        <div style="background:rgba(255,255,255,.1);border-radius:10px;padding:10px 18px;text-align:center;">
+          <div style="color:rgba(255,255,255,.6);font-size:10px;">재직인원</div>
+          <div style="color:#fff;font-size:18px;font-weight:800;">${activeEmps.length}명</div>
+        </div>
+        <div style="background:rgba(255,255,255,.1);border-radius:10px;padding:10px 18px;text-align:center;">
+          <div style="color:rgba(255,255,255,.6);font-size:10px;">유효계약</div>
+          <div style="color:#fff;font-size:18px;font-weight:800;">${activeContracts.length}건</div>
+        </div>
+        <div style="background:rgba(255,255,255,.1);border-radius:10px;padding:10px 18px;text-align:center;">
+          <div style="color:rgba(255,255,255,.6);font-size:10px;">전체인원</div>
+          <div style="color:#fff;font-size:18px;font-weight:800;">${allEmployees.length}명</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-card">
+      <div class="info-card-title"><i class="fas fa-building" style="color:#6366f1;"></i> 기본 정보</div>
+      ${[
+        ['회사명', co.company_name||'-'],
+        ['사업자등록번호', co.business_number||'-'],
+        ['대표이사', co.representative||'-'],
+        ['업종', co.industry||'-'],
+        ['사업장 주소', co.address||'-'],
+      ].map(([l,v])=>`<div class="info-row"><span class="il">${l}</span><span class="iv">${v}</span></div>`).join('')}
+    </div>
+
+    <div class="info-card">
+      <div class="info-card-title"><i class="fas fa-phone" style="color:#10b981;"></i> 연락처</div>
+      ${[
+        ['대표 연락처', co.phone||'-'],
+        ['이메일', co.email||'-'],
+      ].map(([l,v])=>`<div class="info-row"><span class="il">${l}</span><span class="iv">${v}</span></div>`).join('')}
+    </div>
+
+    <div class="info-card">
+      <div class="info-card-title"><i class="fas fa-calendar-alt" style="color:#f59e0b;"></i> 급여 정보</div>
+      ${[
+        ['급여 산정기간', co.pay_period||'-'],
+        ['급여 지급일', co.pay_day||'-'],
+      ].map(([l,v])=>`<div class="info-row"><span class="il">${l}</span><span class="iv">${v}</span></div>`).join('')}
+    </div>
+
+    <!-- 고용형태별 인원 -->
+    <div class="info-card">
+      <div class="info-card-title"><i class="fas fa-users" style="color:#8b5cf6;"></i> 고용형태별 인원</div>
+      ${['정규직','정규직 수습','계약직','계약직 수습','일용직'].map(cat=>{
+        const cnt = allEmployees.filter(e=>e.employment_category===cat||e.employment_category===cat.replace(' ','(')+')').length;
+        return `<div class="info-row"><span class="il"><span class="badge ${empCatBadge(cat)}">${cat}</span></span><span class="iv">${cnt}명</span></div>`;
+      }).join('')}
+    </div>
+
+    <!-- 앱 접근코드 카드 -->
+    <div class="info-card" style="border:1.5px solid #e0e7ff;background:#fafbff;">
+      <div class="info-card-title"><i class="fas fa-key" style="color:#6366f1;"></i> 앱 접근코드</div>
+      <div class="info-row" style="align-items:center;">
+        <span class="il">현재 코드</span>
+        <span class="iv" style="font-size:18px;font-weight:800;color:#4f46e5;letter-spacing:3px;">${co.access_code||'-'}</span>
+      </div>
+      <div style="padding:0 0 4px;">
+        <button onclick="openChangeCodeModal()"
+          style="width:100%;margin-top:6px;padding:11px;border:none;border-radius:10px;
+                 background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;
+                 font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;
+                 display:flex;align-items:center;justify-content:center;gap:7px;
+                 box-shadow:0 4px 14px rgba(99,102,241,.3);transition:opacity .15s;">
+          <i class="fas fa-edit"></i> 접근코드 변경
+        </button>
+      </div>
+    </div>
+
+    <!-- 계약현황 바로가기 -->
+    <div class="info-card" style="border:1.5px solid #dbeafe;background:#eff6ff;cursor:pointer;" onclick="showPage('ct',document.getElementById('nav-ct'))">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div class="info-card-title" style="margin-bottom:4px;"><i class="fas fa-file-contract" style="color:#3b82f6;"></i> 근로계약 현황</div>
+          <div style="font-size:12px;color:#6b7280;">유효 <strong style="color:#2563eb;">${activeContracts.length}건</strong> · 전체 ${allContracts.length}건</div>
+        </div>
+        <div style="width:36px;height:36px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <i class="fas fa-chevron-right" style="color:#fff;font-size:14px;"></i>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ══ 접근코드 변경 ══════════════════════════════════════════════════════════════
+let _ccStep = 1; // 1: 현재코드 확인, 2: 새코드 입력
+
+function openChangeCodeModal(){
+  _ccStep = 1;
+  // 입력 초기화
+  ['cc-verify-input','cc-new-input','cc-confirm-input'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el){ el.value=''; el.classList.remove('error'); }
+  });
+  document.getElementById('cc-verify-err').textContent = '';
+  document.getElementById('cc-new-err').textContent    = '';
+  document.getElementById('cc-step1').style.display    = '';
+  document.getElementById('cc-step2').style.display    = 'none';
+  // 현재 코드 표시
+  document.getElementById('cc-current-value').textContent = currentCompany.access_code || '—';
+  // 버튼 초기화
+  const btn = document.getElementById('cc-action-btn');
+  btn.textContent = '본인 확인';
+  btn.disabled = false;
+  // 모달 열기
+  document.getElementById('code-change-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('cc-verify-input').focus(), 300);
+}
+
+function closeChangeCodeModal(){
+  document.getElementById('code-change-modal').classList.remove('open');
+}
+
+// 액션 버튼 — 현재 단계에 맞는 함수 실행
+function ccActionBtn(){
+  if(_ccStep === 1) ccVerify();
+  else submitChangeCode();
+}
+
+// STEP 1: 현재 코드 일치 확인
+function ccVerify(){
+  const input = document.getElementById('cc-verify-input');
+  const err   = document.getElementById('cc-verify-err');
+  const val   = input.value.trim();
+  if(!val){ _ccSetErr(input, err, '코드를 입력하세요.'); return; }
+  if(val !== currentCompany.access_code){
+    _ccSetErr(input, err, '현재 코드가 일치하지 않습니다.');
+    return;
+  }
+  // 확인 통과 → STEP 2
+  err.textContent = '';
+  input.classList.remove('error');
+  _ccStep = 2;
+  document.getElementById('cc-step2').style.display = '';
+  const btn = document.getElementById('cc-action-btn');
+  btn.textContent = '코드 변경 완료';
+  btn.disabled = true; // 새 코드 입력 전까지 비활성
+  setTimeout(()=>document.getElementById('cc-new-input').focus(), 100);
+}
+
+// STEP 2 입력 실시간 검사 → 확인 버튼 활성/비활성
+// 코드 복잡도 검증: 영문(대 또는 소) + 숫자 + 기호 각 1개 이상, 6자 이상
+function _ccValidateStrength(val){
+  if(val.length < 6)             return '6자 이상 입력하세요.';
+  if(!/[A-Z]/.test(val))         return '영문 대문자를 1자 이상 포함해야 합니다.';
+  if(!/[a-z]/.test(val))         return '영문 소문자를 1자 이상 포함해야 합니다.';
+  if(!/[0-9]/.test(val))         return '숫자를 1자 이상 포함해야 합니다.';
+  if(!/[^A-Za-z0-9]/.test(val)) return '기호(!@#$ 등)를 1자 이상 포함해야 합니다.';
+  return '';
+}
+function ccNewInputCheck(){
+  const newVal    = document.getElementById('cc-new-input').value;
+  const confVal   = document.getElementById('cc-confirm-input').value;
+  const btn       = document.getElementById('cc-action-btn');
+  const err       = document.getElementById('cc-new-err');
+  const newInput  = document.getElementById('cc-new-input');
+  const confInput = document.getElementById('cc-confirm-input');
+
+  if(!newVal){
+    err.textContent = '';
+    newInput.classList.remove('error');
+    confInput.classList.remove('error');
+    btn.disabled = true;
+    return;
+  }
+
+  // 복잡도 검사
+  const strengthErr = _ccValidateStrength(newVal);
+  if(strengthErr){
+    err.textContent = strengthErr;
+    newInput.classList.add('error');
+    btn.disabled = true;
+    return;
+  }
+  newInput.classList.remove('error');
+
+  // 확인 필드 일치 검사
+  if(confVal && newVal !== confVal){
+    err.textContent = '두 코드가 일치하지 않습니다.';
+    confInput.classList.add('error');
+    btn.disabled = true;
+  } else {
+    err.textContent = '';
+    confInput.classList.remove('error');
+    // 두 값 모두 조건 충족 시에만 버튼 활성
+    btn.disabled = !(newVal.length >= 6 && confVal.length >= 6 && newVal === confVal);
+  }
+}
+
+// STEP 2: 새 코드 최종 저장
+async function submitChangeCode(){
+  const newVal  = document.getElementById('cc-new-input').value.trim();
+  const confVal = document.getElementById('cc-confirm-input').value.trim();
+  const newErr  = document.getElementById('cc-new-err');
+  const newInput = document.getElementById('cc-new-input');
+  const confInput = document.getElementById('cc-confirm-input');
+
+  const strengthErr = _ccValidateStrength(newVal);
+  if(strengthErr){
+    _ccSetErr(newInput, newErr, strengthErr); return;
+  }
+  if(newVal !== confVal){
+    _ccSetErr(confInput, newErr, '두 코드가 일치하지 않습니다.'); return;
+  }
+  if(newVal === currentCompany.access_code){
+    _ccSetErr(newInput, newErr, '현재 코드와 동일합니다. 다른 코드를 입력하세요.'); return;
+  }
+
+  const btn = document.getElementById('cc-action-btn');
+  btn.disabled = true;
+  btn.textContent = '확인 중...';
+
+  // ── 다른 고객사 코드 중복 검사 ──
+  try{
+    const checkRes = await fetch('../tables/companies?limit=200');
+    const checkData = await checkRes.json();
+    const isDuplicate = (checkData.data||[]).some(c =>
+      c.id !== currentCompany.id && c.access_code === newVal
+    );
+    if(isDuplicate){
+      btn.disabled = false;
+      btn.textContent = '코드 변경 완료';
+      _ccSetErr(newInput, newErr, '보안상 허용되지 않는 문자조합입니다. 다른 코드를 사용해주세요.');
+      return;
+    }
+  } catch(e){
+    btn.disabled = false;
+    btn.textContent = '코드 변경 완료';
+    _ccSetErr(newInput, newErr, '중복 확인 중 오류가 발생했습니다. 다시 시도해 주세요.');
+    return;
+  }
+
+  btn.textContent = '저장 중...';
+
+  try{
+    await fetch(`../tables/companies/${currentCompany.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ access_code: newVal })
+    });
+    // 로컬 데이터 갱신
+    currentCompany.access_code = newVal;
+    closeChangeCodeModal();
+    renderMyco(); // 우리회사 정보 새로고침
+    _ccToast('접근코드가 변경되었습니다. 새 코드를 기억해 두세요! 🔑');
+  } catch(e){
+    btn.disabled = false;
+    btn.textContent = '코드 변경 완료';
+    _ccSetErr(document.getElementById('cc-new-input'),
+              document.getElementById('cc-new-err'),
+              '저장 중 오류가 발생했습니다. 다시 시도해 주세요.');
+  }
+}
+
+function _ccSetErr(inputEl, errEl, msg){
+  if(inputEl) inputEl.classList.add('error');
+  if(errEl)   errEl.textContent = msg;
+}
+
+function _ccToast(msg){
+  const t = document.createElement('div');
+  t.textContent = msg;
+  Object.assign(t.style, {
+    position:'fixed', bottom:'90px', left:'50%', transform:'translateX(-50%)',
+    background:'#1a1a2e', color:'#fff', padding:'12px 20px',
+    borderRadius:'12px', fontSize:'13px', fontWeight:'600',
+    boxShadow:'0 4px 20px rgba(0,0,0,.25)', zIndex:'9999',
+    maxWidth:'calc(100% - 40px)', textAlign:'center',
+    opacity:'0', transition:'opacity .25s',
+  });
+  document.body.appendChild(t);
+  requestAnimationFrame(()=>{ t.style.opacity='1'; });
+  setTimeout(()=>{
+    t.style.opacity='0';
+    setTimeout(()=>t.remove(), 300);
+  }, 3500);
+}
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ══ 고객사 인앱 알림함 (company_notices) ══
+// ═══════════════════════════════════════════════════════════════════════════════
+
+let _clientNotices = [];          // 현재 고객사의 알림 목록 캐시
+let _notifDetailId = null;        // 현재 열려있는 알림 상세 ID
+
+/* ── 날짜 포매터 ── */
+function _notifFmtDate(ms){
+  if(!ms) return '';
+  const d  = new Date(Number(ms));
+  const now = new Date();
+  const diff = now - d;
+  if(diff < 60000)   return '방금 전';
+  if(diff < 3600000) return Math.floor(diff/60000) + '분 전';
+  if(diff < 86400000) return Math.floor(diff/3600000) + '시간 전';
+  if(diff < 86400000*7) return Math.floor(diff/86400000) + '일 전';
+  return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
+}
+
+/* ── D-day 계산 ── */
+function _notifDday(dateStr){
+  if(!dateStr) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const end   = new Date(dateStr); end.setHours(0,0,0,0);
+  return Math.round((end - today) / 86400000);
+}
+
+/* ── 알림 아이콘 타입별 ── */
+function _notifIcon(type){
+  const map = {
+    'contract_expiry':  { icon:'fas fa-file-contract', bg:'linear-gradient(135deg,#f59e0b,#d97706)' },
+    'contract_renewal': { icon:'fas fa-sync-alt',       bg:'linear-gradient(135deg,#10b981,#059669)' },
+    'payment':          { icon:'fas fa-won-sign',        bg:'linear-gradient(135deg,#3b82f6,#2563eb)' },
+    'notice':           { icon:'fas fa-bullhorn',        bg:'linear-gradient(135deg,#8b5cf6,#7c3aed)' },
+  };
+  return map[type] || { icon:'fas fa-bell', bg:'linear-gradient(135deg,#4f46e5,#6366f1)' };
+}
+
+/* ────────────────────────────────────────────────────────────────
+   loadClientNotices()
+   company_notices 테이블에서 currentCompany.id 기준으로 알림 조회
+   ──────────────────────────────────────────────────────────────── */
+async function loadClientNotices(){
+  if(!currentCompany || !currentCompany.id) return;
+  try {
+    const res  = await fetch(`../tables/company_notices?limit=1000&sort=created_at`);
+    const data = await res.json();
+    const myId = String(currentCompany.id);
+    const all  = (data.data||[]).filter(n => String(n.company_id) === myId);
+
+    // ── 예약 발송 자동 처리 ──
+    // scheduled 상태이고 예약 시각이 지난 공지는 고객사 앱 접속 시 자동으로 sent 처리
+    const now = Date.now();
+    const overdueScheduled = all.filter(n =>
+      n.notice_type === 'general' &&
+      n.gn_status   === 'scheduled' &&
+      new Date(n.gn_scheduled_at || n.sent_at || 0).getTime() <= now
+    );
+    for(const n of overdueScheduled){
+      try {
+        await fetch(`../tables/company_notices/${n.id}`, {
+          method : 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body   : JSON.stringify({ gn_status: 'sent', sent_at: new Date().toISOString(), is_read: false }),
+        });
+        n.gn_status = 'sent';
+        n.is_read   = false;
+      } catch(pe){ console.warn('[알림] 예약 발송 자동 처리 오류:', pe); }
+    }
+
+    _clientNotices = all
+      .filter(n => n.gn_status !== 'scheduled' && n.gn_status !== 'cancelled')
+      .sort((a,b) => Number(b.created_at||0) - Number(a.created_at||0));
+    _updateNotifBadge();
+  } catch(e){
+    console.warn('[알림] loadClientNotices 오류:', e);
+  }
+}
+
+/* ── is_read 값 안전 판별 (boolean/string/number 모두 처리) ── */
+function _isReadVal(v){ return v === true || v === 'true' || v === 1 || v === '1'; }
+
+/* ── 미읽음 뱃지 업데이트 ── */
+function _updateNotifBadge(){
+  // general(중요공지)은 강제 모달 처리이므로 벨 뱃지에서 제외
+  const unread = _clientNotices.filter(n => n.notice_type !== 'general' && !_isReadVal(n.is_read)).length;
+  const badge       = document.getElementById('notif-badge');
+  const headerBadge = document.getElementById('notif-unread-count-badge');
+  if(!badge) return;
+  if(unread > 0){
+    badge.textContent = unread > 99 ? '99+' : String(unread);
+    badge.style.cssText = 'display:flex!important';
+  } else {
+    badge.style.cssText = '';
+  }
+  if(headerBadge){
+    if(unread > 0){
+      headerBadge.textContent = `미읽음 ${unread}`;
+      headerBadge.style.display = '';
+    } else {
+      headerBadge.style.display = 'none';
+    }
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────
+   renderClientNotices()
+   모달 바디에 알림 목록 렌더링
+   ──────────────────────────────────────────────────────────────── */
+function renderClientNotices(){
+  const body   = document.getElementById('notif-modal-body');
+  const footer = document.getElementById('notif-modal-footer');
+  if(!body) return;
+
+  // general(중요공지)은 알림함 목록에서 제외 — 강제 모달로만 처리
+  const listNotices = _clientNotices.filter(n => n.notice_type !== 'general');
+
+  if(listNotices.length === 0){
+    body.innerHTML = `
+      <div class="notif-empty">
+        <i class="fas fa-bell-slash"></i>
+        알림이 없습니다.
+      </div>`;
+    if(footer) footer.style.display = 'none';
+    return;
+  }
+
+  const hasUnread = listNotices.some(n => !n.is_read);
+  if(footer) footer.style.display = hasUnread ? '' : 'none';
+
+  body.innerHTML = listNotices.map(n => {
+    const { icon, bg } = _notifIcon(n.notice_type);
+    const isUnread = !n.is_read;
+    return `
+      <div class="notif-item${isUnread ? ' unread' : ''}" onclick="openNotifDetail('${n.id}')">
+        <div class="notif-icon" style="background:${bg};">
+          <i class="${icon}"></i>
+        </div>
+        <div class="notif-content">
+          <div class="notif-title">${_escHtml(n.title||'알림')}</div>
+          <div class="notif-body">${_escHtml(n.body||'')}</div>
+          <div class="notif-time">${_notifFmtDate(n.created_at)}</div>
+        </div>
+        ${isUnread ? '<div class="notif-unread-dot" title="미읽음"></div>' : ''}
+      </div>`;
+  }).join('');
+}
+
+/* ────────────────────────────────────────────────────────────────
+   openNotifModal() / closeNotifModal()
+   ──────────────────────────────────────────────────────────────── */
+async function openNotifModal(){
+  // 모달 열 때마다 최신 데이터를 서버에서 다시 fetch
+  await loadClientNotices();
+  renderClientNotices();
+  const ov = document.getElementById('notif-modal-overlay');
+  if(ov) ov.classList.add('open');
+}
+
+function closeNotifModal(){
+  const ov = document.getElementById('notif-modal-overlay');
+  if(ov) ov.classList.remove('open');
+}
+
+/* ────────────────────────────────────────────────────────────────
+   openNotifDetail(id)
+   알림 상세 바텀시트 열기 + 읽음 처리
+   ──────────────────────────────────────────────────────────────── */
+async function openNotifDetail(id){
+  const n = _clientNotices.find(x => x.id === id);
+  if(!n) return;
+
+  _notifDetailId = id;
+
+  // 상세 DOM 채우기
+  const titleEl   = document.getElementById('notif-detail-title');
+  const metaEl    = document.getElementById('notif-detail-meta');
+  const bodyEl    = document.getElementById('notif-detail-body');
+  const infoBox   = document.getElementById('notif-detail-infobox');
+  const empEl     = document.getElementById('notif-info-employee');
+  const endDateEl = document.getElementById('notif-info-end-date');
+  const ddayEl    = document.getElementById('notif-info-dday');
+
+  if(titleEl)   titleEl.textContent  = n.title || '알림';
+  if(metaEl)    metaEl.textContent   = _notifFmtDate(n.created_at) + (n.sent_by ? ' · 발송: ' + n.sent_by : '');
+  if(bodyEl)    bodyEl.textContent   = n.body || '';
+
+  // 계약 정보 박스 표시 여부
+  const hasInfo = n.employee_name || n.contract_end;
+  if(infoBox) infoBox.style.display = hasInfo ? '' : 'none';
+  if(empEl)   empEl.textContent     = n.employee_name || '-';
+  if(endDateEl) endDateEl.textContent = n.contract_end || '-';
+
+  // D-day 표시
+  if(n.contract_end && ddayEl){
+    const dd = _notifDday(n.contract_end);
+    if(dd !== null){
+      ddayEl.textContent = dd > 0 ? `D-${dd}` : dd === 0 ? 'D-day' : `D+${Math.abs(dd)}`;
+      ddayEl.style.display = '';
+      ddayEl.style.background = dd <= 0 ? '#fef2f2' : dd <= 7 ? '#fff7ed' : '#f0fdf4';
+      ddayEl.style.color      = dd <= 0 ? '#dc2626' : dd <= 7 ? '#d97706' : '#16a34a';
+      ddayEl.style.borderColor= dd <= 0 ? '#fca5a5' : dd <= 7 ? '#fdba74' : '#86efac';
+    } else {
+      ddayEl.style.display = 'none';
+    }
+  } else if(ddayEl) {
+    ddayEl.style.display = 'none';
+  }
+
+  // 시트 열기 (모달을 닫고 시트를 표시)
+  closeNotifModal();
+  const ov = document.getElementById('notif-detail-overlay');
+  if(ov) ov.classList.add('open');
+
+  // 읽음 처리 (미읽음 상태일 때만)
+  if(!n.is_read){
+    await markNotifRead(id);
+  }
+}
+
+/* ── 알림 상세 닫기 ── */
+function closeNotifDetail(){
+  const ov = document.getElementById('notif-detail-overlay');
+  if(ov) ov.classList.remove('open');
+  _notifDetailId = null;
+}
+
+/* ────────────────────────────────────────────────────────────────
+   markNotifRead(id)
+   단일 알림 읽음 처리: PATCH is_read:true, read_at:now
+   ──────────────────────────────────────────────────────────────── */
+async function markNotifRead(id){
+  try {
+    await fetch(`../tables/company_notices/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_read: true, read_at: String(Date.now()) }),
+    });
+    // 로컬 캐시 업데이트
+    const n = _clientNotices.find(x => x.id === id);
+    if(n){ n.is_read = true; n.read_at = String(Date.now()); }
+    _updateNotifBadge();
+  } catch(e){
+    console.warn('[알림] markNotifRead 오류:', e);
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────
+   markAllNotifRead()
+   전체 읽음 처리: 미읽음 알림 모두 PATCH
+   ──────────────────────────────────────────────────────────────── */
+async function markAllNotifRead(){
+  const unread = _clientNotices.filter(n => !n.is_read);
+  if(unread.length === 0) return;
+
+  const now = String(Date.now());
+  try {
+    await Promise.all(unread.map(n =>
+      fetch(`../tables/company_notices/${n.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_read: true, read_at: now }),
+      })
+    ));
+    // 로컬 캐시 업데이트
+    unread.forEach(n => { n.is_read = true; n.read_at = now; });
+    _updateNotifBadge();
+    renderClientNotices();   // 모달 바디 재렌더
+    showToast('모든 알림을 읽음 처리했습니다.');
+  } catch(e){
+    console.warn('[알림] markAllNotifRead 오류:', e);
+  }
+}
+
+/* ── HTML 이스케이프 헬퍼 (notif 전용) ── */
+function _escHtml(str){
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+/* ════════════════════════════════════════════════════════════════
+   중요공지(general) 강제 확인 모달
+   ════════════════════════════════════════════════════════════════ */
+
+let _gnAlertQueue  = [];   // 표시 대기 중인 general 공지 배열
+let _gnAlertIndex  = 0;    // 현재 표시 중인 인덱스
+
+/**
+ * showGnAlerts(notices)
+ * general + is_read:false 인 공지를 sent_at 오름차순으로 순차 표시
+ */
+function showGnAlerts(notices){
+  // sent_at 오래된 것부터 순서대로
+  _gnAlertQueue = [...notices].sort((a,b) => {
+    const ta = new Date(a.sent_at||0).getTime();
+    const tb = new Date(b.sent_at||0).getTime();
+    return ta - tb;
+  });
+  _gnAlertIndex = 0;
+  if(_gnAlertQueue.length === 0) return;
+  _renderGnAlert();
+}
+
+/** 현재 인덱스의 공지를 모달에 채우고 표시 */
+function _renderGnAlert(){
+  const n       = _gnAlertQueue[_gnAlertIndex];
+  const total   = _gnAlertQueue.length;
+  const current = _gnAlertIndex + 1;
+
+  const titleEl   = document.getElementById('gn-alert-title-el');
+  const metaEl    = document.getElementById('gn-alert-meta');
+  const bodyEl    = document.getElementById('gn-alert-body');
+  const counterEl = document.getElementById('gn-alert-counter');
+  const confirmBtn= document.getElementById('gn-alert-confirm-btn');
+
+  if(!titleEl) return;
+
+  // 제목·발신일·본문
+  titleEl.textContent = n.title || '중요공지';
+  const sentDate = n.sent_at
+    ? new Date(n.sent_at).toLocaleString('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})
+    : '';
+  metaEl.textContent  = sentDate + (n.sent_by ? ' · ' + n.sent_by : '');
+  bodyEl.textContent  = n.body  || '';
+
+  // 복수 건 카운터 (2건 이상일 때만 표시)
+  if(total > 1){
+    counterEl.textContent = `${current} / ${total}`;
+    counterEl.style.display = '';
+  } else {
+    counterEl.style.display = 'none';
+  }
+
+  // 마지막 건이면 "확인", 중간이면 "확인 (다음 공지 →)"
+  const isLast = current === total;
+  confirmBtn.innerHTML = isLast
+    ? `<i class="fas fa-check"></i>&nbsp; 확인`
+    : `<i class="fas fa-check"></i>&nbsp; 확인 <span style="font-size:12px;opacity:.85;">(${current}/${total})</span>&nbsp;<i class="fas fa-chevron-right" style="font-size:12px;"></i>`;
+
+  // 모달 열기
+  const ov = document.getElementById('gn-alert-overlay');
+  if(ov) ov.classList.add('open');
+}
+
+/**
+ * gnAlertConfirm()
+ * 확인 버튼 클릭 → 현재 공지 읽음 처리 → 다음 건 있으면 이어서, 없으면 닫기
+ */
+async function gnAlertConfirm(){
+  const n = _gnAlertQueue[_gnAlertIndex];
+  if(!n) { _closeGnAlert(); return; }
+
+  // 읽음 처리 (백그라운드) — is_read 타입 무관하게 안전 처리
+  if(!_isReadVal(n.is_read)){
+    try {
+      await fetch(`../tables/company_notices/${n.id}`, {
+        method : 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body   : JSON.stringify({ is_read: true, read_at: String(Date.now()) }),
+      });
+      const cached = _clientNotices.find(x => x.id === n.id);
+      if(cached){ cached.is_read = true; cached.read_at = String(Date.now()); }
+    } catch(e){ console.warn('[공지 읽음 처리 오류]', e); }
+  }
+
+  _gnAlertIndex++;
+
+  if(_gnAlertIndex < _gnAlertQueue.length){
+    // 다음 건 렌더
+    _renderGnAlert();
+  } else {
+    _closeGnAlert();
+  }
+}
+
+/** 강제 모달 닫기 */
+function _closeGnAlert(){
+  const ov = document.getElementById('gn-alert-overlay');
+  if(ov) ov.classList.remove('open');
+  _gnAlertQueue = [];
+  _gnAlertIndex = 0;
+  // 뱃지·알림함 목록은 변화 없음 (general은 목록에서 제외)
+}
+
+/* ────────────────────────────────────────────────────────────────
+   알림함 모달 — 배경 클릭 닫기
+   모달 HTML이 script 블록 이후에 위치하므로 DOMContentLoaded 사용
+   ──────────────────────────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', function(){
+  const ov = document.getElementById('notif-modal-overlay');
+  if(ov) ov.addEventListener('click', function(e){
+    if(e.target === ov) closeNotifModal();
+  });
+  const dov = document.getElementById('notif-detail-overlay');
+  if(dov) dov.addEventListener('click', function(e){
+    if(e.target === dov) closeNotifDetail();
+  });
+  // 중요공지 모달: 배경 클릭으로 닫기 불가 (의도적으로 이벤트 리스너 없음)
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ── INIT ──
+// period-nav 없음 처리
+document.getElementById('period-nav') && (document.getElementById('period-nav').style.display='none');
+
+// ══════════════════════════════════════════════════════════════
+// 퇴직금 관리 (고객사 앱)
+// ══════════════════════════════════════════════════════════════
+
+function switchClientSevTab(tab){
+  _clientSevTab = tab;
+  const hBtn = document.getElementById('sev-tab-btn-history');
+  const sBtn = document.getElementById('sev-tab-btn-status');
+  const hPane = document.getElementById('sev-client-history');
+  const sPane = document.getElementById('sev-client-status');
+  const activeStyle = 'color:#f59e0b;border-bottom:2px solid #f59e0b;font-weight:700;';
+  const inactiveStyle = 'color:#9ca3af;border-bottom:2px solid transparent;font-weight:600;';
+  if(tab === 'history'){
+    if(hBtn){ hBtn.style.cssText += activeStyle; }
+    if(sBtn){ sBtn.style.cssText += inactiveStyle; }
+    if(hPane) hPane.style.display = '';
+    if(sPane) sPane.style.display = 'none';
+    renderClientSevHistory();
+  } else {
+    if(sBtn){ sBtn.style.cssText += activeStyle; }
+    if(hBtn){ hBtn.style.cssText += inactiveStyle; }
+    if(sPane) sPane.style.display = '';
+    if(hPane) hPane.style.display = 'none';
+    renderClientSevStatus();
+  }
+}
+
+function renderClientSeverance(){
+  switchClientSevTab(_clientSevTab);
+}
+
+// 퇴직급여 계산 헬퍼
+function _clientCalcTenure(start, end){
+  if(!start) return {totalDays:0, text:'0일', years:0};
+  const s = new Date(start), e = new Date(end || new Date());
+  const days = Math.max(0, Math.floor((e - s) / 86400000));
+  const yy = Math.floor(days / 365);
+  const mm = Math.floor((days % 365) / 30);
+  const dd = days % 30;
+  let text = '';
+  if(yy > 0) text += yy + '년 ';
+  if(mm > 0) text += mm + '개월 ';
+  text += dd + '일';
+  return { totalDays: days, text: text.trim() || '0일', years: yy };
+}
+
+function _clientGetPrev3(empId, baseDate){
+  const base = new Date(baseDate || new Date());
+  const months = [];
+  for(let i = 1; i <= 3; i++){
+    const t = new Date(base.getFullYear(), base.getMonth() - i, 1);
+    months.push({ y: t.getFullYear(), m: t.getMonth() + 1 });
+  }
+  return allPayrolls.filter(p =>
+    p.employee_id === empId &&
+    months.some(mo => Number(p.pay_year) === mo.y && Number(p.pay_month) === mo.m)
+  );
+}
+
+function _clientCalcSev(empId, hireDate, baseDate, pays3){
+  const tenure = _clientCalcTenure(hireDate, baseDate);
+  if(tenure.totalDays < 365) return { amount: 0, tenure, under1yr: true, ordinary3: 0 };
+  const base = new Date(baseDate || new Date());
+  let calDays = 0;
+  for(let i = 1; i <= 3; i++){
+    const t = new Date(base.getFullYear(), base.getMonth() - i + 1, 0);
+    calDays += t.getDate();
+  }
+  const ordinary3 = pays3.reduce((s, p) =>
+    s + (p.base_salary||0) + (p.weekly_holiday_pay||0) + (p.position_allowance||0), 0);
+  const average3  = pays3.reduce((s, p) => s + (p.gross_pay||0), 0);
+  const dailyOrd  = calDays > 0 ? (ordinary3 / calDays) * 30 : 0;
+  const dailyAvg  = calDays > 0 ? (average3  / calDays) * 30 : 0;
+  const daily1    = Math.max(dailyOrd, dailyAvg);
+  const amount    = Math.round(daily1 * (tenure.totalDays / 365));
+  return { amount, tenure, under1yr: false, ordinary3, daily1 };
+}
+
+// ── 지급 발생 이력 탭 ──
+function renderClientSevHistory(){
+  const list = document.getElementById('sev-history-list');
+  if(!list || !currentCompany) return;
+  const coId = currentCompany.id;
+  const today = new Date().toISOString().slice(0, 10);
+
+  const resignedEmps = allEmployees.filter(e => {
+    if(e.company_id !== coId) return false;
+    if(e.employment_category === '일용직') return false;
+    // 직원 status 우선: 퇴직/resigned
+    if(e.status === '퇴직' || e.status === 'resigned') return true;
+    // 직원 status가 재직이면 제외 (퇴직급여 미발생)
+    if(e.status === '재직' || e.status === 'active') return false;
+    // status 없는 경우: 마지막 계약으로 판단
+    const conts = allContracts.filter(c => c.employee_id === e.id && !c.is_draft)
+      .sort((a,b) => (a.contract_start||'').localeCompare(b.contract_start||''));
+    const last = conts[conts.length - 1];
+    if(!last) return false;
+    return last.status === '해지' || last.status === '만료' ||
+           last.status === 'expired' || last.status === 'terminated';
+  });
+
+  if(!resignedEmps.length){
+    list.innerHTML = `<div style="text-align:center;padding:48px 20px;color:#9ca3af;">
+      <i class="fas fa-inbox" style="font-size:36px;margin-bottom:12px;display:block;"></i>
+      <div style="font-size:14px;font-weight:600;">지급 발생 이력이 없습니다</div>
+      <div style="font-size:12px;margin-top:4px;">퇴직·만료된 근로자가 없습니다.</div>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = resignedEmps.sort((a,b)=>(a.name||'').localeCompare(b.name||'','ko')).map(emp => {
+    const conts = allContracts.filter(c => c.employee_id === emp.id && !c.is_draft)
+      .sort((a,b) => (a.contract_start||'').localeCompare(b.contract_start||''));
+    const lastC = conts[conts.length - 1];
+    const firstC = conts[0];
+    const hireDate = firstC?.contract_start || emp.hire_date || '';
+    const resignDate = lastC?.contract_end || emp.resign_date || today;
+    const pays3 = _clientGetPrev3(emp.id, resignDate);
+    const sev = _clientCalcSev(emp.id, hireDate, resignDate, pays3);
+    const statusBadge = lastC?.status === '해지'
+      ? `<span style="background:#fee2e2;color:#dc2626;padding:2px 7px;border-radius:12px;font-size:10px;font-weight:700;">해지</span>`
+      : `<span style="background:#fef3c7;color:#b45309;padding:2px 7px;border-radius:12px;font-size:10px;font-weight:700;">만료</span>`;
+
+    return `<div style="background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.07);margin-bottom:10px;overflow:hidden;">
+      <div style="padding:14px 16px;border-bottom:1px solid #f3f4f6;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="width:34px;height:34px;background:linear-gradient(135deg,#fef3c7,#fde68a);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#92400e;">${(emp.name||'?').charAt(0)}</div>
+            <div>
+              <div style="font-size:14px;font-weight:800;color:#1a1a2e;">${emp.name||'-'}</div>
+              <div style="font-size:11px;color:#6b7280;">${emp.department||''} ${emp.position||''} · ${emp.employment_category||'-'}</div>
+            </div>
+          </div>
+          ${statusBadge}
+        </div>
+      </div>
+      <div style="padding:12px 16px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div style="background:#f9fafb;border-radius:8px;padding:8px;">
+          <div style="font-size:10px;color:#9ca3af;">입사일</div>
+          <div style="font-size:12px;font-weight:600;color:#374151;">${hireDate||'-'}</div>
+        </div>
+        <div style="background:#f9fafb;border-radius:8px;padding:8px;">
+          <div style="font-size:10px;color:#9ca3af;">퇴직·만료일</div>
+          <div style="font-size:12px;font-weight:600;color:#374151;">${resignDate||'-'}</div>
+        </div>
+        <div style="background:#f9fafb;border-radius:8px;padding:8px;">
+          <div style="font-size:10px;color:#9ca3af;">재직 기간</div>
+          <div style="font-size:12px;font-weight:600;color:#374151;">${sev.tenure.text}</div>
+        </div>
+        <div style="background:#f9fafb;border-radius:8px;padding:8px;">
+          <div style="font-size:10px;color:#9ca3af;">1일 평균임금</div>
+          <div style="font-size:12px;font-weight:600;color:#374151;">${sev.under1yr ? '-' : (sev.daily1 ? Math.round(sev.daily1).toLocaleString()+'원' : '-')}</div>
+        </div>
+      </div>
+      <div style="padding:0 16px 14px;">
+        <div style="background:${sev.under1yr?'#f9fafb':'linear-gradient(135deg,#fffbeb,#fef3c7)'};border-radius:10px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <div style="font-size:11px;color:#92400e;">퇴직금 추계</div>
+            <div style="font-size:9.5px;color:#9ca3af;margin-top:1px;">${pays3.length ? '' : '급여 데이터 없음'}</div>
+          </div>
+          <div style="font-size:20px;font-weight:900;color:${sev.under1yr?'#9ca3af':'#b45309'};">
+            ${sev.under1yr ? '1년 미만' : (sev.amount > 0 ? sev.amount.toLocaleString()+'원' : (pays3.length ? '-' : '급여 필요'))}
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── 퇴직급여 추계 탭 ──
+function renderClientSevStatus(){
+  const list = document.getElementById('sev-status-list');
+  const summaryCard = document.getElementById('sev-client-summary');
+  if(!list || !currentCompany) return;
+  const coId = currentCompany.id;
+  const today = new Date().toISOString().slice(0, 10);
+
+  const activeEmps = allEmployees.filter(e => {
+    if(e.company_id !== coId) return false;
+    if(e.employment_category === '일용직') return false;
+    return e.status === 'active' || e.status === '재직' || !e.status || e.status === '';
+  });
+
+  if(!activeEmps.length){
+    list.innerHTML = `<div style="text-align:center;padding:48px 20px;color:#9ca3af;"><i class="fas fa-users-slash" style="font-size:36px;margin-bottom:12px;display:block;"></i><div style="font-size:14px;font-weight:600;">재직 중인 근로자가 없습니다</div></div>`;
+    if(summaryCard) summaryCard.style.display = 'none';
+    return;
+  }
+
+  let totalSev = 0, cntTarget = 0, cntNodata = 0, cntUnder1 = 0;
+  const cards = activeEmps.sort((a,b)=>(a.name||'').localeCompare(b.name||'','ko')).map(emp => {
+    const conts = allContracts.filter(c => c.employee_id === emp.id && !c.is_draft)
+      .sort((a,b) => (a.contract_start||'').localeCompare(b.contract_start||''));
+    const hireDate = (conts[0]?.contract_start) || emp.hire_date || '';
+    const pays3 = _clientGetPrev3(emp.id, today);
+    const sev = _clientCalcSev(emp.id, hireDate, today, pays3);
+    const tenure = _clientCalcTenure(hireDate, today);
+
+    if(!sev.under1yr){ cntTarget++; totalSev += sev.amount || 0; }
+    else cntUnder1++;
+    if(!sev.under1yr && !pays3.length) cntNodata++;
+
+    const amtColor = sev.under1yr ? '#9ca3af' : '#b45309';
+    const bgGradient = sev.under1yr ? '#f9fafb' : 'linear-gradient(135deg,#fffbeb,#fef3c7)';
+
+    return `<div style="background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.07);overflow:hidden;">
+      <div style="padding:12px 14px;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:32px;height:32px;background:linear-gradient(135deg,#fef3c7,#fde68a);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#92400e;">${(emp.name||'?').charAt(0)}</div>
+          <div>
+            <div style="font-size:13px;font-weight:800;color:#1a1a2e;">${emp.name||'-'}</div>
+            <div style="font-size:11px;color:#6b7280;">${emp.department||''} ${emp.position||''}</div>
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:10px;color:#9ca3af;">재직 기간</div>
+          <div style="font-size:11px;font-weight:600;color:#374151;">${tenure.text}</div>
+        </div>
+      </div>
+      <div style="padding:10px 14px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">
+          <div style="background:#f9fafb;border-radius:8px;padding:7px;">
+            <div style="font-size:10px;color:#9ca3af;">입사일</div>
+            <div style="font-size:11.5px;font-weight:600;color:#374151;">${hireDate||'-'}</div>
+          </div>
+          <div style="background:#f9fafb;border-radius:8px;padding:7px;">
+            <div style="font-size:10px;color:#9ca3af;">3개월 평균임금</div>
+            <div style="font-size:11.5px;font-weight:600;color:#374151;">${pays3.length && !sev.under1yr ? Math.round(sev.ordinary3/3).toLocaleString()+'원' : '-'}</div>
+          </div>
+        </div>
+        <div style="background:${bgGradient};border-radius:10px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;">
+          <div style="font-size:11px;color:#92400e;font-weight:600;">퇴직급여 추계액</div>
+          <div style="font-size:18px;font-weight:900;color:${amtColor};">
+            ${sev.under1yr ? '<span style="font-size:12px;color:#9ca3af;">1년 미만</span>' : (pays3.length ? sev.amount.toLocaleString()+'원' : '<span style="font-size:11px;color:#9ca3af;">급여 데이터 없음</span>')}
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  list.innerHTML = cards;
+
+  if(summaryCard){
+    summaryCard.style.display = '';
+    const setT = (id, v) => { const el = document.getElementById(id); if(el) el.textContent = v; };
+    setT('sev-client-cnt', cntTarget);
+    setT('sev-client-nodata', cntNodata);
+    setT('sev-client-under1', cntUnder1);
+    const totalEl = document.getElementById('sev-client-total');
+    if(totalEl) totalEl.textContent = totalSev.toLocaleString() + '원';
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// 연차 관리 (고객사 앱)
+// ══════════════════════════════════════════════════════════════
+
+function renderClientAnnualLeave(){
+  // 기준 연도 셀렉트 초기화
+  const ySel = document.getElementById('al-client-year');
+  if(ySel && !ySel.options.length){
+    const cur = new Date().getFullYear();
+    for(let y = cur; y >= cur - 4; y--){
+      const opt = document.createElement('option');
+      opt.value = y; opt.textContent = y + '년';
+      if(y === cur) opt.selected = true;
+      ySel.appendChild(opt);
+    }
+  }
+  _doRenderClientAL();
+}
+
+function _doRenderClientAL(){
+  const list = document.getElementById('al-client-list');
+  if(!list || !currentCompany) return;
+  const coId = currentCompany.id;
+  const refYear = parseInt(document.getElementById('al-client-year')?.value) || new Date().getFullYear();
+  const co = currentCompany;
+
+  const emps = allEmployees.filter(e =>
+    e.company_id === coId &&
+    e.employment_category !== '일용직' &&
+    (e.status === 'active' || e.status === '재직' || !e.status || e.status === '')
+  ).sort((a,b) => (a.name||'').localeCompare(b.name||'','ko'));
+
+  if(!emps.length){
+    list.innerHTML = `<div style="text-align:center;padding:48px 20px;color:#9ca3af;"><i class="fas fa-users-slash" style="font-size:36px;margin-bottom:12px;display:block;"></i><div style="font-size:14px;font-weight:600;">재직 중인 직원이 없습니다</div></div>`;
+    return;
+  }
+
+  const basis = co.annual_leave_basis || '회계년도 기준';
+
+  const calcAL = (emp) => {
+    const contract = allContracts.filter(c => c.employee_id === emp.id && !c.is_draft)
+      .sort((a,b) => (b.contract_start||'').localeCompare(a.contract_start||''))
+      .find(c => c.status === '활성' || c.status === 'active') ||
+      allContracts.filter(c => c.employee_id === emp.id && !c.is_draft)
+        .sort((a,b) => (b.contract_start||'').localeCompare(a.contract_start||''))[0];
+    if(!contract) return null;
+
+    const hireDateStr = emp.hire_date || contract.contract_start || '';
+    if(!hireDateStr) return null;
+    const hire = new Date(hireDateStr);
+    if(isNaN(hire)) return null;
+
+    let baseDate;
+    if(basis === '입사일 기준'){
+      baseDate = new Date(refYear, hire.getMonth(), hire.getDate());
+      const today = new Date(); today.setHours(0,0,0,0);
+      if(baseDate > today) baseDate = new Date(refYear - 1, hire.getMonth(), hire.getDate());
+    } else {
+      baseDate = new Date(refYear, 0, 1);
+    }
+    if(baseDate < hire) return null;
+
+    const diffMs = baseDate - hire;
+    const diffDays = Math.floor(diffMs / 86400000);
+    const diffMonths = (baseDate.getFullYear() - hire.getFullYear()) * 12 + (baseDate.getMonth() - hire.getMonth());
+    const diffYears = diffDays / 365.25;
+
+    let totalDays = 0;
+    if(diffYears < 1){
+      totalDays = Math.min(Math.max(0, diffMonths), 11);
+    } else {
+      const fullYears = Math.floor(diffYears);
+      const bonus = fullYears >= 3 ? Math.floor((fullYears - 1) / 2) : 0;
+      totalDays = Math.min(15 + bonus, 25);
+    }
+
+    const usedDays = allPayrolls.filter(p => {
+      if(p.employee_id !== emp.id) return false;
+      if(basis === '입사일 기준'){
+        const pDate = new Date(p.pay_year||0, (p.pay_month||1)-1, 1);
+        const pStart = new Date(refYear-1, hire.getMonth(), hire.getDate());
+        const pEnd   = new Date(refYear,   hire.getMonth(), hire.getDate());
+        return pDate >= pStart && pDate < pEnd;
+      }
+      return p.pay_year == refYear;
+    }).reduce((s,p) => s + (parseFloat(p.annual_leave_used)||0), 0);
+
+    const remainDays = Math.max(0, totalDays - usedDays);
+
+    const bs = parseFloat(contract.base_salary) || 0;
+    const wh = parseFloat(contract.weekly_holiday_pay) || 0;
+    const pa = parseFloat(contract.position_allowance) || 0;
+    const stdMonthly = bs + wh + pa;
+    const hourlyWage = stdMonthly > 0 ? Math.round(stdMonthly / 209) : 0;
+    const workHours = parseFloat(contract.work_hours_per_day) || 8;
+    const leavePay = Math.round(hourlyWage * workHours * remainDays);
+
+    return { totalDays, usedDays, remainDays, leavePay, contract, basis };
+  };
+
+  let sumTotal = 0, sumUsed = 0, sumRemain = 0, sumPay = 0;
+  const cards = emps.map(emp => {
+    const al = calcAL(emp);
+    if(!al) return '';
+    sumTotal  += al.totalDays;
+    sumUsed   += al.usedDays;
+    sumRemain += al.remainDays;
+    sumPay    += al.leavePay;
+
+    const remainColor = al.remainDays <= 0 ? '#dc2626' : al.remainDays <= 3 ? '#d97706' : '#059669';
+    const remainBg    = al.remainDays <= 0 ? '#fef2f2' : al.remainDays <= 3 ? '#fffbeb' : '#f0fdf4';
+
+    return `<div style="background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.07);overflow:hidden;">
+      <div style="padding:12px 14px;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;gap:10px;">
+        <div style="width:34px;height:34px;background:linear-gradient(135deg,#ecfdf5,#d1fae5);border:1.5px solid #a7f3d0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#065f46;">${(emp.name||'?').charAt(0)}</div>
+        <div style="flex:1;">
+          <div style="font-size:14px;font-weight:800;color:#1a1a2e;">${emp.name||'-'}</div>
+          <div style="font-size:11px;color:#6b7280;">${emp.department||''} ${emp.position||''} · ${emp.employment_category||'-'}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:10px;color:#9ca3af;">${al.basis}</div>
+          <div style="font-size:11px;color:#374151;font-weight:600;">${emp.hire_date||'-'} 입사</div>
+        </div>
+      </div>
+      <div style="padding:10px 14px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px;">
+          <div style="background:#ecfdf5;border-radius:8px;padding:8px;text-align:center;">
+            <div style="font-size:10px;color:#059669;">총 발생</div>
+            <div style="font-size:16px;font-weight:800;color:#065f46;">${al.totalDays}<span style="font-size:10px;">일</span></div>
+          </div>
+          <div style="background:#f9fafb;border-radius:8px;padding:8px;text-align:center;">
+            <div style="font-size:10px;color:#6b7280;">사용</div>
+            <div style="font-size:16px;font-weight:800;color:#374151;">${al.usedDays}<span style="font-size:10px;">일</span></div>
+          </div>
+          <div style="background:${remainBg};border-radius:8px;padding:8px;text-align:center;border:1px solid ${al.remainDays>0?'transparent':'#fecaca'};">
+            <div style="font-size:10px;color:${remainColor};font-weight:600;">잔여</div>
+            <div style="font-size:16px;font-weight:800;color:${remainColor};">${al.remainDays}<span style="font-size:10px;">일</span></div>
+          </div>
+        </div>
+        ${al.leavePay > 0 ? `<div style="background:#faf5ff;border-radius:8px;padding:8px 10px;display:flex;align-items:center;justify-content:space-between;">
+          <div style="font-size:11px;color:#7c3aed;">잔여 연차 수당 추계</div>
+          <div style="font-size:14px;font-weight:800;color:#5b21b6;">${al.leavePay.toLocaleString()}원</div>
+        </div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  list.innerHTML = cards || `<div style="text-align:center;padding:40px;color:#9ca3af;">계약 데이터가 없습니다.</div>`;
+
+  // 요약 카드 업데이트
+  const setT = (id, v) => { const el = document.getElementById(id); if(el) el.textContent = v; };
+  setT('al-client-total',  sumTotal + '일');
+  setT('al-client-used',   sumUsed + '일');
+  setT('al-client-remain', sumRemain + '일');
+  const payEl = document.getElementById('al-client-pay');
+  if(payEl) payEl.textContent = sumPay ? sumPay.toLocaleString() + '원' : '-';
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ── INIT ──
+// period-nav 없음 처리
+// (위에서 이미 처리됨)

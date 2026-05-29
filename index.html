@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>노무사 급여 관리 시스템</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Noto Sans KR', sans-serif; background: #0d1117; color: #fff; min-height: 100vh; }
+
+    .hero {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      display: flex; align-items: center; justify-content: center; padding: 40px 20px;
+      position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 70% 30%, rgba(233,69,96,0.15) 0%, transparent 60%),
+                  radial-gradient(ellipse at 20% 80%, rgba(59,130,246,0.1) 0%, transparent 50%);
+    }
+    .hero-content { position: relative; z-index: 1; text-align: center; max-width: 700px; }
+    .hero-badge {
+      display: inline-block;
+      background: rgba(233,69,96,0.15); border: 1px solid rgba(233,69,96,0.3);
+      color: #ffb3be; padding: 8px 20px; border-radius: 30px;
+      font-size: 13px; font-weight: 600; margin-bottom: 28px;
+    }
+    .hero h1 { font-size: 44px; font-weight: 800; line-height: 1.25; margin-bottom: 20px; }
+    .hero h1 span { color: #e94560; }
+    .hero p { font-size: 17px; color: rgba(255,255,255,0.7); line-height: 1.7; margin-bottom: 40px; }
+    .hero-btns { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+    .hero-btn {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 16px 32px; border-radius: 14px; font-size: 15px; font-weight: 700;
+      cursor: pointer; text-decoration: none; transition: all 0.25s; font-family: inherit;
+    }
+    .hero-btn.primary {
+      background: linear-gradient(135deg, #e94560, #c73652);
+      color: #fff; box-shadow: 0 4px 20px rgba(233,69,96,0.4);
+    }
+    .hero-btn.primary:hover { transform: translateY(-3px); box-shadow: 0 8px 30px rgba(233,69,96,0.5); }
+    .hero-btn.secondary {
+      background: rgba(255,255,255,0.08); color: #fff;
+      border: 1.5px solid rgba(255,255,255,0.2);
+    }
+    .hero-btn.secondary:hover { background: rgba(255,255,255,0.14); transform: translateY(-2px); }
+
+    .features { padding: 80px 24px; background: #111827; }
+    .features-inner { max-width: 960px; margin: 0 auto; }
+    .section-title { text-align: center; font-size: 28px; font-weight: 800; margin-bottom: 10px; }
+    .section-sub { text-align: center; color: rgba(255,255,255,0.5); font-size: 15px; margin-bottom: 52px; }
+    .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 24px; }
+    .feature-card {
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px; padding: 28px 24px; transition: all 0.25s;
+    }
+    .feature-card:hover { background: rgba(255,255,255,0.07); border-color: rgba(233,69,96,0.3); transform: translateY(-4px); }
+    .feature-icon { font-size: 32px; margin-bottom: 16px; }
+    .feature-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 10px; }
+    .feature-card p { font-size: 13.5px; color: rgba(255,255,255,0.55); line-height: 1.7; }
+
+    .cta { padding: 80px 24px; background: #0d1117; text-align: center; }
+    .cta-inner { max-width: 600px; margin: 0 auto; }
+    .cta h2 { font-size: 28px; font-weight: 800; margin-bottom: 12px; }
+    .cta p { color: rgba(255,255,255,0.6); font-size: 15px; margin-bottom: 36px; }
+    .cta-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .cta-card {
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px; padding: 28px 20px; text-decoration: none; color: inherit;
+      transition: all 0.25s; display: block;
+    }
+    .cta-card:hover { transform: translateY(-4px); }
+    .cta-card.admin { border-color: rgba(233,69,96,0.4); }
+    .cta-card.admin:hover { background: rgba(233,69,96,0.08); }
+    .cta-card.client { border-color: rgba(16,185,129,0.4); }
+    .cta-card.client:hover { background: rgba(16,185,129,0.08); }
+    .cta-card .card-icon { font-size: 36px; margin-bottom: 14px; }
+    .cta-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+    .cta-card p { font-size: 13px; color: rgba(255,255,255,0.55); line-height: 1.6; margin: 0; }
+    .cta-card .card-tag { display: inline-block; margin-top: 14px; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+    .admin .card-tag { background: rgba(233,69,96,0.2); color: #ffb3be; }
+    .client .card-tag { background: rgba(16,185,129,0.2); color: #6ee7b7; }
+
+    footer { padding: 24px; text-align: center; font-size: 12px; color: rgba(255,255,255,0.3); background: #0d1117; border-top: 1px solid rgba(255,255,255,0.06); }
+
+    @media (max-width: 600px) {
+      .hero h1 { font-size: 30px; }
+      .cta-cards { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-content">
+    <div class="hero-badge">노무사 김영진 사무소</div>
+    <h1>스마트 <span>급여 관리</span><br>시스템</h1>
+    <p>근로계약서 관리부터 월별 급여 명세서 발행,<br>직원별 급여 변동 추이까지 한 곳에서 관리하세요.</p>
+    <div class="hero-btns">
+      <a href="admin/index.html" class="hero-btn primary"><i class="fas fa-cog"></i> 관리자 사이트</a>
+      <a href="client/index.html" class="hero-btn secondary"><i class="fas fa-mobile-alt"></i> 고객사 앱</a>
+    </div>
+  </div>
+</div>
+
+<div class="features">
+  <div class="features-inner">
+    <div class="section-title">주요 기능</div>
+    <div class="section-sub">노무사와 고객사 모두를 위한 통합 급여 관리 솔루션</div>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🏢</div>
+        <h3>고객사 통합 관리</h3>
+        <p>여러 고객사를 한 곳에서 관리하고, 고유 접근 코드로 안전하게 분리된 데이터를 제공합니다.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📄</div>
+        <h3>근로계약서 관리</h3>
+        <p>직원별 근로계약 정보를 체계적으로 기록하고, 급여 입력 시 계약 내용을 자동으로 불러옵니다.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🧮</div>
+        <h3>자동 공제 계산</h3>
+        <p>급여 입력 시 국민연금·건강보험·고용보험·소득세 등 4대보험과 세금을 자동으로 계산합니다.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <h3>변동 추이 차트</h3>
+        <p>직원별 월별 실수령액과 지급/공제 내역의 변동 추이를 직관적인 차트로 확인합니다.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📱</div>
+        <h3>모바일 최적화</h3>
+        <p>스마트폰에서도 편하게 급여 명세서를 조회할 수 있는 반응형 고객사 앱을 제공합니다.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔒</div>
+        <h3>회사별 코드 보안</h3>
+        <p>각 고객사마다 고유 접근 코드를 부여하여 다른 회사 정보를 볼 수 없도록 보호합니다.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="cta">
+  <div class="cta-inner">
+    <h2>지금 바로 시작하세요</h2>
+    <p>관리자는 데이터를 관리하고, 고객사 사장님은 언제든 급여를 조회할 수 있습니다.</p>
+    <div class="cta-cards">
+      <a href="admin/index.html" class="cta-card admin">
+        <div class="card-icon">⚙️</div>
+        <h3>관리자 사이트</h3>
+        <p>고객사·직원·근로계약서·급여 입력 및 관리</p>
+        <span class="card-tag">노무사 전용</span>
+      </a>
+      <a href="client/index.html" class="cta-card client">
+        <div class="card-icon">📲</div>
+        <h3>고객사 앱</h3>
+        <p>급여 명세서 조회, 변동 추이 차트, 직원 정보 확인</p>
+        <span class="card-tag">고객사 사장님 전용</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<footer>© 2025 노무사 사무소 급여 관리 시스템. All rights reserved.</footer>
+
+</body>
+</html>

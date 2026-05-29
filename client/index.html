@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>급여 조회 | 고객사 서비스</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+      <link rel="stylesheet" href="css/client-base.css" />
+  <link rel="stylesheet" href="css/client-layout.css" />
+  <link rel="stylesheet" href="css/client-payslip.css" />
+  <link rel="stylesheet" href="css/client-modal.css" />
+  <link rel="stylesheet" href="css/client-billing.css" />
+  <link rel="stylesheet" href="css/client-responsive.css" />
+</head>
+<body>
+
+<!-- ══ LOGIN ══ -->
+<div class="login-screen" id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="icon">💼</div>
+      <h1>급여 조회 서비스</h1>
+      <p>노무사 김영진 사무소</p>
+    </div>
+    <div class="login-field">
+      <label>회사 접근 코드</label>
+      <input type="text" id="login-code" placeholder="" maxlength="8"
+        onkeydown="if(event.key==='Enter') tryLogin()" />
+    </div>
+    <label class="login-remember">
+      <input type="checkbox" id="login-remember" checked />
+      <span>접근 코드 자동 입력</span>
+    </label>
+    <button class="login-btn" onclick="tryLogin()"><i class="fas fa-sign-in-alt"></i> 조회 시작</button>
+    <p class="login-error" id="login-error"></p>
+    <div class="login-footer">코드를 모르시면 담당 노무사에게 문의하세요</div>
+  </div>
+</div>
+
+<!-- ══ APP ══ -->
+<div class="app" id="app">
+
+  <!-- Top Header -->
+  <div class="app-header">
+    <div class="header-top">
+      <div class="company-info">
+        <h2 id="app-company-name">회사명</h2>
+        <p id="app-company-sub">급여 조회 서비스</p>
+      </div>
+      <div class="header-right" style="position:relative;">
+        <!-- 알림 벨 버튼 -->
+        <button class="notif-btn" id="notif-btn" onclick="openNotifModal()" aria-label="알림">
+          <i class="fas fa-bell"></i>
+          <span class="notif-badge" id="notif-badge">0</span>
+        </button>
+        <button class="hamburger-btn" id="hamburger-btn" onclick="toggleHamburgerMenu()" aria-label="메뉴">
+          <span></span><span></span><span></span>
+        </button>
+        <!-- 드롭다운 패널 -->
+        <div class="hmenu-panel" id="hmenu-panel">
+          <div class="hmenu-company">
+            <div class="hmenu-company-name" id="hmenu-company-name">회사명</div>
+            <div class="hmenu-company-sub" id="hmenu-company-sub">급여 조회 서비스</div>
+          </div>
+          <button class="hmenu-item" onclick="closeHamburgerMenu();showPage('myco',null)">
+            <i class="fas fa-building"></i>우리회사 정보
+          </button>
+          <div class="hmenu-divider"></div>
+          <button class="hmenu-item" onclick="closeHamburgerMenu();showPage('insurance-rates',null)">
+            <i class="fas fa-percent"></i>4대보험 요율표
+          </button>
+          <button class="hmenu-item" onclick="closeHamburgerMenu();showPage('min-wage',null)">
+            <i class="fas fa-won-sign"></i>연도별 최저임금
+          </button>
+          <div class="hmenu-divider"></div>
+          <button class="hmenu-item danger" onclick="closeHamburgerMenu();logout()">
+            <i class="fas fa-sign-out-alt"></i>로그아웃
+          </button>
+        </div>
+      </div>
+      <!-- 햄버거 메뉴 닫기용 백드롭 -->
+      <div class="hmenu-backdrop" id="hmenu-backdrop" onclick="closeHamburgerMenu()"></div>
+    </div>
+    <!-- 급여현황 · 명세서 · 사용료 탭 공용 월 선택 (상단 고정) -->
+    <div class="header-month-row hidden" id="header-month-row">
+      <button class="hm-btn" id="hm-prev-btn" aria-label="이전 달"><i class="fas fa-chevron-left"></i></button>
+      <div class="hm-label-wrap" id="hm-label-wrap">
+        <div class="hm-label" id="hm-month-label"></div>
+        <div class="hm-sub" id="hm-sub-label"></div>
+      </div>
+      <button class="hm-btn" id="hm-next-btn" aria-label="다음 달"><i class="fas fa-chevron-right"></i></button>
+    </div>
+  </div>
+
+  <!-- ══ PAGES ══ -->
+
+  <!-- ① 급여 현황 (통계 메인) -->
+  <div class="page active" id="page-stats">
+
+    <!-- 직원 현황 (고용형태별) -->
+    <div class="card">
+      <div class="card-body" style="padding-bottom:12px;">
+        <div style="margin-bottom:10px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <div style="font-size:13px;font-weight:700;color:#1a1a2e;"><i class="fas fa-users" style="color:#3b82f6;margin-right:5px;"></i>직원 현황 (고용형태별)</div>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <span style="font-size:11px;color:#6b7280;background:#fef3c7;border:1px solid #fde68a;padding:3px 9px;border-radius:20px;">전체 <strong id="s-total-emp" style="color:#92400e;">0</strong>명</span>
+            <span style="font-size:11px;color:#059669;background:#f0fdf4;border:1px solid #bbf7d0;padding:3px 9px;border-radius:20px;">재직 <strong id="s-active-emp">0</strong>명</span>
+            <span style="font-size:11px;color:#6b7280;background:#f3f4f6;border:1px solid #e5e7eb;padding:3px 9px;border-radius:20px;">퇴직 <strong id="s-retired-emp">0</strong>명</span>
+          </div>
+        </div>
+        <div class="cat-grid">
+          <div class="cat-card" style="background:#eff6ff;border-color:#bfdbfe;cursor:pointer;" title="정규직 근로계약 조회" onclick="showContractsByCategory('정규직')">
+            <div class="cc-label" style="color:#2563eb;">정규직</div>
+            <div class="cc-val" id="s-cat-regular" style="color:#1d4ed8;">0</div>
+            <div class="cc-unit" style="color:#93c5fd;">명</div>
+          </div>
+          <div class="cat-card" style="background:#f0fdf4;border-color:#bbf7d0;cursor:pointer;" title="정규직(수습) 근로계약 조회" onclick="showContractsByCategory('정규직 수습')">
+            <div class="cc-label" style="color:#15803d;">정규(수습)</div>
+            <div class="cc-val" id="s-cat-regular-prob" style="color:#16a34a;">0</div>
+            <div class="cc-unit" style="color:#86efac;">명</div>
+          </div>
+          <div class="cat-card" style="background:#fffbeb;border-color:#fde68a;cursor:pointer;" title="계약직 근로계약 조회" onclick="showContractsByCategory('계약직')">
+            <div class="cc-label" style="color:#b45309;">계약직</div>
+            <div class="cc-val" id="s-cat-contract" style="color:#d97706;">0</div>
+            <div class="cc-unit" style="color:#fcd34d;">명</div>
+          </div>
+          <div class="cat-card" style="background:#fff7ed;border-color:#fed7aa;cursor:pointer;" title="계약직(수습) 근로계약 조회" onclick="showContractsByCategory('계약직 수습')">
+            <div class="cc-label" style="color:#c2410c;">계약(수습)</div>
+            <div class="cc-val" id="s-cat-contract-prob" style="color:#ea580c;">0</div>
+            <div class="cc-unit" style="color:#fdba74;">명</div>
+          </div>
+          <div class="cat-card" style="background:#fdf4ff;border-color:#e9d5ff;cursor:pointer;" title="일용직 근로계약 조회" onclick="showContractsByCategory('일용직')">
+            <div class="cc-label" style="color:#7e22ce;">일용직</div>
+            <div class="cc-val" id="s-cat-daily" style="color:#9333ea;">0</div>
+            <div class="cc-unit" style="color:#d8b4fe;">명</div>
+          </div>
+        </div>
+        <div style="margin-top:8px;font-size:10.5px;color:#9ca3af;text-align:center;"><i class="fas fa-hand-pointer" style="margin-right:3px;"></i>고용형태 박스를 탭하면 근로계약을 조회할 수 있습니다</div>
+      </div>
+    </div>
+
+    <!-- 당월 급여 지급액 -->
+    <div class="card" id="pay-summary-card" onclick="openPayRatioModal()" style="cursor:pointer;transition:transform .15s,box-shadow .15s;" onmouseenter="this.style.boxShadow='0 4px 20px rgba(99,102,241,.18)'" onmouseleave="this.style.boxShadow=''" ontouchstart="" title="탭하면 항목별 비율을 볼 수 있습니다">
+      <div class="card-body">
+        <div style="margin-bottom:10px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">
+            <div style="font-size:13px;font-weight:700;color:#1a1a2e;"><i class="fas fa-won-sign" style="color:#ef4444;margin-right:5px;"></i>당월 급여 지급액</div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span id="s-pay-month-badge" style="font-size:11px;background:#f3f4f6;color:#6b7280;padding:3px 8px;border-radius:20px;"></span>
+              <span style="font-size:10.5px;color:#a5b4fc;font-weight:600;"><i class="fas fa-chart-pie" style="margin-right:2px;"></i>비율보기</span>
+            </div>
+          </div>
+          <span style="font-size:11px;background:#fdf4ff;border:1px solid #e9d5ff;color:#7e22ce;padding:3px 8px;border-radius:20px;">
+            유효계약 <strong id="s-active-contract">0</strong>건
+          </span>
+        </div>
+        <div class="pay-box-grid">
+          <div class="pay-box-item pay-box-blue">
+            <div class="pb-label"><span class="pb-dot" style="background:#3b82f6;"></span>지급총액</div>
+            <div class="pb-val" id="s-gross">0원</div>
+            <div class="pb-sub" id="s-count">0명</div>
+          </div>
+          <div class="pay-box-item pay-box-red">
+            <div class="pb-label"><span class="pb-dot" style="background:#ef4444;"></span>공제총액</div>
+            <div class="pb-val" id="s-ded">0원</div>
+            <div class="pb-sub" id="s-ded-sub">-</div>
+          </div>
+          <div class="pay-box-item pay-box-green">
+            <div class="pb-label"><span class="pb-dot" style="background:#10b981;"></span>실지급액</div>
+            <div class="pb-val" id="s-net">0원</div>
+            <div class="pb-sub" id="s-net-sub">-</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 이달 급여 현황 (분포) -->
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">📊 이달 급여 현황</div>
+          <div class="chart-sub">인원별 / 부서별 / 직급별</div>
+        </div>
+      </div>
+      <div class="dist-tab-row">
+        <button class="dist-tab-btn active" onclick="switchDistTab('emp',this)">인원별</button>
+        <button class="dist-tab-btn" onclick="switchDistTab('dept',this)">부서별</button>
+        <button class="dist-tab-btn" onclick="switchDistTab('rank',this)">직급별</button>
+      </div>
+      <div id="dist-summary" class="summary-badges"></div>
+      <!-- 인원별: 가로 막대 차트 -->
+      <div style="position:relative;" id="dist-bar-wrap">
+        <canvas id="dist-chart"></canvas>
+      </div>
+      <!-- 부서별·직급별: 도넛 차트 -->
+      <div class="dist-donut-wrap" id="dist-donut-wrap" style="display:none;">
+        <div class="dist-donut-canvas-wrap">
+          <canvas id="dist-donut-chart"></canvas>
+          <div class="dist-donut-center" id="dist-donut-center"></div>
+        </div>
+        <div class="dist-donut-legend" id="dist-donut-legend"></div>
+      </div>
+    </div>
+
+    <!-- 1년간 급여 추이 -->
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">📈 1년간 급여 지급 추이</div>
+          <div class="chart-sub">과거 12개월 집계</div>
+        </div>
+        <span id="trend-period-badge" class="chart-badge" style="background:#ede9fe;color:#4c1d95;"></span>
+      </div>
+      <div class="toggle-row" id="trend-toggles"></div>
+      <div style="height:210px;"><canvas id="trend-chart"></canvas></div>
+    </div>
+
+  </div><!-- /page-stats -->
+
+  <!-- ② 급여 명세서 조회 -->
+  <div class="page" id="page-payslip">
+    <!-- sticky 필터 영역 -->
+    <div class="ps-sticky-filters">
+      <!-- 1단계: 대분류 탭 -->
+      <div class="ps-group-bar">
+        <button class="ps-group-btn active" data-group="all"  onclick="setPsGroup('all',this)">전체</button>
+        <button class="ps-group-btn"        data-group="cat"  onclick="setPsGroup('cat',this)">고용형태별</button>
+        <button class="ps-group-btn"        data-group="dept" onclick="setPsGroup('dept',this)">부서별</button>
+        <button class="ps-group-btn"        data-group="rank" onclick="setPsGroup('rank',this)">직급별</button>
+      </div>
+      <!-- 2단계: 세부 칩 (대분류가 '전체'이면 숨김) -->
+      <div class="ps-sub-bar" id="ps-sub-bar" style="display:none;">
+        <div class="ps-sub-chips" id="ps-sub-chips"></div>
+      </div>
+      <div class="ps-filter-divider"></div>
+    </div>
+    <!-- 직원 목록 -->
+    <div id="payslip-list-content"></div>
+  </div>
+
+  <!-- [사용료 숨김] ③ 사용료 조회 페이지 - 원복 시 아래 주석 해제
+  <div class="page" id="page-billing">
+    <div id="billing-content">
+      <div class="no-data"><i class="fas fa-receipt"></i><p>데이터를 불러오는 중...</p></div>
+    </div>
+  </div>
+  -->
+
+  <!-- ⑦ 퇴직금 관리 -->
+  <div class="page" id="page-severance">
+    <div class="sub-page-header" style="background:linear-gradient(135deg,#f59e0b,#d97706);">
+      <button class="back-btn" style="color:#fff;" onclick="showPage('stats',document.getElementById('nav-stats'))">
+        <i class="fas fa-chevron-left"></i>홈
+      </button>
+      <span class="sub-page-badge" style="background:rgba(255,255,255,.2);color:#fff;"><i class="fas fa-hand-holding-usd" style="margin-right:4px;"></i>퇴직금 관리</span>
+    </div>
+    <!-- 탭 -->
+    <div style="display:flex;background:#fff;border-bottom:2px solid #f3f4f6;position:sticky;top:60px;z-index:50;">
+      <button id="sev-tab-btn-history" onclick="switchClientSevTab('history')" style="flex:1;padding:13px 0;border:none;background:none;font-size:13px;font-weight:700;color:#f59e0b;border-bottom:2px solid #f59e0b;cursor:pointer;font-family:inherit;">
+        <i class="fas fa-history" style="margin-right:5px;"></i>지급 발생 이력
+      </button>
+      <button id="sev-tab-btn-status" onclick="switchClientSevTab('status')" style="flex:1;padding:13px 0;border:none;background:none;font-size:13px;font-weight:600;color:#9ca3af;border-bottom:2px solid transparent;cursor:pointer;font-family:inherit;">
+        <i class="fas fa-users" style="margin-right:5px;"></i>퇴직급여 추계
+      </button>
+    </div>
+    <!-- 지급 발생 이력 탭 -->
+    <div id="sev-client-history" style="padding:0 0 80px;">
+      <div id="sev-history-list" style="padding:12px;"></div>
+    </div>
+    <!-- 퇴직급여 추계 탭 -->
+    <div id="sev-client-status" style="display:none;padding:0 0 80px;">
+      <!-- 요약 카드 -->
+      <div id="sev-client-summary" style="margin:12px;padding:14px 16px;background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1.5px solid #fcd34d;border-radius:12px;display:none;">
+        <div style="display:flex;gap:16px;flex-wrap:wrap;">
+          <div style="text-align:center;"><div style="font-size:11px;color:#92400e;">추계 대상</div><div id="sev-client-cnt" style="font-size:20px;font-weight:800;color:#d97706;">-</div><div style="font-size:10px;color:#92400e;">명</div></div>
+          <div style="text-align:center;"><div style="font-size:11px;color:#92400e;">급여 미입력</div><div id="sev-client-nodata" style="font-size:20px;font-weight:800;color:#ef4444;">-</div><div style="font-size:10px;color:#92400e;">명</div></div>
+          <div style="text-align:center;"><div style="font-size:11px;color:#92400e;">1년 미만</div><div id="sev-client-under1" style="font-size:20px;font-weight:800;color:#6b7280;">-</div><div style="font-size:10px;color:#92400e;">명</div></div>
+          <div style="flex:1;text-align:right;"><div style="font-size:11px;color:#92400e;">합계 추계액</div><div id="sev-client-total" style="font-size:16px;font-weight:800;color:#b45309;"></div></div>
+        </div>
+      </div>
+      <div id="sev-status-list" style="padding:0 12px 12px;"></div>
+    </div>
+  </div>
+
+  <!-- ⑧ 연차 관리 -->
+  <div class="page" id="page-annual-leave">
+    <div class="sub-page-header" style="background:linear-gradient(135deg,#10b981,#059669);">
+      <button class="back-btn" style="color:#fff;" onclick="showPage('stats',document.getElementById('nav-stats'))">
+        <i class="fas fa-chevron-left"></i>홈
+      </button>
+      <span class="sub-page-badge" style="background:rgba(255,255,255,.2);color:#fff;"><i class="fas fa-umbrella-beach" style="margin-right:4px;"></i>연차 관리</span>
+    </div>
+    <!-- 요약 카드 -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px 12px 0;">
+      <div style="background:linear-gradient(135deg,#ecfdf5,#d1fae5);border:1px solid #a7f3d0;border-radius:12px;padding:12px;text-align:center;">
+        <div style="font-size:11px;color:#065f46;margin-bottom:2px;">총 발생 연차</div>
+        <div id="al-client-total" style="font-size:22px;font-weight:800;color:#059669;">-</div>
+        <div style="font-size:10px;color:#6b7280;">일</div>
+      </div>
+      <div style="background:linear-gradient(135deg,#fff7ed,#fed7aa);border:1px solid #fdba74;border-radius:12px;padding:12px;text-align:center;">
+        <div style="font-size:11px;color:#9a3412;margin-bottom:2px;">사용 연차</div>
+        <div id="al-client-used" style="font-size:22px;font-weight:800;color:#ea580c;">-</div>
+        <div style="font-size:10px;color:#6b7280;">일</div>
+      </div>
+      <div style="background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #bfdbfe;border-radius:12px;padding:12px;text-align:center;">
+        <div style="font-size:11px;color:#1e40af;margin-bottom:2px;">잔여 연차</div>
+        <div id="al-client-remain" style="font-size:22px;font-weight:800;color:#2563eb;">-</div>
+        <div style="font-size:10px;color:#6b7280;">일</div>
+      </div>
+      <div style="background:linear-gradient(135deg,#faf5ff,#ede9fe);border:1px solid #ddd6fe;border-radius:12px;padding:12px;text-align:center;">
+        <div style="font-size:11px;color:#4c1d95;margin-bottom:2px;">잔여 수당 추계</div>
+        <div id="al-client-pay" style="font-size:16px;font-weight:800;color:#7c3aed;">-</div>
+      </div>
+    </div>
+    <!-- 기준 연도 선택 -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px 4px;">
+      <div style="font-size:13px;font-weight:700;color:#1a1a2e;"><i class="fas fa-calendar-alt" style="color:#059669;margin-right:5px;"></i>직원별 연차 현황</div>
+      <select id="al-client-year" onchange="renderClientAnnualLeave()" style="border:1px solid #d1d5db;border-radius:8px;padding:5px 10px;font-size:12px;background:#fff;font-family:inherit;color:#374151;cursor:pointer;"></select>
+    </div>
+    <!-- 직원 카드 목록 -->
+    <div id="al-client-list" style="padding:8px 12px 80px;display:grid;gap:8px;"></div>
+  </div>
+
+  <!-- ⑨ 4대보험 요율표 -->
+  <div class="page" id="page-insurance-rates">
+    <div class="sub-page-header" style="background:linear-gradient(135deg,#3b82f6,#1d4ed8);">
+      <button class="back-btn" style="color:#fff;" onclick="showPage('stats',document.getElementById('nav-stats'))">
+        <i class="fas fa-chevron-left"></i>홈
+      </button>
+      <span class="sub-page-badge" style="background:rgba(255,255,255,.2);color:#fff;"><i class="fas fa-percent" style="margin-right:4px;"></i>4대보험 요율표</span>
+    </div>
+    <div style="padding:12px 12px 80px;">
+      <div style="font-size:12px;color:#6b7280;margin-bottom:12px;padding:10px 12px;background:#f0f9ff;border-radius:8px;border:1px solid #bae6fd;">
+        <i class="fas fa-info-circle" style="color:#0284c7;margin-right:5px;"></i>2026년 기준 요율입니다. (근로자 부담분)
+      </div>
+      <!-- 국민연금 -->
+      <div style="background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.07);padding:16px;margin-bottom:12px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+          <div style="width:36px;height:36px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);border-radius:10px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-shield-alt" style="color:#fff;font-size:16px;"></i></div>
+          <div><div style="font-size:14px;font-weight:800;color:#1a1a2e;">국민연금</div><div style="font-size:11px;color:#6b7280;">National Pension</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+          <div style="background:#eff6ff;border-radius:10px;padding:10px;text-align:center;"><div style="font-size:10px;color:#3b82f6;font-weight:600;">근로자</div><div style="font-size:18px;font-weight:800;color:#1d4ed8;">4.5%</div></div>
+          <div style="background:#dbeafe;border-radius:10px;padding:10px;text-align:center;"><div style="font-size:10px;color:#3b82f6;font-weight:600;">사용자</div><div style="font-size:18px;font-weight:800;color:#1d4ed8;">4.5%</div></div>
+          <div style="background:#bfdbfe;border-radius:10px;padding:10px;text-align:center;"><div style="font-size:10px;color:#1d4ed8;font-weight:600;">합계</div><div style="font-size:18px;font-weight:800;color:#1d4ed8;">9.0%</div></div>
+        </div>
+        <div style="margin-top:10px;font-size:11px;color:#6b7280;line-height:1.7;">
+          • 기준소득월액 하한: <strong>390,000원</strong> / 상한: <strong>6,170,000원</strong><br>
+          • 의무 가입: 18세 이상 60세 미만 근로자
+        </div>
+      </div>
+      <!-- 건강보험 -->
+      <div style="background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.07);padding:16px;margin-bottom:12px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+          <div style="width:36px;height:36px;background:linear-gradient(135deg,#10b981,#059669);border-radius:10px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-heartbeat" style="color:#fff;font-size:16px;"></i></div>
+          <div><div style="font-size:14px;font-weight:800;color:#1a1a2e;">건강보험</div><div style="font-size:11px;color:#6b7280;">Health Insurance</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px;">
+          <div style="background:#ecfdf5;border-radius:10px;padding:10px;text-align:center;"><div style="font-size:10px;color:#059669;font-weight:600;">근로자</div><div style="font-size:18px;font-weight:800;color:#065f46;">3.545%</div></div>
+          <div style="background:#d1fae5;border-radius:10px;padding:10px;text-align:center;"><div style="font-size:10px;color:#059669;font-weight:600;">사용자</div><div style="font-size:18px;font-weight:800;color:#065f46;">3.545%</div></div>
+          <div style="background:#a7f3d0;border-radius:10px;padding:10px;text-align:center;"><div style="font-size:10px;color:#065f46;font-weight:600;">합계</div><div style="font-size:18px;font-weight:800;color:#065f46;">7.09%</div></div>
+        </div>
+        <div style="background:#f0fdf4;border-radius:8px;padding:8px 10px;margin-bottom:6px;">
+          <div style="font-size:11.5px;font-weight:700;color:#065f46;margin-bottom:4px;">└ 장기요양보험 (건강보험의 12.95%)</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
+            <div style="background:#ecfdf5;border-radius:8px;padding:8px;text-align:center;"><div style="font-size:9px;color:#059669;">근로자</div><div style="font-size:15px;font-weight:700;color:#065f46;">0.4591%</div></div>
+            <div style="background:#d1fae5;border-radius:8px;padding:8px;text-align:center;"><div style="font-size:9px;color:#059669;">사용자</div><div style="font-size:15px;font-weight:700;color:#065f46;">0.4591%</div></div>
+            <div style="background:#a7f3d0;border-radius:8px;padding:8px;text-align:center;"><div style="font-size:9px;color:#065f46;">합계</div><div style="font-size:15px;font-weight:700;color:#065f46;">0.9182%</div></div>
+          </div>
+        </div>
+        <div style="font-size:11px;color:#6b7280;line-height:1.7;">
+          • 보수월액 하한: <strong>279,260원</strong> / 상한: <strong>119,625,106원</strong>
+        </div>
+      </div>
+      <!-- 고용보험 -->
+      <div style="background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.07);padding:16px;margin-bottom:12px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+          <div style="width:36px;height:36px;background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:10px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-briefcase" style="color:#fff;font-size:16px;"></i></div>
+          <div><div style="font-size:14px;font-weight:800;color:#1a1a2e;">고용보험</div><div style="font-size:11px;color:#6b7280;">Employment Insurance</div></div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;font-size:12px;">
+            <thead><tr style="background:#fffbeb;">
+              <th style="padding:8px;text-align:left;color:#92400e;font-weight:700;border-bottom:1px solid #fde68a;">구분</th>
+              <th style="padding:8px;text-align:center;color:#92400e;font-weight:700;border-bottom:1px solid #fde68a;">근로자</th>
+              <th style="padding:8px;text-align:center;color:#92400e;font-weight:700;border-bottom:1px solid #fde68a;">사용자</th>
+            </tr></thead>
+            <tbody>
+              <tr style="border-bottom:1px solid #f3f4f6;"><td style="padding:8px;color:#374151;">실업급여</td><td style="padding:8px;text-align:center;font-weight:700;">0.9%</td><td style="padding:8px;text-align:center;font-weight:700;">0.9%</td></tr>
+              <tr style="background:#fffbeb;border-bottom:1px solid #f3f4f6;"><td style="padding:8px;color:#374151;">고용안정·직업능력개발<br><span style="font-size:10px;color:#9ca3af;">(150인 미만 사업)</span></td><td style="padding:8px;text-align:center;color:#9ca3af;">-</td><td style="padding:8px;text-align:center;font-weight:700;">0.25%</td></tr>
+              <tr style="border-bottom:1px solid #f3f4f6;"><td style="padding:8px;color:#374151;">고용안정·직업능력개발<br><span style="font-size:10px;color:#9ca3af;">(150인 이상 우선지원)</span></td><td style="padding:8px;text-align:center;color:#9ca3af;">-</td><td style="padding:8px;text-align:center;font-weight:700;">0.45%</td></tr>
+              <tr style="background:#fffbeb;"><td style="padding:8px;color:#374151;">고용안정·직업능력개발<br><span style="font-size:10px;color:#9ca3af;">(150인 이상)</span></td><td style="padding:8px;text-align:center;color:#9ca3af;">-</td><td style="padding:8px;text-align:center;font-weight:700;">0.65%~0.85%</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <!-- 산재보험 -->
+      <div style="background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.07);padding:16px;margin-bottom:12px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+          <div style="width:36px;height:36px;background:linear-gradient(135deg,#ef4444,#dc2626);border-radius:10px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-hard-hat" style="color:#fff;font-size:16px;"></i></div>
+          <div><div style="font-size:14px;font-weight:800;color:#1a1a2e;">산재보험</div><div style="font-size:11px;color:#6b7280;">Industrial Accident Compensation Insurance</div></div>
+        </div>
+        <div style="background:#fef2f2;border-radius:10px;padding:12px;margin-bottom:8px;">
+          <div style="font-size:12px;color:#991b1b;font-weight:700;margin-bottom:4px;">전액 사업주 부담</div>
+          <div style="font-size:11px;color:#6b7280;">근로자 부담 없음. 업종별 요율 상이 (0.7%~34.0%)</div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;font-size:11.5px;">
+            <thead><tr style="background:#fef2f2;">
+              <th style="padding:7px 8px;text-align:left;color:#991b1b;font-weight:700;border-bottom:1px solid #fecaca;">업종</th>
+              <th style="padding:7px 8px;text-align:center;color:#991b1b;font-weight:700;border-bottom:1px solid #fecaca;">요율</th>
+            </tr></thead>
+            <tbody>
+              <tr style="border-bottom:1px solid #f3f4f6;"><td style="padding:7px 8px;color:#374151;">소프트웨어 개발·공급</td><td style="padding:7px 8px;text-align:center;font-weight:700;">0.7%</td></tr>
+              <tr style="background:#fef9f9;border-bottom:1px solid #f3f4f6;"><td style="padding:7px 8px;color:#374151;">사무직 (사무용품 도매 등)</td><td style="padding:7px 8px;text-align:center;font-weight:700;">0.7%</td></tr>
+              <tr style="border-bottom:1px solid #f3f4f6;"><td style="padding:7px 8px;color:#374151;">음식점·숙박</td><td style="padding:7px 8px;text-align:center;font-weight:700;">1.8%</td></tr>
+              <tr style="background:#fef9f9;border-bottom:1px solid #f3f4f6;"><td style="padding:7px 8px;color:#374151;">제조업 (식품·음료)</td><td style="padding:7px 8px;text-align:center;font-weight:700;">1.3%</td></tr>
+              <tr style="border-bottom:1px solid #f3f4f6;"><td style="padding:7px 8px;color:#374151;">운수·창고·통신</td><td style="padding:7px 8px;text-align:center;font-weight:700;">2.0%</td></tr>
+              <tr style="background:#fef9f9;"><td style="padding:7px 8px;color:#374151;">건설업</td><td style="padding:7px 8px;text-align:center;font-weight:700;">3.7%</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="margin-top:8px;font-size:10.5px;color:#9ca3af;">※ 업종별 세부 요율은 근로복지공단(kcomwel.or.kr) 참조</div>
+      </div>
+      <!-- 근로자 부담 공제 요약표 -->
+      <div style="background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.07);padding:16px;">
+        <div style="font-size:13px;font-weight:800;color:#1a1a2e;margin-bottom:10px;"><i class="fas fa-calculator" style="color:#6366f1;margin-right:6px;"></i>근로자 공제 요율 요약</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div style="background:#eff6ff;border-radius:10px;padding:10px;text-align:center;"><div style="font-size:10px;color:#3b82f6;">국민연금</div><div style="font-size:17px;font-weight:800;color:#1d4ed8;">4.5%</div></div>
+          <div style="background:#ecfdf5;border-radius:10px;padding:10px;text-align:center;"><div style="font-size:10px;color:#059669;">건강보험</div><div style="font-size:17px;font-weight:800;color:#065f46;">3.545%</div></div>
+          <div style="background:#f0fdf4;border-radius:10px;padding:10px;text-align:center;"><div style="font-size:10px;color:#16a34a;">장기요양</div><div style="font-size:17px;font-weight:800;color:#15803d;">0.4591%</div></div>
+          <div style="background:#fffbeb;border-radius:10px;padding:10px;text-align:center;"><div style="font-size:10px;color:#d97706;">고용보험</div><div style="font-size:17px;font-weight:800;color:#92400e;">0.9%</div></div>
+        </div>
+        <div style="margin-top:10px;background:#f5f3ff;border-radius:10px;padding:10px;text-align:center;">
+          <div style="font-size:11px;color:#7c3aed;">근로자 총 부담률 (실업급여 기준)</div>
+          <div style="font-size:22px;font-weight:800;color:#5b21b6;">약 9.4%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ⑩ 연도별 최저임금표 -->
+  <div class="page" id="page-min-wage">
+    <div class="sub-page-header" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);">
+      <button class="back-btn" style="color:#fff;" onclick="showPage('stats',document.getElementById('nav-stats'))">
+        <i class="fas fa-chevron-left"></i>홈
+      </button>
+      <span class="sub-page-badge" style="background:rgba(255,255,255,.2);color:#fff;"><i class="fas fa-won-sign" style="margin-right:4px;"></i>연도별 최저임금</span>
+    </div>
+    <div style="padding:12px 12px 80px;">
+      <div style="font-size:12px;color:#6b7280;margin-bottom:12px;padding:10px 12px;background:#faf5ff;border-radius:8px;border:1px solid #e9d5ff;">
+        <i class="fas fa-info-circle" style="color:#7c3aed;margin-right:5px;"></i>최저임금은 모든 사업장에 동일 적용됩니다. (수습 3개월 이내 10% 감액 가능)
+      </div>
+      <!-- 2026년 강조 카드 -->
+      <div style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);border-radius:16px;padding:20px;margin-bottom:16px;color:#fff;">
+        <div style="font-size:12px;opacity:.8;margin-bottom:4px;">2026년 적용 최저임금</div>
+        <div style="font-size:32px;font-weight:900;letter-spacing:-1px;">10,030원<span style="font-size:14px;opacity:.8;font-weight:400;"> / 시간</span></div>
+        <div style="display:flex;gap:16px;margin-top:10px;flex-wrap:wrap;">
+          <div><div style="font-size:10px;opacity:.7;">일급 (8시간)</div><div style="font-size:15px;font-weight:700;">80,240원</div></div>
+          <div><div style="font-size:10px;opacity:.7;">월급 (209시간)</div><div style="font-size:15px;font-weight:700;">2,096,270원</div></div>
+          <div><div style="font-size:10px;opacity:.7;">전년 대비</div><div style="font-size:15px;font-weight:700;">+1.7% ↑</div></div>
+        </div>
+      </div>
+      <!-- 연도별 표 -->
+      <div style="background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.07);overflow:hidden;">
+        <div style="padding:14px 16px;border-bottom:1px solid #f3f4f6;font-size:13px;font-weight:800;color:#1a1a2e;"><i class="fas fa-table" style="color:#8b5cf6;margin-right:6px;"></i>연도별 현황</div>
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;font-size:12.5px;">
+            <thead><tr style="background:#faf5ff;">
+              <th style="padding:10px 12px;text-align:center;color:#7c3aed;font-weight:700;border-bottom:1px solid #e9d5ff;">연도</th>
+              <th style="padding:10px 12px;text-align:right;color:#7c3aed;font-weight:700;border-bottom:1px solid #e9d5ff;">시급</th>
+              <th style="padding:10px 12px;text-align:right;color:#7c3aed;font-weight:700;border-bottom:1px solid #e9d5ff;">월급 (209h)</th>
+              <th style="padding:10px 12px;text-align:right;color:#7c3aed;font-weight:700;border-bottom:1px solid #e9d5ff;">인상률</th>
+            </tr></thead>
+            <tbody id="min-wage-tbody">
+              <tr style="background:#f5f3ff;"><td style="padding:9px 12px;text-align:center;font-weight:800;color:#7c3aed;">2026</td><td style="padding:9px 12px;text-align:right;font-weight:700;">10,030원</td><td style="padding:9px 12px;text-align:right;">2,096,270원</td><td style="padding:9px 12px;text-align:right;color:#16a34a;font-weight:600;">+1.7%</td></tr>
+              <tr><td style="padding:9px 12px;text-align:center;font-weight:700;">2025</td><td style="padding:9px 12px;text-align:right;">10,030원</td><td style="padding:9px 12px;text-align:right;">2,096,270원</td><td style="padding:9px 12px;text-align:right;color:#16a34a;font-weight:600;">+1.7%</td></tr>
+              <tr style="background:#faf5ff;"><td style="padding:9px 12px;text-align:center;">2024</td><td style="padding:9px 12px;text-align:right;">9,860원</td><td style="padding:9px 12px;text-align:right;">2,060,740원</td><td style="padding:9px 12px;text-align:right;color:#16a34a;">+2.5%</td></tr>
+              <tr><td style="padding:9px 12px;text-align:center;">2023</td><td style="padding:9px 12px;text-align:right;">9,620원</td><td style="padding:9px 12px;text-align:right;">2,010,580원</td><td style="padding:9px 12px;text-align:right;color:#16a34a;">+5.0%</td></tr>
+              <tr style="background:#faf5ff;"><td style="padding:9px 12px;text-align:center;">2022</td><td style="padding:9px 12px;text-align:right;">9,160원</td><td style="padding:9px 12px;text-align:right;">1,914,440원</td><td style="padding:9px 12px;text-align:right;color:#16a34a;">+5.1%</td></tr>
+              <tr><td style="padding:9px 12px;text-align:center;">2021</td><td style="padding:9px 12px;text-align:right;">8,720원</td><td style="padding:9px 12px;text-align:right;">1,822,480원</td><td style="padding:9px 12px;text-align:right;color:#16a34a;">+1.5%</td></tr>
+              <tr style="background:#faf5ff;"><td style="padding:9px 12px;text-align:center;">2020</td><td style="padding:9px 12px;text-align:right;">8,590원</td><td style="padding:9px 12px;text-align:right;">1,795,310원</td><td style="padding:9px 12px;text-align:right;color:#16a34a;">+2.9%</td></tr>
+              <tr><td style="padding:9px 12px;text-align:center;">2019</td><td style="padding:9px 12px;text-align:right;">8,350원</td><td style="padding:9px 12px;text-align:right;">1,745,150원</td><td style="padding:9px 12px;text-align:right;color:#16a34a;">+10.9%</td></tr>
+              <tr style="background:#faf5ff;"><td style="padding:9px 12px;text-align:center;">2018</td><td style="padding:9px 12px;text-align:right;">7,530원</td><td style="padding:9px 12px;text-align:right;">1,573,770원</td><td style="padding:9px 12px;text-align:right;color:#16a34a;">+16.4%</td></tr>
+              <tr><td style="padding:9px 12px;text-align:center;">2017</td><td style="padding:9px 12px;text-align:right;">6,470원</td><td style="padding:9px 12px;text-align:right;">1,352,230원</td><td style="padding:9px 12px;text-align:right;color:#16a34a;">+7.3%</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div style="margin-top:12px;padding:10px 12px;background:#faf5ff;border:1px solid #e9d5ff;border-radius:10px;font-size:11px;color:#6b7280;line-height:1.7;">
+        <i class="fas fa-balance-scale" style="color:#8b5cf6;margin-right:4px;"></i>
+        <strong style="color:#374151;">참고</strong><br>
+        • 월 환산액: 주 40시간 근무 기준 (유급주휴 포함 월 209시간)<br>
+        • 수습 근로자(3개월 이내, 1년 이상 근로계약): 최저임금의 90% 적용 가능<br>
+        • 출처: 고용노동부·최저임금위원회 (moel.go.kr)
+      </div>
+    </div>
+  </div>
+
+  <!-- ④ 우리회사 정보 -->
+  <div class="page" id="page-myco">
+    <div class="sec-header">
+      <div class="sec-title">🏢 우리회사 정보</div>
+    </div>
+    <div id="myco-content">
+      <div class="no-data"><i class="fas fa-building"></i><p>데이터를 불러오는 중...</p></div>
+    </div>
+  </div>
+
+  <!-- ⑤ 근로계약 조회 (서브 페이지 – 탭 없음, 고용형태별 카드에서 진입) -->
+  <div class="page" id="page-contracts">
+    <div class="sub-page-header">
+      <button class="back-btn" onclick="goBackToStats()">
+        <i class="fas fa-chevron-left"></i>급여현황
+      </button>
+      <span class="sub-page-badge" id="contracts-page-badge"></span>
+    </div>
+    <!-- 카테고리 히어로 배너 -->
+    <div id="contracts-hero"></div>
+    <!-- 직원 카드 목록 -->
+    <div id="contracts-list"></div>
+  </div>
+
+  <!-- ⑥ 이달 근로계약 현황 (독립 페이지) -->
+  <div class="page" id="page-ct">
+    <!-- 헤더 -->
+    <div class="sub-page-header" style="background:linear-gradient(135deg,#3b82f6,#1d4ed8);">
+      <button class="back-btn" style="color:#fff;" onclick="showPage('stats',document.getElementById('nav-stats'))">
+        <i class="fas fa-chevron-left"></i>홈
+      </button>
+      <span class="sub-page-badge" style="background:rgba(255,255,255,.2);color:#fff;"><i class="fas fa-file-contract" style="margin-right:4px;"></i>근로계약 현황</span>
+    </div>
+    <!-- 상태 필터 탭 -->
+    <div id="ct-status-tabs" style="display:flex;background:#fff;border-bottom:2px solid #f3f4f6;position:sticky;top:60px;z-index:50;">
+      <button id="ct-stab-all"    onclick="setCtStatusTab('all',this)"    style="flex:1;padding:12px 0;border:none;background:none;font-size:12.5px;font-weight:700;color:#2563eb;border-bottom:2px solid #2563eb;cursor:pointer;font-family:inherit;">전체</button>
+      <button id="ct-stab-active" onclick="setCtStatusTab('active',this)" style="flex:1;padding:12px 0;border:none;background:none;font-size:12.5px;font-weight:600;color:#9ca3af;border-bottom:2px solid transparent;cursor:pointer;font-family:inherit;">유효</button>
+      <button id="ct-stab-expired" onclick="setCtStatusTab('expired',this)" style="flex:1;padding:12px 0;border:none;background:none;font-size:12.5px;font-weight:600;color:#9ca3af;border-bottom:2px solid transparent;cursor:pointer;font-family:inherit;">만료/해지</button>
+    </div>
+    <!-- 요약 뱃지 -->
+    <div style="display:flex;gap:8px;padding:10px 12px 4px;flex-wrap:wrap;" id="ct-summary-badges"></div>
+    <!-- 계약 카드 목록 -->
+    <div id="ct-cards-list" style="padding:4px 12px 80px;display:grid;gap:8px;"></div>
+  </div>
+
+</div><!-- /app -->
+
+<!-- ── 급여 항목별 비율 모달 ── -->
+<div class="modal-overlay" id="pay-ratio-modal" onclick="if(event.target===this)closePayRatioModal()">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <!-- 헤더 (그라데이션) -->
+    <div class="pr-header" id="pr-header">
+      <div class="pr-header-title" id="pr-header-title"></div>
+      <div class="pr-header-amount" id="pr-header-amount"></div>
+      <div class="pr-header-meta" id="pr-header-meta"></div>
+    </div>
+    <!-- 탭: 지급항목 / 공제항목 -->
+    <div class="pr-tab-row">
+      <button class="pr-tab-btn active" id="pr-tab-pay" onclick="switchPrTab('pay')">
+        <i class="fas fa-plus-circle" style="margin-right:4px;font-size:11px;"></i>지급 항목 비율
+      </button>
+      <button class="pr-tab-btn" id="pr-tab-ded" onclick="switchPrTab('ded')">
+        <i class="fas fa-minus-circle" style="margin-right:4px;font-size:11px;"></i>공제 항목 비율
+      </button>
+    </div>
+    <!-- 지급 항목 패널 -->
+    <div class="pr-panel active" id="pr-panel-pay">
+      <div class="pr-donut-wrap">
+        <div class="pr-donut-canvas-wrap">
+          <canvas id="pr-pay-canvas"></canvas>
+          <div class="pr-donut-center">
+            <div class="pr-donut-center-label">지급 합계</div>
+            <div class="pr-donut-center-val" id="pr-pay-center-val">-</div>
+          </div>
+        </div>
+        <div class="pr-list" id="pr-pay-list"></div>
+      </div>
+    </div>
+    <!-- 공제 항목 패널 -->
+    <div class="pr-panel" id="pr-panel-ded">
+      <div class="pr-donut-wrap">
+        <div class="pr-donut-canvas-wrap">
+          <canvas id="pr-ded-canvas"></canvas>
+          <div class="pr-donut-center">
+            <div class="pr-donut-center-label">공제 합계</div>
+            <div class="pr-donut-center-val" id="pr-ded-center-val">-</div>
+          </div>
+        </div>
+        <div class="pr-list" id="pr-ded-list"></div>
+      </div>
+    </div>
+    <!-- 닫기 버튼 -->
+    <div style="padding:0 18px 4px;">
+      <button onclick="closePayRatioModal()" style="width:100%;background:#f3f4f6;border:none;border-radius:12px;padding:13px;font-size:13.5px;font-weight:700;color:#6b7280;cursor:pointer;font-family:inherit;touch-action:manipulation;-webkit-tap-highlight-color:transparent;">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── 근로계약 상세 바텀시트 모달 ── -->
+<!-- ── 년월 피커 모달 ── -->
+<div class="ym-overlay" id="ym-picker" onclick="if(event.target===this)closeYmPicker()">
+  <div class="ym-sheet">
+    <div class="ym-handle"></div>
+    <div class="ym-header">
+      <span class="ym-title">년월 선택</span>
+      <button class="ym-close" onclick="closeYmPicker()" aria-label="닫기"><i class="fas fa-times"></i></button>
+    </div>
+    <!-- 년도 행 -->
+    <div class="ym-year-row">
+      <button class="ym-year-btn" id="ym-prev-year" aria-label="이전 년도"><i class="fas fa-chevron-left"></i></button>
+      <div class="ym-year-val" id="ym-year-val"></div>
+      <button class="ym-year-btn" id="ym-next-year" aria-label="다음 년도"><i class="fas fa-chevron-right"></i></button>
+    </div>
+    <!-- 월 12칸 그리드 -->
+    <div class="ym-month-grid" id="ym-month-grid"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="contract-modal" onclick="if(event.target===this)closeContractModal()">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-header-bar">
+      <span style="font-size:14px;font-weight:700;">근로계약 상세</span>
+      <button class="modal-close-btn" onclick="closeContractModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="contract-modal-content"></div>
+  </div>
+</div>
+
+<!-- ── 급여명세서 바텀시트 모달 ── -->
+<div class="modal-overlay" id="payslip-modal" onclick="if(event.target===this)closePayslipModal()">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-header-bar">
+      <span style="font-size:14px;font-weight:700;">급여 명세서</span>
+      <button class="modal-close-btn" onclick="closePayslipModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="payslip-modal-content"></div>
+  </div>
+</div>
+
+<!-- ── 접근코드 변경 모달 ── -->
+<div class="modal-overlay" id="code-change-modal" onclick="if(event.target===this)closeChangeCodeModal()">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-header-bar">
+      <span style="font-size:14px;font-weight:700;"><i class="fas fa-key" style="color:#6366f1;margin-right:6px;"></i>앱 접근코드 변경</span>
+      <button class="modal-close-btn" onclick="closeChangeCodeModal()"><i class="fas fa-times"></i></button>
+    </div>
+
+    <div class="code-change-wrap">
+      <!-- 현재 코드 표시 -->
+      <div class="code-current-box">
+        <div>
+          <div class="code-current-label">현재 접근코드</div>
+          <div class="code-current-value" id="cc-current-value">——</div>
+        </div>
+        <div class="code-current-icon"><i class="fas fa-lock"></i></div>
+      </div>
+
+      <!-- STEP 1: 현재 코드 확인 -->
+      <div id="cc-step1">
+        <div class="code-step-label"><span class="code-step-num">1</span> 현재 코드를 입력해 본인 확인</div>
+        <div class="code-input-row">
+          <input type="text" id="cc-verify-input" placeholder="현재 접근코드 입력"
+            maxlength="30" autocomplete="off" spellcheck="false"
+            onkeydown="if(event.key==='Enter')ccVerify()" />
+        </div>
+        <div class="code-err-msg" id="cc-verify-err"></div>
+      </div>
+
+      <!-- STEP 2: 새 코드 입력 (본인 확인 후 표시) -->
+      <div id="cc-step2" style="display:none;">
+        <div class="code-step-label"><span class="code-step-num">2</span> 새 접근코드 입력 <span style="font-size:11px;color:#9ca3af;font-weight:400;">(영문 대소문자·숫자·기호 포함, 6자 이상)</span></div>
+        <div class="code-input-row">
+          <input type="text" id="cc-new-input" placeholder="새 코드 입력 (6자 이상)"
+            maxlength="30" autocomplete="off" spellcheck="false"
+            oninput="ccNewInputCheck()"
+            onkeydown="if(event.key==='Enter')ccNew1Confirm()" />
+        </div>
+        <div class="code-step-label"><span class="code-step-num">3</span> 새 접근코드 확인</div>
+        <div class="code-input-row">
+          <input type="text" id="cc-confirm-input" placeholder="새 코드 다시 입력"
+            maxlength="30" autocomplete="off" spellcheck="false"
+            oninput="ccNewInputCheck()"
+            onkeydown="if(event.key==='Enter')submitChangeCode()" />
+        </div>
+        <div class="code-err-msg" id="cc-new-err"></div>
+        <div class="code-notice">
+          <i class="fas fa-exclamation-triangle"></i>
+          <span>코드 변경 후 <strong>기존 코드로는 로그인이 불가</strong>합니다.<br>변경한 코드를 반드시 기억해 두세요.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="code-change-footer">
+      <button class="btn-code-cancel" onclick="closeChangeCodeModal()">취소</button>
+      <button class="btn-code-confirm" id="cc-action-btn" onclick="ccActionBtn()">본인 확인</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Bottom Navigation (4개 탭) ── -->
+<nav class="bottom-nav">
+  <button class="nav-item active" id="nav-stats" onclick="showPage('stats',this)">
+    <i class="fas fa-chart-pie"></i>급여현황
+  </button>
+  <button class="nav-item" id="nav-payslip" onclick="showPage('payslip',this)">
+    <i class="fas fa-receipt"></i>명세서
+  </button>
+  <button class="nav-item" id="nav-ct" onclick="showPage('ct',this)">
+    <i class="fas fa-file-contract"></i>계약현황
+  </button>
+  <button class="nav-item" id="nav-severance" onclick="showPage('severance',this)">
+    <i class="fas fa-hand-holding-usd"></i>퇴직금
+  </button>
+  <button class="nav-item" id="nav-annual-leave" onclick="showPage('annual-leave',this)">
+    <i class="fas fa-umbrella-beach"></i>연차
+  </button>
+  <!-- [사용료 숨김] 사용료 탭 메뉴 - 원복 시 아래 주석 해제
+  <button class="nav-item" id="nav-billing" onclick="showPage('billing',this)">
+    <i class="fas fa-credit-card"></i>사용료
+  </button>
+  -->
+</nav>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     중요공지 강제 확인 모달
+     ══════════════════════════════════════════════════════════════ -->
+<div class="gn-alert-overlay" id="gn-alert-overlay" aria-modal="true" role="alertdialog" aria-labelledby="gn-alert-title-el">
+  <div class="gn-alert-box" id="gn-alert-box">
+    <!-- 헤더 -->
+    <div class="gn-alert-head">
+      <div class="gn-alert-badge">
+        <i class="fas fa-bullhorn" style="font-size:10px;"></i> 중요공지
+        <span class="gn-alert-counter" id="gn-alert-counter" style="display:none;"></span>
+      </div>
+      <div class="gn-alert-title" id="gn-alert-title-el"></div>
+      <div class="gn-alert-meta" id="gn-alert-meta"></div>
+    </div>
+    <!-- 본문 -->
+    <div class="gn-alert-body" id="gn-alert-body"></div>
+    <!-- 푸터: 확인 버튼만 -->
+    <div class="gn-alert-foot">
+      <button class="gn-alert-confirm-btn" id="gn-alert-confirm-btn" onclick="gnAlertConfirm()">
+        <i class="fas fa-check"></i>&nbsp; 확인
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     알림함 모달 오버레이
+     ══════════════════════════════════════════════════════════════ -->
+<div class="notif-modal-overlay" id="notif-modal-overlay">
+  <div class="notif-modal" id="notif-modal" role="dialog" aria-label="알림함">
+    <!-- 헤더 -->
+    <div class="notif-modal-head">
+      <div class="notif-modal-head-title">
+        <i class="fas fa-bell"></i>
+        알림함
+        <span id="notif-unread-count-badge" style="background:rgba(255,255,255,.2);border-radius:20px;padding:1px 8px;font-size:11px;font-weight:800;display:none;"></span>
+      </div>
+      <button class="notif-modal-close" onclick="closeNotifModal()" aria-label="닫기">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <!-- 알림 목록 -->
+    <div class="notif-modal-body" id="notif-modal-body">
+      <div class="notif-empty">
+        <i class="fas fa-bell-slash"></i>
+        알림이 없습니다.
+      </div>
+    </div>
+    <!-- 푸터: 전체 읽음 -->
+    <div class="notif-modal-footer" id="notif-modal-footer" style="display:none;">
+      <button class="notif-read-all-btn" onclick="markAllNotifRead()">
+        <i class="fas fa-check-double"></i> 전체 읽음 처리
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     알림 상세 시트
+     ══════════════════════════════════════════════════════════════ -->
+<div class="notif-detail-overlay" id="notif-detail-overlay">
+  <div class="notif-detail-sheet" id="notif-detail-sheet" role="dialog" aria-label="알림 상세">
+    <!-- 헤더 -->
+    <div class="notif-detail-head">
+      <div class="notif-detail-title" id="notif-detail-title">알림 제목</div>
+      <div class="notif-detail-meta" id="notif-detail-meta"></div>
+    </div>
+    <!-- 계약 정보 박스 -->
+    <div class="notif-detail-infobox" id="notif-detail-infobox" style="display:none;">
+      <div class="notif-detail-info-row">
+        <span class="notif-detail-info-label">근로자</span>
+        <span class="notif-detail-info-val" id="notif-info-employee"></span>
+      </div>
+      <div class="notif-detail-info-row">
+        <span class="notif-detail-info-label">계약 종료일</span>
+        <span class="notif-detail-info-val" id="notif-info-end">
+          <span id="notif-info-end-date"></span>
+          <span class="notif-detail-dday" id="notif-info-dday" style="display:none;"></span>
+        </span>
+      </div>
+    </div>
+    <!-- 본문 -->
+    <div class="notif-detail-body" id="notif-detail-body"></div>
+    <!-- 푸터 -->
+    <div class="notif-detail-foot">
+      <button class="notif-detail-close" onclick="closeNotifDetail()">
+        <i class="fas fa-check"></i>&nbsp; 확인
+      </button>
+    </div>
+  </div>
+</div>
+
+    <script src="js/client-core.js"></script>
+  <script src="js/client-payslip.js"></script>
+  <script src="js/client-chart.js"></script>
+  <script src="js/client-billing.js"></script>
+  <script src="js/client-notice.js"></script>
+  <script src="js/client-init.js"></script>
+</body>
+</html>

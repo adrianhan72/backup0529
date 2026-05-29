@@ -1,0 +1,1402 @@
+// ─── PAYROLLS ───
+function renderPayrolls(){
+  if(!currentPayCompanyId) return;
+  const yr=parseInt(document.getElementById('pay-year-filter')?.value)||0;
+  const mo=parseInt(document.getElementById('pay-month-filter')?.value)||0;
+  const q=(document.getElementById('pay-search')?.value||'').toLowerCase();
+  let f=allPayrolls.filter(p=>{
+    if(p.is_draft) return false; // ── 임시저장 레코드 제외 ──
+    if(String(p.company_id)!==String(currentPayCompanyId)) return false;
+    if(yr && Number(p.pay_year)!==yr) return false;
+    if(mo && Number(p.pay_month)!==mo) return false;
+    if(q&&!getEmpName(p.employee_id).toLowerCase().includes(q)) return false;
+    // 정식 등록 계약(is_draft=false)이 없고 임시저장 계약만 있는 직원의 급여는 제외
+    const hasRealContract = allContracts.some(c => c.employee_id === p.employee_id && !c.is_draft);
+    if(!hasRealContract && allContracts.some(c => c.employee_id === p.employee_id && c.is_draft)) return false;
+    return true;
+  }).sort((a,b)=>getEmpName(a.employee_id).localeCompare(getEmpName(b.employee_id),'ko'));
+  const paged=f.slice((pages.pay-1)*ITEMS,pages.pay*ITEMS);
+  const tb=document.getElementById('pay-tbody');
+  if(!f.length){tb.innerHTML='<tr><td colspan="11" class="empty-state">급여 내역이 없습니다</td></tr>';document.getElementById('pay-pagination').innerHTML='';return;}
+  tb.innerHTML=paged.map(p=>{
+    // 매월지급 소계: 기본급 + 주휴수당 + 자격수당 + 차량유지비 + 식대
+    const monthlyTotal = (p.base_salary||0)+(p.weekly_holiday_pay||0)+(p.position_allowance||0)+(p.car_maintenance||0)+(p.meal_allowance||0);
+    // 추가근로수당 소계: 연장 + 야간 + 휴일
+    const extraTotal = (p.overtime_pay||0)+(p.night_pay||0)+(p.holiday_pay||0);
+    // 부정기지급 소계: 연차 + 기타
+    const irregularTotal = (p.annual_leave_pay||0)+(p.other_pay||0);
+    const payEmp = allEmployees.find(x=>x.id===p.employee_id)||{};
+    const payCat = payEmp.employment_category||'-';
+    return `<tr class="pay-tbody-row" onclick="openPayslipModal('${p.id}')" title="클릭하면 급여명세서를 볼 수 있습니다">
+    <td style="font-weight:600">${getEmpName(p.employee_id)}</td>
+    <td><span class="badge ${empCatBadge(payCat)}" style="font-size:10.5px;padding:2px 7px;">${payCat}</span></td>
+    <td>${p.work_days||'-'}일</td>
+    <td>${p.overtime_hours||0}h</td>
+    <td class="amount-blue">${won2(p.gross_pay)}</td>
+    <td style="font-size:11.5px;color:#3b82f6;">${won2(monthlyTotal)}</td>
+    <td style="font-size:11.5px;color:#6366f1;">${won2(extraTotal)}</td>
+    <td style="font-size:11.5px;color:#8b5cf6;">${won2(irregularTotal)}</td>
+    <td class="amount-red">${won2(p.total_deduction)}</td>
+    <td class="amount-green" style="font-size:13px;font-weight:700;">${won2(p.net_pay)}</td>
+    <td onclick="event.stopPropagation()" style="text-align:center;"><button onclick="editPayroll('${p.id}')" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;"><i class="fas fa-pen" style="margin-right:3px;"></i>수정</button></td>
+  </tr>`;
+  }).join('');
+  renderPagination('pay-pagination',f.length,pages.pay,'setPayPage');
+  updateBulkSendBtn();
+}
+function setPayPage(p){pages.pay=p;renderPayrolls()}
+
+// ─── 급여명세서 모달 ───
+function openPayslipModal(payrollId){
+  const p = allPayrolls.find(x=>x.id===payrollId);
+  if(!p) return;
+  window._currentPayslipId = payrollId; // 수정 버튼에서 참조
+  const e = allEmployees.find(x=>x.id===p.employee_id)||{};
+  const co = allCompanies.find(x=>x.id===p.company_id)||{};
+
+  // 수치 계산 (renderPayrolls와 동일 방어 로직)
+  const gross   = p.gross_pay||0;
+  const incTax  = p.income_tax||0;
+  const locTax  = p.local_income_tax||0;
+  const health  = p.health_insurance||0;
+  const ltCare  = p.long_term_care||0;
+  const pension = p.national_pension||0;
+  const empIns  = p.employment_insurance||0;
+  const yearEnd = p.year_end_tax_adjust||0;
+  const hlAdj   = p.health_insurance_adjust||0;
+  const advance = p.advance_deduction||0;
+  const calcDed = incTax+locTax+health+ltCare+pension+empIns+yearEnd+hlAdj+advance;
+  const rawDed  = p.total_deduction||calcDed;
+  const totalDed= Math.abs(rawDed-calcDed)>50?calcDed:rawDed;
+  const rawNet  = p.net_pay||(gross-totalDed);
+  const netPay  = Math.abs(rawNet-(gross-totalDed))>50?(gross-totalDed):rawNet;
+
+  const moStr = String(p.pay_month).padStart(2,'0');
+  const payDate = p.pay_date || (co.pay_day?`${p.pay_year}-${moStr}-${String(co.pay_day).padStart(2,'0')}`:'');
+
+  // ── 헤더 영역 채우기 ──
+  document.getElementById('ps-subtitle').textContent  = `${p.pay_year}년 ${p.pay_month}월분 · ${co.company_name||''}`;
+  document.getElementById('ps-company-name').textContent = co.company_name||'';
+  document.getElementById('ps-period').textContent    = `${p.pay_year}년 ${moStr}월분 급여`;
+  document.getElementById('ps-paydate').textContent   = payDate ? `지급일: ${payDate}` : '';
+
+  // ── 인적사항 ──
+  document.getElementById('ps-name').textContent       = e.name||'-';
+  document.getElementById('ps-dept').textContent       = `${e.department||'-'} / ${e.position||'-'}`;
+  document.getElementById('ps-empcat').textContent     = e.employment_category||'-';
+  document.getElementById('ps-hiredate').textContent   = e.hire_date||'-';
+  document.getElementById('ps-workdays').textContent   = p.work_days        ? `${p.work_days}일`            : '-';
+  document.getElementById('ps-totalhours').textContent = p.total_work_hours ? `${p.total_work_hours}시간`   : '-';
+  document.getElementById('ps-ot').textContent         = p.overtime_hours   ? `${p.overtime_hours}시간`     : '-';
+  document.getElementById('ps-night').textContent      = p.night_hours      ? `${p.night_hours}시간`        : '-';
+  document.getElementById('ps-hol').textContent        = p.holiday_hours    ? `${p.holiday_hours}시간`      : '-';
+  document.getElementById('ps-paydate-cell').textContent = payDate || '-';
+
+  // ── PDF 발송용 컨텍스트 저장 (sendPayslipPDF에서 로그 저장에 사용) ──
+  window._currentPayslipPhone    = e.phone||e.mobile||'';
+  window._currentPayslipEmail     = e.email||'';
+  window._currentPayslipPayrollId = p.id;
+  window._currentPayslipEmpId     = p.employee_id;
+  window._currentPayslipCompanyId = p.company_id;
+  window._currentPayslipYear      = p.pay_year;
+  window._currentPayslipMonth     = p.pay_month;
+  // 이메일 버튼 활성/비활성 갱신
+  const emailBtns = document.querySelectorAll('.ps-email-btn');
+  emailBtns.forEach(btn=>{
+    if(e.email && e.email.trim()){
+      btn.disabled = false;
+      btn.title = e.email;
+      btn.style.opacity = '1';
+      btn.style.cursor = 'pointer';
+    } else {
+      btn.disabled = true;
+      btn.title = '이메일 정보 없음';
+      btn.style.opacity = '0.45';
+      btn.style.cursor = 'not-allowed';
+    }
+  });
+
+  const fmt  = v => (v||0).toLocaleString('ko-KR')+'원';
+  const fmtZ = v => v ? fmt(v) : '—';   // 0원이면 '—' 표시
+
+  // ── 지급 항목 (엑셀 명세서와 동일 구조: 매월지급 / 추가근로수당 / 부정기지급) ──
+  const payTb = document.getElementById('ps-pay-items');
+  const makePayRow = (label, val) => {
+    const isZero = !val || val === 0;
+    return `<tr class="ps-item-row${isZero?' ps-zero':''}">
+      <td>${label}</td><td>${fmtZ(val)}</td>
+    </tr>`;
+  };
+  const makeGroupRow = (label, isDed=false) =>
+    `<tr class="${isDed?'ps-ded-group-row':'ps-group-row'}">
+      <td colspan="2">${label}</td>
+    </tr>`;
+
+  // 지급유형 태그 생성 헬퍼
+  const payTypeTag = (type) => type === 'daily'
+    ? '<span style="font-size:9px;background:#fef3c7;color:#92400e;border-radius:3px;padding:1px 4px;margin-left:4px;border:1px solid #fde68a;">출근일수</span>'
+    : '<span style="font-size:9px;background:#dbeafe;color:#1d4ed8;border-radius:3px;padding:1px 4px;margin-left:4px;border:1px solid #bfdbfe;">정기지급</span>';
+  const makePayRowType = (label, val, type) => {
+    const isZero = !val || val === 0;
+    return `<tr class="ps-item-row${isZero?' ps-zero':''}">
+      <td>${label}${payTypeTag(type)}</td><td>${fmtZ(val)}</td>
+    </tr>`;
+  };
+  // (payTb.innerHTML 은 수습 판정 이후 "지급항목 렌더링" 블록에서 처리)
+
+  // ── 공제 항목 (엑셀 명세서와 동일 구조) ──
+  const dedTb = document.getElementById('ps-ded-items');
+  const makeDedRow = (label, val) => {
+    const isZero = !val || val === 0;
+    return `<tr class="ps-item-row${isZero?' ps-zero':''}">
+      <td>${label}</td><td>${fmtZ(val)}</td>
+    </tr>`;
+  };
+  dedTb.innerHTML =
+    makeGroupRow('▸ 세금', true) +
+    makeDedRow('소득세',              incTax) +
+    makeDedRow('지방소득세 (주민세)',  locTax) +
+    makeGroupRow('▸ 4대보험', true) +
+    makeDedRow('건강보험',            health) +
+    makeDedRow('장기요양보험',         ltCare) +
+    makeDedRow('국민연금',             pension) +
+    makeDedRow('고용보험',             empIns) +
+    makeGroupRow('▸ 정산 / 추가공제', true) +
+    makeDedRow('연말정산',             yearEnd) +
+    makeDedRow('건강보험 정산',        hlAdj) +
+    makeDedRow('기타(선지급) 공제',    advance);
+
+  // ── 합계 ──
+  document.getElementById('ps-gross').textContent     = fmt(gross);
+  document.getElementById('ps-total-ded').textContent = fmt(totalDed);
+  document.getElementById('ps-net').textContent       = fmt(netPay);
+
+  // ── 근로시간 요약 바 ──
+  const totalHours = p.total_work_hours || 0;
+  const otHours    = p.overtime_hours   || 0;
+  const nightHours = p.night_hours      || 0;
+  const holHours   = p.holiday_hours    || 0;
+  // (근로시간 요약 바 삭제로 인해 해당 DOM 참조 제거)
+
+  // ── 계약 조회 (인적사항 그리드 임금 정보 + 계산방법 표 공용) ──
+  // 1차: 지급월에 기간이 겹치는 유효 계약 탐색
+  // 2차: 없으면 해당 직원의 가장 최근 계약(start 기준 내림차순)을 폴백으로 사용
+  const _psYr = Number(p.pay_year), _psMo = Number(p.pay_month);
+  const _psMonthStart = `${_psYr}-${String(_psMo).padStart(2,'0')}-01`;
+  const _psMonthEnd   = new Date(_psYr, _psMo, 0).toISOString().slice(0,10); // 말일
+
+  // 유효 계약 후보 (취소·파기·임시저장·개정무효 제외)
+  const _empContracts = allContracts.filter(c => {
+    if(c.employee_id !== e.id) return false;
+    if(c.is_draft || c.is_voided_by_amend) return false;
+    if(['취소','파기'].includes(c.status)) return false;
+    return true;
+  });
+
+  // 1차: 지급월 기간 일치
+  let ct = _empContracts.find(c => {
+    const s  = c.contract_start || '';
+    const ed = c.contract_end   || '';
+    if(s && s > _psMonthEnd)    return false; // 시작일이 지급월 이후
+    if(ed && ed < _psMonthStart) return false; // 종료일이 지급월 이전
+    return true;
+  }) || null;
+
+  // 2차 폴백: 기간 일치하는 계약이 없으면 → 가장 최근 시작 계약 사용
+  if(!ct && _empContracts.length > 0){
+    ct = _empContracts.slice().sort((a,b) =>
+      (b.contract_start||'').localeCompare(a.contract_start||'')
+    )[0];
+  }
+  // ── 수습기간 판정 ──
+  // 수습 조건: contract_type 이 수습 → probation_months 없어도 수습 계약으로 간주
+  //   probation_months 있으면 수습기간 계산, 없으면 계약 전체 기간을 수습으로 처리
+  const _isProbContract = ct && (ct.contract_type === '정규직 수습' || ct.contract_type === '계약직 수습');
+  let _inProbation = false;   // 이번 지급월이 수습기간 내인가
+  let _probBaseSal  = 0;      // 수습 중 기본급 (= base_salary × pct/100)
+  let _probHourly   = 0;      // 수습 중 통상시급
+  let _probMonthly  = 0;      // 수습 중 월 급여 (= monthly_salary_agreed × pct/100)
+  let _probEndStr   = '';     // 수습 종료일 (YYYY-MM-DD)
+  let _probMonths   = 0;      // 수습 개월수 (0이면 미입력)
+
+  if(_isProbContract){
+    _probMonths = ct.probation_months ? Number(ct.probation_months) : 0;
+
+    if(_probMonths > 0){
+      // probation_months 있음 → 수습 종료일 계산
+      const _probStartDate = new Date(ct.contract_start);
+      const _probEndDate   = new Date(_probStartDate);
+      _probEndDate.setMonth(_probEndDate.getMonth() + _probMonths);
+      _probEndDate.setDate(_probEndDate.getDate() - 1);
+      _probEndStr = _probEndDate.toISOString().slice(0,10);
+      _inProbation = ct.contract_start <= _psMonthEnd && _probEndStr >= _psMonthStart;
+    } else {
+      // probation_months 미입력 → 계약 기간 전체를 수습으로 간주
+      _probEndStr = ct.contract_end || '';
+      _inProbation = true;  // 계약이 존재하는 한 수습 기간
+    }
+
+    if(_inProbation){
+      const pct = ct.probation_pct ? Number(ct.probation_pct) : 100;
+      // 수습 기준 기본급: base_salary × pct/100
+      _probBaseSal = ct.base_salary ? Math.round(Number(ct.base_salary) * pct / 100) : 0;
+      // 수습 기준 월 급여: monthly_salary_agreed × pct/100 (없으면 base_salary 기준)
+      const agreedSal = ct.monthly_salary_agreed || ct.base_salary || 0;
+      _probMonthly = agreedSal ? Math.round(agreedSal * pct / 100) : 0;
+      // 수습 기준 시급: hourly_wage × pct/100 (없으면 수습기본급 ÷ 209)
+      if(ct.hourly_wage && Number(ct.hourly_wage) > 0){
+        _probHourly = Math.round(Number(ct.hourly_wage) * pct / 100);
+      } else if(_probBaseSal > 0){
+        _probHourly = Math.round(_probBaseSal / 209);
+      }
+    }
+  }
+
+  // hourly_wage / monthlySal — 수습기간 내이면 수습 기준값 사용
+  // (계산방법 표 산출식, 공제 보수월액 등에 활용)
+  const hourlyWage = _inProbation
+    ? _probHourly
+    : ct
+      ? (ct.hourly_wage && Number(ct.hourly_wage) > 0
+          ? Number(ct.hourly_wage)
+          : (ct.base_salary ? Math.round(Number(ct.base_salary) / 209) : 0))
+      : 0;
+  const monthlySal = _inProbation
+    ? _probMonthly
+    : ct ? (ct.monthly_salary_agreed || ct.base_salary || 0) : gross;
+
+  // ── 지급 항목 렌더링 (수습 판정 이후 — _inProbation / _probBaseSal 참조 가능) ──
+  // 수습 중이면 기본급 레이블에 '(수습)' 명시, 금액은 p.base_salary 우선 / 없으면 _probBaseSal 폴백
+  const _baseSalLabel = _inProbation ? '기본급 (수습)' : '기본급';
+  const _baseSalAmt   = (p.base_salary && p.base_salary > 0)
+                          ? p.base_salary
+                          : (_inProbation ? _probBaseSal : p.base_salary);
+  payTb.innerHTML =
+    makeGroupRow('▸ 매월 지급') +
+    makePayRow(_baseSalLabel,      _baseSalAmt) +
+    makePayRow('주휴수당',          p.weekly_holiday_pay) +
+    makePayRow('직책수당',          p.position_allowance) +
+    makePayRowType('교통비',        p.transportation_allowance||p.car_maintenance, p.transportation_pay_type||'fixed') +
+    makePayRowType('자가운전보조금',p.self_driving_allowance, p.self_driving_pay_type||'fixed') +
+    makePayRowType('벽지수당',      p.remote_area_allowance, p.remote_area_pay_type||'fixed') +
+    makePayRowType('식대',          p.meal_allowance, p.meal_pay_type||'fixed') +
+    makePayRow('출산·보육수당',     p.childcare_allowance) +
+    makePayRow('연구활동비',        p.research_allowance) +
+    makeGroupRow('▸ 추가 근로수당') +
+    makePayRow('연장근로수당',      p.overtime_pay) +
+    makePayRow('야간근로수당',      p.night_pay) +
+    makePayRow('휴일근로수당',      p.holiday_pay) +
+    makeGroupRow('▸ 비정기 지급') +
+    makePayRow('연차수당',          p.annual_leave_pay) +
+    makePayRow('정기 상여금',       p.bonus_pay) +
+    makePayRow('비정기 성과급',     p.performance_pay) +
+    makePayRow('실비변상적급여',    p.actual_expense_pay) +
+    makePayRow('통신비',            p.communication_pay) +
+    makePayRow('기술수당',          p.skill_allowance) +
+    makePayRow('면허수당',          p.license_allowance) +
+    makePayRow('기타수당',          (p.etc_allowance||0)+(p.other_pay||0));
+
+  // ── 계약상 임금 정보 행 (인적사항 그리드) ──
+  // 고용형태별 표시 규칙:
+  //   정규직/수습   : 계약연봉(값 없으면 공란) + 월기본급(값 없으면 공란) + 일급/시급
+  //   계약직/수습   : 계약연봉(값 없으면 공란) + 월기본급(값 없으면 공란) + 일급/시급
+  //   일용직        : 계약연봉·월기본급 행 제외, 일급/시급만 표시
+  //   기타          : 보유한 임금 항목만 표시
+  (function _renderPsContractWage(){
+    const fmtW  = v => v ? Number(v).toLocaleString('ko-KR') + '원' : '';
+    const cat   = e.employment_category || (ct ? ct.contract_type : '') || '';
+    const isReg      = ['정규직','정규직 수습'].includes(cat);
+    const isCont     = ['계약직','계약직 수습'].includes(cat);
+    const isDaily    = cat === '일용직';
+    const isRegOrCont = isReg || isCont;
+
+    // 항목 목록 구성 — 고용형태 기준
+    // · 정규직/계약직: 연봉·월기본급은 항상 행 포함(값 없으면 빈 문자열 → 공란 표시)
+    // · 일용직: 연봉·월기본급 행 자체 제외
+    const wageItems = [];
+
+    if(isRegOrCont){
+      // 계약연봉: 수습 종료 후 적용 기준 — 수습 중이면 레이블로 명시 (계산 기준 아님)
+      wageItems.push({ lbl: _inProbation ? '정규 연봉' : '계약연봉',
+                       val: fmtW(ct ? ct.annual_salary : 0) });
+      // 월 기본급: 수습 중이면 수습 기본급(_probBaseSal) 사용
+      wageItems.push({ lbl: _inProbation ? '수습 기본급' : '월 기본급',
+                       val: fmtW(_inProbation ? _probBaseSal : (ct ? ct.base_salary : 0)) });
+    }
+
+    // 계약일급 (보유 시 전 고용형태 표시)
+    if(ct && ct.daily_wage)
+      wageItems.push({ lbl: '계약일급', val: fmtW(ct.daily_wage) });
+
+    // 통상시급 결정:
+    //   수습 중  → _probHourly (이미 수습 비율 적용된 시급)
+    //   수습 외  → hourly_wage 직접 보유 → 그대로 사용
+    //             없고 base_salary 있으면 → base_salary ÷ 209h 역산
+    const hpd = parseFloat(ct ? ct.work_hours_per_day : 0) || 8;
+    let effHourlyWage = 0;
+    if(_inProbation && _probHourly > 0){
+      effHourlyWage = _probHourly;                                  // 수습 통상시급
+    } else if(ct && ct.hourly_wage && Number(ct.hourly_wage) > 0){
+      effHourlyWage = Number(ct.hourly_wage);
+    } else if(ct && ct.base_salary && Number(ct.base_salary) > 0){
+      effHourlyWage = Math.round(Number(ct.base_salary) / 209);     // 월 소정근로시간 209h
+    }
+
+    // 통상일급: 통상시급 × 소정근로시간/일
+    if(effHourlyWage > 0)
+      wageItems.push({ lbl: '통상일급', val: fmtW(Math.round(effHourlyWage * hpd)) });
+
+    // 통상시급
+    if(effHourlyWage > 0)
+      wageItems.push({ lbl: '통상시급', val: fmtW(effHourlyWage) });
+
+    // 슬롯 전체 쒈기화 (이전 명세서 잔류 방지)
+    for(let i = 1; i <= 6; i++){
+      const _l = document.getElementById(`ps-ct-wage-lbl${i}`);
+      const _v = document.getElementById(`ps-ct-wage-val${i}`);
+      if(_l){ _l.textContent=''; _l.style.display='none'; }
+      if(_v){ _v.textContent=''; _v.style.display='none'; }
+    }
+
+    // 슬롯 채우기 (최대 6개, lbl1~6 / val1~6)
+    for(let i = 1; i <= 6; i++){
+      const lbl = document.getElementById(`ps-ct-wage-lbl${i}`);
+      const val = document.getElementById(`ps-ct-wage-val${i}`);
+      if(!lbl || !val) continue;
+      const item = wageItems[i - 1];
+      if(item){
+        lbl.textContent   = item.lbl;
+        val.textContent   = item.val;   // 빈 문자열이면 공란으로 표시됨
+        lbl.style.display = '';
+        val.style.display = '';
+      } else {
+        lbl.textContent   = '';
+        val.textContent   = '';
+        lbl.style.display = 'none';
+        val.style.display = 'none';
+      }
+    }
+  })();
+
+  // ── 수습기간 급여 산정 기준 배너 ──
+  (function _renderProbationBanner(){
+    const banner = document.getElementById('ps-probation-banner');
+    if(!banner) return;
+
+    // 수습 계약 유형 여부 (contract_type 또는 employment_category 기준)
+    const catStr = (ct ? ct.contract_type : '') || e.employment_category || '';
+    const isProbType = catStr === '정규직 수습' || catStr === '계약직 수습';
+    if(!isProbType || !ct){ banner.style.display='none'; return; }
+
+    const probStart = ct.contract_start || '';
+    if(!probStart){ banner.style.display='none'; return; }
+
+    // probation_months: 외부 스코프 _probMonths 재사용 (이미 계산됨)
+    // _inProbation, _probEndStr, _probMonths 는 외부 스코프에서 참조 가능
+    if(!_inProbation){ banner.style.display='none'; return; }
+
+    const fmtDate = s => s ? s.replace(/-/g, '.') : '';
+    const pct   = ct.probation_pct ? Number(ct.probation_pct) : null;
+    const basis = ct.probation_basis === 'salary' ? '기본급 기준'
+                : ct.probation_basis === 'hourly'  ? '시급 기준'
+                : ct.probation_basis               ? ct.probation_basis
+                : '미입력';
+
+    // 수습기간 텍스트: probation_months 있으면 종료일 표시, 없으면 계약 종료일 표시
+    let periodTxt;
+    if(_probMonths > 0){
+      periodTxt = `${fmtDate(probStart)} ~ ${fmtDate(_probEndStr)} (${_probMonths}개월)`;
+    } else {
+      periodTxt = _probEndStr
+        ? `${fmtDate(probStart)} ~ ${fmtDate(_probEndStr)} (계약 기간 전체)`
+        : `${fmtDate(probStart)} ~ (기간 미입력)`;
+    }
+
+    document.getElementById('ps-prob-period').textContent  = periodTxt;
+    document.getElementById('ps-prob-pct').textContent     = pct ? `${pct}%` : '미입력 (100% 적용)';
+    document.getElementById('ps-prob-basis').textContent   = basis;
+    document.getElementById('ps-prob-amount').textContent  = _probBaseSal
+      ? `기본급 ${_probBaseSal.toLocaleString('ko-KR')}원 / 통상시급 ${_probHourly.toLocaleString('ko-KR')}원`
+      : '(기본급 정보 없음)';
+
+    banner.style.display = '';
+  })();
+
+  // ── 수습 만료일 초과 경고 배너 ──
+  (function _renderProbOverrunBanner(){
+    const ob  = document.getElementById('ps-prob-overrun-banner');
+    const obd = document.getElementById('ps-prob-overrun-detail');
+    if(!ob || !obd){ return; }
+
+    // 수습 계약이 아닌 경우 숨김
+    const catStr2 = (ct ? ct.contract_type : '') || e.employment_category || '';
+    const isProbType2 = catStr2 === '정규직 수습' || catStr2 === '계약직 수습';
+    if(!isProbType2 || !ct){ ob.style.display='none'; return; }
+
+    // 수습 종료일: 외부 스코프 _probEndStr 재사용 (이미 계산됨)
+    if(!_probEndStr){ ob.style.display='none'; return; }
+
+    // 급여 연월의 시작일·말일
+    const payYr  = Number(p.pay_year);
+    const payMo  = Number(p.pay_month);
+    const mStart = `${payYr}-${String(payMo).padStart(2,'0')}-01`;
+    const lastD  = new Date(payYr, payMo, 0).getDate();
+    const mEnd   = `${payYr}-${String(payMo).padStart(2,'0')}-${String(lastD).padStart(2,'0')}`;
+
+    const fmtD = d => d ? `${d.slice(0,4)}년 ${d.slice(5,7)}월 ${d.slice(8,10)}일` : '-';
+    const nextDay = d => {
+      const dt = new Date(d); dt.setDate(dt.getDate()+1);
+      return dt.toISOString().slice(0,10);
+    };
+
+    // ① 해당 월 전체가 수습 종료일 이후
+    if(mStart > _probEndStr){
+      obd.innerHTML =
+        `<div>· 수습 종료일: <strong style="color:#dc2626;">${fmtD(_probEndStr)}</strong></div>` +
+        `<div>· 이 명세서 기간 <strong>${payYr}년 ${payMo}월</strong>은 수습이 이미 만료된 달입니다.</div>` +
+        `<div style="margin-top:4px;color:#b91c1c;font-weight:600;">채용확정 근로계약서 기준으로 급여명세서를 별도 발행하세요.</div>`;
+      ob.style.display='';
+      return;
+    }
+
+    // ② 해당 월 중간에 수습 만료일이 껴있음
+    if(_probEndStr >= mStart && _probEndStr < mEnd){
+      obd.innerHTML =
+        `<div>· 수습 종료일: <strong style="color:#dc2626;">${fmtD(_probEndStr)}</strong></div>` +
+        `<div>· 이 명세서 기간 <strong>${payYr}년 ${payMo}월</strong> 안에 수습이 만료됩니다.</div>` +
+        `<div style="margin-top:4px;color:#b91c1c;font-weight:600;">
+          ① <u>${fmtD(mStart)} ~ ${fmtD(_probEndStr)}</u>: 수습 기준 급여명세서 (현재 명세서)<br>
+          ② <u>${fmtD(nextDay(_probEndStr))} ~ ${fmtD(mEnd)}</u>: 채용확정 기준 급여명세서 <strong>별도 발행 필요</strong>
+         </div>`;
+      ob.style.display='';
+      return;
+    }
+
+    // ③ 수습 기간 내 → 숨김
+    ob.style.display='none';
+  })();
+
+  // 산출식 계산 (엑셀 양식의 계산 방법 표와 동일 구조)
+  const calcRows = [
+    {
+      label:'연장근로수당',
+      formula: hourlyWage
+        ? `통상시급 ${Math.round(hourlyWage).toLocaleString('ko-KR')}원 × 연장 ${otHours}h × 150%`
+        : '통상시간급 × 연장근로시간 수 × 150%',
+      value: p.overtime_pay||0,
+      color:'#1d4ed8', bg:'#eff6ff'
+    },
+    {
+      label:'야간근로수당',
+      formula: hourlyWage
+        ? `통상시급 ${Math.round(hourlyWage).toLocaleString('ko-KR')}원 × 야간 ${nightHours}h × 50%`
+        : '통상시간급 × 야간근로시간 수 × 50%',
+      value: p.night_pay||0,
+      color:'#7e22ce', bg:'#fdf4ff'
+    },
+    {
+      label:'휴일근로수당',
+      formula: hourlyWage
+        ? `통상시급 ${Math.round(hourlyWage).toLocaleString('ko-KR')}원 × 휴일 ${holHours}h × 150%`
+        : '통상시간급 × 휴일근로시간 수 × 150%',
+      value: p.holiday_pay||0,
+      color:'#c2410c', bg:'#fff7ed'
+    },
+    {
+      label:'소득세',
+      formula:'2023년 근로소득 간이세액표 적용',
+      value: incTax,
+      color:'#7f1d1d', bg:'#fff5f5'
+    },
+    {
+      label:'지방소득세',
+      formula:'근로소득세 × 10%',
+      value: locTax,
+      color:'#7f1d1d', bg:'#fff5f5'
+    },
+    {
+      label:'건강보험',
+      formula: monthlySal
+        ? `보수월액 ${Math.round(monthlySal).toLocaleString('ko-KR')}원 × 3.595%`
+        : '보수월액 × 3.595%',
+      value: health,
+      color:'#065f46', bg:'#f0fdf4'
+    },
+    {
+      label:'장기요양보험',
+      formula:'건강보험료 × 13.14%',
+      value: ltCare,
+      color:'#065f46', bg:'#f0fdf4'
+    },
+    {
+      label:'국민연금',
+      formula: monthlySal
+        ? `보수월액(최대 6,370,000원) ${Math.round(Math.min(monthlySal,6370000)).toLocaleString('ko-KR')}원 × 4.75%`
+        : '보수월액(최대 6,370,000원) × 4.75%',
+      value: pension,
+      color:'#92400e', bg:'#fffbeb'
+    },
+    {
+      label:'고용보험',
+      formula: monthlySal
+        ? `보수월액 ${Math.round(monthlySal).toLocaleString('ko-KR')}원 × 0.9%`
+        : '보수월액 × 0.9%',
+      value: empIns,
+      color:'#1e40af', bg:'#eff6ff'
+    },
+  ];
+
+  // 값이 0인 항목도 포함 (계산 근거를 보여주기 위해)
+  const calcTb = document.getElementById('ps-calc-tbody');
+  if(calcTb) calcTb.innerHTML = calcRows.map((r,i)=>`
+    <tr style="background:${i%2===0?'#f8fafc':'#fff'};">
+      <td style="padding:8px 14px;font-weight:600;color:${r.color};background:${r.bg};border-bottom:1px solid #e2e8f0;">${r.label}</td>
+      <td style="padding:8px 14px;color:#4b5563;border-bottom:1px solid #e2e8f0;font-size:11.5px;">${r.formula}</td>
+      <td style="padding:8px 14px;text-align:right;font-weight:700;color:${r.color};border-bottom:1px solid #e2e8f0;">${r.value?fmt(r.value):'—'}</td>
+    </tr>
+  `).join('');
+
+  openModal('payslip-modal');
+}
+
+async function downloadPayslipPDF(){
+  const btn1 = document.querySelector('#payslip-modal button[onclick="downloadPayslipPDF()"]');
+  const btn2 = document.querySelectorAll('#payslip-modal button[onclick="downloadPayslipPDF()"]');
+  // 버튼 로딩 표시
+  btn2.forEach(b=>{ b.disabled=true; b.innerHTML='<i class="fas fa-spinner fa-spin"></i> 생성 중...'; });
+
+  try{
+    const el = document.getElementById('payslip-content');
+    const canvas = await html2canvas(el, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      logging: false
+    });
+
+    const imgData = canvas.toDataURL('image/png');
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    const margin = 10;
+    const imgW = pageW - margin*2;
+    const imgH = (canvas.height / canvas.width) * imgW;
+
+    // 페이지를 넘어가면 여러 페이지로 분할
+    let y = margin;
+    let remaining = imgH;
+    let srcY = 0;
+    const ratio = canvas.width / imgW;
+
+    while(remaining > 0){
+      const sliceH = Math.min(pageH - margin*2, remaining);
+      const sliceSrcH = sliceH * ratio;
+
+      // 슬라이스 캔버스
+      const sliceCanvas = document.createElement('canvas');
+      sliceCanvas.width = canvas.width;
+      sliceCanvas.height = sliceSrcH;
+      const ctx = sliceCanvas.getContext('2d');
+      ctx.drawImage(canvas, 0, srcY, canvas.width, sliceSrcH, 0, 0, canvas.width, sliceSrcH);
+
+      pdf.addImage(sliceCanvas.toDataURL('image/png'), 'PNG', margin, y, imgW, sliceH);
+
+      remaining -= sliceH;
+      srcY += sliceSrcH;
+      if(remaining > 0) { pdf.addPage(); y = margin; }
+    }
+
+    // 파일명: 직원명_연월_급여명세서.pdf
+    const sub = document.getElementById('ps-subtitle').textContent;
+    const empName = document.getElementById('ps-name').textContent;
+    const periodTxt = document.getElementById('ps-period').textContent.replace('분 급여','').replace('년 ','년').replace('월','월');
+    pdf.save(`${empName}_${periodTxt}_급여명세서.pdf`);
+    toast('PDF 다운로드 완료!','success');
+  } catch(err){
+    console.error(err);
+    toast('PDF 생성 중 오류가 발생했습니다.','error');
+  } finally{
+    btn2.forEach(b=>{ b.disabled=false; b.innerHTML='<i class="fas fa-file-pdf"></i> PDF 다운로드'; });
+  }
+}
+
+async function sendPayslipPDF(){
+  // 버튼 상태 업데이트
+  const sendBtns = document.querySelectorAll('#ps-send-btn-top, #ps-send-btn-bottom');
+  const _kakaoSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0;"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg>';
+  sendBtns.forEach(b=>{ b.disabled=true; b.innerHTML='<i class="fas fa-spinner fa-spin"></i> PDF 생성 중...'; });
+
+  try{
+    // 직원명 및 기간 정보 수집
+    const empName = document.getElementById('ps-name').textContent.trim();
+    const empPhone = window._currentPayslipPhone || '';
+    const periodTxt = document.getElementById('ps-period').textContent
+      .replace('분 급여','').replace('년 ','년').replace('월','월').trim();
+    const fileName = `${empName}_${periodTxt}_급여명세서.pdf`;
+
+    // html2canvas로 명세서 캔버스 생성
+    const el = document.getElementById('payslip-content');
+    const canvas = await html2canvas(el, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      logging: false
+    });
+
+    const imgData = canvas.toDataURL('image/png');
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    const margin = 10;
+    const imgW = pageW - margin*2;
+    const imgH = (canvas.height / canvas.width) * imgW;
+
+    // 페이지 분할 처리
+    let y = margin;
+    let remaining = imgH;
+    let srcY = 0;
+    const ratio = canvas.width / imgW;
+
+    while(remaining > 0){
+      const sliceH = Math.min(pageH - margin*2, remaining);
+      const sliceSrcH = sliceH * ratio;
+      const sliceCanvas = document.createElement('canvas');
+      sliceCanvas.width = canvas.width;
+      sliceCanvas.height = sliceSrcH;
+      const ctx = sliceCanvas.getContext('2d');
+      ctx.drawImage(canvas, 0, srcY, canvas.width, sliceSrcH, 0, 0, canvas.width, sliceSrcH);
+      pdf.addImage(sliceCanvas.toDataURL('image/png'), 'PNG', margin, y, imgW, sliceH);
+      remaining -= sliceH;
+      srcY += sliceSrcH;
+      if(remaining > 0){ pdf.addPage(); y = margin; }
+    }
+
+    // PDF → Blob → File 객체 생성
+    const pdfBlob = pdf.output('blob');
+    const pdfFile = new File([pdfBlob], fileName, { type: 'application/pdf' });
+
+    // 전역 변수에 첨부 파일 등록 (추후 카카오 알림톡 발송에 사용)
+    window._payslipPdfFile = pdfFile;
+    window._payslipEmpPhone = empPhone;
+    window._payslipEmpName = empName;
+    window._payslipFileName = fileName;
+
+    // ── 발송 로그 저장 (payroll_send_logs) ──
+    const payrollId = window._currentPayslipPayrollId;
+    const empId     = window._currentPayslipEmpId;
+    const companyId = window._currentPayslipCompanyId;
+    const payYear   = window._currentPayslipYear;
+    const payMonth  = window._currentPayslipMonth;
+
+    if(payrollId && empId && companyId){
+      try{
+        const sentBy = sessionStorage.getItem('admin_username') || 'admin';
+        const logBody = {
+          id:          'psl_' + Date.now() + '_' + empId,
+          company_id:  companyId,
+          employee_id: empId,
+          payroll_id:  payrollId,
+          pay_year:    payYear,
+          pay_month:   payMonth,
+          sent_at:     new Date().toISOString(),
+          sent_by:     sentBy,
+          send_method: 'kakao',
+          note:        '급여명세서 조회 모달에서 개별 발송'
+        };
+        await api('../tables/payroll_send_logs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(logBody)
+        });
+        // 발송 관리 페이지가 같은 고객사를 열어 두고 있으면 캐시에도 즉시 반영
+        if(typeof _pssSendLogs !== 'undefined' && _pssCompanyId === companyId){
+          _pssSendLogs.push(logBody);
+          renderPssLogs();
+          renderPssMonthTabs();
+          _pssUpdateStats();
+        }
+      } catch(logErr){
+        console.warn('[발송 로그 저장 실패]', logErr);
+      }
+    }
+
+    // ── 고객사 인앱 알림 발송 (카카오 알림톡 개별 발송) ──
+    {
+      const _skCo  = allCompanies.find(x => x.id === companyId) || {};
+      const _coRep = _skCo.representative ? `, ${_skCo.representative} 사장님` : '';
+      await _sendCompanyNotice({
+        companyId  : companyId || '', companyName: _skCo.company_name || '',
+        noticeType : 'payslip_individual_sent',
+        title      : `[급여명세서 발송] ${empName} — ${payYear}년 ${payMonth}월 알림톡 발송`,
+        body       :
+`안녕하세요${_coRep}.
+
+소속 근로자의 급여명세서가 카카오 알림톡으로 발송되었습니다.
+
+■ 근로자: ${empName}
+■ 지급 기간: ${payYear}년 ${payMonth}월
+■ 발송 방법: 카카오 알림톡
+■ 발송 시각: ${new Date().toLocaleString('ko-KR')}
+
+발송 상세 내역은 급여명세서 발송 관리 메뉴에서 확인하세요.`,
+        employeeId : empId, employeeName: empName,
+      });
+    }
+    toast(`✅ ${empName} 급여명세서 PDF 발송 완료!`, 'success');
+
+  } catch(err){
+    console.error('[sendPayslipPDF]', err);
+    toast('PDF 생성 중 오류가 발생했습니다.', 'error');
+  } finally{
+    sendBtns.forEach(b=>{ b.disabled=false; b.innerHTML=_kakaoSvg+' PDF 알림톡 발송'; });
+  }
+}
+
+/* 이메일 개별 발송 (급여명세서 모달) */
+async function sendPayslipEmail(){
+  const email     = window._currentPayslipEmail || '';
+  const empName   = document.getElementById('ps-name').textContent || '';
+  const payYear   = window._currentPayslipYear;
+  const payMonth  = window._currentPayslipMonth;
+  const payrollId = window._currentPayslipPayrollId;
+  const empId     = window._currentPayslipEmpId;
+  const companyId = window._currentPayslipCompanyId;
+
+  if(!email){ toast('이메일 주소가 등록되어 있지 않습니다.', 'error'); return; }
+
+  const moStr   = String(payMonth).padStart(2,'0');
+  const fileName = `${empName}_${payYear}년${moStr}월_급여명세서.pdf`;
+
+  // 버튼 로딩 처리
+  const emailBtns = document.querySelectorAll('.ps-email-btn');
+  emailBtns.forEach(b=>{ b.disabled=true; b.innerHTML='<i class="fas fa-spinner fa-spin"></i> 발송 중...'; });
+
+  try{
+    // PDF 생성
+    const blob = await _generatePayslipBlob(payrollId);
+    const file = new File([blob], fileName, { type:'application/pdf' });
+
+    // 이메일 발송 stub (실제 연동 시 교체)
+    await _sendEmailWithAttachment(email, fileName, file);
+
+    // 발송 로그 저장
+    const sentBy = sessionStorage.getItem('admin_username') || 'admin';
+    const logBody = {
+      id:          'psl_' + Date.now() + '_' + empId,
+      company_id:  companyId,
+      employee_id: empId,
+      payroll_id:  payrollId,
+      pay_year:    payYear,
+      pay_month:   payMonth,
+      sent_at:     new Date().toISOString(),
+      sent_by:     sentBy,
+      send_method: 'email',
+      note:        `이메일 발송 (${email})`
+    };
+    await api('../tables/payroll_send_logs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(logBody)
+    });
+    // 발송 관리 캐시 즉시 반영
+    if(typeof _pssSendLogs !== 'undefined' && _pssCompanyId === companyId){
+      _pssSendLogs.push(logBody);
+      renderPssLogs();
+      renderPssMonthTabs();
+      _pssUpdateStats();
+    }
+
+    // ── 고객사 인앱 알림 발송 (이메일 개별 발송 — 모달) ──
+    {
+      const _seCo  = allCompanies.find(x => x.id === companyId) || {};
+      const _coRep = _seCo.representative ? `, ${_seCo.representative} 사장님` : '';
+      await _sendCompanyNotice({
+        companyId  : companyId || '', companyName: _seCo.company_name || '',
+        noticeType : 'payslip_individual_sent',
+        title      : `[급여명세서 발송] ${empName} — ${payYear}년 ${payMonth}월 이메일 발송`,
+        body       :
+`안녕하세요${_coRep}.
+
+소속 근로자의 급여명세서가 이메일로 발송되었습니다.
+
+■ 근로자: ${empName}
+■ 지급 기간: ${payYear}년 ${payMonth}월
+■ 발송 방법: 이메일 (${email})
+■ 발송 시각: ${new Date().toLocaleString('ko-KR')}
+
+발송 상세 내역은 급여명세서 발송 관리 메뉴에서 확인하세요.`,
+        employeeId : empId, employeeName: empName,
+      });
+    }
+    toast(`✅ ${empName} 급여명세서를 ${email}로 발송했습니다.`, 'success');
+  } catch(err){
+    console.error('[sendPayslipEmail]', err);
+    toast('이메일 발송 중 오류가 발생했습니다.', 'error');
+  } finally{
+    emailBtns.forEach(b=>{
+      b.disabled = !(window._currentPayslipEmail);
+      b.style.opacity = window._currentPayslipEmail ? '1' : '0.45';
+      b.style.cursor  = window._currentPayslipEmail ? 'pointer' : 'not-allowed';
+      b.innerHTML = '<i class="fas fa-envelope"></i> 이메일 발송';
+    });
+  }
+}
+
+// ─── 일괄 발송 ───
+let _bulkSendList = [];      // [{payrollId, empName, phone, status, file}]
+let _bulkSendRunning = false;
+
+/* 버튼 활성화 여부 판단 */
+function updateBulkSendBtn(){
+  const btn = document.getElementById('bulk-send-btn');
+  if(!btn) return;
+
+  // 고객사 미선택 또는 연도·월 미선택
+  if(!currentPayCompanyId){ btn.disabled=true; return; }
+  const yr = parseInt(document.getElementById('pay-year-filter')?.value)||0;
+  const mo = parseInt(document.getElementById('pay-month-filter')?.value)||0;
+  if(!yr||!mo){ btn.disabled=true; return; }
+
+  // 현재 필터 조건(고객사 + 연도 + 월)에 해당하는 급여 데이터
+  const filtered = allPayrolls.filter(p =>
+    p.company_id === currentPayCompanyId &&
+    p.pay_year   === yr &&
+    p.pay_month  === mo
+  );
+
+  // 데이터가 1건도 없으면 비활성
+  if(!filtered.length){ btn.disabled=true; return; }
+
+  // 임시저장(is_draft) 데이터가 1건이라도 있으면 비활성
+  const hasDraft = filtered.some(p => !!p.is_draft);
+  btn.disabled = hasDraft;
+}
+
+/* 일괄 발송 모달 열기 */
+async function openBulkSendModal(){
+  // 직원 데이터(phone 포함)를 항상 최신으로 갱신
+  await loadEmployees();
+
+  const yr = parseInt(document.getElementById('pay-year-filter')?.value)||0;
+  const mo = parseInt(document.getElementById('pay-month-filter')?.value)||0;
+  const co = allCompanies.find(x=>x.id===currentPayCompanyId)||{};
+
+  // 해당 월 급여 목록 수집 (직원당 가장 최근 레코드 1건만 사용 — 중복 방어)
+  const payList = allPayrolls.filter(p=>
+    p.company_id===currentPayCompanyId && p.pay_year===yr && p.pay_month===mo
+  );
+
+  // 직원 ID 기준 중복 제거: 동일 직원의 레코드가 여러 건이면 updated_at 최신 1건만 사용
+  const seenEmpIds = new Set();
+  const dedupedPayList = payList
+    .slice()
+    .sort((a,b)=> (b.updated_at||0) - (a.updated_at||0))  // 최신순 정렬
+    .filter(p => {
+      if(seenEmpIds.has(p.employee_id)) return false;
+      seenEmpIds.add(p.employee_id);
+      return true;
+    });
+
+  _bulkSendList = dedupedPayList.map(p=>{
+    const e = allEmployees.find(x=>x.id===p.employee_id)||{};
+    return {
+      payrollId:  p.id,
+      empId:      p.employee_id,      // ← 발송 로그 저장용
+      companyId:  p.company_id,       // ← 발송 로그 저장용
+      payYear:    p.pay_year,         // ← 발송 로그 저장용
+      payMonth:   p.pay_month,        // ← 발송 로그 저장용
+      empName:    e.name||'(이름없음)',
+      phone:      e.phone||e.mobile||'',
+      email:      e.email||'',
+      status:     'idle',   // idle | generating | generated | reserved | waiting | success | fail
+      file:       null
+    };
+  }).sort((a,b)=> a.empName.localeCompare(b.empName,'ko'));
+
+  _bulkSendRunning = false;
+
+  // 모달 subtitle
+  const moStr = String(mo).padStart(2,'0');
+  document.getElementById('bulk-send-subtitle').textContent =
+    `${co.company_name||''} · ${yr}년 ${moStr}월 · 총 ${_bulkSendList.length}명`;
+
+  // 진행 바 숨김
+  document.getElementById('bulk-progress-bar-wrap').style.display = 'none';
+  document.getElementById('bulk-progress-bar').style.width = '0%';
+
+  // 발송 시작 버튼 복원
+  const startBtn = document.getElementById('bulk-send-start-btn');
+  startBtn.disabled = false;
+  startBtn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg> 알림톡 일괄 발송 시작';
+  startBtn.style.background = 'linear-gradient(135deg,#7c3aed,#6d28d9)';
+  startBtn.style.color = '#fff';
+
+  _renderBulkTable();
+  document.getElementById('bulk-send-modal').classList.add('open');
+}
+
+/* 일괄 발송 모달 닫기 */
+function closeBulkSendModal(){
+  if(_bulkSendRunning){
+    if(!confirm('발송이 진행 중입니다. 닫으면 나머지 발송이 중단됩니다. 닫으시겠습니까?')) return;
+    _bulkSendRunning = false;
+  }
+  document.getElementById('bulk-send-modal').classList.remove('open');
+}
+
+/* 테이블 렌더 */
+function _renderBulkTable(){
+  const tb = document.getElementById('bulk-send-tbody');
+  if(!_bulkSendList.length){
+    tb.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:#9ca3af;">해당 월 급여 데이터가 없습니다.</td></tr>';
+    return;
+  }
+  tb.innerHTML = _bulkSendList.map((item, idx)=>{
+    const hasEmail = !!(item.email && item.email.trim());
+    const emailCell = hasEmail
+      ? `<span style="font-size:12px;color:#374151;">${item.email}</span>`
+      : `<span style="font-size:12px;color:#d1d5db;">미등록</span>`;
+    const emailBtnStyle = hasEmail
+      ? 'background:#dbeafe;color:#1d4ed8;border:1px solid #93c5fd;cursor:pointer;'
+      : 'background:#f3f4f6;color:#d1d5db;border:1px solid #e5e7eb;cursor:not-allowed;';
+    return `
+    <tr id="bs-row-${idx}" style="border-bottom:1px solid #f3f4f6;">
+      <td style="padding:9px 12px;font-weight:700;color:#1a1a2e;">${item.empName}</td>
+      <td style="padding:9px 12px;color:#6b7280;font-size:12.5px;">${item.phone || '<span style="color:#d1d5db;">미등록</span>'}</td>
+      <td style="padding:9px 12px;">${emailCell}</td>
+      <td style="padding:9px 12px;" id="bs-status-${idx}">${_bsStatusHtml(item.status, idx)}</td>
+      <td style="padding:9px 12px;text-align:center;white-space:nowrap;" id="bs-action-${idx}">
+        <button onclick="_bulkEmailSend(${idx})" ${hasEmail ? '' : 'disabled'} style="${emailBtnStyle}border-radius:6px;padding:4px 9px;font-size:11.5px;font-weight:600;font-family:inherit;margin-right:4px;">✉ 이메일 발송</button>
+        <button onclick="_bulkManualDone(${idx})" style="background:#f0fdf4;color:#166534;border:1px solid #86efac;border-radius:6px;padding:4px 9px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;">✔ 수동 교부 완료</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+/* 상태값 → HTML 배지 */
+function _bsStatusHtml(status, idx){
+  const map = {
+    idle:       ['idle',      '⏳ 대기'],
+    generating: ['generating','⚙️ PDF 생성 중'],
+    generated:  ['generated', '✅ PDF 생성완료'],
+    reserved:   ['reserved',  '📨 발송 예약'],
+    waiting:    ['waiting',   '🔄 발송 대기중'],
+    success:    ['success',   '✔ 발송 성공'],
+    fail:       ['fail',      '✖ 발송 실패'],
+  };
+  const [cls, label] = map[status] || ['idle','⏳ 대기'];
+  const retryBtn = status==='fail'
+    ? `<button class="bs-retry-btn" onclick="retrySingleSend(${idx})"><i class="fas fa-redo"></i> 재발송</button>`
+    : '';
+  return `<span class="bs-status ${cls}">${label}</span>${retryBtn}`;
+}
+
+/* 단일 항목 상태 갱신 */
+function _setBsStatus(idx, status){
+  _bulkSendList[idx].status = status;
+  const cell = document.getElementById(`bs-status-${idx}`);
+  if(cell) cell.innerHTML = _bsStatusHtml(status, idx);
+}
+
+/* 진행 바 갱신 */
+function _updateBulkProgress(){
+  const total = _bulkSendList.length;
+  const done  = _bulkSendList.filter(x=>x.status==='success'||x.status==='fail').length;
+  const pct   = total ? Math.round(done/total*100) : 0;
+  document.getElementById('bulk-progress-bar').style.width = pct+'%';
+  document.getElementById('bulk-progress-pct').textContent = `${done} / ${total} (${pct}%)`;
+  document.getElementById('bulk-progress-label').textContent = done===total ? '발송 완료' : '발송 진행 중...';
+}
+
+/* 단건 PDF 생성 → Blob 반환
+ * ⚠️ 주의: openPayslipModal()을 호출하면 classList.add('open')으로 모달이 열리므로
+ *   style.display='none'을 설정하면 안 됨 — 이후 사용자 클릭 시 모달이 열리지 않게 됨.
+ *   대신 payslip-content 요소만 off-screen으로 복제해서 캔버스 캡처.
+ */
+async function _generatePayslipBlob(payrollId){
+  return new Promise(async (resolve, reject)=>{
+    try{
+      // 1. DOM 데이터 채우기 — openPayslipModal 내부 렌더 로직을 활용하되
+      //    모달 open/close는 건드리지 않는다.
+      //    → 방법: payslip-modal을 열되 visibility:hidden으로 처리하고 즉시 원복
+      const modalEl = document.getElementById('payslip-modal');
+
+      // 현재 모달 상태 저장
+      const wasOpen = modalEl.classList.contains('open');
+
+      // 완전히 숨긴 채로 모달 열기
+      // visibility:hidden 만으로는 open 클래스가 붙을 때 display:flex 전환으로 잠깐 보임
+      // → opacity:0 + z-index:-9999 + pointer-events:none 조합으로 완전 차단
+      modalEl.style.opacity       = '0';
+      modalEl.style.zIndex        = '-9999';
+      modalEl.style.pointerEvents = 'none';
+      openPayslipModal(payrollId);   // classList.add('open') + DOM 채우기
+
+      // 렌더링 완료 대기
+      await new Promise(r => setTimeout(r, 150));
+
+      // 2. payslip-content를 off-screen 클론으로 캡처
+      const srcEl = document.getElementById('payslip-content');
+      const clone = srcEl.cloneNode(true);
+      clone.style.cssText = 'position:fixed;left:-9999px;top:0;width:' + srcEl.offsetWidth + 'px;background:#fff;opacity:1;pointer-events:none;z-index:-1;';
+      document.body.appendChild(clone);
+
+      const canvas = await html2canvas(clone, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+        width: srcEl.offsetWidth,
+      });
+      document.body.removeChild(clone);
+
+      // 3. 모달 원래 상태 복원
+      modalEl.style.opacity       = '';
+      modalEl.style.zIndex        = '';
+      modalEl.style.pointerEvents = '';
+      if(!wasOpen) modalEl.classList.remove('open');
+
+      // 4. PDF 생성
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      const margin=10, imgW=pageW-margin*2;
+      const imgH=(canvas.height/canvas.width)*imgW;
+      let y=margin, remaining=imgH, srcY=0;
+      const ratio=canvas.width/imgW;
+      while(remaining>0){
+        const sliceH=Math.min(pageH-margin*2, remaining);
+        const sliceSrcH=sliceH*ratio;
+        const sc=document.createElement('canvas');
+        sc.width=canvas.width; sc.height=sliceSrcH;
+        sc.getContext('2d').drawImage(canvas, 0, srcY, canvas.width, sliceSrcH, 0, 0, canvas.width, sliceSrcH);
+        pdf.addImage(sc.toDataURL('image/png'), 'PNG', margin, y, imgW, sliceH);
+        remaining-=sliceH; srcY+=sliceSrcH;
+        if(remaining>0){ pdf.addPage(); y=margin; }
+      }
+      resolve(pdf.output('blob'));
+
+    } catch(err){ reject(err); }
+  });
+}
+
+/* 카카오 알림톡 발송 (stub → 추후 실제 API 연동) */
+async function _sendKakaoAlimtalk(phone, fileName, file){
+  // ── 실제 카카오 알림톡 API 연동 시 이 함수를 교체하세요 ──
+  // 현재는 파일 등록만 수행하고 성공으로 처리합니다.
+  await new Promise(r=>setTimeout(r, 400)); // 네트워크 지연 시뮬레이션
+  window._bulkPayslipFiles = window._bulkPayslipFiles || [];
+  window._bulkPayslipFiles.push({ phone, fileName, file });
+  console.log('[알림톡 발송 준비]', { phone, fileName, size: (file.size/1024).toFixed(1)+'KB' });
+  // TODO: 실제 발송 API 호출
+  // const form = new FormData();
+  // form.append('phone', phone);
+  // form.append('file', file, fileName);
+  // const res = await fetch('/api/kakao/send', { method:'POST', body:form });
+  // if(!res.ok) throw new Error('발송 실패');
+  return true; // 성공
+}
+
+/* 일괄 발송 로그 저장 — payroll_send_logs 테이블에 기록 */
+async function _saveBulkSendLog(item){
+  try{
+    const sentBy = sessionStorage.getItem('admin_username') || 'admin';
+    const body = {
+      id:          'psl_' + Date.now() + '_' + (item.empId||''),
+      company_id:  item.companyId,
+      employee_id: item.empId,
+      payroll_id:  item.payrollId,
+      pay_year:    item.payYear,
+      pay_month:   item.payMonth,
+      sent_at:     new Date().toISOString(),
+      sent_by:     sentBy,
+      send_method: 'kakao',
+      note:        '급여명세서 조회 화면에서 발송'
+    };
+    await api('../tables/payroll_send_logs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    // 발송 관리 페이지가 같은 고객사를 보고 있으면 캐시에도 즉시 반영
+    if(typeof _pssSendLogs !== 'undefined' && _pssCompanyId === item.companyId){
+      _pssSendLogs.push(body);
+    }
+  } catch(e){
+    console.warn('[발송 로그 저장 실패]', e);
+    // 로그 저장 실패는 발송 결과에 영향을 주지 않음
+  }
+}
+
+/* 발송 시작 */
+async function startBulkSend(){
+  if(_bulkSendRunning) return;
+  _bulkSendRunning = true;
+
+  const startBtn = document.getElementById('bulk-send-start-btn');
+  startBtn.disabled = true;
+  startBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 알림톡 일괄 발송 중...';
+
+  // 진행 바 표시
+  const progressWrap = document.getElementById('bulk-progress-bar-wrap');
+  progressWrap.style.display = 'block';
+  _updateBulkProgress();
+
+  const yr = parseInt(document.getElementById('pay-year-filter')?.value)||0;
+  const mo = parseInt(document.getElementById('pay-month-filter')?.value)||0;
+  const moStr = String(mo).padStart(2,'0');
+
+  for(let i=0; i<_bulkSendList.length; i++){
+    if(!_bulkSendRunning) break; // 닫기 시 중단
+
+    const item = _bulkSendList[i];
+    // 이미 성공한 건은 건너뜀
+    if(item.status === 'success') continue;
+
+    // ① PDF 생성
+    _setBsStatus(i, 'generating');
+    let blob;
+    try{
+      blob = await _generatePayslipBlob(item.payrollId);
+      const fileName = `${item.empName}_${yr}년${moStr}월_급여명세서.pdf`;
+      item.file = new File([blob], fileName, { type:'application/pdf' });
+      _setBsStatus(i, 'generated');
+      await new Promise(r=>setTimeout(r, 80));
+    } catch(err){
+      console.error(`[PDF 생성 실패] ${item.empName}`, err);
+      _setBsStatus(i, 'fail');
+      _updateBulkProgress();
+      continue;
+    }
+
+    // ② 발송 예약
+    _setBsStatus(i, 'reserved');
+    await new Promise(r=>setTimeout(r, 80));
+
+    // ③ 발송 대기
+    _setBsStatus(i, 'waiting');
+    await new Promise(r=>setTimeout(r, 80));
+
+    // ④ 카카오 알림톡 발송
+    try{
+      const fileName = `${item.empName}_${yr}년${moStr}월_급여명세서.pdf`;
+      await _sendKakaoAlimtalk(item.phone, fileName, item.file);
+      _setBsStatus(i, 'success');
+      // ⑤ 발송 로그 저장
+      await _saveBulkSendLog(item);
+    } catch(err){
+      console.error(`[알림톡 발송 실패] ${item.empName}`, err);
+      _setBsStatus(i, 'fail');
+    }
+    _updateBulkProgress();
+  }
+
+  _bulkSendRunning = false;
+
+  // 전체 완료 여부 확인
+  const failCnt = _bulkSendList.filter(x=>x.status==='fail').length;
+  const successCnt = _bulkSendList.filter(x=>x.status==='success').length;
+
+  if(failCnt===0){
+    // 실패 건 없음 → 재발송 버튼 비활성
+    startBtn.disabled = true;
+    startBtn.innerHTML = '<i class="fas fa-check-circle"></i> 전체 발송 완료';
+    startBtn.style.background = 'linear-gradient(135deg,#059669,#047857)';
+    toast(`✅ 전체 ${successCnt}명 알림톡 발송 완료!`, 'success');
+  } else {
+    // 실패 건 있음 → 재발송 버튼 활성 (실패 행에는 개별 재발송 버튼이 이미 표시됨)
+    startBtn.disabled = false;
+    startBtn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg> 알림톡 재발송 (실패 건만)';
+    startBtn.style.background = 'linear-gradient(135deg,#7c3aed,#6d28d9)';
+    startBtn.style.color = '#fff';
+    toast(`⚠ 발송 완료: ${successCnt}명 성공 / ${failCnt}명 실패`, 'error');
+  }
+}
+
+/* 재발송 (실패 건만) */
+async function retrySingleSend(idx){
+  if(_bulkSendRunning) return;
+  const item = _bulkSendList[idx];
+  if(!item) return;
+
+  _bulkSendRunning = true;
+  const yr = parseInt(document.getElementById('pay-year-filter')?.value)||0;
+  const mo = parseInt(document.getElementById('pay-month-filter')?.value)||0;
+  const moStr = String(mo).padStart(2,'0');
+
+  // PDF 재생성
+  _setBsStatus(idx, 'generating');
+  try{
+    const blob = await _generatePayslipBlob(item.payrollId);
+    const fileName = `${item.empName}_${yr}년${moStr}월_급여명세서.pdf`;
+    item.file = new File([blob], fileName, { type:'application/pdf' });
+    _setBsStatus(idx, 'generated');
+    await new Promise(r=>setTimeout(r, 80));
+    _setBsStatus(idx, 'reserved');
+    await new Promise(r=>setTimeout(r, 80));
+    _setBsStatus(idx, 'waiting');
+    await new Promise(r=>setTimeout(r, 80));
+    await _sendKakaoAlimtalk(item.phone, fileName, item.file);
+    _setBsStatus(idx, 'success');
+    // 재발송 로그 저장
+    await _saveBulkSendLog(item);
+    toast(`✅ ${item.empName} 재발송 완료`, 'success');
+  } catch(err){
+    _setBsStatus(idx, 'fail');
+    toast(`✖ ${item.empName} 재발송 실패`, 'error');
+  }
+  _updateBulkProgress();
+  _bulkSendRunning = false;
+
+  // 개별 재발송 후 잔여 실패 건 체크 → 모두 성공이면 하단 버튼 비활성
+  const remainFail = _bulkSendList.filter(x=>x.status==='fail').length;
+  const startBtn2 = document.getElementById('bulk-send-start-btn');
+  if(startBtn2 && remainFail===0){
+    startBtn2.disabled = true;
+    startBtn2.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg> 전체 발송 완료';
+    startBtn2.style.background = 'linear-gradient(135deg,#059669,#047857)';
+  }
+}
+
+/* 이메일 개별 발송 */
+async function _bulkEmailSend(idx){
+  if(_bulkSendRunning) return;
+  const item = _bulkSendList[idx];
+  if(!item || !item.email) return;
+
+  const yr = parseInt(document.getElementById('pay-year-filter')?.value)||0;
+  const mo = parseInt(document.getElementById('pay-month-filter')?.value)||0;
+  const moStr = String(mo).padStart(2,'0');
+
+  // 버튼 비활성 처리
+  const actionCell = document.getElementById(`bs-action-${idx}`);
+  if(actionCell) actionCell.innerHTML = '<span style="color:#6b7280;font-size:12px;"><i class="fas fa-spinner fa-spin"></i> 처리 중...</span>';
+
+  try{
+    // PDF 생성
+    const blob = await _generatePayslipBlob(item.payrollId);
+    const fileName = `${item.empName}_${yr}년${moStr}월_급여명세서.pdf`;
+    const file = new File([blob], fileName, { type:'application/pdf' });
+
+    // 이메일 발송 (stub — 실제 연동 시 API 호출로 교체)
+    await _sendEmailWithAttachment(item.email, fileName, file);
+
+    // 발송 로그 저장 (send_method: email)
+    const sentBy = sessionStorage.getItem('admin_username') || 'admin';
+    await api('../tables/payroll_send_logs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id:          'psl_' + Date.now() + '_' + (item.empId||''),
+        company_id:  item.companyId,
+        employee_id: item.empId,
+        payroll_id:  item.payrollId,
+        pay_year:    item.payYear,
+        pay_month:   item.payMonth,
+        sent_at:     new Date().toISOString(),
+        sent_by:     sentBy,
+        send_method: 'email',
+        note:        `이메일 발송 (${item.email})`
+      })
+    });
+
+    // ── 고객사 인앱 알림 발송 (이메일 개별 발송 — 일괄 목록) ──
+    {
+      const _beCo  = allCompanies.find(x => x.id === item.companyId) || {};
+      const _coRep = _beCo.representative ? `, ${_beCo.representative} 사장님` : '';
+      await _sendCompanyNotice({
+        companyId  : item.companyId || '', companyName: _beCo.company_name || '',
+        noticeType : 'payslip_individual_sent',
+        title      : `[급여명세서 발송] ${item.empName} — ${yr}년 ${mo}월 이메일 발송`,
+        body       :
+`안녕하세요${_coRep}.
+
+소속 근로자의 급여명세서가 이메일로 발송되었습니다.
+
+■ 근로자: ${item.empName}
+■ 지급 기간: ${yr}년 ${mo}월
+■ 발송 방법: 이메일 (${item.email})
+■ 발송 시각: ${new Date().toLocaleString('ko-KR')}
+
+발송 상세 내역은 급여명세서 발송 관리 메뉴에서 확인하세요.`,
+        employeeId : item.empId, employeeName: item.empName,
+      });
+    }
+    // 확인 메시지 → 행 제거
+    alert(`${item.empName}의 ${yr}년 ${mo}월 급여명세서를 이메일로 발송하였습니다.`);
+    _bulkSendList.splice(idx, 1);
+    _renderBulkTable();
+    _checkAllDone();
+  } catch(err){
+    console.error('[이메일 발송 실패]', err);
+    toast(`✖ ${item.empName} 이메일 발송 실패`, 'error');
+    // 버튼 복원
+    _renderBulkTable();
+  }
+}
+
+/* 수동 교부 완료 처리 */
+async function _bulkManualDone(idx){
+  const item = _bulkSendList[idx];
+  if(!item) return;
+
+  const yr = parseInt(document.getElementById('pay-year-filter')?.value)||0;
+  const mo = parseInt(document.getElementById('pay-month-filter')?.value)||0;
+
+  const ok = confirm(`${item.empName}의 ${yr}년 ${mo}월 급여명세서를 수동 교부 완료한 것으로 기록하고 미발송 내역에서 제외하겠습니까?`);
+  if(!ok) return;
+
+  try{
+    // 발송 로그 저장 (send_method: manual)
+    const sentBy = sessionStorage.getItem('admin_username') || 'admin';
+    await api('../tables/payroll_send_logs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id:          'psl_' + Date.now() + '_' + (item.empId||''),
+        company_id:  item.companyId,
+        employee_id: item.empId,
+        payroll_id:  item.payrollId,
+        pay_year:    item.payYear,
+        pay_month:   item.payMonth,
+        sent_at:     new Date().toISOString(),
+        sent_by:     sentBy,
+        send_method: 'manual',
+        note:        '수동 교부 완료'
+      })
+    });
+
+    // 행 제거
+    _bulkSendList.splice(idx, 1);
+    _renderBulkTable();
+    _checkAllDone();
+    toast(`✔ ${item.empName} 수동 교부 완료 처리됐습니다.`, 'success');
+  } catch(err){
+    console.error('[수동 교부 저장 실패]', err);
+    toast('저장 중 오류가 발생했습니다.', 'error');
+  }
+}
+
+/* 전체 완료 여부 체크 → 목록이 비면 버튼 비활성 */
+function _checkAllDone(){
+  if(_bulkSendList.length === 0){
+    const btn = document.getElementById('bulk-send-start-btn');
+    if(btn){
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-check-circle"></i> 전체 처리 완료';
+      btn.style.background = 'linear-gradient(135deg,#059669,#047857)';
+    }
+  }
+}
+
+/* 이메일 첨부 발송 stub (실제 연동 시 교체) */
+async function _sendEmailWithAttachment(toEmail, fileName, file){
+  // TODO: 실제 이메일 API 연동
+  await new Promise(r => setTimeout(r, 600));
+  console.log(`[이메일 발송 stub] to: ${toEmail}, file: ${fileName}`);
+}

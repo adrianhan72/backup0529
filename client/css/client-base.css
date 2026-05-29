@@ -1,0 +1,22 @@
+    *{box-sizing:border-box;margin:0;padding:0}
+    html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+    body{font-family:'Noto Sans KR',sans-serif;background:#f0f2f5;color:#1a1a2e;-webkit-tap-highlight-color:transparent;overscroll-behavior-y:none}
+
+    /* ─ Login ─ */
+    .login-screen{min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);padding:20px}
+    .login-box{background:#fff;border-radius:20px;padding:36px 28px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+    .login-logo{text-align:center;margin-bottom:30px}
+    .login-logo .icon{font-size:46px;margin-bottom:8px}
+    .login-logo h1{font-size:19px;font-weight:800;color:#1a1a2e}
+    .login-logo p{font-size:12.5px;color:#888;margin-top:5px}
+    .login-field{margin-bottom:14px}
+    .login-field label{display:block;font-size:11.5px;font-weight:600;color:#555;margin-bottom:5px}
+    .login-field input{width:100%;border:1.5px solid #e0e0e0;border-radius:10px;padding:12px 14px;font-size:16px;outline:none;transition:border-color .2s;font-family:inherit}
+    .login-field input:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.12)}
+    .login-btn{width:100%;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:none;border-radius:10px;padding:14px;font-size:14.5px;font-weight:700;cursor:pointer;margin-top:6px;font-family:inherit;transition:transform .15s,box-shadow .15s;touch-action:manipulation;-webkit-tap-highlight-color:transparent;min-height:50px}
+    .login-btn:active{transform:scale(.98);box-shadow:0 2px 8px rgba(99,102,241,.3)}
+    .login-error{color:#e94560;font-size:12px;margin-top:8px;text-align:center;min-height:18px}
+    .login-footer{text-align:center;margin-top:20px;font-size:11px;color:#aaa}
+    .login-remember{display:flex;align-items:center;gap:8px;margin:10px 0 14px;cursor:pointer;user-select:none;}
+    .login-remember input[type=checkbox]{width:17px;height:17px;accent-color:#6366f1;cursor:pointer;flex-shrink:0;}
+    .login-remember span{font-size:12.5px;color:#555;font-weight:500;}

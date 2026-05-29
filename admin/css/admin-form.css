@@ -1,0 +1,123 @@
+    /* ── 요일별 근무시간 테이블 ── */
+    .work-schedule-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:4px;}
+    .work-schedule-table{width:100%;min-width:640px;border-collapse:collapse;font-size:12px;}
+    .work-schedule-table th{background:#1e293b;color:#fff;padding:7px 6px;text-align:center;font-weight:600;font-size:11.5px;white-space:nowrap;}
+    .work-schedule-table th.th-brk{background:#7c3aed;}
+    .work-schedule-table td{padding:5px 4px;border-bottom:1px solid #f1f5f9;text-align:center;vertical-align:middle;}
+    .work-schedule-table td.td-brk{background:rgba(124,58,237,0.04);}
+    .work-schedule-table tr.day-sat td{background:#eff6ff;}
+    .work-schedule-table tr.day-sat td.td-brk{background:#e0e7ff;}
+    .work-schedule-table tr.day-sun td{background:#fff5f5;}
+    .work-schedule-table tr.day-sun td.td-brk{background:#fce7f3;}
+    .work-schedule-table tr:last-child td{border-bottom:none;}
+    .work-schedule-table input[type=time]{width:84px;border:1px solid #e2e8f0;border-radius:5px;padding:4px 5px;font-size:12px;font-family:inherit;background:#fff;text-align:center;}
+    .work-schedule-table input[type=time]:disabled{background:#f3f4f6;color:#9ca3af;}
+    .work-schedule-table input.brk-time{width:76px;border:1px solid #ddd6fe;border-radius:5px;padding:4px 5px;font-size:12px;font-family:inherit;background:#faf5ff;text-align:center;}
+    .work-schedule-table input.brk-time:disabled{background:#f3f4f6;color:#9ca3af;border-color:#e2e8f0;}
+    .work-schedule-table .brk-sep{font-size:11px;color:#7c3aed;font-weight:700;padding:0 1px;}
+    /* 복수 휴게슬롯 */
+    .brk-slots-wrap{display:flex;flex-direction:column;gap:3px;align-items:flex-start;min-width:210px;}
+    .brk-slot-row{display:flex;align-items:center;gap:3px;}
+    .btn-brk-add{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;border:1.5px solid #7c3aed;background:#faf5ff;color:#7c3aed;font-size:13px;font-weight:700;cursor:pointer;line-height:1;flex-shrink:0;transition:background .12s;}
+    .btn-brk-add:hover{background:#ede9fe;}
+    .btn-brk-add:disabled{border-color:#d1d5db;color:#d1d5db;background:#f9fafb;cursor:not-allowed;}
+    .btn-brk-del{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;border:1.5px solid #fca5a5;background:#fff5f5;color:#ef4444;font-size:12px;font-weight:700;cursor:pointer;line-height:1;flex-shrink:0;transition:background .12s;}
+    .btn-brk-del:hover{background:#fee2e2;}
+    .work-schedule-table .day-toggle{width:16px;height:16px;cursor:pointer;accent-color:#3b82f6;}
+    /* 일괄 설정 바 */
+    .bulk-schedule-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 14px;background:linear-gradient(90deg,#f0f9ff 0%,#faf5ff 100%);border:1.5px solid #bae6fd;border-radius:9px;margin-bottom:8px;}
+    .bulk-schedule-bar .bulk-label{font-size:12px;font-weight:700;color:#0369a1;white-space:nowrap;display:flex;align-items:center;gap:4px;}
+    .bulk-schedule-bar .bulk-sep{color:#cbd5e1;font-size:13px;margin:0 2px;}
+    .bulk-schedule-bar input[type=time]{width:90px;border:1px solid #bae6fd;border-radius:6px;padding:5px 7px;font-size:12.5px;font-family:inherit;background:#fff;color:#1e293b;text-align:center;}
+    .bulk-schedule-bar input.bulk-brk{border-color:#ddd6fe;background:#faf5ff;}
+    .bulk-schedule-bar .bulk-divider{width:1px;height:26px;background:#e2e8f0;margin:0 4px;}
+    .bulk-schedule-bar .btn-bulk-apply{
+      display:flex;align-items:center;gap:5px;
+      padding:6px 15px;
+      background:linear-gradient(135deg,#3b82f6,#6366f1);color:#fff;
+      border:none;border-radius:7px;font-size:12.5px;font-weight:700;
+      cursor:pointer;white-space:nowrap;font-family:inherit;
+      box-shadow:0 2px 6px rgba(99,102,241,.25);
+      transition:background .18s,box-shadow .18s,transform .15s;
+    }
+    .bulk-schedule-bar .btn-bulk-apply:hover:not(:disabled){
+      background:linear-gradient(135deg,#2563eb,#4f46e5);
+      box-shadow:0 4px 12px rgba(99,102,241,.38);
+      transform:translateY(-1px);
+    }
+    .bulk-schedule-bar .btn-bulk-apply:active:not(:disabled){transform:scale(.96) translateY(1px);}
+    .bulk-schedule-bar .btn-bulk-apply:disabled,.bulk-schedule-bar .btn-bulk-apply[disabled]{opacity:.42;cursor:not-allowed;pointer-events:none;box-shadow:none;}
+    .bulk-apply-target{display:flex;align-items:center;gap:6px;font-size:11.5px;color:#374151;white-space:nowrap;}
+    .bulk-apply-target label{display:flex;align-items:center;gap:3px;cursor:pointer;}
+    .bulk-apply-target input[type=checkbox]{width:14px;height:14px;accent-color:#6366f1;}
+    .bulk-schedule-tip{font-size:11px;color:#6b7280;margin-top:5px;padding-left:2px;}
+    .work-schedule-table .day-label{font-weight:700;font-size:12.5px;}
+    .work-schedule-table .computed-h{font-size:11.5px;color:#0369a1;font-weight:600;min-width:48px;display:inline-block;}
+    .wsh-total{font-size:12px;color:#374151;margin-top:8px;padding:7px 12px;background:#f8fafc;border-radius:7px;border:1px solid #e2e8f0;display:flex;gap:16px;flex-wrap:wrap;}
+    .wsh-total span{font-weight:700;color:#0369a1;}
+    /* 스켈레톤 로딩 */
+    .skel-text{display:inline-block;background:linear-gradient(90deg,#e2e8f0 25%,#f1f5f9 50%,#e2e8f0 75%);background-size:200% 100%;border-radius:4px;height:14px;vertical-align:middle;}
+    @keyframes skelPulse{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
+    .skel-text{animation:skelPulse 1.4s ease-in-out infinite;}
+    /* 고객사 카드 스켈레톤 */
+    .company-card-skel{border:1px solid #e8eaed;border-radius:12px;padding:18px;background:#fff;animation:skelPulse 1.4s ease-in-out infinite;}
+    .company-card-skel .skel-line{background:linear-gradient(90deg,#e2e8f0 25%,#f1f5f9 50%,#e2e8f0 75%);background-size:200% 100%;border-radius:6px;animation:skelPulse 1.4s ease-in-out infinite;}
+    /* 대시보드 로딩 모달 */
+    #dash-loading-modal{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9000;display:flex;align-items:center;justify-content:center;opacity:1;transition:opacity .3s;}
+    #dash-loading-modal.closing{opacity:0;pointer-events:none;}
+    #dash-loading-modal .dlm-box{background:#fff;border-radius:18px;padding:36px 44px;display:flex;flex-direction:column;align-items:center;gap:20px;box-shadow:0 24px 60px rgba(0,0,0,.18);min-width:260px;}
+    #dash-loading-modal .dlm-spinner{width:44px;height:44px;border:4px solid #e0f2fe;border-top-color:#0284c7;border-radius:50%;animation:tblSpin .75s linear infinite;}
+    #dash-loading-modal .dlm-text{font-size:14px;font-weight:600;color:#1e40af;text-align:center;line-height:1.6;}
+    #dash-loading-modal .dlm-dots span{display:inline-block;animation:dtlDot 1.4s ease-in-out infinite;opacity:0;}
+    #dash-loading-modal .dlm-dots span:nth-child(2){animation-delay:.2s;}
+    #dash-loading-modal .dlm-dots span:nth-child(3){animation-delay:.4s;}
+    @keyframes dtlDot{0%,80%,100%{opacity:0;}40%{opacity:1;}}
+    /* 테이블 로딩 오버레이 */
+    .tbl-loading-wrap{position:relative;min-height:160px;}
+    .tbl-loading-overlay{position:absolute;inset:0;background:rgba(255,255,255,.82);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;z-index:10;border-radius:0 0 8px 8px;}
+    .tbl-loading-overlay .tbl-spin{width:32px;height:32px;border:3px solid #e2e8f0;border-top-color:#6366f1;border-radius:50%;animation:tblSpin .7s linear infinite;}
+    .tbl-loading-overlay .tbl-spin-txt{font-size:13px;color:#64748b;font-weight:500;}
+    @keyframes tblSpin{to{transform:rotate(360deg);}}
+    /* ── 필수 입력 필드 하이라이트 ── */
+    .ct-field-error input,
+    .ct-field-error select,
+    .ct-field-error textarea {
+      border: 2px solid #ef4444 !important;
+      background: #fff5f5 !important;
+      box-shadow: 0 0 0 3px rgba(239,68,68,.15) !important;
+      animation: ctFieldShake .35s ease;
+    }
+    .ct-field-error label { color: #dc2626 !important; }
+    @keyframes ctFieldShake {
+      0%,100%{ transform:translateX(0); }
+      20%{ transform:translateX(-5px); }
+      40%{ transform:translateX(5px); }
+      60%{ transform:translateX(-4px); }
+      80%{ transform:translateX(4px); }
+    }
+    /* 필수 항목 안내 배너 */
+    #ct-validation-banner {
+      display:none;
+      margin: 0 0 14px;
+      padding: 11px 15px;
+      background: #fff5f5;
+      border: 1.5px solid #fca5a5;
+      border-radius: 10px;
+      font-size: 12.5px;
+      color: #991b1b;
+      line-height: 1.7;
+    }
+    #ct-validation-banner .vb-title {
+      font-weight: 800;
+      font-size: 13px;
+      color: #dc2626;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+    #ct-validation-banner ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+    #ct-validation-banner ul li { margin-bottom: 2px; }

@@ -1,0 +1,81 @@
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:500;display:none;align-items:flex-end;justify-content:center;-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+    .modal-overlay.open{display:flex;animation:overlayFade .2s ease}
+    @keyframes overlayFade{from{opacity:0}to{opacity:1}}
+    .modal-sheet{background:#fff;border-radius:24px 24px 0 0;width:100%;max-width:540px;max-height:94vh;max-height:94dvh;overflow-y:auto;padding-bottom:calc(20px + env(safe-area-inset-bottom));animation:sheetSlide .25s cubic-bezier(0.32,0.72,0,1)}
+    @keyframes sheetSlide{from{transform:translateY(100%)}to{transform:translateY(0)}}
+    .modal-handle{width:44px;height:5px;background:#e0e0e0;border-radius:3px;margin:10px auto 12px}
+    .modal-header-bar{display:flex;align-items:center;justify-content:space-between;padding:0 18px 12px;border-bottom:1px solid #f0f2f5}
+    .modal-close-btn{background:none;border:none;font-size:20px;color:#9ca3af;cursor:pointer;padding:4px;min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:background .15s}
+    .modal-close-btn:active{background:#f3f4f6}
+
+    /* ─ Payslip content ─ */
+    .ps-header{background:linear-gradient(135deg,#1a1a2e,#0f3460);padding:20px 18px 22px;text-align:center}
+    .ps-header .ps-month{color:rgba(255,255,255,.65);font-size:11.5px;margin-bottom:6px;letter-spacing:0.3px}
+    .ps-header .ps-net{color:#fff;font-size:32px;font-weight:800;letter-spacing:-0.5px;line-height:1.1}
+    .ps-header .ps-emp{color:rgba(255,255,255,.65);font-size:11.5px;margin-top:8px}
+    .ps-header .ps-date{display:inline-flex;align-items:center;gap:4px;background:rgba(99,102,241,.3);color:#c7d2fe;font-size:11px;font-weight:600;padding:4px 12px;border-radius:20px;margin-top:8px}
+    .ps-summary{display:grid;grid-template-columns:1fr 1px 1fr 1px 1fr;padding:14px 0;border-bottom:1px solid #f0f2f5}
+    .ps-sum-item{text-align:center;padding:3px 2px}
+    .ps-sum-item .sl{font-size:10px;color:#aaa} .ps-sum-item .sv{font-size:12.5px;font-weight:800;margin-top:3px;letter-spacing:-0.3px;word-break:keep-all}
+    .ps-sum-item .sv.plus{color:#3b82f6} .ps-sum-item .sv.minus{color:#e94560} .ps-sum-item .sv.net{color:#10b981}
+    .ps-divider{background:#f0f2f5}
+    .ps-section{padding:0 16px}
+    .ps-section-title{font-size:11.5px;font-weight:700;padding:11px 0 7px;display:flex;align-items:center;gap:5px;border-bottom:1px dashed}
+    .ps-section-title.blue{color:#3b82f6;border-color:#bfdbfe}
+    .ps-section-title.red{color:#e94560;border-color:#ffd0d8}
+    .ps-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #f8f9fb;font-size:13px;min-height:40px}
+    .ps-row:last-child{border-bottom:none}
+    .ps-row .pl{color:#555;flex:1;padding-right:8px;word-break:keep-all} .ps-row .pv{font-weight:600;text-align:right;white-space:nowrap} .ps-row .pv.zero{color:#ccc;font-weight:400} .ps-row .pv.sub{font-size:10.5px;color:#888}
+    .ps-total{display:flex;justify-content:space-between;padding:13px 16px;font-weight:700;font-size:13.5px}
+    .ps-total.blue{background:rgba(59,130,246,.06);color:#3b82f6} .ps-total.red{background:rgba(233,69,96,.06);color:#e94560}
+    .ps-net-row{display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,rgba(16,185,129,.1),rgba(16,185,129,.05));padding:16px 16px;border-top:2px solid #10b981;font-size:14px;font-weight:800}
+    .ps-net-row .nv{color:#10b981;font-size:22px;font-weight:800;letter-spacing:-0.5px}
+
+    /* ─ Info rows ─ */
+    .info-card{background:#fff;border-radius:14px;padding:14px 16px;box-shadow:0 2px 10px rgba(0,0,0,.06);margin-bottom:10px}
+    .info-card-title{font-size:11.5px;font-weight:700;color:#9ca3af;margin-bottom:10px;display:flex;align-items:center;gap:5px}
+    .info-row{display:flex;justify-content:space-between;align-items:flex-start;padding:8px 0;border-bottom:1px solid #f5f5f5;font-size:13px;gap:8px}
+    .info-row:last-child{border-bottom:none}
+    .info-row .il{color:#9ca3af;flex-shrink:0} .info-row .iv{font-weight:600;text-align:right;word-break:break-all;min-width:0}
+
+    /* ─ Contract badge ─ */
+    .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
+    .badge-blue{background:#dbeafe;color:#1d4ed8} .badge-green{background:#d1fae5;color:#065f46}
+    .badge-purple{background:#ede9fe;color:#4c1d95} .badge-orange{background:#fed7aa;color:#c2410c}
+    .badge-cyan{background:#cffafe;color:#0e7490} .badge-pink{background:#fce7f3;color:#9d174d}
+    .badge-gray{background:#f3f4f6;color:#374151} .badge-red{background:#fee2e2;color:#991b1b}
+
+    /* ─ Billing list ─ */
+    .billing-row{display:flex;justify-content:space-between;align-items:flex-start;padding:13px 0;border-bottom:1px solid #f5f5f5;gap:8px}
+    .billing-row:last-child{border-bottom:none}
+    .billing-left{min-width:0;flex:1}
+    .billing-right{flex-shrink:0;text-align:right}
+
+    /* ─ No data ─ */
+    .no-data{text-align:center;padding:52px 20px;color:#bbb}
+    .no-data i{font-size:44px;margin-bottom:12px;display:block}
+    .no-data p{font-size:13.5px;line-height:1.7}
+
+    /* ─ Pie layout ─ */
+    .pie-layout{display:flex;flex-direction:column;gap:14px}
+    .pie-chart-wrap{display:flex;justify-content:center}
+    /* ─ Pie legend ─ */
+    .pie-legend{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+    .pie-legend-item{display:flex;flex-direction:column;gap:2px;padding:7px 8px;background:#f9fafb;border:1px solid #f0f2f5;border-radius:8px;transition:background .1s}
+    .pie-legend-item:active{background:#f3f4f6}
+
+    /* ─ Summary badges row ─ */
+    .summary-badges{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}
+    .summary-badge{font-size:11.5px;padding:5px 11px;border-radius:20px;font-weight:600;border:1px solid;text-align:center}
+
+    /* ─ Scrollable table wrapper ─ */
+    .table-wrap{overflow-x:auto;overflow-y:auto;max-height:300px;-webkit-overflow-scrolling:touch;scroll-behavior:smooth;position:relative}
+    .table-wrap::-webkit-scrollbar{width:3px;height:3px}
+    .table-wrap::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:2px}
+    .table-wrap::-webkit-scrollbar-track{background:transparent}
+
+    /* ─ 직원 칩 컨테이너 ─ */
+    .emp-chips-wrap{display:flex;gap:7px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none;-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory;-ms-overflow-style:none}
+    .emp-chips-wrap::-webkit-scrollbar{display:none}
+
+    /* ─ 계약현황 페이지 (구 헤더/필터 CSS 제거됨, ct-table 공통 스타일은 유지) ─ */

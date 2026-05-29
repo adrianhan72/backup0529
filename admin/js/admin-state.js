@@ -1,0 +1,855 @@
+// ─── STATE ───
+let allCompanies=[], allEmployees=[], allContracts=[], allPayrolls=[], allBillings=[];
+let allLeaveLedgers=[];   // 연차휴가 관리대장 캐시 (annual_leave_ledger 테이블 전체)
+let allWLNotifications=[];   // 임금대장 미확인 알림 캐시
+let editId={company:null,contract:null};
+const ITEMS=10;
+let pages={emp:1,cont:1,pay:1};
+
+// ─── 전역 필터·선택 상태 (showPage/init에서 참조하므로 최상단 선언) ───
+
+let currentContCompanyId = null;
+let currentPayCompanyId = null;
+let currentLsCompanyId = null;  // ← showPage에서 참조하므로 반드시 최상단 선언
+// ─── 크로스 페이지 공유 고객사 (어느 페이지에서 선택해도 다른 페이지에 자동 반영) ───
+let currentGlobalCompanyId = null;
+let currentGlobalCompanyName = '';
+
+
+// ─── PAYROLL INPUT MODAL ───
+function openPayrollInputModal(companyId){
+  const co = allCompanies.find(c=>c.id===companyId);
+  if(co && co.status !== '이용중'){
+    toast('"' + co.company_name + '"은 ' + co.status + ' 상태입니다. 이용중인 고객사만 급여 입력이 가능합니다.', 'error');
+    return;
+  }
+  // 급여 입력 페이지로 이동
+  showPage('payroll-input',document.querySelector('[data-page="payroll-input"]'));
+
+  // 페이지 렌더 후 고객사 바로 선택
+  setTimeout(()=>{
+    if(!co) return;
+
+    // 이번 달로 먼저 설정
+    const now = new Date();
+    const yr = document.getElementById('pi-year');
+    const mo = document.getElementById('pi-month');
+    if(yr) yr.value = now.getFullYear();
+    if(mo) mo.value = now.getMonth()+1;
+
+    // selectPICompany 호출 → 카드 전환 + 직원 목록 로드까지 한번에 처리
+    selectPICompany(companyId, co.company_name);
+  }, 100);
+}
+
+// ─── 관리자 계정 캐시 ───
+let allAdminAccounts = [];   // { id, username, display_name } 목록
+
+async function loadAdminAccounts(){
+  try{
+    const res  = await fetch('../tables/admin_accounts?limit=200');
+    const data = await res.json();
+    allAdminAccounts = data.data || [];
+  } catch(e){
+    console.warn('[관리자 계정 로드 오류]', e);
+    allAdminAccounts = [];
+  }
+}
+
+/**
+ * 현재 로그인된 관리자의 username 반환 (저장용)
+ * 항상 username(로그인 ID)을 발송자 필드에 저장해야 display_name 변경 시 자동 반영됨
+ */
+function _getAdminUsername(){
+  return sessionStorage.getItem('admin_username') || 'admin';
+}
+
+/**
+ * username → display_name 변환 헬퍼 (렌더링 표시용)
+ * - username 으로 먼저 조회
+ * - 없으면 display_name 자체로 저장된 구 레코드 호환 (그대로 반환)
+ * - 그래도 없으면 원본 값 반환
+ */
+function _resolveAdminName(val){
+  if(!val || val === '-') return val || '-';
+  const byUsername = allAdminAccounts.find(a => a.username === val);
+  if(byUsername) return byUsername.display_name || val;
+  const byDisplay  = allAdminAccounts.find(a => a.display_name === val);
+  if(byDisplay)  return byDisplay.display_name || val;
+  return val;
+}
+
+// ─── 대시보드 로딩 모달 ───
+function _closeDashLoadingModal(){
+  const m = document.getElementById('dash-loading-modal');
+  if(!m) return;
+  m.classList.add('closing');
+  setTimeout(() => m.remove(), 320);
+}
+
+// ─── 버튼 Ripple 효과 ───
+(function _initRipple(){
+  function addRipple(e){
+    const btn = e.currentTarget;
+    if(btn.disabled || btn.getAttribute('disabled')) return;
+    // 기존 ripple 제거
+    btn.querySelectorAll('.btn-ripple').forEach(r => r.remove());
+    const rect = btn.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height) * 1.6;
+    const x = e.clientX - rect.left - size / 2;
+    const y = e.clientY - rect.top  - size / 2;
+    const ripple = document.createElement('span');
+    ripple.className = 'btn-ripple';
+    ripple.style.cssText = `width:${size}px;height:${size}px;left:${x}px;top:${y}px;`;
+    btn.appendChild(ripple);
+    ripple.addEventListener('animationend', () => ripple.remove());
+  }
+  // 동적 DOM 대응: document 레벨 위임
+  document.addEventListener('mousedown', function(e){
+    const btn = e.target.closest('.btn, .btn-renew, .btn-terminate, .btn-recontract, .btn-void, .btn-draft, .btn-draft-edit, .btn-sb, .cen-bulk-btn, .btn-amend, .btn-cft-confirm, .btn-fixed-terminate, .btn-docx, .btn-print, .btn-final-reg, .btn-amend-complete, .std-update-btn, .al-promo-btn');
+    if(btn) addRipple.call(null, {currentTarget: btn, clientX: e.clientX, clientY: e.clientY});
+  });
+})();
+
+// ─── INIT ───
+let _dataReady = false;       // 핵심 데이터 로드 완료
+let _heavyDataReady = false;  // 급여·청구 데이터 로드 완료
+
+async function init(){
+  try {
+    const t0 = performance.now();
+    console.log('[급여관리] 핵심 데이터 로드 중...');
+
+    // ── 1단계: critical path – 화면 표시에 필수인 3개 테이블만 먼저 로드 ──
+    showSkeletons();
+    await Promise.all([loadCompanies(), loadEmployees(), loadContracts(), loadAdminAccounts()]);
+
+    const t1 = Math.round(performance.now() - t0);
+    console.log(`[급여관리] 핵심 데이터 로드 완료 (${t1}ms):`,
+      {고객사: allCompanies.length, 직원: allEmployees.length, 계약: allContracts.length});
+
+    _dataReady = true;
+    hideSkeletons();
+
+    // 핵심 데이터만으로 즉시 화면 렌더링
+    initMonthFilter(); initPIMonths();
+    renderDashboard(); renderCompanies(); renderContracts();
+    populateFilters(); populatePICompanies(); initBreakSelects();
+    if(document.getElementById('page-contracts')?.classList.contains('active')){
+      renderContCompanyList();
+    }
+    // 임금대장 페이지가 이미 열려 있으면 showPage 흐름 전체 재실행 (데이터 로드 완료 후)
+    if(document.getElementById('page-wage-ledger')?.classList.contains('active')){
+      const _wlMenuEl = document.querySelector('[data-page="wage-ledger"]');
+      showPage('wage-ledger', _wlMenuEl);
+    }
+    // 퇴직급여 페이지가 이미 열려 있으면 고객사 목록 즉시 렌더링
+    if(document.getElementById('page-severance')?.classList.contains('active')){
+      renderSevCompanyList();
+    }
+    console.log('[급여관리] 화면 준비 완료');
+
+    // ── 2단계: lazy load – 급여·청구 데이터 + 산정기준 데이터 백그라운드 로드 ──
+    loadHeavyData();
+    loadStandards().then(()=>{ _renderStandardsBanner(); });
+    // 중요공지 예약 발송 타이머 복원 (미발송 scheduled 건 복구) + 폴링 시작
+    _gnRestoreScheduledTimers();
+    _gnStartPolling();
+
+  } catch(err) {
+    console.error('[급여관리 오류 상세]', err.name, err.message, err.stack);
+    hideSkeletons();
+    toast('데이터 로드 실패: ' + err.message, 'error');
+  }
+}
+
+// 급여·청구 데이터 백그라운드 로드
+async function loadHeavyData(){
+  try {
+    const t0 = performance.now();
+     await Promise.all([loadPayrolls(), loadBillings(), loadAllSendLogs(), loadWLNotifications(), cenLoadHistory(), loadSeveranceNotices(), loadContractDispatchList(true), loadLeaveLedgers()]);
+    const elapsed = Math.round(performance.now() - t0);
+    console.log(`[급여관리] 급여·청구 데이터 로드 완료 (${elapsed}ms):`,
+      {급여: allPayrolls.length, 청구: allBillings.length});
+    _heavyDataReady = true;
+    // 현재 보이는 페이지에 맞게 추가 렌더링
+    renderPayrolls();
+    renderBillings();
+    // 임금대장 페이지가 열려 있고 고객사가 선택된 상태라면 필터 활성화 + 재렌더링
+    if(_wlCompanyId && document.getElementById('page-wage-ledger')?.classList.contains('active')){
+      _setWLFilterReady(true);
+      renderWageLedger();
+    }
+    // [사용료 숨김] 대시보드 사용료 카드·차트 - 원복 시 아래 주석 해제
+    // renderDashBillingCards();
+    // renderBillingTrendChart();
+    // 고객사 카드 갱신 (사용료 현황 섹션은 주석처리됨)
+    renderDashboardCompanies();
+    // 대시보드 트렌드 차트 재렌더링 (allPayrolls 로드 완료 후)
+    renderCompanyTrendChart();
+    renderEmployeeTrendChart();
+    // 대시보드 미발송 배너 갱신
+    _updateDashUnsentContractBanner();
+    _updateDashUnsentBanner();
+    // 임금대장 메뉴 뱃지 갱신
+    _updateWLMenuBadge();
+    // 대시보드 계약만료 통지 / 정규직 전환 / 퇴직금 지급 이력 배너 갱신 (heavy 로드 완료 후)
+    // 로딩 모달 닫기 (페이드아웃 후 제거)
+    _closeDashLoadingModal();
+    // 급여 입력 전체 임시저장 배너 갱신 (활성 여부 무관 — 다음 진입 시 즉시 표시)
+    renderPIAllDraftBanner();
+    if(document.getElementById('page-dashboard')?.classList.contains('active')){
+      renderDraftAlerts();      // 급여 임시저장 포함 전체 임시저장 카드 갱신 (allPayrolls 로드 완료 후)
+      renderDashExpiryBanner();
+      renderDashProbationBanner();
+      renderDashRegularBanner();
+      renderDashSeveranceBanner();
+    }
+    // 수습 근로자 관리 페이지 활성화 시 고객사 칩 갱신
+    if(document.getElementById('page-probation-mgmt')?.classList.contains('active')){
+      if(!_probMgmtSelectedCoId) renderProbMgmtCompanyList();
+      else renderProbationMgmtTable();
+    }
+    // 연차 관리 페이지가 열려 있고 고객사가 선택된 상태라면 테이블 재렌더링
+    // (관리대장 데이터 + 급여 데이터 로드 완료 후 사용일수 반영)
+    if(_alCompanyId && document.getElementById('page-annual-leave')?.classList.contains('active')){
+      renderAlTable();
+    }
+    // 좌측 메뉴 할일 배지 업데이트 (heavy 로드 완료 후 전체 데이터 확정)
+    updateMenuBadges();
+    // 급여명세서 발송 관리 고객사 칩 배지 갱신 (발송이력·급여데이터 확정 후)
+    if(!document.getElementById('pss-main-section') || document.getElementById('pss-main-section').style.display === 'none'){
+      renderPssCompanyList();
+    }
+    console.log('[급여관리] 시스템 준비 완료');
+  } catch(err) {
+    console.error('[급여관리] 급여·청구 로드 실패:', err);
+  }
+}
+
+// ── 스켈레톤 표시/숨기기 ──
+function showSkeletons(){
+  // 대시보드 고객사 영역
+  const dashComp = document.getElementById('dash-companies');
+  if(dashComp) dashComp.innerHTML = skeletonRows(3, 'dash-company-skeleton');
+  // 사용료 카드 영역
+  ['dash-bill-total','dash-bill-paid','dash-bill-pending','dash-bill-unpaid'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.innerHTML = '<span class="skel-text" style="width:80px;"></span>';
+  });
+}
+function hideSkeletons(){
+  document.querySelectorAll('.skel-text, .dash-company-skeleton').forEach(el=>el.remove());
+}
+function skeletonRows(n, cls=''){
+  return Array.from({length:n}, (_,i)=>`
+    <div class="${cls}" style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #f1f5f9;animation:skelPulse 1.2s ease-in-out ${i*0.15}s infinite;">
+      <div class="skel-text" style="width:120px;height:14px;border-radius:4px;"></div>
+      <div class="skel-text" style="width:60px;height:14px;border-radius:4px;"></div>
+      <div class="skel-text" style="width:80px;height:14px;border-radius:4px;"></div>
+    </div>`).join('');
+}
+
+// ─── API ───
+const api=async(url,opt={})=>{
+  const r=await fetch(url,opt);
+  if(!r.ok) console.error('[API 오류]', url, r.status);
+  return r.status===204?null:r.json();
+};
+async function loadCompanies(){const d=await api('../tables/companies?limit=100');allCompanies=d.data||[]}
+async function loadEmployees(){const d=await api('../tables/employees?limit=200');allEmployees=d.data||[]}
+async function loadContracts(){
+  const d=await api('../tables/contracts?limit=200');
+  allContracts=d.data||[];
+  // 계약예정 → 활성 자동 전환 체크
+  await autoActivatePendingContracts();
+}
+
+/* 계약예정 상태 중 contract_start <= 오늘인 계약을 활성으로 전환 */
+async function autoActivatePendingContracts(){
+  const todayStr = new Date().toISOString().slice(0,10);
+  const toActivate = allContracts.filter(c =>
+    c.status === '계약예정' && c.contract_start && c.contract_start <= todayStr
+  );
+  if(!toActivate.length) return;
+  await Promise.all(toActivate.map(async c => {
+    try {
+      await fetch(`../tables/contracts/${c.id}`, {
+        method:'PATCH', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ status:'활성' })
+      });
+      const idx = allContracts.findIndex(x => x.id === c.id);
+      if(idx > -1) allContracts[idx].status = '활성';
+    } catch(e){ console.warn('[자동전환 오류]', c.id, e); }
+  }));
+}
+
+async function loadPayrolls(){
+  // limit=300으로 잘릴 수 있으므로 전체 페이지네이션으로 모두 로드
+  let page=1, all=[];
+  while(true){
+    const d=await api(`../tables/payrolls?limit=500&page=${page}`);
+    const chunk=d.data||[];
+    all=all.concat(chunk);
+    if(all.length>=(d.total||0)||chunk.length<500) break;
+    page++;
+  }
+  allPayrolls=all;
+}
+async function loadWLNotifications(){
+  const d=await api('../tables/wage_ledger_notifications?limit=500');
+  allWLNotifications=(d.data||[]).filter(n=>!n.is_read);
+}
+
+// 대시보드 미발송 배너용 전체 발송 로그 캐시
+let _allSendLogs = [];
+async function loadAllSendLogs(){
+  const d = await api('../tables/payroll_send_logs?limit=500');
+  _allSendLogs = d.data || [];
+}
+async function loadBillings(){const d=await api('../tables/billing?limit=100');allBillings=d.data||[]}
+async function loadLeaveLedgers(){
+  // 전 직원·전 연도 관리대장 전체 로드 (페이지네이션)
+  let page=1, all=[];
+  while(true){
+    const d=await api(`../tables/annual_leave_ledger?limit=500&page=${page}`);
+    const chunk=d.data||[];
+    all=all.concat(chunk);
+    if(all.length>=(d.total||0)||chunk.length<500) break;
+    page++;
+  }
+  allLeaveLedgers=all;
+}
+
+// ─── HELPERS ───
+const won=n=>Math.round(n||0).toLocaleString('ko-KR')+'원';
+const won2=n=>Math.round(n||0).toLocaleString('ko-KR');
+const getCoName=id=>{const c=allCompanies.find(x=>x.id===id);return c?c.company_name:'-'};
+const getEmpName=id=>{const e=allEmployees.find(x=>x.id===id);return e?e.name:'-'};
+const empCatBadge=c=>({'정규직':'badge-blue','정규직 수습':'badge-cyan','계약직':'badge-purple','계약직 수습':'badge-pink','일용직':'badge-orange'}[c]||'badge-gray');
+
+// ─── 금액 입력 필드 포맷 유틸 ───
+// 숫자 문자열 → 천단위 쉼표 문자열 (음수 지원)
+function formatComma(raw){
+  const isNeg = String(raw).startsWith('-');
+  const digits = String(raw).replace(/[^0-9]/g,'');
+  if(!digits) return '';
+  return (isNeg?'-':'')+parseInt(digits,10).toLocaleString('ko-KR');
+}
+// input[data-amount] 요소의 oninput 핸들러: 커서 위치 유지 + 쉼표 삽입
+function onAmountInput(el, calcFn){
+  const raw = el.value.replace(/,/g,'');
+  if(raw===''||raw==='-'){el.value=raw;if(calcFn)calcFn();return;}
+  const isNeg = raw.startsWith('-');
+  const digits = raw.replace(/[^0-9]/g,'');
+  if(!digits){el.value=isNeg?'-':'';if(calcFn)calcFn();return;}
+  const formatted = (isNeg?'-':'')+parseInt(digits,10).toLocaleString('ko-KR');
+  const selEnd = el.selectionEnd;
+  const oldLen = el.value.length;
+  el.value = formatted;
+  // 커서 위치 보정 (쉼표 개수 변화 반영)
+  const diff = formatted.length - oldLen;
+  try{ el.setSelectionRange(selEnd+diff, selEnd+diff); }catch(e){}
+  if(calcFn) calcFn();
+}
+// input[data-amount] 요소에 값 세팅 (숫자 → 쉼표 포맷)
+function setAmountVal(id, num){
+  const el = document.getElementById(id);
+  if(!el) return;
+  const n = Math.round(num||0);
+  el.value = n===0 ? '' : n.toLocaleString('ko-KR');
+}
+// input[data-amount] 요소에서 숫자 읽기 (쉼표 제거 후 parseFloat)
+function getAmountVal(id){
+  const el = document.getElementById(id);
+  if(!el) return 0;
+  return parseFloat(el.value.replace(/,/g,''))||0;
+}
+
+function toast(msg,type='success'){
+  const t=document.getElementById('toast');
+  t.textContent=(type==='success'?'✅ ':'❌ ')+msg;
+  t.className='toast '+type+' show';
+  setTimeout(()=>t.className='toast',2600);
+}
+function openModal(id){document.getElementById(id).classList.add('open')}
+// ─── 계약 도움말 모달 ───
+function openContractHelp(){
+  document.getElementById('contract-help-modal').classList.add('open');
+}
+function closeContractHelp(){
+  document.getElementById('contract-help-modal').classList.remove('open');
+}
+function closeModal(id){
+  document.getElementById(id).classList.remove('open');
+  // 계약 모달이 닫힐 때 readonly 클래스 및 플래그 초기화
+  if(id==='contract-modal'){
+    const modalEl = document.querySelector('#contract-modal .modal');
+    if(modalEl) modalEl.classList.remove('ct-readonly');
+    _recontractEmpId = null;
+    _currentDraftId  = null;
+    // 임시저장 안내 텍스트 초기화
+    const draftInfoEl = document.getElementById('ct-draft-saved-info');
+    if(draftInfoEl){ draftInfoEl.style.display='none'; draftInfoEl.textContent=''; }
+    // 통합 상태 배너 숨김 및 버튼 초기화
+    _resetStatusBanner();
+  }
+  // 고객사 모달 닫힐 때 draft ID 초기화
+  if(id==='company-modal'){
+    _currentCompanyDraftId = null;
+    const cmDraftInfo = document.getElementById('cm-draft-saved-info');
+    if(cmDraftInfo){ cmDraftInfo.style.display='none'; cmDraftInfo.textContent=''; }
+  }
+}
+function showPage(name,el){
+  try{
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.menu-item').forEach(m=>m.classList.remove('active'));
+  const _pageEl=document.getElementById('page-'+name);
+  if(!_pageEl){console.error('[showPage] 페이지 엘리먼트 없음: page-'+name);return;}
+  _pageEl.classList.add('active');
+  // 페이지 전환 시 스크롤 최상단 이동
+  window.scrollTo(0,0);
+  document.querySelector('.content')?.scrollTo(0,0);
+  document.getElementById('topbar-title').textContent={dashboard:'대시보드',companies:'고객사 관리',['company-notice-log']:'알림 발송 이력',['general-notice']:'중요공지 관리',billing:'시스템 사용료 관리',contracts:'근로 계약 관리',['contract-dispatch']:'근로계약서 발송 관리',['contract-expiry-notice']:'계약만료 통지 관리',['regular-conversion']:'정규직 전환 관리',['probation-mgmt']:'수습 근로자 관리',payrolls:'급여 명세서 조회',['payroll-input']:'급여 입력',['labor-status']:'급여 통계 조회',['payslip-send']:'급여 명세서 발송 관리',['admin-accounts']:'관리자 계정 관리',['wage-ledger']:'임금대장',standards:'년도별 산정기준',severance:'퇴직급여 관리',['annual-leave']:'연차 관리',['leave-promotion']:'사용촉진 발송 이력'}[name]||name;
+  // 도움말 버튼: 근로 계약 관리 페이지에서만 표시
+  const _helpBtn = document.getElementById('topbar-help-btn');
+  if(_helpBtn) _helpBtn.style.display = (name === 'contracts') ? '' : 'none';
+  if(name==='labor-status'){
+    // 데이터 미준비 — 칩 영역 스피너
+    if(!_dataReady){
+      const chips = document.getElementById('ls-company-chips');
+      if(chips) chips.innerHTML = `<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#9ca3af;padding:8px 0;"><div style="width:18px;height:18px;border:2px solid #e2e8f0;border-top-color:#6366f1;border-radius:50%;animation:tblSpin .7s linear infinite;flex-shrink:0;"></div>고객사 목록 불러오는 중...</div>`;
+      document.getElementById('ls-company-select-card').style.display = '';
+      document.getElementById('ls-list-section').style.display = 'none';
+      if(el) el.classList.add('active');
+      return;
+    }
+    // 글로벌 공유: 선택된 고객사가 있으면 무조건 selectLsCompany()로 UI 완전 복원
+    if(currentGlobalCompanyId){
+      const _gco = allCompanies.find(c=>c.id===currentGlobalCompanyId);
+      if(_gco){ if(el) el.classList.add('active'); selectLsCompany(currentGlobalCompanyId, _gco.company_name); return; }
+    }
+    // 선택된 고객사 없음 — 고객사 선택 화면 표시
+    renderLsCompanyList();
+    document.getElementById('ls-company-select-card').style.display = '';
+    document.getElementById('ls-list-section').style.display = 'none';
+  }
+  if(name==='contracts'){
+    // 데이터 미준비 — 칩 영역 스피너
+    if(!_dataReady){
+      const chips = document.getElementById('cont-company-chips');
+      if(chips) chips.innerHTML = `<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#9ca3af;padding:8px 0;"><div style="width:18px;height:18px;border:2px solid #e2e8f0;border-top-color:#6366f1;border-radius:50%;animation:tblSpin .7s linear infinite;flex-shrink:0;"></div>고객사 목록 불러오는 중...</div>`;
+      document.getElementById('cont-company-select-card').style.display = '';
+      document.getElementById('cont-list-section').style.display = 'none';
+      if(el) el.classList.add('active');
+      return;
+    }
+    // 글로벌 공유: 선택된 고객사가 있으면 무조건 selectContCompany()로 UI 완전 복원
+    if(currentGlobalCompanyId){
+      const _gco = allCompanies.find(c=>c.id===currentGlobalCompanyId);
+      if(_gco){ if(el) el.classList.add('active'); selectContCompany(currentGlobalCompanyId, _gco.company_name); return; }
+    }
+    // 선택된 고객사 없음 — 고객사 선택 화면 표시
+    renderContCompanyList();
+    document.getElementById('cont-company-select-card').style.display = '';
+    document.getElementById('cont-list-section').style.display = 'none';
+  }
+  if(name==='payroll-input'){
+    // 데이터 미준비 — 칩 영역 스피너
+    if(!_dataReady){
+      const chips = document.getElementById('pi-company-chips');
+      if(chips) chips.innerHTML = `<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#9ca3af;padding:8px 0;"><div style="width:18px;height:18px;border:2px solid #e2e8f0;border-top-color:#6366f1;border-radius:50%;animation:tblSpin .7s linear infinite;flex-shrink:0;"></div>고객사 목록 불러오는 중...</div>`;
+      document.getElementById('pi-company-select-card').style.display = '';
+      document.getElementById('pi-input-section').style.display = 'none';
+      if(el) el.classList.add('active');
+      // heavy 데이터 미준비 시에도 배너 갱신 시도 (이미 로드됐으면 표시)
+      renderPIAllDraftBanner();
+      return;
+    }
+    // 급여 입력 페이지 진입 시 전체 임시저장 배너 항상 갱신 (return 분기 전에 실행)
+    renderPIAllDraftBanner();
+    // 글로벌 공유: 선택된 고객사가 있으면 무조건 selectPICompany()로 UI 완전 복원
+    // (급여 입력은 '이용중' 고객사만 허용)
+    if(currentGlobalCompanyId){
+      const _gco = allCompanies.find(c => c.id === currentGlobalCompanyId && c.status === '이용중');
+      if(_gco){
+        if(el) el.classList.add('active');
+        renderPICompanyList();
+        selectPICompany(currentGlobalCompanyId, _gco.company_name);
+        return;
+      }
+    }
+    // 선택된 고객사 없음 — 고객사 선택 화면 표시
+    renderPICompanyList();
+    document.getElementById('pi-company-select-card').style.display = '';
+    document.getElementById('pi-input-section').style.display = 'none';
+  }
+  if(name==='payrolls'){
+    // 데이터 미준비 — 칩 영역 스피너
+    if(!_dataReady){
+      const chips = document.getElementById('pay-company-chips');
+      if(chips) chips.innerHTML = `<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#9ca3af;padding:8px 0;"><div style="width:18px;height:18px;border:2px solid #e2e8f0;border-top-color:#6366f1;border-radius:50%;animation:tblSpin .7s linear infinite;flex-shrink:0;"></div>고객사 목록 불러오는 중...</div>`;
+      document.getElementById('pay-company-select-card').style.display = '';
+      document.getElementById('pay-list-section').style.display = 'none';
+      document.getElementById('pay-excel-btn').style.display = 'none';
+      if(el) el.classList.add('active');
+      return;
+    }
+    // 글로벌 공유: 선택된 고객사가 있으면 무조건 selectPayCompany()로 UI 완전 복원
+    if(currentGlobalCompanyId){
+      const _gco = allCompanies.find(c=>c.id===currentGlobalCompanyId);
+      if(_gco){ if(el) el.classList.add('active'); selectPayCompany(currentGlobalCompanyId, _gco.company_name); return; }
+    }
+    // 선택된 고객사 없음 — 고객사 선택 화면 표시
+    renderPayCompanyList();
+    document.getElementById('pay-company-select-card').style.display = '';
+    document.getElementById('pay-list-section').style.display = 'none';
+    document.getElementById('pay-excel-btn').style.display = 'none';
+  }
+  if(name==='payslip-send'){
+    // 데이터 미준비 — 칩 영역 스피너
+    if(!_dataReady){
+      const chips = document.getElementById('pss-company-chips');
+      if(chips) chips.innerHTML = `<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#9ca3af;padding:8px 0;"><div style="width:18px;height:18px;border:2px solid #e2e8f0;border-top-color:#6366f1;border-radius:50%;animation:tblSpin .7s linear infinite;flex-shrink:0;"></div>고객사 목록 불러오는 중...</div>`;
+      document.getElementById('pss-company-select-card').style.display = '';
+      document.getElementById('pss-main-section').style.display = 'none';
+      if(el) el.classList.add('active');
+      return;
+    }
+    // 글로벌 공유: 선택된 고객사가 있으면 자동 선택
+    renderPssCompanyList();
+    if(currentGlobalCompanyId){
+      const _gco = allCompanies.find(c=>c.id===currentGlobalCompanyId && c.status==='이용중');
+      if(_gco){ if(el) el.classList.add('active'); selectPssCompany(currentGlobalCompanyId, _gco.company_name); return; }
+    }
+    // 선택된 고객사 없음 — 고객사 선택 화면 표시
+    document.getElementById('pss-company-select-card').style.display = '';
+    document.getElementById('pss-main-section').style.display = 'none';
+  }
+  if(name==='admin-accounts'){
+    renderAdminAccounts();
+  }
+  if(name==='standards'){
+    renderInsuranceRates();
+    renderMinimumWages();
+    // 탭 초기화 (항상 첫번째 탭)
+    switchStdTab('insurance');
+  }
+  if(name==='wage-ledger'){
+    // 데이터 미준비 상태 → 로딩 안내 후 데이터 완료 시 자동 재렌더링
+    if(!_dataReady){
+      const chips = document.getElementById('wl-company-chips');
+      if(chips) chips.innerHTML = `<div style="font-size:12.5px;color:#9ca3af;padding:8px 0;display:flex;align-items:center;gap:6px;"><i class="fas fa-circle-notch fa-spin"></i> 고객사 목록 불러오는 중...</div>`;
+      document.getElementById('wl-company-select-card').style.display='';
+      document.getElementById('wl-main-section').style.display='none';
+      if(el) el.classList.add('active');
+      return;
+    }
+    // 글로벌 공유: 다른 페이지에서 선택된 고객사가 있으면 자동 선택
+    if(currentGlobalCompanyId){
+      const _gco = allCompanies.find(c=>c.id===currentGlobalCompanyId);
+      if(_gco){ if(el) el.classList.add('active'); selectWLCompany(currentGlobalCompanyId, _gco.company_name); return; }
+    }
+    // 이전에 직접 선택한 고객사 유지
+    renderWLCompanyList();
+    if(_wlCompanyId){
+      document.getElementById('wl-company-select-card').style.display='none';
+      document.getElementById('wl-main-section').style.display='';
+      renderWageLedger();
+    } else {
+      document.getElementById('wl-company-select-card').style.display='';
+      document.getElementById('wl-main-section').style.display='none';
+    }
+  }
+  if(name==='severance'){
+    // 데이터 미준비 — 칩 영역 스피너
+    if(!_dataReady){
+      const chips = document.getElementById('sev-company-chips');
+      if(chips) chips.innerHTML = `<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#9ca3af;padding:8px 0;"><div style="width:18px;height:18px;border:2px solid #e2e8f0;border-top-color:#f59e0b;border-radius:50%;animation:tblSpin .7s linear infinite;flex-shrink:0;"></div>고객사 목록 불러오는 중...</div>`;
+      document.getElementById('sev-company-select-card').style.display='';
+      document.getElementById('sev-main-section').style.display='none';
+      if(el) el.classList.add('active');
+      return;
+    }
+    // 글로벌 공유: 다른 페이지에서 선택된 고객사가 있으면 자동 선택
+    if(currentGlobalCompanyId){
+      const _gco = allCompanies.find(c=>c.id===currentGlobalCompanyId);
+      if(_gco){ if(el) el.classList.add('active'); selectSevCompany(currentGlobalCompanyId, _gco.company_name); return; }
+    }
+    // 이전에 직접 선택한 고객사 유지
+    renderSevCompanyList();
+    if(_sevCompanyId){
+      document.getElementById('sev-company-select-card').style.display='none';
+      document.getElementById('sev-main-section').style.display='';
+      renderSeverance();
+    } else {
+      document.getElementById('sev-company-select-card').style.display='';
+      document.getElementById('sev-main-section').style.display='none';
+    }
+  }
+  if(name==='contract-dispatch'){
+    if(!_dataReady){
+      const tbody = document.getElementById('cdp-unsent-tbody');
+      if(tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:#9ca3af;"><i class="fas fa-circle-notch fa-spin" style="color:#6366f1;margin-right:8px;"></i>고객사 데이터 불러오는 중...</td></tr>`;
+      if(el) el.classList.add('active');
+      return;
+    }
+    // 페이지 진입 시 항상 DB에서 최신 이력 강제 재조회 후 렌더링
+    (async()=>{
+      await loadContractDispatchList(true);
+      renderCdpUnsentMonthTabs();   // 미발송 년월 탭
+      renderCdpUnsentList();        // 미발송 목록
+      await renderContractDispatchPage();
+    })();
+  }
+  if(name==='contract-expiry-notice'){
+    if(!_dataReady){
+      // 테이블 tbody에 이미 초기 스피너가 있으므로 그대로 유지 — 데이터 로드 완료 후 재진입 시 렌더
+      const tbody = document.getElementById('cen-target-tbody');
+      if(tbody) tbody.innerHTML = `<tr><td colspan="9" class="cen-empty"><i class="fas fa-circle-notch fa-spin" style="color:#6366f1;"></i>&nbsp;고객사 데이터 불러오는 중...</td></tr>`;
+      if(el) el.classList.add('active');
+      return;
+    }
+    (async()=>{ await initCenPage(); render2YrStats(); })();
+  }
+  if(name==='regular-conversion'){
+    if(!_dataReady){
+      const tbody = document.getElementById('rc-target-tbody');
+      if(tbody) tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:40px;color:#9ca3af;"><i class="fas fa-circle-notch fa-spin" style="color:#6366f1;margin-right:8px;"></i>고객사 데이터 불러오는 중...</td></tr>`;
+      if(el) el.classList.add('active');
+      return;
+    }
+    (async()=>{ await initRcPage(); })();
+  }
+  if(name==='probation-mgmt'){
+    if(!_dataReady){
+      const chips = document.getElementById('probmgmt-company-chips');
+      if(chips) chips.innerHTML = `<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#9ca3af;padding:8px 0;"><div style="width:18px;height:18px;border:2px solid #e2e8f0;border-top-color:#0d9488;border-radius:50%;animation:tblSpin .7s linear infinite;flex-shrink:0;"></div>고객사 목록 불러오는 중...</div>`;
+      document.getElementById('probmgmt-company-select-card').style.display = '';
+      document.getElementById('probmgmt-content-section').style.display     = 'none';
+      if(el) el.classList.add('active');
+      return;
+    }
+    // 계약예정 → 활성 자동 전환 체크
+    autoActivatePendingContracts().then(() => {
+      renderProbMgmtCompanyList();
+      if(_probMgmtSelectedCoId) renderProbationMgmtTable();
+      updateMenuBadges();
+    });
+    // 글로벌 공유: 다른 페이지에서 선택된 고객사가 있으면 자동 선택
+    if(currentGlobalCompanyId && !_probMgmtSelectedCoId){
+      const _gco = allCompanies.find(c => c.id === currentGlobalCompanyId);
+      const _hasTargets = _getProbationAllTargets().some(t => t.contract.company_id === currentGlobalCompanyId);
+      if(_gco && _hasTargets){
+        if(el) el.classList.add('active');
+        selectProbMgmtCompany(currentGlobalCompanyId, _gco.company_name);
+        return;
+      }
+    }
+    // 고객사 선택 카드 표시 (이미 선택된 경우 유지)
+    if(_probMgmtSelectedCoId){
+      document.getElementById('probmgmt-company-select-card').style.display = 'none';
+      document.getElementById('probmgmt-content-section').style.display     = '';
+      renderProbationMgmtTable();
+    } else {
+      document.getElementById('probmgmt-company-select-card').style.display = '';
+      document.getElementById('probmgmt-content-section').style.display     = 'none';
+      renderProbMgmtCompanyList();
+    }
+  }
+  if(name==='annual-leave'){
+    // 데이터 미준비 — 칩 영역 스피너
+    if(!_dataReady){
+      const chips = document.getElementById('al-company-chips');
+      if(chips) chips.innerHTML = `<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#9ca3af;padding:8px 0;"><div style="width:18px;height:18px;border:2px solid #e2e8f0;border-top-color:#6366f1;border-radius:50%;animation:tblSpin .7s linear infinite;flex-shrink:0;"></div>고객사 목록 불러오는 중...</div>`;
+      document.getElementById('al-company-select-card').style.display = '';
+      document.getElementById('al-main-section').style.display = 'none';
+      if(el) el.classList.add('active');
+      return;
+    }
+    // 글로벌 공유: 다른 페이지에서 선택된 고객사가 있으면 바로 해당 고객사 연차 조회
+    if(currentGlobalCompanyId){
+      const _gco = allCompanies.find(c => c.id === currentGlobalCompanyId);
+      if(_gco){ if(el) el.classList.add('active'); initAlPage(); selectAlCompany(currentGlobalCompanyId, _gco.company_name); return; }
+    }
+    initAlPage();
+  }
+  if(name==='leave-promotion'){
+    if(!_dataReady){
+      const tbody = document.getElementById('lp-tbody');
+      if(tbody) tbody.innerHTML = `<tr><td colspan="11" class="al-empty"><i class="fas fa-circle-notch fa-spin" style="color:#6366f1;"></i><br>데이터 불러오는 중...</td></tr>`;
+      if(el) el.classList.add('active');
+      return;
+    }
+    (async()=>{ await initLpPage(); })();
+  }
+  if(name==='companies'){
+    renderCompanies(); // _dataReady false면 스켈레톤, true면 실제 카드 출력
+  }
+  if(name==='company-notice-log'){
+    (async()=>{ await initCnlPage(); })();
+  }
+  if(name==='general-notice'){
+    if(!_dataReady){
+      const chips = document.getElementById('gn-company-chips');
+      if(chips) chips.innerHTML = `<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#9ca3af;padding:8px 0;"><div style="width:18px;height:18px;border:2px solid #e2e8f0;border-top-color:#f59e0b;border-radius:50%;animation:tblSpin .7s linear infinite;flex-shrink:0;"></div>고객사 목록 불러오는 중...</div>`;
+      const tbody = document.getElementById('gn-log-tbody');
+      if(tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:#9ca3af;"><i class="fas fa-circle-notch fa-spin" style="color:#f59e0b;margin-right:8px;"></i>데이터 불러오는 중...</td></tr>`;
+      if(el) el.classList.add('active');
+      return;
+    }
+    (async()=>{ await initGnPage(); })();
+  }
+  if(name==='dashboard'){
+    renderCompanyTrendChart();
+    renderEmployeeTrendChart();
+    _updateDashUnsentContractBanner();
+    _updateDashUnsentBanner();
+  }
+  if(el) el.classList.add('active');
+  }catch(e){console.error('[showPage 오류]',name,e);}
+}
+// 대시보드 카드 버튼 클릭: 사용료 관리 페이지로 이동하며 필터 적용
+/* [사용료 숨김] goBillingWithFilter 함수 - 원복 시 아래 주석 해제
+function goBillingWithFilter(filterValue){
+  // 사용료 관리 메뉴 요소
+  const menuEl = document.querySelector('[data-page="billing"]');
+  showPage('billing', menuEl);
+  // 라디오 버튼 선택 변경
+  const radio = document.querySelector(`input[name="billing-filter"][value="${filterValue}"]`);
+  if(radio){
+    radio.checked = true;
+  } else {
+    // 해당 값이 없으면 전체 선택
+    const allRadio = document.querySelector('input[name="billing-filter"][value="all"]');
+    if(allRadio) allRadio.checked = true;
+  }
+  // 검색어 초기화
+  const searchInput = document.getElementById('billing-search');
+  if(searchInput) searchInput.value = '';
+  // 테이블 다시 렌더링
+  renderBillings();
+}
+*/
+function goBillingWithFilter(filterValue){ /* [사용료 숨김] 비활성화 — 원복 시 위 주석 해제 후 이 줄 삭제 */ }
+function initMonthFilter(){
+  const s=document.getElementById('pay-month-filter');
+  const curMo = new Date().getMonth()+1;
+  s.innerHTML='';
+  for(let i=1;i<=12;i++) s.innerHTML+=`<option value="${i}" ${i===curMo?'selected':''}>${i}월</option>`;
+}
+function initPIMonths(){
+  const s=document.getElementById('pi-month');
+  for(let i=1;i<=12;i++) s.innerHTML+=`<option value="${i}" ${i===new Date().getMonth()+1?'selected':''}>${i}월</option>`;
+}
+function populateFilters(){
+  // '이용중' 고객사만 노출 (임시저장·해지 제외)
+  const activeOnly = allCompanies.filter(c => c.status === '이용중' && !c.is_draft);
+  ['cont-company-filter','pay-company-filter','ct-company'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el) return;
+    const base=id.includes('filter')?'<option value="">전체 고객사</option>':'<option value="">선택</option>';
+    el.innerHTML=base+activeOnly.map(c=>`<option value="${c.id}">${c.company_name}</option>`).join('');
+  });
+}
+function populatePICompanies(){
+  // 숨김 select 동기화 (기존 참조 호환) — '이용중' 고객사만
+  const activeOnly = allCompanies.filter(c => c.status === '이용중' && !c.is_draft);
+  const s=document.getElementById('pi-company');
+  if(s) s.innerHTML='<option value="">선택</option>'+activeOnly.map(c=>`<option value="${c.id}">${c.company_name}</option>`).join('');
+  renderPICompanyList();
+}
+
+// ── 급여 입력 고객사 칩 목록 렌더링 ──
+function renderPICompanyList(){
+  const q=(document.getElementById('pi-company-search')?.value||'').toLowerCase();
+  const chips=document.getElementById('pi-company-chips');
+  if(!chips) return;
+  // '이용중' 고객사만 노출 (임시저장·해지 제외)
+  const filtered=allCompanies.filter(c=>
+    c.status === '이용중' && !c.is_draft && (!q||c.company_name.toLowerCase().includes(q))
+  ).sort((a,b) => (a.company_name||'').localeCompare(b.company_name||'', 'ko'));
+  if(!filtered.length){
+    chips.innerHTML=`<div style="font-size:12.5px;color:#9ca3af;padding:8px 0;">${q ? `"${q}" 검색 결과가 없습니다` : '이용 중인 고객사가 없습니다'}</div>`;
+    return;
+  }
+  chips.innerHTML=filtered.map(c=>{
+    const isSelected = c.id === currentGlobalCompanyId;
+    const empCnt = allEmployees.filter(e => e.company_id===c.id && (e.status==='재직'||e.status==='active')).length;
+    return `<button onclick="selectPICompany('${c.id}','${c.company_name.replace(/'/g,"\\'")}');"
+      class="co-chip${isSelected?' selected':''}">
+      <i class="fas fa-building" style="font-size:11px;"></i>
+      ${c.company_name}
+      <span class="co-chip-badge count">${empCnt}명</span>
+    </button>`;
+  }).join('');
+}
+
+// ── 고객사 선택 ──
+function selectPICompany(companyId, companyName){
+  // 숨김 select 임시 동기화 (기준 체크 시 _getPIInsuranceBasis() 가 company id를 필요로 함)
+  const s=document.getElementById('pi-company');
+  if(s) s.value=companyId;
+
+  // 현재 선택된 년/월 (또는 이번달) 기준으로 산정기준 등록 여부 확인
+  const now=new Date();
+  const yrEl=document.getElementById('pi-year');
+  const moEl=document.getElementById('pi-month');
+  const chkYr = parseInt(yrEl?.value) || now.getFullYear();
+  const chkMo = parseInt(moEl?.value) || (now.getMonth()+1);
+  const stdCheck = _checkPIStandardsReady(chkYr, chkMo, companyId);
+  if(!stdCheck.ok){
+    if(s) s.value=''; // 선택 롤백
+    _showPIStandardsWarn(chkYr, chkMo, stdCheck.missing);
+    return;
+  }
+
+  // 글로벌 공유 변수 업데이트
+  currentGlobalCompanyId = companyId;
+  currentGlobalCompanyName = companyName;
+  // 헤더 레이블
+  document.getElementById('pi-selected-company-label').textContent=companyName+' 급여 입력';
+  // 카드 전환
+  document.getElementById('pi-company-select-card').style.display='none';
+  document.getElementById('pi-input-section').style.display='';
+  // 직원 목록 로드
+  loadPIEmployees();
+  // 4대보험 적용 기준 UI 전환
+  _switchInsuranceModeUI();
+  // 연월 초기화
+  if(yrEl&&!yrEl.value) yrEl.value=now.getFullYear();
+  if(moEl&&!moEl.value) moEl.value=now.getMonth()+1;
+}
+
+// ── 고객사 선택 해제 ──
+function clearPICompanySelect(){
+  const s=document.getElementById('pi-company');
+  if(s) s.value='';
+  // 글로벌 공유 변수 초기화
+  currentGlobalCompanyId = null;
+  currentGlobalCompanyName = '';
+  document.getElementById('pi-company-select-card').style.display='';
+  document.getElementById('pi-input-section').style.display='none';
+  document.getElementById('pi-company-search').value='';
+  renderPICompanyList();
+  // 폼 초기화
+  piContract=null;
+  clearPIFields();
+  const card=document.getElementById('pi-contract-card');
+  if(card) card.style.display='none';
+  // 수정 모드도 종료
+  if(piEditPayrollId){ cancelEditPayroll(); }
+}
+function renderPagination(containerId,total,page,fn){
+  const pages2=Math.ceil(total/ITEMS);
+  const s=Math.min((page-1)*ITEMS+1,total);
+  const e=Math.min(page*ITEMS,total);
+  document.getElementById(containerId).innerHTML=`
+    <span class="page-info">${total}건 중 ${s}-${e}</span>
+    <div class="page-btns">
+      <button class="page-btn" onclick="${fn}(${page-1})" ${page<=1?'disabled style="opacity:.4"':''}><i class="fas fa-chevron-left"></i></button>
+      ${Array.from({length:Math.min(pages2,5)},(_,i)=>{const p=Math.max(1,Math.min(page-2,pages2-4))+i;return p>pages2?'': `<button class="page-btn ${p===page?'active':''}" onclick="${fn}(${p})">${p}</button>`;}).join('')}
+      <button class="page-btn" onclick="${fn}(${page+1})" ${page>=pages2?'disabled style="opacity:.4"':''}><i class="fas fa-chevron-right"></i></button>
+    </div>`;
+}

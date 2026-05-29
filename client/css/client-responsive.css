@@ -1,0 +1,155 @@
+
+
+    /* ─ 초소형 화면 (360px 이하) ─ */
+    @media(max-width:360px){
+      .page{padding:8px 8px 16px}
+      .card-body{padding:10px 12px}
+      .cat-grid{gap:3px;grid-template-columns:repeat(3,1fr)}
+      .cat-card{padding:7px 4px}
+      .cat-card .cc-label{font-size:8px}
+      .cat-card .cc-val{font-size:15px}
+      .cat-card .cc-unit{font-size:8.5px}
+      .pay-box-item{padding:10px 4px}
+      .pay-box-item .pb-val{font-size:12px}
+      .pay-box-item .pb-label{font-size:9px}
+      .chart-card{padding:10px 10px}
+      .ps-header .ps-net{font-size:26px}
+      .ps-row{font-size:12px}
+      .nav-item{font-size:9px}
+      .nav-item i{font-size:17px}
+      .month-label{font-size:13px}
+      .sec-title{font-size:14px}
+      .stat-card .sc-val{font-size:17px}
+      .tgl-chip{padding:3px 7px;font-size:9.5px}
+      .billing-row{flex-wrap:wrap;gap:6px}
+      .info-row{font-size:12px}
+      .bill-summary-grid{gap:5px}
+      .bill-sum-card .bsc-val{font-size:14px}
+      .bill-item-period{font-size:13.5px}
+      .bill-amount-main{font-size:17px}
+      .bill-alert-amt{font-size:19px}
+      .emp-contract-card{padding:11px 12px;gap:10px}
+      .ecc-avatar{width:38px;height:38px;font-size:15px}
+      .ecc-name{font-size:13.5px}
+      .cm-emp-name{font-size:16px}
+    }
+
+    /* ─ 태블릿/PC ─ */
+    @media(min-width:640px){
+      .stat-grid{grid-template-columns:repeat(4,1fr)}
+      .cat-grid{grid-template-columns:repeat(5,1fr)}
+      .pay-box-item .pb-val{font-size:18px}
+      .pie-layout{flex-direction:row;align-items:flex-start}
+      .pie-chart-wrap{justify-content:flex-start;flex-shrink:0}
+      .pie-legend{min-width:0;flex:1}
+      .summary-badges{grid-template-columns:repeat(4,1fr)}
+      .app-header{padding:14px 24px;padding-top:calc(14px + env(safe-area-inset-top))}
+      .company-info h2{font-size:17px}
+      .hm-label{font-size:17px}
+      .page{padding:16px 20px 24px}
+      .card-body{padding:18px 20px}
+      .chart-card{padding:18px 20px}
+    }
+    @media print{.login-screen,.app-header,.bottom-nav,.modal-overlay,.header-month-row{display:none!important}.page{display:block!important;padding:0}}
+
+    /* ══ 근로계약 조회 페이지 전용 ══ */
+
+    /* 뒤로가기 헤더 */
+    .sub-page-header{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+    .back-btn{background:none;border:none;color:#6366f1;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px;padding:8px 0;touch-action:manipulation;-webkit-tap-highlight-color:transparent;flex-shrink:0;min-height:44px}
+    .back-btn i{font-size:14px}
+    .back-btn:active{opacity:.6}
+    .sub-page-title{font-size:16px;font-weight:800;color:#1a1a2e;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .sub-page-badge{font-size:11px;background:#ede9fe;color:#4c1d95;padding:4px 10px;border-radius:20px;font-weight:600;flex-shrink:0}
+
+    /* 카테고리 헤더 배너 */
+    .cat-hero{border-radius:16px;padding:16px 18px;margin-bottom:14px;display:flex;align-items:center;gap:14px}
+    .cat-hero-icon{width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+    .cat-hero-name{font-size:17px;font-weight:800;color:#fff;letter-spacing:-0.3px}
+    .cat-hero-sub{font-size:12px;color:rgba(255,255,255,.7);margin-top:3px}
+
+    /* 직원 카드 목록 */
+    .emp-contract-card{background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(0,0,0,.07);margin-bottom:10px;display:flex;align-items:center;padding:14px 16px;gap:14px;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:transform .15s,box-shadow .15s;border:2px solid transparent}
+    .emp-contract-card:active{transform:scale(.98);box-shadow:0 1px 6px rgba(0,0,0,.07)}
+    .emp-contract-card.has-contract{border-color:transparent}
+    .emp-contract-card.no-contract{border-color:#fde68a;background:#fffdf0}
+    .ecc-avatar{width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;flex-shrink:0;color:#fff}
+    .ecc-info{flex:1;min-width:0}
+    .ecc-name{font-size:14.5px;font-weight:700;color:#1a1a2e;margin-bottom:3px}
+    .ecc-meta{font-size:11.5px;color:#9ca3af;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+    .ecc-arrow{color:#d1d5db;font-size:14px;flex-shrink:0;transition:transform .15s}
+    .emp-contract-card:active .ecc-arrow{transform:translateX(3px)}
+    .ecc-contract-status{display:inline-flex;align-items:center;gap:3px;font-size:10.5px;font-weight:600;padding:3px 8px;border-radius:20px;flex-shrink:0}
+
+    /* 근로계약 상세 모달 */
+    .contract-modal-header{background:linear-gradient(135deg,#1a1a2e,#0f3460);padding:22px 18px 20px;text-align:center}
+    .cm-emp-avatar{width:52px;height:52px;border-radius:16px;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#fff}
+    .cm-emp-name{color:#fff;font-size:18px;font-weight:800;letter-spacing:-0.3px;margin-bottom:4px}
+    .cm-emp-sub{color:rgba(255,255,255,.65);font-size:11.5px;margin-bottom:10px}
+    .cm-status-badges{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+    .cm-badge{display:inline-flex;align-items:center;gap:4px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700}
+
+    /* 계약 섹션 */
+    .cm-section{margin-bottom:6px}
+    .cm-section-title{font-size:11px;font-weight:700;color:#9ca3af;letter-spacing:0.5px;text-transform:uppercase;padding:14px 18px 6px;display:flex;align-items:center;gap:5px}
+    .cm-row{display:flex;justify-content:space-between;align-items:flex-start;padding:11px 18px;border-bottom:1px solid #f5f5f5;gap:10px}
+    .cm-row:last-child{border-bottom:none}
+    .cm-label{font-size:12.5px;color:#9ca3af;flex-shrink:0;padding-top:1px}
+    .cm-value{font-size:13px;font-weight:600;color:#1a1a2e;text-align:right;word-break:keep-all}
+    .cm-value.highlight{font-size:15px;font-weight:800;color:#059669;letter-spacing:-0.3px}
+    .cm-value.blue{color:#2563eb} .cm-value.green{color:#059669} .cm-value.purple{color:#7c3aed} .cm-value.orange{color:#d97706}
+
+    /* 계약 없음 안내 */
+    .no-contract-notice{background:#fffbeb;border:1.5px dashed #fde68a;border-radius:14px;padding:20px 18px;text-align:center;margin-bottom:14px}
+    .no-contract-notice i{font-size:28px;color:#f59e0b;margin-bottom:8px;display:block}
+    .no-contract-notice p{font-size:13px;color:#92400e;line-height:1.6;font-weight:500}
+
+    /* 빈 직원 목록 */
+    .contracts-empty{text-align:center;padding:56px 20px}
+    .contracts-empty i{font-size:44px;color:#e5e7eb;margin-bottom:12px;display:block}
+    .contracts-empty p{font-size:13.5px;color:#9ca3af;line-height:1.7}
+
+    /* ── 접근코드 변경 모달 ── */
+    .code-change-wrap{padding:20px 18px 8px;}
+    .code-current-box{
+      display:flex;align-items:center;justify-content:space-between;
+      background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;
+      padding:14px 16px;margin-bottom:20px;
+    }
+    .code-current-label{font-size:11.5px;color:#9ca3af;margin-bottom:3px;}
+    .code-current-value{font-size:20px;font-weight:800;color:#4f46e5;letter-spacing:3px;}
+    .code-current-icon{width:40px;height:40px;border-radius:10px;background:#eef2ff;
+      display:flex;align-items:center;justify-content:center;color:#6366f1;font-size:17px;flex-shrink:0;}
+    .code-step-label{font-size:12px;font-weight:700;color:#374151;margin-bottom:8px;
+      display:flex;align-items:center;gap:6px;}
+    .code-step-num{width:20px;height:20px;border-radius:50%;background:#6366f1;
+      color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .code-input-row{display:flex;gap:8px;margin-bottom:20px;}
+    .code-input-row input{
+      flex:1;border:1.5px solid #e2e8f0;border-radius:10px;
+      padding:11px 14px;font-size:15px;font-weight:700;letter-spacing:2px;
+      color:#1a1a2e;outline:none;font-family:inherit;
+      transition:border-color .2s,box-shadow .2s;
+    }
+    .code-input-row input:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.15);}
+    .code-input-row input.error{border-color:#ef4444;box-shadow:0 0 0 3px rgba(239,68,68,.13);}
+    .code-notice{
+      background:#fffbeb;border:1.5px solid #fde68a;border-radius:10px;
+      padding:11px 14px;font-size:12px;color:#92400e;line-height:1.6;
+      display:flex;gap:8px;align-items:flex-start;margin-bottom:20px;
+    }
+    .code-notice i{color:#f59e0b;font-size:14px;flex-shrink:0;margin-top:1px;}
+    .code-change-footer{
+      display:flex;gap:10px;padding:0 18px 18px;
+    }
+    .code-change-footer button{
+      flex:1;padding:13px;border:none;border-radius:12px;
+      font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;
+      transition:opacity .15s;
+    }
+    .code-change-footer button:active{opacity:.8;}
+    .btn-code-cancel{background:#f3f4f6;color:#6b7280;}
+    .btn-code-confirm{background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;
+      box-shadow:0 4px 14px rgba(99,102,241,.35);}
+    .btn-code-confirm:disabled{background:#e5e7eb;color:#9ca3af;box-shadow:none;cursor:not-allowed;}
+    .code-err-msg{font-size:12px;color:#ef4444;margin:-14px 0 14px 0;padding:0 2px;min-height:16px;}
