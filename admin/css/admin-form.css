@@ -121,3 +121,108 @@
       padding-left: 18px;
     }
     #ct-validation-banner ul li { margin-bottom: 2px; }
+/* ══ 고객사 수정 이력 섹션 ══ */
+.cm-history-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  cursor: pointer;
+  user-select: none;
+  background: #f8fafc;
+  border-top: 1.5px solid #e5e7eb;
+  transition: background .15s;
+}
+.cm-history-toggle:hover { background: #f1f5f9; }
+
+.cm-hist-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #6366f1;
+  color: #fff;
+  border-radius: 20px;
+  font-size: 10.5px;
+  font-weight: 700;
+  min-width: 20px;
+  padding: 1px 6px;
+  line-height: 1.4;
+}
+
+.cm-history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-top: 8px;
+}
+.cm-history-table thead th {
+  background: #f1f5f9;
+  color: #475569;
+  font-weight: 700;
+  font-size: 11.5px;
+  padding: 7px 10px;
+  text-align: left;
+  border-bottom: 1.5px solid #e2e8f0;
+}
+.cm-history-table tbody tr { border-bottom: 1px solid #f1f5f9; }
+.cm-history-table tbody tr:last-child { border-bottom: none; }
+.cm-history-table tbody td {
+  padding: 6px 10px;
+  vertical-align: top;
+  color: #374151;
+  line-height: 1.5;
+}
+.cm-hist-date {
+  font-size: 11.5px;
+  color: #6b7280 !important;
+  white-space: nowrap;
+  vertical-align: middle !important;
+}
+.cm-hist-field {
+  font-weight: 600;
+  color: #4f46e5 !important;
+  white-space: nowrap;
+}
+.cm-hist-before {
+  color: #dc2626 !important;
+  max-width: 180px;
+  word-break: break-all;
+}
+.cm-hist-after {
+  color: #059669 !important;
+  max-width: 180px;
+  word-break: break-all;
+}
+.cm-hist-row-first td:not(.cm-hist-date) { border-top: 1px solid #e5e7eb; }
+.cm-hist-row-cont td { border-top: 1px dashed #f1f5f9; }
+
+.cm-hist-pager {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.cm-hist-page-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 7px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 6px;
+  background: #fff;
+  color: #374151;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.cm-hist-page-btn:hover:not(:disabled) { background: #eef2ff; border-color: #6366f1; color: #4f46e5; }
+.cm-hist-page-btn.active { background: #6366f1; border-color: #6366f1; color: #fff; font-weight: 700; }
+.cm-hist-page-btn:disabled { opacity: .4; cursor: default; }
+.cm-hist-page-info {
+  font-size: 11.5px;
+  color: #9ca3af;
+  margin-left: 6px;
+}

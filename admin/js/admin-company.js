@@ -402,17 +402,86 @@ function openCompanyModal(id=null){
       document.getElementById('cm-code-regen-btn').style.display = 'inline-flex';
       // 서비스 계약서 파일 복원
       _cmSvcRestore(c.service_contract_file_name||'', c.service_contract_file_data||'');
+      // 급여 항목 설정 복원
+      _cmSetAllowanceConfig(c.allowance_config || {});
     }
+    // 수정 모드: 이력 섹션 렌더링
+    _renderCompanyHistory(id);
+    // ── 수정 내용 적용일 UI 표시 + 최소 날짜 설정 ──
+    _cmInitEffectiveDateUI(id);
   } else {
     // ── 신규 모드: 접근코드 자동 생성, 재생성 버튼 숨김 ──
     _setAccessCode(generateAccessCode());
     document.getElementById('cm-code-regen-btn').style.display = 'none';
     // 서비스 계약서 파일 초기화
     _cmSvcReset();
+    // 급여 항목 설정 초기화
+    _cmSetAllowanceConfig({});
+    // 신규 모드: 이력 섹션 숨김
+    const _histSec = document.getElementById('cm-history-section');
+    if(_histSec) _histSec.style.display = 'none';
+    // 신규 모드: 적용일 UI 숨김
+    const _effRow = document.getElementById('cm-effective-date-row');
+    if(_effRow) _effRow.style.display = 'none';
   }
   openModal('company-modal');
 }
 function editCompany(id){openCompanyModal(id)}
+
+// ── 수정 내용 적용일 UI 초기화 ──
+function _cmInitEffectiveDateUI(companyId){
+  const row      = document.getElementById('cm-effective-date-row');
+  const dateInput= document.getElementById('cm-effective-date');
+  const hintEl   = document.getElementById('cm-effective-date-hint');
+  if(!row || !dateInput) return;
+
+  row.style.display = '';
+
+  // 해당 고객사의 최종 확정 급여 지급일 산출
+  const lastPay = (allPayrolls||[])
+    .filter(p => p.company_id === companyId && !p.is_draft && p.pay_date)
+    .map(p => p.pay_date)
+    .sort()
+    .pop(); // 'YYYY-MM-DD' 문자열 최대값
+
+  // 최소 날짜: 마지막 지급일 다음날, 없으면 오늘
+  let minDate;
+  if(lastPay){
+    const d = new Date(lastPay);
+    d.setDate(d.getDate() + 1);
+    minDate = d.toISOString().slice(0, 10);
+  } else {
+    minDate = new Date().toISOString().slice(0, 10);
+  }
+  dateInput.min   = minDate;
+  dateInput.value = minDate; // 기본값: 최소 날짜
+
+  if(hintEl){
+    hintEl.textContent = lastPay
+      ? `최종 급여 지급일(${lastPay}) 이후부터 선택 가능`
+      : '최초 수정 — 오늘 이후부터 선택 가능';
+  }
+  // 경고 초기화
+  const warnEl = document.getElementById('cm-effective-date-warn');
+  if(warnEl) warnEl.style.display = 'none';
+}
+
+// ── 적용일 변경 시 실시간 검증 ──
+function cmOnEffectiveDateChange(){
+  const dateInput = document.getElementById('cm-effective-date');
+  const warnEl    = document.getElementById('cm-effective-date-warn');
+  const warnMsg   = document.getElementById('cm-effective-date-warn-msg');
+  if(!dateInput || !warnEl || !warnMsg) return;
+
+  const val = dateInput.value;
+  const min = dateInput.min;
+  if(val && min && val < min){
+    warnEl.style.display = '';
+    warnMsg.textContent  = `최종 급여 지급일(${min.replace(/(\d{4})-(\d{2})-(\d{2})/,'$1년 $2월 $3일')}) 이전은 선택할 수 없습니다.`;
+  } else {
+    warnEl.style.display = 'none';
+  }
+}
 
 // ── 고객사 임시저장 ──
 async function saveDraftCompany(){
@@ -435,6 +504,7 @@ async function saveDraftCompany(){
     annual_leave_basis: document.getElementById('cm-annual-leave-basis').value,
     service_contract_file_name: _cmSvcGetSaveData().name,
     service_contract_file_data: _cmSvcGetSaveData().data,
+    allowance_config:   _cmGetAllowanceConfig(),
     status:          '임시저장',
     is_draft:        true,
     draft_saved_at:  Date.now(),
@@ -464,6 +534,31 @@ async function saveDraftCompany(){
   toast(`임시저장 되었습니다. (${timeStr})`, 'success');
 }
 
+// ── 고객사 필드 레이블 (이력 diff 표시용) ──
+const _CM_FIELD_LABELS = {
+  company_name:      '회사명',
+  business_number:   '사업자번호',
+  representative:    '대표이사',
+  industry:          '업종',
+  address:           '사업장주소',
+  phone:             '대표연락처',
+  email:             '이메일',
+  pay_period:        '급여 산정기간',
+  pay_day:           '급여 지급일',
+  insurance_basis:   '4대보험 기준',
+  annual_leave_basis:'연차 산정 기준',
+  note:              '비고',
+  allowance_config:  '급여항목 설정',
+  access_code:       '접근코드',
+};
+
+/** 두 값이 실질적으로 같은지 비교 (JSON stringify로 깊은 비교) */
+function _cmValEqual(a, b){
+  if(typeof a === 'object' || typeof b === 'object')
+    return JSON.stringify(a||{}) === JSON.stringify(b||{});
+  return String(a||'') === String(b||'');
+}
+
 async function saveCompany(){
   const name=document.getElementById('cm-name').value.trim();
   const code=document.getElementById('cm-code').value || generateAccessCode(); // 자동 생성값 사용
@@ -484,8 +579,79 @@ async function saveCompany(){
   const annualLeaveBasis = document.getElementById('cm-annual-leave-basis').value;
   if(!insuranceBasis)    return toast('4대보험 적용 기준을 선택하세요.','error');
   if(!annualLeaveBasis)  return toast('연차 휴가 산정 기준을 선택하세요.','error');
-  const body={company_name:name,business_number:document.getElementById('cm-biz').value,representative:document.getElementById('cm-rep').value,industry:document.getElementById('cm-industry').value,address:document.getElementById('cm-addr').value,phone:document.getElementById('cm-phone').value,email:document.getElementById('cm-email').value,pay_period:document.getElementById('cm-period').value,pay_day:document.getElementById('cm-payday').value,access_code:code,note:document.getElementById('cm-note').value,insurance_basis:insuranceBasis,annual_leave_basis:annualLeaveBasis,service_contract_file_name:_cmSvcGetSaveData().name,service_contract_file_data:_cmSvcGetSaveData().data,is_draft:false,draft_saved_at:null,status:'이용중'};
+
+  // ── 급여 항목 설정: 체크된 항목의 통상임금 포함여부 미선택 유효성 검사 ──
+  const _CM_AW_PT_LABEL = {
+    car:'차량지원비', meal:'식대', research:'연구활동비',
+    communication:'통신비', fitness:'체력증진비',
+    self_dev:'자기계발비', book:'도서지원비', overseas:'해외근무수당'
+  };
+  for(const f of _CM_AW_PT_FIELDS){
+    const hid = _cmAwHtmlId(f);
+    const cb  = document.getElementById(`cm-aw-${hid}`);
+    const sel = document.getElementById(`cm-aw-${hid}-pt`);
+    if(cb?.checked && sel && !sel.value){
+      // 해당 select에 빨간 테두리 표시 후 포커스
+      sel.style.borderColor = '#e94560';
+      sel.focus();
+      setTimeout(() => { sel.style.borderColor = ''; }, 2000);
+      return toast(`[${_CM_AW_PT_LABEL[f]}] 통상임금 포함여부(지급 방식)를 선택하세요.`, 'error');
+    }
+  }
+
+  const newAllowanceCfg = _cmGetAllowanceConfig();
+  const body={company_name:name,business_number:document.getElementById('cm-biz').value,representative:document.getElementById('cm-rep').value,industry:document.getElementById('cm-industry').value,address:document.getElementById('cm-addr').value,phone:document.getElementById('cm-phone').value,email:document.getElementById('cm-email').value,pay_period:document.getElementById('cm-period').value,pay_day:document.getElementById('cm-payday').value,access_code:code,note:document.getElementById('cm-note').value,insurance_basis:insuranceBasis,annual_leave_basis:annualLeaveBasis,service_contract_file_name:_cmSvcGetSaveData().name,service_contract_file_data:_cmSvcGetSaveData().data,allowance_config:newAllowanceCfg,is_draft:false,draft_saved_at:null,status:'이용중'};
+
+  // ── 수정 모드: 적용일 검증 + diff 계산 → company_history 기록 ──
   if(editId.company){
+    // ① 적용일 읽기 및 검증
+    const _effDateEl  = document.getElementById('cm-effective-date');
+    const _effDateStr = _effDateEl?.value || '';      // 'YYYY-MM-DD'
+    const _effDateMin = _effDateEl?.min   || '';
+    if(!_effDateStr){
+      return toast('수정 내용 적용일을 선택하세요.', 'error');
+    }
+    if(_effDateMin && _effDateStr < _effDateMin){
+      _effDateEl.style.borderColor = '#e94560';
+      setTimeout(() => { _effDateEl.style.borderColor = ''; }, 2000);
+      return toast(`적용일은 최종 급여 지급일(${_effDateMin}) 이후여야 합니다.`, 'error');
+    }
+    // 적용일 → ms 타임스탬프 (해당 날짜 00:00:00 KST)
+    const _effTs = new Date(_effDateStr + 'T00:00:00').getTime();
+
+    // ② diff 계산 → company_history 기록
+    const prev = allCompanies.find(x=>x.id===editId.company) || {};
+    const changedFields = Object.keys(_CM_FIELD_LABELS).filter(f =>
+      !_cmValEqual(prev[f], body[f])
+    );
+    if(changedFields.length > 0){
+      const changes = changedFields.map(f => ({
+        field:     f,
+        label:     _CM_FIELD_LABELS[f],
+        before:    typeof prev[f]==='object' ? JSON.stringify(prev[f]||{}) : String(prev[f]||''),
+        after:     typeof body[f]==='object' ? JSON.stringify(body[f]||{}) : String(body[f]||''),
+      }));
+      // 수정 직전 상태 스냅샷 (계약서 당시 정보 복원용)
+      const snapshot = Object.fromEntries(
+        Object.keys(_CM_FIELD_LABELS).map(f=>[f, prev[f]])
+      );
+      const histEntry = {
+        id:           'cmhist_'+Date.now(),
+        company_id:   editId.company,
+        changed_at:   _effTs,            // ← 적용일 타임스탬프
+        effective_date: _effDateStr,     // 사람이 읽을 수 있는 날짜 (이력 표시용)
+        changes:      changes,
+        snapshot:     snapshot,
+      };
+      await api('../tables/company_history',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(histEntry)});
+      await loadCompanyHistories();
+
+      // ③ 적용일 이후 시작되는 모든 계약에 변경된 allowance_config 일괄 반영
+      //    allowance_config 항목이 변경된 경우에만 실행
+      if(changedFields.includes('allowance_config')){
+        await _cmApplyAllowanceToContracts(editId.company, _effDateStr, newAllowanceCfg);
+      }
+    }
     body.id=editId.company;
     await api(`../tables/companies/${editId.company}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   } else if(_currentCompanyDraftId){
@@ -499,10 +665,356 @@ async function saveCompany(){
   _currentCompanyDraftId = null;
   closeModal('company-modal');await loadCompanies();populateFilters();populatePICompanies();renderCompanies();renderDashboard();toast('고객사가 등록되었습니다. ✔');
 }
+/**
+ * 적용일 이후 시작되는 모든 계약에 변경된 allowance_config pay_type 을 일괄 반영.
+ * - 파기(파기) 상태 계약 제외
+ * - 계약별 개별 *_pay_type 필드만 갱신 (금액·기본 정보는 건드리지 않음)
+ *
+ * @param {string} companyId     고객사 ID
+ * @param {string} effectiveDateStr  적용일 'YYYY-MM-DD'
+ * @param {object} newCfg        새 allowance_config
+ */
+async function _cmApplyAllowanceToContracts(companyId, effectiveDateStr, newCfg){
+  if(!newCfg) return;
+
+  // 적용 대상: 해당 고객사 + 계약 시작일 >= 적용일 + 파기 아님
+  const targets = (allContracts||[]).filter(c =>
+    c.company_id === companyId &&
+    c.contract_start >= effectiveDateStr &&
+    c.status !== '파기'
+  );
+  if(!targets.length) return;
+
+  // pay_type 필드 매핑: allowance_config key → contract pay_type 필드명
+  const PT_MAP = {
+    car:           'transport_pay_type',        // 차량지원비
+    meal:          'meal_pay_type',
+    research:      'research_pay_type',
+    communication: 'communication_pay_type',
+    fitness:       'fitness_pay_type',
+    self_dev:      'self_dev_pay_type',
+    book:          'book_pay_type',
+    overseas:      'overseas_pay_type',
+  };
+
+  let updated = 0;
+  for(const contract of targets){
+    const patch = {};
+    for(const [cfgKey, contractField] of Object.entries(PT_MAP)){
+      if(newCfg[cfgKey]){
+        // 항목이 체크된 경우 → 새 pay_type 적용
+        patch[contractField] = newCfg[`${cfgKey}_pay_type`] || '';
+      }
+      // 체크 해제된 항목은 계약의 pay_type을 건드리지 않음
+    }
+    // custom_items: 계약의 custom_allowances JSON에 새 항목 키 반영 (값은 0으로 초기화)
+    if(newCfg.custom_items && newCfg.custom_items.length > 0){
+      let existingCustom = {};
+      try { existingCustom = typeof contract.custom_allowances === 'string'
+        ? JSON.parse(contract.custom_allowances) : (contract.custom_allowances || {}); }
+      catch(e){ existingCustom = {}; }
+      const mergedCustom = {};
+      newCfg.custom_items.forEach(item => {
+        mergedCustom[item.key] = existingCustom[item.key] ?? 0;
+      });
+      patch.custom_allowances = JSON.stringify(mergedCustom);
+    }
+    if(Object.keys(patch).length === 0) continue;
+    await api(`../tables/contracts/${contract.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(patch),
+    });
+    updated++;
+  }
+
+  if(updated > 0){
+    await loadContracts();
+    toast(`${effectiveDateStr} 이후 시작 계약 ${updated}건에 급여 항목 설정이 반영되었습니다.`, 'success');
+  }
+}
+
 async function deleteCompany(id){
   if(!confirm('삭제하시겠습니까?')) return;
   await api(`../tables/companies/${id}`,{method:'DELETE'});await loadCompanies();populateFilters();renderCompanies();renderDashboard();toast('삭제됨');
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 고객사 수정 이력 렌더링
+// ══════════════════════════════════════════════════════════════════════════════
+let _cmHistPage = 1;
+const _CM_HIST_PAGE_SIZE = 10;
+
+function _fmtHistVal(val, field){
+  if(field === 'allowance_config'){
+    try {
+      const cfg = typeof val === 'string' ? JSON.parse(val) : (val || {});
+      const lines = [];
+      const labels = {
+        site:'현장수당', position:'직책수당', skill:'기술수당',
+        license:'면허수당', remote_area:'벽지수당',
+        research:'연구활동비', communication:'통신비', fitness:'체력증진비',
+        self_dev:'자기계발비', book:'도서지원비', overseas:'해외근무수당',
+      };
+      Object.entries(labels).forEach(([k, lbl]) => {
+        if(cfg[k]) lines.push(`${lbl}(${cfg[k+'_pay_type']||'포함'})`);
+      });
+      if(Array.isArray(cfg.custom_items)){
+        cfg.custom_items.forEach(it => { if(it.label) lines.push(it.label); });
+      }
+      return lines.length ? lines.join(', ') : '(없음)';
+    } catch(e){ return String(val||''); }
+  }
+  const s = String(val||'').trim();
+  return s || '(없음)';
+}
+
+function _renderCompanyHistory(companyId){
+  const sec = document.getElementById('cm-history-section');
+  if(!sec) return;
+  const rows = (allCompanyHistories||[])
+    .filter(h => h.company_id === companyId)
+    .sort((a,b) => (b.changed_at||0) - (a.changed_at||0));
+
+  if(!rows.length){
+    sec.style.display = 'none';
+    return;
+  }
+  sec.style.display = '';
+
+  // 총 페이지
+  const total = rows.length;
+  const totalPages = Math.ceil(total / _CM_HIST_PAGE_SIZE);
+  _cmHistPage = Math.min(_cmHistPage, totalPages);
+  const pageRows = rows.slice((_cmHistPage-1)*_CM_HIST_PAGE_SIZE, _cmHistPage*_CM_HIST_PAGE_SIZE);
+
+  // 카운트 뱃지
+  const badge = document.getElementById('cm-history-count');
+  if(badge) badge.textContent = total;
+
+  // tbody
+  const tbody = document.getElementById('cm-history-tbody');
+  if(!tbody) return;
+  tbody.innerHTML = '';
+  pageRows.forEach(h => {
+    const dt = h.changed_at ? new Date(h.changed_at) : null;
+    const dtStr = dt ? `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}` : '-';
+    const changes = Array.isArray(h.changes) ? h.changes : [];
+    const nCh = changes.length;
+    // 첫 번째 변경 행: 날짜 + rowspan
+    changes.forEach((ch, ci) => {
+      const tr = document.createElement('tr');
+      tr.className = ci === 0 ? 'cm-hist-row-first' : 'cm-hist-row-cont';
+      if(ci === 0){
+        const tdDate = document.createElement('td');
+        tdDate.rowSpan = nCh;
+        tdDate.className = 'cm-hist-date';
+        tdDate.textContent = dtStr;
+        tr.appendChild(tdDate);
+      }
+      const tdField = document.createElement('td');
+      tdField.className = 'cm-hist-field';
+      tdField.textContent = ch.label || ch.field;
+      const tdBefore = document.createElement('td');
+      tdBefore.className = 'cm-hist-before';
+      tdBefore.textContent = _fmtHistVal(ch.before, ch.field);
+      const tdAfter = document.createElement('td');
+      tdAfter.className = 'cm-hist-after';
+      tdAfter.textContent = _fmtHistVal(ch.after, ch.field);
+      tr.appendChild(tdField);
+      tr.appendChild(tdBefore);
+      tr.appendChild(tdAfter);
+      tbody.appendChild(tr);
+    });
+  });
+
+  // 페이징
+  const pager = document.getElementById('cm-history-pager');
+  if(!pager) return;
+  if(totalPages <= 1){ pager.innerHTML = ''; return; }
+  let pHtml = `<div class="cm-hist-pager">`;
+  pHtml += `<button class="cm-hist-page-btn" ${_cmHistPage<=1?'disabled':''} onclick="_cmHistGoPage(${_cmHistPage-1})"><i class="fas fa-chevron-left"></i></button>`;
+  // 최대 5개 페이지 버튼
+  const pStart = Math.max(1, _cmHistPage-2);
+  const pEnd   = Math.min(totalPages, pStart+4);
+  for(let p=pStart; p<=pEnd; p++){
+    pHtml += `<button class="cm-hist-page-btn${p===_cmHistPage?' active':''}" onclick="_cmHistGoPage(${p})">${p}</button>`;
+  }
+  pHtml += `<button class="cm-hist-page-btn" ${_cmHistPage>=totalPages?'disabled':''} onclick="_cmHistGoPage(${_cmHistPage+1})"><i class="fas fa-chevron-right"></i></button>`;
+  pHtml += `<span class="cm-hist-page-info">${_cmHistPage} / ${totalPages} 페이지 (총 ${total}건)</span></div>`;
+  pager.innerHTML = pHtml;
+}
+
+function _cmHistGoPage(p){
+  _cmHistPage = p;
+  const companyId = editId.company;
+  if(companyId) _renderCompanyHistory(companyId);
+}
+
+function _cmHistToggle(){
+  const body = document.getElementById('cm-history-body');
+  const icon = document.getElementById('cm-history-toggle-icon');
+  if(!body) return;
+  const isOpen = body.style.display !== 'none';
+  body.style.display = isOpen ? 'none' : '';
+  if(icon) icon.className = isOpen ? 'fas fa-chevron-down' : 'fas fa-chevron-up';
+}
+
+/** 계약 체결 시점에 유효했던 고객사 스냅샷을 반환
+ *  contract_start(또는 created_at) 이후의 첫 번째 이력 직전 상태 = 해당 시점의 회사 정보
+ *  이력이 없으면 현재 회사 정보 그대로 반환
+ */
+function getCompanySnapshotAt(companyId, contractTimestamp){
+  const co = (allCompanies||[]).find(x=>x.id===companyId);
+  if(!co) return null;
+  const hist = (allCompanyHistories||[])
+    .filter(h => h.company_id === companyId && (h.changed_at||0) > (contractTimestamp||0))
+    .sort((a,b) => (a.changed_at||0) - (b.changed_at||0)); // 오름차순
+  if(!hist.length){
+    // 계약 이후 변경 없음 → 현재 회사 정보
+    return co;
+  }
+  // 계약 이후 가장 첫 변경의 snapshot = 계약 당시 상태
+  return { ...co, ...(hist[0].snapshot||{}) };
+}
+
+// ══ 급여 항목 설정(allowance_config) 헬퍼 ══
+// pay_type select가 있는 항목 목록
+const _CM_AW_PT_FIELDS = ['childcare','car','meal','research','communication','fitness','self_dev','book','overseas'];
+// pay_type select 없는 항목 (체크만) — regular_bonus: 통상임금 포함 고정
+const _CM_AW_SIMPLE_FIELDS = ['site','position','skill','license','remote_area','regular_bonus'];
+
+/** 체크박스 체크 시 pay_type select 활성/비활성 토글 */
+function cmAwTogglePayType(field, checked){
+  const sel = document.getElementById(`cm-aw-${_cmAwHtmlId(field)}-pt`);
+  if(!sel) return;
+  sel.disabled = !checked;
+  if(!checked){
+    sel.value = '';
+  } else if(!sel.value){
+    // 새로 체크 시 선택값이 없으면 '매월 정기지급(fixed)'을 기본값으로 설정
+    sel.value = 'fixed';
+  }
+}
+
+/** allowance_config 필드명 → HTML id 변환 (self_dev → self-dev) */
+function _cmAwHtmlId(f){ return f.replace(/_/g, '-'); }
+
+/** 모달 → allowance_config 객체 수집 */
+function _cmGetAllowanceConfig(){
+  const cfg = {};
+  _CM_AW_SIMPLE_FIELDS.forEach(f => {
+    cfg[f] = document.getElementById(`cm-aw-${_cmAwHtmlId(f)}`)?.checked || false;
+  });
+  _CM_AW_PT_FIELDS.forEach(f => {
+    const hid = _cmAwHtmlId(f);
+    cfg[f] = document.getElementById(`cm-aw-${hid}`)?.checked || false;
+    cfg[`${f}_pay_type`] = cfg[f]
+      ? (document.getElementById(`cm-aw-${hid}-pt`)?.value || '')
+      : '';
+  });
+  // custom_items 수집
+  const customItems = [];
+  const area = document.getElementById('cm-custom-items-area');
+  if(area){
+    area.querySelectorAll('.cm-custom-item-row').forEach(row => {
+      const key   = row.dataset.key || '';
+      const label = row.querySelector('.cm-custom-label-input')?.value?.trim() || '';
+      const pt    = row.querySelector('.cm-custom-pt-select')?.value  || 'fixed';
+      if(label) customItems.push({ key, label, pay_type: pt });
+    });
+  }
+  cfg.custom_items = customItems;
+  return cfg;
+}
+
+/** allowance_config 객체 → 모달에 복원
+ *  car / meal 은 cfg 에 값이 없을 때(신규·구형 고객사) checked=true, pay_type='fixed' 기본값 적용 */
+const _CM_AW_DEFAULT_CHECKED = { car: 'fixed', meal: 'fixed' };
+
+function _cmSetAllowanceConfig(cfg){
+  if(!cfg) cfg = {};
+  _CM_AW_SIMPLE_FIELDS.forEach(f => {
+    const cb = document.getElementById(`cm-aw-${_cmAwHtmlId(f)}`);
+    if(cb) cb.checked = !!cfg[f];
+  });
+  _CM_AW_PT_FIELDS.forEach(f => {
+    const hid = _cmAwHtmlId(f);
+    const cb  = document.getElementById(`cm-aw-${hid}`);
+    const sel = document.getElementById(`cm-aw-${hid}-pt`);
+    // car / meal: cfg에 명시적 값이 없으면 기본값(체크 + fixed) 적용
+    const useDefault = (f in _CM_AW_DEFAULT_CHECKED) && cfg[f] === undefined;
+    const checked  = useDefault ? true  : !!cfg[f];
+    const payType  = useDefault
+      ? (_CM_AW_DEFAULT_CHECKED[f])
+      : (cfg[`${f}_pay_type`] || (cfg[f] ? 'fixed' : ''));
+    if(cb)  cb.checked = checked;
+    if(sel){ sel.disabled = !checked; sel.value = payType; }
+  });
+  // custom_items 복원
+  _cmRenderCustomItems(cfg.custom_items || []);
+}
+
+/* ─── 기타 고정지급 수당 (custom_items) UI ─── */
+
+/** custom_items 배열 → cm-custom-items-area 렌더링 */
+function _cmRenderCustomItems(items){
+  const area  = document.getElementById('cm-custom-items-area');
+  const empty = document.getElementById('cm-custom-items-empty');
+  if(!area) return;
+  area.innerHTML = '';
+  (items || []).forEach(item => {
+    _cmAppendCustomRow(item.key || `custom_${Date.now()}_${Math.random().toString(36).slice(2,6)}`, item.label || '', item.pay_type || 'fixed');
+  });
+  if(empty) empty.style.display = 'none';
+}
+
+/** 빈 행 추가 (항목 추가 버튼 클릭 시) */
+function cmAddCustomItem(){
+  const key = `custom_${Date.now()}`;
+  _cmAppendCustomRow(key, '', 'fixed');
+  const area  = document.getElementById('cm-custom-items-area');
+  const empty = document.getElementById('cm-custom-items-empty');
+  if(empty) empty.style.display = 'none';
+  // 새로 추가된 행의 입력란에 포커스
+  const lastRow = area?.lastElementChild;
+  lastRow?.querySelector('.cm-custom-label-input')?.focus();
+}
+
+/** key에 해당하는 행 삭제 */
+function cmRemoveCustomItem(key){
+  const row = document.querySelector(`.cm-custom-item-row[data-key="${key}"]`);
+  if(row) row.remove();
+  const area  = document.getElementById('cm-custom-items-area');
+  const empty = document.getElementById('cm-custom-items-empty');
+  if(empty) empty.style.display = 'none'; // 0개여도 hide — 저장 전까지 빈 상태는 없음
+}
+
+/** 단일 custom 행 DOM 생성 및 area에 append */
+function _cmAppendCustomRow(key, label, payType){
+  const area = document.getElementById('cm-custom-items-area');
+  if(!area) return;
+  const row = document.createElement('div');
+  row.className = 'cm-custom-item-row';
+  row.dataset.key = key;
+  row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 8px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;';
+  row.innerHTML = `
+    <input type="text" class="cm-custom-label-input" placeholder="항목명 입력 (예: 복지포인트)" value="${_escHtml(label)}"
+      style="flex:1;min-width:120px;padding:5px 8px;font-size:13px;border:1px solid #d1d5db;border-radius:5px;outline:none;" />
+    <select class="cm-custom-pt-select"
+      style="padding:5px 6px;font-size:12px;border:1px solid #d1d5db;border-radius:5px;color:#374151;background:#fff;">
+      <option value="fixed"  ${payType==='fixed'   ? 'selected':''}>통상임금 포함</option>
+      <option value="nonfixed" ${payType==='nonfixed'? 'selected':''}>통상임금 제외</option>
+    </select>
+    <button type="button" onclick="cmRemoveCustomItem('${key}')"
+      style="flex-shrink:0;padding:4px 8px;font-size:12px;color:#ef4444;background:#fff0f0;border:1px solid #fca5a5;border-radius:5px;cursor:pointer;">
+      <i class="fas fa-times"></i>
+    </button>`;
+  area.appendChild(row);
+}
+
+/** HTML 특수문자 이스케이프 (항목명 XSS 방지) */
+function _escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 // ── 대시보드 카드용 사용료 현황 계산 ──
 function getBillingInfoForDashCard(companyId){
   const todayStr = new Date().toISOString().slice(0,10);

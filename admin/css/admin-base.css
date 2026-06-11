@@ -226,3 +226,38 @@
     }
 
     /* ══════════════════════════════════════════════
+       풀다운 select — 검색창(.search-input)과 동일한 스타일로 통일
+       border: 1px solid #e0e0e0 / border-radius: 8px
+       padding: 7px 12px / background: #f8f9fb / font-size: 12.5px
+       예외: cm-aw-pt-select(고객사 급여항목 소형 셀렉트),
+             pi-pay-type-select(급여입력 지급유형),
+             .ct-readonly select(계약서 읽기전용)
+    ══════════════════════════════════════════════ */
+    select:not(.cm-aw-pt-select):not(.pi-pay-type-select) {
+      border: 1px solid #e0e0e0 !important;
+      border-radius: 8px !important;
+      padding: 7px 12px !important;
+      background: #f8f9fb !important;
+      font-size: 12.5px !important;
+      color: #333 !important;
+      font-family: inherit !important;
+      cursor: pointer !important;
+      outline: none !important;
+      transition: border-color .18s !important;
+      appearance: auto !important;
+      -webkit-appearance: auto !important;
+    }
+    select:not(.cm-aw-pt-select):not(.pi-pay-type-select):hover {
+      border-color: #c7c7c7 !important;
+    }
+    select:not(.cm-aw-pt-select):not(.pi-pay-type-select):focus {
+      border-color: #e94560 !important;
+    }
+    select:not(.cm-aw-pt-select):not(.pi-pay-type-select):disabled {
+      background: #f3f4f6 !important;
+      color: #9ca3af !important;
+      cursor: not-allowed !important;
+      opacity: .7 !important;
+    }
+
+    /* ══════════════════════════════════════════════

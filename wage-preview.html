@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>임금대장 항목 배치 확인 (임시)</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Malgun Gothic', '맑은 고딕', sans-serif;
+  font-size: 13px;
+  background: #f1f5f9;
+  padding: 28px 20px;
+  color: #1e293b;
+}
+
+h1  { font-size: 17px; font-weight: 700; margin-bottom: 4px; color: #0f172a; }
+.sub { font-size: 12px; color: #64748b; margin-bottom: 20px; }
+.sub b { color: #dc2626; }
+
+/* ── 범례 ── */
+.legend {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin-bottom: 20px; align-items: center;
+}
+.leg { display: flex; align-items: center; gap: 5px; font-size: 11.5px; }
+.leg-box {
+  width: 18px; height: 18px; border-radius: 3px;
+  border: 1px solid #cbd5e1; flex-shrink: 0;
+}
+.leg-sep { color: #cbd5e1; font-size: 14px; }
+
+/* ── 래퍼 ── */
+.tbl-wrap {
+  overflow-x: auto;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.12);
+}
+
+/* ── 테이블 기본 ── */
+table {
+  border-collapse: collapse;
+  min-width: 900px;
+  width: 100%;
+  table-layout: fixed;
+  background: #fff;
+}
+th, td {
+  border: 1px solid #cbd5e1;
+  text-align: center;
+  vertical-align: middle;
+  padding: 0 3px;
+  height: 32px;
+  font-size: 11.5px;
+  overflow: hidden;
+  white-space: normal;
+  word-break: keep-all;
+  line-height: 1.3;
+}
+
+/* ── 열 너비 ── */
+col.c-rn   { width: 38px; }   /* 행번호 */
+col.c-idx  { width: 34px; }   /* 열번호 */
+col.c-c1   { width: 68px; }   /* C1 사원번호 */
+col.c-c2   { width: 64px; }   /* C2 성명 */
+col.c-pay  { width: 82px; }   /* C3~C8 지급 */
+col.c-ded  { width: 82px; }   /* C9~C12 공제 */
+col.c-sign { width: 52px; }   /* C13 영수인 */
+
+/* ── 열 인덱스 행 ── */
+.row-cidx th {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+  font-size: 11px;
+  height: 24px;
+  font-weight: 700;
+  border-color: #334155 !important;
+}
+
+/* ── 행 번호 셀 ── */
+.rn {
+  background: #f8fafc !important;
+  color: #94a3b8 !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  border: none !important;
+  border-right: 1px solid #e2e8f0 !important;
+}
+
+/* ─────── 헤더 행1 그룹 ─────── */
+.th-grp-personal { background: #1e3a5f; color: #fff; font-weight: 700; font-size: 12px; }
+.th-grp-pay      { background: #065f46; color: #fff; font-weight: 700; font-size: 12px; }
+.th-grp-ded      { background: #7f1d1d; color: #fff; font-weight: 700; font-size: 12px; }
+.th-grp-sign     { background: #374151; color: #fff; font-weight: 700; font-size: 12px; }
+
+/* ─────── 헤더 행2~6 셀 종류 ─────── */
+/* 인적사항 고정 셀 */
+.th-empno   { background: #dbeafe; color: #1e40af; font-weight: 700; }
+.th-name    { background: #dbeafe; color: #1e40af; font-weight: 700;
+              border-right: 2px solid #475569 !important; }
+.th-merged  { background: #f1f5f9; color: #475569; font-weight: 600;
+              border-right: 2px solid #475569 !important; }
+
+/* 항상 표시 (hasData 없음) */
+.th-always {
+  background: #fff7ed;
+  color: #9a3412;
+  font-weight: 700;
+}
+/* 조건부 (hasData 유지) */
+.th-cond {
+  background: #f0fdf4;
+  color: #15803d;
+  font-weight: 600;
+}
+/* 공란 (레이블 없음) */
+.th-blank {
+  background: #f8fafc;
+  color: #d1d5db;
+  font-size: 10px !important;
+}
+/* 항상 공란 (구조상, wl-th-na) */
+.th-na {
+  background: #e2e8f0;
+  color: #94a3b8;
+  font-size: 10px !important;
+}
+/* 특수 컬러 셀 */
+.th-gross {
+  background: #dcfce7; color: #14532d; font-weight: 700;
+  border: 2px solid #16a34a !important;
+}
+.th-ded-sum {
+  background: #fee2e2; color: #b91c1c; font-weight: 700;
+  border: 2px solid #b91c1c !important;
+}
+.th-net {
+  background: #dbeafe; color: #1e40af; font-weight: 700;
+  border: 2px solid #2563eb !important;
+}
+.th-sign {
+  background: #f8fafc; color: #64748b; font-weight: 600;
+  border-left: 2px solid #334155 !important;
+  border-bottom: 2px solid #334155 !important;
+}
+
+/* 구분 굵은 테두리 */
+.br-r { border-right: 2px solid #475569 !important; }
+
+/* ─────── 데이터 tbody 셀 ─────── */
+.td-rn   { background: #fefce8 !important; color: #a16207 !important;
+           font-size: 10px !important; font-weight: 700 !important;
+           border: none !important; border-right: 1px solid #e2e8f0 !important; }
+.td-empno  { background: #eff6ff; color: #1d4ed8; }
+.td-name   { background: #eff6ff; color: #1d4ed8; font-weight: 600;
+             border-right: 2px solid #475569 !important; }
+.td-dept   { background: #f1f5f9; color: #475569; font-style: italic;
+             border-right: 2px solid #475569 !important; }
+.td-pay    { background: #fefce8; color: #78350f; }
+.td-blank  { background: #f8fafc; color: #d1d5db; font-size: 10px !important; }
+.td-na     { background: #e2e8f0; color: #94a3b8; font-size: 10px !important; }
+.td-gross  { background: #dcfce7; color: #14532d; font-weight: 700;
+             border: 2px solid #16a34a !important; }
+.td-ded    { background: #fff1f2; color: #9f1239; }
+.td-ded-sum{ background: #fee2e2; color: #b91c1c; font-weight: 700;
+             border: 2px solid #b91c1c !important; }
+.td-net    { background: #dbeafe; color: #1e40af; font-weight: 700;
+             border: 2px solid #2563eb !important; }
+.td-sign   { border-left: 2px solid #475569 !important;
+             border-bottom: 2px solid #475569 !important; }
+
+/* 마지막 data행 하단 */
+.last-row td { border-bottom: 2px solid #475569 !important; }
+
+/* ── 하단 안내 카드 ── */
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+  margin-top: 28px;
+}
+.info-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+.info-card h3 {
+  font-size: 12.5px; font-weight: 700; color: #0f172a;
+  margin-bottom: 10px; padding-bottom: 6px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.info-card table { box-shadow: none; min-width: unset; }
+.info-card th, .info-card td { height: 26px; font-size: 11px; }
+.info-card ul { list-style: disc; padding-left: 18px;
+                line-height: 2; font-size: 11.5px; color: #374151; }
+</style>
+</head>
+<body>
+
+<h1>임금대장 — 기본급여 및 제수당 항목 배치 확인</h1>
+<p class="sub"><b>임시 파일</b> · 확인 후 삭제 예정 &nbsp;|&nbsp; 실제 테이블 구조(헤더 6행 + 가상 데이터 1명)를 그대로 재현합니다. · C6 = 차량교통비 (차량유지비/교통비/벽지수당 택1 동적 표시)</p>
+
+<!-- 범례 -->
+<div class="legend">
+  <div class="leg"><div class="leg-box" style="background:#fff7ed;border-color:#fb923c"></div><span><b style="color:#9a3412">주황</b> = 항상 표시 (hasData 없음)</span></div>
+  <span class="leg-sep">|</span>
+  <div class="leg"><div class="leg-box" style="background:#f0fdf4;border-color:#4ade80"></div><span><b style="color:#15803d">연두</b> = 데이터 있을 때만 (hasData 유지)</span></div>
+  <span class="leg-sep">|</span>
+  <div class="leg"><div class="leg-box" style="background:#e2e8f0;border-color:#94a3b8"></div><span><b style="color:#64748b">회색</b> = 구조상 항상 공란 (wl-th-na)</span></div>
+  <span class="leg-sep">|</span>
+  <div class="leg"><div class="leg-box" style="background:#f8fafc;border-color:#e2e8f0"></div><span><b style="color:#94a3b8">흰회</b> = 공란 (빈 셀)</span></div>
+  <span class="leg-sep">|</span>
+  <div class="leg"><div class="leg-box" style="background:#dcfce7;border:2px solid #16a34a"></div><span><b style="color:#14532d">초록</b> = 지급합계</span></div>
+  <span class="leg-sep">|</span>
+  <div class="leg"><div class="leg-box" style="background:#fee2e2;border:2px solid #b91c1c"></div><span><b style="color:#b91c1c">빨강</b> = 공제합계</span></div>
+  <span class="leg-sep">|</span>
+  <div class="leg"><div class="leg-box" style="background:#dbeafe;border:2px solid #2563eb"></div><span><b style="color:#1e40af">파랑</b> = 차인지급액</span></div>
+</div>
+
+<div class="tbl-wrap">
+<table>
+  <colgroup>
+    <col class="c-rn">    <!-- 행번호 -->
+    <col class="c-idx">   <!-- 열번호 참조 -->
+    <col class="c-c1">    <!-- C1 사원번호 -->
+    <col class="c-c2">    <!-- C2 성명 -->
+    <col class="c-pay">   <!-- C3 -->
+    <col class="c-pay">   <!-- C4 -->
+    <col class="c-pay">   <!-- C5 -->
+    <col class="c-pay">   <!-- C6 -->
+    <col class="c-pay">   <!-- C7 -->
+    <col class="c-pay">   <!-- C8 -->
+    <col class="c-ded">   <!-- C9 -->
+    <col class="c-ded">   <!-- C10 -->
+    <col class="c-ded">   <!-- C11 -->
+    <col class="c-ded">   <!-- C12 -->
+    <col class="c-sign">  <!-- C13 -->
+  </colgroup>
+
+  <thead>
+    <!-- 열 번호 참조행 (실제 테이블에는 없는 행) -->
+    <tr class="row-cidx">
+      <th class="rn" style="background:#1e293b!important;color:#e2e8f0!important;">—</th>
+      <th style="background:#0f172a!important;color:#64748b!important;font-size:10px">참조</th>
+      <th>C1</th><th>C2</th>
+      <th>C3</th><th>C4</th><th>C5</th>
+      <th>C6</th><th>C7</th><th>C8</th>
+      <th>C9</th><th>C10</th><th>C11</th><th>C12</th>
+      <th>C13</th>
+    </tr>
+
+    <!-- ══ 헤더 행1: 그룹 레이블 ══ -->
+    <tr>
+      <td class="rn">행1</td>
+      <td class="th-blank"></td>
+      <th colspan="2" class="th-grp-personal">인적사항</th>
+      <th colspan="6" class="th-grp-pay">기본급여 및 제수당</th>
+      <th colspan="4" class="th-grp-ded">공제 및 차인지급액</th>
+      <th rowspan="6" class="th-sign">영수인</th>
+    </tr>
+
+    <!-- ══ 헤더 행2 ══ -->
+    <tr>
+      <td class="rn">행2</td>
+      <td class="th-blank"></td>
+      <th class="th-empno">사원번호</th>
+      <th class="th-name br-r">성명</th>
+      <!-- PAY_TH[0]: C3=기본급, C4=정기상여금, C5=식대, C6=차량교통비(동적), C7=공란, C8=공란 -->
+      <th class="th-always">기본급</th>       <!-- C3 -->
+      <th class="th-always">정기상여금</th>    <!-- C4 -->
+      <th class="th-always">식대</th>          <!-- C5 -->
+      <th class="th-always" title="차량유지비/교통비/벽지수당 중 선택한 항목으로 동적 표시">차량유지비&nbsp;<span style="font-size:9px;background:#dbeafe;color:#1d4ed8;border-radius:3px;padding:1px 4px;">택1</span></th> <!-- C6 동적 -->
+      <th class="th-blank">—</th>        <!-- C7 공란 -->
+      <th class="th-blank br-r">—</th>   <!-- C8 공란 -->
+      <!-- DED_TH[0]: C9~C12 공제 4개 -->
+      <th class="th-always">국민연금</th>
+      <th class="th-always">건강보험</th>
+      <th class="th-always">고용보험</th>
+      <th class="th-always">장기요양보험료</th>
+    </tr>
+
+    <!-- ══ 헤더 행3 ══ -->
+    <tr>
+      <td class="rn">행3</td>
+      <td class="th-blank"></td>
+      <th colspan="2" class="th-merged">부서</th>
+      <!-- PAY_TH[1]: C3=연구활동비, C4=육아수당, C5=연장근로수당, C6=야간근로수당, C7=휴일근로수당, C8=주휴수당 -->
+      <th class="th-always">연구활동비</th>   <!-- C3 -->
+      <th class="th-always">육아수당</th>       <!-- C4 -->
+      <th class="th-always">연장근로수당</th>  <!-- C5 -->
+      <th class="th-always">야간근로수당</th>  <!-- C6 -->
+      <th class="th-always">휴일근로수당</th>  <!-- C7 -->
+      <th class="th-always br-r">주휴수당</th>    <!-- C8 -->
+      <!-- DED_TH[1] -->
+      <th class="th-always">국민연금소급분</th>
+      <th class="th-always">건강보험료정산</th>
+      <th class="th-always">고용보험정산</th>
+      <th class="th-always">장기요양보험정산</th>
+    </tr>
+
+    <!-- ══ 헤더 행4 ══ -->
+    <tr>
+      <td class="rn">행4</td>
+      <td class="th-blank"></td>
+      <th colspan="2" class="th-merged">직급</th>
+      <!-- PAY_TH[2]: C3=연차수당, C4=면허수당, C5=기술수당, C6=통신비, C7=성과급, C8=실비변상적급여 -->
+      <th class="th-always">연차수당</th>      <!-- C3: annual_leave_pay -->
+      <th class="th-always">면허수당</th>      <!-- C4: license_allowance -->
+      <th class="th-always">기술수당</th>      <!-- C5: skill_allowance -->
+      <th class="th-always">통신비</th>          <!-- C6: communication_pay -->
+      <th class="th-always">성과급</th>          <!-- C7: performance_pay -->
+      <th class="th-always br-r">실비변상적급여</th> <!-- C8: actual_expense_pay -->
+      <!-- DED_TH[2] -->
+      <th class="th-na">—</th>                 <!-- C9 항상공란 -->
+      <th class="th-always">건강보험연말정산</th>
+      <th class="th-na">—</th>                 <!-- C11 항상공란 -->
+      <th class="th-always">장기요양보험연말정산</th>
+    </tr>
+
+    <!-- ══ 헤더 행5 ══ -->
+    <tr>
+      <td class="rn">행5</td>
+      <td class="th-blank"></td>
+      <th colspan="2" class="th-merged">입사일</th>
+      <!-- PAY_TH[3]: C3~C6=공란(추가 입력 항목용), C7=기타, C8=공란 -->
+      <th class="th-blank" title="추가 입력 항목용">—</th>  <!-- C3 공란 -->
+      <th class="th-blank" title="추가 입력 항목용">—</th>  <!-- C4 공란 -->
+      <th class="th-blank" title="추가 입력 항목용">—</th>  <!-- C5 공란 -->
+      <th class="th-blank" title="추가 입력 항목용">—</th>  <!-- C6 공란 -->
+      <th class="th-always">기타</th>             <!-- C7 -->
+      <th class="th-blank br-r">—</th>            <!-- C8 공란 -->
+      <!-- DED_TH[3] -->
+      <th class="th-always">소득세</th>
+      <th class="th-always">지방소득세</th>
+      <th class="th-always">소득세연말정산</th>
+      <th class="th-always">지방세환급</th>
+    </tr>
+
+    <!-- ══ 헤더 행6 ══ -->
+    <tr>
+      <td class="rn">행6</td>
+      <td class="th-blank"></td>
+      <th colspan="2" class="th-merged">퇴사일</th>
+      <!-- PAY_TH[4]: C3~C7=공란, C8=지급합계 -->
+      <th class="th-blank">—</th>  <!-- C3 공란 -->
+      <th class="th-blank">—</th>  <!-- C4 공란 -->
+      <th class="th-blank">—</th>  <!-- C5 공란 -->
+      <th class="th-blank">—</th>  <!-- C6 공란 -->
+      <th class="th-blank">—</th>  <!-- C7 공란 -->
+      <th class="th-gross br-r"><strong>지급합계</strong></th>  <!-- C8: gross_pay -->
+      <!-- DED_TH[4] -->
+      <th class="th-blank">—</th>
+      <th class="th-always">기타공제</th>
+      <th class="th-ded-sum"><strong>공제합계</strong></th>
+      <th class="th-net"><strong>차인지급액</strong></th>
+    </tr>
+  </thead>
+
+  <!-- ══════════════ 가상 데이터 1명 ══════════════ -->
+  <tbody>
+    <!-- 데이터 행1 (TH 행2 대응) -->
+    <tr>
+      <td class="td-rn">데이터<br>행1</td>
+      <td class="th-blank" style="font-size:10px;color:#94a3b8">행2↔</td>
+      <td class="td-empno">EMP001</td>
+      <td class="td-name">홍길동</td>
+      <!-- getPayVals(p, 0): base_salary, bonus_pay, meal, _transportVal(p), '', '' -->
+      <td class="td-pay">3,000,000</td>   <!-- C3 base_salary 기본급 -->
+      <td class="td-pay">500,000</td>     <!-- C4 bonus_pay 정기상여금 -->
+      <td class="td-pay">100,000</td>     <!-- C5 meal_allowance 식대 -->
+      <td class="td-pay" title="선택된 항목(self_driving)의 값을 표시">200,000</td> <!-- C6 차량유지비(예시: self_driving) -->
+      <td class="td-blank">—</td>         <!-- C7 공란 -->
+      <td class="td-blank">—</td>         <!-- C8 공란 -->
+      <!-- getDedVals(p, 0): national_pension, health_insurance, employment_insurance, long_term_care -->
+      <td class="td-ded">157,500</td>
+      <td class="td-ded">112,100</td>
+      <td class="td-ded">28,000</td>
+      <td class="td-ded">14,530</td>
+      <td rowspan="5" class="td-sign"></td>
+    </tr>
+
+    <!-- 데이터 행2 (TH 행3 대응) -->
+    <tr>
+      <td class="td-rn">데이터<br>행2</td>
+      <td class="th-blank" style="font-size:10px;color:#94a3b8">행3↔</td>
+      <td colspan="2" class="td-dept">개발팀</td>
+      <!-- getPayVals(p, 1): research, childcare, overtime, night, holiday, weekly_holiday -->
+      <td class="td-pay">100,000</td>   <!-- C3 research_allowance 연구활동비 -->
+      <td class="td-pay">100,000</td>   <!-- C4 childcare_allowance 육아수당 -->
+      <td class="td-pay">200,000</td>   <!-- C5 overtime_pay 연장근로수당 -->
+      <td class="td-blank">—</td>         <!-- C6 night_pay 야간근로수당 -->
+      <td class="td-blank">—</td>         <!-- C7 holiday_pay 휴일근로수당 -->
+      <td class="td-pay">400,000</td>   <!-- C8 weekly_holiday_pay 주휴수당 -->
+      <!-- getDedVals(p, 1) -->
+      <td class="td-blank">—</td>
+      <td class="td-ded">5,000</td>        <!-- health_insurance_adjust -->
+      <td class="td-blank">—</td>
+      <td class="td-blank">—</td>
+    </tr>
+
+    <!-- 데이터 행3 (TH 행4 대응) -->
+    <tr>
+      <td class="td-rn">데이터<br>행3</td>
+      <td class="th-blank" style="font-size:10px;color:#94a3b8">행4↔</td>
+      <td colspan="2" class="td-dept">대리</td>
+      <!-- getPayVals(p, 2): annual_leave, license, skill, communication, performance, actual_expense -->
+      <td class="td-blank">—</td>      <!-- C3 annual_leave_pay 연차수당 -->
+      <td class="td-blank">—</td>      <!-- C4 license_allowance 면허수당 -->
+      <td class="td-pay">50,000</td>   <!-- C5 skill_allowance 기술수당 -->
+      <td class="td-blank">—</td>      <!-- C6 communication_pay 통신비 -->
+      <td class="td-blank">—</td>      <!-- C7 performance_pay 성과급 -->
+      <td class="td-blank">—</td>      <!-- C8 actual_expense_pay 실비변상적급여 -->
+      <!-- getDedVals(p, 2): 구조상 모두 공란 -->
+      <td class="td-na">—</td>         <!-- C9 항상공란 -->
+      <td class="td-blank">—</td>
+      <td class="td-na">—</td>         <!-- C11 항상공란 -->
+      <td class="td-blank">—</td>
+    </tr>
+
+    <!-- 데이터 행4 (TH 행5 대응) -->
+    <tr>
+      <td class="td-rn">데이터<br>행4</td>
+      <td class="th-blank" style="font-size:10px;color:#94a3b8">행5↔</td>
+      <td colspan="2" class="td-dept">2022-03-01</td>
+      <!-- getPayVals(p, 3): '', '', '', '', etc+other, '' -->
+      <td class="td-blank">—</td>      <!-- C3 공란 -->
+      <td class="td-blank">—</td>      <!-- C4 공란 -->
+      <td class="td-blank">—</td>      <!-- C5 공란 -->
+      <td class="td-blank">—</td>      <!-- C6 공란 -->
+      <td class="td-blank">—</td>      <!-- C7 기타 -->
+      <td class="td-blank">—</td>      <!-- C8 공란 -->
+      <!-- getDedVals(p, 3): income_tax, local_income_tax, year_end_tax_adjust, '' -->
+      <td class="td-ded">150,000</td>  <!-- C9 income_tax 소득세 -->
+      <td class="td-ded">15,000</td>   <!-- C10 local_income_tax 지방소득세 -->
+      <td class="td-blank">—</td>      <!-- C11 year_end_tax_adjust 소득세연말정산 -->
+      <td class="td-blank">—</td>      <!-- C12 지방세환급 -->
+    </tr>
+
+    <!-- 데이터 행5 (TH 행6 대응) — last row -->
+    <tr class="last-row">
+      <td class="td-rn">데이터<br>행5</td>
+      <td class="th-blank" style="font-size:10px;color:#94a3b8">행6↔</td>
+      <td colspan="2" class="td-dept">—</td>
+      <!-- getPayVals(p, 4): '', '', '', '', '', fmtB(gross_pay) -->
+      <td class="td-blank">—</td>  <!-- C3 공란 -->
+      <td class="td-blank">—</td>  <!-- C4 공란 -->
+      <td class="td-blank">—</td>  <!-- C5 공란 -->
+      <td class="td-blank">—</td>  <!-- C6 공란 -->
+      <td class="td-blank">—</td>  <!-- C7 공란 -->
+      <td class="td-gross"><strong>4,650,000</strong></td><!-- C8 gross_pay 지급합계 -->
+      <!-- getDedVals(p, 4): '', advance_deduction, total_deduction, net_pay -->
+      <td class="td-blank">—</td>
+      <td class="td-blank">—</td>          <!-- advance_deduction 기타공제 -->
+      <td class="td-ded-sum"><strong>487,130</strong></td><!-- total_deduction 공제합계 -->
+      <td class="td-net"><strong>4,162,870</strong></td>  <!-- net_pay 차인지급액 -->
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ── 항목 매핑 정리 ── -->
+<div class="info-grid">
+
+  <!-- 지급 항목 전체 매핑 -->
+  <div class="info-card">
+    <h3>📋 지급 항목 전체 매핑 (C3~C8, PAY_TH 기준)</h3>
+    <table style="width:100%">
+      <colgroup>
+        <col style="width:36px"><col style="width:28px">
+        <col style="width:90px"><col><col style="width:56px">
+      </colgroup>
+      <thead>
+        <tr style="background:#f1f5f9">
+          <th>헤더행</th><th>열</th><th>레이블</th><th>DB 필드</th><th>노출</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>행2</td><td>C3</td><td style="color:#9a3412;font-weight:700">기본급</td><td style="font-size:10px">base_salary</td><td class="th-always" style="font-size:10px">항상</td></tr>
+        <tr><td>행2</td><td>C4</td><td style="color:#9a3412;font-weight:700">정기상여금</td><td style="font-size:10px">bonus_pay</td><td class="th-always" style="font-size:10px">항상</td></tr>
+        <tr><td>행2</td><td>C5</td><td style="color:#9a3412;font-weight:700">식대</td><td style="font-size:10px">meal_allowance</td><td class="th-always" style="font-size:10px">항상</td></tr>
+        <tr style="background:#eff6ff"><td>행2</td><td>C6</td><td style="color:#1d4ed8;font-weight:700">차량유지비<br><span style="font-size:9px;font-weight:400;color:#1d4ed8">/교통비/벽지</span></td><td style="font-size:10px">transport_type에 따라<br>self_driving_allowance<br>transportation_allowance<br>remote_area_allowance 중 1개</td><td class="th-always" style="font-size:10px;background:#dbeafe;color:#1d4ed8">택1 동적</td></tr>
+        <tr><td>행2</td><td>C7</td><td>—</td><td style="font-size:10px">공란</td><td class="th-blank" style="font-size:10px">공란</td></tr>
+        <tr><td>행2</td><td>C8</td><td>—</td><td style="font-size:10px">공란</td><td class="th-blank" style="font-size:10px">공란</td></tr>
+        <tr style="border-top:2px solid #e2e8f0">
+          <td>행3</td><td>C3</td><td style="color:#9a3412;font-weight:700">연구활동비</td><td style="font-size:10px">research_allowance</td><td class="th-always" style="font-size:10px">항상</td></tr>
+        <tr><td>행3</td><td>C4</td><td style="color:#9a3412;font-weight:700">육아수당</td><td style="font-size:10px">childcare_allowance</td><td class="th-always" style="font-size:10px">항상</td></tr>
+        <tr><td>행3</td><td>C5</td><td style="color:#9a3412;font-weight:700">연장근로수당</td><td style="font-size:10px">overtime_pay</td><td class="th-always" style="font-size:10px">항상</td></tr>
+        <tr><td>행3</td><td>C6</td><td style="color:#9a3412;font-weight:700">야간근로수당</td><td style="font-size:10px">night_pay</td><td class="th-always" style="font-size:10px">항상</td></tr>
+        <tr><td>행3</td><td>C7</td><td style="color:#9a3412;font-weight:700">휴일근로수당</td><td style="font-size:10px">holiday_pay</td><td class="th-always" style="font-size:10px">항상</td></tr>
+        <tr><td>행3</td><td>C8</td><td style="color:#9a3412;font-weight:700">주휴수당</td><td style="font-size:10px">weekly_holiday_pay</td><td class="th-always" style="font-size:10px">항상</td></tr>
+        <tr style="border-top:2px solid #e2e8f0">
+          <td>행4</td><td>C3</td><td style="color:#9a3412;font-weight:700">연차수당</td><td style="font-size:10px">annual_leave_pay</td><td class="th-always" style="font-size:10px">항상</td></tr>
+        <tr><td>행4</td><td>C4</td><td style="color:#9a3412;font-weight:700">면허수당</td><td style="font-size:10px">license_allowance</td><td class="th-always" style="font-size:10px">항상</td></tr>
+        <tr><td>행4</td><td>C5</td><td style="color:#9a3412;font-weight:700">기술수당</td><td style="font-size:10px">skill_allowance</td><td class="th-always" style="font-size:10px">항상</td></tr>
+        <tr><td>행4</td><td>C6</td><td style="color:#9a3412;font-weight:700">통신비</td><td style="font-size:10px">communication_pay</td><td class="th-always" style="font-size:10px">항상</td></tr>
+        <tr><td>행4</td><td>C7</td><td style="color:#9a3412;font-weight:700">성과급</td><td style="font-size:10px">performance_pay</td><td class="th-always" style="font-size:10px">항상</td></tr>
+        <tr><td>행4</td><td>C8</td><td style="color:#9a3412;font-weight:700">실비변상적급여</td><td style="font-size:10px">actual_expense_pay</td><td class="th-always" style="font-size:10px">항상</td></tr>
+        <tr style="border-top:2px solid #e2e8f0">
+          <td>행5</td><td>C3~C6</td><td>— (추가항목용)</td><td>—</td><td class="th-blank" style="font-size:10px">공란</td></tr>
+        <tr><td>행5</td><td>C7</td><td style="color:#9a3412;font-weight:700">기타</td><td style="font-size:10px">etc_allowance / other_pay</td><td class="th-always" style="font-size:10px">항상</td></tr>
+        <tr><td>행5</td><td>C8</td><td>—</td><td>—</td><td class="th-blank" style="font-size:10px">공란</td></tr>
+        <tr style="border-top:2px solid #e2e8f0">
+          <td>행6</td><td>C3~C7</td><td>—</td><td>—</td><td class="th-blank" style="font-size:10px">공란</td></tr>
+        <tr><td>행6</td><td>C8</td><td style="color:#14532d;font-weight:700"><strong>지급합계</strong></td><td style="font-size:10px">gross_pay</td><td class="th-gross" style="font-size:10px">항상</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 확인 포인트 -->
+  <div class="info-card">
+    <h3>⚠️ 확인 포인트 및 현재 상태</h3>
+    <ul>
+      <li><b>행2</b>: 기본급(C3), 정기상여금(C4), 식대(C5), <b>차량교통비(C6) — 차량유지비/교통비/벽지수당 택1 동적 레이블</b>, C7~C8=공란</li>
+      <li><b>행3</b>: 연구활동비(C3), 육아수당(C4), 연장근로수당(C5), 야간근로수당(C6), 휴일근로수당(C7), 주휴수당(C8)</li>
+      <li><b>행4</b>: 연차수당(C3), 면허수당(C4), 기술수당(C5), 통신비(C6), 성과급(C7), 실비변상적급여(C8)</li>
+      <li><b>행5</b>: C3~C6 추가항목 예비 공란, C7=기타, C8=공란</li>
+      <li><b>행6</b>: C3~C7 공란, <b>C8=지급합계</b></li>
+      <li><b>공제 행4(DED_TH[2]) C9, C11</b>은 구조상 항상 공란 → 회색(wl-th-na) 처리</li>
+    </ul>
+    <div style="margin-top:14px;padding:10px;background:#fef9c3;border-radius:6px;border:1px solid #fde047">
+      <p style="font-size:11.5px;color:#713f12;font-weight:700;margin-bottom:4px">🔎 이 파일에서 확인하세요</p>
+      <ul style="font-size:11px;color:#713f12;list-style:disc;padding-left:16px;line-height:1.8">
+        <li>각 행·열 번호와 레이블이 요청 스펙과 일치하는지</li>
+        <li>주황색 셀 = 항상 표시 항목이 모두 올바른 위치에 있는지</li>
+        <li>행6 C3~C6 공란 위치가 적절한지</li>
+        <li>데이터 행과 헤더 행의 열 정렬이 맞는지</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<p style="margin-top:18px;font-size:11px;color:#94a3b8;text-align:right">
+  Generated: <script>document.write(new Date().toLocaleString('ko-KR'))</script>
+  &nbsp;|&nbsp; <span style="color:#dc2626;font-weight:600">임시 파일 — 확인 후 삭제 요청해 주세요</span>
+</p>
+
+</body>
+</html>

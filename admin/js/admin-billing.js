@@ -2738,7 +2738,9 @@ function renderCenTemplate(){
 ■ 남은 기간: ${ddayStr}
 
 ${urgencyWorker}
-계약 갱신 또는 종료 여부를 담당 노무사와 미리 상의해 주시기 바랍니다.`;
+계약 갱신 또는 종료 여부를 담당 노무사와 미리 상의해 주시기 바랍니다.
+
+${_BRAND_SIG}`;
 
   const kakaoFooter =
 `※ 「기간제 및 단시간근로자 보호 등에 관한 법률」에 따른 계약만료 사전 통지입니다.
@@ -2759,7 +2761,9 @@ ${urgencyWorker}`;
 
   const emailNotice =
 `본 메일은 「기간제 및 단시간근로자 보호 등에 관한 법률」 및 근로기준법에 따른 계약만료 사전 통지 메일입니다.
-수신을 원하지 않으시면 담당자에게 문의해 주세요.`;
+수신을 원하지 않으시면 담당자에게 문의해 주세요.
+
+${_BRAND_SIG}`;
 
   // ── 4. 고객사 — 인앱 알림 ────────────────────────────────────
   const inappTitle  = `[계약만료 예정] ${empName} ${catLabel} — ${ddayStr}`;
@@ -2774,7 +2778,9 @@ ${urgencyCompany}`;
   const inappFoot =
 `담당 노무사에게 갱신 여부를 확인해 주세요.
 문의: ${adminPhone} / ${adminEmail}
-※ 「기간제 및 단시간근로자 보호 등에 관한 법률」에 따른 사전 통지`;
+※ 「기간제 및 단시간근로자 보호 등에 관한 법률」에 따른 사전 통지
+
+${_BRAND_SIG}`;
 
   // ── 5. DOM 반영: 근로자 알림톡 ──────────────────────────────
   _setText('cen-tmpl-kakao-body',   kakaoBody);
@@ -3257,7 +3263,9 @@ ${urgencyCompany}
 
 담당 노무사에게 갱신 여부를 확인해 주세요.
 
-※ 「기간제 및 단시간근로자 보호 등에 관한 법률」에 따른 사전 통지`;
+※ 「기간제 및 단시간근로자 보호 등에 관한 법률」에 따른 사전 통지
+
+${_BRAND_SIG}`;
 
   await fetch('../tables/company_notices', {
     method : 'POST',
@@ -3557,7 +3565,9 @@ async function _2yrSendNotice(empId){
 ◆ 필요 조치
 담당 노무사에게 정규직 근로계약서 재작성을 요청해 주세요.
 
-※ 본 안내는 노무사 사무소에서 발송한 법적 의무 안내입니다.`;
+※ 본 안내는 대화인사노무파트너스에서 발송한 법적 의무 안내입니다.
+
+${_BRAND_SIG}`;
 
   try {
     // ① 고객사 인앱 알림
@@ -3964,7 +3974,9 @@ function renderRcTemplate(){
 ◆ 필요 조치
 담당 노무사에게 정규직 근로계약서 재작성을 요청해 주세요.
 
-※ 본 안내는 노무사 사무소에서 발송한 법적 의무 안내입니다.`;
+※ 본 안내는 대화인사노무파트너스에서 발송한 법적 의무 안내입니다.
+
+${_BRAND_SIG}`;
 
   // 인앱 카드 미리보기 업데이트
   const setTxt = (id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v; };
@@ -3998,7 +4010,7 @@ function renderRcTemplate(){
         <span style="color:#dc2626;font-weight:700;">${fmtDays(totalDays)}</span>
       </div>
     </div>`);
-  setTxt('rc-tmpl-inapp-foot', '※ 본 안내는 노무사 사무소에서 발송한 법적 의무 안내입니다.');
+  setTxt('rc-tmpl-inapp-foot', `※ 본 안내는 대화인사노무파트너스에서 발송한 법적 의무 안내입니다.\n\n${_BRAND_SIG}`);
 
   // 변수 안내 테이블
   const vars = [
@@ -4962,7 +4974,9 @@ ${refYear}년도 미사용 연차 유급휴가가 남아 있어 사용을 촉진
 연차 사용 시 소속 사업장에 사전 신청하여 주시기 바랍니다.
 
 담당 노무사: ${adminName}
-※ 본 통지는 근로기준법 제61조에 따른 공식 연차 사용촉진 통지서입니다.`;
+※ 본 통지는 근로기준법 제61조에 따른 공식 연차 사용촉진 통지서입니다.
+
+${_BRAND_SIG}`;
 }
 
 /**
@@ -4985,7 +4999,9 @@ function _buildLeavePromoCompanyBody(emp, co, al, refYear, adminName, workerMeth
 ■ ${refYear}년 잔여 연차: ${al.remainDays}일 (사용기한: ${endDate})
 
 해당 직원이 기한 내 연차를 미사용할 경우, 「근로기준법」 제61조에 따라 미사용 연차수당 지급 의무가 소멸될 수 있습니다.
-자세한 사항은 담당 노무사 ${adminName}에게 문의하시기 바랍니다.`;
+자세한 사항은 담당 노무사 ${adminName}에게 문의하시기 바랍니다.
+
+${_BRAND_SIG}`;
 }
 
 /** 연차 사용 기한 계산 헬퍼 */
@@ -6324,14 +6340,16 @@ async function _gnSendStandardsUpdateNotice(updateType, detail){
   const body  =
 `안녕하세요.
 
-노무사 사무소에서 최신 산정기준을 업데이트하였습니다.
+대화인사노무파트너스에서 최신 산정기준을 업데이트하였습니다.
 
 ■ 업데이트 항목: ${updateType}
 ${detail}
 ■ 업데이트 일시: ${new Date().toLocaleString('ko-KR')}
 
 급여 계산 시 변경된 기준이 자동 반영됩니다.
-상세 내용은 담당 노무사에게 문의하세요.`;
+상세 내용은 담당 노무사에게 문의하세요.
+
+${_BRAND_SIG}`;
 
   let cnt = 0;
   for(const co of targets){

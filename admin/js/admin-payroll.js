@@ -742,7 +742,9 @@ async function sendPayslipPDF(){
 ■ 발송 방법: 카카오 알림톡
 ■ 발송 시각: ${new Date().toLocaleString('ko-KR')}
 
-발송 상세 내역은 급여명세서 발송 관리 메뉴에서 확인하세요.`,
+발송 상세 내역은 급여명세서 발송 관리 메뉴에서 확인하세요.
+
+${_BRAND_SIG}`,
         employeeId : empId, employeeName: empName,
       });
     }
@@ -828,7 +830,9 @@ async function sendPayslipEmail(){
 ■ 발송 방법: 이메일 (${email})
 ■ 발송 시각: ${new Date().toLocaleString('ko-KR')}
 
-발송 상세 내역은 급여명세서 발송 관리 메뉴에서 확인하세요.`,
+발송 상세 내역은 급여명세서 발송 관리 메뉴에서 확인하세요.
+
+${_BRAND_SIG}`,
         employeeId : empId, employeeName: empName,
       });
     }
@@ -1323,7 +1327,9 @@ async function _bulkEmailSend(idx){
 ■ 발송 방법: 이메일 (${item.email})
 ■ 발송 시각: ${new Date().toLocaleString('ko-KR')}
 
-발송 상세 내역은 급여명세서 발송 관리 메뉴에서 확인하세요.`,
+발송 상세 내역은 급여명세서 발송 관리 메뉴에서 확인하세요.
+
+${_BRAND_SIG}`,
         employeeId : item.empId, employeeName: item.empName,
       });
     }

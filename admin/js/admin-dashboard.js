@@ -1532,6 +1532,20 @@ function goDraftPayroll(draftId){
     if(card) card.style.display = 'none';
     if(sec)  sec.style.display  = '';
     if(lbl)  lbl.textContent    = co.company_name + ' 급여 입력';
+    // 대상자 목록 숨기고 폼 섹션 표시 (임시저장 직접 진입)
+    const targetSec = document.getElementById('pi-target-list-section');
+    if(targetSec) targetSec.style.display = 'none';
+    const formSec = document.getElementById('pi-form-section');
+    if(formSec) formSec.style.display = '';
+    // 직원 헤더 업데이트
+    const emp = allEmployees.find(e => e.id === p.employee_id);
+    const nameEl  = document.getElementById('pi-form-emp-name');
+    const badgeEl = document.getElementById('pi-form-emp-badge');
+    if(nameEl && emp) nameEl.textContent = `${emp.name} (${p.pay_year}년 ${p.pay_month}월) — 임시저장 복원`;
+    if(badgeEl) badgeEl.textContent = '';
+    // 글로벌 고객사 동기화
+    currentGlobalCompanyId   = p.company_id;
+    currentGlobalCompanyName = co.company_name;
   }
 
   // 숨김 select 동기화 → 직원 목록 로드
@@ -1592,13 +1606,7 @@ function renderPIAllDraftBanner(){
         <div style="width:16px;height:16px;border:2px solid #bbf7d0;border-top-color:#16a34a;border-radius:50%;animation:tblSpin .7s linear infinite;flex-shrink:0;"></div>
         임시저장 목록 불러오는 중…
       </div>`;
-    // 아코디언 열린 상태 유지
-    const body = document.getElementById('pi-all-draft-body');
-    if(body && !body.classList.contains('open')){
-      body.classList.add('open');
-      const chevron = document.querySelector('#pi-all-draft-banner .pi-adb-chevron i');
-      if(chevron) chevron.style.transform = 'rotate(180deg)';
-    }
+    // 아코디언 상태 유지 (강제 열기 없음 — 닫힘 기본값 보존)
     return;
   }
 
@@ -1627,13 +1635,8 @@ function renderPIAllDraftBanner(){
 
   countEl.textContent = drafts.length;
 
-  // 아코디언: 아직 한 번도 열린 적 없으면 기본 펼침
-  const _adbBody = document.getElementById('pi-all-draft-body');
-  if(_adbBody && !_adbBody.classList.contains('open')){
-    _adbBody.classList.add('open');
-    const _chevron = document.querySelector('#pi-all-draft-banner .pi-adb-chevron i');
-    if(_chevron) _chevron.style.transform = 'rotate(180deg)';
-  }
+  // 아코디언: 기본값 닫힘 — 사용자가 직접 열기 전까지 접혀 있음
+  // (열린 상태는 사용자 클릭으로만 진입; 렌더링 시 상태 변경하지 않음)
 
   listEl.innerHTML = drafts.map(p => {
     const emp    = (allEmployees||[]).find(e => e.id === p.employee_id);

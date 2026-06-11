@@ -685,372 +685,342 @@ function renderWageLedger(){
 
   // 합계 계산용
   const sumFields = [
-    'work_days','total_work_hours','overtime_hours','night_hours','holiday_hours',
-    'base_salary','weekly_holiday_pay','position_allowance',
-    'overtime_pay','night_pay','holiday_pay',
-    'transportation_allowance','self_driving_allowance','remote_area_allowance',
-    'meal_allowance','childcare_allowance','research_allowance',
-    'annual_leave_pay','bonus_pay','performance_pay','actual_expense_pay','communication_pay',
-    'skill_allowance','license_allowance','etc_allowance','other_pay',
-    'gross_pay','standard_monthly_pay',
+    'base_salary','weekly_holiday_pay',
+    'bonus_pay','meal_allowance','self_driving_allowance','transportation_allowance',
+    'remote_area_allowance','research_allowance','childcare_allowance',
+    'overtime_pay','night_pay','holiday_pay','annual_leave_pay',
+    'license_allowance','skill_allowance','communication_pay','performance_pay',
+    'actual_expense_pay','etc_allowance','other_pay',
+    'gross_pay',
+    'national_pension','health_insurance','employment_insurance','long_term_care',
     'income_tax','local_income_tax',
-    'health_insurance','long_term_care','national_pension','employment_insurance',
-    'year_end_tax_adjust','health_insurance_adjust','advance_deduction','total_deduction',
-    'net_pay'
+    'year_end_tax_adjust','health_insurance_adjust',
+    'advance_deduction','total_deduction','net_pay'
   ];
   const sums = {};
   sumFields.forEach(f => sums[f] = 0);
 
-  const won = v => (!v || v === 0) ? '-' : Number(v).toLocaleString('ko-KR');
   const wonNum = v => (!v || v === 0) ? 0 : Number(v);
+  const num    = v => { const n = Number(v); return (!v || n === 0) ? '-' : n.toLocaleString('ko-KR'); };
 
-  // ══ 카드형 렌더링 ══
-  // 구조: .wl-card-head (인적+요약, flex) + .wl-tbl (지급/공제 상세, 9열 테이블)
-  // 9열 구성: [구분5%] [항목th9%·금액td12%]×4쌍 [여백4%]
-  //           = 1 + 4×2 + 1 = 10열 (colgroup)
+  // ══ 6행 헤더 테이블 렌더링 ══
+  // 열 구성 (총 13열):
+  //  C1: 사원번호  C2: 성명  C3~C8: 지급항목(6열)  C9~C12: 공제항목(4열)  C13: 영수인
+  //
+  // 데이터가 전혀 없는 항목(전 직원 0)은 th를 공란으로 표시
 
-  // ── 헬퍼 ──
-  const num  = v => { const n = Number(v); return (!v || n === 0) ? '-' : n.toLocaleString('ko-KR'); };
-  const numB = v => { const n = Number(v); return (!v || n === 0) ? '<span style="color:#94a3b8;">-</span>' : `<strong>${n.toLocaleString('ko-KR')}</strong>`; };
+  // ── 전체 pays 기준으로 각 항목 유무 판별 ──
+  const hasData = f => pays.some(p => p[f] && Number(p[f]) !== 0);
 
-  // 10열 colgroup (공통)
-  // col1: 구분 | col2~9: th·td ×4쌍 | col10: 여백
-  const CG = `<colgroup>
-    <col class="c-sec">
-    <col class="c-lbl"><col class="c-val">
-    <col class="c-lbl"><col class="c-val">
-    <col class="c-lbl"><col class="c-val">
-    <col class="c-lbl"><col class="c-val">
-  </colgroup>`;
+  // ── 차량유지비: 항상 self_driving 고정 (레이블 '차량유지비') ──
+  const _transportLabel = '차량유지비';
+  // 직원별 transport 값 가져오기 헬퍼 (하위호환: 구 transportation_allowance 필드도 합산)
+  const _transportVal = p => p.self_driving_allowance || p.transportation_allowance || 0;
 
-  // 지급 행 생성: 구분레이블, [항목·값]×4
-  // items = [{label, val}, ...] (최대 4개, 부족하면 빈칸)
-  const payRow = (secLabel, items) => {
-    const cells = Array(4).fill(null).map((_, i) => {
-      const it = items[i];
-      if (!it) return `<th class="wl-empty" style="background:#f9fafb;border-color:#e5e7eb;"></th><td class="wl-empty"></td>`;
-      return `<th>${it.label}</th><td>${numB(it.val)}</td>`;
-    });
-    return `<tr class="wl-pay-row">
-      <td class="wl-sec wl-sec-pay">${secLabel}</td>
-      ${cells.join('')}
-    </tr>`;
+  // 지급항목 th 레이블 정의 (데이터 없으면 공란)
+  // 행2: C3=기본급, C4=정기상여금, C5=식대, C6=차량유지비(기본)/교통비/벽지수당(선택), C7~C8=공란
+  // 요청 스펙대로 행·열 매핑
+  // [행][열-3] (0-indexed, 지급 cols 0~5)
+  const PAY_TH = [
+    // 행2 (index 0): C3=기본급, C4=정기상여금, C5=식대, C6=차량교통비(동적), C7=공란, C8=공란
+    [ '기본급',
+      '정기상여금',
+      '식대',
+      _transportLabel,
+      '',
+      '' ],
+    // 행3 (index 1): C3=연구활동비, C4=육아수당, C5=연장근로수당, C6=야간근로수당, C7=휴일근로수당, C8=주휴수당
+    [ '연구활동비',
+      '육아수당',
+      '연장근로수당',
+      '야간근로수당',
+      '휴일근로수당',
+      '주휴수당' ],
+    // 행4 (index 2): C3=연차수당, C4=면허수당, C5=기술수당, C6=통신비, C7=성과급, C8=실비변상적급여
+    [ '연차수당',
+      '면허수당',
+      '기술수당',
+      '통신비',
+      '성과급',
+      '실비변상적급여' ],
+    // 행5 (index 3): C3~C6=공란(추가 입력 항목용), C7=기타, C8=공란
+    [ '', '', '', '',
+      '기타',
+      '' ],
+    // 행6 (index 4): C3~C6=공란, C7=공란, C8=지급합계(bold)
+    [ '', '', '', '',
+      '',
+      '지급합계' ],
+  ];
+
+  // 공제항목 th 레이블 정의 (C9~C12, index 0~3) — 데이터 유무 무관 항상 표기
+  const DED_TH = [
+    // 행2: C9=국민연금, C10=건강보험, C11=고용보험, C12=장기요양보험료
+        [ '국민연금', '건강보험', '고용보험', '장기요양보험료' ],
+    // 행3: C9=국민연금소급분, C10=건강보험료정산, C11=고용보험정산, C12=장기요양보험정산
+    [ '', '건강보험연말정산', '', '장기요양보험연말정산' ],
+    // 행4: C9~C12 모두 공란
+    [ '', '', '', '' ],
+    // 행5: C9=소득세, C10=지방소득세, C11=소득세연말정산, C12=공란
+    [ '소득세', '지방소득세', '소득세연말정산', '' ],
+    // 행6: C9 공란, C10=기타공제, C11=공제합계(bold), C12=차인지급액(bold)
+    [ '', '기타공제', '공제합계', '차인지급액' ],
+  ];
+
+  // ── 금액 포맷 헬퍼 ──
+  const fmtV = v => {
+    const n = Number(v);
+    return (!v || n === 0) ? '' : n.toLocaleString('ko-KR');
+  };
+  const fmtB = v => {  // bold
+    const n = Number(v);
+    return (!v || n === 0) ? '' : `<strong>${n.toLocaleString('ko-KR')}</strong>`;
   };
 
-  // 공제 행 생성: 구분레이블, [항목·값]×4
-  // secLabel이 있는 첫 번째 행 → 인라인 border-top으로 지급/공제 경계선 강제 적용
-  const DIVIDER = 'border-top:4px double #94a3b8;';
-  const dedRow = (secLabel, items) => {
-    const isFirst = !!secLabel;
-    const bt = isFirst ? DIVIDER : '';
-    const cells = Array(4).fill(null).map((_, i) => {
-      const it = items[i];
-      if (!it) return `<th class="wl-empty" style="background:#f9fafb;border-color:#e5e7eb;${bt}"></th><td class="wl-empty" style="${bt}"></td>`;
-      return `<th style="${bt}">${it.label}</th><td style="${bt}">${numB(it.val)}</td>`;
-    });
-    return `<tr class="wl-ded-row">
-      <td class="wl-sec wl-sec-ded" style="${bt}">${secLabel}</td>
-      ${cells.join('')}
-    </tr>`;
+  // ── 직원별 데이터 행 (데이터 rows) 값 배열 반환 ──
+  // 지급 C3~C8 (6개), 공제 C9~C12 (4개) 각 행별
+  const getPayVals = (p, rowIdx) => {
+    switch(rowIdx){
+      case 0: return [ fmtV(p.base_salary), fmtV(p.bonus_pay),
+                       fmtV(p.meal_allowance), fmtV(_transportVal(p)),
+                       '', '' ];
+      case 1: return [ fmtV(p.research_allowance), fmtV(p.childcare_allowance),
+                       fmtV(p.overtime_pay), fmtV(p.night_pay),
+                       fmtV(p.holiday_pay), fmtV(p.weekly_holiday_pay) ];
+      case 2: return [ fmtV(p.annual_leave_pay), fmtV(p.license_allowance),
+                       fmtV(p.skill_allowance), fmtV(p.communication_pay),
+                       fmtV(p.performance_pay), fmtV(p.actual_expense_pay) ];
+      case 3: return [ '', '', '', '',
+                       fmtV((p.etc_allowance||0)+(p.other_pay||0)), '' ];
+      case 4: return [ '', '', '', '', '', fmtB(p.gross_pay) ];
+      default: return ['','','','','',''];
+    }
+  };
+  const getDedVals = (p, rowIdx) => {
+    switch(rowIdx){
+      case 0: return [ fmtV(p.national_pension), fmtV(p.health_insurance),
+                       fmtV(p.employment_insurance), fmtV(p.long_term_care) ];
+      case 1: return [ '', fmtV(p.health_insurance_adjust), '', '' ];
+      case 2: return [ '', '', '', '' ];
+      case 3: return [ fmtV(p.income_tax), fmtV(p.local_income_tax),
+                       fmtV(p.year_end_tax_adjust), '' ];
+      case 4: return [ '', fmtV(p.advance_deduction),
+                       fmtB(p.total_deduction), fmtB(p.net_pay) ];
+      default: return ['','','',''];
+    }
   };
 
-  // ── 직원 카드 목록 (가나다 순 정렬) ──
+  // ── 합계용 값 배열 ──
+  const getSumPayVals = rowIdx => {
+    switch(rowIdx){
+      case 0: return [ fmtV(sums.base_salary), fmtV(sums.bonus_pay),
+                       fmtV(sums.meal_allowance),
+                       fmtV((sums.self_driving_allowance||0)+(sums.transportation_allowance||0)+(sums.remote_area_allowance||0)),
+                       '', '' ];
+      case 1: return [ fmtV(sums.research_allowance), fmtV(sums.childcare_allowance),
+                       fmtV(sums.overtime_pay), fmtV(sums.night_pay),
+                       fmtV(sums.holiday_pay), fmtV(sums.weekly_holiday_pay) ];
+      case 2: return [ fmtV(sums.annual_leave_pay), fmtV(sums.license_allowance),
+                       fmtV(sums.skill_allowance), fmtV(sums.communication_pay),
+                       fmtV(sums.performance_pay), fmtV(sums.actual_expense_pay) ];
+      case 3: return [ '', '', '', '',
+                       fmtV(sums.etc_allowance + sums.other_pay), '' ];
+      case 4: return [ '', '', '', '', '', fmtB(sums.gross_pay) ];
+      default: return ['','','','','',''];
+    }
+  };
+  const getSumDedVals = rowIdx => {
+    switch(rowIdx){
+      case 0: return [ fmtV(sums.national_pension), fmtV(sums.health_insurance),
+                       fmtV(sums.employment_insurance), fmtV(sums.long_term_care) ];
+      case 1: return [ '', fmtV(sums.health_insurance_adjust), '', '' ];
+      case 2: return [ '', '', '', '' ];
+      case 3: return [ fmtV(sums.income_tax), fmtV(sums.local_income_tax),
+                       fmtV(sums.year_end_tax_adjust), '' ];
+      case 4: return [ '', fmtV(sums.advance_deduction),
+                       fmtB(sums.total_deduction), fmtB(sums.net_pay) ];
+      default: return ['','','',''];
+    }
+  };
+
+  // ── 6행 thead 생성 (공통) ──
+  // 행1: 인적사항(1-2병합), 기본급여및제수당(3-8병합), 공제및차인지급액(9-12병합), 영수인(1-6행 rowspan)
+  // 행2~6: 각 항목 th
+  const buildThead = () => {
+    // 행1 그룹 헤더
+    const r1 = `<tr class="wl-th-group">
+      <th colspan="2" class="wl-th-personal">인적사항</th>
+      <th colspan="6" class="wl-th-pay">기본급여 및 제수당</th>
+      <th colspan="4" class="wl-th-ded">공제 및 차인지급액</th>
+      <th rowspan="6" class="wl-th-sign">영수인</th>
+    </tr>`;
+
+    // 행2: 사원번호, 성명, 지급row0, 공제row0
+    const payR0 = PAY_TH[0];
+    const dedR0 = DED_TH[0];
+    const r2 = `<tr class="wl-th-row wl-th-row-ind">
+      <th class="wl-th-cell">사원번호</th>
+      <th class="wl-th-cell">성명</th>
+      ${payR0.map(t => `<th class="wl-th-cell">${t}</th>`).join('')}
+      ${dedR0.map(t => `<th class="wl-th-cell">${t}</th>`).join('')}
+    </tr>`;
+
+    // 행3~6: 1열-2열 병합(인적사항 계속), 지급·공제 각 항목
+    const merged34 = [
+      { lbl:'부서',    row:2 },
+      { lbl:'직급',    row:3 },
+      { lbl:'입사일',  row:4 },
+      { lbl:'퇴사일',  row:5 },
+    ];
+    const rows3to6 = merged34.map((m, mi) => {
+      const ri = mi + 1; // PAY_TH/DED_TH index 1~4
+      const pv = PAY_TH[ri];
+      const dv = DED_TH[ri];
+      return `<tr class="wl-th-row wl-th-row-mrg">
+        <th colspan="2" class="wl-th-cell wl-th-merged">${m.lbl}</th>
+        ${pv.map((t,i) => `<th class="wl-th-cell${t==='지급합계'?' wl-th-gross':i===5?' wl-th-pay-last':''}">${t}</th>`).join('')}
+        ${dv.map((t,i) => `<th class="wl-th-cell${t==='공제합계'?' wl-th-ded-sum':t==='차인지급액'?' wl-th-net':(ri===2&&(i===0||i===2))?' wl-th-na':''}">${t}</th>`).join('')}
+      </tr>`;
+    }).join('');
+
+    // 행6: 지급합계(bold) / 공제합계·차인지급액(bold) 는 PAY_TH[4], DED_TH[4]에 이미 포함
+    // (위 rows3to6 마지막 행이 행6)
+
+    return `<thead>${r1}${r2}${rows3to6}</thead>`;
+  };
+
+  // ── 직원 데이터 tbody 행 생성 ──
+  // TH 행2~6 구조와 완전히 동일하게 맞춤:
+  //   데이터 행1 → TH 행2: C1(사원번호) | C2(성명) | C3~C8 | C9~C12 | C13(영수인)
+  //   데이터 행2 → TH 행3: C1+C2 colspan=2(부서)  | C3~C8 | C9~C12
+  //   데이터 행3 → TH 행4: C1+C2 colspan=2(직급)  | C3~C8 | C9~C12
+  //   데이터 행4 → TH 행5: C1+C2 colspan=2(입사일)| C3~C8 | C9~C12
+  //   데이터 행5 → TH 행6: C1+C2 colspan=2(퇴사일)| C3~C8 | C9~C12
+  // → rowspan 없이 각 행을 독립적으로 구성 (TH와 열 구조 1:1 일치)
+  const buildTbody = (p, emp, idx, isSum) => {
+    const resign = (allContracts.filter(c => c.employee_id === (p?.employee_id||'') && !c.is_draft)
+      .sort((a,b)=>(b.contract_start||'').localeCompare(a.contract_start||''))[0]?.contract_end) || '';
+
+    const cls = `wl-data-row${isSum?' wl-sum-row':''}`;
+
+    // 행1 (TH 행2): 사원번호 | 성명 | 지급row0 | 공제row0 | 영수인
+    const empNo   = isSum ? '' : (emp.employee_number||'-');
+    const empName = isSum ? `합계 (${pays.length}명)` : (emp.name||'-');
+    const pv0 = isSum ? getSumPayVals(0) : getPayVals(p, 0);
+    const dv0 = isSum ? getSumDedVals(0) : getDedVals(p, 0);
+    const row1 = `<tr class="${cls}">
+      <td class="wl-td-center wl-td-empno">${empNo}</td>
+      <td class="wl-td-center wl-td-name">${empName}</td>
+      ${pv0.map((v,i)=>i===5?`<td class="wl-td-num wl-td-pay-last">${v}</td>`:`<td class="wl-td-num">${v}</td>`).join('')}
+      ${dv0.map(v=>`<td class="wl-td-num">${v}</td>`).join('')}
+      <td rowspan="5" class="wl-td-sign"></td>
+    </tr>`;
+
+    // 행2 (TH 행3): colspan=2(부서) | 지급row1 | 공제row1  ← rowspan=3 점유중 (영수인 td 없음)
+    const dept = isSum ? '' : (emp.department||'');
+    const pv1 = isSum ? getSumPayVals(1) : getPayVals(p, 1);
+    const dv1 = isSum ? getSumDedVals(1) : getDedVals(p, 1);
+    const row2 = `<tr class="${cls}">
+      <td colspan="2" class="wl-td-center wl-td-dept">${dept}</td>
+      ${pv1.map((v,i)=>i===5?`<td class="wl-td-num wl-td-pay-last">${v}</td>`:`<td class="wl-td-num">${v}</td>`).join('')}
+      ${dv1.map(v=>`<td class="wl-td-num">${v}</td>`).join('')}
+    </tr>`;
+
+    // 행3 (TH 행4): colspan=2(직급) | 지급row2 | 공제row2  ← rowspan=3 점유중 (영수인 td 없음)
+    const pos = isSum ? '' : (emp.position||'');
+    const pv2 = isSum ? getSumPayVals(2) : getPayVals(p, 2);
+    const dv2 = isSum ? getSumDedVals(2) : getDedVals(p, 2);
+    const row3 = `<tr class="${cls}">
+      <td colspan="2" class="wl-td-center wl-td-dept">${pos}</td>
+      ${pv2.map((v,i)=>i===5?`<td class="wl-td-num wl-td-pay-last">${v}</td>`:`<td class="wl-td-num">${v}</td>`).join('')}
+      ${dv2.map((v,i)=>i===0||i===2?`<td class="wl-td-num wl-td-na">${v}</td>`:`<td class="wl-td-num">${v}</td>`).join('')}
+    </tr>`;
+
+    // 행4 (TH 행5): colspan=2(입사일) | 지급row3 | 공제row3  ← rowspan 범위 밖 → 영수인 td 새로 시작
+    const hire = isSum ? '' : (emp.hire_date||'');
+    const pv3 = isSum ? getSumPayVals(3) : getPayVals(p, 3);
+    const dv3 = isSum ? getSumDedVals(3) : getDedVals(p, 3);
+    const row4 = `<tr class="${cls}">
+      <td colspan="2" class="wl-td-center wl-td-dept">${hire}</td>
+      ${pv3.map((v,i)=>i===5?`<td class="wl-td-num wl-td-pay-last">${v}</td>`:`<td class="wl-td-num">${v}</td>`).join('')}
+      ${dv3.map(v=>`<td class="wl-td-num">${v}</td>`).join('')}
+    </tr>`;
+
+    // 행5 (TH 행6): colspan=2(퇴사일) | 지급row4 | 공제row4  ← rowspan=2 점유중 (영수인 td 없음)
+    const res = isSum ? '' : resign;
+    const pv4 = isSum ? getSumPayVals(4) : getPayVals(p, 4);
+    const dv4 = isSum ? getSumDedVals(4) : getDedVals(p, 4);
+    // row5: pv4[5]=지급합계(연두), dv4[2]=공제합계(연빨강), dv4[3]=차인지급액(연파랑)
+    const pv4Cells = pv4.map((v, i) =>
+      i === 5
+        ? `<td class="wl-td-gross">${v}</td>`
+        : `<td class="wl-td-num">${v}</td>`
+    ).join('');
+    const dv4Cells = dv4.map((v, i) =>
+      i === 2
+        ? `<td class="wl-td-ded-sum">${v}</td>`
+        : i === 3
+          ? `<td class="wl-td-net">${v}</td>`
+          : `<td class="wl-td-num">${v}</td>`
+    ).join('');
+    const row5 = `<tr class="${cls}">
+      <td colspan="2" class="wl-td-center wl-td-dept">${res}</td>
+      ${pv4Cells}
+      ${dv4Cells}
+    </tr>`;
+
+    return row1 + row2 + row3 + row4 + row5;
+  };
+
+  // ── 직원 정렬 (가나다) ──
   pays.sort((a, b) => {
     const na = (empMap[a.employee_id]?.name || '');
     const nb = (empMap[b.employee_id]?.name || '');
     return na.localeCompare(nb, 'ko');
   });
-  // 지급월 범위 (계약 조회용)
-  const _wlMonthStart = `${yr}-${String(mo).padStart(2,'0')}-01`;
-  const _wlMonthEnd   = new Date(yr, mo, 0).toISOString().slice(0,10);
 
-  const cards = pays.map((p, idx) => {
+  // ── 합계 누산 + tbody HTML 생성 ──
+  let tbodyRows = '';
+  pays.forEach((p, idx) => {
     sumFields.forEach(f => sums[f] += wonNum(p[f]));
     const emp = empMap[p.employee_id] || {};
+    tbodyRows += buildTbody(p, emp, idx, false);
+  });
+  // 합계 행 출력 없음 (삭제)
 
-    // 헤더 셀 데이터
-    const payDate = p.pay_date ? p.pay_date.slice(0,10) : '-';
+  const thead = buildThead();
 
-    // ── 계약상 임금 정보 조회 ──
-    // ① 우선: 지급월과 기간이 겹치는 유효 계약
-    // ② fallback: 기간이 안 맞더라도 해당 직원의 가장 최근 계약
-    //    (계약 갱신 누락 상태에서 급여가 입력된 경우 계약연봉 셀 공백 방지)
-    const _empCtCandidates = allContracts.filter(c => {
-      if(c.employee_id !== p.employee_id) return false;
-      if(c.is_draft || c.is_voided_by_amend) return false;
-      if(['취소','파기'].includes(c.status)) return false;
-      return true;
-    });
-    const empCt = _empCtCandidates.find(c => {
-      const s  = c.contract_start || '';
-      const ed = c.contract_end   || '';
-      if(s && s > _wlMonthEnd)    return false;
-      if(ed && ed < _wlMonthStart) return false;
-      return true;
-    }) || _empCtCandidates.sort((a, b) =>
-      (b.contract_start || '').localeCompare(a.contract_start || '')
-    )[0] || null;
-    const fmtWon = v => v ? Number(v).toLocaleString('ko-KR') + '원' : null;
-    const cat = emp.employment_category || (empCt ? empCt.contract_type : '') || '';
-    const isRegOrCont = ['정규직','정규직 수습','계약직','계약직 수습'].includes(cat);
-    const isHourly    = ['시급제','단시간','아르바이트'].includes(cat);
-    // ── 계약임금 표시 항목 결정 ──
-    // 규칙: 고용형태별로 가장 의미있는 항목 1~2개만 표시하여 헤더 셀 중복 방지
-    //   ① 연봉제(정규직·계약직): annual_salary 우선, 없으면 base_salary
-    //   ② 시급제·단시간: hourly_wage
-    //   ③ 일급제 해당 직원: daily_wage
-    //   → annual_salary와 base_salary를 동시에 표시하지 않음
-    //   → isRegOrCont가 아닌 직원에게 계약연봉/월기본급이 표시되지 않도록 가드
-    const ctWageItems = [];
-    if(isRegOrCont && empCt?.annual_salary) {
-      ctWageItems.push({ lbl:'계약연봉',  val: fmtWon(empCt.annual_salary) });
-    } else if(isRegOrCont && empCt?.base_salary) {
-      ctWageItems.push({ lbl:'월 기본급', val: fmtWon(empCt.base_salary) });
-    }
-    if(isHourly && empCt?.hourly_wage)
-      ctWageItems.push({ lbl:'통상시급',  val: fmtWon(empCt.hourly_wage) });
-    if(!isRegOrCont && !isHourly && empCt?.daily_wage)
-      ctWageItems.push({ lbl:'계약일급',  val: fmtWon(empCt.daily_wage) });
-    // 헤더 셀 HTML — 고용형태 셀과 동일한 .lbl/.val.sm 클래스 색상 그대로 사용
-    const ctWageCells = ctWageItems.map(it => `
-      <div class="wl-head-cell narrow" style="border-left:1px solid #334155;">
-        <span class="lbl">${it.lbl}</span>
-        <span class="val sm">${it.val}</span>
-      </div>`).join('');
-
-    // 지급내역 행 구성 (20항목 → 5행 × 4쌍)
-    const payRows = [
-      payRow('지급내역', [
-        {label:'기본급',         val: p.base_salary},
-        {label:'주휴수당',       val: p.weekly_holiday_pay},
-        {label:'직책수당',       val: p.position_allowance},
-        {label:'연장근로수당',   val: p.overtime_pay},
-      ]),
-      payRow('', [
-        {label:'야간근로수당',   val: p.night_pay},
-        {label:'휴일근로수당',   val: p.holiday_pay},
-        {label:'교통비',         val: p.transportation_allowance},
-        {label:'자가운전보조금', val: p.self_driving_allowance},
-      ]),
-      payRow('', [
-        {label:'벽지수당',       val: p.remote_area_allowance},
-        {label:'식대',           val: p.meal_allowance},
-        {label:'출산·보육수당',  val: p.childcare_allowance},
-        {label:'연구활동비',     val: p.research_allowance},
-      ]),
-      payRow('', [
-        {label:'연차수당',       val: p.annual_leave_pay},
-        {label:'정기상여금',     val: p.bonus_pay},
-        {label:'성과급',         val: p.performance_pay},
-        {label:'실비변상적급여', val: p.actual_expense_pay},
-      ]),
-      payRow('', [
-        {label:'통신비',         val: p.communication_pay},
-        {label:'기술수당',       val: p.skill_allowance},
-        {label:'면허수당',       val: p.license_allowance},
-        {label:'기타수당',       val: (p.etc_allowance||0)+(p.other_pay||0)},
-      ]),
-    ].join('');
-
-    // 공제내역 행 구성 (보수월액 + 9항목 → 3행)
-    const dedRows = [
-      dedRow('공제내역', [
-        {label:'보수월액',   val: p.standard_monthly_pay},
-        {label:'소득세',     val: p.income_tax},
-        {label:'주민세',     val: p.local_income_tax},
-        {label:'건강보험',   val: p.health_insurance},
-      ]),
-      dedRow('', [
-        {label:'장기요양보험료', val: p.long_term_care},
-        {label:'국민연금',       val: p.national_pension},
-        {label:'고용보험',       val: p.employment_insurance},
-        {label:'연말정산',       val: p.year_end_tax_adjust},
-      ]),
-      dedRow('', [
-        {label:'건강보험정산',   val: p.health_insurance_adjust},
-        {label:'기타공제',       val: p.advance_deduction},
-        null,
-        null,
-      ]),
-    ].join('');
-
-    return `
-    <div class="wl-card">
-      <!-- 인적사항 + 요약 헤더 -->
-      <div class="wl-card-head">
-        <div class="wl-head-no">${idx+1}</div>
-        <div class="wl-head-cell wide">
-          <span class="lbl">성명</span>
-          <span class="val">${emp.name||'-'}</span>
-        </div>
-        <div class="wl-head-cell">
-          <span class="lbl">부서</span>
-          <span class="val sm">${emp.department||'-'}</span>
-        </div>
-        <div class="wl-head-cell">
-          <span class="lbl">직책</span>
-          <span class="val sm">${emp.position||'-'}</span>
-        </div>
-        <div class="wl-head-cell">
-          <span class="lbl">고용형태</span>
-          <span class="val sm">${emp.employment_category||'-'}</span>
-        </div>
-        ${ctWageCells}
-        <div class="wl-head-cell narrow">
-          <span class="lbl">근로일수 / 총근로시간</span>
-          <span class="val sm">${num(p.work_days)}일 / ${num(p.total_work_hours)}H</span>
-        </div>
-        <div class="wl-head-cell narrow">
-          <span class="lbl">연장 / 야간 / 휴일</span>
-          <span class="val sm">${num(p.overtime_hours)} / ${num(p.night_hours)} / ${num(p.holiday_hours)} H</span>
-        </div>
-        <div class="wl-head-cell narrow c-gross">
-          <span class="lbl">지급총액</span>
-          <span class="val">${num(p.gross_pay)}</span>
-        </div>
-        <div class="wl-head-cell narrow c-ded">
-          <span class="lbl">공제합계</span>
-          <span class="val">${num(p.total_deduction)}</span>
-        </div>
-        <div class="wl-head-cell narrow c-net">
-          <span class="lbl">실수령액</span>
-          <span class="val">${num(p.net_pay)}</span>
-        </div>
-        <div class="wl-head-cell fixed">
-          <span class="lbl">급여지급일</span>
-          <span class="val sm">${payDate}</span>
-        </div>
-
-      </div>
-      <!-- 지급·공제 상세 테이블 -->
-      <div class="wl-tbl-wrap"><table class="wl-tbl">${CG}
-        <tbody>
-          ${payRows}
-          ${dedRows}
-        </tbody>
-      </table></div>
-    </div>`;
-  }).join('');
-
-  // ── 합계 카드 ──
-  const SB = f => { const n = sums[f]; return (!n || n===0) ? '<span style="color:#475569;">-</span>' : `<strong>${n.toLocaleString('ko-KR')}</strong>`; };
-  const SBn= f => { const n = sums[f]; return n===0 ? '<span style="color:#475569;">-</span>' : `<strong>${n.toLocaleString('ko-KR')}</strong>`; };
-
-  const sumPayRows = [
-    payRow('지급내역', [
-      {label:'기본급',         val: sums.base_salary},
-      {label:'주휴수당',       val: sums.weekly_holiday_pay},
-      {label:'직책수당',       val: sums.position_allowance},
-      {label:'연장근로수당',   val: sums.overtime_pay},
-    ]),
-    payRow('', [
-      {label:'야간근로수당',   val: sums.night_pay},
-      {label:'휴일근로수당',   val: sums.holiday_pay},
-      {label:'교통비',         val: sums.transportation_allowance},
-      {label:'자가운전보조금', val: sums.self_driving_allowance},
-    ]),
-    payRow('', [
-      {label:'벽지수당',       val: sums.remote_area_allowance},
-      {label:'식대',           val: sums.meal_allowance},
-      {label:'출산·보육수당',  val: sums.childcare_allowance},
-      {label:'연구활동비',     val: sums.research_allowance},
-    ]),
-    payRow('', [
-      {label:'연차수당',       val: sums.annual_leave_pay},
-      {label:'정기상여금',     val: sums.bonus_pay},
-      {label:'성과급',         val: sums.performance_pay},
-      {label:'실비변상적급여', val: sums.actual_expense_pay},
-    ]),
-    payRow('', [
-      {label:'통신비',         val: sums.communication_pay},
-      {label:'기술수당',       val: sums.skill_allowance},
-      {label:'면허수당',       val: sums.license_allowance},
-      {label:'기타수당',       val: sums.etc_allowance + sums.other_pay},
-    ]),
-  ].join('');
-
-  const sumDedRows = [
-    dedRow('공제내역', [
-      {label:'보수월액',   val: sums.standard_monthly_pay},
-      {label:'소득세',     val: sums.income_tax},
-      {label:'주민세',     val: sums.local_income_tax},
-      {label:'건강보험',   val: sums.health_insurance},
-    ]),
-    dedRow('', [
-      {label:'장기요양보험료', val: sums.long_term_care},
-      {label:'국민연금',       val: sums.national_pension},
-      {label:'고용보험',       val: sums.employment_insurance},
-      {label:'연말정산',       val: sums.year_end_tax_adjust},
-    ]),
-    dedRow('', [
-      {label:'건강보험정산',   val: sums.health_insurance_adjust},
-      {label:'기타공제',       val: sums.advance_deduction},
-      null,
-      null,
-    ]),
-  ].join('');
-
-  const sumCard = `
-  <div class="wl-sum-card">
-    <div class="wl-card-head">
-      <div class="wl-head-no" style="font-size:11px;">합계</div>
-      <div class="wl-head-cell wide">
-        <span class="lbl">총 인원</span>
-        <span class="val">${pays.length}명</span>
-      </div>
-      <div class="wl-head-cell narrow">
-        <span class="lbl">총 근로일수</span>
-        <span class="val sm">${sums.work_days.toLocaleString('ko-KR')}일</span>
-      </div>
-      <div class="wl-head-cell narrow">
-        <span class="lbl">총 근로시간</span>
-        <span class="val sm">${sums.total_work_hours.toLocaleString('ko-KR')}H</span>
-      </div>
-      <div class="wl-head-cell narrow">
-        <span class="lbl">연장 / 야간 / 휴일</span>
-        <span class="val sm">${sums.overtime_hours} / ${sums.night_hours} / ${sums.holiday_hours} H</span>
-      </div>
-      <div class="wl-head-cell narrow c-gross">
-        <span class="lbl">지급총액 합계</span>
-        <span class="val">${sums.gross_pay.toLocaleString('ko-KR')}</span>
-      </div>
-      <div class="wl-head-cell narrow c-ded">
-        <span class="lbl">공제합계</span>
-        <span class="val">${sums.total_deduction.toLocaleString('ko-KR')}</span>
-      </div>
-      <div class="wl-head-cell narrow c-net">
-        <span class="lbl">실수령액 합계</span>
-        <span class="val">${sums.net_pay.toLocaleString('ko-KR')}</span>
-      </div>
-    </div>
-    <div class="wl-tbl-wrap"><table class="wl-tbl">${CG}
-      <tbody>
-        ${sumPayRows}
-        ${sumDedRows}
-      </tbody>
-    </table></div>
-  </div>`;
+  // colgroup (13열)
+  const CG = `<colgroup>
+    <col class="wl-col-empno">
+    <col class="wl-col-name">
+    <col class="wl-col-pay"><col class="wl-col-pay"><col class="wl-col-pay">
+    <col class="wl-col-pay"><col class="wl-col-pay"><col class="wl-col-pay">
+    <col class="wl-col-ded"><col class="wl-col-ded"><col class="wl-col-ded"><col class="wl-col-ded">
+    <col class="wl-col-sign">
+  </colgroup>`;
 
   area.innerHTML = `
-    <div style="padding:12px 16px 6px;font-size:12px;color:#6b7280;">
+    <div style="padding:10px 16px 6px;font-size:12px;color:#6b7280;">
       ${_wlCompanyName} &nbsp;·&nbsp; ${yr}년 ${mo}월 임금대장 &nbsp;·&nbsp; 총 <strong style="color:#1a1a2e;">${pays.length}명</strong>
     </div>
-    <div style="padding:0 4px 12px;">
-      ${cards}
-      ${sumCard}
+    <div class="wl-ledger-wrap">
+      <table class="wl-ledger-tbl">${CG}
+        ${thead}
+        <tbody>${tbodyRows}</tbody>
+      </table>
     </div>`;
 
-  // ── No 셀 너비를 테이블 구분 열(첫 번째 td.wl-sec) 실제 너비에 동기화 ──
-  // table-layout:auto 에서 실제 렌더링 너비는 JS로만 알 수 있음
+  // ── 직원 구분선: 5행마다 첫번째 행에 border-top 강조 ──
   requestAnimationFrame(() => {
-    const firstSecCell = area.querySelector('.wl-tbl td.wl-sec');
-    if (firstSecCell) {
-      const secW = firstSecCell.getBoundingClientRect().width;
-      area.querySelectorAll('.wl-head-no').forEach(el => {
-        el.style.width    = secW + 'px';
-        el.style.minWidth = secW + 'px';
-      });
-    }
+    const rows = area.querySelectorAll('.wl-ledger-tbl tbody tr');
+    rows.forEach((tr, i) => {
+      if(i % 5 === 0){
+        tr.querySelectorAll('td').forEach(td => {
+          td.style.borderTop = '2px solid #64748b';
+        });
+      }
+    });
   });
 
   _setWLBtns(true);
@@ -1993,795 +1963,7 @@ function renderSevHistoryTab(){
     const last = conts[conts.length - 1];
     if(!last) return false;
     // 마지막 계약 status가 해지 또는 만료로 명시된 경우만
-    return last.status === '해지' || last.status === '만료' ||
+        return last.status === '해지' || last.status === '만료' ||
            last.status === 'expired' || last.status === 'terminated';
   });
-
-  if(!resignedEmps.length){
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#9ca3af;">퇴직금 발생 이력이 없습니다.<br><span style="font-size:11px;color:#d1d5db;">계약이 만료 또는 해지 처리된 직원이 없습니다.</span></td></tr>';
-    return;
-  }
-
-  const won = v => v ? Math.round(v).toLocaleString('ko-KR') + '원' : '-';
-  const fmtDate = d => d || '-';
-
-  // 근로자명 가나다순 정렬
-  const sorted = [...resignedEmps].sort((a,b)=>(a.name||'').localeCompare(b.name||'','ko'));
-
-  const contractBadges = ['①','②','③','④','⑤','⑥','⑦','⑧','⑨','⑩'];
-
-  const rows = sorted.map(emp => {
-    // ── 해당 직원의 모든 계약을 시작일 오름차순 정렬 ──
-    const empContracts = allContracts
-      .filter(c => c.employee_id === emp.id && !c.is_draft)
-      .sort((a,b) => (a.contract_start||'').localeCompare(b.contract_start||''));
-
-    const lastContract = empContracts[empContracts.length - 1] || null;
-
-    // 퇴사(계약종료)일: 마지막 계약의 contract_end → emp.resign_date → 오늘 순
-    const resignDate = lastContract?.contract_end || emp.resign_date || todayStr2;
-
-    // 최초 입사일
-    const firstContractStart = empContracts.length > 0 ? (empContracts[0].contract_start||'') : '';
-    const hireDate = firstContractStart || emp.hire_date || '';
-
-    // 총 재직기간 (최초 입사일 ~ 퇴사일)
-    const totalTenure = calcTenure(hireDate, resignDate);
-    const under1yr = totalTenure.totalDays < 365;
-
-    // 퇴사 사유
-    const reason = lastContract?.status==='해지' ? '계약 해지'
-      : (lastContract?.status==='만료'||lastContract?.status==='expired') ? '계약 만료'
-      : '퇴사';
-
-    // 퇴직금 계산
-    const pays3 = getPrev3MonthsPayrolls(emp.id, resignDate);
-    const sev   = calcSeverancePay(emp.id, hireDate, resignDate, pays3);
-
-    // window[key] 패턴 — 정산내역서 팝업용
-    const _sevRowKey = `sev_hist_${emp.id}`;
-    window[_sevRowKey] = {
-      empId:emp.id, empName:emp.name||'', hireDate, resignDate,
-      department:emp.department||'', position:emp.position||'',
-      phone:emp.phone||'', email:emp.email||'',
-      reason,
-      tenureText: totalTenure.text,
-      tenureDays: totalTenure.totalDays,
-      ordinary3:sev.ordinary3, average3:sev.average3,
-      daily1:sev.daily1, days3:sev.days3,
-      dailyOrdinary:sev.dailyOrdinary, dailyAverage:sev.dailyAverage,
-      amount:sev.amount, pays3count:pays3.length
-    };
-
-    const contractCount = empContracts.length;
-    const deptPos = [emp.department, emp.position].filter(Boolean).join(' / ') || '-';
-
-    // ── 1년 미만 — 퇴직금 없음 ──
-    if(under1yr){
-      // 계약 이력 행 + 총재직기간 합산 행 = contractCount + 1
-      const mainRowspan = Math.max(contractCount, 1) + 1;
-      let html = '';
-
-      // 공통 앞부분 셀 (열1~3 rowspan): 퇴사일 | 성명 | 부서/직책
-      const commonFront = `
-        <td style="padding:9px 10px;font-weight:600;color:#4c1d95;vertical-align:middle;" rowspan="${mainRowspan}">${resignDate||'-'}</td>
-        <td style="padding:9px 10px;font-weight:700;color:#6b7280;vertical-align:middle;" rowspan="${mainRowspan}">${emp.name||'-'}</td>
-        <td style="padding:9px 10px;color:#9ca3af;vertical-align:middle;" rowspan="${mainRowspan}">${deptPos}</td>`;
-
-      // 공통 뒷부분 셀 (열6~8 rowspan): 통상임금 | 퇴직금 | 사유
-      const commonTrail = `
-        <td style="padding:9px 10px;text-align:right;color:#9ca3af;vertical-align:middle;" rowspan="${mainRowspan}">-</td>
-        <td style="padding:9px 10px;text-align:right;color:#9ca3af;vertical-align:middle;" rowspan="${mainRowspan}">1년 미만 — 해당 없음</td>
-        <td style="padding:9px 10px;vertical-align:middle;" rowspan="${mainRowspan}"><span style="padding:2px 8px;border-radius:10px;background:#f3f4f6;color:#9ca3af;font-size:11px;">${reason}</span></td>`;
-
-      if(contractCount === 0){
-        // 계약 데이터 없음: 열1~3(front) + 열4(계약없음) + 열5(재직기간) + 열6~8(trail)
-        html += `<tr style="background:#fafafa;color:#9ca3af;">
-          ${commonFront}
-          <td style="padding:9px 10px;color:#9ca3af;font-style:italic;">계약 정보 없음</td>
-          <td style="padding:9px 10px;text-align:right;color:#9ca3af;">${totalTenure.text}</td>
-          ${commonTrail}
-        </tr>`;
-      } else {
-        empContracts.forEach((ct, idx) => {
-          const badge    = contractBadges[idx] || `(${idx+1})`;
-          const ctStart  = ct.contract_start  || '-';
-          const ctEnd    = ct.contract_end    || '재직 중';
-          const ctTenure = calcTenure(ct.contract_start||'', ct.contract_end||resignDate);
-          const ctHistCell = `<td style="padding:9px 10px;color:#9ca3af;">
-            <span style="display:inline-block;width:20px;font-weight:700;color:#9ca3af;">${badge}</span>
-            ${ctStart} ~ ${ctEnd}
-          </td>`;
-          const ctTenureCell = `<td style="padding:9px 10px;text-align:right;color:#9ca3af;">${ctTenure.text}</td>`;
-          if(idx === 0){
-            // 첫 계약 행: front(1~3) + 계약이력(4) + 재직기간(5) + trail(6~8)
-            html += `<tr style="background:#fafafa;color:#9ca3af;">${commonFront}${ctHistCell}${ctTenureCell}${commonTrail}</tr>`;
-          } else {
-            // 추가 계약 행: 계약이력(4) + 재직기간(5) 만 채움
-            html += `<tr style="background:#fafafa;color:#9ca3af;">${ctHistCell}${ctTenureCell}</tr>`;
-          }
-        });
-      }
-
-      // 총재직기간 합산 행: 열4(라벨) + 열5(값) 만 채움 (열1~3, 6~8은 rowspan으로 이미 점유)
-      html += `<tr style="background:#fef9c3;color:#9ca3af;">
-        <td style="padding:7px 10px;font-size:11.5px;color:#b45309;font-weight:600;text-align:center;">▶ 총 재직기간 합산</td>
-        <td style="padding:7px 10px;text-align:right;font-weight:700;color:#b45309;">${totalTenure.text} (${totalTenure.totalDays.toLocaleString('ko-KR')}일)</td>
-      </tr>`;
-
-      return html;
-    }
-
-    // ── 메인 케이스 ──
-    const mainRowspan = Math.max(contractCount, 1) + 1;
-    let html = '';
-
-    // 공통 앞부분 셀 (열1~3 rowspan): 퇴사일 | 성명 | 부서/직책
-    const commonFront = `
-      <td style="padding:9px 10px;font-weight:600;color:#4c1d95;vertical-align:middle;" rowspan="${mainRowspan}">${resignDate}</td>
-      <td style="padding:9px 10px;font-weight:700;color:#1a1a2e;vertical-align:middle;" rowspan="${mainRowspan}">${emp.name||'-'}</td>
-      <td style="padding:9px 10px;color:#374151;vertical-align:middle;" rowspan="${mainRowspan}">${deptPos}</td>`;
-
-    // 공통 뒷부분 셀 (열6~8 rowspan): 평균 월 통상임금 | 퇴직금 | 사유
-    const commonTrail = `
-      <td style="padding:9px 10px;text-align:right;color:#1d4ed8;font-weight:600;vertical-align:middle;" rowspan="${mainRowspan}">${pays3.length ? won(sev.ordinary3 / 3) : '<span style="color:#9ca3af;font-size:11px;">급여 데이터 없음</span>'}</td>
-      <td style="padding:9px 10px;text-align:right;font-weight:700;vertical-align:middle;color:${sev.amount>0?'#7c3aed':'#9ca3af'};" rowspan="${mainRowspan}">${sev.amount>0 ? won(sev.amount) : '<span style="font-size:11px;">급여 데이터 필요</span>'}</td>
-      <td style="padding:9px 10px;vertical-align:middle;" rowspan="${mainRowspan}"><span style="padding:2px 8px;border-radius:10px;background:#f3f4f6;color:#374151;font-size:11px;">${reason}</span></td>`;
-
-    const rowClickAttr = `style="cursor:pointer;" onclick="openSevDetail(window['${_sevRowKey}'])"
-      onmouseover="this.parentElement.querySelectorAll('tr[data-sev-emp=\\'${emp.id}\\']').forEach(r=>r.style.background='#f5f3ff')"
-      onmouseout="this.parentElement.querySelectorAll('tr[data-sev-emp=\\'${emp.id}\\']').forEach(r=>r.style.background='')"
-      title="클릭하여 퇴직금 정산내역서 확인" data-sev-emp="${emp.id}"`;
-
-    if(contractCount === 0){
-      // 계약 없음: front(1~3) + 계약없음(4) + 재직기간(5) + trail(6~8)
-      html += `<tr ${rowClickAttr}>
-        ${commonFront}
-        <td style="padding:9px 10px;color:#9ca3af;font-style:italic;">계약 정보 없음</td>
-        <td style="padding:9px 10px;text-align:right;color:#374151;">${totalTenure.text}</td>
-        ${commonTrail}
-      </tr>`;
-    } else {
-      empContracts.forEach((ct, idx) => {
-        const badge    = contractBadges[idx] || `(${idx+1})`;
-        const ctStart  = ct.contract_start  || '-';
-        const ctEnd    = ct.contract_end    || '재직 중';
-        const ctTenure = calcTenure(ct.contract_start||'', ct.contract_end||resignDate);
-        const ctHistCell = `<td style="padding:9px 10px;color:#374151;">
-          <span style="display:inline-block;width:20px;font-weight:700;color:#7c3aed;">${badge}</span>
-          ${ctStart} ~ ${ctEnd}
-        </td>`;
-        const ctTenureCell = `<td style="padding:9px 10px;text-align:right;color:#374151;">${ctTenure.text}</td>`;
-
-        if(idx === 0){
-          // 첫 계약 행: front(1~3) + 계약이력(4) + 재직기간(5) + trail(6~8)
-          html += `<tr ${rowClickAttr}>${commonFront}${ctHistCell}${ctTenureCell}${commonTrail}</tr>`;
-        } else {
-          // 추가 계약 행: 계약이력(4) + 재직기간(5) 만 채움
-          html += `<tr data-sev-emp="${emp.id}" style="cursor:pointer;" onclick="openSevDetail(window['${_sevRowKey}'])"
-            onmouseover="this.parentElement.querySelectorAll('tr[data-sev-emp=\\'${emp.id}\\']').forEach(r=>r.style.background='#f5f3ff')"
-            onmouseout="this.parentElement.querySelectorAll('tr[data-sev-emp=\\'${emp.id}\\']').forEach(r=>r.style.background='')"
-            title="클릭하여 퇴직금 정산내역서 확인">
-            ${ctHistCell}${ctTenureCell}
-          </tr>`;
-        }
-      });
-    }
-
-    // 총재직기간 합산 행: 열4(라벨) + 열5(값) 만 채움 (열1~3, 6~8은 rowspan으로 이미 점유)
-    html += `<tr style="background:#fffbeb;" data-sev-emp="${emp.id}">
-      <td style="padding:7px 10px;font-size:11.5px;color:#92400e;font-weight:600;text-align:center;">▶ 총 재직기간 합산</td>
-      <td style="padding:7px 10px;text-align:right;font-weight:700;color:#92400e;">${totalTenure.text} (${totalTenure.totalDays.toLocaleString('ko-KR')}일)</td>
-    </tr>`;
-
-    return html;
-  });
-
-  tbody.innerHTML = rows.join('');
 }
-
-// ── 정산내역표 팝업 열기 ──
-function openSevDetail(data){
-  _sevCurrentRecord = data;
-  const modal = document.getElementById('sev-detail-modal');
-  const body  = document.getElementById('sev-detail-body');
-  if(!modal||!body) return;
-
-  const won = v => v ? Math.round(v).toLocaleString('ko-KR') : '0';
-  const wonW = v => v ? Math.round(v).toLocaleString('ko-KR') + '원' : '0원';
-
-  // 이메일 버튼 활성/비활성
-  const emailBtn = document.getElementById('sev-btn-email');
-  if(emailBtn){
-    const hasEmail = !!data.email;
-    emailBtn.disabled = !hasEmail;
-    emailBtn.style.opacity = hasEmail ? '1' : '0.4';
-    emailBtn.style.cursor = hasEmail ? 'pointer' : 'not-allowed';
-    emailBtn.title = hasEmail ? '' : '직원 정보에 이메일이 등록되지 않았습니다.';
-  }
-
-  const today = new Date().toISOString().slice(0,10);
-  const noData = data.pays3count === 0;
-
-  body.innerHTML = `
-    <!-- 정산내역서 타이틀 -->
-    <div id="sev-print-area" style="font-family:'맑은 고딕',sans-serif;">
-      <div style="text-align:center;margin-bottom:18px;">
-        <div style="font-size:18px;font-weight:800;color:#1a1a2e;letter-spacing:2px;margin-bottom:4px;">퇴 직 금 정 산 내 역 서</div>
-        <div style="font-size:12px;color:#6b7280;">작성일: ${today} &nbsp;|&nbsp; ${_sevCompanyName}</div>
-      </div>
-
-      <!-- 근로자 기본 정보 -->
-      <table style="width:100%;border-collapse:collapse;margin-bottom:16px;font-size:12.5px;">
-        <tr style="background:#f8fafc;">
-          <th style="padding:8px 12px;border:1px solid #e2e8f0;width:100px;font-weight:700;color:#374151;text-align:left;">성 명</th>
-          <td style="padding:8px 12px;border:1px solid #e2e8f0;font-weight:600;">${data.empName}</td>
-          <th style="padding:8px 12px;border:1px solid #e2e8f0;width:100px;font-weight:700;color:#374151;text-align:left;">부서/직책</th>
-          <td style="padding:8px 12px;border:1px solid #e2e8f0;">${[data.department,data.position].filter(Boolean).join(' / ')||'-'}</td>
-        </tr>
-        <tr>
-          <th style="padding:8px 12px;border:1px solid #e2e8f0;font-weight:700;color:#374151;text-align:left;">입 사 일</th>
-          <td style="padding:8px 12px;border:1px solid #e2e8f0;">${data.hireDate||'-'}</td>
-          <th style="padding:8px 12px;border:1px solid #e2e8f0;font-weight:700;color:#374151;text-align:left;">퇴 사 일</th>
-          <td style="padding:8px 12px;border:1px solid #e2e8f0;font-weight:600;color:#dc2626;">${data.resignDate||'-'}</td>
-        </tr>
-        <tr style="background:#f8fafc;">
-          <th style="padding:8px 12px;border:1px solid #e2e8f0;font-weight:700;color:#374151;text-align:left;">재직기간</th>
-          <td colspan="3" style="padding:8px 12px;border:1px solid #e2e8f0;">${data.tenureText} (총 ${data.tenureDays.toLocaleString('ko-KR')}일)</td>
-        </tr>
-        <tr>
-          <th style="padding:8px 12px;border:1px solid #e2e8f0;font-weight:700;color:#374151;text-align:left;">퇴사 사유</th>
-          <td colspan="3" style="padding:8px 12px;border:1px solid #e2e8f0;">${data.reason}</td>
-        </tr>
-      </table>
-
-      <!-- 퇴직금 산정 내역 -->
-      <div style="font-size:13px;font-weight:700;color:#4c1d95;margin-bottom:8px;padding-bottom:4px;border-bottom:2px solid #c4b5fd;">
-        <i class="fas fa-calculator" style="margin-right:6px;"></i>퇴직금 산정 내역
-      </div>
-      ${noData ? `<div style="padding:14px;background:#fef9c3;border:1px solid #fde047;border-radius:8px;color:#713f12;font-size:12.5px;margin-bottom:12px;">
-        <i class="fas fa-exclamation-triangle" style="margin-right:6px;"></i>
-        직전 3개월 급여 데이터가 없어 정확한 퇴직금을 계산할 수 없습니다. 급여 데이터 입력 후 다시 확인하세요.
-      </div>` : ''}
-      <table style="width:100%;border-collapse:collapse;margin-bottom:16px;font-size:12.5px;">
-        <thead>
-          <tr style="background:#f5f3ff;">
-            <th style="padding:8px 12px;border:1px solid #ddd8fe;text-align:left;color:#4c1d95;font-weight:700;">항 목</th>
-            <th style="padding:8px 12px;border:1px solid #ddd8fe;text-align:right;color:#4c1d95;font-weight:700;">금 액</th>
-            <th style="padding:8px 12px;border:1px solid #ddd8fe;text-align:left;color:#4c1d95;font-weight:700;">산정 기준</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td style="padding:8px 12px;border:1px solid #ede9fe;">직전 3개월 통상임금 합계</td>
-            <td style="padding:8px 12px;border:1px solid #ede9fe;text-align:right;font-weight:600;color:#1d4ed8;">${wonW(data.ordinary3)}</td>
-            <td style="padding:8px 12px;border:1px solid #ede9fe;font-size:11.5px;color:#6b7280;">기본급+주휴수당+직책수당+기술/면허수당+출산보육+연구활동비</td>
-          </tr>
-          <tr style="background:#fafafa;">
-            <td style="padding:8px 12px;border:1px solid #ede9fe;">직전 3개월 평균임금 합계</td>
-            <td style="padding:8px 12px;border:1px solid #ede9fe;text-align:right;font-weight:600;">${wonW(data.average3)}</td>
-            <td style="padding:8px 12px;border:1px solid #ede9fe;font-size:11.5px;color:#6b7280;">3개월간 지급 총액 합계</td>
-          </tr>
-          <tr>
-            <td style="padding:8px 12px;border:1px solid #ede9fe;">3개월 역일수</td>
-            <td style="padding:8px 12px;border:1px solid #ede9fe;text-align:right;">${data.days3||'-'}일</td>
-            <td style="padding:8px 12px;border:1px solid #ede9fe;font-size:11.5px;color:#6b7280;">퇴사일 기준 직전 3개월</td>
-          </tr>
-          <tr style="background:#fafafa;">
-            <td style="padding:8px 12px;border:1px solid #ede9fe;">1일 통상임금</td>
-            <td style="padding:8px 12px;border:1px solid #ede9fe;text-align:right;">${wonW(data.dailyOrdinary)}</td>
-            <td style="padding:8px 12px;border:1px solid #ede9fe;font-size:11.5px;color:#6b7280;">통상임금합계 ÷ 역일수</td>
-          </tr>
-          <tr>
-            <td style="padding:8px 12px;border:1px solid #ede9fe;">1일 평균임금</td>
-            <td style="padding:8px 12px;border:1px solid #ede9fe;text-align:right;">${wonW(data.dailyAverage)}</td>
-            <td style="padding:8px 12px;border:1px solid #ede9fe;font-size:11.5px;color:#6b7280;">평균임금합계 ÷ 역일수</td>
-          </tr>
-          <tr style="background:#fefce8;">
-            <td style="padding:8px 12px;border:1px solid #ede9fe;font-weight:700;color:#92400e;">적용 1일 임금</td>
-            <td style="padding:8px 12px;border:1px solid #ede9fe;text-align:right;font-weight:700;color:#92400e;">${wonW(data.daily1)}</td>
-            <td style="padding:8px 12px;border:1px solid #ede9fe;font-size:11.5px;color:#6b7280;">통상임금·평균임금 중 유리한 기준 적용</td>
-          </tr>
-          <tr style="background:#fafafa;">
-            <td style="padding:8px 12px;border:1px solid #ede9fe;">총 재직일수</td>
-            <td style="padding:8px 12px;border:1px solid #ede9fe;text-align:right;">${data.tenureDays.toLocaleString('ko-KR')}일</td>
-            <td style="padding:8px 12px;border:1px solid #ede9fe;font-size:11.5px;color:#6b7280;">${data.hireDate} ~ ${data.resignDate}</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <!-- 퇴직금 산식 -->
-      <div style="background:#f5f3ff;border:1px solid #c4b5fd;border-radius:10px;padding:14px 18px;margin-bottom:16px;">
-        <div style="font-size:12px;color:#6b7280;margin-bottom:6px;">퇴직금 산정 공식</div>
-        <div style="font-size:13px;color:#4c1d95;font-weight:600;">
-          퇴직금 = 1일 평균임금(${won(data.daily1)}원) × 30일 × (재직일수 ${data.tenureDays.toLocaleString('ko-KR')}일 ÷ 365)
-        </div>
-        <div style="font-size:13px;color:#4c1d95;margin-top:6px;">
-          = ${won(data.daily1)}원 × 30 × ${(data.tenureDays/365).toFixed(4)} = <strong style="font-size:15px;color:#7c3aed;">${won(data.amount)}원</strong>
-        </div>
-      </div>
-
-      <!-- 최종 지급액 -->
-      <div style="background:linear-gradient(135deg,#7c3aed,#6d28d9);border-radius:10px;padding:16px 22px;display:flex;align-items:center;justify-content:space-between;color:#fff;">
-        <div>
-          <div style="font-size:12px;opacity:.8;margin-bottom:3px;">최종 퇴직금 지급액</div>
-          <div style="font-size:11px;opacity:.6;">(1원 미만 절사)</div>
-        </div>
-        <div style="font-size:24px;font-weight:800;letter-spacing:-0.5px;">${won(data.amount)}<span style="font-size:16px;font-weight:600;margin-left:2px;">원</span></div>
-      </div>
-
-      <!-- 서명란 -->
-      <table style="width:100%;border-collapse:collapse;margin-top:20px;font-size:12px;">
-        <tr>
-          <td style="padding:10px 14px;border:1px solid #e2e8f0;text-align:center;width:33%;">
-            <div style="color:#6b7280;margin-bottom:24px;">회 사 (확인)</div>
-            <div style="border-top:1px solid #374151;padding-top:6px;color:#374151;">${_sevCompanyName}</div>
-          </td>
-          <td style="padding:10px 14px;border:1px solid #e2e8f0;text-align:center;width:33%;">
-            <div style="color:#6b7280;margin-bottom:24px;">근 로 자 (수령)</div>
-            <div style="border-top:1px solid #374151;padding-top:6px;color:#374151;">${data.empName} (인)</div>
-          </td>
-          <td style="padding:10px 14px;border:1px solid #e2e8f0;text-align:center;width:33%;">
-            <div style="color:#6b7280;margin-bottom:24px;">작 성 일</div>
-            <div style="border-top:1px solid #374151;padding-top:6px;color:#374151;">${today}</div>
-          </td>
-        </tr>
-      </table>
-    </div><!-- /sev-print-area -->
-  `;
-
-  modal.style.display = 'flex';
-}
-
-// ── 정산내역표 팝업 닫기 ──
-function closeSevDetailModal(){
-  const modal = document.getElementById('sev-detail-modal');
-  if(modal) modal.style.display = 'none';
-  _sevCurrentRecord = null;
-}
-
-// ── 계약 조건 조회 모달 ──
-function openSevContractModal(contractId, empName, contractIdx){
-  const modal = document.getElementById('sev-contract-modal');
-  const body  = document.getElementById('sev-contract-modal-body');
-  const title = document.getElementById('sev-contract-modal-title');
-  if(!modal || !body) return;
-
-  const ct = allContracts.find(c => c.id === contractId);
-  if(!ct){ toast('계약 데이터를 찾을 수 없습니다.', 'error'); return; }
-
-  const badgeNum = contractIdx != null ? contractIdx + 1 : '';
-  title.innerHTML = `<span style="background:rgba(255,255,255,.25);border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;">${badgeNum}</span>&nbsp;${empName} — 계약 조건 상세`;
-
-  const fmtDate  = d => d || '-';
-  const fmtWon   = v => v ? Math.round(v).toLocaleString('ko-KR') + '원' : '-';
-  const fmtHr    = v => v ? v + 'h' : '-';
-  const fmtDay   = v => v != null && v !== '' ? v + '일' : '-';
-  const payType  = t => t === 'daily' ? '출근일수 비례' : t === 'fixed' ? '매월 정액' : (t || '-');
-
-  // 계약 상태 뱃지
-  const statusBadge = ct.status === '해지'
-    ? '<span style="background:#fee2e2;color:#dc2626;padding:2px 9px;border-radius:10px;font-size:11.5px;font-weight:700;">해지</span>'
-    : (ct.status === '만료' || ct.status === 'expired')
-    ? '<span style="background:#fef3c7;color:#b45309;padding:2px 9px;border-radius:10px;font-size:11.5px;font-weight:700;">만료</span>'
-    : (ct.status === 'active' || ct.status === '활성' || ct.status === '유효')
-    ? '<span style="background:#dcfce7;color:#15803d;padding:2px 9px;border-radius:10px;font-size:11.5px;font-weight:700;">진행중</span>'
-    : ct.status
-    ? `<span style="background:#f3f4f6;color:#6b7280;padding:2px 9px;border-radius:10px;font-size:11.5px;">${ct.status}</span>`
-    : '-';
-
-  // 4대보험 체크 렌더
-  const insBox = (val, label) => {
-    const on = val === true || val === 'true' || val === 1;
-    return `<span style="display:inline-flex;align-items:center;gap:3px;margin-right:10px;font-size:12px;color:${on?'#15803d':'#9ca3af'};">
-      <i class="fas fa-${on?'check-circle':'times-circle'}" style="font-size:13px;"></i>${label}
-    </span>`;
-  };
-
-  // 수습 정보
-  let probationHtml = '-';
-  if(ct.probation_months > 0){
-    const basis = ct.probation_basis === 'minwage' ? '최저임금 기준'
-      : ct.probation_basis === 'direct' ? '직접 입력'
-      : '계약 급여 기준';
-    probationHtml = `${ct.probation_months}개월`;
-    if(ct.probation_pct)  probationHtml += ` / ${ct.probation_pct}%`;
-    if(ct.probation_amt)  probationHtml += ` (${fmtWon(ct.probation_amt)})`;
-    probationHtml += ` <span style="font-size:11px;color:#9ca3af;">[${basis}]</span>`;
-  }
-
-  // 근무 일정
-  let scheduleHtml = '';
-  try {
-    const sch = typeof ct.schedule_json === 'string' ? JSON.parse(ct.schedule_json) : ct.schedule_json;
-    if(sch && typeof sch === 'object'){
-      const dayNames = {mon:'월',tue:'화',wed:'수',thu:'목',fri:'금',sat:'토',sun:'일'};
-      const activeDays = Object.entries(sch)
-        .filter(([,v]) => v && v.work)
-        .map(([k,v]) => {
-          const s = v.start || ''; const e = v.end || '';
-          return `<span style="display:inline-block;background:#eff6ff;border-radius:5px;padding:2px 7px;margin:2px 2px 2px 0;font-size:11.5px;color:#1d4ed8;">
-            <b>${dayNames[k]||k}</b>${s&&e ? ` ${s}~${e}` : ''}
-          </span>`;
-        });
-      scheduleHtml = activeDays.length ? activeDays.join('') : '-';
-    }
-  } catch(e){ scheduleHtml = '-'; }
-
-  // 급여 항목 행 헬퍼
-  const wageRow = (label, val, sub) => val ? `
-    <tr>
-      <td style="padding:7px 12px;color:#6b7280;font-size:12.5px;width:44%;border-bottom:1px solid #f3f4f6;">${label}</td>
-      <td style="padding:7px 12px;font-weight:600;font-size:12.5px;border-bottom:1px solid #f3f4f6;">${fmtWon(val)}${sub ? `<span style="font-size:11px;color:#9ca3af;font-weight:400;margin-left:5px;">${sub}</span>` : ''}</td>
-    </tr>` : '';
-
-  // 급여 요약 계산
-  const base = ct.base_salary || 0;
-  const fixedAllows = [
-    ct.weekly_holiday_pay||0, ct.position_allowance||0, ct.skill_allowance||0,
-    ct.license_allowance||0, ct.childcare_allowance||0, ct.research_allowance||0,
-    ct.transportation_allowance||ct.car_maintenance||0,
-    ct.self_driving_allowance||0, ct.remote_area_allowance||0,
-    ct.meal_allowance||0, ct.other_allowance||0
-  ].reduce((a,b)=>a+b,0);
-  const totalMonthly = base + fixedAllows;
-
-  body.innerHTML = `
-    <div style="font-size:13px;line-height:1.6;">
-
-      <!-- ① 계약 기간 & 상태 -->
-      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 16px;margin-bottom:16px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-          <div>
-            <span style="font-size:11px;color:#3b82f6;font-weight:600;text-transform:uppercase;letter-spacing:.5px;">계약기간</span>
-            <div style="font-size:15px;font-weight:700;color:#1e40af;margin-top:2px;">
-              ${fmtDate(ct.contract_start)} ~ ${ct.contract_end ? fmtDate(ct.contract_end) : '<span style="color:#15803d;">현재 진행 중</span>'}
-            </div>
-            ${ct.terminate_date ? `<div style="font-size:11.5px;color:#dc2626;margin-top:2px;"><i class="fas fa-ban" style="margin-right:3px;"></i>해지일: ${fmtDate(ct.terminate_date)}</div>` : ''}
-          </div>
-          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
-            ${statusBadge}
-            ${ct.contract_type ? `<span style="font-size:11.5px;color:#374151;background:#e0f2fe;padding:2px 8px;border-radius:8px;">${ct.contract_type}</span>` : ''}
-          </div>
-        </div>
-      </div>
-
-      <!-- ② 근무 조건 -->
-      <div style="margin-bottom:16px;">
-        <div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
-          <i class="fas fa-clock" style="color:#6366f1;"></i> 근무 조건
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
-          <div style="background:#f9fafb;border-radius:8px;padding:10px 12px;">
-            <div style="font-size:10.5px;color:#9ca3af;margin-bottom:2px;">1일 근무시간</div>
-            <div style="font-weight:700;color:#1f2937;">${fmtHr(ct.work_hours_per_day)}</div>
-          </div>
-          <div style="background:#f9fafb;border-radius:8px;padding:10px 12px;">
-            <div style="font-size:10.5px;color:#9ca3af;margin-bottom:2px;">주 근무일수</div>
-            <div style="font-weight:700;color:#1f2937;">${ct.work_days_per_week != null ? ct.work_days_per_week + '일' : '-'}</div>
-          </div>
-          <div style="background:#f9fafb;border-radius:8px;padding:10px 12px;">
-            <div style="font-size:10.5px;color:#9ca3af;margin-bottom:2px;">휴게시간</div>
-            <div style="font-weight:700;color:#1f2937;">${ct.break_time != null ? ct.break_time + '분' : '-'}</div>
-          </div>
-        </div>
-        ${scheduleHtml && scheduleHtml !== '-' ? `
-        <div style="margin-top:8px;background:#f9fafb;border-radius:8px;padding:10px 12px;">
-          <div style="font-size:10.5px;color:#9ca3af;margin-bottom:5px;">근무 요일·시간</div>
-          <div>${scheduleHtml}</div>
-        </div>` : ''}
-        ${ct.annual_leave_days ? `
-        <div style="margin-top:8px;background:#f9fafb;border-radius:8px;padding:10px 12px;">
-          <div style="font-size:10.5px;color:#9ca3af;margin-bottom:2px;">연차 일수</div>
-          <div style="font-weight:700;color:#1f2937;">${fmtDay(ct.annual_leave_days)}</div>
-        </div>` : ''}
-      </div>
-
-      <!-- ③ 급여 구성 -->
-      <div style="margin-bottom:16px;">
-        <div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
-          <i class="fas fa-won-sign" style="color:#f59e0b;"></i> 급여 구성
-        </div>
-        <table style="width:100%;border-collapse:collapse;background:#fafafa;border-radius:8px;overflow:hidden;">
-          <tbody>
-            ${ct.hourly_wage     ? wageRow('시급', ct.hourly_wage) : ''}
-            ${ct.daily_wage      ? wageRow('일급', ct.daily_wage) : ''}
-            ${ct.monthly_salary_agreed ? wageRow('약정 월급', ct.monthly_salary_agreed) : ''}
-            ${ct.annual_salary   ? wageRow('연봉', ct.annual_salary) : ''}
-            ${wageRow('기본급', ct.base_salary)}
-            ${wageRow('주휴수당', ct.weekly_holiday_pay)}
-            ${wageRow('직책수당', ct.position_allowance)}
-            ${wageRow('기술수당', ct.skill_allowance)}
-            ${wageRow('면허수당', ct.license_allowance)}
-            ${wageRow('출산·보육수당', ct.childcare_allowance)}
-            ${wageRow('연구활동비', ct.research_allowance)}
-            ${ct.transportation_allowance||ct.car_maintenance
-              ? wageRow('교통비', ct.transportation_allowance||ct.car_maintenance, payType(ct.transportation_pay_type))
-              : ''}
-            ${wageRow('자가운전보조금', ct.self_driving_allowance, payType(ct.self_driving_pay_type))}
-            ${wageRow('벽지수당', ct.remote_area_allowance, payType(ct.remote_area_pay_type))}
-            ${wageRow('식대', ct.meal_allowance, payType(ct.meal_pay_type))}
-            ${ct.other_allowance ? wageRow('기타수당', ct.other_allowance) : ''}
-          </tbody>
-          ${totalMonthly ? `
-          <tfoot>
-            <tr style="background:#fef3c7;border-top:2px solid #fcd34d;">
-              <td style="padding:9px 12px;font-weight:700;color:#92400e;font-size:13px;">월 합계 (기본급+제수당)</td>
-              <td style="padding:9px 12px;font-weight:800;font-size:14px;color:#92400e;">${totalMonthly.toLocaleString('ko-KR')}원</td>
-            </tr>
-          </tfoot>` : ''}
-        </table>
-        ${ct.salary_start_date ? `
-        <div style="margin-top:6px;font-size:11.5px;color:#9ca3af;padding:0 4px;">
-          <i class="fas fa-calendar-check" style="margin-right:3px;"></i>
-          연봉적용 시작일: ${fmtDate(ct.salary_start_date)}
-        </div>` : ''}
-      </div>
-
-      <!-- ④ 수습 조건 -->
-      ${ct.probation_months > 0 ? `
-      <div style="margin-bottom:16px;">
-        <div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
-          <i class="fas fa-user-clock" style="color:#8b5cf6;"></i> 수습 조건
-        </div>
-        <div style="background:#fdf4ff;border:1px solid #e9d5ff;border-radius:8px;padding:10px 14px;font-size:12.5px;color:#6b21a8;">${probationHtml}</div>
-      </div>` : ''}
-
-      <!-- ⑤ 4대보험 -->
-      <div style="margin-bottom:16px;">
-        <div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
-          <i class="fas fa-shield-alt" style="color:#10b981;"></i> 4대보험 적용
-        </div>
-        <div style="background:#f9fafb;border-radius:8px;padding:10px 14px;">
-          ${insBox(ct.insurance_employment, '고용보험')}
-          ${insBox(ct.insurance_industrial, '산재보험')}
-          ${insBox(ct.insurance_pension,    '국민연금')}
-          ${insBox(ct.insurance_health,     '건강보험')}
-        </div>
-      </div>
-
-      <!-- ⑥ 비고 -->
-      ${ct.note ? `
-      <div style="margin-bottom:6px;">
-        <div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;display:flex;align-items:center;gap:6px;">
-          <i class="fas fa-sticky-note" style="color:#f59e0b;"></i> 비고
-        </div>
-        <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;font-size:12.5px;color:#78716c;white-space:pre-wrap;">${ct.note}</div>
-      </div>` : ''}
-
-    </div>
-  `;
-
-  modal.style.display = 'flex';
-}
-
-function closeSevContractModal(){
-  const modal = document.getElementById('sev-contract-modal');
-  if(modal) modal.style.display = 'none';
-}
-
-// ── 엑셀 다운로드 ──
-function sevDownloadExcel(){
-  if(!_sevCurrentRecord){ toast('정산 데이터가 없습니다.','error'); return; }
-  const d = _sevCurrentRecord;
-  const won = v => Math.round(v)||0;
-  const wonW = v => (Math.round(v)||0).toLocaleString('ko-KR')+'원';
-  const today = new Date().toISOString().slice(0,10);
-
-  const wsData = [
-    [`퇴직금 정산내역서`],
-    [`${_sevCompanyName}  |  작성일: ${today}`],
-    [],
-    ['구 분', '내 용'],
-    ['성 명', d.empName],
-    ['부서/직책', [d.department,d.position].filter(Boolean).join(' / ')||'-'],
-    ['입사일', d.hireDate||'-'],
-    ['퇴사일', d.resignDate||'-'],
-    ['재직기간', `${d.tenureText} (총 ${d.tenureDays.toLocaleString('ko-KR')}일)`],
-    ['퇴사 사유', d.reason],
-    [],
-    ['항 목', '금 액', '산정 기준'],
-    ['직전 3개월 통상임금 합계', won(d.ordinary3), '기본급+주휴수당+직책수당+기술/면허수당+출산보육+연구활동비'],
-    ['직전 3개월 평균임금 합계', won(d.average3), '3개월간 지급 총액 합계'],
-    ['3개월 역일수', `${d.days3||0}일`, '퇴사일 기준 직전 3개월'],
-    ['1일 통상임금', won(d.dailyOrdinary), '통상임금합계 ÷ 역일수'],
-    ['1일 평균임금', won(d.dailyAverage), '평균임금합계 ÷ 역일수'],
-    ['적용 1일 임금', won(d.daily1), '통상임금·평균임금 중 유리한 기준 적용'],
-    ['총 재직일수', `${d.tenureDays}일`, `${d.hireDate} ~ ${d.resignDate}`],
-    [],
-    ['퇴직금 산정 공식', `1일평균임금(${won(d.daily1)}) × 30일 × (${d.tenureDays}일 ÷ 365) = ${wonW(d.amount)}`],
-    [],
-    ['최종 퇴직금 지급액', won(d.amount), '원'],
-  ];
-
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.aoa_to_sheet(wsData);
-  ws['!cols'] = [{wch:30},{wch:25},{wch:55}];
-  XLSX.utils.book_append_sheet(wb, ws, '퇴직금정산');
-  XLSX.writeFile(wb, `퇴직금정산내역서_${d.empName}_${d.resignDate||today}.xlsx`);
-  toast('📥 퇴직금 정산내역서 엑셀 저장 완료', 'success');
-}
-
-// ── PDF 생성 공통 (html2canvas + jsPDF) ──
-async function _sevGeneratePDF(){
-  const printArea = document.getElementById('sev-print-area');
-  if(!printArea) throw new Error('출력 영역을 찾을 수 없습니다.');
-
-  // html2canvas / jsPDF CDN 동적 로드
-  if(typeof html2canvas === 'undefined'){
-    await new Promise((res,rej)=>{
-      const s = document.createElement('script');
-      s.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
-      s.onload = res; s.onerror = rej;
-      document.head.appendChild(s);
-    });
-  }
-  if(typeof window.jspdf === 'undefined' && typeof jsPDF === 'undefined'){
-    await new Promise((res,rej)=>{
-      const s = document.createElement('script');
-      s.src = 'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js';
-      s.onload = res; s.onerror = rej;
-      document.head.appendChild(s);
-    });
-  }
-
-  const canvas = await html2canvas(printArea, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
-  const imgData = canvas.toDataURL('image/png');
-  const JsPDF = window.jspdf?.jsPDF || jsPDF;
-  const pdf = new JsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  const pageW = pdf.internal.pageSize.getWidth();
-  const pageH = pdf.internal.pageSize.getHeight();
-  const imgW = pageW - 20;
-  const imgH = (canvas.height * imgW) / canvas.width;
-  let y = 10;
-  if(imgH <= pageH - 20){
-    pdf.addImage(imgData,'PNG',10,y,imgW,imgH);
-  } else {
-    // 페이지 분할
-    let renderedH = 0;
-    const ratio = imgW / canvas.width;
-    while(renderedH < canvas.height){
-      const sliceH = Math.min((pageH-20) / ratio, canvas.height - renderedH);
-      const sliceCanvas = document.createElement('canvas');
-      sliceCanvas.width = canvas.width;
-      sliceCanvas.height = sliceH;
-      sliceCanvas.getContext('2d').drawImage(canvas, 0, -renderedH);
-      pdf.addImage(sliceCanvas.toDataURL('image/png'),'PNG',10,10,imgW,sliceH*ratio);
-      renderedH += sliceH;
-      if(renderedH < canvas.height) pdf.addPage();
-    }
-  }
-  return pdf;
-}
-
-// ── PDF 저장 ──
-async function sevDownloadPDF(){
-  if(!_sevCurrentRecord){ toast('정산 데이터가 없습니다.','error'); return; }
-  const d = _sevCurrentRecord;
-  const today = new Date().toISOString().slice(0,10);
-  toast('PDF 생성 중...', 'info');
-  try {
-    const pdf = await _sevGeneratePDF();
-    pdf.save(`퇴직금정산내역서_${d.empName}_${d.resignDate||today}.pdf`);
-    toast('📄 PDF 저장 완료', 'success');
-  } catch(e){
-    console.error(e);
-    toast('PDF 생성 중 오류가 발생했습니다.', 'error');
-  }
-}
-
-// ── 알림톡 발송 (PDF 첨부 안내) ──
-async function sevSendAlimtalk(){
-  if(!_sevCurrentRecord){ toast('정산 데이터가 없습니다.','error'); return; }
-  const d = _sevCurrentRecord;
-  const won = v => (Math.round(v)||0).toLocaleString('ko-KR');
-
-  // PDF 먼저 생성 (다운로드 없이 blob URL만 생성)
-  toast('PDF 생성 중...', 'info');
-  try {
-    const pdf = await _sevGeneratePDF();
-    const pdfBlob = pdf.output('blob');
-    const pdfUrl  = URL.createObjectURL(pdfBlob);
-
-    // 알림톡 발송 확인 팝업
-    const msg = `[퇴직금 정산내역서 발송 확인]\n\n수신인: ${d.empName} (${d.phone||'휴대폰 미등록'})\n퇴직금: ${won(d.amount)}원\n\n※ 실제 알림톡 발송은 카카오 비즈메시지 API 연동이 필요합니다.\nPDF가 생성되었습니다. 아래에서 PDF를 미리 확인한 후 수동 발송하세요.`;
-    if(confirm(msg)){
-      // PDF 미리보기 새 탭 오픈
-      window.open(pdfUrl, '_blank');
-      toast(`📲 알림톡 발송 준비 완료 — PDF가 새 탭에 열렸습니다.\n실제 발송은 카카오 비즈메시지 API 연동이 필요합니다.`, 'success');
-
-      // ── 고객사 인앱 알림 발송 (퇴직급여 지급) ──
-      {
-        const _svCo  = allCompanies.find(x => x.id === _sevCompanyId) || {};
-        const _coRep = _svCo.representative ? `, ${_svCo.representative} 사장님` : '';
-        await _sendCompanyNotice({
-          companyId  : _sevCompanyId || '', companyName: _sevCompanyName || '',
-          noticeType : 'severance_paid',
-          title      : `[퇴직급여 지급] ${d.empName} — 퇴직금 정산이 처리되었습니다`,
-          body       :
-`안녕하세요${_coRep}.
-
-소속 근로자의 퇴직금 정산내역서가 발송되었습니다.
-
-■ 근로자: ${d.empName}
-■ 입사일: ${d.hireDate||'-'}
-■ 퇴사일: ${d.resignDate||'-'}
-■ 재직기간: ${d.tenureText||'-'}
-■ 퇴직금 지급액: ${won(d.amount)}원
-■ 발송 방법: 카카오 알림톡
-■ 발송 시각: ${new Date().toLocaleString('ko-KR')}
-
-자세한 내용은 퇴직급여 관리 메뉴에서 확인하세요.`,
-          employeeId  : d.empId || '', employeeName: d.empName || '',
-        });
-      }
-    }
-  } catch(e){
-    console.error(e);
-    toast('PDF 생성 중 오류가 발생했습니다.', 'error');
-  }
-}
-
-// ── 이메일 발송 ──
-async function sevSendEmail(){
-  if(!_sevCurrentRecord){ toast('정산 데이터가 없습니다.','error'); return; }
-  const d = _sevCurrentRecord;
-  if(!d.email){ toast('직원 이메일 정보가 없습니다.','error'); return; }
-  const won = v => (Math.round(v)||0).toLocaleString('ko-KR');
-
-  toast('PDF 생성 중...', 'info');
-  try {
-    const pdf = await _sevGeneratePDF();
-    const pdfBlob = pdf.output('blob');
-    const pdfUrl  = URL.createObjectURL(pdfBlob);
-
-    // 이메일 발송 확인 팝업
-    const msg = `[이메일 발송 확인]\n\n수신: ${d.empName} <${d.email}>\n퇴직금: ${won(d.amount)}원\n\n※ 실제 이메일 발송은 서버측 SMTP/API 연동이 필요합니다.\nPDF가 생성되었습니다. 아래에서 확인 후 별도 이메일 클라이언트를 통해 발송하세요.`;
-    if(confirm(msg)){
-      window.open(pdfUrl, '_blank');
-
-      // ── 고객사 인앱 알림 발송 (퇴직급여 이메일 발송) ──
-      {
-        const _sveCo  = allCompanies.find(x => x.id === _sevCompanyId) || {};
-        const _coRep2 = _sveCo.representative ? `, ${_sveCo.representative} 사장님` : '';
-        await _sendCompanyNotice({
-          companyId  : _sevCompanyId || '', companyName: _sevCompanyName || '',
-          noticeType : 'severance_paid',
-          title      : `[퇴직급여 지급] ${d.empName} — 퇴직금 정산이 처리되었습니다`,
-          body       :
-`안녕하세요${_coRep2}.
-
-소속 근로자의 퇴직금 정산내역서가 이메일로 발송되었습니다.
-
-■ 근로자: ${d.empName}
-■ 입사일: ${d.hireDate||'-'}
-■ 퇴사일: ${d.resignDate||'-'}
-■ 재직기간: ${d.tenureText||'-'}
-■ 퇴직금 지급액: ${won(d.amount)}원
-■ 발송 방법: 이메일 (${d.email})
-■ 발송 시각: ${new Date().toLocaleString('ko-KR')}
-
-자세한 내용은 퇴직급여 관리 메뉴에서 확인하세요.`,
-          employeeId  : d.empId || '', employeeName: d.empName || '',
-        });
-      }
-
-      // mailto 링크 (본문만, 첨부는 브라우저 제한으로 불가)
-      const subject = encodeURIComponent(`[${_sevCompanyName}] 퇴직금 정산내역서 — ${d.empName}`);
-      const body = encodeURIComponent(
-        `${d.empName} 귀중\n\n퇴직금 정산내역서를 안내드립니다.\n\n· 퇴직금: ${won(d.amount)}원\n· 재직기간: ${d.tenureText}\n· 퇴사일: ${d.resignDate}\n\n상세 내역은 첨부된 PDF를 확인해 주시기 바랍니다.\n\n감사합니다.\n${_sevCompanyName}`
-      );
-      setTimeout(()=>{ window.location.href = `mailto:${d.email}?subject=${subject}&body=${body}`; }, 500);
-      toast(`📧 이메일 발송 준비 완료 — PDF 새 탭 + 메일 클라이언트가 열립니다.`, 'success');
-    }
-  } catch(e){
-    console.error(e);
-    toast('PDF 생성 중 오류가 발생했습니다.', 'error');
-  }
-}
-
-// ── 모달 바깥 클릭 시 닫기 ──
-document.addEventListener('click', function(e){
-  const modal = document.getElementById('sev-detail-modal');
-  if(modal && modal.style.display==='flex' && e.target===modal) closeSevDetailModal();
-});

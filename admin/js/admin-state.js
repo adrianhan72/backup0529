@@ -122,7 +122,7 @@ async function init(){
 
     // ── 1단계: critical path – 화면 표시에 필수인 3개 테이블만 먼저 로드 ──
     showSkeletons();
-    await Promise.all([loadCompanies(), loadEmployees(), loadContracts(), loadAdminAccounts()]);
+    await Promise.all([loadCompanies(), loadEmployees(), loadContracts(), loadAdminAccounts(), loadCompanyHistories()]);
 
     const t1 = Math.round(performance.now() - t0);
     console.log(`[급여관리] 핵심 데이터 로드 완료 (${t1}ms):`,
@@ -132,7 +132,7 @@ async function init(){
     hideSkeletons();
 
     // 핵심 데이터만으로 즉시 화면 렌더링
-    initMonthFilter(); initPIMonths();
+    initMonthFilter(); initPIMonths(); initPIYears();
     renderDashboard(); renderCompanies(); renderContracts();
     populateFilters(); populatePICompanies(); initBreakSelects();
     if(document.getElementById('page-contracts')?.classList.contains('active')){
@@ -257,6 +257,8 @@ const api=async(url,opt={})=>{
   return r.status===204?null:r.json();
 };
 async function loadCompanies(){const d=await api('../tables/companies?limit=100');allCompanies=d.data||[]}
+let allCompanyHistories=[];
+async function loadCompanyHistories(){const d=await api('../tables/company_history?limit=500');allCompanyHistories=d.data||[];}
 async function loadEmployees(){const d=await api('../tables/employees?limit=200');allEmployees=d.data||[]}
 async function loadContracts(){
   const d=await api('../tables/contracts?limit=200');
@@ -274,10 +276,10 @@ async function autoActivatePendingContracts(){
   if(!toActivate.length) return;
   await Promise.all(toActivate.map(async c => {
     try {
-      await fetch(`../tables/contracts/${c.id}`, {
-        method:'PATCH', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ status:'활성' })
-      });
+            await fetch(`../tables/contracts/${c.id}`, {
+              method:'PATCH', headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({ status:'활성' })
+            });
       const idx = allContracts.findIndex(x => x.id === c.id);
       if(idx > -1) allContracts[idx].status = '활성';
     } catch(e){ console.warn('[자동전환 오류]', c.id, e); }
@@ -456,6 +458,11 @@ function showPage(name,el){
     document.getElementById('cont-list-section').style.display = 'none';
   }
   if(name==='payroll-input'){
+    // 페이지 진입 시 년월 option 목록 재생성
+    // ※ initPIYears/initPIMonths 내부에서 기존 선택값을 보존하므로
+    //   수정 모드 또는 목록 복귀 시 이전에 선택한 년월이 유지됨
+    initPIYears(); initPIMonths();
+
     // 데이터 미준비 — 칩 영역 스피너
     if(!_dataReady){
       const chips = document.getElementById('pi-company-chips');
@@ -741,7 +748,24 @@ function initMonthFilter(){
 }
 function initPIMonths(){
   const s=document.getElementById('pi-month');
-  for(let i=1;i<=12;i++) s.innerHTML+=`<option value="${i}" ${i===new Date().getMonth()+1?'selected':''}>${i}월</option>`;
+  if(!s) return;
+  // 기존 선택값 보존: 이미 값이 있으면 그 값을 유지, 없으면 현재 월 선택
+  const prevVal = parseInt(s.value) || 0;
+  const defVal  = prevVal >= 1 && prevVal <= 12 ? prevVal : new Date().getMonth()+1;
+  s.innerHTML='';
+  for(let i=1;i<=12;i++) s.innerHTML+=`<option value="${i}" ${i===defVal?'selected':''}>${i}월</option>`;
+}
+function initPIYears(){
+  const s=document.getElementById('pi-year');
+  if(!s) return;
+  // 기존 선택값 보존: 이미 값이 있으면 그 값을 유지, 없으면 현재 연도 선택
+  const curYr  = new Date().getFullYear();
+  const prevVal = parseInt(s.value) || 0;
+  const defVal  = prevVal >= curYr-3 && prevVal <= curYr+1 ? prevVal : curYr;
+  s.innerHTML='';
+  for(let y=curYr+1; y>=curYr-3; y--){
+    s.innerHTML+=`<option value="${y}" ${y===defVal?'selected':''}>${y}년</option>`;
+  }
 }
 function populateFilters(){
   // '이용중' 고객사만 노출 (임시저장·해지 제외)
@@ -788,38 +812,58 @@ function renderPICompanyList(){
 
 // ── 고객사 선택 ──
 function selectPICompany(companyId, companyName){
-  // 숨김 select 임시 동기화 (기준 체크 시 _getPIInsuranceBasis() 가 company id를 필요로 함)
+  // 숨김 select 동기화
   const s=document.getElementById('pi-company');
   if(s) s.value=companyId;
-
-  // 현재 선택된 년/월 (또는 이번달) 기준으로 산정기준 등록 여부 확인
-  const now=new Date();
-  const yrEl=document.getElementById('pi-year');
-  const moEl=document.getElementById('pi-month');
-  const chkYr = parseInt(yrEl?.value) || now.getFullYear();
-  const chkMo = parseInt(moEl?.value) || (now.getMonth()+1);
-  const stdCheck = _checkPIStandardsReady(chkYr, chkMo, companyId);
-  if(!stdCheck.ok){
-    if(s) s.value=''; // 선택 롤백
-    _showPIStandardsWarn(chkYr, chkMo, stdCheck.missing);
-    return;
-  }
 
   // 글로벌 공유 변수 업데이트
   currentGlobalCompanyId = companyId;
   currentGlobalCompanyName = companyName;
+
   // 헤더 레이블
   document.getElementById('pi-selected-company-label').textContent=companyName+' 급여 입력';
-  // 카드 전환
+
+  // 카드 전환 — 년월 선택 UI 표시
   document.getElementById('pi-company-select-card').style.display='none';
   document.getElementById('pi-input-section').style.display='';
-  // 직원 목록 로드
-  loadPIEmployees();
+
+  // ★ 수정 모드 진입(piEditPayrollId 설정됨) 중에는
+  //   폼 섹션 숨김·년월 초기화를 건너뜀 — editPayroll()이 직접 처리
+  const _isEditMode = typeof piEditPayrollId !== 'undefined' && !!piEditPayrollId;
+
+  // 대상자 목록·입력 폼 초기화 (숨김) — 수정 모드 아닐 때만
+  if(!_isEditMode){
+    const targetSec = document.getElementById('pi-target-list-section');
+    if(targetSec) targetSec.style.display='none';
+    const formSec = document.getElementById('pi-form-section');
+    if(formSec) formSec.style.display='none';
+    // ★ 년월 선택 카드(pi-period-section) 반드시 복원
+    // selectPITarget()·editPayroll()에서 숨겨진 상태가 잔존할 수 있으므로
+    // 수정 모드가 아닌 경우 항상 표시 복원
+    const periodSec = document.getElementById('pi-period-section');
+    if(periodSec) periodSec.style.display='';
+    // ★ 임시저장 배너: 고객사+년월 선택 단계에서만 표시
+    // 목록·폼이 숨겨진 이 시점(년월 선택 단계)에서만 배너를 갱신·표시
+    if(typeof renderPIAllDraftBanner === 'function') renderPIAllDraftBanner();
+  } else {
+    // 수정 모드 진입 시 임시저장 배너 숨김
+    const _adb = document.getElementById('pi-all-draft-banner');
+    if(_adb) _adb.style.display = 'none';
+  }
+
+  // 고객사 allowance_config 기반 옵셔널 항목 show/hide
+  const _piSelCo = allCompanies.find(c=>c.id===companyId);
+  if(typeof applyPIAllowanceConfig === 'function')
+    applyPIAllowanceConfig(_piSelCo?.allowance_config ?? null);
   // 4대보험 적용 기준 UI 전환
   _switchInsuranceModeUI();
-  // 연월 초기화
-  if(yrEl&&!yrEl.value) yrEl.value=now.getFullYear();
-  if(moEl&&!moEl.value) moEl.value=now.getMonth()+1;
+
+  // 연월 초기화 — option 목록 자체를 현재 년월 selected 상태로 재생성
+  // (수정 모드 아닐 때만 — 수정 모드에선 editPayroll()이 저장된 년월로 덮어씀)
+  if(!_isEditMode){ initPIYears(); initPIMonths(); }
+
+  // 칩 목록 하이라이트 갱신
+  renderPICompanyList();
 }
 
 // ── 고객사 선택 해제 ──
@@ -831,15 +875,25 @@ function clearPICompanySelect(){
   currentGlobalCompanyName = '';
   document.getElementById('pi-company-select-card').style.display='';
   document.getElementById('pi-input-section').style.display='none';
-  document.getElementById('pi-company-search').value='';
+  const searchEl = document.getElementById('pi-company-search');
+  if(searchEl) searchEl.value='';
   renderPICompanyList();
+  // 대상자 목록·폼 숨김
+  const targetSec = document.getElementById('pi-target-list-section');
+  if(targetSec) targetSec.style.display='none';
+  const formSec = document.getElementById('pi-form-section');
+  if(formSec) formSec.style.display='none';
   // 폼 초기화
   piContract=null;
-  clearPIFields();
+  if(typeof clearPIFields === 'function') clearPIFields();
   const card=document.getElementById('pi-contract-card');
   if(card) card.style.display='none';
   // 수정 모드도 종료
-  if(piEditPayrollId){ cancelEditPayroll(); }
+  if(typeof piEditPayrollId !== 'undefined' && piEditPayrollId){
+    if(typeof cancelEditPayroll === 'function') cancelEditPayroll();
+  }
+  // pi-all-draft-banner 복원 (고객사 선택 해제 시)
+  if(typeof renderPIAllDraftBanner === 'function') renderPIAllDraftBanner();
 }
 function renderPagination(containerId,total,page,fn){
   const pages2=Math.ceil(total/ITEMS);

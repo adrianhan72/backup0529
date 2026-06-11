@@ -114,6 +114,13 @@
     .btn-draft-edit:disabled,.btn-draft-edit[disabled]{opacity:.42;cursor:not-allowed;pointer-events:none;}
     /* draft 배지 */
     .badge-draft{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:700;background:rgba(245,158,11,.15);color:#b45309;border:1px solid rgba(245,158,11,.35);vertical-align:middle;margin-left:5px;}
+    /* 계약 모달 가로 스크롤 방지 */
+    #contract-modal .modal{overflow-x:hidden;}
+    #contract-modal .modal-body{overflow-x:hidden;box-sizing:border-box;}
+    #contract-modal .modal-body *{box-sizing:border-box;max-width:100%;}
+    /* amount-wrap 등 내부 flex 컨테이너가 부모 너비를 초과하지 않도록 */
+    #contract-modal .form-grid{min-width:0;}
+    #contract-modal .form-group{min-width:0;}
     /* 읽기전용 폼 */
     .ct-readonly input,.ct-readonly select,.ct-readonly textarea{background:#f8f9fb!important;color:#374151!important;pointer-events:none;border-color:#e5e7eb!important}
     .ct-readonly .form-computed{background:#f1f5f9!important}
@@ -263,7 +270,7 @@
       transform:translateY(-1px);
     }
     .btn-amend-complete:active:not(:disabled){transform:scale(.96) translateY(1px);}
-    .btn-amend-complete:disabled,.btn-amend-complete[disabled]{opacity:.42;cursor:not-allowed;pointer-events:none;box-shadow:none;}
+    /* btn-amend-complete: 버튼은 항상 활성 — disabled 스타일 불필요 */
     .btn-amend-cancel{
       display:inline-flex;align-items:center;gap:5px;
       padding:7px 14px;border-radius:7px;
@@ -457,3 +464,80 @@
     .help-flow{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:8px;}
     .help-flow-item{background:#f8fafc;border:1.5px solid #cbd5e1;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:600;color:#334155;}
     .help-flow-arrow{color:#94a3b8;font-size:13px;font-weight:700;}
+    /* ══ 근로계약 모달 — 통상임금 지급유형 토글 버튼 ══ */
+    .pi-pay-type-wrap   { display:flex; flex-direction:column; gap:4px; }
+    .pi-pay-type-btns   { display:flex; gap:4px; }
+
+    /* 기본 버튼 */
+    .pi-pay-type-btn {
+      flex:1;
+      padding:5px 8px;
+      font-size:11.5px;
+      font-weight:600;
+      font-family:inherit;
+      border:1.5px solid #d1d5db;
+      border-radius:6px;
+      background:#f9fafb;
+      color:#6b7280;
+      cursor:pointer;
+      line-height:1.4;
+      transition:background .14s, border-color .14s, color .14s;
+      white-space:nowrap;
+    }
+    .pi-pay-type-btn:hover {
+      border-color:#a5b4fc;
+      background:#eef2ff;
+      color:#4f46e5;
+    }
+
+    /* 선택 상태 — 매월 정기지급 (파란색 계열) */
+    .pi-pay-type-btn.active-fixed {
+      background:#eff6ff;
+      border-color:#3b82f6;
+      color:#1d4ed8;
+    }
+    .pi-pay-type-btn.active-fixed:hover {
+      background:#dbeafe;
+    }
+
+    /* 선택 상태 — 출근일수에 따름 (노란색 계열) */
+    .pi-pay-type-btn.active-daily {
+      background:#fef3c7;
+      border-color:#f59e0b;
+      color:#92400e;
+    }
+    .pi-pay-type-btn.active-daily:hover {
+      background:#fde68a;
+    }
+
+    /* 금액 입력창 오른쪽 '원' 단위 표시 래퍼 */
+    .amount-wrap {
+      position:relative;
+      display:flex;
+      align-items:center;
+    }
+    .amount-wrap input[data-amount] {
+      padding-right:28px;
+      width:100%;
+      box-sizing:border-box;
+    }
+    .amount-wrap::after {
+      content:"원";
+      position:absolute;
+      right:10px;
+      font-size:12px;
+      font-weight:600;
+      color:#9ca3af;
+      pointer-events:none;
+      white-space:nowrap;
+    }
+
+    /* 통상임금 포함/제외 힌트 텍스트 */
+    .pi-pay-type-hint {
+      font-size:11px;
+      font-weight:600;
+      color:#9ca3af;
+      line-height:1;
+      padding-left:1px;
+      margin-top:4px;
+    }
