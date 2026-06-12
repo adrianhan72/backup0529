@@ -446,12 +446,16 @@ function loadPITargetList(){
         statusBadge = `<span style="display:inline-flex;align-items:center;gap:4px;background:#fff7ed;color:#c2410c;border:1px solid #fdba74;border-radius:6px;padding:3px 10px;font-size:11.5px;font-weight:700;"><i class="fas fa-exclamation-circle"></i> 미입력</span>`;
       }
 
-      // ⑤ 관리 버튼: isDraft → '이어 입력'(파랑), isPaid → '수정'(보라), else → '입력'(초록)
+      // ⑤ 관리 버튼: isDraft → '이어 입력'(파랑)+'삭제'(빨강), isPaid → '수정'(보라), else → '입력'(초록)
       let actionBtn;
       if(isDraft){
         actionBtn = `<button onclick="selectPITarget('${emp.id}','${contract.id}','${draftId}')"
           style="display:inline-flex;align-items:center;gap:5px;padding:7px 16px;background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">
           <i class="fas fa-play-circle"></i> 이어 입력
+        </button>
+        <button onclick="deletePIDraft('${draftId}','${emp.name}')"
+          style="display:inline-flex;align-items:center;gap:5px;padding:7px 12px;background:#fee2e2;color:#dc2626;border:1px solid #fca5a5;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin-left:6px;">
+          <i class="fas fa-trash-alt"></i> 삭제
         </button>`;
       } else if(isPaid){
         actionBtn = `<button onclick="selectPITarget('${emp.id}','${contract.id}')"
@@ -494,6 +498,37 @@ function hidePITargetList(){
   if(sec) sec.style.display='none';
   // pi-all-draft-banner 복원
   if(typeof renderPIAllDraftBanner === 'function') renderPIAllDraftBanner();
+}
+
+/**
+ * 급여 입력 임시저장 삭제
+ * @param {string} draftId  - 삭제할 payroll 레코드 ID (is_draft=true)
+ * @param {string} empName  - 직원명 (확인 다이얼로그용)
+ */
+async function deletePIDraft(draftId, empName){
+  if(!draftId){ toast('삭제할 임시저장 데이터가 없습니다.', 'error'); return; }
+  const draft = (allPayrolls||[]).find(p => p.id === draftId);
+  if(!draft || !draft.is_draft){
+    toast('임시저장 급여 데이터만 삭제할 수 있습니다.', 'error');
+    return;
+  }
+  const yr = draft.pay_year || '';
+  const mo = draft.pay_month ? String(draft.pay_month).padStart(2,'0') : '';
+  const label = (yr && mo) ? `${yr}년 ${mo}월` : '';
+  if(!confirm(`[${empName}] ${label} 임시저장 급여를 삭제하시겠습니까?\n\n삭제 후 복구할 수 없습니다.`)) return;
+
+  try {
+    await api(`../tables/payrolls/${draftId}`, { method: 'DELETE' });
+    const idx = (allPayrolls||[]).findIndex(p => p.id === draftId);
+    if(idx !== -1) allPayrolls.splice(idx, 1);
+    // 목록 새로고침
+    if(typeof loadPITargetList === 'function') loadPITargetList();
+    if(typeof renderPIAllDraftBanner === 'function') renderPIAllDraftBanner();
+    toast(`${empName} ${label} 임시저장 급여가 삭제되었습니다.`, 'success');
+  } catch(e) {
+    console.error('[deletePIDraft]', e);
+    toast('삭제에 실패했습니다.', 'error');
+  }
 }
 
 /**

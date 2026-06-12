@@ -1845,7 +1845,7 @@ function renderContracts(){
         ${stName==='서류미비'
           ? `<button class="btn btn-sm" style="background:#d97706;color:#fff;border:1px solid #d97706;font-size:11.5px;font-weight:600;gap:4px;display:inline-flex;align-items:center;margin-left:4px;" onclick="openContractForUpload('${c.id}')"><i class="fas fa-upload"></i> 서류 업로드</button>`
           : stName==='임시저장'
-            ? '' // 임시저장: 계속 작성 버튼만 (2번째 버튼 문서 없음)
+            ? `<button class="btn btn-sm" style="background:#fee2e2;color:#dc2626;border:1px solid #fca5a5;font-size:11.5px;font-weight:600;gap:4px;display:inline-flex;align-items:center;margin-left:4px;" onclick="deleteDraftContract('${c.id}')"><i class="fas fa-trash-alt"></i> 삭제</button>`
             : `<button class="btn btn-sm" style="background:#0f172a;color:#fff;border:1px solid #0f172a;font-size:11.5px;font-weight:600;gap:4px;display:inline-flex;align-items:center;margin-left:4px;" onclick="openContractPrintModal('${c.id}')"><i class="fas fa-file-contract"></i> 계약서</button>`
         }
       </td>
@@ -8384,4 +8384,32 @@ ${_BRAND_SIG}`,
 function deleteContract(id){
   // 근로계약 보존 정책: 삭제 불가 (보존 의무 준수)
   toast('근로계약서는 보존 정책에 따라 삭제할 수 없습니다.','error');
+}
+
+// 임시저장 계약 삭제 (작성 미완료 draft 전용 — 직원 미생성 상태이므로 레코드만 제거)
+async function deleteDraftContract(id){
+  const c = (allContracts||[]).find(x => x.id === id);
+  if(!c || !c.is_draft){
+    toast('임시저장 계약서만 삭제할 수 있습니다.', 'error');
+    return;
+  }
+  const empName = c.employee_id
+    ? (getEmpName(c.employee_id) || '해당 직원')
+    : ((() => { try{ return JSON.parse(c.draft_employee_info||'{}').name||''; }catch(e){return '';} })() || '신규 임시저장');
+  const savedAt = c.draft_saved_at
+    ? new Date(c.draft_saved_at).toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})
+    : '';
+  if(!confirm(`[${empName}]${savedAt?' ('+savedAt+')':''} 임시저장 계약서를 삭제하시겠습니까?\n\n삭제 후 복구할 수 없습니다.`)) return;
+
+  try {
+    await api(`../tables/contracts/${id}`, { method: 'DELETE' });
+    const idx = allContracts.findIndex(x => x.id === id);
+    if(idx !== -1) allContracts.splice(idx, 1);
+    renderContracts();
+    if(typeof _renderContractsBanners === 'function') _renderContractsBanners();
+    toast(`임시저장 계약서가 삭제되었습니다.`, 'success');
+  } catch(e) {
+    console.error('[deleteDraftContract]', e);
+    toast('삭제에 실패했습니다.', 'error');
+  }
 }
