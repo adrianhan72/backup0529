@@ -1140,18 +1140,18 @@ const _CT_PAY_TYPE_ROWS = {
 
 function setCTPayType(field, type){
   _ctPayTypes[field] = type;
-  // 힌트 텍스트로 임금유형(통상임금/평균임금 포함여부)을 표시하는 항목
-  // car·meal·research·communication·fitness·self_dev·book·overseas 는 평균임금 수당 → '평균임금 포함/제외'
+  // 레이블 내 span#ct-*-type-hint 로 임금유형 표시 (통일된 방식)
+  // car·meal·research·communication·fitness·self_dev·book·overseas 는 평균임금 수당
   const hintOnlyFields = ['car','meal','research','communication','fitness','self_dev','book','overseas'];
   if(hintOnlyFields.includes(field)){
     const htmlField = field.replace(/_/g, '-');
     const hintEl = document.getElementById(`ct-${htmlField}-type-hint`);
     if(hintEl){
-      // 평균임금 항목: 매월 정기지급(fixed) = 평균임금 포함, 출근일수 비례/영수증청구 = 평균임금 제외
-      const labels = { fixed: '평균임금 포함', daily: '평균임금 제외 (출근일수 비례)', receipt: '평균임금 제외 (영수증 청구)' };
-      const colors = { fixed: '#9ca3af', daily: '#f59e0b', receipt: '#f59e0b' };
-      hintEl.textContent = labels[type] || '평균임금 포함';
-      hintEl.style.color  = colors[type]  || '#9ca3af';
+      // 평균임금 항목: fixed = 평균임금, daily/receipt = 평균임금 제외
+      const labels = { fixed: '(평균임금)', daily: '(평균임금 제외)', receipt: '(평균임금 제외)' };
+      hintEl.textContent = labels[type] || '(평균임금)';
+      // CSS 클래스로 색상 제어
+      hintEl.className = 'ct-wage-type-tag' + (type === 'fixed' ? ' avg' : ' avg-excluded');
     }
 
     // ── 통상임금 불포함(daily/receipt) 항목은 근로계약 임금조건에서 DOM 완전 제거 ──
@@ -1251,11 +1251,10 @@ function applyCTAllowanceConfig(cfg, clearValues = false){
   if(cfg && cfg.childcare){
     const ccHint = document.getElementById('ct-childcare-type-hint');
     if(ccHint){
-      // 출산보육수당은 평균임금 항목: 매월 정기지급(fixed) = 평균임금 포함, 출근일수 비례 = 평균임금 제외
-      const labels = { fixed: '평균임금 포함', daily: '평균임금 제외 (출근일수 비례)' };
-      const colors = { fixed: '#9ca3af', daily: '#f59e0b' };
-      ccHint.textContent = labels[_ctChildcarePayType] || '평균임금 포함';
-      ccHint.style.color  = colors[_ctChildcarePayType]  || '#9ca3af';
+      // 출산보육수당은 평균임금 항목: fixed = 평균임금, daily = 평균임금 제외
+      const labels = { fixed: '(평균임금)', daily: '(평균임금 제외)' };
+      ccHint.textContent = labels[_ctChildcarePayType] || '(평균임금)';
+      ccHint.className = 'ct-wage-type-tag' + (_ctChildcarePayType === 'fixed' ? ' avg' : ' avg-excluded');
     }
   }
   // ── custom_items 동적 행 생성 ──
@@ -1289,12 +1288,12 @@ function _applyCTCustomItems(items, clearValues){
     row.id = rowId;
     row.dataset.customKey = key;
     row.dataset.payType   = pt;
-    row.innerHTML = `<label>${_ctEscHtml(label)}</label>`
+    // custom 항목 힌트: pay_type='fixed' → (통상임금), 그 외 → (평균임금) — 레이블 인라인 span으로 통일
+    const tagClass = pt === 'fixed' ? 'ct-wage-type-tag' : 'ct-wage-type-tag avg';
+    const tagText  = pt === 'fixed' ? '(통상임금)' : '(평균임금)';
+    row.innerHTML = `<label>${_ctEscHtml(label)}<span class="${tagClass}" id="ct-${key}-type-hint">${tagText}</span></label>`
       + `<div class="amount-wrap"><input type="text" inputmode="numeric" id="${inputId}" data-amount placeholder="0"`
-      + ` oninput="onAmountInput(this,calcContractSalary)" /></div>`
-      // custom 항목 힌트: pay_type='fixed' → 통상임금 포함, 그 외(평균임금) → 평균임금 포함
-      + `<div class="pi-pay-type-hint" id="ct-${key}-type-hint" style="color:#9ca3af;">`
-      + `${pt==='fixed'?'통상임금 포함':'평균임금 포함'}</div>`;
+      + ` oninput="onAmountInput(this,calcContractSalary)" /></div>`;
 
     if(anchor && anchor.parentNode){
       anchor.parentNode.insertBefore(row, anchor.nextSibling);

@@ -532,12 +532,17 @@
       white-space:nowrap;
     }
 
-    /* 통상임금 포함/제외 힌트 텍스트 */
-    .pi-pay-type-hint {
-      font-size:11px;
-      font-weight:600;
-      color:#9ca3af;
-      line-height:1;
-      padding-left:1px;
-      margin-top:4px;
+    /* 통상임금 포함/제외 힌트 텍스트 — 레이블 인라인 태그로 통일 */
+    .ct-wage-type-tag {
+      font-size:10.5px;
+      font-weight:500;
+      color:#6b7280;
+      margin-left:5px;
+      white-space:nowrap;
+    }
+    .ct-wage-type-tag.avg {
+      color:#d97706;
+    }
+    .ct-wage-type-tag.avg-excluded {
+      color:#ef4444;
     }
