@@ -1745,11 +1745,9 @@ function _toggleContAlertCard(headEl){
 }
 
 function renderContracts(){
-  // 고객사 선택 여부와 무관하게 상단 배너 항상 갱신
-  _renderContractsBanners();
-
-  // 고객사 미선택 시 목록 숨김
+  // 고객사 미선택 시: 전체 기준 배너 갱신 + 목록 숨김
   if(!currentContCompanyId){
+    _renderContractsBanners();
     document.getElementById('cont-list-section').style.display='none';
     return;
   }

@@ -452,10 +452,11 @@ function showPage(name,el){
       const _gco = allCompanies.find(c=>c.id===currentGlobalCompanyId);
       if(_gco){ if(el) el.classList.add('active'); selectContCompany(currentGlobalCompanyId, _gco.company_name); return; }
     }
-    // 선택된 고객사 없음 — 고객사 선택 화면 표시
+    // 선택된 고객사 없음 — 고객사 선택 화면 표시 + 전사 기준 배너 갱신
     renderContCompanyList();
     document.getElementById('cont-company-select-card').style.display = '';
     document.getElementById('cont-list-section').style.display = 'none';
+    if(typeof _renderContractsBanners === 'function') _renderContractsBanners();
   }
   if(name==='payroll-input'){
     // 페이지 진입 시 년월 option 목록 재생성

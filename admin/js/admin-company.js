@@ -582,6 +582,7 @@ async function saveCompany(){
 
   // ── 급여 항목 설정: 체크된 항목의 통상임금 포함여부 미선택 유효성 검사 ──
   const _CM_AW_PT_LABEL = {
+    childcare:'출산·보육수당',
     car:'차량지원비', meal:'식대', research:'연구활동비',
     communication:'통신비', fitness:'체력증진비',
     self_dev:'자기계발비', book:'도서지원비', overseas:'해외근무수당'
@@ -750,14 +751,28 @@ function _fmtHistVal(val, field){
     try {
       const cfg = typeof val === 'string' ? JSON.parse(val) : (val || {});
       const lines = [];
-      const labels = {
-        site:'현장수당', position:'직책수당', skill:'기술수당',
-        license:'면허수당', remote_area:'벽지수당',
+      // pay_type select 있는 항목 (childcare/car/meal 포함 — 전체 _CM_AW_PT_FIELDS 기준)
+      const ptLabels = {
+        childcare:'출산·보육수당',
+        car:'차량지원비', meal:'식대',
         research:'연구활동비', communication:'통신비', fitness:'체력증진비',
         self_dev:'자기계발비', book:'도서지원비', overseas:'해외근무수당',
       };
-      Object.entries(labels).forEach(([k, lbl]) => {
-        if(cfg[k]) lines.push(`${lbl}(${cfg[k+'_pay_type']||'포함'})`);
+      // pay_type select 없는 항목 (체크만)
+      const simpleLabels = {
+        site:'현장수당', position:'직책수당', skill:'기술수당',
+        license:'면허수당', remote_area:'벽지수당', regular_bonus:'정기상여',
+      };
+      const _PT_KO = { fixed:'정기지급(통상O)', daily:'출근일수(통상O)', non_fixed:'비통상임금', '':'', undefined:'' };
+      Object.entries(ptLabels).forEach(([k, lbl]) => {
+        if(cfg[k]){
+          const ptRaw = cfg[k+'_pay_type'] || '';
+          const ptStr = _PT_KO[ptRaw] || ptRaw || '포함';
+          lines.push(`${lbl}(${ptStr})`);
+        }
+      });
+      Object.entries(simpleLabels).forEach(([k, lbl]) => {
+        if(cfg[k]) lines.push(lbl);
       });
       if(Array.isArray(cfg.custom_items)){
         cfg.custom_items.forEach(it => { if(it.label) lines.push(it.label); });
@@ -1163,6 +1178,12 @@ function selectContCompany(companyId, companyName){
     `<i class="fas fa-file-signature" style="margin-right:6px;"></i>${companyName} 근로계약 목록`;
   document.getElementById('cont-company-select-card').style.display = 'none';
   document.getElementById('cont-list-section').style.display = 'block';
+  // 고객사 선택 시: 전사 기준 배너(임시저장·날인본·동의서) 즉시 숨김
+  // → 선택된 고객사의 계약 상태는 목록 테이블 및 알림 카드로 표시됨
+  ['contracts-draft-banner','contracts-signed-banner','contracts-consent-banner'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el){ el.style.display = 'none'; el.innerHTML = ''; }
+  });
   document.getElementById('cont-search').value = '';
   const _ecEl = document.getElementById('cont-filter-empcat'); if(_ecEl) _ecEl.value='';
   const _stEl = document.getElementById('cont-filter-status'); if(_stEl) _stEl.value='';
@@ -1179,6 +1200,8 @@ function clearContCompanySelect(){
   document.getElementById('cont-list-section').style.display = 'none';
   document.getElementById('cont-company-search').value = '';
   renderContCompanyList();
+  // 고객사 해제 시: 전사 기준 배너 복원 (미선택 상태로 돌아감)
+  if(typeof _renderContractsBanners === 'function') _renderContractsBanners();
 }
 
 // 고객사 관리 카드 → 근로계약서 관리 바로가기
