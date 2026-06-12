@@ -3914,43 +3914,43 @@
                   <input type="checkbox" id="cm-aw-regular-bonus" class="cm-aw-cb" />
                   <span>정기 상여금</span>
                 </label>
-                <span style="font-size:10.5px;color:#6b7280;align-self:center;">통상임금 포함</span>
+                <span style="font-size:10.5px;color:#6b7280;align-self:center;">통상임금</span>
               </div>
 
-              <!-- 출산·보육수당 — 통상임금 포함여부 설정, 부양가족 수·금액은 급여 입력에서 편집 -->
+              <!-- 출산·보육수당 — 평균임금 포함여부 설정, 부양가족 수·금액은 급여 입력에서 편집 -->
               <div class="cm-aw-row">
                 <label class="cm-aw-check-label">
                   <input type="checkbox" id="cm-aw-childcare" class="cm-aw-cb" onchange="cmAwTogglePayType('childcare',this.checked)" />
                   <span>출산·보육수당</span>
                 </label>
                 <select id="cm-aw-childcare-pt" class="cm-aw-pt-select" disabled>
-                  <option value="">통상임금 포함여부</option>
+                  <option value="">평균임금 포함여부</option>
                   <option value="fixed">매월 정기지급</option>
                   <option value="daily">출근일수에 따름</option>
                 </select>
               </div>
 
-              <!-- 차량지원비 — 통상임금 포함여부만 설정, 금액은 근로계약/급여에서 입력 -->
+              <!-- 차량지원비 — 평균임금 포함여부만 설정, 금액은 근로계약/급여에서 입력 -->
               <div class="cm-aw-row">
                 <label class="cm-aw-check-label">
                   <input type="checkbox" id="cm-aw-car" class="cm-aw-cb" onchange="cmAwTogglePayType('car',this.checked)" />
                   <span>차량지원비</span>
                 </label>
                 <select id="cm-aw-car-pt" class="cm-aw-pt-select" disabled>
-                  <option value="">통상임금 포함여부</option>
+                  <option value="">평균임금 포함여부</option>
                   <option value="fixed">매월 정기지급</option>
                   <option value="daily">출근일수에 따름</option>
                 </select>
               </div>
 
-              <!-- 식대 — 통상임금 포함여부만 설정, 금액은 근로계약/급여에서 입력 -->
+              <!-- 식대 — 평균임금 포함여부만 설정, 금액은 근로계약/급여에서 입력 -->
               <div class="cm-aw-row">
                 <label class="cm-aw-check-label">
                   <input type="checkbox" id="cm-aw-meal" class="cm-aw-cb" onchange="cmAwTogglePayType('meal',this.checked)" />
                   <span>식대</span>
                 </label>
                 <select id="cm-aw-meal-pt" class="cm-aw-pt-select" disabled>
-                  <option value="">통상임금 포함여부</option>
+                  <option value="">평균임금 포함여부</option>
                   <option value="fixed">매월 정기지급</option>
                   <option value="daily">출근일수에 따름</option>
                 </select>
@@ -3962,6 +3962,7 @@
                   <input type="checkbox" id="cm-aw-site" class="cm-aw-cb" />
                   <span>현장수당</span>
                 </label>
+                <span style="font-size:10.5px;color:#6b7280;align-self:center;">통상임금</span>
               </div>
 
               <!-- 직책수당 — 통상임금 항상 포함 -->
@@ -3970,6 +3971,7 @@
                   <input type="checkbox" id="cm-aw-position" class="cm-aw-cb" />
                   <span>직책수당</span>
                 </label>
+                <span style="font-size:10.5px;color:#6b7280;align-self:center;">통상임금</span>
               </div>
 
               <!-- 기술수당 — 통상임금 항상 포함 -->
@@ -3978,6 +3980,7 @@
                   <input type="checkbox" id="cm-aw-skill" class="cm-aw-cb" />
                   <span>기술수당</span>
                 </label>
+                <span style="font-size:10.5px;color:#6b7280;align-self:center;">통상임금</span>
               </div>
 
               <!-- 면허수당 — 통상임금 항상 포함 -->
@@ -3986,6 +3989,7 @@
                   <input type="checkbox" id="cm-aw-license" class="cm-aw-cb" />
                   <span>면허수당</span>
                 </label>
+                <span style="font-size:10.5px;color:#6b7280;align-self:center;">통상임금</span>
               </div>
 
               <!-- 벽지수당 — 통상임금 항상 포함 -->
@@ -3994,6 +3998,7 @@
                   <input type="checkbox" id="cm-aw-remote-area" class="cm-aw-cb" />
                   <span>벽지수당</span>
                 </label>
+                <span style="font-size:10.5px;color:#6b7280;align-self:center;">통상임금</span>
               </div>
 
               <!-- 연구활동비 — pay_type: fixed/daily -->
@@ -4003,7 +4008,7 @@
                   <span>연구활동비</span>
                 </label>
                 <select id="cm-aw-research-pt" class="cm-aw-pt-select" disabled>
-                  <option value="">통상임금 포함여부</option>
+                  <option value="">평균임금 포함여부</option>
                   <option value="fixed">매월 정기지급</option>
                   <option value="daily">출근일수에 따름</option>
                 </select>
@@ -4016,7 +4021,7 @@
                   <span>통신비</span>
                 </label>
                 <select id="cm-aw-communication-pt" class="cm-aw-pt-select" disabled>
-                  <option value="">통상임금 포함여부</option>
+                  <option value="">평균임금 포함여부</option>
                   <option value="fixed">매월 정기지급</option>
                   <option value="daily">출근일수에 따름</option>
                 </select>
@@ -4029,7 +4034,7 @@
                   <span>체력증진비</span>
                 </label>
                 <select id="cm-aw-fitness-pt" class="cm-aw-pt-select" disabled>
-                  <option value="">통상임금 포함여부</option>
+                  <option value="">평균임금 포함여부</option>
                   <option value="fixed">매월 정기지급</option>
                   <option value="receipt">영수증 청구</option>
                 </select>
@@ -4042,7 +4047,7 @@
                   <span>자기계발비</span>
                 </label>
                 <select id="cm-aw-self-dev-pt" class="cm-aw-pt-select" disabled>
-                  <option value="">통상임금 포함여부</option>
+                  <option value="">평균임금 포함여부</option>
                   <option value="fixed">매월 정기지급</option>
                   <option value="receipt">영수증 청구</option>
                 </select>
@@ -4055,7 +4060,7 @@
                   <span>도서지원비</span>
                 </label>
                 <select id="cm-aw-book-pt" class="cm-aw-pt-select" disabled>
-                  <option value="">통상임금 포함여부</option>
+                  <option value="">평균임금 포함여부</option>
                   <option value="fixed">매월 정기지급</option>
                   <option value="receipt">영수증 청구</option>
                 </select>
@@ -4068,7 +4073,7 @@
                   <span>해외근무수당</span>
                 </label>
                 <select id="cm-aw-overseas-pt" class="cm-aw-pt-select" disabled>
-                  <option value="">통상임금 포함여부</option>
+                  <option value="">평균임금 포함여부</option>
                   <option value="fixed">매월 정기지급</option>
                   <option value="receipt">영수증 청구</option>
                 </select>

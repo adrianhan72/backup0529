@@ -596,7 +596,7 @@ async function saveCompany(){
       sel.style.borderColor = '#e94560';
       sel.focus();
       setTimeout(() => { sel.style.borderColor = ''; }, 2000);
-      return toast(`[${_CM_AW_PT_LABEL[f]}] 통상임금 포함여부(지급 방식)를 선택하세요.`, 'error');
+      return toast(`[${_CM_AW_PT_LABEL[f]}] 평균임금 포함여부(지급 방식)를 선택하세요.`, 'error');
     }
   }
 
@@ -1018,8 +1018,8 @@ function _cmAppendCustomRow(key, label, payType){
       style="flex:1;min-width:120px;padding:5px 8px;font-size:13px;border:1px solid #d1d5db;border-radius:5px;outline:none;" />
     <select class="cm-custom-pt-select"
       style="padding:5px 6px;font-size:12px;border:1px solid #d1d5db;border-radius:5px;color:#374151;background:#fff;">
-      <option value="fixed"  ${payType==='fixed'   ? 'selected':''}>통상임금 포함</option>
-      <option value="nonfixed" ${payType==='nonfixed'? 'selected':''}>통상임금 제외</option>
+      <option value="fixed"  ${payType==='fixed'   ? 'selected':''}>평균임금 포함</option>
+      <option value="nonfixed" ${payType==='nonfixed'? 'selected':''}>평균임금 제외</option>
     </select>
     <button type="button" onclick="cmRemoveCustomItem('${key}')"
       style="flex-shrink:0;padding:4px 8px;font-size:12px;color:#ef4444;background:#fff0f0;border:1px solid #fca5a5;border-radius:5px;cursor:pointer;">

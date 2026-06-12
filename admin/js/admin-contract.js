@@ -1288,9 +1288,9 @@ function _applyCTCustomItems(items, clearValues){
     row.id = rowId;
     row.dataset.customKey = key;
     row.dataset.payType   = pt;
-    // custom 항목 힌트: pay_type='fixed' → (통상임금), 그 외 → (평균임금) — 레이블 인라인 span으로 통일
-    const tagClass = pt === 'fixed' ? 'ct-wage-type-tag' : 'ct-wage-type-tag avg';
-    const tagText  = pt === 'fixed' ? '(통상임금)' : '(평균임금)';
+    // custom 항목은 pay_type 무관하게 항상 평균임금 분류 — (평균임금) 또는 (평균임금 제외) 표시
+    const tagClass = pt === 'nonfixed' ? 'ct-wage-type-tag avg-excluded' : 'ct-wage-type-tag avg';
+    const tagText  = pt === 'nonfixed' ? '(평균임금 제외)' : '(평균임금)';
     row.innerHTML = `<label>${_ctEscHtml(label)}<span class="${tagClass}" id="ct-${key}-type-hint">${tagText}</span></label>`
       + `<div class="amount-wrap"><input type="text" inputmode="numeric" id="${inputId}" data-amount placeholder="0"`
       + ` oninput="onAmountInput(this,calcContractSalary)" /></div>`;
@@ -1451,31 +1451,30 @@ function calcContractSalary(){
   const fixedHolPay   = getAmountVal('ct-fixed-hol-pay')   || 0;
   const fixedOtSum    = fixedOtPay + fixedNightPay + fixedHolPay;  // 고정OT수당 합계
 
-  // ── custom_items 분류 합산 ──
-  // 고객사에서 '통상임금 포함'으로 설정한 항목 → stdCustomSum
-  // 고객사에서 '통상임금 제외'로 설정한 항목 → avgCustomSum
-  // ※ 두 분류 모두 매월 정기지급되므로 약정임금에는 모두 포함
-  let stdCustomSum = 0, avgCustomSum = 0;
+  // ── custom_items 합산 ──
+  // 기타 고정지급 수당(custom_items)은 항목명을 직접 입력하는 항목으로,
+  // pay_type(평균임금 포함/제외) 설정과 무관하게 모두 평균임금 수당합에 산입한다.
+  // → 통상임금 역산 기본급 계산 시 기본급을 줄이는 방향으로 반영됨.
+  // ※ pay_type='nonfixed'(평균임금 제외)인 항목은 약정임금 합산에서도 제외.
+  let customFixedSum = 0, customNonfixedSum = 0;
   document.querySelectorAll('.ct-custom-item-row').forEach(row => {
-    const key = row.dataset.customKey || '';
     const pt  = row.dataset.payType   || 'fixed';
-    const amt = getAmountVal(`ct-${key}`) || 0;
-    if(pt === 'fixed') stdCustomSum += amt;  // 통상임금 포함
-    else               avgCustomSum += amt;  // 통상임금 제외(평균임금)
+    const amt = getAmountVal(`ct-${row.dataset.customKey || ''}`) || 0;
+    if(pt === 'nonfixed') customNonfixedSum += amt;  // 평균임금 제외 → 약정임금 합산 제외
+    else                  customFixedSum    += amt;  // 평균임금 포함 (fixed)
   });
 
   // ── 수당 분류 합계 ──
   //
   // [통상임금 수당합]
   //   직책수당 + 정기상여금 + 현장수당 + 기술수당 + 면허수당 + 벽지수당
-  //   + 고객사 custom(통상임금 포함으로 설정)
-  const stdAllowSum = position + regularBonus + site_ct + skill_ct + license_ct + remoteArea
-                    + stdCustomSum;
+  //   ※ custom_items는 통상임금 수당합에 포함되지 않음 (모두 평균임금 분류)
+  const stdAllowSum = position + regularBonus + site_ct + skill_ct + license_ct + remoteArea;
   //
-  // [평균임금 수당합 — 매월 정기지급 항목만]
+  // [평균임금 수당합 — 매월 정기지급(fixed) 항목만]
   //   차량지원비(fixed), 식대(fixed), 출산보육수당(fixed), 연구활동비(fixed),
   //   통신비(fixed), 체력증진비(fixed), 자기계발비(fixed), 도서지원비(fixed),
-  //   해외근무수당(fixed), 고객사 custom(통상임금 제외 + 매월 정기지급)
+  //   해외근무수당(fixed), 기타 고정지급 수당 custom(평균임금 포함으로 설정)
   const avgAllowSum = (_isFixedAllow('car')           ? car           : 0)
                     + (_isFixedAllow('meal')          ? meal          : 0)
                     + (_ctChildcarePayType === 'fixed' ? childcare_ct : 0)
@@ -1485,7 +1484,7 @@ function calcContractSalary(){
                     + (_isFixedAllow('self_dev')      ? selfDev_ct    : 0)
                     + (_isFixedAllow('book')          ? book_ct       : 0)
                     + (_isFixedAllow('overseas')      ? overseas_ct   : 0)
-                    + avgCustomSum;
+                    + customFixedSum;
 
   // ── 고정급 = 통상임금수당합 + 고정OT수당합 + 평균임금수당합 ──
   const fixedSum = stdAllowSum + fixedOtSum + avgAllowSum;
