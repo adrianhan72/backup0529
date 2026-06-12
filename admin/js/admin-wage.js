@@ -689,7 +689,9 @@ function renderWageLedger(){
     'bonus_pay','meal_allowance','self_driving_allowance','transportation_allowance',
     'remote_area_allowance','research_allowance','childcare_allowance',
     'overtime_pay','night_pay','holiday_pay','annual_leave_pay',
+    'position_allowance','site_allowance',
     'license_allowance','skill_allowance','communication_pay','performance_pay',
+    'fitness_allowance','self_dev_allowance','book_allowance','overseas_allowance',
     'actual_expense_pay','etc_allowance','other_pay',
     'gross_pay',
     'national_pension','health_insurance','employment_insurance','long_term_care',
@@ -703,69 +705,13 @@ function renderWageLedger(){
   const wonNum = v => (!v || v === 0) ? 0 : Number(v);
   const num    = v => { const n = Number(v); return (!v || n === 0) ? '-' : n.toLocaleString('ko-KR'); };
 
-  // ══ 6행 헤더 테이블 렌더링 ══
+  // ══ 동적 헤더 테이블 렌더링 ══
   // 열 구성 (총 13열):
   //  C1: 사원번호  C2: 성명  C3~C8: 지급항목(6열)  C9~C12: 공제항목(4열)  C13: 영수인
   //
-  // 데이터가 전혀 없는 항목(전 직원 0)은 th를 공란으로 표시
-
-  // ── 전체 pays 기준으로 각 항목 유무 판별 ──
-  const hasData = f => pays.some(p => p[f] && Number(p[f]) !== 0);
-
-  // ── 차량유지비: 항상 self_driving 고정 (레이블 '차량유지비') ──
-  const _transportLabel = '차량유지비';
-  // 직원별 transport 값 가져오기 헬퍼 (하위호환: 구 transportation_allowance 필드도 합산)
-  const _transportVal = p => p.self_driving_allowance || p.transportation_allowance || 0;
-
-  // 지급항목 th 레이블 정의 (데이터 없으면 공란)
-  // 행2: C3=기본급, C4=정기상여금, C5=식대, C6=차량유지비(기본)/교통비/벽지수당(선택), C7~C8=공란
-  // 요청 스펙대로 행·열 매핑
-  // [행][열-3] (0-indexed, 지급 cols 0~5)
-  const PAY_TH = [
-    // 행2 (index 0): C3=기본급, C4=정기상여금, C5=식대, C6=차량교통비(동적), C7=공란, C8=공란
-    [ '기본급',
-      '정기상여금',
-      '식대',
-      _transportLabel,
-      '',
-      '' ],
-    // 행3 (index 1): C3=연구활동비, C4=육아수당, C5=연장근로수당, C6=야간근로수당, C7=휴일근로수당, C8=주휴수당
-    [ '연구활동비',
-      '육아수당',
-      '연장근로수당',
-      '야간근로수당',
-      '휴일근로수당',
-      '주휴수당' ],
-    // 행4 (index 2): C3=연차수당, C4=면허수당, C5=기술수당, C6=통신비, C7=성과급, C8=실비변상적급여
-    [ '연차수당',
-      '면허수당',
-      '기술수당',
-      '통신비',
-      '성과급',
-      '실비변상적급여' ],
-    // 행5 (index 3): C3~C6=공란(추가 입력 항목용), C7=기타, C8=공란
-    [ '', '', '', '',
-      '기타',
-      '' ],
-    // 행6 (index 4): C3~C6=공란, C7=공란, C8=지급합계(bold)
-    [ '', '', '', '',
-      '',
-      '지급합계' ],
-  ];
-
-  // 공제항목 th 레이블 정의 (C9~C12, index 0~3) — 데이터 유무 무관 항상 표기
-  const DED_TH = [
-    // 행2: C9=국민연금, C10=건강보험, C11=고용보험, C12=장기요양보험료
-        [ '국민연금', '건강보험', '고용보험', '장기요양보험료' ],
-    // 행3: C9=국민연금소급분, C10=건강보험료정산, C11=고용보험정산, C12=장기요양보험정산
-    [ '', '건강보험연말정산', '', '장기요양보험연말정산' ],
-    // 행4: C9~C12 모두 공란
-    [ '', '', '', '' ],
-    // 행5: C9=소득세, C10=지방소득세, C11=소득세연말정산, C12=공란
-    [ '소득세', '지방소득세', '소득세연말정산', '' ],
-    // 행6: C9 공란, C10=기타공제, C11=공제합계(bold), C12=차인지급액(bold)
-    [ '', '기타공제', '공제합계', '차인지급액' ],
-  ];
+  // 지급항목은 고객사 allowance_config에 따라 활성 슬롯만 표시.
+  // 슬롯을 6개씩 묶어 행으로 배치하고, 마지막 행의 마지막 슬롯은 항상 '지급합계'.
+  // 최소 행 수는 인적사항(부서/직급/입사일/퇴사일) 4행 + 헤더 행 1행 = 5행.
 
   // ── 금액 포맷 헬퍼 ──
   const fmtV = v => {
@@ -777,27 +723,183 @@ function renderWageLedger(){
     return (!v || n === 0) ? '' : `<strong>${n.toLocaleString('ko-KR')}</strong>`;
   };
 
-  // ── 직원별 데이터 행 (데이터 rows) 값 배열 반환 ──
-  // 지급 C3~C8 (6개), 공제 C9~C12 (4개) 각 행별
+  // ── 고객사 allowance_config 읽기 ──
+  const _cfg = allCompanies.find(x => x.id === _wlCompanyId)?.allowance_config || {};
+
+  // ── 지급 슬롯 목록 구성 ──
+  // 각 슬롯: { lbl: 헤더 텍스트, getVal: p => 값(number), getSumVal: () => 합계값 }
+  // 슬롯 순서:
+  //   1) 기본급 (항상)
+  //   2) 통상임금 고정수당: 정기상여금, 직책수당, 현장수당, 기술수당, 면허수당, 벽지수당
+  //   3) 평균임금 수당: 식대, 차량유지비, 출산·보육수당, 연구활동비, 통신비,
+  //                    체력단련비, 자기계발비, 도서구입비, 해외근무수당
+  //   4) 기타 고정지급 custom items
+  //   5) 고정 항목: 연장근로수당, 야간근로수당, 휴일근로수당, 주휴수당, 연차수당, 성과급, 기타
+  //   마지막 슬롯(마지막 행 끝): 지급합계
+
+  const _paySlots = [];
+
+  // 1) 기본급 (항상)
+  _paySlots.push({ lbl:'기본급',
+    getVal: p => fmtV(p.base_salary),
+    getSumVal: () => fmtV(sums.base_salary) });
+
+  // 2) 통상임금 고정수당 (config 설정 시 포함)
+  if(_cfg.regular_bonus)
+    _paySlots.push({ lbl:'정기상여금',
+      getVal: p => fmtV(p.bonus_pay),
+      getSumVal: () => fmtV(sums.bonus_pay) });
+  if(_cfg.position)
+    _paySlots.push({ lbl:'직책수당',
+      getVal: p => fmtV(p.position_allowance),
+      getSumVal: () => fmtV(sums.position_allowance) });
+  if(_cfg.site)
+    _paySlots.push({ lbl:'현장수당',
+      getVal: p => fmtV(p.site_allowance),
+      getSumVal: () => fmtV(sums.site_allowance) });
+  if(_cfg.skill)
+    _paySlots.push({ lbl:'기술수당',
+      getVal: p => fmtV(p.skill_allowance),
+      getSumVal: () => fmtV(sums.skill_allowance) });
+  if(_cfg.license)
+    _paySlots.push({ lbl:'면허수당',
+      getVal: p => fmtV(p.license_allowance),
+      getSumVal: () => fmtV(sums.license_allowance) });
+  if(_cfg.remote_area)
+    _paySlots.push({ lbl:'벽지수당',
+      getVal: p => fmtV(p.remote_area_allowance),
+      getSumVal: () => fmtV(sums.remote_area_allowance) });
+
+  // 3) 평균임금 수당 (config 설정 시 포함)
+  if(_cfg.meal)
+    _paySlots.push({ lbl:'식대',
+      getVal: p => fmtV(p.meal_allowance),
+      getSumVal: () => fmtV(sums.meal_allowance) });
+  if(_cfg.car)
+    _paySlots.push({ lbl:'차량유지비',
+      getVal: p => fmtV(p.self_driving_allowance || p.transportation_allowance || 0),
+      getSumVal: () => fmtV((sums.self_driving_allowance||0)+(sums.transportation_allowance||0)) });
+  if(_cfg.childcare)
+    _paySlots.push({ lbl:'출산·보육수당',
+      getVal: p => fmtV(p.childcare_allowance),
+      getSumVal: () => fmtV(sums.childcare_allowance) });
+  if(_cfg.research)
+    _paySlots.push({ lbl:'연구활동비',
+      getVal: p => fmtV(p.research_allowance),
+      getSumVal: () => fmtV(sums.research_allowance) });
+  if(_cfg.communication)
+    _paySlots.push({ lbl:'통신비',
+      getVal: p => fmtV(p.communication_pay),
+      getSumVal: () => fmtV(sums.communication_pay) });
+  if(_cfg.fitness)
+    _paySlots.push({ lbl:'체력단련비',
+      getVal: p => fmtV(p.fitness_allowance),
+      getSumVal: () => fmtV(sums.fitness_allowance||0) });
+  if(_cfg.self_dev)
+    _paySlots.push({ lbl:'자기계발비',
+      getVal: p => fmtV(p.self_dev_allowance),
+      getSumVal: () => fmtV(sums.self_dev_allowance||0) });
+  if(_cfg.book)
+    _paySlots.push({ lbl:'도서구입비',
+      getVal: p => fmtV(p.book_allowance),
+      getSumVal: () => fmtV(sums.book_allowance||0) });
+  if(_cfg.overseas)
+    _paySlots.push({ lbl:'해외근무수당',
+      getVal: p => fmtV(p.overseas_allowance),
+      getSumVal: () => fmtV(sums.overseas_allowance||0) });
+
+  // 4) 기타 고정지급 custom items
+  (_cfg.custom_items || []).forEach(item => {
+    const key = item.key;
+    const lbl = item.label;
+    _paySlots.push({ lbl,
+      getVal: p => {
+        const ca = p.custom_allowances ? (typeof p.custom_allowances === 'string'
+          ? JSON.parse(p.custom_allowances) : p.custom_allowances) : {};
+        return fmtV(ca[key] || 0);
+      },
+      getSumVal: () => {
+        const total = pays.reduce((s, p) => {
+          const ca = p.custom_allowances ? (typeof p.custom_allowances === 'string'
+            ? JSON.parse(p.custom_allowances) : p.custom_allowances) : {};
+          return s + (Number(ca[key]) || 0);
+        }, 0);
+        return fmtV(total);
+      }
+    });
+  });
+
+  // 5) 고정 항목 (항상 포함)
+  _paySlots.push({ lbl:'연장근로수당',
+    getVal: p => fmtV(p.overtime_pay),
+    getSumVal: () => fmtV(sums.overtime_pay) });
+  _paySlots.push({ lbl:'야간근로수당',
+    getVal: p => fmtV(p.night_pay),
+    getSumVal: () => fmtV(sums.night_pay) });
+  _paySlots.push({ lbl:'휴일근로수당',
+    getVal: p => fmtV(p.holiday_pay),
+    getSumVal: () => fmtV(sums.holiday_pay) });
+  _paySlots.push({ lbl:'주휴수당',
+    getVal: p => fmtV(p.weekly_holiday_pay),
+    getSumVal: () => fmtV(sums.weekly_holiday_pay) });
+  _paySlots.push({ lbl:'연차수당',
+    getVal: p => fmtV(p.annual_leave_pay),
+    getSumVal: () => fmtV(sums.annual_leave_pay) });
+  _paySlots.push({ lbl:'성과급',
+    getVal: p => fmtV(p.performance_pay),
+    getSumVal: () => fmtV(sums.performance_pay) });
+  _paySlots.push({ lbl:'기타',
+    getVal: p => fmtV((p.etc_allowance||0)+(p.other_pay||0)),
+    getSumVal: () => fmtV(sums.etc_allowance + sums.other_pay) });
+
+  // ── 행 패킹 ──
+  // 슬롯 수 + 지급합계 1개를 6개씩 묶음. 마지막 슬롯은 지급합계 고정.
+  // 최소 5행(인적사항 행 때문).
+  const SLOTS_PER_ROW = 6;
+  const NROWS = Math.max(5, Math.ceil((_paySlots.length + 1) / SLOTS_PER_ROW));
+
+  // PAY_TH: NROWS행 × 6열 레이블 배열 (마지막 셀 = '지급합계', 나머지 빈칸으로 패딩)
+  const PAY_TH = Array.from({ length: NROWS }, (_, ri) => {
+    return Array.from({ length: SLOTS_PER_ROW }, (__, ci) => {
+      const slotIdx = ri * SLOTS_PER_ROW + ci;
+      const isLastSlot = (ri === NROWS - 1 && ci === SLOTS_PER_ROW - 1);
+      if(isLastSlot) return '지급합계';
+      return _paySlots[slotIdx]?.lbl || '';
+    });
+  });
+
+  // 공제항목 th 레이블 — NROWS행에 맞춰 앞 행들은 공란으로 패딩
+  // 공제 정보는 항상 마지막 5행에 배치 (행이 5개 미만이면 NROWS 기준으로 축소)
+  const DED_TH_BASE = [
+    [ '국민연금', '건강보험', '고용보험', '장기요양보험료' ],
+    [ '', '건강보험연말정산', '', '장기요양보험연말정산' ],
+    [ '', '', '', '' ],
+    [ '소득세', '지방소득세', '소득세연말정산', '' ],
+    [ '', '기타공제', '공제합계', '차인지급액' ],
+  ];
+  // DED_TH: NROWS행. 앞쪽 패딩 행은 공란 4개.
+  const DED_PAD = NROWS - DED_TH_BASE.length; // 여분 행 수 (0 이상 보장 by NROWS>=5)
+  const DED_TH = [
+    ...Array.from({ length: Math.max(0, DED_PAD) }, () => ['','','','']),
+    ...DED_TH_BASE
+  ];
+
+  // ── 공제 특수 행 인덱스 (NROWS 기준 절대 인덱스) ──
+  // DED_TH_BASE의 행2(index 2, N/A행) → DED_TH의 인덱스 DED_PAD+2
+  // DED_TH_BASE 행2(index 2, N/A행)의 절대 행 인덱스
+  const _dedNaRowIdx = Math.max(0, DED_PAD) + 2;
+
+  // ── 직원별 지급 데이터 행 값 배열 반환 ──
   const getPayVals = (p, rowIdx) => {
-    switch(rowIdx){
-      case 0: return [ fmtV(p.base_salary), fmtV(p.bonus_pay),
-                       fmtV(p.meal_allowance), fmtV(_transportVal(p)),
-                       '', '' ];
-      case 1: return [ fmtV(p.research_allowance), fmtV(p.childcare_allowance),
-                       fmtV(p.overtime_pay), fmtV(p.night_pay),
-                       fmtV(p.holiday_pay), fmtV(p.weekly_holiday_pay) ];
-      case 2: return [ fmtV(p.annual_leave_pay), fmtV(p.license_allowance),
-                       fmtV(p.skill_allowance), fmtV(p.communication_pay),
-                       fmtV(p.performance_pay), fmtV(p.actual_expense_pay) ];
-      case 3: return [ '', '', '', '',
-                       fmtV((p.etc_allowance||0)+(p.other_pay||0)), '' ];
-      case 4: return [ '', '', '', '', '', fmtB(p.gross_pay) ];
-      default: return ['','','','','',''];
-    }
+    return Array.from({ length: SLOTS_PER_ROW }, (_, ci) => {
+      const slotIdx = rowIdx * SLOTS_PER_ROW + ci;
+      const isLastSlot = (rowIdx === NROWS - 1 && ci === SLOTS_PER_ROW - 1);
+      if(isLastSlot) return fmtB(p.gross_pay);
+      return _paySlots[slotIdx]?.getVal(p) || '';
+    });
   };
   const getDedVals = (p, rowIdx) => {
-    switch(rowIdx){
+    switch(rowIdx - Math.max(0, DED_PAD)){
       case 0: return [ fmtV(p.national_pension), fmtV(p.health_insurance),
                        fmtV(p.employment_insurance), fmtV(p.long_term_care) ];
       case 1: return [ '', fmtV(p.health_insurance_adjust), '', '' ];
@@ -810,27 +912,17 @@ function renderWageLedger(){
     }
   };
 
-  // ── 합계용 값 배열 ──
+  // ── 합계용 지급 값 배열 ──
   const getSumPayVals = rowIdx => {
-    switch(rowIdx){
-      case 0: return [ fmtV(sums.base_salary), fmtV(sums.bonus_pay),
-                       fmtV(sums.meal_allowance),
-                       fmtV((sums.self_driving_allowance||0)+(sums.transportation_allowance||0)+(sums.remote_area_allowance||0)),
-                       '', '' ];
-      case 1: return [ fmtV(sums.research_allowance), fmtV(sums.childcare_allowance),
-                       fmtV(sums.overtime_pay), fmtV(sums.night_pay),
-                       fmtV(sums.holiday_pay), fmtV(sums.weekly_holiday_pay) ];
-      case 2: return [ fmtV(sums.annual_leave_pay), fmtV(sums.license_allowance),
-                       fmtV(sums.skill_allowance), fmtV(sums.communication_pay),
-                       fmtV(sums.performance_pay), fmtV(sums.actual_expense_pay) ];
-      case 3: return [ '', '', '', '',
-                       fmtV(sums.etc_allowance + sums.other_pay), '' ];
-      case 4: return [ '', '', '', '', '', fmtB(sums.gross_pay) ];
-      default: return ['','','','','',''];
-    }
+    return Array.from({ length: SLOTS_PER_ROW }, (_, ci) => {
+      const slotIdx = rowIdx * SLOTS_PER_ROW + ci;
+      const isLastSlot = (rowIdx === NROWS - 1 && ci === SLOTS_PER_ROW - 1);
+      if(isLastSlot) return fmtB(sums.gross_pay);
+      return _paySlots[slotIdx]?.getSumVal() || '';
+    });
   };
   const getSumDedVals = rowIdx => {
-    switch(rowIdx){
+    switch(rowIdx - Math.max(0, DED_PAD)){
       case 0: return [ fmtV(sums.national_pension), fmtV(sums.health_insurance),
                        fmtV(sums.employment_insurance), fmtV(sums.long_term_care) ];
       case 1: return [ '', fmtV(sums.health_insurance_adjust), '', '' ];
@@ -843,16 +935,17 @@ function renderWageLedger(){
     }
   };
 
-  // ── 6행 thead 생성 (공통) ──
-  // 행1: 인적사항(1-2병합), 기본급여및제수당(3-8병합), 공제및차인지급액(9-12병합), 영수인(1-6행 rowspan)
-  // 행2~6: 각 항목 th
+  // ── 동적 thead 생성 ──
+  // 행1: 그룹 헤더 (영수인 rowspan = NROWS+1)
+  // 행2: 사원번호 | 성명 | 지급row0 | 공제row0
+  // 행3~N+1: colspan=2 인적사항 | 지급rowN | 공제rowN
   const buildThead = () => {
     // 행1 그룹 헤더
     const r1 = `<tr class="wl-th-group">
       <th colspan="2" class="wl-th-personal">인적사항</th>
       <th colspan="6" class="wl-th-pay">기본급여 및 제수당</th>
       <th colspan="4" class="wl-th-ded">공제 및 차인지급액</th>
-      <th rowspan="6" class="wl-th-sign">영수인</th>
+      <th rowspan="${NROWS + 1}" class="wl-th-sign">영수인</th>
     </tr>`;
 
     // 행2: 사원번호, 성명, 지급row0, 공제row0
@@ -861,115 +954,96 @@ function renderWageLedger(){
     const r2 = `<tr class="wl-th-row wl-th-row-ind">
       <th class="wl-th-cell">사원번호</th>
       <th class="wl-th-cell">성명</th>
-      ${payR0.map(t => `<th class="wl-th-cell">${t}</th>`).join('')}
+      ${payR0.map((t,i) => `<th class="wl-th-cell${t==='지급합계'?' wl-th-gross':i===5?' wl-th-pay-last':''}">${t}</th>`).join('')}
       ${dedR0.map(t => `<th class="wl-th-cell">${t}</th>`).join('')}
     </tr>`;
 
-    // 행3~6: 1열-2열 병합(인적사항 계속), 지급·공제 각 항목
-    const merged34 = [
-      { lbl:'부서',    row:2 },
-      { lbl:'직급',    row:3 },
-      { lbl:'입사일',  row:4 },
-      { lbl:'퇴사일',  row:5 },
-    ];
-    const rows3to6 = merged34.map((m, mi) => {
-      const ri = mi + 1; // PAY_TH/DED_TH index 1~4
-      const pv = PAY_TH[ri];
-      const dv = DED_TH[ri];
+    // 행3~N+1: 인적사항 레이블(부서/직급/입사일/퇴사일, 이후 공란)
+    const _infoLabels = ['부서','직급','입사일','퇴사일'];
+    const rowsRest = Array.from({ length: NROWS - 1 }, (_, mi) => {
+      const ri   = mi + 1; // PAY_TH/DED_TH index 1~(NROWS-1)
+      const pv   = PAY_TH[ri];
+      const dv   = DED_TH[ri];
+      const info = _infoLabels[mi] || '';
+      const isNaRow  = (ri === _dedNaRowIdx);
       return `<tr class="wl-th-row wl-th-row-mrg">
-        <th colspan="2" class="wl-th-cell wl-th-merged">${m.lbl}</th>
+        <th colspan="2" class="wl-th-cell wl-th-merged">${info}</th>
         ${pv.map((t,i) => `<th class="wl-th-cell${t==='지급합계'?' wl-th-gross':i===5?' wl-th-pay-last':''}">${t}</th>`).join('')}
-        ${dv.map((t,i) => `<th class="wl-th-cell${t==='공제합계'?' wl-th-ded-sum':t==='차인지급액'?' wl-th-net':(ri===2&&(i===0||i===2))?' wl-th-na':''}">${t}</th>`).join('')}
+        ${dv.map((t,i) => `<th class="wl-th-cell${t==='공제합계'?' wl-th-ded-sum':t==='차인지급액'?' wl-th-net':(isNaRow&&(i===0||i===2))?' wl-th-na':''}">${t}</th>`).join('')}
       </tr>`;
     }).join('');
 
-    // 행6: 지급합계(bold) / 공제합계·차인지급액(bold) 는 PAY_TH[4], DED_TH[4]에 이미 포함
-    // (위 rows3to6 마지막 행이 행6)
-
-    return `<thead>${r1}${r2}${rows3to6}</thead>`;
+    return `<thead>${r1}${r2}${rowsRest}</thead>`;
   };
 
   // ── 직원 데이터 tbody 행 생성 ──
-  // TH 행2~6 구조와 완전히 동일하게 맞춤:
-  //   데이터 행1 → TH 행2: C1(사원번호) | C2(성명) | C3~C8 | C9~C12 | C13(영수인)
-  //   데이터 행2 → TH 행3: C1+C2 colspan=2(부서)  | C3~C8 | C9~C12
-  //   데이터 행3 → TH 행4: C1+C2 colspan=2(직급)  | C3~C8 | C9~C12
-  //   데이터 행4 → TH 행5: C1+C2 colspan=2(입사일)| C3~C8 | C9~C12
-  //   데이터 행5 → TH 행6: C1+C2 colspan=2(퇴사일)| C3~C8 | C9~C12
-  // → rowspan 없이 각 행을 독립적으로 구성 (TH와 열 구조 1:1 일치)
+  // 각 직원 = NROWS 행.
+  // 행1: 사원번호 | 성명 | 지급row0 | 공제row0 | 영수인(rowspan=NROWS)
+  // 행2~N: colspan=2 인적사항 | 지급rowN | 공제rowN
   const buildTbody = (p, emp, idx, isSum) => {
     const resign = (allContracts.filter(c => c.employee_id === (p?.employee_id||'') && !c.is_draft)
       .sort((a,b)=>(b.contract_start||'').localeCompare(a.contract_start||''))[0]?.contract_end) || '';
 
     const cls = `wl-data-row${isSum?' wl-sum-row':''}`;
 
-    // 행1 (TH 행2): 사원번호 | 성명 | 지급row0 | 공제row0 | 영수인
     const empNo   = isSum ? '' : (emp.employee_number||'-');
     const empName = isSum ? `합계 (${pays.length}명)` : (emp.name||'-');
+
+    // 인적사항 레이블 (행2~N 순서)
+    const _infoVals = [
+      isSum ? '' : (emp.department||''),
+      isSum ? '' : (emp.position||''),
+      isSum ? '' : (emp.hire_date||''),
+      isSum ? '' : resign,
+    ];
+
+    // 행1
     const pv0 = isSum ? getSumPayVals(0) : getPayVals(p, 0);
     const dv0 = isSum ? getSumDedVals(0) : getDedVals(p, 0);
     const row1 = `<tr class="${cls}">
       <td class="wl-td-center wl-td-empno">${empNo}</td>
       <td class="wl-td-center wl-td-name">${empName}</td>
-      ${pv0.map((v,i)=>i===5?`<td class="wl-td-num wl-td-pay-last">${v}</td>`:`<td class="wl-td-num">${v}</td>`).join('')}
+      ${pv0.map((v,i)=> {
+        const isGross = (0 === NROWS-1 && i === SLOTS_PER_ROW-1);
+        return isGross ? `<td class="wl-td-gross">${v}</td>`
+          : i===SLOTS_PER_ROW-1 ? `<td class="wl-td-num wl-td-pay-last">${v}</td>`
+          : `<td class="wl-td-num">${v}</td>`;
+      }).join('')}
       ${dv0.map(v=>`<td class="wl-td-num">${v}</td>`).join('')}
-      <td rowspan="5" class="wl-td-sign"></td>
+      <td rowspan="${NROWS}" class="wl-td-sign"></td>
     </tr>`;
 
-    // 행2 (TH 행3): colspan=2(부서) | 지급row1 | 공제row1  ← rowspan=3 점유중 (영수인 td 없음)
-    const dept = isSum ? '' : (emp.department||'');
-    const pv1 = isSum ? getSumPayVals(1) : getPayVals(p, 1);
-    const dv1 = isSum ? getSumDedVals(1) : getDedVals(p, 1);
-    const row2 = `<tr class="${cls}">
-      <td colspan="2" class="wl-td-center wl-td-dept">${dept}</td>
-      ${pv1.map((v,i)=>i===5?`<td class="wl-td-num wl-td-pay-last">${v}</td>`:`<td class="wl-td-num">${v}</td>`).join('')}
-      ${dv1.map(v=>`<td class="wl-td-num">${v}</td>`).join('')}
-    </tr>`;
+    // 행2~NROWS
+    const restRows = Array.from({ length: NROWS - 1 }, (_, mi) => {
+      const ri     = mi + 1;
+      const info   = _infoVals[mi] !== undefined ? _infoVals[mi] : '';
+      const pv     = isSum ? getSumPayVals(ri) : getPayVals(p, ri);
+      const dv     = isSum ? getSumDedVals(ri) : getDedVals(p, ri);
+      const isNaRow   = (ri === _dedNaRowIdx);
+      const isLastRow = (ri === NROWS - 1);
 
-    // 행3 (TH 행4): colspan=2(직급) | 지급row2 | 공제row2  ← rowspan=3 점유중 (영수인 td 없음)
-    const pos = isSum ? '' : (emp.position||'');
-    const pv2 = isSum ? getSumPayVals(2) : getPayVals(p, 2);
-    const dv2 = isSum ? getSumDedVals(2) : getDedVals(p, 2);
-    const row3 = `<tr class="${cls}">
-      <td colspan="2" class="wl-td-center wl-td-dept">${pos}</td>
-      ${pv2.map((v,i)=>i===5?`<td class="wl-td-num wl-td-pay-last">${v}</td>`:`<td class="wl-td-num">${v}</td>`).join('')}
-      ${dv2.map((v,i)=>i===0||i===2?`<td class="wl-td-num wl-td-na">${v}</td>`:`<td class="wl-td-num">${v}</td>`).join('')}
-    </tr>`;
+      const pvCells = pv.map((v, i) => {
+        const isGross = isLastRow && (i === SLOTS_PER_ROW - 1);
+        return isGross ? `<td class="wl-td-gross">${v}</td>`
+          : i === SLOTS_PER_ROW-1 ? `<td class="wl-td-num wl-td-pay-last">${v}</td>`
+          : `<td class="wl-td-num">${v}</td>`;
+      }).join('');
 
-    // 행4 (TH 행5): colspan=2(입사일) | 지급row3 | 공제row3  ← rowspan 범위 밖 → 영수인 td 새로 시작
-    const hire = isSum ? '' : (emp.hire_date||'');
-    const pv3 = isSum ? getSumPayVals(3) : getPayVals(p, 3);
-    const dv3 = isSum ? getSumDedVals(3) : getDedVals(p, 3);
-    const row4 = `<tr class="${cls}">
-      <td colspan="2" class="wl-td-center wl-td-dept">${hire}</td>
-      ${pv3.map((v,i)=>i===5?`<td class="wl-td-num wl-td-pay-last">${v}</td>`:`<td class="wl-td-num">${v}</td>`).join('')}
-      ${dv3.map(v=>`<td class="wl-td-num">${v}</td>`).join('')}
-    </tr>`;
+      const dvCells = dv.map((v, i) => {
+        if(isLastRow && i === 2) return `<td class="wl-td-ded-sum">${v}</td>`;
+        if(isLastRow && i === 3) return `<td class="wl-td-net">${v}</td>`;
+        if(isNaRow   && (i===0||i===2)) return `<td class="wl-td-num wl-td-na">${v}</td>`;
+        return `<td class="wl-td-num">${v}</td>`;
+      }).join('');
 
-    // 행5 (TH 행6): colspan=2(퇴사일) | 지급row4 | 공제row4  ← rowspan=2 점유중 (영수인 td 없음)
-    const res = isSum ? '' : resign;
-    const pv4 = isSum ? getSumPayVals(4) : getPayVals(p, 4);
-    const dv4 = isSum ? getSumDedVals(4) : getDedVals(p, 4);
-    // row5: pv4[5]=지급합계(연두), dv4[2]=공제합계(연빨강), dv4[3]=차인지급액(연파랑)
-    const pv4Cells = pv4.map((v, i) =>
-      i === 5
-        ? `<td class="wl-td-gross">${v}</td>`
-        : `<td class="wl-td-num">${v}</td>`
-    ).join('');
-    const dv4Cells = dv4.map((v, i) =>
-      i === 2
-        ? `<td class="wl-td-ded-sum">${v}</td>`
-        : i === 3
-          ? `<td class="wl-td-net">${v}</td>`
-          : `<td class="wl-td-num">${v}</td>`
-    ).join('');
-    const row5 = `<tr class="${cls}">
-      <td colspan="2" class="wl-td-center wl-td-dept">${res}</td>
-      ${pv4Cells}
-      ${dv4Cells}
-    </tr>`;
+      return `<tr class="${cls}">
+        <td colspan="2" class="wl-td-center wl-td-dept">${info}</td>
+        ${pvCells}
+        ${dvCells}
+      </tr>`;
+    }).join('');
 
-    return row1 + row2 + row3 + row4 + row5;
+    return row1 + restRows;
   };
 
   // ── 직원 정렬 (가나다) ──
@@ -1011,11 +1085,11 @@ function renderWageLedger(){
       </table>
     </div>`;
 
-  // ── 직원 구분선: 5행마다 첫번째 행에 border-top 강조 ──
+  // ── 직원 구분선: NROWS행마다 첫번째 행에 border-top 강조 ──
   requestAnimationFrame(() => {
     const rows = area.querySelectorAll('.wl-ledger-tbl tbody tr');
     rows.forEach((tr, i) => {
-      if(i % 5 === 0){
+      if(i % NROWS === 0){
         tr.querySelectorAll('td').forEach(td => {
           td.style.borderTop = '2px solid #64748b';
         });
