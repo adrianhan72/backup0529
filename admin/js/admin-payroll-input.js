@@ -3266,7 +3266,7 @@ function _showPIDraftSavedModal(yr, mo, timeStr, confirmOnly = false, onConfirm 
              </button>
              <button onclick="document.getElementById('pi-draft-saved-modal').remove(); backToPITargetList();"
               style="flex:1;padding:11px;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
-              <i class="fas fa-list" style="margin-right:5px;"></i>목록으로 돌아가기
+              <i class="fas fa-list" style="margin-right:5px;"></i>목록 보기
              </button>`
         }
       </div>
