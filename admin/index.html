@@ -4791,7 +4791,7 @@
             <span style="font-size:13px;color:#374151;white-space:nowrap;">부양가족</span>
             <input type="number" id="ct-childcare-dependents" min="1" max="11" value="1" style="width:64px;text-align:center;" oninput="_checkRegisterBtnState();" />
             <span style="font-size:13px;color:#374151;white-space:nowrap;">인 &nbsp; 월 지급액</span>
-            <div class="amount-wrap" style="flex:1;min-width:120px;max-width:180px;"><input type="text" inputmode="numeric" id="ct-childcare" data-amount placeholder="0" oninput="onAmountInput(this,null);_checkRegisterBtnState();" /></div>
+            <div class="amount-wrap" style="flex:1;min-width:120px;max-width:180px;"><input type="text" inputmode="numeric" id="ct-childcare" data-amount placeholder="0" oninput="onAmountInput(this,calcContractSalary);_checkRegisterBtnState();" /></div>
             <div class="pi-pay-type-hint" id="ct-childcare-type-hint" style="margin-left:0;">통상임금 포함</div>
           </div>
         </div>
