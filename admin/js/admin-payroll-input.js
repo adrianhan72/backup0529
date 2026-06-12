@@ -2120,21 +2120,19 @@ function calcPI(){
     if(pt === 'fixed') _customStdSum += amt;
   });
   const gross=gv('pi-base')+gv('pi-weekly-hol')+gv('pi-site')+gv('pi-remote-area')+gv('pi-position')+gv('pi-skill')+gv('pi-license')+gv('pi-transport')+gv('pi-meal')+gv('pi-childcare')+gv('pi-research')+otPay+nightPay+holPay+_fixedOtPay+_fixedNightPay+_fixedHolPay+gv('pi-annual-pay')+gv('pi-bonus')+gv('pi-performance')+gv('pi-actual-expense')+gv('pi-communication')+gv('pi-fitness')+gv('pi-self-dev')+gv('pi-book')+gv('pi-overseas')+gv('pi-etc-allowance')+_customGrossSum;
-  // 통상임금 기준: 매월 정기지급 항목만 포함 (출근일수에 따름은 제외)
-  const std=gv('pi-base')+gv('pi-weekly-hol')+gv('pi-site')+gv('pi-remote-area')+gv('pi-position')
-    +(_getPIPayTypeVal('transport')==='fixed'    ?gv('pi-transport')    :0)
-    +(_getPIPayTypeVal('meal')==='fixed'         ?gv('pi-meal')         :0)
-    +(_getPIPayTypeVal('research')==='fixed'     ?gv('pi-research')     :0)
-    +(_getPIPayTypeVal('communication')==='fixed'?gv('pi-communication'):0)
-    +(_getPIPayTypeVal('fitness')==='fixed'    ?gv('pi-fitness')    :0)
-    +(_getPIPayTypeVal('self_dev')==='fixed'   ?gv('pi-self-dev')   :0)
-    +(_getPIPayTypeVal('book')==='fixed'       ?gv('pi-book')       :0)
-    +(_getPIPayTypeVal('overseas')==='fixed'   ?gv('pi-overseas')   :0)
-    +gv('pi-skill')
-    +gv('pi-license')
-    +(_getPIPayTypeVal('childcare')==='fixed'    ?gv('pi-childcare')    :0)
-    +_customStdSum
-    +otPay+nightPay+holPay+gv('pi-annual-pay');
+  // ── 통상임금 기준 산정 ──
+  // 통상임금 = 기본급 + 주휴수당 + 통상임금수당합
+  // 통상임금 수당: 직책수당·정기상여금·현장수당·기술수당·면허수당·벽지수당·custom(통상임금포함)
+  // ※ 평균임금 수당(차량·식대·출산보육·연구·통신·체력·자기계발·도서·해외) 및
+  //   OT수당·연차수당은 통상임금에 포함되지 않음
+  const std=gv('pi-base')+gv('pi-weekly-hol')
+    +gv('pi-position')   // 직책수당 — 통상임금
+    +gv('pi-site')       // 현장수당 — 통상임금
+    +gv('pi-remote-area')// 벽지수당 — 통상임금
+    +gv('pi-skill')      // 기술수당 — 통상임금
+    +gv('pi-license')    // 면허수당 — 통상임금
+    +gv('pi-bonus')      // 정기상여금 — 통상임금
+    +_customStdSum;      // custom(pay_type=fixed, 통상임금포함) — 통상임금
   const curStd=gv('pi-std-pay');
   if(!curStd||curStd===0) setAmountVal('pi-std-pay', std);
   const isFixed = _getPIInsuranceBasis() === '확정액 기준';
@@ -2454,8 +2452,8 @@ function calcWeeklyHolidayPay(){
   return { pay: totalPay, desc: d };
 }
 
-// ─── 통상임금 지급유형 관리 ───
-// 'fixed'=매월 정기지급(통상임금 포함), 'daily'=출근일수에 따름(통상임금 제외), ''=미선택
+// ─── 평균임금 지급유형 관리 (차량·식대·연구활동비 등 평균임금 수당) ───
+// 'fixed'=매월 정기지급(평균임금 포함), 'daily'=출근일수에 따름(평균임금 제외), ''=미선택
 const _piPayTypes = { transport:'', meal:'', childcare:'', research:'', communication:'', fitness:'', self_dev:'', book:'', overseas:'' };
 // loadPIContract() 실행 중 setPIPayType()의 calcPI() 중복 호출 방지 플래그
 let _piContractLoading = false;
@@ -2485,7 +2483,7 @@ function setPIPayType(field, type){
 }
 
 function _getPIPayTypeVal(field){
-  // 'fixed'=통상임금 포함, 'daily'=제외, ''=미선택(저장 불가)
+  // 'fixed'=평균임금 포함(매월 정기지급), 'daily'=평균임금 제외(출근일수 비례), ''=미선택(저장 불가)
   return _piPayTypes[field] ?? '';
 }
 
@@ -2501,7 +2499,7 @@ function _resetPIPayTypes(){
 // ── 회사별 allowance_config 기반 급여 입력 항목 show/hide ──
 // 옵셔널 항목 정의: { key, rowId, ptField(있으면) }
 const _PI_OPT_ROWS = [
-  { key:'regular_bonus', rowId:'pi-row-bonus' },  // 정기 상여금: 통상임금 포함 고정
+  { key:'regular_bonus', rowId:'pi-row-bonus' },  // 정기 상여금: 통상임금 수당 (항상 포함)
   { key:'childcare',     rowId:'pi-row-childcare', ptField:'childcare' },  // 출산·보육수당
   { key:'site',          rowId:'pi-row-site' },
   { key:'position',      rowId:'pi-row-position' },
@@ -3746,7 +3744,8 @@ async function savePI(){
   }
   calcPI();
   const c=window._piCalc||{};
-  // ── 통상임금 포함여부 미선택 차단: 금액 > 0 인데 pay_type 미선택('')이면 저장 불가 ──
+  // ── 지급유형(평균임금 포함여부) 미선택 차단: 금액 > 0 인데 pay_type 미선택('')이면 저장 불가 ──
+  // 해당 항목들은 평균임금 수당으로, 매월 정기지급(fixed) 또는 출근일수 비례(daily) 선택 필요
   {
     const _ptItems = [
       { field:'transport',    label:'차량교통비' },
@@ -3762,7 +3761,7 @@ async function savePI(){
     const _unset = _ptItems.filter(x => gv(`pi-${x.field}`) > 0 && _getPIPayTypeVal(x.field) === '');
     if(_unset.length > 0){
       const _names = _unset.map(x => x.label).join(', ');
-      toast(`통상임금 포함여부를 선택해 주세요: ${_names}`, 'error');
+      toast(`지급유형(평균임금 포함여부)을 선택해 주세요: ${_names}`, 'error');
       // 첫 번째 미선택 항목 select에 포커스
       const _firstSel = document.getElementById(`pi-${_piFieldToHtmlId(_unset[0].field)}-pay-type-select`);
       if(_firstSel) _firstSel.focus();
@@ -4099,7 +4098,7 @@ async function savePISplit(){
     return toast('근로일수를 입력하세요.', 'error');
   }
 
-  // ── 통상임금 포함여부 미선택 차단 ──
+  // ── 지급유형(평균임금 포함여부) 미선택 차단 ──
   {
     const _ptItems2 = [
       { field:'transport',    label:'차량교통비' },
@@ -4115,7 +4114,7 @@ async function savePISplit(){
     const _unset2 = _ptItems2.filter(x => gv(`pi-${x.field}`) > 0 && _getPIPayTypeVal(x.field) === '');
     if(_unset2.length > 0){
       const _names2 = _unset2.map(x => x.label).join(', ');
-      toast(`통상임금 포함여부를 선택해 주세요: ${_names2}`, 'error');
+      toast(`지급유형(평균임금 포함여부)을 선택해 주세요: ${_names2}`, 'error');
       const _firstSel2 = document.getElementById(`pi-${_piFieldToHtmlId(_unset2[0].field)}-pay-type-select`);
       if(_firstSel2) _firstSel2.focus();
       return;
