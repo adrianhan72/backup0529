@@ -1231,6 +1231,21 @@ function applyCTAllowanceConfig(cfg, clearValues = false){
     const pt = (cfg && cfg[`${f}_pay_type`]) ? cfg[`${f}_pay_type`] : 'fixed';
     setCTPayType(f, pt);
   });
+  // ── 신규 작성 시 car/meal 기본값 설정 ──
+  // clearValues=true (신규 모드·고객사 변경)에서만 적용
+  if(clearValues){
+    if(cfg){
+      // 고객사 allowance_config 있음: pay_type='fixed'(매월 정기지급)이면 200,000원 기본값
+      const _carPt  = cfg.car_pay_type  || 'fixed';
+      const _mealPt = cfg.meal_pay_type || 'fixed';
+      setAmountVal('ct-car',  _carPt  === 'fixed' ? 200000 : 0);
+      setAmountVal('ct-meal', _mealPt === 'fixed' ? 200000 : 0);
+    } else {
+      // 고객사 미선택: 차량 0원, 식대 200,000원 (기존 기본값 유지)
+      setAmountVal('ct-car',  0);
+      setAmountVal('ct-meal', 200000);
+    }
+  }
   // 출산·보육수당 pay_type 힌트 갱신 + 전역 상태 저장
   _ctChildcarePayType = (cfg && cfg.childcare) ? (cfg.childcare_pay_type || 'fixed') : 'fixed';
   if(cfg && cfg.childcare){
@@ -1975,8 +1990,9 @@ function openContractModal(id=null, preCompanyId=null){
   initScheduleTable();
   document.getElementById('ct-annual-sal').value='';
   setAmountVal('ct-position',0);
+  // ct-car/ct-meal 초기값 0으로 리셋 — 실제 기본값은 applyCTAllowanceConfig에서 pay_type 기준으로 결정
   setAmountVal('ct-car',0); setAmountVal('ct-remote-area',0);
-  setAmountVal('ct-meal',200000); setAmountVal('ct-research',0);
+  setAmountVal('ct-meal',0); setAmountVal('ct-research',0);
   setAmountVal('ct-site',0); setAmountVal('ct-skill',0); setAmountVal('ct-license',0);
   setAmountVal('ct-communication',0); setAmountVal('ct-fitness',0);
   setAmountVal('ct-self-dev',0); setAmountVal('ct-book',0); setAmountVal('ct-overseas',0);
