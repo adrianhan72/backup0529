@@ -1,0 +1,335 @@
+    <div id="page-contract-expiry-notice" class="page">
+
+      <!-- 상단 안내 배너 -->
+      <div class="cen-notice-banner warn">
+        <i class="fas fa-bell" style="color:#ea580c;font-size:20px;margin-top:2px;flex-shrink:0;"></i>
+        <div>
+          <div style="font-size:12.5px;color:#9a3412;line-height:1.7;">
+            계약직 · 계약직(수습) · 일용직의 계약 만료일 <strong>29일 전</strong>이 되면 통지 대상으로 분류됩니다.
+            알림톡 또는 이메일로 근로자에게 계약만료 사실을 안내하세요.<br>
+            <span style="font-size:11.5px;color:#b45309;">※ 이미 통지 이력이 있는 계약은 목록에서 자동으로 제외됩니다.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 요약 통계 카드 -->
+      <div class="cen-summary-grid">
+        <div class="cen-stat-card" style="border-left:4px solid #ef4444;">
+          <div class="cen-stat-label">긴급 (7일 이내)</div>
+          <div class="cen-stat-val" id="cen-stat-urgent" style="color:#dc2626;">0</div>
+          <div class="cen-stat-sub">D-0 ~ D-7</div>
+        </div>
+        <div class="cen-stat-card" style="border-left:4px solid #f97316;">
+          <div class="cen-stat-label">임박 (8~14일)</div>
+          <div class="cen-stat-val" id="cen-stat-soon" style="color:#ea580c;">0</div>
+          <div class="cen-stat-sub">D-8 ~ D-14</div>
+        </div>
+        <div class="cen-stat-card" style="border-left:4px solid #eab308;">
+          <div class="cen-stat-label">일반 (15~29일)</div>
+          <div class="cen-stat-val" id="cen-stat-normal" style="color:#a16207;">0</div>
+          <div class="cen-stat-sub">D-15 ~ D-29</div>
+        </div>
+        <div class="cen-stat-card" style="border-left:4px solid #6366f1;">
+          <div class="cen-stat-label">이번 달 통지 완료</div>
+          <div class="cen-stat-val" id="cen-stat-done" style="color:#4f46e5;">0</div>
+          <div class="cen-stat-sub">이번 달 발송 이력</div>
+        </div>
+      </div>
+
+      <!-- 탭: 통지 대상 / 발송 이력 / 메시지 예시 -->
+      <div class="cen-tab-bar">
+        <button class="cen-tab active" id="cen-tab-target" onclick="cenSwitchTab('target')">
+          <i class="fas fa-exclamation-circle" style="margin-right:5px;"></i>통지 대상
+          <span id="cen-tab-target-badge" style="display:inline-flex;align-items:center;justify-content:center;background:#ef4444;color:#fff;border-radius:10px;font-size:10px;font-weight:700;padding:1px 6px;margin-left:5px;">0</span>
+        </button>
+        <button class="cen-tab" id="cen-tab-history" onclick="cenSwitchTab('history')">
+          <i class="fas fa-history" style="margin-right:5px;"></i>발송 이력
+        </button>
+        <button class="cen-tab" id="cen-tab-template" onclick="cenSwitchTab('template')">
+          <i class="fas fa-comment-alt" style="margin-right:5px;"></i>메시지 예시
+        </button>
+      </div>
+
+      <!-- ─── 탭: 통지 대상 ─── -->
+      <div id="cen-panel-target">
+        <div class="card" style="overflow:hidden;">
+          <!-- 필터 바 -->
+          <div class="cen-filter-bar">
+            <!-- 고객사 필터 -->
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:12px;font-weight:600;color:#6b7280;white-space:nowrap;">고객사</span>
+              <select id="cen-filter-company" onchange="renderCenTargetList()" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 10px;font-size:12.5px;background:#fff;cursor:pointer;font-family:inherit;color:#374151;max-width:150px;">
+                <option value="">전체</option>
+              </select>
+            </div>
+            <!-- 고용형태 필터 -->
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:12px;font-weight:600;color:#6b7280;white-space:nowrap;">고용형태</span>
+              <select id="cen-filter-empcat" onchange="renderCenTargetList()" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 10px;font-size:12.5px;background:#fff;cursor:pointer;font-family:inherit;color:#374151;">
+                <option value="">전체</option>
+                <option value="fixed_term">계약직</option>
+                <option value="fixed_probation">계약직 수습</option>
+                <option value="daily">일용직</option>
+              </select>
+            </div>
+            <!-- D-day 범위 필터 -->
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:12px;font-weight:600;color:#6b7280;white-space:nowrap;">기간</span>
+              <select id="cen-filter-range" onchange="renderCenTargetList()" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 10px;font-size:12.5px;background:#fff;cursor:pointer;font-family:inherit;color:#374151;">
+                <option value="">전체 (29일 이내)</option>
+                <option value="urgent">긴급 (7일 이내)</option>
+                <option value="soon">임박 (8~14일)</option>
+                <option value="normal">일반 (15~29일)</option>
+              </select>
+            </div>
+            <!-- 검색 -->
+            <div class="search-input" style="flex:1;min-width:140px;max-width:200px;">
+              <i class="fas fa-search"></i>
+              <input type="text" id="cen-search" placeholder="직원명 검색" oninput="renderCenTargetList()" />
+            </div>
+            <!-- 새로고침 -->
+            <button onclick="cenRefresh()" style="padding:6px 12px;border:1px solid #d1d5db;border-radius:7px;background:#fff;cursor:pointer;font-size:12px;color:#6b7280;display:inline-flex;align-items:center;gap:5px;font-family:inherit;">
+              <i class="fas fa-sync-alt"></i> 새로고침
+            </button>
+          </div>
+
+          <!-- 일괄 발송 버튼 바 -->
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 18px;background:#fafafa;border-bottom:1px solid #e5e7eb;flex-wrap:wrap;gap:8px;">
+            <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:#374151;cursor:pointer;">
+              <input type="checkbox" id="cen-chk-all" class="cen-chk" onchange="cenToggleAll(this)" />
+              전체 선택
+              <span id="cen-selected-count" style="font-size:11.5px;color:#6366f1;font-weight:700;"></span>
+            </label>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button class="cen-bulk-btn cen-bulk-kakao" id="cen-btn-bulk-kakao" onclick="cenBulkSend('알림톡')" disabled>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg>
+                선택 알림톡 일괄 발송
+              </button>
+              <button class="cen-bulk-btn cen-bulk-email" id="cen-btn-bulk-email" onclick="cenBulkSend('이메일')" disabled>
+                <i class="fas fa-envelope"></i> 선택 이메일 일괄 발송
+              </button>
+            </div>
+          </div>
+
+          <!-- 통지 대상 테이블 -->
+          <div style="overflow-x:auto;padding:0 0 8px;">
+            <table class="cen-table" id="cen-target-table">
+              <thead>
+                <tr>
+                  <th style="width:36px;text-align:center;"><input type="checkbox" class="cen-chk" id="cen-thead-chk" onchange="cenToggleAll(this)" /></th>
+                  <th>직원명</th>
+                  <th>고용형태</th>
+                  <th>고객사</th>
+                  <th>계약 만료일</th>
+                  <th>D-day</th>
+                  <th>연락처</th>
+                  <th>이메일</th>
+                  <th style="text-align:center;">개별 통지</th>
+                </tr>
+              </thead>
+              <tbody id="cen-target-tbody">
+                <tr><td colspan="9" class="cen-empty"><i class="fas fa-spinner fa-spin"></i>불러오는 중...</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="pagination" id="cen-target-pagination"></div>
+        </div>
+      </div>
+
+      <!-- ─── 탭: 발송 이력 ─── -->
+      <div id="cen-panel-history" style="display:none;">
+        <div class="card" style="overflow:hidden;">
+          <!-- 이력 필터 바 -->
+          <div class="cen-filter-bar">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:12px;font-weight:600;color:#6b7280;white-space:nowrap;">발송 방식</span>
+              <select id="cen-log-filter-method" onchange="renderCenHistory()" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 10px;font-size:12.5px;background:#fff;cursor:pointer;font-family:inherit;color:#374151;">
+                <option value="">전체</option>
+                <option value="kakao">알림톡</option>
+                <option value="email">이메일</option>
+                <option value="manual">수동배부</option>
+              </select>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:12px;font-weight:600;color:#6b7280;white-space:nowrap;">고객사</span>
+              <select id="cen-log-filter-company" onchange="renderCenHistory()" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 10px;font-size:12.5px;background:#fff;cursor:pointer;font-family:inherit;color:#374151;max-width:150px;">
+                <option value="">전체</option>
+              </select>
+            </div>
+            <div class="search-input" style="flex:1;min-width:140px;max-width:200px;">
+              <i class="fas fa-search"></i>
+              <input type="text" id="cen-log-search" placeholder="직원명 검색" oninput="renderCenHistory()" />
+            </div>
+            <button onclick="(async()=>{await cenLoadHistory(true);renderCenHistory();})()" style="padding:6px 12px;border:1px solid #d1d5db;border-radius:7px;background:#fff;cursor:pointer;font-size:12px;color:#6b7280;display:inline-flex;align-items:center;gap:5px;font-family:inherit;">
+              <i class="fas fa-sync-alt"></i> 새로고침
+            </button>
+          </div>
+          <!-- 이력 테이블 -->
+          <div style="overflow-x:auto;padding:0 0 8px;">
+            <table class="cen-log-table" id="cen-log-table">
+              <thead>
+                <tr>
+                  <th>발송 일시</th>
+                  <th>직원명</th>
+                  <th>고용형태</th>
+                  <th>고객사</th>
+                  <th>계약 만료일</th>
+                  <th>발송 방식</th>
+                  <th>상태</th>
+                  <th>수신처</th>
+                  <th>발송자</th>
+                </tr>
+              </thead>
+              <tbody id="cen-log-tbody">
+                <tr><td colspan="9" class="cen-empty"><i class="fas fa-spinner fa-spin"></i> 불러오는 중...</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="pagination" id="cen-log-pagination"></div>
+        </div>
+      </div>
+
+      <!-- ─── 탭: 메시지 예시 ─── -->
+      <div id="cen-panel-template" style="display:none;">
+
+        <!-- 샘플 선택 바 -->
+        <div class="cen-tmpl-sample-bar">
+          <label><i class="fas fa-user" style="margin-right:4px;color:#6366f1;"></i>미리보기 샘플</label>
+          <select id="cen-tmpl-sample-sel" class="cen-tmpl-sample-select" onchange="renderCenTemplate()">
+            <option value="__demo__">— 예시 데이터로 보기 —</option>
+          </select>
+          <span style="font-size:11.5px;color:#9ca3af;">통지 대상 직원을 선택하면 실제 데이터로 미리보기가 갱신됩니다.</span>
+        </div>
+
+        <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+        <!-- 섹션 A: 근로자 발송 메시지                -->
+        <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+        <div class="cen-tmpl-group-head">
+          <div class="cen-tmpl-group-badge worker">
+            <i class="fas fa-user-tie"></i> 근로자 발송
+          </div>
+          <span class="cen-tmpl-group-desc">알림톡(휴대폰) · 이메일로 해당 근로자에게 직접 발송</span>
+        </div>
+        <div class="cen-tmpl-wrap">
+          <!-- 알림톡 — 근로자 -->
+          <div>
+            <div class="cen-tmpl-section-head">
+              <span class="cen-tmpl-section-badge kakao">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="#3b1f00"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg>
+                카카오 알림톡
+              </span>
+              <span style="font-size:11.5px;color:#9ca3af;">근로자 휴대폰으로 발송</span>
+            </div>
+            <div class="cen-kakao-wrap">
+              <div class="cen-kakao-profile">
+                <div class="cen-kakao-profile-img">💼</div>
+                <span class="cen-kakao-profile-name">대화인사노무파트너스</span>
+              </div>
+              <div class="cen-kakao-bubble">
+                <div class="cen-kakao-bubble-title">근로계약 만료 안내</div>
+                <div class="cen-kakao-bubble-body" id="cen-tmpl-kakao-body">로딩 중...</div>
+                <hr class="cen-kakao-bubble-divider">
+                <div class="cen-kakao-bubble-footer" id="cen-tmpl-kakao-footer">로딩 중...</div>
+              </div>
+              <div class="cen-kakao-btn-area"><div class="cen-kakao-btn">문의하기</div></div>
+            </div>
+          </div>
+          <!-- 이메일 — 근로자 -->
+          <div>
+            <div class="cen-tmpl-section-head">
+              <span class="cen-tmpl-section-badge email">
+                <i class="fas fa-envelope"></i> 이메일
+              </span>
+              <span style="font-size:11.5px;color:#9ca3af;">근로자 이메일로 발송</span>
+            </div>
+            <div class="cen-email-card">
+              <div class="cen-email-header">
+                <div class="cen-email-header-title" id="cen-tmpl-email-subject">📋 근로계약 만료 안내</div>
+                <div class="cen-email-header-sub" id="cen-tmpl-email-to">수신자: 로딩 중...</div>
+              </div>
+              <div class="cen-email-body">
+                <div class="cen-email-greeting" id="cen-tmpl-email-greeting">안녕하세요.</div>
+                <div class="cen-email-text" id="cen-tmpl-email-intro">로딩 중...</div>
+                <div class="cen-email-info-box" id="cen-tmpl-email-infobox"></div>
+                <div class="cen-email-text" id="cen-tmpl-email-body2">로딩 중...</div>
+                <div class="cen-email-cta">문의 및 재계약 상담 연락처 확인</div>
+                <div class="cen-email-notice" id="cen-tmpl-email-notice">로딩 중...</div>
+              </div>
+              <div class="cen-email-footer" id="cen-tmpl-email-footer">로딩 중...</div>
+            </div>
+          </div>
+        </div><!-- /근로자 wrap -->
+
+        <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+        <!-- 섹션 B: 고객사 발송 메시지                -->
+        <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+        <div class="cen-tmpl-group-head" style="margin-top:8px;">
+          <div class="cen-tmpl-group-badge company">
+            <i class="fas fa-building"></i> 고객사 발송
+          </div>
+          <span class="cen-tmpl-group-desc">고객사 전용 앱 알림함으로 발송 · 앱 접속 시 확인 가능</span>
+        </div>
+        <div class="cen-tmpl-wrap" style="grid-template-columns:1fr;">
+          <div>
+            <div class="cen-tmpl-section-head">
+              <span class="cen-tmpl-section-badge inapp">
+                <i class="fas fa-bell"></i> 인앱 알림
+              </span>
+              <span style="font-size:11.5px;color:#9ca3af;">고객사 앱 알림함에 표시 · 읽음 처리 가능</span>
+            </div>
+            <!-- 인앱 알림 미리보기 — 모바일 앱 카드 스타일 -->
+            <div class="cen-inapp-phone-wrap">
+              <div class="cen-inapp-phone-bar">
+                <span style="font-size:10px;color:#fff;opacity:.8;">알림함</span>
+                <i class="fas fa-bell" style="color:#fff;font-size:12px;"></i>
+              </div>
+              <div class="cen-inapp-notif-card unread">
+                <div class="cen-inapp-notif-icon"><i class="fas fa-file-contract"></i></div>
+                <div class="cen-inapp-notif-content">
+                  <div class="cen-inapp-notif-title" id="cen-tmpl-inapp-title">근로계약 만료 예정 안내</div>
+                  <div class="cen-inapp-notif-body" id="cen-tmpl-inapp-body">로딩 중...</div>
+                  <div class="cen-inapp-notif-time" id="cen-tmpl-inapp-time">방금 전</div>
+                </div>
+                <div class="cen-inapp-unread-dot"></div>
+              </div>
+              <div class="cen-inapp-notif-card" style="opacity:.45;">
+                <div class="cen-inapp-notif-icon" style="background:#f3f4f6;color:#9ca3af;"><i class="fas fa-won-sign"></i></div>
+                <div class="cen-inapp-notif-content">
+                  <div class="cen-inapp-notif-title" style="color:#9ca3af;">급여명세서 발송 완료</div>
+                  <div class="cen-inapp-notif-body" style="color:#c4c9d4;">2025년 5월 급여명세서가 발송됐습니다.</div>
+                  <div class="cen-inapp-notif-time">3일 전</div>
+                </div>
+              </div>
+            </div>
+            <!-- 전체 메시지 본문 카드 -->
+            <div class="cen-inapp-full-card">
+              <div class="cen-inapp-full-head">
+                <i class="fas fa-file-contract" style="color:#4f46e5;"></i>
+                <span id="cen-tmpl-inapp-full-title">근로계약 만료 예정 안내</span>
+                <span class="cen-inapp-new-badge">NEW</span>
+              </div>
+              <div class="cen-inapp-full-body" id="cen-tmpl-inapp-full-body">로딩 중...</div>
+              <div class="cen-inapp-full-infobox" id="cen-tmpl-inapp-infobox"></div>
+              <div class="cen-inapp-full-foot" id="cen-tmpl-inapp-foot">로딩 중...</div>
+            </div>
+          </div>
+        </div><!-- /고객사 wrap -->
+
+        <!-- 변수 안내 -->
+        <div style="padding:0 20px 24px;">
+          <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+            <i class="fas fa-code" style="color:#6366f1;"></i> 메시지 템플릿 변수 안내
+          </div>
+          <div class="card" style="overflow:hidden;padding:0;">
+            <table class="cen-var-table">
+              <thead>
+                <tr><th style="width:150px;">변수</th><th>설명</th><th>예시 값</th></tr>
+              </thead>
+              <tbody id="cen-tmpl-var-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div><!-- /cen-panel-template -->
+
+    </div><!-- /page-contract-expiry-notice -->

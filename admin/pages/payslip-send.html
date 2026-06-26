@@ -1,0 +1,133 @@
+    <div id="page-payslip-send" class="page">
+
+      <!-- 고객사 선택 카드 -->
+      <div class="card" id="pss-company-select-card" style="margin-bottom:16px;padding:20px;">
+        <div class="co-card-title"><i class="fas fa-building"></i>고객사를 선택하세요</div>
+        <div style="display:flex;gap:10px;margin-bottom:12px;">
+          <div class="search-input" style="flex:1;min-width:180px;">
+            <i class="fas fa-search"></i>
+            <input type="text" id="pss-company-search" placeholder="고객사명 검색" oninput="renderPssCompanyList()" />
+          </div>
+        </div>
+        <div id="pss-company-chips" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+      </div>
+
+      <!-- 선택된 고객사 메인 섹션 -->
+      <div id="pss-main-section" style="display:none;">
+
+        <!-- 법적 의무 배너 (상단 고정) -->
+        <div class="pss-legal-banner">
+          <i class="fas fa-balance-scale"></i>
+          <div>
+            <strong>급여명세서 교부 의무 (근로기준법 제48조)</strong> — 사용자는 임금 지급 시 임금명세서를 근로자에게 교부하여야 합니다.
+            위반 시 500만 원 이하 과태료가 부과됩니다. 미발송 항목을 신속히 처리하고 모든 발송 이력을 보관하세요.
+          </div>
+        </div>
+
+        <!-- ① 선택 고객사 헤더 + 발송 월 선택 + 미발송 목록 세트 -->
+        <div style="border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:16px;">
+
+          <!-- 선택 고객사 헤더 -->
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:linear-gradient(90deg,#1e1b4b,#312e81);border-bottom:1px solid rgba(255,255,255,.1);">
+            <span id="pss-selected-company-label" style="font-size:14px;font-weight:700;color:#fff;"></span>
+            <button onclick="clearPssCompanySelect()" style="background:none;border:none;cursor:pointer;color:rgba(255,255,255,.7);font-size:20px;" title="고객사 선택 해제"><i class="fas fa-times-circle"></i></button>
+          </div>
+
+        <!-- 발송 월 선택 + 미발송 목록 카드 (border-radius 제거, 세트 내부) -->
+        <div class="card" style="border-radius:0;box-shadow:none;margin-bottom:0;border-top:none;">
+          <div style="padding:16px 20px 0;">
+
+            <!-- 월 선택 탭 영역 -->
+            <div class="pss-section-head" style="margin-bottom:10px;">
+              <div class="pss-section-title"><i class="fas fa-calendar-alt" style="color:#6366f1;"></i>발송 월 선택</div>
+              <span style="font-size:11.5px;color:#9ca3af;">급여 명세서 미발송 건이 있는 모든 년월</span>
+            </div>
+            <div class="pss-month-tabs" id="pss-month-tabs" style="margin-bottom:16px;">
+              <div class="pss-loading"><i class="fas fa-spinner fa-spin"></i> 로딩 중...</div>
+            </div>
+
+            <!-- 구분선 -->
+            <div style="border-top:1px solid #f3f4f6;margin:0 -20px 16px;"></div>
+
+            <!-- 미발송 목록 헤더 -->
+            <div class="pss-section-head">
+              <div class="pss-section-title">
+                <i class="fas fa-exclamation-triangle" style="color:#f59e0b;"></i>
+                미발송 목록
+                <span class="pss-count-badge red" id="pss-unsent-count">0</span>
+              </div>
+              <button class="pss-send-btn-all" id="pss-send-all-btn" onclick="openPssSendAllModal()" disabled>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0;"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg> 일괄 알림톡 발송
+              </button>
+            </div>
+
+            <!-- 미발송 없을 때 -->
+            <div id="pss-all-clear-msg" class="pss-all-clear" style="display:none;margin-top:12px;">
+              <i class="fas fa-check-circle" style="font-size:20px;color:#16a34a;flex-shrink:0;"></i>
+              <div>
+                <div style="font-size:13px;font-weight:700;color:#166534;">이 달 전원 발송 완료</div>
+                <div style="font-size:11.5px;color:#15803d;margin-top:2px;">선택된 월의 급여명세서가 모든 근로자에게 발송되었습니다.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 미발송 테이블 -->
+          <div id="pss-unsent-table-wrap" class="table-wrap" style="padding:0 20px 16px;">
+            <table id="pss-unsent-table" style="width:100%;border-collapse:collapse;font-size:13px;">
+              <thead>
+                <tr>
+                  <th>직원명</th>
+                  <th>고용구분</th>
+                  <th>연락처</th>
+                  <th>이메일</th>
+                  <th style="text-align:center;">개별 관리</th>
+                </tr>
+              </thead>
+              <tbody id="pss-unsent-tbody">
+                <tr><td colspan="5" class="pss-loading"><i class="fas fa-spinner fa-spin"></i> 로딩 중...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        </div><!-- /선택 고객사 헤더+발송월+미발송 세트 wrapper -->
+
+        <!-- ② 발송 이력 섹션 -->
+        <div class="card">
+          <div style="padding:16px 20px 0;">
+            <div class="pss-section-head">
+              <div class="pss-section-title">
+                <i class="fas fa-history" style="color:#3b82f6;"></i>
+                발송 이력
+                <span class="pss-count-badge blue" id="pss-log-count">0</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div class="search-input" style="width:180px;">
+                  <i class="fas fa-search"></i>
+                  <input type="text" id="pss-log-search" placeholder="직원명 검색" oninput="_pssLogPage=1;renderPssLogs()">
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="table-wrap" style="padding:0 20px 16px;">
+            <table id="pss-log-table" style="width:100%;border-collapse:collapse;font-size:13px;">
+              <thead>
+                <tr>
+                  <th>직원명</th>
+                  <th>고용구분</th>
+                  <th>대상 월</th>
+                  <th>발송 일시</th>
+                  <th>발송 방법</th>
+                  <th>처리 관리자</th>
+                  <th>비고</th>
+                </tr>
+              </thead>
+              <tbody id="pss-log-tbody">
+                <tr><td colspan="7" class="pss-empty">발송 이력이 없습니다.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div id="pss-log-pagination" style="padding:0 20px 16px;"></div>
+        </div>
+
+      </div><!-- /pss-main-section -->
+    </div><!-- /page-payslip-send -->

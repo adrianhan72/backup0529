@@ -103,6 +103,8 @@ async function loadData(){
   allBillings  = (bd.data||[]).filter(b => b.company_id === currentCompany.id);
 }
 
+
+
 // ══ APP START ══
 function startApp(){
   document.getElementById('login-screen').style.display='none';

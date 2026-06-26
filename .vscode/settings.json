@@ -1,0 +1,4 @@
+{
+    "chat.planAgent.defaultModel": "DeepSeek V4 Pro (deepseek)",
+    "chat.extensionUnification.enabled": false
+}

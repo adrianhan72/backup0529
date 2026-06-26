@@ -1,0 +1,122 @@
+    <div id="page-company-notice-log" class="page">
+
+      <!-- 필터 바 -->
+      <div class="card" style="margin-bottom:12px;">
+        <div class="filter-bar" style="flex-wrap:wrap;gap:8px;">
+          <!-- 고객사 드롭다운 -->
+          <select id="cnl-filter-company" onchange="cnlOnCompanyChange()" style="padding:7px 10px;border:1px solid #d1d5db;border-radius:7px;font-size:13px;color:#374151;background:#fff;cursor:pointer;min-width:160px;">
+            <option value="">전체 고객사</option>
+          </select>
+          <!-- 알림 유형 드롭다운 -->
+          <select id="cnl-filter-type" onchange="renderCnlReserveCard();renderCnlTable();" style="padding:7px 10px;border:1px solid #d1d5db;border-radius:7px;font-size:13px;color:#374151;background:#fff;cursor:pointer;">
+            <option value="">전체 유형</option>
+            <option value="contract_created">신규 계약</option>
+            <option value="contract_updated">계약 수정</option>
+            <option value="contract_voided">계약 파기</option>
+            <option value="contract_amended">계약 수정재발행</option>
+            <option value="contract_terminated">계약 해지</option>
+            <option value="contract_termination_scheduled">해지 예약</option>
+            <option value="contract_termination_cancelled">해지 예정 취소</option>
+            <option value="contract_renewed">계약 갱신</option>
+            <option value="contract_renewal_scheduled">갱신 예약</option>
+            <option value="contract_renewed_new">재계약 완료</option>
+            <option value="contract_dispatched">계약서 발송</option>
+            <option value="contract_signed_uploaded">날인본 업로드</option>
+            <option value="contract_consent_uploaded">동의서 업로드</option>
+            <option value="contract_fully_documented">서류 완비 (계약 유효)</option>
+            <option value="payroll_input_complete">급여 입력/수정</option>
+            <option value="payslip_individual_sent">급여명세서 개별</option>
+            <option value="payslip_bulk_sent">급여명세서 일괄</option>
+            <option value="severance_paid">퇴직급여 지급</option>
+            <option value="contract_expiry">계약만료 통지</option>
+            <option value="regular_conversion">정규직 전환 통지</option>
+            <option value="leave_promotion">연차 사용촉진</option>
+            <option value="general">중요공지</option>
+          </select>
+          <!-- 제목 검색 -->
+          <div class="search-input" style="margin:0;">
+            <i class="fas fa-search"></i>
+            <input type="text" id="cnl-search" placeholder="제목 검색" oninput="renderCnlReserveCard();renderCnlTable();" style="width:200px;" />
+          </div>
+          <button onclick="cnlReload()" style="display:flex;align-items:center;gap:5px;padding:7px 13px;border:1px solid #6366f1;border-radius:7px;background:#eef2ff;color:#4f46e5;font-size:13px;font-weight:600;cursor:pointer;">
+            <i class="fas fa-sync-alt"></i> 새로고침
+          </button>
+        </div>
+      </div>
+
+      <!-- ① 예약 현황 카드 (scheduled 건만) -->
+      <div id="cnl-reserve-card" style="display:none;margin-bottom:14px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <i class="fas fa-clock" style="color:#f59e0b;font-size:15px;"></i>
+          <span style="font-size:15px;font-weight:800;color:#1e293b;">예약 현황</span>
+          <span id="cnl-reserve-badge" style="background:#fef3c7;color:#b45309;font-size:12px;font-weight:700;padding:2px 10px;border-radius:20px;"></span>
+        </div>
+        <div class="card" style="padding:0;overflow:hidden;border:1.5px solid #fde68a;">
+          <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:13px;">
+              <thead>
+                <tr style="background:linear-gradient(135deg,#fffbeb,#fef3c7);border-bottom:2px solid #fde68a;">
+                  <th style="padding:10px 14px;text-align:left;font-weight:700;color:#92400e;white-space:nowrap;width:150px;">예약 일시</th>
+                  <th style="padding:10px 14px;text-align:left;font-weight:700;color:#92400e;white-space:nowrap;width:130px;" id="cnl-reserve-th-company">고객사</th>
+                  <th style="padding:10px 14px;text-align:left;font-weight:700;color:#92400e;white-space:nowrap;width:130px;">알림 유형</th>
+                  <th style="padding:10px 14px;text-align:left;font-weight:700;color:#92400e;">제목</th>
+                  <th style="padding:10px 14px;text-align:left;font-weight:700;color:#92400e;white-space:nowrap;width:70px;">발송자</th>
+                  <th style="padding:10px 14px;text-align:center;font-weight:700;color:#92400e;width:160px;">작업</th>
+                </tr>
+              </thead>
+              <tbody id="cnl-reserve-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ② 발송 이력 테이블 영역 (sent / cancelled만) -->
+      <div id="cnl-main-section">
+
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <i class="fas fa-paper-plane" style="color:#6366f1;font-size:14px;"></i>
+          <span style="font-size:15px;font-weight:800;color:#1e293b;">발송 이력</span>
+          <span id="cnl-total-badge" style="font-size:12px;color:#64748b;font-weight:600;"></span>
+        </div>
+
+        <!-- 이력 테이블 -->
+        <div class="card tbl-loading-wrap" id="cnl-table-card" style="padding:0;overflow:hidden;">
+          <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:13px;">
+              <thead>
+                <tr style="background:linear-gradient(135deg,#f1f5f9,#e8ecf3);border-bottom:2px solid #e2e8f0;">
+                  <th style="padding:11px 14px;text-align:left;font-weight:700;color:#475569;white-space:nowrap;width:140px;">발송 일시</th>
+                  <th style="padding:11px 14px;text-align:left;font-weight:700;color:#475569;white-space:nowrap;width:120px;" id="cnl-th-company">고객사</th>
+                  <th style="padding:11px 14px;text-align:left;font-weight:700;color:#475569;white-space:nowrap;width:130px;">알림 유형</th>
+                  <th style="padding:11px 14px;text-align:left;font-weight:700;color:#475569;">제목</th>
+                  <th style="padding:11px 14px;text-align:center;font-weight:700;color:#475569;width:60px;">확인</th>
+                  <th style="padding:11px 14px;text-align:left;font-weight:700;color:#475569;white-space:nowrap;width:70px;">발송자</th>
+                  <th style="padding:11px 14px;text-align:center;font-weight:700;color:#475569;width:60px;">상세</th>
+                </tr>
+              </thead>
+              <tbody id="cnl-tbody"></tbody>
+            </table>
+          </div>
+          <!-- 페이지네이션 -->
+          <div id="cnl-pagination" style="padding:8px 16px;border-top:1px solid #f1f5f9;"></div>
+        </div>
+
+      </div><!-- /cnl-main-section -->
+
+      <!-- 메시지 본문 상세 모달 -->
+      <div id="cnl-detail-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:3000;align-items:center;justify-content:center;">
+        <div style="background:#fff;border-radius:16px;width:min(600px,92vw);max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25);display:flex;flex-direction:column;">
+          <!-- 모달 헤더 -->
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 22px 14px;border-bottom:1px solid #f1f5f9;position:sticky;top:0;background:#fff;z-index:1;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <i class="fas fa-bell" style="color:#6366f1;font-size:18px;"></i>
+              <span style="font-size:15px;font-weight:800;color:#1e293b;">알림 상세 보기</span>
+            </div>
+            <button onclick="closeCnlDetailModal()" style="background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:6px;color:#64748b;font-size:18px;">✕</button>
+          </div>
+          <!-- 모달 본문 -->
+          <div id="cnl-detail-body" style="padding:20px 22px;"></div>
+        </div>
+      </div>
+
+    </div><!-- /page-company-notice-log -->

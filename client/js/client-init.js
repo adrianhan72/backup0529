@@ -88,11 +88,9 @@ function renderClientSevHistory(){
 
   const resignedEmps = allEmployees.filter(e => {
     if(e.company_id !== coId) return false;
-    if(e.employment_category === '일용직') return false;
-    // 직원 status 우선: 퇴직/resigned
-    if(e.status === '퇴직' || e.status === 'resigned') return true;
-    // 직원 status가 재직이면 제외 (퇴직급여 미발생)
-    if(e.status === '재직' || e.status === 'active') return false;
+    if(e.employment_category === 'daily') return false;
+    if(e.status === 'resigned') return true;
+    if(e.status === 'active') return false;
     // status 없는 경우: 마지막 계약으로 판단
     const conts = allContracts.filter(c => c.employee_id === e.id && !c.is_draft)
       .sort((a,b) => (a.contract_start||'').localeCompare(b.contract_start||''));
@@ -131,7 +129,7 @@ function renderClientSevHistory(){
             <div style="width:34px;height:34px;background:linear-gradient(135deg,#fef3c7,#fde68a);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#92400e;">${(emp.name||'?').charAt(0)}</div>
             <div>
               <div style="font-size:14px;font-weight:800;color:#1a1a2e;">${emp.name||'-'}</div>
-              <div style="font-size:11px;color:#6b7280;">${emp.department||''} ${emp.position||''} · ${emp.employment_category||'-'}</div>
+              <div style="font-size:11px;color:#6b7280;">${emp.department||''} ${emp.position||''} · ${contractTypeLabel_c(emp.employment_category)}</div>
             </div>
           </div>
           ${statusBadge}
@@ -180,8 +178,8 @@ function renderClientSevStatus(){
 
   const activeEmps = allEmployees.filter(e => {
     if(e.company_id !== coId) return false;
-    if(e.employment_category === '일용직') return false;
-    return e.status === 'active' || e.status === '재직' || !e.status || e.status === '';
+    if(e.employment_category === 'daily') return false;
+    return e.status === 'active' || !e.status || e.status === '';
   });
 
   if(!activeEmps.length){
@@ -282,8 +280,8 @@ function _doRenderClientAL(){
 
   const emps = allEmployees.filter(e =>
     e.company_id === coId &&
-    e.employment_category !== '일용직' &&
-    (e.status === 'active' || e.status === '재직' || !e.status || e.status === '')
+    e.employment_category !== 'daily' &&
+    (e.status === 'active' || !e.status || e.status === '')
   ).sort((a,b) => (a.name||'').localeCompare(b.name||'','ko'));
 
   if(!emps.length){
@@ -371,7 +369,7 @@ function _doRenderClientAL(){
         <div style="width:34px;height:34px;background:linear-gradient(135deg,#ecfdf5,#d1fae5);border:1.5px solid #a7f3d0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#065f46;">${(emp.name||'?').charAt(0)}</div>
         <div style="flex:1;">
           <div style="font-size:14px;font-weight:800;color:#1a1a2e;">${emp.name||'-'}</div>
-          <div style="font-size:11px;color:#6b7280;">${emp.department||''} ${emp.position||''} · ${emp.employment_category||'-'}</div>
+          <div style="font-size:11px;color:#6b7280;">${emp.department||''} ${emp.position||''} · ${contractTypeLabel_c(emp.employment_category)}</div>
         </div>
         <div style="text-align:right;">
           <div style="font-size:10px;color:#9ca3af;">${al.basis}</div>

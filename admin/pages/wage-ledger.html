@@ -1,0 +1,72 @@
+﻿    <div id="page-wage-ledger" class="page">
+
+      <!-- 임시저장 급여 이어서 작성 확인 모달 -->
+      <div id="wl-resume-modal" class="wl-resume-modal-overlay" style="display:none;"
+           onclick="if(event.target===this)closeWLResumeModal()">
+        <div class="wl-resume-modal">
+          <div class="wl-resume-modal-header">
+            <div class="wl-resume-modal-icon"><i class="fas fa-save"></i></div>
+            <div class="wl-resume-modal-title">임시저장 급여 데이터 있음</div>
+            <button class="wl-resume-modal-close" onclick="closeWLResumeModal()"><i class="fas fa-times"></i></button>
+          </div>
+          <div class="wl-resume-modal-body">
+            <p>선택한 직원의 임시저장 중인 급여 데이터가 있습니다.<br>이어서 작성하시겠습니까?</p>
+            <div class="wl-resume-modal-info" id="wl-resume-modal-info">
+              <!-- 직원명·월 정보 동적 삽입 -->
+            </div>
+          </div>
+          <div class="wl-resume-modal-footer">
+            <button class="wl-resume-btn-fresh" onclick="_wlFreshInput()">
+              <i class="fas fa-redo" style="font-size:11px;margin-right:4px;"></i>초기화 후 새로 작성
+            </button>
+            <button class="wl-resume-btn-resume" onclick="_wlResumeDraft()">
+              <i class="fas fa-play" style="font-size:11px;margin-right:4px;"></i>이어서 작성
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 고객사 선택 카드 -->
+      <div class="card" id="wl-company-select-card" style="margin-bottom:16px;padding:20px;">
+        <div class="co-card-title"><i class="fas fa-building"></i>고객사를 선택하세요</div>
+        <div style="margin-bottom:12px;">
+          <div class="search-input" style="max-width:280px;"><i class="fas fa-search"></i><input type="text" id="wl-company-search" placeholder="고객사명 검색" oninput="renderWLCompanyList()" /></div>
+        </div>
+        <div id="wl-company-chips" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+      </div>
+
+      <!-- 임금대장 메인 섹션 -->
+      <div id="wl-main-section" style="display:none;">
+        <!-- 선택 고객사 헤더 + 목록 카드 세트 -->
+        <div style="border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08);">
+          <!-- 선택 고객사 헤더 -->
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:linear-gradient(90deg,#1e1b4b,#312e81);border-bottom:1px solid rgba(255,255,255,.1);">
+            <span id="wl-selected-company-label" style="font-size:14px;font-weight:700;color:#fff;"></span>
+            <button onclick="clearWLCompanySelect()" style="background:none;border:none;cursor:pointer;color:rgba(255,255,255,.7);font-size:20px;" title="고객사 선택 해제"><i class="fas fa-times-circle"></i></button>
+          </div>
+
+          <div class="card" style="border-radius:0;box-shadow:none;margin-bottom:0;border-top:none;">
+            <!-- 필터 바 -->
+            <div class="filter-bar wl-filter-bar" style="justify-content:space-between;flex-wrap:wrap;gap:10px;">
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                <select class="" id="wl-year-filter" onchange="renderWageLedger()"></select>
+                <select class="" id="wl-month-filter" onchange="renderWageLedger()"></select>
+              </div>
+              <div style="display:flex;gap:8px;">
+                <button class="wl-excel-btn" onclick="downloadWageLedgerExcel()" disabled style="opacity:0.4;cursor:not-allowed;pointer-events:none;"><i class="fas fa-file-excel"></i> 엑셀 다운로드</button>
+                <button class="wl-pdf-btn" onclick="downloadWageLedgerPdf()" disabled style="opacity:0.4;cursor:not-allowed;pointer-events:none;"><i class="fas fa-file-pdf"></i> PDF 다운로드</button>
+                <button class="wl-print-btn" onclick="printWageLedger()" disabled style="opacity:0.4;cursor:not-allowed;pointer-events:none;"><i class="fas fa-print"></i> 인쇄</button>
+              </div>
+            </div>
+
+            <!-- 임금대장 테이블 영역 -->
+            <div class="wl-wrap">
+              <div id="wl-table-area" style="min-height:200px;"></div>
+            </div>
+          </div>
+        </div><!-- /선택 고객사 헤더+목록 세트 wrapper -->
+      </div>
+    </div>
+
+    <!-- ══ PAYROLLS ══ -->
+    <div id="page-payrolls" class="page">

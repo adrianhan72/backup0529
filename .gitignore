@@ -1,0 +1,6 @@
+node_modules/
+.vscode/launch.json
+data/db.json
+data/app.db-shm
+data/app.db-wal
+data/backup/

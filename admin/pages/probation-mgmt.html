@@ -1,0 +1,83 @@
+    <div id="page-probation-mgmt" class="page">
+
+      <!-- ① 고객사 선택 카드 -->
+      <div class="card" id="probmgmt-company-select-card" style="margin-bottom:16px;padding:20px;">
+        <div class="co-card-title"><i class="fas fa-building"></i>고객사를 선택하세요</div>
+        <div style="display:flex;gap:10px;margin-bottom:12px;">
+          <div class="search-input" style="flex:1;min-width:180px;">
+            <i class="fas fa-search"></i>
+            <input type="text" id="probmgmt-company-search" placeholder="고객사명 검색"
+                   oninput="renderProbMgmtCompanyList()" />
+          </div>
+        </div>
+        <div id="probmgmt-company-chips" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+      </div>
+
+      <!-- ② 고객사 선택 후 콘텐츠 섹션 -->
+      <div id="probmgmt-content-section" style="display:none;">
+
+        <!-- 선택된 고객사 헤더 -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding:12px 18px;background:linear-gradient(90deg,#0d9488,#0f766e);border-radius:10px;">
+          <span id="probmgmt-selected-label" style="font-size:14px;font-weight:700;color:#fff;"></span>
+          <button onclick="clearProbMgmtCompany()" style="background:none;border:none;cursor:pointer;color:rgba(255,255,255,.75);font-size:20px;" title="고객사 선택 해제">
+            <i class="fas fa-times-circle"></i>
+          </button>
+        </div>
+
+        <!-- 요약 통계 -->
+        <div class="probmgmt-stat-grid" id="probmgmt-stat-grid">
+          <div class="probmgmt-stat-card" style="border-left:4px solid #0d9488;">
+            <div class="probmgmt-stat-label">전체 수습 근로자</div>
+            <div class="probmgmt-stat-val" id="probmgmt-stat-total" style="color:#0d9488;">0</div>
+            <div class="probmgmt-stat-sub">현재 수습 기간 중인 전체 인원</div>
+          </div>
+          <div class="probmgmt-stat-card" style="border-left:4px solid #dc2626;">
+            <div class="probmgmt-stat-label">해고 시 서면통지 대상자</div>
+            <div class="probmgmt-stat-val" id="probmgmt-stat-urgent" style="color:#dc2626;">0</div>
+            <div class="probmgmt-stat-sub">수습기간이 3개월을 초과하는 근로자는 만료일 30일전까지 서면 통지 의무</div>
+          </div>
+          <div class="probmgmt-stat-card" style="border-left:4px solid #f59e0b;">
+            <div class="probmgmt-stat-label">해고시 해고예고수당(30일치 급여) 지급 대상</div>
+            <div class="probmgmt-stat-val" id="probmgmt-stat-thismonth" style="color:#f59e0b;">0</div>
+            <div class="probmgmt-stat-sub">수습기간이 3개월을 초과하는 근로자 중 만료까지 30일 미만인 근로자</div>
+          </div>
+        </div>
+
+        <!-- 검색 + 테이블 -->
+        <div class="card" style="padding:0;overflow:hidden;">
+          <div class="card-header" style="padding:14px 18px;">
+            <span class="card-title" style="font-size:14px;">📋 수습 근로자 전체 목록</span>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div class="search-input" style="margin:0;">
+                <i class="fas fa-search"></i>
+                <input type="text" id="probmgmt-search" placeholder="근로자명 검색"
+                       oninput="renderProbationMgmtTable()" style="width:160px;" />
+              </div>
+            </div>
+          </div>
+          <div class="probmgmt-table-wrap">
+            <table class="probmgmt-table">
+              <thead>
+                <tr>
+                  <th>근로자명</th>
+                  <th>계약 유형</th>
+                  <th>계약 시작일</th>
+                  <th>수습기간</th>
+                  <th>수습 만료일</th>
+                  <th>D-day</th>
+                  <th style="text-align:center;">처리결과</th>
+                  <th style="text-align:center;">처리일시</th>
+                  <th style="text-align:center;">수습계약서</th>
+                  <th style="text-align:center;">관리</th>
+                </tr>
+              </thead>
+              <tbody id="probmgmt-table-body">
+                <tr><td colspan="10" class="probmgmt-empty"><i class="fas fa-spinner fa-spin" style="margin-right:6px;color:#9ca3af;"></i>데이터 불러오는 중...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div><!-- /probmgmt-content-section -->
+
+    </div><!-- /page-probation-mgmt -->

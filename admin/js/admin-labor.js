@@ -9,7 +9,7 @@ function renderLsCompanyList(){
   if(!container) return;
 
   const companies = allCompanies.filter(c =>
-    c.status === '이용중' && (!q || c.company_name.toLowerCase().includes(q))
+    c.status === COMPANY_STATUS.ACTIVE && (!q || c.company_name.toLowerCase().includes(q))
   ).sort((a,b) => (a.company_name||'').localeCompare(b.company_name||'', 'ko'));
 
   if(!companies.length){
@@ -19,8 +19,8 @@ function renderLsCompanyList(){
 
   container.innerHTML = companies.map(c => {
     const isSelected = c.id === currentGlobalCompanyId;
-    const empCnt = allEmployees.filter(e => e.company_id === c.id && (e.status==='재직'||e.status==='active')).length;
-    const contractCnt = allContracts.filter(ct => ct.company_id === c.id && (ct.status==='active'||ct.status==='활성'||ct.status==='유효')).length;
+    const empCnt = allEmployees.filter(e => e.company_id === c.id && (e.status===EMP_STATUS.ACTIVE||e.status===EMP_STATUS.ACTIVE)).length;
+    const contractCnt = allContracts.filter(ct => ct.company_id === c.id && (ct.status===EMP_STATUS.ACTIVE||ct.status===CONTRACT_STATUS.ACTIVE||ct.status==='유효')).length;
     return `<button onclick="selectLsCompany('${c.id}','${c.company_name.replace(/'/g,"\\'")}')"
       class="co-chip${isSelected?' selected':''}">
       <i class="fas fa-building" style="font-size:11px;"></i>
@@ -661,7 +661,7 @@ function renderLaborStatus(){
 
   // ── 통계 계산 ──
   const targetEmps = allEmployees.filter(e => e.company_id === selCo);
-  const activeEmps = targetEmps.filter(e => e.status === '재직' || e.status === 'active');
+  const activeEmps = targetEmps.filter(e => e.status===EMP_STATUS.ACTIVE || e.status===EMP_STATUS.ACTIVE);
   const retiredEmps = targetEmps.filter(e => e.status !== '재직' && e.status !== 'active');
   const totalEmps = targetEmps.length;
 
@@ -674,8 +674,8 @@ function renderLaborStatus(){
   const cntDaily       = catCount('일용직');
 
   const targetContracts = allContracts.filter(c => c.company_id === selCo);
-  const activeContracts = targetContracts.filter(c => c.status === 'active' || c.status === '활성' || c.status === '유효');
-  const expiredContracts = targetContracts.filter(c => c.status === 'expired' || c.status === '만료');
+  const activeContracts = targetContracts.filter(c => c.status===EMP_STATUS.ACTIVE || c.status===CONTRACT_STATUS.ACTIVE || c.status === '유효');
+  const expiredContracts = targetContracts.filter(c => c.status===CONTRACT_STATUS.EXPIRED || c.status===CONTRACT_STATUS.EXPIRED);
 
   const thisPays = allPayrolls.filter(p => !p.is_draft && p.company_id === selCo && p.pay_year == yr && p.pay_month == mo);
   const totalNet = thisPays.reduce((s,p) => s + (p.net_pay||0), 0);
@@ -709,7 +709,7 @@ function renderLaborStatus(){
   // 이달 급여가 입력된 직원의 계약 + 유효 계약을 합산 (중복 제거)
   const billingContracts = targetContracts.filter(c => {
     const hasPayThisMonth = thisPayEmpIds.has(c.employee_id);
-    const isActive = c.status === 'active' || c.status === '활성' || c.status === '유효';
+    const isActive = c.status===EMP_STATUS.ACTIVE || c.status===CONTRACT_STATUS.ACTIVE || c.status === '유효';
     return hasPayThisMonth || isActive;
   });
 
@@ -734,8 +734,8 @@ function renderLaborStatus(){
       const emp = allEmployees.find(e => e.id === c.employee_id);
       const empCat = emp?.employment_category || '-';
       const catBadge = empCatBadge(empCat);
-      const isResigned = emp?.status === '퇴직' && emp?.resign_date;
-      const periodTxt = empCat === '정규직'
+      const isResigned = emp?.status===EMP_STATUS.RESIGNED && emp?.resign_date;
+      const periodTxt = empCat ===CONTRACT_TYPE.REGULAR
         ? (isResigned ? `${c.contract_start||'-'} ~ ${emp.resign_date}` : `${c.contract_start||'-'} ~ 현재`)
         : `${c.contract_start||'-'} ~ ${c.contract_end||'미정'}`;
       const workInfo = (c.work_hours_per_day && c.work_days_per_week)

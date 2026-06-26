@@ -305,7 +305,9 @@ const wonM = n => {
   return v.toLocaleString('ko-KR') + '만원';
 };
 const fmt = n => Math.round(n||0).toLocaleString('ko-KR');
-const empCatBadge = c => ({'정규직':'badge-blue','정규직 수습':'badge-cyan','계약직':'badge-purple','계약직 수습':'badge-pink','일용직':'badge-orange'}[c]||'badge-gray');
+const CAT_BADGE_CLS = { regular:'badge-blue', regular_probation:'badge-cyan', fixed_term:'badge-purple', fixed_probation:'badge-pink', daily:'badge-orange' };
+const CONTRACT_TYPE_LABEL = { regular:'정규직', regular_probation:'정규직 수습', fixed_term:'계약직', fixed_probation:'계약직 수습', daily:'일용직' };
+const empCatBadge = c => CAT_BADGE_CLS[c] || 'badge-gray';
 const getEmpName = id => (allEmployees.find(e=>e.id===id)||{}).name || '알수없음';
 
 // ══ 1. STATS PAGE ══
@@ -701,12 +703,12 @@ function renderCtContracts(){
   listEl.innerHTML = filtered.map(c => {
     const emp     = allEmployees.find(e=>e.id===c.employee_id) || {};
     const empCat  = emp.employment_category || '-';
-    const isDaily = empCat === '일용직';
+    const isDaily = empCat === 'daily';
     const active  = isCtActive(c);
-    const expired = c.status==='해지'||c.status==='terminated'||c.status==='파기';
+    const expired = c.status==='terminated'||c.status==='voided';
 
     // 계약 기간 표시
-    const period = (empCat==='정규직' && active)
+    const period = ((empCat==='regular'||empCat==='regular_probation') && active)
       ? `${c.contract_start||'-'} ~ 현재`
       : `${c.contract_start||'-'} ~ ${c.contract_end||'미정'}`;
 
@@ -741,7 +743,7 @@ function renderCtContracts(){
 
     // 계약종료 D-day (만료 계약만)
     let dday = '';
-    if(active && c.contract_end && empCat !== '정규직'){
+    if(active && c.contract_end && empCat !== 'regular' && empCat !== 'regular_probation'){
       const diff = Math.ceil((new Date(c.contract_end) - new Date(today)) / 86400000);
       if(diff <= 30 && diff >= 0){
         dday = `<span style="background:#fef3c7;color:#b45309;padding:1px 7px;border-radius:10px;font-size:10px;font-weight:700;">D-${diff===0?'day':diff}</span>`;
@@ -752,8 +754,8 @@ function renderCtContracts(){
 
     // 아바타 색
     const avatarColors = {
-      '정규직':'#3b82f6','정규직 수습':'#22c55e',
-      '계약직':'#f59e0b','계약직 수습':'#f97316','일용직':'#a855f7'
+      'regular':'#3b82f6','regular_probation':'#22c55e',
+      'fixed_term':'#f59e0b','fixed_probation':'#f97316','daily':'#a855f7'
     };
     const avatarColor = avatarColors[empCat] || '#6b7280';
 
@@ -767,7 +769,7 @@ function renderCtContracts(){
             ${empStatusBadge}
             ${dday}
           </div>
-          <div style="font-size:11px;color:#6b7280;margin-top:1px;">${emp.department||''} ${emp.position||''} · ${empCat}</div>
+          <div style="font-size:11px;color:#6b7280;margin-top:1px;">${emp.department||''} ${emp.position||''} · ${CONTRACT_TYPE_LABEL[empCat]||empCat}</div>
         </div>
         ${statusBadge}
       </div>
@@ -775,7 +777,7 @@ function renderCtContracts(){
       <div style="padding:10px 14px;display:grid;grid-template-columns:1fr 1fr;gap:6px;">
         <div style="background:#f9fafb;border-radius:8px;padding:7px 9px;">
           <div style="font-size:10px;color:#9ca3af;margin-bottom:2px;">계약유형</div>
-          <div style="font-size:12px;font-weight:600;color:#374151;"><span class="badge ${empCatBadge(empCat)}" style="font-size:10px;">${empCat}</span></div>
+          <div style="font-size:12px;font-weight:600;color:#374151;"><span class="badge ${empCatBadge(empCat)}" style="font-size:10px;">${CONTRACT_TYPE_LABEL[empCat]||empCat}</span></div>
         </div>
         <div style="background:#f9fafb;border-radius:8px;padding:7px 9px;">
           <div style="font-size:10px;color:#9ca3af;margin-bottom:2px;">소정근로</div>

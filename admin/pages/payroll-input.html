@@ -1,0 +1,682 @@
+    <div id="page-payroll-input" class="page">
+      <!-- ── 전체 급여 임시저장 목록 배너 (고객사 선택 여부 무관하게 항상 표시) ── -->
+      <div id="pi-all-draft-banner">
+        <div class="pi-adb-header" onclick="togglePIAllDraftBanner(this)">
+          <div class="pi-adb-left">
+            <div class="pi-adb-icon"><i class="fas fa-clock-rotate-left"></i></div>
+            <span class="pi-adb-title">임시저장된 급여 입력</span>
+            <span class="pi-adb-badge" id="pi-all-draft-count">0</span>
+          </div>
+          <button class="pi-adb-chevron" onclick="togglePIAllDraftBanner(this.closest('.pi-adb-header'));event.stopPropagation();" title="펼치기/접기">
+            <i class="fas fa-chevron-down"></i>
+          </button>
+        </div>
+        <div class="pi-adb-divider"></div>
+        <div class="pi-adb-body" id="pi-all-draft-body">
+          <div class="pi-adb-list" id="pi-all-draft-list"></div>
+        </div>
+      </div>
+
+      <!-- ── 임시저장 복원 배너 (직원 선택 후 해당 직원의 미완료 임시저장 발견 시 표시) ── -->
+      <div id="pi-draft-banner" style="display:none;background:linear-gradient(90deg,#f0fdf4,#dcfce7);border:1.5px solid #4ade80;border-radius:10px;padding:11px 18px;margin-bottom:14px;align-items:center;justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <i class="fas fa-clock-rotate-left" style="color:#16a34a;font-size:16px;"></i>
+          <div>
+            <span style="font-size:13.5px;font-weight:700;color:#15803d;">임시저장된 급여 입력이 있습니다</span>
+            <span style="font-size:11.5px;color:#166534;margin-left:8px;" id="pi-draft-banner-sub"></span>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button onclick="loadPIDraft()" style="background:#16a34a;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">
+            <i class="fas fa-upload" style="margin-right:4px;"></i>불러오기
+          </button>
+          <button onclick="discardPIDraft()" style="background:none;border:1px solid #86efac;border-radius:6px;padding:5px 12px;font-size:12px;color:#166534;cursor:pointer;font-family:inherit;">
+            <i class="fas fa-trash-alt" style="margin-right:4px;"></i>삭제
+          </button>
+        </div>
+      </div>
+
+      <input type="file" id="excel-upload-input" accept=".xlsx,.xls" style="display:none;" onchange="handleExcelUpload(event)" />
+
+      <!-- ① 고객사 선택 카드 -->
+      <div class="card" id="pi-company-select-card" style="margin-bottom:16px;padding:20px;">
+        <div class="co-card-title"><i class="fas fa-building"></i>고객사를 선택하세요</div>
+        <div style="display:flex;gap:10px;margin-bottom:12px;">
+          <div class="search-input" style="flex:1;min-width:180px;">
+            <i class="fas fa-search"></i>
+            <input type="text" id="pi-company-search" placeholder="고객사명 검색" oninput="renderPICompanyList()" />
+          </div>
+        </div>
+        <div id="pi-company-chips" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+      </div>
+
+      <!-- ② 고객사 선택 후 입력 섹션 -->
+      <div id="pi-input-section" style="display:none;">
+        <!-- 선택된 고객사 헤더 -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:12px 18px;background:linear-gradient(90deg,#1e1b4b,#312e81);border-radius:10px;">
+          <span id="pi-selected-company-label" style="font-size:14px;font-weight:700;color:#fff;"></span>
+          <button onclick="clearPICompanySelect()" style="background:none;border:none;cursor:pointer;color:rgba(255,255,255,.7);font-size:20px;" title="고객사 선택 해제"><i class="fas fa-times-circle"></i></button>
+        </div>
+
+        <!-- 숨김 호환용 select (기존 JS 참조 유지) -->
+        <select id="pi-company" style="display:none;"></select>
+
+        <!-- ③ 급여지급 년월 선택 + 대상자 목록 섹션 -->
+        <div id="pi-period-section" class="card" style="margin-bottom:16px;padding:20px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+            <!-- 왼쪽: 년월 선택 + 목록보기 -->
+            <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+              <div style="font-size:13px;font-weight:700;color:#374151;white-space:nowrap;">
+                <i class="fas fa-calendar-alt" style="color:#6366f1;margin-right:6px;"></i>급여지급 대상 년월
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <select id="pi-year" onchange="onPIYearMonthChange()" style="border:1.5px solid #e0e7ff;border-radius:8px;padding:8px 12px;font-size:13px;font-weight:600;color:#1e1b4b;outline:none;font-family:inherit;background:#fff;cursor:pointer;"></select>
+                <span style="font-size:13px;color:#374151;font-weight:600;">년</span>
+                <select id="pi-month" onchange="onPIYearMonthChange()" style="border:1.5px solid #e0e7ff;border-radius:8px;padding:8px 12px;font-size:13px;font-weight:600;color:#1e1b4b;outline:none;font-family:inherit;background:#fff;cursor:pointer;"></select>
+                <span style="font-size:13px;color:#374151;font-weight:600;">월</span>
+              </div>
+              <button onclick="loadPITargetList()" id="pi-load-target-btn"
+                style="display:inline-flex;align-items:center;gap:7px;padding:9px 20px;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 2px 8px rgba(99,102,241,.25);transition:all .15s;">
+                <i class="fas fa-users"></i> 지급대상자 목록보기
+              </button>
+            </div>
+            <!-- 오른쪽: 다운로드 + 업로드 -->
+            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+              <button onclick="downloadPrevMonthExcel()" id="pi-prev-download-btn"
+                style="display:inline-flex;align-items:center;gap:7px;padding:9px 20px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 2px 8px rgba(16,185,129,.25);transition:all .15s;">
+                <i class="fas fa-file-excel"></i> 전월 임금대장 다운로드
+              </button>
+              <button onclick="openPIUploadModal()" id="pi-bulk-upload-btn"
+                style="display:inline-flex;align-items:center;gap:7px;padding:9px 20px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 2px 8px rgba(245,158,11,.25);transition:all .15s;">
+                <i class="fas fa-upload"></i> 전직원 임금대장 업로드
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── 전직원 임금대장 일괄 업로드 모달 ── -->
+        <div id="pi-upload-modal" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.45);backdrop-filter:blur(3px);align-items:center;justify-content:center;">
+          <div style="background:#fff;border-radius:16px;width:560px;max-width:calc(100vw - 32px);max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25);display:flex;flex-direction:column;">
+            <!-- 모달 헤더 -->
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px 16px;border-bottom:1px solid #f0f0f5;">
+              <div style="display:flex;align-items:center;gap:12px;">
+                <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#f59e0b,#d97706);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                  <i class="fas fa-upload" style="color:#fff;font-size:17px;"></i>
+                </div>
+                <div>
+                  <div style="font-size:15px;font-weight:800;color:#1e1b4b;">전직원 임금대장 일괄 업로드</div>
+                  <div id="pi-upload-modal-sub" style="font-size:12px;color:#6b7280;margin-top:2px;"></div>
+                </div>
+              </div>
+              <button onclick="closePIUploadModal()" style="background:none;border:none;cursor:pointer;color:#9ca3af;font-size:22px;line-height:1;padding:4px;"><i class="fas fa-times"></i></button>
+            </div>
+            <!-- 모달 본문 -->
+            <div style="padding:24px;">
+              <!-- 안내 문구 -->
+              <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:12px;color:#92400e;line-height:1.8;">
+                <i class="fas fa-info-circle" style="color:#f59e0b;margin-right:6px;"></i>
+                <strong>전월 임금대장 다운로드</strong>로 받은 엑셀 양식을 작성한 후 업로드하세요.<br>
+                파일명 형식: <code style="background:#fef3c7;padding:1px 6px;border-radius:4px;">[고객사명]_임금대장_YYYY년MM월.xlsx</code>
+              </div>
+              <!-- 드래그앤드롭 영역 -->
+              <div id="pi-upload-drop-zone"
+                onclick="document.getElementById('pi-upload-file-input').click()"
+                ondragover="event.preventDefault();this.classList.add('pi-upload-dz-over');"
+                ondragleave="this.classList.remove('pi-upload-dz-over');"
+                ondrop="event.preventDefault();this.classList.remove('pi-upload-dz-over');handlePIBulkUpload({target:{files:event.dataTransfer.files}})"
+                class="pi-upload-dz">
+                <div class="pi-upload-dz-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                <div class="pi-upload-dz-text">클릭하거나 파일을 여기에 드래그하세요</div>
+                <div class="pi-upload-dz-hint">.xlsx · .xls 형식만 가능</div>
+                <div id="pi-upload-file-label" class="pi-upload-dz-label"></div>
+              </div>
+              <input type="file" id="pi-upload-file-input" accept=".xlsx,.xls" style="display:none;" onchange="handlePIBulkUpload(event)" />
+              <!-- 업로드 진행 표시 -->
+              <div id="pi-upload-progress" style="display:none;margin-top:16px;text-align:center;color:#6b7280;font-size:13px;">
+                <div style="width:36px;height:36px;border:3px solid #e5e7eb;border-top-color:#f59e0b;border-radius:50%;animation:tblSpin .7s linear infinite;margin:0 auto 10px;"></div>
+                파일 분석 중…
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ④ 지급대상자 목록 테이블 -->
+        <div id="pi-target-list-section" style="display:none;margin-bottom:16px;">
+          <div class="card" style="overflow:hidden;">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #f0f0f5;background:#f8fafc;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <i class="fas fa-users" style="color:#6366f1;font-size:14px;"></i>
+                <span style="font-size:13.5px;font-weight:700;color:#1e1b4b;" id="pi-target-list-title">지급대상자 목록</span>
+                <span id="pi-target-list-badge" style="background:#eef2ff;color:#4338ca;border:1px solid #c7d2fe;border-radius:12px;padding:2px 10px;font-size:11.5px;font-weight:700;"></span>
+              </div>
+              <button onclick="hidePITargetList()" style="background:none;border:none;cursor:pointer;color:#9ca3af;font-size:18px;" title="목록 닫기"><i class="fas fa-times"></i></button>
+            </div>
+            <div style="overflow-x:auto;">
+              <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                <thead>
+                  <tr style="background:#f1f5f9;">
+                    <th style="padding:10px 14px;text-align:left;font-size:11.5px;font-weight:700;color:#475569;border-bottom:1px solid #e2e8f0;">직원명</th>
+                    <th style="padding:10px 14px;text-align:left;font-size:11.5px;font-weight:700;color:#475569;border-bottom:1px solid #e2e8f0;">고용형태</th>
+                    <th style="padding:10px 14px;text-align:left;font-size:11.5px;font-weight:700;color:#475569;border-bottom:1px solid #e2e8f0;">계약기간</th>
+                    <th style="padding:10px 14px;text-align:center;font-size:11.5px;font-weight:700;color:#475569;border-bottom:1px solid #e2e8f0;">계약상태</th>
+                    <th style="padding:10px 14px;text-align:center;font-size:11.5px;font-weight:700;color:#475569;border-bottom:1px solid #e2e8f0;">급여입력 여부</th>
+                    <th style="padding:10px 14px;text-align:center;font-size:11.5px;font-weight:700;color:#475569;border-bottom:1px solid #e2e8f0;">관리</th>
+                  </tr>
+                </thead>
+                <tbody id="pi-target-list-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ⑤ 급여 입력 폼 섹션 (대상자 선택 후 표시) -->
+        <div id="pi-form-section" style="display:none;">
+          <!-- 선택된 직원 헤더 -->
+          <div id="pi-form-emp-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:10px 16px;background:linear-gradient(90deg,#f0fdf4,#dcfce7);border:1.5px solid #86efac;border-radius:10px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <i class="fas fa-user-circle" style="color:#16a34a;font-size:18px;"></i>
+              <span id="pi-form-emp-name" style="font-size:14px;font-weight:700;color:#15803d;"></span>
+              <span id="pi-form-emp-badge" style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:5px;background:#dcfce7;color:#166534;border:1px solid #86efac;"></span>
+            </div>
+            <button onclick="backToPITargetList()" style="display:inline-flex;align-items:center;gap:5px;background:#fff;border:1.5px solid #86efac;border-radius:7px;padding:6px 14px;font-size:12px;color:#166534;font-weight:600;cursor:pointer;font-family:inherit;">
+              <i class="fas fa-arrow-left"></i> 목록으로
+            </button>
+          </div>
+
+        <div style="display:grid;grid-template-columns:300px 1fr;gap:20px;">
+          <!-- 좌측: 계약정보 + 지급합계 -->
+          <div style="display:flex;flex-direction:column;gap:16px;">
+            <!-- 숨김 호환용 직원 select (기존 JS 참조 유지) -->
+            <select id="pi-employee" onchange="loadPIContract()" style="display:none;"><option value="">직원 선택</option></select>
+            <div class="card" id="pi-contract-card" style="display:none;">
+              <div class="card-header"><span class="card-title">📄 계약 정보</span></div>
+              <div id="pi-contract-info" style="padding:14px 16px;font-size:12px;color:#555;line-height:2.2;"></div>
+            </div>
+            <div class="card">
+              <div class="card-header"><span class="card-title">📊 지급 합계</span></div>
+              <div class="summary-box" style="margin:0;border:none;border-radius:0;">
+                <div class="summary-row-item"><span style="color:#666;">지급 총액</span><span class="amount-blue" id="pi-gross-disp">0원</span></div>
+                <div class="summary-row-item"><span style="color:#666;">공제 합계</span><span class="amount-red" id="pi-ded-disp">0원</span></div>
+                <div class="summary-row-item total"><span>영수액 (실수령)</span><span style="color:#e94560;" id="pi-net-disp">0원</span></div>
+              </div>
+            </div>
+          </div>
+          <!-- 우측: 급여 항목 입력 폼 -->
+          <div class="card">
+            <div class="card-header"><span class="card-title">💰 급여 항목 입력</span></div>
+            <!-- 수습 만료일 초과 경고 배너 (수습 계약에서 해당 월이 수습 종료일을 넘긴 경우) -->
+            <!-- ══ 수습 만료 경고 배너 (케이스①: 전체 초과 / 케이스②: 월 중간 분리 입력) ══ -->
+            <div id="pi-prob-overrun-banner" style="display:none;margin:0;border-bottom:2px solid #fca5a5;border-radius:0;">
+
+              <!-- ── 케이스① : 해당 월 전체가 수습 만료 이후 (저장 차단) ── -->
+              <div id="pi-prob-case1-panel" style="display:none;padding:14px 18px;background:linear-gradient(90deg,#fff1f2,#fef2f2);">
+                <div style="display:flex;align-items:flex-start;gap:10px;">
+                  <i class="fas fa-ban" style="color:#dc2626;font-size:18px;margin-top:1px;flex-shrink:0;"></i>
+                  <div style="flex:1;">
+                    <div style="font-size:13px;font-weight:800;color:#b91c1c;margin-bottom:4px;">
+                      ⛔ 수습 기간 전체 초과 — 채용확정 계약으로 급여를 저장해야 합니다
+                    </div>
+                    <div id="pi-prob-overrun-detail" style="font-size:12px;color:#7f1d1d;line-height:1.8;"></div>
+                    <div style="margin-top:8px;padding:8px 10px;background:#fef2f2;border:1px dashed #fca5a5;border-radius:7px;font-size:11.5px;color:#991b1b;line-height:1.6;">
+                      <i class="fas fa-info-circle" style="margin-right:4px;color:#dc2626;"></i>
+                      수습이 만료된 이후 달의 급여는 <strong>채용확정 근로계약 기준</strong>으로 저장해야 합니다.<br>
+                      아래 <strong style="color:#7c3aed;">[채용확정 계약 자동 생성]</strong> 버튼을 클릭하면 수습 계약을 기반으로
+                      채용확정 계약서(정규직·계약직)를 자동으로 생성하고, 이 급여도 함께 처리합니다.
+                    </div>
+                    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+                      <button onclick="_probAutoCreateAndSave()" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:#7c3aed;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;">
+                        <i class="fas fa-magic"></i> 채용확정 계약 자동 생성 후 저장
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ── 케이스② : 월 중간에 수습 만료 (분리 입력 UI) ── -->
+              <div id="pi-prob-case2-panel" style="display:none;padding:14px 18px;background:linear-gradient(90deg,#fffbeb,#fefce8);border-bottom:1px solid #fcd34d;">
+                <div style="display:flex;align-items:flex-start;gap:10px;">
+                  <i class="fas fa-cut" style="color:#d97706;font-size:18px;margin-top:1px;flex-shrink:0;"></i>
+                  <div style="flex:1;">
+                    <div style="font-size:13px;font-weight:800;color:#92400e;margin-bottom:6px;">
+                      ✂️ 수습 만료일이 이 달 중간 — 수습 기간 / 채용확정 기간을 분리하여 저장합니다
+                    </div>
+                    <div id="pi-prob-split-info" style="font-size:12px;color:#78350f;line-height:1.9;margin-bottom:8px;"></div>
+                    <!-- 분리 근로일수 입력 -->
+                    <div style="background:#fff;border:1.5px solid #fcd34d;border-radius:8px;padding:12px 14px;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                      <div>
+                        <div style="font-size:11px;font-weight:700;color:#d97706;margin-bottom:4px;">
+                          🟡 수습 기간 근로일수 <span id="pi-prob-split-prob-dates" style="font-weight:400;color:#6b7280;"></span>
+                        </div>
+                        <input id="pi-prob-wd-prob" type="number" min="0" step="1" value="0"
+                          style="width:100%;padding:7px 10px;border:1.5px solid #fcd34d;border-radius:6px;font-size:13px;font-weight:700;text-align:center;"
+                          oninput="_onProbSplitInputChange()" placeholder="수습 근로일수">
+                        <div style="font-size:11px;color:#92400e;margin-top:3px;">
+                          총근로시간: <input id="pi-prob-wh-prob" type="number" min="0" step="0.5" value="0"
+                            style="width:80px;padding:4px 6px;border:1px solid #fcd34d;border-radius:4px;font-size:12px;"
+                            oninput="_onProbSplitInputChange()"> h
+                        </div>
+                      </div>
+                      <div>
+                        <div style="font-size:11px;font-weight:700;color:#2563eb;margin-bottom:4px;">
+                          🔵 채용확정 기간 근로일수 <span id="pi-prob-split-post-dates" style="font-weight:400;color:#6b7280;"></span>
+                        </div>
+                        <input id="pi-prob-wd-post" type="number" min="0" step="1" value="0"
+                          style="width:100%;padding:7px 10px;border:1.5px solid #93c5fd;border-radius:6px;font-size:13px;font-weight:700;text-align:center;"
+                          oninput="_onProbSplitInputChange()" placeholder="확정 근로일수">
+                        <div style="font-size:11px;color:#1d4ed8;margin-top:3px;">
+                          총근로시간: <input id="pi-prob-wh-post" type="number" min="0" step="0.5" value="0"
+                            style="width:80px;padding:4px 6px;border:1px solid #93c5fd;border-radius:4px;font-size:12px;"
+                            oninput="_onProbSplitInputChange()"> h
+                        </div>
+                      </div>
+                    </div>
+                    <!-- 합계 표시 -->
+                    <div id="pi-prob-split-total-check" style="margin-top:6px;font-size:12px;color:#374151;"></div>
+                    <!-- 분리 저장 버튼 -->
+                    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                      <button id="pi-prob-split-save-btn" onclick="savePISplit()" disabled
+                        style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;background:#d97706;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;opacity:.5;">
+                        <i class="fas fa-cut"></i> 수습 / 채용확정 분리 저장 (2건)
+                      </button>
+                      <span style="font-size:11px;color:#6b7280;">
+                        <i class="fas fa-info-circle"></i>
+                        저장 시 채용확정 계약서가 자동 생성되고 직원 고용형태가 변경됩니다.
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div style="padding:20px;display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+            <!-- 지급 -->
+            <div>
+              <!-- ══ 산정기준 (최상단 첫 번째 섹션) ══ -->
+              <div class="pi-section-title" style="background:#f8faff;border:1.5px solid #c7d2f0;border-radius:7px;padding:6px 10px;margin-bottom:8px;color:#4338ca;">
+                <i class="fas fa-calendar-alt"></i> 산정기준
+              </div>
+              <!-- 지급일 -->
+              <div class="pi-row">
+                <label style="display:flex;align-items:center;gap:5px;">
+                  지급일
+                  <span id="pi-paydate-badge" style="display:none;font-size:10px;font-weight:400;color:#6b7280;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:4px;padding:1px 6px;"></span>
+                </label>
+                <input type="date" id="pi-paydate" style="width:200px;" />
+              </div>
+              <!-- 급여 산정기간: 계약서에 입력된 값 readonly 표시 -->
+              <div class="pi-row">
+                <label>급여 산정기간</label>
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <input type="text" id="pi-pay-period" readonly
+                    style="width:200px;background:#f9fafb;color:#374151;border:1px solid #e5e7eb;border-radius:6px;padding:5px 10px;font-size:12.5px;cursor:default;"
+                    placeholder="계약서 미입력" />
+                </div>
+              </div>
+              <!-- 통상시급: 계약서 hourly_wage readonly 표시 -->
+              <div class="pi-row">
+                <label>통상시급</label>
+                <div style="display:flex;align-items:center;gap:4px;">
+                  <span id="pi-hourly-wage-disp"
+                    style="font-size:13px;font-weight:600;color:#1d4ed8;">-</span>
+                  <span style="font-size:11px;color:#9ca3af;">/h</span>
+                </div>
+              </div>
+              <!-- 고정 연장/야간/휴일근로수당: 계약서에서 자동 표시 (readonly) -->
+              <div class="pi-row" id="pi-row-fixed-ot-disp" style="display:none;">
+                <label style="color:#7c3aed;">고정 연장근로수당</label>
+                <span id="pi-fixed-ot-pay-disp" style="font-size:13px;font-weight:600;color:#7c3aed;">0원</span>
+              </div>
+              <div class="pi-row" id="pi-row-fixed-night-disp" style="display:none;">
+                <label style="color:#7c3aed;">고정 야간근로수당</label>
+                <span id="pi-fixed-night-pay-disp" style="font-size:13px;font-weight:600;color:#7c3aed;">0원</span>
+              </div>
+              <div class="pi-row" id="pi-row-fixed-hol-disp" style="display:none;">
+                <label style="color:#7c3aed;">고정 휴일근로수당</label>
+                <span id="pi-fixed-hol-pay-disp" style="font-size:13px;font-weight:600;color:#7c3aed;">0원</span>
+              </div>
+              <!-- ══ 근로 실적 ══ -->
+              <div class="pi-section-title green" style="margin-top:14px;"><i class="fas fa-clipboard-list"></i> 근로 실적</div>
+              <div class="pi-row">
+                <label>근로일수 <span style="font-size:10px;font-weight:400;color:#888;">(실제)</span></label>
+                <div style="display:flex;align-items:center;gap:3px;"><input type="number" id="pi-work-days" placeholder="0" min="0" step="0.5" oninput="calcPIWorkActual()" style="width:72px;" /><span style="font-size:11px;color:#888;">일</span></div>
+              </div>
+              <!-- 근로일수·시간 자동입력 안내 배지 -->
+              <div id="pi-workdays-auto-label" style="display:none;margin:-4px 0 6px 0;padding:4px 9px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:5px;font-size:10.5px;color:#2563eb;line-height:1.5;"></div>
+              <div class="pi-row">
+                <label>추가 연장근로 시간</label>
+                <div style="display:flex;align-items:center;gap:3px;"><input type="number" id="pi-ot-hours" placeholder="0" min="0" step="0.5" oninput="calcPITotalHours();calcPI();" style="width:72px;" /><span style="font-size:11px;color:#888;">h</span></div>
+              </div>
+              <div class="pi-row">
+                <label>추가 야간근로 시간</label>
+                <div style="display:flex;align-items:center;gap:3px;"><input type="number" id="pi-night-hours" placeholder="0" min="0" step="0.5" oninput="calcPITotalHours();calcPI();" style="width:72px;" /><span style="font-size:11px;color:#888;">h</span></div>
+              </div>
+              <div class="pi-row">
+                <label>추가 휴일근로 시간</label>
+                <div style="display:flex;align-items:center;gap:3px;"><input type="number" id="pi-hol-hours" placeholder="0" min="0" step="0.5" oninput="calcPITotalHours();calcPI();" style="width:72px;" /><span style="font-size:11px;color:#888;">h</span></div>
+              </div>
+              <div class="pi-row">
+                <label>총 근로시간 <span class="pi-auto-badge">자동계산</span></label>
+                <div style="display:flex;align-items:center;gap:3px;">
+                  <input type="number" id="pi-total-hours" placeholder="0" min="0" step="0.5"
+                         class="pi-total-hours-auto" readonly tabindex="-1"
+                         style="width:72px;" />
+                  <span style="font-size:11px;color:#888;">h</span>
+                </div>
+              </div>
+              <!-- 5인 미만/이상 사업장 판정 안내 배지 -->
+              <div id="pi-small-firm-badge" style="display:none;margin-top:6px;margin-bottom:4px;padding:6px 10px;border-radius:7px;font-size:11px;line-height:1.7;background:#fffbeb;border:1px solid #fde68a;"></div>
+              <!-- 근로 실적 자동 산출 결과 패널 -->
+              <div id="pi-work-auto-panel" style="display:none;margin-top:8px;margin-bottom:4px;background:#f8faff;border:1px solid #c7d2f0;border-radius:8px;padding:10px 12px;">
+                <div style="font-size:11.5px;font-weight:700;color:#4f46e5;margin-bottom:7px;display:flex;align-items:center;gap:5px;">
+                  <i class="fas fa-calculator" style="font-size:11px;"></i> 근로 실적 기반 자동 산출
+                  <span style="font-size:10px;font-weight:400;color:#818cf8;">(계약 참조)</span>
+                </div>
+                <!-- 기본급 일할 계산 -->
+                <div class="pi-row" style="background:#eff0ff;border-radius:6px;padding:5px 8px;margin-bottom:4px;">
+                  <label style="color:#4338ca;font-size:12px;">기본급</label>
+                  <span class="pi-val" id="pi-base-daily-disp" style="color:#4338ca;font-size:12px;">-</span>
+                </div>
+                <!-- 주휴수당 자동계산 -->
+                <div class="pi-row" style="background:#eff0ff;border-radius:6px;padding:5px 8px;margin-bottom:4px;">
+                  <label style="color:#4338ca;font-size:12px;">주휴수당</label>
+                  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;">
+                    <span class="pi-val" id="pi-weekly-hol-disp" style="color:#4338ca;font-size:12px;">0원</span>
+                    <span id="pi-weekly-hol-desc" class="pi-weekly-hol-desc"></span>
+                  </div>
+                </div>
+                <!-- 수당 자동 산출 -->
+                <div class="pi-row" style="background:#f0f6ff;border-radius:6px;padding:5px 8px;margin-bottom:4px;">
+                  <label style="color:#3b82f6;">추가 연장근로수당</label>
+                  <span class="pi-val" id="pi-ot-pay-disp" style="color:#3b82f6;">0원</span>
+                </div>
+                <div class="pi-row" style="background:#f0f6ff;border-radius:6px;padding:5px 8px;margin-bottom:4px;">
+                  <label style="color:#3b82f6;">추가 야간근로수당</label>
+                  <span class="pi-val" id="pi-night-pay-disp" style="color:#3b82f6;">0원</span>
+                </div>
+                <div class="pi-row" style="background:#f0f6ff;border-radius:6px;padding:5px 8px;">
+                  <label style="color:#3b82f6;">추가 휴일근로수당</label>
+                  <span class="pi-val" id="pi-hol-pay-disp" style="color:#3b82f6;">0원</span>
+                </div>
+              </div>
+              <!-- 비고 -->
+              <div class="pi-note-wrap">
+                <label class="pi-note-label">비고</label>
+                <textarea id="pi-note" rows="3" placeholder="선택 입력"></textarea>
+              </div>
+
+              <!-- 계약 없을 때 수당 표시 (별도 위치) -->
+              <div id="pi-ot-pay-simple-wrap" style="display:none;">
+                <div class="pi-row" style="background:#f0f6ff;border-radius:6px;padding:5px 8px;"><label style="color:#3b82f6;">추가 연장근로수당</label><span class="pi-val" id="pi-ot-pay-disp-simple" style="color:#3b82f6;">0원</span></div>
+                <div style="height:6px;"></div>
+                <div class="pi-row" style="background:#f0f6ff;border-radius:6px;padding:5px 8px;"><label style="color:#3b82f6;">추가 야간근로수당</label><span class="pi-val" id="pi-night-pay-disp-simple" style="color:#3b82f6;">0원</span></div>
+                <div style="height:6px;"></div>
+                <div class="pi-row" style="background:#f0f6ff;border-radius:6px;padding:5px 8px;"><label style="color:#3b82f6;">추가 휴일근로수당</label><span class="pi-val" id="pi-hol-pay-disp-simple" style="color:#3b82f6;">0원</span></div>
+              </div>
+
+              <!-- 기본급·주휴수당 hidden inputs — 자동계산 결과를 DB 저장·calcPI에 전달 -->
+              <input type="hidden" id="pi-base" data-amount />
+              <input type="hidden" id="pi-weekly-hol" data-amount />
+              <!-- ══ 정기 지급항목 ══ -->
+              <div class="pi-section-title blue" style="margin-top:16px;"><i class="fas fa-file-contract"></i> 정기 지급항목</div>
+              <!-- 출산·보육수당 (첫 번째 항목, allowance_config 연동) -->
+              <div class="pi-row" id="pi-row-childcare" style="display:none;">
+                <label>출산·보육수당</label>
+                <div class="pi-row-right">
+                  <span class="pi-dep-wrap">부양가족 <input type="number" id="pi-dependents" min="1" value="1" oninput="calcPI()" class="pi-dep-input" /> 인</span>
+                  <input type="text" inputmode="numeric" id="pi-childcare" data-amount oninput="onAmountInput(this,calcPI)" class="pi-row-amount" />
+                </div>
+              </div>
+              <div class="pi-row" id="pi-row-bonus">
+                <label>정기 상여금</label>
+                <div class="pi-row-right">
+                  <span id="pi-bonus-contract-badge" style="display:none;font-size:10px;font-weight:700;color:#1d4ed8;background:#eff6ff;border:1px solid #93c5fd;border-radius:4px;padding:1px 6px;margin-right:4px;">계약서 고정</span>
+                  <input type="text" inputmode="numeric" id="pi-bonus" data-amount oninput="onAmountInput(this,calcPI)" class="pi-row-amount" />
+                </div>
+              </div>
+              <div class="pi-row" id="pi-row-site" style="display:none;"><label>현장수당</label><input type="text" inputmode="numeric" id="pi-site" data-amount oninput="onAmountInput(this,calcPI)" /></div>
+              <div class="pi-row" id="pi-row-position" style="display:none;"><label>직책수당</label><input type="text" inputmode="numeric" id="pi-position" data-amount oninput="onAmountInput(this,calcPI)" /></div>
+              <div class="pi-row" id="pi-row-skill" style="display:none;"><label>기술수당</label><input type="text" inputmode="numeric" id="pi-skill" data-amount oninput="onAmountInput(this,calcPI)" /></div>
+              <div class="pi-row" id="pi-row-license" style="display:none;"><label>면허수당</label><input type="text" inputmode="numeric" id="pi-license" data-amount oninput="onAmountInput(this,calcPI)" /></div>
+              <!-- 벽지수당 (통상임금 항상 포함 — 독립 행) -->
+              <div class="pi-row" id="pi-row-remote-area" style="display:none;"><label>벽지수당</label><input type="text" inputmode="numeric" id="pi-remote-area" data-amount oninput="onAmountInput(this,calcPI)" /></div>
+              <!-- 차량유지비 -->
+              <div class="pi-row" id="pi-transport-row">
+                <label>차량유지비</label>
+                <div class="pi-row-right">
+                  <input type="text" inputmode="numeric" id="pi-transport" data-amount oninput="onAmountInput(this,calcPI)" class="pi-row-amount" />
+                </div>
+              </div>
+              <!-- 식대 -->
+              <div class="pi-row">
+                <label>식대</label>
+                <div class="pi-row-right">
+                  <input type="text" inputmode="numeric" id="pi-meal" data-amount oninput="onAmountInput(this,calcPI)" class="pi-row-amount" />
+                </div>
+              </div>
+
+              <!-- 연구활동비 -->
+              <div class="pi-row" id="pi-row-research" style="display:none;">
+                <label>연구활동비</label>
+                <div class="pi-row-right">
+                  <input type="text" inputmode="numeric" id="pi-research" data-amount oninput="onAmountInput(this,calcPI)" class="pi-row-amount" />
+                </div>
+              </div>
+              <!-- 통신비 -->
+              <div class="pi-row" id="pi-row-communication" style="display:none;">
+                <label>통신비</label>
+                <div class="pi-row-right">
+                  <input type="text" inputmode="numeric" id="pi-communication" data-amount oninput="onAmountInput(this,calcPI)" class="pi-row-amount" />
+                </div>
+              </div>
+              <!-- 체력증진비 -->
+              <div class="pi-row" id="pi-row-fitness" style="display:none;">
+                <label>체력증진비</label>
+                <div class="pi-row-right">
+                  <input type="text" inputmode="numeric" id="pi-fitness" data-amount oninput="onAmountInput(this,calcPI)" class="pi-row-amount" />
+                </div>
+              </div>
+              <!-- 자기계발비 -->
+              <div class="pi-row" id="pi-row-self-dev" style="display:none;">
+                <label>자기계발비</label>
+                <div class="pi-row-right">
+                  <input type="text" inputmode="numeric" id="pi-self-dev" data-amount oninput="onAmountInput(this,calcPI)" class="pi-row-amount" />
+                </div>
+              </div>
+              <!-- 도서지원비 -->
+              <div class="pi-row" id="pi-row-book" style="display:none;">
+                <label>도서지원비</label>
+                <div class="pi-row-right">
+                  <input type="text" inputmode="numeric" id="pi-book" data-amount oninput="onAmountInput(this,calcPI)" class="pi-row-amount" />
+                </div>
+              </div>
+              <!-- 해외근무수당 -->
+              <div class="pi-row" id="pi-row-overseas" style="display:none;">
+                <label>해외근무수당</label>
+                <div class="pi-row-right">
+                  <input type="text" inputmode="numeric" id="pi-overseas" data-amount oninput="onAmountInput(this,calcPI)" class="pi-row-amount" />
+                </div>
+              </div>
+              <div class="pi-section-title blue" style="margin-top:14px;"><i class="fas fa-calendar-minus"></i> 비정기 지급항목</div>
+
+              <!-- ── 연차 현황 표 ── -->
+              <div id="pi-annual-leave-box" style="margin-bottom:8px;display:none;">
+                <div style="font-size:11.5px;font-weight:700;color:#4f46e5;margin-bottom:5px;display:flex;align-items:center;gap:5px;">
+                  <i class="fas fa-umbrella-beach" style="font-size:11px;"></i> 연차 현황
+                </div>
+                <table style="width:100%;border-collapse:collapse;font-size:12px;background:#fff;border-radius:7px;overflow:hidden;box-shadow:0 1px 4px rgba(99,102,241,.10);">
+                  <colgroup><col style="width:50%"><col style="width:50%"></colgroup>
+                  <tr style="background:#eff0ff;">
+                    <td style="padding:6px 10px;font-weight:600;color:#4338ca;border-right:1px solid #e0e7ff;">총 발생 연차</td>
+                    <td style="padding:6px 10px;text-align:right;font-weight:700;color:#1e1b4b;" id="pi-al-total">-</td>
+                  </tr>
+                  <tr style="background:#f8faff;">
+                    <td style="padding:6px 10px;color:#374151;border-right:1px solid #e0e7ff;">이번달 사용 연차</td>
+                    <td style="padding:6px 10px;text-align:right;">
+                      <input type="number" id="pi-annual-used" min="0" step="0.25" value="0"
+                             oninput="calcAnnualLeaveTable()"
+                             style="width:60px;border:1px solid #c7d2f0;border-radius:5px;padding:3px 6px;font-size:12px;text-align:right;font-family:inherit;outline:none;" />
+                      <span style="color:#888;margin-left:3px;">일</span>
+                    </td>
+                  </tr>
+                  <tr style="background:#f8faff;">
+                    <td style="padding:6px 10px;color:#374151;border-right:1px solid #e0e7ff;">누적 사용 연차</td>
+                    <td style="padding:6px 10px;text-align:right;font-weight:600;color:#6366f1;" id="pi-al-cum">0일</td>
+                  </tr>
+                  <tr style="background:#f0fdf4;">
+                    <td style="padding:6px 10px;font-weight:600;color:#166534;border-right:1px solid #bbf7d0;">잔여 연차</td>
+                    <td style="padding:6px 10px;text-align:right;font-weight:700;color:#15803d;" id="pi-al-remain">-</td>
+                  </tr>
+                </table>
+              </div>
+
+              <div class="pi-row" style="align-items:center;">
+                <label>연차수당</label>
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:11.5px;color:#6b7280;font-weight:400;white-space:nowrap;">
+                    <input type="checkbox" id="pi-annual-auto-chk"
+                      style="width:13px;height:13px;accent-color:#4f46e5;cursor:pointer;flex-shrink:0;"
+                      onchange="onAnnualAutoChkChange()" />
+                    잔여 연차로 자동계산
+                  </label>
+                  <input type="text" inputmode="numeric" id="pi-annual-pay" data-amount oninput="onAmountInput(this,calcPI)" />
+                </div>
+              </div>
+              <div class="pi-row"><label>비정기 성과급</label><input type="text" inputmode="numeric" id="pi-performance" data-amount oninput="onAmountInput(this,calcPI)" /></div>
+              <div class="pi-row"><label>실비변상적급여</label><input type="text" inputmode="numeric" id="pi-actual-expense" data-amount oninput="onAmountInput(this,calcPI)" /></div>
+              <!-- ── 비정기 지급: daily/receipt 항목 동적 삽입 영역 ── -->
+              <div id="pi-irregular-dynamic-rows"></div>
+              <div class="pi-row" style="align-items:center;">
+                <label>기타수당</label>
+                <input type="text" id="pi-etc-allowance-memo" placeholder="메모 (예: 명절수당)" maxlength="100"
+                  style="flex:1;min-width:0;margin:0 8px;border:1px solid #e0e0e0;border-radius:6px;padding:6px 9px;font-size:12px;color:#374151;outline:none;font-family:inherit;" />
+                <input type="text" inputmode="numeric" id="pi-etc-allowance" data-amount oninput="onAmountInput(this,calcPI)" />
+              </div>
+            </div>
+            <!-- 공제 -->
+            <div>
+              <div class="pi-section-title red" id="pi-ded-title"><i class="fas fa-minus-circle"></i> 공제 내역 <span id="pi-ded-mode-badge" style="font-size:10px;padding:2px 8px;border-radius:10px;margin-left:6px;background:#e94560;color:#fff;font-weight:700;">요율 자동계산</span></div>
+
+              <!-- 요율 기준: 보수월액 + 자동계산 결과 -->
+              <div id="pi-ded-auto-block">
+                <div style="margin-bottom:10px;">
+                  <div style="font-size:11px;color:#888;margin-bottom:6px;">보수월액 (공제 기준)</div>
+                  <input type="text" inputmode="numeric" id="pi-std-pay" data-amount oninput="onAmountInput(this,calcPIManual)" style="width:100%;border:1px solid #e0e0e0;border-radius:7px;padding:8px 10px;font-size:12.5px;outline:none;font-family:inherit;" placeholder="자동 계산" />
+                  <div style="font-size:10.5px;color:#aaa;margin-top:3px;">※ 기본급+주휴수당+직책수당 기준 자동계산, 직접 수정 가능</div>
+                </div>
+                <div id="pi-ded-detail" style="background:#fff9fa;border:1px dashed #ffd0d8;border-radius:8px;padding:14px;font-size:12.5px;line-height:2.4;"></div>
+              </div>
+
+              <!-- 확정액 기준: 직접 입력 -->
+              <div id="pi-ded-fixed-block" style="display:none;">
+                <div style="padding:10px 12px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;margin-bottom:10px;font-size:11.5px;color:#92400e;">
+                  <i class="fas fa-info-circle" style="margin-right:4px;"></i>확정액 기준: 각 보험료를 직접 입력하세요. 소득세·주민세는 자동 계산됩니다.
+                </div>
+                <div style="background:#fff9fa;border:1px dashed #ffd0d8;border-radius:8px;padding:12px;">
+                  <div class="pi-row"><label style="font-size:11.5px;color:#888;">국민연금</label><input type="text" inputmode="numeric" id="pi-pension-fixed" data-amount placeholder="0" oninput="onAmountInput(this,calcPIFixed)" /></div>
+                  <div class="pi-row"><label style="font-size:11.5px;color:#888;">건강보험</label><input type="text" inputmode="numeric" id="pi-health-fixed" data-amount placeholder="0" oninput="onAmountInput(this,calcPIFixed)" /></div>
+                  <div class="pi-row"><label style="font-size:11.5px;color:#888;">장기요양보험</label><input type="text" inputmode="numeric" id="pi-ltcare-fixed" data-amount placeholder="0" oninput="onAmountInput(this,calcPIFixed)" /></div>
+                  <div class="pi-row"><label style="font-size:11.5px;color:#888;">고용보험</label><input type="text" inputmode="numeric" id="pi-employ-fixed" data-amount placeholder="0" oninput="onAmountInput(this,calcPIFixed)" /></div>
+                  <div id="pi-ded-detail-fixed" style="margin-top:8px;font-size:12px;line-height:2.2;color:#666;"></div>
+                </div>
+              </div>
+
+              <div class="pi-section-title red" style="margin-top:14px;"><i class="fas fa-file-invoice-dollar"></i> 정산 / 추가 공제</div>
+
+              <!-- 국민연금소급분 -->
+              <div class="pi-row">
+                <label>국민연금소급분</label>
+                <input type="text" inputmode="numeric" id="pi-national-pension-retro" data-amount placeholder="0" oninput="onAmountInput(this,calcPI)" />
+              </div>
+
+              <!-- 건강보험정산 -->
+              <div class="pi-row">
+                <label>건강보험정산</label>
+                <input type="text" inputmode="numeric" id="pi-health-adj-retro" data-amount placeholder="0" oninput="onAmountInput(this,calcPI)" />
+              </div>
+
+              <!-- 장기요양보험정산 -->
+              <div class="pi-row">
+                <label>장기요양보험정산</label>
+                <input type="text" inputmode="numeric" id="pi-ltcare-adj" data-amount placeholder="0" oninput="onAmountInput(this,calcPI)" />
+              </div>
+
+              <!-- 고용보험정산 -->
+              <div class="pi-row">
+                <label>고용보험정산</label>
+                <input type="text" inputmode="numeric" id="pi-empins-adj" data-amount placeholder="0" oninput="onAmountInput(this,calcPI)" />
+              </div>
+
+              <!-- 직전월 메모 인계 배너 -->
+              <div id="pi-prev-memo-banner" style="display:none;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:8px 12px;margin-bottom:8px;font-size:11.5px;color:#1e40af;">
+                <div style="display:flex;align-items:center;gap:6px;font-weight:700;margin-bottom:4px;">
+                  <span>📋</span><span id="pi-prev-memo-banner-title">직전월 메모 인계</span>
+                  <button onclick="_dismissPrevMemoBanner()" style="margin-left:auto;background:none;border:none;cursor:pointer;font-size:13px;color:#93c5fd;line-height:1;" title="배너 닫기">✕</button>
+                </div>
+                <div style="color:#3b82f6;font-size:11px;">직전월에 작성된 메모가 아래 란에 인계되었습니다. 내용을 확인하고 필요하면 수정하세요.</div>
+              </div>
+
+              <!-- 건강보험연말정산 -->
+              <div class="pi-row">
+                <label>건강보험연말정산</label>
+                <input type="text" inputmode="numeric" id="pi-health-adj-yearend" data-amount placeholder="0" oninput="onAmountInput(this,calcPI)" />
+              </div>
+              <textarea id="pi-health-adj-yearend-memo" rows="2" placeholder="메모 (건강보험연말정산 사유 등)"
+                style="width:100%;box-sizing:border-box;border:1px solid #e0e0e0;border-radius:6px;padding:6px 9px;font-size:11.5px;color:#374151;font-family:inherit;outline:none;resize:vertical;background:#fffbf0;margin-bottom:4px;"></textarea>
+
+              <!-- 장기요양보험연말정산 -->
+              <div class="pi-row">
+                <label>장기요양보험연말정산</label>
+                <input type="text" inputmode="numeric" id="pi-ltcare-adj-yearend" data-amount placeholder="0" oninput="onAmountInput(this,calcPI)" />
+              </div>
+              <textarea id="pi-ltcare-adj-yearend-memo" rows="2" placeholder="메모 (장기요양보험연말정산 사유 등)"
+                style="width:100%;box-sizing:border-box;border:1px solid #e0e0e0;border-radius:6px;padding:6px 9px;font-size:11.5px;color:#374151;font-family:inherit;outline:none;resize:vertical;background:#fffbf0;margin-bottom:4px;"></textarea>
+
+              <!-- 소득세연말정산 + 메모 -->
+              <div class="pi-row">
+                <label>소득세연말정산<span style="font-size:10px;color:#aaa;margin-left:4px;">(+추가납부/-환급)</span></label>
+                <input type="text" inputmode="numeric" id="pi-yearend" data-amount placeholder="0" oninput="onAmountInput(this,calcPI)" />
+              </div>
+              <textarea id="pi-yearend-memo" rows="2" placeholder="메모 (소득세연말정산 사유 등)"
+                style="width:100%;box-sizing:border-box;border:1px solid #e0e0e0;border-radius:6px;padding:6px 9px;font-size:11.5px;color:#374151;font-family:inherit;outline:none;resize:vertical;background:#fffbf0;margin-bottom:4px;"></textarea>
+
+              <!-- 기타 + 메모 -->
+              <div class="pi-row">
+                <label>기타<span style="font-size:10px;color:#aaa;margin-left:4px;">(+추가/-공제)</span></label>
+                <input type="text" inputmode="numeric" id="pi-advance" data-amount placeholder="0" oninput="onAmountInput(this,calcPI)" />
+              </div>
+              <textarea id="pi-advance-memo" rows="2" placeholder="메모 (기타 공제·추가 사유 등)"
+                style="width:100%;box-sizing:border-box;border:1px solid #e0e0e0;border-radius:6px;padding:6px 9px;font-size:11.5px;color:#374151;font-family:inherit;outline:none;resize:vertical;background:#f0fdf4;margin-bottom:4px;"></textarea>
+              <div style="margin-top:18px;padding:14px;background:#fff3f5;border-radius:10px;border:1px solid #ffd0d8;">
+                <div style="display:flex;justify-content:space-between;font-size:12.5px;padding:4px 0;"><span style="color:#666;">지급 총액</span><span class="amount-blue" id="pi-gross-disp2">0원</span></div>
+                <div style="display:flex;justify-content:space-between;font-size:12.5px;padding:4px 0;"><span style="color:#666;">공제 합계</span><span class="amount-red" id="pi-ded-disp2">0원</span></div>
+                <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:800;padding-top:10px;border-top:2px solid #e94560;margin-top:6px;">
+                  <span>영수액</span><span style="color:#e94560;" id="pi-net-disp2">0원</span>
+                </div>
+              </div>
+              <div style="margin-top:16px;display:flex;gap:8px;">
+                <button class="btn btn-secondary" id="pi-clear-btn"
+                  onclick="piEditPayrollId ? restoreEditPayroll() : clearPI()"
+                  style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;">
+                  <i id="pi-clear-btn-icon" class="fas fa-redo"></i>
+                  <span id="pi-clear-btn-label">초기화</span>
+                </button>
+                <button class="btn" onclick="savePIDraft()" id="pi-draft-btn"
+                  style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;background:linear-gradient(135deg,#6ee7b7,#10b981);color:#fff;border:none;border-radius:8px;padding:10px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
+                  <i class="fas fa-floppy-disk"></i> 임시저장
+                </button>
+                <button class="btn btn-primary" onclick="savePI()"
+                  style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;">
+                  <i class="fas fa-save"></i> 급여 저장
+                </button>
+                <button class="btn" id="pi-cancel-btn"
+                  onclick="piEditPayrollId ? cancelEditPayroll() : backToPITargetList()"
+                  style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;background:#f1f5f9;color:#64748b;border:1.5px solid #cbd5e1;border-radius:8px;padding:10px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
+                  <i class="fas fa-times"></i> <span id="pi-cancel-btn-label">취소</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+        </div><!-- /pi-form-section -->
+      </div><!-- /pi-input-section -->
+    </div>
