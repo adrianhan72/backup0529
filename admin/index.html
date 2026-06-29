@@ -938,6 +938,7 @@
         <div class="form-group"><label>회사명 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><input type="text" id="cm-name" /></div>
         <div class="form-group"><label>사업자등록번호 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><input type="text" id="cm-biz" placeholder="000-00-00000" /></div>
         <div class="form-group"><label>계약 시작일 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><input type="date" id="cm-contract-start" /></div>
+        <div class="form-group" id="cm-contract-end-row" style="display:none;"><label style="color:#dc2626;">계약 해지일</label><input type="date" id="cm-contract-end" readonly style="background:#fff5f5;border-color:#fca5a5;color:#dc2626;font-weight:600;" /></div>
         <div class="form-group"><label>대표이사명 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><input type="text" id="cm-rep" /></div>
         <div class="form-group"><label>업종</label><input type="text" id="cm-industry" /></div>
         <div class="form-group full"><label>사업장 주소 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><input type="text" id="cm-addr" /></div>
@@ -2662,6 +2663,10 @@
         <div id="tm-company-name" style="font-size:17px;font-weight:700;color:#1e293b;margin-bottom:10px;"></div>
         <div style="font-size:14px;color:#64748b;">정말 해지하시겠습니까?</div>
         <div style="font-size:12px;color:#94a3b8;margin-top:8px;">해지 후 데이터는 해지일로부터 5년간 보존됩니다.</div>
+      </div>
+      <div style="margin-top:20px;">
+        <label style="display:block;font-size:12.5px;font-weight:600;color:#374151;margin-bottom:6px;">계약 해지일 <span style="color:#c00;font-weight:900;">*</span></label>
+        <input type="date" id="tm-end-date" style="width:100%;border:1.5px solid #e0e0e0;border-radius:8px;padding:8px 12px;font-size:13.5px;font-family:inherit;color:#333;outline:none;box-sizing:border-box;" />
       </div>
     </div>
     <div class="modal-footer" style="gap:8px;background:#fff;">

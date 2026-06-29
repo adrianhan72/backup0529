@@ -476,7 +476,10 @@ function openCompanyModal(id=null){
     ? '<i class="fas fa-check-circle"></i> 수정완료'
     : '<i class="fas fa-check-circle"></i> 등록';
 
-  ['cm-name','cm-biz','cm-rep','cm-industry','cm-addr','cm-phone','cm-email','cm-period','cm-payday','cm-note','cm-contract-start'].forEach(i=>document.getElementById(i).value='');
+  ['cm-name','cm-biz','cm-rep','cm-industry','cm-addr','cm-phone','cm-email','cm-period','cm-payday','cm-note','cm-contract-start','cm-contract-end'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});
+  // 해지일 행 초기화 (기본 숨김)
+  const _cmEndRow = document.getElementById('cm-contract-end-row');
+  if(_cmEndRow) _cmEndRow.style.display = 'none';
   document.getElementById('cm-insurance-basis').value='';
   document.getElementById('cm-annual-leave-basis').value='';
   // 산정기간 셀렉트 초기화 (전월 1일부터 1개월간)
@@ -500,6 +503,16 @@ function openCompanyModal(id=null){
       document.getElementById('cm-insurance-basis').value=c.insurance_basis||'';
       document.getElementById('cm-annual-leave-basis').value=c.annual_leave_basis||'';
       document.getElementById('cm-contract-start').value=c.contract_start_date||'';
+      // 해지 상태면 계약 해지일 행 표시
+      const _endRow = document.getElementById('cm-contract-end-row');
+      const _endEl  = document.getElementById('cm-contract-end');
+      if(c.status === COMPANY_STATUS.INACTIVE && c.contract_end_date){
+        if(_endRow) _endRow.style.display = '';
+        if(_endEl)  _endEl.value = c.contract_end_date;
+      } else {
+        if(_endRow) _endRow.style.display = 'none';
+        if(_endEl)  _endEl.value = '';
+      }
       // 기존 코드 표시 (수정 불가, 재생성 버튼만 노출)
       _setAccessCode(c.access_code || generateAccessCode());
       document.getElementById('cm-code-regen-btn').style.display = 'inline-flex';

@@ -522,6 +522,10 @@ function terminateCompany(id, name){
   terminateTargetId = id;
   document.getElementById('tm-company-name').innerHTML =
     `<i class="fas fa-building" style="color:#64748b;margin-right:6px;"></i>${name}`;
+  // 해지일 기본값: 오늘
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const endDateEl = document.getElementById('tm-end-date');
+  if(endDateEl) endDateEl.value = todayStr;
   openModal('terminate-modal');
 }
 
@@ -531,9 +535,12 @@ async function doTerminate(){
   if(!id) return;
   const c = allCompanies.find(x => x.id === id);
   if(!c) return;
-  const todayStr = new Date().toISOString().slice(0, 10);
-  // PATCH: status·contract_end_date 두 필드만 변경 (PUT 시 누락 컬럼 에러 방지)
-  const patch = { status: COMPANY_STATUS.INACTIVE, contract_end_date: todayStr };
+  // 해지일: 입력값 우선, 없으면 오늘
+  const endDateEl = document.getElementById('tm-end-date');
+  const endDateStr = endDateEl?.value || new Date().toISOString().slice(0, 10);
+  if(!endDateStr) return toast('계약 해지일을 입력해 주세요.', 'error');
+  // PATCH: status·contract_end_date 두 필드만 변경
+  const patch = { status: COMPANY_STATUS.INACTIVE, contract_end_date: endDateStr };
   await api(`../tables/companies/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(patch)});
   closeModal('terminate-modal');
   closeModal('company-modal');
@@ -542,7 +549,7 @@ async function doTerminate(){
   populatePICompanies();
   renderCompanies();
   renderDashboard();
-  toast(`"${c.company_name}" 해지 완료 (해지일: ${todayStr})`);
+  toast(`"${c.company_name}" 해지 완료 (해지일: ${endDateStr})`);
 }
 
 /* [사용료 숨김] 기존 terminateCompany / doTerminate (미납금 체크 포함) - 원복 시 아래 주석 해제
