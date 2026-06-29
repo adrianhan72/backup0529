@@ -18,6 +18,12 @@ function isCompanyActive(c){
   }
   return true;
 }
+// 유효 근로계약(active) 1건 이상 여부
+function _hasActiveContract(companyId){
+  return (allContracts||[]).some(ct =>
+    ct.company_id === companyId && ct.status === CONTRACT_STATUS.ACTIVE
+  );
+}
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ─── 전역 필터·선택 상태 (showPage/init에서 참조하므로 최상단 선언) ───
@@ -845,8 +851,8 @@ function populateFilters(){
   });
 }
 function populatePICompanies(){
-  // 숨김 select 동기화 (기존 참조 호환) — 이용중 고객사만 (해지일 경과 제외)
-  const activeOnly = allCompanies.filter(c => isCompanyActive(c));
+  // 숨김 select 동기화 (기존 참조 호환) — 이용중 + 유효 근로계약 1건 이상인 고객사만
+  const activeOnly = allCompanies.filter(c => isCompanyActive(c) && _hasActiveContract(c.id));
   const s=document.getElementById('pi-company');
   if(s) s.innerHTML='<option value="">선택</option>'+activeOnly.map(c=>`<option value="${c.id}">${c.company_name}</option>`).join('');
   renderPICompanyList();
@@ -857,12 +863,12 @@ function renderPICompanyList(){
   const q=(document.getElementById('pi-company-search')?.value||'').toLowerCase();
   const chips=document.getElementById('pi-company-chips');
   if(!chips) return;
-  // 이용중 고객사만 노출 (임시저장·해지·해지일경과 제외)
+  // 이용중 + 유효 근로계약 1건 이상인 고객사만 노출
   const filtered=allCompanies.filter(c=>
-    isCompanyActive(c) && (!q||c.company_name.toLowerCase().includes(q))
+    isCompanyActive(c) && _hasActiveContract(c.id) && (!q||c.company_name.toLowerCase().includes(q))
   ).sort((a,b) => (a.company_name||'').localeCompare(b.company_name||'', 'ko'));
   if(!filtered.length){
-    chips.innerHTML=`<div style="font-size:12.5px;color:#9ca3af;padding:8px 0;">${q ? `"${q}" 검색 결과가 없습니다` : '이용 중인 고객사가 없습니다'}</div>`;
+    chips.innerHTML=`<div style="font-size:12.5px;color:#9ca3af;padding:8px 0;">${q ? `"${q}" 검색 결과가 없습니다` : '유효한 근로계약이 있는 고객사가 없습니다'}</div>`;
     return;
   }
   chips.innerHTML=filtered.map(c=>{
