@@ -596,12 +596,20 @@ async function doChangeEndDate(){
 
 // ── 해지예정 고객사 — 해지 취소 ──
 async function cancelTerminate(id, name){
-  if(!confirm(`"${name}"의 해지 예정을 취소하시겠습니까?\n계약 해지 예정일이 제거되고 이용중 상태로 복구됩니다.`)) return;
+  const c = allCompanies.find(x => x.id === id);
+  const isFullyTerminated = c && c.status === COMPANY_STATUS.INACTIVE;
+  const msg = isFullyTerminated
+    ? `"${name}"의 해지를 취소하시겠습니까?\n계약 해지일이 제거되고 이용중 상태로 복구됩니다.`
+    : `"${name}"의 해지 예정을 취소하시겠습니까?\n계약 해지 예정일이 제거되고 이용중 상태로 복구됩니다.`;
+  if(!confirm(msg)) return;
   const patch = { status: COMPANY_STATUS.ACTIVE, contract_end_date: null };
   await api(`../tables/companies/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(patch)});
   await loadCompanies();
   populateFilters(); populatePICompanies(); renderCompanies(); renderDashboard();
-  toast(`"${name}" 해지 예정이 취소되었습니다.`);
+  const toastMsg = isFullyTerminated
+    ? `"${name}" 해지가 취소되어 이용중으로 복구되었습니다.`
+    : `"${name}" 해지 예정이 취소되었습니다.`;
+  toast(toastMsg);
 }
 
 /* [사용료 숨김] 기존 terminateCompany / doTerminate (미납금 체크 포함) - 원복 시 아래 주석 해제
