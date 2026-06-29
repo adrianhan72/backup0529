@@ -774,25 +774,42 @@ function _cmValEqual(a, b){
 }
 
 async function saveCompany(){
-  const name=document.getElementById('cm-name').value.trim();
-  const code=document.getElementById('cm-code').value || generateAccessCode(); // 자동 생성값 사용
-  const biz=document.getElementById('cm-biz').value.trim();
-  const rep=document.getElementById('cm-rep').value.trim();
-  const phone=document.getElementById('cm-phone').value.trim();
-  const period=document.getElementById('cm-period').value.trim();
-  const payday=document.getElementById('cm-payday').value.trim();
-  if(!name)   return toast('회사명을 입력하세요.','error');
-  if(!biz)    return toast('사업자등록번호를 입력하세요.','error');
-  if(!rep)    return toast('대표이사명을 입력하세요.','error');
-  if(!phone)  return toast('대표 연락처를 입력하세요.','error');
-  if(!period) return toast('급여 산정기간을 입력하세요.','error');
-  if(!payday) return toast('급여 지급일을 입력하세요.','error');
-  const addr=document.getElementById('cm-addr').value.trim();
-  if(!addr)   return toast('사업장 주소를 입력하세요.','error');
-  const insuranceBasis = document.getElementById('cm-insurance-basis').value;
-  const annualLeaveBasis = document.getElementById('cm-annual-leave-basis').value;
-  if(!insuranceBasis)    return toast('4대보험 적용 기준을 선택하세요.','error');
-  if(!annualLeaveBasis)  return toast('연차 휴가 산정 기준을 선택하세요.','error');
+  const code=document.getElementById('cm-code').value || generateAccessCode();
+
+  // ── 필수 입력 검사 헬퍼: 오류 시 빨간 테두리 + 스크롤 + 포커스 ──
+  function _cmRequire(id, msg){
+    const el = document.getElementById(id);
+    if(!el) return true; // 요소 없으면 통과
+    const val = el.tagName === 'SELECT' ? el.value : el.value.trim();
+    if(val) return true; // 값 있으면 통과
+    // 오류 표시
+    el.style.borderColor = '#e94560';
+    el.style.boxShadow   = '0 0 0 2px rgba(233,69,96,0.15)';
+    el.scrollIntoView({ behavior:'smooth', block:'center' });
+    el.focus();
+    setTimeout(() => { el.style.borderColor = ''; el.style.boxShadow = ''; }, 2500);
+    toast(msg, 'error');
+    return false;
+  }
+
+  if(!_cmRequire('cm-name',   '회사명을 입력하세요.'))            return;
+  if(!_cmRequire('cm-biz',    '사업자등록번호를 입력하세요.'))     return;
+  if(!_cmRequire('cm-rep',    '대표이사명을 입력하세요.'))         return;
+  if(!_cmRequire('cm-addr',   '사업장 주소를 입력하세요.'))        return;
+  if(!_cmRequire('cm-phone',  '대표 연락처를 입력하세요.'))        return;
+  if(!_cmRequire('cm-payday', '급여 지급일을 입력하세요.'))        return;
+  if(!_cmRequire('cm-insurance-basis',   '4대보험 적용 기준을 선택하세요.'))  return;
+  if(!_cmRequire('cm-annual-leave-basis','연차 휴가 산정 기준을 선택하세요.')) return;
+
+  const name   = document.getElementById('cm-name').value.trim();
+  const biz    = document.getElementById('cm-biz').value.trim();
+  const rep    = document.getElementById('cm-rep').value.trim();
+  const phone  = document.getElementById('cm-phone').value.trim();
+  const period = document.getElementById('cm-period').value.trim();
+  const payday = document.getElementById('cm-payday').value.trim();
+  const addr   = document.getElementById('cm-addr').value.trim();
+  const insuranceBasis    = document.getElementById('cm-insurance-basis').value;
+  const annualLeaveBasis  = document.getElementById('cm-annual-leave-basis').value;
 
   // ── 급여 항목 설정: 체크된 항목의 통상임금 포함여부 미선택 유효성 검사 ──
   const _CM_AW_PT_LABEL = {
