@@ -532,10 +532,15 @@ async function doTerminate(){
   const c = allCompanies.find(x => x.id === id);
   if(!c) return;
   const todayStr = new Date().toISOString().slice(0, 10);
-  const body = {...c, status: CONTRACT_STATUS.TERMINATED, contract_end_date: todayStr};
+  const body = {...c, status: COMPANY_STATUS.INACTIVE, contract_end_date: todayStr};
   await api(`../tables/companies/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   closeModal('terminate-modal');
-  await loadCompanies();populateFilters();populatePICompanies();renderCompanies();renderDashboard();
+  closeModal('company-modal');
+  await loadCompanies();
+  populateFilters();
+  populatePICompanies();
+  renderCompanies();
+  renderDashboard();
   toast(`"${c.company_name}" 해지 완료 (해지일: ${todayStr})`);
 }
 
