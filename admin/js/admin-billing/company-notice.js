@@ -249,7 +249,7 @@ function _cenFillCompanyFilter(selId){
   const sel = document.getElementById(selId);
   if(!sel || sel.options.length > 1) return;
   allCompanies
-    .filter(c => c.status===COMPANY_STATUS.ACTIVE)
+    .filter(c => isCompanyActive(c))
     .sort((a,b)=>(a.company_name||'').localeCompare(b.company_name||'','ko'))
     .forEach(c=>{
       const opt = document.createElement('option');

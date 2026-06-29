@@ -199,7 +199,7 @@ function renderAlCompanyChips(){
   const q = (document.getElementById('al-company-search')?.value||'').trim().toLowerCase();
 
   const active = allCompanies.filter(c =>
-    (c.status===COMPANY_STATUS.ACTIVE || c.status===EMP_STATUS.ACTIVE) &&
+    isCompanyActive(c) &&
     (!q || (c.company_name||'').toLowerCase().includes(q))
   ).sort((a,b)=>(a.company_name||'').localeCompare(b.company_name||'','ko'));
 

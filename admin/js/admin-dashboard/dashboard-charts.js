@@ -116,7 +116,7 @@ function renderDashboard(){
   // 퇴직금 지급 이력 배너 (임시저장 위)
   renderDashSeveranceBanner();
 
-  const activeCompanyCount=allCompanies.filter(c=>!c.is_draft && c.status===COMPANY_STATUS.ACTIVE).length;
+  const activeCompanyCount=allCompanies.filter(c=>isCompanyActive(c)).length;
 
   // 이용중 고객사 건수 뱃지 업데이트
   const activeCountEl = document.getElementById('active-count');
@@ -344,7 +344,7 @@ function renderEmployeeTrendChart(){
 
   // 이용중 고객사 ID 목록 (현재 기준)
   const activeCompanyIds = new Set(
-    allCompanies.filter(c => c.status === COMPANY_STATUS.ACTIVE).map(c => c.id)
+    allCompanies.filter(c => isCompanyActive(c)).map(c => c.id)
   );
 
   for(let i = months - 1; i >= 0; i--){
@@ -720,7 +720,7 @@ function renderDashboardCompanies(){
   const searchInput=document.getElementById('dash-company-search');
   const searchTerm=searchInput?searchInput.value.toLowerCase().trim():'';
 
-  let companies=allCompanies.filter(c=>!c.is_draft && c.status===COMPANY_STATUS.ACTIVE);
+  let companies=allCompanies.filter(c=>isCompanyActive(c));
 
   if(searchTerm){
     companies=companies.filter(c=>(c.company_name||'').toLowerCase().includes(searchTerm));

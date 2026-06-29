@@ -6,6 +6,20 @@ let editId={company:null,contract:null};
 const ITEMS=10;
 let pages={emp:1,cont:1,pay:1};
 
+// ─── 공통 헬퍼: 실질 이용중 고객사 판별 ──────────────────────────────────────
+// DB status=ACTIVE이더라도 contract_end_date가 오늘 이하면 해지 완료로 간주
+function isCompanyActive(c){
+  if(!c || c.is_draft) return false;
+  if(c.status !== COMPANY_STATUS.ACTIVE) return false;
+  // 해지일이 설정되어 있고, 오늘 이하면 해지 완료
+  if(c.contract_end_date){
+    const today = new Date().toISOString().slice(0,10);
+    if(c.contract_end_date <= today) return false;
+  }
+  return true;
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 // ─── 전역 필터·선택 상태 (showPage/init에서 참조하므로 최상단 선언) ───
 
 let currentContCompanyId = null;
@@ -19,8 +33,8 @@ let currentGlobalCompanyName = '';
 // ─── PAYROLL INPUT MODAL ───
 function openPayrollInputModal(companyId){
   const co = allCompanies.find(c=>c.id===companyId);
-  if(co && co.status !== COMPANY_STATUS.ACTIVE){
-    toast('"' + co.company_name + '"은 ' + co.status + ' 상태입니다. 이용중인 고객사만 급여 입력이 가능합니다.', 'error');
+  if(co && !isCompanyActive(co)){
+    toast('"' + co.company_name + '"은 이용중이 아닌 고객사입니다. 급여 입력이 불가합니다.', 'error');
     return;
   }
   // 급여 입력 페이지로 이동
@@ -532,7 +546,7 @@ async function showPage(name,el){
     // 글로벌 공유: 선택된 고객사가 있으면 무조건 selectPICompany()로 UI 완전 복원
     // (급여 입력은 이용중 고객사만 허용)
     if(currentGlobalCompanyId){
-      const _gco = allCompanies.find(c => c.id === currentGlobalCompanyId && c.status === COMPANY_STATUS.ACTIVE);
+      const _gco = allCompanies.find(c => c.id === currentGlobalCompanyId && isCompanyActive(c));
       if(_gco){
         if(el) el.classList.add('active');
         renderPICompanyList();
@@ -580,7 +594,7 @@ async function showPage(name,el){
     // 글로벌 공유: 선택된 고객사가 있으면 자동 선택
     renderPssCompanyList();
     if(currentGlobalCompanyId){
-      const _gco = allCompanies.find(c=>c.id===currentGlobalCompanyId && c.status===COMPANY_STATUS.ACTIVE);
+      const _gco = allCompanies.find(c=>c.id===currentGlobalCompanyId && isCompanyActive(c));
       if(_gco){ if(el) el.classList.add('active'); selectPssCompany(currentGlobalCompanyId, _gco.company_name); return; }
     }
     // 선택된 고객사 없음 — 고객사 선택 화면 표시
@@ -822,7 +836,7 @@ function initPIYears(){
 }
 function populateFilters(){
   // 이용중 고객사만 노출 (임시저장·해지 제외)
-  const activeOnly = allCompanies.filter(c => c.status === COMPANY_STATUS.ACTIVE && !c.is_draft);
+  const activeOnly = allCompanies.filter(c => isCompanyActive(c));
   ['cont-company-filter','pay-company-filter','ct-company'].forEach(id=>{
     const el=document.getElementById(id);
     if(!el) return;
@@ -831,8 +845,8 @@ function populateFilters(){
   });
 }
 function populatePICompanies(){
-  // 숨김 select 동기화 (기존 참조 호환) — 이용중 고객사만
-  const activeOnly = allCompanies.filter(c => c.status === COMPANY_STATUS.ACTIVE && !c.is_draft);
+  // 숨김 select 동기화 (기존 참조 호환) — 이용중 고객사만 (해지일 경과 제외)
+  const activeOnly = allCompanies.filter(c => isCompanyActive(c));
   const s=document.getElementById('pi-company');
   if(s) s.innerHTML='<option value="">선택</option>'+activeOnly.map(c=>`<option value="${c.id}">${c.company_name}</option>`).join('');
   renderPICompanyList();
@@ -843,9 +857,9 @@ function renderPICompanyList(){
   const q=(document.getElementById('pi-company-search')?.value||'').toLowerCase();
   const chips=document.getElementById('pi-company-chips');
   if(!chips) return;
-  // 이용중 고객사만 노출 (임시저장·해지 제외)
+  // 이용중 고객사만 노출 (임시저장·해지·해지일경과 제외)
   const filtered=allCompanies.filter(c=>
-    c.status === COMPANY_STATUS.ACTIVE && !c.is_draft && (!q||c.company_name.toLowerCase().includes(q))
+    isCompanyActive(c) && (!q||c.company_name.toLowerCase().includes(q))
   ).sort((a,b) => (a.company_name||'').localeCompare(b.company_name||'', 'ko'));
   if(!filtered.length){
     chips.innerHTML=`<div style="font-size:12.5px;color:#9ca3af;padding:8px 0;">${q ? `"${q}" 검색 결과가 없습니다` : '이용 중인 고객사가 없습니다'}</div>`;

@@ -21,7 +21,7 @@ function renderPssCompanyList(){
   const wrap = document.getElementById('pss-company-chips');
   if(!wrap) return;
   const list = allCompanies.filter(c =>
-    c.status===COMPANY_STATUS.ACTIVE && !c.is_draft &&
+    isCompanyActive(c) &&
     (!q || (c.company_name||'').toLowerCase().includes(q))
   ).sort((a,b) => (a.company_name||'').localeCompare(b.company_name||'', 'ko'));
   if(!list.length){

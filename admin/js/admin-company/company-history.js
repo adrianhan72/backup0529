@@ -348,7 +348,7 @@ function renderContCompanyList(){
   if(!container) return;
 
   const companies = allCompanies.filter(c =>
-    c.status===COMPANY_STATUS.ACTIVE && (!q || c.company_name.toLowerCase().includes(q))
+    isCompanyActive(c) && (!q || c.company_name.toLowerCase().includes(q))
   ).sort((a,b) => (a.company_name||'').localeCompare(b.company_name||'', 'ko'));
 
   if(!companies.length){
@@ -399,8 +399,8 @@ function clearContCompanySelect(){
 // 고객사 관리 카드 → 근로계약서 관리 바로가기
 function goContractsByCompany(companyId, companyName){
   const co = allCompanies.find(c => c.id === companyId);
-  if(co && co.status !== COMPANY_STATUS.ACTIVE){
-    toast('"' + companyName + '"은 ' + companyStatusLabel(co.status) + ' 상태입니다. 이용중인 고객사만 근로계약 관리가 가능합니다.', 'error');
+  if(co && !isCompanyActive(co)){
+    toast('"' + companyName + '"은 이용중이 아닌 고객사입니다. 근로계약 관리가 불가합니다.', 'error');
     return;
   }
   const menuEl = document.querySelector('.menu-item[data-page="contracts"]');
@@ -427,7 +427,7 @@ function renderPayCompanyList(){
   if(!container) return;
 
   const companies = allCompanies.filter(c =>
-    c.status===COMPANY_STATUS.ACTIVE && (!q || c.company_name.toLowerCase().includes(q))
+    isCompanyActive(c) && (!q || c.company_name.toLowerCase().includes(q))
   ).sort((a,b) => (a.company_name||'').localeCompare(b.company_name||'', 'ko'));
 
   if(!companies.length){
@@ -501,8 +501,8 @@ function initPayYearMonth(){
 // 대시보드·고객사관리 카드 → 임금대장 바로가기
 function goPayrollsByCompany(companyId, companyName){
   const co = allCompanies.find(c => c.id === companyId);
-  if(co && co.status!==COMPANY_STATUS.ACTIVE){
-    toast('"' + companyName + '"은 ' + co.status + ' 상태입니다. 이용중인 고객사만 급여 조회가 가능합니다.', 'error');
+  if(co && !isCompanyActive(co)){
+    toast('"' + companyName + '"은 이용중이 아닌 고객사입니다. 급여 조회가 불가합니다.', 'error');
     return;
   }
   const menuEl = document.querySelector('.menu-item[data-page="payrolls"]');
