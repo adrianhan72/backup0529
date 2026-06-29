@@ -566,10 +566,8 @@ function changeEndDate(id, name, currentEndDate){
   if(nameEl) nameEl.innerHTML = `<i class="fas fa-building" style="color:#64748b;margin-right:6px;"></i>${name}`;
   const dateEl = document.getElementById('ced-end-date');
   if(dateEl){
-    // 내일부터 선택 가능 (오늘 이하면 즉시 해지로 전환되므로)
-    const tmrw = new Date(); tmrw.setDate(tmrw.getDate()+1);
-    dateEl.min = tmrw.toISOString().slice(0,10);
-    dateEl.value = currentEndDate || tmrw.toISOString().slice(0,10);
+    dateEl.min = '';
+    dateEl.value = currentEndDate || new Date().toISOString().slice(0,10);
   }
   openModal('change-end-date-modal');
 }
@@ -581,18 +579,19 @@ async function doChangeEndDate(){
   if(!c) return;
   const dateEl = document.getElementById('ced-end-date');
   const newDateStr = dateEl?.value || '';
-  if(!newDateStr) return toast('새 해지 예정일을 선택해 주세요.', 'error');
+  if(!newDateStr) return toast('해지일을 선택해 주세요.', 'error');
   const todayStr = new Date().toISOString().slice(0,10);
-  if(newDateStr <= todayStr){
-    toast('해지 예정일은 내일 이후여야 합니다.', 'error');
-    return;
-  }
-  const patch = { contract_end_date: newDateStr };
+  // 오늘 이하면 즉시 해지(INACTIVE), 미래면 해지예정(ACTIVE) 유지
+  const newStatus = newDateStr <= todayStr ? COMPANY_STATUS.INACTIVE : COMPANY_STATUS.ACTIVE;
+  const patch = { status: newStatus, contract_end_date: newDateStr };
   await api(`../tables/companies/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(patch)});
   closeModal('change-end-date-modal');
   await loadCompanies();
   populateFilters(); populatePICompanies(); renderCompanies(); renderDashboard();
-  toast(`해지 예정일이 ${newDateStr}로 변경되었습니다.`);
+  const msg = newDateStr <= todayStr
+    ? `해지 처리 완료 (해지일: ${newDateStr})`
+    : `해지 예정일이 ${newDateStr}로 변경되었습니다.`;
+  toast(msg);
 }
 
 // ── 해지예정 고객사 — 해지 취소 ──
