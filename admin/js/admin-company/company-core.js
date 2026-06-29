@@ -190,8 +190,7 @@ function _cmPeriodCompose(){
   const dayHidden = document.getElementById('cm-period-day-hidden');
   if(moHidden)  moHidden.value  = mo;
   if(dayHidden) dayHidden.value = day;
-  const preview = document.getElementById('cm-period-preview');
-  if(preview) preview.textContent = `→ ${val}`;
+
 }
 
 /**
