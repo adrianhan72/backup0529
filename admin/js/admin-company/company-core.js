@@ -235,16 +235,21 @@ function renderCompanies(){
  * 저장 포맷: "전월 1일부터 1개월간" (pay_period 컬럼 호환용 텍스트)
  */
 function _cmPeriodCompose(){
-  const mo  = document.getElementById('cm-period-month')?.value || '전월';
-  const day = document.getElementById('cm-period-day')?.value   || '1';
-  const val = `${mo} ${day}일부터 1개월간`;
-  const hidden = document.getElementById('cm-period');
-  if(hidden) hidden.value = val;
+  const mo  = document.getElementById('cm-period-month')?.value || '';
+  const day = document.getElementById('cm-period-day')?.value   || '';
+  const hidden    = document.getElementById('cm-period');
   const moHidden  = document.getElementById('cm-period-month-hidden');
   const dayHidden = document.getElementById('cm-period-day-hidden');
-  if(moHidden)  moHidden.value  = mo;
-  if(dayHidden) dayHidden.value = day;
-
+  // 월·일 모두 선택된 경우에만 합성값 세팅, 하나라도 없으면 hidden 비움
+  if(mo && day){
+    if(hidden)    hidden.value    = `${mo} ${day}일부터 1개월간`;
+    if(moHidden)  moHidden.value  = mo;
+    if(dayHidden) dayHidden.value = day;
+  } else {
+    if(hidden)    hidden.value    = '';
+    if(moHidden)  moHidden.value  = '';
+    if(dayHidden) dayHidden.value = '';
+  }
 }
 
 /**
@@ -254,32 +259,40 @@ function _cmPeriodCompose(){
  * @param {number|string} day - pay_period_day DB 컬럼값 (1~31)
  */
 function _cmPeriodRestore(val, month, day){
-  if(month){
-    _cmSetSelect('cm-period-month', month);
-  } else if(val){
-    // 구형 포맷 fallback 파싱: "(전월|당월)\d+일..."
-    const s = val.replace(/\s/g,'');
-    const m = s.match(/^(전월|당월)(\d+)일/);
-    if(m) _cmSetSelect('cm-period-month', m[1]);
-  }
+  const pmEl = document.getElementById('cm-period-month');
+  const pdEl = document.getElementById('cm-period-day');
 
-  if(day !== undefined && day !== null && day !== ''){
-    _cmSetSelect('cm-period-day', String(day));
+  // 월 복원
+  let resolvedMonth = '';
+  if(month){
+    resolvedMonth = month;
   } else if(val){
     const s = val.replace(/\s/g,'');
     const m = s.match(/^(전월|당월)(\d+)일/);
-    if(m) _cmSetSelect('cm-period-day', m[2]);
+    if(m) resolvedMonth = m[1];
   }
+  if(pmEl) pmEl.value = resolvedMonth; // 값 없으면 '월 선택' 유지
+
+  // 일 복원
+  let resolvedDay = '';
+  if(day !== undefined && day !== null && day !== ''){
+    resolvedDay = String(day);
+  } else if(val){
+    const s = val.replace(/\s/g,'');
+    const m = s.match(/^(전월|당월)(\d+)일/);
+    if(m) resolvedDay = m[2];
+  }
+  if(pdEl) pdEl.value = resolvedDay; // 값 없으면 '일 선택' 유지
 
   _cmPeriodCompose();
 }
 
-/** select 요소에 value 세팅. 없는 옵션이면 첫 번째 옵션 유지 */
+/** select 요소에 value 세팅. 없는 옵션이면 첫 번째 옵션(빈 값) 유지 */
 function _cmSetSelect(id, value){
   const el = document.getElementById(id);
   if(!el) return;
   const opt = [...el.options].find(o => o.value === value);
-  if(opt) el.value = value;
+  el.value = opt ? value : '';
 }
 
 // 임시저장 진행 중인 고객사 draft ID (신규 작성 시 추적용)
@@ -537,7 +550,11 @@ function openCompanyModal(id=null){
   document.getElementById('cm-insurance-basis').value='';
   document.getElementById('cm-annual-leave-basis').value='';
   // 산정기간 셀렉트 초기화 (전월 1일부터 1개월간)
-  _cmSetSelect('cm-period-month','전월'); _cmSetSelect('cm-period-day','1');
+  // 신규 모달: 산정기간 빈 값으로 초기화 (유효성 검사 유도)
+  const _pmEl = document.getElementById('cm-period-month');
+  const _pdEl = document.getElementById('cm-period-day');
+  if(_pmEl) _pmEl.value = '';
+  if(_pdEl) _pdEl.value = '';
   _cmPeriodCompose();
 
   if(id && !_isDraft){
