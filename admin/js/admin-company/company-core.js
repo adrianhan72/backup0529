@@ -817,9 +817,10 @@ async function saveCompany(){
   if(!_cmRequire('cm-rep',            '대표이사명을 입력하세요.'))         return;
   if(!_cmRequire('cm-addr',           '사업장 주소를 입력하세요.'))        return;
   if(!_cmRequire('cm-phone',          '대표 연락처를 입력하세요.'))        return;
-  // 급여 산정기간: 저장 전 hidden 값 강제 동기화 후 검사 (포커스는 셀렉트로)
+  // 급여 산정기간: 저장 전 강제 동기화 후 월·일 각각 검사 (포커스는 해당 셀렉트로)
   _cmPeriodCompose();
-  if(!_cmRequire('cm-period-month-hidden', '급여 산정기간을 선택하세요.', 'cm-period-month')) return;
+  if(!_cmRequire('cm-period-month', '급여 산정기간의 월(전월/당월)을 선택하세요.')) return;
+  if(!_cmRequire('cm-period-day',   '급여 산정기간의 시작 일자를 선택하세요.'))     return;
   if(!_cmRequire('cm-payday',         '급여 지급일을 입력하세요.'))        return;
   if(!_cmRequire('cm-insurance-basis',   '4대보험 적용 기준을 선택하세요.'))  return;
   if(!_cmRequire('cm-annual-leave-basis','연차 휴가 산정 기준을 선택하세요.')) return;
