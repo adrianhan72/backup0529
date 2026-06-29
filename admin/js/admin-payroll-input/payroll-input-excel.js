@@ -300,14 +300,19 @@ function editPayroll(payrollId){
         if(_endDateEdit < _monthEndEdit){
           const _coIdEdit = currentGlobalCompanyId || document.getElementById('pi-company')?.value;
           const _coEdit   = allCompanies.find(c => c.id === _coIdEdit);
-          const _coPPEdit = (_coEdit?.pay_period || '').replace(/\s/g,'');
+          // pay_period_month / pay_period_day 컬럼 우선 사용, fallback: pay_period 문자열 파싱
+          const _coMoEdit  = _coEdit?.pay_period_month || null;
+          const _coDayEdit = parseInt(_coEdit?.pay_period_day) || 1;
+          const _isJeonwolEdit = _coMoEdit
+            ? (_coMoEdit === '전월')
+            : (_coEdit?.pay_period || '').replace(/\s/g,'').startsWith('전월');
           let _sStrEdit;
-          if(_coPPEdit.startsWith('전월')){
+          if(_isJeonwolEdit){
             const _pm = p.pay_month === 1 ? 12 : p.pay_month - 1;
             const _py = p.pay_month === 1 ? p.pay_year - 1 : p.pay_year;
-            _sStrEdit = `${_py}-${String(_pm).padStart(2,'0')}-01`;
+            _sStrEdit = `${_py}-${String(_pm).padStart(2,'0')}-${String(_coDayEdit).padStart(2,'0')}`;
           } else {
-            _sStrEdit = `${p.pay_year}-${String(p.pay_month).padStart(2,'0')}-01`;
+            _sStrEdit = `${p.pay_year}-${String(p.pay_month).padStart(2,'0')}-${String(_coDayEdit).padStart(2,'0')}`;
           }
           const _sd = new Date(_sStrEdit);
           const fmt = d => `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
@@ -2063,7 +2068,7 @@ async function downloadPayrollExcel(){
     hdr(`${co.company_name}  |  ${yr}년 ${moStr}월 임금대장`,C.TITLE_BG,C.TITLE_FG,true,13)
   ]);
   data1.push([
-    txt(`사업자번호: ${co.business_number||'-'}  /  대표자: ${co.representative||'-'}  /  급여지급일: ${co.pay_day||'-'}일  /  산정기간: ${co.pay_period||'-'}`,C.COINFO_BG,C.COINFO_FG,false,9)
+    txt(`사업자번호: ${co.business_number||'-'}  /  대표자: ${co.representative||'-'}  /  급여지급일: ${co.pay_day||'-'}일  /  산정기간: ${co.pay_period_month&&co.pay_period_day?`${co.pay_period_month} ${co.pay_period_day}일부터 1개월간`:(co.pay_period||'-')}`,C.COINFO_BG,C.COINFO_FG,false,9)
   ]);
   data1.push([txt('')]); // 공백
 

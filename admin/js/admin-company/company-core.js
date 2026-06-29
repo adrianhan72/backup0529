@@ -76,8 +76,9 @@ function renderCompanies(){
   const searchInput=document.getElementById('company-search').value.toLowerCase();
   
   let filtered=allCompanies.filter(c=>{
-    // is_draft인 경우 status를 '임시저장'으로 취급
-    const effectiveStatus = c.is_draft ? COMPANY_STATUS.DRAFT : (c.status||COMPANY_STATUS.ACTIVE);
+    // 임시저장 항목은 상단 배너에서 별도 표시되므로 목록 카드에서 제외
+    if(c.is_draft) return false;
+    const effectiveStatus = c.status||COMPANY_STATUS.ACTIVE;
     if(statusFilter&&effectiveStatus!==statusFilter) return false;
     if(searchInput&&!(c.company_name||'').toLowerCase().includes(searchInput)) return false;
     return true;
@@ -97,40 +98,60 @@ function renderCompanies(){
 
     // 이번 달 급여 데이터
     const now=new Date();
-    const thisMonthPayrolls=allPayrolls.filter(p=>!p.is_draft&&p.company_id===c.id&&p.pay_year==now.getFullYear()&&p.pay_month==(now.getMonth()+1));
-    const hasPayroll=thisMonthPayrolls.length>0;
+    const nowYear=now.getFullYear(), nowMonth=now.getMonth()+1;
+    // 유효 근로계약(active) 직원 ID 목록 (중복 제거)
+    const activeEmpIds=[...new Set(
+      (allContracts||[]).filter(ct=>ct.company_id===c.id&&ct.status===CONTRACT_STATUS.ACTIVE).map(ct=>ct.employee_id)
+    )];
+    const totalTarget=activeEmpIds.length; // 급여 입력 대상 수
+    // 이번 달 입력 완료(non-draft) payroll이 있는 직원 수
+    const thisMonthPayrolls=(allPayrolls||[]).filter(p=>!p.is_draft&&p.company_id===c.id&&p.pay_year==nowYear&&p.pay_month==nowMonth);
+    const paidEmpIds=new Set(thisMonthPayrolls.map(p=>p.employee_id));
+    const paidCount=activeEmpIds.filter(eid=>paidEmpIds.has(eid)).length; // 유효계약 직원 중 입력완료 수
+    const allPaid=totalTarget>0&&paidCount===totalTarget; // 전원 완료 여부
     const totalNetPay=thisMonthPayrolls.reduce((sum,p)=>sum+(p.net_pay||0),0);
 
     // 급여 입력 섹션 (이용중 고객사만, 임시저장 제외)
-    const payrollSection = (c.status!==COMPANY_STATUS.ACTIVE || isDraftComp) ? '' : hasPayroll
-      ? `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;margin-top:10px;">
+    let payrollSection='';
+    if(c.status===COMPANY_STATUS.ACTIVE&&!isDraftComp){
+      if(totalTarget===0){
+        // 유효 계약 없음 — 섹션 미표시
+        payrollSection='';
+      } else if(allPaid){
+        // 전원 완료 → 총액 표시
+        payrollSection=`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;margin-top:10px;">
            <div>
-             <div style="font-size:10px;color:#0369a1;margin-bottom:2px;">이번 달 급여 총액</div>
+             <div style="font-size:10px;color:#0369a1;margin-bottom:2px;">이번 달 급여 총액 <span style="color:#16a34a;font-weight:700;">(${paidCount}/${totalTarget}건 완료)</span></div>
              <div style="font-size:15px;font-weight:700;color:#0c4a6e;">${Math.round(totalNetPay).toLocaleString('ko-KR')}<span style="font-size:11px;font-weight:500;">원</span></div>
            </div>
            <button class="btn btn-sm" style="background:#3b82f6;color:#fff;padding:5px 11px;font-size:11.5px;font-weight:600;" onclick="openPayrollInputModal('${c.id}')">
              <i class="fas fa-edit"></i> 내역 수정
            </button>
-         </div>`
-      : `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;margin-top:10px;">
+         </div>`;
+      } else {
+        // 미완료 → 미입력 + 진행률 표시
+        const progressTxt=paidCount>0?`${paidCount}/${totalTarget}건 입력`:`0/${totalTarget}건 입력`;
+        payrollSection=`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;margin-top:10px;">
            <div>
              <div style="font-size:10px;color:#c2410c;margin-bottom:2px;">이번 달 급여</div>
-             <div style="font-size:13px;font-weight:600;color:#9a3412;">미입력 ⏳</div>
+             <div style="font-size:13px;font-weight:600;color:#9a3412;">미입력 ⏳ <span style="font-size:11px;font-weight:500;color:#b45309;">(${progressTxt})</span></div>
            </div>
            <button class="btn btn-sm" style="background:#e94560;color:#fff;padding:5px 11px;font-size:11.5px;font-weight:600;" onclick="openPayrollInputModal('${c.id}')">
              <i class="fas fa-plus-circle"></i> 급여 입력
            </button>
          </div>`;
+      }
+    }
     
     return `<div class="company-card">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-        <span class="code-badge">코드: ${c.access_code}</span>
+        <span class="code-badge">코드: ${_normalizeAccessCode(c.access_code)}</span>
         ${statusBadge}
       </div>
       <h3>${c.company_name}</h3>
-      <div style="font-size:11px;color:#aaa;margin-top:2px;margin-bottom:6px;"><i class="fas fa-calendar-alt" style="margin-right:3px;"></i>등록일: ${c.contract_start_date||'-'}</div>
+      <div style="font-size:11px;color:#aaa;margin-top:2px;margin-bottom:6px;"><i class="fas fa-calendar-alt" style="margin-right:3px;"></i>계약시작일: ${c.contract_start_date||'-'}</div>
       ${payrollSection}
-      <p style="margin-top:10px;">대표: ${c.representative||'-'} · 업종: ${c.industry||'-'}<br>사업자: ${c.business_number||'-'}<br>급여일: ${c.pay_day||'-'} · 산정: ${c.pay_period||'-'}<br><i class="fas fa-shield-alt" style="color:#6366f1;margin-right:3px;font-size:10px;"></i>4대보험: ${c.insurance_basis||'요율 기준'} · <i class="fas fa-umbrella-beach" style="color:#0891b2;margin-right:3px;font-size:10px;"></i>연차: ${c.annual_leave_basis||'회계년도 기준'}<br>${c.phone||''}${contractInfo}</p>
+      <p style="margin-top:10px;">대표: ${c.representative||'-'} · 업종: ${c.industry||'-'}<br>사업자: ${c.business_number||'-'}<br>급여일: ${c.pay_day||'-'} · 산정: ${c.pay_period_month&&c.pay_period_day?`${c.pay_period_month} ${c.pay_period_day}일부터 1개월간`:(c.pay_period||'-')}<br><i class="fas fa-shield-alt" style="color:#6366f1;margin-right:3px;font-size:10px;"></i>4대보험: ${c.insurance_basis||'요율 기준'} · <i class="fas fa-umbrella-beach" style="color:#0891b2;margin-right:3px;font-size:10px;"></i>연차: ${c.annual_leave_basis||'회계년도 기준'}<br>${c.phone||''}${contractInfo}</p>
       <div style="display:flex;align-items:center;gap:6px;margin-top:10px;font-size:12px;font-weight:600;color:#3b82f6;"><i class="fas fa-users"></i> 유효 근로계약: ${activeContractCount}건</div>
       ${c.note ? `<div style="margin-top:6px;font-size:11.5px;color:#6b7280;"><i class="fas fa-sticky-note" style="margin-right:4px;color:#9ca3af;"></i>${c.note}</div>` : ''}
       ${isDraftComp
@@ -154,6 +175,60 @@ function renderCompanies(){
     </div>`;
   }).join('');
 }
+// ── 급여 산정기간 UI ──────────────────────────────────────────────────────────
+/**
+ * 2개 셀렉트(월/일) → hidden #cm-period(표시용 텍스트) + #cm-period-month-hidden + #cm-period-day-hidden 값 조합 + 미리보기 갱신
+ * 저장 포맷: "전월 1일부터 1개월간" (pay_period 컬럼 호환용 텍스트)
+ */
+function _cmPeriodCompose(){
+  const mo  = document.getElementById('cm-period-month')?.value || '전월';
+  const day = document.getElementById('cm-period-day')?.value   || '1';
+  const val = `${mo} ${day}일부터 1개월간`;
+  const hidden = document.getElementById('cm-period');
+  if(hidden) hidden.value = val;
+  const moHidden  = document.getElementById('cm-period-month-hidden');
+  const dayHidden = document.getElementById('cm-period-day-hidden');
+  if(moHidden)  moHidden.value  = mo;
+  if(dayHidden) dayHidden.value = day;
+  const preview = document.getElementById('cm-period-preview');
+  if(preview) preview.textContent = `→ ${val}`;
+}
+
+/**
+ * 저장된 pay_period_month / pay_period_day 컬럼값(우선) 또는 pay_period 문자열을 파싱해 2개 셀렉트에 복원.
+ * @param {string} val  - pay_period 텍스트 (fallback용)
+ * @param {string} month - pay_period_month DB 컬럼값 ('전월'|'당월')
+ * @param {number|string} day - pay_period_day DB 컬럼값 (1~31)
+ */
+function _cmPeriodRestore(val, month, day){
+  if(month){
+    _cmSetSelect('cm-period-month', month);
+  } else if(val){
+    // 구형 포맷 fallback 파싱: "(전월|당월)\d+일..."
+    const s = val.replace(/\s/g,'');
+    const m = s.match(/^(전월|당월)(\d+)일/);
+    if(m) _cmSetSelect('cm-period-month', m[1]);
+  }
+
+  if(day !== undefined && day !== null && day !== ''){
+    _cmSetSelect('cm-period-day', String(day));
+  } else if(val){
+    const s = val.replace(/\s/g,'');
+    const m = s.match(/^(전월|당월)(\d+)일/);
+    if(m) _cmSetSelect('cm-period-day', m[2]);
+  }
+
+  _cmPeriodCompose();
+}
+
+/** select 요소에 value 세팅. 없는 옵션이면 첫 번째 옵션 유지 */
+function _cmSetSelect(id, value){
+  const el = document.getElementById(id);
+  if(!el) return;
+  const opt = [...el.options].find(o => o.value === value);
+  if(opt) el.value = value;
+}
+
 // 임시저장 진행 중인 고객사 draft ID (신규 작성 시 추적용)
 let _currentCompanyDraftId = null;
 
@@ -168,9 +243,18 @@ function generateAccessCode(){
   const used = (allCompanies||[]).map(c=>c.access_code).filter(Boolean);
   return used.includes(code) ? generateAccessCode() : code; // 충돌 시 재귀 재생성
 }
+/** SQLite type affinity로 인해 숫자형 코드가 "2345.0" 형태로 저장될 수 있어 정제 */
+function _normalizeAccessCode(code){
+  if(!code && code !== 0) return '';
+  const s = String(code);
+  // "2345.0" 처럼 정수.0 형태면 정수 문자열로 변환
+  if(/^\d+\.0$/.test(s)) return String(Math.trunc(parseFloat(s)));
+  return s;
+}
 function _setAccessCode(code){
-  document.getElementById('cm-code').value = code;
-  document.getElementById('cm-code-display').textContent = code || '—';
+  const normalized = _normalizeAccessCode(code);
+  document.getElementById('cm-code').value = normalized;
+  document.getElementById('cm-code-display').textContent = normalized || '—';
 }
 function regenAccessCode(){
   if(!confirm('접근코드를 새로 생성하면 기존 코드로는 앱 로그인이 불가능해집니다.\n재생성하시겠습니까?')) return;
@@ -361,31 +445,48 @@ function _cmSvcGetSaveData(){
 // ──────────────────────────────────────────────────────────────────────────
 
 function openCompanyModal(id=null){
-  editId.company=id;
-  if(!id){
-    _currentCompanyDraftId = null; // 신규 작성 시 초기화
+  // 임시저장 항목인지 먼저 확인
+  const _cmpData = id ? allCompanies.find(x=>x.id===id) : null;
+  const _isDraft = !!(_cmpData && _cmpData.is_draft);
+
+  // 임시저장 항목은 신규 입력 양식으로 처리 (editId.company = null)
+  if(_isDraft){
+    editId.company = null;
+    _currentCompanyDraftId = id;  // 덮어쓰기용 draft ID 보존
   } else {
-    // 기존 고객사가 임시저장 상태라면 draft ID 복원
-    const _cmpData = allCompanies.find(x=>x.id===id);
-    _currentCompanyDraftId = (_cmpData && _cmpData.is_draft) ? id : null;
+    editId.company = id;
+    _currentCompanyDraftId = null;
   }
+
   // 임시저장 안내 텍스트 초기화
   const _cmDraftInfo = document.getElementById('cm-draft-saved-info');
   if(_cmDraftInfo){ _cmDraftInfo.style.display='none'; _cmDraftInfo.textContent=''; }
-  document.getElementById('cm-title').textContent=id?'고객사 수정':'고객사 추가';
-  // 수정 모드에서는 임시저장 버튼 숨김 + 등록 버튼 텍스트 변경
+
+  // 타이틀: 임시저장 이어쓰기 / 수정 / 추가
+  document.getElementById('cm-title').textContent =
+    _isDraft ? '고객사 추가 (이어 작성)' :
+    id       ? '고객사 수정' : '고객사 추가';
+
+  // 임시저장 버튼: 신규·임시저장 모드에서만 노출
   const _cmDraftBtn = document.getElementById('cm-btn-draft');
-  if(_cmDraftBtn) _cmDraftBtn.style.display = id ? 'none' : '';
+  if(_cmDraftBtn) _cmDraftBtn.style.display = (id && !_isDraft) ? 'none' : '';
+
+  // 등록 버튼 텍스트
   const _cmRegBtn = document.getElementById('cm-btn-register');
-  if(_cmRegBtn) _cmRegBtn.innerHTML = id
+  if(_cmRegBtn) _cmRegBtn.innerHTML = (id && !_isDraft)
     ? '<i class="fas fa-check-circle"></i> 수정완료'
     : '<i class="fas fa-check-circle"></i> 등록';
-  ['cm-name','cm-biz','cm-rep','cm-industry','cm-addr','cm-phone','cm-email','cm-period','cm-payday','cm-note'].forEach(i=>document.getElementById(i).value='');
+
+  ['cm-name','cm-biz','cm-rep','cm-industry','cm-addr','cm-phone','cm-email','cm-period','cm-payday','cm-note','cm-contract-start'].forEach(i=>document.getElementById(i).value='');
   document.getElementById('cm-insurance-basis').value='';
   document.getElementById('cm-annual-leave-basis').value='';
-  if(id){
-    // ── 수정 모드: 기존 데이터 복원, 접근코드는 기존 코드 그대로 유지 ──
-    const c=allCompanies.find(x=>x.id===id);
+  // 산정기간 셀렉트 초기화 (전월 1일부터 1개월간)
+  _cmSetSelect('cm-period-month','전월'); _cmSetSelect('cm-period-day','1');
+  _cmPeriodCompose();
+
+  if(id && !_isDraft){
+    // ── 수정 모드 (정식 등록된 고객사): 기존 데이터 복원 ──
+    const c=_cmpData;
     if(c){
       document.getElementById('cm-name').value=c.company_name||'';
       document.getElementById('cm-biz').value=c.business_number||'';
@@ -394,11 +495,12 @@ function openCompanyModal(id=null){
       document.getElementById('cm-addr').value=c.address||'';
       document.getElementById('cm-phone').value=c.phone||'';
       document.getElementById('cm-email').value=c.email||'';
-      document.getElementById('cm-period').value=c.pay_period||'';
+      _cmPeriodRestore(c.pay_period||'', c.pay_period_month||null, c.pay_period_day!=null?c.pay_period_day:null);
       document.getElementById('cm-payday').value=c.pay_day||'';
       document.getElementById('cm-note').value=c.note||'';
       document.getElementById('cm-insurance-basis').value=c.insurance_basis||'';
       document.getElementById('cm-annual-leave-basis').value=c.annual_leave_basis||'';
+      document.getElementById('cm-contract-start').value=c.contract_start_date||'';
       // 기존 코드 표시 (수정 불가, 재생성 버튼만 노출)
       _setAccessCode(c.access_code || generateAccessCode());
       document.getElementById('cm-code-regen-btn').style.display = 'inline-flex';
@@ -412,17 +514,43 @@ function openCompanyModal(id=null){
     // ── 수정 내용 적용일 UI 표시 + 최소 날짜 설정 ──
     _cmInitEffectiveDateUI(id);
   } else {
-    // ── 신규 모드: 접근코드 자동 생성, 재생성 버튼 숨김 ──
-    _setAccessCode(generateAccessCode());
-    document.getElementById('cm-code-regen-btn').style.display = 'none';
-    // 서비스 계약서 파일 초기화
-    _cmSvcReset();
-    // 급여 항목 설정 초기화
-    _cmSetAllowanceConfig({});
-    // 신규 모드: 이력 섹션 숨김
+    // ── 신규 모드 또는 임시저장 이어쓰기 모드 ──
+    const c = _isDraft ? _cmpData : null;
+    if(c){
+      // 임시저장 데이터 복원
+      document.getElementById('cm-name').value=c.company_name||'';
+      document.getElementById('cm-biz').value=c.business_number||'';
+      document.getElementById('cm-rep').value=c.representative||'';
+      document.getElementById('cm-industry').value=c.industry||'';
+      document.getElementById('cm-addr').value=c.address||'';
+      document.getElementById('cm-phone').value=c.phone||'';
+      document.getElementById('cm-email').value=c.email||'';
+      _cmPeriodRestore(c.pay_period||'', c.pay_period_month||null, c.pay_period_day!=null?c.pay_period_day:null);
+      document.getElementById('cm-payday').value=c.pay_day||'';
+      document.getElementById('cm-note').value=c.note||'';
+      document.getElementById('cm-insurance-basis').value=c.insurance_basis||'';
+      document.getElementById('cm-annual-leave-basis').value=c.annual_leave_basis||'';
+      document.getElementById('cm-contract-start').value=c.contract_start_date||'';
+      // 임시저장 시 생성된 접근코드 유지
+      _setAccessCode(c.access_code || generateAccessCode());
+      document.getElementById('cm-code-regen-btn').style.display = 'none';
+      // 서비스 계약서 파일 복원
+      _cmSvcRestore(c.service_contract_file_name||'', c.service_contract_file_data||'');
+      // 급여 항목 설정 복원
+      _cmSetAllowanceConfig(c.allowance_config || {});
+    } else {
+      // 순수 신규: 접근코드 자동 생성, 재생성 버튼 숨김
+      _setAccessCode(generateAccessCode());
+      document.getElementById('cm-code-regen-btn').style.display = 'none';
+      // 서비스 계약서 파일 초기화
+      _cmSvcReset();
+      // 급여 항목 설정 초기화
+      _cmSetAllowanceConfig({});
+    }
+    // 신규/임시저장 모드: 이력 섹션 숨김
     const _histSec = document.getElementById('cm-history-section');
     if(_histSec) _histSec.style.display = 'none';
-    // 신규 모드: 적용일 UI 숨김
+    // 신규/임시저장 모드: 적용일 UI 숨김
     const _effRow = document.getElementById('cm-effective-date-row');
     if(_effRow) _effRow.style.display = 'none';
   }
@@ -499,6 +627,8 @@ async function saveDraftCompany(){
     phone:           document.getElementById('cm-phone').value.trim(),
     email:           document.getElementById('cm-email').value.trim(),
     pay_period:      document.getElementById('cm-period').value.trim(),
+    pay_period_month: document.getElementById('cm-period-month-hidden').value || null,
+    pay_period_day:   parseInt(document.getElementById('cm-period-day-hidden').value) || null,
     pay_day:         document.getElementById('cm-payday').value.trim(),
     access_code:     document.getElementById('cm-code').value || generateAccessCode(),
     note:            document.getElementById('cm-note').value.trim(),
@@ -507,6 +637,7 @@ async function saveDraftCompany(){
     service_contract_file_name: _cmSvcGetSaveData().name,
     service_contract_file_data: _cmSvcGetSaveData().data,
     allowance_config:   _cmGetAllowanceConfig(),
+    contract_start_date: document.getElementById('cm-contract-start').value || null,
     status:          COMPANY_STATUS.DRAFT,
     is_draft:        true,
     draft_saved_at:  Date.now(),
@@ -546,9 +677,12 @@ const _CM_FIELD_LABELS = {
   phone:             '대표연락처',
   email:             '이메일',
   pay_period:        '급여 산정기간',
+  pay_period_month:  '급여 산정기간(월기준)',
+  pay_period_day:    '급여 산정기간(시작일)',
   pay_day:           '급여 지급일',
   insurance_basis:   '4대보험 기준',
   annual_leave_basis:'연차 산정 기준',
+  contract_start_date:'계약 시작일',
   note:              '비고',
   allowance_config:  '급여항목 설정',
   access_code:       '접근코드',
@@ -618,7 +752,7 @@ async function saveCompany(){
   const _prevStatus = editId.company
     ? (allCompanies.find(x=>x.id===editId.company)?.status || COMPANY_STATUS.ACTIVE)
     : COMPANY_STATUS.ACTIVE;
-  const body={company_name:name,business_number:document.getElementById('cm-biz').value,representative:document.getElementById('cm-rep').value,industry:document.getElementById('cm-industry').value,address:document.getElementById('cm-addr').value,phone:document.getElementById('cm-phone').value,email:document.getElementById('cm-email').value,pay_period:document.getElementById('cm-period').value,pay_day:document.getElementById('cm-payday').value,access_code:code,note:document.getElementById('cm-note').value,insurance_basis:insuranceBasis,annual_leave_basis:annualLeaveBasis,service_contract_file_name:_cmSvcGetSaveData().name,service_contract_file_data:_cmSvcGetSaveData().data,allowance_config:newAllowanceCfg,is_draft:false,draft_saved_at:null,status:_prevStatus};
+  const body={company_name:name,business_number:document.getElementById('cm-biz').value,representative:document.getElementById('cm-rep').value,industry:document.getElementById('cm-industry').value,address:document.getElementById('cm-addr').value,phone:document.getElementById('cm-phone').value,email:document.getElementById('cm-email').value,pay_period:document.getElementById('cm-period').value,pay_period_month:document.getElementById('cm-period-month-hidden').value||null,pay_period_day:parseInt(document.getElementById('cm-period-day-hidden').value)||null,pay_day:document.getElementById('cm-payday').value,access_code:code,note:document.getElementById('cm-note').value,insurance_basis:insuranceBasis,annual_leave_basis:annualLeaveBasis,service_contract_file_name:_cmSvcGetSaveData().name,service_contract_file_data:_cmSvcGetSaveData().data,allowance_config:newAllowanceCfg,contract_start_date:document.getElementById('cm-contract-start').value||null,is_draft:false,draft_saved_at:null,status:_prevStatus};
 
   // ── 수정 모드: diff 계산 → 변경 있을 때만 적용일 검증 + company_history 기록 ──
   if(editId.company){

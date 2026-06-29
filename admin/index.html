@@ -942,7 +942,32 @@
         <div class="form-group full"><label>사업장 주소 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><input type="text" id="cm-addr" /></div>
         <div class="form-group"><label>대표 연락처 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><input type="text" id="cm-phone" placeholder="010-0000-0000" /></div>
         <div class="form-group"><label>이메일</label><input type="text" id="cm-email" /></div>
-        <div class="form-group"><label>급여 산정기간 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span> <span class="form-hint">(예: 전월1일~말일)</span></label><input type="text" id="cm-period" placeholder="전월1일~말일" /></div>
+        <div class="form-group"><label>계약 시작일 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><input type="date" id="cm-contract-start" /></div>
+        <div class="form-group full">
+          <label>급여 산정기간 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <select id="cm-period-month" onchange="_cmPeriodCompose()" style="border:1px solid #e0e0e0;border-radius:8px;padding:7px 10px;font-size:12.5px;color:#333;outline:none;font-family:inherit;background:#f8f9fb;flex:0 0 auto;">
+              <option value="전월">전월</option>
+              <option value="당월">당월</option>
+            </select>
+            <select id="cm-period-day" onchange="_cmPeriodCompose()" style="border:1px solid #e0e0e0;border-radius:8px;padding:7px 10px;font-size:12.5px;color:#333;outline:none;font-family:inherit;background:#f8f9fb;flex:0 0 auto;">
+              <option value="1">1일</option>
+              <option value="5">5일</option>
+              <option value="10">10일</option>
+              <option value="11">11일</option>
+              <option value="15">15일</option>
+              <option value="16">16일</option>
+              <option value="20">20일</option>
+              <option value="21">21일</option>
+              <option value="25">25일</option>
+            </select>
+            <span style="font-size:13px;color:#6b7280;font-weight:500;">부터 1개월간</span>
+            <span id="cm-period-preview" style="font-size:11.5px;color:#6366f1;font-weight:600;margin-left:4px;"></span>
+          </div>
+          <input type="hidden" id="cm-period" />
+          <input type="hidden" id="cm-period-month-hidden" />
+          <input type="hidden" id="cm-period-day-hidden" />
+        </div>
         <div class="form-group"><label>급여 지급일 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span> <span class="form-hint">(예: 25일)</span></label><input type="text" id="cm-payday" placeholder="25일" /></div>
         <div class="form-group">
           <label>4대보험 적용 기준 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>

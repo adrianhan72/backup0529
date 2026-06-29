@@ -183,7 +183,7 @@ function loadPITargetList(){
     tbody.innerHTML = targets.map(({emp, contract}) => {
       // 유효 계약의 contract_type이 현재 고용형태의 정확한 상태(수습 만료 후 전환 포함)를 반영.
       // emp.employment_category는 갱신이 지연될 수 있으므로 contract_type을 우선 사용.
-      const cat      = contract.contract_type || emp.employment_category || '-';
+      const cat      = CONTRACT_TYPE_LABEL[contract.contract_type] || CONTRACT_TYPE_LABEL[emp.employment_category] || contract.contract_type || emp.employment_category || '-';
       const catStyle = CAT_BADGE[cat] || 'background:#f3f4f6;color:#374151;';
       const cStart   = contract.contract_start || '-';
       const cEnd     = contract.contract_end   || '무기한';
@@ -283,7 +283,7 @@ function selectPITarget(empId, contractId, draftId=null){
   // 직원 헤더 업데이트
   // 유효 계약의 contract_type이 현재 고용형태의 정확한 상태를 반영.
   // emp.employment_category는 갱신이 지연될 수 있으므로 contract_type을 우선 사용.
-  const cat     = contract.contract_type || emp.employment_category || '';
+  const cat     = CONTRACT_TYPE_LABEL[contract.contract_type] || CONTRACT_TYPE_LABEL[emp.employment_category] || contract.contract_type || emp.employment_category || '';
   const CAT_COLORS = {
     '정규직':'background:#dbeafe;color:#1d4ed8;border-color:#93c5fd;',
     '정규직 수습':'background:#cffafe;color:#0e7490;border-color:#67e8f9;',
@@ -696,20 +696,27 @@ function loadPIContract(){
 
           // 만료일이 해당 월 말일보다 이전 → 부분월(만근 미달)
           if(_endDate < _monthEnd){
-            // 고객사 pay_period 파싱: "전월" or "당월" 기준 시작일 결정
+            // 고객사 pay_period_month / pay_period_day 컬럼으로 산정기간 시작일 결정
+            // fallback: pay_period 문자열 파싱 ("전월"/"당월" 시작 여부)
             const _coId  = currentGlobalCompanyId || document.getElementById('pi-company')?.value;
             const _co    = allCompanies.find(c => c.id === _coId);
-            const _coPayPeriod = (_co?.pay_period || '').replace(/\s/g, ''); // 공백 제거
+            const _coMo  = _co?.pay_period_month || null;  // '전월' | '당월' | null
+            const _coDay = parseInt(_co?.pay_period_day) || 1; // 시작일 (1~31)
+
+            // pay_period_month 컬럼 없으면 pay_period 문자열로 fallback
+            const _isJeonwol = _coMo
+              ? (_coMo === '전월')
+              : (_co?.pay_period || '').replace(/\s/g,'').startsWith('전월');
 
             let _periodStartStr;
-            if(_coPayPeriod.startsWith('전월')){
-              // 전월 1일: 급여 월의 전월
+            if(_isJeonwol){
+              // 전월 N일: 급여 월의 전월 지정일
               const _prevMo = _ppMo === 1 ? 12 : _ppMo - 1;
               const _prevYr = _ppMo === 1 ? _ppYr - 1 : _ppYr;
-              _periodStartStr = `${_prevYr}-${String(_prevMo).padStart(2,'0')}-01`;
+              _periodStartStr = `${_prevYr}-${String(_prevMo).padStart(2,'0')}-${String(_coDay).padStart(2,'0')}`;
             } else {
-              // 당월 1일 (기본 fallback)
-              _periodStartStr = `${_ppYr}-${String(_ppMo).padStart(2,'0')}-01`;
+              // 당월 N일
+              _periodStartStr = `${_ppYr}-${String(_ppMo).padStart(2,'0')}-${String(_coDay).padStart(2,'0')}`;
             }
 
             // 만료일을 MM/DD 형식으로 표시
