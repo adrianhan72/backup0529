@@ -944,6 +944,41 @@
         <div class="form-group"><label>이메일</label><input type="text" id="cm-email" /></div>
         <div class="form-group"><label>계약 시작일 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><input type="date" id="cm-contract-start" /></div>
         <div class="form-group"><label>메모</label><input type="text" id="cm-note" /></div>
+
+        <!-- 노무대행 서비스 계약서 섹션 -->
+        <div class="form-group full">
+          <div class="cm-svc-section">
+            <div class="cm-svc-section-title">
+              <i class="fas fa-file-signature" style="color:#6366f1;"></i>
+              노무대행 서비스 계약서 날인본
+              <span style="font-size:11px;font-weight:400;color:#9ca3af;margin-left:4px;">(선택사항)</span>
+            </div>
+            <div class="cm-svc-upload-area">
+              <!-- 파일 없을 때 업로드 영역 -->
+              <div id="cm-svc-no-file">
+                <label class="cm-svc-upload-btn" for="cm-svc-file-input">
+                  <i class="fas fa-upload"></i> 파일 업로드 (이미지 여러 장 · ZIP · PDF)
+                </label>
+                <input type="file" id="cm-svc-file-input"
+                  accept="image/*,application/pdf,application/zip,application/x-zip-compressed,.zip"
+                  multiple style="display:none;" onchange="cmSvcFileChange(this)" />
+                <p class="cm-svc-hint"><i class="fas fa-info-circle"></i> JPG·PNG 이미지(복수 선택 가능), PDF, ZIP 파일을 업로드할 수 있습니다. 업로드 후 저장하면 첨부됩니다.</p>
+              </div>
+              <!-- 파일 목록 -->
+              <div id="cm-svc-file-list-wrap" style="display:none;">
+                <div id="cm-svc-file-list" class="cm-svc-file-list"></div>
+                <!-- 파일 추가 버튼 -->
+                <label class="cm-svc-add-more" for="cm-svc-file-add-input">
+                  <i class="fas fa-plus"></i> 파일 추가
+                </label>
+                <input type="file" id="cm-svc-file-add-input"
+                  accept="image/*,application/pdf,application/zip,application/x-zip-compressed,.zip"
+                  multiple style="display:none;" onchange="cmSvcFileAdd(this)" />
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- ══ 관리 기준 ══ -->
         <div class="form-group full">
           <div style="display:flex;align-items:center;gap:8px;padding:10px 0 4px;border-top:1.5px solid #e5e7eb;margin-top:4px;">
@@ -1169,39 +1204,6 @@
           </div>
         </div>
 
-        <!-- 노무대행 서비스 계약서 섹션 -->
-        <div class="form-group full">
-          <div class="cm-svc-section">
-            <div class="cm-svc-section-title">
-              <i class="fas fa-file-signature" style="color:#6366f1;"></i>
-              노무대행 서비스 계약서 날인본
-              <span style="font-size:11px;font-weight:400;color:#9ca3af;margin-left:4px;">(선택사항)</span>
-            </div>
-            <div class="cm-svc-upload-area">
-              <!-- 파일 없을 때 업로드 영역 -->
-              <div id="cm-svc-no-file">
-                <label class="cm-svc-upload-btn" for="cm-svc-file-input">
-                  <i class="fas fa-upload"></i> 파일 업로드 (이미지 여러 장 · ZIP · PDF)
-                </label>
-                <input type="file" id="cm-svc-file-input"
-                  accept="image/*,application/pdf,application/zip,application/x-zip-compressed,.zip"
-                  multiple style="display:none;" onchange="cmSvcFileChange(this)" />
-                <p class="cm-svc-hint"><i class="fas fa-info-circle"></i> JPG·PNG 이미지(복수 선택 가능), PDF, ZIP 파일을 업로드할 수 있습니다. 업로드 후 저장하면 첨부됩니다.</p>
-              </div>
-              <!-- 파일 목록 -->
-              <div id="cm-svc-file-list-wrap" style="display:none;">
-                <div id="cm-svc-file-list" class="cm-svc-file-list"></div>
-                <!-- 파일 추가 버튼 -->
-                <label class="cm-svc-add-more" for="cm-svc-file-add-input">
-                  <i class="fas fa-plus"></i> 파일 추가
-                </label>
-                <input type="file" id="cm-svc-file-add-input"
-                  accept="image/*,application/pdf,application/zip,application/x-zip-compressed,.zip"
-                  multiple style="display:none;" onchange="cmSvcFileAdd(this)" />
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
     <!-- ── 정보 수정 이력 섹션 (수정 모드 전용) ── -->
