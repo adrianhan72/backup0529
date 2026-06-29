@@ -532,8 +532,9 @@ async function doTerminate(){
   const c = allCompanies.find(x => x.id === id);
   if(!c) return;
   const todayStr = new Date().toISOString().slice(0, 10);
-  const body = {...c, status: COMPANY_STATUS.INACTIVE, contract_end_date: todayStr};
-  await api(`../tables/companies/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  // PATCH: status·contract_end_date 두 필드만 변경 (PUT 시 누락 컬럼 에러 방지)
+  const patch = { status: COMPANY_STATUS.INACTIVE, contract_end_date: todayStr };
+  await api(`../tables/companies/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(patch)});
   closeModal('terminate-modal');
   closeModal('company-modal');
   await loadCompanies();
