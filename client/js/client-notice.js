@@ -25,6 +25,7 @@ function _notifIcon(type){
     'contract_renewal': { icon:'fas fa-sync-alt',       bg:'linear-gradient(135deg,#10b981,#059669)' },
     'payment':          { icon:'fas fa-won-sign',        bg:'linear-gradient(135deg,#3b82f6,#2563eb)' },
     'notice':           { icon:'fas fa-bullhorn',        bg:'linear-gradient(135deg,#8b5cf6,#7c3aed)' },
+    'welcome':          { icon:'fas fa-handshake',       bg:'linear-gradient(135deg,#06b6d4,#0891b2)' },
   };
   return map[type] || { icon:'fas fa-bell', bg:'linear-gradient(135deg,#4f46e5,#6366f1)' };
 }
@@ -178,10 +179,25 @@ async function openNotifDetail(id){
   if(metaEl)    metaEl.textContent   = _notifFmtDate(n.created_at) + (n.sent_by ? ' · 발송: ' + n.sent_by : '');
   if(bodyEl)    bodyEl.textContent   = n.body || '';
 
-  // 계약 정보 박스 표시 여부
-  const hasInfo = n.employee_name || n.contract_end;
-  if(infoBox) infoBox.style.display = hasInfo ? '' : 'none';
-  if(empEl)   empEl.textContent     = n.employee_name || '-';
+  // 계약 정보 박스 표시 여부 — welcome 타입은 고객사명 표시
+  const isWelcome = n.notice_type === 'welcome';
+  const label1El  = document.getElementById('notif-info-label-1');
+  const row2El    = document.getElementById('notif-info-row-2');
+
+  if(isWelcome){
+    // welcome: 고객사명 표시, 계약종료일 행 숨김
+    if(label1El) label1El.textContent = '고객사';
+    if(empEl)    empEl.textContent    = n.company_name || '-';
+    if(row2El)   row2El.style.display = 'none';
+    if(infoBox)  infoBox.style.display = '';  // 항상 표시
+  } else {
+    // 일반 알림: 근로자명 + 계약종료일
+    if(label1El) label1El.textContent = '근로자';
+    if(row2El)   row2El.style.display = '';
+    const hasInfo = n.employee_name || n.contract_end;
+    if(infoBox) infoBox.style.display = hasInfo ? '' : 'none';
+    if(empEl)   empEl.textContent     = n.employee_name || '-';
+  }
   if(endDateEl) endDateEl.textContent = n.contract_end || '-';
 
   // D-day 표시

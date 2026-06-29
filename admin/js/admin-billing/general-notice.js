@@ -5,6 +5,13 @@
 let _gnSelectedIds    = new Set(); // 선택된 고객사 ID 집합
 let _gnScheduleTimers = [];        // 예약 타이머 핸들 목록
 
+// ── 유틸 ──
+/** Date → datetime-local input용 로컬 시간 문자열 (YYYY-MM-DDTHH:mm) */
+function _toDatetimeLocalValue(d){
+  const p = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
 // ─────────────────────────────────────────────
 // 페이지 초기화
 // ─────────────────────────────────────────────
@@ -120,7 +127,7 @@ function openGnComposeModal(){
   const dtEl = document.getElementById('gn-scheduled-at');
   if(dtEl){
     const d = new Date(Date.now() + 3600000);
-    dtEl.value = d.toISOString().slice(0,16);
+    dtEl.value = _toDatetimeLocalValue(d);
   }
   modal.style.display = 'flex';
 }
@@ -162,7 +169,7 @@ async function openGnEditModal(recordId){
   const dtEl = document.getElementById('gn-scheduled-at');
   if(dtEl && n.gn_scheduled_at){
     const d = new Date(n.gn_scheduled_at);
-    dtEl.value = isNaN(d) ? '' : d.toISOString().slice(0,16);
+    dtEl.value = isNaN(d) ? '' : _toDatetimeLocalValue(d);
   }
 
   // 버튼 수정 모드로

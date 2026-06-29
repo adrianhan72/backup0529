@@ -814,7 +814,7 @@ async function saveCompany(){
   if(!_cmRequire('cm-name',           '회사명을 입력하세요.'))            return;
   if(!_cmRequire('cm-biz',            '사업자등록번호를 입력하세요.'))     return;
   if(!_cmRequire('cm-contract-start', '계약 시작일을 입력하세요.'))        return;
-  if(!_cmRequire('cm-rep',            '대표이사명을 입력하세요.'))         return;
+  if(!_cmRequire('cm-rep',            '대표자명을 입력하세요.'))         return;
   if(!_cmRequire('cm-addr',           '사업장 주소를 입력하세요.'))        return;
   if(!_cmRequire('cm-phone',          '대표 연락처를 입력하세요.'))        return;
   // 급여 산정기간: 저장 전 강제 동기화 후 월·일 각각 검사 (포커스는 해당 셀렉트로)
