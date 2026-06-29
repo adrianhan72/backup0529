@@ -117,10 +117,7 @@ function renderCompanies(){
       ? '<span class="badge-draft"><i class="fas fa-cloud" style="font-size:9px;margin-right:2px;"></i>임시저장</span>'
       : (isEffectivelyInactive || c.status===COMPANY_STATUS.INACTIVE
           ? '<span class="badge badge-gray">'+companyStatusLabel(COMPANY_STATUS.INACTIVE)+'</span>'
-          : '<span class="badge badge-green">'+companyStatusLabel(COMPANY_STATUS.ACTIVE)+'</span>'
-            + (isTerminatePending
-                ? `<span class="badge" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d;font-size:10px;margin-left:4px;"><i class="fas fa-clock" style="margin-right:3px;font-size:9px;"></i>${c.contract_end_date} 해지예정</span>`
-                : ''));
+          : '<span class="badge badge-green">'+companyStatusLabel(COMPANY_STATUS.ACTIVE)+'</span>');
 
 
     // 이번 달 급여 데이터
