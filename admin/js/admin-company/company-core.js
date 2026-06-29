@@ -798,6 +798,12 @@ async function saveCompany(){
   if(!_cmRequire('cm-rep',            '대표이사명을 입력하세요.'))         return;
   if(!_cmRequire('cm-addr',           '사업장 주소를 입력하세요.'))        return;
   if(!_cmRequire('cm-phone',          '대표 연락처를 입력하세요.'))        return;
+  // 급여 산정기간: 두 셀렉트가 모두 선택되어야 함 (cm-period-month 기준 체크 → 포커스)
+  if(!document.getElementById('cm-period-month')?.value || !document.getElementById('cm-period-day')?.value){
+    const el = document.getElementById('cm-period-month');
+    if(el){ el.style.borderColor='#e94560'; el.style.boxShadow='0 0 0 2px rgba(233,69,96,0.15)'; el.scrollIntoView({behavior:'smooth',block:'center'}); el.focus(); setTimeout(()=>{el.style.borderColor='';el.style.boxShadow='';},2500); }
+    toast('급여 산정기간을 선택하세요.','error'); return;
+  }
   if(!_cmRequire('cm-payday',         '급여 지급일을 입력하세요.'))        return;
   if(!_cmRequire('cm-insurance-basis',   '4대보험 적용 기준을 선택하세요.'))  return;
   if(!_cmRequire('cm-annual-leave-basis','연차 휴가 산정 기준을 선택하세요.')) return;
