@@ -159,7 +159,12 @@ function renderCompanies(){
         ${statusBadge}
       </div>
       <h3>${c.company_name}</h3>
-      <div style="font-size:11px;color:#aaa;margin-top:2px;margin-bottom:6px;"><i class="fas fa-calendar-alt" style="margin-right:3px;"></i>계약시작일: ${c.contract_start_date||'-'}${(c.status===COMPANY_STATUS.INACTIVE||isTerminatePending)&&c.contract_end_date?`&nbsp;&nbsp;<i class="fas fa-ban" style="color:#dc2626;margin-right:3px;"></i><span style="color:#dc2626;">계약 해지일: ${c.contract_end_date}</span>`:''}</div>
+      <div style="font-size:11px;color:#aaa;margin-top:2px;margin-bottom:6px;">
+        <div><i class="fas fa-calendar-alt" style="margin-right:3px;"></i>계약시작일: ${c.contract_start_date||'-'}</div>
+        ${c.status===COMPANY_STATUS.INACTIVE&&c.contract_end_date
+          ? `<div style="margin-top:2px;"><i class="fas fa-ban" style="color:#dc2626;margin-right:3px;"></i><span style="color:#dc2626;">계약 해지일: ${c.contract_end_date}</span></div>`
+          : ''}
+      </div>
       ${payrollSection}
       <p style="margin-top:10px;">대표: ${c.representative||'-'} · 업종: ${c.industry||'-'}<br>사업자: ${c.business_number||'-'}<br>급여일: ${c.pay_day||'-'} · 산정: ${c.pay_period_month&&c.pay_period_day?`${c.pay_period_month} ${c.pay_period_day}일부터 1개월간`:(c.pay_period||'-')}<br><i class="fas fa-shield-alt" style="color:#6366f1;margin-right:3px;font-size:10px;"></i>4대보험: ${c.insurance_basis||'요율 기준'} · <i class="fas fa-umbrella-beach" style="color:#0891b2;margin-right:3px;font-size:10px;"></i>연차: ${c.annual_leave_basis||'회계년도 기준'}<br>${c.phone||''}</p>
       <div style="display:flex;align-items:center;gap:6px;margin-top:10px;font-size:12px;font-weight:600;color:#3b82f6;"><i class="fas fa-users"></i> 유효 근로계약: ${activeContractCount}건</div>
