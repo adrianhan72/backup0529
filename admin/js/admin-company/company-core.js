@@ -75,11 +75,22 @@ function renderCompanies(){
   const statusFilter=document.getElementById('company-status-filter').value;
   const searchInput=document.getElementById('company-search').value.toLowerCase();
   
+  // 오늘 날짜 (필터 기준)
+  const _todayStr = new Date().toISOString().slice(0, 10);
+
+  // effectiveStatus 계산 헬퍼: DB status=ACTIVE이더라도 해지일이 오늘 이하면 inactive 취급
+  function _effectiveStatus(c){
+    if(c.is_draft) return 'draft';
+    if(c.status === COMPANY_STATUS.ACTIVE && c.contract_end_date && c.contract_end_date <= _todayStr)
+      return COMPANY_STATUS.INACTIVE;
+    return c.status || COMPANY_STATUS.ACTIVE;
+  }
+
   let filtered=allCompanies.filter(c=>{
     // 임시저장 항목은 상단 배너에서 별도 표시되므로 목록 카드에서 제외
     if(c.is_draft) return false;
-    const effectiveStatus = c.status||COMPANY_STATUS.ACTIVE;
-    if(statusFilter&&effectiveStatus!==statusFilter) return false;
+    const effStatus = _effectiveStatus(c);
+    if(statusFilter&&effStatus!==statusFilter) return false;
     if(searchInput&&!(c.company_name||'').toLowerCase().includes(searchInput)) return false;
     return true;
   }).sort((a,b) => (a.company_name||'').localeCompare(b.company_name||'', 'ko'));
@@ -91,19 +102,25 @@ function renderCompanies(){
       ct.company_id === c.id && ct.status === CONTRACT_STATUS.ACTIVE
     ).length;
     const isDraftComp = !!c.is_draft;
-    const todayStr = new Date().toISOString().slice(0, 10);
+    // 해지예정: DB=ACTIVE + 해지일이 오늘보다 미래
     const isTerminatePending = !isDraftComp
       && c.status === COMPANY_STATUS.ACTIVE
       && c.contract_end_date
-      && c.contract_end_date > todayStr;
+      && c.contract_end_date > _todayStr;
+    // 실질 해지: DB=ACTIVE이지만 해지일이 오늘 이하 (자동 해지 도래)
+    const isEffectivelyInactive = !isDraftComp
+      && c.status === COMPANY_STATUS.ACTIVE
+      && c.contract_end_date
+      && c.contract_end_date <= _todayStr;
+    // 뱃지 렌더링
     const statusBadge = isDraftComp
       ? '<span class="badge-draft"><i class="fas fa-cloud" style="font-size:9px;margin-right:2px;"></i>임시저장</span>'
-      : (c.status===COMPANY_STATUS.ACTIVE
-          ? '<span class="badge badge-green">'+companyStatusLabel(COMPANY_STATUS.ACTIVE)+'</span>'
+      : (isEffectivelyInactive || c.status===COMPANY_STATUS.INACTIVE
+          ? '<span class="badge badge-gray">'+companyStatusLabel(COMPANY_STATUS.INACTIVE)+'</span>'
+          : '<span class="badge badge-green">'+companyStatusLabel(COMPANY_STATUS.ACTIVE)+'</span>'
             + (isTerminatePending
                 ? `<span class="badge" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d;font-size:10px;margin-left:4px;"><i class="fas fa-clock" style="margin-right:3px;font-size:9px;"></i>${c.contract_end_date} 해지예정</span>`
-                : '')
-          : '<span class="badge badge-gray">'+companyStatusLabel(COMPANY_STATUS.INACTIVE)+'</span>');
+                : ''));
 
 
     // 이번 달 급여 데이터
@@ -121,9 +138,9 @@ function renderCompanies(){
     const allPaid=totalTarget>0&&paidCount===totalTarget; // 전원 완료 여부
     const totalNetPay=thisMonthPayrolls.reduce((sum,p)=>sum+(p.net_pay||0),0);
 
-    // 급여 입력 섹션 (이용중 고객사만, 임시저장 제외)
+    // 급여 입력 섹션 (이용중 고객사만, 임시저장·실질해지 제외)
     let payrollSection='';
-    if(c.status===COMPANY_STATUS.ACTIVE&&!isDraftComp){
+    if(c.status===COMPANY_STATUS.ACTIVE&&!isDraftComp&&!isEffectivelyInactive){
       if(totalTarget===0){
         // 유효 계약 없음 — 섹션 미표시
         payrollSection='';
@@ -161,8 +178,10 @@ function renderCompanies(){
       <h3>${c.company_name}</h3>
       <div style="font-size:11px;color:#aaa;margin-top:2px;margin-bottom:6px;">
         <div><i class="fas fa-calendar-alt" style="margin-right:3px;"></i>계약시작일: ${c.contract_start_date||'-'}</div>
-        ${c.status===COMPANY_STATUS.INACTIVE&&c.contract_end_date
+        ${(c.status===COMPANY_STATUS.INACTIVE||isEffectivelyInactive)&&c.contract_end_date
           ? `<div style="margin-top:2px;"><i class="fas fa-ban" style="color:#dc2626;margin-right:3px;"></i><span style="color:#dc2626;">계약 해지일: ${c.contract_end_date}</span></div>`
+          : isTerminatePending&&c.contract_end_date
+          ? `<div style="margin-top:2px;"><i class="fas fa-clock" style="color:#d97706;margin-right:3px;"></i><span style="color:#d97706;">해지 예정일: ${c.contract_end_date}</span></div>`
           : ''}
       </div>
       ${payrollSection}
@@ -174,9 +193,27 @@ function renderCompanies(){
              <span style="font-size:11.5px;color:#92400e;font-weight:600;"><i class="fas fa-exclamation-circle" style="margin-right:4px;color:#f59e0b;"></i>임시저장 상태 — 등록을 완료해 주세요</span>
              <button class="btn btn-draft btn-sm" style="padding:5px 12px;font-size:12px;width:100%;text-align:center;justify-content:center;" onclick="editCompany('${c.id}')"><i class="fas fa-pencil-alt"></i> 계속 작성</button>
            </div>`
-        : c.status===COMPANY_STATUS.INACTIVE
+        : (c.status===COMPANY_STATUS.INACTIVE||isEffectivelyInactive)
           ? `<div style="margin-top:8px;padding:8px 10px;background:#fff3f3;border:1px solid #fca5a5;border-radius:6px;font-size:11px;color:#b91c1c;line-height:1.5;">
               <i class="fas fa-info-circle"></i> 해지고객사의 데이터 보존년한은 해지일로부터 5년입니다
+             </div>`
+          : isTerminatePending
+          ? `<div style="margin-top:10px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:8px;">
+                <div style="display:flex;gap:6px;">
+                  <button class="btn btn-primary btn-sm" onclick="editCompany('${c.id}')">정보수정</button>
+                  <button class="btn btn-sm" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;font-weight:600;" onmouseover="this.style.background='#dbeafe'" onmouseout="this.style.background='#eff6ff'" onclick="goContractsByCompany('${c.id}','${c.company_name}')">근로계약서</button>
+                  <button class="btn btn-sm" style="background:#f0fdf4;color:#166534;border:1px solid #86efac;font-weight:600;" onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='#f0fdf4'" onclick="goPayrollsByCompany('${c.id}','${c.company_name}')">급여명세</button>
+                </div>
+              </div>
+              <div style="display:flex;gap:6px;">
+                <button class="btn btn-sm" style="flex:1;background:#fef3c7;color:#92400e;border:1px solid #fcd34d;font-weight:600;" onmouseover="this.style.background='#fde68a'" onmouseout="this.style.background='#fef3c7'" onclick="changeEndDate('${c.id}','${c.company_name}','${c.contract_end_date}')">
+                  <i class="fas fa-calendar-edit" style="margin-right:3px;"></i>해지일 변경
+                </button>
+                <button class="btn btn-sm" style="flex:1;background:#f0fdf4;color:#166534;border:1px solid #86efac;font-weight:600;" onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='#f0fdf4'" onclick="cancelTerminate('${c.id}','${c.company_name}')">
+                  <i class="fas fa-undo" style="margin-right:3px;"></i>해지 취소
+                </button>
+              </div>
              </div>`
           : `<div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:10px;">
               <div style="display:flex;gap:6px;">

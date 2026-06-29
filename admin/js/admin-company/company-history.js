@@ -539,8 +539,10 @@ async function doTerminate(){
   const endDateEl = document.getElementById('tm-end-date');
   const endDateStr = endDateEl?.value || new Date().toISOString().slice(0, 10);
   if(!endDateStr) return toast('계약 해지일을 입력해 주세요.', 'error');
-  // PATCH: status·contract_end_date 두 필드만 변경
-  const patch = { status: COMPANY_STATUS.INACTIVE, contract_end_date: endDateStr };
+  const todayStr = new Date().toISOString().slice(0, 10);
+  // 해지일이 오늘 이하면 즉시 해지(INACTIVE), 미래면 해지예정(ACTIVE + contract_end_date 세팅)
+  const newStatus = endDateStr <= todayStr ? COMPANY_STATUS.INACTIVE : COMPANY_STATUS.ACTIVE;
+  const patch = { status: newStatus, contract_end_date: endDateStr };
   await api(`../tables/companies/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(patch)});
   closeModal('terminate-modal');
   closeModal('company-modal');
@@ -549,7 +551,58 @@ async function doTerminate(){
   populatePICompanies();
   renderCompanies();
   renderDashboard();
-  toast(`"${c.company_name}" 해지 완료 (해지일: ${endDateStr})`);
+  const msg = endDateStr <= todayStr
+    ? `"${c.company_name}" 해지 처리 완료 (해지일: ${endDateStr})`
+    : `"${c.company_name}" 해지 예정 등록 (예정일: ${endDateStr})`;
+  toast(msg);
+}
+
+// ── 해지예정 고객사 — 해지일 변경 ──
+let _changeEndDateTargetId = null;
+
+function changeEndDate(id, name, currentEndDate){
+  _changeEndDateTargetId = id;
+  const nameEl = document.getElementById('ced-company-name');
+  if(nameEl) nameEl.innerHTML = `<i class="fas fa-building" style="color:#64748b;margin-right:6px;"></i>${name}`;
+  const dateEl = document.getElementById('ced-end-date');
+  if(dateEl){
+    // 내일부터 선택 가능 (오늘 이하면 즉시 해지로 전환되므로)
+    const tmrw = new Date(); tmrw.setDate(tmrw.getDate()+1);
+    dateEl.min = tmrw.toISOString().slice(0,10);
+    dateEl.value = currentEndDate || tmrw.toISOString().slice(0,10);
+  }
+  openModal('change-end-date-modal');
+}
+
+async function doChangeEndDate(){
+  const id = _changeEndDateTargetId;
+  if(!id) return;
+  const c = allCompanies.find(x => x.id === id);
+  if(!c) return;
+  const dateEl = document.getElementById('ced-end-date');
+  const newDateStr = dateEl?.value || '';
+  if(!newDateStr) return toast('새 해지 예정일을 선택해 주세요.', 'error');
+  const todayStr = new Date().toISOString().slice(0,10);
+  if(newDateStr <= todayStr){
+    toast('해지 예정일은 내일 이후여야 합니다.', 'error');
+    return;
+  }
+  const patch = { contract_end_date: newDateStr };
+  await api(`../tables/companies/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(patch)});
+  closeModal('change-end-date-modal');
+  await loadCompanies();
+  populateFilters(); populatePICompanies(); renderCompanies(); renderDashboard();
+  toast(`해지 예정일이 ${newDateStr}로 변경되었습니다.`);
+}
+
+// ── 해지예정 고객사 — 해지 취소 ──
+async function cancelTerminate(id, name){
+  if(!confirm(`"${name}"의 해지 예정을 취소하시겠습니까?\n계약 해지 예정일이 제거되고 이용중 상태로 복구됩니다.`)) return;
+  const patch = { status: COMPANY_STATUS.ACTIVE, contract_end_date: null };
+  await api(`../tables/companies/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(patch)});
+  await loadCompanies();
+  populateFilters(); populatePICompanies(); renderCompanies(); renderDashboard();
+  toast(`"${name}" 해지 예정이 취소되었습니다.`);
 }
 
 /* [사용료 숨김] 기존 terminateCompany / doTerminate (미납금 체크 포함) - 원복 시 아래 주석 해제
