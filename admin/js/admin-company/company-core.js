@@ -794,10 +794,10 @@ async function saveCompany(){
 
   if(!_cmRequire('cm-name',           '회사명을 입력하세요.'))            return;
   if(!_cmRequire('cm-biz',            '사업자등록번호를 입력하세요.'))     return;
+  if(!_cmRequire('cm-contract-start', '계약 시작일을 입력하세요.'))        return;
   if(!_cmRequire('cm-rep',            '대표이사명을 입력하세요.'))         return;
   if(!_cmRequire('cm-addr',           '사업장 주소를 입력하세요.'))        return;
   if(!_cmRequire('cm-phone',          '대표 연락처를 입력하세요.'))        return;
-  if(!_cmRequire('cm-contract-start', '계약 시작일을 입력하세요.'))        return;
   if(!_cmRequire('cm-payday',         '급여 지급일을 입력하세요.'))        return;
   if(!_cmRequire('cm-insurance-basis',   '4대보험 적용 기준을 선택하세요.'))  return;
   if(!_cmRequire('cm-annual-leave-basis','연차 휴가 산정 기준을 선택하세요.')) return;
