@@ -204,11 +204,11 @@ function renderCompanies(){
                 </div>
               </div>
               <div style="display:flex;gap:6px;">
-                <button class="btn btn-sm" style="flex:1;background:#fef3c7;color:#92400e;border:1px solid #fcd34d;font-weight:600;" onmouseover="this.style.background='#fde68a'" onmouseout="this.style.background='#fef3c7'" onclick="changeEndDate('${c.id}','${c.company_name}','${c.contract_end_date}')">
-                  <i class="fas fa-calendar-edit" style="margin-right:3px;"></i>해지일 변경
+                <button class="btn btn-sm" style="flex:1;display:flex;align-items:center;justify-content:center;gap:4px;background:#fef3c7;color:#92400e;border:1px solid #fcd34d;font-weight:600;" onmouseover="this.style.background='#fde68a'" onmouseout="this.style.background='#fef3c7'" onclick="changeEndDate('${c.id}','${c.company_name}','${c.contract_end_date}')">
+                  <i class="fas fa-calendar-edit"></i>해지일 변경
                 </button>
-                <button class="btn btn-sm" style="flex:1;background:#f0fdf4;color:#166534;border:1px solid #86efac;font-weight:600;" onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='#f0fdf4'" onclick="cancelTerminate('${c.id}','${c.company_name}')">
-                  <i class="fas fa-undo" style="margin-right:3px;"></i>해지 취소
+                <button class="btn btn-sm" style="flex:1;display:flex;align-items:center;justify-content:center;gap:4px;background:#f0fdf4;color:#166534;border:1px solid #86efac;font-weight:600;" onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='#f0fdf4'" onclick="cancelTerminate('${c.id}','${c.company_name}')">
+                  <i class="fas fa-undo"></i>해지 취소
                 </button>
               </div>
              </div>`
