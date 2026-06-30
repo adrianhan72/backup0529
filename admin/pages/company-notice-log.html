@@ -10,28 +10,30 @@
           <!-- 알림 유형 드롭다운 -->
           <select id="cnl-filter-type" onchange="renderCnlReserveCard();renderCnlTable();" style="padding:7px 10px;border:1px solid #d1d5db;border-radius:7px;font-size:13px;color:#374151;background:#fff;cursor:pointer;">
             <option value="">전체 유형</option>
-            <option value="contract_created">신규 계약</option>
-            <option value="contract_updated">계약 수정</option>
-            <option value="contract_voided">계약 파기</option>
-            <option value="contract_amended">계약 수정재발행</option>
-            <option value="contract_terminated">계약 해지</option>
-            <option value="contract_termination_scheduled">해지 예약</option>
-            <option value="contract_termination_cancelled">해지 예정 취소</option>
-            <option value="contract_renewed">계약 갱신</option>
-            <option value="contract_renewal_scheduled">갱신 예약</option>
-            <option value="contract_renewed_new">재계약 완료</option>
-            <option value="contract_dispatched">계약서 발송</option>
-            <option value="contract_signed_uploaded">날인본 업로드</option>
-            <option value="contract_consent_uploaded">동의서 업로드</option>
-            <option value="contract_fully_documented">서류 완비 (계약 유효)</option>
+            <option value="welcome">가입환영</option>
+            <option value="contract_renewed">근로계약 갱신</option>
+            <option value="contract_renewal_scheduled">근로계약 갱신 예약</option>
+            <option value="contract_expiry">근로계약 만료 통지</option>
+            <option value="contract_updated">근로계약 수정</option>
+            <option value="contract_amended">근로계약 수정</option>
+            <option value="contract_renewed_new">근로계약 재계약</option>
+            <option value="contract_voided">근로계약 파기</option>
+            <option value="contract_terminated">근로계약 해지</option>
+            <option value="contract_termination_scheduled">근로계약 해지 예약</option>
+            <option value="contract_termination_cancelled">근로계약 해지 취소</option>
+            <option value="contract_signed_uploaded">근로계약서 날인본 등록</option>
+            <option value="contract_dispatched">근로계약서 발송</option>
             <option value="payroll_input_complete">급여 입력/수정</option>
             <option value="payslip_individual_sent">급여명세서 개별</option>
             <option value="payslip_bulk_sent">급여명세서 일괄</option>
-            <option value="severance_paid">퇴직급여 지급</option>
-            <option value="contract_expiry">계약만료 통지</option>
-            <option value="regular_conversion">정규직 전환 통지</option>
+            <option value="contract_consent_uploaded">동의서 날인본 등록</option>
+            <option value="contract_fully_documented">서류 완비</option>
+            <option value="contract_created">신규 근로계약</option>
             <option value="leave_promotion">연차 사용촉진</option>
+            <option value="notice">이용안내</option>
+            <option value="regular_conversion">정규직 전환</option>
             <option value="general">중요공지</option>
+            <option value="severance_paid">퇴직급여 지급</option>
           </select>
           <!-- 제목 검색 -->
           <div class="search-input" style="margin:0;">
@@ -119,4 +121,4 @@
         </div>
       </div>
 
-    </div><!-- /page-company-notice-log -->
+    </div><!-- /page-company-notice-log -->

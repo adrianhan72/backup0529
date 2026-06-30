@@ -56,6 +56,7 @@ CREATE TABLE IF NOT EXISTS employees (
   address             TEXT,
   dependents          INTEGER DEFAULT 0,
   job_description     TEXT,
+  is_representative   INTEGER DEFAULT 0,
   created_at          INTEGER,
   updated_at          INTEGER
 );

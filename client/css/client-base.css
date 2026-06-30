@@ -20,3 +20,16 @@
     .login-remember{display:flex;align-items:center;gap:8px;margin:10px 0 14px;cursor:pointer;user-select:none;}
     .login-remember input[type=checkbox]{width:17px;height:17px;accent-color:#6366f1;cursor:pointer;flex-shrink:0;}
     .login-remember span{font-size:12.5px;color:#555;font-weight:500;}
+
+    /* ─ Termination Modal ─ */
+    .term-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:none;align-items:center;justify-content:center;padding:24px;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+    .term-overlay.open{display:flex;animation:termFadeIn .3s ease}
+    @keyframes termFadeIn{from{opacity:0}to{opacity:1}}
+    .term-modal{background:#fff;border-radius:20px;padding:36px 28px;width:100%;max-width:380px;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,.45);animation:termScaleIn .3s cubic-bezier(.34,1.56,.64,1)}
+    @keyframes termScaleIn{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
+    .term-icon{width:64px;height:64px;border-radius:50%;background:#fee2e2;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:28px;color:#dc2626}
+    .term-title{font-size:17px;font-weight:800;color:#1a1a2e;margin-bottom:12px}
+    .term-msg{font-size:26px;font-weight:800;color:#dc2626;line-height:1.35;margin-bottom:10px;word-break:keep-all}
+    .term-sub{font-size:13px;color:#9ca3af;margin-bottom:28px;line-height:1.5}
+    .term-close-btn{width:100%;background:linear-gradient(135deg,#e94560,#dc2626);color:#fff;border:none;border-radius:12px;padding:15px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;transition:transform .15s,box-shadow .15s;touch-action:manipulation;-webkit-tap-highlight-color:transparent;min-height:52px}
+    .term-close-btn:active{transform:scale(.97);box-shadow:0 4px 16px rgba(220,38,38,.35)}

@@ -486,7 +486,7 @@ async function showPage(name,el){
   // 페이지 전환 시 스크롤 최상단 이동
   window.scrollTo(0,0);
   document.querySelector('.content')?.scrollTo(0,0);
-  document.getElementById('topbar-title').textContent={dashboard:'대시보드',companies:'고객사 관리',['company-notice-log']:'알림 발송 이력',['general-notice']:'중요공지 관리',billing:'시스템 사용료 관리',contracts:'근로 계약 관리',['contract-dispatch']:'근로계약서 발송 관리',['contract-expiry-notice']:'계약만료 통지 관리',['regular-conversion']:'정규직 전환 관리',['probation-mgmt']:'수습 근로자 관리',payrolls:'급여 명세서 조회',['payroll-input']:'급여 입력',['labor-status']:'급여 통계 조회',['payslip-send']:'급여 명세서 발송 관리',['admin-accounts']:'관리자 계정 관리',['wage-ledger']:'임금대장',standards:'년도별 산정기준',severance:'퇴직급여 관리',['annual-leave']:'연차 관리',['leave-promotion']:'사용촉진 발송 이력'}[name]||name;
+  document.getElementById('topbar-title').textContent={dashboard:'대시보드',companies:'고객사 관리',['company-notice-log']:'고객사앱 알림 이력',['general-notice']:'중요공지 관리',billing:'시스템 사용료 관리',contracts:'근로 계약 관리',['contract-dispatch']:'근로계약서 발송 관리',['contract-expiry-notice']:'계약만료 통지 관리',['regular-conversion']:'정규직 전환 관리',['probation-mgmt']:'수습 근로자 관리',payrolls:'급여 명세서 조회',['payroll-input']:'급여 입력',['labor-status']:'급여 통계 조회',['payslip-send']:'급여 명세서 발송 관리',['admin-accounts']:'관리자 계정 관리',['wage-ledger']:'임금대장',standards:'년도별 산정기준',severance:'퇴직급여 관리',['annual-leave']:'연차 관리',['leave-promotion']:'사용촉진 발송 이력'}[name]||name;
   // 도움말 버튼: 근로 계약 관리 페이지에서만 표시
   const _helpBtn = document.getElementById('topbar-help-btn');
   if(_helpBtn) _helpBtn.style.display = (name === 'contracts') ? '' : 'none';

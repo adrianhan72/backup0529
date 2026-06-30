@@ -776,27 +776,122 @@ function _setEditNameCategoryLock(lock, lockCat = lock) {
   if(nameLock) nameLock.style.display = lock    ? 'block' : 'none';
   if(catLock)  catLock.style.display  = lockCat ? 'block' : 'none';
 }
+/**
+ * 직원명이 선택된 고객사의 대표자명과 일치하면 '대표자 본인' 체크박스를 표시
+ */
+function _checkRepSelf(){
+  const nameEl  = document.getElementById('ct-em-name');
+  const rowEl   = document.getElementById('ct-em-rep-self-row');
+  const chkEl   = document.getElementById('ct-em-is-rep');
+  const coId    = document.getElementById('ct-company')?.value;
+  if(!nameEl || !rowEl || !coId){ if(rowEl) rowEl.style.display='none'; return; }
+  const empName = nameEl.value.trim();
+  const co = (allCompanies||[]).find(c => c.id === coId);
+  const repName = (co?.representative || '').trim();
+  if(empName && repName && empName === repName){
+    rowEl.style.display = '';
+  } else {
+    rowEl.style.display = 'none';
+    if(chkEl) chkEl.checked = false;
+  }
+}
 function checkCtDuplicateName(){
   const name = document.getElementById('ct-em-name').value.trim();
   const alertEl = document.getElementById('ct-em-name-dup-alert');
   const msgEl   = document.getElementById('ct-em-name-dup-msg');
+  const actionsEl = document.getElementById('ct-em-name-dup-actions');
   const suggestEl = document.getElementById('ct-em-name-dup-suggestions');
   if(!name){ alertEl.style.display='none'; return; }
-  const dupes = allEmployees.filter(e=>e.name===name);
+  const coId = document.getElementById('ct-company')?.value;
+  if(!coId){ alertEl.style.display='none'; return; }
+  const dupes = allEmployees.filter(e=>e.company_id===coId && e.name===name);
   if(!dupes.length){ alertEl.style.display='none'; return; }
+
   const escaped = name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-  const existingNames = allEmployees.filter(e=>new RegExp(`^${escaped}(\\d+)?$`).test(e.name)).map(e=>e.name);
+  const existingNames = allEmployees.filter(e=>e.company_id===coId && new RegExp(`^${escaped}(\\d+)?$`).test(e.name)).map(e=>e.name);
   const suggestions=[];
   for(let n=2;n<=existingNames.length+2;n++){
     const c=`${name}${n}`;
-    if(!existingNames.includes(c)){ suggestions.push(c); if(suggestions.length>=3) break; }
+    if(!existingNames.includes(c)){ suggestions.push(c); if(suggestions.length>=1) break; }
   }
-  msgEl.textContent=`동일한 이름 "${name}"의 직원이 이미 ${dupes.length}명 있습니다.`;
-  suggestEl.innerHTML=suggestions.map(s=>
-    `<button type="button" onclick="document.getElementById('ct-em-name').value='${s}';document.getElementById('ct-em-name-dup-alert').style.display='none'"
-      style="padding:3px 10px;background:#FFF;border:1.5px solid #FB923C;border-radius:20px;color:#9A3412;font-size:11px;cursor:pointer;font-weight:600;">
-      ${s} 로 입력</button>`).join('');
+
+  // ── 동명 직원별 계약 상태 판별 ──
+  const activeContractStatuses = new Set(['active','활성','docs_incomplete','서류미비']);
+  let hasActiveDupes = false, hasInactiveDupes = false;
+  const dupesWithStatus = dupes.map(emp => {
+    const activeCt = (allContracts||[]).find(c =>
+      c.employee_id === emp.id && activeContractStatuses.has(c.status)
+    );
+    const latestCt = (allContracts||[])
+      .filter(c => c.employee_id === emp.id)
+      .sort((a,b) => (b.contract_start||'').localeCompare(a.contract_start||''))[0];
+    const isActive = !!activeCt;
+    if(isActive) hasActiveDupes = true; else hasInactiveDupes = true;
+    return { emp, activeCt, latestCt, isActive };
+  });
+
+  // ── 메시지 ──
+  const activeCount = dupesWithStatus.filter(d=>d.isActive).length;
+  const inactiveCount = dupesWithStatus.length - activeCount;
+  let msgParts = [`동일한 이름 "${name}"의 직원이 이미 ${dupes.length}명 있습니다.`];
+  if(activeCount > 0) msgParts.push(`재직 중: ${activeCount}명`);
+  if(inactiveCount > 0) msgParts.push(`퇴직·만료: ${inactiveCount}명`);
+  msgEl.textContent = msgParts.join(' / ');
+
+  // ── 액션 버튼 ──
+  let actionsHtml = '';
+  dupesWithStatus.forEach(({ emp, activeCt, latestCt, isActive }) => {
+    const empLabel = `${emp.name}(${emp.employee_number||'무번호'})`;
+    if(isActive && activeCt){
+      actionsHtml += `<button type="button" onclick="_ctDupRenew('${activeCt.id}')"
+        style="padding:4px 10px;background:#ecfdf5;border:1.5px solid #6ee7b7;border-radius:20px;color:#065f46;font-size:11px;cursor:pointer;font-weight:600;">
+        <i class="fas fa-sync-alt"></i> ${empLabel} 계약 갱신</button>`;
+      actionsHtml += `<button type="button" onclick="_ctDupEdit('${activeCt.id}')"
+        style="padding:4px 10px;background:#eff6ff;border:1.5px solid #93c5fd;border-radius:20px;color:#1e40af;font-size:11px;cursor:pointer;font-weight:600;">
+        <i class="fas fa-edit"></i> ${empLabel} 계약 수정</button>`;
+    } else if(latestCt){
+      actionsHtml += `<button type="button" onclick="_ctDupRecontract('${latestCt.id}')"
+        style="padding:4px 10px;background:#fef3c7;border:1.5px solid #fcd34d;border-radius:20px;color:#92400e;font-size:11px;cursor:pointer;font-weight:600;">
+        <i class="fas fa-file-signature"></i> ${empLabel} 재계약</button>`;
+    }
+  });
+  actionsEl.innerHTML = actionsHtml;
+
+  // ── 번호 붙인 대체 이름 제안 ──
+  suggestEl.innerHTML = suggestions.length
+    ? `<div style="font-size:10.5px;color:#9a3412;margin-bottom:4px;">또는 새 이름으로:</div>` + suggestions.map(s=>
+      `<button type="button" onclick="document.getElementById('ct-em-name').value='${s}';document.getElementById('ct-em-name-dup-alert').style.display='none'"
+        style="padding:3px 10px;background:#FFF;border:1.5px solid #FB923C;border-radius:20px;color:#9A3412;font-size:11px;cursor:pointer;font-weight:600;">
+        ${s} 로 입력</button>`).join('')
+    : '';
   alertEl.style.display='block';
+}
+
+/** 중복이름 → 기존 계약 갱신 (활성 계약을 edit 모달로 열고 갱신 패널 표시) */
+function _ctDupRenew(contractId){
+  document.getElementById('ct-em-name-dup-alert').style.display='none';
+  closeModal('contract-modal');
+  setTimeout(() => {
+    openContractModal(contractId);
+    setTimeout(() => { if(typeof doContractRenew==='function') doContractRenew(); }, 300);
+  }, 200);
+}
+
+/** 중복이름 → 기존 계약 수정 (활성 계약을 edit 모달로 열기) */
+function _ctDupEdit(contractId){
+  document.getElementById('ct-em-name-dup-alert').style.display='none';
+  closeModal('contract-modal');
+  setTimeout(() => { openContractModal(contractId); }, 200);
+}
+
+/** 중복이름 → 재계약 (가장 최근 계약 기준으로 재계약 모달 열기) */
+function _ctDupRecontract(contractId){
+  document.getElementById('ct-em-name-dup-alert').style.display='none';
+  closeModal('contract-modal');
+  setTimeout(() => {
+    const src = (allContracts||[]).find(c => c.id === contractId);
+    if(src && typeof openRecontractModal === 'function') openRecontractModal(src);
+  }, 200);
 }
 
 // ─── 사원번호 유니크 유효성 검사 ───────────────────────────────────────────
@@ -990,22 +1085,22 @@ function calcContractStatusDisplay(c, today){
   if(s==='갱신예정')  return {badge:'badge-amber',  label:'갱신예정'};
   if(s==='계약예정')  return {badge:'badge-indigo', label:'계약예정'};
   if(s==='해지예정')  return {badge:'badge-rose',   label:'해지예정'};
-  if(s==='파기')      return {badge:'badge-slate',  label:'파기'};
+  if(s==='파기'||s==='voided')      return {badge:'badge-slate',  label:'파기'};
   if(s==='갱신됨')    return {badge:'badge-gray',   label:'만료'}; // 레거시 → 만료로 표시
   if(s==='만료'||s==='expired')    return {badge:'badge-gray',  label:'만료'};
   if(s==='해지'||s==='terminated') return {badge:'badge-red',   label:'해지'};
   // 만료예정·종료예정은 레거시 값 → 계약유효로 표시 (유효한 계약)
-  if(s==='만료예정'||s==='종료예정') return {badge:'badge-green', label:'계약유효'};
+  if(s==='만료예정'||s==='종료예정') return {badge:'badge-green', label:'유효'};
   // 서류미비 상태 (활성이지만 계약서 날인본 또는 동의서 미첨부)
   if(s==='서류미비') return {badge:'badge-orange', label:'서류미비'};
   // 활성/유효 상태
   if(s==='활성'||s==='유효'||s==='active'){
     if(start && start > today) return {badge:'badge-amber', label:'갱신예정'};
-    // 두 파일 모두 있어야 '계약유효', 하나라도 없으면 '서류미비'
+    // 두 파일 모두 있어야 '유효', 하나라도 없으면 '서류미비'
     const hasSignedFile  = !!(c.signed_file_data);
     const hasConsentFile = !!(c.consent_file_data);
     if(!hasSignedFile || !hasConsentFile) return {badge:'badge-orange', label:'서류미비'};
-    return {badge:'badge-green', label:'계약유효'};
+    return {badge:'badge-green', label:'유효'};
   }
   return {badge:'badge-gray', label: s};
 }

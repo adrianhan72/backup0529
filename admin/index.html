@@ -83,7 +83,7 @@
     <div class="menu-item active" data-page="dashboard" onclick="showPage('dashboard',this)"><i class="fas fa-th-large"></i> 대시보드</div>
     <div class="menu-section">고객사 관리</div>
     <div class="menu-item" data-page="companies" onclick="showPage('companies',this)"><i class="fas fa-building"></i> 고객사 관리<span class="menu-todo-badge" id="badge-companies" style="display:none;"></span></div>
-    <div class="menu-item" data-page="company-notice-log" onclick="showPage('company-notice-log',this)"><i class="fas fa-bell"></i> 알림 발송 이력</div>
+    <div class="menu-item" data-page="company-notice-log" onclick="showPage('company-notice-log',this)"><i class="fas fa-bell"></i> 고객사앱 알림 이력</div>
     <div class="menu-item" data-page="general-notice" onclick="showPage('general-notice',this)"><i class="fas fa-bullhorn"></i> 중요공지 관리</div>
     <!-- [사용료 숨김] 사용료 관리 메뉴 - 원복 시 아래 주석 해제
     <div class="menu-item" data-page="billing" onclick="showPage('billing',this)"><i class="fas fa-file-invoice-dollar"></i> 사용료 관리</div>
@@ -1559,7 +1559,7 @@
       </div>
       <div class="form-grid">
         <div class="form-group full"><span class="form-section-title">기본 정보</span></div>
-        <div class="form-group"><label>회사 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><select id="ct-company" onchange="loadCtEmployees();autoFillAnnualLeave();_autoFillCTPeriod();_checkRegisterBtnState();onCtCompanyChange();"><option value="">선택</option></select></div>
+        <div class="form-group"><label>회사 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><select id="ct-company" onchange="loadCtEmployees();autoFillAnnualLeave();_autoFillCTPeriod();_checkRegisterBtnState();onCtCompanyChange();_checkRepSelf();"><option value="">선택</option></select></div>
         <!-- ══ 수정 모드: 직원 정보 표시·편집 섹션 ══ -->
         <div id="ct-edit-emp-info" class="form-group full" style="display:none;">
           <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;padding:16px 18px;margin-top:4px;">
@@ -1661,10 +1661,17 @@
                 </div>
               </div>
               <div class="form-group"><label>이름 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
-                <input type="text" id="ct-em-name" oninput="checkCtDuplicateName();_checkRegisterBtnState();" autocomplete="off" />
+                <input type="text" id="ct-em-name" oninput="checkCtDuplicateName();_checkRegisterBtnState();_checkRepSelf()" autocomplete="off" />
+                <div id="ct-em-rep-self-row" style="display:none;margin-top:8px;">
+                  <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;font-weight:600;color:#7c3aed;background:#f5f3ff;border:1.5px solid #c4b5fd;border-radius:8px;padding:8px 12px;">
+                    <input type="checkbox" id="ct-em-is-rep" onchange="_checkRegisterBtnState()" style="accent-color:#7c3aed;width:17px;height:17px;" />
+                    <span>대표자 본인 (상시근로자 수에서 제외)</span>
+                  </label>
+                </div>
                 <div id="ct-em-name-dup-alert" style="display:none;margin-top:6px;padding:8px 10px;background:#FFF7ED;border:1.5px solid #FB923C;border-radius:8px;font-size:12px;color:#9A3412;">
                   <strong id="ct-em-name-dup-msg"></strong>
-                  <div id="ct-em-name-dup-suggestions" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px;"></div>
+                  <div id="ct-em-name-dup-actions" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;"></div>
+                  <div id="ct-em-name-dup-suggestions" style="display:flex;flex-direction:column;gap:4px;margin-top:6px;"></div>
                 </div>
               </div>
               <div class="form-group"><label>고용형태 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><select id="ct-em-category" onchange="toggleEmExpire();toggleAnnualSal();toggleProbation();_checkRegisterBtnState();"><option value="" disabled selected>-- 선택하세요 --</option><option value="정규직">정규직</option><option value="정규직 수습">정규직 수습</option><option value="계약직">계약직</option><option value="계약직 수습">계약직 수습</option><option value="일용직">일용직</option></select></div>

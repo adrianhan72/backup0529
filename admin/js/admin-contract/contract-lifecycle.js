@@ -2371,6 +2371,7 @@ async function saveContract(){
       address: document.getElementById('ct-em-address').value,
       bank_name: document.getElementById('ct-em-bank')?.value.trim()    || '',
       bank_account: document.getElementById('ct-em-account')?.value.trim() || '',
+      is_representative: document.getElementById('ct-em-is-rep')?.checked ? 1 : 0,
       note: ''
     };
     const saved = await api('../tables/employees',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(empBody)});

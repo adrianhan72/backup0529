@@ -46,6 +46,20 @@ async function tryLogin(){
   const data = await res.json();
   const found = (data.data||[]).find(c => c.access_code === code);
   if(!found){ showErr('코드가 올바르지 않습니다. 담당 노무사에게 문의하세요.'); return; }
+
+  // 해지된 고객사 차단
+  const today = new Date().toISOString().slice(0, 10);
+  const isInactive = found.status === 'inactive';
+  const isAutoTerminated = found.status === 'active' && found.contract_end_date && found.contract_end_date <= today;
+  if(isInactive || isAutoTerminated){
+    const endDate = found.contract_end_date;
+    const msg = endDate
+      ? `${endDate}부로 해지된 고객사입니다.`
+      : '해지된 고객사입니다.';
+    showTermModal(msg);
+    return;
+  }
+
   // 자동 입력 체크 여부에 따라 코드 저장/삭제
   if(document.getElementById('login-remember').checked){
     localStorage.setItem(LS_CODE_KEY, code);
@@ -57,7 +71,19 @@ async function tryLogin(){
   await Promise.all([ loadData(), loadClientNotices() ]);
   startApp();
 }
-function showErr(msg){ const e=document.getElementById('login-error'); e.textContent=msg; setTimeout(()=>e.textContent='',3000); }
+function showErr(msg, permanent){ const e=document.getElementById('login-error'); e.textContent=msg; if(!permanent) setTimeout(()=>e.textContent='',3000); }
+
+function showTermModal(msg){
+  document.getElementById('term-msg').textContent = msg;
+  document.getElementById('term-overlay').classList.add('open');
+}
+function dismissTermModal(){
+  document.getElementById('term-overlay').classList.remove('open');
+  // 저장된 접근 코드 초기화
+  localStorage.removeItem(LS_CODE_KEY);
+  document.getElementById('login-code').value = '';
+  document.getElementById('login-remember').checked = false;
+}
 
 // ── 햄버거 메뉴 ──
 function toggleHamburgerMenu(){

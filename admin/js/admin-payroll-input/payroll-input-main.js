@@ -199,7 +199,7 @@ function loadPITargetList(){
         contractStatusBadge = `<span style="display:inline-block;background:#dcfce7;color:#15803d;border:1px solid #86efac;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;margin-right:3px;">유효</span>`
           + `<span style="display:inline-block;background:#fff7ed;color:#c2410c;border:1px solid #fdba74;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">서류미비</span>`;
       } else if(_cs === '활성' || _cs === 'active'){
-        contractStatusBadge = `<span style="display:inline-block;background:#dcfce7;color:#15803d;border:1px solid #86efac;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">계약유효</span>`;
+        contractStatusBadge = `<span style="display:inline-block;background:#dcfce7;color:#15803d;border:1px solid #86efac;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">유효</span>`;
       } else if(_cs === '계약예정'){
         contractStatusBadge = `<span style="display:inline-block;background:#e0e7ff;color:#3730a3;border:1px solid #a5b4fc;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">계약예정</span>`;
       } else {
@@ -2123,12 +2123,17 @@ function _getPISmallFirmInfo(coId, yr, mo){
   const totalDays  = monthEnd.getDate();
 
   // 이 달에 유효 계약이 걸쳐있는 근로자 목록 (직원별 최신 계약 1건)
+  // ※ 대표자 본인(is_representative=1)은 상시근로자 수에서 제외
+  const repEmpIds = new Set(
+    (allEmployees||[]).filter(e => e.company_id === coId && e.is_representative).map(e => e.id)
+  );
   const empContractMap = new Map();
   (allContracts||[])
     .filter(c =>
       c.company_id === coId &&
       !c.is_draft && !c.is_voided_by_amend &&
-      VALID_ST.has(c.status)
+      VALID_ST.has(c.status) &&
+      !repEmpIds.has(c.employee_id)
     )
     .sort((a,b)=>(b.contract_start||'').localeCompare(a.contract_start||''))
     .forEach(c => {

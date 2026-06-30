@@ -551,9 +551,13 @@ async function doTerminate(){
   populatePICompanies();
   renderCompanies();
   renderDashboard();
-  const msg = endDateStr <= todayStr
-    ? `"${c.company_name}" 해지 처리 완료 (해지일: ${endDateStr})`
-    : `"${c.company_name}" 해지 예정 등록 (예정일: ${endDateStr})`;
+  const isFuture = endDateStr > todayStr;
+  if(isFuture){
+    _createTermNotice(c, endDateStr);
+  }
+  const msg = isFuture
+    ? `"${c.company_name}" 해지 예정 등록 (예정일: ${endDateStr})`
+    : `"${c.company_name}" 해지 처리 완료 (해지일: ${endDateStr})`;
   toast(msg);
 }
 
@@ -577,6 +581,7 @@ async function doChangeEndDate(){
   if(!id) return;
   const c = allCompanies.find(x => x.id === id);
   if(!c) return;
+  const oldEndDateStr = c.contract_end_date || ''; // 변경 전 해지일
   const dateEl = document.getElementById('ced-end-date');
   const newDateStr = dateEl?.value || '';
   if(!newDateStr) return toast('해지일을 선택해 주세요.', 'error');
@@ -588,9 +593,13 @@ async function doChangeEndDate(){
   closeModal('change-end-date-modal');
   await loadCompanies();
   populateFilters(); populatePICompanies(); renderCompanies(); renderDashboard();
-  const msg = newDateStr <= todayStr
-    ? `해지 처리 완료 (해지일: ${newDateStr})`
-    : `해지 예정일이 ${newDateStr}로 변경되었습니다.`;
+  const isFuture = newDateStr > todayStr;
+  if(isFuture){
+    _createTermNotice(c, newDateStr, oldEndDateStr);
+  }
+  const msg = isFuture
+    ? `해지 예정일이 ${newDateStr}로 변경되었습니다.`
+    : `해지 처리 완료 (해지일: ${newDateStr})`;
   toast(msg);
 }
 
@@ -606,10 +615,79 @@ async function cancelTerminate(id, name){
   await api(`../tables/companies/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(patch)});
   await loadCompanies();
   populateFilters(); populatePICompanies(); renderCompanies(); renderDashboard();
+  // 해지 예정 취소 알림 발송 (완전 해지 취소든 예정 취소든 동일하게)
+  if(c){
+    _createCancelNotice(c);
+  }
   const toastMsg = isFullyTerminated
     ? `"${name}" 해지가 취소되어 이용중으로 복구되었습니다.`
     : `"${name}" 해지 예정이 취소되었습니다.`;
   toast(toastMsg);
+}
+
+/**
+ * 해지 예약 / 예정일 변경 시 고객사 앱 알림 발송
+ * @param company       회사 객체
+ * @param endDateStr    해지 예정일
+ * @param oldEndDateStr 변경 전 해지일 (optional, 미지정 시 최초 예약)
+ */
+async function _createTermNotice(company, endDateStr, oldEndDateStr){
+  if(!company) return;
+  const adminName = typeof _getAdminUsername === 'function' ? _getAdminUsername() : '관리자';
+  const title = oldEndDateStr
+    ? '[서비스 해지 예정일 변경 안내]'
+    : '[서비스 해지 예정 안내]';
+  const body  = oldEndDateStr
+    ? `해지예정일이 ${oldEndDateStr}에서 ${endDateStr}로 변경되었습니다.`
+    : `${endDateStr}부로 서비스 이용이 해지될 예정입니다. 감사합니다.`;
+  try {
+    await fetch('../tables/company_notices', {
+      method : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body   : JSON.stringify({
+        company_id   : company.id,
+        company_name : company.company_name || '',
+        notice_type  : 'notice',
+        title,
+        body,
+        sent_at      : new Date().toISOString(),
+        sent_by      : adminName,
+        is_read      : 0,
+      }),
+    });
+    console.log(`[해지예정알림] ${company.company_name} → ${endDateStr}`);
+  } catch(e){
+    console.warn('[해지예정알림] 발송 실패:', e);
+  }
+}
+
+/**
+ * 해지 예정 취소 시 고객사 앱 알림 발송
+ */
+async function _createCancelNotice(company){
+  if(!company) return;
+  const adminName = typeof _getAdminUsername === 'function' ? _getAdminUsername() : '관리자';
+  const title = '[서비스 해지 취소 안내]';
+  const body  = '예약되었던 서비스 이용 해지가 정상적으로 취소처리되었습니다. 서비스를 계속 이용하실 수 있습니다.';
+  try {
+    await fetch('../tables/company_notices', {
+      method : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body   : JSON.stringify({
+        company_id   : company.id,
+        company_name : company.company_name || '',
+        notice_type  : 'notice',
+        title,
+        body,
+        sent_at      : new Date().toISOString(),
+        sent_by      : adminName,
+        is_read      : 0,
+      }),
+    });
+    console.log(`[해지취소알림] ${company.company_name}`);
+  } catch(e){
+    console.warn('[해지취소알림] 발송 실패:', e);
+  }
 }
 
 /* [사용료 숨김] 기존 terminateCompany / doTerminate (미납금 체크 포함) - 원복 시 아래 주석 해제

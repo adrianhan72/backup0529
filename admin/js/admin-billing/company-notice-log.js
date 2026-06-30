@@ -1,4 +1,4 @@
-//  고객사 알림 발송 이력 (page-company-notice-log)
+//  고객사앱 알림 이력 (page-company-notice-log)
 // ======================================================================
 
 const CNL_PAGE_SIZE = 20;  // 페이지당 20건
@@ -12,28 +12,30 @@ let _cnlLoaded      = false;
 
 // ── notice_type → 한글 레이블 ──
 const CNL_TYPE_LABEL = {
-  contract_created              : '신규 계약',
-  contract_updated              : '계약 수정',
-  contract_voided               : '계약 파기',
-  contract_amended              : '수정재발행',
-  contract_terminated           : '계약 해지',
-  contract_termination_scheduled: '해지 예약',
-  contract_termination_cancelled: '해지예정 취소',
-  contract_renewed              : '계약 갱신',
-  contract_renewal_scheduled    : '갱신 예약',
-  contract_renewed_new          : '재계약 완료',
-  contract_dispatched           : '계약서 발송',
-  contract_signed_uploaded      : '날인본 업로드',
-  contract_consent_uploaded     : '동의서 업로드',
+  contract_created              : '신규 근로계약',
+  contract_updated              : '근로계약 수정',
+  contract_voided               : '근로계약 파기',
+  contract_amended              : '근로계약 수정',
+  contract_terminated           : '근로계약 해지',
+  contract_termination_scheduled: '근로계약 해지 예약',
+  contract_termination_cancelled: '근로계약 해지 취소',
+  contract_renewed              : '근로계약 갱신',
+  contract_renewal_scheduled    : '근로계약 갱신 예약',
+  contract_renewed_new          : '근로계약 재계약',
+  contract_dispatched           : '근로계약서 발송',
+  contract_signed_uploaded      : '근로계약서 날인본 등록',
+  contract_consent_uploaded     : '동의서 날인본 등록',
   contract_fully_documented     : '서류 완비',
   payroll_input_complete        : '급여 입력/수정',
   payslip_individual_sent       : '급여명세서 개별',
   payslip_bulk_sent             : '급여명세서 일괄',
   severance_paid                : '퇴직급여 지급',
-  contract_expiry               : '계약만료 통지',
+  contract_expiry               : '근로계약 만료 통지',
   regular_conversion            : '정규직 전환',
   leave_promotion               : '연차 사용촉진',
   general                       : '중요공지',
+  welcome                       : '가입환영',
+  notice                        : '이용안내',
 };
 
 // notice_type → 색상 팔레트
@@ -60,6 +62,8 @@ const CNL_TYPE_COLOR = {
   regular_conversion            : { bg:'#f0fdf4', color:'#166534' },
   leave_promotion               : { bg:'#fefce8', color:'#854d0e' },
   general                       : { bg:'#fef3c7', color:'#b45309' },
+  welcome                       : { bg:'#ecfeff', color:'#0e7490' },
+  notice                        : { bg:'#ede9fe', color:'#6d28d9' },
 };
 
 /** 고객사 드롭다운 옵션 채우기 */
