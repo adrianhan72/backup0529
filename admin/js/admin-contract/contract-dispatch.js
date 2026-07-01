@@ -166,10 +166,7 @@ function _cdpAttachBtn(contractId){
   const c = (allContracts||[]).find(x => x.id === contractId);
   if(!c) return `<span style="font-size:11.5px;color:#d1d5db;">-</span>`;
   return `<button onclick="event.stopPropagation();openContractPrintModal('${contractId}')"
-    style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:6px;
-           border:1px solid #c7d2fe;background:#eef2ff;color:#3730a3;font-size:11.5px;
-           font-weight:600;cursor:pointer;white-space:nowrap;transition:opacity .15s;"
-    onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'"
+    class="btn btn-indigo btn-sm"
     title="근로계약 조건에 따라 자동완성된 계약서 미리보기">
     <i class="fas fa-file-contract" style="font-size:10px;"></i>미리보기
   </button>`;
@@ -342,12 +339,8 @@ function renderCdpUnsentList(){
     const email    = emp.email || '';
     const hasPhone = !!(phone.trim());
     const hasEmail = !!(email.trim());
-    const kakaoStyle = hasPhone
-      ? 'background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;cursor:pointer;'
-      : 'background:#f3f4f6;color:#d1d5db;border:1px solid #e5e7eb;cursor:not-allowed;';
-    const emailStyle = hasEmail
-      ? 'background:#dbeafe;color:#1d4ed8;border:1px solid #93c5fd;cursor:pointer;'
-      : 'background:#f3f4f6;color:#d1d5db;border:1px solid #e5e7eb;cursor:not-allowed;';
+    const kakaoClass = hasPhone ? 'btn btn-indigo btn-sm' : 'btn btn-sm';
+    const emailClass = hasEmail ? 'btn btn-sky btn-sm' : 'btn btn-sm';
     return `<tr id="cdp-urow-${idx}">
       <td style="font-weight:700;color:#1f2937;">${emp.name || '-'}</td>
       <td><span class="badge ${empCatBadge(cat)}" style="font-size:10.5px;padding:2px 7px;">${contractTypeLabel(cat)}</span></td>
@@ -357,15 +350,15 @@ function renderCdpUnsentList(){
       <td style="font-size:12px;">${hasEmail ? `<span style="color:#374151;">${email}</span>` : '<span style="color:#d1d5db;">미등록</span>'}</td>
       <td style="text-align:center;white-space:nowrap;">
         <button onclick="cdpUnsentKakao('${c.id}')" ${hasPhone ? '' : 'disabled'}
-          style="${kakaoStyle}border-radius:6px;padding:4px 9px;font-size:11.5px;font-weight:600;font-family:inherit;margin-right:3px;display:inline-flex;align-items:center;gap:4px;">
+          class="${kakaoClass}" style="margin-right:3px;">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg>알림톡
         </button>
         <button onclick="cdpUnsentEmail('${c.id}')" ${hasEmail ? '' : 'disabled'}
-          style="${emailStyle}border-radius:6px;padding:4px 9px;font-size:11.5px;font-weight:600;font-family:inherit;margin-right:3px;">
+          class="${emailClass}" style="margin-right:3px;">
           ✉ 이메일
         </button>
         <button onclick="cdpUnsentManual('${c.id}')"
-          style="background:#f0fdf4;color:#166534;border:1px solid #86efac;border-radius:6px;padding:4px 9px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;">
+          class="btn btn-success btn-sm">
           ✔ 수동교부
         </button>
       </td>

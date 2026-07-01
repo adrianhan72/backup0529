@@ -1,7 +1,7 @@
     .pss-send-btn:hover{ opacity:.88; }
-    .pss-send-btn-all{ background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:7px; }
-    .pss-send-btn-all:hover{ opacity:.88; }
-    .pss-send-btn-all:disabled{ background:linear-gradient(135deg,#9ca3af,#6b7280)!important;cursor:not-allowed!important;opacity:.7; }
+    .pss-send-btn-all{ background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:1px solid #5b21b6;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:7px;transition:background .18s; }
+    .pss-send-btn-all:hover{ background:#5b21b6; }
+    .pss-send-btn-all:disabled{ background:linear-gradient(135deg,#9ca3af,#6b7280)!important;border-color:#6b7280!important;cursor:not-allowed!important;opacity:.7; }
     /* 발송 이력 테이블 */
     #pss-log-table th{ background:#f0f9ff;color:#0369a1;padding:9px 12px;font-size:12px;font-weight:700;border-bottom:2px solid #bae6fd;text-align:left; }
     #pss-log-table td{ padding:10px 12px;font-size:12.5px;vertical-align:middle;border-bottom:1px solid #f0f9ff; }
@@ -87,9 +87,9 @@
     #cdp-unsent-table th{ background:#fff7ed;color:#92400e;padding:9px 12px;font-size:12px;font-weight:700;border-bottom:2px solid #fed7aa;text-align:left;white-space:nowrap; }
     #cdp-unsent-table td{ padding:10px 12px;font-size:12.5px;vertical-align:middle;border-bottom:1px solid #fff3e0; }
     #cdp-unsent-table tr:hover td{ background:#fffbeb; }
-    .cdp-send-btn-all{ background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;border-radius:8px;padding:7px 16px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px; }
-    .cdp-send-btn-all:hover{ opacity:.88; }
-    .cdp-send-btn-all:disabled{ background:linear-gradient(135deg,#9ca3af,#6b7280)!important;cursor:not-allowed!important;opacity:.7; }
+    .cdp-send-btn-all{ background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:1px solid #5b21b6;border-radius:8px;padding:7px 16px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px;transition:background .18s; }
+    .cdp-send-btn-all:hover{ background:#5b21b6; }
+    .cdp-send-btn-all:disabled{ background:linear-gradient(135deg,#9ca3af,#6b7280)!important;border-color:#6b7280!important;cursor:not-allowed!important;opacity:.7; }
 
     /* 법적 의무 강조 배너 */
     .pss-legal-banner{ display:flex;align-items:flex-start;gap:10px;padding:11px 16px;background:#faf5ff;border:1.5px solid #c4b5fd;border-radius:9px;margin-bottom:16px;font-size:12px;color:#5b21b6;line-height:1.6; }
@@ -213,10 +213,10 @@
     /* topbar 로그아웃 버튼 */
     .topbar-logout-btn{
       display:inline-flex;align-items:center;gap:5px;
-      padding:6px 14px;border-radius:8px;border:1.5px solid rgba(233,69,96,.4);
-      background:rgba(233,69,96,.07);color:#e94560;
+      padding:6px 14px;border-radius:8px;border:1px solid #c02e45;
+      background:#e94560;color:#fff;
       font-size:12px;font-weight:600;cursor:pointer;
       font-family:'Noto Sans KR',sans-serif;
-      transition:all .2s;
+      transition:background .18s,border-color .18s;
     }
-    .topbar-logout-btn:hover{background:rgba(233,69,96,.15);border-color:#e94560;}
+    .topbar-logout-btn:hover{background:#c02e45;border-color:#b8283d;}
