@@ -19,7 +19,6 @@
     }
     .btn-outline-primary:hover:not(:disabled){
       background:#fff0f3;border-color:#d63651;
-      box-shadow:0 2px 8px rgba(233,69,96,.18);
     }
     .btn-outline-primary:active:not(:disabled){
       background:#ffe4e8;border-color:#c02e45;
