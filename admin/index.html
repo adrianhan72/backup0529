@@ -267,16 +267,10 @@
           </div>
           <!-- 버튼 -->
           <div style="display:flex;gap:10px;justify-content:flex-end;padding-top:4px;">
-            <button onclick="closeGnComposeModal()"
-              style="padding:10px 22px;border:1px solid #d1d5db;border-radius:9px;background:#fff;
-                     color:#374151;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit;">
+            <button onclick="closeGnComposeModal()" class="btn btn-secondary">
               취소
             </button>
-            <button onclick="submitGnNotice()"
-              style="padding:10px 26px;border:none;border-radius:9px;
-                     background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;
-                     font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;
-                     display:flex;align-items:center;gap:7px;">
+            <button onclick="submitGnNotice()" class="btn btn-warning">
               <i id="gn-submit-icon" class="fas fa-paper-plane"></i>
               <span id="gn-submit-label">즉시 발송</span>
             </button>
@@ -540,7 +534,7 @@
         <div class="probmgmt-modal-header">
           <i class="fas fa-user-clock" style="color:#0d9488;font-size:18px;"></i>
           <div class="probmgmt-modal-title" id="probmgmt-modal-title">수습 근로자 처리</div>
-          <button class="probmgmt-modal-close" onclick="closeProbMgmtModal()"><i class="fas fa-times"></i></button>
+          <button class="btn btn-close" onclick="closeProbMgmtModal()"><i class="fas fa-times"></i></button>
         </div>
         <div class="probmgmt-modal-body">
           <div class="probmgmt-modal-info" id="probmgmt-modal-info"></div>
@@ -577,7 +571,7 @@
       <button class="ledger-nav-btn" onclick="_ledgerNavYear(-1)" title="이전 연도">&#8249;</button>
       <div class="ledger-nav-year" id="ledger-nav-title">2025년 연차휴가 관리대장</div>
       <button class="ledger-nav-btn" onclick="_ledgerNavYear(+1)" title="다음 연도">&#8250;</button>
-      <button class="ledger-nav-close" onclick="closeModal('al-ledger-modal')" title="닫기"><i class="fas fa-times"></i></button>
+      <button class="btn btn-icon-dark" onclick="closeModal('al-ledger-modal')" title="닫기"><i class="fas fa-times"></i></button>
     </div>
 
     <!-- 모달 본문 (스크롤 영역) -->

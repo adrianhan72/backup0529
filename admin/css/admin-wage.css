@@ -349,7 +349,7 @@
       transform:translateY(-1px);
     }
     .std-update-btn:active:not(:disabled){transform:scale(.96) translateY(1px);}
-    .std-update-btn:disabled,.std-update-btn[disabled]{opacity:.42;cursor:not-allowed;pointer-events:none;box-shadow:none;}
+    .std-update-btn:disabled,.std-update-btn[disabled]{background:#9ca3af;color:#d1d5db;border-color:#9ca3af;cursor:not-allowed;pointer-events:none;box-shadow:none;opacity:1;}
     /* 최저임금용 녹색 변형 */
     .std-update-btn-green{background:linear-gradient(135deg,#10b981,#059669);border-color:#047857;}
     .std-update-btn-green:hover:not(:disabled){background:#047857;}
@@ -379,7 +379,7 @@
     }
     .std-banner-btn:hover:not(:disabled){transform:translateY(-1px);}
     .std-banner-btn:active:not(:disabled){transform:scale(.96) translateY(1px);}
-    .std-banner-btn:disabled,.std-banner-btn[disabled]{opacity:.42;cursor:not-allowed;pointer-events:none;}
+    .std-banner-btn:disabled,.std-banner-btn[disabled]{background:#9ca3af;color:#d1d5db;border-color:#9ca3af;cursor:not-allowed;pointer-events:none;opacity:1;}
     .std-banner.pension .std-banner-btn{
       background:#3b82f6;color:#fff;
       box-shadow:0 1px 3px rgba(59,130,246,.25);
