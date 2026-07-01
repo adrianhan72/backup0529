@@ -852,13 +852,12 @@ function initMonthFilter(){
 function initPIMonths(maxMonth){
   const s=document.getElementById('pi-month');
   if(!s) return;
-  // maxMonth가 주어지지 않으면 현재 월 기준으로 계산
   const now = new Date();
   const curYr = now.getFullYear();
   const curMo = now.getMonth()+1;
   const selYr = parseInt(document.getElementById('pi-year')?.value) || curYr;
-  // 선택된 연도가 올해이면 이번 달까지만, 과거 연도면 12월까지
-  const limit = maxMonth ?? (selYr >= curYr ? curMo : 12);
+  // 익월까지 허용: 올해 → 이번달+1, 내년 → 1월만, 과거 → 12월
+  const limit = maxMonth ?? (selYr > curYr ? 1 : selYr === curYr ? Math.min(curMo+1, 12) : 12);
   const prevVal = parseInt(s.value) || 0;
   const defVal = (prevVal >= 1 && prevVal <= limit) ? prevVal : Math.min(curMo, limit);
   s.innerHTML='';
@@ -868,10 +867,11 @@ function initPIYears(){
   const s=document.getElementById('pi-year');
   if(!s) return;
   const curYr  = new Date().getFullYear();
+  const maxYr  = new Date().getMonth() === 11 ? curYr+1 : curYr; // 12월이면 내년까지
   const prevVal = parseInt(s.value) || 0;
-  const defVal  = prevVal >= curYr-3 && prevVal <= curYr ? prevVal : curYr;
+  const defVal  = prevVal >= curYr-3 && prevVal <= maxYr ? prevVal : curYr;
   s.innerHTML='';
-  for(let y=curYr; y>=curYr-3; y--){
+  for(let y=maxYr; y>=curYr-3; y--){
     s.innerHTML+=`<option value="${y}" ${y===defVal?'selected':''}>${y}년</option>`;
   }
 }
