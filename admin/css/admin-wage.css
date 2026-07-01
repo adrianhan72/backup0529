@@ -626,10 +626,10 @@
     .wl-block-item-link.draft:hover{background:#fde68a;}
     .wl-block-item-link.docs {background:#fde8d8;color:#c2410c;}
     .wl-block-item-link.docs:hover {background:#fed7aa;}
-    .wl-block-item-link.pay  {background:#dbeafe;color:#1d4ed8;}
-    .wl-block-item-link.pay:hover  {background:#bfdbfe;}
-    .wl-block-item-link.pay-draft{background:#f0fdf4;color:#15803d;border:1.5px solid #86efac;}
-    .wl-block-item-link.pay-draft:hover{background:#dcfce7;}
+    .wl-block-item-link.pay  {background:#ef4444;color:#fff;border:1px solid #dc2626;}
+    .wl-block-item-link.pay:hover  {background:#dc2626;}
+    .wl-block-item-link.pay-draft{background:#10b981;color:#fff;border:1px solid #059669;}
+    .wl-block-item-link.pay-draft:hover{background:#059669;}
     .wl-block-item-draft-badge{
       display:inline-flex;align-items:center;gap:3px;
       font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:12px;

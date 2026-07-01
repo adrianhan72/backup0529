@@ -460,7 +460,7 @@ function renderProbationMgmtTable(){
       <td style="text-align:center;">${actionCell}</td>
       <td style="text-align:center;">${actionAtCell}</td>
       <td style="text-align:center;">
-      <button class="probmgmt-action-btn" onclick="openContractInNewWindow('${c.id}')" style="background:#f0f9ff;color:#0369a1;border-color:#bae6fd;" title="수습 계약서 새 창으로 보기">
+      <button class="btn btn-sky btn-sm" onclick="openContractInNewWindow('${c.id}')" title="수습 계약서 새 창으로 보기">
           <i class="fas fa-file-contract" style="font-size:11px;"></i> 조회
         </button>
       </td>
