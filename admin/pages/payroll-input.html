@@ -53,7 +53,7 @@
         <!-- 선택된 고객사 헤더 -->
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:12px 18px;background:linear-gradient(90deg,#1e1b4b,#312e81);border-radius:10px;">
           <span id="pi-selected-company-label" style="font-size:14px;font-weight:700;color:#fff;"></span>
-          <button onclick="clearPICompanySelect()" style="background:none;border:none;cursor:pointer;color:rgba(255,255,255,.7);font-size:20px;" title="고객사 선택 해제"><i class="fas fa-times-circle"></i></button>
+          <button onclick="clearPICompanySelect()" class="btn btn-icon-dark" title="고객사 선택 해제"><i class="fas fa-times-circle"></i></button>
         </div>
 
         <!-- 숨김 호환용 select (기존 JS 참조 유지) -->
@@ -106,7 +106,7 @@
                   <div id="pi-upload-modal-sub" style="font-size:12px;color:#6b7280;margin-top:2px;"></div>
                 </div>
               </div>
-              <button onclick="closePIUploadModal()" style="background:none;border:none;cursor:pointer;color:#9ca3af;font-size:22px;line-height:1;padding:4px;"><i class="fas fa-times"></i></button>
+              <button onclick="closePIUploadModal()" class="btn btn-close"><i class="fas fa-times"></i></button>
             </div>
             <!-- 모달 본문 -->
             <div style="padding:24px;">
@@ -147,7 +147,7 @@
                 <span style="font-size:13.5px;font-weight:700;color:#1e1b4b;" id="pi-target-list-title">지급대상자 목록</span>
                 <span id="pi-target-list-badge" style="background:#eef2ff;color:#4338ca;border:1px solid #c7d2fe;border-radius:12px;padding:2px 10px;font-size:11.5px;font-weight:700;"></span>
               </div>
-              <button onclick="hidePITargetList()" style="background:none;border:none;cursor:pointer;color:#9ca3af;font-size:18px;" title="목록 닫기"><i class="fas fa-times"></i></button>
+              <button onclick="hidePITargetList()" class="btn btn-close" title="목록 닫기"><i class="fas fa-times"></i></button>
             </div>
             <div style="overflow-x:auto;">
               <table style="width:100%;border-collapse:collapse;font-size:13px;">
@@ -605,7 +605,7 @@
               <div id="pi-prev-memo-banner" style="display:none;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:8px 12px;margin-bottom:8px;font-size:11.5px;color:#1e40af;">
                 <div style="display:flex;align-items:center;gap:6px;font-weight:700;margin-bottom:4px;">
                   <span>📋</span><span id="pi-prev-memo-banner-title">직전월 메모 인계</span>
-                  <button onclick="_dismissPrevMemoBanner()" style="margin-left:auto;background:none;border:none;cursor:pointer;font-size:13px;color:#93c5fd;line-height:1;" title="배너 닫기">✕</button>
+                  <button onclick="_dismissPrevMemoBanner()" class="btn btn-close" style="margin-left:auto;" title="배너 닫기">✕</button>
                 </div>
                 <div style="color:#3b82f6;font-size:11px;">직전월에 작성된 메모가 아래 란에 인계되었습니다. 내용을 확인하고 필요하면 수정하세요.</div>
               </div>

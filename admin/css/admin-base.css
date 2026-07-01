@@ -67,6 +67,13 @@
     .btn-lg{padding:10px 22px;font-size:14px;border-radius:9px;}
     .btn-icon{padding:5px 9px;}
     .btn-icon-sm{padding:4px 7px;font-size:11px;}
+    /* 닫기/해제 아이콘 전용 — 더 작고 평평하게 */
+    .btn-close{background:transparent;color:#64748b;border-color:transparent;padding:4px 8px;font-size:16px;line-height:1;}
+    .btn-close:hover:not(:disabled){background:#f1f5f9;color:#334155;border-color:#e2e8f0;}
+    .btn-close:active:not(:disabled){background:#e2e8f0;}
+    .btn-icon-dark{background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.2);padding:5px 9px;}
+    .btn-icon-dark:hover:not(:disabled){background:rgba(255,255,255,.25);border-color:rgba(255,255,255,.35);}
+    .btn-icon-dark:active:not(:disabled){background:rgba(255,255,255,.35);}
 
     /* ══════════════════════════════════════════════
        SOLID TYPE — 색상 채운 버튼
