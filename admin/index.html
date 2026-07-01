@@ -1405,7 +1405,7 @@
 <!-- Contract -->
 <div class="modal-overlay" id="contract-modal">
   <div class="modal" style="max-width:720px;">
-    <div class="modal-header"><span class="modal-title" id="ct-title">근로계약서 추가</span><button class="modal-close" onclick="closeModal('contract-modal')"><i class="fas fa-times"></i></button></div>
+    <div class="modal-header"><span class="modal-title" id="ct-title">근로계약서 추가</span><button class="btn btn-icon-dark" onclick="closeModal('contract-modal')"><i class="fas fa-times"></i></button></div>
     <!-- 등록 프로세스 단계 표시바 (작성 모드 전용) -->
     <div id="ct-step-bar" class="ct-step-bar" style="display:none;">
       <div class="ct-step active" id="ct-step-1"><div class="ct-step-num">1</div><span>계약 정보 입력</span></div>
@@ -1423,8 +1423,7 @@
       <button id="ct-btn-recontract" class="btn-recontract" onclick="doContractRecontract()" style="display:none;"><i class="fas fa-file-signature"></i> 재계약</button>
       <button id="ct-btn-terminate"      class="btn-terminate"       onclick="doContractTerminate()"      style="display:none;"><i class="fas fa-user-clock"></i> 퇴사예정 설정</button>
       <button id="ct-btn-fixed-terminate" class="btn-fixed-terminate" onclick="doFixedTerminate()"          style="display:none;"><i class="fas fa-scissors"></i> 해지 설정</button>
-      <button id="ct-btn-print-doc"  onclick="openContractPrintModal(editId.contract)"
-        style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#0f172a,#1e3a5f);color:#fff;border:none;border-radius:8px;padding:7px 15px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 2px 8px rgba(15,23,42,.3);transition:all .2s;">
+      <button id="ct-btn-print-doc" onclick="openContractPrintModal(editId.contract)" class="btn btn-slate">
         <i class="fas fa-file-contract"></i> 현 계약서 확인
       </button>
     </div>

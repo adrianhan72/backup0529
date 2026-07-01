@@ -223,19 +223,13 @@ function renderCnlReserveCard(){
       <td style="padding:10px 14px;font-size:12px;color:#64748b;white-space:nowrap;">${_resolveAdminName(n.sent_by)||'-'}</td>
       <td style="padding:10px 14px;text-align:center;">
         <div style="display:flex;gap:4px;justify-content:center;align-items:center;flex-wrap:nowrap;">
-          <button onclick="cancelGnScheduled('${n.id}')"
-            style="padding:3px 8px;border:1px solid #fca5a5;border-radius:6px;background:#fef2f2;
-                   color:#dc2626;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">
+          <button onclick="cancelGnScheduled('${n.id}')" class="btn btn-danger btn-sm">
             <i class="fas fa-ban"></i> 취소
           </button>
-          <button onclick="openGnEditModal('${n.id}')"
-            style="padding:3px 8px;border:1px solid #a5b4fc;border-radius:6px;background:#eef2ff;
-                   color:#4f46e5;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">
+          <button onclick="openGnEditModal('${n.id}')" class="btn btn-indigo btn-sm">
             <i class="fas fa-edit"></i> 수정
           </button>
-          <button onclick="openCnlDetailById('${n.id}')"
-            style="padding:3px 8px;border:1px solid #c7d2fe;border-radius:6px;background:#eef2ff;
-                   color:#4f46e5;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">
+          <button onclick="openCnlDetailById('${n.id}')" class="btn btn-indigo btn-sm">
             <i class="fas fa-eye"></i> 보기
           </button>
         </div>
@@ -408,9 +402,7 @@ function renderCnlTable(){
       <td style="padding:10px 14px;text-align:center;">${confirmCell}</td>
       <td style="padding:10px 14px;font-size:12px;color:#64748b;white-space:nowrap;">${_resolveAdminName(n.sent_by)||'-'}</td>
       <td style="padding:10px 14px;text-align:center;">
-        <button onclick="openCnlDetail(${safeIdx})"
-          style="padding:3px 8px;border:1px solid #c7d2fe;border-radius:6px;background:#eef2ff;color:#4f46e5;
-                 font-size:12px;font-weight:600;cursor:pointer;">
+        <button onclick="openCnlDetail(${safeIdx})" class="btn btn-indigo btn-sm">
           <i class="fas fa-eye"></i>
         </button>
       </td>

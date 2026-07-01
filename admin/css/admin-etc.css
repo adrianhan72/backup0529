@@ -213,10 +213,10 @@
     /* topbar 로그아웃 버튼 */
     .topbar-logout-btn{
       display:inline-flex;align-items:center;gap:5px;
-      padding:6px 14px;border-radius:8px;border:1px solid #c02e45;
-      background:#e94560;color:#fff;
+      padding:6px 14px;border-radius:8px;border:1px solid #4b5563;
+      background:#6b7280;color:#fff;
       font-size:12px;font-weight:600;cursor:pointer;
       font-family:'Noto Sans KR',sans-serif;
       transition:background .18s,border-color .18s;
     }
-    .topbar-logout-btn:hover{background:#c02e45;border-color:#b8283d;}
+    .topbar-logout-btn:hover{background:#4b5563;border-color:#374151;}

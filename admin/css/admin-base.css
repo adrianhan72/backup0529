@@ -33,7 +33,9 @@
     .btn:hover:not(:disabled){background:#4b5563;}
     .btn:active:not(:disabled){background:#374151;}
     .btn:focus-visible{outline:2.5px solid currentColor;outline-offset:2px;}
-    .btn:disabled,.btn[disabled]{opacity:.42;cursor:not-allowed;pointer-events:none;}
+    .btn:disabled,.btn[disabled]{background:#9ca3af;color:#d1d5db;border-color:#9ca3af;cursor:not-allowed;pointer-events:none;opacity:1;}
+    .btn:disabled.btn-icon-dark,.btn[disabled].btn-icon-dark{background:transparent;color:rgba(255,255,255,.3);border-color:rgba(255,255,255,.15);}
+    .btn:disabled.btn-close,.btn[disabled].btn-close{background:transparent;color:#d1d5db;border-color:#e5e7eb;}
     /* Ripple 레이어 — 리플이 적용되는 모든 버튼 공통 */
     .btn .btn-ripple,
     .btn-sb .btn-ripple,
@@ -71,9 +73,9 @@
     .btn-close{background:transparent;color:#64748b;border-color:#d1d5db;padding:4px 8px;font-size:16px;line-height:1;}
     .btn-close:hover:not(:disabled){background:#d1d5db;color:#334155;border-color:#9ca3af;}
     .btn-close:active:not(:disabled){background:#9ca3af;color:#1e293b;border-color:#6b7280;}
-    .btn-icon-dark{background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.25);padding:5px 9px;}
-    .btn-icon-dark:hover:not(:disabled){background:rgba(255,255,255,.25);border-color:rgba(255,255,255,.45);}
-    .btn-icon-dark:active:not(:disabled){background:rgba(255,255,255,.4);border-color:rgba(255,255,255,.6);}
+    .btn-icon-dark{background:transparent;color:#fff;border-color:rgba(255,255,255,.3);padding:5px 9px;}
+    .btn-icon-dark:hover:not(:disabled){background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.5);}
+    .btn-icon-dark:active:not(:disabled){background:rgba(255,255,255,.25);border-color:rgba(255,255,255,.65);}
 
     /* ══════════════════════════════════════════════
        SOLID TYPE — 색상 채운 버튼
