@@ -296,11 +296,11 @@
     .dash-co-payday{font-size:12px;color:#6b7280;white-space:nowrap;}
     .dash-co-pending{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:700;color:#e94560;white-space:nowrap;}
     .dash-co-done{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:#10b981;white-space:nowrap;}
-    .dash-co-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 13px;border-radius:7px;font-size:12px;font-weight:600;border:none;cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap;}
-    .dash-co-btn-input{background:linear-gradient(135deg,#e94560,#c73652);color:#fff;}
-    .dash-co-btn-input:hover{background:linear-gradient(135deg,#d63651,#b52e47);box-shadow:0 3px 10px rgba(233,69,96,.3);}
-    .dash-co-btn-edit{background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;}
-    .dash-co-btn-edit:hover{background:#dbeafe;}
+    .dash-co-btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:5px 13px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s;white-space:nowrap;width:100%;box-sizing:border-box;}
+    .dash-co-btn-input{background:linear-gradient(135deg,#e94560,#c73652);color:#fff;border:1px solid #b8283d;}
+    .dash-co-btn-input:hover{background:#b8283d;}
+    .dash-co-btn-edit{background:#f59e0b;color:#fff;border:1px solid #d97706;}
+    .dash-co-btn-edit:hover{background:#d97706;}
     /* 년도별 산정기준 */
     .std-tab-bar{display:flex;gap:4px;border-bottom:2px solid #e5e7eb;margin-bottom:20px;}
     .std-tab{padding:9px 22px;font-size:13.5px;font-weight:600;color:#6b7280;background:none;border:none;border-bottom:2.5px solid transparent;cursor:pointer;font-family:inherit;transition:all .15s;margin-bottom:-2px;border-radius:6px 6px 0 0;}
@@ -349,6 +349,10 @@
     }
     .std-update-btn:active:not(:disabled){transform:scale(.96) translateY(1px);}
     .std-update-btn:disabled,.std-update-btn[disabled]{opacity:.42;cursor:not-allowed;pointer-events:none;box-shadow:none;}
+    /* 최저임금용 녹색 변형 */
+    .std-update-btn-green{background:linear-gradient(135deg,#10b981,#059669);border-color:#047857;}
+    .std-update-btn-green:hover:not(:disabled){background:#047857;}
+    .std-update-btn-green:active:not(:disabled){background:#065f46;}
     /* 최저임금 테이블 */
     .mw-table{width:100%;border-collapse:collapse;font-size:13px;}
     .mw-table th{background:#f8f9fb;font-size:11.5px;font-weight:700;color:#374151;padding:10px 14px;border:1px solid #e5e7eb;text-align:center;}

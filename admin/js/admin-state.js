@@ -26,6 +26,34 @@ function _hasActiveContract(companyId){
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * 임시저장 삭제 공통 헬퍼
+ * @param {string} id    레코드 ID
+ * @param {string} table 테이블명 (companies/contracts/payrolls)
+ * @param {string} label 확인 메시지용 이름
+ */
+async function _deleteDraft(id, table, label){
+  if(!confirm(`'${label}' 임시저장을 삭제하시겠습니까?\n삭제 후 복구할 수 없습니다.`)) return;
+  try {
+    await api(`../tables/${table}/${id}`, { method: 'DELETE' });
+    toast(`'${label}' 임시저장이 삭제되었습니다.`, 'success');
+    // 데이터 다시 로드 후 UI 갱신
+    if(table==='companies'){ await loadCompanies(); renderCompanies(); }
+    else if(table==='contracts'){ await loadContracts(); }
+    else if(table==='payrolls'){ await loadPayrolls(); }
+    // 대시보드 및 배너 갱신
+    if(typeof renderDraftAlerts === 'function') renderDraftAlerts();
+    if(typeof _renderContractsBanners === 'function') _renderContractsBanners();
+    if(typeof _renderContAlertCards === 'function') _renderContAlertCards();
+    if(typeof _renderCompaniesDraftBanner === 'function') _renderCompaniesDraftBanner();
+    if(typeof renderPIAllDraftBanner === 'function') renderPIAllDraftBanner();
+    if(typeof renderDashboard === 'function') renderDashboard();
+  } catch(e){
+    toast('삭제 중 오류가 발생했습니다.', 'error');
+    console.error(e);
+  }
+}
+
 // ─── 전역 필터·선택 상태 (showPage/init에서 참조하므로 최상단 선언) ───
 
 let currentContCompanyId = null;
@@ -529,6 +557,8 @@ async function showPage(name,el){
     renderContCompanyList();
     document.getElementById('cont-company-select-card').style.display = '';
     document.getElementById('cont-list-section').style.display = 'none';
+    // 고객사 선택과 무관하게 상단 배너(임시저장 등)는 항상 갱신
+    if(typeof _renderContractsBanners === 'function') _renderContractsBanners();
   }
   if(name==='payroll-input'){
     // 페이지 진입 시 년월 option 목록 재생성

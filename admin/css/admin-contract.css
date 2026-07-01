@@ -77,40 +77,28 @@
     .btn-void:active:not(:disabled){transform:scale(.96) translateY(1px);}
     .btn-void:disabled,.btn-void[disabled]{opacity:.42;cursor:not-allowed;pointer-events:none;}
 
-    /* 임시저장 버튼 — Warning */
     .btn-draft{
       background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;
-      border:none;border-radius:7px;padding:7px 16px;
+      border:1px solid #b45309;border-radius:7px;padding:7px 16px;
       font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;
       display:inline-flex;align-items:center;gap:5px;
-      box-shadow:0 1px 4px rgba(245,158,11,.25);
-      transition:background .18s,box-shadow .18s,transform .15s;
+      transition:background .18s;
       position:relative;overflow:hidden;
     }
-    .btn-draft:hover:not(:disabled){
-      background:linear-gradient(135deg,#d97706,#b45309);
-      box-shadow:0 4px 14px rgba(245,158,11,.35);
-      transform:translateY(-1px);
-    }
-    .btn-draft:active:not(:disabled){transform:scale(.96) translateY(1px);}
+    .btn-draft:hover:not(:disabled){background:#b45309;}
+    .btn-draft:active:not(:disabled){background:#92400e;}
     .btn-draft:disabled,.btn-draft[disabled]{opacity:.42;cursor:not-allowed;pointer-events:none;}
 
-    /* 임시저장 계속 수정 — Warning (동일) */
     .btn-draft-edit{
       background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;
-      border:none;border-radius:7px;padding:7px 16px;
+      border:1px solid #b45309;border-radius:7px;padding:7px 16px;
       font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;
       display:inline-flex;align-items:center;gap:5px;
-      box-shadow:0 1px 4px rgba(245,158,11,.25);
-      transition:background .18s,box-shadow .18s,transform .15s;
+      transition:background .18s;
       position:relative;overflow:hidden;
     }
-    .btn-draft-edit:hover:not(:disabled){
-      background:linear-gradient(135deg,#d97706,#b45309);
-      box-shadow:0 4px 14px rgba(245,158,11,.35);
-      transform:translateY(-1px);
-    }
-    .btn-draft-edit:active:not(:disabled){transform:scale(.96) translateY(1px);}
+    .btn-draft-edit:hover:not(:disabled){background:#b45309;}
+    .btn-draft-edit:active:not(:disabled){background:#92400e;}
     .btn-draft-edit:disabled,.btn-draft-edit[disabled]{opacity:.42;cursor:not-allowed;pointer-events:none;}
     /* draft 배지 */
     .badge-draft{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:700;background:rgba(245,158,11,.15);color:#b45309;border:1px solid rgba(245,158,11,.35);vertical-align:middle;margin-left:5px;}

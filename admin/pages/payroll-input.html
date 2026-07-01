@@ -27,12 +27,10 @@
           </div>
         </div>
         <div style="display:flex;gap:8px;">
-          <button onclick="loadPIDraft()" style="background:#16a34a;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">
+          <button onclick="loadPIDraft()" class="btn btn-success btn-sm">
             <i class="fas fa-upload" style="margin-right:4px;"></i>불러오기
           </button>
-          <button onclick="discardPIDraft()" style="background:none;border:1px solid #86efac;border-radius:6px;padding:5px 12px;font-size:12px;color:#166534;cursor:pointer;font-family:inherit;">
-            <i class="fas fa-trash-alt" style="margin-right:4px;"></i>삭제
-          </button>
+          <button onclick="discardPIDraft()" class="btn btn-sm btn-secondary"><i class="fas fa-trash-alt"></i> 삭제</button>
         </div>
       </div>
 
@@ -178,9 +176,7 @@
               <span id="pi-form-emp-name" style="font-size:14px;font-weight:700;color:#15803d;"></span>
               <span id="pi-form-emp-badge" style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:5px;background:#dcfce7;color:#166534;border:1px solid #86efac;"></span>
             </div>
-            <button onclick="backToPITargetList()" style="display:inline-flex;align-items:center;gap:5px;background:#fff;border:1.5px solid #86efac;border-radius:7px;padding:6px 14px;font-size:12px;color:#166534;font-weight:600;cursor:pointer;font-family:inherit;">
-              <i class="fas fa-arrow-left"></i> 목록으로
-            </button>
+            <button onclick="backToPITargetList()" class="btn btn-sm btn-success"><i class="fas fa-arrow-left"></i> 목록으로</button>
           </div>
 
         <div style="display:grid;grid-template-columns:300px 1fr;gap:20px;">
@@ -224,7 +220,7 @@
                       채용확정 계약서(정규직·계약직)를 자동으로 생성하고, 이 급여도 함께 처리합니다.
                     </div>
                     <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
-                      <button onclick="_probAutoCreateAndSave()" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:#7c3aed;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;">
+                      <button onclick="_probAutoCreateAndSave()" class="btn btn-indigo btn-sm">
                         <i class="fas fa-magic"></i> 채용확정 계약 자동 생성 후 저장
                       </button>
                     </div>
@@ -679,4 +675,4 @@
       </div>
         </div><!-- /pi-form-section -->
       </div><!-- /pi-input-section -->
-    </div>
+    </div>

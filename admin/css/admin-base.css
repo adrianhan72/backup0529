@@ -22,34 +22,18 @@
       display:inline-flex;align-items:center;gap:6px;
       padding:8px 16px;border-radius:8px;
       font-size:12.5px;font-weight:600;
-      cursor:pointer;border:none;
+      cursor:pointer;
+      border:1px solid #4b5563;
+      background:#6b7280;color:#fff;
       font-family:inherit;
-      transition:background .18s cubic-bezier(.4,0,.2,1),
-                 color .18s cubic-bezier(.4,0,.2,1),
-                 box-shadow .18s cubic-bezier(.4,0,.2,1),
-                 transform .15s cubic-bezier(.4,0,.2,1),
-                 border-color .18s cubic-bezier(.4,0,.2,1),
-                 opacity .18s;
+      transition:background .18s,border-color .18s,opacity .18s;
       position:relative;overflow:hidden;
       user-select:none;white-space:nowrap;
     }
-    /* 클릭 누를 때 눌리는 효과 */
-    .btn:active:not(:disabled):not([disabled]){
-      transform:scale(.96) translateY(1px);
-    }
-    /* 키보드 포커스 링 */
-    .btn:focus-visible{
-      outline:2.5px solid currentColor;
-      outline-offset:2px;
-    }
-    /* 비활성화 */
-    .btn:disabled,.btn[disabled]{
-      opacity:.42;
-      cursor:not-allowed;
-      pointer-events:none;
-      box-shadow:none !important;
-      transform:none !important;
-    }
+    .btn:hover:not(:disabled){background:#4b5563;}
+    .btn:active:not(:disabled){background:#374151;}
+    .btn:focus-visible{outline:2.5px solid currentColor;outline-offset:2px;}
+    .btn:disabled,.btn[disabled]{opacity:.42;cursor:not-allowed;pointer-events:none;}
     /* Ripple 레이어 — 리플이 적용되는 모든 버튼 공통 */
     .btn .btn-ripple,
     .btn-sb .btn-ripple,
@@ -88,142 +72,49 @@
        SOLID TYPE — 색상 채운 버튼
     ══════════════════════════════════════════════ */
     /* Primary (레드 — 주요 액션) */
-    .btn-primary{
-      background:#e94560;color:#fff;
-      box-shadow:0 1px 3px rgba(233,69,96,.28);
-    }
-    .btn-primary:hover:not(:disabled){
-      background:#d63651;
-      box-shadow:0 4px 14px rgba(233,69,96,.38);
-      transform:translateY(-1px);
-    }
-    .btn-primary:active:not(:disabled){
-      background:#c02e45;
-      box-shadow:0 1px 4px rgba(233,69,96,.3);
-    }
-    .btn-primary.selected,.btn-primary[aria-selected="true"]{
-      background:#b8283d;
-      box-shadow:inset 0 2px 6px rgba(0,0,0,.18);
-    }
+    .btn-primary{background:#e94560;border-color:#c02e45;}
+    .btn-primary:hover:not(:disabled){background:#c02e45;}
+    .btn-primary:active:not(:disabled){background:#b8283d;}
+    .btn-primary.selected,.btn-primary[aria-selected="true"]{background:#b8283d;}
 
-    /* Success (그린 — 완료/등록) */
-    .btn-success{
-      background:#10b981;color:#fff;
-      box-shadow:0 1px 3px rgba(16,185,129,.25);
-    }
-    .btn-success:hover:not(:disabled){
-      background:#059669;
-      box-shadow:0 4px 14px rgba(16,185,129,.35);
-      transform:translateY(-1px);
-    }
-    .btn-success:active:not(:disabled){
-      background:#047857;
-      box-shadow:0 1px 4px rgba(16,185,129,.28);
-    }
-    .btn-success.selected,.btn-success[aria-selected="true"]{
-      background:#065f46;
-      box-shadow:inset 0 2px 6px rgba(0,0,0,.18);
-    }
+    /* Success (그린) */
+    .btn-success{background:#10b981;border-color:#059669;}
+    .btn-success:hover:not(:disabled){background:#059669;}
+    .btn-success:active:not(:disabled){background:#047857;}
+    .btn-success.selected,.btn-success[aria-selected="true"]{background:#065f46;}
 
-    /* Warning (앰버 — 경고/수정/임시저장) */
-    .btn-warning{
-      background:#f59e0b;color:#fff;
-      box-shadow:0 1px 3px rgba(245,158,11,.25);
-    }
-    .btn-warning:hover:not(:disabled){
-      background:#d97706;
-      box-shadow:0 4px 14px rgba(245,158,11,.35);
-      transform:translateY(-1px);
-    }
-    .btn-warning:active:not(:disabled){
-      background:#b45309;
-      box-shadow:0 1px 4px rgba(245,158,11,.28);
-    }
-    .btn-warning.selected,.btn-warning[aria-selected="true"]{
-      background:#92400e;
-      box-shadow:inset 0 2px 6px rgba(0,0,0,.18);
-    }
+    /* Warning (앰버) */
+    .btn-warning{background:#f59e0b;border-color:#d97706;}
+    .btn-warning:hover:not(:disabled){background:#d97706;}
+    .btn-warning:active:not(:disabled){background:#b45309;}
+    .btn-warning.selected,.btn-warning[aria-selected="true"]{background:#92400e;}
 
-    /* Danger (딥 레드 — 삭제/위험) */
-    .btn-danger{
-      background:#ef4444;color:#fff;
-      box-shadow:0 1px 3px rgba(239,68,68,.25);
-    }
-    .btn-danger:hover:not(:disabled){
-      background:#dc2626;
-      box-shadow:0 4px 14px rgba(239,68,68,.35);
-      transform:translateY(-1px);
-    }
-    .btn-danger:active:not(:disabled){
-      background:#b91c1c;
-      box-shadow:0 1px 4px rgba(239,68,68,.28);
-    }
-    .btn-danger.selected,.btn-danger[aria-selected="true"]{
-      background:#991b1b;
-      box-shadow:inset 0 2px 6px rgba(0,0,0,.18);
-    }
+    /* Danger (레드 — 삭제/해지) */
+    .btn-danger{background:#ef4444;border-color:#dc2626;}
+    .btn-danger:hover:not(:disabled){background:#dc2626;}
+    .btn-danger:active:not(:disabled){background:#b91c1c;}
+    .btn-danger.selected,.btn-danger[aria-selected="true"]{background:#991b1b;}
 
-    /* Indigo (인디고 — 계약갱신/인디고 계열) */
-    .btn-indigo{
-      background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;
-      box-shadow:0 1px 4px rgba(99,102,241,.28);
-    }
-    .btn-indigo:hover:not(:disabled){
-      background:linear-gradient(135deg,#4f46e5,#4338ca);
-      box-shadow:0 4px 14px rgba(99,102,241,.38);
-      transform:translateY(-1px);
-    }
-    .btn-indigo:active:not(:disabled){
-      background:linear-gradient(135deg,#4338ca,#3730a3);
-      box-shadow:0 1px 4px rgba(99,102,241,.3);
-    }
-    .btn-indigo.selected,.btn-indigo[aria-selected="true"]{
-      background:#3730a3;
-      box-shadow:inset 0 2px 6px rgba(0,0,0,.2);
-    }
+    /* Indigo */
+    .btn-indigo{background:linear-gradient(135deg,#6366f1,#4f46e5);border-color:#4338ca;}
+    .btn-indigo:hover:not(:disabled){background:#4338ca;}
+    .btn-indigo:active:not(:disabled){background:#3730a3;}
+    .btn-indigo.selected,.btn-indigo[aria-selected="true"]{background:#3730a3;}
 
-    /* Teal (계약 재계약) */
-    .btn-teal{
-      background:linear-gradient(135deg,#10b981,#059669);color:#fff;
-      box-shadow:0 1px 4px rgba(16,185,129,.25);
-    }
-    .btn-teal:hover:not(:disabled){
-      background:linear-gradient(135deg,#059669,#047857);
-      box-shadow:0 4px 14px rgba(16,185,129,.35);
-      transform:translateY(-1px);
-    }
-    .btn-teal:active:not(:disabled){
-      background:linear-gradient(135deg,#047857,#065f46);
-    }
+    /* Teal */
+    .btn-teal{background:linear-gradient(135deg,#10b981,#059669);border-color:#047857;}
+    .btn-teal:hover:not(:disabled){background:#047857;}
+    .btn-teal:active:not(:disabled){background:#065f46;}
 
-    /* Slate (계약 무효/취소) */
-    .btn-slate{
-      background:linear-gradient(135deg,#64748b,#475569);color:#fff;
-      box-shadow:0 1px 4px rgba(100,116,139,.22);
-    }
-    .btn-slate:hover:not(:disabled){
-      background:linear-gradient(135deg,#475569,#334155);
-      box-shadow:0 4px 14px rgba(100,116,139,.3);
-      transform:translateY(-1px);
-    }
-    .btn-slate:active:not(:disabled){
-      background:linear-gradient(135deg,#334155,#1e293b);
-    }
+    /* Slate */
+    .btn-slate{background:linear-gradient(135deg,#64748b,#475569);border-color:#334155;}
+    .btn-slate:hover:not(:disabled){background:#334155;}
+    .btn-slate:active:not(:disabled){background:#1e293b;}
 
-    /* Sky (수정재발행 — 파란 계열) */
-    .btn-sky{
-      background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#fff;
-      border:1px solid #0369a1;
-      box-shadow:0 1px 4px rgba(14,165,233,.22);
-    }
-    .btn-sky:hover:not(:disabled){
-      background:linear-gradient(135deg,#0284c7,#0369a1);
-      box-shadow:0 4px 14px rgba(14,165,233,.32);
-      transform:translateY(-1px);
-    }
-    .btn-sky:active:not(:disabled){
-      background:linear-gradient(135deg,#0369a1,#075985);
-    }
+    /* Sky */
+    .btn-sky{background:linear-gradient(135deg,#0ea5e9,#0284c7);border-color:#0369a1;}
+    .btn-sky:hover:not(:disabled){background:#0369a1;}
+    .btn-sky:active:not(:disabled){background:#075985;}
 
     /* ══════════════════════════════════════════════
        풀다운 select — 검색창(.search-input)과 동일한 스타일로 통일

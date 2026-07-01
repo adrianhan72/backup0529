@@ -21,11 +21,16 @@ function _renderCompaniesDraftBanner(){
   const rows = drafts.map(c => {
     const savedAt = fmtTime(c.draft_saved_at);
     return `
-      <div class="draft-item-row" onclick="openCompanyModal('${c.id}')" title="클릭하여 이어 작성">
+      <div class="draft-item-row" style="cursor:default;">
         <div class="draft-item-icon co"><i class="fas fa-building"></i></div>
-        <div class="draft-item-name">${c.company_name || '(이름 없음)'}</div>
-        <div class="draft-item-meta" style="font-size:11.5px;color:#92400e;white-space:nowrap;">${savedAt ? '임시저장 ' + savedAt : '임시저장'}</div>
-        <div class="draft-item-action" style="font-size:11.5px;color:#d97706;white-space:nowrap;flex-shrink:0;"><i class="fas fa-pencil-alt"></i> 이어 작성</div>
+        <div class="pi-adb-row-main">
+          <div class="pi-adb-row-name">${c.company_name || '(이름 없음)'}</div>
+        </div>
+        <div class="pi-adb-row-right" style="flex-direction:row;align-items:center;gap:8px;">
+          ${savedAt ? `<span class="pi-adb-row-time">임시저장 ${savedAt}</span>` : ''}
+          <button onclick="openCompanyModal('${c.id}')" class="btn-draft-edit-sm"><i class="fas fa-pencil-alt"></i> 이어 작성</button>
+          <button onclick="_deleteDraft('${c.id}','companies','${(c.company_name||'(이름 없음)').replace(/'/g,"\\'")}')" class="btn-draft-del-sm"><i class="fas fa-trash-alt"></i> 삭제</button>
+        </div>
       </div>`;
   }).join('');
 
@@ -148,7 +153,7 @@ function renderCompanies(){
              <div style="font-size:10px;color:#0369a1;margin-bottom:2px;">이번 달 급여 총액 <span style="color:#16a34a;font-weight:700;">(${paidCount}/${totalTarget}건 완료)</span></div>
              <div style="font-size:15px;font-weight:700;color:#0c4a6e;">${Math.round(totalNetPay).toLocaleString('ko-KR')}<span style="font-size:11px;font-weight:500;">원</span></div>
            </div>
-           <button class="btn btn-sm" style="background:#3b82f6;color:#fff;padding:5px 11px;font-size:11.5px;font-weight:600;" onclick="openPayrollInputModal('${c.id}')">
+           <button class="btn btn-sm btn-warning" onclick="openPayrollInputModal('${c.id}')">
              <i class="fas fa-edit"></i> 내역 수정
            </button>
          </div>`;
@@ -160,7 +165,7 @@ function renderCompanies(){
              <div style="font-size:10px;color:#c2410c;margin-bottom:2px;">이번 달 급여</div>
              <div style="font-size:13px;font-weight:600;color:#9a3412;">미입력 ⏳ <span style="font-size:11px;font-weight:500;color:#b45309;">(${progressTxt})</span></div>
            </div>
-           <button class="btn btn-sm" style="background:#e94560;color:#fff;padding:5px 11px;font-size:11.5px;font-weight:600;" onclick="openPayrollInputModal('${c.id}')">
+           <button class="btn btn-sm btn-danger" onclick="openPayrollInputModal('${c.id}')">
              <i class="fas fa-plus-circle"></i> 급여 입력
            </button>
          </div>`;
@@ -188,14 +193,14 @@ function renderCompanies(){
       ${isDraftComp
         ? `<div style="margin-top:10px;padding:9px 12px;background:linear-gradient(90deg,#fffbeb,#fef3c7);border:1.5px dashed #f59e0b;border-radius:8px;display:flex;flex-direction:column;gap:8px;">
              <span style="font-size:11.5px;color:#92400e;font-weight:600;"><i class="fas fa-exclamation-circle" style="margin-right:4px;color:#f59e0b;"></i>임시저장 상태 — 등록을 완료해 주세요</span>
-             <button class="btn btn-draft btn-sm" style="padding:5px 12px;font-size:12px;width:100%;text-align:center;justify-content:center;" onclick="editCompany('${c.id}')"><i class="fas fa-pencil-alt"></i> 계속 작성</button>
+             <button class="btn btn-draft btn-sm" style="width:100%;" onclick="editCompany('${c.id}')"><i class="fas fa-pencil-alt"></i> 계속 작성</button>
            </div>`
         : (c.status===COMPANY_STATUS.INACTIVE||isEffectivelyInactive)
           ? `<div style="margin-top:8px;">
               <div style="padding:8px 10px;background:#fff3f3;border:1px solid #fca5a5;border-radius:6px;font-size:11px;color:#b91c1c;line-height:1.5;margin-bottom:8px;">
                 <i class="fas fa-info-circle"></i> 해지고객사의 데이터 보존년한은 해지일로부터 5년입니다
               </div>
-              <button class="btn btn-sm" style="width:100%;display:flex;align-items:center;justify-content:center;gap:4px;background:#f0fdf4;color:#166534;border:1px solid #86efac;font-weight:600;" onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='#f0fdf4'" onclick="cancelTerminate('${c.id}','${c.company_name}')">
+              <button class="btn btn-sm btn-success" style="width:100%;" onclick="cancelTerminate('${c.id}','${c.company_name}')">
                 <i class="fas fa-undo"></i>해지 취소
               </button>
              </div>`
@@ -203,27 +208,27 @@ function renderCompanies(){
           ? `<div style="margin-top:10px;">
               <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:8px;">
                 <div style="display:flex;gap:6px;">
-                  <button class="btn btn-primary btn-sm" onclick="editCompany('${c.id}')">정보수정</button>
-                  <button class="btn btn-sm" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;font-weight:600;" onmouseover="this.style.background='#dbeafe'" onmouseout="this.style.background='#eff6ff'" onclick="goContractsByCompany('${c.id}','${c.company_name}')">근로계약서</button>
-                  <button class="btn btn-sm" style="background:#f0fdf4;color:#166534;border:1px solid #86efac;font-weight:600;" onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='#f0fdf4'" onclick="goPayrollsByCompany('${c.id}','${c.company_name}')">급여명세</button>
+                  <button class="btn btn-warning btn-sm" onclick="editCompany('${c.id}')">정보수정</button>
+                  <button class="btn btn-sm btn-indigo" onclick="goContractsByCompany('${c.id}','${c.company_name}')">근로계약서</button>
+                  <button class="btn btn-sm btn-success" onclick="goPayrollsByCompany('${c.id}','${c.company_name}')">급여명세</button>
                 </div>
               </div>
               <div style="display:flex;gap:6px;">
-                <button class="btn btn-sm" style="flex:1;display:flex;align-items:center;justify-content:center;gap:4px;background:#fef3c7;color:#92400e;border:1px solid #fcd34d;font-weight:600;" onmouseover="this.style.background='#fde68a'" onmouseout="this.style.background='#fef3c7'" onclick="changeEndDate('${c.id}','${c.company_name}','${c.contract_end_date}')">
+                <button class="btn btn-sm btn-warning" onclick="changeEndDate('${c.id}','${c.company_name}','${c.contract_end_date}')">
                   <i class="fas fa-calendar-edit"></i>해지일 변경
                 </button>
-                <button class="btn btn-sm" style="flex:1;display:flex;align-items:center;justify-content:center;gap:4px;background:#f0fdf4;color:#166534;border:1px solid #86efac;font-weight:600;" onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='#f0fdf4'" onclick="cancelTerminate('${c.id}','${c.company_name}')">
+                <button class="btn btn-sm btn-success" style="flex:1;" onclick="cancelTerminate('${c.id}','${c.company_name}')">
                   <i class="fas fa-undo"></i>해지 취소
                 </button>
               </div>
              </div>`
           : `<div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:10px;">
               <div style="display:flex;gap:6px;">
-                <button class="btn btn-primary btn-sm" onclick="editCompany('${c.id}')">정보수정</button>
-                <button class="btn btn-sm" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;font-weight:600;" onmouseover="this.style.background='#dbeafe'" onmouseout="this.style.background='#eff6ff'" onclick="goContractsByCompany('${c.id}','${c.company_name}')">근로계약서</button>
-                <button class="btn btn-sm" style="background:#f0fdf4;color:#166534;border:1px solid #86efac;font-weight:600;" onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='#f0fdf4'" onclick="goPayrollsByCompany('${c.id}','${c.company_name}')">급여명세</button>
+                <button class="btn btn-warning btn-sm" onclick="editCompany('${c.id}')">정보수정</button>
+                <button class="btn btn-sm btn-indigo" onclick="goContractsByCompany('${c.id}','${c.company_name}')">근로계약서</button>
+                <button class="btn btn-sm btn-success" onclick="goPayrollsByCompany('${c.id}','${c.company_name}')">급여명세</button>
               </div>
-              <button class="btn btn-sm" style="background:#e5e7eb;color:#9ca3af;border:1px solid #d1d5db;" onmouseover="this.style.background='#d1d5db'" onmouseout="this.style.background='#e5e7eb'" onclick="terminateCompany('${c.id}','${c.company_name}')">해지</button>
+              <button class="btn btn-sm btn-secondary" onclick="terminateCompany('${c.id}','${c.company_name}')">해지</button>
              </div>`
       }
     </div>`;
@@ -510,6 +515,26 @@ function _cmSvcGetSaveData(){
 }
 // ──────────────────────────────────────────────────────────────────────────
 
+/** 고객사 임시저장 모달에서 삭제 */
+async function deleteDraftCompany(){
+  const id = _currentCompanyDraftId;
+  if(!id) return;
+  const c = allCompanies.find(x => x.id === id);
+  const label = c?.company_name || '(이름 없음)';
+  if(!confirm(`'${label}' 임시저장을 삭제하시겠습니까?\n삭제 후 복구할 수 없습니다.`)) return;
+  try {
+    await api(`../tables/companies/${id}`, { method: 'DELETE' });
+    toast(`'${label}' 임시저장이 삭제되었습니다.`, 'success');
+    closeModal('company-modal');
+    await loadCompanies();
+    renderCompanies();
+    if(typeof renderDraftAlerts === 'function') renderDraftAlerts();
+    if(typeof renderDashboard === 'function') renderDashboard();
+  } catch(e){
+    toast('삭제 중 오류가 발생했습니다.', 'error');
+  }
+}
+
 function openCompanyModal(id=null){
   // 임시저장 항목인지 먼저 확인
   const _cmpData = id ? allCompanies.find(x=>x.id===id) : null;
@@ -536,6 +561,10 @@ function openCompanyModal(id=null){
   // 임시저장 버튼: 신규·임시저장 모드에서만 노출
   const _cmDraftBtn = document.getElementById('cm-btn-draft');
   if(_cmDraftBtn) _cmDraftBtn.style.display = (id && !_isDraft) ? 'none' : '';
+
+  // 삭제 버튼: 임시저장(이어작성) 모드에서만 노출
+  const _cmDelBtn = document.getElementById('cm-btn-delete');
+  if(_cmDelBtn) _cmDelBtn.style.display = _isDraft ? '' : 'none';
 
   // 등록 버튼 텍스트
   const _cmRegBtn = document.getElementById('cm-btn-register');

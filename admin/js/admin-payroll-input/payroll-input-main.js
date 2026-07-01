@@ -1346,11 +1346,14 @@ function _applyPIPayDate(forceOverwrite){
   pdEl.style.color      = '';
   pdEl.style.cursor     = '';
 
-  // ── 고객사 pay_day 기반 자동 계산 ──────────────────────────────────────
+  // ── 급여일 우선순위: 근로계약서 pay_day > 고객사 pay_day ────────────
   const coId = currentGlobalCompanyId || document.getElementById('pi-company')?.value;
   const co   = allCompanies.find(c => c.id === coId);
-  const rawPayDay = co?.pay_day;
+  // 근로계약서에 개별 급여일이 설정된 경우 우선 사용
+  const contractPayDay = piContract?.pay_day;
+  const rawPayDay = contractPayDay ? String(contractPayDay) : (co?.pay_day);
   const payDayNum = parseInt(String(rawPayDay || '').replace(/[^0-9]/g, '')) || 0;
+  const isFromContract = !!(contractPayDay && payDayNum);
 
   const yr = parseInt(document.getElementById('pi-year')?.value)  || 0;
   const mo = parseInt(document.getElementById('pi-month')?.value) || 0;
@@ -1382,10 +1385,10 @@ function _applyPIPayDate(forceOverwrite){
   }
 
   if(badgeEl){
-    badgeEl.textContent   = `고객사 설정: 매월${day}일`;
-    badgeEl.style.color   = '#6b7280';
-    badgeEl.style.background = '#f3f4f6';
-    badgeEl.style.borderColor = '#e5e7eb';
+    badgeEl.textContent   = isFromContract ? `근로계약서 설정: 매월${day}일` : `고객사 설정: 매월${day}일`;
+    badgeEl.style.color   = isFromContract ? '#4f46e5' : '#6b7280';
+    badgeEl.style.background = isFromContract ? '#eef2ff' : '#f3f4f6';
+    badgeEl.style.borderColor = isFromContract ? '#c7d2fe' : '#e5e7eb';
     badgeEl.style.display = '';
   }
 }

@@ -28,8 +28,8 @@ function renderPIAllDraftBanner(){
   const drafts = (allPayrolls||[])
     .filter(p => !!p.is_draft)
     .sort((a, b) => {                                        // 최신 저장순
-      const ta = a.draft_saved_at ? new Date(a.draft_saved_at).getTime() : 0;
-      const tb = b.draft_saved_at ? new Date(b.draft_saved_at).getTime() : 0;
+      const ta = a.updated_at ? new Date(a.updated_at).getTime() : 0;
+      const tb = b.updated_at ? new Date(b.updated_at).getTime() : 0;
       return tb - ta;
     });
 
@@ -59,26 +59,34 @@ function renderPIAllDraftBanner(){
     const empName= emp ? emp.name : '(직원 미지정)';
     const coName = co  ? (co.company_name || '-') : '-';
     const yrMo   = (p.pay_year && p.pay_month) ? `${p.pay_year}년 ${p.pay_month}월` : '';
-    const netPay = p.net_pay   ? Number(p.net_pay).toLocaleString('ko-KR') + '원' : '';
-    const savedAt= _fmt(p.draft_saved_at);
-    const noteHtml = p.note
-      ? `<span class="pi-adb-row-note" title="${p.note.replace(/"/g,'&quot;')}">· ${p.note}</span>`
-      : '';
+    const empCat = typeof contractTypeLabel === 'function' ? contractTypeLabel(emp?.employment_category) : (emp?.employment_category || '');
+    // 급여일: 근로계약서 pay_day > 급여레코드 pay_date > 고객사 pay_day
+    const ct = (allContracts||[]).find(c => c.employee_id === p.employee_id && c.company_id === p.company_id && !c.is_draft && (c.status==='active'||c.status==='활성'));
+    const ctPayDay = ct?.pay_day;
+    const coPayDay = co?.pay_day;
+    const fallbackDay = p.pay_date ? (p.pay_date.includes('-') ? parseInt(p.pay_date.slice(8)) : parseInt(p.pay_date)) : 0;
+    const displayDay = ctPayDay || parseInt(coPayDay) || fallbackDay;
+    const payDateStr = displayDay ? `급여일: 매월 ${displayDay}일` : '';
+    const savedAt= _fmt(p.updated_at);
+    const metaParts = [coName, yrMo, empCat, payDateStr].filter(Boolean);
     return `
-    <div class="pi-adb-row" onclick="goDraftPayroll('${p.id}')" title="${empName} ${yrMo} 임시저장 — 클릭하여 이어 입력">
+    <div class="pi-adb-row" style="cursor:default;">
       <div class="pi-adb-row-icon"><i class="fas fa-file-invoice-dollar"></i></div>
       <div class="pi-adb-row-main">
         <div class="pi-adb-row-name">${empName}</div>
         <div class="pi-adb-row-meta">
-          <span class="pi-adb-row-co">${coName}</span>
-          ${yrMo   ? `<span class="pi-adb-row-yrmo">${yrMo}</span>` : ''}
-          ${netPay ? `<span class="pi-adb-row-net">${netPay}</span>` : ''}
-          ${noteHtml}
+          ${metaParts.map((v,i) => i===0
+            ? `<span class="pi-adb-row-co">${v}</span>`
+            : `<span class="pi-adb-row-yrmo"> · ${v}</span>`
+          ).join('')}
         </div>
       </div>
-      <div class="pi-adb-row-right">
+      <div class="pi-adb-row-right" style="flex-direction:row;align-items:center;gap:10px;">
         ${savedAt ? `<span class="pi-adb-row-time">${savedAt} 저장</span>` : ''}
-        <span class="pi-adb-row-action"><i class="fas fa-pencil-alt" style="font-size:10px;margin-right:3px;"></i>이어 입력</span>
+        <span style="display:inline-flex;gap:10px;">
+          <button onclick="goDraftPayroll('${p.id}')" class="btn-draft-edit-sm"><i class="fas fa-pencil-alt"></i>이어 입력</button>
+          <button onclick="_deleteDraft('${p.id}','payrolls','${empName} ${yrMo||''}')" class="btn-draft-del-sm"><i class="fas fa-trash-alt"></i> 삭제</button>
+        </span>
       </div>
     </div>`;
   }).join('');
@@ -103,10 +111,9 @@ function togglePIAllDraftBanner(headerEl){
 function renderDashboard(){
   // 임시저장 알림 카드 (최우선 렌더)
   renderDraftAlerts();
-  // 계약서 날인본 미등록 알림 카드
-  renderSignedAlerts();
-  // 제3자 정보제공동의서 미등록 알림 카드
-  renderConsentAlerts();
+  // [사용안함] 서류미비 계약도 유효 계약으로 처리 → 날인본/동의서 알림 카드 제거
+  // renderSignedAlerts();
+  // renderConsentAlerts();
   // 계약만료 통지 대상 배너 (임시저장 위)
   renderDashExpiryBanner();
   // 수습 만료 통지 대상 배너 (계약만료 ~ 정규직 전환 사이)
@@ -711,7 +718,7 @@ function _buildDashCompanyRow(c){
     <td><span class="dash-co-name" title="${c.company_name}">${c.company_name}</span></td>
     <td><span class="dash-co-payday">${payDay}</span></td>
     <td>${statusCell}</td>
-    <td><button class="dash-co-btn ${btnClass}" onclick="openPayrollInputModal('${safeId}')">${btnLabel}</button></td>
+    <td style="width:110px;"><button class="dash-co-btn ${btnClass}" onclick="openPayrollInputModal('${safeId}')">${btnLabel}</button></td>
   </tr>`;
 }
 

@@ -4,120 +4,10 @@ function _renderContAlertCards(){
 
   const today = new Date().toISOString().slice(0,10);
 
-  // ── 전 고객사 기준 날인본/동의서 미등록 배너 (대시보드와 동일 UI) ──
-  (function(){
-    function _getEmpCo(c){
-      const emp = allEmployees.find(e => e.id === c.employee_id);
-      const co  = allCompanies.find(x => x.id === c.company_id);
-      return {
-        name  : emp ? emp.name : '(미지정)',
-        phone : emp ? (emp.phone || '-') : '-',
-        coName: co  ? (co.company_name || '-') : '-',
-      };
-    }
-
-    // ① 날인본 미등록
-    const signedMissing = allContracts.filter(c =>
-      !c.is_draft && (c.status===CONTRACT_STATUS.ACTIVE || c.status===CONTRACT_STATUS.PENDING || c.status===CONTRACT_STATUS.DOCS_INCOMPLETE) && !c.signed_file_name
-    );
-    let signedEl = document.getElementById('_ca-signed-banner');
-    if(!signedEl){
-      signedEl = document.createElement('div');
-      signedEl.id = '_ca-signed-banner';
-      signedEl.style.marginBottom = '10px';
-      wrap.prepend(signedEl);
-    }
-    if(!signedMissing.length){
-      signedEl.style.display = 'none';
-      signedEl.innerHTML = '';
-    } else {
-      const rows = signedMissing.map(c => {
-        const {name, phone, coName} = _getEmpCo(c);
-        const _rowClick = c.status===CONTRACT_STATUS.DOCS_INCOMPLETE
-          ? `openContractForUpload('${c.id}')`
-          : `viewContract('${c.id}')`;
-        return `<div class="signed-item-row" onclick="${_rowClick}" title="클릭하여 서류 업로드" style="cursor:pointer;">
-          <div class="signed-item-icon"><i class="fas fa-file-contract"></i></div>
-          <div class="signed-item-name">${name}</div>
-          <div class="signed-item-meta">${coName}</div>
-          <div class="signed-item-phone">${phone}</div>
-        </div>`;
-      }).join('');
-      signedEl.style.display = '';
-      signedEl.innerHTML = `
-        <div class="dash-ac-card signed-alert-card">
-          <div class="dash-ac-header" onclick="toggleDashAccordion('_ca-signed-body',this.querySelector('.dash-ac-toggle'))">
-            <div class="dash-ac-left">
-              <div>
-                <div class="dash-ac-title signed-alert-title">
-                  <span class="pulse-dot-indigo"></span>계약서 날인본 미등록
-                </div>
-                <div class="dash-ac-sub signed-alert-sub">근로계약서 날인본이 등록되지 않은 근로자가 있습니다.</div>
-              </div>
-            </div>
-            <div class="dash-ac-badges"><span class="dash-ac-badge">${signedMissing.length}건</span></div>
-            <div class="dash-ac-toggle"><i class="fas fa-chevron-down"></i></div>
-          </div>
-          <div id="_ca-signed-body" class="dash-ac-body" style="padding:0 20px;">
-            <div style="padding:16px 0;">${rows}</div>
-          </div>
-        </div>`;
-    }
-
-    // ② 제3자 정보제공동의서 미등록
-    const consentMissing = allContracts.filter(c =>
-      !c.is_draft && (c.status===CONTRACT_STATUS.ACTIVE || c.status===CONTRACT_STATUS.PENDING || c.status===CONTRACT_STATUS.DOCS_INCOMPLETE) && !c.consent_file_name
-    );
-    let consentEl = document.getElementById('_ca-consent-banner');
-    if(!consentEl){
-      consentEl = document.createElement('div');
-      consentEl.id = '_ca-consent-banner';
-      consentEl.style.marginBottom = '10px';
-      // signed 배너 바로 뒤에 삽입
-      signedEl.after(consentEl);
-    }
-    if(!consentMissing.length){
-      consentEl.style.display = 'none';
-      consentEl.innerHTML = '';
-    } else {
-      const rows = consentMissing.map(c => {
-        const {name, phone, coName} = _getEmpCo(c);
-        const _rowClick = c.status===CONTRACT_STATUS.DOCS_INCOMPLETE
-          ? `openContractForUpload('${c.id}')`
-          : `viewContract('${c.id}')`;
-        return `<div class="consent-item-row" onclick="${_rowClick}" title="클릭하여 서류 업로드" style="cursor:pointer;">
-          <div class="consent-item-icon"><i class="fas fa-file-signature"></i></div>
-          <div class="consent-item-name">${name}</div>
-          <div class="consent-item-meta">${coName}</div>
-          <div class="consent-item-phone">${phone}</div>
-        </div>`;
-      }).join('');
-      consentEl.style.display = '';
-      consentEl.innerHTML = `
-        <div class="dash-ac-card consent-alert-card">
-          <div class="dash-ac-header" onclick="toggleDashAccordion('_ca-consent-body',this.querySelector('.dash-ac-toggle'))">
-            <div class="dash-ac-left">
-              <div>
-                <div class="dash-ac-title consent-alert-title">
-                  <span class="pulse-dot-red"></span>제3자 정보제공동의서 미등록
-                </div>
-                <div class="dash-ac-sub consent-alert-sub">정보제공동의서가 등록되지 않은 근로자가 있습니다.</div>
-              </div>
-            </div>
-            <div class="dash-ac-badges"><span class="dash-ac-badge">${consentMissing.length}건</span></div>
-            <div class="dash-ac-toggle"><i class="fas fa-chevron-down"></i></div>
-          </div>
-          <div id="_ca-consent-body" class="dash-ac-body" style="padding:0 20px;">
-            <div style="padding:16px 0;">${rows}</div>
-          </div>
-        </div>`;
-    }
-  })();
-
   // 현재 고객사 계약 전체 분류
   const companyContracts = allContracts.filter(c => c.company_id === currentContCompanyId);
 
-  const ALERT_LABELS = ['임시저장','갱신예정','계약예정','해지예정'];
+  const ALERT_LABELS = ['갱신예정','계약예정','해지예정'];
   const groups = {};
   ALERT_LABELS.forEach(l => groups[l] = []);
 
@@ -126,27 +16,8 @@ function _renderContAlertCards(){
     if(groups[label] !== undefined) groups[label].push(c);
   });
 
-  // 카드 정의
+  // 카드 정의 (임시저장 카드는 _renderContractsBanners 로 통일)
   const CARD_CONFIG = [
-    {
-      key: '임시저장', cls: 'cont-alert-draft',
-      icon: 'fas fa-pen-square', iconColor: '#d97706',
-      title: '임시저장 중인 계약서',
-      desc: '작성이 완료되지 않은 계약서입니다. 계속 작성하거나 삭제하세요.',
-      cols: ['직원명','고용형태','작성일시','관리'],
-      row: (c) => {
-        const emp = allEmployees.find(e=>e.id===c.employee_id);
-        const empCat = emp?.employment_category || c.contract_type || '-';
-        const catBadge = CAT_BADGE_CLS[empCat] || 'badge-gray';
-        const createdAt = c.created_at ? new Date(c.created_at).toLocaleString('ko-KR',{year:'2-digit',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : '-';
-        return `<td style="font-weight:700;color:#1f2937;">${getEmpName(c.employee_id)}</td>
-          <td><span class="badge ${catBadge}" style="font-size:11px;">${contractTypeLabel(empCat)}</span></td>
-          <td style="font-size:12px;color:#6b7280;">${createdAt}</td>
-          <td style="white-space:nowrap;">
-            <button onclick="viewContract('${c.id}')" class="btn btn-sm" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d;font-size:11.5px;font-weight:600;display:inline-flex;align-items:center;gap:4px;"><i class="fas fa-edit"></i> 계속 작성</button>
-          </td>`;
-      }
-    },
     {
       key: '갱신예정', cls: 'cont-alert-renew',
       icon: 'fas fa-sync-alt', iconColor: '#b45309',
@@ -165,7 +36,7 @@ function _renderContAlertCards(){
           <td style="font-size:12px;color:#6b7280;">${c.contract_start||'-'}</td>
           <td><span style="font-weight:700;color:${ddayColor};font-size:12.5px;">${dday}</span></td>
           <td style="white-space:nowrap;">
-            <button onclick="viewContract('${c.id}')" class="btn btn-sm" style="background:#fefce8;color:#713f12;border:1px solid #fde047;font-size:11.5px;font-weight:600;display:inline-flex;align-items:center;gap:4px;"><i class="fas fa-search"></i> 조회</button>
+            <button onclick="viewContract('${c.id}')" class="btn btn-sm btn-warning"><i class="fas fa-search"></i> 조회</button>
           </td>`;
       }
     },
@@ -190,7 +61,7 @@ function _renderContAlertCards(){
           <td style="font-size:12px;color:#6b7280;">${c.contract_start||'-'}</td>
           <td><span style="font-weight:700;color:${ddayColor};font-size:12.5px;">${dday}</span></td>
           <td style="white-space:nowrap;">
-            <button onclick="viewContract('${c.id}')" class="btn btn-sm" style="background:#eef2ff;color:#3730a3;border:1px solid #a5b4fc;font-size:11.5px;font-weight:600;display:inline-flex;align-items:center;gap:4px;"><i class="fas fa-search"></i> 조회</button>
+            <button onclick="viewContract('${c.id}')" class="btn btn-sm btn-indigo"><i class="fas fa-search"></i> 조회</button>
           </td>`;
       }
     },
@@ -213,7 +84,7 @@ function _renderContAlertCards(){
           <td style="font-size:12px;color:#9f1239;font-weight:600;">${termDate||'-'}</td>
           <td><span style="font-weight:700;color:${ddayColor};font-size:12.5px;">${dday}</span></td>
           <td style="white-space:nowrap;">
-            <button onclick="viewContract('${c.id}')" class="btn btn-sm" style="background:#fff1f2;color:#9f1239;border:1px solid #fda4af;font-size:11.5px;font-weight:600;display:inline-flex;align-items:center;gap:4px;"><i class="fas fa-search"></i> 조회</button>
+            <button onclick="viewContract('${c.id}')" class="btn btn-sm btn-danger"><i class="fas fa-search"></i> 조회</button>
           </td>`;
       }
     },
@@ -345,12 +216,12 @@ function renderContracts(){
         : `<span class="badge ${stBadge}">${stName}</span>`
       }</td>
       <td style="white-space:nowrap;">
-        <button class="btn btn-sm" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;font-size:11.5px;font-weight:600;gap:4px;display:inline-flex;align-items:center;" onclick="viewContract('${c.id}')"><i class="fas fa-search"></i> 조회</button>
+        <button class="btn btn-sm btn-indigo" onclick="viewContract('${c.id}')"><i class="fas fa-search"></i> 조회</button>
         ${stName==='서류미비'
-          ? `<button class="btn btn-sm" style="background:#d97706;color:#fff;border:1px solid #d97706;font-size:11.5px;font-weight:600;gap:4px;display:inline-flex;align-items:center;margin-left:4px;" onclick="openContractForUpload('${c.id}')"><i class="fas fa-upload"></i> 서류 업로드</button>`
+          ? `<button class="btn btn-sm btn-warning" onclick="openContractForUpload('${c.id}')"><i class="fas fa-upload"></i> 서류 업로드</button>`
           : c.is_draft
-            ? `<button class="btn btn-sm" disabled title="임시저장 상태에서는 출력할 수 없습니다" style="background:#f3f4f6;color:#d1d5db;border:1px solid #e5e7eb;font-size:11.5px;font-weight:600;gap:4px;display:inline-flex;align-items:center;margin-left:4px;cursor:not-allowed;"><i class="fas fa-file-contract"></i> 계약서</button>`
-            : `<button class="btn btn-sm" style="background:#0f172a;color:#fff;border:1px solid #0f172a;font-size:11.5px;font-weight:600;gap:4px;display:inline-flex;align-items:center;margin-left:4px;" onclick="openContractPrintModal('${c.id}')"><i class="fas fa-file-contract"></i> 계약서</button>`
+            ? `<button class="btn btn-sm" disabled title="임시저장 상태에서는 출력할 수 없습니다"><i class="fas fa-file-contract"></i> 계약서</button>`
+            : `<button class="btn btn-sm btn-slate" onclick="openContractPrintModal('${c.id}')"><i class="fas fa-file-contract"></i> 계약서</button>`
         }
       </td>
     </tr>`;
@@ -395,7 +266,7 @@ function openContractModal(id=null, preCompanyId=null){
   modalEl.querySelectorAll('.modal-body .btn-brk-add').forEach(btn=>{
     btn.disabled = false; btn.style.cursor = ''; btn.style.pointerEvents = '';
   });
-  ['ct-start','ct-end','ct-annual-sal','ct-base','ct-note','ct-pay-period'].forEach(i=>document.getElementById(i).value='');
+  ['ct-start','ct-end','ct-annual-sal','ct-base','ct-note','ct-pay-period','ct-pay-day'].forEach(i=>document.getElementById(i).value='');
   const _ppHint = document.getElementById('ct-pay-period-hint'); if(_ppHint) _ppHint.textContent='';
   document.getElementById('ct-annual').value=15;
   // 요일별 스케줄 테이블 초기화 (기본값: 월~금 09:00~18:00, 휴게 1h)
@@ -615,6 +486,8 @@ function openContractModal(id=null, preCompanyId=null){
       // 급여 산정기간 복원
       const _ppEl = document.getElementById('ct-pay-period');
       if(_ppEl) _ppEl.value = c.pay_period || '';
+      const _pdEl = document.getElementById('ct-pay-day');
+      if(_pdEl) _pdEl.value = c.pay_day || '';
       _autoFillCTPeriod(); // 힌트 갱신
       // DB에 값이 있는 항목은 allowance_config와 무관하게 강제 노출 (하위호환)
       _forceShowNonZeroCTRows(c);
@@ -1091,15 +964,11 @@ function calcContractStatusDisplay(c, today){
   if(s==='해지'||s==='terminated') return {badge:'badge-red',   label:'해지'};
   // 만료예정·종료예정은 레거시 값 → 계약유효로 표시 (유효한 계약)
   if(s==='만료예정'||s==='종료예정') return {badge:'badge-green', label:'유효'};
-  // 서류미비 상태 (활성이지만 계약서 날인본 또는 동의서 미첨부)
-  if(s==='서류미비') return {badge:'badge-orange', label:'서류미비'};
-  // 활성/유효 상태
+  // 서류미비 상태 (DB에 저장된 상태 그대로 배지만 표시, 계약은 유효)
+  if(s==='서류미비'||s==='docs_incomplete') return {badge:'badge-orange', label:'서류미비'};
+  // 활성/유효 상태 — 서류와 무관하게 유효 계약으로 처리
   if(s==='활성'||s==='유효'||s==='active'){
     if(start && start > today) return {badge:'badge-amber', label:'갱신예정'};
-    // 두 파일 모두 있어야 '유효', 하나라도 없으면 '서류미비'
-    const hasSignedFile  = !!(c.signed_file_data);
-    const hasConsentFile = !!(c.consent_file_data);
-    if(!hasSignedFile || !hasConsentFile) return {badge:'badge-orange', label:'서류미비'};
     return {badge:'badge-green', label:'유효'};
   }
   return {badge:'badge-gray', label: s};
@@ -1593,6 +1462,7 @@ async function openAmendPreview(){
     childcare_allowance: getAmountVal('ct-childcare')||0,
     childcare_dependents: parseInt(document.getElementById('ct-childcare-dependents')?.value||1)||1,
     pay_period: document.getElementById('ct-pay-period')?.value.trim() || '',
+    pay_day: parseInt(document.getElementById('ct-pay-day')?.value) || null,
     car_maintenance: car_,
     insurance_employment:true, insurance_industrial:true, insurance_pension:true, insurance_health:true,
     note: document.getElementById('ct-note').value,

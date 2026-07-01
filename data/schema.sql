@@ -84,6 +84,7 @@ CREATE TABLE IF NOT EXISTS contracts (
   contract_type         TEXT,
   status                TEXT DEFAULT '활성',
   pay_period            TEXT,
+  pay_day               INTEGER,
   -- 수당 (allowance)
   meal_allowance        REAL,   meal_pay_type         TEXT,
   transportation_allowance REAL, transport_pay_type   TEXT,

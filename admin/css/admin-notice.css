@@ -41,7 +41,7 @@
     .pi-adb-divider{display:none;}/* 헤더 border-bottom으로 대체 */
     .pi-adb-list{padding:12px 20px 16px;}
     /* 개별 행 — 대시보드 .draft-item-row + .draft-item-icon.pi 와 동일 */
-    .pi-adb-row{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;background:#fffbeb;border:1px solid #fde68a;margin-bottom:6px;cursor:pointer;transition:background .15s,border-color .15s;}
+    .pi-adb-row{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;background:#fffbeb;border:1px solid #fde68a;margin-bottom:6px;transition:background .15s,border-color .15s;}
     .pi-adb-row:hover{background:#fef3c7;border-color:#f59e0b;}
     .pi-adb-row:last-child{margin-bottom:0;}
     .pi-adb-row-icon{width:30px;height:30px;border-radius:8px;background:rgba(22,163,74,.13);color:#16a34a;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
@@ -90,12 +90,31 @@
     .consent-item-phone{font-size:11.5px;color:#dc2626;font-weight:600;white-space:nowrap;}
     /* 임시저장 아이템 */
     .draft-alert-card .dash-ac-body{background:#fff;}
-    .draft-item-row{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;background:#fffbeb;border:1px solid #fde68a;margin-bottom:6px;cursor:pointer;transition:background .15s,border-color .15s;}
+    .draft-item-row{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;background:#fffbeb;border:1px solid #fde68a;margin-bottom:6px;transition:background .15s,border-color .15s;}
     .draft-item-row:hover{background:#fef3c7;border-color:#f59e0b;}
     .draft-item-row:last-child{margin-bottom:0;}
     .draft-item-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
     .draft-item-icon.co{background:rgba(245,158,11,.15);color:#d97706;}
     .draft-item-icon.ct{background:rgba(99,102,241,.12);color:#6366f1;}
+    /* ── draft action buttons (outline type) ── */
+    .btn-draft-edit-sm{
+      display:inline-flex;align-items:center;gap:3px;
+      padding:3px 8px;border-radius:6px;
+      font-size:11px;font-weight:600;font-family:inherit;
+      cursor:pointer;white-space:nowrap;flex-shrink:0;
+      border:1px solid #d97706;background:#f59e0b;color:#fff;
+      transition:background .18s;
+    }
+    .btn-draft-edit-sm:hover:not(:disabled){background:#d97706;}
+    .btn-draft-del-sm{
+      display:inline-flex;align-items:center;gap:3px;
+      padding:3px 8px;border-radius:6px;
+      font-size:11px;font-weight:600;font-family:inherit;
+      cursor:pointer;white-space:nowrap;flex-shrink:0;
+      border:1px solid #6b7280;background:#9ca3af;color:#fff;
+      transition:background .18s;
+    }
+    .btn-draft-del-sm:hover:not(:disabled){background:#6b7280;}
     /* ── 계약서 조회 첨부 서류 업로드 섹션 ── */
     .ctf-section{margin:16px 0 0;padding:0 24px 20px;}
     .ctf-section-title{font-size:13px;font-weight:700;color:#374151;margin-bottom:10px;padding-bottom:7px;border-bottom:1.5px solid #e5e7eb;display:flex;align-items:center;gap:6px;}

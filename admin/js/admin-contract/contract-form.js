@@ -1315,6 +1315,23 @@ function onCtCompanyChange(){
   }
   // 고객사 변경 시: clearValues=true (금액 초기화 + 기본값 재설정)
   applyCTAllowanceConfig(cfg, true);
+  // 급여일 기본값: 고객사 pay_day → 계약서 필드
+  _setCtPayDayDefault(coId);
+}
+
+/** 고객사 pay_day를 계약서 급여일 필드 기본값으로 설정 */
+function _setCtPayDayDefault(coId){
+  const payDayEl = document.getElementById('ct-pay-day');
+  const hintEl   = document.getElementById('ct-pay-day-default');
+  if(!payDayEl) return;
+  const co = coId ? (allCompanies||[]).find(x => x.id === coId) : null;
+  const coPayDay = co?.pay_day;
+  if(hintEl){
+    hintEl.textContent = coPayDay ? `(고객사 기본: 매월 ${coPayDay}일)` : '(고객사 미설정)';
+  }
+  if(coPayDay && !payDayEl.value){
+    payDayEl.placeholder = `매월 ${coPayDay}일`;
+  }
 }
 
 // 수정 모드 하위호환: allowance_config와 무관하게 DB에 저장된 값이 있는 항목 강제 노출

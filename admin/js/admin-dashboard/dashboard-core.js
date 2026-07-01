@@ -1098,11 +1098,16 @@ function renderDraftAlerts(){
   // 고객사 행 HTML
   const companyRows = draftCompanies.map(c => {
     const savedAt = fmtDraftTime(c.draft_saved_at);
-    return `<div class="draft-item-row" onclick="goDraftCompany('${c.id}')" title="클릭하여 이어 작성">
+    return `<div class="draft-item-row" style="cursor:default;">
       <div class="draft-item-icon co"><i class="fas fa-building"></i></div>
-      <div class="draft-item-name">${c.company_name || '(이름 없음)'}</div>
-      <div class="draft-item-meta">${savedAt ? '임시저장 ' + savedAt : '임시저장'}</div>
-      <div class="draft-item-action"><i class="fas fa-pencil-alt"></i> 이어 작성</div>
+      <div class="pi-adb-row-main">
+        <div class="pi-adb-row-name">${c.company_name || '(이름 없음)'}</div>
+      </div>
+      <div class="pi-adb-row-right" style="flex-direction:row;align-items:center;gap:8px;">
+        ${savedAt ? `<span class="pi-adb-row-time">${savedAt} 저장</span>` : ''}
+        <button onclick="goDraftCompany('${c.id}')" class="btn-draft-edit-sm"><i class="fas fa-pencil-alt"></i> 이어 작성</button>
+          <button onclick="_deleteDraft('${c.id}','companies','${c.company_name||'(이름 없음)'}')" class="btn-draft-del-sm"><i class="fas fa-trash-alt"></i> 삭제</button>
+      </div>
     </div>`;
   }).join('');
 
@@ -1110,21 +1115,27 @@ function renderDraftAlerts(){
   const contractRows = draftContracts.map(c => {
     const emp     = allEmployees.find(e => e.id === c.employee_id);
     const co      = allCompanies.find(x => x.id === c.company_id);
-    const empName = emp ? emp.name : (c.note ? c.note.replace('[임시저장] 직원명: ','').split(' / ')[0] : '(직원 미지정)');
+    const empName = emp ? emp.name : '-';
     const coName  = co ? co.company_name : '-';
-    const savedAt = fmtDraftTime(c.draft_saved_at);
-    return `<div class="draft-item-row" onclick="goDraftContract('${c.id}')" title="클릭하여 이어 작성">
+    const savedAt = fmtDraftTime(c.updated_at);
+    return `<div class="draft-item-row" style="cursor:default;">
       <div class="draft-item-icon ct"><i class="fas fa-file-contract"></i></div>
-      <div class="draft-item-name">${empName}</div>
-      <div class="draft-item-meta">${coName}${savedAt ? ' · ' + savedAt : ''}</div>
-      <div class="draft-item-action"><i class="fas fa-pencil-alt"></i> 이어 작성</div>
+      <div class="pi-adb-row-main">
+        <div class="pi-adb-row-name">${empName}</div>
+        <div class="pi-adb-row-meta"><span class="pi-adb-row-co">${coName}</span></div>
+      </div>
+      <div class="pi-adb-row-right" style="flex-direction:row;align-items:center;gap:8px;">
+        ${savedAt ? `<span class="pi-adb-row-time">${savedAt} 저장</span>` : ''}
+        <button onclick="goDraftContract('${c.id}')" class="btn-draft-edit-sm"><i class="fas fa-pencil-alt"></i> 이어 작성</button>
+          <button onclick="_deleteDraft('${c.id}','contracts','${empName}')" class="btn-draft-del-sm"><i class="fas fa-trash-alt"></i> 삭제</button>
+      </div>
     </div>`;
   }).join('');
 
   // 급여 임시저장 행 HTML — draft_saved_at 내림차순 정렬
   const sortedDraftPayrolls = [...draftPayrolls].sort((a, b) => {
-    const ta = a.draft_saved_at ? new Date(a.draft_saved_at).getTime() : 0;
-    const tb = b.draft_saved_at ? new Date(b.draft_saved_at).getTime() : 0;
+    const ta = a.updated_at ? new Date(a.updated_at).getTime() : 0;
+    const tb = b.updated_at ? new Date(b.updated_at).getTime() : 0;
     return tb - ta;
   });
   const payrollRows = sortedDraftPayrolls.map(p => {
@@ -1135,27 +1146,33 @@ function renderDraftAlerts(){
     const yrMo   = (p.pay_year && p.pay_month)
       ? `${p.pay_year}년 ${p.pay_month}월`
       : '';
-    const netPay = p.net_pay
-      ? Number(p.net_pay).toLocaleString('ko-KR') + '원'
-      : '';
-    const savedAt = fmtDraftTime(p.draft_saved_at);
-    const noteSnip = p.note
-      ? `<span class="pi-adb-row-note" title="${p.note.replace(/"/g,'&quot;')}">· ${p.note}</span>`
-      : '';
-    return `<div class="draft-item-row" onclick="goDraftPayroll('${p.id}')" title="${empName} ${yrMo} 임시저장 — 클릭하여 이어 입력">
+    const empCat = typeof contractTypeLabel === 'function' ? contractTypeLabel(emp?.employment_category) : (emp?.employment_category || '');
+    // 급여일: 근로계약서 pay_day > 급여레코드 pay_date > 고객사 pay_day
+    const ct = (allContracts||[]).find(c => c.employee_id === p.employee_id && c.company_id === p.company_id && !c.is_draft && (c.status==='active'||c.status==='활성'));
+    const ctPayDay = ct?.pay_day;
+    const coPayDay = co?.pay_day;
+    const fallbackDay = p.pay_date ? (p.pay_date.includes('-') ? parseInt(p.pay_date.slice(8)) : parseInt(p.pay_date)) : 0;
+    const displayDay = ctPayDay || parseInt(coPayDay) || fallbackDay;
+    const payDateStr = displayDay ? `급여일: 매월 ${displayDay}일` : '';
+    const savedAt = fmtDraftTime(p.updated_at);
+    const metaParts = [coName, yrMo, empCat, payDateStr].filter(Boolean);
+    return `<div class="draft-item-row" style="cursor:default;">
       <div class="draft-item-icon pi"><i class="fas fa-file-invoice-dollar"></i></div>
       <div class="pi-adb-row-main">
         <div class="pi-adb-row-name">${empName}</div>
         <div class="pi-adb-row-meta">
-          <span class="pi-adb-row-co">${coName}</span>
-          ${yrMo   ? `<span class="pi-adb-row-yrmo">${yrMo}</span>` : ''}
-          ${netPay ? `<span class="pi-adb-row-net">${netPay}</span>` : ''}
-          ${noteSnip}
+          ${metaParts.map((v,i) => i===0
+            ? `<span class="pi-adb-row-co">${v}</span>`
+            : `<span class="pi-adb-row-yrmo"> · ${v}</span>`
+          ).join('')}
         </div>
       </div>
-      <div class="pi-adb-row-right">
+      <div class="pi-adb-row-right" style="flex-direction:row;align-items:center;gap:10px;">
         ${savedAt ? `<span class="pi-adb-row-time">${savedAt} 저장</span>` : ''}
-        <span class="pi-adb-row-action"><i class="fas fa-pencil-alt" style="font-size:10px;margin-right:3px;"></i>이어 입력</span>
+        <span style="display:inline-flex;gap:10px;">
+          <button onclick="goDraftPayroll('${p.id}')" class="btn-draft-edit-sm"><i class="fas fa-pencil-alt"></i>이어 입력</button>
+          <button onclick="_deleteDraft('${p.id}','payrolls','${empName} ${yrMo||''}')" class="btn-draft-del-sm"><i class="fas fa-trash-alt"></i> 삭제</button>
+        </span>
       </div>
     </div>`;
   }).join('');
@@ -1263,13 +1280,18 @@ function _renderContractsBanners(){
 
     const rows = drafts.map(c => {
       const {name, coName} = getEmpCo(c);
-      const savedAt = fmtTime(c.draft_saved_at);
-      return `<div class="draft-item-row" onclick="goDraftContract('${c.id}')" title="클릭하여 이어 작성">
+      const savedAt = fmtTime(c.updated_at);
+      return `<div class="draft-item-row" style="cursor:default;">
         <div class="draft-item-icon ct"><i class="fas fa-file-contract"></i></div>
-        <div class="draft-item-name">${name}</div>
-        <div class="draft-item-meta" style="font-size:11.5px;color:#6b7280;">${coName}</div>
-        <div class="draft-item-meta" style="font-size:11.5px;color:#92400e;white-space:nowrap;">${savedAt ? '임시저장 '+savedAt : '임시저장'}</div>
-        <div style="font-size:11.5px;color:#d97706;white-space:nowrap;flex-shrink:0;"><i class="fas fa-pencil-alt"></i> 이어 작성</div>
+        <div class="pi-adb-row-main">
+          <div class="pi-adb-row-name">${name}</div>
+          <div class="pi-adb-row-meta"><span class="pi-adb-row-co">${coName}</span></div>
+        </div>
+        <div class="pi-adb-row-right" style="flex-direction:row;align-items:center;gap:8px;">
+          ${savedAt ? `<span class="pi-adb-row-time">임시저장 ${savedAt}</span>` : ''}
+          <button onclick="goDraftContract('${c.id}')" class="btn-draft-edit-sm"><i class="fas fa-pencil-alt"></i> 이어 작성</button>
+          <button onclick="_deleteDraft('${c.id}','contracts','${name}')" class="btn-draft-del-sm"><i class="fas fa-trash-alt"></i> 삭제</button>
+        </div>
       </div>`;
     }).join('');
 
@@ -1291,188 +1313,29 @@ function _renderContractsBanners(){
       </div>`;
   })();
 
-  // ── ② 날인본 미등록 배너 ──
+  // ── ② 날인본 미등록 / ③ 동의서 미등록 배너: [사용안함] ──
   (function(){
-    const sec     = document.getElementById('contracts-signed-banner');
-    if(!sec) return;
-    const missing = allContracts.filter(c =>
-      !c.is_draft && (c.status===CONTRACT_STATUS.ACTIVE || c.status===CONTRACT_STATUS.PENDING) && !c.signed_file_name
-    );
-    if(!missing.length){ sec.style.display='none'; sec.innerHTML=''; return; }
-
-    const rows = missing.map(c => {
-      const {name, phone, coName} = getEmpCo(c);
-      return `<div class="signed-item-row" onclick="goDraftContract('${c.id}')" title="클릭하여 계약 편집">
-        <div class="signed-item-icon"><i class="fas fa-file-contract"></i></div>
-        <div class="signed-item-name">${name}</div>
-        <div class="signed-item-meta">${coName}</div>
-        <div class="signed-item-phone">${phone}</div>
-      </div>`;
-    }).join('');
-
-    sec.style.display = '';
-    sec.innerHTML = `
-      <div class="dash-ac-card signed-alert-card">
-        <div class="dash-ac-header" onclick="toggleDashAccordion('ct-signed-body',this.querySelector('.dash-ac-toggle'))">
-          <div class="dash-ac-left">
-            <div>
-              <div class="dash-ac-title signed-alert-title">
-                <span class="pulse-dot-indigo"></span>계약서 날인본 미등록
-              </div>
-              <div class="dash-ac-sub signed-alert-sub">근로계약서 날인본이 등록되지 않은 근로자가 있습니다.</div>
-            </div>
-          </div>
-          <div class="dash-ac-badges"><span class="dash-ac-badge">${missing.length}건</span></div>
-          <div class="dash-ac-toggle"><i class="fas fa-chevron-down"></i></div>
-        </div>
-        <div id="ct-signed-body" class="dash-ac-body" style="padding:0 20px;">
-          <div style="padding:16px 0;">${rows}</div>
-        </div>
-      </div>`;
+    const sec = document.getElementById('contracts-signed-banner');
+    if(sec){ sec.style.display='none'; sec.innerHTML=''; }
   })();
-
-  // ── ③ 제3자 정보제공동의서 미등록 배너 ──
   (function(){
-    const sec     = document.getElementById('contracts-consent-banner');
-    if(!sec) return;
-    const missing = allContracts.filter(c =>
-      !c.is_draft && (c.status===CONTRACT_STATUS.ACTIVE || c.status===CONTRACT_STATUS.PENDING) && !c.consent_file_name
-    );
-    if(!missing.length){ sec.style.display='none'; sec.innerHTML=''; return; }
-
-    const rows = missing.map(c => {
-      const {name, phone, coName} = getEmpCo(c);
-      return `<div class="consent-item-row" onclick="goDraftContract('${c.id}')" title="클릭하여 계약 편집">
-        <div class="consent-item-icon"><i class="fas fa-file-signature"></i></div>
-        <div class="consent-item-name">${name}</div>
-        <div class="consent-item-meta">${coName}</div>
-        <div class="consent-item-phone">${phone}</div>
-      </div>`;
-    }).join('');
-
-    sec.style.display = '';
-    sec.innerHTML = `
-      <div class="dash-ac-card consent-alert-card">
-        <div class="dash-ac-header" onclick="toggleDashAccordion('ct-consent-body',this.querySelector('.dash-ac-toggle'))">
-          <div class="dash-ac-left">
-            <div>
-              <div class="dash-ac-title consent-alert-title">
-                <span class="pulse-dot-red"></span>제3자 정보제공동의서 미등록
-              </div>
-              <div class="dash-ac-sub consent-alert-sub">정보제공동의서가 등록되지 않은 근로자가 있습니다.</div>
-            </div>
-          </div>
-          <div class="dash-ac-badges"><span class="dash-ac-badge">${missing.length}건</span></div>
-          <div class="dash-ac-toggle"><i class="fas fa-chevron-down"></i></div>
-        </div>
-        <div id="ct-consent-body" class="dash-ac-body" style="padding:0 20px;">
-          <div style="padding:16px 0;">${rows}</div>
-        </div>
-      </div>`;
+    const sec = document.getElementById('contracts-consent-banner');
+    if(sec){ sec.style.display='none'; sec.innerHTML=''; }
   })();
 }
 
 function renderSignedAlerts(){
+  // [사용안함] 서류미비 계약도 유효 계약으로 처리하므로 알림 카드 제거
   const sec = document.getElementById('dash-signed-section');
-  if(!sec) return;
-
-  const missing = allContracts.filter(c =>
-    !c.is_draft &&
-    (c.status===CONTRACT_STATUS.ACTIVE || c.status===CONTRACT_STATUS.PENDING) &&
-    !c.signed_file_name
-  );
-
-  if(missing.length === 0){ sec.style.display='none'; sec.innerHTML=''; return; }
-
-  const rows = missing.map(c => {
-    const emp    = allEmployees.find(e => e.id === c.employee_id);
-    const co     = allCompanies.find(x => x.id === c.company_id);
-    const name   = emp ? emp.name : '(미지정)';
-    const phone  = emp ? (emp.phone || '-') : '-';
-    const coName = co ? (co.company_name || '-') : '-';
-    return `<div class="signed-item-row" onclick="goDraftContract('${c.id}')" title="클릭하여 계약 편집">
-      <div class="signed-item-icon"><i class="fas fa-file-contract"></i></div>
-      <div class="signed-item-name">${name}</div>
-      <div class="signed-item-meta">${coName}</div>
-      <div class="signed-item-phone">${phone}</div>
-    </div>`;
-  }).join('');
-
-  sec.style.display = 'block';
-  sec.innerHTML = `
-  <div class="dash-ac-card signed-alert-card">
-    <div class="dash-ac-header" onclick="toggleDashAccordion('signed-main-body', this.querySelector('.dash-ac-toggle'))">
-      <div class="dash-ac-left">
-        <div>
-          <div class="dash-ac-title signed-alert-title">
-            <span class="pulse-dot-indigo"></span>
-            계약서 날인본 미등록
-          </div>
-          <div class="dash-ac-sub signed-alert-sub">근로계약서 날인본이 등록되지 않은 근로자가 있습니다.</div>
-        </div>
-      </div>
-      <div class="dash-ac-badges">
-        <span class="dash-ac-badge">${missing.length}건</span>
-      </div>
-      <div class="dash-ac-toggle"><i class="fas fa-chevron-down"></i></div>
-    </div>
-    <div id="signed-main-body" class="dash-ac-body" style="padding:0 20px;">
-    <div style="padding:16px 0;">${rows}</div>
-  </div>
-  </div>`;
-  if(typeof _renderContractsBanners === 'function') _renderContractsBanners();
+  if(sec){ sec.style.display='none'; sec.innerHTML=''; }
 }
+
 
 // 제3자 정보제공동의서 미등록 알림 카드
 function renderConsentAlerts(){
+  // [사용안함] 서류미비 계약도 유효 계약으로 처리하므로 알림 카드 제거
   const sec = document.getElementById('dash-consent-section');
-  if(!sec) return;
-
-  const missing = allContracts.filter(c =>
-    !c.is_draft &&
-    (c.status===CONTRACT_STATUS.ACTIVE || c.status===CONTRACT_STATUS.PENDING) &&
-    !c.consent_file_name
-  );
-
-  if(missing.length === 0){ sec.style.display='none'; sec.innerHTML=''; return; }
-
-  const rows = missing.map(c => {
-    const emp    = allEmployees.find(e => e.id === c.employee_id);
-    const co     = allCompanies.find(x => x.id === c.company_id);
-    const name   = emp ? emp.name : '(미지정)';
-    const phone  = emp ? (emp.phone || '-') : '-';
-    const coName = co ? (co.company_name || '-') : '-';
-    return `<div class="consent-item-row" onclick="goDraftContract('${c.id}')" title="클릭하여 계약 편집">
-      <div class="consent-item-icon"><i class="fas fa-file-signature"></i></div>
-      <div class="consent-item-name">${name}</div>
-      <div class="consent-item-meta">${coName}</div>
-      <div class="consent-item-phone">${phone}</div>
-    </div>`;
-  }).join('');
-
-  sec.style.display = 'block';
-  sec.innerHTML = `
-  <div class="dash-ac-card consent-alert-card">
-    <div class="dash-ac-header" onclick="toggleDashAccordion('consent-main-body', this.querySelector('.dash-ac-toggle'))">
-      <div class="dash-ac-left">
-        <div>
-          <div class="dash-ac-title consent-alert-title">
-            <span class="pulse-dot-red"></span>
-            제3자 정보제공동의서 미등록
-          </div>
-          <div class="dash-ac-sub consent-alert-sub">정보제공동의서가 등록되지 않은 근로자가 있습니다.</div>
-        </div>
-      </div>
-      <div class="dash-ac-badges">
-        <span class="dash-ac-badge">${missing.length}건</span>
-      </div>
-      <div class="dash-ac-toggle"><i class="fas fa-chevron-down"></i></div>
-    </div>
-    <div id="consent-main-body" class="dash-ac-body" style="padding:0 20px;">
-    <div style="padding:16px 0;">${rows}</div>
-  </div>
-  </div>`;
-  if(typeof _renderContractsBanners === 'function') _renderContractsBanners();
+  if(sec){ sec.style.display='none'; sec.innerHTML=''; }
 }
 
 // ─── 대시보드 알림 카드 아코디언 토글 ───
@@ -1497,23 +1360,38 @@ function toggleDashAccordion(bodyId, toggleBtn, event){
 
 // draft 고객사 → 고객사 관리 페이지로 이동 후 모달 열기
 function goDraftCompany(id){
+  const c = allCompanies.find(x=>x.id===id);
+  if(c) currentGlobalCompanyId = id; // showPage가 올바른 필터로 진입하도록
   showPage('companies', document.querySelector('.menu-item[data-page="companies"]'));
-  const sf = document.getElementById('company-status-filter');
-  if(sf){ sf.value='임시저장'; }
-  renderCompanies();
-  setTimeout(()=>openCompanyModal(id), 200);
+  setTimeout(()=>{
+    if(typeof openCompanyModal === 'function') openCompanyModal(id);
+  }, 400);
 }
 
-// draft 계약서 → 근로계약 관리 페이지로 이동 후 모달 열기
+// draft 계약서 → 근로 계약 관리 페이지로 이동 후 모달 열기
 function goDraftContract(id){
   const c = allContracts.find(x=>x.id===id);
   if(!c) return;
   if(c.company_id){
     const co = allCompanies.find(x=>x.id===c.company_id);
-    if(co) goContractsByCompany(c.company_id, co.company_name);
+    if(co){
+      // 페이지 이동 전 글로벌 상태 미리 설정 (showPage가 올바른 회사로 select 하도록)
+      currentGlobalCompanyId = c.company_id;
+      currentGlobalCompanyName = co.company_name || '';
+      showPage('contracts', document.querySelector('.menu-item[data-page="contracts"]'));
+      // showPage 내부에서 selectContCompany가 호출되므로 중복 호출 방지
+      setTimeout(()=>{
+        if(typeof continueDraftContract === 'function') continueDraftContract(id);
+        else if(typeof editContract === 'function') editContract(id);
+      }, 600);
+      return;
+    }
   }
   showPage('contracts', document.querySelector('.menu-item[data-page="contracts"]'));
-  setTimeout(()=>editContract(id), 300);
+  setTimeout(()=>{
+    if(typeof continueDraftContract === 'function') continueDraftContract(id);
+    else if(typeof editContract === 'function') editContract(id);
+  }, 600);
 }
 
 // ── 급여 임시저장 → 급여 입력 페이지로 이동 후 해당 직원·연월 세팅 + 임시저장 복원 ──
@@ -1521,66 +1399,56 @@ function goDraftPayroll(draftId){
   const p = (allPayrolls||[]).find(x => x.id === draftId);
   if(!p){ toast('임시저장 데이터를 찾을 수 없습니다.', 'error'); return; }
 
+  // showPage가 select 하도록 글로벌 상태 미리 설정
+  currentGlobalCompanyId = p.company_id;
+  const co = allCompanies.find(x => x.id === p.company_id);
+  if(co) currentGlobalCompanyName = co.company_name;
+
   const piMenuItem = document.querySelector('[data-page="payroll-input"]');
   showPage('payroll-input', piMenuItem);
 
-  // 고객사 칩 UI 전환
-  const co = allCompanies.find(x => x.id === p.company_id);
-  if(co){
-    const card = document.getElementById('pi-company-select-card');
-    const sec  = document.getElementById('pi-input-section');
-    const lbl  = document.getElementById('pi-selected-company-label');
-    if(card) card.style.display = 'none';
-    if(sec)  sec.style.display  = '';
-    if(lbl)  lbl.textContent    = co.company_name + ' 급여 입력';
-    // 대상자 목록 숨기고 폼 섹션 표시 (임시저장 직접 진입)
-    const targetSec = document.getElementById('pi-target-list-section');
-    if(targetSec) targetSec.style.display = 'none';
-    const formSec = document.getElementById('pi-form-section');
-    if(formSec) formSec.style.display = '';
-    // 직원 헤더 업데이트
-    const emp = allEmployees.find(e => e.id === p.employee_id);
-    const nameEl  = document.getElementById('pi-form-emp-name');
-    const badgeEl = document.getElementById('pi-form-emp-badge');
-    if(nameEl && emp) nameEl.textContent = `${emp.name} (${p.pay_year}년 ${p.pay_month}월) — 임시저장 복원`;
-    if(badgeEl) badgeEl.textContent = '';
-    // 글로벌 고객사 동기화
-    currentGlobalCompanyId   = p.company_id;
-    currentGlobalCompanyName = co.company_name;
-  }
-
-  // 숨김 select 동기화 → 직원 목록 로드
-  const coSel = document.getElementById('pi-company');
-  if(coSel){ coSel.value = p.company_id; loadPIEmployees(); }
-
-  // 직원 선택
-  const empSel = document.getElementById('pi-employee');
-  if(empSel){ empSel.value = p.employee_id; }
-
-  // 연월 설정
-  const yrEl = document.getElementById('pi-year');
-  const moEl = document.getElementById('pi-month');
-  if(yrEl) yrEl.value = p.pay_year;
-  if(moEl) moEl.value = p.pay_month;
-
-  // 신규 입력 모드 보장 (수정 배너 숨김)
-  piEditPayrollId = null;
-  const editBanner = document.getElementById('pi-edit-banner');
-  if(editBanner) editBanner.style.display = 'none';
-
-  // piDraftId 를 미리 세팅한 뒤 loadPIContract 및 복원 실행
-  piDraftId = draftId;
-
-  // 계약 로드 후 폼 복원 (loadPIContract 내부가 async이므로 약간 지연 후 실행)
-  loadPIContract();
+  // showPage 완료 후 DOM 세팅
   setTimeout(() => {
-    // _checkAndShowPIDraftBanner 가 내부에서 배너를 띄우지만,
-    // 여기서는 바로 loadPIDraft() 를 호출해 폼에 값을 채운다.
-    loadPIDraft();
-  }, 400);
+    if(co){
+      const card = document.getElementById('pi-company-select-card');
+      const sec  = document.getElementById('pi-input-section');
+      const lbl  = document.getElementById('pi-selected-company-label');
+      if(card) card.style.display = 'none';
+      if(sec)  sec.style.display  = '';
+      if(lbl)  lbl.textContent    = co.company_name + ' 급여 입력';
+      const targetSec = document.getElementById('pi-target-list-section');
+      if(targetSec) targetSec.style.display = 'none';
+      const formSec = document.getElementById('pi-form-section');
+      if(formSec) formSec.style.display = '';
+      const emp = allEmployees.find(e => e.id === p.employee_id);
+      const nameEl  = document.getElementById('pi-form-emp-name');
+      const badgeEl = document.getElementById('pi-form-emp-badge');
+      if(nameEl && emp) nameEl.textContent = `${emp.name} (${p.pay_year}년 ${p.pay_month}월) — 임시저장 복원`;
+      if(badgeEl) badgeEl.textContent = '';
+    }
 
-  // 스크롤 상단
-  document.getElementById('page-payroll-input')?.scrollTo(0, 0);
-  window.scrollTo(0, 0);
+    const coSel = document.getElementById('pi-company');
+    if(coSel){ coSel.value = p.company_id; if(typeof loadPIEmployees === 'function') loadPIEmployees(); }
+
+    const empSel = document.getElementById('pi-employee');
+    if(empSel){ empSel.value = p.employee_id; }
+
+    const yrEl = document.getElementById('pi-year');
+    const moEl = document.getElementById('pi-month');
+    if(yrEl) yrEl.value = p.pay_year;
+    if(moEl) moEl.value = p.pay_month;
+
+    piEditPayrollId = null;
+    const editBanner = document.getElementById('pi-edit-banner');
+    if(editBanner) editBanner.style.display = 'none';
+
+    piDraftId = draftId;
+    
+    // 계약 로드 및 임시저장 복원
+    setTimeout(() => {
+      if(typeof loadPIContract === 'function') loadPIContract();
+      if(typeof loadPIDraft === 'function') setTimeout(() => loadPIDraft(), 300);
+    }, 200);
+  }, 500);
 }
 
