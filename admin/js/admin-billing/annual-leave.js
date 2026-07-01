@@ -1011,8 +1011,8 @@ function openAlPromoModal(empId){
   const hasEmail = !!(emp.email||'').trim();
   const btnKakao = document.getElementById('al-btn-kakao');
   const btnEmail = document.getElementById('al-btn-email');
-  if(btnKakao){ btnKakao.disabled = !hasPhone; btnKakao.style.opacity = hasPhone?'1':'0.4'; }
-  if(btnEmail){ btnEmail.disabled = !hasEmail; btnEmail.style.opacity = hasEmail?'1':'0.4'; }
+  if(btnKakao){ btnKakao.disabled = !hasPhone; }
+  if(btnEmail){ btnEmail.disabled = !hasEmail; }
 
   openModal('al-promo-modal');
 }
@@ -1187,9 +1187,9 @@ async function confirmSendLeavePromotion(method){
     const btnPhone = document.getElementById('al-btn-phone');
     const hP = !!(_alPromoData?.emp?.phone||'').trim();
     const hE = !!(_alPromoData?.emp?.email||'').trim();
-    if(btnKakao){ btnKakao.disabled=!hP; btnKakao.style.opacity=hP?'1':'0.4';
+    if(btnKakao){ btnKakao.disabled=!hP;
       btnKakao.innerHTML='<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg> 카카오 알림톡'; }
-    if(btnEmail){ btnEmail.disabled=!hE; btnEmail.style.opacity=hE?'1':'0.4';
+    if(btnEmail){ btnEmail.disabled=!hE;
       btnEmail.innerHTML='<i class="fas fa-envelope"></i> 이메일'; }
     if(btnPhone){ btnPhone.disabled=false;
       btnPhone.innerHTML='<i class="fas fa-phone-alt" style="color:#059669;"></i> 유선 직접 안내 완료'; }
@@ -1436,9 +1436,9 @@ function _cenRenderPagination(containerId, total, page, fn){
   container.innerHTML = `
     <span class="page-info">${total}건 중 ${s}-${e}</span>
     <div class="page-btns">
-      <button class="page-btn" onclick="${fn}(${page-1})" ${page<=1?'disabled style="opacity:.4"':''}><i class="fas fa-chevron-left"></i></button>
+      <button class="page-btn" onclick="${fn}(${page-1})" ${page<=1?'disabled':''}><i class="fas fa-chevron-left"></i></button>
       ${btnRange}
-      <button class="page-btn" onclick="${fn}(${page+1})" ${page>=totalPages?'disabled style="opacity:.4"':''}><i class="fas fa-chevron-right"></i></button>
+      <button class="page-btn" onclick="${fn}(${page+1})" ${page>=totalPages?'disabled':''}><i class="fas fa-chevron-right"></i></button>
     </div>`;
 }
 // ======================================================================

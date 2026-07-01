@@ -1005,8 +1005,8 @@ function renderPagination(containerId,total,page,fn){
   document.getElementById(containerId).innerHTML=`
     <span class="page-info">${total}건 중 ${s}-${e}</span>
     <div class="page-btns">
-      <button class="page-btn" onclick="${fn}(${page-1})" ${page<=1?'disabled style="opacity:.4"':''}><i class="fas fa-chevron-left"></i></button>
+      <button class="page-btn" onclick="${fn}(${page-1})" ${page<=1?'disabled':''}><i class="fas fa-chevron-left"></i></button>
       ${Array.from({length:Math.min(pages2,5)},(_,i)=>{const p=Math.max(1,Math.min(page-2,pages2-4))+i;return p>pages2?'': `<button class="page-btn ${p===page?'active':''}" onclick="${fn}(${p})">${p}</button>`;}).join('')}
-      <button class="page-btn" onclick="${fn}(${page+1})" ${page>=pages2?'disabled style="opacity:.4"':''}><i class="fas fa-chevron-right"></i></button>
+      <button class="page-btn" onclick="${fn}(${page+1})" ${page>=pages2?'disabled':''}><i class="fas fa-chevron-right"></i></button>
     </div>`;
 }

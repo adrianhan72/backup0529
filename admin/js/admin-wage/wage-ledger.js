@@ -360,7 +360,7 @@ function clearWLCompanySelect(){
   ['.wl-excel-btn','.wl-pdf-btn','.wl-print-btn'].forEach(sel=>{
     const btn=document.querySelector(sel);
     if(!btn) return;
-    btn.disabled=true; btn.style.opacity='0.4';
+    btn.disabled=true;
     btn.style.cursor='not-allowed'; btn.style.pointerEvents='none';
   });
 }

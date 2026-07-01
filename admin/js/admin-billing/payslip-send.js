@@ -534,9 +534,9 @@ function renderPssLogs(){
   document.getElementById('pss-log-pagination').innerHTML = totalPages <= 1 ? '' : `
     <span class="page-info">${total}건 중 ${ps}-${pe}</span>
     <div class="page-btns">
-      <button class="page-btn" onclick="setPssLogPage(${_pssLogPage-1})" ${_pssLogPage<=1?'disabled style="opacity:.4"':''}><i class="fas fa-chevron-left"></i></button>
+      <button class="page-btn" onclick="setPssLogPage(${_pssLogPage-1})" ${_pssLogPage<=1?'disabled':''}><i class="fas fa-chevron-left"></i></button>
       ${Array.from({length:Math.min(totalPages,5)},(_,i)=>{const p=Math.max(1,Math.min(_pssLogPage-2,totalPages-4))+i;return p>totalPages?'':`<button class="page-btn ${p===_pssLogPage?'active':''}" onclick="setPssLogPage(${p})">${p}</button>`;}).join('')}
-      <button class="page-btn" onclick="setPssLogPage(${_pssLogPage+1})" ${_pssLogPage>=totalPages?'disabled style="opacity:.4"':''}><i class="fas fa-chevron-right"></i></button>
+      <button class="page-btn" onclick="setPssLogPage(${_pssLogPage+1})" ${_pssLogPage>=totalPages?'disabled':''}><i class="fas fa-chevron-right"></i></button>
     </div>`;
 }
 

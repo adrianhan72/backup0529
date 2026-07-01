@@ -136,7 +136,7 @@
     .ctf-btn-delete:hover{background:#fee2e2;border-color:#fca5a5;}
     .ctf-btn-preview{background:#f5f3ff;color:#7c3aed;border:1.5px solid #ddd6fe;}
     .ctf-btn-preview:hover{background:#ede9fe;border-color:#c4b5fd;}
-    .ctf-btn:disabled{opacity:.45;cursor:not-allowed;}
+    .ctf-btn:disabled{background:#9ca3af;color:#d1d5db;border-color:#9ca3af;cursor:not-allowed;opacity:1;}
     .ctf-preview-wrap{margin-top:8px;display:none;border-radius:8px;overflow:hidden;border:1px solid #e5e7eb;}
     .ctf-preview-wrap img{width:100%;max-height:260px;object-fit:contain;display:block;background:#f8f9fb;}
     .ctf-status-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:700;margin-left:4px;}
@@ -227,7 +227,7 @@
       background:linear-gradient(135deg,#4f46e5,#4338ca);
       box-shadow:0 4px 14px rgba(99,102,241,.38);
     }
-    .cen-method-btn:disabled,.cen-method-btn[disabled]{opacity:.42;cursor:not-allowed;pointer-events:none;}
+    .cen-method-btn:disabled,.cen-method-btn[disabled]{background:#9ca3af;color:#d1d5db;border-color:#9ca3af;cursor:not-allowed;pointer-events:none;opacity:1;}
     /* 이력 탭 */
     .cen-tab-bar{display:flex;gap:4px;border-bottom:2px solid #e5e7eb;margin-bottom:16px;}
     .cen-tab{padding:8px 18px;border-radius:8px 8px 0 0;border:none;background:none;font-size:13px;font-weight:600;color:#6b7280;cursor:pointer;font-family:inherit;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;}
@@ -251,7 +251,7 @@
       transform:translateY(-1px);
     }
     .cen-bulk-btn:active:not(:disabled){transform:scale(.96) translateY(1px);}
-    .cen-bulk-btn:disabled,.cen-bulk-btn[disabled]{opacity:.42;cursor:not-allowed;pointer-events:none;box-shadow:none;}
+    .cen-bulk-btn:disabled,.cen-bulk-btn[disabled]{background:#9ca3af;color:#d1d5db;border-color:#9ca3af;cursor:not-allowed;pointer-events:none;box-shadow:none;opacity:1;}
     .cen-bulk-kakao{
       background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;
       box-shadow:0 1px 4px rgba(124,58,237,.28);

@@ -186,7 +186,6 @@ function _renderCdpPagination(totalPages, filtered){
     color:${active?'#fff':'#374151'};
     font-size:13px;font-family:inherit;font-weight:${active?700:400};
     cursor:${disabled?'not-allowed':'pointer'};
-    opacity:${disabled?'0.35':'1'};
     transition:background .15s,border-color .15s;
   `;
   const btn = (label, page, disabled=false, active=false) =>

@@ -79,7 +79,7 @@ function _updateGnSelectedCount(){
   const el  = document.getElementById('gn-selected-count');
   if(el) el.textContent = cnt > 0 ? `${cnt}개 고객사 선택됨` : '선택된 고객사가 없습니다.';
   const btn = document.getElementById('gn-compose-btn');
-  if(btn){ btn.disabled = cnt === 0; btn.style.opacity = cnt > 0 ? '1' : '.4'; }
+  if(btn){ btn.disabled = cnt === 0; }
 }
 
 // ─────────────────────────────────────────────

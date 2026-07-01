@@ -446,8 +446,7 @@ function _rcBuildPagination(total, current, pageVar, renderFn){
     `<button onclick="${pageVar}=${page};${renderFn}();"
        style="min-width:30px;height:30px;padding:0 8px;border:1px solid ${active?'#6366f1':'#d1d5db'};
               border-radius:6px;background:${active?'#6366f1':'#fff'};color:${active?'#fff':'#374151'};
-              font-size:12px;cursor:${disabled?'default':'pointer'};font-family:inherit;font-weight:${active?'700':'400'};
-              opacity:${disabled?'0.4':'1'};"
+              font-size:12px;cursor:${disabled?'default':'pointer'};font-family:inherit;font-weight:${active?'700':'400'};" 
        ${disabled?'disabled':''}>
        ${label}
      </button>`;
