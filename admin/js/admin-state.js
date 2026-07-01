@@ -849,24 +849,29 @@ function initMonthFilter(){
   s.innerHTML='';
   for(let i=1;i<=12;i++) s.innerHTML+=`<option value="${i}" ${i===curMo?'selected':''}>${i}월</option>`;
 }
-function initPIMonths(){
+function initPIMonths(maxMonth){
   const s=document.getElementById('pi-month');
   if(!s) return;
-  // 기존 선택값 보존: 이미 값이 있으면 그 값을 유지, 없으면 현재 월 선택
+  // maxMonth가 주어지지 않으면 현재 월 기준으로 계산
+  const now = new Date();
+  const curYr = now.getFullYear();
+  const curMo = now.getMonth()+1;
+  const selYr = parseInt(document.getElementById('pi-year')?.value) || curYr;
+  // 선택된 연도가 올해이면 이번 달까지만, 과거 연도면 12월까지
+  const limit = maxMonth ?? (selYr >= curYr ? curMo : 12);
   const prevVal = parseInt(s.value) || 0;
-  const defVal  = prevVal >= 1 && prevVal <= 12 ? prevVal : new Date().getMonth()+1;
+  const defVal = (prevVal >= 1 && prevVal <= limit) ? prevVal : Math.min(curMo, limit);
   s.innerHTML='';
-  for(let i=1;i<=12;i++) s.innerHTML+=`<option value="${i}" ${i===defVal?'selected':''}>${i}월</option>`;
+  for(let i=1;i<=limit;i++) s.innerHTML+=`<option value="${i}" ${i===defVal?'selected':''}>${i}월</option>`;
 }
 function initPIYears(){
   const s=document.getElementById('pi-year');
   if(!s) return;
-  // 기존 선택값 보존: 이미 값이 있으면 그 값을 유지, 없으면 현재 연도 선택
   const curYr  = new Date().getFullYear();
   const prevVal = parseInt(s.value) || 0;
-  const defVal  = prevVal >= curYr-3 && prevVal <= curYr+1 ? prevVal : curYr;
+  const defVal  = prevVal >= curYr-3 && prevVal <= curYr ? prevVal : curYr;
   s.innerHTML='';
-  for(let y=curYr+1; y>=curYr-3; y--){
+  for(let y=curYr; y>=curYr-3; y--){
     s.innerHTML+=`<option value="${y}" ${y===defVal?'selected':''}>${y}년</option>`;
   }
 }

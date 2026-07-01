@@ -1533,7 +1533,12 @@ function _checkPIProbationOverrun(){
 }
 
 // ── 년/월 변경 시 산정기준 즉시 체크 ──
+let _prevPIYear = null;
 function onPIYearMonthChange(){
+  // 연도 변경 시 월 옵션 갱신 (익월 제한)
+  const yrEl = document.getElementById('pi-year');
+  const curYr = yrEl ? parseInt(yrEl.value) : null;
+  if(curYr && curYr !== _prevPIYear){ _prevPIYear = curYr; initPIMonths(); }
   // 급여 입력 섹션이 보이는 상태(고객사 선택된 상태)일 때만 체크
   const inputSection = document.getElementById('pi-input-section');
   if(!inputSection || inputSection.style.display === 'none') return;
