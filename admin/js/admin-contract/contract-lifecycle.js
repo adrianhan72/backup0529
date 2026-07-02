@@ -1987,6 +1987,8 @@ async function saveDraftContract(reason){
 
   await loadContracts();
   renderContracts();
+  // 대시보드 임시저장 알림 카드 + 메뉴 뱃지 갱신
+  if(typeof renderDraftAlerts === 'function') renderDraftAlerts();
   if(typeof updateMenuBadges === 'function') updateMenuBadges();
 
   // 임시저장 시각 표시
