@@ -1987,6 +1987,7 @@ async function saveDraftContract(reason){
 
   await loadContracts();
   renderContracts();
+  if(typeof updateMenuBadges === 'function') updateMenuBadges();
 
   // 임시저장 시각 표시
   const now = new Date();
