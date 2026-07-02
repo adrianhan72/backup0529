@@ -19,8 +19,12 @@ function renderLsCompanyList(){
 
   container.innerHTML = companies.map(c => {
     const isSelected = c.id === currentGlobalCompanyId;
-    const empCnt = allEmployees.filter(e => e.company_id === c.id && (e.status===EMP_STATUS.ACTIVE||e.status===EMP_STATUS.ACTIVE)).length;
-    const contractCnt = allContracts.filter(ct => ct.company_id === c.id && (ct.status===EMP_STATUS.ACTIVE||ct.status===CONTRACT_STATUS.ACTIVE||ct.status==='유효')).length;
+    // 유효 계약(active, docs_incomplete) 보유 직원 수
+    const activeCtEmpIds = new Set(
+      allContracts.filter(ct => ct.company_id === c.id && (ct.status === CONTRACT_STATUS.ACTIVE || ct.status === CONTRACT_STATUS.DOCS_INCOMPLETE)).map(ct => ct.employee_id)
+    );
+    const empCnt = activeCtEmpIds.size;
+    const contractCnt = allContracts.filter(ct => ct.company_id === c.id && (ct.status === CONTRACT_STATUS.ACTIVE || ct.status === CONTRACT_STATUS.DOCS_INCOMPLETE)).length;
     return `<button onclick="selectLsCompany('${c.id}','${c.company_name.replace(/'/g,"\\'")}')"
       class="co-chip${isSelected?' selected':''}">
       <i class="fas fa-building" style="font-size:11px;"></i>
@@ -660,22 +664,25 @@ function renderLaborStatus(){
   const contractFilter = document.querySelector('input[name="ls-contract-filter"]:checked')?.value || 'all';
 
   // ── 통계 계산 ──
-  const targetEmps = allEmployees.filter(e => e.company_id === selCo);
-  const activeEmps = targetEmps.filter(e => e.status===EMP_STATUS.ACTIVE || e.status===EMP_STATUS.ACTIVE);
-  const retiredEmps = targetEmps.filter(e => e.status !== '재직' && e.status !== 'active');
+  const targetContracts = allContracts.filter(c => c.company_id === selCo);
+  const activeContracts = targetContracts.filter(c => c.status === CONTRACT_STATUS.ACTIVE || c.status === CONTRACT_STATUS.DOCS_INCOMPLETE);
+  
+  // 유효 계약이 있는 직원만 대상
+  const activeEmpIds = new Set(activeContracts.map(c => c.employee_id));
+  const targetEmps = allEmployees.filter(e => e.company_id === selCo && activeEmpIds.has(e.id));
+  const activeEmps = targetEmps.filter(e => e.status === EMP_STATUS.ACTIVE);
+  const retiredEmps = targetEmps.filter(e => e.status !== EMP_STATUS.ACTIVE);
   const totalEmps = targetEmps.length;
 
-  // 고용형태별 카운트 (전체 직원 기준)
-  const catCount = cat => targetEmps.filter(e => e.employment_category === cat).length;
-  const cntRegular     = catCount('정규직');
-  const cntRegularProb = catCount('정규직(수습)');
-  const cntContract    = catCount('계약직');
-  const cntContractProb= catCount('계약직(수습)');
-  const cntDaily       = catCount('일용직');
+  // 고용형태별 카운트 (전체 직원 기준) — 영문 DB 값으로 비교
+  const catCount = cat => targetEmps.filter(e => normalizeContractType(e.employment_category) === cat).length;
+  const cntRegular     = catCount(CONTRACT_TYPE.REGULAR);
+  const cntRegularProb = catCount(CONTRACT_TYPE.REGULAR_PROBATION);
+  const cntContract    = catCount(CONTRACT_TYPE.FIXED);
+  const cntContractProb= catCount(CONTRACT_TYPE.FIXED_PROBATION);
+  const cntDaily       = catCount(CONTRACT_TYPE.DAILY);
 
-  const targetContracts = allContracts.filter(c => c.company_id === selCo);
-  const activeContracts = targetContracts.filter(c => c.status===EMP_STATUS.ACTIVE || c.status===CONTRACT_STATUS.ACTIVE || c.status === '유효');
-  const expiredContracts = targetContracts.filter(c => c.status===CONTRACT_STATUS.EXPIRED || c.status===CONTRACT_STATUS.EXPIRED);
+  const expiredContracts = targetContracts.filter(c => c.status === CONTRACT_STATUS.EXPIRED);
 
   const thisPays = allPayrolls.filter(p => !p.is_draft && p.company_id === selCo && p.pay_year == yr && p.pay_month == mo);
   const totalNet = thisPays.reduce((s,p) => s + (p.net_pay||0), 0);
@@ -707,10 +714,9 @@ function renderLaborStatus(){
   // 기준: 이달 급여 데이터가 있는 직원의 계약 OR 유효한 계약 (계약 상태 무관)
   const thisPayEmpIds = new Set(thisPays.map(p => p.employee_id));
   // 이달 급여가 입력된 직원의 계약 + 유효 계약을 합산 (중복 제거)
-  const billingContracts = targetContracts.filter(c => {
+  const billingContracts = activeContracts.filter(c => {
     const hasPayThisMonth = thisPayEmpIds.has(c.employee_id);
-    const isActive = c.status===EMP_STATUS.ACTIVE || c.status===CONTRACT_STATUS.ACTIVE || c.status === '유효';
-    return hasPayThisMonth || isActive;
+    return hasPayThisMonth || true;  // 유효 계약은 항상 포함
   });
 
   let filteredContracts;
@@ -753,7 +759,7 @@ function renderLaborStatus(){
       const stBadge = stBadge2; const stLabel2 = stName2;
       return `<tr>
         <td style="font-weight:600;">${getEmpName(c.employee_id)}</td>
-        <td><span class="badge ${catBadge}" style="font-size:10.5px;">${empCat}</span></td>
+        <td><span class="badge ${catBadge}" style="font-size:10.5px;">${contractTypeLabel(empCat)}</span></td>
         <td style="font-size:11px;color:#555;">${periodTxt}</td>
         <td style="font-size:11.5px;color:#666;">${workInfo}</td>
         <td class="amount-green" style="font-weight:600;">${won(c.monthly_salary_agreed)}</td>
