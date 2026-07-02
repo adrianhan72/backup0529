@@ -1964,25 +1964,38 @@ async function saveDraftContract(reason){
   }
 
   let savedId;
+  const bodyJSON = JSON.stringify(draftBody);
+  console.log('[saveDraftContract] isEditMode:', isEditMode, 'isNew:', isNew, 'body keys:', Object.keys(draftBody).length);
+  console.log('[saveDraftContract] is_draft:', draftBody.is_draft, 'employee_id:', draftBody.employee_id, 'company_id:', draftBody.company_id);
+  try {
   if(isEditMode){
     // 기존 계약 수정 중 임시저장 → PATCH
     draftBody.id = editId.contract;
-    await api(`../tables/contracts/${editId.contract}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(draftBody)});
+    const res = await api(`../tables/contracts/${editId.contract}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:bodyJSON});
+    console.log('[saveDraftContract] PATCH(edit) response:', res);
     savedId = editId.contract;
   } else if(editId.contract === null && (_currentDraftId || window._resumeDraftId)){
     // 이전 임시저장 ID가 있으면 덮어쓰기
     const draftId = window._resumeDraftId || _currentDraftId;
     draftBody.id = draftId;
-    await api(`../tables/contracts/${draftId}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(draftBody)});
+    const res = await api(`../tables/contracts/${draftId}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:bodyJSON});
+    console.log('[saveDraftContract] PATCH(resume) response:', res);
     savedId = draftId;
     _currentDraftId = draftId;
     window._resumeDraftId = null;
   } else {
     // 최초 임시저장 → POST
     draftBody.id = 'cont_draft_'+Date.now();
-    const res = await api('../tables/contracts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(draftBody)});
+    const res = await api('../tables/contracts',{method:'POST',headers:{'Content-Type':'application/json'},body:bodyJSON});
+    console.log('[saveDraftContract] POST response:', res);
+    if(res && res.error){ console.error('[saveDraftContract] Server error:', res.error); toast('임시저장 실패: ' + res.error, 'error'); return; }
     savedId = res.id || draftBody.id;
     _currentDraftId = savedId;
+  }
+  } catch(e){
+    console.error('[saveDraftContract] Exception:', e);
+    toast('임시저장 중 오류가 발생했습니다.', 'error');
+    return;
   }
 
   await loadContracts();
