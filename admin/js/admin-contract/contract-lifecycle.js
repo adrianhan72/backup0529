@@ -128,14 +128,21 @@ function generateContractHTMLFromData(c, emp, co){
   // 채용 확정 후 생성된 계약(contract_type='정규직') 계약서가 수습 양식으로
   // 출력되는 문제를 방지. emp.employment_category는 폴백으로만 사용.
   // 계약예정 상태인 경우 수습 카테고리 정규화 (채용확정 → 본계약 전환이므로 수습 아님)
-  const _ctTypeBase = c.contract_type || emp.employment_category || '정규직';
+  const _ctTypeRaw = c.contract_type || emp.employment_category || '정규직';
+  // 영문 정규화 → 내부 비교용
+  const _ctTypeNorm = typeof normalizeContractType === 'function'
+    ? normalizeContractType(_ctTypeRaw) : _ctTypeRaw;
   const _isPendingContract = (c.status===CONTRACT_STATUS.PENDING);
-  const ctType = _isPendingContract
-    ? (_ctTypeBase ===CONTRACT_TYPE.REGULAR_PROBATION ? '정규직' : _ctTypeBase ===CONTRACT_TYPE.FIXED_PROBATION ? '계약직' : _ctTypeBase)
-    : _ctTypeBase;
-  const isDaily  = ctType ===CONTRACT_TYPE.DAILY;
-  const isProb   = ctType ===CONTRACT_TYPE.REGULAR_PROBATION || ctType ===CONTRACT_TYPE.FIXED_PROBATION;
-  const isRegular= ctType ===CONTRACT_TYPE.REGULAR || ctType ===CONTRACT_TYPE.REGULAR_PROBATION;
+  // 계약예정 시 수습→본계약 전환: 정규직 수습→정규직, 계약직 수습→계약직
+  const _ctTypeFinal = _isPendingContract
+    ? (_ctTypeNorm ===CONTRACT_TYPE.REGULAR_PROBATION ? CONTRACT_TYPE.REGULAR : _ctTypeNorm ===CONTRACT_TYPE.FIXED_PROBATION ? CONTRACT_TYPE.FIXED : _ctTypeNorm)
+    : _ctTypeNorm;
+  // 표시용 한글 라벨
+  const ctType = typeof contractTypeLabel === 'function'
+    ? contractTypeLabel(_ctTypeFinal) : _ctTypeFinal;
+  const isDaily  = _ctTypeFinal ===CONTRACT_TYPE.DAILY;
+  const isProb   = _ctTypeFinal ===CONTRACT_TYPE.REGULAR_PROBATION || _ctTypeFinal ===CONTRACT_TYPE.FIXED_PROBATION;
+  const isRegular= _ctTypeFinal ===CONTRACT_TYPE.REGULAR || _ctTypeFinal ===CONTRACT_TYPE.REGULAR_PROBATION;
 
   const fmt  = v => Number(v||0).toLocaleString('ko-KR');
   const row  = (label, val, cls='') => `<tr${cls?' class="'+cls+'"':''}><th>${label}</th><td>${val||'—'}</td></tr>`;
@@ -865,6 +872,8 @@ async function savePendingContractEdit(){
       if(emailEl)   empPatch.email             = emailEl.value;
       const empnoEl = document.getElementById('ct-edit-em-empno');
       if(empnoEl && empnoEl.value.trim()) empPatch.employee_number = empnoEl.value.trim();
+      const repChkEl = document.getElementById('ct-edit-em-is-rep');
+      if(repChkEl) empPatch.is_representative = repChkEl.checked ? 1 : 0;
       if(Object.keys(empPatch).length){
         await api(`../tables/employees/${editEmpId}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(empPatch)});
       }
@@ -889,7 +898,7 @@ async function savePendingContractEdit(){
 소속 근로자의 계약 해지가 예약 처리되었습니다.
 
 ■ 근로자: ${_pendEmp.name||''}
-■ 고용형태: ${c.contract_type||''}
+■ 고용형태: ${contractTypeLabel(c.contract_type)||c.contract_type||''}
 ■ 계약 기간: ${_fmtD(c.contract_start)}${c.contract_end ? ' ~ ' + _fmtD(c.contract_end) : ''}
 ■ 퇴사 예정일: ${_fmtD(_termDate)}
 ■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
@@ -913,7 +922,7 @@ ${_BRAND_SIG}`,
 소속 근로자의 근로계약이 해지 처리되었습니다.
 
 ■ 근로자: ${_pendEmp.name||''}
-■ 고용형태: ${c.contract_type||''}
+■ 고용형태: ${contractTypeLabel(c.contract_type)||c.contract_type||''}
 ■ 계약 기간: ${_fmtD(c.contract_start)}${c.contract_end ? ' ~ ' + _fmtD(c.contract_end) : ''}
 ■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
 
@@ -936,7 +945,7 @@ ${_BRAND_SIG}`,
 소속 근로자의 근로계약 내용이 수정되었습니다.
 
 ■ 근로자: ${_pendEmp.name||''}
-■ 고용형태: ${c.contract_type||''}
+■ 고용형태: ${contractTypeLabel(c.contract_type)||c.contract_type||''}
 ■ 계약 기간: ${_fmtD(newStart)}${newEnd ? ' ~ ' + _fmtD(newEnd) : ' (기간 미정)'}
 ■ 계약 상태: ${newStatus}
 ■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
@@ -952,7 +961,14 @@ ${_BRAND_SIG}`,
     }
     closeModal('contract-modal');
     await loadContracts(); await loadEmployees(); renderContracts(); renderDashboard();
-    const statusLabelMap = {'활성':'계약유효 (활성)','해지예정':'해지예정 유지','해지':'해지 처리됨','만료':'만료','계약예정':'계약예정','갱신예정':'갱신예정'};
+    const statusLabelMap = {
+      [CONTRACT_STATUS.ACTIVE]:            '계약유효 (활성)',
+      [CONTRACT_STATUS.TERMINATE_PENDING]: '해지예정 유지',
+      [CONTRACT_STATUS.TERMINATED]:        '해지 처리됨',
+      [CONTRACT_STATUS.EXPIRED]:           '만료',
+      [CONTRACT_STATUS.PENDING]:           '계약예정',
+      [CONTRACT_STATUS.RENEWAL_PENDING]:   '갱신예정',
+    };
     const statusLabel = statusLabelMap[newStatus] || newStatus;
     toast(`계약이 수정됐습니다. 상태: ${statusLabel}`);
   } catch(e){
@@ -1022,7 +1038,7 @@ async function cancelPreTerminate(){
 소속 근로자의 계약 해지 예정이 취소되어 기존 계약이 정상 유효 상태로 복귀되었습니다.
 
 ■ 근로자: ${empName}
-■ 고용형태: ${c.contract_type||''}
+■ 고용형태: ${contractTypeLabel(c.contract_type)||c.contract_type||''}
 ■ 계약 기간: ${_fmtD(c.contract_start)}${c.contract_end ? ' ~ ' + _fmtD(c.contract_end) : ' (기간 미정)'}
 ■ 취소된 ${typeLabel}일: ${termDate ? _fmtD(termDate) : '-'}
 ■ 현재 계약 상태: 계약유효 (활성) 복귀
@@ -1126,7 +1142,7 @@ async function doContractVoid(){
 소속 근로자의 근로계약이 파기 처리되었습니다.
 
 ■ 근로자: ${_voidEmp.name||''}
-■ 고용형태: ${c.contract_type||''}
+■ 고용형태: ${contractTypeLabel(c.contract_type)||c.contract_type||''}
 ■ 계약 기간: ${_fmtD(c.contract_start)}${c.contract_end ? ' ~ ' + _fmtD(c.contract_end) : ' (기간 미정)'}
 ■ 파기 사유: ${statusLabel} 상태의 계약 파기
 ■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
@@ -1186,7 +1202,7 @@ async function confirmContractRenew(){
 
   // 2. 신규 계약 생성 (기존 조건 복사)
   //    - 시작일이 오늘 이후면 '계약예정', 오늘이거나 이전이면 '활성'
-  const newStatus = newStart > today ? '계약예정' : '활성';
+  const newStatus = newStart > today ? CONTRACT_STATUS.PENDING : CONTRACT_STATUS.ACTIVE;
   const newId = 'cont'+Date.now();
   const newContract = Object.assign({}, c, {
     id: newId,
@@ -1219,7 +1235,7 @@ async function confirmContractRenew(){
 소속 근로자의 계약 갱신이 예약되었습니다.
 
 ■ 근로자: ${_renewEmp.name||''}
-■ 고용형태: ${c.contract_type||''}
+■ 고용형태: ${contractTypeLabel(c.contract_type)||c.contract_type||''}
 ■ 기존 계약 종료일: ${_fmtD(oldEnd)}
 ■ 새 계약 시작일: ${_fmtD(newStart)} (시작일 미도래 — 계약예정)
 ■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
@@ -1243,7 +1259,7 @@ ${_BRAND_SIG}`,
 소속 근로자의 계약 갱신이 완료되었습니다.
 
 ■ 근로자: ${_renewEmp.name||''}
-■ 고용형태: ${c.contract_type||''}
+■ 고용형태: ${contractTypeLabel(c.contract_type)||c.contract_type||''}
 ■ 기존 계약 종료일: ${_fmtD(oldEnd)}
 ■ 새 계약 시작일: ${_fmtD(newStart)}
 ■ 계약 상태: 계약유효 (활성)
@@ -1455,7 +1471,7 @@ async function confirmContractTerminate(){
   }
 
   // 미래 날짜 → 해지예정, 오늘 이하 → 즉시 해지
-  const newStatus = termDate > today ? '해지예정' : '해지';
+  const newStatus = termDate > today ? CONTRACT_STATUS.TERMINATE_PENDING : CONTRACT_STATUS.TERMINATED;
 
   // contract_end 는 유지, terminate_date 에만 해지예정일 기록
   await api(`../tables/contracts/${c.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
@@ -1535,19 +1551,14 @@ async function deleteDraftContract(){
  */
 function openContractForUpload(contractId){
   if(!contractId) return;
-  openContractModal(contractId);
-  // openContractModal은 동기 처리이므로 한 틱 후 미리보기 모달 진입
+  const c = allContracts.find(x => x.id === contractId);
+  if(!c) return;
+  window._cpUploadOnly = true;
+  openContractModal(contractId);            // 데이터 채우기
   requestAnimationFrame(() => {
-    openContractPreview();                 // contract-preview-modal 열기
-    requestAnimationFrame(() => {
-      showCpTab('upload');                 // 업로드 탭 전환
-      // 업로드 섹션 상단으로 스크롤
-      const _uploadBody = document.getElementById('cp-body-upload');
-      if(_uploadBody) _uploadBody.scrollTo({ top: 0, behavior: 'instant' });
-      // contract-preview-modal 본문 스크롤도 최상단으로
-      const _previewModal = document.querySelector('#contract-preview-modal .modal');
-      if(_previewModal) _previewModal.scrollTo({ top: 0, behavior: 'instant' });
-    });
+    closeModal('contract-modal');           // 수정 모달 숨김
+    _renderCpExistingFiles(c);             // 기존 계약 파일 섹션 렌더링
+    document.getElementById('contract-preview-modal').classList.add('open');
   });
 }
 function loadCtEmployees(preselect=null){
@@ -1673,7 +1684,7 @@ function _cftValidate(){
 
   // 유효 — 상태 계산
   const isFuture   = termDate > today;
-  const newStatus  = isFuture ? '해지예정' : '해지';
+  const newStatus  = isFuture ? CONTRACT_STATUS.TERMINATE_PENDING : CONTRACT_STATUS.TERMINATED;
   const statusColor= isFuture ? '#c2410c'  : '#dc2626';
   const statusBg   = isFuture ? '#fff7ed'  : '#fef2f2';
   const statusBorder= isFuture? '#fdba74'  : '#fca5a5';
@@ -1766,7 +1777,7 @@ async function confirmFixedTerminate(){
   const reason       = selectedChip ? selectedChip.textContent.trim() : '';
   const noteInput    = (document.getElementById('ct-fixed-terminate-note') || {}).value || '';
   const note         = noteInput.trim();
-  const newStatus    = termDate > today ? '해지예정' : '해지';
+  const newStatus    = termDate > today ? CONTRACT_STATUS.TERMINATE_PENDING : CONTRACT_STATUS.TERMINATED;
 
   // 기존 note에 사유/메모 추가 (덮어쓰기 방지)
   const addendum = [reason, note].filter(Boolean).join(' — ');
@@ -2700,7 +2711,7 @@ async function saveContract(){
     contractEnd   = document.getElementById('ct-end').value;
     contractType  = document.getElementById('ct-type').value;
     const today2  = new Date().toISOString().slice(0,10);
-    contractStatus= contractStart > today2 ? '계약예정' : '활성';
+    contractStatus= contractStart > today2 ? CONTRACT_STATUS.PENDING : CONTRACT_STATUS.ACTIVE;
   } else {
     // 신규 모드: ct-em-start(계약시작일) 전용 필드 사용. 없으면 ct-em-hire 폴백(하위호환)
     contractStart = document.getElementById('ct-em-start')?.value
@@ -2708,7 +2719,7 @@ async function saveContract(){
     contractEnd   = document.getElementById('ct-em-expire').value;
     contractType  = document.getElementById('ct-em-category').value;
     const today2new = new Date().toISOString().slice(0,10);
-    contractStatus = contractStart > today2new ? '계약예정' : '활성';
+    contractStatus = contractStart > today2new ? CONTRACT_STATUS.PENDING : CONTRACT_STATUS.ACTIVE;
   }
 
   // ── contract_type / status 영문 정규화 ──
@@ -2797,6 +2808,7 @@ async function saveContract(){
         address:             document.getElementById('ct-edit-em-address').value,
         bank_name:           document.getElementById('ct-edit-em-bank').value,
         bank_account:        document.getElementById('ct-edit-em-account').value,
+        is_representative:   document.getElementById('ct-edit-em-is-rep')?.checked ? 1 : 0,
       };
       // 이름·고용형태: readOnly/disabled가 아닐 때만 업데이트 (수정 모드에서만 반영)
       if(_nameElSave && !_nameElSave.readOnly && _nameElSave.value.trim()) empPatch.name = _nameElSave.value.trim();
@@ -2843,7 +2855,7 @@ async function saveContract(){
 소속 근로자의 근로계약이 해지 처리되었습니다.
 
 ■ 근로자: ${_empName}
-■ 고용형태: ${contractType}
+■ 고용형태: ${contractTypeLabel(contractType)||contractType}
 ■ 계약 시작일: ${_fmtDate(contractStart)}
 ■ 계약 종료일: ${_fmtDate(contractEnd || _origC.contract_end || '')}
 ■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
@@ -2867,7 +2879,7 @@ ${_BRAND_SIG}`,
 소속 근로자의 근로계약 내용이 수정되었습니다.
 
 ■ 근로자: ${_empName}
-■ 고용형태: ${contractType}
+■ 고용형태: ${contractTypeLabel(contractType)||contractType}
 ■ 계약 기간: ${_fmtDate(contractStart)}${contractEnd ? ' ~ ' + _fmtDate(contractEnd) : ' (기간 미정)'}
 ■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
 
@@ -2891,7 +2903,7 @@ ${_BRAND_SIG}`,
 소속 근로자의 재계약이 완료되었습니다.
 
 ■ 근로자: ${_empName}
-■ 고용형태: ${contractType}
+■ 고용형태: ${contractTypeLabel(contractType)||contractType}
 ■ 새 계약 기간: ${_fmtDate(contractStart)}${contractEnd ? ' ~ ' + _fmtDate(contractEnd) : ' (기간 미정)'}
 ■ 계약 상태: ${contractStatus === '계약예정' ? '계약예정 (시작일 미도래)' : '계약유효 (활성)'}
 ■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
@@ -2915,9 +2927,9 @@ ${_BRAND_SIG}`,
 소속 근로자의 근로계약이 새로 작성되었습니다.
 
 ■ 근로자: ${_empName}
-■ 고용형태: ${contractType}
+■ 고용형태: ${contractTypeLabel(contractType)||contractType}
 ■ 계약 기간: ${_fmtDate(contractStart)}${contractEnd ? ' ~ ' + _fmtDate(contractEnd) : ' (기간 미정)'}
-■ 계약 상태: ${contractStatus === '서류미비' ? '서류미비 (파일 업로드 필요)' : contractStatus === '계약예정' ? '계약예정' : '계약유효 (활성)'}
+■ 계약 상태: ${contractStatus === CONTRACT_STATUS.DOCS_INCOMPLETE ? '서류미비 (파일 업로드 필요)' : contractStatus === CONTRACT_STATUS.PENDING ? '계약예정' : '계약유효 (활성)'}
 ■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
 
 자세한 내용은 근로 계약 관리 메뉴에서 확인하세요.

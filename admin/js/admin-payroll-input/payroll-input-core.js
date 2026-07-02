@@ -11,7 +11,7 @@ let piContract=null;
  * @returns {boolean} 전원 입력완료 여부
  */
 function _isPIMonthFullyPaid(coId, yr, mo){
-  const VALID_STATUSES = new Set(['활성','active','계약예정','서류미비']);
+  const VALID_STATUSES = new Set([CONTRACT_STATUS.ACTIVE, CONTRACT_STATUS.PENDING, CONTRACT_STATUS.DOCS_INCOMPLETE]);
   const periodStart = `${yr}-${String(mo).padStart(2,'0')}-01`;
   const periodEnd   = new Date(yr, mo, 0).toISOString().slice(0,10);
 

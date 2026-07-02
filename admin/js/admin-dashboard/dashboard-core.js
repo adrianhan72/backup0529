@@ -975,7 +975,7 @@ async function execProbExtend(){
       ...origFields,
       probation_months  : newMonths,
       contract_end      : newEndStr,
-      status            : '활성',
+      status            : CONTRACT_STATUS.ACTIVE,
       is_voided_by_amend: false,
       voided_at         : null,
       amended_from      : origC.id,

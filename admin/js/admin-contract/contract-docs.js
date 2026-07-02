@@ -90,7 +90,7 @@ function _ctfMakeRow(type, c, label, icon, color, bgColor, isVoidedFile=false){
     if(isVoidedFile){
       // 파기 워터마크 레이어
       previewHtml = `
-        <div class="ctf-voided-wrap" id="${prevId}" style="display:none;">
+        <div class="ctf-voided-wrap" id="${prevId}">
           <img src="${c[dataField]}" alt="${_esc(label)}">
           <div class="ctf-voided-overlay">
             <div class="ctf-voided-stamp">파 기</div>
@@ -131,7 +131,6 @@ function _ctfTogglePreview(prevId, btn){
   if(!wrap) return;
   const shown = wrap.style.display === 'block';
   wrap.style.display = shown ? 'none' : 'block';
-  // 파기 파일 버튼 vs 일반 버튼 레이블 분기
   const isVoidedBtn = btn.classList.contains('ctf-btn-preview-voided');
   if(shown){
     btn.innerHTML = isVoidedBtn
@@ -169,10 +168,28 @@ async function _ctfUpload(type, contractId, inputEl){
     const idx = allContracts.findIndex(x => x.id === contractId);
     if(idx !== -1){ allContracts[idx][nameField] = file.name; allContracts[idx][dataField] = base64; }
 
+    // ── 서류미비 → 유효 자동 전환 (양쪽 파일 모두 업로드 완료 시) ──
+    const c = allContracts.find(x => x.id === contractId);
+    if(c && (c.status === 'docs_incomplete' || c.status === '서류미비')){
+      if(c.signed_file_data && c.consent_file_data){
+        await fetch(`../tables/contracts/${contractId}`, {
+          method: 'PATCH',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ status: 'active' })
+        });
+        if(idx !== -1) allContracts[idx].status = 'active';
+      }
+    }
+
     toast('파일이 업로드되었습니다.', 'success');
     // 섹션 재렌더링
-    const c = allContracts.find(x => x.id === contractId);
     if(c) _renderContractFilesSection(c);
+    // 업로드 모달도 갱신
+    if(document.getElementById('contract-preview-modal')?.classList.contains('open')){
+      _renderCpExistingFiles(c);
+    }
+    // 계약 목록 테이블 갱신 (서류미비 뱃지 반영)
+    if(typeof renderContracts === 'function') renderContracts();
 
     // ── 고객사 인앱 알림 발송 (날인본/동의서 업로드) ──
     {
@@ -218,7 +235,7 @@ ${_BRAND_SIG}`,
 소속 근로자의 계약 관련 서류가 모두 완비되어 계약이 유효 상태로 전환되었습니다.
 
 ■ 근로자: ${_ufEmp.name||''}
-■ 고용형태: ${c.contract_type||''}
+■ 고용형태: ${contractTypeLabel(c.contract_type)||c.contract_type||''}
 ■ 계약 기간: ${c.contract_start||''}${c.contract_end ? ' ~ ' + c.contract_end : ''}
 ■ 완비 서류: 계약서 날인본 + 제3자 정보제공 동의서
 ■ 전환 일시: ${new Date().toLocaleString('ko-KR')}
@@ -265,6 +282,12 @@ async function _ctfDelete(type, contractId){
     toast('파일이 삭제되었습니다.', 'success');
     const c = allContracts.find(x => x.id === contractId);
     if(c) _renderContractFilesSection(c);
+    // 업로드 모달도 갱신
+    if(document.getElementById('contract-preview-modal')?.classList.contains('open')){
+      _renderCpExistingFiles(c);
+    }
+    // 계약 목록 테이블 갱신 (서류미비 뱃지 반영)
+    if(typeof renderContracts === 'function') renderContracts();
 
   } catch(e){
     toast('삭제에 실패했습니다.', 'error');
@@ -292,6 +315,269 @@ function _ctfToBase64(file){
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
+}
+
+// ── 서류 업로드 모달: DOM API로 파일 섹션 직접 생성 (innerHTML/inline onclick 의존성 제거) ──
+function _renderCpExistingFiles(c){
+  if(!c) return;
+  const container = document.getElementById('cp-files-container');
+  if(!container) return;
+  // 기존 내용 제거
+  container.innerHTML = '';
+
+  const isVoided = !!(c.is_voided_by_amend);
+  const files = [
+    { type:'signed',  label:'계약서 날인본',               icon:'fas fa-file-signature', color:'#4f46e5', bg:'#eff6ff', voided:isVoided },
+    { type:'consent', label:'제3자 개인정보 제공 동의서 날인본', icon:'fas fa-shield-alt',    color:'#7c3aed', bg:'#f5f3ff', voided:false    },
+  ];
+
+  files.forEach(f => {
+    const row = _cpCreateFileRow(c, f.type, f.label, f.icon, f.color, f.bg, f.voided);
+    container.appendChild(row);
+  });
+
+  // 푸터 버튼 숨김
+  const finalBtn = document.getElementById('cp-btn-final');
+  const wordBtn  = document.getElementById('cp-btn-word');
+  const printBtn = document.getElementById('cp-btn-print');
+  const skipRow  = document.getElementById('cp-skip-row');
+  const noticeEl = document.getElementById('cp-upload-notice');
+  if(finalBtn) finalBtn.style.display = 'none';
+  if(wordBtn)  wordBtn.style.display  = 'none';
+  if(printBtn) printBtn.style.display = 'none';
+  if(skipRow)  skipRow.style.display  = 'none';
+  if(noticeEl) noticeEl.style.display = 'none';
+  const backBtn = document.querySelector('#contract-preview-modal .btn-secondary');
+  if(backBtn) backBtn.innerHTML = '<i class="fas fa-times"></i> 닫기';
+}
+
+// ── 개별 파일 행 DOM 생성 ──
+function _cpCreateFileRow(c, type, label, icon, color, bgColor, isVoidedFile){
+  const nameField = type === 'signed' ? 'signed_file_name'  : 'consent_file_name';
+  const dataField = type === 'signed' ? 'signed_file_data'  : 'consent_file_data';
+  const hasFile   = !!(c[dataField]);
+  const fileName  = c[nameField] || '첨부파일';
+  const isPdf     = hasFile && ((fileName.toLowerCase().endsWith('.pdf')) || (c[dataField]||'').startsWith('data:application/pdf'));
+
+  const rowId  = `cp-row-${type}`;
+  const prevId = `cp-prev-${type}`;
+  const inputId= `cp-input-${type}`;
+
+  const row = document.createElement('div');
+  row.className = isVoidedFile ? 'ctf-row ctf-row-voided' : 'ctf-row';
+  row.id = rowId;
+
+  // ── row-header ──
+  const header = document.createElement('div');
+  header.className = 'ctf-row-header';
+
+  // icon
+  const iconDiv = document.createElement('div');
+  iconDiv.className = 'ctf-row-icon';
+  iconDiv.style.background = isVoidedFile ? '#fff5f5' : bgColor;
+  iconDiv.style.color = isVoidedFile ? '#dc2626' : color;
+  iconDiv.innerHTML = `<i class="${icon}"></i>`;
+
+  // label
+  const labelDiv = document.createElement('div');
+  labelDiv.className = 'ctf-row-label';
+  const titleDiv = document.createElement('div');
+  titleDiv.className = 'ctf-label-title';
+  titleDiv.textContent = label;
+  // badge
+  const badge = document.createElement('span');
+  if(hasFile){
+    if(isVoidedFile){
+      badge.className = 'ctf-status-badge ctf-badge-voided';
+      badge.innerHTML = '<i class="fas fa-ban"></i> 파기';
+    } else {
+      badge.className = 'ctf-status-badge ctf-badge-ok';
+      badge.innerHTML = '<i class="fas fa-check"></i> 등록됨';
+    }
+  } else {
+    badge.className = 'ctf-status-badge ctf-badge-none';
+    badge.textContent = '미등록';
+  }
+  titleDiv.appendChild(badge);
+  labelDiv.appendChild(titleDiv);
+  // file name
+  const fileDiv = document.createElement('div');
+  if(hasFile){
+    fileDiv.className = 'ctf-label-file';
+    fileDiv.title = fileName;
+    fileDiv.textContent = fileName;
+  } else {
+    fileDiv.className = 'ctf-label-none';
+    fileDiv.textContent = '업로드된 파일 없음';
+  }
+  labelDiv.appendChild(fileDiv);
+
+  // actions
+  const actions = document.createElement('div');
+  actions.className = 'ctf-row-actions';
+  if(isVoidedFile){
+    if(hasFile){
+      if(!isPdf){
+        const previewBtn = _cpCreateBtn('원본 보기', 'ctf-btn ctf-btn-preview-voided', 'fas fa-eye', () => _ctfTogglePreview(prevId, previewBtn));
+        actions.appendChild(previewBtn);
+      }
+      const downloadBtn = _cpCreateBtn('다운로드', 'ctf-btn ctf-btn-download', 'fas fa-download', () => _ctfDownload(type));
+      actions.appendChild(downloadBtn);
+    } else {
+      const noneSpan = document.createElement('span');
+      noneSpan.style.cssText = 'font-size:11.5px;color:#9ca3af;font-style:italic;';
+      noneSpan.textContent = '날인본 없음';
+      actions.appendChild(noneSpan);
+    }
+  } else if(hasFile){
+    if(!isPdf){
+      const previewBtn = _cpCreateBtn('미리보기', 'ctf-btn ctf-btn-preview', 'fas fa-eye', function(){ _ctfTogglePreview(prevId, this); });
+      actions.appendChild(previewBtn);
+    }
+    const downloadBtn = _cpCreateBtn('다운로드', 'ctf-btn ctf-btn-download', 'fas fa-download', () => _ctfDownload(type));
+    actions.appendChild(downloadBtn);
+    const deleteBtn = _cpCreateBtn('삭제', 'ctf-btn ctf-btn-delete', 'fas fa-trash-alt', () => _ctfDelete(type, c.id));
+    actions.appendChild(deleteBtn);
+  } else {
+    const uploadBtn = _cpCreateBtn('업로드', 'ctf-btn ctf-btn-upload', 'fas fa-upload', () => document.getElementById(inputId).click());
+    actions.appendChild(uploadBtn);
+  }
+
+  header.appendChild(iconDiv);
+  header.appendChild(labelDiv);
+  header.appendChild(actions);
+  row.appendChild(header);
+
+  // uploading spinner
+  const loading = document.createElement('div');
+  loading.className = 'ctf-uploading';
+  loading.id = `ctf-loading-${type}`;
+  loading.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 업로드 중...';
+  row.appendChild(loading);
+
+  // preview
+  if(hasFile && !isPdf){
+    if(isVoidedFile){
+      const voidedWrap = document.createElement('div');
+      voidedWrap.className = 'ctf-voided-wrap';
+      voidedWrap.id = prevId;
+      const img = document.createElement('img');
+      img.src = c[dataField];
+      img.alt = label;
+      voidedWrap.appendChild(img);
+      const overlay = document.createElement('div');
+      overlay.className = 'ctf-voided-overlay';
+      overlay.innerHTML = '<div class="ctf-voided-stamp">파 기</div>';
+      voidedWrap.appendChild(overlay);
+      row.appendChild(voidedWrap);
+      const banner = document.createElement('div');
+      banner.className = 'ctf-voided-banner';
+      banner.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 이 날인본은 수정 재발행으로 인해 <strong>파기</strong>된 계약서의 사본입니다. 법적 효력이 없습니다.';
+      row.appendChild(banner);
+    } else {
+      const previewWrap = document.createElement('div');
+      previewWrap.className = 'ctf-preview-wrap';
+      previewWrap.id = prevId;
+      const img = document.createElement('img');
+      img.src = c[dataField];
+      img.alt = label;
+      previewWrap.appendChild(img);
+      row.appendChild(previewWrap);
+    }
+  }
+
+  // hidden file input
+  if(!isVoidedFile){
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.id = inputId;
+    fileInput.accept = 'image/*,.pdf';
+    fileInput.style.display = 'none';
+    fileInput.addEventListener('change', function(){ _ctfUpload(type, c.id, this); });
+    row.appendChild(fileInput);
+  }
+
+  return row;
+}
+
+// ── 버튼 생성 헬퍼 ──
+function _cpCreateBtn(text, className, iconClass, clickHandler){
+  const btn = document.createElement('button');
+  btn.className = className;
+  btn.innerHTML = `<i class="${iconClass}"></i> ${text}`;
+  btn.addEventListener('click', clickHandler);
+  return btn;
+}
+
+// ── 서류 업로드 모달: 신규 등록용 업로드 존 (임시 파일 저장) ──
+function _renderCpRegistrationUpload(){
+  const container = document.getElementById('cp-files-container');
+  if(!container) return;
+  container.innerHTML = `
+    <!-- 계약서 날인본 -->
+    <div style="margin-bottom:12px;">
+      <div style="font-size:12.5px;font-weight:700;color:#374151;margin-bottom:8px;">
+        <i class="fas fa-file-signature" style="color:#4f46e5;margin-right:6px;"></i>① 계약서 날인본
+        <span id="cp-signed-check" style="display:none;color:#10b981;margin-left:8px;font-size:12px;"><i class="fas fa-check-circle"></i> 업로드 완료</span>
+      </div>
+      <div class="upload-zone" id="cp-upload-zone"
+        onclick="document.getElementById('cp-file-input').click()"
+        ondragover="event.preventDefault();this.style.borderColor='#6366f1';"
+        ondragleave="this.style.borderColor='';"
+        ondrop="handleContractFileDrop(event)">
+        <div class="upload-zone-icon">📄</div>
+        <div class="upload-zone-text">날인된 근로계약서를 업로드하세요</div>
+        <div class="upload-zone-sub">JPG, PNG, PDF 지원 · 클릭 또는 드래그</div>
+      </div>
+      <input type="file" id="cp-file-input" accept="image/*,.pdf" style="display:none;" onchange="handleContractFileSelect(event)">
+      <div class="upload-preview" id="cp-upload-preview" style="display:none;">
+        <i class="fas fa-check-circle" style="color:#10b981;font-size:20px;"></i>
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:700;color:#166534;" id="cp-upload-filename">파일명</div>
+          <div style="font-size:11.5px;color:#4b7c59;" id="cp-upload-filesize">크기</div>
+        </div>
+        <button onclick="clearContractUpload()" class="btn btn-close"><i class="fas fa-times-circle"></i></button>
+      </div>
+    </div>
+    <!-- 제3자 동의서 -->
+    <div style="margin-bottom:12px;">
+      <div style="font-size:12.5px;font-weight:700;color:#374151;margin-bottom:8px;">
+        <i class="fas fa-shield-alt" style="color:#7c3aed;margin-right:6px;"></i>② 제3자 개인정보 제공 동의서 날인본
+        <span id="cp-consent-check" style="display:none;color:#10b981;margin-left:8px;font-size:12px;"><i class="fas fa-check-circle"></i> 업로드 완료</span>
+      </div>
+      <div class="upload-zone" id="cp-consent-zone"
+        onclick="document.getElementById('cp-consent-input').click()"
+        ondragover="event.preventDefault();this.style.borderColor='#7c3aed';"
+        ondragleave="this.style.borderColor='';"
+        ondrop="handleConsentFileDrop(event)"
+        style="border-color:#c4b5fd;">
+        <div class="upload-zone-icon">🤝</div>
+        <div class="upload-zone-text">제3자 개인정보 제공 동의서를 업로드하세요</div>
+        <div class="upload-zone-sub">JPG, PNG, PDF 지원 · 클릭 또는 드래그</div>
+      </div>
+      <input type="file" id="cp-consent-input" accept="image/*,.pdf" style="display:none;" onchange="handleConsentFileSelect(event)">
+      <div class="upload-preview" id="cp-consent-preview" style="display:none;border-color:#c4b5fd;background:#f5f3ff;">
+        <i class="fas fa-check-circle" style="color:#7c3aed;font-size:20px;"></i>
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:700;color:#4c1d95;" id="cp-consent-filename">파일명</div>
+          <div style="font-size:11.5px;color:#6d28d9;" id="cp-consent-filesize">크기</div>
+        </div>
+        <button onclick="clearConsentUpload()" class="btn btn-close"><i class="fas fa-times-circle"></i></button>
+      </div>
+    </div>`;
+  // 등록 모드: 푸터 버튼 표시
+  const finalBtn = document.getElementById('cp-btn-final');
+  const wordBtn  = document.getElementById('cp-btn-word');
+  const printBtn = document.getElementById('cp-btn-print');
+  const skipRow  = document.getElementById('cp-skip-row');
+  const noticeEl = document.getElementById('cp-upload-notice');
+  if(finalBtn) finalBtn.style.display = '';
+  if(wordBtn)  wordBtn.style.display  = '';
+  if(printBtn) printBtn.style.display = '';
+  if(skipRow)  skipRow.style.display  = '';
+  if(noticeEl) noticeEl.style.display = '';
+  const backBtn = document.querySelector('#contract-preview-modal .btn-secondary');
+  if(backBtn) backBtn.innerHTML = '← 수정하기';
 }
 
 // Base64 파일 다운로드 헬퍼 (레거시 호환)
@@ -322,15 +608,11 @@ function setContractStep(step){
 function openContractPreview(){
   if(_ctValidate()) return;   // 유효성 검사 실패 시 배너+하이라이트 표시 후 중단
   setContractStep(2);
-  // 파일 업로드 상태 초기화 (모달 열 때마다 리셋)
   _resetUploadState();
-  // 계약서 HTML 생성
-  let html;
-  try { html = generateContractHTML(); } catch(e){ console.error('[openContractPreview] generateContractHTML 오류:', e); toast('계약서 미리보기 생성 중 오류가 발생했습니다.', 'error'); return; }
-  document.getElementById('ct-print-area').innerHTML = html;
-  // 탭 초기화
-  showCpTab('preview');
-  // 최종 등록 버튼 초기 비활성
+  // 계약서 HTML 생성 (숨겨진 preview 영역에 저장: downloadContractDocx/printContract 용)
+  try { let html = generateContractHTML(); document.getElementById('ct-print-area').innerHTML = html; } catch(e){ console.error('[openContractPreview] generateContractHTML 오류:', e); }
+  // 등록 모드 업로드 UI 렌더링
+  _renderCpRegistrationUpload();
   _updateFinalBtn();
   document.getElementById('contract-preview-modal').classList.add('open');
 }
@@ -338,8 +620,6 @@ function openContractPreview(){
 function closeContractPreview(){
   document.getElementById('contract-preview-modal').classList.remove('open');
   setContractStep(1);
-
-  // 최종 버튼 원복
   const finalBtn = document.getElementById('cp-btn-final');
   if(finalBtn){
     finalBtn.style.display = '';
@@ -347,19 +627,21 @@ function closeContractPreview(){
     finalBtn.onclick   = finalSaveContract;
     finalBtn.disabled  = true;
   }
-
-  // 플래그 초기화
   window._isAmendMode = false;
   window._amendNewContractId = null;
+  // 업로드 전용 모드에서 닫을 때 계약 목록 갱신 (서류 상태 반영)
+  if(window._cpUploadOnly){
+    window._cpUploadOnly = false;
+    if(typeof loadContracts === 'function') loadContracts().then(() => {
+      if(typeof renderContracts === 'function') renderContracts();
+    });
+  }
 }
 
 function showCpTab(tab){
-  document.getElementById('cp-body-preview').style.display = tab==='preview' ? '' : 'none';
-  document.getElementById('cp-body-upload').style.display  = tab==='upload'  ? '' : 'none';
-  document.getElementById('cp-tab-preview').className = 'contract-preview-tab' + (tab==='preview'?' active':'');
-  document.getElementById('cp-tab-upload').className  = 'contract-preview-tab' + (tab==='upload'?' active':'');
-  if(tab==='upload') setContractStep(3);
-  else setContractStep(2);
+  // 탭 구조 제거됨 — upload body 항상 표시
+  const uploadBody = document.getElementById('cp-body-upload');
+  if(uploadBody) uploadBody.style.display = 'block';
 }
 
 // 최종 등록 버튼 활성화 조건 체크
@@ -719,7 +1001,7 @@ function _buildDocx(){
         mkTable([
           ...[infoRow('계약기간', contractPeriod)],
           ...(hasProbation ? [infoRow('수습기간', `${data.contractStart} ~ ${probEndDate} (${data.probationMonths}개월)\n수습임금 ${won(data.probationAmt)}/월 (${_probBasisDocx})`)] : []),
-          infoRow('고용형태', data.contractType),
+          infoRow('고용형태', contractTypeLabel(data.contractType)||data.contractType),
         ]),
 
         // ── 제2조 근무장소 ──
@@ -1079,7 +1361,7 @@ function generateContractHTML(){
       <colgroup><col style="width:32%"><col style="width:68%"></colgroup>
       ${row('계약기간', contractPeriodHTML)}
       ${d.contractEnd && !d.isDaily && d.contractType !==CONTRACT_TYPE.REGULAR && d.contractType !==CONTRACT_TYPE.REGULAR_PROBATION ? row('계약 종료일', d.contractEnd) : ''}
-      ${row('고용형태', d.contractType)}
+      ${row('고용형태', contractTypeLabel(d.contractType)||d.contractType)}
       ${hasProbation ? row('수습기간', `${d.contractStart} ~ ${probEndDate} (${probMonths}개월)<br>수습 임금 ${won(probAmt)}원/월 · ${probBasisLabel}`) : ''}
     </table>
   </div>
@@ -1217,10 +1499,14 @@ function openContractPrintModal(contractId){
   // c.contract_type 우선 참조 (채용확정 생성 계약예정은 c.contract_type이 실제 유형)
   // 계약예정 상태인 경우 수습 카테고리 정규화 (예: '계약직 수습' → '계약직')
   const _ctTypeRaw = c.contract_type || emp.employment_category || '정규직';
+  const _ctTypeNorm = typeof normalizeContractType === 'function'
+    ? normalizeContractType(_ctTypeRaw) : _ctTypeRaw;
   const _isPendingPrint = (c.status===CONTRACT_STATUS.PENDING);
-  const ctType = _isPendingPrint
-    ? (_ctTypeRaw ===CONTRACT_TYPE.REGULAR_PROBATION ? '정규직' : _ctTypeRaw ===CONTRACT_TYPE.FIXED_PROBATION ? '계약직' : _ctTypeRaw)
-    : _ctTypeRaw;
+  const _ctTypeFinal = _isPendingPrint
+    ? (_ctTypeNorm ===CONTRACT_TYPE.REGULAR_PROBATION ? CONTRACT_TYPE.REGULAR : _ctTypeNorm ===CONTRACT_TYPE.FIXED_PROBATION ? CONTRACT_TYPE.FIXED : _ctTypeNorm)
+    : _ctTypeNorm;
+  const ctType = typeof contractTypeLabel === 'function'
+    ? contractTypeLabel(_ctTypeFinal) : _ctTypeFinal;
 
   // 모달 타이틀·배지 업데이트
   const typeColor = {

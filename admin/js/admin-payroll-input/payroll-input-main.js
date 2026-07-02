@@ -111,7 +111,7 @@ function loadPITargetList(){
 
   // 해당 고객사 + 해당 년월에 유효 계약이 있는 근로자 필터링
   // 유효 조건: is_draft=false, 파기되지 않음, 계약 기간이 해당 월과 겹침
-  const VALID_STATUSES = new Set(['활성','active','계약예정','서류미비']);
+  const VALID_STATUSES = new Set([CONTRACT_STATUS.ACTIVE, CONTRACT_STATUS.PENDING, CONTRACT_STATUS.DOCS_INCOMPLETE]);
   const targetContracts = allContracts.filter(c => {
     if(c.company_id !== coId) return false;
     if(c.is_draft) return false;

@@ -381,6 +381,7 @@ function selectContCompany(companyId, companyName){
   document.getElementById('cont-search').value = '';
   const _ecEl = document.getElementById('cont-filter-empcat'); if(_ecEl) _ecEl.value='';
   const _stEl = document.getElementById('cont-filter-status'); if(_stEl) _stEl.value='';
+  const _docEl = document.getElementById('cont-filter-docs-incomplete'); if(_docEl) _docEl.checked=false;
   pages.cont = 1;
   renderContracts();
 }
@@ -394,6 +395,7 @@ function clearContCompanySelect(){
   document.getElementById('cont-list-section').style.display = 'none';
   document.getElementById('cont-company-search').value = '';
   renderContCompanyList();
+  const _docEl2 = document.getElementById('cont-filter-docs-incomplete'); if(_docEl2) _docEl2.checked=false;
 }
 
 // 고객사 관리 카드 → 근로계약서 관리 바로가기

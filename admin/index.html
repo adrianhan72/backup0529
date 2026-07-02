@@ -1553,7 +1553,7 @@
       </div>
       <div class="form-grid">
         <div class="form-group full"><span class="form-section-title">기본 정보</span></div>
-        <div class="form-group"><label>회사 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><select id="ct-company" onchange="loadCtEmployees();autoFillAnnualLeave();_autoFillCTPeriod();_checkRegisterBtnState();onCtCompanyChange();_checkRepSelf();"><option value="">선택</option></select></div>
+        <div class="form-group"><label>회사 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><select id="ct-company" onchange="loadCtEmployees();autoFillAnnualLeave();_autoFillCTPeriod();_checkRegisterBtnState();onCtCompanyChange();_checkRepSelf('ct-em-name','ct-em-rep-self-row','ct-em-is-rep','ct-em-rep-alt-names');_checkRepSelf('ct-edit-emp-name','ct-edit-em-rep-self-row','ct-edit-em-is-rep','ct-edit-em-rep-alt-names');"><option value="">선택</option></select></div>
         <!-- ══ 수정 모드: 직원 정보 표시·편집 섹션 ══ -->
         <div id="ct-edit-emp-info" class="form-group full" style="display:none;">
           <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;padding:16px 18px;margin-top:4px;">
@@ -1564,7 +1564,7 @@
               <div class="form-group full"><span class="form-section-title" style="font-size:11px;">인사 정보 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></span></div>
               <div class="form-group">
                 <label>사원번호 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
-                <input type="text" id="ct-edit-em-empno" placeholder="예: 0001" oninput="checkCtEditEmpNoUniqueness();_checkAmendBtnState();" autocomplete="off" />
+                <input type="text" id="ct-edit-em-empno" placeholder="예: 0001" onblur="checkCtEditEmpNoUniqueness();_checkAmendBtnState();" autocomplete="off" />
                 <div id="ct-edit-em-empno-alert" style="display:none;margin-top:6px;padding:7px 10px;border-radius:8px;font-size:11px;font-weight:600;">
                   <span class="empno-alert-msg"></span>
                 </div>
@@ -1572,9 +1572,25 @@
               <div class="form-group">
                 <label>이름 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
                 <!-- 수정모드: input / 갱신·재계약모드: readonly div 전환 (JS가 제어) -->
-                <input type="text" id="ct-edit-emp-name" placeholder="이름" oninput="_checkAmendBtnState();" autocomplete="off" />
+                <input type="text" id="ct-edit-emp-name" placeholder="이름" onblur="checkCtEditDuplicateName();_checkAmendBtnState();" autocomplete="off" />
                 <!-- 갱신·재계약 시 이름 잠금 안내 -->
                 <span id="ct-edit-name-lock-hint" style="display:none;font-size:11px;color:#9ca3af;margin-top:3px;">갱신·재계약 시 이름을 변경할 수 없습니다. (고용형태 변경은 가능)</span>
+                <div id="ct-edit-em-rep-self-row" style="display:none;margin-top:8px;background:#f5f3ff;border:1.5px solid #c4b5fd;border-radius:8px;padding:10px 12px;">
+                  <div style="font-size:12px;color:#7c3aed;font-weight:700;margin-bottom:8px;">
+                    <i class="fas fa-info-circle"></i> 입력한 이름이 <strong>대표자명</strong>과 동일합니다.
+                  </div>
+                  <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;font-weight:600;color:#7c3aed;margin-bottom:6px;">
+                    <input type="checkbox" id="ct-edit-em-is-rep" onchange="_checkAmendBtnState()" style="accent-color:#7c3aed;width:17px;height:17px;" />
+                    <span>대표자 본인입니다 (상시근로자 수에서 제외)</span>
+                  </label>
+                  <div style="font-size:11px;color:#9ca3af;margin-bottom:6px;">또는 다른 이름으로 입력</div>
+                  <div id="ct-edit-em-rep-alt-names" style="display:flex;flex-wrap:wrap;gap:4px;"></div>
+                </div>
+                <div id="ct-edit-em-name-dup-alert" style="display:none;margin-top:6px;padding:8px 10px;background:#FFF7ED;border:1.5px solid #FB923C;border-radius:8px;font-size:12px;color:#9A3412;">
+                  <strong id="ct-edit-em-name-dup-msg"></strong>
+                  <div id="ct-edit-em-name-dup-actions" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;"></div>
+                  <div id="ct-edit-em-name-dup-suggestions" style="display:flex;flex-direction:column;gap:4px;margin-top:6px;"></div>
+                </div>
               </div>
               <div class="form-group">
                 <label>고용형태 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
@@ -1620,7 +1636,7 @@
               <!-- 고용형태는 인사 정보 섹션에 표시되므로 중복 제거 / ct-type: 고용형태 값 전달용 hidden input -->
               <input type="hidden" id="ct-type" />
               <!-- 계약 상태는 모달 상단 액션 바에 표시되므로 중복 제거 -->
-              <input type="hidden" id="ct-status" value="활성" />
+              <input type="hidden" id="ct-status" value="active" />
 
               <div class="form-group full"><span class="form-section-title" style="font-size:11px;">개인 정보</span></div>
               <div class="form-group"><label>주민등록번호 (앞7자리) <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><input type="text" id="ct-edit-em-id" placeholder="YYMMDD-N" maxlength="8" autocomplete="off" oninput="_onIdInput(this, _checkAmendBtnState)" /></div>
@@ -1649,18 +1665,23 @@
               <div class="form-group full"><span class="form-section-title" style="font-size:11px;">인사 정보 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></span></div>
               <div class="form-group">
                 <label>사원번호 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
-                <input type="text" id="ct-em-empno" placeholder="예: 0001" oninput="checkCtEmpNoUniqueness();_checkRegisterBtnState();" autocomplete="off" />
+                <input type="text" id="ct-em-empno" placeholder="예: 0001" onblur="checkCtEmpNoUniqueness();_checkRegisterBtnState();" autocomplete="off" />
                 <div id="ct-em-empno-alert" style="display:none;margin-top:6px;padding:7px 10px;border-radius:8px;font-size:11px;font-weight:600;">
                   <span class="empno-alert-msg"></span>
                 </div>
               </div>
               <div class="form-group"><label>이름 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
-                <input type="text" id="ct-em-name" oninput="checkCtDuplicateName();_checkRegisterBtnState();_checkRepSelf()" autocomplete="off" />
-                <div id="ct-em-rep-self-row" style="display:none;margin-top:8px;">
-                  <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;font-weight:600;color:#7c3aed;background:#f5f3ff;border:1.5px solid #c4b5fd;border-radius:8px;padding:8px 12px;">
+                <input type="text" id="ct-em-name" onblur="checkCtDuplicateName();_checkRegisterBtnState();" autocomplete="off" />
+                <div id="ct-em-rep-self-row" style="display:none;margin-top:8px;background:#f5f3ff;border:1.5px solid #c4b5fd;border-radius:8px;padding:10px 12px;">
+                  <div style="font-size:12px;color:#7c3aed;font-weight:700;margin-bottom:8px;">
+                    <i class="fas fa-info-circle"></i> 입력한 이름이 <strong>대표자명</strong>과 동일합니다.
+                  </div>
+                  <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;font-weight:600;color:#7c3aed;margin-bottom:6px;">
                     <input type="checkbox" id="ct-em-is-rep" onchange="_checkRegisterBtnState()" style="accent-color:#7c3aed;width:17px;height:17px;" />
-                    <span>대표자 본인 (상시근로자 수에서 제외)</span>
+                    <span>대표자 본인입니다 (상시근로자 수에서 제외)</span>
                   </label>
+                  <div style="font-size:11px;color:#9ca3af;margin-bottom:6px;">또는 다른 이름으로 입력</div>
+                  <div id="ct-em-rep-alt-names" style="display:flex;flex-wrap:wrap;gap:4px;"></div>
                 </div>
                 <div id="ct-em-name-dup-alert" style="display:none;margin-top:6px;padding:8px 10px;background:#FFF7ED;border:1.5px solid #FB923C;border-radius:8px;font-size:12px;color:#9A3412;">
                   <strong id="ct-em-name-dup-msg"></strong>
@@ -2009,99 +2030,40 @@
   </div>
 </div>
 
-<!-- ══ 계약서 자동완성 미리보기 모달 ══ -->
+<!-- ══ 서류 날인본 업로드 모달 ══ -->
 <div class="contract-preview-overlay" id="contract-preview-modal">
   <div class="contract-preview-modal">
     <!-- 헤더 -->
     <div class="contract-preview-header">
-      <h3><i class="fas fa-file-contract"></i> 근로계약서 자동완성</h3>
+      <h3><i class="fas fa-upload"></i> 서류 날인본 업로드</h3>
       <button onclick="closeContractPreview()" class="btn btn-icon-dark"><i class="fas fa-times"></i></button>
     </div>
-    <!-- 단계 탭 -->
-    <div class="contract-preview-tabs">
-      <button class="contract-preview-tab active" id="cp-tab-preview" onclick="showCpTab('preview')"><i class="fas fa-eye" style="margin-right:5px;"></i>계약서 미리보기</button>
-      <button class="contract-preview-tab" id="cp-tab-upload" onclick="showCpTab('upload')"><i class="fas fa-upload" style="margin-right:5px;"></i>날인본 업로드</button>
-    </div>
-    <!-- 미리보기 탭 내용 -->
-    <div class="contract-preview-body" id="cp-body-preview">
-      <div id="ct-print-area" class="contract-doc"></div>
-    </div>
-    <!-- 업로드 탭 내용 -->
-    <div class="contract-preview-body" id="cp-body-upload" style="display:none;">
-      <div style="padding:20px 24px 12px;">
+    <!-- 업로드 내용 (JS가 동적 렌더링) -->
+    <div class="contract-preview-body" id="cp-body-upload" style="display:block;padding:30px 0;">
+      <div id="cp-upload-notice" style="padding:20px 24px 12px;">
         <div style="background:#fffbeb;border:1.5px solid #fcd34d;border-radius:10px;padding:12px 16px;font-size:12.5px;color:#92400e;line-height:1.7;">
           <strong>📋 등록 안내</strong><br>
-          아래 두 서류를 모두 업로드해야 계약이 <strong>유효</strong> 상태로 등록됩니다.<br>
-          ① 계약서 미리보기 탭에서 <strong>WORD 다운로드</strong> 또는 <strong>인쇄</strong> → ② 당사자 날인/서명 → ③ 두 서류 스캔/촬영 후 아래에 업로드 → ④ <strong>최종 등록</strong>
+          아래 두 서류를 모두 업로드해야 계약이 <strong>유효</strong> 상태로 등록됩니다.
         </div>
       </div>
-
-      <!-- ─── 계약서 날인본 ─── -->
-      <div style="padding:0 24px 4px;">
-        <div style="font-size:12.5px;font-weight:700;color:#374151;margin-bottom:8px;">
-          <i class="fas fa-file-signature" style="color:#4f46e5;margin-right:6px;"></i>① 계약서 날인본
-          <span id="cp-signed-check" style="display:none;color:#10b981;margin-left:8px;font-size:12px;"><i class="fas fa-check-circle"></i> 업로드 완료</span>
-        </div>
-        <div class="upload-zone" id="cp-upload-zone"
-          onclick="document.getElementById('cp-file-input').click()"
-          ondragover="event.preventDefault();this.style.borderColor='#6366f1';"
-          ondragleave="this.style.borderColor='';"
-          ondrop="handleContractFileDrop(event)">
-          <div class="upload-zone-icon">📄</div>
-          <div class="upload-zone-text">날인된 근로계약서를 업로드하세요</div>
-          <div class="upload-zone-sub">JPG, PNG, PDF 지원 · 클릭 또는 드래그</div>
-        </div>
-        <input type="file" id="cp-file-input" accept="image/*,.pdf" style="display:none;" onchange="handleContractFileSelect(event)">
-        <div class="upload-preview" id="cp-upload-preview">
-          <i class="fas fa-check-circle" style="color:#10b981;font-size:20px;"></i>
-          <div style="flex:1;">
-            <div style="font-size:13px;font-weight:700;color:#166534;" id="cp-upload-filename">파일명</div>
-            <div style="font-size:11.5px;color:#4b7c59;" id="cp-upload-filesize">크기</div>
-          </div>
-          <button onclick="clearContractUpload()" class="btn btn-close"><i class="fas fa-times-circle"></i></button>
-        </div>
-      </div>
-
-      <!-- ─── 제3자 개인정보 제공 동의서 ─── -->
-      <div style="padding:8px 24px 4px;">
-        <div style="font-size:12.5px;font-weight:700;color:#374151;margin-bottom:8px;">
-          <i class="fas fa-shield-alt" style="color:#7c3aed;margin-right:6px;"></i>② 제3자 개인정보 제공 동의서 날인본
-          <span id="cp-consent-check" style="display:none;color:#10b981;margin-left:8px;font-size:12px;"><i class="fas fa-check-circle"></i> 업로드 완료</span>
-        </div>
-        <div class="upload-zone" id="cp-consent-zone"
-          onclick="document.getElementById('cp-consent-input').click()"
-          ondragover="event.preventDefault();this.style.borderColor='#7c3aed';"
-          ondragleave="this.style.borderColor='';"
-          ondrop="handleConsentFileDrop(event)"
-          style="border-color:#c4b5fd;">
-          <div class="upload-zone-icon">🤝</div>
-          <div class="upload-zone-text">제3자 개인정보 제공 동의서를 업로드하세요</div>
-          <div class="upload-zone-sub">JPG, PNG, PDF 지원 · 클릭 또는 드래그</div>
-        </div>
-        <input type="file" id="cp-consent-input" accept="image/*,.pdf" style="display:none;" onchange="handleConsentFileSelect(event)">
-        <div class="upload-preview" id="cp-consent-preview" style="border-color:#c4b5fd;background:#f5f3ff;">
-          <i class="fas fa-check-circle" style="color:#7c3aed;font-size:20px;"></i>
-          <div style="flex:1;">
-            <div style="font-size:13px;font-weight:700;color:#4c1d95;" id="cp-consent-filename">파일명</div>
-            <div style="font-size:11.5px;color:#6d28d9;" id="cp-consent-filesize">크기</div>
-          </div>
-          <button onclick="clearConsentUpload()" class="btn btn-close"><i class="fas fa-times-circle"></i></button>
-        </div>
-      </div>
-
-      <!-- 서류 없이 등록 옵션 -->
-      <div style="padding:12px 24px 16px;text-align:center;">
+      <div id="cp-files-container" style="padding:0 24px;"></div>
+      <!-- 서류 없이 등록 옵션 (신규 등록 시에만 표시) -->
+      <div id="cp-skip-row" style="padding:12px 24px 16px;text-align:center;display:none;">
         <label style="display:inline-flex;align-items:center;gap:7px;font-size:12px;color:#9ca3af;cursor:pointer;">
-          <input type="checkbox" id="cp-skip-upload" style="width:14px;height:14px;">
+          <input type="checkbox" id="cp-skip-upload" style="width:14px;height:14px;" onchange="_updateFinalBtn()">
           서류 없이 등록 (나중에 업로드) — <em>계약 상태가 '서류미비'로 저장됩니다</em>
         </label>
       </div>
     </div>
+    <!-- 미리보기 영역 (숨김 유지: generateContractHTML 호환) -->
+    <div class="contract-preview-body" id="cp-body-preview" style="display:none;">
+      <div id="ct-print-area" class="contract-doc"></div>
+    </div>
     <!-- 푸터 -->
     <div class="contract-preview-footer">
       <div style="display:flex;gap:8px;">
-        <button class="btn-docx" onclick="downloadContractDocx()"><i class="fas fa-file-word"></i> WORD 다운로드</button>
-        <button class="btn-print" onclick="printContract()"><i class="fas fa-print"></i> 인쇄</button>
+        <button class="btn-docx" id="cp-btn-word" onclick="downloadContractDocx()"><i class="fas fa-file-word"></i> WORD 다운로드</button>
+        <button class="btn-print" id="cp-btn-print" onclick="printContract()"><i class="fas fa-print"></i> 인쇄</button>
       </div>
       <div style="display:flex;gap:8px;align-items:center;">
         <button class="btn btn-secondary" style="padding:7px 16px;font-size:13px;" onclick="closeContractPreview()">← 수정하기</button>

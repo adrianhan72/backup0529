@@ -50,6 +50,10 @@
               <option value="해지">해지</option>
               <option value="파기">파기</option>
             </select>
+            <label id="cont-filter-docs-incomplete-label" style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-weight:600;color:#ea580c;background:#fff7ed;border:1.5px solid #fdba74;border-radius:20px;padding:6px 14px;user-select:none;">
+              <input type="checkbox" id="cont-filter-docs-incomplete" onchange="renderContracts()" style="accent-color:#ea580c;width:15px;height:15px;" />
+              서류미비 상태만 보기
+            </label>
           </div>
           <div class="table-wrap">
             <table>
