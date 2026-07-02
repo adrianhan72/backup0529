@@ -1974,6 +1974,7 @@ async function saveDraftContract(reason){
     draftBody.id = editId.contract;
     const res = await api(`../tables/contracts/${editId.contract}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:bodyJSON});
     console.log('[saveDraftContract] PATCH(edit) response:', res);
+    if(res && res.error){ toast('임시저장 실패: ' + res.error, 'error'); return; }
     savedId = editId.contract;
   } else if(editId.contract === null && (_currentDraftId || window._resumeDraftId)){
     // 이전 임시저장 ID가 있으면 덮어쓰기
@@ -1981,6 +1982,7 @@ async function saveDraftContract(reason){
     draftBody.id = draftId;
     const res = await api(`../tables/contracts/${draftId}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:bodyJSON});
     console.log('[saveDraftContract] PATCH(resume) response:', res);
+    if(res && res.error){ toast('임시저장 실패: ' + res.error, 'error'); return; }
     savedId = draftId;
     _currentDraftId = draftId;
     window._resumeDraftId = null;
@@ -2000,8 +2002,8 @@ async function saveDraftContract(reason){
   }
 
   await loadContracts();
-  renderContracts();
-  // 대시보드 임시저장 알림 카드 + 메뉴 뱃지 갱신
+  // 경량 배너만 갱신 (전체 테이블 재렌더링 X — 폼 깜빡임 방지)
+  if(typeof _renderContractsBanners === 'function') _renderContractsBanners();
   if(typeof renderDraftAlerts === 'function') renderDraftAlerts();
   if(typeof updateMenuBadges === 'function') updateMenuBadges();
 
