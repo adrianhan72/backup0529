@@ -35,7 +35,20 @@ function _hasActiveContract(companyId){
 async function _deleteDraft(id, table, label){
   if(!confirm(`'${label}' 임시저장을 삭제하시겠습니까?\n삭제 후 복구할 수 없습니다.`)) return;
   try {
+    // 계약 삭제 시 연결된 직원도 함께 정리
+    let _empIdToCleanup = null;
+    if(table==='contracts'){
+      const c = allContracts.find(x => x.id === id);
+      if(c && c.employee_id){
+        const otherContracts = allContracts.filter(x => x.id !== id && x.employee_id === c.employee_id);
+        if(otherContracts.length === 0) _empIdToCleanup = c.employee_id;
+      }
+    }
     await api(`../tables/${table}/${id}`, { method: 'DELETE' });
+    // 계약 삭제 성공 후 직원 삭제 시도 (FK 참조 해제된 상태)
+    if(_empIdToCleanup){
+      fetch(`../tables/employees/${_empIdToCleanup}`, { method: 'DELETE' }).finally(() => loadEmployees());
+    }
     toast(`'${label}' 임시저장이 삭제되었습니다.`, 'success');
     // 데이터 다시 로드 후 UI 갱신
     if(table==='companies'){ await loadCompanies(); renderCompanies(); }

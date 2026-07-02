@@ -1082,8 +1082,16 @@ async function cancelPendingContract(){
     }
   }
 
-  // 해당 계약 레코드 삭제
+  // 해당 계약 레코드 삭제 + 연결 직원도 다른 계약 없으면 삭제 시도
+  let _empIdToCleanup = null;
+  if(c.employee_id){
+    const otherContracts = allContracts.filter(x => x.id !== c.id && x.employee_id === c.employee_id);
+    if(otherContracts.length === 0) _empIdToCleanup = c.employee_id;
+  }
   await api(`../tables/contracts/${c.id}`,{method:'DELETE'});
+  if(_empIdToCleanup){
+    fetch(`../tables/employees/${_empIdToCleanup}`, { method: 'DELETE' });
+  }
 
   closeModal('contract-modal');
   await Promise.all([loadContracts(), loadEmployees()]);
@@ -1497,7 +1505,16 @@ async function deleteDraftContract(){
   const label = emp?.name || '(직원 미지정)';
   if(!confirm(`'${label}' 임시저장 계약서를 삭제하시겠습니까?\n삭제 후 복구할 수 없습니다.`)) return;
   try {
+    // 계약 삭제 + 연결 직원 정리
+    let _empIdToCleanup = null;
+    if(c.employee_id){
+      const otherContracts = allContracts.filter(x => x.id !== id && x.employee_id === c.employee_id);
+      if(otherContracts.length === 0) _empIdToCleanup = c.employee_id;
+    }
     await api(`../tables/contracts/${id}`, { method: 'DELETE' });
+    if(_empIdToCleanup){
+      fetch(`../tables/employees/${_empIdToCleanup}`, { method: 'DELETE' }).finally(() => loadEmployees());
+    }
     toast('임시저장 계약서가 삭제되었습니다.', 'success');
     closeModal('contract-modal');
     await loadContracts();
@@ -1852,7 +1869,7 @@ async function saveDraftContract(reason){
       company_id: coId,
       name: document.getElementById('ct-em-name').value.trim(),
       gender: document.getElementById('ct-em-gender').value,
-      employment_category: document.getElementById('ct-em-category').value,
+      employment_category: CONTRACT_TYPE_LEGACY_MAP[document.getElementById('ct-em-category').value] || document.getElementById('ct-em-category').value,
       employee_number: document.getElementById('ct-em-empno')?.value.trim() || '',
       job_description: document.getElementById('ct-em-job').value.trim(),
       id_number: document.getElementById('ct-em-id').value,
@@ -1874,10 +1891,11 @@ async function saveDraftContract(reason){
     await loadEmployees();
   }
 
-  // 현재 입력값 수집 (유효성 검사 없이 최대한 수집)
-  const catForDraft = isEditMode
+  // 현재 입력값 수집 + 영문 정규화
+  const _rawCatDraft = isEditMode
     ? (allContracts.find(x=>x.id===editId.contract)||{}).contract_type||'정규직'
     : (isNew ? document.getElementById('ct-em-category').value : document.getElementById('ct-type').value);
+  const catForDraft = CONTRACT_TYPE_LEGACY_MAP[_rawCatDraft] || _rawCatDraft;
   const isDailyDraft = catForDraft ===CONTRACT_TYPE.DAILY;
 
   const scheduleJSON = getScheduleJSON();
@@ -1935,7 +1953,7 @@ async function saveDraftContract(reason){
     contract_start:       contractStart,
     contract_end:         contractEnd,
     contract_type:        catForDraft,
-    status:               '임시저장',
+    status:               'draft',
     work_hours_per_day:   avgHours,
     work_days_per_week:   workDays,
     schedule_json:        JSON.stringify(scheduleJSON),
@@ -2447,7 +2465,7 @@ async function saveContract(){
       company_id: coId,
       name: newName,
       gender: document.getElementById('ct-em-gender').value,
-      employment_category: document.getElementById('ct-em-category').value,
+      employment_category: CONTRACT_TYPE_LEGACY_MAP[document.getElementById('ct-em-category').value] || document.getElementById('ct-em-category').value,
       employee_number: document.getElementById('ct-em-empno')?.value.trim() || '',
       job_description: newJob,
       id_number: document.getElementById('ct-em-id').value,
@@ -2692,6 +2710,10 @@ async function saveContract(){
     const today2new = new Date().toISOString().slice(0,10);
     contractStatus = contractStart > today2new ? '계약예정' : '활성';
   }
+
+  // ── contract_type / status 영문 정규화 ──
+  contractType   = CONTRACT_TYPE_LEGACY_MAP[contractType]     || contractType;
+  contractStatus = CONTRACT_STATUS_LEGACY_MAP[contractStatus] || contractStatus;
 
   // 요일별 스케줄 수집
   const scheduleJSON = getScheduleJSON();
