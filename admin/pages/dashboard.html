@@ -162,7 +162,15 @@
         <div class="card">
           <div class="card-header">
             <span class="card-title">👥 관리 근로자 수</span>
-            <span style="font-size:11px;color:#aaa;">이용중 고객사의 유효 계약 직원 기준</span>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <span style="font-size:11px;color:#aaa;">표시 항목:</span>
+              <label style="display:flex;align-items:center;gap:3px;font-size:11px;color:#555;cursor:pointer;"><input type="checkbox" class="emp-chart-chk" data-type="total" checked onchange="renderEmployeeTrendChart()"> 전체</label>
+              <label style="display:flex;align-items:center;gap:3px;font-size:11px;color:#555;cursor:pointer;"><input type="checkbox" class="emp-chart-chk" data-type="regular" checked onchange="renderEmployeeTrendChart()"> 정규직</label>
+              <label style="display:flex;align-items:center;gap:3px;font-size:11px;color:#555;cursor:pointer;"><input type="checkbox" class="emp-chart-chk" data-type="regular_probation" checked onchange="renderEmployeeTrendChart()"> 정규직 수습</label>
+              <label style="display:flex;align-items:center;gap:3px;font-size:11px;color:#555;cursor:pointer;"><input type="checkbox" class="emp-chart-chk" data-type="fixed_term" checked onchange="renderEmployeeTrendChart()"> 계약직</label>
+              <label style="display:flex;align-items:center;gap:3px;font-size:11px;color:#555;cursor:pointer;"><input type="checkbox" class="emp-chart-chk" data-type="fixed_term_probation" checked onchange="renderEmployeeTrendChart()"> 계약직 수습</label>
+              <label style="display:flex;align-items:center;gap:3px;font-size:11px;color:#555;cursor:pointer;"><input type="checkbox" class="emp-chart-chk" data-type="daily" checked onchange="renderEmployeeTrendChart()"> 일용직</label>
+            </div>
           </div>
           <div style="padding:20px 24px;height:260px;">
             <canvas id="employee-trend-chart"></canvas>

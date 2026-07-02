@@ -395,14 +395,35 @@ function renderEmployeeTrendChart(){
   const rangeEl = document.getElementById('dash-chart-range');
   const months = rangeEl ? parseInt(rangeEl.value) : 12;
 
+  // 체크박스 상태 읽기
+  const showType = {};
+  document.querySelectorAll('.emp-chart-chk').forEach(cb => {
+    showType[cb.dataset.type] = cb.checked;
+  });
+
   const now = new Date();
   const labels = [];
-  const managedData = [];  // 이용중 고객사에서 해당 월 급여가 입력된 직원 수
+  // 고용형태별 데이터 배열
+  const typeKeys = ['total', 'regular', 'regular_probation', 'fixed_term', 'fixed_term_probation', 'daily'];
+  const dataMap = {};
+  typeKeys.forEach(k => { dataMap[k] = []; });
 
   // 이용중 고객사 ID 목록 (현재 기준)
   const activeCompanyIds = new Set(
     allCompanies.filter(c => isCompanyActive(c)).map(c => c.id)
   );
+
+  // 직원 ID → 현재 계약의 contract_type 매핑
+  const empTypeMap = {};
+  allContracts
+    .filter(ct => !ct.is_draft && activeCompanyIds.has(ct.company_id) &&
+      ct.status !== CONTRACT_STATUS.VOIDED && ct.status !== CONTRACT_STATUS.CANCELED)
+    .sort((a, b) => (b.contract_start || '').localeCompare(a.contract_start || ''))
+    .forEach(ct => {
+      if (!empTypeMap[ct.employee_id]) {
+        empTypeMap[ct.employee_id] = ct.contract_type || ct.employment_category || 'regular';
+      }
+    });
 
   for(let i = months - 1; i >= 0; i--){
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
@@ -410,19 +431,25 @@ function renderEmployeeTrendChart(){
     const mo = d.getMonth() + 1;
     labels.push(`${yr}.${String(mo).padStart(2,'0')}`);
 
-    // 해당 월에 급여가 입력된 직원 중 이용중 고객사 소속 직원 수
-    // → 급여 데이터가 실제 근무/관리의 가장 정확한 기록
-    const managedSet = new Set(
-      allPayrolls
-        .filter(p =>
-          Number(p.pay_year) === yr &&
-          Number(p.pay_month) === mo &&
-          activeCompanyIds.has(p.company_id)
-        )
-        .map(p => p.employee_id)
-    );
+    // 해당 월 급여 입력된 직원들 (이용중 고객사 소속)
+    const monthEmps = allPayrolls
+      .filter(p =>
+        Number(p.pay_year) === yr && Number(p.pay_month) === mo &&
+        activeCompanyIds.has(p.company_id)
+      )
+      .map(p => p.employee_id);
+    const uniqueEmpIds = [...new Set(monthEmps)];
 
-    managedData.push(managedSet.size);
+    // 전체
+    dataMap.total.push(uniqueEmpIds.length);
+    // 고용형태별 카운트
+    const counts = {};
+    typeKeys.filter(k => k !== 'total').forEach(k => { counts[k] = 0; });
+    uniqueEmpIds.forEach(eid => {
+      const tp = empTypeMap[eid] || 'regular';
+      if (counts[tp] !== undefined) counts[tp]++;
+    });
+    typeKeys.filter(k => k !== 'total').forEach(k => dataMap[k].push(counts[k]));
   }
 
   const ctx = document.getElementById('employee-trend-chart');
@@ -433,88 +460,72 @@ function renderEmployeeTrendChart(){
     employeeTrendChartInstance = null;
   }
 
-  // 최대값 기반 y축 범위
-  const maxVal = Math.max(...managedData, 1);
+  // 표시할 데이터셋 구성
+  const typeConfig = {
+    total:                { label: '전체', color: '#6366f1', bg: 'rgba(99,102,241,0.08)', dash: false, width: 2.5, radius: 5 },
+    regular:              { label: '정규직', color: '#3b82f6', bg: 'rgba(59,130,246,0.06)', dash: false, width: 2, radius: 4 },
+    regular_probation:    { label: '정규직 수습', color: '#0ea5e9', bg: 'rgba(14,165,233,0.06)', dash: [5,3], width: 2, radius: 4 },
+    fixed_term:           { label: '계약직', color: '#f59e0b', bg: 'rgba(245,158,11,0.06)', dash: false, width: 2, radius: 4 },
+    fixed_term_probation: { label: '계약직 수습', color: '#f97316', bg: 'rgba(249,115,22,0.06)', dash: [5,3], width: 2, radius: 4 },
+    daily:                { label: '일용직', color: '#10b981', bg: 'rgba(16,185,129,0.06)', dash: [3,3], width: 2, radius: 4 },
+  };
+
+  const datasets = [];
+  const allDataForMax = [];
+  typeKeys.forEach(k => {
+    if(!showType[k]) return;
+    const cfg = typeConfig[k];
+    allDataForMax.push(...dataMap[k]);
+    const ds = {
+      label: cfg.label, data: dataMap[k],
+      borderColor: cfg.color, backgroundColor: cfg.bg,
+      pointBackgroundColor: cfg.color, pointBorderColor: '#fff',
+      pointBorderWidth: 2, pointRadius: cfg.radius, pointHoverRadius: cfg.radius + 2,
+      borderWidth: cfg.width, fill: false, tension: 0.35
+    };
+    if(cfg.dash) ds.borderDash = cfg.dash;
+    datasets.push(ds);
+  });
+
+  const maxVal = Math.max(...allDataForMax, 1);
 
   employeeTrendChartInstance = new Chart(ctx, {
     type: 'line',
-    data: {
-      labels,
-      datasets: [
-        {
-          label: '관리대상 직원',
-          data: managedData,
-          borderColor: '#8b5cf6',
-          backgroundColor: 'rgba(139,92,246,0.10)',
-          pointBackgroundColor: '#8b5cf6',
-          pointBorderColor: '#fff',
-          pointBorderWidth: 2,
-          pointRadius: 5,
-          pointHoverRadius: 7,
-          borderWidth: 2.5,
-          fill: true,
-          tension: 0.35
-        }
-      ]
-    },
+    data: { labels, datasets },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
       plugins: {
         legend: {
-          position: 'top',
-          align: 'end',
+          position: 'top', align: 'end',
           labels: {
             boxWidth: 12, boxHeight: 12,
             borderRadius: 4, useBorderRadius: true,
-            font: { size: 12, family: "'Noto Sans KR', sans-serif" },
+            font: { size: 11, family: "'Noto Sans KR', sans-serif" },
             color: '#555'
           }
         },
         tooltip: {
           backgroundColor: 'rgba(26,26,46,0.92)',
-          titleColor: '#fff',
-          bodyColor: '#ddd',
-          padding: 12,
-          cornerRadius: 8,
+          titleColor: '#fff', bodyColor: '#ddd',
+          padding: 12, cornerRadius: 8,
           titleFont: { size: 12, family: "'Noto Sans KR', sans-serif" },
           bodyFont: { size: 12, family: "'Noto Sans KR', sans-serif" },
           callbacks: {
-            label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y}명`,
-            afterBody: (items) => {
-              const idx = items[0]?.dataIndex;
-              if(idx === undefined) return '';
-              // 해당 월의 전월 대비 증감
-              const cur = managedData[idx];
-              const prev = idx > 0 ? managedData[idx - 1] : null;
-              if(prev === null) return '';
-              const diff = cur - prev;
-              if(diff === 0) return '  전월 대비 변동 없음';
-              return diff > 0 ? `  전월 대비 +${diff}명 증가` : `  전월 대비 ${diff}명 감소`;
-            }
+            label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y}명`
           }
         }
       },
       scales: {
         x: {
           grid: { color: 'rgba(0,0,0,0.04)' },
-          ticks: {
-            font: { size: 11, family: "'Noto Sans KR', sans-serif" },
-            color: '#999',
-            maxRotation: 0
-          }
+          ticks: { font: { size: 11, family: "'Noto Sans KR', sans-serif" }, color: '#999', maxRotation: 0 }
         },
         y: {
-          beginAtZero: true,
-          grace: Math.max(1, Math.ceil(maxVal * 0.1)),
+          beginAtZero: true, grace: Math.max(1, Math.ceil(maxVal * 0.1)),
           grid: { color: 'rgba(0,0,0,0.06)' },
-          ticks: {
-            precision: 0,
-            font: { size: 11, family: "'Noto Sans KR', sans-serif" },
-            color: '#999',
-            callback: val => val + '명'
-          }
+          ticks: { precision: 0, font: { size: 11, family: "'Noto Sans KR', sans-serif" }, color: '#999', callback: val => val + '명' }
         }
       }
     }
