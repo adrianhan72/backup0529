@@ -54,7 +54,7 @@ function updateMenuBadges(){
     !c.is_draft && (c.status===CONTRACT_STATUS.ACTIVE || c.status===CONTRACT_STATUS.PENDING) && !c.consent_file_name
   ).length;
   const draftContractCount = (allContracts||[]).filter(c => !!c.is_draft).length;
-  _setBadge('badge-contracts', missingSign + missingConsent + draftContractCount);
+  _setBadge('badge-contracts', draftContractCount);
 
   // 4) 계약만료 통지 → contract-expiry-notice
   // _cenNoticeList(통지 이력)가 heavy 데이터 → 로드 전에는 "이미 통지된 계약" 필터 미작동 → 과다 집계
