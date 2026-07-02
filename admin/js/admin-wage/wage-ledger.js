@@ -477,7 +477,8 @@ function renderWageLedger(){
 
   // 열람 대상 월에 유효했던 계약 필터 함수
   const wasActiveInMonth = c => {
-    if(c.is_voided_by_amend) return false;          // 수정재발행으로 무효화된 계약 제외
+    if(c.is_draft) return false;                     // 임시저장 계약은 제외
+    if(c.is_voided_by_amend) return false;
     const start = c.contract_start || '';
     const end   = c.contract_end   || '';
     // contract_start 가 대상월 말일 이전이어야 함
