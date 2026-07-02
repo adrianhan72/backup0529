@@ -170,7 +170,7 @@
           <button id="sev-btn-pdf" onclick="sevDownloadPDF()" class="btn btn-danger">
             <i class="fas fa-file-pdf"></i> PDF로 저장
           </button>
-          <button id="sev-btn-alimtalk" onclick="sevSendAlimtalk()" class="btn btn-warning">
+          <button id="sev-btn-alimtalk" onclick="sevSendAlimtalk()" class="btn btn-kakao">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg> 알림톡 발송
           </button>
           <button id="sev-btn-email" onclick="sevSendEmail()" class="btn btn-sky">
@@ -413,7 +413,7 @@
 
         <!-- 모달 하단 버튼 -->
         <div style="padding:16px 28px;border-top:1px solid #ede9fe;display:flex;justify-content:flex-end;gap:10px;flex-shrink:0;background:#faf9ff;">
-          <button id="bulk-send-start-btn" onclick="startBulkSend()" class="btn btn-warning"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg> 알림톡 일괄 발송 시작</button>
+          <button id="bulk-send-start-btn" onclick="startBulkSend()" class="btn btn-kakao"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg> 알림톡 일괄 발송 시작</button>
           <button onclick="closeBulkSendModal()" class="btn btn-secondary">닫기</button>
         </div>
       </div>
@@ -508,7 +508,7 @@
 
         <!-- 하단 버튼 -->
         <div style="padding:16px 28px;border-top:1px solid #ede9fe;display:flex;justify-content:flex-end;gap:10px;flex-shrink:0;background:#faf9ff;">
-          <button id="pss-bulk-send-btn" onclick="confirmPssBulkSend()" class="btn btn-warning"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg> 알림톡 일괄 발송 시작</button>
+          <button id="pss-bulk-send-btn" onclick="confirmPssBulkSend()" class="btn btn-kakao"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg> 알림톡 일괄 발송 시작</button>
           <button id="pss-bulk-cancel-btn" onclick="closePssBulkModal()" class="btn btn-secondary">닫기</button>
         </div>
       </div>
@@ -2102,7 +2102,7 @@
         <!-- 구분선 -->
         <div style="width:1px;height:28px;background:#d1d5db;margin:0 2px;"></div>
         <!-- 발송 버튼 그룹 -->
-        <button onclick="dispatchContractKakao()" id="cpm-kakao-btn" title="카카오 알림톡으로 계약서 PDF 발송" class="btn btn-warning" disabled>
+        <button onclick="dispatchContractKakao()" id="cpm-kakao-btn" title="카카오 알림톡으로 계약서 PDF 발송" class="btn btn-kakao" disabled>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0;"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg>
           알림톡
         </button>

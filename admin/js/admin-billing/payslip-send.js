@@ -221,7 +221,7 @@ function renderPssUnsentList(){
       <td style="color:#6b7280;font-size:12px;">${phone || '<span style="color:#d1d5db;">미등록</span>'}</td>
       <td style="font-size:12px;">${hasEmail ? `<span style="color:#374151;">${email}</span>` : '<span style="color:#d1d5db;">미등록</span>'}</td>
       <td style="text-align:center;white-space:nowrap;">
-        <button onclick="_pssKakaoSendRow('${p.id}','${p.employee_id}')" style="background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;border-radius:6px;padding:4px 9px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;margin-right:3px;display:inline-flex;align-items:center;gap:4px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg>알림톡 발송</button>
+        <button onclick="_pssKakaoSendRow('${p.id}','${p.employee_id}')" style="background:linear-gradient(135deg,#ffe033,#f9d000);color:#3b1f00;border:1px solid #eab308;border-radius:6px;padding:4px 9px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;margin-right:3px;display:inline-flex;align-items:center;gap:4px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg>알림톡 발송</button>
         <button onclick="_pssEmailSendRow('${p.id}','${p.employee_id}')" ${hasEmail ? '' : 'disabled'} style="${emailBtnStyle}border-radius:6px;padding:4px 9px;font-size:11.5px;font-weight:600;font-family:inherit;margin-right:3px;">✉ 이메일 발송</button>
         <button onclick="_pssManualDoneRow('${p.id}','${p.employee_id}')" style="background:#f0fdf4;color:#166534;border:1px solid #86efac;border-radius:6px;padding:4px 9px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;">✔ 수동교부 완료</button>
       </td>
@@ -501,9 +501,20 @@ function renderPssLogs(){
   const total = logs.length;
   const paged = logs.slice((_pssLogPage-1)*PSS_LOG_ITEMS, _pssLogPage*PSS_LOG_ITEMS);
 
-  const methodLabel = { kakao:'카카오', email:'이메일', manual:'수동 교부' };
-  const methodIcon  = { kakao:'fas fa-comment', email:'fas fa-envelope', manual:'fas fa-hand-paper' };
-  const methodColor = { kakao:'#f9d000', email:'#3b82f6', manual:'#6b7280' };
+  const methodBadge = m => {
+    const cfg = {
+      [DISPATCH_METHOD.KAKAO]:  { bg:'#f9d000', color:'#3b1f00', icon:'M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z', isSvg:true },
+      [DISPATCH_METHOD.EMAIL]:  { bg:'#dbeafe', color:'#1e40af', fa:'fa-envelope' },
+      [DISPATCH_METHOD.MANUAL]: { bg:'#d1fae5', color:'#065f46', fa:'fa-hand-holding' },
+      '수정재발행':              { bg:'#fce7f3', color:'#9d174d', fa:'fa-sync-alt' },
+    };
+    const c = cfg[m] || { bg:'#f3f4f6', color:'#374151', fa:'fa-question' };
+    const label = DISPATCH_METHOD_LABEL[m] || m || '-';
+    const icon = c.isSvg
+      ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="${c.color}"><path d="${c.icon}"/></svg>`
+      : `<i class="fas ${c.fa}" style="font-size:11px;"></i>`;
+    return `<span style="display:inline-flex;align-items:center;gap:4px;background:${c.bg};color:${c.color};padding:2px 9px;border-radius:20px;font-size:11.5px;font-weight:700;white-space:nowrap;">${icon}${label}</span>`;
+  };
 
   tbody.innerHTML = paged.map(l => {
     const emp = allEmployees.find(e => e.id === l.employee_id) || {};
@@ -518,10 +529,7 @@ function renderPssLogs(){
       <td><span class="badge ${empCatBadge(cat)}" style="font-size:10.5px;padding:2px 7px;">${contractTypeLabel(cat)}</span></td>
       <td style="font-size:12px;color:#374151;">${l.pay_year||'-'}년 ${l.pay_month||'-'}월</td>
       <td style="font-size:12px;color:#374151;">${sentDt}</td>
-      <td><span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;">
-        <i class="${methodIcon[meth]||'fas fa-paper-plane'}" style="color:${methodColor[meth]||'#6b7280'};"></i>
-        ${methodLabel[meth]||meth}
-      </span></td>
+      <td>${methodBadge(meth)}</td>
       <td style="font-size:12px;color:#6b7280;">${_resolveAdminName(l.sent_by)||'-'}</td>
       <td style="font-size:11.5px;color:#6b7280;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${(l.note||'').replace(/"/g,'&quot;')}">${l.note||'-'}</td>
     </tr>`;

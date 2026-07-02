@@ -30,7 +30,7 @@
                 <div class="search-input"><i class="fas fa-search"></i><input type="text" id="pay-search" placeholder="직원명 검색" oninput="renderPayrolls()" /></div>
               </div>
               <button id="bulk-send-btn" onclick="openBulkSendModal()" disabled
-                style="display:flex;align-items:center;gap:7px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;border-radius:9px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;box-shadow:0 2px 8px rgba(124,58,237,.25);transition:all .2s;">
+                style="display:flex;align-items:center;gap:7px;background:linear-gradient(135deg,#ffe033,#f9d000);color:#3b1f00;border:none;border-radius:9px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;box-shadow:0 2px 8px rgba(234,179,8,.25);transition:all .2s;">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0;"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg> 명세서 PDF 일괄 발송
               </button>
             </div>
@@ -97,7 +97,7 @@
 
         <!-- 모달 하단 버튼 -->
         <div style="padding:16px 28px;border-top:1px solid #ede9fe;display:flex;justify-content:flex-end;gap:10px;flex-shrink:0;background:#faf9ff;">
-          <button id="bulk-send-start-btn" onclick="startBulkSend()" class="btn btn-warning"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg> 알림톡 일괄 발송 시작</button>
+          <button id="bulk-send-start-btn" onclick="startBulkSend()" class="btn btn-kakao"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg> 알림톡 일괄 발송 시작</button>
           <button onclick="closeBulkSendModal()" class="btn btn-secondary">닫기</button>
         </div>
       </div>

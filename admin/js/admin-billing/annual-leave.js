@@ -1292,18 +1292,19 @@ function renderLpTable(){
     const d = new Date(ts);
     return isNaN(d)?'-':d.toLocaleString('ko-KR',{year:'2-digit',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
   };
-  // 근로자 발송 방식 배지
+  // 발송 방식 배지 (통일 스타일)
   const workerMethodBadge = m => {
     const cfg = {
-      [DISPATCH_METHOD.KAKAO]: { bg:'#fef9c3', c:'#713f12', icon:'fas fa-comment' },
-      [DISPATCH_METHOD.EMAIL]: { bg:'#dbeafe', c:'#1e40af', icon:'fas fa-envelope' },
-      'phone':                 { bg:'#d1fae5', c:'#065f46', icon:'fas fa-phone-alt' },
+      [DISPATCH_METHOD.KAKAO]: { bg:'#f9d000', color:'#3b1f00', icon:'M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z', isSvg:true },
+      [DISPATCH_METHOD.EMAIL]: { bg:'#dbeafe', color:'#1e40af', fa:'fa-envelope' },
+      'phone':                 { bg:'#d1fae5', color:'#065f46', fa:'fa-phone-alt' },
     };
-    const s = cfg[m] || { bg:'#f3f4f6', c:'#374151', icon:'fas fa-question' };
+    const c = cfg[m] || { bg:'#f3f4f6', color:'#374151', fa:'fa-question' };
     const label = DISPATCH_METHOD_LABEL[m] || (m==='phone'?'유선직접안내':m) || '-';
-    return `<span style="background:${s.bg};color:${s.c};padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:4px;">
-      <i class="${s.icon}" style="font-size:10px;"></i>${label}
-    </span>`;
+    const icon = c.isSvg
+      ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="${c.color}"><path d="${c.icon}"/></svg>`
+      : `<i class="fas ${c.fa}" style="font-size:11px;"></i>`;
+    return `<span style="display:inline-flex;align-items:center;gap:4px;background:${c.bg};color:${c.color};padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;">${icon}${label}</span>`;
   };
   // 고객사 앱 알림 고정 배지
   const companyNoticeBadge = `<span style="background:#dcfce7;color:#166534;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:4px;"><i class="fas fa-check" style="font-size:10px;"></i>인앱 발송</span>`;
@@ -1386,22 +1387,27 @@ function renderCenHistory(){
   };
   const methodBadge = m => {
     const cfg = {
-      [DISPATCH_METHOD.KAKAO]:  { bg:'#fef9c3',color:'#713f12' },
-      [DISPATCH_METHOD.EMAIL]:  { bg:'#dbeafe',color:'#1e40af' },
-      [DISPATCH_METHOD.MANUAL]: { bg:'#d1fae5',color:'#065f46' },
-      '수정재발행':              { bg:'#fce7f3',color:'#9d174d' },
+      [DISPATCH_METHOD.KAKAO]:  { bg:'#f9d000', color:'#3b1f00', icon:'M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z', isSvg:true },
+      [DISPATCH_METHOD.EMAIL]:  { bg:'#dbeafe', color:'#1e40af', fa:'fa-envelope' },
+      [DISPATCH_METHOD.MANUAL]: { bg:'#d1fae5', color:'#065f46', fa:'fa-hand-holding' },
+      '수정재발행':              { bg:'#fce7f3', color:'#9d174d', fa:'fa-sync-alt' },
     };
-    const c = cfg[m]||{bg:'#f3f4f6',color:'#374151'};
-    return `<span style="background:${c.bg};color:${c.color};padding:2px 9px;border-radius:20px;font-size:11.5px;font-weight:700;">${DISPATCH_METHOD_LABEL[m]||m||'-'}</span>`;
+    const c = cfg[m] || { bg:'#f3f4f6', color:'#374151', fa:'fa-question' };
+    const label = DISPATCH_METHOD_LABEL[m] || m || '-';
+    const icon = c.isSvg
+      ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="${c.color}"><path d="${c.icon}"/></svg>`
+      : `<i class="fas ${c.fa}" style="font-size:11px;"></i>`;
+    return `<span style="display:inline-flex;align-items:center;gap:4px;background:${c.bg};color:${c.color};padding:2px 9px;border-radius:20px;font-size:11.5px;font-weight:700;white-space:nowrap;">${icon}${label}</span>`;
   };
   const statusBadge = s => {
     const cfg = {
-      [DISPATCH_STATUS.COMPLETED]: { bg:'#dcfce7',color:'#166534' },
-      [DISPATCH_STATUS.FAILED]:    { bg:'#fee2e2',color:'#991b1b' },
-      [DISPATCH_STATUS.PENDING]:   { bg:'#e0e7ff',color:'#3730a3' },
+      [DISPATCH_STATUS.COMPLETED]: { bg:'#dcfce7',color:'#166534', fa:'fa-check-circle' },
+      [DISPATCH_STATUS.FAILED]:    { bg:'#fee2e2',color:'#991b1b', fa:'fa-times-circle' },
+      [DISPATCH_STATUS.PENDING]:   { bg:'#e0e7ff',color:'#3730a3', fa:'fa-clock' },
     };
-    const c = cfg[s]||{bg:'#f3f4f6',color:'#374151'};
-    return `<span style="background:${c.bg};color:${c.color};padding:2px 9px;border-radius:20px;font-size:11.5px;font-weight:700;">${DISPATCH_STATUS_LABEL[s]||s||'-'}</span>`;
+    const c = cfg[s] || { bg:'#f3f4f6', color:'#374151', fa:'fa-circle' };
+    const label = DISPATCH_STATUS_LABEL[s] || s || '-';
+    return `<span style="display:inline-flex;align-items:center;gap:4px;background:${c.bg};color:${c.color};padding:2px 9px;border-radius:20px;font-size:11.5px;font-weight:700;"><i class="fas ${c.fa}" style="font-size:10px;"></i>${label}</span>`;
   };
   tbody.innerHTML = pageData.map((r,idx)=>`
     <tr style="${idx%2?'background:#fafafa':''}" onmouseover="this.style.background='#f0f9ff'" onmouseout="this.style.background='${idx%2?'#fafafa':''}'">

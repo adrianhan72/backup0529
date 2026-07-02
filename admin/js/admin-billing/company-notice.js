@@ -389,7 +389,7 @@ function renderCenTargetList(){
     const hasPhone = !!phone.trim();
     const hasEmail = !!email.trim();
     const kakaoStyle = hasPhone
-      ? 'background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;cursor:pointer;'
+      ? 'background:linear-gradient(135deg,#ffe033,#f9d000);color:#3b1f00;border:1px solid #eab308;cursor:pointer;'
       : 'background:#f3f4f6;color:#d1d5db;border:1px solid #e5e7eb;cursor:not-allowed;';
     const emailStyle = hasEmail
       ? 'background:#dbeafe;color:#1d4ed8;border:1px solid #93c5fd;cursor:pointer;'

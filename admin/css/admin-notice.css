@@ -255,12 +255,12 @@
     .cen-bulk-btn:active:not(:disabled){transform:scale(.96) translateY(1px);}
     .cen-bulk-btn:disabled,.cen-bulk-btn[disabled]{background:#9ca3af;color:#d1d5db;border-color:#9ca3af;cursor:not-allowed;pointer-events:none;box-shadow:none;opacity:1;}
     .cen-bulk-kakao{
-      background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;
-      box-shadow:0 1px 4px rgba(124,58,237,.28);
+      background:linear-gradient(135deg,#ffe033,#f9d000);color:#3b1f00;
+      box-shadow:0 1px 4px rgba(234,179,8,.28);
     }
     .cen-bulk-kakao:hover:not(:disabled){
-      background:linear-gradient(135deg,#6d28d9,#5b21b6);
-      box-shadow:0 4px 14px rgba(124,58,237,.38);
+      background:linear-gradient(135deg,#f9d000,#eab308);
+      box-shadow:0 4px 14px rgba(234,179,8,.38);
     }
     .cen-bulk-email{
       background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;

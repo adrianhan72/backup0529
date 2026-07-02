@@ -110,6 +110,12 @@
     .btn-indigo:active:not(:disabled){background:#3730a3;}
     .btn-indigo.selected,.btn-indigo[aria-selected="true"]{background:#3730a3;}
 
+    /* Kakao */
+    .btn-kakao{background:linear-gradient(135deg,#ffe033,#f9d000);color:#3b1f00;border-color:#eab308;}
+    .btn-kakao:hover:not(:disabled){background:linear-gradient(135deg,#f9d000,#eab308);}
+    .btn-kakao:active:not(:disabled){background:#eab308;}
+    .btn-kakao.selected,.btn-kakao[aria-selected="true"]{background:#eab308;}
+
     /* Teal */
     .btn-teal{background:linear-gradient(135deg,#10b981,#059669);border-color:#047857;}
     .btn-teal:hover:not(:disabled){background:#047857;}

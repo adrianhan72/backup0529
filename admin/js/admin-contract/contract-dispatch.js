@@ -98,7 +98,7 @@ async function renderContractDispatchPage(){
 
   const methodBadge = m => {
     const cfg = {
-      [DISPATCH_METHOD.KAKAO]:  { bg:'#fef9c3', color:'#713f12', icon:'M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z', isSvg:true },
+      [DISPATCH_METHOD.KAKAO]:  { bg:'#f9d000', color:'#3b1f00', icon:'M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z', isSvg:true },
       [DISPATCH_METHOD.EMAIL]:  { bg:'#dbeafe', color:'#1e40af', fa:'fa-envelope' },
       [DISPATCH_METHOD.MANUAL]: { bg:'#d1fae5', color:'#065f46', fa:'fa-hand-holding' },
       '수정재발행':              { bg:'#fce7f3', color:'#9d174d', fa:'fa-sync-alt' },
@@ -125,14 +125,15 @@ async function renderContractDispatchPage(){
   };
 
   const typeBadge = t => {
+    const normalized = normalizeContractType(t);
     const cfg = {
-      [CONTRACT_TYPE.REGULAR]:           { bg:'#dbeafe',color:'#1e40af' },
-      [CONTRACT_TYPE.REGULAR_PROBATION]: { bg:'#e0f2fe',color:'#075985' },
-      [CONTRACT_TYPE.FIXED_TERM]:        { bg:'#ede9fe',color:'#5b21b6' },
-      [CONTRACT_TYPE.FIXED_PROBATION]:   { bg:'#fce7f3',color:'#9d174d' },
-      [CONTRACT_TYPE.DAILY]:             { bg:'#fef3c7',color:'#92400e' },
+      [CONTRACT_TYPE.REGULAR]:           { bg:'rgba(59,130,246,.1)',color:'#3b82f6' },
+      [CONTRACT_TYPE.REGULAR_PROBATION]: { bg:'rgba(6,182,212,.1)',color:'#0891b2' },
+      [CONTRACT_TYPE.FIXED]:             { bg:'rgba(139,92,246,.1)',color:'#8b5cf6' },
+      [CONTRACT_TYPE.FIXED_PROBATION]:   { bg:'rgba(236,72,153,.1)',color:'#db2777' },
+      [CONTRACT_TYPE.DAILY]:             { bg:'rgba(234,88,12,.1)',color:'#ea580c' },
     };
-    const c = cfg[t] || { bg:'#f3f4f6',color:'#374151' };
+    const c = cfg[normalized] || { bg:'#f3f4f6',color:'#374151' };
     return `<span style="background:${c.bg};color:${c.color};padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;">${contractTypeLabel(t)}</span>`;
   };
 
@@ -145,8 +146,8 @@ async function renderContractDispatchPage(){
       <td style="padding:9px 12px;font-weight:700;color:#4f46e5;">${r.employee_name||'-'}</td>
       <td style="padding:9px 12px;">${typeBadge(r.contract_type)}</td>
       <td style="padding:9px 12px;text-align:center;">${methodBadge(r.dispatch_method)}</td>
-      <td style="padding:9px 12px;text-align:center;">${statusBadge(r.dispatch_status)}</td>
       <td style="padding:9px 12px;font-size:12px;color:#374151;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.recipient||''}">${r.recipient||'-'}</td>
+      <td style="padding:9px 12px;text-align:center;">${statusBadge(r.dispatch_status)}</td>
       <td style="padding:9px 12px;font-size:12px;color:#6b7280;">${_resolveAdminName(r.dispatched_by)||'-'}</td>
       <td style="padding:9px 12px;text-align:center;white-space:nowrap;">${_cdpAttachBtn(r.contract_id)}</td>
     </tr>`;
@@ -338,7 +339,7 @@ function renderCdpUnsentList(){
     const email    = emp.email || '';
     const hasPhone = !!(phone.trim());
     const hasEmail = !!(email.trim());
-    const kakaoClass = hasPhone ? 'btn btn-indigo btn-sm' : 'btn btn-sm';
+    const kakaoClass = hasPhone ? 'btn btn-kakao btn-sm' : 'btn btn-sm';
     const emailClass = hasEmail ? 'btn btn-sky btn-sm' : 'btn btn-sm';
     return `<tr id="cdp-urow-${idx}">
       <td style="font-weight:700;color:#1f2937;">${emp.name || '-'}</td>
@@ -347,6 +348,7 @@ function renderCdpUnsentList(){
       <td style="font-size:12px;color:#6b7280;">${c.contract_start || '-'}</td>
       <td style="font-size:12px;color:#6b7280;">${phone || '<span style="color:#d1d5db;">미등록</span>'}</td>
       <td style="font-size:12px;">${hasEmail ? `<span style="color:#374151;">${email}</span>` : '<span style="color:#d1d5db;">미등록</span>'}</td>
+      <td style="text-align:center;white-space:nowrap;">${_cdpAttachBtn(c.id)}</td>
       <td style="text-align:center;white-space:nowrap;">
         <button onclick="cdpUnsentKakao('${c.id}')" ${hasPhone ? '' : 'disabled'}
           class="${kakaoClass}" style="margin-right:3px;">

@@ -252,6 +252,21 @@ function renderRcHistory(){
     return;
   }
 
+  const methodBadge = m => {
+    const cfg = {
+      [DISPATCH_METHOD.KAKAO]:  { bg:'#f9d000', color:'#3b1f00', icon:'M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z', isSvg:true },
+      [DISPATCH_METHOD.EMAIL]:  { bg:'#dbeafe', color:'#1e40af', fa:'fa-envelope' },
+      [DISPATCH_METHOD.MANUAL]: { bg:'#d1fae5', color:'#065f46', fa:'fa-hand-holding' },
+      '수정재발행':              { bg:'#fce7f3', color:'#9d174d', fa:'fa-sync-alt' },
+    };
+    const c = cfg[m] || { bg:'#f3f4f6', color:'#374151', fa:'fa-question' };
+    const label = DISPATCH_METHOD_LABEL[m] || m || '-';
+    const icon = c.isSvg
+      ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="${c.color}"><path d="${c.icon}"/></svg>`
+      : `<i class="fas ${c.fa}" style="font-size:11px;"></i>`;
+    return `<span style="display:inline-flex;align-items:center;gap:4px;background:${c.bg};color:${c.color};padding:2px 9px;border-radius:20px;font-size:11.5px;font-weight:700;white-space:nowrap;">${icon}${label}</span>`;
+  };
+
   tbody.innerHTML = pageData.map(r => {
     const cls = CAT_BADGE_CLS[r.contract_type] || 'badge-purple';
     // 누적 기간 — note 필드에서 일수 파싱 시도
@@ -263,7 +278,7 @@ function renderRcHistory(){
       <td><span class="badge ${cls}" style="font-size:11px;">${r.contract_type||'-'}</span></td>
       <td style="font-size:12px;color:#374151;">${r.company_name||'-'}</td>
       <td style="font-size:12px;color:#6b7280;">${totalDaysText}</td>
-      <td><span style="background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:20px;font-size:11.5px;font-weight:700;">${r.notice_method||'인앱알림'}</span></td>
+      <td>${methodBadge(r.notice_method)}</td>
       <td style="font-size:12px;color:#6b7280;">${_resolveAdminName(r.noticed_by)||'-'}</td>
       <td style="font-size:11.5px;color:#6b7280;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${(r.note||'').replace(/"/g,'&quot;')}">${r.note||'-'}</td>
     </tr>`;

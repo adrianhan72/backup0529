@@ -84,8 +84,8 @@ async function openBulkSendModal(){
   const startBtn = document.getElementById('bulk-send-start-btn');
   startBtn.disabled = false;
   startBtn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg> 알림톡 일괄 발송 시작';
-  startBtn.style.background = 'linear-gradient(135deg,#7c3aed,#6d28d9)';
-  startBtn.style.color = '#fff';
+  startBtn.style.background = 'linear-gradient(135deg,#ffe033,#f9d000)';
+  startBtn.style.color = '#3b1f00';
 
   _renderBulkTable();
   document.getElementById('bulk-send-modal').classList.add('open');
@@ -363,8 +363,8 @@ async function startBulkSend(){
     // 실패 건 있음 → 재발송 버튼 활성 (실패 행에는 개별 재발송 버튼이 이미 표시됨)
     startBtn.disabled = false;
     startBtn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg> 알림톡 재발송 (실패 건만)';
-    startBtn.style.background = 'linear-gradient(135deg,#7c3aed,#6d28d9)';
-    startBtn.style.color = '#fff';
+    startBtn.style.background = 'linear-gradient(135deg,#ffe033,#f9d000)';
+    startBtn.style.color = '#3b1f00';
     toast(`⚠ 발송 완료: ${successCnt}명 성공 / ${failCnt}명 실패`, 'error');
   }
 }
