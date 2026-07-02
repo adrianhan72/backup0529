@@ -1830,6 +1830,7 @@ async function confirmFixedTerminate(){
 }
 // ── 임시저장 ──
 async function saveDraftContract(reason){
+  const activeEl = document.activeElement; // 포커스 보존
   const coId  = document.getElementById('ct-company').value;
   if(!coId) return toast('회사를 선택하세요.','error');
 
@@ -2014,6 +2015,10 @@ async function saveDraftContract(reason){
     toast(`⚠ 필수 항목 누락으로 임시저장 되었습니다.\n[${reason}]`, 'warning');
   } else {
     toast(`임시저장 되었습니다. (${timeStr})`, 'success');
+  }
+  // 포커스 복원
+  if(activeEl && typeof activeEl.focus === 'function'){
+    setTimeout(() => { try { activeEl.focus(); } catch(e) {} }, 100);
   }
 }
 
