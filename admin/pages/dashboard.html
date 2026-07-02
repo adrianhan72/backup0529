@@ -147,6 +147,12 @@
         <div class="card">
           <div class="card-header">
             <span class="card-title">📈 고객사 수</span>
+            <select id="dash-company-filter" onchange="renderCompanyTrendChart()"
+              style="border:1px solid #e0e0e0;border-radius:6px;padding:3px 10px;font-size:11.5px;color:#555;background:#fff;outline:none;cursor:pointer;font-family:inherit;">
+              <option value="all">전체</option>
+              <option value="active" selected>이용중</option>
+              <option value="inactive">해지</option>
+            </select>
           </div>
           <div style="padding:20px 24px;height:260px;">
             <canvas id="company-trend-chart"></canvas>

@@ -227,11 +227,20 @@ let companyTrendChartInstance = null;
 function renderCompanyTrendChart(){
   const rangeEl = document.getElementById('dash-chart-range');
   const months = rangeEl ? parseInt(rangeEl.value) : 12;
+  const filterEl = document.getElementById('dash-company-filter');
+  const filter = filterEl ? filterEl.value : 'active';
 
   const now = new Date();
   const labels = [];
-  const activeData = [];  // 해당 월 급여가 입력된 고객사 수
-  const totalData = [];   // 누적 전체 고객사 수
+  const activeData = [];
+  const inactiveData = [];
+
+  // 회사 ID → 현재 상태 매핑 (차트 시점이 아닌 현재 기준)
+  const coStatusMap = {};
+  allCompanies.forEach(c => {
+    if(c.is_draft) return;
+    coStatusMap[c.id] = isCompanyActive(c) ? 'active' : 'inactive';
+  });
 
   for(let i = months - 1; i >= 0; i--){
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
@@ -239,46 +248,71 @@ function renderCompanyTrendChart(){
     const mo = d.getMonth() + 1;
     labels.push(`${yr}.${String(mo).padStart(2,'0')}`);
 
-    // 해당 월에 급여 데이터가 1건 이상 있는 고객사 수 (이용중·해지 무관, 당시 실제 이용 기준)
-    const totalCount = new Set(
+    // 해당 월 급여 데이터가 있는 고객사 ID 목록
+    const monthCoIds = [...new Set(
       allPayrolls
         .filter(p => Number(p.pay_year) === yr && Number(p.pay_month) === mo)
         .map(p => p.company_id)
-    ).size;
+    )];
 
-    activeData.push(totalCount);
-    totalData.push(totalCount);
+    const activeCount = monthCoIds.filter(id => coStatusMap[id] === 'active').length;
+    const inactiveCount = monthCoIds.filter(id => coStatusMap[id] === 'inactive').length;
+    activeData.push(activeCount);
+    inactiveData.push(inactiveCount);
   }
 
   const ctx = document.getElementById('company-trend-chart');
   if(!ctx) return;
 
-  // 기존 차트 인스턴스 제거
   if(companyTrendChartInstance){
     companyTrendChartInstance.destroy();
     companyTrendChartInstance = null;
+  }
+
+  // 필터에 따라 표시할 데이터셋 구성
+  const datasets = [];
+  const showActive = filter === 'all' || filter === 'active';
+  const showInactive = filter === 'all' || filter === 'inactive';
+
+  if(showActive){
+    datasets.push({
+      label: '이용중',
+      data: activeData,
+      borderColor: '#10b981',
+      backgroundColor: 'rgba(16,185,129,0.08)',
+      pointBackgroundColor: '#10b981',
+      pointBorderColor: '#fff',
+      pointBorderWidth: 2,
+      pointRadius: 5,
+      pointHoverRadius: 7,
+      borderWidth: 2.5,
+      fill: true,
+      tension: 0.35
+    });
+  }
+  if(showInactive){
+    datasets.push({
+      label: '해지',
+      data: inactiveData,
+      borderColor: '#ef4444',
+      backgroundColor: 'rgba(239,68,68,0.06)',
+      pointBackgroundColor: '#ef4444',
+      pointBorderColor: '#fff',
+      pointBorderWidth: 2,
+      pointRadius: 4,
+      pointHoverRadius: 6,
+      borderWidth: 2,
+      borderDash: [5,3],
+      fill: true,
+      tension: 0.35
+    });
   }
 
   companyTrendChartInstance = new Chart(ctx, {
     type: 'line',
     data: {
       labels: labels,
-      datasets: [
-        {
-          label: '급여 입력 고객사',
-          data: activeData,
-          borderColor: '#e94560',
-          backgroundColor: 'rgba(233,69,96,0.08)',
-          pointBackgroundColor: '#e94560',
-          pointBorderColor: '#fff',
-          pointBorderWidth: 2,
-          pointRadius: 5,
-          pointHoverRadius: 7,
-          borderWidth: 2.5,
-          fill: true,
-          tension: 0.35
-        }
-      ]
+      datasets: datasets
     },
     options: {
       responsive: true,
