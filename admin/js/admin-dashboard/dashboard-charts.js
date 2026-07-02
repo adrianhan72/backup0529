@@ -228,18 +228,32 @@ function renderCompanyTrendChart(){
   const rangeEl = document.getElementById('dash-chart-range');
   const months = rangeEl ? parseInt(rangeEl.value) : 12;
   const filterEl = document.getElementById('dash-company-filter');
-  const filter = filterEl ? filterEl.value : 'active';
+  const filter = filterEl ? filterEl.value : 'employee';
 
   const now = new Date();
   const labels = [];
-  const activeData = [];
-  const inactiveData = [];
+  // 근로자 수 기준 데이터
+  const allData = [];       // 전체
+  const under5Data = [];    // 5인 미만
+  const over5Data = [];     // 5인 이상
+  // 계약 기준 데이터
+  const activeData = [];    // 이용중
+  const inactiveData = [];  // 해지
 
-  // 회사 ID → 현재 상태 매핑 (차트 시점이 아닌 현재 기준)
-  const coStatusMap = {};
+  // 회사 ID → { status, empCount } 매핑 (현재 기준)
+  const coMeta = {};
   allCompanies.forEach(c => {
     if(c.is_draft) return;
-    coStatusMap[c.id] = isCompanyActive(c) ? 'active' : 'inactive';
+    const active = isCompanyActive(c);
+    // 상시근로자 수: is_representative=0 인 유효계약 직원 수
+    const empCount = allContracts.filter(ct =>
+      ct.company_id === c.id && !ct.is_draft &&
+      ct.status !== CONTRACT_STATUS.VOIDED && ct.status !== CONTRACT_STATUS.CANCELED
+    ).filter(ct => {
+      const emp = allEmployees.find(e => e.id === ct.employee_id);
+      return emp && !emp.is_representative;
+    }).length;
+    coMeta[c.id] = { status: active ? 'active' : 'inactive', empCount };
   });
 
   for(let i = months - 1; i >= 0; i--){
@@ -248,17 +262,17 @@ function renderCompanyTrendChart(){
     const mo = d.getMonth() + 1;
     labels.push(`${yr}.${String(mo).padStart(2,'0')}`);
 
-    // 해당 월 급여 데이터가 있는 고객사 ID 목록
     const monthCoIds = [...new Set(
       allPayrolls
         .filter(p => Number(p.pay_year) === yr && Number(p.pay_month) === mo)
         .map(p => p.company_id)
     )];
 
-    const activeCount = monthCoIds.filter(id => coStatusMap[id] === 'active').length;
-    const inactiveCount = monthCoIds.filter(id => coStatusMap[id] === 'inactive').length;
-    activeData.push(activeCount);
-    inactiveData.push(inactiveCount);
+    allData.push(monthCoIds.length);
+    under5Data.push(monthCoIds.filter(id => (coMeta[id]?.empCount || 0) < 5).length);
+    over5Data.push(monthCoIds.filter(id => (coMeta[id]?.empCount || 0) >= 5).length);
+    activeData.push(monthCoIds.filter(id => coMeta[id]?.status === 'active').length);
+    inactiveData.push(monthCoIds.filter(id => coMeta[id]?.status === 'inactive').length);
   }
 
   const ctx = document.getElementById('company-trend-chart');
@@ -269,42 +283,43 @@ function renderCompanyTrendChart(){
     companyTrendChartInstance = null;
   }
 
-  // 필터에 따라 표시할 데이터셋 구성
   const datasets = [];
-  const showActive = filter === 'all' || filter === 'active';
-  const showInactive = filter === 'all' || filter === 'inactive';
-
-  if(showActive){
+  if(filter === 'employee'){
     datasets.push({
-      label: '이용중',
-      data: activeData,
-      borderColor: '#10b981',
-      backgroundColor: 'rgba(16,185,129,0.08)',
-      pointBackgroundColor: '#10b981',
-      pointBorderColor: '#fff',
-      pointBorderWidth: 2,
-      pointRadius: 5,
-      pointHoverRadius: 7,
-      borderWidth: 2.5,
-      fill: true,
-      tension: 0.35
+      label: '전체', data: allData,
+      borderColor: '#6366f1', backgroundColor: 'rgba(99,102,241,0.06)',
+      pointBackgroundColor: '#6366f1', pointBorderColor: '#fff',
+      pointBorderWidth: 2, pointRadius: 5, pointHoverRadius: 7,
+      borderWidth: 2.5, fill: false, tension: 0.35
     });
-  }
-  if(showInactive){
     datasets.push({
-      label: '해지',
-      data: inactiveData,
-      borderColor: '#ef4444',
-      backgroundColor: 'rgba(239,68,68,0.06)',
-      pointBackgroundColor: '#ef4444',
-      pointBorderColor: '#fff',
-      pointBorderWidth: 2,
-      pointRadius: 4,
-      pointHoverRadius: 6,
-      borderWidth: 2,
-      borderDash: [5,3],
-      fill: true,
-      tension: 0.35
+      label: '5인 미만', data: under5Data,
+      borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.08)',
+      pointBackgroundColor: '#f59e0b', pointBorderColor: '#fff',
+      pointBorderWidth: 2, pointRadius: 4, pointHoverRadius: 6,
+      borderWidth: 2, fill: false, tension: 0.35
+    });
+    datasets.push({
+      label: '5인 이상', data: over5Data,
+      borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.08)',
+      pointBackgroundColor: '#10b981', pointBorderColor: '#fff',
+      pointBorderWidth: 2, pointRadius: 4, pointHoverRadius: 6,
+      borderWidth: 2, fill: false, tension: 0.35
+    });
+  } else {
+    datasets.push({
+      label: '이용중', data: activeData,
+      borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.08)',
+      pointBackgroundColor: '#10b981', pointBorderColor: '#fff',
+      pointBorderWidth: 2, pointRadius: 5, pointHoverRadius: 7,
+      borderWidth: 2.5, fill: true, tension: 0.35
+    });
+    datasets.push({
+      label: '해지', data: inactiveData,
+      borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.06)',
+      pointBackgroundColor: '#ef4444', pointBorderColor: '#fff',
+      pointBorderWidth: 2, pointRadius: 4, pointHoverRadius: 6,
+      borderWidth: 2, borderDash: [5,3], fill: true, tension: 0.35
     });
   }
 
