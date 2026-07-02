@@ -1845,6 +1845,35 @@ async function saveDraftContract(reason){
   const isNew     = !editId.contract && !_recontractEmpId;
   const isEditMode = !!editId.contract;
 
+  // ── 신규 직원인 경우 먼저 직원 생성 (임시저장도 직원 DB에 저장) ──
+  if(isNew && !empId){
+    const saved = await api('../tables/employees',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      id: 'emp'+Date.now(),
+      company_id: coId,
+      name: document.getElementById('ct-em-name').value.trim(),
+      gender: document.getElementById('ct-em-gender').value,
+      employment_category: document.getElementById('ct-em-category').value,
+      employee_number: document.getElementById('ct-em-empno')?.value.trim() || '',
+      job_description: document.getElementById('ct-em-job').value.trim(),
+      id_number: document.getElementById('ct-em-id').value,
+      department: document.getElementById('ct-em-dept').value,
+      position: document.getElementById('ct-em-position').value,
+      hire_date: document.getElementById('ct-em-hire').value,
+      expire_date: document.getElementById('ct-em-expire').value,
+      status: EMP_STATUS.ACTIVE,
+      dependents: parseInt(document.getElementById('ct-em-dependents')?.value)||0,
+      phone: document.getElementById('ct-em-phone').value,
+      email: document.getElementById('ct-em-email').value,
+      address: document.getElementById('ct-em-address').value,
+      bank_name: document.getElementById('ct-em-bank')?.value.trim() || '',
+      bank_account: document.getElementById('ct-em-account')?.value.trim() || '',
+      is_representative: document.getElementById('ct-em-is-rep')?.checked ? 1 : 0,
+      note: ''
+    })});
+    empId = saved.id || ('emp'+Date.now());
+    await loadEmployees();
+  }
+
   // 현재 입력값 수집 (유효성 검사 없이 최대한 수집)
   const catForDraft = isEditMode
     ? (allContracts.find(x=>x.id===editId.contract)||{}).contract_type||'정규직'
@@ -1958,12 +1987,7 @@ async function saveDraftContract(reason){
     draft_saved_at:       Date.now(),
   };
 
-  // 신규 임시저장: 직원명 정도는 note에 보관 (직원 미생성)
-  if(isNew){
-    const tmpName = document.getElementById('ct-em-name').value.trim();
-    if(tmpName) draftBody.note = `[임시저장] 직원명: ${tmpName}${draftBody.note ? ' / '+draftBody.note : ''}`;
-  }
-
+  // (직원이 이미 생성되었으므로 note에 직원명 별도 보관 불필요)
   let savedId;
   const bodyJSON = JSON.stringify(draftBody);
   console.log('[saveDraftContract] isEditMode:', isEditMode, 'isNew:', isNew, 'body keys:', Object.keys(draftBody).length);
