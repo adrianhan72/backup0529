@@ -329,10 +329,31 @@ function openContractModal(id=null, preCompanyId=null){
     document.getElementById('ct-edit-emp-info').style.display = 'none';
     document.getElementById('ct-title').textContent = '근로계약서 추가';
   } else {
+    // 임시저장(draft)에 employee_id가 없으면 신규 섹션으로 열기
+    const c = allContracts.find(x => x.id === id);
+    const isDraftWithoutEmp = c && c.is_draft && !c.employee_id;
+    if(isDraftWithoutEmp){
+      document.getElementById('ct-company').value = c.company_id || '';
+      // note에서 직원명 복원: "[임시저장] 직원명: xxx"
+      const noteName = (c.note || '').match(/\[임시저장\]\s*직원명:\s*(.+?)(?:\s*\/|$)/);
+      document.getElementById('ct-em-name').value = noteName ? noteName[1].trim() : '';
+      document.getElementById('ct-em-category').value = c.contract_type || '';
+      document.getElementById('ct-em-start').value = c.contract_start || '';
+      document.getElementById('ct-em-expire').value = c.contract_end || '';
+      document.getElementById('ct-em-hire').value = c.contract_start || '';
+      document.getElementById('ct-em-phone').value = '';
+      document.getElementById('ct-em-id').value = '';
+      document.getElementById('ct-em-address').value = '';
+      document.getElementById('ct-em-job').value = '';
+      { const _nDep=document.getElementById('ct-em-dependents'); if(_nDep) _nDep.value=1; }
+      // 급여·수당은 _fillContractForm에서 채움
+      document.getElementById('ct-new-emp-section').style.display = 'block';
+      document.getElementById('ct-edit-emp-info').style.display = 'none';
+      document.getElementById('ct-title').textContent = '근로계약서 추가 (이어 작성)';
+    } else {
     // 수정: 기존 직원 정보 표시, 신규 입력 섹션 숨김
     document.getElementById('ct-new-emp-section').style.display = 'none';
     document.getElementById('ct-edit-emp-info').style.display = 'block';
-    const c=allContracts.find(x=>x.id===id);
     if(c){
       // 계약예정 여부 — 이하 여러 곳에서 공통 사용
       const _isPendingCt = (c.status===CONTRACT_STATUS.PENDING);
@@ -521,6 +542,7 @@ function openContractModal(id=null, preCompanyId=null){
     _prevEditCategory = document.getElementById('ct-edit-em-category')?.value || '';
     // 수정 모드: 데이터 복원 완료 후 연차일수 자동계산 힌트 표시
     autoFillAnnualLeave();
+    } // close isDraftWithoutEmp else
   }
   // 신규 모드: 힌트 초기화
   if(isNew){ const h=document.getElementById('ct-annual-hint'); if(h) h.style.display='none'; }
