@@ -395,15 +395,8 @@ function renderEmployeeTrendChart(){
   const rangeEl = document.getElementById('dash-chart-range');
   const months = rangeEl ? parseInt(rangeEl.value) : 12;
 
-  // 체크박스 상태 읽기
-  const showType = {};
-  document.querySelectorAll('.emp-chart-chk').forEach(cb => {
-    showType[cb.dataset.type] = cb.checked;
-  });
-
   const now = new Date();
   const labels = [];
-  // 고용형태별 데이터 배열
   const typeKeys = ['total', 'regular', 'regular_probation', 'fixed_term', 'fixed_term_probation', 'daily'];
   const dataMap = {};
   typeKeys.forEach(k => { dataMap[k] = []; });
@@ -473,7 +466,6 @@ function renderEmployeeTrendChart(){
   const datasets = [];
   const allDataForMax = [];
   typeKeys.forEach(k => {
-    if(!showType[k]) return;
     const cfg = typeConfig[k];
     allDataForMax.push(...dataMap[k]);
     const ds = {
