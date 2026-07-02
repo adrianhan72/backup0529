@@ -388,7 +388,7 @@ function backToPITargetList(){
 }
 
 function loadPIEmployees(){
-  const co=document.getElementById('pi-company').value;
+  const co=currentGlobalCompanyId || document.getElementById('pi-company').value;
   const s=document.getElementById('pi-employee');
   s.innerHTML='<option value="">선택</option>';
   [...allEmployees.filter(e=>e.company_id===co&&(e.status===EMP_STATUS.ACTIVE||e.status===EMP_STATUS.ACTIVE))].sort((a,b)=>(a.name||'').localeCompare(b.name||'','ko')).forEach(e=>{const _deptPos=[e.department,e.position].filter(v=>v&&v.trim()).join('/');s.innerHTML+=`<option value="${e.id}">${e.name}${_deptPos?` (${_deptPos})`:''}</option>`;});

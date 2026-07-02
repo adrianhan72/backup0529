@@ -657,7 +657,7 @@ async function _createTermNotice(company, endDateStr, oldEndDateStr){
         is_read      : 0,
       }),
     });
-    console.log(`[해지예정알림] ${company.company_name} → ${endDateStr}`);
+
   } catch(e){
     console.warn('[해지예정알림] 발송 실패:', e);
   }
@@ -686,7 +686,7 @@ async function _createCancelNotice(company){
         is_read      : 0,
       }),
     });
-    console.log(`[해지취소알림] ${company.company_name}`);
+
   } catch(e){
     console.warn('[해지취소알림] 발송 실패:', e);
   }

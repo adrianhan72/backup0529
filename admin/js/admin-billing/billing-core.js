@@ -17,7 +17,7 @@ async function generateMonthlyBilling(){
       // 이미 해당 연월에 청구 데이터가 있는지 확인
       const exists=allBillings.find(b=>b.company_id===co.id&&b.billing_year==yr&&b.billing_month==mo);
       if(exists){
-        console.log(`[청구 생성 스킵] ${co.company_name} - 이미 ${yr}년 ${mo}월 청구 존재`);
+
         continue;
       }
       
@@ -37,7 +37,7 @@ async function generateMonthlyBilling(){
       const empCount=payrollEmps.length>0?payrollEmps.length:activeEmps.length;
       
       if(empCount===0){
-        console.log(`[청구 생성 스킵] ${co.company_name} - 재직 직원 0명`);
+
         continue;
       }
       

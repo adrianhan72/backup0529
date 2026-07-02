@@ -468,5 +468,4 @@ function calcMonthWorkDays(year, month) {
   return count;
 }
 
-// ── 상수 로드 확인 ──
-console.log('[상수] constants.js v2.35 로드 — 영문 DB값 + 한글 LABEL');
+

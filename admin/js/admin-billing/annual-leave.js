@@ -1112,11 +1112,11 @@ async function confirmSendLeavePromotion(method){
     if(method ===DISPATCH_METHOD.KAKAO){
       // 실제 카카오 API 연동 시 교체
       await new Promise(r=>setTimeout(r,400));
-      console.log('[알림톡] 연차 사용촉진 발송:', emp.phone, emp.name);
+
     } else if(method ===DISPATCH_METHOD.EMAIL){
       // 실제 이메일 API 연동 시 교체
       await new Promise(r=>setTimeout(r,400));
-      console.log('[이메일] 연차 사용촉진 발송:', emp.email, emp.name);
+
     }
     // 유선직접안내는 별도 발송 없음 — 이력만 기록
 

@@ -244,7 +244,6 @@ async function _sendKakaoAlimtalk(phone, fileName, file){
   await new Promise(r=>setTimeout(r, 400)); // 네트워크 지연 시뮬레이션
   window._bulkPayslipFiles = window._bulkPayslipFiles || [];
   window._bulkPayslipFiles.push({ phone, fileName, file });
-  console.log('[알림톡 발송 준비]', { phone, fileName, size: (file.size/1024).toFixed(1)+'KB' });
   // TODO: 실제 발송 API 호출
   // const form = new FormData();
   // form.append('phone', phone);
@@ -552,5 +551,4 @@ function _checkAllDone(){
 async function _sendEmailWithAttachment(toEmail, fileName, file){
   // TODO: 실제 이메일 API 연동
   await new Promise(r => setTimeout(r, 600));
-  console.log(`[이메일 발송 stub] to: ${toEmail}, file: ${fileName}`);
 }

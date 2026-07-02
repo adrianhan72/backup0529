@@ -727,7 +727,6 @@ function cancelPendingEdit(){
 async function savePendingContractEdit(){
   const c = allContracts.find(x=>x.id===editId.contract);
   if(!c) return toast('계약 정보를 찾을 수 없습니다.','error');
-  console.log('[savePendingContractEdit] 시작, contract id:', editId.contract);
 
   // ── 최저임금 위반 차단 (예정 계약 수정 경로) ──
   const _mwWarnRowPend  = document.getElementById('ct-prob-minwage-warning-row');
@@ -2019,14 +2018,11 @@ async function saveDraftContract(reason){
   // (직원이 이미 생성되었으므로 note에 직원명 별도 보관 불필요)
   let savedId;
   const bodyJSON = JSON.stringify(draftBody);
-  console.log('[saveDraftContract] isEditMode:', isEditMode, 'isNew:', isNew, 'body keys:', Object.keys(draftBody).length);
-  console.log('[saveDraftContract] is_draft:', draftBody.is_draft, 'employee_id:', draftBody.employee_id, 'company_id:', draftBody.company_id);
   try {
   if(isEditMode){
     // 기존 계약 수정 중 임시저장 → PATCH
     draftBody.id = editId.contract;
     const res = await api(`../tables/contracts/${editId.contract}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:bodyJSON});
-    console.log('[saveDraftContract] PATCH(edit) response:', res);
     if(res && res.error){ toast('임시저장 실패: ' + res.error, 'error'); return; }
     savedId = editId.contract;
   } else if(editId.contract === null && (_currentDraftId || window._resumeDraftId)){
@@ -2034,7 +2030,6 @@ async function saveDraftContract(reason){
     const draftId = window._resumeDraftId || _currentDraftId;
     draftBody.id = draftId;
     const res = await api(`../tables/contracts/${draftId}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:bodyJSON});
-    console.log('[saveDraftContract] PATCH(resume) response:', res);
     if(res && res.error){ toast('임시저장 실패: ' + res.error, 'error'); return; }
     savedId = draftId;
     _currentDraftId = draftId;
@@ -2043,7 +2038,6 @@ async function saveDraftContract(reason){
     // 최초 임시저장 → POST
     draftBody.id = 'cont_draft_'+Date.now();
     const res = await api('../tables/contracts',{method:'POST',headers:{'Content-Type':'application/json'},body:bodyJSON});
-    console.log('[saveDraftContract] POST response:', res);
     if(res && res.error){ console.error('[saveDraftContract] Server error:', res.error); toast('임시저장 실패: ' + res.error, 'error'); return; }
     savedId = res.id || draftBody.id;
     _currentDraftId = savedId;
@@ -2449,10 +2443,8 @@ function _ctValidate(){
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function saveContract(){
-  console.log('[saveContract] 시작');
   // ── 필수 입력 일괄 검사 (하이라이트 + 배너) ──
   const _valResult = _ctValidate();
-  console.log('[saveContract] _ctValidate 결과:', _valResult);
   if(_valResult) return;
 
   // 재계약 모드: _recontractEmpId 사용

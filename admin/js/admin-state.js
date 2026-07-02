@@ -179,7 +179,6 @@ let _heavyDataReady = false;  // 급여·청구 데이터 로드 완료
 async function init(){
   try {
     const t0 = performance.now();
-    console.log('[급여관리] 핵심 데이터 로드 중...');
 
     // ── 1단계: critical path – 화면 표시에 필수인 3개 테이블만 먼저 로드 ──
     showSkeletons();
@@ -189,8 +188,6 @@ async function init(){
     _normalizeLoadedData();
 
     const t1 = Math.round(performance.now() - t0);
-    console.log(`[급여관리] 핵심 데이터 로드 완료 (${t1}ms):`,
-      {고객사: allCompanies.length, 직원: allEmployees.length, 계약: allContracts.length});
 
     _dataReady = true;
     hideSkeletons();
@@ -222,7 +219,6 @@ async function init(){
     if(document.getElementById('page-severance')?.classList.contains('active')){
       renderSevCompanyList();
     }
-    console.log('[급여관리] 화면 준비 완료');
 
     // ── 2단계: lazy load – 급여·청구 데이터 + 산정기준 데이터 백그라운드 로드 ──
     loadHeavyData();
@@ -244,8 +240,6 @@ async function loadHeavyData(){
     const t0 = performance.now();
      await Promise.all([loadPayrolls(), loadBillings(), loadAllSendLogs(), loadWLNotifications(), cenLoadHistory(), loadSeveranceNotices(), loadContractDispatchList(true), loadLeaveLedgers()]);
     const elapsed = Math.round(performance.now() - t0);
-    console.log(`[급여관리] 급여·청구 데이터 로드 완료 (${elapsed}ms):`,
-      {급여: allPayrolls.length, 청구: allBillings.length});
     _heavyDataReady = true;
     // 현재 보이는 페이지에 맞게 추가 렌더링
     renderPayrolls();
@@ -296,7 +290,6 @@ async function loadHeavyData(){
     if(!document.getElementById('pss-main-section') || document.getElementById('pss-main-section').style.display === 'none'){
       renderPssCompanyList();
     }
-    console.log('[급여관리] 시스템 준비 완료');
   } catch(err) {
     console.error('[급여관리] 급여·청구 로드 실패:', err);
   }
@@ -328,7 +321,11 @@ function skeletonRows(n, cls=''){
 // ─── API ───
 const api=async(url,opt={})=>{
   const r=await fetch(url,opt);
-  if(!r.ok) console.error('[API 오류]', url, r.status);
+  if(!r.ok){
+    const errBody = await r.text();
+    console.error('[API 오류]', url, r.status, errBody);
+    throw new Error(`[${r.status}] ${errBody}`);
+  }
   return r.status===204?null:r.json();
 };
 
@@ -343,7 +340,6 @@ function _normalizeLoadedData() {
     if (c.status) c.status = normalizeContractStatus(c.status);
     if (c.contract_type) c.contract_type = normalizeContractType(c.contract_type);
   });
-  console.log('[정규화] 데이터 로드 후 상태값 영문 정규화 완료');
 }
 
 async function loadCompanies(){

@@ -5,7 +5,7 @@
 // ===============================================================================
 async function _probAutoCreateAndSave(){
   const empId = document.getElementById('pi-employee').value;
-  const coId  = document.getElementById('pi-company').value;
+  const coId  = currentGlobalCompanyId || document.getElementById('pi-company').value;
   const yr    = parseInt(document.getElementById('pi-year').value);
   const mo    = parseInt(document.getElementById('pi-month').value);
   if(!empId || !yr || !mo) return toast('직원·연월을 확인하세요.', 'error');

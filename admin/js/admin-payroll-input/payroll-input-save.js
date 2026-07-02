@@ -5,7 +5,7 @@
 // ==============================================================================
 function _buildPIBody(){
   const empId = document.getElementById('pi-employee').value;
-  const coId  = document.getElementById('pi-company').value;
+  const coId  = currentGlobalCompanyId || document.getElementById('pi-company').value;
   const yr    = parseInt(document.getElementById('pi-year').value);
   const mo    = parseInt(document.getElementById('pi-month').value);
   calcPI();
@@ -384,7 +384,7 @@ async function discardPIDraft(){
 async function savePI(){
   try {
   const empId=document.getElementById('pi-employee').value;
-  const coId=document.getElementById('pi-company').value;
+  const coId=currentGlobalCompanyId || document.getElementById('pi-company').value;
   const yr=parseInt(document.getElementById('pi-year').value);
   const mo=parseInt(document.getElementById('pi-month').value);
   if(!empId) return toast('직원을 선택하세요.','error');
@@ -763,7 +763,7 @@ async function savePISplit(){
   if(saveBtn && saveBtn.disabled) return;
 
   const empId = document.getElementById('pi-employee').value;
-  const coId  = document.getElementById('pi-company').value;
+  const coId  = currentGlobalCompanyId || document.getElementById('pi-company').value;
   const yr    = parseInt(document.getElementById('pi-year').value);
   const mo    = parseInt(document.getElementById('pi-month').value);
   if(!empId || !yr || !mo) return toast('직원·연월을 확인하세요.', 'error');
