@@ -1900,7 +1900,7 @@ async function saveDraftContract(reason){
   const hourlyDraft   = getAmountVal('ct-hourly-input') || 0;
 
   const draftBody = {
-    employee_id:          empId||'',
+    employee_id:          empId||null,
     company_id:           coId,
     contract_start:       contractStart,
     contract_end:         contractEnd,
