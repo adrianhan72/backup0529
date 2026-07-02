@@ -245,14 +245,15 @@ function renderCompanyTrendChart(){
   allCompanies.forEach(c => {
     if(c.is_draft) return;
     const active = isCompanyActive(c);
-    // 상시근로자 수: is_representative=0 인 유효계약 직원 수
+    // 상시근로자 수: 대표자 본인(is_representative) 제외, 유효계약 기준
+    const repEmpIds = new Set(
+      (allEmployees||[]).filter(e => e.company_id === c.id && e.is_representative).map(e => e.id)
+    );
     const empCount = allContracts.filter(ct =>
       ct.company_id === c.id && !ct.is_draft &&
-      ct.status !== CONTRACT_STATUS.VOIDED && ct.status !== CONTRACT_STATUS.CANCELED
-    ).filter(ct => {
-      const emp = allEmployees.find(e => e.id === ct.employee_id);
-      return emp && !emp.is_representative;
-    }).length;
+      ct.status !== CONTRACT_STATUS.VOIDED && ct.status !== CONTRACT_STATUS.CANCELED &&
+      !repEmpIds.has(ct.employee_id)
+    ).length;
     coMeta[c.id] = { status: active ? 'active' : 'inactive', empCount };
   });
 
