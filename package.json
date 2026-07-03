@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "prod": "SET DEV=false && node server.js"
   },
   "dependencies": {
     "@codemirror/lang-css": "^6.3.1",
