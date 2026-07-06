@@ -158,21 +158,68 @@ function calcAnnualLeaveDays(hireDateStr, basisType, contractStartStr){
 }
 
 // 현재 폼의 입사일·고객사 정보를 읽어 연차일수 자동 계산 후 필드에 반영
-/** 고객사 선택 시 ct-pay-period에 기본값(co.pay_period) 자동 세팅 */
+/** 고객사 선택 시 ct-pay-period 셀렉트에 기본값 자동 세팅 */
 function _autoFillCTPeriod(){
   const coId = document.getElementById('ct-company')?.value || currentContCompanyId;
   const co   = allCompanies.find(c => c.id === coId);
-  const el   = document.getElementById('ct-pay-period');
   const hint = document.getElementById('ct-pay-period-hint');
-  if(!el) return;
-  // 이미 값이 있으면 덮어쓰지 않음 (수정 모드에서 기존 값 유지)
-  if(!el.value && co?.pay_period){
-    el.value = co.pay_period;
-  }
   if(hint && co?.pay_period){
     hint.textContent = `(고객사 기본값: ${co.pay_period})`;
     hint.style.display = 'inline';
   }
+  // 셀렉트가 미선택 상태이고 고객사에 pay_period_month/day 값이 있으면 복원
+  const moEl = document.getElementById('ct-pay-period-month');
+  const dayEl = document.getElementById('ct-pay-period-day');
+  if(moEl && dayEl && !moEl.value && !dayEl.value && co){
+    if(co.pay_period_month) moEl.value = co.pay_period_month;
+    if(co.pay_period_day != null) dayEl.value = String(co.pay_period_day);
+    _ctPeriodCompose();
+  }
+}
+
+/** ct-pay-period 셀렉트 → hidden 합성값 생성 */
+function _ctPeriodCompose(){
+  const mo  = document.getElementById('ct-pay-period-month')?.value || '';
+  const day = document.getElementById('ct-pay-period-day')?.value   || '';
+  const hidden    = document.getElementById('ct-pay-period');
+  const moHidden  = document.getElementById('ct-pay-period-month-hidden');
+  const dayHidden = document.getElementById('ct-pay-period-day-hidden');
+  if(mo && day){
+    if(hidden)    hidden.value    = `${mo} ${day}일부터 1개월간`;
+    if(moHidden)  moHidden.value  = mo;
+    if(dayHidden) dayHidden.value = day;
+  } else {
+    if(hidden)    hidden.value    = '';
+    if(moHidden)  moHidden.value  = '';
+    if(dayHidden) dayHidden.value = '';
+  }
+}
+
+/** 저장된 pay_period 값 → ct-pay-period 셀렉트에 복원 */
+function _ctPeriodRestore(payPeriod, month, day){
+  const pmEl = document.getElementById('ct-pay-period-month');
+  const pdEl = document.getElementById('ct-pay-period-day');
+  // 월 복원
+  let resolvedMonth = '';
+  if(month){
+    resolvedMonth = month;
+  } else if(payPeriod){
+    const s = payPeriod.replace(/\s/g,'');
+    const m = s.match(/^(전월|당월)(\d+)일/);
+    if(m) resolvedMonth = m[1];
+  }
+  if(pmEl) pmEl.value = resolvedMonth;
+  // 일 복원
+  let resolvedDay = '';
+  if(day !== undefined && day !== null && day !== ''){
+    resolvedDay = String(day);
+  } else if(payPeriod){
+    const s = payPeriod.replace(/\s/g,'');
+    const m = s.match(/^(전월|당월)(\d+)일/);
+    if(m) resolvedDay = m[2];
+  }
+  if(pdEl) pdEl.value = resolvedDay;
+  _ctPeriodCompose();
 }
 
 function autoFillAnnualLeave(){
@@ -732,6 +779,22 @@ const DAY_CLASSES = ['','','','','','day-sat','day-sun'];
 // 기본 근무 요일 (월~금 체크)
 const DAY_DEFAULTS = { mon:true, tue:true, wed:true, thu:true, fri:true, sat:false, sun:false };
 
+// ── 일괄 설정 요일 체크박스 연동 ──
+function _bulkWeekdayToggle(){
+  const weekdayChk = document.getElementById('bulk-chk-weekday').checked;
+  ['mon','tue','wed','thu','fri'].forEach(d => {
+    const el = document.getElementById('bulk-chk-'+d);
+    if(el) el.checked = weekdayChk;
+  });
+}
+function _bulkDayToggle(){
+  const allChecked = ['mon','tue','wed','thu','fri'].every(d =>
+    document.getElementById('bulk-chk-'+d)?.checked
+  );
+  const weekdayEl = document.getElementById('bulk-chk-weekday');
+  if(weekdayEl) weekdayEl.checked = allChecked;
+}
+
 // ── 일괄 설정 적용 ──
 function applyBulkSchedule(){
   const start = document.getElementById('bulk-start').value;
@@ -739,84 +802,183 @@ function applyBulkSchedule(){
   const brks  = document.getElementById('bulk-brks').value;
   const brke  = document.getElementById('bulk-brke').value;
 
-  // 유효성 체크
-  if(!start || !end){
-    toast('출근·퇴근 시간을 입력해 주세요.', 'error'); return;
-  }
-  if(start >= end){
-    toast('퇴근 시간이 출근 시간보다 늦어야 합니다.', 'error'); return;
-  }
-  if(brks && brke && brks >= brke){
-    toast('휴게 종료 시간이 시작 시간보다 늦어야 합니다.', 'error'); return;
-  }
+  if(!start || !end){ toast('출근·퇴근 시간을 입력해 주세요.', 'error'); return; }
+  if(start >= end){ toast('퇴근 시간이 출근 시간보다 늦어야 합니다.', 'error'); return; }
+  if(brks && brke && brks >= brke){ toast('휴게 종료 시간이 시작 시간보다 늦어야 합니다.', 'error'); return; }
 
-  // 적용 대상 요일 결정
   const applyWeekday = document.getElementById('bulk-chk-weekday').checked;
-  const applySat     = document.getElementById('bulk-chk-sat').checked;
-  const applySun     = document.getElementById('bulk-chk-sun').checked;
+  const targets = new Set();
+  if(applyWeekday) ['mon','tue','wed','thu','fri'].forEach(d => targets.add(d));
+  if(document.getElementById('bulk-chk-mon')?.checked) targets.add('mon');
+  if(document.getElementById('bulk-chk-tue')?.checked) targets.add('tue');
+  if(document.getElementById('bulk-chk-wed')?.checked) targets.add('wed');
+  if(document.getElementById('bulk-chk-thu')?.checked) targets.add('thu');
+  if(document.getElementById('bulk-chk-fri')?.checked) targets.add('fri');
+  if(document.getElementById('bulk-chk-sat')?.checked) targets.add('sat');
+  if(document.getElementById('bulk-chk-sun')?.checked) targets.add('sun');
+  if(targets.size === 0){ toast('적용할 요일을 하나 이상 선택해 주세요.', 'error'); return; }
 
-  const targets = [];
-  if(applyWeekday) targets.push(...['mon','tue','wed','thu','fri']);
-  if(applySat)     targets.push('sat');
-  if(applySun)     targets.push('sun');
-
-  if(targets.length === 0){
-    toast('적용할 요일을 하나 이상 선택해 주세요.', 'error'); return;
-  }
-
+  const breaks = (brks && brke) ? [{s: brks, e: brke}] : [];
   let applied = 0;
-  targets.forEach(key=>{
-    const chk = document.getElementById(`ct-sch-chk-${key}`);
-    if(!chk) return;
-
-    // 체크 안 된 요일이면 먼저 체크 활성화 (onDayToggle로 필드 unlock)
-    if(!chk.checked){
-      chk.checked = true;
-      onDayToggle(key);
+  // 선택된 요일에는 값 적용, 선택되지 않은 요일은 비활성(빈값)
+  DAY_KEYS.forEach(key=>{
+    const container = document.getElementById(`ct-sch-shifts-${key}`);
+    if(!container) return;
+    if(targets.has(key)){
+      container.innerHTML = _shiftGroupHTML(key, 0, true, start, end, breaks);
+      applied++;
+    } else {
+      container.innerHTML = _shiftGroupHTML(key, 0, false, '', '', []);
     }
-
-    const sEl = document.getElementById(`ct-sch-start-${key}`);
-    const eEl = document.getElementById(`ct-sch-end-${key}`);
-    if(sEl) sEl.value = start;
-    if(eEl) eEl.value = end;
-    // 휴게: 첫 번째 슬롯만 갱신 (기존 복수 슬롯 구조 유지)
-    const wrap = document.getElementById(`ct-sch-brkwrap-${key}`);
-    if(wrap){
-      const firstS = wrap.querySelector('[data-brk-type="s"]');
-      const firstE = wrap.querySelector('[data-brk-type="e"]');
-      if(firstS) firstS.value = brks;
-      if(firstE) firstE.value = brke;
-    }
-    applied++;
+    _renderShiftButtons(key);
   });
-
   calcWorkHours();
-
-  if(applied === 0){
-    toast('적용할 요일을 찾을 수 없습니다.', 'warning');
-  } else {
-    toast(`${applied}개 요일에 근무시간이 일괄 적용되었습니다. ✔`, 'success');
-  }
+  toast(`${applied}개 요일에 근무시간이 일괄 적용되었습니다. ✔`, 'success');
 }
 
-// ── 휴게 슬롯 렌더 헬퍼 ──
-function _brkSlotsHTML(key, enabled, breaks){
-  // breaks: [{s:'12:00', e:'13:00'}, ...]
-  const slots = (breaks && breaks.length) ? breaks : (enabled ? [{s:'12:00', e:'13:00'}] : [{s:'', e:''}]);
-  return slots.map((b, idx) => {
-    const isFirst = idx === 0;
-    const dis = enabled ? '' : 'disabled';
-    return `<div class="brk-slot-row" id="ct-sch-brkrow-${key}-${idx}">`
-      + `<input type="time" class="brk-time" data-brk-key="${key}" data-brk-idx="${idx}" data-brk-type="s"`
-      + ` value="${b.s||''}" oninput="calcWorkHours()" ${dis} />`
-      + `<span class="brk-sep">~</span>`
-      + `<input type="time" class="brk-time" data-brk-key="${key}" data-brk-idx="${idx}" data-brk-type="e"`
-      + ` value="${b.e||''}" oninput="calcWorkHours()" ${dis} />`
-      + (idx > 0
-          ? `<button type="button" class="btn-brk-del" onclick="_removeBrkSlot('${key}',${idx})" ${dis} title="휴게 슬롯 삭제">−</button>`
-          : `<button type="button" class="btn-brk-add" onclick="_addBrkSlot('${key}')" ${dis?'disabled':''} title="휴게시간 추가">+</button>`)
-      + `</div>`;
+// ── 시프트 그룹 렌더 헬퍼 ──
+function _shiftGroupHTML(key, idx, enabled, start, end, breaks){
+  const dis = enabled ? '' : 'disabled';
+  const s = start || (enabled && idx===0 ? '09:00' : '');
+  const e = end   || (enabled && idx===0 ? '18:00' : '');
+  const defBreaks = (enabled && idx===0) ? [{s:'12:00', e:'13:00'}] : [{s:'', e:''}];
+  const brks = (breaks && breaks.length) ? breaks : defBreaks;
+  const sid = idx===0 ? '' : '-'+idx;
+  return `<div class="shift-group" id="ct-sch-shift-${key}${sid}">
+    <span style="font-size:10.5px;color:#6b7280;white-space:nowrap;">출근</span>
+    <input type="time" id="ct-sch-start-${key}${sid}" value="${s}" oninput="calcWorkHours()" ${dis} />
+    <span style="font-size:10.5px;color:#6b7280;white-space:nowrap;">퇴근</span>
+    <input type="time" id="ct-sch-end-${key}${sid}" value="${e}" oninput="calcWorkHours()" ${dis} />
+    <span style="font-size:10.5px;color:#7c3aed;white-space:nowrap;">휴게</span>
+    <div class="brk-slots-wrap" id="ct-sch-brkwrap-${key}${sid}">${_brkSlotsHTML2(key, idx, enabled, brks)}</div>
+  </div>`;
+}
+
+// ── 시프트 +/− 버튼 영역 렌더 ──
+function _renderShiftButtons(key){
+  const btnCell = document.getElementById(`ct-sch-btns-${key}`);
+  if(!btnCell) return;
+  const container = document.getElementById(`ct-sch-shifts-${key}`);
+  const count = container ? container.querySelectorAll('.shift-group').length : 1;
+  const firstStart = document.getElementById(`ct-sch-start-${key}`);
+  const isActive = firstStart && !firstStart.disabled;
+  let html = '<button type="button" class="btn-brk-add shift-add" onclick="_addShift(\''+key+'\')" title="시프트 추가">+</button>';
+  if(isActive && count === 1){
+    html += '<button type="button" class="btn-brk-del shift-del" onclick="_deactivateShift(\''+key+'\')" title="비활성화">−</button>';
+  }
+  for(let i=1; i<count; i++){
+    html += '<button type="button" class="btn-brk-del shift-del" onclick="_removeShift(\''+key+'\','+i+')" title="시프트 삭제">−</button>';
+  }
+  btnCell.innerHTML = html;
+}
+
+// ── 첫 번째 시프트 비활성화 ──
+function _deactivateShift(key){
+  const container = document.getElementById(`ct-sch-shifts-${key}`);
+  if(!container) return;
+  container.innerHTML = _shiftGroupHTML(key, 0, false, '', '', []);
+  _renderShiftButtons(key);
+  calcWorkHours();
+}
+
+// ── 시프트용 휴게 슬롯 HTML (idx 포함) ──
+function _brkSlotsHTML2(key, shiftIdx, enabled, breaks){
+  const dis = enabled ? '' : 'disabled';
+  const sid = shiftIdx===0 ? '' : '-'+shiftIdx;
+  return breaks.map((b, idx) => {
+    return `<div class="brk-slot-row" id="ct-sch-brkrow-${key}${sid}-${idx}">
+      <input type="time" class="brk-time" data-brk-key="${key}" data-shift-idx="${shiftIdx}" data-brk-idx="${idx}" data-brk-type="s"
+        value="${b.s||''}" oninput="calcWorkHours()" ${dis} />
+      <span class="brk-sep">~</span>
+      <input type="time" class="brk-time" data-brk-key="${key}" data-shift-idx="${shiftIdx}" data-brk-idx="${idx}" data-brk-type="e"
+        value="${b.e||''}" oninput="calcWorkHours()" ${dis} />
+      ${idx > 0
+        ? `<button type="button" class="btn-brk-del" onclick="_removeBrkSlot2('${key}',${shiftIdx},${idx})" ${dis} title="휴게 삭제">−</button>`
+        : ''}
+    </div>`;
   }).join('');
+}
+
+// ── 시프트 추가 ──
+function _addShift(key){
+  const row = document.getElementById(`ct-sch-row-${key}`);
+  const container = row?.querySelector('.td-shifts .shifts-container');
+  if(!container) return;
+  const existing = container.querySelectorAll('.shift-group');
+  // 첫 번째 시프트가 비활성 상태이면 활성화 (주말→평일 전환)
+  if(existing.length === 1){
+    const firstStart = document.getElementById(`ct-sch-start-${key}`);
+    if(firstStart && firstStart.disabled){
+      container.innerHTML = _shiftGroupHTML(key, 0, true, '', '', null);
+      _renderShiftButtons(key);
+      calcWorkHours();
+      return;
+    }
+  }
+  // 이미 활성 상태면 새 시프트 추가
+  const idx = existing.length;
+  const html = _shiftGroupHTML(key, idx, true, '', '', []);
+  const div = document.createElement('div');
+  div.innerHTML = html;
+  container.appendChild(div.firstElementChild);
+  _renderShiftButtons(key);
+  calcWorkHours();
+}
+
+// ── 시프트 삭제 ──
+function _removeShift(key, idx){
+  const sid = idx===0 ? '' : '-'+idx;
+  const shift = document.getElementById(`ct-sch-shift-${key}${sid}`);
+  if(shift) shift.remove();
+  _renderShiftButtons(key);
+  calcWorkHours();
+}
+
+// ── 시프트용 휴게 슬롯 추가 ──
+function _addBrkSlot2(key, shiftIdx){
+  const sid = shiftIdx===0 ? '' : '-'+shiftIdx;
+  const wrap = document.getElementById(`ct-sch-brkwrap-${key}${sid}`);
+  if(!wrap) return;
+  const idx = wrap.querySelectorAll('.brk-slot-row').length;
+  const row = document.createElement('div');
+  row.className = 'brk-slot-row';
+  row.id = `ct-sch-brkrow-${key}${sid}-${idx}`;
+  row.innerHTML =
+    `<input type="time" class="brk-time" data-brk-key="${key}" data-shift-idx="${shiftIdx}" data-brk-idx="${idx}" data-brk-type="s" value="" oninput="calcWorkHours()" />`
+    + `<span class="brk-sep">~</span>`
+    + `<input type="time" class="brk-time" data-brk-key="${key}" data-shift-idx="${shiftIdx}" data-brk-idx="${idx}" data-brk-type="e" value="" oninput="calcWorkHours()" />`
+    + `<button type="button" class="btn-brk-del" onclick="_removeBrkSlot2('${key}',${shiftIdx},${idx})" title="휴게 삭제">−</button>`;
+  wrap.appendChild(row);
+  calcWorkHours();
+}
+
+function _removeBrkSlot2(key, shiftIdx, idx){
+  const sid = shiftIdx===0 ? '' : '-'+shiftIdx;
+  const wrap = document.getElementById(`ct-sch-brkwrap-${key}${sid}`);
+  if(!wrap) return;
+  const row = document.getElementById(`ct-sch-brkrow-${key}${sid}-${idx}`);
+  if(row) row.remove();
+  wrap.querySelectorAll('.brk-slot-row').forEach((r,i)=>{
+    r.id = `ct-sch-brkrow-${key}${sid}-${i}`;
+    r.querySelectorAll('[data-brk-idx]').forEach(el=>el.setAttribute('data-brk-idx', i));
+    const delBtn = r.querySelector('.btn-brk-del');
+    if(delBtn) delBtn.setAttribute('onclick', `_removeBrkSlot2('${key}',${shiftIdx},${i})`);
+  });
+  calcWorkHours();
+}
+
+function _getBrkSlots2(key, shiftIdx){
+  const sid = shiftIdx===0 ? '' : '-'+shiftIdx;
+  const wrap = document.getElementById(`ct-sch-brkwrap-${key}${sid}`);
+  if(!wrap) return [];
+  const rows = wrap.querySelectorAll('.brk-slot-row');
+  const result = [];
+  rows.forEach(row=>{
+    const sEl = row.querySelector('[data-brk-type="s"]');
+    const eEl = row.querySelector('[data-brk-type="e"]');
+    result.push({ s: sEl ? sEl.value : '', e: eEl ? eEl.value : '' });
+  });
+  return result;
 }
 function _getBrkSlots(key){
   const wrap = document.getElementById(`ct-sch-brkwrap-${key}`);
@@ -876,56 +1038,19 @@ function initScheduleTable(){
   const tbody = document.getElementById('ct-schedule-tbody');
   if(!tbody) return;
   tbody.innerHTML = DAY_KEYS.map((key,i)=>{
-    const on = DAY_DEFAULTS[key];
     const isWknd = key==='sat'||key==='sun';
-    const defBreaks = (on && !isWknd) ? [{s:'12:00', e:'13:00'}] : [{s:'', e:''}];
+    const enabled = !isWknd;
     const color = i>=5 ? (i===5?'#2563eb':'#dc2626') : '#1e293b';
     return `
     <tr class="${DAY_CLASSES[i]}" id="ct-sch-row-${key}">
-      <td><input type="checkbox" class="day-toggle" id="ct-sch-chk-${key}" onchange="onDayToggle('${key}')" ${on?'checked':''} /></td>
       <td><span class="day-label" style="color:${color}">${DAYS_KR[i]}</span></td>
-      <td><input type="time" id="ct-sch-start-${key}" value="${on?'09:00':''}" oninput="calcWorkHours()" ${on?'':'disabled'} /></td>
-      <td><input type="time" id="ct-sch-end-${key}" value="${on?'18:00':''}" oninput="calcWorkHours()" ${on?'':'disabled'} /></td>
-      <td class="td-brk"><div class="brk-slots-wrap" id="ct-sch-brkwrap-${key}">${_brkSlotsHTML(key, on, defBreaks)}</div></td>
-      <td><span class="computed-h" id="ct-sch-hrs-${key}">${on?'8시간':'-'}</span></td>
-      <td><input type="text" id="ct-sch-note-${key}" placeholder="비고" style="width:100%;border:1px solid #e2e8f0;border-radius:5px;padding:3px 6px;font-size:11.5px;font-family:inherit;" ${on?'':'disabled'} /></td>
+      <td class="td-shifts"><div class="shifts-container" id="ct-sch-shifts-${key}">${_shiftGroupHTML(key, 0, enabled, '', '', null)}</div></td>
+      <td style="text-align:center;" id="ct-sch-btns-${key}"></td>
+      <td><span class="computed-h" id="ct-sch-hrs-${key}">${enabled?'8시간':'-'}</span></td>
     </tr>`;
   }).join('');
-  calcWorkHours();
-}
-
-function onDayToggle(key){
-  const chk = document.getElementById(`ct-sch-chk-${key}`).checked;
-  const isWknd = key==='sat'||key==='sun';
-  // 출근·퇴근·비고
-  ['start','end','note'].forEach(f=>{
-    const el = document.getElementById(`ct-sch-${f}-${key}`);
-    if(!el) return;
-    el.disabled = !chk;
-    if(!chk) el.value = '';
-  });
-  // 휴게 슬롯 전체 활성/비활성
-  const wrap = document.getElementById(`ct-sch-brkwrap-${key}`);
-  if(wrap){
-    wrap.querySelectorAll('input').forEach(el=>{ el.disabled=!chk; if(!chk) el.value=''; });
-    const addBtn = wrap.querySelector('.btn-brk-add');
-    if(addBtn) addBtn.disabled = !chk;
-    const delBtns = wrap.querySelectorAll('.btn-brk-del');
-    delBtns.forEach(b=>b.disabled=!chk);
-  }
-  if(chk){
-    const sEl = document.getElementById(`ct-sch-start-${key}`); if(sEl && !sEl.value) sEl.value='09:00';
-    const eEl = document.getElementById(`ct-sch-end-${key}`);   if(eEl && !eEl.value) eEl.value='18:00';
-    // 슬롯이 비어있으면 평일 기본값 세팅
-    if(!isWknd && wrap){
-      const firstS = wrap.querySelector('[data-brk-type="s"]');
-      const firstE = wrap.querySelector('[data-brk-type="e"]');
-      if(firstS && !firstS.value) firstS.value='12:00';
-      if(firstE && !firstE.value) firstE.value='13:00';
-    }
-  }
-  const hrsEl = document.getElementById(`ct-sch-hrs-${key}`);
-  if(hrsEl && !chk) hrsEl.textContent = '-';
+  // 초기 버튼 렌더링
+  DAY_KEYS.forEach(key => _renderShiftButtons(key));
   calcWorkHours();
 }
 
@@ -935,22 +1060,29 @@ function calcWorkHours(){
   let totalWeekMins = 0;
   let workDays = 0;
   DAY_KEYS.forEach(key=>{
-    const chk = document.getElementById(`ct-sch-chk-${key}`);
     const hrsEl = document.getElementById(`ct-sch-hrs-${key}`);
-    if(!chk || !chk.checked){ if(hrsEl) hrsEl.textContent='-'; return; }
-    const s = timeToMins((document.getElementById(`ct-sch-start-${key}`)||{}).value);
-    const e = timeToMins((document.getElementById(`ct-sch-end-${key}`)||{}).value);
-    // 복수 휴게 슬롯 합산
-    const slots = _getBrkSlots(key);
-    const totalBrk = slots.reduce((sum, b)=>{
-      const bs = timeToMins(b.s), be = timeToMins(b.e);
-      return sum + ((bs!==null && be!==null && be>bs) ? (be-bs) : 0);
-    }, 0);
-    if(s!==null && e!==null && e>s){
-      const mins = Math.max(0, e-s-totalBrk);
-      totalWeekMins += mins;
+    let dayMins = 0;
+    // 모든 시프트 합산
+    let shiftIdx = 0;
+    while(true){
+      const sid = shiftIdx===0 ? '' : '-'+shiftIdx;
+      const sEl = document.getElementById(`ct-sch-start-${key}${sid}`);
+      if(!sEl){ if(shiftIdx===0){ shiftIdx++; continue; } break; }
+      const s = timeToMins(sEl.value);
+      const e = timeToMins((document.getElementById(`ct-sch-end-${key}${sid}`)||{}).value);
+      if(s===null || e===null || e<=s){ shiftIdx++; continue; }
+      const slots = _getBrkSlots2(key, shiftIdx);
+      const totalBrk = slots.reduce((sum, b)=>{
+        const bs = timeToMins(b.s), be = timeToMins(b.e);
+        return sum + ((bs!==null && be!==null && be>bs) ? (be-bs) : 0);
+      }, 0);
+      dayMins += Math.max(0, e-s-totalBrk);
+      shiftIdx++;
+    }
+    if(dayMins > 0){
+      totalWeekMins += dayMins;
       workDays++;
-      const h = mins/60;
+      const h = dayMins/60;
       if(hrsEl) hrsEl.textContent = (Number.isInteger(h)?h:h.toFixed(1))+'시간';
     } else {
       if(hrsEl) hrsEl.textContent = '-';
@@ -971,21 +1103,24 @@ function calcWorkHours(){
 // 스케줄 → JSON 직렬화 (저장용)
 function getScheduleJSON(){
   return DAY_KEYS.map((key,i)=>{
-    const chk = document.getElementById(`ct-sch-chk-${key}`);
-    const active = chk && chk.checked;
-    const slots = active ? _getBrkSlots(key) : [];
-    // 호환성: brk_start/brk_end는 첫 번째 슬롯으로
-    return {
-      day:   key,
-      label: DAYS_KR[i],
-      active,
-      start:     active ? (document.getElementById(`ct-sch-start-${key}`)||{}).value||'' : '',
-      end:       active ? (document.getElementById(`ct-sch-end-${key}`)||{}).value||''   : '',
-      brk_start: slots[0]?.s || '',
-      brk_end:   slots[0]?.e || '',
-      breaks:    slots,  // 복수 휴게 슬롯 배열
-      note:      active ? (document.getElementById(`ct-sch-note-${key}`)||{}).value||'' : '',
-    };
+    const shifts = [];
+    let shiftIdx = 0;
+    while(true){
+      const sid = shiftIdx===0 ? '' : '-'+shiftIdx;
+      const sEl = document.getElementById(`ct-sch-start-${key}${sid}`);
+      if(!sEl) break;
+      const slots = _getBrkSlots2(key, shiftIdx);
+      shifts.push({
+        start: sEl.value||'',
+        end: (document.getElementById(`ct-sch-end-${key}${sid}`)||{}).value||'',
+        breaks: slots,
+        brk_start: slots[0]?.s || '',
+        brk_end: slots[0]?.e || '',
+      });
+      shiftIdx++;
+    }
+    const active = shifts.length > 0 && shifts.some(sh => sh.start && sh.end);
+    return { day: key, label: DAYS_KR[i], active, shifts };
   });
 }
 
@@ -994,31 +1129,26 @@ function setScheduleFromJSON(schedule){
   if(!schedule || !Array.isArray(schedule)) return;
   schedule.forEach(row=>{
     const key = row.day;
-    const chkEl = document.getElementById(`ct-sch-chk-${key}`);
-    if(!chkEl) return;
-    chkEl.checked = !!row.active;
-    // 출근·퇴근·비고 disabled 동기화
-    ['start','end','note'].forEach(f=>{
-      const el = document.getElementById(`ct-sch-${f}-${key}`);
-      if(el) el.disabled = !row.active;
-    });
-    if(row.active){
-      const sEl = document.getElementById(`ct-sch-start-${key}`); if(sEl) sEl.value = row.start||'09:00';
-      const eEl = document.getElementById(`ct-sch-end-${key}`);   if(eEl) eEl.value = row.end||'18:00';
-      const nEl = document.getElementById(`ct-sch-note-${key}`);  if(nEl) nEl.value = row.note||'';
-      // breaks 배열 우선, 없으면 레거시 brk_start/brk_end 폴백
-      const breaks = Array.isArray(row.breaks) && row.breaks.length
-        ? row.breaks
-        : (row.brk_start||row.brk_end ? [{s:row.brk_start||'',e:row.brk_end||''}] : []);
-      _setBrkSlots(key, breaks, true);
-    } else {
-      _setBrkSlots(key, [{s:'',e:''}], false);
+    const container = document.getElementById(`ct-sch-shifts-${key}`);
+    if(!container) return;
+    const active = !!row.active;
+    if(!active){
+      container.innerHTML = _shiftGroupHTML(key, 0, false, '', '', []);
+      return;
     }
+    const shifts = (row.shifts && row.shifts.length) ? row.shifts
+      : (row.start||row.end ? [{ start:row.start||'09:00', end:row.end||'18:00',
+          breaks: Array.isArray(row.breaks)&&row.breaks.length ? row.breaks
+            : (row.brk_start||row.brk_end?[{s:row.brk_start||'',e:row.brk_end||''}]:[{s:'12:00',e:'13:00'}]) }] : []);
+    container.innerHTML = shifts.map((sh, idx) =>
+      _shiftGroupHTML(key, idx, true, sh.start, sh.end, sh.breaks)
+    ).join('');
+    _renderShiftButtons(key);
   });
   calcWorkHours();
 }
 
-// 레거시 단일 시간 → 요일별 스케줄 변환 (구버전 계약 데이터 호환)
+// 레거시 단일 시간 → 요일별 스케줄 변환
 function setScheduleFromLegacy(c){
   const start = c.day_start||'09:00';
   const end   = c.day_end||'18:00';
@@ -1031,20 +1161,12 @@ function setScheduleFromLegacy(c){
   const workDays = c.work_days_per_week||5;
   DAY_KEYS.forEach((key,i)=>{
     const active = i < workDays;
-    const chkEl = document.getElementById(`ct-sch-chk-${key}`);
-    if(chkEl) chkEl.checked = active;
-    ['start','end','note'].forEach(f=>{
-      const el = document.getElementById(`ct-sch-${f}-${key}`);
-      if(el) el.disabled = !active;
-    });
-    if(active){
-      const sEl = document.getElementById(`ct-sch-start-${key}`); if(sEl) sEl.value = start;
-      const eEl = document.getElementById(`ct-sch-end-${key}`);   if(eEl) eEl.value = end;
-      const breaks = brkMins > 0 ? [{s: toTime(brkStart), e: toTime(brkEnd)}] : [];
-      _setBrkSlots(key, breaks, true);
-    } else {
-      _setBrkSlots(key, [{s:'',e:''}], false);
-    }
+    const container = document.getElementById(`ct-sch-shifts-${key}`);
+    if(!container) return;
+    if(!active){ container.innerHTML = _shiftGroupHTML(key, 0, false, '', '', []); return; }
+    const breaks = brkMins > 0 ? [{s: toTime(brkStart), e: toTime(brkEnd)}] : [];
+    container.innerHTML = _shiftGroupHTML(key, 0, true, start, end, breaks);
+    _renderShiftButtons(key);
   });
   calcWorkHours();
 }
@@ -1329,8 +1451,9 @@ function _setCtPayDayDefault(coId){
   if(hintEl){
     hintEl.textContent = coPayDay ? `(고객사 기본: 매월 ${coPayDay}일)` : '(고객사 미설정)';
   }
+  // 고객사 급여일이 있고 계약서 필드가 비어있으면 값을 채움 (placeholder 대신 실제 값)
   if(coPayDay && !payDayEl.value){
-    payDayEl.placeholder = `매월 ${coPayDay}일`;
+    payDayEl.value = coPayDay;
   }
 }
 

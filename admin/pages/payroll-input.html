@@ -79,10 +79,10 @@
             </div>
             <!-- 오른쪽: 다운로드 + 업로드 -->
             <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
-              <button onclick="downloadPrevMonthExcel()" id="pi-prev-download-btn" class="btn btn-teal">
+              <button onclick="downloadPrevMonthExcel()" id="pi-prev-download-btn" class="btn btn-success">
                 <i class="fas fa-file-excel"></i> 전월 임금대장 다운로드
               </button>
-              <button onclick="openPIUploadModal()" id="pi-bulk-upload-btn" class="btn btn-warning">
+              <button onclick="openPIUploadModal()" id="pi-bulk-upload-btn" class="btn btn-success">
                 <i class="fas fa-upload"></i> 전직원 임금대장 업로드
               </button>
             </div>
@@ -268,7 +268,8 @@
                     <!-- 분리 저장 버튼 -->
                     <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
                       <button id="pi-prob-split-save-btn" onclick="savePISplit()" disabled
-                        style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;background:#d97706;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;opacity:.5;">
+                        class="btn btn-warning btn-sm"
+                        style="display:inline-flex;align-items:center;gap:6px;">
                         <i class="fas fa-cut"></i> 수습 / 채용확정 분리 저장 (2건)
                       </button>
                       <span style="font-size:11px;color:#6b7280;">
@@ -652,17 +653,17 @@
                   <i id="pi-clear-btn-icon" class="fas fa-redo"></i>
                   <span id="pi-clear-btn-label">초기화</span>
                 </button>
-                <button class="btn" onclick="savePIDraft()" id="pi-draft-btn"
-                  style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;background:linear-gradient(135deg,#6ee7b7,#10b981);color:#fff;border:none;border-radius:8px;padding:10px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
+                <button class="btn btn-success" onclick="savePIDraft()" id="pi-draft-btn"
+                  style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;">
                   <i class="fas fa-floppy-disk"></i> 임시저장
                 </button>
                 <button class="btn btn-primary" onclick="savePI()"
                   style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;">
                   <i class="fas fa-save"></i> 급여 저장
                 </button>
-                <button class="btn" id="pi-cancel-btn"
+                <button class="btn btn-secondary" id="pi-cancel-btn"
                   onclick="piEditPayrollId ? cancelEditPayroll() : backToPITargetList()"
-                  style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;background:#f1f5f9;color:#64748b;border:1.5px solid #cbd5e1;border-radius:8px;padding:10px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
+                  style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;">
                   <i class="fas fa-times"></i> <span id="pi-cancel-btn-label">취소</span>
                 </button>
               </div>

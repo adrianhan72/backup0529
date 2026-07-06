@@ -13,15 +13,15 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-    <link rel="stylesheet" href="css/admin-base.css" />
-  <link rel="stylesheet" href="css/admin-modal.css" />
-  <link rel="stylesheet" href="css/admin-contract.css" />
-  <link rel="stylesheet" href="css/admin-form.css" />
-  <link rel="stylesheet" href="css/admin-notice.css" />
-  <link rel="stylesheet" href="css/admin-payroll.css" />
-  <link rel="stylesheet" href="css/admin-wage.css" />
-  <link rel="stylesheet" href="css/admin-login.css" />
-  <link rel="stylesheet" href="css/admin-etc.css" />
+    <link rel="stylesheet" href="css/admin-base.css?v=20260703b" />
+  <link rel="stylesheet" href="css/admin-modal.css?v=20260703b" />
+  <link rel="stylesheet" href="css/admin-contract.css?v=20260703b" />
+  <link rel="stylesheet" href="css/admin-form.css?v=20260703b" />
+  <link rel="stylesheet" href="css/admin-notice.css?v=20260703b" />
+  <link rel="stylesheet" href="css/admin-payroll.css?v=20260703b" />
+  <link rel="stylesheet" href="css/admin-wage.css?v=20260703b" />
+  <link rel="stylesheet" href="css/admin-login.css?v=20260703b" />
+  <link rel="stylesheet" href="css/admin-etc.css?v=20260703b" />
 </head>
 <body>
 
@@ -984,12 +984,12 @@
         <div class="form-group">
           <label>급여 산정기간 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-            <select id="cm-period-month" onchange="_cmPeriodCompose()" style="border:1px solid #e0e0e0;border-radius:8px;padding:7px 10px;font-size:12.5px;color:#333;outline:none;font-family:inherit;background:#f8f9fb;flex:0 0 auto;">
+            <select id="cm-period-month" onchange="_cmPeriodCompose()" style="flex:0 0 auto;">
               <option value="">월 선택</option>
               <option value="전월">전월</option>
               <option value="당월">당월</option>
             </select>
-            <select id="cm-period-day" onchange="_cmPeriodCompose()" style="border:1px solid #e0e0e0;border-radius:8px;padding:7px 10px;font-size:12.5px;color:#333;outline:none;font-family:inherit;background:#f8f9fb;flex:0 0 auto;">
+            <select id="cm-period-day" onchange="_cmPeriodCompose()" style="flex:0 0 auto;">
               <option value="">일 선택</option>
               <option value="1">1일</option>
               <option value="5">5일</option>
@@ -1007,10 +1007,10 @@
           <input type="hidden" id="cm-period-month-hidden" />
           <input type="hidden" id="cm-period-day-hidden" />
         </div>
-        <div class="form-group"><label>급여 지급일 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span> <span class="form-hint">(예: 25일)</span></label><input type="text" id="cm-payday" placeholder="25일" /></div>
+        <div class="form-group"><label>급여 지급일 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span> <span class="form-hint">(예: 25일)</span></label><div style="display:flex;align-items:center;gap:4px;"><input type="number" id="cm-payday" min="1" max="31" placeholder="25" style="width:80px;" /><span style="font-size:13px;color:#374151;font-weight:600;">일</span></div></div>
         <div class="form-group">
           <label>4대보험 적용 기준 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
-          <select id="cm-insurance-basis" style="border:1px solid #e0e0e0;border-radius:8px;padding:8px 12px;font-size:13.5px;outline:none;font-family:inherit;width:100%;background:#fff;color:#333;">
+          <select id="cm-insurance-basis" style="width:100%;">
             <option value="" disabled selected>선택하세요</option>
             <option value="요율 기준">요율 기준 (년도별 산정기준 요율 자동계산)</option>
             <option value="확정액 기준">확정액 기준 (금액 직접 입력)</option>
@@ -1018,7 +1018,7 @@
         </div>
         <div class="form-group">
           <label>연차 휴가 산정 기준 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
-          <select id="cm-annual-leave-basis" style="border:1px solid #e0e0e0;border-radius:8px;padding:8px 12px;font-size:13.5px;outline:none;font-family:inherit;width:100%;background:#fff;color:#333;">
+          <select id="cm-annual-leave-basis" style="width:100%;">
             <option value="" disabled selected>선택하세요</option>
             <option value="회계년도 기준">회계년도 기준</option>
             <option value="입사일 기준">입사일 기준</option>
@@ -1553,7 +1553,7 @@
       </div>
       <div class="form-grid">
         <div class="form-group full"><span class="form-section-title">기본 정보</span></div>
-        <div class="form-group"><label>회사 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><select id="ct-company" onchange="loadCtEmployees();autoFillAnnualLeave();_autoFillCTPeriod();_checkRegisterBtnState();onCtCompanyChange();_checkRepSelf('ct-em-name','ct-em-rep-self-row','ct-em-is-rep','ct-em-rep-alt-names');_checkRepSelf('ct-edit-emp-name','ct-edit-em-rep-self-row','ct-edit-em-is-rep','ct-edit-em-rep-alt-names');"><option value="">선택</option></select></div>
+        <div class="form-group"><span id="ct-company-name" style="font-size:14px;font-weight:700;color:#1e1b4b;"></span><input type="hidden" id="ct-company" /></div>
         <!-- ══ 수정 모드: 직원 정보 표시·편집 섹션 ══ -->
         <div id="ct-edit-emp-info" class="form-group full" style="display:none;">
           <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;padding:16px 18px;margin-top:4px;">
@@ -1749,27 +1749,32 @@
           <!-- ── 일괄 설정 바 ── -->
           <div class="bulk-schedule-bar">
             <span class="bulk-label">⚡ 일괄 설정</span>
-            <div class="bulk-divider"></div>
-            <span style="font-size:11.5px;color:#475569;white-space:nowrap;">출근</span>
-            <input type="time" id="bulk-start" value="09:00" />
-            <span style="font-size:11.5px;color:#475569;white-space:nowrap;">퇴근</span>
-            <input type="time" id="bulk-end" value="18:00" />
-            <div class="bulk-divider"></div>
-            <span style="font-size:11.5px;color:#7c3aed;white-space:nowrap;">휴게</span>
-            <input type="time" id="bulk-brks" class="bulk-brk" value="12:00" />
-            <span style="font-size:11px;color:#94a3b8;">~</span>
-            <input type="time" id="bulk-brke" class="bulk-brk" value="13:00" />
-            <div class="bulk-divider"></div>
-            <div class="bulk-apply-target">
-              <label><input type="checkbox" id="bulk-chk-weekday" checked /> 평일(월~금)</label>
-              <label><input type="checkbox" id="bulk-chk-sat" /> 토요일</label>
-              <label><input type="checkbox" id="bulk-chk-sun" /> 일요일</label>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;width:100%;margin-top:6px;">
+              <span style="font-size:11.5px;color:#475569;white-space:nowrap;">출근</span>
+              <input type="time" id="bulk-start" value="09:00" />
+              <span style="font-size:11.5px;color:#475569;white-space:nowrap;">퇴근</span>
+              <input type="time" id="bulk-end" value="18:00" />
+              <div class="bulk-divider"></div>
+              <span style="font-size:11.5px;color:#7c3aed;white-space:nowrap;">휴게</span>
+              <input type="time" id="bulk-brks" class="bulk-brk" value="12:00" />
+              <span style="font-size:11px;color:#94a3b8;">~</span>
+              <input type="time" id="bulk-brke" class="bulk-brk" value="13:00" />
             </div>
-            <button type="button" class="btn-bulk-apply" onclick="applyBulkSchedule()">
-              ✔ 적용
-            </button>
+            <div class="bulk-apply-target" style="width:100%;margin-top:8px;">
+              <label><input type="checkbox" id="bulk-chk-weekday" checked onchange="_bulkWeekdayToggle()" /> 평일(월~금)</label>
+              <label><input type="checkbox" id="bulk-chk-mon" onchange="_bulkDayToggle()" /> 월</label>
+              <label><input type="checkbox" id="bulk-chk-tue" onchange="_bulkDayToggle()" /> 화</label>
+              <label><input type="checkbox" id="bulk-chk-wed" onchange="_bulkDayToggle()" /> 수</label>
+              <label><input type="checkbox" id="bulk-chk-thu" onchange="_bulkDayToggle()" /> 목</label>
+              <label><input type="checkbox" id="bulk-chk-fri" onchange="_bulkDayToggle()" /> 금</label>
+              <label><input type="checkbox" id="bulk-chk-sat" onchange="_bulkDayToggle()" /> 토</label>
+              <label><input type="checkbox" id="bulk-chk-sun" onchange="_bulkDayToggle()" /> 일</label>
+            </div>
+            <div class="bulk-schedule-footer">
+              <div class="bulk-schedule-tip">💡 적용 대상 요일 중 <b>체크(근무)</b>된 요일에만 아래 표에 시간이 반영됩니다.</div>
+              <button type="button" class="btn btn-indigo btn-sm" onclick="applyBulkSchedule()">✔ 적용</button>
+            </div>
           </div>
-          <div class="bulk-schedule-tip">💡 적용 대상 요일 중 <b>체크(근무)</b>된 요일에만 시간이 반영됩니다.</div>
         </div>
         <div class="form-group full">
           <div style="overflow-x:auto;">
@@ -1777,13 +1782,10 @@
             <table class="work-schedule-table" id="ct-schedule-table">
               <thead>
                 <tr>
-                  <th style="width:34px;">근무</th>
                   <th style="width:30px;">요일</th>
-                  <th style="width:88px;">출근</th>
-                  <th style="width:88px;">퇴근</th>
-                  <th class="th-brk" style="min-width:220px;">휴게시간 <span style="font-size:10px;font-weight:400;opacity:.8;">(복수 추가 가능)</span></th>
+                  <th style="min-width:420px;">근무시간 <span style="font-size:10px;font-weight:400;opacity:.8;">(출근~퇴근·휴게)</span></th>
+                  <th style="width:36px;"></th>
                   <th style="width:60px;">소정시간</th>
-                  <th>비고</th>
                 </tr>
               </thead>
               <tbody id="ct-schedule-tbody">
@@ -1821,12 +1823,34 @@
         <!-- ── 급여산정기간 + 급여일 — 같은 행 ── -->
         <div class="form-group">
           <label>급여 산정기간 <span class="form-hint" id="ct-pay-period-hint"></span></label>
-          <input type="text" id="ct-pay-period" placeholder="예: 전월 1일 ~ 말일" />
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <select id="ct-pay-period-month" onchange="_ctPeriodCompose()" style="flex:0 0 auto;">
+              <option value="">월 선택</option>
+              <option value="전월">전월</option>
+              <option value="당월">당월</option>
+            </select>
+            <select id="ct-pay-period-day" onchange="_ctPeriodCompose()" style="flex:0 0 auto;">
+              <option value="">일 선택</option>
+              <option value="1">1일</option>
+              <option value="5">5일</option>
+              <option value="10">10일</option>
+              <option value="11">11일</option>
+              <option value="15">15일</option>
+              <option value="16">16일</option>
+              <option value="20">20일</option>
+              <option value="21">21일</option>
+              <option value="25">25일</option>
+            </select>
+            <span style="font-size:13px;color:#6b7280;font-weight:500;">부터 1개월간</span>
+          </div>
+          <input type="hidden" id="ct-pay-period" />
+          <input type="hidden" id="ct-pay-period-month-hidden" />
+          <input type="hidden" id="ct-pay-period-day-hidden" />
         </div>
         <div class="form-group">
           <label>급여일 <span style="font-size:11px;font-weight:400;color:#6b7280;">(매월)</span></label>
           <div style="display:flex;align-items:center;gap:6px;">
-            <input type="number" id="ct-pay-day" min="1" max="31" placeholder="고객사 설정값" style="width:80px;" />
+            <input type="number" id="ct-pay-day" min="1" max="31" placeholder="미입력 시 고객사 급여일 적용" style="width:80px;" />
             <span style="font-size:12px;color:#6b7280;">일</span>
             <span id="ct-pay-day-default" style="font-size:11px;color:#9ca3af;"></span>
           </div>
@@ -2213,13 +2237,13 @@
             <span id="xl-company-name-label"></span>
             <span style="font-size:11px;font-weight:400;color:#4ade80;margin-left:4px;">선택됨</span>
           </div>
-          <select id="xl-company" onchange="onXlCompanyChange()" style="border:1px solid #e0e0e0;border-radius:7px;padding:9px 11px;font-size:13px;outline:none;font-family:inherit;">
+          <select id="xl-company" onchange="onXlCompanyChange()">
             <option value="">-- 고객사를 선택하세요 --</option>
           </select>
         </div>
         <div class="form-group">
           <label>년도 *</label>
-          <select id="xl-year" style="border:1px solid #e0e0e0;border-radius:7px;padding:9px 11px;font-size:13px;outline:none;font-family:inherit;">
+          <select id="xl-year">
             <option value="2025">2025년</option>
             <option value="2026">2026년</option>
             <option value="2024">2024년</option>
@@ -2227,7 +2251,7 @@
         </div>
         <div class="form-group">
           <label>월 *</label>
-          <select id="xl-month" style="border:1px solid #e0e0e0;border-radius:7px;padding:9px 11px;font-size:13px;outline:none;font-family:inherit;"></select>
+          <select id="xl-month"></select>
         </div>
         <div class="form-group full">
           <label>포함 옵션</label>

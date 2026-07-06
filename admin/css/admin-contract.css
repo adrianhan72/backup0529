@@ -91,7 +91,8 @@
     /* draft 배지 */
     .badge-draft{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:700;background:rgba(245,158,11,.15);color:#b45309;border:1px solid rgba(245,158,11,.35);vertical-align:middle;margin-left:5px;}
     /* 읽기전용 폼 */
-    .ct-readonly input,.ct-readonly select,.ct-readonly textarea{background:#f8f9fb!important;color:#374151!important;pointer-events:none;border-color:#e5e7eb!important}
+    .ct-readonly input,.ct-readonly select,.ct-readonly textarea{background:#f8f9fb!important;color:#374151!important;pointer-events:none;border-color:#e5e7eb!important;opacity:1!important;-webkit-text-fill-color:#374151!important}
+    .ct-readonly select{appearance:none!important;-webkit-appearance:none!important;-moz-appearance:none!important;padding:7px 28px 7px 12px!important;background:#f8f9fb url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='none' stroke='%236b7280' stroke-width='1.5' stroke-linecap='round' d='M3 4.5l3 3 3-3'/%3E%3C/svg%3E") no-repeat right 8px center!important;background-size:14px!important;color:#374151!important}
     .ct-readonly .form-computed{background:#f1f5f9!important}
     /* 해지 설정 패널 / 퇴사예정 패널은 ct-readonly 영향 받지 않음 */
     .ct-readonly .ct-fixed-terminate-panel input,

@@ -176,7 +176,7 @@ function renderContracts(){
       if((emp?.employment_category||'')!==filterEmpCat) return false;
     }
     // 계약상태 필터
-    const {label}=calcContractStatusDisplay(c,today);
+    const {label, docsIncomplete} = calcContractStatusDisplay(c,today);
     if(filterStatus){
       // 명시적 필터가 있으면 해당 상태만 (알림 카드 항목 포함)
       if(label!==filterStatus) return false;
@@ -184,8 +184,8 @@ function renderContracts(){
       // 필터 없음(전체): 알림 카드 전용 상태는 메인 테이블에서 제외
       if(ALERT_ONLY_LABELS.has(label)) return false;
     }
-    // 서류미비만 보기 필터 (다른 필터와 병행 가능)
-    if(filterDocsOnly && c.status!=='docs_incomplete' && c.status!=='서류미비') return false;
+    // 서류미비만 보기 필터 (status가 서류미비이거나 실제 파일이 누락된 경우)
+    if(filterDocsOnly && c.status!=='docs_incomplete' && c.status!=='서류미비' && !docsIncomplete) return false;
     return true;
   }).sort((a,b)=>getEmpName(a.employee_id).localeCompare(getEmpName(b.employee_id),'ko'));
   const paged=f.slice((pages.cont-1)*ITEMS,pages.cont*ITEMS);
@@ -262,10 +262,17 @@ function openContractModal(id=null, preCompanyId=null){
   window._isAmendMode = false;
   // 통합 상태 배너 초기화
   _resetStatusBanner();
-  // readonly 클래스 제거
+  // readonly 클래스 제거 + 모든 필드 활성화
   const modalEl = document.querySelector('#contract-modal .modal');
   modalEl.classList.remove('ct-readonly');
-  modalEl.querySelectorAll('input,select,textarea').forEach(el=>{ el.disabled = false; });
+  modalEl.querySelectorAll('input,select,textarea').forEach(el=>{
+    el.disabled = false;
+    el.tabIndex = 0;
+    el.style.pointerEvents = '';
+    el.style.background = '';
+    el.style.color = '';
+    el.style.cursor = '';
+  });
   // 지급유형 버튼 + 휴게시간 추가 버튼 재활성화 (신규/수정 모드)
   modalEl.querySelectorAll('.modal-body .pi-pay-type-btn').forEach(btn=>{
     btn.disabled = false; btn.style.cursor = ''; btn.style.pointerEvents = '';
@@ -273,7 +280,8 @@ function openContractModal(id=null, preCompanyId=null){
   modalEl.querySelectorAll('.modal-body .btn-brk-add').forEach(btn=>{
     btn.disabled = false; btn.style.cursor = ''; btn.style.pointerEvents = '';
   });
-  ['ct-start','ct-end','ct-annual-sal','ct-base','ct-note','ct-pay-period','ct-pay-day'].forEach(i=>document.getElementById(i).value='');
+  ['ct-start','ct-end','ct-annual-sal','ct-base','ct-note','ct-pay-period','ct-pay-period-month-hidden','ct-pay-period-day-hidden','ct-pay-day'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});
+  ['ct-pay-period-month','ct-pay-period-day'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});
   const _ppHint = document.getElementById('ct-pay-period-hint'); if(_ppHint) _ppHint.textContent='';
   document.getElementById('ct-annual').value=15;
   // 요일별 스케줄 테이블 초기화 (기본값: 월~금 09:00~18:00, 휴게 1h)
@@ -333,6 +341,10 @@ function openContractModal(id=null, preCompanyId=null){
   if(isNew){
     // 신규: 고객사 프리셋 지원, 신규 직원 입력 섹션 표시
     document.getElementById('ct-company').value = preCompanyId || '';
+    { const _co = preCompanyId ? (allCompanies||[]).find(x=>x.id===preCompanyId) : null;
+      const _nameEl = document.getElementById('ct-company-name'); if(_nameEl) _nameEl.textContent = _co?.company_name || ''; }
+    // 고객사 급여산정기간·급여일 기본값 자동 채움
+    if(preCompanyId){ _autoFillCTPeriod(); _setCtPayDayDefault(preCompanyId); }
     // 신규 모드: 프리셋 고객사의 allowance_config 적용 (값 초기화 포함)
     { const _newCo = preCompanyId ? (allCompanies||[]).find(x=>x.id===preCompanyId) : null;
       let _newCfg = _newCo?.allowance_config ?? null;
@@ -355,11 +367,12 @@ function openContractModal(id=null, preCompanyId=null){
       if(emp){
         document.getElementById('ct-edit-em-gender').value    = emp.gender || '남';
         // 계약예정 상태이면 수습 카테고리 정규화 (예: '계약직 수습' → '계약직')
-        const _empCatDisplay = emp.employment_category || '-';
+        const _empCatRaw = emp.employment_category || '';
+        const _empCatKorean = contractTypeLabel(_empCatRaw) || '-';
         const _isPendingDisplay = _isPendingCt;
         document.getElementById('ct-edit-em-category').value = _isPendingDisplay
-          ? (_empCatDisplay ===CONTRACT_TYPE.REGULAR_PROBATION ? '정규직' : _empCatDisplay ===CONTRACT_TYPE.FIXED_PROBATION ? '계약직' : _empCatDisplay)
-          : _empCatDisplay;
+          ? (_empCatRaw ===CONTRACT_TYPE.REGULAR_PROBATION ? '정규직' : _empCatRaw ===CONTRACT_TYPE.FIXED_PROBATION ? '계약직' : _empCatKorean)
+          : _empCatKorean;
         document.getElementById('ct-edit-em-job').value       = emp.job_description || '';
         document.getElementById('ct-edit-em-dept').value      = emp.department || '';
         document.getElementById('ct-edit-em-position').value  = emp.position || '';
@@ -379,6 +392,8 @@ function openContractModal(id=null, preCompanyId=null){
         if(_editRepChk) _editRepChk.checked = emp.is_representative ? true : false;
       }
       document.getElementById('ct-company').value=c.company_id||'';
+      { const _co = c.company_id ? (allCompanies||[]).find(x=>x.id===c.company_id) : null;
+        const _nameEl = document.getElementById('ct-company-name'); if(_nameEl) _nameEl.textContent = _co?.company_name || ''; }
       // 수정 모드: 계약 체결 시점의 고객사 allowance_config 적용 (getCompanySnapshotAt)
       { const _ctStartTs = c.contract_start ? new Date(c.contract_start).getTime() : 0;
         const _editCo = getCompanySnapshotAt(c.company_id||'', _ctStartTs);
@@ -499,10 +514,9 @@ function openContractModal(id=null, preCompanyId=null){
       setAmountVal('ct-childcare', c.childcare_allowance||0);
       { const _ccDep=document.getElementById('ct-childcare-dependents'); if(_ccDep) _ccDep.value=c.childcare_dependents||1; }
       // 급여 산정기간 복원
-      const _ppEl = document.getElementById('ct-pay-period');
-      if(_ppEl) _ppEl.value = c.pay_period || '';
+      _ctPeriodRestore(c.pay_period||'', c.pay_period_month||null, c.pay_period_day!=null?c.pay_period_day:null);
       const _pdEl = document.getElementById('ct-pay-day');
-      if(_pdEl) _pdEl.value = c.pay_day || '';
+      if(_pdEl) _pdEl.value = (typeof c.pay_day === 'number' || /^\d+$/.test(c.pay_day)) ? c.pay_day : '';
       _autoFillCTPeriod(); // 힌트 갱신
       // DB에 값이 있는 항목은 allowance_config와 무관하게 강제 노출 (하위호환)
       _forceShowNonZeroCTRows(c);
@@ -644,7 +658,7 @@ function _resetWageInputs(){
   setAmountVal('ct-hourly-input', 0);
 }
 
-// lock     : 이름·주민번호·성별 잠금 여부 (수정=false, 갱신·재계약=true)
+// lock     : 이름·주민번호·성별·사원번호 잠금 여부 (수정=false, 갱신·재계약=true)
 // lockCat  : 고용형태 잠금 여부 (기본값 = lock과 동일 — 하위 호환)
 //            재계약도 고용형태는 변경 가능하므로 false로 호출
 function _setEditNameCategoryLock(lock, lockCat = lock) {
@@ -652,13 +666,15 @@ function _setEditNameCategoryLock(lock, lockCat = lock) {
   const catEl      = document.getElementById('ct-edit-em-category');
   const idEl       = document.getElementById('ct-edit-em-id');
   const genderEl   = document.getElementById('ct-edit-em-gender');
+  const empnoEl    = document.getElementById('ct-edit-em-empno');
   const nameLock   = document.getElementById('ct-edit-name-lock-hint');
   const catLock    = document.getElementById('ct-edit-category-lock-hint');
 
-  // 이름·주민번호·성별: lock 적용
+  // 이름·주민번호·성별·사원번호: lock 적용
   if(nameEl)   { nameEl.readOnly   = lock;    nameEl.style.background   = lock    ? '#f3f4f6' : ''; nameEl.style.color    = lock    ? '#6b7280' : ''; }
   if(idEl)     { idEl.readOnly     = lock;    idEl.style.background     = lock    ? '#f3f4f6' : ''; idEl.style.color      = lock    ? '#6b7280' : ''; }
   if(genderEl) { genderEl.disabled = lock;    genderEl.style.background = lock    ? '#f3f4f6' : ''; genderEl.style.color  = lock    ? '#6b7280' : ''; }
+  if(empnoEl)  { empnoEl.readOnly  = lock;    empnoEl.style.background  = lock    ? '#f3f4f6' : ''; empnoEl.style.color   = lock    ? '#6b7280' : ''; }
   // 고용형태: lockCat 적용 (재계약은 false → 편집 가능)
   if(catEl)    { catEl.disabled    = lockCat; catEl.style.background    = lockCat ? '#f3f4f6' : ''; catEl.style.color     = lockCat ? '#6b7280' : ''; }
   if(nameLock) nameLock.style.display = lock    ? 'block' : 'none';
@@ -1221,12 +1237,17 @@ function viewContract(id){
   // 모달 본문(modal-body) 읽기전용 - 액션 패널 제외
   const modalEl = document.querySelector('#contract-modal .modal');
   modalEl.classList.add('ct-readonly');
-  // modal-body 내 input/select/textarea만 disabled (액션 패널 제외)
+  // modal-body 내 input/select/textarea 비활성화 (액션 패널 제외)
+  // select는 disabled 대신 pointer-events로 차단 (브라우저 기본 opacity 방지)
   // 단, 입사일(ct-edit-em-hire)은 재입사 케이스를 위해 항상 편집 가능하게 유지
   const bodyEl = modalEl.querySelector('.modal-body');
   if(bodyEl) bodyEl.querySelectorAll('input,select,textarea').forEach(el=>{
-    el.disabled = true;
-    // toggleCtEndDate()가 disabled 상태에서 배경색을 바꾸지 않도록 스타일 통일
+    if(el.tagName === 'SELECT'){
+      el.tabIndex = -1;
+      el.style.pointerEvents = 'none';
+    } else {
+      el.disabled = true;
+    }
     el.style.background = '#f8f9fb';
     el.style.color = '#374151';
     el.style.cursor = 'default';
@@ -1380,6 +1401,8 @@ function doContractAmend(){
   const bodyEl = modalEl.querySelector('.modal-body');
   if(bodyEl) bodyEl.querySelectorAll('input,select,textarea').forEach(el=>{
     el.disabled = false;
+    el.tabIndex = 0;
+    el.style.pointerEvents = '';
     el.style.background = '';
     el.style.color = '';
     el.style.cursor = '';
@@ -1548,6 +1571,8 @@ async function openAmendPreview(){
     childcare_allowance: getAmountVal('ct-childcare')||0,
     childcare_dependents: parseInt(document.getElementById('ct-childcare-dependents')?.value||1)||1,
     pay_period: document.getElementById('ct-pay-period')?.value.trim() || '',
+    pay_period_month: document.getElementById('ct-pay-period-month-hidden')?.value || null,
+    pay_period_day: parseInt(document.getElementById('ct-pay-period-day-hidden')?.value) || null,
     pay_day: parseInt(document.getElementById('ct-pay-day')?.value) || null,
     car_maintenance: car_,
     insurance_employment:true, insurance_industrial:true, insurance_pension:true, insurance_health:true,

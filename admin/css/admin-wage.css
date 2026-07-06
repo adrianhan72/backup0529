@@ -245,9 +245,10 @@
     .form-grid.cols3{grid-template-columns:1fr 1fr 1fr}
     .form-group{display:flex;flex-direction:column;gap:5px}
     .form-group.full{grid-column:1/-1}
-    .form-group label{font-size:11.5px;font-weight:600;color:#555}
+    .form-group label{font-size:11.5px;font-weight:600;color:#555;min-height:18px;line-height:1.4}
 
-    .form-group input,.form-group select,.form-group textarea{border:1px solid #e0e0e0;border-radius:8px;padding:7px 12px;font-size:12.5px;color:#333;outline:none;transition:border-color .2s;font-family:inherit;background:#f8f9fb;}
+    .form-group input,.form-group textarea{border:1px solid #e0e0e0;border-radius:8px;padding:7px 12px;font-size:12.5px;color:#333;outline:none;transition:border-color .2s;font-family:inherit;background:#f8f9fb;}
+    .form-group select{border:1px solid #e0e0e0;border-radius:8px;padding:7px 28px 7px 12px;font-size:12.5px;color:#333;outline:none;transition:border-color .2s;font-family:inherit;background:#f8f9fb url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='none' stroke='%236b7280' stroke-width='1.5' stroke-linecap='round' d='M3 4.5l3 3 3-3'/%3E%3C/svg%3E") no-repeat right 8px center;background-size:14px;appearance:none;-webkit-appearance:none;-moz-appearance:none;}
     .form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:#e94560}
     .form-section-title{font-size:12px;font-weight:700;color:#e94560;padding:10px 0 3px;border-bottom:1px dashed #ffd0d8;margin-bottom:6px;grid-column:1/-1;display:flex;align-items:center;gap:6px;}
 

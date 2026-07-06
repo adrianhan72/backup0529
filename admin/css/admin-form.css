@@ -10,9 +10,9 @@
     .work-schedule-table tr.day-sun td{background:#fff5f5;}
     .work-schedule-table tr.day-sun td.td-brk{background:#fce7f3;}
     .work-schedule-table tr:last-child td{border-bottom:none;}
-    .work-schedule-table input[type=time]{width:84px;border:1px solid #e2e8f0;border-radius:5px;padding:4px 5px;font-size:12px;font-family:inherit;background:#fff;text-align:center;}
+    .work-schedule-table input[type=time]{width:100px;border:1px solid #e2e8f0;border-radius:5px;padding:4px 2px;font-size:12px;font-family:inherit;background:#fff;text-align:center;}
     .work-schedule-table input[type=time]:disabled{background:#f3f4f6;color:#9ca3af;}
-    .work-schedule-table input.brk-time{width:76px;border:1px solid #ddd6fe;border-radius:5px;padding:4px 5px;font-size:12px;font-family:inherit;background:#faf5ff;text-align:center;}
+    .work-schedule-table input.brk-time{width:92px;border:1px solid #ddd6fe;border-radius:5px;padding:4px 2px;font-size:12px;font-family:inherit;background:#faf5ff;text-align:center;}
     .work-schedule-table input.brk-time:disabled{background:#f3f4f6;color:#9ca3af;border-color:#e2e8f0;}
     .work-schedule-table .brk-sep{font-size:11px;color:#7c3aed;font-weight:700;padding:0 1px;}
     /* 복수 휴게슬롯 */
@@ -25,12 +25,16 @@
     .btn-brk-del:hover{background:#fee2e2;}
     .work-schedule-table .day-toggle{width:16px;height:16px;cursor:pointer;accent-color:#3b82f6;}
     /* 일괄 설정 바 */
-    .bulk-schedule-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 14px;background:linear-gradient(90deg,#f0f9ff 0%,#faf5ff 100%);border:1.5px solid #bae6fd;border-radius:9px;margin-bottom:8px;}
+    .bulk-schedule-bar{display:flex;flex-direction:column;gap:0;flex-wrap:wrap;padding:10px 14px;background:linear-gradient(90deg,#f0f9ff 0%,#faf5ff 100%);border:1.5px solid #bae6fd;border-radius:9px;margin-bottom:8px;}
     .bulk-schedule-bar .bulk-label{font-size:12px;font-weight:700;color:#0369a1;white-space:nowrap;display:flex;align-items:center;gap:4px;}
     .bulk-schedule-bar .bulk-sep{color:#cbd5e1;font-size:13px;margin:0 2px;}
-    .bulk-schedule-bar input[type=time]{width:90px;border:1px solid #bae6fd;border-radius:6px;padding:5px 7px;font-size:12.5px;font-family:inherit;background:#fff;color:#1e293b;text-align:center;}
+    .bulk-schedule-bar input[type=time]{width:110px;border:1px solid #bae6fd;border-radius:6px;padding:5px 4px;font-size:12.5px;font-family:inherit;background:#fff;color:#1e293b;text-align:center;}
+    .bulk-schedule-bar input[type=time]::-webkit-calendar-picker-indicator{margin-left:-4px;}
+    .bulk-schedule-bar input[type=time]::-webkit-inner-spin-button{display:none;}
     .bulk-schedule-bar input.bulk-brk{border-color:#ddd6fe;background:#faf5ff;}
     .bulk-schedule-bar .bulk-divider{width:1px;height:26px;background:#e2e8f0;margin:0 4px;}
+    .bulk-apply-target{display:flex;align-items:center;gap:6px;font-size:11.5px;color:#374151;white-space:nowrap;flex-wrap:wrap;}
+    .bulk-apply-target label{display:flex;align-items:center;gap:3px;cursor:pointer;}
     .bulk-schedule-bar .btn-bulk-apply{
       display:flex;align-items:center;gap:5px;
       padding:6px 15px;
@@ -44,12 +48,20 @@
     }
     .bulk-schedule-bar .btn-bulk-apply:active:not(:disabled){transform:scale(.96) translateY(1px);}
     .bulk-schedule-bar .btn-bulk-apply:disabled,.bulk-schedule-bar .btn-bulk-apply[disabled]{background:#9ca3af;color:#d1d5db;border-color:#9ca3af;cursor:not-allowed;pointer-events:none;box-shadow:none;opacity:1;}
-    .bulk-apply-target{display:flex;align-items:center;gap:6px;font-size:11.5px;color:#374151;white-space:nowrap;}
-    .bulk-apply-target label{display:flex;align-items:center;gap:3px;cursor:pointer;}
     .bulk-apply-target input[type=checkbox]{width:14px;height:14px;accent-color:#6366f1;}
     .bulk-schedule-tip{font-size:11px;color:#6b7280;margin-top:5px;padding-left:2px;}
+    .bulk-schedule-footer{display:flex;align-items:center;justify-content:space-between;margin:8px -14px -10px -14px;padding:8px 14px;border-top:1px solid #bae6fd;background:rgba(255,255,255,.5);border-radius:0 0 9px 9px;gap:10px;flex-wrap:wrap;}
+    .bulk-schedule-footer .bulk-schedule-tip{margin-top:0;}
     .work-schedule-table .day-label{font-weight:700;font-size:12.5px;}
     .work-schedule-table .computed-h{font-size:11.5px;color:#0369a1;font-weight:600;min-width:48px;display:inline-block;}
+    /* 시프트 그룹 */
+    .td-shifts{padding:4px 2px!important;}
+    .shifts-container{display:flex;flex-direction:column;gap:4px;}
+    .shift-group{display:inline-flex;align-items:center;gap:3px;padding:2px 4px;background:#f8fafc;border-radius:6px;border:1px solid #e2e8f0;width:fit-content;}
+    .shift-group .brk-slots-wrap{min-width:auto!important;}
+    [id^="ct-sch-btns-"]{display:flex;align-items:center;gap:2px;flex-wrap:nowrap;height:100%;}
+    .shift-add{width:22px!important;height:22px!important;font-size:12px!important;line-height:1!important;padding:0!important;}
+    .shift-del{width:22px!important;height:22px!important;font-size:12px!important;line-height:1!important;padding:0!important;}
     .wsh-total{font-size:12px;color:#374151;margin-top:8px;padding:7px 12px;background:#f8fafc;border-radius:7px;border:1px solid #e2e8f0;display:flex;gap:16px;flex-wrap:wrap;}
     .wsh-total span{font-weight:700;color:#0369a1;}
     /* 스켈레톤 로딩 */

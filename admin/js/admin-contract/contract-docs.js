@@ -272,12 +272,12 @@ async function _ctfDelete(type, contractId){
     await fetch(`../tables/contracts/${contractId}`, {
       method: 'PATCH',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ [nameField]: '', [dataField]: '' })
+      body: JSON.stringify({ [nameField]: '', [dataField]: '', status: '서류미비' })
     });
 
     // 로컬 캐시 갱신
     const idx = allContracts.findIndex(x => x.id === contractId);
-    if(idx !== -1){ allContracts[idx][nameField] = ''; allContracts[idx][dataField] = ''; }
+    if(idx !== -1){ allContracts[idx][nameField] = ''; allContracts[idx][dataField] = ''; allContracts[idx].status = '서류미비'; }
 
     toast('파일이 삭제되었습니다.', 'success');
     const c = allContracts.find(x => x.id === contractId);

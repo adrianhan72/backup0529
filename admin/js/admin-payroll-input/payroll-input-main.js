@@ -2877,17 +2877,14 @@ function _updatePIBottomBtns(){
     // ── 수정 모드 ──
     if(cancelBtn && cancelLabel){
       cancelLabel.textContent      = '수정 취소';
-      cancelBtn.style.background   = '#fff7ed';
-      cancelBtn.style.color        = '#c2410c';
-      cancelBtn.style.borderColor  = '#fdba74';
+      cancelBtn.classList.remove('btn-secondary');
+      cancelBtn.classList.add('btn-warning');
     }
     if(clearBtn && clearLabel){
       clearLabel.textContent       = '원상복구';
       if(clearIcon) clearIcon.className = 'fas fa-rotate-left';
-      clearBtn.style.background    = '#fef3c7';
-      clearBtn.style.color         = '#92400e';
-      clearBtn.style.borderColor   = '#fcd34d';
       clearBtn.classList.remove('btn-secondary');
+      clearBtn.classList.add('btn-warning');
     }
     // 진입 직후(스냅샷 있음)에는 비활성 → 변경 감지 후 활성
     _checkPIRestoreBtn();
@@ -2895,16 +2892,13 @@ function _updatePIBottomBtns(){
     // ── 신규 모드 ──
     if(cancelBtn && cancelLabel){
       cancelLabel.textContent      = '취소';
-      cancelBtn.style.background   = '#f1f5f9';
-      cancelBtn.style.color        = '#64748b';
-      cancelBtn.style.borderColor  = '#cbd5e1';
+      cancelBtn.classList.remove('btn-warning');
+      cancelBtn.classList.add('btn-secondary');
     }
     if(clearBtn && clearLabel){
       clearLabel.textContent       = '초기화';
       if(clearIcon) clearIcon.className = 'fas fa-redo';
-      clearBtn.style.background    = '';
-      clearBtn.style.color         = '';
-      clearBtn.style.borderColor   = '';
+      clearBtn.classList.remove('btn-warning');
       clearBtn.classList.add('btn-secondary');
     }
     // 신규 모드: 초기화 버튼 항상 활성 보장
