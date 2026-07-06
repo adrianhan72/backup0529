@@ -830,7 +830,6 @@ function applyBulkSchedule(){
     } else {
       container.innerHTML = _shiftGroupHTML(key, 0, false, '', '', []);
     }
-    _renderShiftButtons(key);
   });
   calcWorkHours();
   toast(`${applied}개 요일에 근무시간이 일괄 적용되었습니다. ✔`, 'success');
@@ -851,25 +850,10 @@ function _shiftGroupHTML(key, idx, enabled, start, end, breaks){
     <input type="time" id="ct-sch-end-${key}${sid}" value="${e}" oninput="calcWorkHours()" ${dis} />
     <span style="font-size:10.5px;color:#7c3aed;white-space:nowrap;">휴게</span>
     <div class="brk-slots-wrap" id="ct-sch-brkwrap-${key}${sid}">${_brkSlotsHTML2(key, idx, enabled, brks)}</div>
+    ${idx===0
+      ? `<button type="button" class="btn-brk-add shift-add" onclick="_addShift('${key}')" title="시프트 추가">+</button><button type="button" class="btn-brk-del shift-del" onclick="_deactivateShift('${key}')" ${dis} title="비활성화">−</button>`
+      : `<button type="button" class="btn-brk-del shift-del" onclick="_removeShift('${key}',${idx})" title="시프트 삭제">−</button>`}
   </div>`;
-}
-
-// ── 시프트 +/− 버튼 영역 렌더 ──
-function _renderShiftButtons(key){
-  const btnCell = document.getElementById(`ct-sch-btns-${key}`);
-  if(!btnCell) return;
-  const container = document.getElementById(`ct-sch-shifts-${key}`);
-  const count = container ? container.querySelectorAll('.shift-group').length : 1;
-  const firstStart = document.getElementById(`ct-sch-start-${key}`);
-  const isActive = firstStart && !firstStart.disabled;
-  let html = '<button type="button" class="btn-brk-add shift-add" onclick="_addShift(\''+key+'\')" title="시프트 추가">+</button>';
-  if(isActive && count === 1){
-    html += '<button type="button" class="btn-brk-del shift-del" onclick="_deactivateShift(\''+key+'\')" title="비활성화">−</button>';
-  }
-  for(let i=1; i<count; i++){
-    html += '<button type="button" class="btn-brk-del shift-del" onclick="_removeShift(\''+key+'\','+i+')" title="시프트 삭제">−</button>';
-  }
-  btnCell.innerHTML = html;
 }
 
 // ── 첫 번째 시프트 비활성화 ──
@@ -877,7 +861,6 @@ function _deactivateShift(key){
   const container = document.getElementById(`ct-sch-shifts-${key}`);
   if(!container) return;
   container.innerHTML = _shiftGroupHTML(key, 0, false, '', '', []);
-  _renderShiftButtons(key);
   calcWorkHours();
 }
 
@@ -910,7 +893,6 @@ function _addShift(key){
     const firstStart = document.getElementById(`ct-sch-start-${key}`);
     if(firstStart && firstStart.disabled){
       container.innerHTML = _shiftGroupHTML(key, 0, true, '', '', null);
-      _renderShiftButtons(key);
       calcWorkHours();
       return;
     }
@@ -921,7 +903,6 @@ function _addShift(key){
   const div = document.createElement('div');
   div.innerHTML = html;
   container.appendChild(div.firstElementChild);
-  _renderShiftButtons(key);
   calcWorkHours();
 }
 
@@ -930,7 +911,6 @@ function _removeShift(key, idx){
   const sid = idx===0 ? '' : '-'+idx;
   const shift = document.getElementById(`ct-sch-shift-${key}${sid}`);
   if(shift) shift.remove();
-  _renderShiftButtons(key);
   calcWorkHours();
 }
 
@@ -1045,12 +1025,9 @@ function initScheduleTable(){
     <tr class="${DAY_CLASSES[i]}" id="ct-sch-row-${key}">
       <td><span class="day-label" style="color:${color}">${DAYS_KR[i]}</span></td>
       <td class="td-shifts"><div class="shifts-container" id="ct-sch-shifts-${key}">${_shiftGroupHTML(key, 0, enabled, '', '', null)}</div></td>
-      <td style="text-align:center;" id="ct-sch-btns-${key}"></td>
       <td><span class="computed-h" id="ct-sch-hrs-${key}">${enabled?'8시간':'-'}</span></td>
     </tr>`;
   }).join('');
-  // 초기 버튼 렌더링
-  DAY_KEYS.forEach(key => _renderShiftButtons(key));
   calcWorkHours();
 }
 
@@ -1143,7 +1120,6 @@ function setScheduleFromJSON(schedule){
     container.innerHTML = shifts.map((sh, idx) =>
       _shiftGroupHTML(key, idx, true, sh.start, sh.end, sh.breaks)
     ).join('');
-    _renderShiftButtons(key);
   });
   calcWorkHours();
 }
@@ -1166,7 +1142,6 @@ function setScheduleFromLegacy(c){
     if(!active){ container.innerHTML = _shiftGroupHTML(key, 0, false, '', '', []); return; }
     const breaks = brkMins > 0 ? [{s: toTime(brkStart), e: toTime(brkEnd)}] : [];
     container.innerHTML = _shiftGroupHTML(key, 0, true, start, end, breaks);
-    _renderShiftButtons(key);
   });
   calcWorkHours();
 }
