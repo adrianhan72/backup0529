@@ -1,59 +1,59 @@
     .cv-action-bar{display:flex;align-items:center;gap:8px;padding:10px 18px;background:#f8f9fb;border-bottom:2px solid #e5e7eb;flex-wrap:wrap}
     .cv-action-bar.bottom{border-bottom:none;border-top:2px solid #e5e7eb}
     .cv-action-bar .cv-label{font-size:12px;color:#6b7280;flex:1}
-    /* ══════════════════════════════════════════════
-       계약 액션 버튼 alias — 새 시스템 기반
-       (기존 클래스명 유지, .btn 속성 상속)
-    ══════════════════════════════════════════════ */
-    /* 갱신 — Indigo */
+    /* ?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═
+       계약 ?�션 버튼 alias ?????�스??기반
+       (기존 ?�래?�명 ?��?, .btn ?�성 ?�속)
+    ?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═ */
+    /* 갱신 ??Indigo */
     .btn-renew{
-      background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;
-      border:none;border-radius:7px;padding:7px 16px;
+      background:#d97706;color:#fff;
+      border:1px solid #b45309;border-radius:7px;padding:7px 16px;
       font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;
       display:inline-flex;align-items:center;gap:5px;
       transition:background .18s,border-color .18s;
       position:relative;overflow:hidden;
     }
     .btn-renew:hover:not(:disabled){
-      background:#4338ca;
+      background:#b45309;
     }
     .btn-renew:active:not(:disabled){transform:scale(.96) translateY(1px);}
-    .btn-renew:disabled,.btn-renew[disabled]{background:#9ca3af;color:#d1d5db;border-color:#9ca3af;cursor:not-allowed;pointer-events:none;opacity:1;}
+    .btn-renew:disabled,.btn-renew[disabled]{background:#cccccc;color:#f2f2f2;border:1px solid #cccccc;cursor:not-allowed;pointer-events:none;opacity:1;}
 
-    /* 계약 종료 — Danger */
+    /* 계약 종료 ??Danger */
     .btn-terminate{
-      background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;
-      border:none;border-radius:7px;padding:7px 16px;
+      background:#e94560;color:#fff;
+      border:1px solid #b8283d;border-radius:7px;padding:7px 16px;
       font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;
       display:inline-flex;align-items:center;gap:5px;
       transition:background .18s,border-color .18s;
       position:relative;overflow:hidden;
     }
     .btn-terminate:hover:not(:disabled){
-      background:#b91c1c;
+      background:#b8283d;
     }
     .btn-terminate:active:not(:disabled){transform:scale(.96) translateY(1px);}
-    .btn-terminate:disabled,.btn-terminate[disabled]{background:#9ca3af;color:#d1d5db;border-color:#9ca3af;cursor:not-allowed;pointer-events:none;opacity:1;}
+    .btn-terminate:disabled,.btn-terminate[disabled]{background:#cccccc;color:#f2f2f2;border:1px solid #cccccc;cursor:not-allowed;pointer-events:none;opacity:1;}
 
-    /* 재계약 — Teal */
+    /* ?�계????Teal */
     .btn-recontract{
-      background:linear-gradient(135deg,#10b981,#059669);color:#fff;
-      border:none;border-radius:7px;padding:7px 16px;
+      background:#d97706;color:#fff;
+      border:1px solid #b45309;border-radius:7px;padding:7px 16px;
       font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;
       display:inline-flex;align-items:center;gap:5px;
       transition:background .18s,border-color .18s;
       position:relative;overflow:hidden;
     }
     .btn-recontract:hover:not(:disabled){
-      background:#047857;
+      background:#b45309;
     }
     .btn-recontract:active:not(:disabled){transform:scale(.96) translateY(1px);}
-    .btn-recontract:disabled,.btn-recontract[disabled]{background:#9ca3af;color:#d1d5db;border-color:#9ca3af;cursor:not-allowed;pointer-events:none;opacity:1;}
+    .btn-recontract:disabled,.btn-recontract[disabled]{background:#cccccc;color:#f2f2f2;border:1px solid #cccccc;cursor:not-allowed;pointer-events:none;opacity:1;}
 
-    /* 계약 무효 — Slate */
+    /* 계약 무효 ??Slate */
     .btn-void{
-      background:linear-gradient(135deg,#64748b,#475569);color:#fff;
-      border:none;border-radius:7px;padding:7px 16px;
+      background:#475569;color:#fff;
+      border:1px solid #334155;border-radius:7px;padding:7px 16px;
       font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;
       display:inline-flex;align-items:center;gap:5px;
       transition:background .18s,border-color .18s;
@@ -63,10 +63,10 @@
       background:#334155;
     }
     .btn-void:active:not(:disabled){transform:scale(.96) translateY(1px);}
-    .btn-void:disabled,.btn-void[disabled]{background:#9ca3af;color:#d1d5db;border-color:#9ca3af;cursor:not-allowed;pointer-events:none;opacity:1;}
+    .btn-void:disabled,.btn-void[disabled]{background:#cccccc;color:#f2f2f2;border:1px solid #cccccc;cursor:not-allowed;pointer-events:none;opacity:1;}
 
     .btn-draft{
-      background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;
+      background:#d97706;color:#fff;
       border:1px solid #b45309;border-radius:7px;padding:7px 16px;
       font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;
       display:inline-flex;align-items:center;gap:5px;
@@ -75,10 +75,10 @@
     }
     .btn-draft:hover:not(:disabled){background:#b45309;}
     .btn-draft:active:not(:disabled){background:#92400e;}
-    .btn-draft:disabled,.btn-draft[disabled]{background:#9ca3af;color:#d1d5db;border-color:#9ca3af;cursor:not-allowed;pointer-events:none;opacity:1;}
+    .btn-draft:disabled,.btn-draft[disabled]{background:#cccccc;color:#f2f2f2;border:1px solid #cccccc;cursor:not-allowed;pointer-events:none;opacity:1;}
 
     .btn-draft-edit{
-      background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;
+      background:#d97706;color:#fff;
       border:1px solid #b45309;border-radius:7px;padding:7px 16px;
       font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;
       display:inline-flex;align-items:center;gap:5px;
@@ -87,21 +87,21 @@
     }
     .btn-draft-edit:hover:not(:disabled){background:#b45309;}
     .btn-draft-edit:active:not(:disabled){background:#92400e;}
-    .btn-draft-edit:disabled,.btn-draft-edit[disabled]{background:#9ca3af;color:#d1d5db;border-color:#9ca3af;cursor:not-allowed;pointer-events:none;opacity:1;}
-    /* draft 배지 */
+    .btn-draft-edit:disabled,.btn-draft-edit[disabled]{background:#cccccc;color:#f2f2f2;border:1px solid #cccccc;cursor:not-allowed;pointer-events:none;opacity:1;}
+    /* draft 배�? */
     .badge-draft{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:700;background:rgba(245,158,11,.15);color:#b45309;border:1px solid rgba(245,158,11,.35);vertical-align:middle;margin-left:5px;}
-    /* 읽기전용 폼 */
+    /* ?�기?�용 ??*/
     .ct-readonly input,.ct-readonly select,.ct-readonly textarea{background:#f8f9fb!important;color:#374151!important;pointer-events:none;border-color:#e5e7eb!important;opacity:1!important;-webkit-text-fill-color:#374151!important}
     .ct-readonly select{appearance:none!important;-webkit-appearance:none!important;-moz-appearance:none!important;padding:7px 28px 7px 12px!important;background:#f8f9fb url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='none' stroke='%236b7280' stroke-width='1.5' stroke-linecap='round' d='M3 4.5l3 3 3-3'/%3E%3C/svg%3E") no-repeat right 8px center!important;background-size:14px!important;color:#374151!important}
     .ct-readonly .form-computed{background:#f1f5f9!important}
-    /* 해지 설정 패널 / 퇴사예정 패널은 ct-readonly 영향 받지 않음 */
+    /* ?��? ?�정 ?�널 / ?�사?�정 ?�널?� ct-readonly ?�향 받�? ?�음 */
     .ct-readonly .ct-fixed-terminate-panel input,
     .ct-readonly .ct-fixed-terminate-panel textarea,
     .ct-readonly .ct-terminate-panel input,
     .ct-readonly .ct-terminate-panel textarea{background:#fff!important;color:inherit!important;pointer-events:auto!important;border-color:#fdba74!important;cursor:text!important;}
-    /* 정규직 퇴사예정일 입력 패널 */
+    /* ?�규�??�사?�정???�력 ?�널 */
     .ct-terminate-panel{background:#fff5f5;border:1.5px solid #fca5a5;border-radius:10px;padding:14px 18px;margin:12px 18px 0;}
-    /* 계약직 해지 설정 패널 */
+    /* 계약�??��? ?�정 ?�널 */
     .ct-fixed-terminate-panel{background:linear-gradient(135deg,#fff7ed,#ffedd5);border:1.5px solid #fb923c;border-radius:12px;padding:18px 22px;margin:12px 18px 0;}
     .ct-fixed-terminate-panel .cft-title{font-size:13.5px;font-weight:800;color:#9a3412;margin-bottom:6px;display:flex;align-items:center;gap:8px;}
     .ct-fixed-terminate-panel .cft-desc{font-size:12px;color:#c2410c;line-height:1.7;margin-bottom:16px;background:#fff3e0;border:1px solid #fdba74;border-radius:8px;padding:10px 14px;}
@@ -117,22 +117,22 @@
     .cft-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
     .btn-cft-confirm{
       display:inline-flex;align-items:center;gap:6px;
-      background:linear-gradient(135deg,#dc2626,#b91c1c);color:#fff;
-      border:none;border-radius:8px;padding:8px 20px;
+      background:#e94560;color:#fff;
+      border:1px solid #b8283d;border-radius:8px;padding:8px 20px;
       font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;
       transition:background .18s,border-color .18s;
       position:relative;overflow:hidden;
     }
     .btn-cft-confirm:hover:not(:disabled){
-      background:#991b1b;
+      background:#b8283d;
     }
     .btn-cft-confirm:active:not(:disabled){transform:scale(.96) translateY(1px);}
-    .btn-cft-confirm:disabled,.btn-cft-confirm[disabled]{background:#9ca3af;color:#d1d5db;border-color:#9ca3af;cursor:not-allowed;pointer-events:none;opacity:1;}
-    /* 해지 설정 버튼 — Orange */
+    .btn-cft-confirm:disabled,.btn-cft-confirm[disabled]{background:#cccccc;color:#f2f2f2;border:1px solid #cccccc;cursor:not-allowed;pointer-events:none;opacity:1;}
+    /* ?��? ?�정 버튼 ??Orange */
     .btn-fixed-terminate{
       display:inline-flex;align-items:center;gap:6px;
-      background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;
-      border:none;border-radius:8px;padding:7px 16px;
+      background:#ea580c;color:#fff;
+      border:1px solid #c2410c;border-radius:8px;padding:7px 16px;
       font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;
       transition:background .18s,border-color .18s;
       position:relative;overflow:hidden;
@@ -141,73 +141,73 @@
       background:#c2410c;
     }
     .btn-fixed-terminate:active:not(:disabled){transform:scale(.96) translateY(1px);}
-    .btn-fixed-terminate:disabled,.btn-fixed-terminate[disabled]{background:#9ca3af;color:#d1d5db;border-color:#9ca3af;cursor:not-allowed;pointer-events:none;opacity:1;}
-    /* ── 계약 상태 통합 배너 (해지예정 / 계약예정 / 갱신예정 공용) ── */
+    .btn-fixed-terminate:disabled,.btn-fixed-terminate[disabled]{background:#cccccc;color:#f2f2f2;border:1px solid #cccccc;cursor:not-allowed;pointer-events:none;opacity:1;}
+    /* ?�?� 계약 ?�태 ?�합 배너 (?��??�정 / 계약?�정 / 갱신?�정 공용) ?�?� */
     .ct-status-banner{display:none;align-items:flex-start;gap:14px;border-radius:12px;padding:14px 20px;margin:12px 18px 0;border:2px solid;}
-    /* 해지예정 – 레드 */
+    /* ?��??�정 ???�드 */
     .ct-status-banner.type-preterminate{background:linear-gradient(135deg,#fff1f2,#ffe4e6);border-color:#fda4af;}
     .ct-status-banner.type-preterminate .banner-title{color:#be123c;}
     .ct-status-banner.type-preterminate .banner-date{color:#9f1239;}
-    /* 계약예정 – 인디고 */
+    /* 계약?�정 ???�디�?*/
     .ct-status-banner.type-pending{background:linear-gradient(135deg,#eef2ff,#e0e7ff);border-color:#a5b4fc;}
     .ct-status-banner.type-pending .banner-title{color:#3730a3;}
     .ct-status-banner.type-pending .banner-date{color:#4338ca;}
-    /* 갱신예정 – 앰버 */
+    /* 갱신?�정 ???�버 */
     .ct-status-banner.type-renew{background:linear-gradient(135deg,#fffbeb,#fef3c7);border-color:#fcd34d;}
     .ct-status-banner.type-renew .banner-title{color:#92400e;}
     .ct-status-banner.type-renew  .banner-date{color:#b45309;}
-    /* 공통 내부 요소 */
+    /* 공통 ?��? ?�소 */
     .ct-status-banner .banner-icon{font-size:28px;line-height:1;flex-shrink:0;margin-top:2px;}
     .ct-status-banner .banner-body{flex:1;min-width:0;}
     .ct-status-banner .banner-title{font-size:14px;font-weight:800;margin-bottom:4px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
     .ct-status-banner .banner-date{font-size:13px;font-weight:600;margin-bottom:10px;}
     .ct-status-banner .banner-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:2px;}
-    /* ══ 배너 내 버튼 공통 (btn-sb) ══ */
+    /* ?�═ 배너 ??버튼 공통 (btn-sb) ?�═ */
     .btn-sb{
       display:inline-flex;align-items:center;gap:5px;
-      padding:6px 15px;border-radius:7px;border:none;cursor:pointer;
+      padding:6px 15px;border-radius:7px;border:1px solid #cccccc;cursor:pointer;
       font-size:12.5px;font-weight:700;font-family:inherit;
       transition:background .18s,border-color .18s;
     position:relative;overflow:hidden;
     }
     .btn-sb:active:not(:disabled){transform:scale(.96) translateY(1px);}
-    .btn-sb:disabled,.btn-sb[disabled]{background:#9ca3af;color:#d1d5db;border-color:#9ca3af;cursor:not-allowed;pointer-events:none;opacity:1;}
+    .btn-sb:disabled,.btn-sb[disabled]{background:#cccccc;color:#f2f2f2;border:1px solid #cccccc;cursor:not-allowed;pointer-events:none;opacity:1;}
 
-    /* 편집 — Indigo */
-    .btn-sb-edit{background:#4f46e5;color:#fff;}
-    .btn-sb-edit:hover:not(:disabled){background:#3730a3;}
+    /* ?�집 ??Indigo */
+    .btn-sb-edit{background:#d97706;color:#fff;}
+    .btn-sb-edit:hover:not(:disabled){background:#b45309;}
     .btn-sb-edit.amber{background:#d97706;color:#fff;}
     .btn-sb-edit.amber:hover:not(:disabled){background:#b45309;}
-    .btn-sb-edit.rose{background:#be123c;color:#fff;}
-    .btn-sb-edit.rose:hover:not(:disabled){background:#9f1239;}
+    .btn-sb-edit.rose{background:#d97706;color:#fff;}
+    .btn-sb-edit.rose:hover:not(:disabled){background:#b45309;}
 
-    /* 저장 — Success */
+    /* ?�????Success */
     .btn-sb-save{background:#16a34a;color:#fff;}
     .btn-sb-save:hover:not(:disabled){background:#15803d;}
 
-    /* 취소 — Secondary outline */
-    .btn-sb-cancel{background:#f1f5f9;color:#374151;border:1.5px solid #cbd5e1;}
-    .btn-sb-cancel:hover:not(:disabled){background:#e2e8f0;border-color:#94a3b8;}
+    /* 취소 ??Secondary outline */
+    .btn-sb-cancel{background:#475569;color:#fff;border:1px solid #334155;}
+    .btn-sb-cancel:hover:not(:disabled){background:#334155;}
 
-    /* 삭제 — Outline Danger */
-    .btn-sb-destroy{background:#fff;color:#dc2626;border:1.5px solid #dc2626;}
-    .btn-sb-destroy:hover:not(:disabled){background:#fee2e2;border-color:#b91c1c;}
-    /* ── 수정 및 재발행 버튼 (Sky 계열) ── */
+    /* ??�� ??Outline Danger */
+    .btn-sb-destroy{background:#475569;color:#fff;border:1px solid #334155;}
+    .btn-sb-destroy:hover:not(:disabled){background:#334155;}
+    /* ?�?� ?�정 �??�발??버튼 (Sky 계열) ?�?� */
     .btn-amend{
       display:inline-flex;align-items:center;gap:5px;
       padding:7px 15px;border-radius:7px;
-      border:1.5px solid #0369a1;
-      background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#fff;
+      border:1px solid #b45309;
+      background:#d97706;color:#fff;
       font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;
       transition:background .18s,border-color .18s;
     }
     .btn-amend:hover:not(:disabled){
-      background:#0369a1;
-      border-color:#075985;
+      background:#b45309;
+      border-color:#b45309;
     }
     .btn-amend:active:not(:disabled){transform:scale(.96) translateY(1px);}
-    .btn-amend:disabled,.btn-amend[disabled]{background:#9ca3af;color:#d1d5db;border-color:#9ca3af;cursor:not-allowed;pointer-events:none;opacity:1;}
-    /* ── 수정 및 재발행 안내 패널 ── */
+    .btn-amend:disabled,.btn-amend[disabled]{background:#cccccc;color:#f2f2f2;border:1px solid #cccccc;cursor:not-allowed;pointer-events:none;opacity:1;}
+    /* ?�?� ?�정 �??�발???�내 ?�널 ?�?� */
     .ct-amend-panel{background:linear-gradient(135deg,#f0f9ff,#e0f2fe);border:1.5px solid #7dd3fc;border-radius:10px;padding:14px 18px;margin:10px 18px 0;}
     .ct-amend-panel .amend-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px;}
     .ct-amend-panel .amend-title{font-size:13px;font-weight:800;color:#0369a1;display:flex;align-items:center;gap:7px;}
@@ -218,8 +218,9 @@
     .ct-amend-panel .amend-actions{display:flex;gap:8px;flex-wrap:wrap;}
     .btn-amend-complete{
       display:inline-flex;align-items:center;gap:5px;
-      padding:7px 18px;border-radius:7px;border:none;
-      background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;
+      padding:7px 18px;border-radius:7px;
+      border:1px solid #166534;
+      background:#15803d;color:#fff;
       font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;
       transition:background .18s,border-color .18s;
       position:relative;overflow:hidden;
@@ -228,7 +229,7 @@
       background:#166534;
     }
     .btn-amend-complete:active:not(:disabled){transform:scale(.96) translateY(1px);}
-    /* btn-amend-complete: 버튼은 항상 활성 — disabled 스타일 불필요 */
+    /* btn-amend-complete: 버튼?� ??�� ?�성 ??disabled ?��???불필??*/
     .btn-amend-cancel{
       display:inline-flex;align-items:center;gap:5px;
       padding:7px 14px;border-radius:7px;
@@ -238,8 +239,8 @@
     }
     .btn-amend-cancel:hover:not(:disabled){background:#e2e8f0;border-color:#94a3b8;}
     .btn-amend-cancel:active:not(:disabled){transform:scale(.96) translateY(1px);}
-    /* ── 계약서 자동완성 프로세스 ── */
-    /* 단계 표시바 */
+    /* ?�?� 계약???�동?�성 ?�로?�스 ?�?� */
+    /* ?�계 ?�시�?*/
     .ct-step-bar{display:flex;align-items:center;gap:0;padding:14px 24px;background:#f8fafc;border-bottom:1px solid #e2e8f0;}
     .ct-step{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:#94a3b8;flex:1;}
     .ct-step-num{width:24px;height:24px;border-radius:50%;border:2px solid #cbd5e1;background:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;transition:all .2s;}
@@ -249,7 +250,7 @@
     .ct-step.done{color:#059669;}
     .ct-step-line{flex:1;height:2px;background:#e2e8f0;margin:0 4px;max-width:40px;}
     .ct-step-line.done{background:#10b981;}
-    /* 계약서 미리보기 모달 */
+    /* 계약??미리보기 모달 */
     .contract-preview-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:3000;align-items:flex-start;justify-content:center;padding:24px 16px;overflow-y:auto;}
     .contract-preview-overlay.open{display:flex;}
     .contract-preview-modal{background:#fff;border-radius:14px;width:100%;max-width:820px;box-shadow:0 24px 80px rgba(0,0,0,.25);display:flex;flex-direction:column;margin:auto;max-height:92vh;}
@@ -259,7 +260,7 @@
     .contract-preview-tab{padding:10px 22px;font-size:12.5px;font-weight:600;color:#64748b;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;background:none;border-top:none;border-left:none;border-right:none;}
     .contract-preview-tab.active{color:#4f46e5;border-bottom-color:#6366f1;background:#fff;}
     .contract-preview-body{flex:1;overflow-y:auto;padding:0;}
-    /* 계약서 문서 스타일 */
+    /* 계약??문서 ?��???*/
     .contract-doc{padding:40px 52px;font-family:'Noto Sans KR',sans-serif;font-size:13px;line-height:1.9;color:#1a1a1a;background:#fff;}
     .contract-doc h1{text-align:center;font-size:22px;font-weight:900;letter-spacing:6px;margin-bottom:4px;color:#0f172a;padding-bottom:10px;border-bottom:3px double #0f172a;}
     .contract-doc .doc-subtitle{text-align:center;font-size:12px;color:#64748b;margin-bottom:24px;margin-top:6px;}
@@ -273,7 +274,7 @@
     .contract-doc .info-table tr.total-row td{background:#eff6ff;}
     .contract-doc .doc-note{font-size:11.5px;color:#64748b;margin-top:4px;padding-left:4px;line-height:1.7;}
     .contract-doc .doc-text{font-size:12.5px;margin:4px 0;line-height:1.9;}
-    .contract-doc .doc-divider{border:none;border-top:1.5px dashed #cbd5e1;margin:16px 0;}
+    .contract-doc .doc-divider{border:1px solid #cccccc;border-top:1.5px dashed #cbd5e1;margin:16px 0;}
     .contract-doc .doc-insurance-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:8px;}
     .contract-doc .insurance-item{border:1.5px solid #e2e8f0;border-radius:8px;padding:10px;text-align:center;font-size:12.5px;font-weight:600;color:#94a3b8;background:#f8fafc;}
     .contract-doc .insurance-item.active{border-color:#818cf8;color:#4f46e5;background:#eef2ff;}
@@ -289,7 +290,7 @@
     .contract-doc .sign-stamp{width:64px;height:64px;border:2px dashed #cbd5e1;border-radius:50%;margin:0 auto 4px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#94a3b8;line-height:1.4;}
     .contract-doc .sign-label{font-size:11px;color:#94a3b8;}
     .contract-doc .highlight{background:#fef9c3;padding:0 4px;border-radius:3px;font-weight:700;}
-    /* 업로드 섹션 */
+    /* ?�로???�션 */
     .upload-zone{border:2.5px dashed #a5b4fc;border-radius:12px;padding:32px 20px;text-align:center;background:#f5f3ff;cursor:pointer;transition:all .2s;margin:20px 24px;}
     .upload-zone:hover{border-color:#6366f1;background:#ede9fe;}
     .upload-zone-icon{font-size:36px;margin-bottom:10px;}
@@ -297,12 +298,13 @@
     .upload-zone-sub{font-size:12px;color:#6b7280;}
     .upload-preview{display:none;margin:0 24px 20px;padding:14px 18px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;align-items:center;gap:12px;}
     .upload-preview.show{display:flex;}
-    /* 푸터 */
+    /* ?�터 */
     .contract-preview-footer{padding:16px 24px;border-top:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;flex-shrink:0;background:#f8fafc;border-radius:0 0 14px 14px;}
-    /* 계약서 푸터 액션 버튼 */
+    /* 계약???�터 ?�션 버튼 */
     .btn-docx{
       display:inline-flex;align-items:center;gap:6px;
-      padding:8px 18px;border-radius:8px;border:none;cursor:pointer;
+      padding:8px 18px;border-radius:8px;
+      border:1px solid #1d4ed8;cursor:pointer;
       font-size:13px;font-weight:700;font-family:inherit;
       background:#2563eb;color:#fff;
       transition:background .18s,border-color .18s;
@@ -312,7 +314,7 @@
       background:#1d4ed8;
     }
     .btn-docx:active:not(:disabled){transform:scale(.96) translateY(1px);}
-    .btn-docx:disabled,.btn-docx[disabled]{background:#9ca3af;color:#d1d5db;border-color:#9ca3af;cursor:not-allowed;pointer-events:none;opacity:1;}
+    .btn-docx:disabled,.btn-docx[disabled]{background:#cccccc;color:#f2f2f2;border:1px solid #cccccc;cursor:not-allowed;pointer-events:none;opacity:1;}
 
     .btn-print{
       display:inline-flex;align-items:center;gap:6px;
@@ -325,11 +327,12 @@
     }
     .btn-print:hover:not(:disabled){background:#f1f5f9;border-color:#334155;}
     .btn-print:active:not(:disabled){transform:scale(.96) translateY(1px);}
-    .btn-print:disabled,.btn-print[disabled]{background:#9ca3af;color:#d1d5db;border-color:#9ca3af;cursor:not-allowed;pointer-events:none;opacity:1;}
+    .btn-print:disabled,.btn-print[disabled]{background:#cccccc;color:#f2f2f2;border:1px solid #cccccc;cursor:not-allowed;pointer-events:none;opacity:1;}
 
     .btn-final-reg{
       display:inline-flex;align-items:center;gap:6px;
-      padding:8px 22px;border-radius:8px;border:none;cursor:pointer;
+      padding:8px 22px;border-radius:8px;
+      border:1px solid #059669;cursor:pointer;
       font-size:13px;font-weight:700;font-family:inherit;
       background:#10b981;color:#fff;
       transition:background .18s,border-color .18s;
@@ -339,12 +342,12 @@
       background:#059669;
     }
     .btn-final-reg:active:not(:disabled){transform:scale(.96) translateY(1px);}
-    .btn-final-reg:disabled,.btn-final-reg[disabled]{background:#9ca3af;color:#d1d5db;border-color:#9ca3af;cursor:not-allowed;pointer-events:none;opacity:1;}
-    /* ── 계약서 출력 전용 모달 (cpm) ── */
+    .btn-final-reg:disabled,.btn-final-reg[disabled]{background:#cccccc;color:#f2f2f2;border:1px solid #cccccc;cursor:not-allowed;pointer-events:none;opacity:1;}
+    /* ?�?� 계약??출력 ?�용 모달 (cpm) ?�?� */
     #contract-print-modal.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:3000;align-items:center;justify-content:center;padding:16px;}
     #contract-print-modal.modal-overlay.open{display:flex;}
     #contract-print-modal .modal{border-radius:14px;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.3);}
-    /* 출력 전용 모달 내 문서 스타일 */
+    /* 출력 ?�용 모달 ??문서 ?��???*/
     #cpm-doc-area h1,#cpm-doc-area h2{text-align:center;font-size:21px;font-weight:900;letter-spacing:6px;margin-bottom:4px;color:#0f172a;padding-bottom:8px;border-bottom:3px double #0f172a;}
     #cpm-doc-area h2{font-size:20px;letter-spacing:4px;}
     #cpm-doc-area .doc-subtitle{text-align:center;font-size:12px;color:#64748b;margin-bottom:8px;margin-top:4px;}
@@ -360,7 +363,7 @@
     #cpm-doc-area .info-table tr.total-row td{background:#eff6ff;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
     #cpm-doc-area .doc-note{font-size:11.5px;color:#64748b;margin-top:4px;padding-left:4px;line-height:1.6;}
     #cpm-doc-area .doc-text{font-size:12.5px;margin:4px 0;line-height:1.9;}
-    #cpm-doc-area .doc-divider{border:none;border-top:1.5px dashed #cbd5e1;margin:14px 0;}
+    #cpm-doc-area .doc-divider{border:1px solid #cccccc;border-top:1.5px dashed #cbd5e1;margin:14px 0;}
     #cpm-doc-area .doc-insurance-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:6px;}
     #cpm-doc-area .insurance-item{border:1.5px solid #e2e8f0;border-radius:6px;padding:8px;text-align:center;font-size:12px;font-weight:600;color:#94a3b8;background:#f8fafc;}
     #cpm-doc-area .insurance-item.active{border-color:#818cf8;color:#4f46e5;background:#eef2ff;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
@@ -380,11 +383,11 @@
     #cpm-doc-area .doc-probation-box{background:#fefce8;border:1.5px solid #fde047;border-radius:7px;padding:10px 13px;margin-top:6px;font-size:12px;line-height:1.8;color:#854d0e;}
     #cpm-doc-area .doc-daily-note{background:#fff7ed;border:1.5px solid #fed7aa;border-radius:7px;padding:10px 13px;margin-top:8px;font-size:12px;line-height:1.8;color:#9a3412;}
     @media print{
-      /* 계약서 인쇄: wl-print-mode(임금대장)가 아닐 때만 적용 */
+      /* 계약???�쇄: wl-print-mode(?�금?�??가 ?�닐 ?�만 ?�용 */
       body:not(.wl-print-mode) > *{display:none!important;}
       body:not(.wl-print-mode) #ct-print-area{display:block!important;position:fixed;inset:0;background:#fff;z-index:99999;overflow:auto;}
     }
-    /* ── 계약 도움말 버튼 & 모달 ── */
+    /* ?�?� 계약 ?��?�?버튼 & 모달 ?�?� */
     .btn-help{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;border:2px solid #6366f1;background:#fff;color:#6366f1;font-size:12px;font-weight:800;cursor:pointer;line-height:1;flex-shrink:0;transition:all .15s;vertical-align:middle;margin-left:8px;}
     .btn-help:hover{background:#6366f1;color:#fff;}
     .help-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:3000;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto;}
@@ -392,7 +395,7 @@
     .help-modal{background:#fff;border-radius:16px;width:100%;max-width:680px;box-shadow:0 20px 60px rgba(0,0,0,.2);overflow:hidden;margin:auto;}
     .help-modal-header{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;}
     .help-modal-header h3{font-size:16px;font-weight:800;margin:0;display:flex;align-items:center;gap:8px;}
-    .help-modal-close{background:rgba(255,255,255,.2);border:none;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;font-size:14px;transition:background .15s;}
+    .help-modal-close{background:rgba(255,255,255,.2);border:1px solid #cccccc;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;font-size:14px;transition:background .15s;}
     .help-modal-close:hover{background:rgba(255,255,255,.35);}
     .help-modal-body{padding:24px;max-height:70vh;overflow-y:auto;}
     .help-section{margin-bottom:24px;}
@@ -416,7 +419,7 @@
     .help-flow{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:8px;}
     .help-flow-item{background:#f8fafc;border:1.5px solid #cbd5e1;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:600;color:#334155;}
     .help-flow-arrow{color:#94a3b8;font-size:13px;font-weight:700;}
-    /* ══ 근로계약 모달 — 통상임금 지급유형 토글 버튼 ══ */
+    /* ?�═ 근로계약 모달 ???�상?�금 지급유???��? 버튼 ?�═ */
     .pi-pay-type-wrap   { display:flex; flex-direction:column; gap:4px; }
     .pi-pay-type-btns   { display:flex; gap:4px; }
 
@@ -442,7 +445,7 @@
       color:#4f46e5;
     }
 
-    /* 선택 상태 — 매월 정기지급 (파란색 계열) */
+    /* ?�택 ?�태 ??매월 ?�기지�?(?��???계열) */
     .pi-pay-type-btn.active-fixed {
       background:#eff6ff;
       border-color:#3b82f6;
@@ -452,7 +455,7 @@
       background:#dbeafe;
     }
 
-    /* 선택 상태 — 출근일수에 따름 (노란색 계열) */
+    /* ?�택 ?�태 ??출근?�수???�름 (?��???계열) */
     .pi-pay-type-btn.active-daily {
       background:#fef3c7;
       border-color:#f59e0b;
@@ -462,7 +465,7 @@
       background:#fde68a;
     }
 
-    /* 금액 입력창 오른쪽 '원' 단위 표시 래퍼 */
+    /* 금액 ?�력�??�른�?'?? ?�위 ?�시 ?�퍼 */
     .amount-wrap {
       position:relative;
       display:flex;
@@ -474,7 +477,7 @@
       box-sizing:border-box;
     }
     .amount-wrap::after {
-      content:"원";
+      content:"??;
       position:absolute;
       right:10px;
       font-size:12px;
@@ -484,7 +487,7 @@
       white-space:nowrap;
     }
 
-    /* 통상임금 포함/제외 힌트 텍스트 */
+    /* ?�상?�금 ?�함/?�외 ?�트 ?�스??*/
     .pi-pay-type-hint {
       font-size:11px;
       font-weight:600;

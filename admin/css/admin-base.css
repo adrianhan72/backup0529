@@ -15,9 +15,9 @@
     .main{margin-left:240px;min-height:100vh;display:flex;flex-direction:column}
     .topbar{background:#fff;padding:0 28px;height:60px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,.06);position:sticky;top:0;z-index:50}
     .topbar-title{font-size:15px;font-weight:700;color:#1a1a2e}
-    /* ══════════════════════════════════════════════
+    /* ?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═
        버튼 공통 기반
-    ══════════════════════════════════════════════ */
+    ?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═ */
     .btn{
       display:inline-flex;align-items:center;justify-content:center;gap:6px;
       padding:8px 16px;border-radius:8px;
@@ -33,10 +33,10 @@
     .btn:hover:not(:disabled){background:#4b5563;}
     .btn:active:not(:disabled){background:#374151;}
     .btn:focus-visible{outline:2.5px solid currentColor;outline-offset:2px;}
-    .btn:disabled,.btn[disabled]{background:#9ca3af;color:#d1d5db;border-color:#9ca3af;cursor:not-allowed;pointer-events:none;opacity:1;}
+    .btn:disabled,.btn[disabled]{background:#cccccc;color:#f2f2f2;border:1px solid #cccccc;cursor:not-allowed;pointer-events:none;opacity:1;}
     .btn:disabled.btn-icon-dark,.btn[disabled].btn-icon-dark{background:transparent;color:rgba(255,255,255,.3);border-color:rgba(255,255,255,.15);}
-    .btn:disabled.btn-close,.btn[disabled].btn-close{background:transparent;color:#d1d5db;border-color:#e5e7eb;}
-    /* Ripple 레이어 — 리플이 적용되는 모든 버튼 공통 */
+    .btn:disabled.btn-close,.btn[disabled].btn-close{background:transparent;color:#f2f2f2;border-color:#cccccc;}
+    /* Ripple ?�이????리플???�용?�는 모든 버튼 공통 */
     .btn .btn-ripple,
     .btn-sb .btn-ripple,
     .btn-renew .btn-ripple,
@@ -64,12 +64,12 @@
     @keyframes btnRipple{
       to{transform:scale(4);opacity:0;}
     }
-    /* 크기 변형 */
+    /* ?�기 변??*/
     .btn-sm{padding:5px 10px;font-size:11.5px;border-radius:7px;}
     .btn-lg{padding:10px 22px;font-size:14px;border-radius:9px;}
     .btn-icon{padding:5px 9px;}
     .btn-icon-sm{padding:4px 7px;font-size:11px;}
-    /* 닫기/해제 아이콘 전용 — 더 작고 평평하게 */
+    /* ?�기/?�제 ?�이�??�용 ?????�고 ?�평?�게 */
     .btn-close{background:transparent;color:#64748b;border-color:#d1d5db;padding:4px 8px;font-size:16px;line-height:1;}
     .btn-close:hover:not(:disabled){background:#d1d5db;color:#334155;border-color:#9ca3af;}
     .btn-close:active:not(:disabled){background:#9ca3af;color:#1e293b;border-color:#6b7280;}
@@ -77,14 +77,20 @@
     .btn-icon-dark:hover:not(:disabled){background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.5);}
     .btn-icon-dark:active:not(:disabled){background:rgba(255,255,255,.25);border-color:rgba(255,255,255,.65);}
 
-    /* ══════════════════════════════════════════════
-       SOLID TYPE — 색상 채운 버튼
-    ══════════════════════════════════════════════ */
-    /* Primary (레드 — 주요 액션) */
+    /* ?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═
+       SOLID TYPE ???�상 채운 버튼
+    ?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═ */
+    /* Primary (?�드 ??주요 ?�션) */
     .btn-primary{background:#e94560;border-color:#c02e45;}
     .btn-primary:hover:not(:disabled){background:#c02e45;}
     .btn-primary:active:not(:disabled){background:#b8283d;}
     .btn-primary.selected,.btn-primary[aria-selected="true"]{background:#b8283d;}
+
+    /* Secondary (회색 — 취소/해지/닫기) */
+    .btn-secondary{background:#9ca3af;border-color:#6b7280;}
+    .btn-secondary:hover:not(:disabled){background:#6b7280;}
+    .btn-secondary:active:not(:disabled){background:#4b5563;}
+    .btn-secondary.selected,.btn-secondary[aria-selected="true"]{background:#4b5563;}
 
     /* Success (그린) */
     .btn-success{background:#10b981;border-color:#059669;}
@@ -92,50 +98,50 @@
     .btn-success:active:not(:disabled){background:#047857;}
     .btn-success.selected,.btn-success[aria-selected="true"]{background:#065f46;}
 
-    /* Warning (앰버) */
+    /* Warning (?�버) */
     .btn-warning{background:#f59e0b;border-color:#d97706;}
     .btn-warning:hover:not(:disabled){background:#d97706;}
     .btn-warning:active:not(:disabled){background:#b45309;}
     .btn-warning.selected,.btn-warning[aria-selected="true"]{background:#92400e;}
 
-    /* Danger (레드 — 삭제/해지) */
-    .btn-danger{background:#ef4444;border-color:#dc2626;}
-    .btn-danger:hover:not(:disabled){background:#dc2626;}
-    .btn-danger:active:not(:disabled){background:#b91c1c;}
-    .btn-danger.selected,.btn-danger[aria-selected="true"]{background:#991b1b;}
+    /* Danger (?�드 ????��/?��?) */
+    .btn-danger{background:#e94560;border-color:#b8283d;}
+    .btn-danger:hover:not(:disabled){background:#b8283d;}
+    .btn-danger:active:not(:disabled){background:#9b1e35;}
+    .btn-danger.selected,.btn-danger[aria-selected="true"]{background:#7e182b;}
 
     /* Indigo */
-    .btn-indigo{background:linear-gradient(135deg,#6366f1,#4f46e5);border-color:#4338ca;}
+    .btn-indigo{background:#4f46e5;border-color:#4338ca;}
     .btn-indigo:hover:not(:disabled){background:#4338ca;}
     .btn-indigo:active:not(:disabled){background:#3730a3;}
     .btn-indigo.selected,.btn-indigo[aria-selected="true"]{background:#3730a3;}
 
     /* Kakao */
-    .btn-kakao{background:linear-gradient(135deg,#ffe033,#f9d000);color:#3b1f00;border-color:#eab308;}
-    .btn-kakao:hover:not(:disabled){background:linear-gradient(135deg,#f9d000,#eab308);}
+    .btn-kakao{background:#f9d000;color:#3b1f00;border-color:#eab308;}
+    .btn-kakao:hover:not(:disabled){background:#eab308;}
     .btn-kakao:active:not(:disabled){background:#eab308;}
     .btn-kakao.selected,.btn-kakao[aria-selected="true"]{background:#eab308;}
 
     /* Teal */
-    .btn-teal{background:linear-gradient(135deg,#10b981,#059669);border-color:#047857;}
-    .btn-teal:hover:not(:disabled){background:#047857;}
-    .btn-teal:active:not(:disabled){background:#065f46;}
+    .btn-teal{background:#d97706;border-color:#b45309;}
+    .btn-teal:hover:not(:disabled){background:#b45309;}
+    .btn-teal:active:not(:disabled){background:#92400e;}
 
     /* Slate */
-    .btn-slate{background:linear-gradient(135deg,#64748b,#475569);border-color:#334155;}
+    .btn-slate{background:#475569;border-color:#334155;}
     .btn-slate:hover:not(:disabled){background:#334155;}
     .btn-slate:active:not(:disabled){background:#1e293b;}
 
     /* Sky */
-    .btn-sky{background:linear-gradient(135deg,#0ea5e9,#0284c7);border-color:#0369a1;}
+    .btn-sky{background:#0284c7;border-color:#0369a1;}
     .btn-sky:hover:not(:disabled){background:#0369a1;}
     .btn-sky:active:not(:disabled){background:#075985;}
 
-    /* ══════════════════════════════════════════════
-       풀다운 select — form input과 높이·간격 통일
-       좌측 텍스트 여백 = 우측 화살표 여백 = 8px
-       예외: cm-aw-pt-select, pi-pay-type-select
-    ══════════════════════════════════════════════ */
+    /* ?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═
+       ?�?�운 select ??form input�??�이·간격 ?�일
+       좌측 ?�스???�백 = ?�측 ?�살???�백 = 8px
+       ?�외: cm-aw-pt-select, pi-pay-type-select
+    ?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═ */
     select:not(.cm-aw-pt-select):not(.pi-pay-type-select) {
       border: 1px solid #e0e0e0;
       border-radius: 8px;
@@ -164,4 +170,4 @@
       cursor: not-allowed;
     }
 
-    /* ══════════════════════════════════════════════
+    /* ?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═

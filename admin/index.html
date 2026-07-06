@@ -923,10 +923,11 @@
         <div class="form-group full"><span class="form-section-title">기본 정보</span></div>
         <div class="form-group">
           <label>앱 접근 코드</label>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <div id="cm-code-display" style="flex:1;padding:8px 12px;background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;font-weight:700;color:#4f46e5;letter-spacing:2px;min-height:38px;display:flex;align-items:center;">—</div>
-            <button type="button" id="cm-code-regen-btn" onclick="regenAccessCode()" title="코드 재생성" class="btn btn-indigo btn-icon" style="display:none;"><i class="fas fa-sync-alt"></i></button>
+          <div style="position:relative;display:flex;align-items:center;">
+            <input type="text" id="cm-code-display" style="flex:1;padding:7px 56px 7px 12px;background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;font-weight:700;color:#4f46e5;letter-spacing:2px;height:37px;box-sizing:border-box;" placeholder="접근 코드" readonly oninput="_onCmCodeInput()" />
+            <button type="button" id="cm-code-action-btn" onclick="_toggleCmCodeEdit()" class="btn btn-sm btn-slate" style="position:absolute;right:4px;top:50%;transform:translateY(-50%);padding:4px 8px;font-size:11px;">변경</button>
           </div>
+          <div id="cm-code-msg" style="font-size:11px;margin-top:4px;color:#9ca3af;"><i class="fas fa-info-circle"></i> 숫자와 알파벳을 포함한 6글자 이상</div>
           <input type="hidden" id="cm-code" />
         </div>
         <div class="form-group"><label>회사명 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><input type="text" id="cm-name" /></div>
@@ -2046,6 +2047,9 @@
       <button id="ct-btn-recontract2" class="btn-recontract" onclick="doContractRecontract()" style="display:none;"><i class="fas fa-file-signature"></i> 재계약</button>
       <button id="ct-btn-terminate2"      class="btn-terminate"       onclick="doContractTerminate()"      style="display:none;"><i class="fas fa-user-clock"></i> 퇴사예정 설정</button>
       <button id="ct-btn-fixed-terminate2" class="btn-fixed-terminate" onclick="doFixedTerminate()"          style="display:none;"><i class="fas fa-scissors"></i> 해지 설정</button>
+      <button id="ct-btn-print-doc2" onclick="openContractPrintModal(editId.contract)" class="btn btn-slate">
+        <i class="fas fa-file-contract"></i> 현 계약서 확인
+      </button>
       <button class="btn-amend-complete" id="ct-btn-amend-complete2" onclick="openAmendPreview()" style="display:none;">
         <i class="fas fa-check-circle"></i> 수정완료 — 재발행 진행
       </button>

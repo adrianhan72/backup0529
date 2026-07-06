@@ -1,29 +1,29 @@
     .pss-send-btn:hover{ opacity:.88; }
-    .pss-send-btn-all{ background:linear-gradient(135deg,#ffe033,#f9d000);color:#3b1f00;border:1px solid #eab308;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:7px;transition:background .18s; }
-    .pss-send-btn-all:hover{ background:linear-gradient(135deg,#f9d000,#eab308); }
-    .pss-send-btn-all:disabled{ background:#9ca3af!important;color:#d1d5db!important;border-color:#9ca3af!important;cursor:not-allowed!important;opacity:1; }
-    /* 발송 이력 테이블 */
+    .pss-send-btn-all{ background:#f9d000;color:#3b1f00;border:1px solid #eab308;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:7px;transition:background .18s; }
+    .pss-send-btn-all:hover{ background:#eab308; }
+    .pss-send-btn-all:disabled{ background:#cccccc!important;color:#f2f2f2!important;border:1px solid #cccccc!important;cursor:not-allowed!important;opacity:1; }
+    /* 발송 ?�력 ?�이�?*/
     #pss-log-table th{ background:#f0f9ff;color:#0369a1;padding:9px 12px;font-size:12px;font-weight:700;border-bottom:2px solid #bae6fd;text-align:left; }
     #pss-log-table td{ padding:10px 12px;font-size:12.5px;vertical-align:middle;border-bottom:1px solid #f0f9ff; }
     #pss-log-table tr:hover td{ background:#f0f9ff; }
-    /* 발송 상태 배지 */
+    /* 발송 ?�태 배�? */
     .pss-badge-unsent{ display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:700;background:#fef2f2;color:#dc2626; }
     .pss-badge-sent{ display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:700;background:#dcfce7;color:#16a34a; }
-    /* 발송 확인 모달 */
+    /* 발송 ?�인 모달 */
     #pss-confirm-modal .pss-modal-box{ background:#fff;border-radius:16px;width:94%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden; }
-    #pss-confirm-modal .pss-modal-head{ background:linear-gradient(135deg,#7c3aed,#6d28d9);padding:18px 22px;display:flex;justify-content:space-between;align-items:center; }
-    /* 발송 메모 모달 — 수동 발송 확인 */
+    #pss-confirm-modal .pss-modal-head{ background:#6d28d9;padding:18px 22px;display:flex;justify-content:space-between;align-items:center; }
+    /* 발송 메모 모달 ???�동 발송 ?�인 */
     .pss-method-btn{ padding:8px 16px;border-radius:8px;border:1.5px solid #e5e7eb;background:#fff;font-size:12.5px;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit; }
     .pss-method-btn:hover,.pss-method-btn.selected{ border-color:#6366f1;background:#f5f3ff;color:#4f46e5; }
-    .pss-method-btn.selected{ background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border-color:#4f46e5; }
-    /* 섹션 구분 헤더 */
+    .pss-method-btn.selected{ background:#4f46e5;color:#fff;border-color:#4f46e5; }
+    /* ?�션 구분 ?�더 */
     .pss-section-head{ display:flex;align-items:center;justify-content:space-between;margin-bottom:10px; }
     .pss-section-title{ font-size:13.5px;font-weight:800;color:#1f2937;display:flex;align-items:center;gap:7px; }
     .pss-count-badge{ display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;border-radius:11px;font-size:11px;font-weight:700;padding:0 6px; }
     .pss-count-badge.red{ background:#fef2f2;color:#dc2626;border:1px solid #fca5a5; }
     .pss-count-badge.green{ background:#dcfce7;color:#16a34a;border:1px solid #86efac; }
     .pss-count-badge.blue{ background:#eff6ff;color:#2563eb;border:1px solid #93c5fd; }
-    /* ══ 근로계약 관리 — 알림 카드 ══ */
+    /* ?�═ 근로계약 관�????�림 카드 ?�═ */
     .cont-alert-card{border-radius:12px;overflow:hidden;margin-bottom:12px;}
     .cont-alert-card-head{display:flex;align-items:center;justify-content:space-between;padding:11px 18px;cursor:pointer;user-select:none;}
     .cont-alert-card-head:hover{filter:brightness(.97);}
@@ -36,7 +36,7 @@
     .cont-alert-table th{padding:8px 14px;font-size:11.5px;font-weight:700;text-align:left;white-space:nowrap;}
     .cont-alert-table td{padding:9px 14px;vertical-align:middle;border-top:1px solid rgba(0,0,0,.05);}
     .cont-alert-table tr:hover td{filter:brightness(.97);}
-    /* 임시저장 — amber */
+    /* ?�시?�????amber */
     .cont-alert-draft{border:1.5px solid #fcd34d;}
     .cont-alert-draft .cont-alert-card-head{background:linear-gradient(90deg,#fffbeb,#fef3c7);}
     .cont-alert-draft .cont-alert-card-title{color:#92400e;}
@@ -44,7 +44,7 @@
     .cont-alert-draft .cont-alert-card-body{background:#fffdf0;}
     .cont-alert-draft .cont-alert-table th{background:#fffbeb;color:#92400e;}
     .cont-alert-draft .cont-alert-table td{color:#374151;}
-    /* 서류미비 — orange */
+    /* ?�류미비 ??orange */
     .cont-alert-docs{border:1.5px solid #fdba74;}
     .cont-alert-docs .cont-alert-card-head{background:linear-gradient(90deg,#fff7ed,#ffedd5);}
     .cont-alert-docs .cont-alert-card-title{color:#9a3412;}
@@ -52,7 +52,7 @@
     .cont-alert-docs .cont-alert-card-body{background:#fff9f5;}
     .cont-alert-docs .cont-alert-table th{background:#fff7ed;color:#9a3412;}
     .cont-alert-docs .cont-alert-table td{color:#374151;}
-    /* 갱신예정 — amber/gold */
+    /* 갱신?�정 ??amber/gold */
     .cont-alert-renew{border:1.5px solid #fde047;}
     .cont-alert-renew .cont-alert-card-head{background:linear-gradient(90deg,#fefce8,#fef9c3);}
     .cont-alert-renew .cont-alert-card-title{color:#713f12;}
@@ -60,7 +60,7 @@
     .cont-alert-renew .cont-alert-card-body{background:#fefdf0;}
     .cont-alert-renew .cont-alert-table th{background:#fefce8;color:#713f12;}
     .cont-alert-renew .cont-alert-table td{color:#374151;}
-    /* 계약예정 — indigo */
+    /* 계약?�정 ??indigo */
     .cont-alert-pending{border:1.5px solid #a5b4fc;}
     .cont-alert-pending .cont-alert-card-head{background:linear-gradient(90deg,#eef2ff,#e0e7ff);}
     .cont-alert-pending .cont-alert-card-title{color:#3730a3;}
@@ -68,7 +68,7 @@
     .cont-alert-pending .cont-alert-card-body{background:#f5f6ff;}
     .cont-alert-pending .cont-alert-table th{background:#eef2ff;color:#3730a3;}
     .cont-alert-pending .cont-alert-table td{color:#374151;}
-    /* 해지예정 — rose */
+    /* ?��??�정 ??rose */
     .cont-alert-preterminate{border:1.5px solid #fda4af;}
     .cont-alert-preterminate .cont-alert-card-head{background:linear-gradient(90deg,#fff1f2,#ffe4e6);}
     .cont-alert-preterminate .cont-alert-card-title{color:#9f1239;}
@@ -77,29 +77,29 @@
     .cont-alert-preterminate .cont-alert-table th{background:#fff1f2;color:#9f1239;}
     .cont-alert-preterminate .cont-alert-table td{color:#374151;}
 
-    /* 계약서 발송 관리 — 미발송 카드 */
+    /* 계약??발송 관�???미발??카드 */
     .cdp-month-tabs{ display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px; }
     .cdp-month-tab{ padding:6px 14px;border-radius:20px;border:1.5px solid #e5e7eb;background:#fff;font-size:12px;font-weight:600;color:#6b7280;cursor:pointer;transition:all .15s; }
-    .cdp-month-tab:hover{ border-color:#f59e0b;color:#b45309; }
-    .cdp-month-tab.active{ background:linear-gradient(135deg,#f59e0b,#d97706);border-color:#d97706;color:#fff; }
+    .cdp-month-tab:hover{ border-color:#6366f1;color:#4f46e5; }
+    .cdp-month-tab.active{ background:#4f46e5;border-color:#4f46e5;color:#fff; }
     .cdp-month-tab .cdp-tab-badge{ display:inline-flex;align-items:center;justify-content:center;min-width:17px;height:17px;border-radius:50%;font-size:10px;font-weight:700;margin-left:5px;padding:0 3px; }
     .cdp-month-tab .cdp-tab-badge.unsent{ background:#ef4444;color:#fff; }
     #cdp-unsent-table th{ background:#fff7ed;color:#92400e;padding:9px 12px;font-size:12px;font-weight:700;border-bottom:2px solid #fed7aa;text-align:left;white-space:nowrap; }
     #cdp-unsent-table td{ padding:10px 12px;font-size:12.5px;vertical-align:middle;border-bottom:1px solid #fff3e0; }
     #cdp-unsent-table tr:hover td{ background:#fffbeb; }
-    .cdp-send-btn-all{ background:linear-gradient(135deg,#ffe033,#f9d000);color:#3b1f00;border:1px solid #eab308;border-radius:8px;padding:7px 16px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px;transition:background .18s; }
-    .cdp-send-btn-all:hover{ background:linear-gradient(135deg,#f9d000,#eab308); }
-    .cdp-send-btn-all:disabled{ background:#9ca3af!important;color:#d1d5db!important;border-color:#9ca3af!important;cursor:not-allowed!important;opacity:1; }
+    .cdp-send-btn-all{ background:#f9d000;color:#3b1f00;border:1px solid #eab308;border-radius:8px;padding:7px 16px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px;transition:background .18s; }
+    .cdp-send-btn-all:hover{ background:#eab308; }
+    .cdp-send-btn-all:disabled{ background:#cccccc!important;color:#f2f2f2!important;border:1px solid #cccccc!important;cursor:not-allowed!important;opacity:1; }
 
-    /* 법적 의무 강조 배너 */
+    /* 법적 ?�무 강조 배너 */
     .pss-legal-banner{ display:flex;align-items:flex-start;gap:10px;padding:11px 16px;background:#faf5ff;border:1.5px solid #c4b5fd;border-radius:9px;margin-bottom:16px;font-size:12px;color:#5b21b6;line-height:1.6; }
     .pss-legal-banner i{ color:#7c3aed;margin-top:1px;flex-shrink:0; }
-    /* 빈 상태 */
+    /* �??�태 */
     .pss-empty{ text-align:center;padding:28px 0;color:#9ca3af;font-size:13px; }
     /* 로딩 */
     .pss-loading{ text-align:center;padding:20px;color:#9ca3af;font-size:13px; }
 
-    /* ── 관리자 로그인 화면 ── */
+    /* ?�?�?관리자 로그???�면 ?�?�?*/
     #admin-login-screen{
       position:fixed;inset:0;z-index:9999;
       background:linear-gradient(135deg,#0f0c29 0%,#1a1a2e 40%,#16213e 70%,#0f3460 100%);
@@ -173,7 +173,7 @@
     }
     #admin-login-screen .aln-eye-btn{
       position:absolute;right:12px;top:50%;transform:translateY(-50%);
-      background:none;border:none;cursor:pointer;
+      background:none;border:1px solid #cccccc;cursor:pointer;
       color:rgba(255,255,255,.3);font-size:14px;padding:4px;
       transition:color .2s;
     }
@@ -184,8 +184,8 @@
       display:none;padding-left:2px;
     }
     #admin-login-screen .aln-btn{
-      width:100%;padding:14px;border:none;border-radius:10px;
-      background:linear-gradient(135deg,#e94560,#c0392b);
+      width:100%;padding:14px;border:1px solid #cccccc;border-radius:10px;
+      background:#e94560;
       color:#fff;font-size:14px;font-weight:700;cursor:pointer;
       font-family:'Noto Sans KR',sans-serif;letter-spacing:.3px;
       transition:opacity .2s,transform .15s;
@@ -210,13 +210,13 @@
       60%{transform:translateX(-4px)}
       80%{transform:translateX(4px)}
     }
-    /* topbar 로그아웃 버튼 */
+    /* topbar 로그?�웃 버튼 */
     .topbar-logout-btn{
       display:inline-flex;align-items:center;gap:5px;
-      padding:6px 14px;border-radius:8px;border:1px solid #4b5563;
-      background:#6b7280;color:#fff;
+      padding:6px 14px;border-radius:8px;border:1px solid #6b7280;
+      background:#9ca3af;color:#fff;
       font-size:12px;font-weight:600;cursor:pointer;
       font-family:'Noto Sans KR',sans-serif;
       transition:background .18s,border-color .18s;
     }
-    .topbar-logout-btn:hover{background:#4b5563;border-color:#374151;}
+    .topbar-logout-btn:hover{background:#6b7280;border-color:#6b7280;}

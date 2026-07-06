@@ -8,6 +8,8 @@
       <div id="dash-unsent-section" style="display:none;margin-bottom:18px;"></div>
       <!-- 계약만료 통지 대상 배너 -->
       <div id="dash-expiry-banner" style="display:none;margin-bottom:10px;"></div>
+      <!-- 수습 근로자 관리 배너 -->
+      <div id="dash-probation-banner" style="display:none;margin-bottom:10px;"></div>
       <!-- 정규직 전환 의무 대상 배너 -->
       <div id="dash-regular-banner" style="display:none;margin-bottom:10px;"></div>
       <!-- 퇴직금 지급 이력 배너 (임시저장 위) -->
@@ -22,7 +24,7 @@
       <!-- 급여 입력 카드 -->
       <div class="card" style="margin-bottom:18px;">
         <div class="card-header">
-          <span class="card-title">💰 급여 미입력 <span id="active-count" style="font-size:13px;font-weight:600;color:#6b7280;"></span></span>
+          <span class="card-title">💰 이번 달 급여 미입력 <span id="active-count" style="font-size:13px;font-weight:600;color:#6b7280;"></span></span>
           <div style="display:flex;align-items:center;gap:8px;">
             <div class="search-input" style="margin:0;">
               <i class="fas fa-search"></i>
@@ -32,8 +34,6 @@
         </div>
         <div id="dash-companies" style="padding:0 0 4px;"></div>
       </div>
-      <!-- 수습 근로자 관리 배너 (급여 미입력 카드 다음) -->
-      <div id="dash-probation-banner" style="display:none;margin-bottom:30px;"></div>
       
       <!-- [사용료 숨김] 사용료 징수현황 카드 4종 + 매출추이 차트 - 원복 시 아래 주석 해제
       이번달 사용료 요약 카드 4종

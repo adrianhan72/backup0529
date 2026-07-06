@@ -61,18 +61,18 @@
 
     /* Outline Danger (레드 테두리) */
     .btn-outline-danger{
-      background:transparent;color:#ef4444;
-      border:1.5px solid #ef4444;
+      background:transparent;color:#e94560;
+      border:1.5px solid #e94560;
     }
     .btn-outline-danger:hover:not(:disabled){
-      background:#fff5f5;border-color:#dc2626;
+      background:#fff5f5;border-color:#b8283d;
       box-shadow:0 2px 8px rgba(239,68,68,.18);
     }
     .btn-outline-danger:active:not(:disabled){
-      background:#fee2e2;border-color:#b91c1c;
+      background:#fee2e2;border-color:#b8283d;
     }
     .btn-outline-danger.selected,.btn-outline-danger[aria-selected="true"]{
-      background:#ef4444;color:#fff;
+      background:#e94560;color:#fff;
     }
 
     /* Outline Indigo (인디고 테두리) */

@@ -262,14 +262,16 @@ function renderDashProbationBanner(){
       ? `<span style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:20px;padding:1px 8px;font-size:11px;font-weight:600;">해고예고수당대상 ${co.severance}명</span>`
       : '';
 
-    return `<div class="prob-acc-co-item" style="cursor:pointer;"
-      onclick="selectProbMgmtCompanyFromDash('${co.coId}','${co.coName.replace(/'/g,"\\'")}',null)">
-      <div class="prob-acc-co-header" style="cursor:pointer;">
+    return `<div class="prob-acc-co-item" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+      <div class="prob-acc-co-header" style="cursor:pointer;display:flex;align-items:center;gap:6px;flex-wrap:wrap;" onclick="selectProbMgmtCompanyFromDash('${co.coId}','${co.coName.replace(/'/g,"\\'")}',null)">
         <i class="fas fa-building" style="color:#0d9488;font-size:12px;flex-shrink:0;"></i>
-        <span class="prob-acc-co-name">${co.coName}</span>
-        <span class="prob-acc-co-badges">${noticeBadge}${severanceBadge}</span>
-        <i class="fas fa-chevron-right" style="color:#0d9488;font-size:11px;margin-left:auto;flex-shrink:0;"></i>
+        <span class="prob-acc-co-name" style="white-space:nowrap;">${co.coName}</span>
+        ${noticeBadge}${severanceBadge}
       </div>
+      <button class="btn btn-danger btn-sm" style="flex-shrink:0;margin-right:30px;"
+        onclick="event.stopPropagation();selectProbMgmtCompanyFromDash('${co.coId}','${co.coName.replace(/'/g,"\\'")}',null)">
+        <i class="fas fa-cog"></i> 관리
+      </button>
     </div>`;
   }).join('');
 

@@ -745,6 +745,8 @@ function _buildDashCompanyRow(c){
   );
   const validEmpIds = [...new Set(validContracts.map(ct => ct.employee_id))];
   const totalValid  = validEmpIds.length;
+  // 유효 근로계약이 없는 고객사는 목록에서 제외
+  if(totalValid === 0) return null;
   // 이번 달 급여 입력된 직원
   const inputtedEmpIds = new Set(
     allPayrolls
@@ -809,7 +811,7 @@ function renderDashboardCompanies(){
     return;
   }
 
-  const rows=companies.map(c=>_buildDashCompanyRow(c)).join('');
+  const rows=companies.map(c=>_buildDashCompanyRow(c)).filter(r=>r!==null).join('');
   wrap.innerHTML=`
     <table class="dash-co-table">
       <thead>

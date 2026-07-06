@@ -94,7 +94,7 @@
     .probmgmt-dday.soon{background:#ccfbf1;color:#115e59;border:1px solid #5eead4;}
     .probmgmt-dday.urgent{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;}
     .probmgmt-dday.normal{background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;}
-    .probmgmt-action-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;border:none;background:linear-gradient(135deg,#0d9488,#0f766e);color:#fff;transition:opacity .15s;}
+    .probmgmt-action-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;border:none;background:#0f766e;color:#fff;transition:opacity .15s;}
     .probmgmt-action-btn:hover{opacity:.85;}
     .probmgmt-empty{padding:36px;text-align:center;color:#9ca3af;font-size:13.5px;}
     .probmgmt-stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:18px;}
@@ -120,7 +120,7 @@
     .probmgmt-opt-desc{font-size:12px;color:#6b7280;line-height:1.55;}
     .probmgmt-modal-footer{padding:14px 22px;border-top:1px solid #f1f5f9;display:flex;justify-content:flex-end;gap:8px;}
     .probmgmt-modal-cancel{padding:8px 18px;border-radius:8px;border:1px solid #e2e8f0;background:#f8fafc;font-size:13px;font-weight:600;color:#374151;cursor:pointer;}
-    .probmgmt-modal-confirm{padding:8px 20px;border-radius:8px;border:none;background:linear-gradient(135deg,#0d9488,#0f766e);color:#fff;font-size:13px;font-weight:700;cursor:pointer;transition:opacity .15s;}
+    .probmgmt-modal-confirm{padding:8px 20px;border-radius:8px;border:none;background:#0f766e;color:#fff;font-size:13px;font-weight:700;cursor:pointer;transition:opacity .15s;}
     .probmgmt-modal-confirm:hover{opacity:.88;}
     /* 카드 내 확장 UI */
     .probmgmt-opt-expand{display:none;margin-top:12px;padding:14px 16px;border-radius:10px;border:1.5px solid #e2e8f0;background:#f8fafc;}
@@ -134,10 +134,10 @@
     .probmgmt-opt-expand-hint{font-size:11.5px;color:#6b7280;line-height:1.6;margin-bottom:10px;}
     .probmgmt-opt-action-btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:9px;border:none;font-size:13px;font-weight:700;cursor:pointer;transition:opacity .15s;}
     .probmgmt-opt-action-btn:hover{filter:brightness(.85);}
-    .probmgmt-opt-action-btn.primary{background:linear-gradient(135deg,#0d9488,#0f766e);color:#fff;}
-    .probmgmt-opt-action-btn.danger{background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;}
-    .probmgmt-opt-action-btn.warning{background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;}
-    .probmgmt-opt-action-btn.info{background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;}
+    .probmgmt-opt-action-btn.primary{background:#0f766e;color:#fff;}
+    .probmgmt-opt-action-btn.danger{background:#e94560;color:#fff;}
+    .probmgmt-opt-action-btn.warning{background:#d97706;color:#fff;}
+    .probmgmt-opt-action-btn.info{background:#2563eb;color:#fff;}
 
     /* ── 메시지 예시 탭 ── */
     .cen-tmpl-wrap{display:grid;grid-template-columns:1fr 1fr;gap:24px;padding:20px;}
@@ -211,8 +211,8 @@
     .cen-inapp-full-body{padding:14px 16px;font-size:12.5px;color:#374151;line-height:1.8;white-space:pre-wrap;}
     .cen-inapp-full-infobox{margin:0 16px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;padding:12px 14px;}
     .cen-inapp-full-foot{padding:10px 16px;font-size:11px;color:#9ca3af;border-top:1px solid #f1f5f9;line-height:1.7;}
-    .ctf-btn-preview-voided{background:#fff5f5;color:#b91c1c;border:1.5px solid #fca5a5;}
-    .ctf-btn-preview-voided:hover{background:#fee2e2;}
+    .ctf-btn-preview-voided{background:#4f46e5;color:#fff;border:1px solid #4338ca;}
+    .ctf-btn-preview-voided:hover{background:#4338ca;}
     .draft-item-name{font-size:13px;font-weight:700;color:#1e293b;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
     .draft-item-meta{font-size:11px;color:#9ca3af;white-space:nowrap;}
     .draft-item-action{font-size:11.5px;font-weight:700;color:#d97706;white-space:nowrap;display:flex;align-items:center;gap:3px;}

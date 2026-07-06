@@ -114,6 +114,43 @@ function authMiddleware(req, res, next) {
   }
 }
 
+// ═══════════════════════════════════════════════
+// 고객사 접근코드 중복 확인 (Public — 클라이언트 앱용)
+// ═══════════════════════════════════════════════
+app.get('/api/companies/check-code', (req, res) => {
+  try {
+    const { code, exclude } = req.query;
+    if (!code) return res.json({ duplicate: false });
+    let result;
+    if (exclude) {
+      result = db.companies.findOne({ access_code: code, 'id__!=': exclude });
+    } else {
+      result = db.companies.findOne({ access_code: code });
+    }
+    res.json({ duplicate: !!result });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// PATCH /api/companies/:id — 고객사 정보 업데이트 (클라이언트 앱용, access_code 수정 허용)
+app.patch('/api/companies/:id', (req, res) => {
+  try {
+    const id = req.params.id;
+    const allowed = ['access_code'];
+    const patch = {};
+    for (const k of allowed) {
+      if (req.body[k] !== undefined) patch[k] = req.body[k];
+    }
+    if (Object.keys(patch).length === 0) return res.status(400).json({ error: 'No valid fields' });
+    db.companies.patch(id, patch);
+    const updated = db.companies.findById(id);
+    res.json({ success: true, data: updated });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.use('/tables', authMiddleware);
 
 // ═══════════════════════════════════════════════

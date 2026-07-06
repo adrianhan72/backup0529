@@ -200,40 +200,56 @@ function renderCompanies(){
               <div style="padding:8px 10px;background:#fff3f3;border:1px solid #fca5a5;border-radius:6px;font-size:11px;color:#b91c1c;line-height:1.5;margin-bottom:8px;">
                 <i class="fas fa-info-circle"></i> 해지고객사의 데이터 보존년한은 해지일로부터 5년입니다
               </div>
-              <button class="btn btn-sm btn-success" style="width:100%;" onclick="cancelTerminate('${c.id}','${c.company_name}')">
+              <button class="btn btn-sm btn-secondary" style="width:100%;" onclick="cancelTerminate('${c.id}','${c.company_name}')">
                 <i class="fas fa-undo"></i>해지 취소
               </button>
              </div>`
           : isTerminatePending
           ? `<div style="margin-top:10px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:8px;">
-                <div style="display:flex;gap:6px;">
-                  <button class="btn btn-warning btn-sm" onclick="editCompany('${c.id}')">정보수정</button>
-                  <button class="btn btn-sm btn-indigo" onclick="goContractsByCompany('${c.id}','${c.company_name}')">근로계약서</button>
-                  <button class="btn btn-sm btn-success" onclick="goPayrollsByCompany('${c.id}','${c.company_name}')">급여명세</button>
-                </div>
+              <div style="display:flex;gap:6px;margin-bottom:6px;">
+                <button class="btn btn-sm btn-indigo" style="flex:1;" onclick="goContractsByCompany('${c.id}','${c.company_name}')">근로계약</button>
+                <button class="btn btn-sm btn-indigo" style="flex:1;" onclick="goPayrollsByCompany('${c.id}','${c.company_name}')">급여명세</button>
+                ${allPaid
+                  ? `<button class="btn btn-sm btn-indigo" style="flex:1;" onclick="goWageLedgerByCompany('${c.id}','${c.company_name}')">임금대장</button>`
+                  : `<button class="btn btn-sm" disabled style="flex:1;">임금대장</button>`}
               </div>
               <div style="display:flex;gap:6px;">
-                <button class="btn btn-sm btn-warning" onclick="changeEndDate('${c.id}','${c.company_name}','${c.contract_end_date}')">
+                <button class="btn btn-warning btn-sm" style="flex:1;" onclick="editCompany('${c.id}')">고객정보 수정</button>
+                <button class="btn btn-sm btn-warning" style="flex:1;" onclick="changeEndDate('${c.id}','${c.company_name}','${c.contract_end_date}')">
                   <i class="fas fa-calendar-edit"></i>해지일 변경
                 </button>
-                <button class="btn btn-sm btn-success" style="flex:1;" onclick="cancelTerminate('${c.id}','${c.company_name}')">
+                <button class="btn btn-sm btn-secondary" style="flex:1;" onclick="cancelTerminate('${c.id}','${c.company_name}')">
                   <i class="fas fa-undo"></i>해지 취소
                 </button>
               </div>
              </div>`
-          : `<div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:10px;">
-              <div style="display:flex;gap:6px;">
-                <button class="btn btn-warning btn-sm" onclick="editCompany('${c.id}')">정보수정</button>
-                <button class="btn btn-sm btn-indigo" onclick="goContractsByCompany('${c.id}','${c.company_name}')">근로계약서</button>
-                <button class="btn btn-sm btn-success" onclick="goPayrollsByCompany('${c.id}','${c.company_name}')">급여명세</button>
+          : `<div style="margin-top:10px;">
+              <div style="display:flex;gap:6px;margin-bottom:6px;">
+                <button class="btn btn-sm btn-indigo" style="flex:1;" onclick="goContractsByCompany('${c.id}','${c.company_name}')">근로계약</button>
+                <button class="btn btn-sm btn-indigo" style="flex:1;" onclick="goPayrollsByCompany('${c.id}','${c.company_name}')">급여명세</button>
+                ${allPaid
+                  ? `<button class="btn btn-sm btn-indigo" style="flex:1;" onclick="goWageLedgerByCompany('${c.id}','${c.company_name}')">임금대장</button>`
+                  : `<button class="btn btn-sm" disabled style="flex:1;">임금대장</button>`}
               </div>
-              <button class="btn btn-sm btn-secondary" onclick="terminateCompany('${c.id}','${c.company_name}')">해지</button>
+              <div style="display:flex;gap:6px;">
+                <button class="btn btn-warning btn-sm" style="flex:1;" onclick="editCompany('${c.id}')">고객정보 수정</button>
+                <button class="btn btn-sm btn-secondary" style="flex:1;" onclick="terminateCompany('${c.id}','${c.company_name}')">자문계약 해지</button>
+              </div>
              </div>`
       }
     </div>`;
   }).join('');
 }
+
+// ── 고객사 카드에서 임금대장 페이지로 이동 ──
+function goWageLedgerByCompany(companyId, companyName){
+  const menuEl = document.querySelector('.menu-item[data-page="wage-ledger"]');
+  showPage('wage-ledger', menuEl);
+  setTimeout(() => {
+    if(typeof selectWLCompany === 'function') selectWLCompany(companyId, companyName);
+  }, 100);
+}
+
 // ── 급여 산정기간 UI ──────────────────────────────────────────────────────────
 /**
  * 2개 셀렉트(월/일) → hidden #cm-period(표시용 텍스트) + #cm-period-month-hidden + #cm-period-day-hidden 값 조합 + 미리보기 갱신
@@ -305,11 +321,10 @@ let _currentCompanyDraftId = null;
 
 // ── 앱 접근코드 자동 생성 ──────────────────────────────────────────────────
 function generateAccessCode(){
-  // 형식: 영대문자 2자 + 숫자 3자 + 영대문자 1자 + 숫자 1자  (총 7자, 예: AB123C4)
-  const alpha = 'ABCDEFGHJKLMNPQRSTUVWXYZ'; // O·I 제외 (0·1과 혼동 방지)
-  const digit = '23456789';                  // 0·1 제외
-  const rand = (s) => s[Math.floor(Math.random() * s.length)];
-  const code = rand(alpha)+rand(alpha)+rand(digit)+rand(digit)+rand(digit)+rand(alpha)+rand(digit);
+  // 형식: 숫자 + 대소문자 알파벳 혼합 6자리 (예: A3bK9x)
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'; // O·I·0·1·l 제외 (혼동 방지)
+  let code = '';
+  for(let i=0; i<6; i++){ code += chars[Math.floor(Math.random() * chars.length)]; }
   // 기존 고객사 코드와 충돌 검사
   const used = (allCompanies||[]).map(c=>c.access_code).filter(Boolean);
   return used.includes(code) ? generateAccessCode() : code; // 충돌 시 재귀 재생성
@@ -325,12 +340,63 @@ function _normalizeAccessCode(code){
 function _setAccessCode(code){
   const normalized = _normalizeAccessCode(code);
   document.getElementById('cm-code').value = normalized;
-  document.getElementById('cm-code-display').textContent = normalized || '—';
+  const displayEl = document.getElementById('cm-code-display');
+  if(displayEl){ displayEl.value = normalized || ''; displayEl.readOnly = true; displayEl.style.background = '#f1f5f9'; displayEl.style.borderColor = '#e2e8f0'; }
+  const btnEl = document.getElementById('cm-code-action-btn');
+  if(btnEl){ btnEl.innerHTML = '<i class="fas fa-pen"></i> 변경'; btnEl.onclick = _toggleCmCodeEdit; }
 }
-function regenAccessCode(){
-  if(!confirm('접근코드를 새로 생성하면 기존 코드로는 앱 로그인이 불가능해집니다.\n재생성하시겠습니까?')) return;
-  _setAccessCode(generateAccessCode());
-  toast('새 접근코드가 생성되었습니다. 저장 후 고객사에 안내해 주세요.', 'info');
+function _onCmCodeInput(){
+  const el = document.getElementById('cm-code-display');
+  document.getElementById('cm-code').value = el.value;
+  el.style.borderColor = ''; el.style.background = '';
+  const m = document.getElementById('cm-code-msg');
+  if(m){ m.style.color = '#9ca3af'; m.innerHTML = '<i class="fas fa-info-circle"></i> 숫자와 알파벳을 포함한 6글자 이상'; }
+}
+function _toggleCmCodeEdit(){
+  const inputEl = document.getElementById('cm-code-display');
+  const btnEl = document.getElementById('cm-code-action-btn');
+  if(!inputEl || !btnEl) return;
+  if(inputEl.readOnly){
+    inputEl.readOnly = false;
+    inputEl.style.background = '#fff';
+    inputEl.style.borderColor = '#6366f1';
+    inputEl.focus();
+    btnEl.innerHTML = '<i class="fas fa-check-circle"></i> 중복체크';
+    btnEl.onclick = checkAccessCodeDuplicate;
+  }
+}
+function checkAccessCodeDuplicate(){
+  const inputEl = document.getElementById('cm-code-display');
+  const code = inputEl?.value?.trim();
+  const msgEl = document.getElementById('cm-code-msg');
+  if(!code){ toast('접근 코드를 입력하세요.', 'error'); return; }
+  // 형식 검증: 6글자 이상, 숫자+알파벳 모두 포함
+  if(code.length < 6 || !/[a-zA-Z]/.test(code) || !/[0-9]/.test(code)){
+    if(msgEl){ msgEl.style.display = 'block'; msgEl.style.color = '#dc2626'; msgEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 숫자와 알파벳을 포함한 6글자 이상'; }
+    if(inputEl){ inputEl.style.borderColor = '#dc2626'; inputEl.style.background = '#fef2f2'; inputEl.focus(); }
+    toast('숫자와 알파벳을 포함한 6글자 이상 입력하세요.', 'error');
+    return;
+  }
+  // 형식 통과 시 테두리 복원
+  if(inputEl){ inputEl.style.borderColor = ''; inputEl.style.background = ''; }
+  // 서버에서 중복 검사 (loadCompanies limit=100 이슈 회피)
+  const currentId = editId.company || _cmpData?.id;
+  fetch(`/api/companies/check-code?code=${encodeURIComponent(code)}&exclude=${currentId||''}`)
+    .then(r => r.json())
+    .then(data => {
+      if(data.duplicate){
+        if(msgEl){ msgEl.style.display = 'block'; msgEl.style.color = '#dc2626'; msgEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 사용할 수 없는 코드입니다. 다른 코드를 입력하세요.'; }
+        if(inputEl){ inputEl.style.borderColor = '#dc2626'; inputEl.style.background = '#fef2f2'; }
+        toast('다른 고객사에서 사용 중인 코드입니다.', 'error');
+      } else {
+        if(msgEl){ msgEl.style.display = 'block'; msgEl.style.color = '#16a34a'; msgEl.innerHTML = '<i class="fas fa-check-circle"></i> 사용 가능한 코드입니다.'; }
+        if(inputEl){ inputEl.style.borderColor = '#16a34a'; inputEl.style.background = '#f0fdf4'; }
+        toast('사용 가능한 코드입니다.', 'success');
+      }
+    }).catch(() => {
+      if(msgEl){ msgEl.style.display = 'block'; msgEl.style.color = '#dc2626'; msgEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 확인 중 오류가 발생했습니다.'; }
+      toast('확인 중 오류가 발생했습니다.', 'error');
+    });
 }
 // ──────────────────────────────────────────────────────────────────────────
 // ── 고객사 모달 - 노무대행 서비스 계약서 파일 처리 (복수 파일) ──
@@ -613,9 +679,8 @@ function openCompanyModal(id=null){
         if(_endRow) _endRow.style.display = 'none';
         if(_endEl)  _endEl.value = '';
       }
-      // 기존 코드 표시 (수정 불가, 재생성 버튼만 노출)
+      // 기존 코드 표시
       _setAccessCode(c.access_code || generateAccessCode());
-      document.getElementById('cm-code-regen-btn').style.display = 'inline-flex';
       // 서비스 계약서 파일 복원
       _cmSvcRestore(c.service_contract_file_name||'', c.service_contract_file_data||'');
       // 급여 항목 설정 복원
@@ -645,15 +710,13 @@ function openCompanyModal(id=null){
       document.getElementById('cm-contract-start').value=c.contract_start_date||'';
       // 임시저장 시 생성된 접근코드 유지
       _setAccessCode(c.access_code || generateAccessCode());
-      document.getElementById('cm-code-regen-btn').style.display = 'none';
       // 서비스 계약서 파일 복원
       _cmSvcRestore(c.service_contract_file_name||'', c.service_contract_file_data||'');
       // 급여 항목 설정 복원
       _cmSetAllowanceConfig(c.allowance_config || {});
     } else {
-      // 순수 신규: 접근코드 자동 생성, 재생성 버튼 숨김
+      // 순수 신규: 접근코드 자동 생성
       _setAccessCode(generateAccessCode());
-      document.getElementById('cm-code-regen-btn').style.display = 'none';
       // 서비스 계약서 파일 초기화
       _cmSvcReset();
       // 급여 항목 설정 초기화

@@ -10,6 +10,11 @@ function renderPayrolls(){
     if(yr && Number(p.pay_year)!==yr) return false;
     if(mo && Number(p.pay_month)!==mo) return false;
     if(q&&!getEmpName(p.employee_id).toLowerCase().includes(q)) return false;
+    // 익월을 초과하는 미래 월은 제외 (당월 + 익월까지만 표시)
+    const now = new Date();
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const limitYm = nextMonth.getFullYear() * 100 + (nextMonth.getMonth() + 1);
+    if(Number(p.pay_year) * 100 + Number(p.pay_month) > limitYm) return false;
     // 정식 등록 계약(is_draft=false)이 없고 임시저장 계약만 있는 직원의 급여는 제외
     const hasRealContract = allContracts.some(c => c.employee_id === p.employee_id && !c.is_draft);
     if(!hasRealContract && allContracts.some(c => c.employee_id === p.employee_id && c.is_draft)) return false;

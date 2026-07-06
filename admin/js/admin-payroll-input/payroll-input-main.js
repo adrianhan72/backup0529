@@ -216,11 +216,11 @@ function loadPITargetList(){
         statusBadge = `<span style="display:inline-flex;align-items:center;gap:4px;background:#fff7ed;color:#c2410c;border:1px solid #fdba74;border-radius:6px;padding:3px 10px;font-size:11.5px;font-weight:700;"><i class="fas fa-exclamation-circle"></i> 미입력</span>`;
       }
 
-      // ⑤ 관리 버튼: isDraft → '이어 입력'(파랑), isPaid → '수정'(보라), else → '입력'(초록)
+      // ⑤ 관리 버튼: isDraft → '이어 입력'(주황), isPaid → '수정'(보라), else → '입력'(초록)
       let actionBtn;
       if(isDraft){
         actionBtn = `<button onclick="selectPITarget('${emp.id}','${contract.id}','${draftId}')"
-          style="display:inline-flex;align-items:center;gap:5px;padding:7px 16px;background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">
+          style="display:inline-flex;align-items:center;gap:5px;padding:7px 16px;background:#d97706;color:#fff;border:1px solid #b45309;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">
           <i class="fas fa-play-circle"></i> 이어 입력
         </button>`;
       } else if(isPaid){

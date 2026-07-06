@@ -379,16 +379,33 @@ function _initWLFilters(){
       yrSel.appendChild(o);
     }
   }
-  // 월 옵션
-  if(!moSel.options.length){
-    for(let m = 1; m <= 12; m++){
-      const o = document.createElement('option');
-      o.value = m; o.textContent = m + '월';
-      moSel.appendChild(o);
-    }
-  }
+  // 월 옵션 (당월 + 익월까지만 표시, 익월 초과는 제외)
+  _populateWLMonthOptions(now.getFullYear());
   yrSel.value = now.getFullYear();
   moSel.value = now.getMonth() + 1;
+  // 연도 변경 시 월 옵션 재생성
+  yrSel.addEventListener('change', function(){
+    _populateWLMonthOptions(parseInt(this.value));
+    const curNow = new Date();
+    const maxMo = parseInt(this.value) === curNow.getFullYear() ? curNow.getMonth() + 2 : 12;
+    if(parseInt(moSel.value) > maxMo) moSel.value = Math.min(curNow.getMonth() + 1, maxMo);
+  });
+}
+
+function _populateWLMonthOptions(year){
+  const moSel = document.getElementById('wl-month-filter');
+  if(!moSel) return;
+  const now = new Date();
+  const curYr = now.getFullYear();
+  const maxMo = (year === curYr) ? Math.min(now.getMonth() + 2, 12) : 12; // 당월+익월까지만, 최대 12
+  const curVal = moSel.value;
+  moSel.innerHTML = '';
+  for(let m = 1; m <= maxMo; m++){
+    const o = document.createElement('option');
+    o.value = m; o.textContent = m + '월';
+    moSel.appendChild(o);
+  }
+  if(parseInt(curVal) <= maxMo) moSel.value = curVal;
 }
 
 // 임금대장 필터 select 활성/비활성 + 로딩 안내 제어

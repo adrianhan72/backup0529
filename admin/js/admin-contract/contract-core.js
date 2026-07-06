@@ -206,8 +206,8 @@ function renderContracts(){
     const baseSalaryDisplay = isContDaily
       ? `<span style="font-size:11px;color:#9ca3af;">일급여</span> ${won(c.daily_wage||c.base_salary)}`
       : won(c.base_salary);
-    // ── 서류미비 배지 (별도 표시) ──
-    const docsBadge = docsIncomplete ? `<span class="badge badge-orange" style="margin-left:3px;">서류미비</span>` : '';
+    // ── 서류미비 배지 (상태가 이미 서류미비면 중복 표시하지 않음) ──
+    const docsBadge = (docsIncomplete && stName !== '서류미비') ? `<span class="badge badge-orange" style="margin-left:3px;">서류미비</span>` : '';
     return `<tr>
       <td style="font-weight:600">${getEmpName(c.employee_id)}</td>
       <td><span class="badge ${catBadge}">${contractTypeLabel(empCat)}</span></td>
@@ -518,6 +518,8 @@ function openContractModal(id=null, preCompanyId=null){
       const _pdEl = document.getElementById('ct-pay-day');
       if(_pdEl) _pdEl.value = (typeof c.pay_day === 'number' || /^\d+$/.test(c.pay_day)) ? c.pay_day : '';
       _autoFillCTPeriod(); // 힌트 갱신
+      // 계약에 급여일이 없으면 고객사 기본값으로 채움
+      _setCtPayDayDefault(c.company_id);
       // DB에 값이 있는 항목은 allowance_config와 무관하게 강제 노출 (하위호환)
       _forceShowNonZeroCTRows(c);
       document.getElementById('ct-note').value=c.note||'';
@@ -1067,7 +1069,7 @@ function calcContractStatusDisplay(c, today){
   // 만료예정·종료예정은 레거시 값 → 계약유효로 표시 (유효한 계약)
   if(s==='만료예정'||s==='종료예정') return {badge:'badge-green', label:'유효', docsIncomplete};
   // 서류미비 상태 (DB에 저장된 상태 그대로 배지만 표시, 계약은 유효)
-  if(s==='서류미비'||s==='docs_incomplete') return {badge:'badge-orange', label:'서류미비', docsIncomplete: false};
+  if(s==='서류미비'||s==='docs_incomplete') return {badge:'badge-orange', label:'서류미비', docsIncomplete};
   // 활성/유효 상태 — 서류와 무관하게 유효 계약으로 처리
   if(s==='활성'||s==='유효'||s==='active'){
     if(start && start > today) return {badge:'badge-amber', label:'갱신예정', docsIncomplete};
