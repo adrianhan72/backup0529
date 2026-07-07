@@ -1,4 +1,4 @@
-    <div id="page-payroll-input" class="page">
+﻿    <div id="page-payroll-input" class="page">
       <!-- ── 전체 급여 임시저장 목록 배너 (고객사 선택 여부 무관하게 항상 표시) ── -->
       <div id="pi-all-draft-banner">
         <div class="pi-adb-header" onclick="togglePIAllDraftBanner(this)">
@@ -411,9 +411,9 @@
               <input type="hidden" id="pi-weekly-hol" data-amount />
               <!-- ══ 정기 지급항목 ══ -->
               <div class="pi-section-title blue" style="margin-top:16px;"><i class="fas fa-file-contract"></i> 정기 지급항목</div>
-              <!-- 출산·보육수당 (첫 번째 항목, allowance_config 연동) -->
+              <!-- 보육수당 (첫 번째 항목, allowance_config 연동) -->
               <div class="pi-row" id="pi-row-childcare" style="display:none;">
-                <label>출산·보육수당</label>
+                <label>보육수당</label>
                 <div class="pi-row-right">
                   <span class="pi-dep-wrap">부양가족 <input type="number" id="pi-dependents" min="1" value="1" oninput="calcPI()" class="pi-dep-input" /> 인</span>
                   <input type="text" inputmode="numeric" id="pi-childcare" data-amount oninput="onAmountInput(this,calcPI)" class="pi-row-amount" />

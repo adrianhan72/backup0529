@@ -335,7 +335,7 @@ function renderRcTemplate(){
   // 미리보기 데이터 구성 (실제 또는 예시)
   const empName    = item?.empName        || '홍길동';
   const coName     = item?.company        || '(주)예시기업';
-  const coRep      = item ? (allCompanies.find(c=>c.id===item.companyId)?.representative||'') : '대표자';
+    const coRep      = item ? getCompanyRepName(allCompanies.find(c=>c.id===item.companyId)) : '대표자';
   const catText    = item?.activeContract?.contract_type || '계약직';
   const firstStart = item?.firstStart     || '2023-01-01';
   const totalDays  = item?.totalDays      || 750;

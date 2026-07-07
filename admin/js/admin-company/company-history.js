@@ -4,6 +4,14 @@ let _cmHistPage = 1;
 const _CM_HIST_PAGE_SIZE = 10;
 
 function _fmtHistVal(val, field){
+  if(field === 'representatives'){
+    try {
+      const reps = typeof val === 'string' ? JSON.parse(val) : (Array.isArray(val) ? val : []);
+      if(!Array.isArray(reps) || reps.length === 0) return '(없음)';
+      const names = reps.map(r => r.name || '(이름 없음)').join(', ');
+      return names;
+    } catch(e){ return String(val||''); }
+  }
   if(field === 'allowance_config'){
     try {
       const cfg = typeof val === 'string' ? JSON.parse(val) : (val || {});

@@ -1,4 +1,4 @@
-// ─── LABOR STATUS ───
+﻿// ─── LABOR STATUS ───
 // currentLsCompanyId → 최상단 STATE 블록에서 선언됨
 const LS_ITEMS = 15;
 
@@ -126,7 +126,7 @@ function renderLsPieChart(){
     { label:'자가운전보조금', val: s('self_driving_allowance'),   color:'#7c3aed' },
     { label:'벽지수당',       val: s('remote_area_allowance'),    color:'#8b5cf6' },
     { label:'식대',           val: s('meal_allowance'),           color:'#6ee7b7' },
-    { label:'출산·보육수당',  val: s('childcare_allowance'),      color:'#34d399' },
+    { label:'보육수당',  val: s('childcare_allowance'),      color:'#34d399' },
     { label:'연구활동비',     val: s('research_allowance'),       color:'#10b981' },
     { label:'연장근로수당',   val: s('overtime_pay'),             color:'#fbbf24' },
     { label:'야간근로수당',   val: s('night_pay'),                color:'#f97316' },

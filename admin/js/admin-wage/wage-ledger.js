@@ -1,4 +1,4 @@
-// ─── WAGE LEDGER (임금대장) ───
+﻿// ─── WAGE LEDGER (임금대장) ───
 let _wlCompanyId = null;
 let _wlCompanyName = '';
 
@@ -1381,7 +1381,7 @@ function downloadWageLedgerExcel(){
        {lbl:'자가운전보조금',val:isSum?sums.self_driving_allowance  :nv(p.self_driving_allowance)}],
       [{lbl:'벽지수당',      val:isSum?sums.remote_area_allowance  :nv(p.remote_area_allowance)},
        {lbl:'식대',          val:isSum?sums.meal_allowance         :nv(p.meal_allowance)},
-       {lbl:'출산·보육수당', val:isSum?sums.childcare_allowance    :nv(p.childcare_allowance)},
+       {lbl:'보육수당', val:isSum?sums.childcare_allowance    :nv(p.childcare_allowance)},
        {lbl:'연구활동비',    val:isSum?sums.research_allowance     :nv(p.research_allowance)}],
       [{lbl:'연차수당',      val:isSum?sums.annual_leave_pay       :nv(p.annual_leave_pay)},
        {lbl:'정기상여금',    val:isSum?sums.bonus_pay              :nv(p.bonus_pay)},

@@ -1,4 +1,4 @@
-// ===============================================================================
+﻿// ===============================================================================
 // _probAutoCreateAndSave()
 //   케이스① (해당 월 전체가 수습 만료 이후): 채용확정 계약서를 자동 생성하고
 //   현재 폼에 입력된 급여를 채용확정 계약 기준으로 저장한다.
@@ -443,7 +443,7 @@ function _fillPayrollFields(p, cfgCo){
   })();
   // 모든 pay_type 세팅 완료 → calcPI 잠금 해제
   _piContractLoading = false;
-  // 값 있는 옵셔널 행(출산보육수당 등) 강제 노출 재확인 후 비정기 섹션 이동 처리
+  // 값 있는 옵셔널 행(보육수당 등) 강제 노출 재확인 후 비정기 섹션 이동 처리
   _forceShowNonZeroPIRows(p);
   _renderPIIrregularRows();
   // 계산 갱신
@@ -490,7 +490,7 @@ function restoreEditPayroll(){
   //   수정 모드 진입 시(_editPayroll)에 이미 올바르게 적용되어 있고,
   //   원상복구는 "현재 폼 UI 구조를 유지한 채 값만 원본으로 되돌리는" 동작이다.
   //   applyPIAllowanceConfig 를 재호출하면 cfg.childcare=false 인 고객사에서
-  //   출산보육수당 행이 숨겨지는 side-effect 가 발생한다.
+  //   보육수당 행이 숨겨지는 side-effect 가 발생한다.
   _fillPayrollFields(p, _restoreCfgCo);
 
   // ── 복원 후 계산 갱신 + 스냅샷 재설정 ──
@@ -801,7 +801,7 @@ function validateAndParseExcel(wb, fileName){
       '자가운전보조금': 'self_driving_allowance',
       '벽지수당':       'remote_area_allowance',
       '식대':           'meal_allowance',
-      '출산·보육수당':  'childcare_allowance',
+      '보육수당':  'childcare_allowance',
       '연구활동비':     'research_allowance',
       '연차수당':       'annual_leave_pay',
       '정기상여금':     'bonus_pay',
@@ -2068,7 +2068,7 @@ async function downloadPayrollExcel(){
     hdr(`${co.company_name}  |  ${yr}년 ${moStr}월 임금대장`,C.TITLE_BG,C.TITLE_FG,true,13)
   ]);
   data1.push([
-    txt(`사업자번호: ${co.business_number||'-'}  /  대표자: ${co.representative||'-'}  /  급여지급일: ${co.pay_day||'-'}일  /  산정기간: ${co.pay_period_month&&co.pay_period_day?`${co.pay_period_month} ${co.pay_period_day}일부터 1개월간`:(co.pay_period||'-')}`,C.COINFO_BG,C.COINFO_FG,false,9)
+    txt(`사업자번호: ${co.business_number||'-'}  /  대표자: ${getCompanyRepName(co)}  /  급여지급일: ${co.pay_day||'-'}일  /  산정기간: ${co.pay_period_month&&co.pay_period_day?`${co.pay_period_month} ${co.pay_period_day}일부터 1개월간`:(co.pay_period||'-')}`,C.COINFO_BG,C.COINFO_FG,false,9)
   ]);
   data1.push([txt('')]); // 공백
 
@@ -2409,7 +2409,7 @@ async function downloadPayrollExcel(){
       sl('지급자(회사)',signLBG,'374151',true),
       sl(`${co.company_name}`,signBg,'374151',false),
       sl('대표자',signLBG,'374151',true),
-      sl(co.representative||'',signBg,'374151',false),
+      sl(getCompanyRepName(co),signBg,'374151',false),
       sl('(인)',signBg,'374151',true),
       nb(signBg),
     ]);

@@ -1,4 +1,4 @@
-// ─── PAYROLLS ───
+﻿// ─── PAYROLLS ───
 function renderPayrolls(){
   if(!currentPayCompanyId) return;
   const yr=parseInt(document.getElementById('pay-year-filter')?.value)||0;
@@ -285,7 +285,7 @@ function openPayslipModal(payrollId){
     makePayRowType('자가운전보조금',p.self_driving_allowance, p.self_driving_pay_type||'fixed') +
     makePayRowType('벽지수당',      p.remote_area_allowance, p.remote_area_pay_type||'fixed') +
     makePayRowType('식대',          p.meal_allowance, p.meal_pay_type||'fixed') +
-    makePayRow('출산·보육수당',     p.childcare_allowance) +
+    makePayRow('보육수당',     p.childcare_allowance) +
     makePayRow('연구활동비',        p.research_allowance) +
     makeGroupRow('▸ 추가 근로수당') +
     makePayRow('연장근로수당',      p.overtime_pay) +
@@ -732,7 +732,7 @@ async function sendPayslipPDF(){
     // ── 고객사 인앱 알림 발송 (카카오 알림톡 개별 발송) ──
     {
       const _skCo  = allCompanies.find(x => x.id === companyId) || {};
-      const _coRep = _skCo.representative ? `, ${_skCo.representative} 사장님` : '';
+      const _coRep = getCompanyRepGreeting(_skCo);
       await _sendCompanyNotice({
         companyId  : companyId || '', companyName: _skCo.company_name || '',
         noticeType : 'payslip_individual_sent',
@@ -820,7 +820,7 @@ async function sendPayslipEmail(){
     // ── 고객사 인앱 알림 발송 (이메일 개별 발송 — 모달) ──
     {
       const _seCo  = allCompanies.find(x => x.id === companyId) || {};
-      const _coRep = _seCo.representative ? `, ${_seCo.representative} 사장님` : '';
+      const _coRep = getCompanyRepGreeting(_seCo);
       await _sendCompanyNotice({
         companyId  : companyId || '', companyName: _seCo.company_name || '',
         noticeType : 'payslip_individual_sent',

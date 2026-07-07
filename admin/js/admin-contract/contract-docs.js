@@ -195,7 +195,7 @@ async function _ctfUpload(type, contractId, inputEl){
     {
       const _ufCo  = allCompanies.find(x => x.id === c?.company_id) || {};
       const _ufEmp = allEmployees.find(x => x.id === c?.employee_id) || {};
-      const _coRep = _ufCo.representative ? `, ${_ufCo.representative} 사장님` : '';
+      const _coRep = getCompanyRepGreeting(_ufCo);
       const _typeLabel = type === 'signed' ? '계약서 날인본' : '제3자 정보제공 동의서';
       if(c?.company_id){
         // 업로드 종류별 알림
@@ -269,25 +269,24 @@ async function _ctfDelete(type, contractId){
   const dataField = type === 'signed' ? 'signed_file_data'  : 'consent_file_data';
 
   try{
-    await fetch(`../tables/contracts/${contractId}`, {
+    const res = await fetch(`../tables/contracts/${contractId}`, {
       method: 'PATCH',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ [nameField]: '', [dataField]: '', status: '서류미비' })
+      body: JSON.stringify({ [nameField]: '', [dataField]: '' })
     });
+    if(!res.ok){ const err = await res.json().catch(()=>({})); throw new Error(err.error || `HTTP ${res.status}`); }
 
-    // 로컬 캐시 갱신
-    const idx = allContracts.findIndex(x => x.id === contractId);
-    if(idx !== -1){ allContracts[idx][nameField] = ''; allContracts[idx][dataField] = ''; allContracts[idx].status = '서류미비'; }
+    // DB 재조회 후 목록 갱신 (로컬 캐시만 수정하면 필터/정렬 불일치 발생 가능)
+    await loadContracts();
+    if(typeof renderContracts === 'function') renderContracts();
 
-    toast('파일이 삭제되었습니다.', 'success');
+    toast(`'${label}' 파일이 삭제되었습니다. 계약 상태가 서류미비로 변경되었습니다.`, 'success');
     const c = allContracts.find(x => x.id === contractId);
     if(c) _renderContractFilesSection(c);
     // 업로드 모달도 갱신
     if(document.getElementById('contract-preview-modal')?.classList.contains('open')){
       _renderCpExistingFiles(c);
     }
-    // 계약 목록 테이블 갱신 (서류미비 뱃지 반영)
-    if(typeof renderContracts === 'function') renderContracts();
 
   } catch(e){
     toast('삭제에 실패했습니다.', 'error');
@@ -605,16 +604,19 @@ function setContractStep(step){
 
 // 폼 유효성 간단 검사
 // 계약서 미리보기 모달 열기
-function openContractPreview(){
-  if(_ctValidate()) return;   // 유효성 검사 실패 시 배너+하이라이트 표시 후 중단
-  setContractStep(2);
+async function openContractPreview(){
   _resetUploadState();
-  // 계약서 HTML 생성 (숨겨진 preview 영역에 저장: downloadContractDocx/printContract 용)
+  if(_ctValidate()) return;
+  setContractStep(2);
+  // 계약서 HTML 생성
   try { let html = generateContractHTML(); document.getElementById('ct-print-area').innerHTML = html; } catch(e){ console.error('[openContractPreview] generateContractHTML 오류:', e); }
-  // 등록 모드 업로드 UI 렌더링
-  _renderCpRegistrationUpload();
-  _updateFinalBtn();
-  document.getElementById('contract-preview-modal').classList.add('open');
+  // 바로 저장
+  setContractStep(3);
+  if(typeof saveContract !== 'function'){ toast('saveContract 함수를 찾을 수 없습니다.', 'error'); return; }
+  try { await saveContract(); } catch(e) {
+    console.error('[openContractPreview] saveContract 오류:', e);
+    toast('저장 중 오류: ' + (e.message || '알 수 없는 오류'), 'error');
+  }
 }
 
 function closeContractPreview(){
@@ -1194,7 +1196,7 @@ function _collectContractData(){
     companyName:       company.company_name||'',
     bizNumber:         company.business_number||'',
     companyAddr:       company.address||'',
-    representative:    company.representative||'',
+    representative:    getCompanyRepName(company),
     payDay:            company.pay_day||'',
     empName, phone, address, idNumber, jobDescription, department, position,
     contractStart:     document.getElementById('ct-start')?.value || document.getElementById('ct-em-hire')?.value || '',

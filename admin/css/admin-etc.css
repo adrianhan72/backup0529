@@ -1,4 +1,4 @@
-    .pss-send-btn:hover{ opacity:.88; }
+﻿    .pss-send-btn:hover{ opacity:.88; }
     .pss-send-btn-all{ background:#f9d000;color:#3b1f00;border:1px solid #eab308;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:7px;transition:background .18s; }
     .pss-send-btn-all:hover{ background:#eab308; }
     .pss-send-btn-all:disabled{ background:#cccccc!important;color:#f2f2f2!important;border:1px solid #cccccc!important;cursor:not-allowed!important;opacity:1; }
@@ -192,8 +192,8 @@
       box-shadow:0 6px 20px rgba(233,69,96,.4);
       margin-top:4px;
     }
-    #admin-login-screen .aln-btn:hover{opacity:.9;transform:translateY(-1px);}
-    #admin-login-screen .aln-btn:active{transform:translateY(0);}
+    #admin-login-screen .aln-btn:hover{}
+    #admin-login-screen .aln-btn:active{}
     #admin-login-screen .aln-btn:disabled{cursor:not-allowed;transform:none;}
     #admin-login-screen .aln-footer{
       text-align:center;margin-top:24px;

@@ -1,4 +1,4 @@
-// ==============================================================================
+﻿// ==============================================================================
 // _buildPIBody()
 //   현재 급여 입력 폼의 값으로 payroll 저장 body 객체를 생성한다.
 //   savePI(), savePIDraft() 양쪽에서 공유하는 공통 헬퍼.
@@ -441,7 +441,7 @@ async function savePI(){
     const _ptItems = [
       { field:'transport',    label:'차량교통비' },
       { field:'meal',         label:'식대' },
-      { field:'childcare',    label:'출산·보육수당' },
+      { field:'childcare',    label:'보육수당' },
       { field:'research',     label:'연구활동비' },
       { field:'communication',label:'통신비' },
       { field:'fitness',       label:'체력증진비' },
@@ -490,7 +490,7 @@ async function savePI(){
     {
       const _piCo  = allCompanies.find(x => x.id === coId) || {};
       const _piEmp = allEmployees.find(x => x.id === empId) || {};
-      const _coRep = _piCo.representative ? `, ${_piCo.representative} 사장님` : '';
+      const _coRep = getCompanyRepGreeting(_piCo);
       if(coId){
         await _sendCompanyNotice({
           companyId  : coId, companyName: _piCo.company_name || '',
@@ -547,7 +547,7 @@ async function savePI(){
     {
       const _piCo  = allCompanies.find(x => x.id === coId) || {};
       const _piEmp = allEmployees.find(x => x.id === empId) || {};
-      const _coRep = _piCo.representative ? `, ${_piCo.representative} 사장님` : '';
+      const _coRep = getCompanyRepGreeting(_piCo);
       if(coId){
         await _sendCompanyNotice({
           companyId  : coId, companyName: _piCo.company_name || '',
@@ -798,7 +798,7 @@ async function savePISplit(){
     const _ptItems2 = [
       { field:'transport',    label:'차량교통비' },
       { field:'meal',         label:'식대' },
-      { field:'childcare',    label:'출산·보육수당' },
+      { field:'childcare',    label:'보육수당' },
       { field:'research',     label:'연구활동비' },
       { field:'communication',label:'통신비' },
       { field:'fitness',       label:'체력증진비' },
@@ -879,7 +879,7 @@ async function savePISplit(){
     transport_pay_type:_getPIPayTypeVal('transport'),
     meal_allowance:    round0((gv('pi-meal')) * ratioProb),
     meal_pay_type:     _getPIPayTypeVal('meal'),
-    childcare_allowance: gv('pi-childcare') || 0,  // 출산·보육수당: 비율 적용 안 함, 입력값 그대로
+    childcare_allowance: gv('pi-childcare') || 0,  // 보육수당: 비율 적용 안 함, 입력값 그대로
     childcare_pay_type:     _getPIPayTypeVal('childcare'),
     research_allowance:  round0((gv('pi-research') || 0) * ratioProb),
     research_pay_type:      _getPIPayTypeVal('research'),
@@ -941,7 +941,7 @@ async function savePISplit(){
       transport_pay_type:confirmedContract.transport_pay_type || _getPIPayTypeVal('transport'),
       meal_allowance:    round0((confirmedContract.meal_allowance || gv('pi-meal')) * ratioPost),
       meal_pay_type:     confirmedContract.meal_pay_type || 'fixed',
-      childcare_allowance: gv('pi-childcare') || 0,  // 출산·보육수당: 비율 적용 안 함, 입력값 그대로
+      childcare_allowance: gv('pi-childcare') || 0,  // 보육수당: 비율 적용 안 함, 입력값 그대로
       childcare_pay_type:     _getPIPayTypeVal('childcare'),
       research_allowance:  round0((confirmedContract.research_allowance || 0) * ratioPost),
       research_pay_type:      confirmedContract.research_pay_type      || _getPIPayTypeVal('research'),

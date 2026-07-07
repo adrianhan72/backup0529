@@ -74,7 +74,7 @@ function renderCenTemplate(){
       empName     = item.emp?.name          || empName;
       catLabel    = item.cat                || catLabel;
       coName      = item.co?.company_name   || coName;
-      coRep       = item.co?.representative || coRep;
+      coRep       = getCompanyRepName(item.co) || coRep;
       contractEnd = item.c?.contract_end    || contractEnd;
       daysLeft    = item.daysLeft           ?? daysLeft;
       phone       = item.emp?.phone         || phone;
@@ -604,7 +604,7 @@ async function _cenSendCompanyNotice({ c, emp, co, daysLeft }){
   if(!c || !co) return;
   const adminName = _getAdminUsername();
   const cat       = emp?.employment_category || c.contract_type || '';
-  const coRep     = co.representative || '';
+    const coRep     = getCompanyRepName(co);
   const ddayStr   = daysLeft === 0 ? 'D-day' : `D-${daysLeft}`;
   const [ey,em,ed]= (c.contract_end||'----/--/--').split('-');
   const endKr     = ey ? `${parseInt(ey)}년 ${parseInt(em)}월 ${parseInt(ed)}일` : c.contract_end;

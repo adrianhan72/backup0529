@@ -1,4 +1,4 @@
-function _renderContAlertCards(){
+﻿function _renderContAlertCards(){
   const wrap = document.getElementById('cont-alert-cards-wrap');
   if(!wrap || !currentContCompanyId) return;
 
@@ -208,8 +208,7 @@ function renderContracts(){
     const baseSalaryDisplay = isContDaily
       ? `<span style="font-size:11px;color:#9ca3af;">일급여</span> ${won(c.daily_wage||c.base_salary)}`
       : won(c.base_salary);
-    // ── 서류미비 배지 (상태가 이미 서류미비면 중복 표시하지 않음) ──
-    const docsBadge = (docsIncomplete && stName !== '서류미비') ? `<span class="badge badge-orange" style="margin-left:3px;">서류미비</span>` : '';
+    // ── 서류미비 배지 (파기된 계약은 서류미비 관리 안 함) ──
     return `<tr>
       <td style="font-weight:600">${getEmpName(c.employee_id)}</td>
       <td><span class="badge ${catBadge}">${contractTypeLabel(empCat)}</span></td>
@@ -220,7 +219,10 @@ function renderContracts(){
       <td style="color:#f59e0b;font-weight:600">${isContDaily ? '<span style="color:#9ca3af;font-size:11px;">-</span>' : won(c.weekly_holiday_pay)}</td>
       <td class="amount-green">${isContDaily ? '<span style="color:#9ca3af;font-size:11px;">-</span>' : won(c.monthly_salary_agreed)}</td>
       <td>
-        <span class="badge ${stBadge}">${stName}</span>${docsBadge}
+        ${docsIncomplete && stName !== '파기' ? `<span class="badge badge-orange">서류미비</span>` : `<span style="font-size:11px;color:#9ca3af;">-</span>`}
+      </td>
+      <td>
+        <span class="badge ${stBadge}">${stName}</span>
       </td>
       <td style="white-space:nowrap;">
         <button class="btn btn-sm btn-indigo" onclick="viewContract('${c.id}')"><i class="fas fa-search"></i> 조회</button>
@@ -238,6 +240,60 @@ function renderContracts(){
   renderPagination('cont-pagination',f.length,pages.cont,'setContPage');
 }
 function setContPage(p){pages.cont=p;renderContracts()}
+// ── 계약 모달 유효성 검사 오류 초기화 ──
+function _ctClearErrors(){
+  document.querySelectorAll('#contract-modal .ct-field-error').forEach(el=>{
+    el.classList.remove('ct-field-error');
+  });
+  const banner = document.getElementById('ct-validation-banner');
+  if(banner) banner.style.display = 'none';
+}
+
+// ── 계약 시작일 ↔ 입사일 연동 ──
+function _onCtHireChange(){
+  const hireEl = document.getElementById('ct-em-hire');
+  const startEl = document.getElementById('ct-em-start');
+  const hintEl = document.getElementById('ct-em-start-hint');
+  if(!startEl || !hintEl) return;
+  if(hireEl && hireEl.value){
+    startEl.disabled = false;
+    // 입사일 변경 시 이미 입력된 계약 시작일도 재검증
+    if(startEl.value){
+      _validateCtStartVsHire('ct-em-start','ct-em-hire','ct-em-start-hint');
+    } else {
+      hintEl.style.color = '#6b7280';
+      hintEl.textContent = '이번 계약의 효력 발생일 — 급여항목·계약 기간 기준.';
+    }
+  } else {
+    startEl.disabled = true;
+    startEl.value = '';
+    hintEl.style.color = '#9ca3af';
+    hintEl.textContent = '입사일을 먼저 입력하세요.';
+  }
+}
+function _validateCtStartVsHire(startId, hireId, hintId){
+  const startEl = document.getElementById(startId);
+  const hireEl = document.getElementById(hireId);
+  const hintEl = document.getElementById(hintId);
+  if(!startEl || !hireEl || !hintEl) return true;
+  const start = startEl.value;
+  const hire  = hireEl.value;
+  if(!start || !hire){ startEl.style.borderColor = ''; startEl.style.background = ''; return true; }
+  if(start < hire){
+    startEl.style.borderColor = '#e94560';
+    startEl.style.background = '#fef2f2';
+    hintEl.style.color = '#dc2626';
+    hintEl.innerHTML = '<i class=\"fas fa-exclamation-triangle\"></i> 계약 시작일은 입사일(' + hire + ')보다 이전일 수 없습니다.';
+    return false;
+  } else {
+    startEl.style.borderColor = '';
+    startEl.style.background = '';
+    hintEl.style.color = '#6b7280';
+    hintEl.textContent = '이번 계약의 효력 발생일 — 급여항목·계약 기간 기준.';
+    return true;
+  }
+}
+
 function openContractModal(id=null, preCompanyId=null){
   editId.contract=id;
   _recontractEmpId = null; // 재계약 플래그 초기화
@@ -341,6 +397,8 @@ function openContractModal(id=null, preCompanyId=null){
   // ct-edit-emp-info 섹션의 show/hide로 자동 제어됨
 
   if(isNew){
+    // 신규: 첨부서류 파일 전역변수 초기화 (이전 조회 계약의 파일 잔재 방지)
+    if(typeof _resetUploadState === 'function') _resetUploadState();
     // 신규: 고객사 프리셋 지원, 신규 직원 입력 섹션 표시
     document.getElementById('ct-company').value = preCompanyId || '';
     { const _co = preCompanyId ? (allCompanies||[]).find(x=>x.id===preCompanyId) : null;
@@ -354,6 +412,11 @@ function openContractModal(id=null, preCompanyId=null){
       applyCTAllowanceConfig(_newCfg, true); }
     document.getElementById('ct-new-emp-section').style.display = 'block';
     document.getElementById('ct-edit-emp-info').style.display = 'none';
+    // 계약 시작일: 입사일 입력 전까지 비활성화
+    const _startNew = document.getElementById('ct-em-start');
+    const _hintNew = document.getElementById('ct-em-start-hint');
+    if(_startNew){ _startNew.disabled = true; _startNew.value = ''; }
+    if(_hintNew){ _hintNew.style.color = '#9ca3af'; _hintNew.textContent = '입사일을 먼저 입력하세요.'; }
     document.getElementById('ct-title').textContent = '근로계약서 추가';
   } else {
     // 수정: 기존 직원 정보 표시, 신규 입력 섹션 숨김 (draft도 employee_id 있으므로 정상 동작)
@@ -512,7 +575,7 @@ function openContractModal(id=null, preCompanyId=null){
       setAmountVal('ct-overseas',    c.overseas_allowance||0);
       setCTPayType('overseas',       c.overseas_pay_type||'fixed');
       setAmountVal('ct-regular-bonus', c.regular_bonus||0);
-      // 출산·보육수당 복원
+      // 보육수당 복원
       setAmountVal('ct-childcare', c.childcare_allowance||0);
       { const _ccDep=document.getElementById('ct-childcare-dependents'); if(_ccDep) _ccDep.value=c.childcare_dependents||1; }
       // 급여 산정기간 복원
@@ -574,13 +637,6 @@ function _ctClearFieldError(e){
   const fg = e.target.closest('.form-group');
   if(fg && fg.classList.contains('ct-field-error')){
     fg.classList.remove('ct-field-error');
-    // 배너에서 해당 항목 제거 후, 남은 항목 없으면 배너 숨김
-    const banner = document.getElementById('ct-validation-banner');
-    const list   = document.getElementById('ct-validation-list');
-    if(!banner || !list) return;
-    if(!document.querySelector('#contract-modal .ct-field-error')){
-      banner.style.display = 'none';
-    }
   }
 }
 function onCtEmployeeChange(){/* 직원 드롭다운 제거됨 - 신규 직원 섹션 항상 표시(신규 모드) */}
@@ -601,6 +657,7 @@ function _onEditCategoryChange() {
   const typeEl = document.getElementById('ct-type');
   if(!catEl || !typeEl) return;
   const newCat = catEl.value;
+  const newCatNorm = CONTRACT_TYPE_LEGACY_MAP[newCat] || newCat;
   const prevCat = _prevEditCategory;
 
   // ── 예외 그룹: Alert·초기화 불필요 ──
@@ -628,12 +685,12 @@ function _onEditCategoryChange() {
   // 계약 종료일 행 표시 제어
   toggleCtEndDate(true);
   // 수습 섹션 제어 (ct-em-category가 아닌 ct-type을 보는 toggleProbation 우회)
-  const isProbation = (newCat ===CONTRACT_TYPE.REGULAR_PROBATION || newCat ===CONTRACT_TYPE.FIXED_PROBATION);
+  const isProbation = (newCatNorm ===CONTRACT_TYPE.REGULAR_PROBATION || newCatNorm ===CONTRACT_TYPE.FIXED_PROBATION);
   const probSec = document.getElementById('ct-probation-section');
   if(probSec) probSec.style.display = isProbation ? '' : 'none';
   // 입사일·퇴사예정일 행 표시 제어
-  const isFixed   = (newCat ===CONTRACT_TYPE.FIXED || newCat ===CONTRACT_TYPE.FIXED_PROBATION || newCat ===CONTRACT_TYPE.DAILY);
-  const isRegular = (newCat ===CONTRACT_TYPE.REGULAR || newCat ===CONTRACT_TYPE.REGULAR_PROBATION);
+  const isFixed   = (newCatNorm ===CONTRACT_TYPE.FIXED || newCatNorm ===CONTRACT_TYPE.FIXED_PROBATION || newCatNorm ===CONTRACT_TYPE.DAILY);
+  const isRegular = (newCatNorm ===CONTRACT_TYPE.REGULAR || newCatNorm ===CONTRACT_TYPE.REGULAR_PROBATION);
   const hireRowEl   = document.getElementById('ct-edit-row-hire');
   const expireRowEl = document.getElementById('ct-edit-row-expire');
   if(hireRowEl)   hireRowEl.style.display   = '';
@@ -700,9 +757,10 @@ function _checkRepSelf(nameInputId, repRowId, repChkId, altNamesId){
   if(!nameEl || !rowEl || !coId){ if(rowEl) rowEl.style.display='none'; return; }
   const empName = nameEl.value.trim();
   const co = (allCompanies||[]).find(c => c.id === coId);
-  const repName = (co?.representative || '').trim();
-
-  if(empName && repName && empName === repName){
+  const reps = typeof _cmParseReps === 'function' ? _cmParseReps(co) : [];
+  const repNames = reps.map(r => r.name).filter(Boolean);
+  const isRep = empName && repNames.length > 0 && repNames.includes(empName);
+  if(isRep){
     // ── 대표자명과 일치: 선택 UI 표시 ──
     rowEl.style.display = '';
     // 대체 이름 제안 생성
@@ -1070,8 +1128,12 @@ function calcContractStatusDisplay(c, today){
   if(s==='해지'||s==='terminated') return {badge:'badge-red',   label:'해지', docsIncomplete};
   // 만료예정·종료예정은 레거시 값 → 계약유효로 표시 (유효한 계약)
   if(s==='만료예정'||s==='종료예정') return {badge:'badge-green', label:'유효', docsIncomplete};
-  // 서류미비 상태 (DB에 저장된 상태 그대로 배지만 표시, 계약은 유효)
-  if(s==='서류미비'||s==='docs_incomplete') return {badge:'badge-orange', label:'서류미비', docsIncomplete};
+  // 서류미비는 독립된 상태가 아님 — 유효/만료/해지 등 실제 상태를 유지하고 docsIncomplete 플래그로만 관리
+  if(s==='서류미비'||s==='docs_incomplete'){
+    // DB에 남아있는 레거시 값 → 유효로 폴백 (실제 상태는 DB 정리 완료)
+    if(start && start > today) return {badge:'badge-indigo',  label:'계약예정', docsIncomplete:true};
+    return {badge:'badge-green', label:'유효', docsIncomplete:true};
+  }
   // 활성/유효 상태 — 서류와 무관하게 유효 계약으로 처리
   if(s==='활성'||s==='유효'||s==='active'){
     if(start && start > today) return {badge:'badge-amber', label:'갱신예정', docsIncomplete};
@@ -1628,6 +1690,10 @@ async function openAmendPreview(){
     const saved = await fetch('../tables/contracts', {
       method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(newBody)
     });
+    if(!saved.ok){
+      const errData = await saved.json().catch(()=>({}));
+      throw new Error(errData.error || `HTTP ${saved.status}`);
+    }
     const savedJson = await saved.json();
     newContractId = savedJson.id || newBody.id;
     allContracts.push({ ...newBody, id: newContractId });
@@ -1646,7 +1712,7 @@ async function openAmendPreview(){
   });
 
   // ⑤ 고객사 인앱 알림
-  const _coRep = _co.representative ? `, ${_co.representative} 사장님` : '';
+  const _coRep = getCompanyRepGreeting(_co);
   const _fmtD  = d => { if(!d) return '-'; const [y,m,dd]=d.split('-'); return `${parseInt(y)}년 ${parseInt(m)}월 ${parseInt(dd)}일`; };
   await _sendCompanyNotice({
     companyId:coId, companyName:_co.company_name||'', noticeType:'contract_voided',

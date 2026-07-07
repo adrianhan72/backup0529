@@ -1,4 +1,4 @@
-    .cv-action-bar{display:flex;align-items:center;gap:8px;padding:10px 18px;background:#f8f9fb;border-bottom:2px solid #e5e7eb;flex-wrap:wrap}
+﻿    .cv-action-bar{display:flex;align-items:center;gap:8px;padding:10px 18px;background:#f8f9fb;border-bottom:2px solid #e5e7eb;flex-wrap:wrap}
     .cv-action-bar.bottom{border-bottom:none;border-top:2px solid #e5e7eb}
     .cv-action-bar .cv-label{font-size:12px;color:#6b7280;flex:1}
     /* ?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═
@@ -17,7 +17,7 @@
     .btn-renew:hover:not(:disabled){
       background:#b45309;
     }
-    .btn-renew:active:not(:disabled){transform:scale(.96) translateY(1px);}
+    .btn-renew:active:not(:disabled){}
     .btn-renew:disabled,.btn-renew[disabled]{background:#cccccc;color:#f2f2f2;border:1px solid #cccccc;cursor:not-allowed;pointer-events:none;opacity:1;}
 
     /* 계약 종료 ??Danger */
@@ -32,7 +32,7 @@
     .btn-terminate:hover:not(:disabled){
       background:#b8283d;
     }
-    .btn-terminate:active:not(:disabled){transform:scale(.96) translateY(1px);}
+    .btn-terminate:active:not(:disabled){}
     .btn-terminate:disabled,.btn-terminate[disabled]{background:#cccccc;color:#f2f2f2;border:1px solid #cccccc;cursor:not-allowed;pointer-events:none;opacity:1;}
 
     /* ?�계????Teal */
@@ -47,7 +47,7 @@
     .btn-recontract:hover:not(:disabled){
       background:#b45309;
     }
-    .btn-recontract:active:not(:disabled){transform:scale(.96) translateY(1px);}
+    .btn-recontract:active:not(:disabled){}
     .btn-recontract:disabled,.btn-recontract[disabled]{background:#cccccc;color:#f2f2f2;border:1px solid #cccccc;cursor:not-allowed;pointer-events:none;opacity:1;}
 
     /* 계약 무효 ??Slate */
@@ -62,7 +62,7 @@
     .btn-void:hover:not(:disabled){
       background:#334155;
     }
-    .btn-void:active:not(:disabled){transform:scale(.96) translateY(1px);}
+    .btn-void:active:not(:disabled){}
     .btn-void:disabled,.btn-void[disabled]{background:#cccccc;color:#f2f2f2;border:1px solid #cccccc;cursor:not-allowed;pointer-events:none;opacity:1;}
 
     .btn-draft{
@@ -126,7 +126,7 @@
     .btn-cft-confirm:hover:not(:disabled){
       background:#b8283d;
     }
-    .btn-cft-confirm:active:not(:disabled){transform:scale(.96) translateY(1px);}
+    .btn-cft-confirm:active:not(:disabled){}
     .btn-cft-confirm:disabled,.btn-cft-confirm[disabled]{background:#cccccc;color:#f2f2f2;border:1px solid #cccccc;cursor:not-allowed;pointer-events:none;opacity:1;}
     /* ?��? ?�정 버튼 ??Orange */
     .btn-fixed-terminate{
@@ -140,7 +140,7 @@
     .btn-fixed-terminate:hover:not(:disabled){
       background:#c2410c;
     }
-    .btn-fixed-terminate:active:not(:disabled){transform:scale(.96) translateY(1px);}
+    .btn-fixed-terminate:active:not(:disabled){}
     .btn-fixed-terminate:disabled,.btn-fixed-terminate[disabled]{background:#cccccc;color:#f2f2f2;border:1px solid #cccccc;cursor:not-allowed;pointer-events:none;opacity:1;}
     /* ?�?� 계약 ?�태 ?�합 배너 (?��??�정 / 계약?�정 / 갱신?�정 공용) ?�?� */
     .ct-status-banner{display:none;align-items:flex-start;gap:14px;border-radius:12px;padding:14px 20px;margin:12px 18px 0;border:2px solid;}
@@ -170,7 +170,7 @@
       transition:background .18s,border-color .18s;
     position:relative;overflow:hidden;
     }
-    .btn-sb:active:not(:disabled){transform:scale(.96) translateY(1px);}
+    .btn-sb:active:not(:disabled){}
     .btn-sb:disabled,.btn-sb[disabled]{background:#cccccc;color:#f2f2f2;border:1px solid #cccccc;cursor:not-allowed;pointer-events:none;opacity:1;}
 
     /* ?�집 ??Indigo */
@@ -205,7 +205,7 @@
       background:#b45309;
       border-color:#b45309;
     }
-    .btn-amend:active:not(:disabled){transform:scale(.96) translateY(1px);}
+    .btn-amend:active:not(:disabled){}
     .btn-amend:disabled,.btn-amend[disabled]{background:#cccccc;color:#f2f2f2;border:1px solid #cccccc;cursor:not-allowed;pointer-events:none;opacity:1;}
     /* ?�?� ?�정 �??�발???�내 ?�널 ?�?� */
     .ct-amend-panel{background:linear-gradient(135deg,#f0f9ff,#e0f2fe);border:1.5px solid #7dd3fc;border-radius:10px;padding:14px 18px;margin:10px 18px 0;}
@@ -228,7 +228,7 @@
     .btn-amend-complete:hover:not(:disabled){
       background:#166534;
     }
-    .btn-amend-complete:active:not(:disabled){transform:scale(.96) translateY(1px);}
+    .btn-amend-complete:active:not(:disabled){}
     /* btn-amend-complete: 버튼?� ??�� ?�성 ??disabled ?��???불필??*/
     .btn-amend-cancel{
       display:inline-flex;align-items:center;gap:5px;
@@ -238,7 +238,7 @@
       transition:background .18s,border-color .18s,transform .15s;
     }
     .btn-amend-cancel:hover:not(:disabled){background:#e2e8f0;border-color:#94a3b8;}
-    .btn-amend-cancel:active:not(:disabled){transform:scale(.96) translateY(1px);}
+    .btn-amend-cancel:active:not(:disabled){}
     /* ?�?� 계약???�동?�성 ?�로?�스 ?�?� */
     /* ?�계 ?�시�?*/
     .ct-step-bar{display:flex;align-items:center;gap:0;padding:14px 24px;background:#f8fafc;border-bottom:1px solid #e2e8f0;}
@@ -313,7 +313,7 @@
     .btn-docx:hover:not(:disabled){
       background:#1d4ed8;
     }
-    .btn-docx:active:not(:disabled){transform:scale(.96) translateY(1px);}
+    .btn-docx:active:not(:disabled){}
     .btn-docx:disabled,.btn-docx[disabled]{background:#cccccc;color:#f2f2f2;border:1px solid #cccccc;cursor:not-allowed;pointer-events:none;opacity:1;}
 
     .btn-print{
@@ -326,7 +326,7 @@
       position:relative;overflow:hidden;
     }
     .btn-print:hover:not(:disabled){background:#f1f5f9;border-color:#334155;}
-    .btn-print:active:not(:disabled){transform:scale(.96) translateY(1px);}
+    .btn-print:active:not(:disabled){}
     .btn-print:disabled,.btn-print[disabled]{background:#cccccc;color:#f2f2f2;border:1px solid #cccccc;cursor:not-allowed;pointer-events:none;opacity:1;}
 
     .btn-final-reg{
@@ -341,7 +341,7 @@
     .btn-final-reg:hover:not(:disabled){
       background:#059669;
     }
-    .btn-final-reg:active:not(:disabled){transform:scale(.96) translateY(1px);}
+    .btn-final-reg:active:not(:disabled){}
     .btn-final-reg:disabled,.btn-final-reg[disabled]{background:#cccccc;color:#f2f2f2;border:1px solid #cccccc;cursor:not-allowed;pointer-events:none;opacity:1;}
     /* ?�?� 계약??출력 ?�용 모달 (cpm) ?�?� */
     #contract-print-modal.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:3000;align-items:center;justify-content:center;padding:16px;}

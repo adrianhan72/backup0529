@@ -187,7 +187,7 @@ function renderCompanies(){
           : ''}
       </div>
       ${payrollSection}
-      <p style="margin-top:10px;">대표: ${c.representative||'-'} · 업종: ${c.industry||'-'}<br>사업자: ${c.business_number||'-'}<br>급여일: ${c.pay_day||'-'} · 산정: ${c.pay_period_month&&c.pay_period_day?`${c.pay_period_month} ${c.pay_period_day}일부터 1개월간`:(c.pay_period||'-')}<br><i class="fas fa-shield-alt" style="color:#6366f1;margin-right:3px;font-size:10px;"></i>4대보험: ${c.insurance_basis||'요율 기준'} · <i class="fas fa-umbrella-beach" style="color:#0891b2;margin-right:3px;font-size:10px;"></i>연차: ${c.annual_leave_basis||'회계년도 기준'}<br>${c.phone||''}</p>
+      <p style="margin-top:10px;">대표: ${(()=>{const reps=_cmParseReps(c);return reps.length>1?`${reps[0].name} 외 ${reps.length-1}명`:c.representative||'-'})()} · 업종: ${c.industry||'-'}<br>사업자: ${c.business_number||'-'}<br>급여일: ${c.pay_day||'-'} · 산정: ${c.pay_period_month&&c.pay_period_day?`${c.pay_period_month} ${c.pay_period_day}일부터 1개월간`:(c.pay_period||'-')}<br><i class="fas fa-shield-alt" style="color:#6366f1;margin-right:3px;font-size:10px;"></i>4대보험: ${c.insurance_basis||'요율 기준'} · <i class="fas fa-umbrella-beach" style="color:#0891b2;margin-right:3px;font-size:10px;"></i>연차: ${c.annual_leave_basis||'회계년도 기준'}<br>${c.phone||''}</p>
       <div style="display:flex;align-items:center;gap:6px;margin-top:10px;font-size:12px;font-weight:600;color:#3b82f6;"><i class="fas fa-users"></i> 유효 근로계약: ${activeContractCount}건</div>
       ${c.note ? `<div style="margin-top:6px;font-size:11.5px;color:#6b7280;"><i class="fas fa-sticky-note" style="margin-right:4px;color:#9ca3af;"></i>${c.note}</div>` : ''}
       ${isDraftComp
@@ -345,6 +345,70 @@ function _setAccessCode(code){
   const btnEl = document.getElementById('cm-code-action-btn');
   if(btnEl){ btnEl.innerHTML = '<i class="fas fa-pen"></i> 변경'; btnEl.onclick = _toggleCmCodeEdit; }
 }
+
+// ── 대표자 정보 동적 행 ──
+let _cmRepIdx = 0;
+function _cmRepRowHTML(idx, data = { name: '', phone: '', email: '' }) {
+  return `<div class="cm-rep-row" id="cm-rep-row-${idx}" style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+    <div style="flex:1;min-width:120px;"><input type="text" id="cm-rep-name-${idx}" placeholder="대표자명" value="${_esc(data.name)}" style="width:100%;border:1.5px solid #e0e0e0;border-radius:8px;padding:7px 12px;font-size:13px;font-family:inherit;box-sizing:border-box;" /></div>
+    <div style="flex:1;min-width:140px;"><input type="text" id="cm-rep-phone-${idx}" placeholder="연락처" value="${_esc(data.phone)}" style="width:100%;border:1.5px solid #e0e0e0;border-radius:8px;padding:7px 12px;font-size:13px;font-family:inherit;box-sizing:border-box;" /></div>
+    <div style="flex:1;min-width:160px;"><input type="text" id="cm-rep-email-${idx}" placeholder="이메일" value="${_esc(data.email)}" style="width:100%;border:1.5px solid #e0e0e0;border-radius:8px;padding:7px 12px;font-size:13px;font-family:inherit;box-sizing:border-box;" /></div>
+    ${idx > 0 ? `<button type="button" onclick="_cmRemoveRepRow(${idx})" class="btn btn-sm btn-secondary" style="flex-shrink:0;"><i class="fas fa-trash-alt"></i></button>` : `<span style="width:32px;flex-shrink:0;"></span>`}
+  </div>`;
+}
+function _cmAddRepRow(data = { name: '', phone: '', email: '' }) {
+  const container = document.getElementById('cm-rep-rows');
+  if (!container) return;
+  const idx = _cmRepIdx++;
+  const row = document.createElement('div');
+  row.innerHTML = _cmRepRowHTML(idx, data);
+  container.appendChild(row.firstElementChild);
+}
+function _cmRemoveRepRow(idx) {
+  const row = document.getElementById('cm-rep-row-' + idx);
+  if (row) row.remove();
+}
+function _cmCollectReps() {
+  const reps = [];
+  for (let i = 0; i < _cmRepIdx; i++) {
+    const nameEl = document.getElementById('cm-rep-name-' + i);
+    const phoneEl = document.getElementById('cm-rep-phone-' + i);
+    const emailEl = document.getElementById('cm-rep-email-' + i);
+    const name = nameEl?.value?.trim() || '';
+    if (name) {
+      reps.push({ name, phone: phoneEl?.value?.trim() || '', email: emailEl?.value?.trim() || '' });
+    }
+  }
+  return reps;
+}
+function _cmParseReps(c) {
+  if (!c) return [];
+  if (c.representatives) {
+    try { const r = typeof c.representatives === 'string' ? JSON.parse(c.representatives) : c.representatives; if (Array.isArray(r)) return r; } catch(e){}
+  }
+  if (c.representative || c.phone || c.email) {
+    return [{ name: c.representative || '', phone: c.phone || '', email: c.email || '' }];
+  }
+  return [];
+}
+// 전역 헬퍼: 고객사 대표자명 표시 (계약서 등에서 사용)
+function getCompanyRepName(co) {
+  const reps = _cmParseReps(co);
+  return reps.map(r => r.name).filter(Boolean).join(', ') || '-';
+}
+function getCompanyRepGreeting(co) {
+  const reps = _cmParseReps(co);
+  const names = reps.map(r => r.name).filter(Boolean);
+  if (names.length === 0) return '';
+  return `, ${names.join(', ')} 사장님`;
+}
+function _cmClearRepRows() {
+  _cmRepIdx = 0;
+  const container = document.getElementById('cm-rep-rows');
+  if (container) container.innerHTML = '';
+}
+function _esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
 function _onCmCodeInput(){
   const el = document.getElementById('cm-code-display');
   document.getElementById('cm-code').value = el.value;
@@ -658,11 +722,22 @@ function openCompanyModal(id=null){
     if(c){
       document.getElementById('cm-name').value=c.company_name||'';
       document.getElementById('cm-biz').value=c.business_number||'';
-      document.getElementById('cm-rep').value=c.representative||'';
       document.getElementById('cm-industry').value=c.industry||'';
       document.getElementById('cm-addr').value=c.address||'';
       document.getElementById('cm-phone').value=c.phone||'';
       document.getElementById('cm-email').value=c.email||'';
+      // 대표자 정보: representatives JSON 우선, 없으면 기존 rep/phone/email 단일값
+      _cmClearRepRows();
+      let _reps = [];
+      if(c.representatives){
+        try { _reps = typeof c.representatives === 'string' ? JSON.parse(c.representatives) : c.representatives; } catch(e){ _reps = []; }
+      }
+      if(_reps.length === 0 && (c.representative || c.phone || c.email)){
+        _reps = [{ name: c.representative || '', phone: c.phone || '', email: c.email || '' }];
+      }
+      if(_reps.length === 0) _reps = [{ name: '', phone: '', email: '' }];
+      _reps.forEach(r => _cmAddRepRow(r));
+      document.getElementById('cm-rep').value = _reps[0]?.name || '';
       _cmPeriodRestore(c.pay_period||'', c.pay_period_month||null, c.pay_period_day!=null?c.pay_period_day:null);
       document.getElementById('cm-payday').value=c.pay_day||'';
       document.getElementById('cm-note').value=c.note||'';
@@ -697,11 +772,22 @@ function openCompanyModal(id=null){
       // 임시저장 데이터 복원
       document.getElementById('cm-name').value=c.company_name||'';
       document.getElementById('cm-biz').value=c.business_number||'';
-      document.getElementById('cm-rep').value=c.representative||'';
       document.getElementById('cm-industry').value=c.industry||'';
       document.getElementById('cm-addr').value=c.address||'';
       document.getElementById('cm-phone').value=c.phone||'';
       document.getElementById('cm-email').value=c.email||'';
+      // 대표자 정보 복원
+      _cmClearRepRows();
+      let _draftReps = [];
+      if(c.representatives){
+        try { _draftReps = typeof c.representatives === 'string' ? JSON.parse(c.representatives) : c.representatives; } catch(e){ _draftReps = []; }
+      }
+      if(_draftReps.length === 0 && (c.representative || c.phone || c.email)){
+        _draftReps = [{ name: c.representative || '', phone: c.phone || '', email: c.email || '' }];
+      }
+      if(_draftReps.length === 0) _draftReps = [{ name: '', phone: '', email: '' }];
+      _draftReps.forEach(r => _cmAddRepRow(r));
+      document.getElementById('cm-rep').value = _draftReps[0]?.name || '';
       _cmPeriodRestore(c.pay_period||'', c.pay_period_month||null, c.pay_period_day!=null?c.pay_period_day:null);
       document.getElementById('cm-payday').value=c.pay_day||'';
       document.getElementById('cm-note').value=c.note||'';
@@ -721,6 +807,8 @@ function openCompanyModal(id=null){
       _cmSvcReset();
       // 급여 항목 설정 초기화
       _cmSetAllowanceConfig({});
+      // 대표자 기본 행
+      _cmClearRepRows(); _cmAddRepRow();
     }
     // 신규/임시저장 모드: 이력 섹션 숨김
     const _histSec = document.getElementById('cm-history-section');
@@ -847,6 +935,7 @@ const _CM_FIELD_LABELS = {
   company_name:      '회사명',
   business_number:   '사업자번호',
   representative:    '대표이사',
+  representatives:   '대표자 정보',
   industry:          '업종',
   address:           '사업장주소',
   phone:             '대표연락처',
@@ -905,10 +994,8 @@ async function saveCompany(){
 
   if(!_cmRequire('cm-name',           '회사명을 입력하세요.'))            return;
   if(!_cmRequire('cm-biz',            '사업자등록번호를 입력하세요.'))     return;
-  if(!_cmRequire('cm-contract-start', '계약 시작일을 입력하세요.'))        return;
-  if(!_cmRequire('cm-rep',            '대표자명을 입력하세요.'))         return;
+  if(!_cmRequire('cm-contract-start', '자문계약 시작일을 입력하세요.'))    return;
   if(!_cmRequire('cm-addr',           '사업장 주소를 입력하세요.'))        return;
-  if(!_cmRequire('cm-phone',          '대표 연락처를 입력하세요.'))        return;
   // 급여 산정기간: 저장 전 강제 동기화 후 월·일 각각 검사 (포커스는 해당 셀렉트로)
   _cmPeriodCompose();
   if(!_cmRequire('cm-period-month', '급여 산정기간의 월(전월/당월)을 선택하세요.')) return;
@@ -917,10 +1004,20 @@ async function saveCompany(){
   if(!_cmRequire('cm-insurance-basis',   '4대보험 적용 기준을 선택하세요.'))  return;
   if(!_cmRequire('cm-annual-leave-basis','연차 휴가 산정 기준을 선택하세요.')) return;
 
+  // ── 대표자 정보 수집 및 검증 ──
+  const _representatives = _cmCollectReps();
+  if(_representatives.length === 0){
+    return toast('대표자 정보를 1명 이상 입력하세요.', 'error');
+  }
+  // hidden 필드 동기화 (하위호환)
+  document.getElementById('cm-rep').value = _representatives[0]?.name || '';
+  document.getElementById('cm-phone').value = _representatives[0]?.phone || '';
+  document.getElementById('cm-email').value = _representatives[0]?.email || '';
+
   const name   = document.getElementById('cm-name').value.trim();
   const biz    = document.getElementById('cm-biz').value.trim();
-  const rep    = document.getElementById('cm-rep').value.trim();
-  const phone  = document.getElementById('cm-phone').value.trim();
+  const rep    = _representatives[0]?.name || '';
+  const phone  = _representatives[0]?.phone || '';
   const period = document.getElementById('cm-period').value.trim();
   const payday = document.getElementById('cm-payday').value.trim();
   const addr   = document.getElementById('cm-addr').value.trim();
@@ -951,7 +1048,7 @@ async function saveCompany(){
   const _prevStatus = editId.company
     ? (allCompanies.find(x=>x.id===editId.company)?.status || COMPANY_STATUS.ACTIVE)
     : COMPANY_STATUS.ACTIVE;
-  const body={company_name:name,business_number:document.getElementById('cm-biz').value,representative:document.getElementById('cm-rep').value,industry:document.getElementById('cm-industry').value,address:document.getElementById('cm-addr').value,phone:document.getElementById('cm-phone').value,email:document.getElementById('cm-email').value,pay_period:document.getElementById('cm-period').value,pay_period_month:document.getElementById('cm-period-month-hidden').value||null,pay_period_day:parseInt(document.getElementById('cm-period-day-hidden').value)||null,pay_day:document.getElementById('cm-payday').value,access_code:code,note:document.getElementById('cm-note').value,insurance_basis:insuranceBasis,annual_leave_basis:annualLeaveBasis,service_contract_file_name:_cmSvcGetSaveData().name,service_contract_file_data:_cmSvcGetSaveData().data,allowance_config:newAllowanceCfg,contract_start_date:document.getElementById('cm-contract-start').value||null,is_draft:false,draft_saved_at:null,status:_prevStatus};
+  const body={company_name:name,business_number:document.getElementById('cm-biz').value,representative:_representatives[0]?.name||'',representatives:JSON.stringify(_representatives),industry:document.getElementById('cm-industry').value,address:document.getElementById('cm-addr').value,phone:_representatives[0]?.phone||'',email:_representatives[0]?.email||'',pay_period:document.getElementById('cm-period').value,pay_period_month:document.getElementById('cm-period-month-hidden').value||null,pay_period_day:parseInt(document.getElementById('cm-period-day-hidden').value)||null,pay_day:document.getElementById('cm-payday').value,access_code:code,note:document.getElementById('cm-note').value,insurance_basis:insuranceBasis,annual_leave_basis:annualLeaveBasis,service_contract_file_name:_cmSvcGetSaveData().name,service_contract_file_data:_cmSvcGetSaveData().data,allowance_config:newAllowanceCfg,contract_start_date:document.getElementById('cm-contract-start').value||null,is_draft:false,draft_saved_at:null,status:_prevStatus};
 
   // ── 수정 모드: diff 계산 → 변경 있을 때만 적용일 검증 + company_history 기록 ──
   if(editId.company){

@@ -1,4 +1,4 @@
-    *{box-sizing:border-box;margin:0;padding:0}
+﻿    *{box-sizing:border-box;margin:0;padding:0}
     html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
     body{font-family:'Noto Sans KR',sans-serif;background:#f0f2f5;color:#1a1a2e;-webkit-tap-highlight-color:transparent;overscroll-behavior-y:none}
 
@@ -14,7 +14,7 @@
     .login-field input{width:100%;border:1.5px solid #e0e0e0;border-radius:10px;padding:12px 14px;font-size:16px;outline:none;transition:border-color .2s;font-family:inherit}
     .login-field input:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.12)}
     .login-btn{width:100%;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:none;border-radius:10px;padding:14px;font-size:14.5px;font-weight:700;cursor:pointer;margin-top:6px;font-family:inherit;transition:transform .15s,box-shadow .15s;touch-action:manipulation;-webkit-tap-highlight-color:transparent;min-height:50px}
-    .login-btn:active{transform:scale(.98);box-shadow:0 2px 8px rgba(99,102,241,.3)}
+    .login-btn:active{}
     .login-error{color:#e94560;font-size:12px;margin-top:8px;text-align:center;min-height:18px}
     .login-footer{text-align:center;margin-top:20px;font-size:11px;color:#aaa}
     .login-remember{display:flex;align-items:center;gap:8px;margin:10px 0 14px;cursor:pointer;user-select:none;}
@@ -32,4 +32,4 @@
     .term-msg{font-size:26px;font-weight:800;color:#dc2626;line-height:1.35;margin-bottom:10px;word-break:keep-all}
     .term-sub{font-size:13px;color:#9ca3af;margin-bottom:28px;line-height:1.5}
     .term-close-btn{width:100%;background:linear-gradient(135deg,#e94560,#dc2626);color:#fff;border:none;border-radius:12px;padding:15px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;transition:transform .15s,box-shadow .15s;touch-action:manipulation;-webkit-tap-highlight-color:transparent;min-height:52px}
-    .term-close-btn:active{transform:scale(.97);box-shadow:0 4px 16px rgba(220,38,38,.35)}
+    .term-close-btn:active{}

@@ -105,9 +105,8 @@ function _updateDash2YrBanner(){
   section.style.display = '';
   section.innerHTML = `
     <div onclick="showPage('regular-conversion', document.querySelector('.menu-item[data-page=\\'regular-conversion\\']'));"
-         style="cursor:pointer;background:linear-gradient(135deg,#fff1f2,#fee2e2);border:1.5px solid #f87171;border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:14px;transition:box-shadow .15s;"
-         onmouseover="this.style.boxShadow='0 4px 18px rgba(239,68,68,.2)'"
-         onmouseout="this.style.boxShadow='none'">
+         style="cursor:pointer;background:linear-gradient(135deg,#fff1f2,#fee2e2);border:1.5px solid #f87171;border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:14px;"
+         >
       <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#ef4444,#dc2626);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
         <i class="fas fa-gavel" style="color:#fff;font-size:17px;"></i>
       </div>
@@ -200,7 +199,7 @@ async function _2yrSendNotice(empId){
   if(!co)  { toast('고객사 정보를 찾을 수 없습니다.','error'); return; }
 
   const adminName = _getAdminUsername();
-  const coRep     = co.representative || '';
+    const coRep     = getCompanyRepName(co);
   const fmtDays   = (d) => {
     const y = Math.floor(d / 365);
     const m = Math.floor((d % 365) / 30);

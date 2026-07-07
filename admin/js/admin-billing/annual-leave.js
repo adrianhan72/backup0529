@@ -1046,7 +1046,7 @@ ${_BRAND_SIG}`;
  * 고객사(고용주)용 앱 알림 본문 — 사용촉진 발송 사실 통보
  */
 function _buildLeavePromoCompanyBody(emp, co, al, refYear, adminName, workerMethod){
-  const coRep   = co?.representative || '';
+  const coRep   = getCompanyRepName(co);
   const endDate = _calcLeaveEndDate(emp, al, refYear);
   const methodLabel = workerMethod === '유선직접안내'
     ? '유선(전화) 직접 안내'

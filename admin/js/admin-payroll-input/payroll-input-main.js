@@ -1,4 +1,4 @@
-// ============================================================================
+﻿// ============================================================================
 // 급여 입력 페이지 — 전직원 임금대장 일괄 업로드 모달
 // ============================================================================
 function openPIUploadModal(){
@@ -629,7 +629,7 @@ function loadPIContract(){
     }
     setAmountVal('pi-meal',          piContract.meal_allowance);
     setPIPayType('meal',             _ptOf(piContract.meal_pay_type,          'meal'));
-    setAmountVal('pi-childcare',     0);  // 출산·보육수당: 매월 직접 입력 (계약서 고정값 미사용)
+    setAmountVal('pi-childcare',     0);  // 보육수당: 매월 직접 입력 (계약서 고정값 미사용)
     setPIPayType('childcare',        _ptOf(piContract.childcare_pay_type,     'childcare'));
     setAmountVal('pi-research',      piContract.research_allowance||0);
     setPIPayType('research',         _ptOf(piContract.research_pay_type,      'research'));
@@ -2345,7 +2345,7 @@ function _resetPIPayTypes(){
 // 옵셔널 항목 정의: { key, rowId, ptField(있으면) }
 const _PI_OPT_ROWS = [
   { key:'regular_bonus', rowId:'pi-row-bonus' },  // 정기 상여금: 통상임금 포함 고정
-  { key:'childcare',     rowId:'pi-row-childcare', ptField:'childcare' },  // 출산·보육수당
+  { key:'childcare',     rowId:'pi-row-childcare', ptField:'childcare' },  // 보육수당
   { key:'site',          rowId:'pi-row-site' },
   { key:'position',      rowId:'pi-row-position' },
   { key:'skill',         rowId:'pi-row-skill' },
@@ -2361,7 +2361,7 @@ const _PI_OPT_ROWS = [
 
 /** 비정기 지급 섹션으로 이동하는 항목의 한글 레이블 */
 const _PI_IRREGULAR_LABELS = {
-  childcare:     '출산·보육수당',
+  childcare:     '보육수당',
   car:           '차량지원비',
   meal:          '식대',
   research:      '연구활동비',
@@ -2494,7 +2494,7 @@ function _forceShowNonZeroPIRows(p){
 
 /**
  * 계약서 금액이 0(또는 미입력)인 정기지급(fixed) 옵셔널 항목을 숨김.
- * - 출산·보육수당(childcare)은 매월 직접 입력 항목이므로 제외.
+ * - 보육수당(childcare)은 매월 직접 입력 항목이므로 제외.
  * - daily/receipt 항목은 _renderPIIrregularRows()가 별도 처리하므로 제외.
  * - applyPIAllowanceConfig() + 계약서 값 세팅 이후, _renderPIIrregularRows() 이전에 호출.
  */
@@ -2516,7 +2516,7 @@ function _hideZeroContractPIRows(){
     overseas:      'overseas_allowance',
   };
   _PI_OPT_ROWS.forEach(({ key, rowId, ptField }) => {
-    if(key === 'childcare') return;  // 출산·보육수당: 매월 직접 입력 — 제외
+    if(key === 'childcare') return;  // 보육수당: 매월 직접 입력 — 제외
     const ctField = _ctFieldMap[key];
     if(!ctField) return;
     const ctAmt = parseFloat(piContract[ctField] || 0);
@@ -2556,7 +2556,7 @@ const _PI_CONTRACT_FIXED_IDS = [
   'pi-transport','pi-meal',
   'pi-research','pi-communication','pi-skill','pi-license',
   'pi-fitness','pi-self-dev','pi-book','pi-overseas'
-  // ※ 'pi-childcare' 제외 — 출산·보육수당은 매월 직접 입력 항목 (readonly 불가)
+  // ※ 'pi-childcare' 제외 — 보육수당은 매월 직접 입력 항목 (readonly 불가)
 ];
 const _PI_PAY_TYPE_FIELDS = ['transport','meal','childcare','research','communication','fitness','self_dev','book','overseas'];
 

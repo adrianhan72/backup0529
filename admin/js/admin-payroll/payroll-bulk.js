@@ -459,7 +459,7 @@ async function _bulkEmailSend(idx){
     // ── 고객사 인앱 알림 발송 (이메일 개별 발송 — 일괄 목록) ──
     {
       const _beCo  = allCompanies.find(x => x.id === item.companyId) || {};
-      const _coRep = _beCo.representative ? `, ${_beCo.representative} 사장님` : '';
+      const _coRep = getCompanyRepGreeting(_beCo);
       await _sendCompanyNotice({
         companyId  : item.companyId || '', companyName: _beCo.company_name || '',
         noticeType : 'payslip_individual_sent',

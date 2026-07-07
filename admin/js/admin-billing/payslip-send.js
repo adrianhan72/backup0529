@@ -417,9 +417,8 @@ function _updateDashUnsentContractBanner(){
   section.style.display = '';
   section.innerHTML = `
     <div onclick="showPage('contract-dispatch', document.querySelector('.menu-item[data-page=\\'contract-dispatch\\']'))"
-         style="cursor:pointer;background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #3b82f6;border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:14px;transition:box-shadow .15s;"
-         onmouseover="this.style.boxShadow='0 4px 18px rgba(59,130,246,.2)'"
-         onmouseout="this.style.boxShadow='none'">
+         style="cursor:pointer;background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #3b82f6;border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:14px;"
+         >
       <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#3b82f6,#2563eb);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
         <i class="fas fa-file-contract" style="color:#fff;font-size:17px;"></i>
       </div>
@@ -453,9 +452,8 @@ function _updateDashUnsentBanner(){
   section.style.display = '';
   section.innerHTML = `
     <div onclick="showPage('payslip-send', document.querySelector('.menu-item[data-page=\\'payslip-send\\']'))"
-         style="cursor:pointer;background:linear-gradient(135deg,#fff7ed,#fef3c7);border:1px solid #f59e0b;border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:14px;transition:box-shadow .15s;"
-         onmouseover="this.style.boxShadow='0 4px 18px rgba(245,158,11,.2)'"
-         onmouseout="this.style.boxShadow='none'">
+         style="cursor:pointer;background:linear-gradient(135deg,#fff7ed,#fef3c7);border:1px solid #f59e0b;border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:14px;"
+         >
       <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#f59e0b,#d97706);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
         <i class="fas fa-exclamation-triangle" style="color:#fff;font-size:17px;"></i>
       </div>

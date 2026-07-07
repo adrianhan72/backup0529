@@ -1,4 +1,4 @@
-    /* ?�?�??�일�?근무?�간 ?�이�??�?�?*/
+﻿    /* ?�?�??�일�?근무?�간 ?�이�??�?�?*/
     /* ── 고객사 모달 입력필드 높이 통일 (textarea 제외) ── */
     #company-modal input[type="text"],
     #company-modal input[type="date"],
@@ -50,7 +50,7 @@
     .bulk-schedule-bar .btn-bulk-apply:hover:not(:disabled){
       background:#4f46e5;
     }
-    .bulk-schedule-bar .btn-bulk-apply:active:not(:disabled){transform:scale(.96) translateY(1px);}
+    .bulk-schedule-bar .btn-bulk-apply:active:not(:disabled){}
     .bulk-schedule-bar .btn-bulk-apply:disabled,.bulk-schedule-bar .btn-bulk-apply[disabled]{background:#cccccc;color:#f2f2f2;border:1px solid #cccccc;cursor:not-allowed;pointer-events:none;box-shadow:none;opacity:1;}
     .bulk-apply-target input[type=checkbox]{width:14px;height:14px;accent-color:#6366f1;}
     .bulk-schedule-tip{font-size:11px;color:#6b7280;margin-top:5px;padding-left:2px;}

@@ -1,4 +1,4 @@
-/** 인쇄 전용 CSS */
+﻿/** 인쇄 전용 CSS */
 function _getContractPrintCSS(){
   return [
     '*{box-sizing:border-box;margin:0;padding:0;}',
@@ -507,7 +507,7 @@ function generateContractHTMLFromData(c, emp, co){
       ${row('상호(사업장명)', co.company_name)}
       ${row('사업자등록번호', co.business_number)}
       ${row('소재지(주소)',   co.address)}
-      ${row('대표자(사용자)', co.representative)}
+      ${row('대표자(사용자)', getCompanyRepName(co))}
       ${row('대표 연락처',   co.phone)}
     </table>
   </div>
@@ -625,7 +625,7 @@ function generateContractHTMLFromData(c, emp, co){
       <table class="sign-info-table">
         <tr><th>상호</th><td>${co.company_name||''}</td></tr>
         <tr><th>주소</th><td>${co.address||''}</td></tr>
-        <tr><th>대표자</th><td>${co.representative||''}</td></tr>
+        <tr><th>대표자</th><td>${getCompanyRepName(co)}</td></tr>
       </table>
       <div class="sign-stamp-area">
         <div class="sign-stamp"></div>
@@ -882,7 +882,7 @@ async function savePendingContractEdit(){
     {
       const _pendEmp = allEmployees.find(x => x.id === c.employee_id) || {};
       const _pendCo  = allCompanies.find(x => x.id === c.company_id)  || {};
-      const _coRep   = _pendCo.representative ? `, ${_pendCo.representative} 사장님` : '';
+      const _coRep   = getCompanyRepGreeting(_pendCo);
       const _fmtD    = d => { if(!d) return '-'; const [y,m,dd]=d.split('-'); return `${parseInt(y)}년 ${parseInt(m)}월 ${parseInt(dd)}일`; };
       if(isPreTermEdit && newStatus === '해지예정'){
         // 해지 예약
@@ -1025,7 +1025,7 @@ async function cancelPreTerminate(){
   // ── 고객사 인앱 알림 발송 (해지 예정 취소) ──
   {
     const _cptCo  = allCompanies.find(x => x.id === c.company_id) || {};
-    const _coRep  = _cptCo.representative ? `, ${_cptCo.representative} 사장님` : '';
+    const _coRep  = getCompanyRepGreeting(_cptCo);
     const _fmtD   = d => { if(!d) return '-'; const [y,m,dd]=d.split('-'); return `${parseInt(y)}년 ${parseInt(m)}월 ${parseInt(dd)}일`; };
     await _sendCompanyNotice({
       companyId  : c.company_id, companyName: _cptCo.company_name || '',
@@ -1129,7 +1129,7 @@ async function doContractVoid(){
   {
     const _voidEmp = allEmployees.find(x => x.id === c.employee_id) || {};
     const _voidCo  = allCompanies.find(x => x.id === c.company_id)  || {};
-    const _coRep   = _voidCo.representative ? `, ${_voidCo.representative} 사장님` : '';
+    const _coRep   = getCompanyRepGreeting(_voidCo);
     const _fmtD    = d => { if(!d) return '-'; const [y,m,dd]=d.split('-'); return `${parseInt(y)}년 ${parseInt(m)}월 ${parseInt(dd)}일`; };
     await _sendCompanyNotice({
       companyId  : c.company_id, companyName: _voidCo.company_name || '',
@@ -1220,7 +1220,7 @@ async function confirmContractRenew(){
   {
     const _renewEmp = allEmployees.find(x => x.id === c.employee_id) || {};
     const _renewCo  = allCompanies.find(x => x.id === c.company_id)  || {};
-    const _coRep    = _renewCo.representative ? `, ${_renewCo.representative} 사장님` : '';
+    const _coRep    = getCompanyRepGreeting(_renewCo);
     const _fmtD     = d => { if(!d) return '-'; const [y,m,dd]=d.split('-'); return `${parseInt(y)}년 ${parseInt(m)}월 ${parseInt(dd)}일`; };
     if(newStatus === '계약예정'){
       // 갱신 예약
@@ -1422,7 +1422,7 @@ function openRecontractModal(srcContract){
   setCTPayType('book',           srcContract.book_pay_type||'fixed');
   setAmountVal('ct-overseas',    srcContract.overseas_allowance||0);
   setCTPayType('overseas',       srcContract.overseas_pay_type||'fixed');
-  // 출산·보육수당 복원
+  // 보육수당 복원
   setAmountVal('ct-childcare',   srcContract.childcare_allowance||0);
   { const _ccDep=document.getElementById('ct-childcare-dependents'); if(_ccDep) _ccDep.value=srcContract.childcare_dependents||1; }
   document.getElementById('ct-note').value = '';
@@ -1872,6 +1872,14 @@ async function saveDraftContract(reason){
 
   // ── 신규 직원인 경우 먼저 직원 생성 (임시저장도 직원 DB에 저장) ──
   if(isNew && !empId){
+    const newEmpNo = document.getElementById('ct-em-empno')?.value.trim() || '';
+    // 동일 사번 직원이 이미 있으면 재사용 (이전 저장 시도 실패 후 재시도 대응)
+    const existingEmp = newEmpNo
+      ? (allEmployees||[]).find(e => e.company_id === coId && e.employee_number === newEmpNo)
+      : null;
+    if(existingEmp){
+      empId = existingEmp.id;
+    } else {
     const saved = await api('../tables/employees',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
       id: 'emp'+Date.now(),
       company_id: coId,
@@ -2067,7 +2075,8 @@ async function saveDraftContract(reason){
   if(activeEl && typeof activeEl.focus === 'function'){
     setTimeout(() => { try { activeEl.focus(); } catch(e) {} }, 100);
   }
-}
+  } // if(isNew && !empId)
+} // saveDraftContract
 
 // 임시저장 진행 중인 draft ID (신규 작성 시 추적용)
 let _currentDraftId = null;
@@ -2214,16 +2223,139 @@ function _onIdInput(el, checkBtnFn){
   if(typeof checkBtnFn === 'function') checkBtnFn();
 }
 
-// ── 필수 입력 유효성 검사 + 하이라이트 헬퍼 ──────────────────────────────
-function _ctClearErrors(){
-  // 이전 오류 하이라이트 전부 초기화
-  document.querySelectorAll('#contract-modal .ct-field-error').forEach(el=>{
-    el.classList.remove('ct-field-error');
-  });
-  const banner = document.getElementById('ct-validation-banner');
-  if(banner) banner.style.display = 'none';
+// ── 휴대전화번호 포맷·유효성 헬퍼 ──────────────────────────────────────────
+/**
+ * _formatPhoneInput(el)
+ *  - 숫자만 추출 → 최대 11자리
+ *  - 010-XXXX-XXXX 형식으로 자동 하이픈 삽입
+ */
+function _formatPhoneInput(el){
+  const sel  = el.selectionStart;
+  const prev = el.value;
+  const digits = prev.replace(/[^0-9]/g, '').slice(0, 11);
+  let next = '';
+  let cursorAdj = 0;
+
+  if(digits.length <= 3){
+    next = digits;
+  } else if(digits.length <= 7){
+    next = digits.slice(0,3) + '-' + digits.slice(3);
+    if(!prev.includes('-')) cursorAdj = 1;
+  } else {
+    next = digits.slice(0,3) + '-' + digits.slice(3,7) + '-' + digits.slice(7);
+    // 하이픈 개수 차이만큼 커서 보정
+    const prevHyphens = (prev.match(/-/g)||[]).length;
+    const nextHyphens = (next.match(/-/g)||[]).length;
+    cursorAdj = nextHyphens - prevHyphens;
+  }
+
+  if(next !== prev){
+    el.value = next;
+    const newPos = Math.min(Math.max(0, sel + cursorAdj), next.length);
+    el.setSelectionRange(newPos, newPos);
+  }
 }
 
+/**
+ * _validatePhoneNumber(val)
+ *  - 010으로 시작하는 11자리(하이픈 제외) 번호인지 검사
+ *  반환: { ok: boolean, msg: string }
+ */
+function _validatePhoneNumber(val){
+  if(!val || !val.trim()) return { ok: false, msg: '휴대전화번호를 입력해 주세요.' };
+  const digits = val.replace(/[^0-9]/g, '');
+  if(digits.length !== 11)
+    return { ok: false, msg: '휴대전화번호는 11자리여야 합니다 (현재 '+digits.length+'자리).' };
+  if(!digits.startsWith('010'))
+    return { ok: false, msg: '휴대전화번호는 010으로 시작해야 합니다.' };
+  // 010 다음 8자리: 두 번째 자리는 1~9 (통신사 식별번호)
+  const secondPart = digits.slice(3);
+  if(!/^\d{8}$/.test(secondPart))
+    return { ok: false, msg: '휴대전화번호 뒷 8자리가 올바르지 않습니다.' };
+  return { ok: true, msg: '' };
+}
+
+/**
+ * _onPhoneInput(el, checkBtnFn)
+ *  휴대전화번호 입력 필드 oninput 핸들러
+ *  1) 자동 포맷 적용
+ *  2) 인라인 오류 힌트 표시/제거
+ *  3) 버튼 상태 갱신 콜백 호출
+ */
+function _onPhoneInput(el, checkBtnFn){
+  _formatPhoneInput(el);
+  const val = el.value;
+  let hint = el.parentElement.querySelector('.phone-format-hint');
+  if(!hint){
+    hint = document.createElement('span');
+    hint.className = 'phone-format-hint';
+    hint.style.cssText = 'font-size:11px;margin-top:3px;display:block;';
+    el.parentElement.appendChild(hint);
+  }
+  if(!val){
+    hint.textContent = '';
+    hint.style.color = '';
+  } else {
+    const digits = val.replace(/[^0-9]/g, '');
+    const { ok, msg } = _validatePhoneNumber(val);
+    if(ok){
+      hint.textContent = '✓ 형식 확인';
+      hint.style.color = '#16a34a';
+    } else if(digits.length < 11){
+      hint.textContent = `${11-digits.length}자리 더 입력하세요`;
+      hint.style.color = '#6b7280';
+    } else {
+      hint.textContent = '✗ ' + msg;
+      hint.style.color = '#dc2626';
+    }
+  }
+  if(typeof checkBtnFn === 'function') checkBtnFn();
+}
+
+// ── 이메일 주소 포맷·유효성 헬퍼 (선택 입력) ──────────────────────────────
+/**
+ * _validateEmail(val)
+ *  - 이메일 형식 검사 (간단한 RFC5322 기반)
+ *  - 선택사항: 빈 값은 ok:true 반환
+ */
+function _validateEmail(val){
+  if(!val || !val.trim()) return { ok: true, msg: '' };  // 선택 입력
+  // 기본 이메일 패턴: x@y.z
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val.trim()))
+    return { ok: false, msg: '올바른 이메일 주소 형식이 아닙니다 (예: example@email.com).' };
+  return { ok: true, msg: '' };
+}
+
+/**
+ * _onEmailInput(el)
+ *  이메일 입력 필드 oninput 핸들러
+ *  - 인라인 오류 힌트만 표시 (선택사항이므로 형식 검증만)
+ */
+function _onEmailInput(el){
+  const val = el.value;
+  let hint = el.parentElement.querySelector('.email-format-hint');
+  if(!hint){
+    hint = document.createElement('span');
+    hint.className = 'email-format-hint';
+    hint.style.cssText = 'font-size:11px;margin-top:3px;display:block;';
+    el.parentElement.appendChild(hint);
+  }
+  if(!val){
+    hint.textContent = '';
+    hint.style.color = '';
+  } else {
+    const { ok, msg } = _validateEmail(val);
+    if(ok){
+      hint.textContent = '✓ 형식 확인';
+      hint.style.color = '#16a34a';
+    } else {
+      hint.textContent = '✗ ' + msg;
+      hint.style.color = '#dc2626';
+    }
+  }
+}
+
+// ── 필수 입력 유효성 검사 + 하이라이트 헬퍼 ──────────────────────────────
 function _ctMarkError(fieldId, label, errors){
   // form-group 부모에 에러 클래스 부여
   const el = document.getElementById(fieldId);
@@ -2235,16 +2367,19 @@ function _ctMarkError(fieldId, label, errors){
 
 function _ctShowErrors(errors){
   if(!errors.length) return;
-  const banner = document.getElementById('ct-validation-banner');
-  const list   = document.getElementById('ct-validation-list');
-  if(!banner || !list) return;
-  list.innerHTML = errors.map(e=>`<li>${e}</li>`).join('');
-  banner.style.display = 'block';
-  // 배너로 스크롤
-  banner.scrollIntoView({ behavior:'smooth', block:'nearest' });
+  // 첫 번째 오류 필드로 포커스 이동 + 스크롤
+  const firstError = document.querySelector('#contract-modal .ct-field-error');
+  if(firstError){
+    const input = firstError.querySelector('input, select, textarea');
+    if(input){
+      input.focus();
+      input.scrollIntoView({ behavior:'smooth', block:'center' });
+    } else {
+      firstError.scrollIntoView({ behavior:'smooth', block:'center' });
+    }
+  }
 }
 
-// 유효성 검사 실행 → 오류 있으면 true 반환 (saveDraftContract 진입 전 분기)
 function _ctValidate(){
   _ctClearErrors();
   const errors = [];
@@ -2258,6 +2393,13 @@ function _ctValidate(){
   if(isEditOrRecontract){
     const start = document.getElementById('ct-start').value;
     if(!start) _ctMarkError('ct-start', '계약 시작일', errors);
+    // 계약 시작일은 입사일보다 이전일 수 없음
+    (function(){
+      const _hire = document.getElementById('ct-edit-em-hire')?.value;
+      if(_hire && start && start < _hire){
+        _ctMarkError('ct-start', '계약 시작일은 입사일보다 이전일 수 없습니다', errors);
+      }
+    })();
   }
 
   if(isNew){
@@ -2276,6 +2418,14 @@ function _ctValidate(){
       _ctMarkError('ct-em-hire', '입사일', errors);
     if(!document.getElementById('ct-em-start')?.value)
       _ctMarkError('ct-em-start', '계약 시작일', errors);
+    // 계약 시작일은 입사일보다 이전일 수 없음
+    (function(){
+      const _hire = document.getElementById('ct-em-hire')?.value;
+      const _start = document.getElementById('ct-em-start')?.value;
+      if(_hire && _start && _start < _hire){
+        _ctMarkError('ct-em-start', '계약 시작일은 입사일보다 이전일 수 없습니다', errors);
+      }
+    })();
     (function(){
       const _idVal = document.getElementById('ct-em-id').value.trim();
       if(!_idVal){
@@ -2289,16 +2439,34 @@ function _ctValidate(){
       _ctMarkError('ct-em-job', '담당업무', errors);
     if(!document.getElementById('ct-em-address').value.trim())
       _ctMarkError('ct-em-address', '주소', errors);
-    if(!document.getElementById('ct-em-phone').value.trim())
-      _ctMarkError('ct-em-phone', '휴대전화', errors);
+    (function(){
+      const _phoneVal = document.getElementById('ct-em-phone').value.trim();
+      if(!_phoneVal){
+        _ctMarkError('ct-em-phone', '휴대전화', errors);
+      } else {
+        const _phoneChk = _validatePhoneNumber(_phoneVal);
+        if(!_phoneChk.ok) _ctMarkError('ct-em-phone', '휴대전화 형식 오류', errors);
+      }
+    })();
+    (function(){
+      const _emailVal = document.getElementById('ct-em-email').value.trim();
+      if(_emailVal){
+        const _emailChk = _validateEmail(_emailVal);
+        if(!_emailChk.ok) _ctMarkError('ct-em-email', '이메일 형식 오류', errors);
+      }
+    })();
     if(!document.getElementById('ct-em-category').value)
       _ctMarkError('ct-em-category', '고용형태', errors);
     const _depVal = parseInt(document.getElementById('ct-em-dependents')?.value);
     if(isNaN(_depVal) || _depVal < 0)
       _ctMarkError('ct-em-dependents', '부양가족 수', errors);
 
+    // ── 통상시급: 모든 고용형태 공통 필수 ──
+    if(!getAmountVal('ct-hourly-input'))
+      _ctMarkError('ct-hourly-input', '통상시급', errors);
+
     // ── 임금 관련 (고용형태 기준) ──
-    const cat = document.getElementById('ct-em-category').value;
+    const cat = CONTRACT_TYPE_LEGACY_MAP[document.getElementById('ct-em-category').value] || document.getElementById('ct-em-category').value;
     if(cat ===CONTRACT_TYPE.DAILY){
       if(!getAmountVal('ct-daily-wage'))
         _ctMarkError('ct-daily-wage', '일급여', errors);
@@ -2369,17 +2537,36 @@ function _ctValidate(){
     }
     if(!document.getElementById('ct-edit-em-job')?.value.trim())
       _ctMarkError('ct-edit-em-job', '담당업무', errors);
-    if(!document.getElementById('ct-edit-em-phone')?.value.trim())
-      _ctMarkError('ct-edit-em-phone', '휴대전화', errors);
+    (function(){
+      const _phoneValE = document.getElementById('ct-edit-em-phone')?.value.trim();
+      if(!_phoneValE){
+        _ctMarkError('ct-edit-em-phone', '휴대전화', errors);
+      } else {
+        const _phoneChkE = _validatePhoneNumber(_phoneValE);
+        if(!_phoneChkE.ok) _ctMarkError('ct-edit-em-phone', '휴대전화 형식 오류', errors);
+      }
+    })();
+    (function(){
+      const _emailValE = document.getElementById('ct-edit-em-email')?.value.trim();
+      if(_emailValE){
+        const _emailChkE = _validateEmail(_emailValE);
+        if(!_emailChkE.ok) _ctMarkError('ct-edit-em-email', '이메일 형식 오류', errors);
+      }
+    })();
     if(!document.getElementById('ct-edit-em-address')?.value.trim())
       _ctMarkError('ct-edit-em-address', '주소', errors);
     const _editDepVal = parseInt(document.getElementById('ct-edit-em-dependents')?.value);
     if(isNaN(_editDepVal) || _editDepVal < 0)
       _ctMarkError('ct-edit-em-dependents', '부양가족 수', errors);
 
+    // ── 통상시급: 모든 고용형태 공통 필수 ──
+    if(!getAmountVal('ct-hourly-input'))
+      _ctMarkError('ct-hourly-input', '통상시급', errors);
+
     // ── 수정/재계약: 임금 관련 ──
-    const catForCheck = (document.getElementById('ct-edit-em-category')?.value)
+    const _rawCatForCheck = (document.getElementById('ct-edit-em-category')?.value)
       || (document.getElementById('ct-type')?.value) || '정규직';
+    const catForCheck = CONTRACT_TYPE_LEGACY_MAP[_rawCatForCheck] || _rawCatForCheck;
     if(catForCheck ===CONTRACT_TYPE.DAILY){
       if(!getAmountVal('ct-daily-wage'))
         _ctMarkError('ct-daily-wage', '일급여', errors);
@@ -2437,6 +2624,7 @@ function _ctValidate(){
   }
   return false;  // 통과
 }
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function saveContract(){
@@ -2449,6 +2637,7 @@ async function saveContract(){
   const coId = document.getElementById('ct-company').value;
   const start = (editId.contract||_recontractEmpId) ? document.getElementById('ct-start').value : '';
   const base  = getAmountVal('ct-base');
+  const isEditMode = !!editId.contract;
 
   // ── 신규 직원인 경우 먼저 직원 저장 ──
   if(!empId && !editId.contract && !_recontractEmpId){
@@ -2492,9 +2681,10 @@ async function saveContract(){
 
   // 정규직 계열 여부 판단 (신규: 구분 선택값, 수정/재계약: 계약유형 select)
   // 고용형태는 인사정보(ct-edit-em-category) 기준으로 읽음
-  const catForSave = editId.contract
+  const _rawCatForSave = editId.contract
     ? (document.getElementById('ct-edit-em-category')?.value||(allContracts.find(x=>x.id===editId.contract)||{}).contract_type||'정규직')
     : (_recontractEmpId ? (document.getElementById('ct-edit-em-category')?.value||'정규직') : (document.getElementById('ct-em-category').value||'정규직'));
+  const catForSave = CONTRACT_TYPE_LEGACY_MAP[_rawCatForSave] || _rawCatForSave;
   const isRegularGroup = catForSave ===CONTRACT_TYPE.REGULAR || catForSave ===CONTRACT_TYPE.REGULAR_PROBATION;
   const isFixedTermSave = catForSave ===CONTRACT_TYPE.FIXED || catForSave ===CONTRACT_TYPE.FIXED_PROBATION;
   const isProbationSave = catForSave ===CONTRACT_TYPE.REGULAR_PROBATION || catForSave ===CONTRACT_TYPE.FIXED_PROBATION;
@@ -2664,7 +2854,6 @@ async function saveContract(){
 
   // 신규/재계약 모드: 계약시작일, 종료일, 유형, 상태 결정
   const isRecontract = !!_recontractEmpId && !editId.contract;
-  const isEditMode   = !!editId.contract;
   const today3 = new Date().toISOString().slice(0,10);
   let contractStart, contractEnd, contractType, contractStatus;
   if(isEditMode){
@@ -2751,21 +2940,13 @@ async function saveContract(){
   }
 
   // 파일 완비 여부에 따라 최종 계약 상태 결정
-  // skip 체크 또는 파일 미첨부 시 → '서류미비'로 강제 (해지/만료/파기 등 최종 상태 제외)
+  // 서류미비는 더 이상 상태값으로 저장하지 않음 (docsIncomplete 플래그로 관리)
   const _isTerminalStatus = (contractStatus==='해지'||contractStatus==='만료'||contractStatus==='파기'||contractStatus==='expired'||contractStatus==='terminated');
   if(!_isTerminalStatus && !isEditMode){
-    const _hasBothFiles = signedFileData && consentFileData;
-    if(!_hasBothFiles) contractStatus = '서류미비';
+    const _hasBothFiles = !!(signedFileData && consentFileData);
   } else if(isEditMode && !_isTerminalStatus){
-    // 편집 모드: 두 파일 모두 있으면 서류미비 해제, 없으면 서류미비 유지
-    const _hasBothFilesEdit = signedFileData && consentFileData;
-    const origC2 = allContracts.find(x=>x.id===editId.contract)||{};
-    // 기존 상태가 서류미비였고, 이번에 두 파일이 모두 갖춰진 경우 → 활성으로 전환
-    if(origC2.status===CONTRACT_STATUS.DOCS_INCOMPLETE && _hasBothFilesEdit){
-      contractStatus = '활성';
-    } else if(!_hasBothFilesEdit && !_isTerminalStatus && origC2.status!=='계약예정' && origC2.status!=='갱신예정' && origC2.status!=='해지예정'){
-      contractStatus = '서류미비';
-    }
+    // 편집 모드: 파일 상태에 따라 status 변경하지 않음 (docsIncomplete 플래그로 관리)
+    const _hasBothFilesEdit = !!(signedFileData && consentFileData);
   }
 
   const body={employee_id:empId,company_id:coId,contract_start:contractStart,contract_end:contractEnd,contract_type:contractType,status:contractStatus,probation_months:probMonths,probation_pct:probPct,probation_amt:probAmt,probation_basis:probBasis,work_hours_per_day:avgDayHours,work_days_per_week:isDailySave?0:workDaysCount,schedule_json:JSON.stringify(scheduleJSON),annual_leave_days:isDailySave?0:parseFloat(document.getElementById('ct-annual').value)||15,annual_salary:annual,monthly_salary_agreed:monthly,base_salary:baseSalaryForSave,daily_wage:dailyWageForSave,weekly_holiday_pay:weeklyHol,fixed_ot_pay:getAmountVal('ct-fixed-ot-pay'),fixed_ot_hours:parseFloat(document.getElementById('ct-fixed-ot-hours')?.value)||0,fixed_night_pay:getAmountVal('ct-fixed-night-pay'),fixed_night_hours:parseFloat(document.getElementById('ct-fixed-night-hours')?.value)||0,fixed_hol_pay:getAmountVal('ct-fixed-hol-pay'),fixed_hol_hours:parseFloat(document.getElementById('ct-fixed-hol-hours')?.value)||0,hourly_wage:hourlyWage,position_allowance:getAmountVal('ct-position'),transportation_allowance:getAmountVal('ct-car'),transportation_pay_type:_getCTPayTypeVal('car'),self_driving_allowance:0,self_driving_pay_type:'fixed',remote_area_allowance:getAmountVal('ct-remote-area'),remote_area_pay_type:'fixed',meal_allowance:getAmountVal('ct-meal'),meal_pay_type:_getCTPayTypeVal('meal'),research_allowance:getAmountVal('ct-research'),research_pay_type:_getCTPayTypeVal('research'),site_allowance:getAmountVal('ct-site'),skill_allowance:getAmountVal('ct-skill'),license_allowance:getAmountVal('ct-license'),communication_allowance:getAmountVal('ct-communication'),communication_pay_type:_getCTPayTypeVal('communication'),fitness_allowance:getAmountVal('ct-fitness'),fitness_pay_type:_getCTPayTypeVal('fitness'),self_dev_allowance:getAmountVal('ct-self-dev'),self_dev_pay_type:_getCTPayTypeVal('self_dev'),book_allowance:getAmountVal('ct-book'),book_pay_type:_getCTPayTypeVal('book'),overseas_allowance:getAmountVal('ct-overseas'),overseas_pay_type:_getCTPayTypeVal('overseas'),car_maintenance:getAmountVal('ct-car'),regular_bonus:getAmountVal('ct-regular-bonus')||0,childcare_allowance:getAmountVal('ct-childcare')||0,childcare_dependents:parseInt(document.getElementById('ct-childcare-dependents')?.value||1)||1,pay_period:document.getElementById('ct-pay-period')?.value.trim()||'',pay_period_month:document.getElementById('ct-pay-period-month-hidden')?.value||null,pay_period_day:parseInt(document.getElementById('ct-pay-period-day-hidden')?.value)||null,pay_day:parseInt(document.getElementById('ct-pay-day')?.value)||null,insurance_employment:true,insurance_industrial:true,insurance_pension:true,insurance_health:true,note:document.getElementById('ct-note').value,salary_start_date:document.getElementById('ct-salary-start')?.value||'',salary_end_date:document.getElementById('ct-salary-end')?.value||'',is_draft:false,draft_saved_at:null,signed_file_name:signedFileName,signed_file_data:signedFileData,consent_file_name:consentFileName,consent_file_data:consentFileData};
@@ -2822,7 +3003,7 @@ async function saveContract(){
     const _emp = allEmployees.find(x => x.id === empId) || {};
     const _coName  = _co.company_name || '';
     const _empName = _emp.name || '';
-    const _coRep   = _co.representative ? `, ${_co.representative} 사장님` : '';
+    const _coRep   = getCompanyRepGreeting(_co);
     const _fmtDate = d => {
       if(!d) return '-';
       const [y,m,dd] = d.split('-');

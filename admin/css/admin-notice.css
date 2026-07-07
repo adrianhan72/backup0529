@@ -1,4 +1,4 @@
-    /* ?�?� ?�?�보???�림 카드 공통 ?�코?�언 ?�?� */
+﻿    /* ?�?� ?�?�보???�림 카드 공통 ?�코?�언 ?�?� */
     .dash-ac-card{background:#fff;border-radius:14px;overflow:hidden;}
     .dash-ac-header{display:flex;align-items:center;padding:13px 18px 13px 20px;gap:10px;cursor:pointer;user-select:none;transition:filter .15s;}
     .dash-ac-header:hover{filter:brightness(.97);}
@@ -219,7 +219,7 @@
       border-color:#6366f1;background:#f5f3ff;color:#4f46e5;
       box-shadow:0 2px 8px rgba(99,102,241,.16);
     }
-    .cen-method-btn:active:not(:disabled){transform:scale(.96) translateY(1px);}
+    .cen-method-btn:active:not(:disabled){}
     .cen-method-btn.selected{
       background:#4f46e5;
       border-color:#4f46e5;color:#fff;
@@ -252,7 +252,7 @@
       box-shadow:0 4px 14px rgba(0,0,0,.22);
       transform:translateY(-1px);
     }
-    .cen-bulk-btn:active:not(:disabled){transform:scale(.96) translateY(1px);}
+    .cen-bulk-btn:active:not(:disabled){}
     .cen-bulk-btn:disabled,.cen-bulk-btn[disabled]{background:#cccccc;color:#f2f2f2;border:1px solid #cccccc;cursor:not-allowed;pointer-events:none;box-shadow:none;opacity:1;}
     .cen-bulk-kakao{
       background:linear-gradient(135deg,#ffe033,#f9d000);color:#3b1f00;

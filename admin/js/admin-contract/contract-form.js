@@ -1,10 +1,11 @@
-// ─── 브랜드 서명 (모든 발송 메시지 하단 공통) ───
+﻿// ─── 브랜드 서명 (모든 발송 메시지 하단 공통) ───
 const _BRAND_SIG = '─────────────────────\n인사톡 노무톡 · 대화인사노무파트너스';
 
 // ─── EMPLOYEES ───
 // ─── CONTRACTS ───
 function toggleEmExpire(){
-  const cat = document.getElementById('ct-em-category').value;
+  const rawCat = document.getElementById('ct-em-category').value;
+  const cat = CONTRACT_TYPE_LEGACY_MAP[rawCat] || rawCat;
   const expInput   = document.getElementById('ct-em-expire');
   const expRow     = document.getElementById('ct-new-row-expire');
   const expReqSpan = document.getElementById('ct-expire-required');
@@ -40,7 +41,8 @@ function _checkFixedTermDuration(){
     if(editWarningRow) editWarningRow.style.display = 'none';
     if(!warningRow) return false;
 
-    const cat = document.getElementById('ct-em-category')?.value || '';
+    const rawCat = document.getElementById('ct-em-category')?.value || '';
+    const cat = CONTRACT_TYPE_LEGACY_MAP[rawCat] || rawCat;
     const isFixedContract = cat ===CONTRACT_TYPE.FIXED || cat ===CONTRACT_TYPE.FIXED_PROBATION;
 
     if(!isFixedContract){
@@ -71,10 +73,11 @@ function _checkFixedTermDuration(){
     if(warningRow) warningRow.style.display = 'none';
     if(!editWarningRow) return false;
 
-    const cat = document.getElementById('ct-type')?.value || '';
-    const isFixedContract = cat ===CONTRACT_TYPE.FIXED || cat ===CONTRACT_TYPE.FIXED_PROBATION;
+    const rawCatEdit = document.getElementById('ct-type')?.value || '';
+    const catEdit = CONTRACT_TYPE_LEGACY_MAP[rawCatEdit] || rawCatEdit;
+    const isFixedContractEdit = catEdit ===CONTRACT_TYPE.FIXED || catEdit ===CONTRACT_TYPE.FIXED_PROBATION;
 
-    if(!isFixedContract){
+    if(!isFixedContractEdit){
       editWarningRow.style.display = 'none';
       return false;
     }
@@ -268,9 +271,10 @@ function autoFillAnnualLeave(){
 
 function toggleAnnualSal(){
   // 수정 모드(editId.contract 있음)이면 ct-type 기준, 신규이면 ct-em-category 기준
-  const cat = (editId.contract || _recontractEmpId)
+  const rawCat = (editId.contract || _recontractEmpId)
     ? (document.getElementById('ct-type')?.value || '')
     : document.getElementById('ct-em-category').value;
+  const cat = CONTRACT_TYPE_LEGACY_MAP[rawCat] || rawCat;
   const isRegularGroup = cat ===CONTRACT_TYPE.REGULAR || cat ===CONTRACT_TYPE.REGULAR_PROBATION;
   const isFixedTerm    = cat ===CONTRACT_TYPE.FIXED || cat ===CONTRACT_TYPE.FIXED_PROBATION; // 계약직 계열
   const isDaily        = cat ===CONTRACT_TYPE.DAILY;
@@ -369,7 +373,8 @@ function toggleAnnualSal(){
 // onSalaryStartChange 제거 — salary_start_date = contract_start 통합으로 불필요
 
 function toggleProbation(){
-  const cat = document.getElementById('ct-em-category').value;
+  const rawCat = document.getElementById('ct-em-category').value;
+  const cat = CONTRACT_TYPE_LEGACY_MAP[rawCat] || rawCat;
   const isProbation = cat ===CONTRACT_TYPE.REGULAR_PROBATION || cat ===CONTRACT_TYPE.FIXED_PROBATION;
   const sec = document.getElementById('ct-probation-section');
   if(sec) sec.style.display = isProbation ? '' : 'none';
@@ -525,7 +530,8 @@ function _checkProbMinWageWarning(){
   const warningBox = document.getElementById('ct-prob-minwage-warning-box');
   if(!warningRow || !warningBox) return;
 
-  const emCat = document.getElementById('ct-em-category')?.value || '';
+  const _rawEmCat = document.getElementById('ct-em-category')?.value || '';
+  const emCat = CONTRACT_TYPE_LEGACY_MAP[_rawEmCat] || _rawEmCat;
   const basis = document.querySelector('input[name="ct-probation-basis"]:checked')?.value || 'salary';
   const isRegular  = emCat ===CONTRACT_TYPE.REGULAR_PROBATION;
   const isContract = emCat ===CONTRACT_TYPE.FIXED_PROBATION;
@@ -634,10 +640,11 @@ function _checkMinWageWarning(){
   if(!wRow || !wBox){ _checkRegisterBtnState(); return; }
 
   // 고용형태 결정 (신규: ct-em-category, 수정/재계약: ct-edit-em-category 텍스트 또는 ct-type)
-  const cat = document.getElementById('ct-em-category')?.value
+  const rawCat = document.getElementById('ct-em-category')?.value
     || document.getElementById('ct-edit-em-category')?.value
     || document.getElementById('ct-type')?.value
     || '';
+  const cat = CONTRACT_TYPE_LEGACY_MAP[rawCat] || rawCat;
 
   const isDaily       = cat ===CONTRACT_TYPE.DAILY;
   const isRegular     = cat ===CONTRACT_TYPE.REGULAR;
@@ -1151,7 +1158,8 @@ function initBreakSelects(){ initScheduleTable(); }
 function getBreakMins(hId,mId){ return 0; }
 function setBreakMins(hId,mId,totalMins){}
 function toggleCtEndDate(preserveValue=false){
-  const type = document.getElementById('ct-type').value;
+  const rawType = document.getElementById('ct-type').value;
+  const type = CONTRACT_TYPE_LEGACY_MAP[rawType] || rawType;
   const endInput = document.getElementById('ct-end');
   const endRow   = document.getElementById('ct-row-end');
   const endReqSpan = document.getElementById('ct-end-required');
@@ -1250,7 +1258,7 @@ function _resetCTPayTypes(){
 // 모든 수당 항목이 allowance_config 기준 조건부 표시 (car/meal 포함)
 const _CT_OPT_ROWS = [
   { key:'regular_bonus', rowId:'ct-row-regular-bonus' }, // 정기 상여금: 통상임금 포함 고정
-  { key:'childcare',     rowId:'ct-row-childcare'     }, // 출산·보육수당
+  { key:'childcare',     rowId:'ct-row-childcare'     }, // 보육수당
   { key:'car',           rowId:'ct-row-car'           }, // 차량지원비
   { key:'meal',          rowId:'ct-row-meal'          }, // 식대
   { key:'site',          rowId:'ct-row-site'          }, // 현장수당
@@ -1274,7 +1282,7 @@ function applyCTAllowanceConfig(cfg, clearValues = false){
     if(rowEl) rowEl.style.display = visible ? '' : 'none';
     if(!visible && clearValues){
       if(key === 'childcare'){
-        // 출산·보육수당: 금액 + 부양가족 수 모두 초기화
+        // 보육수당: 금액 + 부양가족 수 모두 초기화
         setAmountVal('ct-childcare', 0);
         const depEl = document.getElementById('ct-childcare-dependents');
         if(depEl) depEl.value = 1;
@@ -1304,7 +1312,7 @@ function applyCTAllowanceConfig(cfg, clearValues = false){
       if(cfg.meal) setAmountVal('ct-meal', _mealPt === 'fixed' ? 200000 : 0);
     }
   }
-  // 출산·보육수당 pay_type 힌트 갱신
+  // 보육수당 pay_type 힌트 갱신
   if(cfg && cfg.childcare){
     const _ccPt = cfg.childcare_pay_type || 'fixed';
     const ccHint = document.getElementById('ct-childcare-type-hint');
@@ -1438,7 +1446,7 @@ function _setCtPayDayDefault(coId){
 function _forceShowNonZeroCTRows(c){
   const _fieldMap = {
     regular_bonus : 'regular_bonus',       // 계약서 DB 컬럼
-    childcare     : 'childcare_allowance', // 출산·보육수당
+    childcare     : 'childcare_allowance', // 보육수당
     site          : 'site_allowance',
     position      : 'position_allowance',  // 직책수당
     skill         : 'skill_allowance',
@@ -1496,9 +1504,10 @@ function _calcMonthlyStdHours(hpd, dpw){
 
 function calcContractSalary(){
   // 수정 모드이면 ct-edit-em-category, 신규이면 ct-em-category 기준
-  const cat = (editId.contract || _recontractEmpId)
+  const rawCat = (editId.contract || _recontractEmpId)
     ? (document.getElementById('ct-edit-em-category')?.value || document.getElementById('ct-em-category').value)
     : document.getElementById('ct-em-category').value;
+  const cat = CONTRACT_TYPE_LEGACY_MAP[rawCat] || rawCat;
   const isDaily        = cat ===CONTRACT_TYPE.DAILY;
   const isRegularGroup = cat ===CONTRACT_TYPE.REGULAR || cat ===CONTRACT_TYPE.REGULAR_PROBATION;
   const isFixedTerm    = cat ===CONTRACT_TYPE.FIXED || cat ===CONTRACT_TYPE.FIXED_PROBATION;

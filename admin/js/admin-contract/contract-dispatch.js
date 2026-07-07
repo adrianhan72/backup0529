@@ -515,7 +515,7 @@ async function _saveDispatchRecord({ method: dispatchMethod, status: dispatchSta
     // ── 고객사 인앱 알림 발송 (계약서 발송) ──
     if(coId && empName && (dispatchStatus ===DISPATCH_STATUS.COMPLETED)){
       const _dispCo = allCompanies.find(x => x.id === coId) || {};
-      const _coRep  = _dispCo.representative ? `, ${_dispCo.representative} 사장님` : '';
+      const _coRep  = getCompanyRepGreeting(_dispCo);
       const _methodLabel = dispatchMethod ===DISPATCH_METHOD.KAKAO ? '카카오 알림톡'
         : dispatchMethod ===DISPATCH_METHOD.EMAIL ? '이메일'
         : dispatchMethod === '수정재발행' ? '수정재발행 (계약서 변경 후 재발행)'
