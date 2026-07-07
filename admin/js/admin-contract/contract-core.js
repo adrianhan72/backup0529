@@ -1116,12 +1116,13 @@ function calcContractStatusDisplay(c, today){
   const docsIncomplete = !!(c && (!c.signed_file_data || !c.consent_file_data));
   // 임시저장 상태 최우선 처리 (임시저장은 서류미비와 무관)
   if(c.is_draft) return {badge:'badge-yellow', label:'임시저장', docsIncomplete: false};
-  const s = c.status || '활성';
+  // 상태 정규화: DB 영문값('pending' 등) → 한글 표시값('계약예정' 등)
+  const s = (CONTRACT_STATUS_LABEL[c.status] || c.status || '활성');
   const start = c.contract_start || '';
   // 명시적 상태 우선
-  if(s==='갱신예정')  return {badge:'badge-amber',  label:'갱신예정', docsIncomplete};
-  if(s==='계약예정')  return {badge:'badge-indigo', label:'계약예정', docsIncomplete};
-  if(s==='해지예정')  return {badge:'badge-rose',   label:'해지예정', docsIncomplete};
+  if(s==='갱신예정'||s==='renewal_pending')  return {badge:'badge-amber',  label:'갱신예정', docsIncomplete};
+  if(s==='계약예정'||s==='pending')  return {badge:'badge-indigo', label:'계약예정', docsIncomplete};
+  if(s==='해지예정'||s==='terminate_pending')  return {badge:'badge-rose',   label:'해지예정', docsIncomplete};
   if(s==='파기'||s==='voided')      return {badge:'badge-slate',  label:'파기', docsIncomplete};
   if(s==='갱신됨')    return {badge:'badge-gray',   label:'만료', docsIncomplete}; // 레거시 → 만료로 표시
   if(s==='만료'||s==='expired')    return {badge:'badge-gray',  label:'만료', docsIncomplete};

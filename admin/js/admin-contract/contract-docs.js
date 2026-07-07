@@ -263,7 +263,7 @@ ${_BRAND_SIG}`,
 // ── 파일 삭제 ──
 async function _ctfDelete(type, contractId){
   const label = type === 'signed' ? '계약서 날인본' : '제3자 개인정보 제공 동의서 날인본';
-  if(!confirm(`'${label}' 파일을 삭제하시겠습니까?`)) return;
+  if(!confirm(`[${label} 삭제]\n\n삭제된 데이터는 복구할 수 없습니다.\n정말 삭제하시겠습니까?`)) return;
 
   const nameField = type === 'signed' ? 'signed_file_name'  : 'consent_file_name';
   const dataField = type === 'signed' ? 'signed_file_data'  : 'consent_file_data';
@@ -280,7 +280,7 @@ async function _ctfDelete(type, contractId){
     await loadContracts();
     if(typeof renderContracts === 'function') renderContracts();
 
-    toast(`'${label}' 파일이 삭제되었습니다. 계약 상태가 서류미비로 변경되었습니다.`, 'success');
+    toast(`'${label}' 파일이 삭제되었습니다.`, 'success');
     const c = allContracts.find(x => x.id === contractId);
     if(c) _renderContractFilesSection(c);
     // 업로드 모달도 갱신
