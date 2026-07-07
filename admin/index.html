@@ -270,7 +270,7 @@
             <button onclick="closeGnComposeModal()" class="btn btn-secondary">
               취소
             </button>
-            <button onclick="submitGnNotice()" class="btn btn-warning">
+            <button onclick="submitGnNotice()" class="btn btn-danger">
               <i id="gn-submit-icon" class="fas fa-paper-plane"></i>
               <span id="gn-submit-label">즉시 발송</span>
             </button>
@@ -1416,9 +1416,9 @@
       <button id="ct-btn-amend"      class="btn-amend"      onclick="doContractAmend()"       style="display:none;"><i class="fas fa-edit"></i> 수정 및 재발행</button>
       <button id="ct-btn-renew"      class="btn-renew"      onclick="doContractRenew()"      style="display:none;"><i class="fas fa-sync-alt"></i> 갱신</button>
       <button id="ct-btn-recontract" class="btn-recontract" onclick="doContractRecontract()" style="display:none;"><i class="fas fa-file-signature"></i> 재계약</button>
-      <button id="ct-btn-terminate"      class="btn-terminate"       onclick="doContractTerminate()"      style="display:none;"><i class="fas fa-user-clock"></i> 퇴사예정 설정</button>
+      <button id="ct-btn-terminate"      class="btn btn-secondary"       onclick="doContractTerminate()"      style="display:none;"><i class="fas fa-user-clock"></i> 퇴사예정 설정</button>
       <button id="ct-btn-fixed-terminate" class="btn-fixed-terminate" onclick="doFixedTerminate()"          style="display:none;"><i class="fas fa-scissors"></i> 해지 설정</button>
-      <button id="ct-btn-print-doc" onclick="openContractPrintModal(editId.contract)" class="btn btn-slate">
+      <button id="ct-btn-print-doc" onclick="openContractPrintModal(editId.contract)" class="btn btn-indigo">
         <i class="fas fa-file-contract"></i> 현 계약서 확인
       </button>
     </div>
@@ -2045,9 +2045,9 @@
       <button id="ct-btn-amend2"      class="btn-amend"      onclick="doContractAmend()"       style="display:none;"><i class="fas fa-edit"></i> 수정 및 재발행</button>
       <button id="ct-btn-renew2"      class="btn-renew"      onclick="doContractRenew()"      style="display:none;"><i class="fas fa-sync-alt"></i> 갱신</button>
       <button id="ct-btn-recontract2" class="btn-recontract" onclick="doContractRecontract()" style="display:none;"><i class="fas fa-file-signature"></i> 재계약</button>
-      <button id="ct-btn-terminate2"      class="btn-terminate"       onclick="doContractTerminate()"      style="display:none;"><i class="fas fa-user-clock"></i> 퇴사예정 설정</button>
+      <button id="ct-btn-terminate2"      class="btn btn-secondary"       onclick="doContractTerminate()"      style="display:none;"><i class="fas fa-user-clock"></i> 퇴사예정 설정</button>
       <button id="ct-btn-fixed-terminate2" class="btn-fixed-terminate" onclick="doFixedTerminate()"          style="display:none;"><i class="fas fa-scissors"></i> 해지 설정</button>
-      <button id="ct-btn-print-doc2" onclick="openContractPrintModal(editId.contract)" class="btn btn-slate">
+      <button id="ct-btn-print-doc2" onclick="openContractPrintModal(editId.contract)" class="btn btn-indigo">
         <i class="fas fa-file-contract"></i> 현 계약서 확인
       </button>
       <button class="btn-amend-complete" id="ct-btn-amend-complete2" onclick="openAmendPreview()" style="display:none;">
@@ -2136,8 +2136,8 @@
         <button onclick="dispatchContractEmail()" id="cpm-email-btn" title="이메일로 계약서 PDF 발송" class="btn btn-sky" disabled>
           <i class="fas fa-envelope"></i> 이메일
         </button>
-        <button onclick="dispatchContractManual()" id="cpm-manual-btn" title="출력물 직접 배부 완료 처리" class="btn btn-success">
-          <i class="fas fa-hand-holding"></i> 수동 직접 배부
+        <button onclick="dispatchContractManual()" id="cpm-manual-btn" title="수동교부 완료 처리" class="btn btn-success">
+          <i class="fas fa-hand-paper"></i> 수동교부
         </button>
       </div>
     </div>

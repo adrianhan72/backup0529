@@ -1549,7 +1549,6 @@ function openContractPrintModal(contractId){
   if(emailBtn){
     const hasEmail = !isVoided && !!(emp.email && emp.email.trim());
     emailBtn.disabled    = !hasEmail;
-    emailBtn.style.opacity = hasEmail ? '1' : '0.45';
     emailBtn.style.cursor  = hasEmail ? 'pointer' : 'not-allowed';
     emailBtn.title = isVoided
       ? '파기된 계약서는 발송할 수 없습니다'
@@ -1563,7 +1562,6 @@ function openContractPrintModal(contractId){
   if(kakaoBtn){
     const hasPhone = !isVoided && !!(emp.phone && emp.phone.trim());
     kakaoBtn.disabled    = !hasPhone;
-    kakaoBtn.style.opacity = hasPhone ? '1' : '0.45';
     kakaoBtn.style.cursor  = hasPhone ? 'pointer' : 'not-allowed';
     kakaoBtn.title = isVoided
       ? '파기된 계약서는 발송할 수 없습니다'
@@ -1576,7 +1574,6 @@ function openContractPrintModal(contractId){
   const manualBtn = document.getElementById('cpm-manual-btn');
   if(manualBtn){
     manualBtn.disabled   = isVoided;
-    manualBtn.style.opacity = isVoided ? '0.45' : '1';
     manualBtn.style.cursor  = isVoided ? 'not-allowed' : 'pointer';
     manualBtn.title = isVoided ? '파기된 계약서는 발송할 수 없습니다' : '출력물 직접 배부 완료 처리';
   }

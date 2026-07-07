@@ -180,7 +180,7 @@ const DISPATCH_METHOD = Object.freeze({
 const DISPATCH_METHOD_LABEL = Object.freeze({
   [DISPATCH_METHOD.KAKAO]:  '알림톡',
   [DISPATCH_METHOD.EMAIL]:  '이메일',
-  [DISPATCH_METHOD.MANUAL]: '수동배부',
+  [DISPATCH_METHOD.MANUAL]: '수동교부',
 });
 
 // ═══════════════════════════════════════════

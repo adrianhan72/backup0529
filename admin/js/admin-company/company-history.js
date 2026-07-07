@@ -380,7 +380,7 @@ function selectContCompany(companyId, companyName){
   document.getElementById('cont-list-section').style.display = 'block';
   document.getElementById('cont-search').value = '';
   const _ecEl = document.getElementById('cont-filter-empcat'); if(_ecEl) _ecEl.value='';
-  const _stEl = document.getElementById('cont-filter-status'); if(_stEl) _stEl.value='';
+  const _stEl = document.getElementById('cont-filter-status'); if(_stEl) _stEl.value='유효';
   const _docEl = document.getElementById('cont-filter-docs-incomplete'); if(_docEl) _docEl.checked=false;
   pages.cont = 1;
   renderContracts();

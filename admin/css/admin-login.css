@@ -117,7 +117,7 @@
     /* ?�상?�금 지급유???�?�운 select (기존 버튼 UI ?��? */
     .pi-pay-type-select{font-size:12px;padding:0 6px;border-radius:4px;border:1px solid #d1d5db;background:#f9fafb;color:#374151;cursor:pointer;outline:none;height:28px;font-family:inherit;flex-shrink:0;}
     .pi-pay-type-select:focus{border-color:#3b82f6;outline:none;}
-    .pi-pay-type-select:disabled{opacity:.45;cursor:default;pointer-events:none;}
+    .pi-pay-type-select:disabled{cursor:default;pointer-events:none;}
     /* 미선???�태(value="") ???�색 ?�레?�스?�???�상 */
     .pi-pay-type-select.pi-pt-unset{border-color:#fbbf24;background:#fffbeb;color:#92400e;}
     /* ?�택 ?�료 ??매월 ?�기지�?fixed) */
@@ -265,5 +265,5 @@
 .cm-aw-pt-select      { flex:1; min-width:0; border:1px solid #d1d5db; border-radius:6px; padding:4px 6px;
                          font-size:11.5px; font-family:inherit; color:#374151; background:#fff;
                          cursor:pointer; outline:none; transition:border-color .15s, opacity .15s; }
-.cm-aw-pt-select:disabled { background:#f3f4f6; color:#9ca3af; cursor:not-allowed; opacity:.7; }
+.cm-aw-pt-select:disabled { background:#f3f4f6; color:#9ca3af; cursor:not-allowed; }
 .cm-aw-pt-select:not(:disabled):focus { border-color:#6366f1; }

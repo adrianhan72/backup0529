@@ -40,17 +40,17 @@
               <option value="regular">정규직</option>
               <option value="regular_probation">정규직 수습</option>
               <option value="fixed_term">계약직</option>
-              <option value="fixed_probation">계약직 수습</option>
+              <option value="fixed_term_probation">계약직 수습</option>
               <option value="daily">일용직</option>
             </select>
             <select id="cont-filter-status" onchange="renderContracts()" class="">
               <option value="">계약상태 전체</option>
-              <option value="계약유효">유효</option>
+              <option value="유효" selected>유효</option>
               <option value="만료">만료</option>
               <option value="해지">해지</option>
               <option value="파기">파기</option>
             </select>
-            <label id="cont-filter-docs-incomplete-label" style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-weight:600;color:#ea580c;background:#fff7ed;border:1.5px solid #fdba74;border-radius:20px;padding:6px 14px;user-select:none;">
+            <label id="cont-filter-docs-incomplete-label" style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-weight:600;color:#ea580c;background:rgba(234,88,12,.1);border:1.5px solid #fdba74;border-radius:20px;padding:6px 14px;user-select:none;">
               <input type="checkbox" id="cont-filter-docs-incomplete" onchange="renderContracts()" style="accent-color:#ea580c;width:15px;height:15px;" />
               서류미비 상태만 보기
             </label>

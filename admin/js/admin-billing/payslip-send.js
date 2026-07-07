@@ -223,7 +223,7 @@ function renderPssUnsentList(){
       <td style="text-align:center;white-space:nowrap;">
         <button onclick="_pssKakaoSendRow('${p.id}','${p.employee_id}')" style="background:linear-gradient(135deg,#ffe033,#f9d000);color:#3b1f00;border:1px solid #eab308;border-radius:6px;padding:4px 9px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;margin-right:3px;display:inline-flex;align-items:center;gap:4px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg>알림톡 발송</button>
         <button onclick="_pssEmailSendRow('${p.id}','${p.employee_id}')" ${hasEmail ? '' : 'disabled'} style="${emailBtnStyle}border-radius:6px;padding:4px 9px;font-size:11.5px;font-weight:600;font-family:inherit;margin-right:3px;">✉ 이메일 발송</button>
-        <button onclick="_pssManualDoneRow('${p.id}','${p.employee_id}')" style="background:#f0fdf4;color:#166534;border:1px solid #86efac;border-radius:6px;padding:4px 9px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;">✔ 수동교부 완료</button>
+        <button onclick="_pssManualDoneRow('${p.id}','${p.employee_id}')" style="background:#f0fdf4;color:#166534;border:1px solid #86efac;border-radius:6px;padding:4px 9px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;"><i class="fas fa-hand-paper"></i> 수동교부 완료</button>
       </td>
     </tr>`;
   }).join('');

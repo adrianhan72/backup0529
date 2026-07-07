@@ -194,7 +194,7 @@
     }
     #admin-login-screen .aln-btn:hover{opacity:.9;transform:translateY(-1px);}
     #admin-login-screen .aln-btn:active{transform:translateY(0);}
-    #admin-login-screen .aln-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+    #admin-login-screen .aln-btn:disabled{cursor:not-allowed;transform:none;}
     #admin-login-screen .aln-footer{
       text-align:center;margin-top:24px;
       color:rgba(255,255,255,.25);font-size:10.5px;line-height:1.6;

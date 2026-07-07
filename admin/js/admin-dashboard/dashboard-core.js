@@ -462,12 +462,12 @@ function renderProbationMgmtTable(){
       <td style="text-align:center;">${actionCell}</td>
       <td style="text-align:center;">${actionAtCell}</td>
       <td style="text-align:center;">
-      <button class="btn btn-sky btn-sm" onclick="openContractInNewWindow('${c.id}')" title="수습 계약서 새 창으로 보기">
-          <i class="fas fa-file-contract" style="font-size:11px;"></i> 조회
+      <button class="btn btn-sm btn-indigo" onclick="openContractInNewWindow('${c.id}')" title="수습 계약서 새 창으로 보기">
+          <i class="fas fa-file-contract" style="font-size:11px;"></i> 계약서
         </button>
       </td>
       <td style="text-align:center;">
-        <button class="probmgmt-action-btn" onclick="openProbMgmtModal('${c.id}')">
+        <button class="btn btn-danger btn-sm" onclick="openProbMgmtModal('${c.id}')">
           <i class="fas fa-cog" style="font-size:11px;"></i> 관리
         </button>
       </td>

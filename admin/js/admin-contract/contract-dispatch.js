@@ -360,7 +360,7 @@ function renderCdpUnsentList(){
         </button>
         <button onclick="cdpUnsentManual('${c.id}')"
           class="btn btn-success btn-sm">
-          ✔ 수동교부
+          <i class="fas fa-hand-paper"></i> 수동교부
         </button>
       </td>
     </tr>`;
@@ -519,7 +519,7 @@ async function _saveDispatchRecord({ method: dispatchMethod, status: dispatchSta
       const _methodLabel = dispatchMethod ===DISPATCH_METHOD.KAKAO ? '카카오 알림톡'
         : dispatchMethod ===DISPATCH_METHOD.EMAIL ? '이메일'
         : dispatchMethod === '수정재발행' ? '수정재발행 (계약서 변경 후 재발행)'
-        : dispatchMethod ===DISPATCH_METHOD.MANUAL ? '수동 직접 배부'
+        : dispatchMethod ===DISPATCH_METHOD.MANUAL ? '수동교부'
         : dispatchMethod;
       const _fmtD = d => { if(!d) return '-'; const [y,m,dd]=d.split('-'); return `${parseInt(y)}년 ${parseInt(m)}월 ${parseInt(dd)}일`; };
       await _sendCompanyNotice({
@@ -612,11 +612,11 @@ async function dispatchContractEmail(){
   }
 }
 
-// ── 수동 직접 배부 ────────────────────────────────────
+// ── 수동교부 ────────────────────────────────────
 async function dispatchContractManual(){
   const name  = window._printingEmpName || '근로자';
   const confirmed = confirm(
-    `[ 수동 직접 배부 처리 ]\n\n` +
+    `[ 수동교부 처리 ]\n\n` +
     `${name} 님의 근로계약서를 출력하여 직접 배부(교부)하셨습니까?\n\n` +
     `확인을 누르면 배부 완료 이력이 등록됩니다.`
   );
@@ -634,12 +634,12 @@ async function dispatchContractManual(){
     });
     toast(`✅ ${name} 님 근로계약서 직접 배부 완료`, 'success');
   } catch(e){
-    console.error('[수동배부]', e);
+    console.error('[수동교부]', e);
     toast('처리 중 오류가 발생했습니다.', 'error');
   } finally {
     if(btn){
       btn.disabled=false;
-      btn.innerHTML='<i class="fas fa-hand-holding"></i> 수동 직접 배부';
+      btn.innerHTML='<i class="fas fa-hand-paper"></i> 수동교부';
     }
   }
 }

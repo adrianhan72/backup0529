@@ -303,7 +303,8 @@ function _cenGetTargetContracts(){
     // 고용형태 확인 (emp.employment_category 우선)
     const emp = allEmployees.find(e=>e.id===c.employee_id);
     const cat = emp?.employment_category || c.contract_type || '';
-    if(![CONTRACT_TYPE.FIXED_TERM, CONTRACT_TYPE.FIXED_PROBATION, CONTRACT_TYPE.DAILY].includes(cat)) return false;
+    const normalizedCat = normalizeContractType(cat);
+    if(![CONTRACT_TYPE.FIXED, CONTRACT_TYPE.FIXED_PROBATION, CONTRACT_TYPE.DAILY].includes(normalizedCat)) return false;
     // 계약 만료일 확인
     if(!c.contract_end) return false;
     const endDate = new Date(c.contract_end);
@@ -388,19 +389,13 @@ function renderCenTargetList(){
     const email    = c._emp?.email || '';
     const hasPhone = !!phone.trim();
     const hasEmail = !!email.trim();
-    const kakaoStyle = hasPhone
-      ? 'background:linear-gradient(135deg,#ffe033,#f9d000);color:#3b1f00;border:1px solid #eab308;cursor:pointer;'
-      : 'background:#f3f4f6;color:#d1d5db;border:1px solid #e5e7eb;cursor:not-allowed;';
-    const emailStyle = hasEmail
-      ? 'background:#dbeafe;color:#1d4ed8;border:1px solid #93c5fd;cursor:pointer;'
-      : 'background:#f3f4f6;color:#d1d5db;border:1px solid #e5e7eb;cursor:not-allowed;';
     return `<tr>
       <td style="text-align:center;">
         <input type="checkbox" class="cen-chk cen-row-chk" data-idx="${globalIdx}" data-contract-id="${c.id}"
           onchange="cenUpdateSelectedCount()" />
       </td>
       <td style="font-weight:700;color:#1f2937;">${empName}</td>
-      <td><span class="badge ${CAT_BADGE_CLS[c._cat]||'badge-gray'}" style="font-size:11px;">${c._cat}</span></td>
+      <td><span class="badge ${CAT_BADGE_CLS[normalizeContractType(c._cat)]||'badge-gray'}" style="font-size:11px;">${contractTypeLabel(c._cat)}</span></td>
       <td style="font-size:12px;color:#374151;">${coName}</td>
       <td style="font-size:12px;color:#6b7280;font-weight:600;">${c.contract_end}</td>
       <td>${fmtDday(c._daysLeft)}</td>
@@ -408,16 +403,16 @@ function renderCenTargetList(){
       <td style="font-size:12px;">${hasEmail ? `<span style="color:#374151;">${email}</span>` : '<span style="color:#d1d5db;">미등록</span>'}</td>
       <td style="text-align:center;white-space:nowrap;">
         <button onclick="cenSendOne('${c.id}','알림톡')" ${hasPhone?'':'disabled'}
-          style="${kakaoStyle}border-radius:6px;padding:4px 9px;font-size:11.5px;font-weight:600;font-family:inherit;margin-right:3px;display:inline-flex;align-items:center;gap:4px;">
+          class="${hasPhone ? 'btn btn-kakao btn-sm' : 'btn btn-sm'}" style="margin-right:3px;">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg>알림톡
         </button>
         <button onclick="cenSendOne('${c.id}','이메일')" ${hasEmail?'':'disabled'}
-          style="${emailStyle}border-radius:6px;padding:4px 9px;font-size:11.5px;font-weight:600;font-family:inherit;margin-right:3px;">
+          class="${hasEmail ? 'btn btn-sky btn-sm' : 'btn btn-sm'}" style="margin-right:3px;">
           ✉ 이메일
         </button>
-        <button onclick="cenSendOne('${c.id}','수동배부')"
-          style="background:#f0fdf4;color:#166534;border:1px solid #86efac;border-radius:6px;padding:4px 9px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;">
-          ✔ 수동교부
+        <button onclick="cenSendOne('${c.id}','수동교부')"
+          class="btn btn-success btn-sm">
+          <i class="fas fa-hand-paper"></i> 수동교부
         </button>
       </td>
     </tr>`;
@@ -497,7 +492,7 @@ async function cenSendOne(contractId, method){
   try{
     // 1) 근로자 통지 이력 저장
     await _cenSaveNotice({ contractId, method, status: DISPATCH_STATUS.COMPLETED, recipient, note:`개별 ${method} — ${emp.name}`, daysLeft });
-    // 2) 고객사 인앱 알림 발송 (수동배부 포함 항상 전송)
+    // 2) 고객사 인앱 알림 발송 (수동교부 포함 항상 전송)
     await _cenSendCompanyNotice({ c, emp, co, daysLeft });
     toast(`✅ ${emp.name} 계약만료 통지(${method}) 완료 + 고객사 알림 발송`, 'success');
     await cenRefresh();

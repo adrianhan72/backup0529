@@ -36,7 +36,7 @@ function _renderContAlertCards(){
           <td style="font-size:12px;color:#6b7280;">${c.contract_start||'-'}</td>
           <td><span style="font-weight:700;color:${ddayColor};font-size:12.5px;">${dday}</span></td>
           <td style="white-space:nowrap;">
-            <button onclick="viewContract('${c.id}')" class="btn btn-sm btn-warning"><i class="fas fa-search"></i> 조회</button>
+            <button onclick="viewContract('${c.id}')" class="btn btn-sm btn-indigo"><i class="fas fa-search"></i> 조회</button>
           </td>`;
       }
     },
@@ -84,7 +84,7 @@ function _renderContAlertCards(){
           <td style="font-size:12px;color:#9f1239;font-weight:600;">${termDate||'-'}</td>
           <td><span style="font-weight:700;color:${ddayColor};font-size:12.5px;">${dday}</span></td>
           <td style="white-space:nowrap;">
-            <button onclick="viewContract('${c.id}')" class="btn btn-sm btn-danger"><i class="fas fa-search"></i> 조회</button>
+            <button onclick="viewContract('${c.id}')" class="btn btn-sm btn-indigo"><i class="fas fa-search"></i> 조회</button>
           </td>`;
       }
     },
@@ -173,7 +173,9 @@ function renderContracts(){
     // 고용형태 필터
     if(filterEmpCat){
       const emp=allEmployees.find(e=>e.id===c.employee_id);
-      if((emp?.employment_category||'')!==filterEmpCat) return false;
+      const empCat = emp?.employment_category || '';
+      // 한글/영문 모두 매칭 (예: '계약직 수습' ↔ 'fixed_term_probation')
+      if(empCat !== filterEmpCat && empCat !== CONTRACT_TYPE_LABEL[filterEmpCat] && CONTRACT_TYPE_LABEL[empCat] !== filterEmpCat) return false;
     }
     // 계약상태 필터
     const {label, docsIncomplete} = calcContractStatusDisplay(c,today);
@@ -224,10 +226,10 @@ function renderContracts(){
         <button class="btn btn-sm btn-indigo" onclick="viewContract('${c.id}')"><i class="fas fa-search"></i> 조회</button>
         ${c.is_draft
           ? `<button class="btn btn-sm" disabled title="임시저장 상태에서는 출력할 수 없습니다"><i class="fas fa-file-contract"></i> 계약서</button>`
-          : `<button class="btn btn-sm btn-slate" onclick="openContractPrintModal('${c.id}')"><i class="fas fa-file-contract"></i> 계약서</button>`
+          : `<button class="btn btn-sm btn-indigo" onclick="openContractPrintModal('${c.id}')"><i class="fas fa-file-contract"></i> 계약서</button>`
         }
         ${docsIncomplete
-          ? `<button class="btn btn-sm btn-warning" onclick="openContractForUpload('${c.id}')"><i class="fas fa-upload"></i> 서류 업로드</button>`
+          ? `<button class="btn btn-sm btn-danger" onclick="openContractForUpload('${c.id}')"><i class="fas fa-upload"></i> 서류 업로드</button>`
           : ''
         }
       </td>
@@ -1217,14 +1219,12 @@ function viewContract(id){
       if(isPendingSt && c.contract_start && today >= c.contract_start){
         [_editBtn, _destroyBtn].forEach(btn => {
           btn.disabled = true;
-          btn.style.opacity = '0.4';
           btn.style.cursor  = 'not-allowed';
           btn.title = '계약 시작일이 도래하여 수정·취소가 불가합니다.';
         });
       } else {
         [_editBtn, _destroyBtn].forEach(btn => {
           btn.disabled = false;
-          btn.style.opacity = '';
           btn.style.cursor  = '';
           btn.title = '';
         });
@@ -1305,7 +1305,6 @@ function viewContract(id){
       const el=document.getElementById(bid);
       if(el){
         el.style.pointerEvents='none';
-        el.style.opacity='0.35';
         el.style.cursor='not-allowed';
         el.title='임시저장 상태에서는 출력할 수 없습니다';
       }
@@ -1318,7 +1317,6 @@ function viewContract(id){
     const el=document.getElementById(bid);
     if(el){
       el.style.pointerEvents='';
-      el.style.opacity='';
       el.style.cursor='';
       el.title='';
     }

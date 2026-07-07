@@ -27,7 +27,7 @@ function _calc2YrExceedList(){
     if([CONTRACT_STATUS.CANCELED, CONTRACT_STATUS.VOIDED].includes(c.status)) return false; // 파기·취소는 제외
     const emp = allEmployees.find(e => e.id === c.employee_id);
     const cat = emp?.employment_category || c.contract_type || '';
-    if(![CONTRACT_TYPE.FIXED_TERM, CONTRACT_TYPE.FIXED_PROBATION].includes(cat)) return; // 계약직 계열만
+    if(![CONTRACT_TYPE.FIXED, CONTRACT_TYPE.FIXED_PROBATION, '계약직', '계약직 수습'].includes(cat)) return; // 계약직 계열만
     if(!c.contract_start) return;
     if(!byEmp[c.employee_id]) byEmp[c.employee_id] = [];
     byEmp[c.employee_id].push(c);
@@ -50,7 +50,7 @@ function _calc2YrExceedList(){
     if(totalDays < WARN_DAYS) return; // 1년 6개월 미만은 표시 안 함
 
     const emp = allEmployees.find(e => e.id === empId);
-    const co  = allCompanies.find(x => x.id === contracts[0].company_id);
+    const co  = allCompanies.find(x => x.id === (contracts[0].company_id || emp?.company_id));
 
     // 최초 계약 시작일
     const firstStart = contracts
