@@ -98,6 +98,16 @@ function loadPITargetList(){
   const mo = parseInt(document.getElementById('pi-month')?.value);
   if(!yr || !mo){ toast('년도와 월을 선택하세요.', 'warning'); return; }
 
+  // 등기임원 / 특수관계인 데이터 보장 로드 후 재렌더링
+  const _needReload = (!allExecutives || allExecutives.length === 0) || (!allRelatedParties || allRelatedParties.length === 0);
+  if(_needReload){
+    Promise.all([
+      allExecutives && allExecutives.length > 0 ? Promise.resolve() : loadExecutives().catch(()=>{}),
+      allRelatedParties && allRelatedParties.length > 0 ? Promise.resolve() : loadRelatedParties().catch(()=>{})
+    ]).then(() => loadPITargetList());
+    return;
+  }
+
   // 산정기준 등록 여부 확인
   const stdCheck = _checkPIStandardsReady(yr, mo, coId);
   if(!stdCheck.ok){
@@ -136,9 +146,43 @@ function loadPITargetList(){
 
   const targets = [...empContractMap.entries()].map(([empId, c]) => {
     const emp = allEmployees.find(e => e.id === empId);
-    return { emp, contract: c };
+    return { emp, contract: c, _type: 'employee' };
   }).filter(t => t.emp)
     .sort((a,b) => (a.emp.name||'').localeCompare(b.emp.name||'','ko'));
+
+  // ── 대표자, 등기임원, 특수관계인 추가 (별도 근로계약 없음) ──
+  const coData = (allCompanies||[]).find(c => c.id === coId);
+  
+  // 대표자
+  if(coData){
+    let reps = [];
+    try { reps = typeof coData.representatives === 'string' ? JSON.parse(coData.representatives) : (coData.representatives || []); } catch(e){ reps = []; }
+    if(!Array.isArray(reps)) reps = [];
+    reps.forEach((r, i) => {
+      if(r.name){
+        targets.push({
+          emp: { id: `rep_${coId}_${i}`, name: r.name, company_id: coId, employment_category: '대표자' },
+          contract: null, _type: 'representative'
+        });
+      }
+    });
+  }
+
+  // 등기임원
+  (allExecutives||[]).filter(e => e.company_id === coId).forEach(e => {
+    targets.push({
+      emp: { id: e.id, name: e.name, company_id: coId, employment_category: '등기임원', position: e.position, created_at: e.created_at },
+      contract: null, _type: 'executive'
+    });
+  });
+
+  // 특수관계인
+  (allRelatedParties||[]).filter(r => r.company_id === coId).forEach(r => {
+    targets.push({
+      emp: { id: r.id, name: r.name, company_id: coId, employment_category: '특수관계인', position: r.relationship, created_at: r.created_at },
+      contract: null, _type: 'related_party'
+    });
+  });
 
   // ① pi-all-draft-banner 숨기기 (목록 표시 중에는 최상단 배너 숨김)
   const allDraftBanner = document.getElementById('pi-all-draft-banner');
@@ -180,22 +224,55 @@ function loadPITargetList(){
       '계약직':'background:#ede9fe;color:#6d28d9;','계약직 수습':'background:#fce7f3;color:#9d174d;',
       '일용직':'background:#fef3c7;color:#92400e;'
     };
-    tbody.innerHTML = targets.map(({emp, contract}) => {
-      // 유효 계약의 contract_type이 현재 고용형태의 정확한 상태(수습 만료 후 전환 포함)를 반영.
-      // emp.employment_category는 갱신이 지연될 수 있으므로 contract_type을 우선 사용.
-      const cat      = CONTRACT_TYPE_LABEL[contract.contract_type] || CONTRACT_TYPE_LABEL[emp.employment_category] || contract.contract_type || emp.employment_category || '-';
-      const catStyle = CAT_BADGE[cat] || 'background:#f3f4f6;color:#374151;';
-      const cStart   = contract.contract_start || '-';
-      const cEnd     = contract.contract_end   || '무기한';
+    tbody.innerHTML = targets.map(({emp, contract, _type}) => {
+      // 대표자·등기임원·특수관계인: 가상 계약 데이터
+      const isVirtual = !contract;
+      
+      // 실제 근로계약이 존재하는지 확인 (이름 + 회사로 매칭)
+      let actualContract = contract;
+      if(isVirtual && emp.name){
+        const matchedEmp = allEmployees.find(e => e.company_id === coId && e.name === emp.name);
+        if(matchedEmp){
+          const matchedContract = allContracts.find(c => 
+            c.employee_id === matchedEmp.id && !c.is_draft && !c.is_voided_by_amend &&
+            [CONTRACT_STATUS.ACTIVE, CONTRACT_STATUS.PENDING].includes(c.status)
+          );
+          if(matchedContract) actualContract = matchedContract;
+        }
+      }
+      
+      const catRaw  = emp.employment_category || '';
+      const cat     = CONTRACT_TYPE_LABEL[catRaw] || catRaw;
+      // 대표자·등기임원·특수관계인 뱃지: 밝은회색 배경 + 짙은회색 글씨
+      const catStyle = (cat==='등기임원'||cat==='특수관계인'||cat==='대표자')
+        ? 'background:#e5e7eb;color:#374151;'
+        : (CAT_BADGE[cat] || 'background:#f3f4f6;color:#374151;');
+      
+      // 계약 기간: 실제 계약이 있으면 계약기간, 없으면 등록일~무기한
+      // 대표자: 등록일 없으면 고객사 자문계약 시작일 기준
+      let cStart;
+      if(actualContract){
+        cStart = actualContract.contract_start || '-';
+      } else if(emp.created_at){
+        cStart = new Date(emp.created_at).toISOString().slice(0,10);
+      } else if(_type === 'representative' && coData){
+        cStart = coData.contract_start_date || '-';
+      } else {
+        cStart = '-';
+      }
+      const cEnd = actualContract ? (actualContract.contract_end || '무기한') : '무기한';
+      
       const isDraft  = draftEmpMap.has(emp.id);
       const isPaid   = paidEmpIds.has(emp.id);
       const draftId  = isDraft ? draftEmpMap.get(emp.id) : null;
-      const deptPos  = [emp.department, emp.position].filter(v=>v&&v.trim()).join('/');
+      const deptPos  = isVirtual ? (emp.position || '') : [emp.department, emp.position].filter(v=>v&&v.trim()).join('/');
 
       // ④-0 계약상태 배지
-      const _cs = contract.status || '활성';
+      const _cs = actualContract ? (actualContract.status || '활성') : '';
       let contractStatusBadge;
-      if(_cs === '서류미비'){
+      if(!actualContract){
+        contractStatusBadge = `<span style="display:inline-block;background:#f5f3ff;color:#7c3aed;border:1px solid #c4b5fd;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">별도계약</span>`;
+      } else if(_cs === '서류미비'){
         contractStatusBadge = `<span style="display:inline-block;background:#dcfce7;color:#15803d;border:1px solid #86efac;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;margin-right:3px;">유효</span>`
           + `<span style="display:inline-block;background:#fff7ed;color:#c2410c;border:1px solid #fdba74;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">서류미비</span>`;
       } else if(_cs === '활성' || _cs === 'active'){
@@ -216,20 +293,22 @@ function loadPITargetList(){
         statusBadge = `<span style="display:inline-flex;align-items:center;gap:4px;background:#fff7ed;color:#c2410c;border:1px solid #fdba74;border-radius:6px;padding:3px 10px;font-size:11.5px;font-weight:700;"><i class="fas fa-exclamation-circle"></i> 미입력</span>`;
       }
 
-      // ⑤ 관리 버튼: isDraft → '이어 입력'(주황), isPaid → '수정'(보라), else → '입력'(초록)
+      // ⑤ 관리 버튼
       let actionBtn;
+      const targetEmpId = emp.id;
+      const targetContractId = contract ? contract.id : '';
       if(isDraft){
-        actionBtn = `<button onclick="selectPITarget('${emp.id}','${contract.id}','${draftId}')"
+        actionBtn = `<button onclick="selectPITarget('${targetEmpId}','${targetContractId}','${draftId}')"
           style="display:inline-flex;align-items:center;gap:5px;padding:7px 16px;background:#d97706;color:#fff;border:1px solid #b45309;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">
           <i class="fas fa-play-circle"></i> 이어 입력
         </button>`;
       } else if(isPaid){
-        actionBtn = `<button onclick="selectPITarget('${emp.id}','${contract.id}')"
+        actionBtn = `<button onclick="selectPITarget('${targetEmpId}','${targetContractId}')"
           style="display:inline-flex;align-items:center;gap:5px;padding:7px 16px;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">
           <i class="fas fa-edit"></i> 수정
         </button>`;
       } else {
-        actionBtn = `<button onclick="selectPITarget('${emp.id}','${contract.id}')"
+        actionBtn = `<button onclick="selectPITarget('${targetEmpId}','${targetContractId}')"
           style="display:inline-flex;align-items:center;gap:5px;padding:7px 16px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">
           <i class="fas fa-calculator"></i> 입력
         </button>`;
@@ -387,11 +466,37 @@ function backToPITargetList(){
   // → loadPITargetList 내 return 전 배너 숨김이 이미 처리되므로 별도 복원 불필요
 }
 
-function loadPIEmployees(){
+async function loadPIEmployees(){
   const co=currentGlobalCompanyId || document.getElementById('pi-company').value;
   const s=document.getElementById('pi-employee');
   s.innerHTML='<option value="">선택</option>';
-  [...allEmployees.filter(e=>e.company_id===co&&(e.status===EMP_STATUS.ACTIVE||e.status===EMP_STATUS.ACTIVE))].sort((a,b)=>(a.name||'').localeCompare(b.name||'','ko')).forEach(e=>{const _deptPos=[e.department,e.position].filter(v=>v&&v.trim()).join('/');s.innerHTML+=`<option value="${e.id}">${e.name}${_deptPos?` (${_deptPos})`:''}</option>`;});
+
+  // 등기임원 / 특수관계인 데이터 보장 로드
+  if(!allExecutives || allExecutives.length === 0){ await loadExecutives().catch(()=>{}); }
+  if(!allRelatedParties || allRelatedParties.length === 0){ await loadRelatedParties().catch(()=>{}); }
+
+  // 일반 직원
+  [...allEmployees.filter(e=>e.company_id===co&&(e.status===EMP_STATUS.ACTIVE||e.status===EMP_STATUS.ACTIVE))].sort((a,b)=>(a.name||'').localeCompare(b.name||'','ko')).forEach(e=>{const _deptPos=[e.department,e.position].filter(v=>v&&v.trim()).join('/');s.innerHTML+=`<option value="${e.id}" data-type="employee">${e.name}${_deptPos?` (${_deptPos})`:''}</option>`;});
+
+  // 대표자 (고객사 representatives에서 추출)
+  const coData = (allCompanies||[]).find(c => c.id === co);
+  if(coData){
+    let reps = [];
+    try { reps = typeof coData.representatives === 'string' ? JSON.parse(coData.representatives) : (coData.representatives || []); } catch(e){ reps = []; }
+    if(!Array.isArray(reps)) reps = [];
+    reps.forEach((r, i) => {
+      if(r.name){
+        s.innerHTML += `<option value="rep_${co}_${i}" data-type="representative" style="color:#7c3aed;">${r.name} — 대표자</option>`;
+      }
+    });
+  }
+
+  // 등기임원
+  (allExecutives||[]).filter(e=>e.company_id===co).sort((a,b)=>(a.name||'').localeCompare(b.name||'','ko')).forEach(e=>{s.innerHTML+=`<option value="${e.id}" data-type="executive" style="color:#4f46e5;">${e.name} (${e.position||'등기임원'}) — 등기임원</option>`;});
+
+  // 특수관계인
+  (allRelatedParties||[]).filter(r=>r.company_id===co).sort((a,b)=>(a.name||'').localeCompare(b.name||'','ko')).forEach(r=>{s.innerHTML+=`<option value="${r.id}" data-type="related_party" style="color:#0891b2;">${r.name} (${r.relationship||'특수관계인'}) — 특수관계인</option>`;});
+
   document.getElementById('pi-contract-card').style.display='none';
   piContract=null;clearPIFields();
 }
@@ -578,9 +683,70 @@ function onAnnualAutoChkChange(){
 
 function loadPIContract(){
   _piContractLoading = true;  // setPIPayType 내 calcPI 중복 호출 방지 시작
-  const empId=document.getElementById('pi-employee').value;
+  const empSel = document.getElementById('pi-employee');
+  const empId = empSel?.value;
   const card=document.getElementById('pi-contract-card');
   if(!empId){card.style.display='none';piContract=null;_piContractLoading=false;return;}
+
+  // 선택된 옵션의 data-type 확인 (등기임원/특수관계인 여부)
+  const selectedOption = empSel?.selectedOptions?.[0];
+  const personType = selectedOption?.dataset?.type || 'employee';
+
+  if(personType === 'executive' || personType === 'representative'){
+    const exec = personType === 'executive' ? (allExecutives||[]).find(e => e.id === empId) : null;
+    const repName = personType === 'representative' ? (() => {
+      // empId 형식: rep_{coId}_{idx}
+      const parts = empId.split('_');
+      const idx = parseInt(parts.pop());
+      const coId2 = parts.join('_');
+      const co2 = (allCompanies||[]).find(c => c.id === coId2);
+      if(co2){
+        let reps = [];
+        try { reps = typeof co2.representatives === 'string' ? JSON.parse(co2.representatives) : (co2.representatives || []); } catch(e){}
+        return (reps[idx] || {}).name || '';
+      }
+      return '';
+    })() : '';
+    const coIdForExec = personType === 'executive' ? exec?.company_id : empId.split('_').slice(0, -1).join('_');
+    piContract = {
+      id: null, employee_id: empId, company_id: coIdForExec || '',
+      contract_type: personType === 'executive' ? CONTRACT_TYPE.EXECUTIVE : CONTRACT_TYPE.REGULAR,
+      contract_start: '', contract_end: '',
+      hourly_wage: 0, base_salary: 0, daily_wage: 0, weekly_holiday_pay: 0,
+      annual_salary: 0, monthly_salary_agreed: 0,
+      work_hours_per_day: 0, work_days_per_week: 0,
+      position_allowance: 0, transportation_allowance: 0, meal_allowance: 0,
+      research_allowance: 0, communication_allowance: 0, fitness_allowance: 0,
+      self_dev_allowance: 0, book_allowance: 0, overseas_allowance: 0,
+      remote_area_allowance: 0, site_allowance: 0, skill_allowance: 0, license_allowance: 0,
+      is_virtual: true, _personType: personType
+    };
+    card.style.display = 'none';
+    _piContractLoading = false;
+    _applyPIDefaultWorkDays(false);
+    return;
+  }
+
+  if(personType === 'related_party'){
+    const rel = (allRelatedParties||[]).find(r => r.id === empId);
+    piContract = rel ? {
+      id: null, employee_id: empId, company_id: rel.company_id,
+      contract_type: CONTRACT_TYPE.RELATED_PARTY, contract_start: '', contract_end: '',
+      hourly_wage: 0, base_salary: 0, daily_wage: 0, weekly_holiday_pay: 0,
+      annual_salary: 0, monthly_salary_agreed: 0,
+      work_hours_per_day: 0, work_days_per_week: 0,
+      position_allowance: 0, transportation_allowance: 0, meal_allowance: 0,
+      research_allowance: 0, communication_allowance: 0, fitness_allowance: 0,
+      self_dev_allowance: 0, book_allowance: 0, overseas_allowance: 0,
+      remote_area_allowance: 0, site_allowance: 0, skill_allowance: 0, license_allowance: 0,
+      is_virtual: true, _personType: 'related_party'
+    } : null;
+    card.style.display = 'none';
+    _piContractLoading = false;
+    _applyPIDefaultWorkDays(false);
+    return;
+  }
+
   // 유효 계약 후보를 모두 수집한 뒤, 복수일 경우 contract_start가 가장 최근인 것을 우선 선택.
   // - 수습→채용확정 자동 생성 시 원본 수습 계약이 is_voided_by_amend=true로 무효화되지 않은
   //   예외 상황(네트워크 오류 등)에서도 가장 최근 계약이 올바르게 선택되도록 방어한다.
@@ -2131,9 +2297,17 @@ function _getPISmallFirmInfo(coId, yr, mo){
   const totalDays  = monthEnd.getDate();
 
   // 이 달에 유효 계약이 걸쳐있는 근로자 목록 (직원별 최신 계약 1건)
-  // ※ 대표자 본인(is_representative=1)은 상시근로자 수에서 제외
+  // ※ 대표자 본인(is_representative=1)·등기임원·특수관계인은 상시근로자 수에서 제외
+  const coData = (allCompanies||[]).find(c => c.id === coId);
+  let repNames = [];
+  if(coData){
+    try { const reps = typeof coData.representatives === 'string' ? JSON.parse(coData.representatives) : (coData.representatives || []); repNames = (Array.isArray(reps) ? reps : []).map(r => r.name).filter(Boolean); } catch(e){}
+  }
+  const execNames = (allExecutives||[]).filter(e => e.company_id === coId).map(e => e.name).filter(Boolean);
+  const relNames  = (allRelatedParties||[]).filter(r => r.company_id === coId).map(r => r.name).filter(Boolean);
+  const excludedNames = new Set([...repNames, ...execNames, ...relNames]);
   const repEmpIds = new Set(
-    (allEmployees||[]).filter(e => e.company_id === coId && e.is_representative).map(e => e.id)
+    (allEmployees||[]).filter(e => e.company_id === coId && (e.is_representative || excludedNames.has(e.name))).map(e => e.id)
   );
   const empContractMap = new Map();
   (allContracts||[])

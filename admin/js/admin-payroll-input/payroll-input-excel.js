@@ -190,13 +190,12 @@ function goPayrollInputNew(companyId, employeeId, year, month){
   // 숨김 select 동기화
   const coSel = document.getElementById('pi-company');
   coSel.value = companyId;
-  loadPIEmployees();
-  // 회사 allowance_config 기반 항목 show/hide
-  applyPIAllowanceConfig(allCompanies.find(x=>x.id===companyId)?.allowance_config ?? null);
-  // 직원 선택
-  const empSel = document.getElementById('pi-employee');
-  empSel.value = employeeId;
-  loadPIContract();
+  loadPIEmployees().then(() => {
+    // 직원 선택
+    const empSel = document.getElementById('pi-employee');
+    empSel.value = employeeId;
+    loadPIContract();
+  });
   // 연월 설정
   document.getElementById('pi-year').value = year;
   document.getElementById('pi-month').value = month;
@@ -275,12 +274,13 @@ function editPayroll(payrollId){
   // 숨김 select 동기화
   const coSel=document.getElementById('pi-company');
   coSel.value=p.company_id;
-  loadPIEmployees();
-  // 직원 선택 (loadPIEmployees가 비동기가 아니므로 동기 처리)
-  const empSel=document.getElementById('pi-employee');
-  empSel.value=p.employee_id;
-  // 계약 정보 로드
-  loadPIContract();
+  loadPIEmployees().then(() => {
+    // 직원 선택
+    const empSel=document.getElementById('pi-employee');
+    empSel.value=p.employee_id;
+    // 계약 정보 로드
+    loadPIContract();
+  });
   // 년도·월 설정
   document.getElementById('pi-year').value=p.pay_year;
   // 월 셀렉트에 해당 월 옵션 세팅 후 선택

@@ -245,9 +245,14 @@ function renderCompanyTrendChart(){
   allCompanies.forEach(c => {
     if(c.is_draft) return;
     const active = isCompanyActive(c);
-    // 상시근로자 수: 대표자 본인(is_representative) 제외, 유효계약 기준
+    // 상시근로자 수: 대표자 본인(is_representative)·등기임원·특수관계인 제외, 유효계약 기준
+    let repNamesD = [];
+    try { const reps = typeof c.representatives === 'string' ? JSON.parse(c.representatives) : (c.representatives || []); repNamesD = (Array.isArray(reps) ? reps : []).map(r => r.name).filter(Boolean); } catch(e){}
+    const execNamesD = (allExecutives||[]).filter(e => e.company_id === c.id).map(e => e.name).filter(Boolean);
+    const relNamesD  = (allRelatedParties||[]).filter(r => r.company_id === c.id).map(r => r.name).filter(Boolean);
+    const excludedNames = new Set([...repNamesD, ...execNamesD, ...relNamesD]);
     const repEmpIds = new Set(
-      (allEmployees||[]).filter(e => e.company_id === c.id && e.is_representative).map(e => e.id)
+      (allEmployees||[]).filter(e => e.company_id === c.id && (e.is_representative || excludedNames.has(e.name))).map(e => e.id)
     );
     const empCount = allContracts.filter(ct =>
       ct.company_id === c.id && !ct.is_draft &&

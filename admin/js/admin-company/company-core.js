@@ -817,6 +817,11 @@ function openCompanyModal(id=null){
     const _effRow = document.getElementById('cm-effective-date-row');
     if(_effRow) _effRow.style.display = 'none';
   }
+
+  // ── 등기임원 / 특수관계인 데이터 로드 ──
+  _cmLoadExecutives(id && !_isDraft ? id : null);
+  _cmLoadRelated(id && !_isDraft ? id : null);
+
   openModal('company-modal');
 }
 function editCompany(id){openCompanyModal(id)}
@@ -847,7 +852,7 @@ function _cmInitEffectiveDateUI(companyId){
     minDate = new Date().toISOString().slice(0, 10);
   }
   dateInput.min   = minDate;
-  dateInput.value = minDate; // 기본값: 최소 날짜
+  dateInput.value = new Date().toISOString().slice(0, 10); // 기본값: 오늘 날짜
 
   if(hintEl){
     hintEl.textContent = lastPay
@@ -954,20 +959,24 @@ const _CM_FIELD_LABELS = {
 
 /** 두 값이 실질적으로 같은지 비교 */
 function _cmValEqual(a, b){
-  // 둘 중 하나라도 객체/배열이면 키 정렬 후 stringify 비교
-  const toStr = v => {
-    if(v === null || v === undefined) return '{}';
-    if(typeof v === 'object') return JSON.stringify(Object.keys(v).sort().reduce((o,k)=>{o[k]=v[k];return o;},{}));
-    // 문자열이지만 JSON 객체인 경우 파싱 후 재비교
+  // null/undefined ↔ 빈 문자열 동등 처리
+  if((a === null || a === undefined || a === '') && (b === null || b === undefined || b === '')) return true;
+  // JSON 배열/객체 정규화 비교
+  const normalize = v => {
+    if(v === null || v === undefined) return '';
+    if(typeof v === 'object') return JSON.stringify(v, Object.keys(v).sort());
     if(typeof v === 'string'){
-      try { const p = JSON.parse(v); if(typeof p === 'object' && p !== null) return JSON.stringify(Object.keys(p).sort().reduce((o,k)=>{o[k]=p[k];return o;},{})); } catch(e){}
+      const t = v.trim();
+      if((t.startsWith('{') || t.startsWith('[')) && (t.endsWith('}') || t.endsWith(']'))){
+        try { const p = JSON.parse(t); return JSON.stringify(p, Object.keys(p).sort()); } catch(e){}
+      }
     }
     return String(v||'');
   };
-  if(typeof a === 'object' || typeof b === 'object' ||
-     (typeof a === 'string' && a.startsWith('{')) ||
-     (typeof b === 'string' && b.startsWith('{')))
-    return toStr(a) === toStr(b);
+  const isJsonLike = v => (typeof v === 'object') || (typeof v === 'string' && v.trim().startsWith('{')) || (typeof v === 'string' && v.trim().startsWith('['));
+  if(isJsonLike(a) || isJsonLike(b)){
+    return normalize(a) === normalize(b);
+  }
   return String(a||'') === String(b||'');
 }
 
@@ -1051,6 +1060,7 @@ async function saveCompany(){
   const body={company_name:name,business_number:document.getElementById('cm-biz').value,representative:_representatives[0]?.name||'',representatives:JSON.stringify(_representatives),industry:document.getElementById('cm-industry').value,address:document.getElementById('cm-addr').value,phone:_representatives[0]?.phone||'',email:_representatives[0]?.email||'',pay_period:document.getElementById('cm-period').value,pay_period_month:document.getElementById('cm-period-month-hidden').value||null,pay_period_day:parseInt(document.getElementById('cm-period-day-hidden').value)||null,pay_day:document.getElementById('cm-payday').value,access_code:code,note:document.getElementById('cm-note').value,insurance_basis:insuranceBasis,annual_leave_basis:annualLeaveBasis,service_contract_file_name:_cmSvcGetSaveData().name,service_contract_file_data:_cmSvcGetSaveData().data,allowance_config:newAllowanceCfg,contract_start_date:document.getElementById('cm-contract-start').value||null,is_draft:false,draft_saved_at:null,status:_prevStatus};
 
   // ── 수정 모드: diff 계산 → 변경 있을 때만 적용일 검증 + company_history 기록 ──
+  let _effDateStr = ''; // 상위 스코프에서 선언 (등기임원 이력에서도 사용)
   if(editId.company){
     // ① diff 계산 (적용일 검증보다 먼저)
     const prev = allCompanies.find(x=>x.id===editId.company) || {};
@@ -1058,11 +1068,18 @@ async function saveCompany(){
       !_cmValEqual(prev[f], body[f])
     );
 
-    // ② 변경된 필드가 있을 때만 적용일 검증
-    const _effDateEl  = document.getElementById('cm-effective-date');
-    const _effDateStr = _effDateEl?.value || '';
-    const _effDateMin = _effDateEl?.min   || '';
-    if(changedFields.length > 0){
+    // ② 변경된 필드가 없으면 바로 저장 (검증 스킵)
+    if(changedFields.length === 0){
+      // 변경 없음 → 바로 저장 완료
+    } else {
+      // 변경 확인 다이얼로그
+      const changeSummary = changedFields.map(f => `• ${_CM_FIELD_LABELS[f]}`).join('\n');
+      if(!confirm(`다음 항목이 수정되었습니다:\n\n${changeSummary}\n\n계속 진행하시겠습니까?`)) return;
+
+      // ② 적용일 검증
+      const _effDateEl  = document.getElementById('cm-effective-date');
+      _effDateStr = _effDateEl?.value || '';
+      const _effDateMin = _effDateEl?.min   || '';
       if(!_effDateStr){
         return toast('수정 내용 적용일을 선택하세요.', 'error');
       }
@@ -1071,42 +1088,39 @@ async function saveCompany(){
         setTimeout(() => { _effDateEl.style.borderColor = ''; }, 2000);
         return toast(`적용일은 최종 급여 지급일(${_effDateMin}) 이후여야 합니다.`, 'error');
       }
-    }
 
-    // ③ 고객사 정보 PUT 먼저 저장 (저장 성공 후 이력 기록)
-    body.id=editId.company;
-    await api(`../tables/companies/${editId.company}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      // ③ 고객사 정보 PUT 먼저 저장 (저장 성공 후 이력 기록)
+      body.id=editId.company;
+      const putRes = await api(`../tables/companies/${editId.company}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      if(!putRes){ toast('저장에 실패했습니다.', 'error'); return; }
 
-    // ④ 변경 이력 기록
-    if(changedFields.length > 0){
+      // ④ 변경 이력 기록
       const changes = changedFields.map(f => ({
         field:     f,
         label:     _CM_FIELD_LABELS[f],
-        before:    typeof prev[f]==='object' ? JSON.stringify(prev[f]||{}) : String(prev[f]||''),
-        after:     typeof body[f]==='object' ? JSON.stringify(body[f]||{}) : String(body[f]||''),
+        before:    (prev[f] !== null && typeof prev[f]==='object') ? JSON.stringify(prev[f]) : String(prev[f]??''),
+        after:     (body[f] !== null && typeof body[f]==='object') ? JSON.stringify(body[f]) : String(body[f]??''),
       }));
-      // 수정 직전 상태 스냅샷 (계약서 당시 정보 복원용)
       const snapshot = Object.fromEntries(
         Object.keys(_CM_FIELD_LABELS).map(f=>[f, prev[f]])
       );
       const histEntry = {
         id:           'cmhist_'+Date.now(),
         company_id:   editId.company,
-        changed_at:   Date.now(),        // 실제 저장 시각
-        effective_date: _effDateStr,     // 수정 내용 적용일 (이력 표시용)
+        changed_at:   Date.now(),
+        effective_date: _effDateStr,
         changes:      changes,
         snapshot:     snapshot,
       };
       await api('../tables/company_history',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(histEntry)});
       await loadCompanyHistories();
 
-      // ⑤ 적용일 이후 시작되는 모든 계약에 변경된 allowance_config 일괄 반영
+      // ⑤ 적용일 이후 계약에 allowance_config 반영
       if(changedFields.includes('allowance_config')){
         await _cmApplyAllowanceToContracts(editId.company, _effDateStr, newAllowanceCfg);
       }
     }
   } else if(_currentCompanyDraftId){
-    // 임시저장에서 이어서 등록
     body.id=_currentCompanyDraftId;
     await api(`../tables/companies/${_currentCompanyDraftId}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   } else {
@@ -1114,6 +1128,76 @@ async function saveCompany(){
     await api('../tables/companies',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   }
   _currentCompanyDraftId = null;
+
+  // ── 등기임원 / 특수관계인 저장 (companyId 확정 후) ──
+  const _savedCoId = editId.company || body.id;
+  if(_savedCoId){
+    // 등기임원 필수 입력 검증
+    const _execErrors = [];
+    _cmExecutives.forEach((_, i) => {
+      const name = document.getElementById(`cm-exec-name-${i}`)?.value?.trim() || '';
+      const position = document.getElementById(`cm-exec-position-${i}`)?.value?.trim() || '';
+      const phone = document.getElementById(`cm-exec-phone-${i}`)?.value?.trim() || '';
+      const idnum = document.getElementById(`cm-exec-idnum-${i}`)?.value?.trim() || '';
+      if(!name || !position || !phone || !idnum) {
+        _execErrors.push(`등기임원 #${i+1}: ${!name?'이름 ':''}${!position?'직책 ':''}${!phone?'전화번호 ':''}${!idnum?'주민번호 ':''}필수`);
+      }
+    });
+    if(_execErrors.length){ toast(_execErrors.join('\n'), 'error'); return; }
+
+    // 특수관계인 필수 입력 검증
+    const _relErrors = [];
+    _cmRelatedParties.forEach((_, i) => {
+      const name = document.getElementById(`cm-rel-name-${i}`)?.value?.trim() || '';
+      const rel = document.getElementById(`cm-rel-relationship-${i}`)?.value?.trim() || '';
+      const phone = document.getElementById(`cm-rel-phone-${i}`)?.value?.trim() || '';
+      const idnum = document.getElementById(`cm-rel-idnum-${i}`)?.value?.trim() || '';
+      if(!name || !rel || !phone || !idnum) {
+        _relErrors.push(`특수관계인 #${i+1}: ${!name?'이름 ':''}${!rel?'관계 ':''}${!phone?'전화번호 ':''}${!idnum?'주민번호 ':''}필수`);
+      }
+    });
+    if(_relErrors.length){ toast(_relErrors.join('\n'), 'error'); return; }
+
+    // ── 변경 전 데이터 수집 (이력 기록용) ──
+    const _prevExecs = await api(`../tables/registered_executives?company_id=${_savedCoId}`).then(r => (r?.data || [])).catch(() => []);
+    const _prevRels  = await api(`../tables/related_party_workers?company_id=${_savedCoId}`).then(r => (r?.data || [])).catch(() => []);
+
+    await _cmSaveExecutives(_savedCoId);
+    await _cmSaveRelated(_savedCoId);
+
+    // ── 변경 이력 생성 ──
+    const _newExecs = _cmCollectExecutives();
+    const _newRels  = _cmCollectRelated();
+
+    const _execChanges = [];
+    const _prevExecNames = _prevExecs.map(e => e.name);
+    const _newExecNames  = _newExecs.map(e => e.name);
+    _newExecs.forEach(e => { if(!_prevExecNames.includes(e.name)) _execChanges.push(`등기임원 ${e.name} 추가`); });
+    _prevExecs.forEach(e => { if(!_newExecNames.includes(e.name)) _execChanges.push(`등기임원 ${e.name} 삭제`); });
+
+    const _relChanges = [];
+    const _prevRelNames = _prevRels.map(r => r.name);
+    const _newRelNames  = _newRels.map(r => r.name);
+    _newRels.forEach(r => { if(!_prevRelNames.includes(r.name)) _relChanges.push(`특수관계인 ${r.name} 추가`); });
+    _prevRels.forEach(r => { if(!_newRelNames.includes(r.name)) _relChanges.push(`특수관계인 ${r.name} 삭제`); });
+
+    if(_execChanges.length > 0 || _relChanges.length > 0){
+      const histEntry = {
+        id:           'cmhist_'+Date.now()+'_'+Math.random().toString(36).slice(2,6),
+        company_id:   _savedCoId,
+        changed_at:   Date.now(),
+        effective_date: _effDateStr || '',
+        changes:      [
+          ...(_execChanges.length ? [{ field: 'registered_executives', label: '등기임원', before: _prevExecNames.join(', ') || '(없음)', after: _newExecNames.join(', ') || '(없음)' }] : []),
+          ...(_relChanges.length  ? [{ field: 'related_party_workers', label: '특수관계인', before: _prevRelNames.join(', ') || '(없음)', after: _newRelNames.join(', ') || '(없음)' }] : []),
+        ],
+        snapshot:     {},
+      };
+      await api('../tables/company_history',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(histEntry)});
+      await loadCompanyHistories();
+    }
+  }
+
   closeModal('company-modal');await loadCompanies();populateFilters();populatePICompanies();renderCompanies();renderDashboard();toast('고객사가 등록되었습니다. ✔');
 }
 /**
@@ -1177,6 +1261,204 @@ async function _cmApplyAllowanceToContracts(companyId, effectiveDateStr, newCfg)
 async function deleteCompany(id){
   if(!confirm('삭제하시겠습니까?')) return;
   await api(`../tables/companies/${id}`,{method:'DELETE'});await loadCompanies();populateFilters();renderCompanies();renderDashboard();toast('삭제됨');
+}
+
+// ── 등기임원 / 특수관계인 급여대상자 관리 ──────────────────────────────────
+let _cmExecutives = [];
+let _cmRelatedParties = [];
+
+function _cmExecutiveHTML(idx, data = { name: '', position: '', phone: '', id_number: '', bank_name: '', bank_account: '', bank_holder: '' }) {
+  const esc = (s) => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return `
+  <div class="cm-person-card" id="cm-exec-card-${idx}" style="background:#f8fafc;border:1.5px solid #e0e0e0;border-radius:10px;padding:14px;margin-bottom:10px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <span style="font-size:13px;font-weight:700;color:#374151;">등기임원 #${idx+1}</span>
+      <button type="button" class="btn btn-sm btn-secondary" onclick="_cmRemoveExecutive(${idx})" style="padding:2px 10px;font-size:11px;"><i class="fas fa-times"></i> 삭제</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;">
+      <div class="cm-person-fg"><label>이름 <span style="color:#c00;">*</span></label><input type="text" id="cm-exec-name-${idx}" value="${esc(data.name)}" placeholder="이름" /></div>
+      <div class="cm-person-fg"><label>직책 <span style="color:#c00;">*</span></label><input type="text" id="cm-exec-position-${idx}" value="${esc(data.position)}" placeholder="예: 전무이사" /></div>
+      <div class="cm-person-fg"><label>전화번호 <span style="color:#c00;">*</span></label><input type="text" id="cm-exec-phone-${idx}" value="${esc(data.phone)}" placeholder="010-0000-0000" maxlength="13" oninput="_onPhoneInput(this)" /></div>
+      <div class="cm-person-fg"><label>주민번호 앞7자리 <span style="color:#c00;">*</span></label><input type="text" id="cm-exec-idnum-${idx}" value="${esc(data.id_number)}" placeholder="YYMMDD-N" maxlength="8" oninput="_onIdInput(this)" /></div>
+    </div>
+    <div style="margin-top:10px;border-top:1px dashed #d1d5db;padding-top:10px;">
+      <span style="font-size:11px;color:#6b7280;font-weight:600;">급여지급계좌 (선택)</span>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px 10px;margin-top:6px;">
+        <div class="cm-person-fg"><label>은행명</label><input type="text" id="cm-exec-bank-${idx}" value="${esc(data.bank_name)}" placeholder="예: 국민은행" /></div>
+        <div class="cm-person-fg"><label>계좌번호</label><input type="text" id="cm-exec-account-${idx}" value="${esc(data.bank_account)}" placeholder="000-0000-000000" /></div>
+        <div class="cm-person-fg"><label>예금주</label><input type="text" id="cm-exec-holder-${idx}" value="${esc(data.bank_holder)}" placeholder="예금주명" /></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function _cmRelatedHTML(idx, data = { name: '', relationship: '', phone: '', id_number: '', bank_name: '', bank_account: '', bank_holder: '' }) {
+  const esc = (s) => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return `
+  <div class="cm-person-card" id="cm-rel-card-${idx}" style="background:#f8fafc;border:1.5px solid #e0e0e0;border-radius:10px;padding:14px;margin-bottom:10px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <span style="font-size:13px;font-weight:700;color:#374151;">특수관계인 #${idx+1}</span>
+      <button type="button" class="btn btn-sm btn-secondary" onclick="_cmRemoveRelated(${idx})" style="padding:2px 10px;font-size:11px;"><i class="fas fa-times"></i> 삭제</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;">
+      <div class="cm-person-fg"><label>이름 <span style="color:#c00;">*</span></label><input type="text" id="cm-rel-name-${idx}" value="${esc(data.name)}" placeholder="이름" /></div>
+      <div class="cm-person-fg"><label>관계 <span style="color:#c00;">*</span></label><input type="text" id="cm-rel-relationship-${idx}" value="${esc(data.relationship)}" placeholder="예: 배우자" /></div>
+      <div class="cm-person-fg"><label>전화번호 <span style="color:#c00;">*</span></label><input type="text" id="cm-rel-phone-${idx}" value="${esc(data.phone)}" placeholder="010-0000-0000" maxlength="13" oninput="_onPhoneInput(this)" /></div>
+      <div class="cm-person-fg"><label>주민번호 앞7자리 <span style="color:#c00;">*</span></label><input type="text" id="cm-rel-idnum-${idx}" value="${esc(data.id_number)}" placeholder="YYMMDD-N" maxlength="8" oninput="_onIdInput(this)" /></div>
+    </div>
+    <div style="margin-top:10px;border-top:1px dashed #d1d5db;padding-top:10px;">
+      <span style="font-size:11px;color:#6b7280;font-weight:600;">급여지급계좌 (선택)</span>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px 10px;margin-top:6px;">
+        <div class="cm-person-fg"><label>은행명</label><input type="text" id="cm-rel-bank-${idx}" value="${esc(data.bank_name)}" placeholder="예: 국민은행" /></div>
+        <div class="cm-person-fg"><label>계좌번호</label><input type="text" id="cm-rel-account-${idx}" value="${esc(data.bank_account)}" placeholder="000-0000-000000" /></div>
+        <div class="cm-person-fg"><label>예금주</label><input type="text" id="cm-rel-holder-${idx}" value="${esc(data.bank_holder)}" placeholder="예금주명" /></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function _cmRenderExecutives() {
+  const list = document.getElementById('cm-executives-list');
+  if (!list) return;
+  list.innerHTML = _cmExecutives.map((d, i) => _cmExecutiveHTML(i, d)).join('');
+}
+
+function _cmRenderRelated() {
+  const list = document.getElementById('cm-related-list');
+  if (!list) return;
+  list.innerHTML = _cmRelatedParties.map((d, i) => _cmRelatedHTML(i, d)).join('');
+}
+
+function _cmAddExecutive() {
+  _cmExecutives.push({ name: '', position: '', phone: '', id_number: '', bank_name: '', bank_account: '', bank_holder: '' });
+  _cmRenderExecutives();
+}
+
+function _cmRemoveExecutive(idx) {
+  _cmExecutives.splice(idx, 1);
+  _cmRenderExecutives();
+  toast('수정 완료 버튼을 눌러야 삭제하신 내용이 최종 반영됩니다.', 'warning');
+}
+
+function _cmAddRelated() {
+  _cmRelatedParties.push({ name: '', relationship: '', phone: '', id_number: '', bank_name: '', bank_account: '', bank_holder: '' });
+  _cmRenderRelated();
+}
+
+function _cmRemoveRelated(idx) {
+  _cmRelatedParties.splice(idx, 1);
+  _cmRenderRelated();
+  toast('수정 완료 버튼을 눌러야 삭제하신 내용이 최종 반영됩니다.', 'warning');
+}
+
+function _cmCollectExecutives() {
+  const result = [];
+  _cmExecutives.forEach((_, i) => {
+    const name = document.getElementById(`cm-exec-name-${i}`)?.value?.trim() || '';
+    const position = document.getElementById(`cm-exec-position-${i}`)?.value?.trim() || '';
+    const phone = document.getElementById(`cm-exec-phone-${i}`)?.value?.trim() || '';
+    const id_number = document.getElementById(`cm-exec-idnum-${i}`)?.value?.trim() || '';
+    const bank_name = document.getElementById(`cm-exec-bank-${i}`)?.value?.trim() || '';
+    const bank_account = document.getElementById(`cm-exec-account-${i}`)?.value?.trim() || '';
+    const bank_holder = document.getElementById(`cm-exec-holder-${i}`)?.value?.trim() || '';
+    if (name || position || phone || id_number) {
+      result.push({ name, position, phone, id_number, bank_name, bank_account, bank_holder });
+    }
+  });
+  return result;
+}
+
+function _cmCollectRelated() {
+  const result = [];
+  _cmRelatedParties.forEach((_, i) => {
+    const name = document.getElementById(`cm-rel-name-${i}`)?.value?.trim() || '';
+    const relationship = document.getElementById(`cm-rel-relationship-${i}`)?.value?.trim() || '';
+    const phone = document.getElementById(`cm-rel-phone-${i}`)?.value?.trim() || '';
+    const id_number = document.getElementById(`cm-rel-idnum-${i}`)?.value?.trim() || '';
+    const bank_name = document.getElementById(`cm-rel-bank-${i}`)?.value?.trim() || '';
+    const bank_account = document.getElementById(`cm-rel-account-${i}`)?.value?.trim() || '';
+    const bank_holder = document.getElementById(`cm-rel-holder-${i}`)?.value?.trim() || '';
+    if (name || relationship || phone || id_number) {
+      result.push({ name, relationship, phone, id_number, bank_name, bank_account, bank_holder });
+    }
+  });
+  return result;
+}
+
+async function _cmLoadExecutives(companyId) {
+  _cmExecutives = [];
+  if (!companyId) { _cmRenderExecutives(); return; }
+  try {
+    const res = await api(`../tables/registered_executives?company_id=${companyId}`);
+    const rows = res?.data || res || [];
+    _cmExecutives = (Array.isArray(rows) ? rows : []).map(r => ({
+      id: r.id, name: r.name, position: r.position, phone: r.phone, id_number: r.id_number,
+      bank_name: r.bank_name || '', bank_account: r.bank_account || '', bank_holder: r.bank_holder || ''
+    }));
+  } catch(e) { console.error('[_cmLoadExecutives]', e); }
+  _cmRenderExecutives();
+}
+
+async function _cmLoadRelated(companyId) {
+  _cmRelatedParties = [];
+  if (!companyId) { _cmRenderRelated(); return; }
+  try {
+    const res = await api(`../tables/related_party_workers?company_id=${companyId}`);
+    const rows = res?.data || res || [];
+    _cmRelatedParties = (Array.isArray(rows) ? rows : []).map(r => ({
+      id: r.id, name: r.name, relationship: r.relationship, phone: r.phone, id_number: r.id_number,
+      bank_name: r.bank_name || '', bank_account: r.bank_account || '', bank_holder: r.bank_holder || ''
+    }));
+  } catch(e) { console.error('[_cmLoadRelated]', e); }
+  _cmRenderRelated();
+}
+
+async function _cmSaveExecutives(companyId) {
+  const collected = _cmCollectExecutives();
+  try {
+    const res = await api(`../tables/registered_executives?company_id=${companyId}`);
+    const existing = res?.data || [];
+    for (const r of existing) {
+      await api(`../tables/registered_executives/${r.id}`, { method: 'DELETE' });
+    }
+    for (const d of collected) {
+      const body = {
+        id: 'exec_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
+        company_id: companyId, name: d.name, position: d.position,
+        phone: d.phone, id_number: d.id_number,
+        bank_name: d.bank_name, bank_account: d.bank_account, bank_holder: d.bank_holder,
+        created_at: Date.now(), updated_at: Date.now()
+      };
+      await api('../tables/registered_executives', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    }
+  } catch(e) {
+    console.error('[_cmSaveExecutives]', e);
+    throw e;
+  }
+}
+
+async function _cmSaveRelated(companyId) {
+  const collected = _cmCollectRelated();
+  try {
+    const res = await api(`../tables/related_party_workers?company_id=${companyId}`);
+    const existing = res?.data || [];
+    for (const r of existing) {
+      await api(`../tables/related_party_workers/${r.id}`, { method: 'DELETE' });
+    }
+    for (const d of collected) {
+      const body = {
+        id: 'rel_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
+        company_id: companyId, name: d.name, relationship: d.relationship,
+        phone: d.phone, id_number: d.id_number,
+        bank_name: d.bank_name, bank_account: d.bank_account, bank_holder: d.bank_holder,
+        created_at: Date.now(), updated_at: Date.now()
+      };
+      await api('../tables/related_party_workers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    }
+  } catch(e) {
+    console.error('[_cmSaveRelated]', e);
+    throw e;
+  }
 }
 
 // ==============================================================================

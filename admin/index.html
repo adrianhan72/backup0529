@@ -1217,6 +1217,30 @@
 
       </div>
     </div>
+
+    <!-- ── 등기임원 섹션 ── -->
+    <div id="cm-executives-section" style="border-top:1px solid #e5e7eb;padding:16px 20px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <span style="font-weight:700;font-size:12.5px;color:#374151;display:flex;align-items:center;gap:7px;">
+          <i class="fas fa-user-tie" style="color:#4f46e5;font-size:13px;"></i> 등기임원
+          <span style="font-size:10.5px;font-weight:400;color:#9ca3af;">(대표이사는 입력하지 않아도 됩니다.)</span>
+        </span>
+        <button type="button" class="btn btn-sm btn-indigo" onclick="_cmAddExecutive()"><i class="fas fa-plus"></i> 추가</button>
+      </div>
+      <div id="cm-executives-list"></div>
+    </div>
+
+    <!-- ── 특수관계인 급여대상자 섹션 ── -->
+    <div id="cm-related-section" style="border-top:1px solid #e5e7eb;padding:16px 20px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <span style="font-weight:700;font-size:12.5px;color:#374151;display:flex;align-items:center;gap:7px;">
+          <i class="fas fa-users" style="color:#0891b2;font-size:13px;"></i> 특수관계인 급여대상자
+        </span>
+        <button type="button" class="btn btn-sm btn-indigo" onclick="_cmAddRelated()"><i class="fas fa-plus"></i> 추가</button>
+      </div>
+      <div id="cm-related-list"></div>
+    </div>
+
     <!-- ── 정보 수정 이력 섹션 (수정 모드 전용) ── -->
     <div id="cm-history-section" style="display:none;border-top:1px solid #e5e7eb;margin:0 -1px;">
       <div class="cm-history-toggle" onclick="_cmHistToggle()">
@@ -1544,14 +1568,14 @@
         </button>
       </div>
       <div class="amend-desc">
-        아래 계약서 내용을 수정한 후 <strong>수정완료</strong> 버튼을 클릭하세요.<br>
-        수정된 계약서를 근로자에게 재발송하고, <strong>날인본 사본을 업로드</strong>해야 계약 유효 상태가 유지됩니다.
+        아래 계약서 내용을 수정한 후 <strong>수정완료</strong> 버튼을 클릭하면 이 계약은 파기처리되고 수정된 계약이 다시 등록됩니다.<br>
+        이후 근로자에게 <strong>계약서를 재발송</strong>하고, <strong>날인본 사본을 업로드</strong>하여 보관하세요.
       </div>
       <div class="amend-steps">
         <div class="ct-amend-step"><div class="step-num">1</div> 내용 수정</div>
-        <div class="ct-amend-step"><div class="step-num">2</div> 수정완료 클릭</div>
+        <div class="ct-amend-step"><div class="step-num">2</div> 수정완료 (파기 및 수정계약 재등록)</div>
         <div class="ct-amend-step"><div class="step-num">3</div> 계약서 재발송</div>
-        <div class="ct-amend-step"><div class="step-num">4</div> 날인본 업로드 → 유효 확정</div>
+        <div class="ct-amend-step"><div class="step-num">4</div> 날인본 업로드 (보관)</div>
       </div>
       <div class="amend-actions">
         <button class="btn-amend-complete" id="ct-btn-amend-complete" onclick="openAmendPreview()">
@@ -1593,11 +1617,12 @@
                   <div style="font-size:12px;color:#7c3aed;font-weight:700;margin-bottom:8px;">
                     <i class="fas fa-info-circle"></i> 입력한 이름이 <strong>대표자명</strong>과 동일합니다.
                   </div>
-                  <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;font-weight:600;color:#7c3aed;margin-bottom:6px;">
+                  <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;font-weight:600;color:#1f2937;margin-bottom:4px;">
                     <input type="checkbox" id="ct-edit-em-is-rep" onchange="_checkAmendBtnState()" style="accent-color:#7c3aed;width:17px;height:17px;" />
-                    <span>대표자 본인입니다 (상시근로자 수에서 제외)</span>
+                    <span>대표자 본인입니다.</span>
                   </label>
-                  <div style="font-size:11px;color:#9ca3af;margin-bottom:6px;">또는 다른 이름으로 입력</div>
+                  <div style="font-size:10.5px;color:#9ca3af;margin-bottom:4px;padding-left:24px;">본인일 경우 상시근로자 수에서 제외되며, 근로계약서를 작성하지 않아도 급여를 입력할 수 있습니다.</div>
+                  <div style="font-size:12px;color:#7c3aed;font-weight:700;margin-bottom:6px;">동명이인일 경우</div>
                   <div id="ct-edit-em-rep-alt-names" style="display:flex;flex-wrap:wrap;gap:4px;"></div>
                 </div>
                 <div id="ct-edit-em-name-dup-alert" style="display:none;margin-top:6px;padding:8px 10px;background:#FFF7ED;border:1.5px solid #FB923C;border-radius:8px;font-size:12px;color:#9A3412;">
@@ -1688,11 +1713,12 @@
                   <div style="font-size:12px;color:#7c3aed;font-weight:700;margin-bottom:8px;">
                     <i class="fas fa-info-circle"></i> 입력한 이름이 <strong>대표자명</strong>과 동일합니다.
                   </div>
-                  <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;font-weight:600;color:#7c3aed;margin-bottom:6px;">
+                  <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;font-weight:600;color:#1f2937;margin-bottom:4px;">
                     <input type="checkbox" id="ct-em-is-rep" onchange="_checkRegisterBtnState()" style="accent-color:#7c3aed;width:17px;height:17px;" />
-                    <span>대표자 본인입니다 (상시근로자 수에서 제외)</span>
+                    <span>대표자 본인입니다.</span>
                   </label>
-                  <div style="font-size:11px;color:#9ca3af;margin-bottom:6px;">또는 다른 이름으로 입력</div>
+                  <div style="font-size:10.5px;color:#9ca3af;margin-bottom:4px;padding-left:24px;">본인일 경우 상시근로자 수에서 제외되며, 근로계약서를 작성하지 않아도 급여를 입력할 수 있습니다.</div>
+                  <div style="font-size:12px;color:#7c3aed;font-weight:700;margin-bottom:6px;">동명이인일 경우</div>
                   <div id="ct-em-rep-alt-names" style="display:flex;flex-wrap:wrap;gap:4px;"></div>
                 </div>
                 <div id="ct-em-name-dup-alert" style="display:none;margin-top:6px;padding:8px 10px;background:#FFF7ED;border:1.5px solid #FB923C;border-radius:8px;font-size:12px;color:#9A3412;">
@@ -2124,9 +2150,9 @@
     </div>
     <!-- 툴바 -->
     <div style="display:flex;align-items:center;gap:10px;padding:10px 20px;background:#f8fafc;border-bottom:1px solid #e2e8f0;flex-shrink:0;flex-wrap:wrap;">
-      <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#64748b;margin-right:4px;">
-        <i class="fas fa-info-circle" style="color:#6366f1;"></i>
-        계약서를 인쇄하거나 PDF로 저장할 수 있습니다. 이 계약은 근로자에게 알림톡·이메일 또는 직접 배부로 발송해서 날인본을 업로드해야 유효한 계약으로 처리됩니다.
+      <div style="display:flex;align-items:flex-start;gap:6px;font-size:12px;color:#64748b;margin-right:4px;line-height:1.7;" id="cpm-guide-text">
+        <i class="fas fa-info-circle" style="color:#6366f1;margin-top:2px;"></i>
+        <span>• 계약서는 반드시 근로자에게 알림톡 또는 이메일로 발송하거나 수동교부해야 합니다.<br>• 조회 모드에서 계약서와 제3자 정보제공동의서는 각 날인본을 업로드해서 보관할 수 있습니다.</span>
       </div>
       <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
         <button onclick="printContractDoc()" class="btn btn-slate">

@@ -174,8 +174,21 @@ function renderContracts(){
     if(filterEmpCat){
       const emp=allEmployees.find(e=>e.id===c.employee_id);
       const empCat = emp?.employment_category || '';
-      // 한글/영문 모두 매칭 (예: '계약직 수습' ↔ 'fixed_term_probation')
-      if(empCat !== filterEmpCat && empCat !== CONTRACT_TYPE_LABEL[filterEmpCat] && CONTRACT_TYPE_LABEL[empCat] !== filterEmpCat) return false;
+      const empName = emp?.name || '';
+      // 대표자·등기임원·특수관계인: 실제 고용형태가 아닌 이름 매칭으로 필터
+      if(filterEmpCat === 'representative'){
+        const co2 = (allCompanies||[]).find(x => x.id === c.company_id);
+        let reps2 = [];
+        try { reps2 = typeof co2?.representatives === 'string' ? JSON.parse(co2.representatives) : (co2?.representatives || []); } catch(e){}
+        if(!Array.isArray(reps2) || !reps2.some(r => r.name === empName)) return false;
+      } else if(filterEmpCat === 'executive'){
+        if(!(allExecutives||[]).some(e => e.company_id === c.company_id && e.name === empName)) return false;
+      } else if(filterEmpCat === 'related_party'){
+        if(!(allRelatedParties||[]).some(r => r.company_id === c.company_id && r.name === empName)) return false;
+      } else {
+        // 한글/영문 모두 매칭 (예: '계약직 수습' ↔ 'fixed_term_probation')
+        if(empCat !== filterEmpCat && empCat !== CONTRACT_TYPE_LABEL[filterEmpCat] && CONTRACT_TYPE_LABEL[empCat] !== filterEmpCat) return false;
+      }
     }
     // 계약상태 필터
     const {label, docsIncomplete} = calcContractStatusDisplay(c,today);
@@ -209,10 +222,32 @@ function renderContracts(){
       ? `<span style="font-size:11px;color:#9ca3af;">일급여</span> ${won(c.daily_wage||c.base_salary)}`
       : won(c.base_salary);
     // ── 서류미비 배지 (파기된 계약은 서류미비 관리 안 함) ──
+    // ── 대표자·등기임원·특수관계인 추가 배지 ──
+    const empName = emp?.name || '';
+    let specialBadge = '';
+    if(empName){
+      // 대표자 확인
+      const co = (allCompanies||[]).find(x => x.id === c.company_id);
+      if(co){
+        let reps = [];
+        try { reps = typeof co.representatives === 'string' ? JSON.parse(co.representatives) : (co.representatives || []); } catch(e){}
+        if(Array.isArray(reps) && reps.some(r => r.name === empName)){
+          specialBadge = `<span class="badge" style="background:#e5e7eb;color:#374151;margin-left:4px;">대표자</span>`;
+        }
+      }
+      // 등기임원 확인
+      if(!specialBadge && (allExecutives||[]).some(e => e.company_id === c.company_id && e.name === empName)){
+        specialBadge = `<span class="badge" style="background:#e5e7eb;color:#374151;margin-left:4px;">등기임원</span>`;
+      }
+      // 특수관계인 확인
+      if(!specialBadge && (allRelatedParties||[]).some(r => r.company_id === c.company_id && r.name === empName)){
+        specialBadge = `<span class="badge" style="background:#e5e7eb;color:#374151;margin-left:4px;">특수관계인</span>`;
+      }
+    }
     return `<tr>
       <td style="font-weight:600">${getEmpName(c.employee_id)}</td>
-      <td><span class="badge ${catBadge}">${contractTypeLabel(empCat)}</span></td>
-      <td style="font-size:11.5px">${periodTxt}</td>
+      <td><span class="badge ${catBadge}">${contractTypeLabel(empCat)}</span>${specialBadge}</td>
+      <td style="font-size:11.5px;${stName==='파기'?'text-decoration:line-through;color:#9ca3af;':''}">${periodTxt}</td>
       <td class="amount">${won(c.hourly_wage)}/h</td>
       <td class="amount-blue">${isContDaily ? '<span style="color:#9ca3af;font-size:11px;">-</span>' : won(c.annual_salary)}</td>
       <td class="amount">${baseSalaryDisplay}</td>
@@ -230,8 +265,12 @@ function renderContracts(){
           ? `<button class="btn btn-sm" disabled title="임시저장 상태에서는 출력할 수 없습니다"><i class="fas fa-file-contract"></i> 계약서</button>`
           : `<button class="btn btn-sm btn-indigo" onclick="openContractPrintModal('${c.id}')"><i class="fas fa-file-contract"></i> 계약서</button>`
         }
-        ${docsIncomplete
+        ${docsIncomplete && stName !== '파기'
           ? `<button class="btn btn-sm btn-danger" onclick="openContractForUpload('${c.id}')"><i class="fas fa-upload"></i> 서류 업로드</button>`
+          : ''
+        }
+        ${stName === '파기'
+          ? `<button class="btn btn-sm btn-secondary" onclick="deleteContract('${c.id}')"><i class="fas fa-trash-alt"></i> 삭제</button>`
           : ''
         }
       </td>
@@ -316,6 +355,8 @@ function openContractModal(id=null, preCompanyId=null){
   document.getElementById('ct-renew-panel').style.display = 'none';
   const _amendPanelInit = document.getElementById('ct-amend-panel');
   if(_amendPanelInit) _amendPanelInit.style.display = 'none';
+  const _cftPanelInit = document.getElementById('ct-fixed-terminate-panel');
+  if(_cftPanelInit) _cftPanelInit.style.display = 'none';
   // amend 모드 플래그 초기화
   window._isAmendMode = false;
   // 통합 상태 배너 초기화
@@ -742,7 +783,7 @@ function _setEditNameCategoryLock(lock, lockCat = lock) {
   if(catLock)  catLock.style.display  = lockCat ? 'block' : 'none';
 }
 /**
- * 직원명이 선택된 고객사의 대표자명과 일치하면 '대표자 본인' 체크박스와 대체 이름 제안을 표시
+ * 직원명이 선택된 고객사의 대표자명·등기임원·특수관계인과 일치하면 경고 표시
  * @param {string} nameInputId  - 이름 input 요소 ID
  * @param {string} repRowId     - 대표자 행 div ID
  * @param {string} repChkId     - 대표자 체크박스 ID
@@ -757,12 +798,46 @@ function _checkRepSelf(nameInputId, repRowId, repChkId, altNamesId){
   if(!nameEl || !rowEl || !coId){ if(rowEl) rowEl.style.display='none'; return; }
   const empName = nameEl.value.trim();
   const co = (allCompanies||[]).find(c => c.id === coId);
+
+  // 대표자명 수집
   const reps = typeof _cmParseReps === 'function' ? _cmParseReps(co) : [];
   const repNames = reps.map(r => r.name).filter(Boolean);
-  const isRep = empName && repNames.length > 0 && repNames.includes(empName);
+
+  // 등기임원명 수집
+  const execNames = (allExecutives||[]).filter(e => e.company_id === coId).map(e => e.name).filter(Boolean);
+
+  // 특수관계인명 수집
+  const relatedNames = (allRelatedParties||[]).filter(r => r.company_id === coId).map(r => r.name).filter(Boolean);
+
+  // 중복 확인: 대표자·등기임원·특수관계인 중 하나라도 일치
+  const allProtectedNames = [...new Set([...repNames, ...execNames, ...relatedNames])];
+  const isRep = empName && allProtectedNames.length > 0 && allProtectedNames.includes(empName);
+
+  // 어떤 카테고리와 일치하는지 파악 (메시지용)
+  let matchCategory = '';
+  if(repNames.includes(empName)) matchCategory = '대표자';
+  else if(execNames.includes(empName)) matchCategory = '등기임원';
+  else if(relatedNames.includes(empName)) matchCategory = '특수관계인';
+
   if(isRep){
-    // ── 대표자명과 일치: 선택 UI 표시 ──
+    // ── 대표자·등기임원·특수관계인명과 일치: 선택 UI 표시 ──
     rowEl.style.display = '';
+    // 경고 메시지 동적 설정
+    const msgEl = rowEl.querySelector('div:first-child');
+    if(msgEl){
+      const categoryLabel = matchCategory === '대표자' ? '대표자명' :
+                            matchCategory === '등기임원' ? '등기임원명' :
+                            matchCategory === '특수관계인' ? '특수관계인명' : '대표자·등기임원·특수관계인명';
+      msgEl.innerHTML = `<i class="fas fa-info-circle"></i> 입력한 이름이 <strong>${categoryLabel}</strong>과 동일합니다.`;
+    }
+    // 체크박스 라벨 동적 설정
+    const chkLabel = rowEl.querySelector('label span');
+    if(chkLabel){
+      const selfLabel = matchCategory === '등기임원' ? '등기임원 본인입니다.' :
+                        matchCategory === '특수관계인' ? '특수관계인 본인입니다.' :
+                        '대표자 본인입니다.';
+      chkLabel.textContent = selfLabel;
+    }
     // 대체 이름 제안 생성
     if(altEl){
       const escaped = empName.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
@@ -777,8 +852,8 @@ function _checkRepSelf(nameInputId, repRowId, repChkId, altNamesId){
       altEl.innerHTML = suggestions.length
         ? suggestions.map(s =>
           `<button type="button" onclick="_repUseAltName('${nameInputId}','${repRowId}','${s}')"
-            style="padding:4px 12px;background:#FFF;border:1.5px solid #FB923C;border-radius:20px;color:#9A3412;font-size:11px;cursor:pointer;font-weight:600;">
-            ${s} (으)로 입력</button>`).join('')
+            class="btn btn-sm btn-secondary" style="font-size:11px;">` +
+            `${s} (으)로 입력</button>`).join('')
         : `<span style="font-size:11px;color:#9ca3af;">대체 가능한 이름이 없습니다. 직접 수정해 주세요.</span>`;
     }
   } else {
@@ -1116,6 +1191,8 @@ function calcContractStatusDisplay(c, today){
   const docsIncomplete = !!(c && (!c.signed_file_data || !c.consent_file_data));
   // 임시저장 상태 최우선 처리 (임시저장은 서류미비와 무관)
   if(c.is_draft) return {badge:'badge-yellow', label:'임시저장', docsIncomplete: false};
+  // 수정재발행으로 파기된 계약 (is_voided_by_amend 플래그 우선)
+  if(c.is_voided_by_amend) return {badge:'badge-slate', label:'파기', docsIncomplete};
   // 상태 정규화: DB 영문값('pending' 등) → 한글 표시값('계약예정' 등)
   const s = (CONTRACT_STATUS_LABEL[c.status] || c.status || '활성');
   const start = c.contract_start || '';
@@ -1395,9 +1472,11 @@ function viewContract(id){
   ['ct-btn-renew','ct-btn-renew2'].forEach(bid=>{
     const el=document.getElementById(bid); if(el) el.style.display=(isActive||isPreTerminate)?'':'none';
   });
-  // 재계약: 만료·해지·파기된 계약만
+  // 재계약: 만료·해지된 계약만 (파기 제외)
   ['ct-btn-recontract','ct-btn-recontract2'].forEach(bid=>{
-    const el=document.getElementById(bid); if(el) el.style.display=isTerminated?'':'none';
+    const el=document.getElementById(bid);
+    const isVoided = c?.status===CONTRACT_STATUS.VOIDED || c?.is_voided_by_amend;
+    if(el) el.style.display=(isTerminated && !isVoided)?'':'none';
   });
   // 퇴사예정 설정: 정규직 유효 계약만 (계약직/일용직은 별도 해지설정 버튼 사용)
   ['ct-btn-terminate','ct-btn-terminate2'].forEach(bid=>{
@@ -1572,8 +1651,10 @@ async function openAmendPreview(){
   const empId   = origC.employee_id;
   const start   = document.getElementById('ct-start').value;
   const end     = document.getElementById('ct-end').value;
-  const cType   = document.getElementById('ct-type').value;
-  const catTxt  = document.getElementById('ct-edit-em-category')?.value || cType;
+  const cTypeRaw   = document.getElementById('ct-type').value;
+  const cType  = CONTRACT_TYPE_LEGACY_MAP[cTypeRaw] || cTypeRaw;
+  const catTxtRaw = document.getElementById('ct-edit-em-category')?.value || cType;
+  const catTxt  = CONTRACT_TYPE_LEGACY_MAP[catTxtRaw] || catTxtRaw;
   const isRegGrp= catTxt ===CONTRACT_TYPE.REGULAR || catTxt ===CONTRACT_TYPE.REGULAR_PROBATION;
   const isDailyA= catTxt ===CONTRACT_TYPE.DAILY;
   const isFixedA= catTxt ===CONTRACT_TYPE.FIXED || catTxt ===CONTRACT_TYPE.FIXED_PROBATION;
@@ -1613,7 +1694,11 @@ async function openAmendPreview(){
     probation_amt:    isProbA?(parseFloat(document.getElementById('ct-probation-amt').value)||0):0,
     probation_basis:  isProbA?(document.querySelector('input[name="ct-probation-basis"]:checked')?.value||'salary'):'salary',
     work_hours_per_day: hours_, work_days_per_week: isDailyA?0:days_,
-    schedule_json: JSON.stringify(getScheduleJSON()),
+    schedule_json: (() => {
+      const _newSch = getScheduleJSON();
+      const _hasActive = Array.isArray(_newSch) && _newSch.some(d => d.active);
+      return _hasActive ? JSON.stringify(_newSch) : (origC.schedule_json || JSON.stringify(_newSch));
+    })(),
     annual_leave_days: isDailyA?0:(parseFloat(document.getElementById('ct-annual').value)||15),
     annual_salary: annual_, monthly_salary_agreed: monthly_, base_salary: base_,
     daily_wage: dWage_, weekly_holiday_pay: wkHol_, hourly_wage: hWage_,
@@ -1638,7 +1723,10 @@ async function openAmendPreview(){
     pay_period_day: parseInt(document.getElementById('ct-pay-period-day-hidden')?.value) || null,
     pay_day: parseInt(document.getElementById('ct-pay-day')?.value) || null,
     car_maintenance: car_,
-    insurance_employment:true, insurance_industrial:true, insurance_pension:true, insurance_health:true,
+    insurance_employment: origC.insurance_employment!==undefined ? origC.insurance_employment : true,
+    insurance_industrial: origC.insurance_industrial!==undefined ? origC.insurance_industrial : true,
+    insurance_pension:    origC.insurance_pension!==undefined    ? origC.insurance_pension    : true,
+    insurance_health:     origC.insurance_health!==undefined     ? origC.insurance_health     : true,
     note: document.getElementById('ct-note').value,
     salary_start_date: start, salary_end_date:'', is_draft:false, draft_saved_at:null,
   };
@@ -1681,8 +1769,10 @@ async function openAmendPreview(){
     ...commonFields,
     id: 'cont' + Date.now(), status: newStatus,
     amended_from: origId, is_voided_by_amend: false,
-    signed_file_name: origC.signed_file_name||'',
-    signed_file_data: origC.signed_file_data||'',
+    // 계약서 날인본: 수정 시 반드시 재업로드 필요 → 초기화
+    signed_file_name: '',
+    signed_file_data: '',
+    // 제3자정보제공 동의서 날인본: 원본 계약에서 복사
     consent_file_name: origC.consent_file_name||'',
     consent_file_data: origC.consent_file_data||'',
   };

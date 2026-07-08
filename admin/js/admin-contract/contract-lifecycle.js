@@ -493,6 +493,10 @@ function generateContractHTMLFromData(c, emp, co){
   const titleHTML = _hOpen + (titleByType[ctType]||'근 로 계 약 서') + _hClose;
 
   return `
+  ${(c.status===CONTRACT_STATUS.VOIDED || c.is_voided_by_amend) ? `
+  <div style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;display:flex;align-items:center;justify-content:center;opacity:0.12;">
+    <div style="font-size:80px;font-weight:900;color:#dc2626;transform:rotate(-30deg);white-space:nowrap;border:8px solid #dc2626;padding:20px 60px;border-radius:16px;">파기</div>
+  </div>` : ''}
   ${titleHTML}
 
 
@@ -1870,6 +1874,15 @@ async function saveDraftContract(reason){
   const isNew     = !editId.contract && !_recontractEmpId;
   const isEditMode = !!editId.contract;
 
+  // ── 파기된 계약(수정재발행)은 편집 불가 ──
+  if(isEditMode){
+    const _origDraft = allContracts.find(x => x.id === editId.contract);
+    if(_origDraft && _origDraft.is_voided_by_amend){
+      toast('이 계약은 수정재발행으로 파기되어 편집할 수 없습니다.', 'error');
+      return;
+    }
+  }
+
   // ── 신규 직원인 경우 먼저 직원 생성 (임시저장도 직원 DB에 저장) ──
   if(isNew && !empId){
     const newEmpNo = document.getElementById('ct-em-empno')?.value.trim() || '';
@@ -2639,6 +2652,15 @@ async function saveContract(){
   const base  = getAmountVal('ct-base');
   const isEditMode = !!editId.contract;
 
+  // ── 파기된 계약(수정재발행)은 편집 불가 ──
+  if(isEditMode){
+    const _origEdit = allContracts.find(x => x.id === editId.contract);
+    if(_origEdit && _origEdit.is_voided_by_amend){
+      toast('이 계약은 수정재발행으로 파기되어 편집할 수 없습니다.', 'error');
+      return;
+    }
+  }
+
   // ── 신규 직원인 경우 먼저 직원 저장 ──
   if(!empId && !editId.contract && !_recontractEmpId){
     const newName = document.getElementById('ct-em-name').value.trim();
@@ -3115,7 +3137,36 @@ ${_BRAND_SIG}`,
   _currentDraftId  = null; // 임시저장 ID 초기화
   closeModal('contract-modal');await loadContracts();await loadEmployees();renderContracts();renderDashboard();toast('근로계약서가 등록되었습니다. ✔');
 }
-function deleteContract(id){
-  // 근로계약 보존 정책: 삭제 불가 (보존 의무 준수)
-  toast('근로계약서는 보존 정책에 따라 삭제할 수 없습니다.','error');
+async function deleteContract(id){
+  const c = allContracts.find(x => x.id === id);
+  if(!c) return toast('계약 정보를 찾을 수 없습니다.', 'error');
+
+  // 파기된 계약만 삭제 허용
+  const isVoided = c.status === 'voided' || c.is_voided_by_amend;
+  if(!isVoided){
+    toast('근로계약서는 보존 정책에 따라 삭제할 수 없습니다.', 'error');
+    return;
+  }
+
+  if(!confirm('삭제 후에는 다시 조회할 수 없습니다.\n정말 파기 기록을 삭제하시겠습니까?')) return;
+
+  try {
+    // FK 제약 해소: 연관 레코드 먼저 삭제
+    await api(`../tables/contract_dispatch?contract_id=${id}&limit=100`, { method: 'GET' }).then(res => {
+      const list = res?.data || [];
+      return Promise.all(list.map(r => api(`../tables/contract_dispatch/${r.id}`, { method: 'DELETE' }).catch(()=>{})));
+    }).catch(()=>{});
+    await api(`../tables/contract_expiry_notice?contract_id=${id}&limit=100`, { method: 'GET' }).then(res => {
+      const list = res?.data || [];
+      return Promise.all(list.map(r => api(`../tables/contract_expiry_notice/${r.id}`, { method: 'DELETE' }).catch(()=>{})));
+    }).catch(()=>{});
+
+    await api(`../tables/contracts/${id}`, { method: 'DELETE' });
+    await loadContracts();
+    renderContracts();
+    toast('파기된 계약서가 삭제되었습니다.', 'success');
+  } catch(e){
+    console.error('[deleteContract]', e);
+    toast('삭제에 실패했습니다.', 'error');
+  }
 }

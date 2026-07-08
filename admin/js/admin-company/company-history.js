@@ -12,6 +12,10 @@ function _fmtHistVal(val, field){
       return names;
     } catch(e){ return String(val||''); }
   }
+  if(field === 'registered_executives' || field === 'related_party_workers'){
+    // 등기임원/특수관계인 변경 이력: before/after는 이름 목록 문자열
+    return String(val||'') || '(없음)';
+  }
   if(field === 'allowance_config'){
     try {
       const cfg = typeof val === 'string' ? JSON.parse(val) : (val || {});
@@ -36,7 +40,9 @@ function _fmtHistVal(val, field){
     } catch(e){ return String(val||''); }
   }
   const s = String(val||'').trim();
-  return s || '(없음)';
+  // JSON 빈 객체/배열은 (없음)으로 표시
+  if(s === '{}' || s === '[]' || s === 'null' || s === '') return '(없음)';
+  return s;
 }
 
 function _renderCompanyHistory(companyId){

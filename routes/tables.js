@@ -15,6 +15,7 @@ const VALID_TABLES = new Set([
   'company_notices','admin_accounts','insurance_rates','minimum_wages',
   'annual_leave_promotions','annual_leave_ledger','company_history',
   'wage_ledger_notifications',
+  'registered_executives','related_party_workers',
 ]);
 
 function resolveTable(name, db) {

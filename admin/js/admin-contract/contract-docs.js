@@ -22,22 +22,11 @@ function _renderContractFilesSection(c){
       </div>
     </div>` : '';
 
-  // 재발행 계약서(amended_from 있음)이면 원본 참조 배너
-  const amendedBannerHtml = (!isVoided && c.amended_from) ? `
-    <div style="background:linear-gradient(135deg,#f0f9ff,#e0f2fe);border:1.5px solid #7dd3fc;border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:12px;color:#0369a1;display:flex;align-items:center;gap:8px;">
-      <i class="fas fa-edit" style="font-size:16px;color:#0284c7;flex-shrink:0;"></i>
-      <div>
-        <strong>수정 재발행 계약서</strong> — 기존 계약서를 수정하여 재발행된 계약서입니다.
-        <button onclick="viewContract('${c.amended_from}')" style="margin-left:8px;background:#0284c7;color:#fff;border:none;border-radius:5px;padding:2px 8px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">원본 조회</button>
-      </div>
-    </div>` : '';
-
   section.innerHTML = `
     <div class="ctf-section-title">
       <i class="fas fa-paperclip" style="color:#6366f1;"></i>첨부 서류
     </div>
     ${voidedBannerHtml}
-    ${amendedBannerHtml}
     ${_ctfMakeRow('signed',  c, '계약서 날인본',               'fas fa-file-signature', '#4f46e5', '#eff6ff', isVoided)}
     ${_ctfMakeRow('consent', c, '제3자 개인정보 제공 동의서 날인본', 'fas fa-shield-alt',    '#7c3aed', '#f5f3ff', false)}
   `;
@@ -1580,8 +1569,56 @@ function openContractPrintModal(contractId){
     manualBtn.title = isVoided ? '파기된 계약서는 발송할 수 없습니다' : '출력물 직접 배부 완료 처리';
   }
 
+  // ── 안내문구 동적 업데이트 (발송 이력 확인) ──
+  _updateCpmGuide(contractId, isVoided, c.voided_at);
+
   // 모달 열기
   document.getElementById('contract-print-modal').classList.add('open');
+}
+
+/**
+ * 계약서 조회 모달 안내문구: 발송 이력에 따라 동적 표시
+ */
+async function _updateCpmGuide(contractId, isVoided, voidedAt){
+  const guideEl = document.getElementById('cpm-guide-text');
+  if(!guideEl) return;
+  const spanEl = guideEl.querySelector('span');
+  if(!spanEl) return;
+
+  // 파기된 계약서인 경우
+  if(isVoided && voidedAt){
+    const vDt = new Date(voidedAt);
+    const vDtStr = !isNaN(vDt)
+      ? `${vDt.getFullYear()}-${String(vDt.getMonth()+1).padStart(2,'0')}-${String(vDt.getDate()).padStart(2,'0')} ${String(vDt.getHours()).padStart(2,'0')}:${String(vDt.getMinutes()).padStart(2,'0')}`
+      : voidedAt;
+    spanEl.innerHTML = `• 수정 및 재발행으로 인한 파기일시: ${vDtStr}`;
+    spanEl.style.color = '#ef4444';
+    return;
+  }
+
+  // 발송 이력 조회
+  let lastDispatch = null;
+  try {
+    await loadContractDispatchList();
+    const list = window._contractDispatchList || [];
+    const contractDispatches = list
+      .filter(d => d.contract_id === contractId && d.dispatch_status === 'completed')
+      .sort((a, b) => (b.dispatched_at || '').localeCompare(a.dispatched_at || ''));
+    lastDispatch = contractDispatches[0] || null;
+  } catch(e) { /* 무시 */ }
+
+  if(lastDispatch){
+    const dt = lastDispatch.dispatched_at ? new Date(lastDispatch.dispatched_at) : null;
+    const dtStr = dt && !isNaN(dt) 
+      ? `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`
+      : '-';
+    const methodLabel = { kakao:'알림톡', email:'이메일', manual:'수동교부', direct:'직접배부' }[lastDispatch.dispatch_method] || lastDispatch.dispatch_method || '-';
+    spanEl.innerHTML = `• 최종 발송 일시: ${dtStr}, 발송방식: ${methodLabel}<br>• 조회 모드에서 계약서와 제3자 정보제공동의서는 각 날인본을 업로드해서 보관할 수 있습니다.`;
+    spanEl.style.color = '#64748b';
+  } else {
+    spanEl.innerHTML = `• <span style="color:#dc2626;font-weight:600;">(계약서 미발송)</span> 계약서는 반드시 근로자에게 알림톡 또는 이메일로 발송하거나 수동교부해야 합니다.<br>• 조회 모드에서 계약서와 제3자 정보제공동의서는 각 날인본을 업로드해서 보관할 수 있습니다.`;
+    spanEl.style.color = '#64748b';
+  }
 }
 
 function closeContractPrintModal(){

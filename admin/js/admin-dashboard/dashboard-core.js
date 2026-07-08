@@ -1430,10 +1430,10 @@ function goDraftPayroll(draftId){
     }
 
     const coSel = document.getElementById('pi-company');
-    if(coSel){ coSel.value = p.company_id; if(typeof loadPIEmployees === 'function') loadPIEmployees(); }
-
-    const empSel = document.getElementById('pi-employee');
-    if(empSel){ empSel.value = p.employee_id; }
+    if(coSel){ coSel.value = p.company_id; if(typeof loadPIEmployees === 'function') loadPIEmployees().then(() => {
+      const empSel2 = document.getElementById('pi-employee');
+      if(empSel2){ empSel2.value = p.employee_id; }
+    }); }
 
     const yrEl = document.getElementById('pi-year');
     const moEl = document.getElementById('pi-month');

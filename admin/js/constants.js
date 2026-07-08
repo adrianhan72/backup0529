@@ -92,6 +92,9 @@ const CONTRACT_TYPE = Object.freeze({
   FIXED:             'fixed_term',
   FIXED_PROBATION:   'fixed_term_probation',
   DAILY:             'daily',
+  EXECUTIVE:         'executive',
+  RELATED_PARTY:     'related_party',
+  REPRESENTATIVE:    'representative',
 });
 
 const CONTRACT_TYPE_LABEL = Object.freeze({
@@ -100,6 +103,9 @@ const CONTRACT_TYPE_LABEL = Object.freeze({
   [CONTRACT_TYPE.FIXED]:             '계약직',
   [CONTRACT_TYPE.FIXED_PROBATION]:   '계약직 수습',
   [CONTRACT_TYPE.DAILY]:             '일용직',
+  [CONTRACT_TYPE.EXECUTIVE]:         '등기임원',
+  [CONTRACT_TYPE.RELATED_PARTY]:     '특수관계인',
+  [CONTRACT_TYPE.REPRESENTATIVE]:    '대표자',
 });
 
 // 한글 레거시 → 영문 정규값
@@ -109,6 +115,9 @@ const CONTRACT_TYPE_LEGACY_MAP = {
   '계약직':      CONTRACT_TYPE.FIXED,
   '계약직 수습': CONTRACT_TYPE.FIXED_PROBATION,
   '일용직':      CONTRACT_TYPE.DAILY,
+  '등기임원':    CONTRACT_TYPE.EXECUTIVE,
+  '특수관계인':  CONTRACT_TYPE.RELATED_PARTY,
+  '대표자':      CONTRACT_TYPE.REPRESENTATIVE,
 };
 
 const CAT_BADGE_CLS = Object.freeze({
@@ -117,6 +126,9 @@ const CAT_BADGE_CLS = Object.freeze({
   [CONTRACT_TYPE.FIXED]:             'badge-purple',
   [CONTRACT_TYPE.FIXED_PROBATION]:   'badge-pink',
   [CONTRACT_TYPE.DAILY]:             'badge-orange',
+  [CONTRACT_TYPE.EXECUTIVE]:         'badge-slate',
+  [CONTRACT_TYPE.RELATED_PARTY]:     'badge-gray',
+  [CONTRACT_TYPE.REPRESENTATIVE]:    'badge-gray',
 });
 
 const CONTRACT_PROBATION_TYPES = Object.freeze([

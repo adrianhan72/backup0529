@@ -63,6 +63,42 @@ CREATE TABLE IF NOT EXISTS employees (
 CREATE INDEX IF NOT EXISTS idx_employees_company ON employees(company_id);
 
 -- -----------------------------------------------------------
+-- registered_executives (등기임원) — 별도 근로계약 없이 급여지급
+-- -----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS registered_executives (
+  id            TEXT PRIMARY KEY,
+  company_id    TEXT REFERENCES companies(id),
+  name          TEXT NOT NULL,
+  position      TEXT NOT NULL,
+  phone         TEXT NOT NULL,
+  id_number     TEXT NOT NULL,
+  bank_name     TEXT,
+  bank_account  TEXT,
+  bank_holder   TEXT,
+  created_at    INTEGER,
+  updated_at    INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_registered_executives_company ON registered_executives(company_id);
+
+-- -----------------------------------------------------------
+-- related_party_workers (특수관계인 급여대상자)
+-- -----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS related_party_workers (
+  id            TEXT PRIMARY KEY,
+  company_id    TEXT REFERENCES companies(id),
+  name          TEXT NOT NULL,
+  relationship  TEXT NOT NULL,
+  phone         TEXT NOT NULL,
+  id_number     TEXT NOT NULL,
+  bank_name     TEXT,
+  bank_account  TEXT,
+  bank_holder   TEXT,
+  created_at    INTEGER,
+  updated_at    INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_related_party_workers_company ON related_party_workers(company_id);
+
+-- -----------------------------------------------------------
 -- contracts (근로계약)
 -- -----------------------------------------------------------
 CREATE TABLE IF NOT EXISTS contracts (

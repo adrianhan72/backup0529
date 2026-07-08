@@ -1,5 +1,6 @@
 // ─── STATE ───
 let allCompanies=[], allEmployees=[], allContracts=[], allPayrolls=[], allBillings=[];
+let allExecutives=[], allRelatedParties=[];   // 등기임원 / 특수관계인 급여대상자
 let allLeaveLedgers=[];   // 연차휴가 관리대장 캐시 (annual_leave_ledger 테이블 전체)
 let allWLNotifications=[];   // 임금대장 미확인 알림 캐시
 let editId={company:null,contract:null};
@@ -182,7 +183,7 @@ async function init(){
 
     // ── 1단계: critical path – 화면 표시에 필수인 3개 테이블만 먼저 로드 ──
     showSkeletons();
-    await Promise.all([loadCompanies(), loadEmployees(), loadContracts(), loadAdminAccounts(), loadCompanyHistories()]);
+    await Promise.all([loadCompanies(), loadEmployees(), loadContracts(), loadAdminAccounts(), loadCompanyHistories(), loadExecutives(), loadRelatedParties()]);
 
     // 데이터 정규화 (한글 레거시 → 영문)
     _normalizeLoadedData();
@@ -369,6 +370,8 @@ async function loadCompanyHistories(){
   });
 }
 async function loadEmployees(){const d=await api('../tables/employees?limit=200');allEmployees=d.data||[]}
+async function loadExecutives(){const d=await api('../tables/registered_executives?limit=200');allExecutives=d.data||[]}
+async function loadRelatedParties(){const d=await api('../tables/related_party_workers?limit=200');allRelatedParties=d.data||[]}
 async function loadContracts(){
   const d=await api('../tables/contracts?limit=200');
   allContracts=d.data||[];
@@ -436,7 +439,7 @@ async function loadLeaveLedgers(){
 const won=n=>Math.round(n||0).toLocaleString('ko-KR')+'원';
 const won2=n=>Math.round(n||0).toLocaleString('ko-KR');
 const getCoName=id=>{const c=allCompanies.find(x=>x.id===id);return c?c.company_name:'-'};
-const getEmpName=id=>{const e=allEmployees.find(x=>x.id===id);return e?e.name:'-'};
+const getEmpName=id=>{const e=allEmployees.find(x=>x.id===id);if(e)return e.name;const ex=(allExecutives||[]).find(x=>x.id===id);if(ex)return ex.name;const rp=(allRelatedParties||[]).find(x=>x.id===id);if(rp)return rp.name;if(typeof id==='string'&&id.startsWith('rep_')){const parts=id.split('_');const idx=parseInt(parts.pop());const coId2=parts.join('_');const co2=(allCompanies||[]).find(c=>c.id===coId2);if(co2){let reps=[];try{reps=typeof co2.representatives==='string'?JSON.parse(co2.representatives):(co2.representatives||[]);}catch(e){}return (reps[idx]||{}).name||'-';}}return '-'};
 const empCatBadge=c=>(CAT_BADGE_CLS[c]||'badge-gray');
 
 // ─── 금액 입력 필드 포맷 유틸 ───
