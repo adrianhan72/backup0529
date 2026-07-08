@@ -184,12 +184,12 @@
       display:none;padding-left:2px;
     }
     #admin-login-screen .aln-btn{
-      width:100%;padding:14px;border:1px solid #cccccc;border-radius:10px;
-      background:#e94560;
+      width:100%;padding:14px;border:1px solid #b91c1c;border-radius:10px;
+      background:#dc2626;
       color:#fff;font-size:14px;font-weight:700;cursor:pointer;
       font-family:'Noto Sans KR',sans-serif;letter-spacing:.3px;
       transition:opacity .2s,transform .15s;
-      box-shadow:0 6px 20px rgba(233,69,96,.4);
+      box-shadow:0 6px 20px rgba(220,38,38,.4);
       margin-top:4px;
     }
     #admin-login-screen .aln-btn:hover{}

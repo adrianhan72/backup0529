@@ -135,7 +135,7 @@
     .probmgmt-opt-action-btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:9px;border:none;font-size:13px;font-weight:700;cursor:pointer;transition:opacity .15s;}
     .probmgmt-opt-action-btn:hover{filter:brightness(.85);}
     .probmgmt-opt-action-btn.primary{background:#0f766e;color:#fff;}
-    .probmgmt-opt-action-btn.danger{background:#e94560;color:#fff;}
+    .probmgmt-opt-action-btn.danger{background:#dc2626;color:#fff;}
     .probmgmt-opt-action-btn.warning{background:#d97706;color:#fff;}
     .probmgmt-opt-action-btn.info{background:#2563eb;color:#fff;}
 

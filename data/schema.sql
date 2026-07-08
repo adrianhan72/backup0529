@@ -148,6 +148,7 @@ CREATE TABLE IF NOT EXISTS contracts (
   amended_from          TEXT,
   is_voided_by_amend    INTEGER DEFAULT 0,
   voided_at             TEXT,
+  terminate_date        TEXT,
   -- 서류
   signed_file_name      TEXT,    signed_file_data      TEXT,
   consent_file_name     TEXT,    consent_file_data     TEXT,

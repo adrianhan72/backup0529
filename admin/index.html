@@ -1353,7 +1353,7 @@
 
         <div style="margin-bottom:14px;">
           <div style="font-size:12.5px;font-weight:700;color:#1e40af;margin-bottom:6px;"><i class="fas fa-circle" style="font-size:8px;margin-right:5px;"></i>정규직 / 정규직 수습</div>
-          <div class="help-desc" style="padding-left:14px;">만료일 없이 무기한 계약. 퇴사 시 <strong>퇴사예정 설정</strong> 버튼으로 퇴사예정일을 지정합니다. 계약 기간을 연장할 경우 <strong>갱신</strong> 버튼을 사용해 기존 계약을 만료 처리하고 새 계약을 생성합니다.</div>
+          <div class="help-desc" style="padding-left:14px;">만료일 없이 무기한 계약. 퇴사 시 <strong>퇴사 설정</strong> 버튼으로 퇴사일을 지정합니다. 계약 기간을 연장할 경우 <strong>갱신</strong> 버튼을 사용해 기존 계약을 만료 처리하고 새 계약을 생성합니다.</div>
         </div>
         <div style="margin-bottom:14px;">
           <div style="font-size:12.5px;font-weight:700;color:#7c3aed;margin-bottom:6px;"><i class="fas fa-circle" style="font-size:8px;margin-right:5px;"></i>계약직 / 계약직 수습</div>
@@ -1388,9 +1388,9 @@
           <div class="help-flow">
             <span class="help-flow-item">계약유효 계약 조회</span>
             <span class="help-flow-arrow">→</span>
-            <span class="help-flow-item">퇴사예정 설정</span>
+            <span class="help-flow-item">퇴사 설정</span>
             <span class="help-flow-arrow">→</span>
-            <span class="help-flow-item">퇴사예정일 입력 → 해지예정</span>
+            <span class="help-flow-item">퇴사일 입력 → 해지예정</span>
             <span class="help-flow-arrow">→</span>
             <span class="help-flow-item">당일 도래 시 → 해지</span>
           </div>
@@ -1453,7 +1453,7 @@
       <button id="ct-btn-amend"      class="btn-amend"      onclick="doContractAmend()"       style="display:none;"><i class="fas fa-edit"></i> 수정 및 재발행</button>
       <button id="ct-btn-renew"      class="btn-renew"      onclick="doContractRenew()"      style="display:none;"><i class="fas fa-sync-alt"></i> 갱신</button>
       <button id="ct-btn-recontract" class="btn-recontract" onclick="doContractRecontract()" style="display:none;"><i class="fas fa-file-signature"></i> 재계약</button>
-      <button id="ct-btn-terminate"      class="btn btn-secondary"       onclick="doContractTerminate()"      style="display:none;"><i class="fas fa-user-clock"></i> 퇴사예정 설정</button>
+      <button id="ct-btn-terminate"      class="btn btn-secondary"       onclick="doContractTerminate()"      style="display:none;"><i class="fas fa-user-clock"></i> 퇴사 설정</button>
       <button id="ct-btn-fixed-terminate" class="btn-fixed-terminate" onclick="doFixedTerminate()"          style="display:none;"><i class="fas fa-scissors"></i> 해지 설정</button>
       <button id="ct-btn-print-doc" onclick="openContractPrintModal(editId.contract)" class="btn btn-indigo">
         <i class="fas fa-file-contract"></i> 현 계약서 확인
@@ -1516,12 +1516,12 @@
       </div>
     </div>
 
-    <!-- 퇴사예정일 입력 패널 (정규직 전용) -->
+    <!-- 퇴사 설정 패널 (정규직 전용) -->
     <div id="ct-terminate-panel" class="ct-terminate-panel" style="display:none;">
-      <div style="font-size:12.5px;font-weight:700;color:#b91c1c;margin-bottom:8px;"><i class="fas fa-user-clock" style="margin-right:5px;"></i>퇴사예정일 설정 <span style="font-size:11px;font-weight:400;color:#9ca3af;">(정규직 전용)</span></div>
-      <div style="font-size:12px;color:#6b7280;margin-bottom:10px;">퇴사예정일을 입력하면 계약 상태가 <strong>해지예정</strong>으로 변경됩니다. 퇴사예정일이 오늘 이전이면 즉시 <strong>해지</strong> 처리됩니다.</div>
+      <div style="font-size:12.5px;font-weight:700;color:#b91c1c;margin-bottom:8px;"><i class="fas fa-user-clock" style="margin-right:5px;"></i>퇴사 설정 <span style="font-size:11px;font-weight:400;color:#9ca3af;">(정규직 전용)</span></div>
+      <div style="font-size:12px;color:#6b7280;margin-bottom:10px;">퇴사일을 미래로 입력하면 계약 상태가 <strong>해지예정</strong>으로 변경됩니다. 퇴사일이 오늘 이전이면 즉시 <strong>해지</strong> 처리됩니다.</div>
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-        <label style="font-size:12.5px;font-weight:600;color:#374151;white-space:nowrap;">퇴사예정일 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
+        <label style="font-size:12.5px;font-weight:600;color:#374151;white-space:nowrap;">퇴사일 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
         <input type="date" id="ct-terminate-date" style="border:1.5px solid #fca5a5;border-radius:7px;padding:6px 10px;font-size:13px;font-family:inherit;" />
         <button class="btn-terminate" style="padding:6px 14px;" onclick="confirmContractTerminate()"><i class="fas fa-check"></i> 확정</button>
         <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px;" onclick="document.getElementById('ct-terminate-panel').style.display='none'">취소</button>
@@ -1542,18 +1542,31 @@
       </div>
     </div>
     <!-- 갱신 입력 패널 (토글) -->
-    <div id="ct-renew-panel" style="display:none;background:#eff6ff;border:1.5px solid #93c5fd;border-radius:10px;padding:14px 18px;margin:12px 18px 0;">
-      <div style="font-size:12.5px;font-weight:700;color:#1e40af;margin-bottom:10px;"><i class="fas fa-sync-alt" style="margin-right:5px;"></i>계약 갱신 처리</div>
-      <div style="font-size:12px;color:#6b7280;margin-bottom:10px;">기존 계약 종료일과 신규 계약 시작일을 입력하세요.</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+    <!-- ── 계약 갱신 안내 패널 ── -->
+    <div id="ct-renew-panel" class="ct-renew-panel" style="display:none;">
+      <div class="renew-header">
+        <div class="renew-title">
+          <i class="fas fa-sync-alt" style="color:#1e40af;"></i>
+          계약 갱신 모드
+        </div>
+      </div>
+      <div class="renew-desc">
+        계약 갱신은 아직 만료되지 않은 기존 계약을 해지하고 계약 조건을 변경하여 새로운 계약을 맺는 것을 의미합니다. 해지된 계약은 5년간 보존됩니다.<br>
+        아래에서 <strong>기존 계약 종료일</strong>과 <strong>신규 계약 시작일</strong>을 지정한 후 계약 내용을 수정하고 하단의 <strong>갱신완료</strong> 버튼을 클릭하세요.
+      </div>
+      <div class="renew-steps">
+        <div class="ct-renew-step"><div class="step-num">1</div> 갱신일 지정</div>
+        <div class="ct-renew-step"><div class="step-num">2</div> 갱신사항 입력</div>
+        <div class="ct-renew-step"><div class="step-num">3</div> 갱신완료</div>
+        <div class="ct-renew-step"><div class="step-num">4</div> 계약서 재발송</div>
+        <div class="ct-renew-step"><div class="step-num">5</div> 날인본 업로드</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <div><label style="font-size:11.5px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">기존 계약 종료일 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
           <input type="date" id="ct-renew-old-end" style="width:100%;border:1.5px solid #93c5fd;border-radius:7px;padding:6px 10px;font-size:13px;font-family:inherit;" /></div>
         <div><label style="font-size:11.5px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">신규 계약 시작일 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
-          <input type="date" id="ct-renew-new-start" style="width:100%;border:1.5px solid #93c5fd;border-radius:7px;padding:6px 10px;font-size:13px;font-family:inherit;" /></div>
-      </div>
-      <div style="display:flex;gap:8px;">
-        <button class="btn-renew" style="padding:6px 16px;" onclick="confirmContractRenew()"><i class="fas fa-check"></i> 갱신 확정</button>
-        <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px;" onclick="document.getElementById('ct-renew-panel').style.display='none'">취소</button>
+          <input type="date" id="ct-renew-new-start" disabled style="width:100%;border:1.5px solid #93c5fd;border-radius:7px;padding:6px 10px;font-size:13px;font-family:inherit;" />
+          <div id="ct-renew-new-start-err" style="font-size:11px;color:#dc2626;margin-top:3px;display:none;"></div></div>
       </div>
     </div>
     <!-- ── 수정 및 재발행 안내 패널 ── -->
@@ -1563,9 +1576,6 @@
           <i class="fas fa-edit" style="color:#0284c7;"></i>
           계약 내용 수정 및 재발행 모드
         </div>
-        <button class="btn-amend-cancel" onclick="cancelContractAmend()">
-          <i class="fas fa-times"></i> 수정 취소
-        </button>
       </div>
       <div class="amend-desc">
         아래 계약서 내용을 수정한 후 <strong>수정완료</strong> 버튼을 클릭하면 이 계약은 파기처리되고 수정된 계약이 다시 등록됩니다.<br>
@@ -1576,11 +1586,6 @@
         <div class="ct-amend-step"><div class="step-num">2</div> 수정완료 (파기 및 수정계약 재등록)</div>
         <div class="ct-amend-step"><div class="step-num">3</div> 계약서 재발송</div>
         <div class="ct-amend-step"><div class="step-num">4</div> 날인본 업로드 (보관)</div>
-      </div>
-      <div class="amend-actions">
-        <button class="btn-amend-complete" id="ct-btn-amend-complete" onclick="openAmendPreview()">
-          <i class="fas fa-check-circle"></i> 수정완료 — 재발행 진행
-        </button>
       </div>
     </div>
     <div class="modal-body">
@@ -1808,7 +1813,7 @@
             </div>
             <div class="bulk-schedule-footer">
               <div class="bulk-schedule-tip">💡 적용 대상 요일 중 <b>체크(근무)</b>된 요일에만 아래 표에 시간이 반영됩니다.</div>
-              <button type="button" class="btn btn-indigo btn-sm" onclick="applyBulkSchedule()">✔ 적용</button>
+              <button type="button" class="btn btn-warning btn-sm" onclick="applyBulkSchedule()">✔ 아래 시간표에 적용</button>
             </div>
           </div>
         </div>
@@ -2080,13 +2085,19 @@
       <button id="ct-btn-amend2"      class="btn-amend"      onclick="doContractAmend()"       style="display:none;"><i class="fas fa-edit"></i> 수정 및 재발행</button>
       <button id="ct-btn-renew2"      class="btn-renew"      onclick="doContractRenew()"      style="display:none;"><i class="fas fa-sync-alt"></i> 갱신</button>
       <button id="ct-btn-recontract2" class="btn-recontract" onclick="doContractRecontract()" style="display:none;"><i class="fas fa-file-signature"></i> 재계약</button>
-      <button id="ct-btn-terminate2"      class="btn btn-secondary"       onclick="doContractTerminate()"      style="display:none;"><i class="fas fa-user-clock"></i> 퇴사예정 설정</button>
+      <button id="ct-btn-terminate2"      class="btn btn-secondary"       onclick="doContractTerminate()"      style="display:none;"><i class="fas fa-user-clock"></i> 퇴사 설정</button>
       <button id="ct-btn-fixed-terminate2" class="btn-fixed-terminate" onclick="doFixedTerminate()"          style="display:none;"><i class="fas fa-scissors"></i> 해지 설정</button>
-      <button id="ct-btn-print-doc2" onclick="openContractPrintModal(editId.contract)" class="btn btn-indigo">
-        <i class="fas fa-file-contract"></i> 현 계약서 확인
-      </button>
-      <button class="btn-amend-complete" id="ct-btn-amend-complete2" onclick="openAmendPreview()" style="display:none;">
+      <button class="btn btn-primary" id="ct-btn-amend-complete2" onclick="openAmendPreview()" style="display:none;">
         <i class="fas fa-check-circle"></i> 수정완료 — 재발행 진행
+      </button>
+      <button class="btn btn-secondary" id="ct-btn-amend-cancel2" onclick="cancelContractAmend()" style="display:none;">
+        <i class="fas fa-times"></i> 수정 취소
+      </button>
+      <button class="btn btn-primary" id="ct-btn-renew-complete2" onclick="confirmContractRenew()" style="display:none;">
+        <i class="fas fa-check-circle"></i> 갱신완료 — 재등록 진행
+      </button>
+      <button class="btn btn-secondary" id="ct-btn-renew-cancel2" onclick="cancelContractRenew()" style="display:none;">
+        <i class="fas fa-times"></i> 갱신 취소
       </button>
     </div>
   </div>

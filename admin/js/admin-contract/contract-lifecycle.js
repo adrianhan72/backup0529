@@ -1094,7 +1094,7 @@ async function cancelPendingContract(){
   if(isRenew && prevContractMatch){
     const prevId = prevContractMatch[1];
     const prevC  = allContracts.find(x=>x.id===prevId);
-    if(prevC && prevC.status===CONTRACT_STATUS.EXPIRED){
+    if(prevC && (prevC.status===CONTRACT_STATUS.EXPIRED || prevC.status===CONTRACT_STATUS.TERMINATED)){
       // 이전 계약을 활성 상태로 복귀
       await api(`../tables/contracts/${prevId}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({status: CONTRACT_STATUS.ACTIVE, contract_end: prevC.contract_end||''})});
@@ -1195,6 +1195,21 @@ function _collectRenewFormFields(){
   fields.annual_salary = getAmountVal('ct-annual-sal');
   fields.daily_wage    = getAmountVal('ct-daily-wage');
 
+  // 월약정급여: 정규직이면 연봉/12, 그 외는 폼 계산값에서 읽기
+  const ctNorm2 = fields.contract_type;
+  const isRegGroup2 = (ctNorm2 === CONTRACT_TYPE.REGULAR || ctNorm2 === CONTRACT_TYPE.REGULAR_PROBATION);
+  if (isRegGroup2 && fields.annual_salary > 0) {
+    fields.monthly_salary_agreed = Math.round(fields.annual_salary / 12);
+  } else {
+    // 계약직·일용직은 ct-monthly-computed의 텍스트 값에서 숫자 추출
+    const monthlyEl = document.getElementById('ct-monthly-computed');
+    if (monthlyEl) {
+      const txt = monthlyEl.textContent || '';
+      const num = parseInt(txt.replace(/[^0-9]/g, '')) || 0;
+      if (num > 0) fields.monthly_salary_agreed = num;
+    }
+  }
+
   // 수당
   fields.position_allowance    = getAmountVal('ct-position') || 0;
   fields.transportation_allowance = getAmountVal('ct-car') || 0;
@@ -1255,36 +1270,91 @@ function _collectRenewFormFields(){
   return fields;
 }
 
+/**
+ * 갱신 신규 계약 시작일 유효성 검사
+ * @param {string} oldEnd - 기존 계약 종료일 (YYYY-MM-DD)
+ */
+function _validateRenewNewStart(oldEnd){
+  const newStartEl = document.getElementById('ct-renew-new-start');
+  const newStartErr = document.getElementById('ct-renew-new-start-err');
+  const ns = newStartEl?.value;
+  if(!ns) {
+    if(newStartErr){ newStartErr.textContent = '신규 계약 시작일을 입력하세요.'; newStartErr.style.display = 'block'; }
+    return false;
+  }
+  if(ns <= oldEnd){
+    if(newStartErr){ newStartErr.textContent = '신규 계약 시작일은 기존 계약 종료일보다 이후여야 합니다.'; newStartErr.style.display = 'block'; }
+    newStartEl.style.borderColor = '#dc2626';
+    return false;
+  }
+  if(newStartErr) newStartErr.style.display = 'none';
+  newStartEl.style.borderColor = '#93c5fd';
+  return true;
+}
+
 function doContractRenew(){
-  // 패널 토글
+  // 종료 패널 숨김
   document.getElementById('ct-terminate-panel').style.display = 'none';
   const rp = document.getElementById('ct-renew-panel');
-  rp.style.display = rp.style.display==='none' ? 'block' : 'none';
-  if(rp.style.display==='block'){
-    const today    = new Date().toISOString().slice(0,10);
-    const tomorrow = new Date(Date.now()+86400000).toISOString().slice(0,10);
-    // 기존 계약 종료일 기본값: 오늘
-    document.getElementById('ct-renew-old-end').value   = today;
-    // 신규 계약 시작일 기본값: 내일
-    document.getElementById('ct-renew-new-start').value = tomorrow;
-    document.getElementById('ct-renew-old-end').disabled  = false;
-    document.getElementById('ct-renew-new-start').disabled= false;
+  if(!rp) return;
+  rp.style.display = 'block';
 
-    // ── 갱신 시 전체 폼 필드 편집 가능하게 해제 ──
-    const modalEl = document.querySelector('#contract-modal .modal');
-    if(modalEl){
-      modalEl.classList.remove('ct-readonly');
-      const bodyEl = modalEl.querySelector('.modal-body');
-      if(bodyEl) bodyEl.querySelectorAll('input,select,textarea').forEach(el=>{
-        if(el.closest('#ct-renew-panel')) return; // 갱신 패널 내부는 그대로
-        el.disabled = false;
-        el.tabIndex = 0;
-        el.style.pointerEvents = '';
-        el.style.background = '';
-        el.style.color = '';
-        el.style.cursor = '';
-      });
-      // 지급유형 버튼 + 휴게시간 추가 버튼 재활성화
+  const oldEndEl = document.getElementById('ct-renew-old-end');
+  const newStartEl = document.getElementById('ct-renew-new-start');
+  const newStartErr = document.getElementById('ct-renew-new-start-err');
+
+  // 기존 계약 종료일: 사용자가 직접 입력 (기본값 없음)
+  oldEndEl.value = '';
+  oldEndEl.disabled = false;
+  // 신규 계약 시작일: 비활성 상태로 시작 (기존 종료일 입력 후 활성화)
+  newStartEl.value = '';
+  newStartEl.disabled = true;
+  newStartEl.removeAttribute('min');
+  if(newStartErr) newStartErr.style.display = 'none';
+
+  // ── 기존 계약 종료일 변경 시 신규 시작일 활성화 + 유효성 검사 ──
+  oldEndEl.onchange = function(){
+    const oe = oldEndEl.value;
+    if(oe){
+      const minDate = new Date(oe);
+      minDate.setDate(minDate.getDate() + 1);
+      const minStr = minDate.toISOString().slice(0,10);
+      newStartEl.min = minStr;
+      newStartEl.disabled = false;
+      if(newStartEl.value) _validateRenewNewStart(oe);
+      else {
+        newStartEl.value = minStr;
+        if(newStartErr) newStartErr.style.display = 'none';
+      }
+    } else {
+      newStartEl.disabled = true;
+      newStartEl.value = '';
+      newStartEl.removeAttribute('min');
+      if(newStartErr) newStartErr.style.display = 'none';
+    }
+  };
+
+  // ── 신규 계약 시작일 변경 시 유효성 검사 ──
+  newStartEl.onchange = function(){
+    const oe = oldEndEl.value;
+    if(oe) _validateRenewNewStart(oe);
+  };
+
+  // ── 갱신 시 전체 폼 필드 편집 가능하게 해제 ──
+  const modalEl = document.querySelector('#contract-modal .modal');
+  if(modalEl){
+    modalEl.classList.remove('ct-readonly');
+    const bodyEl = modalEl.querySelector('.modal-body');
+    if(bodyEl) bodyEl.querySelectorAll('input,select,textarea').forEach(el=>{
+      if(el.closest('#ct-renew-panel')) return;
+      el.disabled = false;
+      el.tabIndex = 0;
+      el.style.pointerEvents = '';
+      el.style.background = '';
+      el.style.color = '';
+      el.style.cursor = '';
+    });
+    if(bodyEl){
       bodyEl.querySelectorAll('.pi-pay-type-btn').forEach(btn=>{
         btn.disabled = false; btn.style.cursor = ''; btn.style.pointerEvents = '';
       });
@@ -1292,15 +1362,58 @@ function doContractRenew(){
         btn.disabled = false; btn.style.cursor = ''; btn.style.pointerEvents = '';
       });
     }
-
-    setTimeout(()=>rp.scrollIntoView({behavior:'smooth',block:'center'}),100);
   }
+
+  // 액션 버튼 숨김 (갱신 중에는 다른 액션 불가)
+  ['ct-btn-amend','ct-btn-amend2','ct-btn-renew','ct-btn-renew2',
+   'ct-btn-terminate','ct-btn-terminate2','ct-btn-recontract','ct-btn-recontract2',
+   'ct-btn-fixed-terminate','ct-btn-fixed-terminate2'].forEach(bid=>{
+    const el = document.getElementById(bid); if(el) el.style.display='none';
+  });
+
+  // 하단 갱신완료·취소 버튼 표시
+  const btnComplete2 = document.getElementById('ct-btn-renew-complete2');
+  if(btnComplete2) btnComplete2.style.display = 'inline-flex';
+  const btnCancel2 = document.getElementById('ct-btn-renew-cancel2');
+  if(btnCancel2) btnCancel2.style.display = 'inline-flex';
+
+  // amend 패널 숨김
+  const amendPanel = document.getElementById('ct-amend-panel');
+  if(amendPanel) amendPanel.style.display = 'none';
+
+  // 첨부서류 섹션 숨김 (갱신 모드에서는 불필요)
+  const filesSection = document.getElementById('ct-files-section');
+  if(filesSection) filesSection.style.display = 'none';
+
+  setTimeout(()=>rp.scrollIntoView({behavior:'smooth',block:'center'}),100);
+}
+
+/** 갱신 모드 취소: 계약 조회 모드로 복귀 */
+function cancelContractRenew(){
+  const cid = editId.contract;
+  if(!cid) return;
+  viewContract(cid);
 }
 async function confirmContractRenew(){
-  const oldEnd   = document.getElementById('ct-renew-old-end').value;
-  const newStart = document.getElementById('ct-renew-new-start').value;
-  if(!oldEnd)   return toast('기존 계약 종료일을 입력하세요.','error');
-  if(!newStart) return toast('신규 계약 시작일을 입력하세요.','error');
+  const oldEndEl = document.getElementById('ct-renew-old-end');
+  const newStartEl = document.getElementById('ct-renew-new-start');
+  const oldEnd   = oldEndEl?.value;
+  const newStart = newStartEl?.value;
+  if(!oldEnd){
+    oldEndEl?.focus();
+    oldEndEl?.scrollIntoView({behavior:'smooth',block:'center'});
+    return toast('기존 계약 종료일을 입력하세요.','error');
+  }
+  if(!newStart){
+    newStartEl?.focus();
+    newStartEl?.scrollIntoView({behavior:'smooth',block:'center'});
+    return toast('신규 계약 시작일을 입력하세요.','error');
+  }
+  if(newStart <= oldEnd){
+    newStartEl?.focus();
+    newStartEl?.scrollIntoView({behavior:'smooth',block:'center'});
+    return toast('신규 계약 시작일은 기존 계약 종료일보다 이후여야 합니다.','error');
+  }
 
   const c = allContracts.find(x=>x.id===editId.contract);
   if(!c) return toast('계약 정보를 찾을 수 없습니다.','error');
@@ -1313,9 +1426,9 @@ async function confirmContractRenew(){
     if(!confirm(`기존 계약 종료일(${origEnd})보다 앞당겨진 날짜(${oldEnd})입니다.\n계약 종료일 단축은 [해지] 처리를 권장합니다.\n그래도 계속 진행하시겠습니까?`)) return;
   }
 
-  // 1. 기존 계약: 종료일 확정 + 상태 '만료' (후속 계약이 이어지므로 만료 처리)
+  // 1. 기존 계약: 종료일 확정 + 상태 '해지' (갱신으로 인한 계약 종료, 기록 5년 보존)
   await api(`../tables/contracts/${c.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({contract_end: oldEnd, status: CONTRACT_STATUS.EXPIRED})});
+    body:JSON.stringify({contract_end: oldEnd, status: CONTRACT_STATUS.TERMINATED})});
 
   // 2. 신규 계약 생성 (현재 폼 입력값 + 기존 계약 병합)
   //    - 시작일이 오늘 이후면 '계약예정', 오늘이거나 이전이면 '활성'
@@ -1331,8 +1444,8 @@ async function confirmContractRenew(){
     terminate_date: '',
     note: document.getElementById('ct-note')?.value || c.note || '',
   });
-  // API 시스템 필드 제거
-  ['gs_project_id','gs_table_name','created_at','updated_at','deleted'].forEach(k=>delete newContract[k]);
+  // API 시스템 필드 및 DB 미존재 컬럼 제거
+  ['gs_project_id','gs_table_name','created_at','updated_at','deleted','terminate_date'].forEach(k=>delete newContract[k]);
   await api('../tables/contracts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(newContract)});
 
   // ── 고객사 인앱 알림 발송 (갱신/갱신예약) ──
@@ -1396,7 +1509,7 @@ ${_BRAND_SIG}`,
   closeModal('contract-modal');
   await loadContracts(); await loadEmployees(); renderContracts(); renderDashboard();
   const label = newStatus === '계약예정' ? '계약예정 (시작일 미도래)' : '계약유효 (활성)';
-  toast(`연장 처리 완료. 전 계약: 만료 / 새 계약: ${label}`);
+  toast(`연장 처리 완료. 전 계약: 해지 / 새 계약: ${label}`);
 }
 
 // ─── 재계약 플로우 ───
@@ -1414,6 +1527,10 @@ let _recontractSourceId = null;
 function openRecontractModal(srcContract){
   // 동일 회사 기준 신규 계약 모달 오픈 (신규 모드)
   openContractModal(null, srcContract.company_id);
+
+  // 첨부서류 섹션 숨김 (재계약 입력 모드에서는 불필요)
+  const filesSection = document.getElementById('ct-files-section');
+  if(filesSection) filesSection.style.display = 'none';
 
   // 신규 모드에서 기존 계약 데이터로 필드 채우기
   const emp = allEmployees.find(e=>e.id===srcContract.employee_id)||{};
@@ -1565,9 +1682,9 @@ function doContractTerminate(){
   if(tp.style.display==='block'){
     const c = allContracts.find(x=>x.id===editId.contract)||{};
     const dateEl = document.getElementById('ct-terminate-date');
-    // 이미 해지예정일(terminate_date)이 설정된 경우 그 값으로, 없으면 빈값
+    // 이미 해지예정일(terminate_date)이 설정된 경우 그 값으로, 없으면 오늘
     // contract_end(계약만료일)는 건드리지 않음
-    dateEl.value = c.terminate_date || '';
+    dateEl.value = c.terminate_date || new Date().toISOString().slice(0,10);
     dateEl.disabled = false;
     setTimeout(()=>tp.scrollIntoView({behavior:'smooth',block:'center'}),100);
   }

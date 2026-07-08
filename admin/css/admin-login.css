@@ -162,7 +162,7 @@
     .bs-status.success{background:#dcfce7;color:#16a34a}
     .bs-status.fail{background:#fef2f2;color:#dc2626}
     @keyframes bs-pulse{0%,100%{opacity:1}50%{opacity:.55}}
-    .bs-retry-btn{margin-left:8px;background:#e94560;color:#fff;border:1px solid #cccccc;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit}
+    .bs-retry-btn{margin-left:8px;background:#dc2626;color:#fff;border:1px solid #b91c1c;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit}
     .bs-retry-btn:hover{opacity:.85}
     #bulk-send-tbody tr{border-bottom:1px solid #f0edff;transition:background .15s}
     #bulk-send-tbody tr:hover{background:#faf9ff}

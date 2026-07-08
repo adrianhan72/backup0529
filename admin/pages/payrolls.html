@@ -25,8 +25,8 @@
           <div class="card" style="border-radius:0;box-shadow:none;margin-bottom:0;border-top:none;">
             <div class="filter-bar" style="justify-content:space-between;">
               <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-                <select class="" id="pay-year-filter" onchange="renderPayrolls()"></select>
-                <select class="" id="pay-month-filter" onchange="renderPayrolls()"></select>
+                <select class="" id="pay-year-filter" onchange="pages.pay=1;renderPayrolls()"></select>
+                <select class="" id="pay-month-filter" onchange="pages.pay=1;renderPayrolls()"></select>
                 <div class="search-input"><i class="fas fa-search"></i><input type="text" id="pay-search" placeholder="직원명 검색" oninput="renderPayrolls()" /></div>
               </div>
               <button id="bulk-send-btn" onclick="openBulkSendModal()" disabled

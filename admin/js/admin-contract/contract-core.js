@@ -215,7 +215,9 @@ function renderContracts(){
     const catBadge=CAT_BADGE_CLS[empCat]||'badge-gray';
     const isResigned = emp?.status===EMP_STATUS.RESIGNED && emp?.resign_date;
     const periodTxt = (empCat===CONTRACT_TYPE.REGULAR||empCat===CONTRACT_TYPE.REGULAR_PROBATION)
-      ? (isResigned ? `${c.contract_start||'-'} ~ ${emp.resign_date}` : `${c.contract_start||'-'} ~ 현재`)
+      ? (c.contract_end ? `${c.contract_start||'-'} ~ ${c.contract_end}`
+         : isResigned ? `${c.contract_start||'-'} ~ ${emp.resign_date}`
+         : `${c.contract_start||'-'} ~ 현재`)
       : `${c.contract_start||'-'} ~ ${c.contract_end||'미정'}`;
     const isContDaily = empCat ===CONTRACT_TYPE.DAILY;
     const baseSalaryDisplay = isContDaily
@@ -279,6 +281,7 @@ function renderContracts(){
   renderPagination('cont-pagination',f.length,pages.cont,'setContPage');
 }
 function setContPage(p){pages.cont=p;renderContracts()}
+function filterContracts(){pages.cont=1;renderContracts()}
 // ── 계약 모달 유효성 검사 오류 초기화 ──
 function _ctClearErrors(){
   document.querySelectorAll('#contract-modal .ct-field-error').forEach(el=>{
@@ -1441,7 +1444,7 @@ function viewContract(id){
      'ct-btn-terminate','ct-btn-terminate2'].forEach(bid=>{
       const el=document.getElementById(bid); if(el) el.style.display='none';
     });
-    ['ct-btn-print-doc','ct-btn-print-doc2'].forEach(bid=>{
+    ['ct-btn-print-doc'].forEach(bid=>{
       const el=document.getElementById(bid);
       if(el){
         el.style.pointerEvents='none';
@@ -1453,7 +1456,7 @@ function viewContract(id){
   }
 
   // 정상 상태: 출력 버튼 활성 복원
-  ['ct-btn-print-doc','ct-btn-print-doc2'].forEach(bid=>{
+  ['ct-btn-print-doc'].forEach(bid=>{
     const el=document.getElementById(bid);
     if(el){
       el.style.pointerEvents='';
@@ -1506,14 +1509,20 @@ function viewContract(id){
   const _printBtnLabel = isTerminated
     ? '<i class="fas fa-file-contract"></i> 이전 계약서 확인'
     : '<i class="fas fa-file-contract"></i> 현 계약서 확인';
-  ['ct-btn-print-doc','ct-btn-print-doc2'].forEach(bid=>{
+  ['ct-btn-print-doc'].forEach(bid=>{
     const el=document.getElementById(bid);
     if(el) el.innerHTML = _printBtnLabel;
   });
 
-  // 조회 모드 전환 시 하단 수정완료 버튼 숨김 초기화
+  // 조회 모드 전환 시 하단 수정완료·취소 버튼 숨김 초기화
   const _btnAC2 = document.getElementById('ct-btn-amend-complete2');
   if(_btnAC2) _btnAC2.style.display = 'none';
+  const _btnCancel2 = document.getElementById('ct-btn-amend-cancel2');
+  if(_btnCancel2) _btnCancel2.style.display = 'none';
+  const _btnRenewComplete2 = document.getElementById('ct-btn-renew-complete2');
+  if(_btnRenewComplete2) _btnRenewComplete2.style.display = 'none';
+  const _btnRenewCancel2 = document.getElementById('ct-btn-renew-cancel2');
+  if(_btnRenewCancel2) _btnRenewCancel2.style.display = 'none';
 
   // ── 첨부 서류 섹션 렌더링 ──
   _renderContractFilesSection(c);
@@ -1569,13 +1578,27 @@ function doContractAmend(){
     const el = document.getElementById(bid); if(el) el.style.display='none';
   });
 
-  // 하단 수정완료 버튼 표시
+  // 갱신 패널·버튼 숨김
+  const renewPanel = document.getElementById('ct-renew-panel');
+  if(renewPanel) renewPanel.style.display = 'none';
+  const _btnRenewC2 = document.getElementById('ct-btn-renew-complete2');
+  if(_btnRenewC2) _btnRenewC2.style.display = 'none';
+  const _btnRenewX2 = document.getElementById('ct-btn-renew-cancel2');
+  if(_btnRenewX2) _btnRenewX2.style.display = 'none';
+
+  // 하단 수정완료·취소 버튼 표시
   const btnComplete2 = document.getElementById('ct-btn-amend-complete2');
   if(btnComplete2) btnComplete2.style.display = 'inline-flex';
+  const btnCancel2 = document.getElementById('ct-btn-amend-cancel2');
+  if(btnCancel2) btnCancel2.style.display = 'inline-flex';
 
   // 수정 안내 패널 표시
   const panel = document.getElementById('ct-amend-panel');
   if(panel) panel.style.display = '';
+
+  // 첨부서류 섹션 숨김 (수정 모드에서는 불필요)
+  const filesSection = document.getElementById('ct-files-section');
+  if(filesSection) filesSection.style.display = 'none';
 
   // 단계바 표시 (수정 진행 상황 안내)
   const stepBar = document.getElementById('ct-step-bar');

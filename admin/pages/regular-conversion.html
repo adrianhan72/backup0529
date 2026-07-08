@@ -54,10 +54,10 @@
       <div id="rc-panel-target">
         <!-- 필터 바 -->
         <div class="cen-filter-bar">
-          <select id="rc-filter-company" onchange="renderRcTargetList()" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 10px;font-size:12.5px;background:#fff;cursor:pointer;font-family:inherit;color:#374151;max-width:160px;">
+          <select id="rc-filter-company" onchange="_rcTargetPage=1;renderRcTargetList()" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 10px;font-size:12.5px;background:#fff;cursor:pointer;font-family:inherit;color:#374151;max-width:160px;">
             <option value="">전체 고객사</option>
           </select>
-          <select id="rc-filter-status" onchange="renderRcTargetList()" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 10px;font-size:12.5px;background:#fff;cursor:pointer;font-family:inherit;color:#374151;">
+          <select id="rc-filter-status" onchange="_rcTargetPage=1;renderRcTargetList()" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 10px;font-size:12.5px;background:#fff;cursor:pointer;font-family:inherit;color:#374151;">
             <option value="">전체 상태</option>
             <option value="exceeded">전환 의무 (2년 초과)</option>
             <option value="urgent">임박 (90일 이내)</option>

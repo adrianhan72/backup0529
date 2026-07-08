@@ -58,14 +58,14 @@
             <!-- 고객사 필터 -->
             <div style="display:flex;align-items:center;gap:6px;">
               <span style="font-size:12px;font-weight:600;color:#6b7280;white-space:nowrap;">고객사</span>
-              <select id="cen-filter-company" onchange="renderCenTargetList()" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 10px;font-size:12.5px;background:#fff;cursor:pointer;font-family:inherit;color:#374151;max-width:150px;">
+              <select id="cen-filter-company" onchange="_cenTargetPage=1;renderCenTargetList()" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 10px;font-size:12.5px;background:#fff;cursor:pointer;font-family:inherit;color:#374151;max-width:150px;">
                 <option value="">전체</option>
               </select>
             </div>
             <!-- 고용형태 필터 -->
             <div style="display:flex;align-items:center;gap:6px;">
               <span style="font-size:12px;font-weight:600;color:#6b7280;white-space:nowrap;">고용형태</span>
-              <select id="cen-filter-empcat" onchange="renderCenTargetList()" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 10px;font-size:12.5px;background:#fff;cursor:pointer;font-family:inherit;color:#374151;">
+              <select id="cen-filter-empcat" onchange="_cenTargetPage=1;renderCenTargetList()" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 10px;font-size:12.5px;background:#fff;cursor:pointer;font-family:inherit;color:#374151;">
                 <option value="">전체</option>
                 <option value="fixed_term">계약직</option>
                 <option value="fixed_probation">계약직 수습</option>
@@ -75,7 +75,7 @@
             <!-- D-day 범위 필터 -->
             <div style="display:flex;align-items:center;gap:6px;">
               <span style="font-size:12px;font-weight:600;color:#6b7280;white-space:nowrap;">기간</span>
-              <select id="cen-filter-range" onchange="renderCenTargetList()" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 10px;font-size:12.5px;background:#fff;cursor:pointer;font-family:inherit;color:#374151;">
+              <select id="cen-filter-range" onchange="_cenTargetPage=1;renderCenTargetList()" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 10px;font-size:12.5px;background:#fff;cursor:pointer;font-family:inherit;color:#374151;">
                 <option value="">전체 (29일 이내)</option>
                 <option value="urgent">긴급 (7일 이내)</option>
                 <option value="soon">임박 (8~14일)</option>

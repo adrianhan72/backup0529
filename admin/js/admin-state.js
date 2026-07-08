@@ -168,7 +168,7 @@ function _closeDashLoadingModal(){
   }
   // 동적 DOM 대응: document 레벨 위임
   document.addEventListener('mousedown', function(e){
-    const btn = e.target.closest('.btn, .btn-renew, .btn-terminate, .btn-recontract, .btn-void, .btn-draft, .btn-draft-edit, .btn-sb, .cen-bulk-btn, .btn-amend, .btn-cft-confirm, .btn-fixed-terminate, .btn-docx, .btn-print, .btn-final-reg, .btn-amend-complete, .std-update-btn, .al-promo-btn');
+    const btn = e.target.closest('.btn, .btn-renew, .btn-terminate, .btn-recontract, .btn-void, .btn-draft, .btn-draft-edit, .btn-sb, .cen-bulk-btn, .btn-amend, .btn-cft-confirm, .btn-fixed-terminate, .btn-docx, .btn-print, .btn-final-reg, .std-update-btn, .al-promo-btn');
     if(btn) addRipple.call(null, {currentTarget: btn, clientX: e.clientX, clientY: e.clientY});
   });
 })();

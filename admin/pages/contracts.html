@@ -35,7 +35,7 @@
         <div class="card" style="border-radius:0;box-shadow:none;margin-bottom:0;border-top:none;">
           <div class="filter-bar" style="flex-wrap:wrap;gap:8px;">
             <div class="search-input"><i class="fas fa-search"></i><input type="text" id="cont-search" placeholder="직원명 검색" oninput="renderContracts()" /></div>
-            <select id="cont-filter-empcat" onchange="renderContracts()" class="">
+            <select id="cont-filter-empcat" onchange="filterContracts()" class="">
               <option value="">고용형태 전체</option>
               <option value="regular">정규직</option>
               <option value="regular_probation">정규직 수습</option>
@@ -46,7 +46,7 @@
               <option value="related_party">특수관계인</option>
               <option value="representative">대표자</option>
             </select>
-            <select id="cont-filter-status" onchange="renderContracts()" class="">
+            <select id="cont-filter-status" onchange="filterContracts()" class="">
               <option value="">계약상태 전체</option>
               <option value="유효" selected>유효</option>
               <option value="만료">만료</option>
@@ -54,7 +54,7 @@
               <option value="파기">파기</option>
             </select>
             <label id="cont-filter-docs-incomplete-label" style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-weight:600;color:#ea580c;background:rgba(234,88,12,.1);border:1.5px solid #fdba74;border-radius:20px;padding:6px 14px;user-select:none;">
-              <input type="checkbox" id="cont-filter-docs-incomplete" onchange="renderContracts()" style="accent-color:#ea580c;width:15px;height:15px;" />
+              <input type="checkbox" id="cont-filter-docs-incomplete" onchange="filterContracts()" style="accent-color:#ea580c;width:15px;height:15px;" />
               서류미비 상태만 보기
             </label>
           </div>

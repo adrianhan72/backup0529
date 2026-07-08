@@ -299,8 +299,8 @@
     .dash-co-pending{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:700;color:#e94560;white-space:nowrap;}
     .dash-co-done{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:#10b981;white-space:nowrap;}
     .dash-co-btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:5px 13px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s;white-space:nowrap;width:100%;box-sizing:border-box;}
-    .dash-co-btn-input{background:#e94560;color:#fff;border:1px solid #b8283d;}
-    .dash-co-btn-input:hover{background:#b8283d;}
+    .dash-co-btn-input{background:#dc2626;color:#fff;border:1px solid #b91c1c;}
+    .dash-co-btn-input:hover{background:#b91c1c;}
     .dash-co-btn-edit{background:#f59e0b;color:#fff;border:1px solid #d97706;}
     .dash-co-btn-edit:hover{background:#d97706;}
     /* ?�도�??�정기�? */
@@ -337,16 +337,16 @@
     .std-update-btn{
       display:inline-flex;align-items:center;gap:6px;
       padding:8px 20px;
-      background:#e94560;color:#fff;
-      border:1px solid #b8283d;border-radius:8px;font-size:13px;font-weight:700;
+      background:#dc2626;color:#fff;
+      border:1px solid #b91c1c;border-radius:8px;font-size:13px;font-weight:700;
       cursor:pointer;font-family:inherit;
-      box-shadow:0 1px 4px rgba(233,69,96,.28);
+      box-shadow:0 1px 4px rgba(220,38,38,.28);
       transition:background .18s,box-shadow .18s,transform .15s;
       position:relative;overflow:hidden;
     }
     .std-update-btn:hover:not(:disabled){
-      background:#b8283d;
-      box-shadow:0 4px 14px rgba(233,69,96,.38);
+      background:#b91c1c;
+      box-shadow:0 4px 14px rgba(220,38,38,.38);
       transform:translateY(-1px);
     }
     .std-update-btn:active:not(:disabled){}
@@ -389,11 +389,11 @@
       background:#2563eb;box-shadow:0 3px 10px rgba(59,130,246,.32);
     }
     .std-banner.health .std-banner-btn{
-      background:#e94560;color:#fff;
-      box-shadow:0 1px 3px rgba(233,69,96,.25);
+      background:#dc2626;color:#fff;
+      box-shadow:0 1px 3px rgba(220,38,38,.25);
     }
     .std-banner.health .std-banner-btn:hover:not(:disabled){
-      background:#d63651;box-shadow:0 3px 10px rgba(233,69,96,.32);
+      background:#b91c1c;box-shadow:0 3px 10px rgba(220,38,38,.32);
     }
     .std-banner.minwage .std-banner-btn{
       background:#10b981;color:#fff;
@@ -546,8 +546,8 @@
     .wl-excel-btn:active{}
     .wl-print-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;background:#1a1a2e;color:#fff;border:1px solid #cccccc;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s;}
     .wl-print-btn:hover{background:#2d2d4e;}
-    .wl-pdf-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;background:#e94560;color:#fff;border:1px solid #b8283d;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s;}
-    .wl-pdf-btn:hover{background:#b8283d;}
+    .wl-pdf-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;background:#dc2626;color:#fff;border:1px solid #b91c1c;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s;}
+    .wl-pdf-btn:hover{background:#b91c1c;}
     .wl-pdf-btn:active{}
     .wl-excel-btn:disabled,.wl-pdf-btn:disabled,.wl-print-btn:disabled{background:#cccccc;color:#f2f2f2;border:1px solid #cccccc;cursor:not-allowed;opacity:1;box-shadow:none;}
 
@@ -629,8 +629,8 @@
     .wl-block-item-link.draft:hover{background:#fde68a;}
     .wl-block-item-link.docs {background:#fde8d8;color:#c2410c;}
     .wl-block-item-link.docs:hover {background:#fed7aa;}
-    .wl-block-item-link.pay  {background:#e94560;color:#fff;border:1px solid #b8283d;}
-    .wl-block-item-link.pay:hover  {background:#b8283d;}
+    .wl-block-item-link.pay  {background:#dc2626;color:#fff;border:1px solid #b91c1c;}
+    .wl-block-item-link.pay:hover  {background:#b91c1c;}
     .wl-block-item-link.pay-draft{background:#10b981;color:#fff;border:1px solid #059669;}
     .wl-block-item-link.pay-draft:hover{background:#059669;}
     .wl-block-item-draft-badge{

@@ -84,7 +84,7 @@
           <!-- 발송 방식 필터 -->
           <div style="display:flex;align-items:center;gap:6px;">
             <span style="font-size:12px;color:#6b7280;font-weight:600;white-space:nowrap;">발송 방식</span>
-            <select id="cdp-filter-method" onchange="renderContractDispatchPage()" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 10px;font-size:12.5px;color:#374151;background:#fff;cursor:pointer;font-family:inherit;">
+            <select id="cdp-filter-method" onchange="_cdpPage=1;renderContractDispatchPage()" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 10px;font-size:12.5px;color:#374151;background:#fff;cursor:pointer;font-family:inherit;">
               <option value="">전체</option>
               <option value="kakao">알림톡</option>
               <option value="email">이메일</option>
@@ -94,7 +94,7 @@
           <!-- 발송 상태 필터 -->
           <div style="display:flex;align-items:center;gap:6px;">
             <span style="font-size:12px;color:#6b7280;font-weight:600;white-space:nowrap;">발송 상태</span>
-            <select id="cdp-filter-status" onchange="renderContractDispatchPage()" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 10px;font-size:12.5px;color:#374151;background:#fff;cursor:pointer;font-family:inherit;">
+            <select id="cdp-filter-status" onchange="_cdpPage=1;renderContractDispatchPage()" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 10px;font-size:12.5px;color:#374151;background:#fff;cursor:pointer;font-family:inherit;">
               <option value="">전체</option>
               <option value="completed">완료</option>
               <option value="failed">실패</option>
@@ -104,17 +104,17 @@
           <!-- 고객사 필터 -->
           <div style="display:flex;align-items:center;gap:6px;">
             <span style="font-size:12px;color:#6b7280;font-weight:600;white-space:nowrap;">고객사</span>
-            <select id="cdp-filter-company" onchange="renderContractDispatchPage()" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 10px;font-size:12.5px;color:#374151;background:#fff;cursor:pointer;max-width:160px;font-family:inherit;">
+            <select id="cdp-filter-company" onchange="_cdpPage=1;renderContractDispatchPage()" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 10px;font-size:12.5px;color:#374151;background:#fff;cursor:pointer;max-width:160px;font-family:inherit;">
               <option value="">전체</option>
             </select>
           </div>
           <!-- 기간 필터 -->
           <div style="display:flex;align-items:center;gap:6px;">
             <span style="font-size:12px;color:#6b7280;font-weight:600;white-space:nowrap;">기간</span>
-            <input type="date" id="cdp-filter-date-from" onchange="renderContractDispatchPage()"
+            <input type="date" id="cdp-filter-date-from" onchange="_cdpPage=1;renderContractDispatchPage()"
               style="border:1px solid #d1d5db;border-radius:7px;padding:5px 8px;font-size:12.5px;color:#374151;background:#fff;cursor:pointer;font-family:inherit;" />
             <span style="font-size:12px;color:#9ca3af;">~</span>
-            <input type="date" id="cdp-filter-date-to" onchange="renderContractDispatchPage()"
+            <input type="date" id="cdp-filter-date-to" onchange="_cdpPage=1;renderContractDispatchPage()"
               style="border:1px solid #d1d5db;border-radius:7px;padding:5px 8px;font-size:12.5px;color:#374151;background:#fff;cursor:pointer;font-family:inherit;" />
             <button onclick="document.getElementById('cdp-filter-date-from').value='';document.getElementById('cdp-filter-date-to').value='';renderContractDispatchPage();"
               title="기간 초기화" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:7px;background:#fff;cursor:pointer;font-size:11px;color:#9ca3af;line-height:1;font-family:inherit;">✕</button>

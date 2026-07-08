@@ -47,7 +47,6 @@
     .btn-draft .btn-ripple,
     .btn-draft-edit .btn-ripple,
     .btn-amend .btn-ripple,
-    .btn-amend-complete .btn-ripple,
     .btn-cft-confirm .btn-ripple,
     .btn-docx .btn-ripple,
     .btn-print .btn-ripple,
@@ -81,10 +80,10 @@
        SOLID TYPE ???�상 채운 버튼
     ?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═ */
     /* Primary (?�드 ??주요 ?�션) */
-    .btn-primary{background:#e94560;border-color:#c02e45;}
-    .btn-primary:hover:not(:disabled){background:#c02e45;}
-    .btn-primary:active:not(:disabled){background:#b8283d;}
-    .btn-primary.selected,.btn-primary[aria-selected="true"]{background:#b8283d;}
+    .btn-primary{background:#dc2626;border-color:#b91c1c;}
+    .btn-primary:hover:not(:disabled){background:#b91c1c;}
+    .btn-primary:active:not(:disabled){background:#991b1b;}
+    .btn-primary.selected,.btn-primary[aria-selected="true"]{background:#991b1b;}
 
     /* Secondary (회색 — 취소/해지/닫기) */
     .btn-secondary{background:#9ca3af;border-color:#6b7280;}
@@ -105,10 +104,10 @@
     .btn-warning.selected,.btn-warning[aria-selected="true"]{background:#92400e;}
 
     /* Danger (?�드 ????��/?��?) */
-    .btn-danger{background:#e94560;border-color:#b8283d;}
-    .btn-danger:hover:not(:disabled){background:#b8283d;}
-    .btn-danger:active:not(:disabled){background:#9b1e35;}
-    .btn-danger.selected,.btn-danger[aria-selected="true"]{background:#7e182b;}
+    .btn-danger{background:#dc2626;border-color:#b91c1c;}
+    .btn-danger:hover:not(:disabled){background:#b91c1c;}
+    .btn-danger:active:not(:disabled){background:#991b1b;}
+    .btn-danger.selected,.btn-danger[aria-selected="true"]{background:#991b1b;}
 
     /* Indigo */
     .btn-indigo{background:#4f46e5;border-color:#4338ca;}
