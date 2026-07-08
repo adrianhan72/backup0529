@@ -1165,6 +1165,96 @@ ${_BRAND_SIG}`,
 }
 
 // ─── 갱신 플로우 ───
+/**
+ * 갱신 시 현재 폼에 입력된 값을 수집하여 신규 계약에 반영
+ * 기존 계약을 베이스로, 사용자가 수정한 필드만 덮어쓴다.
+ */
+function _collectRenewFormFields(){
+  const fields = {};
+
+  // 계약 유형
+  const typeEl = document.getElementById('ct-type');
+  if(typeEl) fields.contract_type = CONTRACT_TYPE_LEGACY_MAP[typeEl.value] || typeEl.value;
+
+  // 계약 시작일·종료일 (폼에 입력된 값, 정규직은 종료일 강제 공백)
+  const ctNorm = fields.contract_type;
+  const isRegular = (ctNorm === CONTRACT_TYPE.REGULAR || ctNorm === CONTRACT_TYPE.REGULAR_PROBATION);
+  const startEl = document.getElementById('ct-start');
+  if(startEl) fields.contract_start = startEl.value;
+  const endEl = document.getElementById('ct-end');
+  if(endEl) fields.contract_end = isRegular ? '' : endEl.value;
+
+  // 근무시간
+  const hoursEl = document.getElementById('ct-hours');
+  if(hoursEl) fields.work_hours_per_day = parseFloat(hoursEl.value) || 0;
+  const daysEl = document.getElementById('ct-days');
+  if(daysEl) fields.work_days_per_week = parseFloat(daysEl.value) || 5;
+
+  // 기본급·일급·연봉
+  fields.base_salary   = getAmountVal('ct-base');
+  fields.annual_salary = getAmountVal('ct-annual-sal');
+  fields.daily_wage    = getAmountVal('ct-daily-wage');
+
+  // 수당
+  fields.position_allowance    = getAmountVal('ct-position') || 0;
+  fields.transportation_allowance = getAmountVal('ct-car') || 0;
+  fields.remote_area_allowance = getAmountVal('ct-remote-area') || 0;
+  fields.meal_allowance        = getAmountVal('ct-meal') || 0;
+  fields.research_allowance    = getAmountVal('ct-research') || 0;
+  fields.site_allowance        = getAmountVal('ct-site') || 0;
+  fields.skill_allowance       = getAmountVal('ct-skill') || 0;
+  fields.license_allowance     = getAmountVal('ct-license') || 0;
+  fields.communication_allowance = getAmountVal('ct-communication') || 0;
+  fields.fitness_allowance     = getAmountVal('ct-fitness') || 0;
+  fields.self_dev_allowance    = getAmountVal('ct-self-dev') || 0;
+  fields.book_allowance        = getAmountVal('ct-book') || 0;
+  fields.overseas_allowance    = getAmountVal('ct-overseas') || 0;
+  fields.regular_bonus         = getAmountVal('ct-regular-bonus') || 0;
+  fields.childcare_allowance   = getAmountVal('ct-childcare') || 0;
+
+  // 수당 지급유형
+  const payTypeMap = {
+    car:'transportation_pay_type', meal:'meal_pay_type', research:'research_pay_type',
+    communication:'communication_pay_type', fitness:'fitness_pay_type',
+    self_dev:'self_dev_pay_type', book:'book_pay_type', overseas:'overseas_pay_type'
+  };
+  Object.keys(payTypeMap).forEach(k => {
+    fields[payTypeMap[k]] = _getCTPayTypeVal(k);
+  });
+
+  // 연차
+  const annualEl = document.getElementById('ct-annual');
+  if(annualEl) fields.annual_leave_days = parseFloat(annualEl.value) || 15;
+
+  // 급여 산정기간·지급일
+  const ppEl = document.getElementById('ct-pay-period');
+  if(ppEl) fields.pay_period = ppEl.value.trim();
+  const ppMonEl = document.getElementById('ct-pay-period-month-hidden');
+  if(ppMonEl) fields.pay_period_month = ppMonEl.value || null;
+  const ppDayEl = document.getElementById('ct-pay-period-day-hidden');
+  if(ppDayEl) fields.pay_period_day = parseInt(ppDayEl.value) || null;
+  const payDayEl = document.getElementById('ct-pay-day');
+  if(payDayEl) fields.pay_day = parseInt(payDayEl.value) || null;
+
+  // 근무시간표
+  try {
+    const sch = getScheduleJSON();
+    if(Array.isArray(sch) && sch.some(d=>d.active)) fields.schedule_json = JSON.stringify(sch);
+  } catch(e){}
+
+  // 수습
+  const probMonEl = document.getElementById('ct-probation-months');
+  if(probMonEl) fields.probation_months = parseInt(probMonEl.value) || 0;
+  const probPctEl = document.getElementById('ct-probation-pct');
+  if(probPctEl) fields.probation_pct = parseFloat(probPctEl.value) || 0;
+  const probAmtEl = document.getElementById('ct-probation-amt');
+  if(probAmtEl) fields.probation_amt = parseFloat(probAmtEl.value) || 0;
+  const probBasisEl = document.querySelector('input[name="ct-probation-basis"]:checked');
+  if(probBasisEl) fields.probation_basis = probBasisEl.value;
+
+  return fields;
+}
+
 function doContractRenew(){
   // 패널 토글
   document.getElementById('ct-terminate-panel').style.display = 'none';
@@ -1173,12 +1263,36 @@ function doContractRenew(){
   if(rp.style.display==='block'){
     const today    = new Date().toISOString().slice(0,10);
     const tomorrow = new Date(Date.now()+86400000).toISOString().slice(0,10);
-    const c = allContracts.find(x=>x.id===editId.contract)||{};
-    // 기존 계약 종료일 기본값: 계약서에 등록된 종료일 또는 오늘
-    document.getElementById('ct-renew-old-end').value   = c.contract_end || today;
+    // 기존 계약 종료일 기본값: 오늘
+    document.getElementById('ct-renew-old-end').value   = today;
+    // 신규 계약 시작일 기본값: 내일
     document.getElementById('ct-renew-new-start').value = tomorrow;
     document.getElementById('ct-renew-old-end').disabled  = false;
     document.getElementById('ct-renew-new-start').disabled= false;
+
+    // ── 갱신 시 전체 폼 필드 편집 가능하게 해제 ──
+    const modalEl = document.querySelector('#contract-modal .modal');
+    if(modalEl){
+      modalEl.classList.remove('ct-readonly');
+      const bodyEl = modalEl.querySelector('.modal-body');
+      if(bodyEl) bodyEl.querySelectorAll('input,select,textarea').forEach(el=>{
+        if(el.closest('#ct-renew-panel')) return; // 갱신 패널 내부는 그대로
+        el.disabled = false;
+        el.tabIndex = 0;
+        el.style.pointerEvents = '';
+        el.style.background = '';
+        el.style.color = '';
+        el.style.cursor = '';
+      });
+      // 지급유형 버튼 + 휴게시간 추가 버튼 재활성화
+      bodyEl.querySelectorAll('.pi-pay-type-btn').forEach(btn=>{
+        btn.disabled = false; btn.style.cursor = ''; btn.style.pointerEvents = '';
+      });
+      bodyEl.querySelectorAll('.btn-brk-add').forEach(btn=>{
+        btn.disabled = false; btn.style.cursor = ''; btn.style.pointerEvents = '';
+      });
+    }
+
     setTimeout(()=>rp.scrollIntoView({behavior:'smooth',block:'center'}),100);
   }
 }
@@ -1203,18 +1317,19 @@ async function confirmContractRenew(){
   await api(`../tables/contracts/${c.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({contract_end: oldEnd, status: CONTRACT_STATUS.EXPIRED})});
 
-  // 2. 신규 계약 생성 (기존 조건 복사)
+  // 2. 신규 계약 생성 (현재 폼 입력값 + 기존 계약 병합)
   //    - 시작일이 오늘 이후면 '계약예정', 오늘이거나 이전이면 '활성'
   const newStatus = newStart > today ? CONTRACT_STATUS.PENDING : CONTRACT_STATUS.ACTIVE;
   const newId = 'cont'+Date.now();
-  const newContract = Object.assign({}, c, {
+  const _renewFields = _collectRenewFormFields();
+  const newContract = Object.assign({}, c, _renewFields, {
     id: newId,
-    contract_start: newStart,
-    contract_end:   '',          // 정규직 연장: 새 종료일 없음
+    contract_start: newStart,                              // 갱신 패널에서 지정한 시작일 우선
+    contract_end:   _renewFields.contract_end !== undefined ? _renewFields.contract_end : '',  // 계약직은 폼 종료일, 정규직은 빈값
     status:         newStatus,
     is_draft:       false,
     terminate_date: '',
-    note: (c.note?c.note+' / ':'') + `연장계약 (전계약:${c.id})`
+    note: document.getElementById('ct-note')?.value || c.note || '',
   });
   // API 시스템 필드 제거
   ['gs_project_id','gs_table_name','created_at','updated_at','deleted'].forEach(k=>delete newContract[k]);
@@ -1784,9 +1899,7 @@ async function confirmFixedTerminate(){
 
   // 기존 note에 사유/메모 추가 (덮어쓰기 방지)
   const addendum = [reason, note].filter(Boolean).join(' — ');
-  const finalNote= addendum
-    ? (c.note ? `${c.note}\n[해지] ${addendum}` : `[해지] ${addendum}`)
-    : c.note || '';
+  const finalNote = c.note || '';
 
   const emp    = allEmployees.find(e => e.id === c.employee_id) || {};
   const empName= emp.name || '(이름 없음)';

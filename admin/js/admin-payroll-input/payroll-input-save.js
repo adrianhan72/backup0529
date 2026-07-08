@@ -688,7 +688,7 @@ async function _autoCreateConfirmedContract(probEndDate){
     insurance_industrial:    piContract.insurance_industrial    ?? true,
     insurance_pension:       piContract.insurance_pension       ?? true,
     insurance_health:        piContract.insurance_health        ?? true,
-    note:                    `[자동 생성] 수습 계약(${piContract.id}) 만료 후 채용확정 계약서. 수습 종료일: ${probEndDate}`,
+    note:                    '',
     amended_from:            piContract.id,
     is_draft:                false,
     is_voided_by_amend:      false,
