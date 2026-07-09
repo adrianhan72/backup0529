@@ -1,7 +1,7 @@
 /**
  * modules/payroll.mjs — Phase 2 급여 관리 모듈
  */
-import { getCompanies, getPayrolls, loadPayrolls } from '../state.mjs';
+import { getCompanies, getPayrolls, loadPayrolls } from './state.mjs';
 
 function ensurePayrolls() {
   const g = getPayrolls();

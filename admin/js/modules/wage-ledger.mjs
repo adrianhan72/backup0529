@@ -1,7 +1,7 @@
 /**
  * modules/wage-ledger.mjs — Phase 2 임금대장 모듈
  */
-import { getPayrolls } from '../state.mjs';
+import { getPayrolls } from './state.mjs';
 
 function addWageLedgerStatsPanel() {
   const container = document.getElementById('page-wage-ledger');

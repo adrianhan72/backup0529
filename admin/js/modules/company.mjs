@@ -6,7 +6,7 @@
  */
 import { isCompanyActive, s } from './utils.mjs';
 import { COMPANY_STATUS } from './constants.mjs';
-import { getCompanies as _getCompanies, getEmployees, getContracts, loadCompanies } from '../state.mjs';
+import { getCompanies as _getCompanies, getEmployees, getContracts, loadCompanies } from './state.mjs';
 
 function ensureCompanies() {
   const g = _getCompanies();

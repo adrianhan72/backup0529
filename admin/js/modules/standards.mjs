@@ -1,7 +1,7 @@
 /**
  * modules/standards.mjs — Phase 2 제 기준 관리 모듈
  */
-import { getCompanies } from '../state.mjs';
+import { getCompanies } from './state.mjs';
 
 function addStandardsStatsPanel() {
   const container = document.getElementById('page-standards');

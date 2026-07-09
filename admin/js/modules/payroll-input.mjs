@@ -1,7 +1,7 @@
 /**
  * modules/payroll-input.mjs — Phase 2 급여 입력 모듈
  */
-import { getPayrolls } from '../state.mjs';
+import { getPayrolls } from './state.mjs';
 
 function addPayrollInputStatsPanel() {
   const container = document.getElementById('page-payroll-input');

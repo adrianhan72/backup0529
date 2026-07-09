@@ -4,7 +4,7 @@
  * 계약 통계 + 유형 분포 패널.
  */
 import { CONTRACT_ACTIVE_STATUSES, CONTRACT_TERMINAL_STATUSES, CONTRACT_PROBATION_TYPES, contractTypeLabel } from './constants.mjs';
-import { getCompanies, getEmployees, getContracts as _getContracts, loadContracts } from '../state.mjs';
+import { getCompanies, getEmployees, getContracts as _getContracts, loadContracts } from './state.mjs';
 
 function ensureContracts() {
   const g = _getContracts();

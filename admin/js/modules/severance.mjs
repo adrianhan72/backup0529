@@ -2,7 +2,7 @@
  * modules/severance.mjs — Phase 2 퇴직급여 관리 모듈
  */
 import { CONTRACT_ACTIVE_STATUSES } from './constants.mjs';
-import { getEmployees, getContracts } from '../state.mjs';
+import { getEmployees, getContracts } from './state.mjs';
 
 function addSeveranceStatsPanel() {
   const container = document.getElementById('page-severance');
