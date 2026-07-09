@@ -61,17 +61,6 @@ export function getCachedPage(name) {
 
 function initLoaderModule() {
   console.log('[ESM Loader] 페이지 로더 모듈 초기화');
-
-  // window 브릿지: ES Module 함수를 전역에 노출
-  if (typeof window !== 'undefined') {
-    window._esmLoader = {
-      PAGE_REGISTRY,
-      isExternalPage,
-      getPageNames,
-      clearPageCache,
-      getCachedPage,
-    };
-  }
 }
 
 if (document.readyState === 'loading') {

@@ -79,8 +79,8 @@ export function formatPhone(phone) {
 function initHelpersModule() {
   console.log('[ESM Helpers] 헬퍼 모듈 초기화');
   if (typeof window !== 'undefined') {
-    window._esmHelpers = { show, hide, $, qs, qsa, toDateStr, fmtShortTime, daysBetween, daysFromNow, isEmpty, extractDigits, formatPhone };
-  }
+  // 순수 ES 모듈
+}
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initHelpersModule);

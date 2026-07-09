@@ -111,17 +111,6 @@ export function getPageTitle(name) {
 
 function initRouterModule() {
   console.log('[ESM Router] 라우터 모듈 초기화');
-  
-  // window 브릿지
-  if (typeof window !== 'undefined') {
-    window._esmRouter = {
-      navigateTo,
-      getCurrentPage,
-      onPageChange,
-      getPageTitle,
-      PAGE_TITLES,
-    };
-  }
 }
 
 if (document.readyState === 'loading') {

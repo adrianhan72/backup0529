@@ -51,10 +51,4 @@ export function refreshDashboard() {
   }
 }
 
-// window 브릿지
-if (typeof window !== 'undefined') {
-  window._esmDashCore = {
-    renderExpiryBanner, renderRegularBanner, renderProbationBanner,
-    renderSeveranceBanner, renderDraftAlerts, refreshDashboard,
-  };
-}
+// 순수 ES 모듈 — import { renderExpiryBanner } 로 사용

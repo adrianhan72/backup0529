@@ -35,6 +35,4 @@ export function refreshCharts() {
   if (typeof window.renderBillingTrendChart === 'function') window.renderBillingTrendChart();
 }
 
-if (typeof window !== 'undefined') {
-  window._esmDashCharts = { calcPayrollTrend, calcBillingTrend, refreshCharts };
-}
+// 순수 ES 모듈 — import { calcPayrollTrend } 로 사용

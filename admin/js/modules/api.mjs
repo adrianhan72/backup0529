@@ -129,14 +129,4 @@ export async function updatePayroll(id, data) {
   return api(`/api/payrolls/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
 }
 
-// 기존 글로벌 api()와 호환성을 위해 window에도 등록
-if (typeof window !== 'undefined') {
-  window._esmApi = {
-    loadTable, createRow, updateRow, patchRow, deleteRow,
-    fetchCompanies, fetchCompany, createCompany, updateCompany,
-    fetchEmployees, fetchEmployee, createEmployee, updateEmployee,
-    fetchContracts, fetchContract, createContract, updateContract,
-    renewContract, terminateContract,
-    fetchPayrolls, createPayroll, updatePayroll,
-  };
-}
+// window 등록 없음 — 순수 ES 모듈

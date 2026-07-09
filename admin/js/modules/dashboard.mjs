@@ -7,12 +7,11 @@
 import { getCompanies, getEmployees, getContracts, getPayrolls, loadCoreData } from './state.mjs';
 import { isCompanyActive } from './utils.mjs';
 import { CONTRACT_ACTIVE_STATUSES } from './constants.mjs';
-import { getCompanies as allCo, getEmployees as allEmp, getContracts as allCt, getPayrolls as allPay } from './bridge.mjs';
 
 function printDashboardSummary() {
-  const companies = allCo();
-  const employees = allEmp();
-  const contracts = allCt();
+  const companies = getCompanies();
+  const employees = getEmployees();
+  const contracts = getContracts();
   const activeCompanies = companies.filter(c => isCompanyActive(c));
   const activeContracts = contracts.filter(c => CONTRACT_ACTIVE_STATUSES.includes(c.status));
 
@@ -67,7 +66,6 @@ function enhanceDashboard() {
 function initDashboardModule() {
   console.log('[ESM Dashboard] 모듈 초기화');
   enhanceDashboard();
-  window._esmDashboard = { printDashboardSummary, enhanceDashboard };
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initDashboardModule);

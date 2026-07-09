@@ -51,17 +51,12 @@ app.post('/api/kakao/send', (req, res) => {
 });
 
 // ── ES Module (.mjs) MIME 타입 보장 ──
-// Express static이 .mjs 확장자를 인식하지 못해 index.html을 반환하는 문제 해결
 app.use('/admin', (req, res, next) => {
   if (req.path.endsWith('.mjs')) {
-    const relPath = req.path.replace(/^[\/\\]/, '');  // 선행 슬래시 제거 (Windows path.join 호환)
+    const relPath = req.path.replace(/^[\/\\]/, '');
     const filePath = path.join(ROOT, 'admin', relPath);
-    console.log('[.mjs] req.path=%s → filePath=%s', req.path, filePath);
     res.type('application/javascript');
-    res.sendFile(filePath, (err) => {
-      if (err) { console.log('[.mjs] ERROR:', err.message); next(); }
-      else console.log('[.mjs] OK:', filePath);
-    });
+    res.sendFile(filePath, err => err && next());
   } else {
     next();
   }
