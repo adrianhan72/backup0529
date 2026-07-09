@@ -51,7 +51,21 @@ out = out.replace(/(?<!\.)allContracts(?!\s*[=:])/g, 'getContracts()');
 out = out.replace(/(?<!\.)allEmployees(?!\s*[=:])/g, 'getEmployees()');
 out = out.replace(/(?<!\.)allCompanies(?!\s*[=:])/g, 'getCompanies()');
 out = out.replace(/(?<!\.)allPayrolls(?!\s*[=:])/g, 'getPayrolls()');
-out = out.replace(/(?<!\.)allBillings(?!\s*[=:])/g, 'getPayrolls()'); // billings 별도 처리 필요시 수정
+out = out.replace(/(?<!\.)allBillings(?!\s*[=:])/g, 'getPayrolls()');
+
+// 3b. 전역 상태 변수 → window.xxx 치환 (ESM strict mode 대응)
+const stateVars = [
+  'currentGlobalCompanyId', 'currentGlobalCompanyName',
+  'currentContCompanyId', 'currentPayCompanyId', 'currentLsCompanyId',
+  'allExecutives', 'allRelatedParties', 'allLeaveLedgers', 'allWLNotifications',
+  'allAdminAccounts', 'allCompanyHistories', '_allSendLogs',
+  'editId', 'pages', '_dataReady', '_heavyDataReady',
+  '_allInsuranceRates', 'ITEMS',
+];
+stateVars.forEach(v => {
+  const re = new RegExp(`(?<!window\\.)(?<!var |let |const |\\.)(?<![\\w.])${v}\\b(?!\\s*=)`, 'g');
+  out = out.replace(re, `window.${v}`);
+});
 
 // 4. 함수명 추출
 const funcs = [...out.matchAll(/^export (?:async )?function (\w+)/gm)].map(m => m[1]);
