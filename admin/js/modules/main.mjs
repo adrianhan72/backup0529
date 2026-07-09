@@ -22,6 +22,7 @@ import { addWageLedgerStatsPanel } from './wage-ledger.mjs';
 import { addSeveranceStatsPanel } from './severance.mjs';
 import { PAGE_REGISTRY, isExternalPage, getPageNames } from './loader.mjs';
 import { show, hide, $, toDateStr, fmtShortTime, formatPhone } from './helpers.mjs';
+import { navigateTo, getCurrentPage, onPageChange, getPageTitle } from './router.mjs';
 
-console.log('[ESM] ✅ 모듈 시스템 준비 완료 (Phase 3-A)');
-console.log('[ESM]   14 modules loaded');
+console.log('[ESM] ✅ 모듈 시스템 준비 완료 (Phase 3-B)');
+console.log('[ESM]   15 modules loaded');
