@@ -20,9 +20,13 @@ app.use(require('./middleware/cors')());
 app.use(express.json({ limit: '10mb' }));
 
 // ── 라우트 ──
-app.use('/api/auth',      require('./routes/auth')(db));
-app.use('/api/companies', require('./routes/companies')(db));
-app.use('/tables',        require('./routes/tables')(db));
+app.use('/api/auth',        require('./routes/auth')(db));
+app.use('/api/companies',   require('./routes/companies')(db));
+app.use('/api/employees',   require('./routes/employees')(db));
+app.use('/api/contracts',   require('./routes/contracts')(db));
+app.use('/api/payrolls',    require('./routes/payrolls')(db));
+app.use('/api/billing',     require('./routes/billing')(db));
+app.use('/tables',          require('./routes/tables')(db));       // 하위 호환 유지
 
 // ── 기타 API ──
 app.post('/api/kakao/send', (req, res) => {

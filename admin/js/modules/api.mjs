@@ -58,7 +58,85 @@ export async function deleteRow(table, id) {
   return api(`/tables/${table}/${id}`, { method: 'DELETE' });
 }
 
+// ── Phase A: 도메인별 API ──
+
+/** 고객사 API */
+export async function fetchCompanies(params) {
+  const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+  return api(`/api/companies${qs}`);
+}
+export async function fetchCompany(id) {
+  return api(`/api/companies/${id}`);
+}
+export async function createCompany(data) {
+  return api('/api/companies', { method: 'POST', body: JSON.stringify(data) });
+}
+export async function updateCompany(id, data) {
+  return api(`/api/companies/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
+}
+export async function fetchCompanyEmployees(companyId) {
+  return api(`/api/companies/${companyId}/employees`);
+}
+export async function fetchCompanyContracts(companyId) {
+  return api(`/api/companies/${companyId}/contracts`);
+}
+
+/** 직원 API */
+export async function fetchEmployees(params) {
+  const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+  return api(`/api/employees${qs}`);
+}
+export async function fetchEmployee(id) {
+  return api(`/api/employees/${id}`);
+}
+export async function createEmployee(data) {
+  return api('/api/employees', { method: 'POST', body: JSON.stringify(data) });
+}
+export async function updateEmployee(id, data) {
+  return api(`/api/employees/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
+}
+
+/** 계약 API */
+export async function fetchContracts(params) {
+  const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+  return api(`/api/contracts${qs}`);
+}
+export async function fetchContract(id) {
+  return api(`/api/contracts/${id}`);
+}
+export async function createContract(data) {
+  return api('/api/contracts', { method: 'POST', body: JSON.stringify(data) });
+}
+export async function updateContract(id, data) {
+  return api(`/api/contracts/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
+}
+export async function renewContract(id, data) {
+  return api(`/api/contracts/${id}/renew`, { method: 'POST', body: JSON.stringify(data || {}) });
+}
+export async function terminateContract(id, data) {
+  return api(`/api/contracts/${id}/terminate`, { method: 'POST', body: JSON.stringify(data || {}) });
+}
+
+/** 급여 API */
+export async function fetchPayrolls(params) {
+  const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+  return api(`/api/payrolls${qs}`);
+}
+export async function createPayroll(data) {
+  return api('/api/payrolls', { method: 'POST', body: JSON.stringify(data) });
+}
+export async function updatePayroll(id, data) {
+  return api(`/api/payrolls/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
+}
+
 // 기존 글로벌 api()와 호환성을 위해 window에도 등록
 if (typeof window !== 'undefined') {
-  window._esmApi = { loadTable, createRow, updateRow, patchRow, deleteRow };
+  window._esmApi = {
+    loadTable, createRow, updateRow, patchRow, deleteRow,
+    fetchCompanies, fetchCompany, createCompany, updateCompany,
+    fetchEmployees, fetchEmployee, createEmployee, updateEmployee,
+    fetchContracts, fetchContract, createContract, updateContract,
+    renewContract, terminateContract,
+    fetchPayrolls, createPayroll, updatePayroll,
+  };
 }
