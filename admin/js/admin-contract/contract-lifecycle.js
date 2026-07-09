@@ -1433,10 +1433,8 @@ async function confirmContractRenew(){
   // 2. 신규 계약 생성 (현재 폼 입력값 + 기존 계약 병합)
   //    - 시작일이 오늘 이후면 '계약예정', 오늘이거나 이전이면 '활성'
   const newStatus = newStart > today ? CONTRACT_STATUS.PENDING : CONTRACT_STATUS.ACTIVE;
-  const newId = 'cont'+Date.now();
   const _renewFields = _collectRenewFormFields();
   const newContract = Object.assign({}, c, _renewFields, {
-    id: newId,
     contract_start: newStart,                              // 갱신 패널에서 지정한 시작일 우선
     contract_end:   _renewFields.contract_end !== undefined ? _renewFields.contract_end : '',  // 계약직은 폼 종료일, 정규직은 빈값
     status:         newStatus,
@@ -1444,9 +1442,10 @@ async function confirmContractRenew(){
     terminate_date: '',
     note: document.getElementById('ct-note')?.value || c.note || '',
   });
-  // API 시스템 필드 및 DB 미존재 컬럼 제거
-  ['gs_project_id','gs_table_name','created_at','updated_at','deleted','terminate_date'].forEach(k=>delete newContract[k]);
-  await api('../tables/contracts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(newContract)});
+  // API 시스템 필드 및 DB 미존재 컬럼 제거 (id는 서버에서 UUID 생성)
+  ['id','gs_project_id','gs_table_name','created_at','updated_at','deleted','terminate_date'].forEach(k=>delete newContract[k]);
+  const savedNew = await api('../tables/contracts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(newContract)});
+  const newId = savedNew.id;
 
   // ── 고객사 인앱 알림 발송 (갱신/갱신예약) ──
   {
@@ -2143,7 +2142,6 @@ async function saveDraftContract(reason){
       empId = existingEmp.id;
     } else {
     const saved = await api('../tables/employees',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-      id: 'emp'+Date.now(),
       company_id: coId,
       name: document.getElementById('ct-em-name').value.trim(),
       gender: document.getElementById('ct-em-gender').value,
@@ -2165,7 +2163,7 @@ async function saveDraftContract(reason){
       is_representative: document.getElementById('ct-em-is-rep')?.checked ? 1 : 0,
       note: ''
     })});
-    empId = saved.id || ('emp'+Date.now());
+    empId = saved.id;
     await loadEmployees();
   }
 
@@ -2303,11 +2301,11 @@ async function saveDraftContract(reason){
     _currentDraftId = draftId;
     window._resumeDraftId = null;
   } else {
-    // 최초 임시저장 → POST
-    draftBody.id = 'cont_draft_'+Date.now();
+    // 최초 임시저장 → POST (ID는 서버에서 UUID 생성)
+    delete draftBody.id;
     const res = await api('../tables/contracts',{method:'POST',headers:{'Content-Type':'application/json'},body:bodyJSON});
     if(res && res.error){ console.error('[saveDraftContract] Server error:', res.error); toast('임시저장 실패: ' + res.error, 'error'); return; }
-    savedId = res.id || draftBody.id;
+    savedId = res.id;
     _currentDraftId = savedId;
   }
   } catch(e){
@@ -2921,7 +2919,6 @@ async function saveContract(){
     const newPhone = document.getElementById('ct-em-phone').value.trim();
     const newCat = document.getElementById('ct-em-category').value;
     const empBody = {
-      id: 'emp'+Date.now(),
       company_id: coId,
       name: newName,
       gender: document.getElementById('ct-em-gender').value,
@@ -2944,7 +2941,7 @@ async function saveContract(){
       note: ''
     };
     const saved = await api('../tables/employees',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(empBody)});
-    empId = saved.id || empBody.id;
+    empId = saved.id;
     await loadEmployees();
   }
 
@@ -3259,17 +3256,21 @@ async function saveContract(){
   } else {
     // 임시저장에서 이어서 등록하는 경우: 기존 draft ID 재사용
     const _resumeId = window._resumeDraftId || _currentDraftId;
-    body.id = _resumeId || ('cont'+Date.now());
+    let _savedContractId_ = '';
     if(_resumeId){
       await api(`../tables/contracts/${_resumeId}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      _savedContractId_ = _resumeId;
       window._resumeDraftId = null;
     } else {
-      await api('../tables/contracts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      // ID는 서버에서 UUID 생성 (프론트에서 미리 만들지 않음)
+      delete body.id;
+      const _saved = await api('../tables/contracts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      _savedContractId_ = _saved.id;
     }
   }
   // ── 고객사 인앱 알림 발송 ──
   {
-    const _savedContractId = isEditMode ? editId.contract : (body.id || '');
+    const _savedContractId = isEditMode ? editId.contract : (_savedContractId_ || '');
     const _co  = allCompanies.find(x => x.id === coId) || {};
     const _emp = allEmployees.find(x => x.id === empId) || {};
     const _coName  = _co.company_name || '';

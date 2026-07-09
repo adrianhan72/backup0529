@@ -1252,6 +1252,14 @@ function calcContractStatusDisplay(c, today){
   // 활성/유효 상태 — 서류와 무관하게 유효 계약으로 처리
   if(s==='활성'||s==='유효'||s==='active'){
     if(start && start > today) return {badge:'badge-amber', label:'갱신예정', docsIncomplete};
+    // 계약직/일용직: 유효 종료일(terminate_date 우선, 없으면 contract_end)이 지났으면 만료 처리
+    const ct = (c.contract_type || '').toLowerCase();
+    const isFixedTerm = ct === 'fixed_term' || ct === 'fixed_term_probation' || ct === 'daily'
+                     || ct === '계약직' || ct === '계약직 수습' || ct === '일용직';
+    const effectiveEnd = c.terminate_date || c.contract_end || '';
+    if(isFixedTerm && effectiveEnd && effectiveEnd < today){
+      return {badge:'badge-gray', label:'만료', docsIncomplete};
+    }
     return {badge:'badge-green', label:'유효', docsIncomplete};
   }
   return {badge:'badge-gray', label: s, docsIncomplete};
@@ -1859,11 +1867,11 @@ async function openAmendPreview(){
     return;
   }
 
-  // ③ 신규 계약서 POST (수정 재발행)
+  // ③ 신규 계약서 POST (수정 재발행) — ID는 서버에서 UUID 생성
   const newStatus = '서류미비'; // 날인본 없이 저장 → 발송 후 날인본 별도 첨부
   const newBody = {
     ...commonFields,
-    id: 'cont' + Date.now(), status: newStatus,
+    status: newStatus,
     amended_from: origId, is_voided_by_amend: false,
     // 계약서 날인본: 수정 시 반드시 재업로드 필요 → 초기화
     signed_file_name: '',
@@ -1872,7 +1880,6 @@ async function openAmendPreview(){
     consent_file_name: origC.consent_file_name||'',
     consent_file_data: origC.consent_file_data||'',
   };
-  newContractId = newBody.id;
   try {
     const saved = await fetch('../tables/contracts', {
       method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(newBody)
@@ -1882,7 +1889,7 @@ async function openAmendPreview(){
       throw new Error(errData.error || `HTTP ${saved.status}`);
     }
     const savedJson = await saved.json();
-    newContractId = savedJson.id || newBody.id;
+    newContractId = savedJson.id;
     allContracts.push({ ...newBody, id: newContractId });
   } catch(e){
     console.error('[재발행 계약서 저장 오류]', e);

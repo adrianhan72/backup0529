@@ -634,9 +634,8 @@ async function _autoCreateConfirmedContract(probEndDate){
   //   정규직 → '' (무기한)
   const newEnd = confirmedType ===CONTRACT_TYPE.FIXED ? (piContract.contract_end || '') : '';
 
-  // 신규 채용확정 계약 body
+  // 신규 채용확정 계약 body (ID는 서버에서 UUID 생성)
   const newContractBody = {
-    id: 'cont' + Date.now(),
     employee_id:             piContract.employee_id,
     company_id:              piContract.company_id,
     // ── 기간 필드 ──
