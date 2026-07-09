@@ -7,16 +7,12 @@
 import { getCompanies, getEmployees, getContracts, getPayrolls, loadCoreData } from './state.mjs';
 import { isCompanyActive } from './utils.mjs';
 import { CONTRACT_ACTIVE_STATUSES } from './constants.mjs';
-
-const getAllCompanies = () => window.allCompanies || [];
-const getAllEmployees = () => window.allEmployees || [];
-const getAllContracts = () => window.allContracts || [];
-const getAllPayrolls  = () => window.allPayrolls || [];
+import { getCompanies as allCo, getEmployees as allEmp, getContracts as allCt, getPayrolls as allPay } from './bridge.mjs';
 
 function printDashboardSummary() {
-  const companies = getAllCompanies();
-  const employees = getAllEmployees();
-  const contracts = getAllContracts();
+  const companies = allCo();
+  const employees = allEmp();
+  const contracts = allCt();
   const activeCompanies = companies.filter(c => isCompanyActive(c));
   const activeContracts = contracts.filter(c => CONTRACT_ACTIVE_STATUSES.includes(c.status));
 
