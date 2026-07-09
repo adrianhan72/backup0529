@@ -50,17 +50,24 @@ app.post('/api/kakao/send', (req, res) => {
   res.json({ ok: true, stub: true, message: '카카오 전송 (스텁)' });
 });
 
-// ── ES Module MIME 타입 등록 (.mjs 파일 지원) ──
-require('express').static.mime.define({ 'application/javascript': ['mjs'] });
+// ── ES Module (.mjs) MIME 타입 보장 ──
+// Express static이 .mjs 확장자를 인식하지 못해 index.html을 반환하는 문제 해결
+app.use('/admin', (req, res, next) => {
+  if (req.path.endsWith('.mjs')) {
+    // req.path는 mount prefix('/admin') 제거된 값이므로 ROOT/admin + req.path
+    const relPath = req.path.replace(/^[\/\\]/, '');  // 선행 슬래시 제거 (Windows path.join 호환)
+    const filePath = path.join(ROOT, 'admin', relPath);
+    res.type('application/javascript');
+    res.sendFile(filePath, (err) => {
+      if (err) next(); // 파일 없으면 다음 미들웨어로
+    });
+  } else {
+    next();
+  }
+});
 
 // ── 정적 파일 ──
-// .mjs 파일에 올바른 MIME 타입 강제 적용
-const mjsHeaders = (res, filePath) => {
-  if (filePath.endsWith('.mjs')) {
-    res.setHeader('Content-Type', 'application/javascript; charset=UTF-8');
-  }
-};
-app.use('/admin',   express.static(path.join(ROOT, 'admin'), { setHeaders: mjsHeaders }));
+app.use('/admin',   express.static(path.join(ROOT, 'admin')));
 app.use('/client',  express.static(path.join(ROOT, 'client')));
 app.use('/scripts', express.static(path.join(ROOT, 'scripts')));
 app.use('/docs',    express.static(path.join(ROOT, 'docs')));
