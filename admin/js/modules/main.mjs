@@ -27,6 +27,8 @@ import { renderExpiryBanner, refreshDashboard } from './dashboard/core.mjs';
 import { calcPayrollTrend, refreshCharts } from './dashboard/charts.mjs';
 import { filterActiveCompanies, getCompanyStats } from './company/core.mjs';
 import { getActiveContracts, getExpiringContracts, getContractTypeSummary } from './contract/core.mjs';
+import { getPayrollStats, getDraftPayrolls } from './payroll/core.mjs';
+import { getBillingStats, getUnpaidBillings } from './billing/core.mjs';
 
 console.log('[ESM] ✅ 모듈 시스템 준비 완료 (Phase 3-C)');
-console.log('[ESM]   19 modules loaded');
+console.log('[ESM]   22 modules loaded');
