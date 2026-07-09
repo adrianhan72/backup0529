@@ -4,10 +4,11 @@
  */
 import { getCompanies, getEmployees, getPayrolls, getContracts } from '../state.mjs';
 import { CONTRACT_TYPE, CONTRACT_STATUS, COMPANY_STATUS, EMP_STATUS, CONTRACT_TYPE_LEGACY_MAP, DISPATCH_METHOD, DISPATCH_STATUS } from '../constants.mjs';
+import { N } from './contract-lifecycle-notices.mjs';
 
 const _w = (name) => window[name];
 
-﻿/** 인쇄 전용 CSS */
+/** 인쇄 전용 CSS */
 
 export function _resetStatusBanner(){
   const sbEl = document.getElementById('ct-status-banner');
@@ -251,20 +252,7 @@ export async function savePendingContractEdit(){
           companyId  : c.company_id, companyName: _pendCo.company_name || '',
           noticeType : 'contract_termination_scheduled',
           title      : `[해지 예약] ${_pendEmp.name||''} — 계약 해지가 예약되었습니다`,
-          body       :
-`안녕하세요${_coRep}.
-
-소속 근로자의 계약 해지가 예약 처리되었습니다.
-
-■ 근로자: ${_pendEmp.name||''}
-■ 고용형태: ${_w('contractTypeLabel')(c.contract_type)||c.contract_type||''}
-■ 계약 기간: ${_fmtD(c.contract_start)}${c.contract_end ? ' ~ ' + _fmtD(c.contract_end) : ''}
-■ 퇴사 예정일: ${_fmtD(_termDate)}
-■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
-
-자세한 내용은 근로 계약 관리 메뉴에서 확인하세요.
-
-${_BRAND_SIG}`,
+          body       : N.terminationScheduled({ coRep: _coRep, empName: _pendEmp.name||'', ctLabel: _w('contractTypeLabel')(c.contract_type)||c.contract_type||'', period: `${_fmtD(c.contract_start)}${c.contract_end ? ' ~ ' + _fmtD(c.contract_end) : ''}`, termDate: _fmtD(_termDate) }),
           contractId  : c.id,
           employeeId  : c.employee_id, employeeName: _pendEmp.name || '',
           contractEnd : c.contract_end || '',
@@ -275,19 +263,7 @@ ${_BRAND_SIG}`,
           companyId  : c.company_id, companyName: _pendCo.company_name || '',
           noticeType : 'contract_terminated',
           title      : `[계약 해지] ${_pendEmp.name||''} — 근로계약이 해지되었습니다`,
-          body       :
-`안녕하세요${_coRep}.
-
-소속 근로자의 근로계약이 해지 처리되었습니다.
-
-■ 근로자: ${_pendEmp.name||''}
-■ 고용형태: ${_w('contractTypeLabel')(c.contract_type)||c.contract_type||''}
-■ 계약 기간: ${_fmtD(c.contract_start)}${c.contract_end ? ' ~ ' + _fmtD(c.contract_end) : ''}
-■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
-
-자세한 내용은 근로 계약 관리 메뉴에서 확인하세요.
-
-${_BRAND_SIG}`,
+          body       : N.immediateTermination({ coRep: _coRep, empName: _pendEmp.name||'', ctLabel: _w('contractTypeLabel')(c.contract_type)||c.contract_type||'', period: `${_fmtD(c.contract_start)}${c.contract_end ? ' ~ ' + _fmtD(c.contract_end) : ''}` }),
           contractId  : c.id,
           employeeId  : c.employee_id, employeeName: _pendEmp.name || '',
           contractEnd : c.contract_end || '',
@@ -298,20 +274,7 @@ ${_BRAND_SIG}`,
           companyId  : c.company_id, companyName: _pendCo.company_name || '',
           noticeType : 'contract_updated',
           title      : `[계약 수정] ${_pendEmp.name||''} — 근로계약이 수정되었습니다`,
-          body       :
-`안녕하세요${_coRep}.
-
-소속 근로자의 근로계약 내용이 수정되었습니다.
-
-■ 근로자: ${_pendEmp.name||''}
-■ 고용형태: ${_w('contractTypeLabel')(c.contract_type)||c.contract_type||''}
-■ 계약 기간: ${_fmtD(newStart)}${newEnd ? ' ~ ' + _fmtD(newEnd) : ' (기간 미정)'}
-■ 계약 상태: ${newStatus}
-■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
-
-자세한 내용은 근로 계약 관리 메뉴에서 확인하세요.
-
-${_BRAND_SIG}`,
+          body       : N.contractEdited({ coRep: _coRep, empName: _pendEmp.name||'', ctLabel: _w('contractTypeLabel')(c.contract_type)||c.contract_type||'', period: `${_fmtD(newStart)}${newEnd ? ' ~ ' + _fmtD(newEnd) : ' (기간 미정)'}`, newStatus }),
           contractId  : c.id,
           employeeId  : c.employee_id, employeeName: _pendEmp.name || '',
           contractEnd : newEnd,
@@ -391,21 +354,7 @@ export async function cancelPreTerminate(){
       companyId  : c.company_id, companyName: _cptCo.company_name || '',
       noticeType : 'contract_termination_cancelled',
       title      : `[해지 예정 취소] ${empName} — 계약 해지 예정이 취소되었습니다`,
-      body       :
-`안녕하세요${_coRep}.
-
-소속 근로자의 계약 해지 예정이 취소되어 기존 계약이 정상 유효 상태로 복귀되었습니다.
-
-■ 근로자: ${empName}
-■ 고용형태: ${_w('contractTypeLabel')(c.contract_type)||c.contract_type||''}
-■ 계약 기간: ${_fmtD(c.contract_start)}${c.contract_end ? ' ~ ' + _fmtD(c.contract_end) : ' (기간 미정)'}
-■ 취소된 ${typeLabel}일: ${termDate ? _fmtD(termDate) : '-'}
-■ 현재 계약 상태: 계약유효 (활성) 복귀
-■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
-
-자세한 내용은 근로 계약 관리 메뉴에서 확인하세요.
-
-${_BRAND_SIG}`,
+      body       : N.terminationCancelled({ coRep: _coRep, empName: empName, ctLabel: _w('contractTypeLabel')(c.contract_type)||c.contract_type||'', period: `${_fmtD(c.contract_start)}${c.contract_end ? ' ~ ' + _fmtD(c.contract_end) : ' (기간 미정)'}`, typeLabel, termDate: termDate ? _fmtD(termDate) : '-' }),
       contractId  : c.id,
       employeeId  : c.employee_id, employeeName: empName,
       contractEnd : c.contract_end || '',
@@ -495,20 +444,7 @@ export async function doContractVoid(){
       companyId  : c.company_id, companyName: _voidCo.company_name || '',
       noticeType : 'contract_voided',
       title      : `[계약 파기] ${_voidEmp.name||''} — 근로계약이 파기되었습니다`,
-      body       :
-`안녕하세요${_coRep}.
-
-소속 근로자의 근로계약이 파기 처리되었습니다.
-
-■ 근로자: ${_voidEmp.name||''}
-■ 고용형태: ${_w('contractTypeLabel')(c.contract_type)||c.contract_type||''}
-■ 계약 기간: ${_fmtD(c.contract_start)}${c.contract_end ? ' ~ ' + _fmtD(c.contract_end) : ' (기간 미정)'}
-■ 파기 사유: ${statusLabel} 상태의 계약 파기
-■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
-
-자세한 내용은 근로 계약 관리 메뉴에서 확인하세요.
-
-${_BRAND_SIG}`,
+      body       : N.contractVoided({ coRep: _coRep, empName: _voidEmp.name||'', ctLabel: _w('contractTypeLabel')(c.contract_type)||c.contract_type||'', period: `${_fmtD(c.contract_start)}${c.contract_end ? ' ~ ' + _fmtD(c.contract_end) : ' (기간 미정)'}`, statusLabel }),
       contractId  : c.id,
       employeeId  : c.employee_id, employeeName: _voidEmp.name || '',
       contractEnd : c.contract_end || '',
@@ -816,20 +752,7 @@ export async function confirmContractRenew(){
         companyId  : c.company_id, companyName: _renewCo.company_name || '',
         noticeType : 'contract_renewal_scheduled',
         title      : `[갱신 예약] ${_renewEmp.name||''} — 계약 갱신이 예약되었습니다`,
-        body       :
-`안녕하세요${_coRep}.
-
-소속 근로자의 계약 갱신이 예약되었습니다.
-
-■ 근로자: ${_renewEmp.name||''}
-■ 고용형태: ${_w('contractTypeLabel')(c.contract_type)||c.contract_type||''}
-■ 기존 계약 종료일: ${_fmtD(oldEnd)}
-■ 새 계약 시작일: ${_fmtD(newStart)} (시작일 미도래 — 계약예정)
-■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
-
-자세한 내용은 근로 계약 관리 메뉴에서 확인하세요.
-
-${_BRAND_SIG}`,
+        body       : N.renewalScheduled({ coRep: _coRep, empName: _renewEmp.name||'', ctLabel: _w('contractTypeLabel')(c.contract_type)||c.contract_type||'', oldEnd: _fmtD(oldEnd), newStart: _fmtD(newStart) }),
         contractId  : newId,
         employeeId  : c.employee_id, employeeName: _renewEmp.name || '',
         contractEnd : '',
@@ -840,21 +763,7 @@ ${_BRAND_SIG}`,
         companyId  : c.company_id, companyName: _renewCo.company_name || '',
         noticeType : 'contract_renewed',
         title      : `[계약 갱신] ${_renewEmp.name||''} — 계약이 갱신되었습니다`,
-        body       :
-`안녕하세요${_coRep}.
-
-소속 근로자의 계약 갱신이 완료되었습니다.
-
-■ 근로자: ${_renewEmp.name||''}
-■ 고용형태: ${_w('contractTypeLabel')(c.contract_type)||c.contract_type||''}
-■ 기존 계약 종료일: ${_fmtD(oldEnd)}
-■ 새 계약 시작일: ${_fmtD(newStart)}
-■ 계약 상태: 계약유효 (활성)
-■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
-
-자세한 내용은 근로 계약 관리 메뉴에서 확인하세요.
-
-${_BRAND_SIG}`,
+        body       : N.renewed({ coRep: _coRep, empName: _renewEmp.name||'', ctLabel: _w('contractTypeLabel')(c.contract_type)||c.contract_type||'', oldEnd: _fmtD(oldEnd), newStart: _fmtD(newStart) }),
         contractId  : newId,
         employeeId  : c.employee_id, employeeName: _renewEmp.name || '',
         contractEnd : '',
@@ -2646,20 +2555,7 @@ export async function saveContract(){
           companyId  : coId, companyName: _coName,
           noticeType : 'contract_terminated',
           title      : `[계약 해지] ${_empName} — 근로계약이 해지되었습니다`,
-          body       :
-`안녕하세요${_coRep}.
-
-소속 근로자의 근로계약이 해지 처리되었습니다.
-
-■ 근로자: ${_empName}
-■ 고용형태: ${_w('contractTypeLabel')(contractType)||contractType}
-■ 계약 시작일: ${_fmtDate(contractStart)}
-■ 계약 종료일: ${_fmtDate(contractEnd || _origC.contract_end || '')}
-■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
-
-자세한 내용은 근로 계약 관리 메뉴에서 확인하세요.
-
-${_BRAND_SIG}`,
+          body       : N.contractTerminated({ coRep: _coRep, empName: _empName, ctLabel: _w('contractTypeLabel')(contractType)||contractType, period: `${_fmtDate(contractStart)} ~ ${_fmtDate(contractEnd || _origC.contract_end || '')}` }),
           contractId  : _savedContractId,
           employeeId  : empId, employeeName: _empName,
           contractEnd : contractEnd || _origC.contract_end || '',
@@ -2670,19 +2566,7 @@ ${_BRAND_SIG}`,
           companyId  : coId, companyName: _coName,
           noticeType : 'contract_updated',
           title      : `[계약 수정] ${_empName} — 근로계약이 수정되었습니다`,
-          body       :
-`안녕하세요${_coRep}.
-
-소속 근로자의 근로계약 내용이 수정되었습니다.
-
-■ 근로자: ${_empName}
-■ 고용형태: ${_w('contractTypeLabel')(contractType)||contractType}
-■ 계약 기간: ${_fmtDate(contractStart)}${contractEnd ? ' ~ ' + _fmtDate(contractEnd) : ' (기간 미정)'}
-■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
-
-자세한 내용은 근로 계약 관리 메뉴에서 확인하세요.
-
-${_BRAND_SIG}`,
+          body       : N.contractUpdated({ coRep: _coRep, empName: _empName, ctLabel: _w('contractTypeLabel')(contractType)||contractType, period: `${_fmtDate(contractStart)}${contractEnd ? ' ~ ' + _fmtDate(contractEnd) : ' (기간 미정)'}` }),
           contractId  : _savedContractId,
           employeeId  : empId, employeeName: _empName,
           contractEnd : contractEnd,
@@ -2694,20 +2578,7 @@ ${_BRAND_SIG}`,
         companyId  : coId, companyName: _coName,
         noticeType : 'contract_renewed_new',
         title      : `[재계약 완료] ${_empName} — 새 근로계약이 작성되었습니다`,
-        body       :
-`안녕하세요${_coRep}.
-
-소속 근로자의 재계약이 완료되었습니다.
-
-■ 근로자: ${_empName}
-■ 고용형태: ${_w('contractTypeLabel')(contractType)||contractType}
-■ 새 계약 기간: ${_fmtDate(contractStart)}${contractEnd ? ' ~ ' + _fmtDate(contractEnd) : ' (기간 미정)'}
-■ 계약 상태: ${contractStatus === '계약예정' ? '계약예정 (시작일 미도래)' : '계약유효 (활성)'}
-■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
-
-자세한 내용은 근로 계약 관리 메뉴에서 확인하세요.
-
-${_BRAND_SIG}`,
+        body       : N.recontractCompleted({ coRep: _coRep, empName: _empName, ctLabel: _w('contractTypeLabel')(contractType)||contractType, period: `${_fmtDate(contractStart)}${contractEnd ? ' ~ ' + _fmtDate(contractEnd) : ' (기간 미정)'}`, statusLabel: contractStatus === '계약예정' ? '계약예정 (시작일 미도래)' : '계약유효 (활성)' }),
         contractId  : _savedContractId,
         employeeId  : empId, employeeName: _empName,
         contractEnd : contractEnd,
@@ -2718,20 +2589,7 @@ ${_BRAND_SIG}`,
         companyId  : coId, companyName: _coName,
         noticeType : 'contract_created',
         title      : `[신규 계약] ${_empName} — 근로계약이 작성되었습니다`,
-        body       :
-`안녕하세요${_coRep}.
-
-소속 근로자의 근로계약이 새로 작성되었습니다.
-
-■ 근로자: ${_empName}
-■ 고용형태: ${_w('contractTypeLabel')(contractType)||contractType}
-■ 계약 기간: ${_fmtDate(contractStart)}${contractEnd ? ' ~ ' + _fmtDate(contractEnd) : ' (기간 미정)'}
-■ 계약 상태: ${contractStatus === CONTRACT_STATUS.DOCS_INCOMPLETE ? '서류미비 (파일 업로드 필요)' : contractStatus === CONTRACT_STATUS.PENDING ? '계약예정' : '계약유효 (활성)'}
-■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
-
-자세한 내용은 근로 계약 관리 메뉴에서 확인하세요.
-
-${_BRAND_SIG}`,
+        body       : N.contractCreated({ coRep: _coRep, empName: _empName, ctLabel: _w('contractTypeLabel')(contractType)||contractType, period: `${_fmtDate(contractStart)}${contractEnd ? ' ~ ' + _fmtDate(contractEnd) : ' (기간 미정)'}`, statusLabel: contractStatus === CONTRACT_STATUS.DOCS_INCOMPLETE ? '서류미비 (파일 업로드 필요)' : contractStatus === CONTRACT_STATUS.PENDING ? '계약예정' : '계약유효 (활성)' }),
         contractId  : _savedContractId,
         employeeId  : empId, employeeName: _empName,
         contractEnd : contractEnd,
