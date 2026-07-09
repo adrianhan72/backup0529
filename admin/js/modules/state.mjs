@@ -1,129 +1,63 @@
 /**
- * state.mjs — 캡슐화된 상태 관리 모듈
+ * state.mjs — 상태 관리 모듈 (Phase 3)
  * 
- * 기존 전역 변수(allCompanies, allEmployees 등)를 모듈 스코프로 캡슐화.
- * getter/setter/loader 함수만 export하여 외부에서 안전하게 접근.
+ * 기존 window.allXxx 전역 변수와 동기화.
  */
 
 import { loadTable } from './api.mjs';
 
-// ═══════════════════════════════════════════
-// 내부 상태 (모듈 스코프 — 외부 접근 불가)
-// ═══════════════════════════════════════════
-
-let _companies = [];
-let _employees = [];
-let _contracts = [];
-let _payrolls = [];
-let _billings = [];
-let _executives = [];
-let _relatedParties = [];
-let _leaveLedgers = [];
-let _wlNotifications = [];
-let _dataReady = false;
-let _heavyDataReady = false;
-
-// ═══════════════════════════════════════════
-// 읽기 전용 Getters
-// ═══════════════════════════════════════════
-
-export function getCompanies()  { return [..._companies]; }
-export function getEmployees()  { return [..._employees]; }
-export function getContracts()  { return [..._contracts]; }
-export function getPayrolls()   { return [..._payrolls]; }
-export function getBillings()   { return [..._billings]; }
-export function getExecutives() { return [..._executives]; }
-export function getRelatedParties() { return [..._relatedParties]; }
-export function getLeaveLedgers()   { return [..._leaveLedgers]; }
-export function getWLNotifications(){ return [..._wlNotifications]; }
-export function isDataReady()       { return _dataReady; }
-export function isHeavyDataReady()  { return _heavyDataReady; }
-
-// ═══════════════════════════════════════════
-// 데이터 로더
-// ═══════════════════════════════════════════
+export function getCompanies()  { return window.allCompanies || []; }
+export function getEmployees()  { return window.allEmployees || []; }
+export function getContracts()  { return window.allContracts || []; }
+export function getPayrolls()   { return window.allPayrolls || []; }
+export function getBillings()   { return window.allBillings || []; }
+export function getExecutives() { return window.allExecutives || []; }
+export function getRelatedParties() { return window.allRelatedParties || []; }
+export function getLeaveLedgers()   { return window.allLeaveLedgers || []; }
+export function getWLNotifications(){ return window.allWLNotifications || []; }
+export function isDataReady()       { return !!window._dataReady; }
+export function isHeavyDataReady()  { return !!window._heavyDataReady; }
 
 export async function loadCompanies() {
   const d = await loadTable('companies', 100);
-  _companies = d.data || [];
-  return _companies;
+  window.allCompanies = d.data || [];
+  return window.allCompanies;
 }
-
 export async function loadEmployees() {
   const d = await loadTable('employees', 200);
-  _employees = d.data || [];
-  return _employees;
+  window.allEmployees = d.data || [];
+  return window.allEmployees;
 }
-
 export async function loadContracts() {
   const d = await loadTable('contracts', 500);
-  _contracts = d.data || [];
-  return _contracts;
+  window.allContracts = d.data || [];
+  return window.allContracts;
 }
-
 export async function loadPayrolls(page = 1) {
   const d = await loadTable('payrolls', 500, page);
-  _payrolls = d.data || [];
-  return _payrolls;
+  window.allPayrolls = d.data || [];
+  return window.allPayrolls;
 }
-
 export async function loadBillings() {
   const d = await loadTable('billing', 100);
-  _billings = d.data || [];
-  return _billings;
+  window.allBillings = d.data || [];
+  return window.allBillings;
 }
-
 export async function loadExecutives() {
   const d = await loadTable('registered_executives', 200);
-  _executives = d.data || [];
-  return _executives;
+  window.allExecutives = d.data || [];
+  return window.allExecutives;
 }
-
 export async function loadRelatedParties() {
   const d = await loadTable('related_party_workers', 200);
-  _relatedParties = d.data || [];
-  return _relatedParties;
+  window.allRelatedParties = d.data || [];
+  return window.allRelatedParties;
 }
-
-export async function loadLeaveLedgers() {
-  const d = await loadTable('annual_leave_ledger', 200);
-  _leaveLedgers = d.data || [];
-  return _leaveLedgers;
-}
-
-/**
- * 핵심 데이터 로드 (대시보드·고객사·계약 표시에 필요한 최소 데이터)
- */
 export async function loadCoreData() {
-  const t0 = performance.now();
   await Promise.all([loadCompanies(), loadEmployees(), loadContracts()]);
-  _dataReady = true;
-  const ms = Math.round(performance.now() - t0);
-  console.log(`[ESM] 핵심 데이터 로드 완료 (${ms}ms): {고객사: ${_companies.length}, 직원: ${_employees.length}, 계약: ${_contracts.length}}`);
-  return { companies: _companies, employees: _employees, contracts: _contracts };
+  window._dataReady = true;
 }
-
-/**
- * Heavy 데이터 로드 (급여·청구·발송이력 등)
- */
 export async function loadHeavyDataModules() {
-  const t0 = performance.now();
-  await Promise.all([loadPayrolls(), loadBillings(), loadExecutives(), loadRelatedParties(), loadLeaveLedgers()]);
-  _heavyDataReady = true;
-  const ms = Math.round(performance.now() - t0);
-  console.log(`[ESM] Heavy 데이터 로드 완료 (${ms}ms): {급여: ${_payrolls.length}, 청구: ${_billings.length}}`);
-  return { payrolls: _payrolls, billings: _billings };
-}
-
-// ═══════════════════════════════════════════
-// window 브릿지 (기존 글로벌 코드와 호환)
-// ═══════════════════════════════════════════
-
-if (typeof window !== 'undefined') {
-  // 기존 코드가 allCompanies 등을 참조할 수 있도록 동기화
-  Object.defineProperty(window, '_esmState', {
-    value: { getCompanies, getEmployees, getContracts, getPayrolls, getBillings, loadCoreData, loadHeavyDataModules },
-    writable: false,
-    configurable: true,
-  });
+  await Promise.all([loadPayrolls(), loadBillings(), loadExecutives(), loadRelatedParties()]);
+  window._heavyDataReady = true;
 }
