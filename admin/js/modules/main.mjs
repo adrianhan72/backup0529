@@ -29,6 +29,9 @@ import { filterActiveCompanies, getCompanyStats } from './company/core.mjs';
 import { getActiveContracts, getExpiringContracts, getContractTypeSummary } from './contract/core.mjs';
 import { getPayrollStats, getDraftPayrolls } from './payroll/core.mjs';
 import { getBillingStats, getUnpaidBillings } from './billing/core.mjs';
+import { getPayrollInputStats } from './payroll-input/core.mjs';
+import { getYearlyPayrollSummary } from './wage-ledger/core.mjs';
+import { getSeveranceStats } from './severance/core.mjs';
 
-console.log('[ESM] ✅ 모듈 시스템 준비 완료 (Phase 3-C)');
-console.log('[ESM]   22 modules loaded');
+console.log('[ESM] ✅ 모듈 시스템 준비 완료 (Phase 3-C 완료)');
+console.log('[ESM]   25 modules loaded');
