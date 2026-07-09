@@ -28,11 +28,15 @@ export function calcBillingTrend() {
   return Object.entries(monthly).sort().slice(-12);
 }
 
+// Phase 4: 레거시 차트 렌더 함수 호출 헬퍼
+const _callLegacy = (name) => {
+  const fn = window[name];
+  if (typeof fn === 'function') fn();
+};
+
 /** 대시보드 차트 새로고침 */
 export function refreshCharts() {
-  if (typeof window.renderCompanyTrendChart === 'function') window.renderCompanyTrendChart();
-  if (typeof window.renderEmployeeTrendChart === 'function') window.renderEmployeeTrendChart();
-  if (typeof window.renderBillingTrendChart === 'function') window.renderBillingTrendChart();
+  _callLegacy('renderCompanyTrendChart');
+  _callLegacy('renderEmployeeTrendChart');
+  _callLegacy('renderBillingTrendChart');
 }
-
-// 순수 ES 모듈 — import { calcPayrollTrend } 로 사용
