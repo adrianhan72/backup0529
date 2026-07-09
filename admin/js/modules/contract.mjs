@@ -6,16 +6,21 @@
 import { CONTRACT_ACTIVE_STATUSES, CONTRACT_TERMINAL_STATUSES, CONTRACT_PROBATION_TYPES, contractTypeLabel } from './constants.mjs';
 import { getCompanies, getEmployees, getContracts as _getContracts, loadContracts } from './state.mjs';
 
+// Phase 4: 모듈 레벨 상태
+let _ctFetching = false;
+let _updateCtStats = null;
+let _updateCtTypes = null;
+
 function ensureContracts() {
   const g = _getContracts();
   if (g && g.length > 0) return g;
-  if (!window._esmContractFetching) {
-    window._esmContractFetching = true;
+  if (!_ctFetching) {
+    _ctFetching = true;
     loadContracts().then(() => {
-      window._esmContractFetching = false;
-      if (window._esmUpdateContractStats) window._esmUpdateContractStats();
-      if (window._esmUpdateContractTypes) window._esmUpdateContractTypes();
-    }).catch(() => { window._esmContractFetching = false; });
+      _ctFetching = false;
+      if (_updateCtStats) _updateCtStats();
+      if (_updateCtTypes) _updateCtTypes();
+    }).catch(() => { _ctFetching = false; });
   }
   return [];
 }
@@ -67,7 +72,7 @@ function addContractStatsPanel() {
   };
   update();
   container.insertBefore(panel, container.firstChild);
-  window._esmUpdateContractStats = update;
+  _updateCtStats = update;
 }
 
 function addContractTypeSummary() {
@@ -103,7 +108,7 @@ function addContractTypeSummary() {
   };
   update();
   container.insertBefore(section, container.firstChild);
-  window._esmUpdateContractTypes = update;
+  _updateCtTypes = update;
 }
 
 // MutationObserver — DOM 변경 감지 + 통계 갱신
@@ -118,8 +123,8 @@ function startContractWatcher() {
     // 계약 목록이 렌더링되면 통계 갱신
     if (document.getElementById('cont-list-section')?.style.display !== 'none') {
       setTimeout(() => {
-        if (window._esmUpdateContractStats) window._esmUpdateContractStats();
-        if (window._esmUpdateContractTypes) window._esmUpdateContractTypes();
+        if (_updateCtStats) _updateCtStats();
+        if (_updateCtTypes) _updateCtTypes();
       }, 200);
     }
   });
@@ -139,16 +144,14 @@ function initContractModule() {
       window[fnName] = function() {
         orig.apply(this, arguments);
         setTimeout(() => {
-          if (window._esmUpdateContractStats) window._esmUpdateContractStats();
-          if (window._esmUpdateContractTypes) window._esmUpdateContractTypes();
+          if (_updateCtStats) _updateCtStats();
+          if (_updateCtTypes) _updateCtTypes();
         }, 150);
       };
     }
   };
   hookRender('renderContracts');
   hookRender('selectContCompany');
-
-  window._esmContract = { addContractStatsPanel, addContractTypeSummary };
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initContractModule);

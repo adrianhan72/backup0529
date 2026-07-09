@@ -31,7 +31,8 @@ function addSeveranceStatsPanel() {
   };
   update();
   container.insertBefore(panel, container.firstChild);
-  window._esmUpdateSevStats = update;
+  // Phase 4: 모듈 레벨 콜백 (외부 호출 없음)
+  let _updateSevStats = update;
 }
 
 let _sevObs = null;

@@ -3,15 +3,19 @@
  */
 import { getCompanies, getPayrolls, loadPayrolls } from './state.mjs';
 
+// Phase 4: 모듈 레벨 상태
+let _payFetching = false;
+let _updatePayStats = null;
+
 function ensurePayrolls() {
   const g = getPayrolls();
   if (g && g.length > 0) return g;
-  if (!window._esmPayFetching) {
-    window._esmPayFetching = true;
+  if (!_payFetching) {
+    _payFetching = true;
     loadPayrolls().then(() => {
-      window._esmPayFetching = false;
-      if (window._esmUpdatePayrollStats) window._esmUpdatePayrollStats();
-    }).catch(() => { window._esmPayFetching = false; });
+      _payFetching = false;
+      if (_updatePayStats) _updatePayStats();
+    }).catch(() => { _payFetching = false; });
   }
   return [];
 }
@@ -52,7 +56,7 @@ function addPayrollStatsPanel() {
   };
   update();
   container.insertBefore(panel, container.firstChild);
-  window._esmUpdatePayrollStats = update;
+  _updatePayStats = update;
 }
 
 let _payObs = null;
@@ -74,12 +78,10 @@ function initPayrollModule() {
     window.renderPayrolls = function() {
       orig.apply(this, arguments);
       setTimeout(() => {
-        if (window._esmUpdatePayrollStats) window._esmUpdatePayrollStats();
+        if (_updatePayStats) _updatePayStats();
       }, 100);
     };
   }
-
-  window._esmPayroll = { addPayrollStatsPanel };
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initPayrollModule);

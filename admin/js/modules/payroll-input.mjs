@@ -37,7 +37,7 @@ function addPayrollInputStatsPanel() {
   };
   update();
   container.insertBefore(panel, container.firstChild);
-  window._esmUpdatePIStats = update;
+  let _updatePIStats = update;
 }
 
 let _piObs = null;
@@ -53,7 +53,6 @@ function initPIModule() {
   console.log('[ESM Payroll Input] 모듈 초기화');
   addPayrollInputStatsPanel();
   startPIWatcher();
-  window._esmPI = { addPayrollInputStatsPanel };
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initPIModule);

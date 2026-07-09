@@ -8,15 +8,19 @@ import { isCompanyActive, s } from './utils.mjs';
 import { COMPANY_STATUS } from './constants.mjs';
 import { getCompanies as _getCompanies, getEmployees, getContracts, loadCompanies } from './state.mjs';
 
+// Phase 4: 모듈 레벨 상태 (window 참조 제거)
+let _coFetching = false;
+let _updateCoStats = null;
+
 function ensureCompanies() {
   const g = _getCompanies();
   if (g && g.length > 0) return g;
-  if (!window._esmCoFetching) {
-    window._esmCoFetching = true;
+  if (!_coFetching) {
+    _coFetching = true;
     loadCompanies().then(() => {
-      window._esmCoFetching = false;
-      if (window._esmUpdateCompanyStats) window._esmUpdateCompanyStats();
-    }).catch(() => { window._esmCoFetching = false; });
+      _coFetching = false;
+      if (_updateCoStats) _updateCoStats();
+    }).catch(() => { _coFetching = false; });
   }
   return [];
 }
@@ -56,7 +60,7 @@ function addCompanyStatsPanel() {
   };
   update();
   container.insertBefore(panel, container.firstChild);
-  window._esmUpdateCompanyStats = update;
+  _updateCoStats = update;
 }
 
 function enhanceCompanySearch() {
@@ -109,13 +113,9 @@ function initCompanyModule() {
     const orig = window.renderCompanies;
     window.renderCompanies = function() {
       orig.apply(this, arguments);
-      setTimeout(() => {
-        if (window._esmUpdateCompanyStats) window._esmUpdateCompanyStats();
-      }, 100);
+      setTimeout(() => { if (_updateCoStats) _updateCoStats(); }, 100);
     };
   }
-
-  window._esmCompany = { addCompanyStatsPanel };
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initCompanyModule);

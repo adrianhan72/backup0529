@@ -29,7 +29,7 @@ function addWageLedgerStatsPanel() {
   };
   update();
   container.insertBefore(panel, container.firstChild);
-  window._esmUpdateWLStats = update;
+  let _updateWLStats = update;
 }
 
 let _wlObs = null;
