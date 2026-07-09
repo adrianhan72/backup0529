@@ -71,8 +71,25 @@ export function updateMenuBadges() {
   }
 }
 
+/** 임금대장 메뉴 뱃지 (미확인 알림) */
+export function updateWLMenuBadge() {
+  const menuItem = document.querySelector('[data-page="wage-ledger"]');
+  if (!menuItem) return;
+  menuItem.querySelectorAll('.wl-menu-badge').forEach(el => el.remove());
+  const notifications = getWLNotifications();
+  const unreadCount = notifications.filter(n => !n.is_read).length;
+  if (unreadCount > 0) {
+    const badge = document.createElement('span');
+    badge.className = 'wl-menu-badge';
+    badge.textContent = 'N';
+    badge.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;background:#e94560;color:#fff;font-size:10px;font-weight:800;border-radius:10px;padding:1px 6px;margin-left:6px;letter-spacing:0;line-height:1.4;vertical-align:middle;';
+    menuItem.appendChild(badge);
+  }
+}
+
 // Phase 3-3: window 등록 → 레거시 코드가 ESM 버전을 사용하도록 오버라이드
 if (typeof window !== 'undefined') {
   window.updateMenuBadges = updateMenuBadges;
-  console.log('[ESM Badges] updateMenuBadges → ESM 모듈로 오버라이드');
+  window._updateWLMenuBadge = updateWLMenuBadge;
+  console.log('[ESM Badges] updateMenuBadges + _updateWLMenuBadge → ESM 모듈로 오버라이드');
 }

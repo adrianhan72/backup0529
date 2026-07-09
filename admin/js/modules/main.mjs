@@ -21,6 +21,7 @@ import './dashboard/charts.mjs';
 import './company/core.mjs';
 import './contract/core.mjs';
 import './payroll/core.mjs';
+import './payroll-bulk.mjs';     // Phase 3-3: payroll-bulk.js 완전 변환
 import './billing/core.mjs';
 import './payroll-input/core.mjs';
 import './wage-ledger/core.mjs';
