@@ -29,6 +29,9 @@ import './contract/contract-docs.mjs';       // Phase 5: contract-docs.js 완전
 import './contract/contract-core.mjs';      // Phase 6: contract-core.js 완전 변환 (36함수)
 import './wage-ledger/wage-ledger.mjs';      // Phase 6: wage-ledger.js 완전 변환 (20함수)
 import './billing/billing-core.mjs';         // Phase 6: billing-core.js 완전 변환 (14함수)
+import './contract/contract-form.mjs';       // Phase 7: contract-form.js 완전 변환 (61함수)
+import './billing/payslip-send.mjs';         // Phase 7: payslip-send.js 완전 변환 (36함수)
+import './company/company-core.mjs';         // Phase 7: company-core.js 완전 변환 (56함수)
 import './billing/core.mjs';
 import './payroll-input/core.mjs';
 import './wage-ledger/core.mjs';
