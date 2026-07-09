@@ -7,7 +7,19 @@
 import { isCompanyActive, s } from './utils.mjs';
 import { COMPANY_STATUS } from './constants.mjs';
 
-const getAllCompanies = () => window.allCompanies || [];
+const getAllCompanies = () => {
+  const g = window.allCompanies;
+  if (g && g.length > 0) return g;
+  if (!window._esmCoFetching) {
+    window._esmCoFetching = true;
+    fetch('../tables/companies?limit=100').then(r => r.json()).then(d => {
+      window.allCompanies = d.data || [];
+      window._esmCoFetching = false;
+      if (window._esmUpdateCompanyStats) window._esmUpdateCompanyStats();
+    }).catch(() => { window._esmCoFetching = false; });
+  }
+  return [];
+};
 const getAllEmployees = () => window.allEmployees || [];
 const getAllContracts = () => window.allContracts || [];
 
@@ -93,6 +105,18 @@ function initCompanyModule() {
   startCompanyPageWatcher();
   wrapPageLoader();
   enhanceCompanySearch();
+
+  // 데이터 변경 시 ESM 패널 자동 갱신 (renderCompanies 후크)
+  if (typeof window.renderCompanies === 'function') {
+    const orig = window.renderCompanies;
+    window.renderCompanies = function() {
+      orig.apply(this, arguments);
+      setTimeout(() => {
+        if (window._esmUpdateCompanyStats) window._esmUpdateCompanyStats();
+      }, 100);
+    };
+  }
+
   window._esmCompany = { addCompanyStatsPanel };
 }
 

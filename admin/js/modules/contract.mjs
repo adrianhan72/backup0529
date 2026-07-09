@@ -5,7 +5,22 @@
  */
 import { CONTRACT_ACTIVE_STATUSES, CONTRACT_TERMINAL_STATUSES, CONTRACT_PROBATION_TYPES, contractTypeLabel } from './constants.mjs';
 
-const getAllContracts  = () => window.allContracts || [];
+const getAllContracts  = () => {
+  // window.allContracts 우선, 없으면 DOM에서 읽기
+  const g = window.allContracts;
+  if (g && g.length > 0) return g;
+  // fallback: API로 직접 조회 (window.allContracts 미로드 시)
+  if (!window._esmContractFetching) {
+    window._esmContractFetching = true;
+    fetch('../tables/contracts?limit=500').then(r => r.json()).then(d => {
+      window.allContracts = d.data || [];
+      window._esmContractFetching = false;
+      if (window._esmUpdateContractStats) window._esmUpdateContractStats();
+      if (window._esmUpdateContractTypes) window._esmUpdateContractTypes();
+    }).catch(() => { window._esmContractFetching = false; });
+  }
+  return [];
+};
 const getAllEmployees  = () => window.allEmployees || [];
 const getAllCompanies  = () => window.allCompanies || [];
 
@@ -95,7 +110,7 @@ function addContractTypeSummary() {
   window._esmUpdateContractTypes = update;
 }
 
-// MutationObserver
+// MutationObserver — DOM 변경 감지 + 통계 갱신
 let _ctObs = null;
 function startContractWatcher() {
   const c = document.getElementById('page-contracts');
@@ -104,8 +119,15 @@ function startContractWatcher() {
   _ctObs = new MutationObserver(() => {
     if (!document.getElementById('esm-contract-stats')) addContractStatsPanel();
     if (!document.getElementById('esm-contract-types')) addContractTypeSummary();
+    // 계약 목록이 렌더링되면 통계 갱신
+    if (document.getElementById('cont-list-section')?.style.display !== 'none') {
+      setTimeout(() => {
+        if (window._esmUpdateContractStats) window._esmUpdateContractStats();
+        if (window._esmUpdateContractTypes) window._esmUpdateContractTypes();
+      }, 200);
+    }
   });
-  _ctObs.observe(c, { childList: true });
+  _ctObs.observe(c, { childList: true, subtree: true });
 }
 
 function initContractModule() {
@@ -113,6 +135,23 @@ function initContractModule() {
   addContractStatsPanel();
   addContractTypeSummary();
   startContractWatcher();
+
+  // 데이터 변경 시 ESM 패널 자동 갱신 (renderContracts + selectContCompany 후크)
+  const hookRender = (fnName) => {
+    if (typeof window[fnName] === 'function') {
+      const orig = window[fnName];
+      window[fnName] = function() {
+        orig.apply(this, arguments);
+        setTimeout(() => {
+          if (window._esmUpdateContractStats) window._esmUpdateContractStats();
+          if (window._esmUpdateContractTypes) window._esmUpdateContractTypes();
+        }, 150);
+      };
+    }
+  };
+  hookRender('renderContracts');
+  hookRender('selectContCompany');
+
   window._esmContract = { addContractStatsPanel, addContractTypeSummary };
 }
 
