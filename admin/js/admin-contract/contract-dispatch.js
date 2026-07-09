@@ -334,7 +334,7 @@ function renderCdpUnsentList(){
   tbody.innerHTML = list.map((c, idx) => {
     const emp = allEmployees.find(e => e.id === c.employee_id) || {};
     const co  = allCompanies.find(x => x.id === c.company_id)  || {};
-    const cat = emp.employment_category || c.contract_type || '-';
+    const cat = c.contract_type || emp.employment_category || '-';
     const phone    = emp.phone || '';
     const email    = emp.email || '';
     const hasPhone = !!(phone.trim());

@@ -26,7 +26,7 @@
       cols: ['직원명','고용형태','계약 시작일','D-day','관리'],
       row: (c) => {
         const emp = allEmployees.find(e=>e.id===c.employee_id);
-        const empCat = emp?.employment_category || c.contract_type || '-';
+        const empCat = c.contract_type || emp?.employment_category || '-';
         const catBadge = CAT_BADGE_CLS[empCat] || 'badge-gray';
         const diff = c.contract_start ? Math.ceil((new Date(c.contract_start)-new Date(today))/(1000*60*60*24)) : null;
         const dday = diff !== null ? (diff>0?`D-${diff}`:diff===0?'D-day':`D+${Math.abs(diff)}`) : '-';
@@ -73,7 +73,7 @@
       cols: ['직원명','고용형태','퇴사 예정일','D-day','관리'],
       row: (c) => {
         const emp = allEmployees.find(e=>e.id===c.employee_id);
-        const empCat = emp?.employment_category || c.contract_type || '-';
+        const empCat = c.contract_type || emp?.employment_category || '-';
         const catBadge = CAT_BADGE_CLS[empCat] || 'badge-gray';
         const termDate = c.terminate_date || '';
         const diff = termDate ? Math.ceil((new Date(termDate)-new Date(today))/(1000*60*60*24)) : null;
@@ -175,8 +175,9 @@ function renderContracts(){
     // 고용형태 필터
     if(filterEmpCat){
       const emp=allEmployees.find(e=>e.id===c.employee_id);
-      const empCat = emp?.employment_category || '';
       const empName = emp?.name || '';
+      // 계약 유형은 c.contract_type 우선 (직원 카테고리와 다를 수 있음)
+      const ctCat = c.contract_type || emp?.employment_category || '';
       // 대표자·등기임원·특수관계인: 실제 고용형태가 아닌 이름 매칭으로 필터
       if(filterEmpCat === 'representative'){
         const co2 = (allCompanies||[]).find(x => x.id === c.company_id);
@@ -189,7 +190,7 @@ function renderContracts(){
         if(!(allRelatedParties||[]).some(r => r.company_id === c.company_id && r.name === empName)) return false;
       } else {
         // 한글/영문 모두 매칭 (예: '계약직 수습' ↔ 'fixed_term_probation')
-        if(empCat !== filterEmpCat && empCat !== CONTRACT_TYPE_LABEL[filterEmpCat] && CONTRACT_TYPE_LABEL[empCat] !== filterEmpCat) return false;
+        if(ctCat !== filterEmpCat && ctCat !== CONTRACT_TYPE_LABEL[filterEmpCat] && CONTRACT_TYPE_LABEL[ctCat] !== filterEmpCat) return false;
       }
     }
     // 계약상태 필터
@@ -212,15 +213,17 @@ function renderContracts(){
     // ── 표시 상태 스마트 계산 ──
     const {badge:stBadge, label:stName, docsIncomplete} = calcContractStatusDisplay(c, today);
     const emp=allEmployees.find(e=>e.id===c.employee_id);
-    const empCatRaw=emp?.employment_category||'-';
-    const empCat=typeof normalizeContractType === 'function' ? normalizeContractType(empCatRaw) : empCatRaw;
+    // 계약 유형은 c.contract_type 우선 (직원의 현재 employment_category와 다를 수 있음)
+    const ctRaw = c.contract_type || emp?.employment_category || '-';
+    const empCat=typeof normalizeContractType === 'function' ? normalizeContractType(ctRaw) : ctRaw;
     const catBadge=CAT_BADGE_CLS[empCat]||'badge-gray';
     const isResigned = emp?.status===EMP_STATUS.RESIGNED && emp?.resign_date;
     // terminate_date가 있으면 모든 고용형태에서 우선 표시 (갱신/해지/퇴사)
     // contract_end는 최초 계약 당시의 원래 종료일로만 사용
+    // 정규직 수습은 수습기간 만료일 = contract_end 이므로 별도 처리
     const periodTxt = c.terminate_date
       ? `${c.contract_start||'-'} ~ ${c.terminate_date}`
-      : (empCat===CONTRACT_TYPE.REGULAR||empCat===CONTRACT_TYPE.REGULAR_PROBATION)
+      : (empCat===CONTRACT_TYPE.REGULAR)
         ? (isResigned ? `${c.contract_start||'-'} ~ ${emp.resign_date}` : `${c.contract_start||'-'} ~ 현재`)
         : `${c.contract_start||'-'} ~ ${c.contract_end||'미정'}`;
     const isContDaily = empCat ===CONTRACT_TYPE.DAILY;
@@ -399,6 +402,8 @@ function openContractModal(id=null, preCompanyId=null){
   ['ct-start','ct-end','ct-annual-sal','ct-base','ct-note','ct-pay-period','ct-pay-period-month-hidden','ct-pay-period-day-hidden','ct-pay-day'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});
   { const _tdEl=document.getElementById('ct-terminate-display'); if(_tdEl) _tdEl.value=''; }
   { const _trEl=document.getElementById('ct-row-terminate'); if(_trEl) _trEl.style.display='none'; }
+  { const _vdEl=document.getElementById('ct-voided-display'); if(_vdEl) _vdEl.value=''; }
+  { const _vrEl=document.getElementById('ct-row-voided'); if(_vrEl) _vrEl.style.display='none'; }
   ['ct-pay-period-month','ct-pay-period-day'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});
   const _ppHint = document.getElementById('ct-pay-period-hint'); if(_ppHint) _ppHint.textContent='';
   document.getElementById('ct-annual').value=15;
@@ -552,6 +557,17 @@ function openContractModal(id=null, preCompanyId=null){
           termDispEl.value = _effectiveTermDate;
         } else {
           termRowEl.style.display = 'none';
+        }
+      }
+      // 계약 파기일 행: is_voided_by_amend인 경우 표시
+      const voidedRowEl = document.getElementById('ct-row-voided');
+      const voidedDispEl = document.getElementById('ct-voided-display');
+      if(voidedRowEl && voidedDispEl){
+        if(c.is_voided_by_amend && c.voided_at){
+          voidedRowEl.style.display = '';
+          voidedDispEl.value = new Date(c.voided_at).toLocaleString('ko-KR');
+        } else {
+          voidedRowEl.style.display = 'none';
         }
       }
       const hireRowEl   = document.getElementById('ct-edit-row-hire');
@@ -1446,6 +1462,8 @@ function viewContract(id){
   // 단, 입사일(ct-edit-em-hire)은 재입사 케이스를 위해 항상 편집 가능하게 유지
   const bodyEl = modalEl.querySelector('.modal-body');
   if(bodyEl) bodyEl.querySelectorAll('input,select,textarea').forEach(el=>{
+    // 해지일·파기일 필드는 readonly 유지, disabled로 인한 검정색 강제 방지
+    if(el.id === 'ct-terminate-display' || el.id === 'ct-voided-display') return;
     if(el.tagName === 'SELECT'){
       el.tabIndex = -1;
       el.style.pointerEvents = 'none';

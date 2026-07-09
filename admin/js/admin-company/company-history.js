@@ -374,14 +374,11 @@ function renderContCompanyList(){
     const isSelected = c.id === currentGlobalCompanyId;
     // 오늘 현재 유효한 계약 (활성 + 서류미비, 임시저장 제외)
     const activeContracts = allContracts.filter(ct => ct.company_id === c.id && !ct.is_draft && (ct.status === '활성' || ct.status === 'active' || ct.status === '서류미비' || ct.status === 'docs_incomplete'));
-    // 유효 계약을 가진 고유 근로자 수
-    const empCnt = new Set(activeContracts.map(ct => ct.employee_id)).size;
     const contractCnt = activeContracts.length;
     return `<button onclick="selectContCompany('${c.id}','${c.company_name.replace(/'/g,"\\'")}')"
       class="co-chip${isSelected?' selected':''}">
       <i class="fas fa-building" style="font-size:11px;"></i>
       ${c.company_name}
-      <span class="co-chip-badge count">${empCnt}명</span>
       <span class="co-chip-badge count">계약 ${contractCnt}</span>
     </button>`;
   }).join('');
