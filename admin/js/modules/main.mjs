@@ -23,6 +23,10 @@ import { addSeveranceStatsPanel } from './severance.mjs';
 import { PAGE_REGISTRY, isExternalPage, getPageNames } from './loader.mjs';
 import { show, hide, $, toDateStr, fmtShortTime, formatPhone } from './helpers.mjs';
 import { navigateTo, getCurrentPage, onPageChange, getPageTitle } from './router.mjs';
+import { renderExpiryBanner, refreshDashboard } from './dashboard/core.mjs';
+import { calcPayrollTrend, refreshCharts } from './dashboard/charts.mjs';
+import { filterActiveCompanies, getCompanyStats } from './company/core.mjs';
+import { getActiveContracts, getExpiringContracts, getContractTypeSummary } from './contract/core.mjs';
 
-console.log('[ESM] ✅ 모듈 시스템 준비 완료 (Phase 3-B)');
-console.log('[ESM]   15 modules loaded');
+console.log('[ESM] ✅ 모듈 시스템 준비 완료 (Phase 3-C)');
+console.log('[ESM]   19 modules loaded');
