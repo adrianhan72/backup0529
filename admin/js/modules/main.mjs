@@ -25,6 +25,7 @@ import './payroll-bulk.mjs';     // Phase 3-3: payroll-bulk.js 완전 변환
 import './payroll/payroll-core.mjs';  // Phase 5: payroll-core.js 완전 변환
 import './contract/contract-dispatch.mjs';  // Phase 5: contract-dispatch.js 완전 변환
 import './contract/contract-lifecycle.mjs';  // Phase 5: contract-lifecycle.js 완전 변환 (46함수)
+import './contract/contract-docs.mjs';       // Phase 5: contract-docs.js 완전 변환 (39함수)
 import './billing/core.mjs';
 import './payroll-input/core.mjs';
 import './wage-ledger/core.mjs';
