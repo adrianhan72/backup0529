@@ -1677,6 +1677,7 @@ let _recontractEmpId = null;
 // ─── 종료 플로우 ───
 function doContractTerminate(){
   document.getElementById('ct-renew-panel').style.display = 'none';
+  document.getElementById('ct-amend-panel').style.display = 'none';
   const tp = document.getElementById('ct-terminate-panel');
   tp.style.display = tp.style.display==='none' ? 'block' : 'none';
   if(tp.style.display==='block'){
@@ -1686,9 +1687,26 @@ function doContractTerminate(){
     // contract_end(계약만료일)는 건드리지 않음
     dateEl.value = c.terminate_date || new Date().toISOString().slice(0,10);
     dateEl.disabled = false;
+
+    // 액션 버튼 숨김 (퇴사 설정 중에는 다른 액션 불가)
+    ['ct-btn-amend','ct-btn-amend2','ct-btn-renew','ct-btn-renew2',
+     'ct-btn-terminate','ct-btn-terminate2','ct-btn-recontract','ct-btn-recontract2',
+     'ct-btn-fixed-terminate','ct-btn-fixed-terminate2',
+     'ct-btn-amend-complete2','ct-btn-amend-cancel2',
+     'ct-btn-renew-complete2','ct-btn-renew-cancel2'].forEach(bid=>{
+      const el = document.getElementById(bid); if(el) el.style.display='none';
+    });
+
     setTimeout(()=>tp.scrollIntoView({behavior:'smooth',block:'center'}),100);
   }
 }
+/** 퇴사 설정 모드 취소: 계약 조회 모드로 복귀 */
+function cancelContractTerminate(){
+  const cid = editId.contract;
+  if(!cid) return;
+  viewContract(cid);
+}
+
 async function confirmContractTerminate(){
   // 정규직 전용: 퇴사예정일 입력 → 해지예정 또는 해지 처리
   // contract_end(원래 계약만료일)는 절대 변경하지 않음
@@ -1705,17 +1723,17 @@ async function confirmContractTerminate(){
     return toast(`해지예정일은 계약 만료일(${c.contract_end}) 이전이어야 합니다.`, 'error');
   }
 
-  // 미래 날짜 → 해지예정, 오늘 이하 → 즉시 해지
-  const newStatus = termDate > today ? CONTRACT_STATUS.TERMINATE_PENDING : CONTRACT_STATUS.TERMINATED;
+  // 오늘 이전 → 즉시 해지, 오늘 또는 이후 → 해지예정
+  const newStatus = termDate < today ? CONTRACT_STATUS.TERMINATED : CONTRACT_STATUS.TERMINATE_PENDING;
 
   // contract_end 는 유지, terminate_date 에만 해지예정일 기록
   await api(`../tables/contracts/${c.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({terminate_date: termDate, status: newStatus})});
 
-  // 퇴사예정일 → 직원 resign_date 기록 (퇴사 처리는 실제 해지 시)
+  // 퇴사일 → 직원 기록 업데이트
   const emp = allEmployees.find(e=>e.id===c.employee_id);
   if(emp){
-    const empPatch = newStatus==='해지'
+    const empPatch = newStatus === CONTRACT_STATUS.TERMINATED
       ? {status: EMP_STATUS.RESIGNED, resign_date: termDate}
       : {resign_date: termDate};  // 예정만 기록, 재직 상태 유지
     await api(`../tables/employees/${emp.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
@@ -1724,7 +1742,8 @@ async function confirmContractTerminate(){
 
   closeModal('contract-modal');
   await loadContracts(); await loadEmployees(); renderContracts(); renderDashboard();
-  toast(`퇴사예정일(${termDate})이 설정됐습니다. 계약 상태: ${newStatus}`);
+  const statusLabel = newStatus === CONTRACT_STATUS.TERMINATED ? '해지' : '해지예정';
+  toast(`퇴사일(${termDate})이 설정됐습니다. 계약 상태: ${statusLabel}`);
 }
 
 function editContract(id){openContractModal(id)}

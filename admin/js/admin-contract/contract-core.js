@@ -161,6 +161,7 @@ function renderContracts(){
   const filterEmpCat=(document.getElementById('cont-filter-empcat')?.value||'');
   const filterStatus=(document.getElementById('cont-filter-status')?.value||'');
   const filterDocsOnly=document.getElementById('cont-filter-docs-incomplete')?.checked||false;
+  const filterById=(document.getElementById('cont-filter-id')?.value||'').trim();
   const today=new Date().toISOString().slice(0,10);
 
   // 알림 카드에서 관리되는 상태는 메인 테이블 기본 제외 (서류미비는 유효 계약이므로 메인 테이블에 포함)
@@ -168,6 +169,8 @@ function renderContracts(){
 
   let f=allContracts.filter(c=>{
     if(c.company_id!==currentContCompanyId) return false;
+    // 계약서 고유 ID 검색 (독립적 — ID 입력 시 해당 계약만 표시)
+    if(filterById && c.id !== filterById) return false;
     // 직원명 검색
     if(q&&!getEmpName(c.employee_id).toLowerCase().includes(q)) return false;
     // 고용형태 필터
@@ -214,11 +217,13 @@ function renderContracts(){
     const empCat=typeof normalizeContractType === 'function' ? normalizeContractType(empCatRaw) : empCatRaw;
     const catBadge=CAT_BADGE_CLS[empCat]||'badge-gray';
     const isResigned = emp?.status===EMP_STATUS.RESIGNED && emp?.resign_date;
-    const periodTxt = (empCat===CONTRACT_TYPE.REGULAR||empCat===CONTRACT_TYPE.REGULAR_PROBATION)
-      ? (c.contract_end ? `${c.contract_start||'-'} ~ ${c.contract_end}`
-         : isResigned ? `${c.contract_start||'-'} ~ ${emp.resign_date}`
-         : `${c.contract_start||'-'} ~ 현재`)
-      : `${c.contract_start||'-'} ~ ${c.contract_end||'미정'}`;
+    // terminate_date가 있으면 모든 고용형태에서 우선 표시 (갱신/해지/퇴사)
+    // contract_end는 최초 계약 당시의 원래 종료일로만 사용
+    const periodTxt = c.terminate_date
+      ? `${c.contract_start||'-'} ~ ${c.terminate_date}`
+      : (empCat===CONTRACT_TYPE.REGULAR||empCat===CONTRACT_TYPE.REGULAR_PROBATION)
+        ? (isResigned ? `${c.contract_start||'-'} ~ ${emp.resign_date}` : `${c.contract_start||'-'} ~ 현재`)
+        : `${c.contract_start||'-'} ~ ${c.contract_end||'미정'}`;
     const isContDaily = empCat ===CONTRACT_TYPE.DAILY;
     const baseSalaryDisplay = isContDaily
       ? `<span style="font-size:11px;color:#9ca3af;">일급여</span> ${won(c.daily_wage||c.base_salary)}`
@@ -282,6 +287,16 @@ function renderContracts(){
 }
 function setContPage(p){pages.cont=p;renderContracts()}
 function filterContracts(){pages.cont=1;renderContracts()}
+
+// ── 계약서 고유 ID 클립보드 복사 ──
+function _copyContractId(id){
+  if(!id) return;
+  navigator.clipboard.writeText(id).then(()=>{
+    if(typeof toast === 'function') toast(`계약서 고유 ID가 복사되었습니다. (${id})`);
+  }).catch(()=>{
+    if(typeof toast === 'function') toast('복사에 실패했습니다.', 'error');
+  });
+}
 // ── 계약 모달 유효성 검사 오류 초기화 ──
 function _ctClearErrors(){
   document.querySelectorAll('#contract-modal .ct-field-error').forEach(el=>{
@@ -517,12 +532,16 @@ function openContractModal(id=null, preCompanyId=null){
         ? (_ctValRaw ===CONTRACT_TYPE.REGULAR_PROBATION ? '정규직' : _ctValRaw ===CONTRACT_TYPE.FIXED_PROBATION ? '계약직' : _ctValRaw)
         : _ctValRaw;
       document.getElementById('ct-type').value=ctVal; toggleCtEndDate(true);
-      document.getElementById('ct-end').value=c.contract_end||'';
       document.getElementById('ct-status').value=c.status||CONTRACT_STATUS.ACTIVE;
       // 계약직/일용직: 입사일·퇴사예정일 행 숨김 (계약 시작일·종료일과 동일하므로 중복)
       // 정규직/정규직 수습: 무기한 계약이므로 퇴사예정일 행 숨김
       const isFixedType  = (ctVal===CONTRACT_TYPE.FIXED||ctVal===CONTRACT_TYPE.FIXED_PROBATION||ctVal===CONTRACT_TYPE.DAILY);
       const isRegularType= (ctVal===CONTRACT_TYPE.REGULAR||ctVal===CONTRACT_TYPE.REGULAR_PROBATION);
+      // 계약 종료일: terminate_date가 있으면 모든 고용형태에서 우선 표시 (갱신/해지/퇴사)
+      // contract_end는 최초 계약 당시의 원래 종료일로만 사용
+      const hasTermDate = !!(c.terminate_date);
+      const isTerminatedOrPending = (c.status===CONTRACT_STATUS.TERMINATED || c.status===CONTRACT_STATUS.TERMINATE_PENDING);
+      document.getElementById('ct-end').value = hasTermDate ? c.terminate_date : (c.contract_end||'');
       const hireRowEl   = document.getElementById('ct-edit-row-hire');
       const expireRowEl = document.getElementById('ct-edit-row-expire');
       const endRowEl    = document.getElementById('ct-row-end');
@@ -530,8 +549,23 @@ function openContractModal(id=null, preCompanyId=null){
       if(hireRowEl)   hireRowEl.style.display   = '';
       // 정규직이면 퇴사예정일 숨김, 계약직이면 입사일과 함께 숨김 (종료일과 동일)
       if(expireRowEl) expireRowEl.style.display  = (isFixedType || isRegularType) ? 'none' : '';
-      // 정규직이면 계약 종료일도 숨김
-      if(endRowEl)    endRowEl.style.display     = isRegularType ? 'none' : '';
+      // 계약 종료일 행: terminate_date가 있으면 항상 표시, 정규직은 원래 숨김
+      if(endRowEl){
+        if(isRegularType && !hasTermDate && !c.contract_end){
+          endRowEl.style.display = 'none';
+        } else {
+          endRowEl.style.display = '';
+          // terminate_date가 있으면 라벨을 "계약 해지일"로 변경, 없으면 "계약 종료일"
+          const endLabel = endRowEl.querySelector('label');
+          if(endLabel){
+            if(hasTermDate){
+              endLabel.innerHTML = '계약 해지일 <span id="ct-end-required" style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;display:none;">*</span>';
+            } else {
+              endLabel.innerHTML = '계약 종료일 <span id="ct-end-required" style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;display:none;">*</span>';
+            }
+          }
+        }
+      }
       // 계약유형에 따라 연봉 행 표시 제어
       // ctVal = emp.employment_category || c.contract_type (위 5920줄에서 이미 결정된 값)
       const isRegEdit  = ctVal===CONTRACT_TYPE.REGULAR || ctVal===CONTRACT_TYPE.REGULAR_PROBATION;
@@ -1421,17 +1455,31 @@ function viewContract(id){
   const isPreTerminate= !isDraft && (c?.status===CONTRACT_STATUS.TERMINATE_PENDING);  // 퇴사예정일 설정된 정규직
   const isActive      = !isDraft && !isTerminated && !isPending && !isPreTerminate;
 
-  // 액션 라벨
-  const labelEl = document.getElementById('ct-action-label');
-  if(labelEl){
-    if(isDraft){
-      labelEl.textContent = '⚠ 임시저장 상태';
-    } else if(c?.is_voided_by_amend){
-      labelEl.innerHTML = `상태: ${stName} &nbsp;<span style="background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;border-radius:20px;padding:1px 9px;font-size:10.5px;font-weight:700;"><i class="fas fa-ban" style="margin-right:3px;"></i>수정재발행 파기</span>`;
-    } else {
-      labelEl.textContent = `상태: ${stName}`;
+  // ── 모달 제목 옆: 계약서 고유 ID + 복사 아이콘 + 상태 뱃지 ──
+  const {badge:stBadgeCls, label:stLabel} = calcContractStatusDisplay(c||{}, today);
+  const _buildLabelHTML = (id, statusLabel, badgeCls, isDraftFlag, isVoidedAmend) => {
+    const idHTML = `<span style="font-weight:500;color:#9ca3af;">계약서 고유 ID: ${id||'—'}</span>`
+      + ` <button onclick="event.stopPropagation();_copyContractId('${id||''}')" title="ID 복사" style="background:none;border:none;cursor:pointer;color:#9ca3af;padding:2px 4px;font-size:11px;border-radius:4px;transition:color .15s;" onmouseenter="this.style.color='#6366f1'" onmouseleave="this.style.color='#9ca3af'"><i class="far fa-copy"></i></button>`;
+    if(isDraftFlag){
+      return `${idHTML} <span class="badge badge-yellow" style="margin-left:6px;">임시저장</span>`;
     }
+    if(isVoidedAmend){
+      return `${idHTML} <span class="badge ${badgeCls}" style="margin-left:6px;">${statusLabel}</span>`
+        + `&nbsp;<span style="background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;border-radius:20px;padding:1px 9px;font-size:10.5px;font-weight:700;"><i class="fas fa-ban" style="margin-right:3px;"></i>수정재발행 파기</span>`;
+    }
+    return `${idHTML} <span class="badge ${badgeCls}" style="margin-left:6px;">${statusLabel}</span>`;
+  };
+  const _titleInfoEl = document.getElementById('ct-title-info');
+  if(_titleInfoEl && c){
+    _titleInfoEl.innerHTML = _buildLabelHTML(c.id, stLabel, stBadgeCls, isDraft, c?.is_voided_by_amend);
+    _titleInfoEl.style.display = 'inline-flex';
+  } else if(_titleInfoEl){
+    _titleInfoEl.style.display = 'none';
   }
+  // 액션 바 라벨은 비움 (정보는 제목 옆으로 이동)
+  [document.getElementById('ct-action-label'), document.getElementById('ct-action-label-bottom')].forEach(el=>{
+    if(el) el.textContent = '';
+  });
 
   // 임시저장 계속 수정 버튼 (draft 전용)
   const draftEditBtn = document.getElementById('ct-btn-draft-edit');
@@ -1476,10 +1524,35 @@ function viewContract(id){
     const el=document.getElementById(bid); if(el) el.style.display=(isActive||isPreTerminate)?'':'none';
   });
   // 재계약: 만료·해지된 계약만 (파기 제외)
+  //   - 동일인에게 유효(active/pending) 계약이 있으면 숨김
+  //   - 여러 만료/해지 계약 중 가장 최근 계약에만 표시
   ['ct-btn-recontract','ct-btn-recontract2'].forEach(bid=>{
     const el=document.getElementById(bid);
     const isVoided = c?.status===CONTRACT_STATUS.VOIDED || c?.is_voided_by_amend;
-    if(el) el.style.display=(isTerminated && !isVoided)?'':'none';
+    let showRecontract = (isTerminated && !isVoided);
+    if(showRecontract && c?.employee_id){
+      // 동일인 활성 계약 존재 시 숨김
+      const hasActive = allContracts.some(x =>
+        x.employee_id === c.employee_id &&
+        x.id !== c.id &&
+        (x.status===CONTRACT_STATUS.ACTIVE || x.status===CONTRACT_STATUS.PENDING)
+      );
+      if(hasActive) showRecontract = false;
+      // 가장 최근 만료/해지 계약인지 확인
+      if(showRecontract){
+        const latestTerminated = allContracts
+          .filter(x =>
+            x.employee_id === c.employee_id &&
+            (x.status===CONTRACT_STATUS.EXPIRED || x.status===CONTRACT_STATUS.TERMINATED) &&
+            !(x.status===CONTRACT_STATUS.VOIDED || x.is_voided_by_amend)
+          )
+          .sort((a,b) => (b.contract_end||'').localeCompare(a.contract_end||''));
+        if(latestTerminated.length > 0 && latestTerminated[0].id !== c.id){
+          showRecontract = false;
+        }
+      }
+    }
+    if(el) el.style.display=showRecontract?'':'none';
   });
   // 퇴사예정 설정: 정규직 유효 계약만 (계약직/일용직은 별도 해지설정 버튼 사용)
   ['ct-btn-terminate','ct-btn-terminate2'].forEach(bid=>{
