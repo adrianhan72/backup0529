@@ -13,7 +13,6 @@ let _cnlLoaded      = false;
 // ── notice_type → 한글 레이블 ──
 const CNL_TYPE_LABEL = {
   contract_created              : '신규 근로계약',
-  contract_updated              : '근로계약 수정',
   contract_voided               : '근로계약 파기',
   contract_amended              : '근로계약 수정',
   contract_terminated           : '근로계약 해지',

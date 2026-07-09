@@ -1534,10 +1534,10 @@
         <div class="banner-title"><span id="ct-sb-title-icon"></span>&nbsp;<span id="ct-sb-title-text"></span>&nbsp;<span id="ct-sb-dday" style="display:inline-block;color:#fff;border-radius:20px;padding:1px 11px;font-size:11.5px;font-weight:700;margin-left:4px;"></span></div>
         <div class="banner-date" id="ct-sb-date"></div>
         <div class="banner-actions">
-          <button class="btn-sb btn-sb-edit" id="ct-sb-btn-edit" onclick="editPendingContract()"><i class="fas fa-pencil-alt"></i> 수정</button>
-          <button class="btn-sb btn-sb-save" id="ct-sb-btn-save" style="display:none;" onclick="savePendingContractEdit()"><i class="fas fa-check"></i> 수정완료</button>
-          <button class="btn-sb btn-sb-cancel" id="ct-sb-btn-cancel" style="display:none;" onclick="cancelPendingEdit()"><i class="fas fa-times"></i> 취소</button>
-          <button class="btn-sb btn-sb-destroy" id="ct-sb-btn-destroy" onclick="doContractVoidOrCancel()"><i class="fas fa-ban"></i> 파기</button>
+          <button class="btn-sb btn-sb-edit" id="ct-sb-btn-edit" onclick="doContractAmend()"><i class="fas fa-pencil-alt"></i> 수정 및 재발행</button>
+          <button class="btn-sb btn-sb-save" id="ct-sb-btn-save" style="display:none;" onclick="openAmendPreview()"><i class="fas fa-check"></i> 수정 및 재발행 완료</button>
+          <button class="btn-sb btn-sb-cancel" id="ct-sb-btn-cancel" style="display:none;" onclick="cancelContractAmend()"><i class="fas fa-times"></i> 취소</button>
+          <button class="btn btn-secondary" id="ct-sb-btn-destroy" onclick="doContractVoidOrCancel()"><i class="fas fa-times-circle"></i> 계약 취소</button>
         </div>
       </div>
     </div>
@@ -2883,5 +2883,20 @@
   <script src="js/admin-billing/company-notice-log.js"></script>
   <script src="js/admin-billing/general-notice.js"></script>
   <script src="js/admin-billing.js"></script>
+
+  <!-- ─── 범용 확인 모달 ─── -->
+  <div class="modal-overlay" id="ct-confirm-modal">
+    <div class="modal-card" style="max-width:400px;width:95%">
+      <div class="modal-body" style="padding:28px 24px;background:#fff;text-align:center;">
+        <i class="fas fa-exclamation-triangle" style="font-size:40px;color:#f59e0b;margin-bottom:16px;display:block;"></i>
+        <div id="ct-confirm-msg" style="font-size:14px;color:#374151;line-height:1.6;white-space:pre-wrap;"></div>
+      </div>
+      <div class="modal-footer" style="gap:8px;background:#fff;justify-content:center;">
+        <button class="btn btn-secondary" id="ct-confirm-cancel-btn" style="min-width:80px;">취소</button>
+        <button class="btn btn-primary" id="ct-confirm-ok-btn" style="min-width:80px;background:#d97706;">확인</button>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>

@@ -680,7 +680,7 @@ function editPendingContract(){
     el.style.cursor = '';
   });
 
-  // 배너 버튼 전환: [수정] [파기] → [수정완료] [취소]
+  // 배너 버튼 전환: [수정 및 재발행] [파기] → [수정 및 재발행 완료] [취소]
   document.getElementById('ct-sb-btn-edit').style.display    = 'none';
   document.getElementById('ct-sb-btn-save').style.display    = 'inline-flex';
   document.getElementById('ct-sb-btn-cancel').style.display  = 'inline-flex';
@@ -710,14 +710,18 @@ function editPendingContract(){
   }
 
   // 모달 제목 변경
-  const titleMap = { '해지예정':'근로계약서 수정 (해지예정)', '계약예정':'근로계약서 수정 (계약예정)', '갱신예정':'근로계약서 수정 (갱신예정)' };
-  document.getElementById('ct-title').textContent = titleMap[c?.status] || '근로계약서 수정 (예정 계약)';
+  const titleMap = {
+    [CONTRACT_STATUS.TERMINATE_PENDING]: '근로계약서 수정 및 재발행 (해지예정)',
+    [CONTRACT_STATUS.PENDING]:           '근로계약서 수정 및 재발행 (계약예정)',
+    [CONTRACT_STATUS.RENEWAL_PENDING]:   '근로계약서 수정 및 재발행 (갱신예정)'
+  };
+  document.getElementById('ct-title').textContent = titleMap[c?.status] || '근로계약서 수정 및 재발행 (예정 계약)';
 
   // 일괄 설정 바 다시 표시
   const bulkBar = document.getElementById('ct-bulk-bar-wrap');
   if(bulkBar) bulkBar.style.display = '';
 
-  toast('예정 계약을 수정합니다. 변경 후 수정완료를 눌러 저장하세요.');
+  toast('예정 계약을 수정 및 재발행합니다. 변경 후 수정 및 재발행 완료를 눌러 저장하세요.');
 }
 
 // ─── 예정 계약 수정 취소 ───
@@ -1003,30 +1007,42 @@ async function cancelPreTerminate(){
   const empName  = emp.name || '';
   const termDate = c.terminate_date || '';
 
-  // 계약직/정규직 구분 메시지
-  const typeLabel  = isFixed ? '조기 해지 예정' : '퇴사예정';
-  const dateLabel  = termDate ? `\n${typeLabel}일: ${termDate}` : '';
-  const extraMsg   = isFixed
-    ? '\n\n해지 예정이 취소되고 계약이 계약유효 상태로 복귀됩니다.\n직원의 퇴직예정일(resign_date)도 함께 초기화됩니다.'
-    : '\n\n퇴사예정일 설정을 해제하고 계약을 활성 상태로 되돌립니다.\n직원의 퇴직예정일(resign_date)도 함께 초기화됩니다.';
+  // 계약직/정규직 공통 메시지
+  const dateLabel  = termDate ? `\n계약 해지일: ${termDate}` : '';
 
-  if(!confirm(`[${typeLabel} 취소]${empName ? `\n\n직원: ${empName}` : ''}${dateLabel}${extraMsg}\n\n진행하시겠습니까?`)) return;
+  const confirmed = await _showConfirm({
+    message: `[해지예정 철회]${empName ? `\n\n${empName}` : ''}${dateLabel}\n\n` +
+      `근로계약 해지를 철회하시면 계약 해지일 설정을 해제하고 계약을 원래 상태로 되돌립니다.\n` +
+      `정말 철회하시겠습니까?`,
+    okText: '철회',
+    okClass: 'btn-primary'
+  });
+  if(!confirmed) return;
 
-  // 1) 계약 상태 복귀
-  await api(`../tables/contracts/${c.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({status: CONTRACT_STATUS.ACTIVE, terminate_date:''})});
+  try {
+    // 1) 계약 상태 복귀
+    await api(`../tables/contracts/${c.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({status: CONTRACT_STATUS.ACTIVE, terminate_date:''})});
 
-  // 2) 직원 resign_date 초기화 (status는 재직 상태 유지 — 이미 퇴직으로 바뀐 경우는 재직으로 복귀)
-  if(emp.id){
-    const empPatch = emp.status===EMP_STATUS.RESIGNED
-      ? {status: EMP_STATUS.ACTIVE, resign_date:''}
-      : {resign_date:''};
-    await api(`../tables/employees/${emp.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(empPatch)});
+    // 2) 직원 상태 복원 (resign_date 컬럼 없음 — expire_date 사용)
+    if(emp.id && emp.status===EMP_STATUS.RESIGNED){
+      await api(`../tables/employees/${emp.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({status: EMP_STATUS.ACTIVE, expire_date:''})});
+    }
+
+    // 3) 모달 닫기 + 페이지 새로고침
+    closeModal('contract-modal');
+    await Promise.all([loadContracts(), loadEmployees()]);
+    renderContracts(); renderDashboard();
+    toast('근로계약 해지가 철회되었습니다.', 'success');
+  } catch(e) {
+    console.error('cancelPreTerminate:', c?.id, e);
+    toast('해지 철회 중 오류: ' + (e.message || e), 'error');
+    return;
   }
 
-  // ── 고객사 인앱 알림 발송 (해지 예정 취소) ──
-  {
+  // 4) 고객사 인앱 알림 발송 (비동기, 실패해도 무시)
+  try {
     const _cptCo  = allCompanies.find(x => x.id === c.company_id) || {};
     const _coRep  = getCompanyRepGreeting(_cptCo);
     const _fmtD   = d => { if(!d) return '-'; const [y,m,dd]=d.split('-'); return `${parseInt(y)}년 ${parseInt(m)}월 ${parseInt(dd)}일`; };
@@ -1042,7 +1058,7 @@ async function cancelPreTerminate(){
 ■ 근로자: ${empName}
 ■ 고용형태: ${contractTypeLabel(c.contract_type)||c.contract_type||''}
 ■ 계약 기간: ${_fmtD(c.contract_start)}${c.contract_end ? ' ~ ' + _fmtD(c.contract_end) : ' (기간 미정)'}
-■ 취소된 ${typeLabel}일: ${termDate ? _fmtD(termDate) : '-'}
+■ 취소된 해지일: ${termDate ? _fmtD(termDate) : '-'}
 ■ 현재 계약 상태: 계약유효 (활성) 복귀
 ■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
 
@@ -1053,12 +1069,7 @@ ${_BRAND_SIG}`,
       employeeId  : c.employee_id, employeeName: empName,
       contractEnd : c.contract_end || '',
     });
-  }
-
-  closeModal('contract-modal');
-  await Promise.all([loadContracts(), loadEmployees()]);
-  renderContracts(); renderDashboard();
-  toast(`${typeLabel} 취소 완료 — 계약이 활성 상태로 복귀됐습니다.`, 'success');
+  } catch(e) { /* 알림 발송 실패는 무시 */ }
 }
 
 // ─── 계약예정·갱신예정 취소 플로우 (레코드 삭제) ───
@@ -1082,9 +1093,7 @@ async function cancelPendingContract(){
   if(!confirm(
     `[${statusLabel} 취소]${empName ? `\n\n직원: ${empName}` : ''}\n` +
     `계약 시작일: ${c.contract_start||'—'}\n\n` +
-    `아직 시작되지 않은 계약을 취소합니다.\n` +
-    `취소된 계약은 목록에서 삭제되며 별도로 보관하지 않습니다.\n\n` +
-    `진행하시겠습니까?`
+    `이 계약을 정말 취소하고 파기처리하시겠습니까?`
   )) return;
 
   // 갱신 취소 시: 이전 계약(만료 처리됐던 것)을 활성으로 복귀시켜야 하는지 확인

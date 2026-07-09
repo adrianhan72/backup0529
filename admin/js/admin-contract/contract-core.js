@@ -26,13 +26,14 @@
       cols: ['직원명','고용형태','계약 시작일','D-day','관리'],
       row: (c) => {
         const emp = allEmployees.find(e=>e.id===c.employee_id);
-        const empCat = c.contract_type || emp?.employment_category || '-';
-        const catBadge = CAT_BADGE_CLS[empCat] || 'badge-gray';
+        const _rawCat = c.contract_type || emp?.employment_category || '-';
+        const empCat = contractTypeLabel(_rawCat);
+        const catBadge = CAT_BADGE_CLS[_rawCat] || 'badge-gray';
         const diff = c.contract_start ? Math.ceil((new Date(c.contract_start)-new Date(today))/(1000*60*60*24)) : null;
         const dday = diff !== null ? (diff>0?`D-${diff}`:diff===0?'D-day':`D+${Math.abs(diff)}`) : '-';
         const ddayColor = diff !== null && diff <= 7 ? '#dc2626' : '#b45309';
         return `<td style="font-weight:700;color:#1f2937;">${getEmpName(c.employee_id)}</td>
-          <td><span class="badge ${catBadge}" style="font-size:11px;">${contractTypeLabel(empCat)}</span></td>
+          <td><span class="badge ${catBadge}" style="font-size:11px;">${empCat}</span></td>
           <td style="font-size:12px;color:#6b7280;">${c.contract_start||'-'}</td>
           <td><span style="font-weight:700;color:${ddayColor};font-size:12.5px;">${dday}</span></td>
           <td style="white-space:nowrap;">
@@ -48,16 +49,15 @@
       cols: ['직원명','고용형태','계약 시작일','D-day','관리'],
       row: (c) => {
         const emp = allEmployees.find(e=>e.id===c.employee_id);
-        // 계약예정: c.contract_type 우선 참조 (수습→정규 전환 계약은 c.contract_type이 실제 계약 유형)
-        // 수습 카테고리가 오면 수습 제거 후 정규화 (예: '계약직 수습' → '계약직')
         const _rawCat = c.contract_type || emp?.employment_category || '-';
-        const empCat = _rawCat ===CONTRACT_TYPE.REGULAR_PROBATION ? '정규직' : _rawCat ===CONTRACT_TYPE.FIXED_PROBATION ? '계약직' : _rawCat;
-        const catBadge = CAT_BADGE_CLS[empCat] || 'badge-gray';
+        // 수습→정규 전환 계약은 probation 제거 후 표시
+        const empCat = _rawCat ===CONTRACT_TYPE.REGULAR_PROBATION ? '정규직' : _rawCat ===CONTRACT_TYPE.FIXED_PROBATION ? '계약직' : contractTypeLabel(_rawCat);
+        const catBadge = CAT_BADGE_CLS[_rawCat] || 'badge-gray';
         const diff = c.contract_start ? Math.ceil((new Date(c.contract_start)-new Date(today))/(1000*60*60*24)) : null;
         const dday = diff !== null ? (diff>0?`D-${diff}`:diff===0?'D-day':`D+${Math.abs(diff)}`) : '-';
         const ddayColor = diff !== null && diff <= 7 ? '#dc2626' : '#4338ca';
         return `<td style="font-weight:700;color:#1f2937;">${getEmpName(c.employee_id)}</td>
-          <td><span class="badge ${catBadge}" style="font-size:11px;">${contractTypeLabel(empCat)}</span></td>
+          <td><span class="badge ${catBadge}" style="font-size:11px;">${empCat}</span></td>
           <td style="font-size:12px;color:#6b7280;">${c.contract_start||'-'}</td>
           <td><span style="font-weight:700;color:${ddayColor};font-size:12.5px;">${dday}</span></td>
           <td style="white-space:nowrap;">
@@ -73,14 +73,15 @@
       cols: ['직원명','고용형태','퇴사 예정일','D-day','관리'],
       row: (c) => {
         const emp = allEmployees.find(e=>e.id===c.employee_id);
-        const empCat = c.contract_type || emp?.employment_category || '-';
-        const catBadge = CAT_BADGE_CLS[empCat] || 'badge-gray';
+        const _rawCat = c.contract_type || emp?.employment_category || '-';
+        const empCat = _rawCat ===CONTRACT_TYPE.REGULAR_PROBATION ? '정규직 수습' : _rawCat ===CONTRACT_TYPE.FIXED_PROBATION ? '계약직 수습' : contractTypeLabel(_rawCat);
+        const catBadge = CAT_BADGE_CLS[_rawCat] || CAT_BADGE_CLS[empCat] || 'badge-gray';
         const termDate = c.terminate_date || '';
         const diff = termDate ? Math.ceil((new Date(termDate)-new Date(today))/(1000*60*60*24)) : null;
         const dday = diff !== null ? (diff>0?`D-${diff}`:diff===0?'D-day':`D+${Math.abs(diff)}`) : '-';
         const ddayColor = diff !== null && diff <= 14 ? '#dc2626' : '#be123c';
         return `<td style="font-weight:700;color:#1f2937;">${getEmpName(c.employee_id)}</td>
-          <td><span class="badge ${catBadge}" style="font-size:11px;">${contractTypeLabel(empCat)}</span></td>
+          <td><span class="badge ${catBadge}" style="font-size:11px;">${empCat}</span></td>
           <td style="font-size:12px;color:#9f1239;font-weight:600;">${termDate||'-'}</td>
           <td><span style="font-weight:700;color:${ddayColor};font-size:12.5px;">${dday}</span></td>
           <td style="white-space:nowrap;">
@@ -1436,20 +1437,24 @@ function viewContract(id){
 
       // ── 타입별 스타일·텍스트 설정 ──
       const typeMap = {
-        '해지예정': { cls:'type-preterminate', icon:'⚠️', ddayBg:'#be123c',
-                      editCls:'btn-sb btn-sb-edit rose', destroyLabel:'<i class="fas fa-times-circle"></i> 해지 취소' },
-        '계약예정': { cls:'type-pending',       icon:'📋', ddayBg:'#4338ca',
+        [CONTRACT_STATUS.TERMINATE_PENDING]: { cls:'type-preterminate', icon:'⚠️', ddayBg:'#be123c',
+                      editCls:'btn-sb btn-sb-edit rose', destroyLabel:'<i class="fas fa-undo-alt"></i> 해지 철회' },
+        [CONTRACT_STATUS.PENDING]:           { cls:'type-pending',       icon:'📋', ddayBg:'#4338ca',
                       editCls:'btn-sb btn-sb-edit',      destroyLabel:'<i class="fas fa-times-circle"></i> 계약 취소' },
-        '갱신예정': { cls:'type-renew',         icon:'🔄', ddayBg:'#d97706',
+        [CONTRACT_STATUS.RENEWAL_PENDING]:   { cls:'type-renew',         icon:'🔄', ddayBg:'#d97706',
                       editCls:'btn-sb btn-sb-edit amber', destroyLabel:'<i class="fas fa-times-circle"></i> 갱신 취소' },
       };
       const tm = typeMap[effectiveStatus];
       sbEl.className = `ct-status-banner ${tm.cls}`;
       document.getElementById('ct-sb-icon').textContent = tm.icon;
-      document.getElementById('ct-sb-title-text').textContent = effectiveStatus;
+      document.getElementById('ct-sb-title-text').textContent = CONTRACT_STATUS_LABEL[effectiveStatus] || effectiveStatus;
 
       // 아이콘 (FontAwesome)
-      const iconMap = { '해지예정':'fa-user-clock', '계약예정':'fa-calendar-alt', '갱신예정':'fa-sync-alt' };
+      const iconMap = {
+        [CONTRACT_STATUS.TERMINATE_PENDING]: 'fa-user-clock',
+        [CONTRACT_STATUS.PENDING]:           'fa-calendar-alt',
+        [CONTRACT_STATUS.RENEWAL_PENDING]:   'fa-sync-alt'
+      };
       document.getElementById('ct-sb-title-icon').innerHTML = `<i class="fas ${iconMap[effectiveStatus]}"></i>`;
 
       // ── 날짜 정보 및 D-day ──
@@ -1460,15 +1465,23 @@ function viewContract(id){
       let dateHtml = '';
 
       if(isPreTerm){
-        // 해지예정: 퇴사예정일 + D-day + 원래 계약만료일
+        // 해지예정: 계약 해지일 + D-day + 변경 버튼 + (계약직/일용직: 원래 계약 종료일)
         const termDate = c.terminate_date || '';
         const dday = calcDday(termDate);
         if(dday){ ddayEl.textContent = dday; ddayEl.style.background = tm.ddayBg; ddayEl.style.display = 'inline-block'; }
         else { ddayEl.style.display = 'none'; }
         const termKr    = fmtDate(termDate) || '—';
-        const contractEndKr = fmtDate(c.contract_end) || '미정';
-        dateHtml = `퇴사예정일: <strong>${termKr}</strong>`
-          + `<span style="font-size:11.5px;margin-left:12px;">(원래 계약 만료일: ${contractEndKr})</span>`;
+        const ctType = c.contract_type || '';
+        const isRegType = (ctType===CONTRACT_TYPE.REGULAR||ctType===CONTRACT_TYPE.REGULAR_PROBATION);
+        const contractEndKr = fmtDate(c.contract_end) || '—';
+        dateHtml = `계약 해지일: <span id="ct-sb-term-text"><strong>${termKr}</strong></span>`
+          + `<span id="ct-sb-term-edit" style="display:none;"><input type="date" id="ct-sb-term-input" value="${termDate}" style="border:1.5px solid #6366f1;border-radius:6px;padding:3px 8px;font-size:13px;font-family:inherit;width:140px;" /></span>`
+          + ` <button id="ct-sb-term-change-btn" onclick="changeTerminateDate()" style="background:#d97706;color:#fff;border:none;border-radius:5px;padding:2px 10px;font-size:11.5px;cursor:pointer;margin-left:4px;transition:all .15s;" onmouseenter="this.style.background='#b45309'" onmouseleave="this.style.background='#d97706'">변경</button>`
+          + ` <button id="ct-sb-term-confirm-btn" onclick="confirmTerminateDateChange()" style="display:none;background:#6366f1;color:#fff;border:none;border-radius:5px;padding:2px 10px;font-size:11.5px;cursor:pointer;margin-left:4px;">확인</button>`
+          + ` <button id="ct-sb-term-cancel-btn" onclick="cancelTerminateDateChange()" style="display:none;background:#9ca3af;color:#fff;border:1px solid #6b7280;border-radius:5px;padding:2px 10px;font-size:11.5px;cursor:pointer;margin-left:2px;">취소</button>`;
+        if(!isRegType && c.contract_end){
+          dateHtml += `<span style="font-size:11.5px;margin-left:12px;">(원래 계약 종료일: ${contractEndKr})</span>`;
+        }
       } else {
         // 계약예정 / 갱신예정(DB status='갱신예정' or '활성'+미래시작일): 계약시작일 + D-day + 계약종료일
         const startVal = c.contract_start || '';
@@ -1498,9 +1511,11 @@ function viewContract(id){
       const _editBtn    = document.getElementById('ct-sb-btn-edit');
       const _destroyBtn = document.getElementById('ct-sb-btn-destroy');
       _editBtn.className    = tm.editCls;
-      _editBtn.style.display    = 'inline-flex';
+      // 해지예정: 수정 및 재발행 버튼 숨김 (해지일 변경 버튼으로 대체)
+      _editBtn.style.display    = isPreTerm ? 'none' : 'inline-flex';
       document.getElementById('ct-sb-btn-save').style.display    = 'none';
       document.getElementById('ct-sb-btn-cancel').style.display  = 'none';
+      _destroyBtn.className     = 'btn btn-secondary';
       _destroyBtn.style.display = 'inline-flex';
       _destroyBtn.innerHTML     = tm.destroyLabel;
 
@@ -1628,14 +1643,14 @@ function viewContract(id){
   });
 
   // 버튼 표시/숨김
-  // 수정 및 재발행: 활성(유효·해지예정 포함) 계약에서 가능
+  // 수정 및 재발행: 유효(active) 계약만 가능 (해지예정은 상태 배너에서 처리)
   ['ct-btn-amend','ct-btn-amend2'].forEach(bid=>{
     const el=document.getElementById(bid);
-    if(el) el.style.display=(isActive||isPreTerminate)?'inline-flex':'none';
+    if(el) el.style.display=isActive?'inline-flex':'none';
   });
-  // 갱신: 유효 계약 + 해지예정(퇴사 전 갱신 가능)
+  // 갱신: 유효(active) 계약만 가능 (해지예정은 상태 배너에서 처리)
   ['ct-btn-renew','ct-btn-renew2'].forEach(bid=>{
-    const el=document.getElementById(bid); if(el) el.style.display=(isActive||isPreTerminate)?'':'none';
+    const el=document.getElementById(bid); if(el) el.style.display=isActive?'':'none';
   });
   // 재계약: 만료·해지된 계약만 (파기 제외)
   //   - 동일인에게 유효(active/pending) 계약이 있으면 숨김
@@ -1674,12 +1689,9 @@ function viewContract(id){
     if(el) el.style.display=(isActive && isRegular)?'inline-flex':'none';
   });
 
-  // 해지 설정: 계약직·계약직수습·일용직 — 유효(isActive) 또는 해지예정(isPreTerminate) 상태
-  // 해지예정 상태에서는 "해지 예정 수정" 레이블로 변경 (해지일/사유 변경 용도)
-  const showFixedTermBtn = isFixed && (isActive || isPreTerminate);
-  const fixedTermLabel   = isPreTerminate
-    ? '<i class="fas fa-scissors"></i> 해지 예정 수정'
-    : '<i class="fas fa-scissors"></i> 해지 설정';
+  // 해지 설정: 계약직·계약직수습·일용직 — 유효(isActive) 계약만 가능
+  const showFixedTermBtn = isFixed && isActive;
+  const fixedTermLabel   = '<i class="fas fa-scissors"></i> 해지 설정';
   ['ct-btn-fixed-terminate','ct-btn-fixed-terminate2'].forEach(bid=>{
     const el=document.getElementById(bid);
     if(el){
@@ -1713,6 +1725,96 @@ function viewContract(id){
 
   // ── 첨부 서류 섹션 렌더링 ──
   _renderContractFilesSection(c);
+}
+
+// ─── 해지예정일 인라인 변경 ───
+let _savedTerminateDate = '';
+
+function changeTerminateDate(){
+  const textEl   = document.getElementById('ct-sb-term-text');
+  const editEl   = document.getElementById('ct-sb-term-edit');
+  const changeBtn = document.getElementById('ct-sb-term-change-btn');
+  const confirmBtn = document.getElementById('ct-sb-term-confirm-btn');
+  const cancelBtn  = document.getElementById('ct-sb-term-cancel-btn');
+  const inputEl    = document.getElementById('ct-sb-term-input');
+
+  if(!textEl || !editEl || !inputEl) return;
+  _savedTerminateDate = inputEl.value;
+
+  textEl.style.display      = 'none';
+  editEl.style.display      = 'inline';
+  changeBtn.style.display   = 'none';
+  confirmBtn.style.display  = 'inline';
+  cancelBtn.style.display   = 'inline';
+  inputEl.focus();
+}
+
+async function confirmTerminateDateChange(){
+  const inputEl = document.getElementById('ct-sb-term-input');
+  const newDate = inputEl?.value;
+  if(!newDate) return toast('해지일을 입력해 주세요.', 'error');
+
+  const cid = editId?.contract;
+  if(!cid) return;
+
+  const today = new Date().toISOString().slice(0,10);
+  const newStatus = newDate <= today ? CONTRACT_STATUS.TERMINATED : CONTRACT_STATUS.TERMINATE_PENDING;
+
+  await api(`../tables/contracts/${cid}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ terminate_date: newDate, status: newStatus })
+  });
+
+  toast('해지일이 변경되었습니다.');
+  await Promise.all([loadContracts(), loadEmployees()]);
+  viewContract(cid);
+}
+
+function cancelTerminateDateChange(){
+  const textEl   = document.getElementById('ct-sb-term-text');
+  const editEl   = document.getElementById('ct-sb-term-edit');
+  const changeBtn = document.getElementById('ct-sb-term-change-btn');
+  const confirmBtn = document.getElementById('ct-sb-term-confirm-btn');
+  const cancelBtn  = document.getElementById('ct-sb-term-cancel-btn');
+  const inputEl    = document.getElementById('ct-sb-term-input');
+
+  if(!textEl || !editEl || !inputEl) return;
+  inputEl.value = _savedTerminateDate;
+
+  textEl.style.display      = 'inline';
+  editEl.style.display      = 'none';
+  changeBtn.style.display   = 'inline';
+  confirmBtn.style.display  = 'none';
+  cancelBtn.style.display   = 'none';
+}
+
+// ─── 범용 커스텀 확인 모달 (confirm 대체) ───
+/**
+ * @param {Object} opts
+ * @param {string} opts.message  - 표시할 메시지 (pre-wrap)
+ * @param {string} [opts.okText] - 확인 버튼 텍스트 (기본: '확인')
+ * @param {string} [opts.okClass] - 확인 버튼 클래스 (기본: 'btn-primary')
+ * @returns {Promise<boolean>} true=확인, false=취소
+ */
+function _showConfirm(opts){
+  return new Promise(resolve => {
+    const msgEl = document.getElementById('ct-confirm-msg');
+    const okBtn = document.getElementById('ct-confirm-ok-btn');
+    const cancelBtn = document.getElementById('ct-confirm-cancel-btn');
+
+    msgEl.textContent = opts.message;
+    okBtn.textContent = opts.okText || '확인';
+    okBtn.className = 'btn ' + (opts.okClass || 'btn-primary');
+    okBtn.style.background = opts.okClass ? '' : '#d97706';
+    cancelBtn.textContent = opts.cancelText || '취소';
+
+    // 클릭 핸들러 등록 (살짝 지연시켜 모달 close 애니메이션 완료 후 resolve)
+    okBtn.onclick = () => { closeModal('ct-confirm-modal'); setTimeout(() => resolve(true), 100); };
+    cancelBtn.onclick = () => { closeModal('ct-confirm-modal'); setTimeout(() => resolve(false), 100); };
+
+    openModal('ct-confirm-modal');
+  });
 }
 
 // ==============================================================================
@@ -1799,6 +1901,10 @@ function doContractAmend(){
   // 수정완료 버튼 초기 상태 설정 + 최저임금 경고 초기 평가
   _checkMinWageWarning();
   _checkAmendBtnState();
+
+  // ── 상태 배너 숨김 (amend 패널과 하단 버튼으로 대체) ──
+  const sbEl = document.getElementById('ct-status-banner');
+  if(sbEl) sbEl.style.display = 'none';
 
   // 필드 변경 감지 → 수정완료 버튼 재평가
   if(bodyEl) bodyEl.querySelectorAll('input,select,textarea').forEach(el=>{

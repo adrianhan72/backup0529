@@ -300,6 +300,8 @@ function normalizeContractStatus(val) {
 }
 function normalizeContractType(val) {
   if (!val) return val;
+  // legacy alias: 'fixed_probation' → 'fixed_term_probation', 'regular_probation' → 'regular_probation' (unchanged)
+  if (val==='fixed_probation') return CONTRACT_TYPE.FIXED_PROBATION;
   return CONTRACT_TYPE_LEGACY_MAP[val] || val;
 }
 function normalizeCompanyStatus(val) {
