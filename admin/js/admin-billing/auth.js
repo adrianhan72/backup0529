@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', function(){
   });
 });
 
-/* ── 로그인: API 테이블에서 계정 검증 ── */
+/* ── 로그인: API 서버에서 bcrypt 해시 검증 ── */
 async function adminLogin(){
   const idEl  = document.getElementById('aln-id');
   const pwEl  = document.getElementById('aln-pw');
@@ -63,16 +63,16 @@ async function adminLogin(){
   btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>&nbsp; 확인 중...';
 
   try{
-    const res  = await fetch('../tables/admin_accounts?limit=200');
+    // POST /api/auth/login → 서버에서 bcrypt 검증 + JWT 발급
+    const res = await fetch('../api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: idVal, password: pwVal }),
+    });
     const data = await res.json();
-    const accounts = data.data || [];
 
-    const matched = accounts.find(a =>
-      a.username === idVal && a.password === pwVal
-    );
-
-    if(!matched){
-      _alnSetError('아이디 또는 비밀번호가 올바르지 않습니다.', pwEl);
+    if(!res.ok || !data.token){
+      _alnSetError(data.error || '아이디 또는 비밀번호가 올바르지 않습니다.', pwEl);
       pwEl.value = '';
       pwEl.focus();
       btn.disabled = false;
@@ -80,14 +80,14 @@ async function adminLogin(){
       return;
     }
 
-    // 인증 성공 — 계정 정보 세션에 저장
+    // 인증 성공 — JWT 토큰 + 계정 정보 세션에 저장
     sessionStorage.setItem('admin_auth', 'ok');
-    sessionStorage.setItem('admin_username', matched.username);
-    sessionStorage.setItem('admin_display_name', matched.display_name || matched.username);
+    sessionStorage.setItem('admin_token', data.token);
+    sessionStorage.setItem('admin_username', idVal);
+    sessionStorage.setItem('admin_display_name', data.display_name || idVal);
 
     setTimeout(()=>{
       _alnShowApp();
-      // topbar 접속자 이름 갱신
       _alnUpdateTopbar();
       init();
     }, 350);
