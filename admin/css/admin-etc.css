@@ -24,7 +24,7 @@
     .pss-count-badge.green{ background:#dcfce7;color:#16a34a;border:1px solid #86efac; }
     .pss-count-badge.blue{ background:#eff6ff;color:#2563eb;border:1px solid #93c5fd; }
     /* ?�═ 근로계약 관�????�림 카드 ?�═ */
-    .cont-alert-card{border-radius:12px;overflow:hidden;margin-bottom:12px;}
+    .cont-alert-card{border-radius:0;overflow:hidden;margin-bottom:0;}
     .cont-alert-card-head{display:flex;align-items:center;justify-content:space-between;padding:11px 18px;cursor:pointer;user-select:none;}
     .cont-alert-card-head:hover{filter:brightness(.97);}
     .cont-alert-card-title{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:800;}
@@ -37,7 +37,7 @@
     .cont-alert-table td{padding:9px 14px;vertical-align:middle;border-top:1px solid rgba(0,0,0,.05);}
     .cont-alert-table tr:hover td{filter:brightness(.97);}
     /* ?�시?�????amber */
-    .cont-alert-draft{border:1.5px solid #fcd34d;}
+    .cont-alert-draft{border:none;border-bottom:1.5px solid #fcd34d;}
     .cont-alert-draft .cont-alert-card-head{background:linear-gradient(90deg,#fffbeb,#fef3c7);}
     .cont-alert-draft .cont-alert-card-title{color:#92400e;}
     .cont-alert-draft .cont-alert-card-count{background:#fef2f2;color:#d97706;border:1px solid #fcd34d;}
@@ -45,7 +45,7 @@
     .cont-alert-draft .cont-alert-table th{background:#fffbeb;color:#92400e;}
     .cont-alert-draft .cont-alert-table td{color:#374151;}
     /* ?�류미비 ??orange */
-    .cont-alert-docs{border:1.5px solid #fdba74;}
+    .cont-alert-docs{border:none;border-bottom:1.5px solid #fdba74;}
     .cont-alert-docs .cont-alert-card-head{background:linear-gradient(90deg,#fff7ed,#ffedd5);}
     .cont-alert-docs .cont-alert-card-title{color:#9a3412;}
     .cont-alert-docs .cont-alert-card-count{background:#fff7ed;color:#ea580c;border:1px solid #fdba74;}
@@ -53,7 +53,7 @@
     .cont-alert-docs .cont-alert-table th{background:#fff7ed;color:#9a3412;}
     .cont-alert-docs .cont-alert-table td{color:#374151;}
     /* 갱신?�정 ??amber/gold */
-    .cont-alert-renew{border:1.5px solid #fde047;}
+    .cont-alert-renew{border:none;border-bottom:1.5px solid #fde047;}
     .cont-alert-renew .cont-alert-card-head{background:linear-gradient(90deg,#fefce8,#fef9c3);}
     .cont-alert-renew .cont-alert-card-title{color:#713f12;}
     .cont-alert-renew .cont-alert-card-count{background:#fef9c3;color:#b45309;border:1px solid #fde047;}
@@ -61,7 +61,7 @@
     .cont-alert-renew .cont-alert-table th{background:#fefce8;color:#713f12;}
     .cont-alert-renew .cont-alert-table td{color:#374151;}
     /* 계약?�정 ??indigo */
-    .cont-alert-pending{border:1.5px solid #a5b4fc;}
+    .cont-alert-pending{border:none;border-bottom:1.5px solid #a5b4fc;}
     .cont-alert-pending .cont-alert-card-head{background:linear-gradient(90deg,#eef2ff,#e0e7ff);}
     .cont-alert-pending .cont-alert-card-title{color:#3730a3;}
     .cont-alert-pending .cont-alert-card-count{background:#e0e7ff;color:#4338ca;border:1px solid #a5b4fc;}
@@ -69,7 +69,7 @@
     .cont-alert-pending .cont-alert-table th{background:#eef2ff;color:#3730a3;}
     .cont-alert-pending .cont-alert-table td{color:#374151;}
     /* ?��??�정 ??rose */
-    .cont-alert-preterminate{border:1.5px solid #fda4af;}
+    .cont-alert-preterminate{border:none;border-bottom:1.5px solid #fda4af;}
     .cont-alert-preterminate .cont-alert-card-head{background:linear-gradient(90deg,#fff1f2,#ffe4e6);}
     .cont-alert-preterminate .cont-alert-card-title{color:#9f1239;}
     .cont-alert-preterminate .cont-alert-card-count{background:#ffe4e6;color:#be123c;border:1px solid #fda4af;}

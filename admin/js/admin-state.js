@@ -375,8 +375,10 @@ async function loadRelatedParties(){const d=await api('../tables/related_party_w
 async function loadContracts(){
   const d=await api('../tables/contracts?limit=200');
   allContracts=d.data||[];
-  // 계약예정 → 활성 자동 전환 체크
+  // 계약예정 → 활성 / 해지예정 → 해지 / 기간만료 → 만료 자동 전환 체크
   await autoActivatePendingContracts();
+  await autoProcessTerminatePendingContracts();
+  await autoExpireFixedTermContracts();
 }
 
 /* 계약예정 상태 중 contract_start <= 오늘인 계약을 활성으로 전환 */
@@ -395,6 +397,50 @@ async function autoActivatePendingContracts(){
       const idx = allContracts.findIndex(x => x.id === c.id);
       if(idx > -1) allContracts[idx].status = CONTRACT_STATUS.ACTIVE;
     } catch(e){ console.warn('[자동전환 오류]', c.id, e); }
+  }));
+}
+
+/* 해지예정/퇴사예정 상태 중 terminate_date <= 오늘인 계약을 해지로 전환 */
+async function autoProcessTerminatePendingContracts(){
+  const todayStr = new Date().toISOString().slice(0,10);
+  const toTerminate = allContracts.filter(c =>
+    c.status === CONTRACT_STATUS.TERMINATE_PENDING && c.terminate_date && c.terminate_date <= todayStr
+  );
+  if(!toTerminate.length) return;
+  await Promise.all(toTerminate.map(async c => {
+    try {
+      await fetch(`../tables/contracts/${c.id}`, {
+        method:'PATCH', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ status: CONTRACT_STATUS.TERMINATED })
+      });
+      const idx = allContracts.findIndex(x => x.id === c.id);
+      if(idx > -1) allContracts[idx].status = CONTRACT_STATUS.TERMINATED;
+    } catch(e){ console.warn('[자동해지전환 오류]', c.id, e); }
+  }));
+}
+
+/* 계약직/일용직 중 contract_end < 오늘인 활성 계약을 만료로 전환 */
+async function autoExpireFixedTermContracts(){
+  const todayStr = new Date().toISOString().slice(0,10);
+  const FIXED_TERM_TYPES = ['fixed_term', 'fixed_term_probation', 'daily', '계약직', '계약직 수습', '일용직'];
+  const toExpire = allContracts.filter(c => {
+    if (c.status !== CONTRACT_STATUS.ACTIVE && c.status !== '활성') return false;
+    if (c.is_draft) return false;
+    const effectiveEnd = c.terminate_date || c.contract_end || '';
+    if (!effectiveEnd || effectiveEnd >= todayStr) return false;
+    const ct = (c.contract_type || '').toLowerCase();
+    return FIXED_TERM_TYPES.includes(ct);
+  });
+  if(!toExpire.length) return;
+  await Promise.all(toExpire.map(async c => {
+    try {
+      await fetch(`../tables/contracts/${c.id}`, {
+        method:'PATCH', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ status: CONTRACT_STATUS.EXPIRED })
+      });
+      const idx = allContracts.findIndex(x => x.id === c.id);
+      if(idx > -1) allContracts[idx].status = CONTRACT_STATUS.EXPIRED;
+    } catch(e){ console.warn('[자동만료전환 오류]', c.id, e); }
   }));
 }
 
@@ -753,11 +799,15 @@ async function showPage(name,el){
       if(el) el.classList.add('active');
       return;
     }
-    // 계약예정 → 활성 자동 전환 체크
+    // 계약예정 → 활성 / 해지예정 → 해지 / 기간만료 → 만료 자동 전환 체크
     autoActivatePendingContracts().then(() => {
-      renderProbMgmtCompanyList();
-      if(_probMgmtSelectedCoId) renderProbationMgmtTable();
-      updateMenuBadges();
+      autoProcessTerminatePendingContracts().then(() => {
+        autoExpireFixedTermContracts().then(() => {
+          renderProbMgmtCompanyList();
+          if(_probMgmtSelectedCoId) renderProbationMgmtTable();
+          updateMenuBadges();
+        });
+      });
     });
     // 글로벌 공유: 다른 페이지에서 선택된 고객사가 있으면 자동 선택
     if(currentGlobalCompanyId && !_probMgmtSelectedCoId){

@@ -5,9 +5,7 @@
 
 PRAGMA journal_mode = WAL;
 
--- -----------------------------------------------------------
 -- admin_accounts
--- -----------------------------------------------------------
 CREATE TABLE IF NOT EXISTS admin_accounts (
   id                TEXT PRIMARY KEY,
   username          TEXT UNIQUE,
@@ -18,9 +16,7 @@ CREATE TABLE IF NOT EXISTS admin_accounts (
   updated_at        INTEGER
 );
 
--- -----------------------------------------------------------
 -- annual_leave_ledger
--- -----------------------------------------------------------
 CREATE TABLE IF NOT EXISTS annual_leave_ledger (
   id                TEXT PRIMARY KEY,
   employee_id       TEXT REFERENCES employees(id),
@@ -40,9 +36,7 @@ CREATE TABLE IF NOT EXISTS annual_leave_ledger (
   updated_at        INTEGER
 );
 
--- -----------------------------------------------------------
 -- annual_leave_promotions
--- -----------------------------------------------------------
 CREATE TABLE IF NOT EXISTS annual_leave_promotions (
   id                    TEXT PRIMARY KEY,
   employee_id           TEXT REFERENCES employees(id),
@@ -63,9 +57,7 @@ CREATE TABLE IF NOT EXISTS annual_leave_promotions (
   updated_at            INTEGER
 );
 
--- -----------------------------------------------------------
 -- billing
--- -----------------------------------------------------------
 CREATE TABLE IF NOT EXISTS billing (
   id                  TEXT PRIMARY KEY,
   company_id          TEXT REFERENCES companies(id),
@@ -88,9 +80,7 @@ CREATE TABLE IF NOT EXISTS billing (
 );
 CREATE INDEX idx_billing_company ON billing(company_id);
 
--- -----------------------------------------------------------
 -- companies
--- -----------------------------------------------------------
 CREATE TABLE IF NOT EXISTS companies (
   id                TEXT PRIMARY KEY,
   company_name      TEXT,
@@ -114,9 +104,7 @@ CREATE TABLE IF NOT EXISTS companies (
   updated_at        INTEGER
 , service_contract_file_name TEXT, service_contract_file_data TEXT, contract_start_date TEXT, pay_period_month TEXT, pay_period_day INTEGER, contract_end_date TEXT, representatives TEXT);
 
--- -----------------------------------------------------------
 -- company_history
--- -----------------------------------------------------------
 CREATE TABLE IF NOT EXISTS company_history (
   id          TEXT PRIMARY KEY,
   company_id  TEXT REFERENCES companies(id),
@@ -127,9 +115,7 @@ CREATE TABLE IF NOT EXISTS company_history (
   updated_at  INTEGER
 , effective_date TEXT);
 
--- -----------------------------------------------------------
 -- company_notices
--- -----------------------------------------------------------
 CREATE TABLE IF NOT EXISTS company_notices (
   id                TEXT PRIMARY KEY,
   company_id        TEXT REFERENCES companies(id),
@@ -153,9 +139,7 @@ CREATE TABLE IF NOT EXISTS company_notices (
 );
 CREATE INDEX idx_company_notices_company ON company_notices(company_id);
 
--- -----------------------------------------------------------
 -- contract_dispatch
--- -----------------------------------------------------------
 CREATE TABLE IF NOT EXISTS contract_dispatch (
   id              TEXT PRIMARY KEY,
   contract_id     TEXT REFERENCES contracts(id),
@@ -176,9 +160,7 @@ CREATE TABLE IF NOT EXISTS contract_dispatch (
   updated_at      INTEGER
 );
 
--- -----------------------------------------------------------
 -- contract_expiry_notice
--- -----------------------------------------------------------
 CREATE TABLE IF NOT EXISTS contract_expiry_notice (
   id                TEXT PRIMARY KEY,
   contract_id       TEXT REFERENCES contracts(id),
@@ -199,9 +181,7 @@ CREATE TABLE IF NOT EXISTS contract_expiry_notice (
   updated_at        INTEGER
 );
 
--- -----------------------------------------------------------
 -- contracts
--- -----------------------------------------------------------
 CREATE TABLE IF NOT EXISTS contracts (
   id                    TEXT PRIMARY KEY,
   employee_id           TEXT REFERENCES employees(id),
@@ -259,9 +239,7 @@ CREATE TABLE IF NOT EXISTS contracts (
 CREATE INDEX idx_contracts_employee ON contracts(employee_id);
 CREATE INDEX idx_contracts_company  ON contracts(company_id);
 
--- -----------------------------------------------------------
 -- employees
--- -----------------------------------------------------------
 CREATE TABLE IF NOT EXISTS employees (
   id                  TEXT PRIMARY KEY,
   company_id          TEXT REFERENCES companies(id),
@@ -286,9 +264,7 @@ CREATE TABLE IF NOT EXISTS employees (
 , is_representative INTEGER DEFAULT 0, bank_name TEXT, bank_account TEXT, expire_date TEXT);
 CREATE INDEX idx_employees_company ON employees(company_id);
 
--- -----------------------------------------------------------
 -- insurance_rates
--- -----------------------------------------------------------
 CREATE TABLE IF NOT EXISTS insurance_rates (
   id              TEXT PRIMARY KEY,
   insurance_type  TEXT,
@@ -303,9 +279,7 @@ CREATE TABLE IF NOT EXISTS insurance_rates (
   updated_at      INTEGER
 );
 
--- -----------------------------------------------------------
 -- minimum_wages
--- -----------------------------------------------------------
 CREATE TABLE IF NOT EXISTS minimum_wages (
   id            TEXT PRIMARY KEY,
   year          INTEGER,
@@ -316,9 +290,7 @@ CREATE TABLE IF NOT EXISTS minimum_wages (
   updated_at    INTEGER
 );
 
--- -----------------------------------------------------------
 -- payroll_send_logs
--- -----------------------------------------------------------
 CREATE TABLE IF NOT EXISTS payroll_send_logs (
   id            TEXT PRIMARY KEY,
   company_id    TEXT REFERENCES companies(id),
@@ -334,9 +306,7 @@ CREATE TABLE IF NOT EXISTS payroll_send_logs (
   updated_at    INTEGER
 );
 
--- -----------------------------------------------------------
 -- payrolls
--- -----------------------------------------------------------
 CREATE TABLE IF NOT EXISTS payrolls (
   id                  TEXT PRIMARY KEY,
   employee_id         TEXT REFERENCES employees(id),
@@ -366,9 +336,7 @@ CREATE INDEX idx_payrolls_employee ON payrolls(employee_id);
 CREATE INDEX idx_payrolls_company  ON payrolls(company_id);
 CREATE INDEX idx_payrolls_ym       ON payrolls(pay_year, pay_month);
 
--- -----------------------------------------------------------
 -- registered_executives
--- -----------------------------------------------------------
 CREATE TABLE IF NOT EXISTS registered_executives (
   id TEXT PRIMARY KEY, company_id TEXT, name TEXT NOT NULL, position TEXT NOT NULL,
   phone TEXT NOT NULL, id_number TEXT NOT NULL, bank_name TEXT, bank_account TEXT,
@@ -376,9 +344,7 @@ CREATE TABLE IF NOT EXISTS registered_executives (
 );
 CREATE INDEX idx_registered_executives_company ON registered_executives(company_id);
 
--- -----------------------------------------------------------
 -- related_party_workers
--- -----------------------------------------------------------
 CREATE TABLE IF NOT EXISTS related_party_workers (
   id TEXT PRIMARY KEY, company_id TEXT, name TEXT NOT NULL, relationship TEXT NOT NULL,
   phone TEXT NOT NULL, id_number TEXT NOT NULL, bank_name TEXT, bank_account TEXT,
@@ -386,7 +352,5 @@ CREATE TABLE IF NOT EXISTS related_party_workers (
 );
 CREATE INDEX idx_related_party_workers_company ON related_party_workers(company_id);
 
--- -----------------------------------------------------------
 -- wage_ledger_notifications
--- -----------------------------------------------------------
 CREATE TABLE IF NOT EXISTS wage_ledger_notifications (id TEXT PRIMARY KEY, company_id TEXT, year INTEGER, month INTEGER, is_read INTEGER DEFAULT 0, created_at INTEGER, updated_at INTEGER);
