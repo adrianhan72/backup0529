@@ -1176,13 +1176,13 @@ function _collectRenewFormFields(){
   const typeEl = document.getElementById('ct-type');
   if(typeEl) fields.contract_type = CONTRACT_TYPE_LEGACY_MAP[typeEl.value] || typeEl.value;
 
-  // 계약 시작일·종료일 (폼에 입력된 값, 정규직은 종료일 강제 공백)
+  // 계약 시작일·종료일 (폼에 입력된 값, 정규직(수습 제외)만 종료일 강제 공백)
   const ctNorm = fields.contract_type;
-  const isRegular = (ctNorm === CONTRACT_TYPE.REGULAR || ctNorm === CONTRACT_TYPE.REGULAR_PROBATION);
+  const isRegularNoProb = (ctNorm === CONTRACT_TYPE.REGULAR);
   const startEl = document.getElementById('ct-start');
   if(startEl) fields.contract_start = startEl.value;
   const endEl = document.getElementById('ct-end');
-  if(endEl) fields.contract_end = isRegular ? '' : endEl.value;
+  if(endEl) fields.contract_end = isRegularNoProb ? '' : endEl.value;
 
   // 근무시간
   const hoursEl = document.getElementById('ct-hours');
@@ -2186,11 +2186,14 @@ async function saveDraftContract(reason){
     ? (document.getElementById('ct-em-expire').value||'')
     : (document.getElementById('ct-end').value||'');
 
+  // 정규직(수습 제외)은 계약 종료일을 항상 빈 값으로 강제
+  const isRegNoProbDraft = catForDraft === CONTRACT_TYPE.REGULAR;
+  const finalContractEnd = isRegNoProbDraft ? '' : contractEnd;
+
   const baseDraft       = getAmountVal('ct-base')||0;
   const annualDraft     = getAmountVal('ct-annual-sal')||0;
   const dailyDraft      = getAmountVal('ct-daily-wage')||0;
   const wkHolDraft      = isDailyDraft ? 0 : Math.round(baseDraft / 5); // 월 주휴수당 = 기본급 ÷ 5
-  const isRegDraft      = catForDraft ===CONTRACT_TYPE.REGULAR || catForDraft ===CONTRACT_TYPE.REGULAR_PROBATION;
   const posDraft        = getAmountVal('ct-position')||0;
   const carDraft        = getAmountVal('ct-car')||0;
   const remoteAreaDraft = getAmountVal('ct-remote-area')||0;
@@ -2227,7 +2230,7 @@ async function saveDraftContract(reason){
     employee_id:          empId||null,
     company_id:           coId,
     contract_start:       contractStart,
-    contract_end:         contractEnd,
+    contract_end:         finalContractEnd,
     contract_type:        catForDraft,
     status:               'draft',
     work_hours_per_day:   avgHours,
@@ -3171,6 +3174,10 @@ async function saveContract(){
   // ── contract_type / status 영문 정규화 ──
   contractType   = CONTRACT_TYPE_LEGACY_MAP[contractType]     || contractType;
   contractStatus = CONTRACT_STATUS_LEGACY_MAP[contractStatus] || contractStatus;
+
+  // 정규직(수습 제외)은 계약 종료일을 항상 빈 값으로 강제 (기간의 정함 없음)
+  // 정규직 수습은 수습기간 만료일이 계약 종료일이므로 contract_end 유지
+  if(contractType === CONTRACT_TYPE.REGULAR) contractEnd = '';
 
   // 요일별 스케줄 수집
   const scheduleJSON = getScheduleJSON();

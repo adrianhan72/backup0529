@@ -1,7 +1,5 @@
--- ============================================================
--- SQLite Schema for 인사톡 노무톡
+-- SQLite Schema (auto-generated from DB)
 -- Updated: 2026-07-09
--- ============================================================
 
 PRAGMA journal_mode = WAL;
 

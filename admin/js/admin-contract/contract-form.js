@@ -388,10 +388,51 @@ function toggleProbation(){
     // 수습 아닌 경우 경고 상자 강제 숨김
     const wr = document.getElementById('ct-prob-minwage-warning-row');
     if(wr) wr.style.display = 'none';
+    // 계약 종료일 편집 가능 복원
+    _setProbationEndReadonly(false);
   } else {
     onProbationBasisChange(); // 표시될 때 UI 동기화
     _checkProbMinWageWarning(); // 경고 갱신
+    // 계약 종료일 readonly + 힌트 표시
+    _setProbationEndReadonly(true);
+    _autoCalcProbationEndDate(); // 수습기간 입력값으로 자동 계산
   }
+}
+
+// 수습 계약: 계약 종료일 필드 readonly 토글 + 힌트
+function _setProbationEndReadonly(readonly){
+  const endEl = document.getElementById('ct-end');
+  const hintEl = document.getElementById('ct-end-hint');
+  if(endEl){
+    endEl.readOnly = readonly;
+    if(readonly){
+      endEl.style.background = '#f3f4f6';
+      endEl.style.cursor = 'not-allowed';
+    } else {
+      endEl.style.background = '';
+      endEl.style.cursor = '';
+    }
+  }
+  if(hintEl) hintEl.style.display = readonly ? '' : 'none';
+}
+
+// 수습기간 변경 시 계약 종료일 자동 계산 (시작일 + 수습개월 - 1일)
+function _autoCalcProbationEndDate(){
+  const monthsEl = document.getElementById('ct-probation-months');
+  const months = parseInt(monthsEl?.value) || 0;
+  if(!months) return;
+
+  // 계약 시작일: ct-start(수정/재계약) 우선, ct-em-start(신규) 폴백
+  const startEl = document.getElementById('ct-start') || document.getElementById('ct-em-start');
+  const startVal = startEl?.value;
+  if(!startVal) return;
+
+  const startDate = new Date(startVal);
+  startDate.setMonth(startDate.getMonth() + months);
+  startDate.setDate(startDate.getDate() - 1);
+
+  const endEl = document.getElementById('ct-end');
+  if(endEl) endEl.value = startDate.toISOString().slice(0,10);
 }
 
 // ── 산정기준 라디오 변경 핸들러 ──
@@ -1371,6 +1412,8 @@ function onCtStartChange(){
   }
   // clearValues=false: 기입력 금액은 유지하면서 show/hide + pay_type만 갱신
   applyCTAllowanceConfig(cfg, false);
+  // 수습 계약이면 계약 종료일 재계산
+  if(typeof _autoCalcProbationEndDate === 'function') _autoCalcProbationEndDate();
 }
 
 /**

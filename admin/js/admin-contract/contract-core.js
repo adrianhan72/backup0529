@@ -561,13 +561,14 @@ function openContractModal(id=null, preCompanyId=null){
       if(hireRowEl)   hireRowEl.style.display   = '';
       // 정규직이면 퇴사예정일 숨김, 계약직이면 입사일과 함께 숨김 (종료일과 동일)
       if(expireRowEl) expireRowEl.style.display  = (isFixedType || isRegularType) ? 'none' : '';
-      // 계약 종료일 행: 정규직은 원래 숨김 (기간의 정함 없음)
+      // 계약 종료일 행: 정규직(수습 제외)만 숨김 (기간의 정함 없음)
+      // 정규직 수습은 수습기간 만료일 = 계약 종료일이므로 표시됨
+      const isRegularNoProbation = ctVal === CONTRACT_TYPE.REGULAR;
       if(endRowEl){
-        if(isRegularType && !c.contract_end){
+        if(isRegularNoProbation){
           endRowEl.style.display = 'none';
         } else {
           endRowEl.style.display = '';
-          // 라벨은 항상 "계약 종료일"로 유지 (해지일은 별도 ct-row-terminate에서 표시)
           const endLabel = endRowEl.querySelector('label');
           if(endLabel){
             endLabel.innerHTML = '계약 종료일 <span id="ct-end-required" style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;display:none;">*</span>';
@@ -608,6 +609,8 @@ function openContractModal(id=null, preCompanyId=null){
         const _rbEl = document.querySelector(`input[name="ct-probation-basis"][value="${_basis}"]`);
         if(_rbEl){ _rbEl.checked = true; }
         onProbationBasisChange();
+        // 수습 계약: 계약 종료일 readonly + 힌트
+        if(typeof _setProbationEndReadonly === 'function') _setProbationEndReadonly(true);
       }
       // 연차일수: 저장된 값 복원 후 자동계산으로 힌트 표시 (입사일 복원 후 호출)
       document.getElementById('ct-annual').value=c.annual_leave_days||15;
