@@ -50,8 +50,17 @@ app.post('/api/kakao/send', (req, res) => {
   res.json({ ok: true, stub: true, message: '카카오 전송 (스텁)' });
 });
 
+// ── ES Module MIME 타입 등록 (.mjs 파일 지원) ──
+require('express').static.mime.define({ 'application/javascript': ['mjs'] });
+
 // ── 정적 파일 ──
-app.use('/admin',   express.static(path.join(ROOT, 'admin')));
+// .mjs 파일에 올바른 MIME 타입 강제 적용
+const mjsHeaders = (res, filePath) => {
+  if (filePath.endsWith('.mjs')) {
+    res.setHeader('Content-Type', 'application/javascript; charset=UTF-8');
+  }
+};
+app.use('/admin',   express.static(path.join(ROOT, 'admin'), { setHeaders: mjsHeaders }));
 app.use('/client',  express.static(path.join(ROOT, 'client')));
 app.use('/scripts', express.static(path.join(ROOT, 'scripts')));
 app.use('/docs',    express.static(path.join(ROOT, 'docs')));

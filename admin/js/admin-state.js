@@ -1,8 +1,9 @@
 // ─── STATE ───
-let allCompanies=[], allEmployees=[], allContracts=[], allPayrolls=[], allBillings=[];
-let allExecutives=[], allRelatedParties=[];   // 등기임원 / 특수관계인 급여대상자
-let allLeaveLedgers=[];   // 연차휴가 관리대장 캐시 (annual_leave_ledger 테이블 전체)
-let allWLNotifications=[];   // 임금대장 미확인 알림 캐시
+// var: window 속성 생성 → ESM state.mjs에서 window.allXxx 로 접근 가능
+var allCompanies=[], allEmployees=[], allContracts=[], allPayrolls=[], allBillings=[];
+var allExecutives=[], allRelatedParties=[];   // 등기임원 / 특수관계인 급여대상자
+var allLeaveLedgers=[];   // 연차휴가 관리대장 캐시 (annual_leave_ledger 테이블 전체)
+var allWLNotifications=[];   // 임금대장 미확인 알림 캐시
 let editId={company:null,contract:null};
 const ITEMS=10;
 let pages={emp:1,cont:1,pay:1};
