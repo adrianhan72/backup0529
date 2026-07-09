@@ -4,25 +4,21 @@
  * 계약 통계 + 유형 분포 패널.
  */
 import { CONTRACT_ACTIVE_STATUSES, CONTRACT_TERMINAL_STATUSES, CONTRACT_PROBATION_TYPES, contractTypeLabel } from './constants.mjs';
+import { getCompanies, getEmployees, getContracts as _getContracts, loadContracts } from '../state.mjs';
 
-const getAllContracts  = () => {
-  // window.allContracts 우선, 없으면 DOM에서 읽기
-  const g = window.allContracts;
+function ensureContracts() {
+  const g = _getContracts();
   if (g && g.length > 0) return g;
-  // fallback: API로 직접 조회 (window.allContracts 미로드 시)
   if (!window._esmContractFetching) {
     window._esmContractFetching = true;
-    fetch('../tables/contracts?limit=500').then(r => r.json()).then(d => {
-      window.allContracts = d.data || [];
+    loadContracts().then(() => {
       window._esmContractFetching = false;
       if (window._esmUpdateContractStats) window._esmUpdateContractStats();
       if (window._esmUpdateContractTypes) window._esmUpdateContractTypes();
     }).catch(() => { window._esmContractFetching = false; });
   }
   return [];
-};
-const getAllEmployees  = () => window.allEmployees || [];
-const getAllCompanies  = () => window.allCompanies || [];
+}
 
 function addContractStatsPanel() {
   const container = document.getElementById('page-contracts');
@@ -33,7 +29,7 @@ function addContractStatsPanel() {
   panel.style.cssText = 'display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;';
 
   const update = () => {
-    const contracts = getAllContracts();
+    const contracts = ensureContracts();
     const active = contracts.filter(c => !c.is_draft && CONTRACT_ACTIVE_STATUSES.includes(c.status));
     const drafts = contracts.filter(c => !!c.is_draft);
     const terminated = contracts.filter(c => !c.is_draft && CONTRACT_TERMINAL_STATUSES.includes(c.status));
@@ -83,7 +79,7 @@ function addContractTypeSummary() {
   section.style.cssText = 'background:#fff;border-radius:10px;padding:14px 16px;box-shadow:0 1px 3px rgba(0,0,0,.06);margin-bottom:14px;';
 
   const update = () => {
-    const contracts = getAllContracts().filter(c => !c.is_draft);
+    const contracts = ensureContracts().filter(c => !c.is_draft);
     const typeCount = {};
     contracts.forEach(c => {
       const label = contractTypeLabel(c.contract_type) || c.contract_type || '기타';

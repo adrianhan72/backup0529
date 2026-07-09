@@ -1,23 +1,24 @@
 /**
- * modules/payroll/core.mjs — 급여 관리 모듈 브릿지 (Phase 3-C)
+ * modules/payroll/core.mjs — 급여 관리 모듈 (Phase 3)
  */
 import { formatCurrency } from '../utils.mjs';
+import { getPayrolls } from '../state.mjs';
 
 /** 이번 달 급여 데이터 */
 export function getThisMonthPayrolls() {
-  const payrolls = window.allPayrolls || [];
+  const payrolls = getPayrolls();
   const now = new Date();
   return payrolls.filter(p => !p.is_draft && p.pay_year === now.getFullYear() && p.pay_month === now.getMonth() + 1);
 }
 
 /** 임시저장 급여 목록 */
 export function getDraftPayrolls() {
-  return (window.allPayrolls || []).filter(p => !!p.is_draft);
+  return getPayrolls().filter(p => !!p.is_draft);
 }
 
 /** 급여 통계 */
 export function getPayrollStats() {
-  const all = window.allPayrolls || [];
+  const all = getPayrolls();
   const completed = all.filter(p => !p.is_draft);
   const drafts = all.filter(p => !!p.is_draft);
   const now = new Date();
@@ -34,6 +35,6 @@ export function getPayrollStats() {
   };
 }
 
-if (typeof window !== 'undefined') {
-  window._esmPayrollCore = { getThisMonthPayrolls, getDraftPayrolls, getPayrollStats };
+export function register() {
+  return { getThisMonthPayrolls, getDraftPayrolls, getPayrollStats };
 }

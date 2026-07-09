@@ -1,7 +1,7 @@
 /**
  * modules/wage-ledger.mjs — Phase 2 임금대장 모듈
  */
-const getAllPayrolls = () => window.allPayrolls || [];
+import { getPayrolls } from '../state.mjs';
 
 function addWageLedgerStatsPanel() {
   const container = document.getElementById('page-wage-ledger');
@@ -11,7 +11,7 @@ function addWageLedgerStatsPanel() {
   panel.style.cssText = 'display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;';
 
   const update = () => {
-    const completed = getAllPayrolls().filter(p => !p.is_draft);
+    const completed = getPayrolls().filter(p => !p.is_draft);
     const thisYear = new Date().getFullYear();
     const yp = completed.filter(p => p.pay_year === thisYear);
     const totalAmount = yp.reduce((s, p) => s + (p.total_amount || 0), 0);

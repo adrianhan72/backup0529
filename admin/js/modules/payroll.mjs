@@ -1,20 +1,20 @@
 /**
  * modules/payroll.mjs — Phase 2 급여 관리 모듈
  */
-const getAllPayrolls  = () => {
-  const g = window.allPayrolls;
+import { getCompanies, getPayrolls, loadPayrolls } from '../state.mjs';
+
+function ensurePayrolls() {
+  const g = getPayrolls();
   if (g && g.length > 0) return g;
   if (!window._esmPayFetching) {
     window._esmPayFetching = true;
-    fetch('../tables/payrolls?limit=500').then(r => r.json()).then(d => {
-      window.allPayrolls = d.data || [];
+    loadPayrolls().then(() => {
       window._esmPayFetching = false;
       if (window._esmUpdatePayrollStats) window._esmUpdatePayrollStats();
     }).catch(() => { window._esmPayFetching = false; });
   }
   return [];
-};
-const getAllCompanies = () => window.allCompanies || [];
+}
 
 function addPayrollStatsPanel() {
   const container = document.getElementById('page-payrolls');
@@ -24,7 +24,7 @@ function addPayrollStatsPanel() {
   panel.style.cssText = 'display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;';
 
   const update = () => {
-    const payrolls = getAllPayrolls();
+    const payrolls = ensurePayrolls();
     const total = payrolls.length;
     const drafts = payrolls.filter(p => !!p.is_draft);
     const completed = payrolls.filter(p => !p.is_draft);

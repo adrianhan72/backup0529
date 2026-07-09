@@ -1,17 +1,18 @@
 /**
- * modules/contract/core.mjs — 계약 관리 모듈 브릿지 (Phase 3-C)
+ * modules/contract/core.mjs — 계약 관리 모듈 (Phase 3)
  */
 import { CONTRACT_ACTIVE_STATUSES, CONTRACT_PROBATION_TYPES, contractTypeLabel } from '../constants.mjs';
+import { getContracts } from '../state.mjs';
 
 /** 활성 계약 목록 */
 export function getActiveContracts() {
-  const contracts = window.allContracts || [];
+  const contracts = getContracts();
   return contracts.filter(c => !c.is_draft && CONTRACT_ACTIVE_STATUSES.includes(c.status));
 }
 
 /** 수습 계약 목록 */
 export function getProbationContracts() {
-  const contracts = window.allContracts || [];
+  const contracts = getContracts();
   return contracts.filter(c => !c.is_draft && CONTRACT_PROBATION_TYPES.includes(c.contract_type));
 }
 
@@ -29,7 +30,7 @@ export function getExpiringContracts(days = 30) {
 
 /** 계약 유형별 집계 */
 export function getContractTypeSummary() {
-  const contracts = (window.allContracts || []).filter(c => !c.is_draft);
+  const contracts = getContracts().filter(c => !c.is_draft);
   const summary = {};
   contracts.forEach(c => {
     const label = contractTypeLabel(c.contract_type) || c.contract_type || '기타';
@@ -38,6 +39,6 @@ export function getContractTypeSummary() {
   return summary;
 }
 
-if (typeof window !== 'undefined') {
-  window._esmContractCore = { getActiveContracts, getProbationContracts, getExpiringContracts, getContractTypeSummary };
+export function register() {
+  return { getActiveContracts, getProbationContracts, getExpiringContracts, getContractTypeSummary };
 }

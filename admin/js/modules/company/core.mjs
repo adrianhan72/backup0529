@@ -1,27 +1,27 @@
 /**
- * modules/company/core.mjs — 고객사 관리 모듈 브릿지 (Phase 3-C)
+ * modules/company/core.mjs — 고객사 관리 모듈 (Phase 3)
  */
-import { fetchCompanies, createCompany, updateCompany } from '../api.mjs';
 import { isCompanyActive } from '../utils.mjs';
+import { getCompanies, getEmployees, getContracts } from '../state.mjs';
 
 /** 고객사 목록 필터링 (ESM) */
 export function filterActiveCompanies() {
-  const companies = window.allCompanies || [];
+  const companies = getCompanies();
   return companies.filter(c => isCompanyActive(c) && !c.is_draft);
 }
 
 /** 고객사 검색 */
 export function searchCompanies(query) {
   const q = (query || '').toLowerCase();
-  const companies = window.allCompanies || [];
+  const companies = getCompanies();
   return companies.filter(c => (c.company_name || '').toLowerCase().includes(q));
 }
 
 /** 고객사 통계 */
 export function getCompanyStats() {
-  const all = window.allCompanies || [];
-  const employees = window.allEmployees || [];
-  const contracts = window.allContracts || [];
+  const all = getCompanies();
+  const employees = getEmployees();
+  const contracts = getContracts();
   return {
     total: all.length,
     active: all.filter(c => isCompanyActive(c)).length,
@@ -30,6 +30,6 @@ export function getCompanyStats() {
   };
 }
 
-if (typeof window !== 'undefined') {
-  window._esmCompanyCore = { filterActiveCompanies, searchCompanies, getCompanyStats };
+export function register() {
+  return { filterActiveCompanies, searchCompanies, getCompanyStats };
 }

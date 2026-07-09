@@ -1,7 +1,7 @@
 /**
  * modules/payroll-input.mjs — Phase 2 급여 입력 모듈
  */
-const getAllPayrolls = () => window.allPayrolls || [];
+import { getPayrolls } from '../state.mjs';
 
 function addPayrollInputStatsPanel() {
   const container = document.getElementById('page-payroll-input');
@@ -11,7 +11,7 @@ function addPayrollInputStatsPanel() {
   panel.style.cssText = 'display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;';
 
   const update = () => {
-    const p = getAllPayrolls();
+    const p = getPayrolls();
     const drafts = p.filter(x => !!x.is_draft);
     const now = new Date();
     const y = now.getFullYear(), m = now.getMonth() + 1;

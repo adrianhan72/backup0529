@@ -6,22 +6,20 @@
  */
 import { isCompanyActive, s } from './utils.mjs';
 import { COMPANY_STATUS } from './constants.mjs';
+import { getCompanies as _getCompanies, getEmployees, getContracts, loadCompanies } from '../state.mjs';
 
-const getAllCompanies = () => {
-  const g = window.allCompanies;
+function ensureCompanies() {
+  const g = _getCompanies();
   if (g && g.length > 0) return g;
   if (!window._esmCoFetching) {
     window._esmCoFetching = true;
-    fetch('../tables/companies?limit=100').then(r => r.json()).then(d => {
-      window.allCompanies = d.data || [];
+    loadCompanies().then(() => {
       window._esmCoFetching = false;
       if (window._esmUpdateCompanyStats) window._esmUpdateCompanyStats();
     }).catch(() => { window._esmCoFetching = false; });
   }
   return [];
-};
-const getAllEmployees = () => window.allEmployees || [];
-const getAllContracts = () => window.allContracts || [];
+}
 
 function addCompanyStatsPanel() {
   const container = document.getElementById('page-companies');
@@ -32,7 +30,7 @@ function addCompanyStatsPanel() {
   panel.style.cssText = 'display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;';
 
   const update = () => {
-    const companies = getAllCompanies();
+    const companies = ensureCompanies();
     const active = companies.filter(c => isCompanyActive(c) && !c.is_draft);
     const inactive = companies.filter(c => !isCompanyActive(c) && !c.is_draft);
     const drafts = companies.filter(c => !!c.is_draft);

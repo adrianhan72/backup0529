@@ -1,11 +1,12 @@
 /**
- * modules/severance/core.mjs — 퇴직급여 모듈 브릿지 (Phase 3-C)
+ * modules/severance/core.mjs — 퇴직급여 모듈 (Phase 3)
  */
 import { CONTRACT_ACTIVE_STATUSES } from '../constants.mjs';
+import { getContracts, getEmployees } from '../state.mjs';
 
 /** 1년 이상 근속자 수 */
 export function getLongTermEmployeeCount() {
-  const contracts = window.allContracts || [];
+  const contracts = getContracts();
   const oneYearAgo = new Date();
   oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
   return contracts.filter(c =>
@@ -16,13 +17,13 @@ export function getLongTermEmployeeCount() {
 
 /** 퇴직급여 통계 */
 export function getSeveranceStats() {
-  const employees = (window.allEmployees || []).length;
-  const contracts = window.allContracts || [];
+  const employees = getEmployees().length;
+  const contracts = getContracts();
   const active = contracts.filter(c => CONTRACT_ACTIVE_STATUSES.includes(c.status)).length;
   const longTerm = getLongTermEmployeeCount();
   return { totalEmployees: employees, activeContracts: active, longTermEmployees: longTerm };
 }
 
-if (typeof window !== 'undefined') {
-  window._esmSeveranceCore = { getLongTermEmployeeCount, getSeveranceStats };
+export function register() {
+  return { getLongTermEmployeeCount, getSeveranceStats };
 }

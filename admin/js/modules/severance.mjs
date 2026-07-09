@@ -2,9 +2,7 @@
  * modules/severance.mjs — Phase 2 퇴직급여 관리 모듈
  */
 import { CONTRACT_ACTIVE_STATUSES } from './constants.mjs';
-
-const getAllEmployees = () => window.allEmployees || [];
-const getAllContracts = () => window.allContracts || [];
+import { getEmployees, getContracts } from '../state.mjs';
 
 function addSeveranceStatsPanel() {
   const container = document.getElementById('page-severance');
@@ -14,8 +12,8 @@ function addSeveranceStatsPanel() {
   panel.style.cssText = 'display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;';
 
   const update = () => {
-    const employees = getAllEmployees();
-    const contracts = getAllContracts();
+    const employees = getEmployees();
+    const contracts = getContracts();
     const active = contracts.filter(c => CONTRACT_ACTIVE_STATUSES.includes(c.status));
     const oneYearAgo = new Date(); oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
     const longTerm = active.filter(c => c.contract_start_date && new Date(c.contract_start_date) <= oneYearAgo);

@@ -1,7 +1,7 @@
 /**
  * modules/standards.mjs — Phase 2 제 기준 관리 모듈
  */
-const getAllCompanies = () => window.allCompanies || [];
+import { getCompanies } from '../state.mjs';
 
 function addStandardsStatsPanel() {
   const container = document.getElementById('page-standards');
@@ -11,7 +11,7 @@ function addStandardsStatsPanel() {
   panel.style.cssText = 'display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;';
 
   const update = () => {
-    const companies = getAllCompanies().filter(c => !c.is_draft);
+    const companies = getCompanies().filter(c => !c.is_draft);
     panel.innerHTML = `
       <div class="esm-stat-card" style="flex:1;min-width:120px;background:#fff;border-radius:10px;padding:12px 14px;box-shadow:0 1px 3px rgba(0,0,0,.06);border-left:3px solid #10b981;">
         <div style="font-size:10px;color:#6b7280;margin-bottom:3px;">전체 고객사</div>

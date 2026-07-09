@@ -8,7 +8,7 @@ import { formatCurrency } from '../utils.mjs';
 
 /** 급여 추세 차트 데이터 계산 */
 export function calcPayrollTrend() {
-  const payrolls = typeof window.allPayrolls !== 'undefined' ? window.allPayrolls : [];
+  const payrolls = getPayrolls();
   const monthly = {};
   payrolls.filter(p => !p.is_draft).forEach(p => {
     const key = `${p.pay_year}-${String(p.pay_month).padStart(2,'0')}`;
@@ -19,7 +19,7 @@ export function calcPayrollTrend() {
 
 /** 청구 추세 차트 데이터 */
 export function calcBillingTrend() {
-  const billings = typeof window.allBillings !== 'undefined' ? window.allBillings : [];
+  const billings = getBillings();
   const monthly = {};
   billings.forEach(b => {
     const key = `${b.bill_year}-${String(b.bill_month).padStart(2,'0')}`;
