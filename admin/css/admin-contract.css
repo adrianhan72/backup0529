@@ -1,4 +1,24 @@
 ﻿    .ct-title-info{display:inline-flex;align-items:center;gap:6px;margin-left:14px;font-size:12px;white-space:nowrap}
+    /* 비활성 입력 필드 스타일 */
+    #contract-modal input:disabled:not(#ct-terminate-display):not(#ct-voided-display),#contract-modal select:disabled:not(#ct-em-gender):not(#ct-edit-em-gender){color:#9ca3af!important;background:#f3f4f6!important;cursor:not-allowed!important;-webkit-text-fill-color:#9ca3af!important}
+    #ct-em-gender,#ct-edit-em-gender{background:#f8f9fb!important;border-color:#e0e0e0!important;color:#333!important;cursor:default;opacity:1!important}
+    /* 임금조건 섹션 내 필드 높이 통일 (급여 산정기간 ~ 벽지수당 영역) */
+    #ct-wage-section-title ~ .form-group input[type="text"],
+    #ct-wage-section-title ~ .form-group input[type="number"],
+    #ct-wage-section-title ~ .form-group input[type="date"],
+    #ct-wage-section-title ~ .form-group select,
+    #ct-row-salary-period ~ .form-group input[type="text"],
+    #ct-row-salary-period ~ .form-group input[type="number"],
+    #ct-row-salary-period ~ .form-group select{height:38px;box-sizing:border-box;padding:6px 12px;font-size:13px}
+    #ct-wage-section-title ~ .form-group .amount-wrap input,
+    #ct-row-salary-period ~ .form-group .amount-wrap input{height:38px;box-sizing:border-box;padding:6px 12px;font-size:13px}
+    #ct-wage-section-title ~ .form-group .form-computed,
+    #ct-row-salary-period ~ .form-group .form-computed{height:38px;box-sizing:border-box;padding:6px 12px;font-size:13px;display:flex;align-items:center}
+    #ct-probation-months,#ct-new-probation-months{box-sizing:border-box;height:37px;padding:5px 12px;font-size:13px;border:1px solid #d1d5db;border-radius:6px}
+    #contract-modal .form-grid{align-items:stretch}
+    #contract-modal .form-grid .form-group{display:flex;flex-direction:column}
+    #contract-modal input[type="email"]{height:36px;box-sizing:border-box}
+    #contract-modal .form-group > span[style*="margin-top:4px"]{margin-top:2px!important}
     .cv-action-bar{display:flex;align-items:center;gap:8px;padding:10px 18px;background:#f8f9fb;border-bottom:2px solid #e5e7eb;flex-wrap:wrap}
     .cv-action-bar.bottom{border-bottom:none;border-top:2px solid #e5e7eb}
     .cv-action-bar .cv-label{font-size:12px;color:#6b7280;flex:1}

@@ -11,7 +11,6 @@ function toggleEmExpire(){
   const expReqSpan = document.getElementById('ct-expire-required');
   // 계약직·계약직 수습·일용직만 퇴사예정일 표시 (정규직·정규직 수습은 무기한 계약이므로 숨김)
   const isFixed    = cat ===CONTRACT_TYPE.FIXED || cat ===CONTRACT_TYPE.FIXED_PROBATION || cat ===CONTRACT_TYPE.DAILY;
-  // 계약직·계약직 수습·일용직 모두 종료일 필수 (* 표시)
   const isRequired = isFixed;
   if(expRow)     expRow.style.display     = isFixed ? '' : 'none';
   if(expReqSpan) expReqSpan.style.display = isRequired ? '' : 'none';
@@ -276,7 +275,9 @@ function toggleAnnualSal(){
     : document.getElementById('ct-em-category').value;
   const cat = CONTRACT_TYPE_LEGACY_MAP[rawCat] || rawCat;
   const isRegularGroup = cat ===CONTRACT_TYPE.REGULAR || cat ===CONTRACT_TYPE.REGULAR_PROBATION;
-  const isFixedTerm    = cat ===CONTRACT_TYPE.FIXED || cat ===CONTRACT_TYPE.FIXED_PROBATION; // 계약직 계열
+  const isRegularOnly  = cat ===CONTRACT_TYPE.REGULAR;                        // 정규직(수습 제외)
+  const isRegularProb   = cat ===CONTRACT_TYPE.REGULAR_PROBATION;              // 정규직 수습
+  const isFixedTerm    = cat ===CONTRACT_TYPE.FIXED || cat ===CONTRACT_TYPE.FIXED_PROBATION;
   const isDaily        = cat ===CONTRACT_TYPE.DAILY;
 
   // ── 상단 섹션 타이틀·라벨 업데이트 ──
@@ -286,7 +287,7 @@ function toggleAnnualSal(){
   const labelMonthly      = document.getElementById('ct-label-monthly');
   const dailyWageLabel    = document.querySelector('#ct-row-daily-wage label');
 
-  if(isRegularGroup){
+  if(isRegularOnly){
     if(salaryPeriodTitle) salaryPeriodTitle.innerHTML = '연봉 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span>';
     if(labelAnnualSal)    labelAnnualSal.innerHTML    = '연봉 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span>';
     if(wageSectionTitle)  wageSectionTitle.textContent = '임금 조건 (월)';
@@ -311,8 +312,8 @@ function toggleAnnualSal(){
   // ── 연봉/월약정급여 입력 행 표시 제어 ──
   const rowSalPeriod = document.getElementById('ct-row-salary-period');
   const rowAnnualSal = document.getElementById('ct-row-annual-sal');
-  // 정규직·계약직 모두 입력 행 표시 (일용직은 ct-row-daily-wage 사용)
-  const showAnnualRow = isRegularGroup || isFixedTerm;
+  // 정규직 수습은 연봉 섹션 숨김 (수습 기간 중 연봉 의미 없음)
+  const showAnnualRow = isRegularOnly || isFixedTerm;
   if(rowSalPeriod) rowSalPeriod.style.display = showAnnualRow ? '' : 'none';
   if(rowAnnualSal) rowAnnualSal.style.display  = showAnnualRow ? '' : 'none';
 
@@ -377,9 +378,17 @@ function toggleProbation(){
   const cat = CONTRACT_TYPE_LEGACY_MAP[rawCat] || rawCat;
   const isProbation = cat ===CONTRACT_TYPE.REGULAR_PROBATION || cat ===CONTRACT_TYPE.FIXED_PROBATION;
   const sec = document.getElementById('ct-probation-section');
+  const periodRow = document.getElementById('ct-row-probation-period');
+  const newPeriodRow = document.getElementById('ct-new-row-probation-period');
+  const newEndRow = document.getElementById('ct-new-row-end');
   if(sec) sec.style.display = isProbation ? '' : 'none';
+  if(periodRow) periodRow.style.display = isProbation ? '' : 'none';
+  if(newPeriodRow) newPeriodRow.style.display = isProbation ? '' : 'none';
+  if(newEndRow) newEndRow.style.display = isProbation ? '' : 'none';
   if(!isProbation){
-    document.getElementById('ct-probation-months').value = '';  // 빈 값으로 초기화
+    // 수습기간 select 초기화 (활성 섹션 기준)
+    const _probMonEl = document.getElementById('ct-probation-months') || document.getElementById('ct-new-probation-months');
+    if(_probMonEl) _probMonEl.value = '';
     document.getElementById('ct-probation-pct').value = '';
     document.getElementById('ct-probation-amt').value = '';
     // 산정기준 라디오 초기화
@@ -395,6 +404,8 @@ function toggleProbation(){
     _checkProbMinWageWarning(); // 경고 갱신
     // 계약 종료일 readonly + 힌트 표시
     _setProbationEndReadonly(true);
+    // 시작일 미입력 시 수습기간 비활성화
+    if(typeof _updateProbationPeriodState === 'function') _updateProbationPeriodState();
     _autoCalcProbationEndDate(); // 수습기간 입력값으로 자동 계산
   }
 }
@@ -418,21 +429,24 @@ function _setProbationEndReadonly(readonly){
 
 // 수습기간 변경 시 계약 종료일 자동 계산 (시작일 + 수습개월 - 1일)
 function _autoCalcProbationEndDate(){
-  const monthsEl = document.getElementById('ct-probation-months');
+  const monthsEl = document.getElementById('ct-new-probation-months') || document.getElementById('ct-probation-months');
   const months = parseInt(monthsEl?.value) || 0;
   if(!months) return;
 
-  // 계약 시작일: ct-start(수정/재계약) 우선, ct-em-start(신규) 폴백
-  const startEl = document.getElementById('ct-start') || document.getElementById('ct-em-start');
-  const startVal = startEl?.value;
+  // 계약 시작일: 값이 실제로 있는 필드를 우선 사용
+  const startElNew = document.getElementById('ct-em-start');
+  const startElEdit = document.getElementById('ct-start');
+  const startVal = (startElNew?.value) || (startElEdit?.value) || '';
   if(!startVal) return;
 
   const startDate = new Date(startVal);
   startDate.setMonth(startDate.getMonth() + months);
   startDate.setDate(startDate.getDate() - 1);
+  const endStr = startDate.toISOString().slice(0,10);
 
-  const endEl = document.getElementById('ct-end');
-  if(endEl) endEl.value = startDate.toISOString().slice(0,10);
+  // 수정/재계약 모드: ct-end, 신규 모드: ct-new-end (신규 우선)
+  const endEl = document.getElementById('ct-new-end') || document.getElementById('ct-end');
+  if(endEl) endEl.value = endStr;
 }
 
 // ── 산정기준 라디오 변경 핸들러 ──
@@ -1204,12 +1218,12 @@ function toggleCtEndDate(preserveValue=false){
   const endInput = document.getElementById('ct-end');
   const endRow   = document.getElementById('ct-row-end');
   const endReqSpan = document.getElementById('ct-end-required');
-  // 계약직·계약직 수습·일용직만 계약 종료일 표시 (정규직·정규직 수습은 무기한 계약이므로 숨김)
+  // 계약직·계약직 수습·일용직·정규직 수습만 계약 종료일 표시 (정규직만 무기한 계약으로 숨김)
   const isFixed    = type ===CONTRACT_TYPE.FIXED || type ===CONTRACT_TYPE.DAILY || type ===CONTRACT_TYPE.FIXED_PROBATION;
-  const isRegular  = type ===CONTRACT_TYPE.REGULAR || type ===CONTRACT_TYPE.REGULAR_PROBATION;
-  // 계약직·계약직 수습·일용직 모두 종료일 필수 (* 표시)
+  const isRegularOnly = type ===CONTRACT_TYPE.REGULAR;
+  // 계약직·계약직 수습·일용직 모두 종료일 필수 (* 표시), 정규직 수습은 수습기간 자동계산
   const isRequired = isFixed;
-  if(endRow)     endRow.style.display    = isRegular ? 'none' : '';
+  if(endRow)     endRow.style.display    = isRegularOnly ? 'none' : '';
   if(endReqSpan) endReqSpan.style.display = isRequired ? '' : 'none';
   // 조회 모드(ct-readonly)이거나 preserveValue=true이면 값을 지우지 않음
   const modalEl = document.querySelector('#contract-modal .modal');
@@ -1412,7 +1426,8 @@ function onCtStartChange(){
   }
   // clearValues=false: 기입력 금액은 유지하면서 show/hide + pay_type만 갱신
   applyCTAllowanceConfig(cfg, false);
-  // 수습 계약이면 계약 종료일 재계산
+  // 수습 계약이면 계약 종료일 재계산 + 수습기간 활성화
+  if(typeof _updateProbationPeriodState === 'function') _updateProbationPeriodState();
   if(typeof _autoCalcProbationEndDate === 'function') _autoCalcProbationEndDate();
 }
 

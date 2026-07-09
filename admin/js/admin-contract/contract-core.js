@@ -158,7 +158,7 @@ function renderContracts(){
 
   const q=(document.getElementById('cont-search')?.value||'').toLowerCase();
   const filterEmpCat=(document.getElementById('cont-filter-empcat')?.value||'');
-  const filterStatus=(document.getElementById('cont-filter-status')?.value||'');
+  const filterStatus=Array.from(document.querySelectorAll('.cont-filter-status-cb:checked')).map(cb=>cb.value).filter(v=>v!=='전체');
   const filterDocsOnly=document.getElementById('cont-filter-docs-incomplete')?.checked||false;
   const filterById=(document.getElementById('cont-filter-id')?.value||'').trim();
   const today=new Date().toISOString().slice(0,10);
@@ -193,11 +193,10 @@ function renderContracts(){
         if(ctCat !== filterEmpCat && ctCat !== CONTRACT_TYPE_LABEL[filterEmpCat] && CONTRACT_TYPE_LABEL[ctCat] !== filterEmpCat) return false;
       }
     }
-    // 계약상태 필터
+    // 계약상태 필터 (다중 선택 — 하나라도 일치하면 통과)
     const {label, docsIncomplete} = calcContractStatusDisplay(c,today);
-    if(filterStatus){
-      // 명시적 필터가 있으면 해당 상태만 (알림 카드 항목 포함)
-      if(label!==filterStatus) return false;
+    if(filterStatus.length > 0){
+      if(!filterStatus.includes(label)) return false;
     } else {
       // 필터 없음(전체): 알림 카드 전용 상태는 메인 테이블에서 제외
       if(ALERT_ONLY_LABELS.has(label)) return false;
@@ -290,6 +289,26 @@ function renderContracts(){
 function setContPage(p){pages.cont=p;renderContracts()}
 function filterContracts(){pages.cont=1;renderContracts()}
 
+// 개별 상태 체크박스 변경 시 전체 연동
+function _onStatusFilterChange(){
+  const allCbs = document.querySelectorAll('.cont-filter-status-cb');
+  const allChecked = Array.from(allCbs).filter(c=>c.value!=='전체').every(c=>c.checked);
+  const allCb = Array.from(allCbs).find(c=>c.value==='전체');
+  if(allCb) allCb.checked = allChecked;
+  filterContracts();
+}
+
+// 상태 필터 '전체' 토글 — 전체 선택 시 모든 항목 체크, 해제 시 유효만 선택
+function _toggleAllStatus(cb){
+  const allCbs = document.querySelectorAll('.cont-filter-status-cb');
+  if(cb.checked){
+    allCbs.forEach(c=>{c.checked=true;});
+  } else {
+    allCbs.forEach(c=>{c.checked=c.value==='유효';});
+  }
+  filterContracts();
+}
+
 // ── 계약서 고유 ID 클립보드 복사 ──
 function _copyContractId(id){
   if(!id) return;
@@ -316,20 +335,61 @@ function _onCtHireChange(){
   if(!startEl || !hintEl) return;
   if(hireEl && hireEl.value){
     startEl.disabled = false;
+    startEl.style.background = '';
+    startEl.style.color = '';
+    startEl.style.cursor = '';
     // 입사일 변경 시 이미 입력된 계약 시작일도 재검증
     if(startEl.value){
       _validateCtStartVsHire('ct-em-start','ct-em-hire','ct-em-start-hint');
     } else {
       hintEl.style.color = '#6b7280';
-      hintEl.textContent = '이번 계약의 효력 발생일 — 급여항목·계약 기간 기준.';
+      hintEl.textContent = '이 계약의 효력 발생일';
     }
+    // 시작일 활성화 시 수습기간도 활성화 체크
+    _updateProbationPeriodState();
   } else {
     startEl.disabled = true;
     startEl.value = '';
+    startEl.style.background = '#f3f4f6';
+    startEl.style.color = '#9ca3af';
+    startEl.style.cursor = 'not-allowed';
     hintEl.style.color = '#9ca3af';
     hintEl.textContent = '입사일을 먼저 입력하세요.';
+    // 시작일 비활성화 → 수습기간도 비활성화
+    _disableProbationPeriod();
   }
 }
+
+// 수습기간 필드 활성화/비활성화 (계약 시작일 입력 여부 기준)
+function _updateProbationPeriodState(){
+  const startEl = document.getElementById('ct-em-start') || document.getElementById('ct-start');
+  const startVal = startEl?.value;
+  // 활성 섹션 기준으로 수습기간 요소 찾기 (신규 섹션 우선)
+  const probMonEl = document.getElementById('ct-new-probation-months') || document.getElementById('ct-probation-months');
+  if(!probMonEl) return;
+  if(startVal){
+    probMonEl.disabled = false;
+    probMonEl.style.background = '';
+    probMonEl.style.color = '';
+    probMonEl.style.cursor = '';
+  } else {
+    _disableProbationPeriod();
+  }
+}
+
+function _disableProbationPeriod(){
+  const probMonEl = document.getElementById('ct-new-probation-months') || document.getElementById('ct-probation-months');
+  if(!probMonEl) return;
+  probMonEl.disabled = true;
+  probMonEl.value = '';
+  probMonEl.style.background = '#f3f4f6';
+  probMonEl.style.color = '#9ca3af';
+  probMonEl.style.cursor = 'not-allowed';
+  // 계약 종료일도 초기화
+  const endEl = document.getElementById('ct-new-end') || document.getElementById('ct-end');
+  if(endEl) endEl.value = '';
+}
+
 function _validateCtStartVsHire(startId, hireId, hintId){
   const startEl = document.getElementById(startId);
   const hireEl = document.getElementById(hireId);
@@ -385,6 +445,8 @@ function openContractModal(id=null, preCompanyId=null){
   const modalEl = document.querySelector('#contract-modal .modal');
   modalEl.classList.remove('ct-readonly');
   modalEl.querySelectorAll('input,select,textarea').forEach(el=>{
+    // 성별 필드는 항상 readonly (주민번호 자동설정 전용)
+    if(el.id === 'ct-em-gender' || el.id === 'ct-edit-em-gender') return;
     el.disabled = false;
     el.tabIndex = 0;
     el.style.pointerEvents = '';
@@ -404,6 +466,7 @@ function openContractModal(id=null, preCompanyId=null){
   { const _trEl=document.getElementById('ct-row-terminate'); if(_trEl) _trEl.style.display='none'; }
   { const _vdEl=document.getElementById('ct-voided-display'); if(_vdEl) _vdEl.value=''; }
   { const _vrEl=document.getElementById('ct-row-voided'); if(_vrEl) _vrEl.style.display='none'; }
+  { const _ppRow=document.getElementById('ct-row-probation-period'); if(_ppRow) _ppRow.style.display='none'; }
   ['ct-pay-period-month','ct-pay-period-day'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});
   const _ppHint = document.getElementById('ct-pay-period-hint'); if(_ppHint) _ppHint.textContent='';
   document.getElementById('ct-annual').value=15;
@@ -615,9 +678,12 @@ function openContractModal(id=null, preCompanyId=null){
       if(rowDailyWageE) rowDailyWageE.style.display = isDailyEdit ? '' : 'none';
       // 수습 섹션 복원
       const probSec=document.getElementById('ct-probation-section');
+      const probPeriodRow=document.getElementById('ct-row-probation-period');
       if(probSec) probSec.style.display=isProbEdit?'':'none';
+      if(probPeriodRow) probPeriodRow.style.display=isProbEdit?'':'none';
       if(isProbEdit){
-        document.getElementById('ct-probation-months').value=c.probation_months||'';  // 미입력 시 빈 값
+        const _probMonEl = document.getElementById('ct-probation-months') || document.getElementById('ct-new-probation-months');
+        if(_probMonEl) _probMonEl.value = c.probation_months||'';
         document.getElementById('ct-probation-pct').value=c.probation_pct||'';
         document.getElementById('ct-probation-amt').value=c.probation_amt||'';
         // 산정기준 라디오 복원
@@ -792,7 +858,12 @@ function _onEditCategoryChange() {
   // 수습 섹션 제어 (ct-em-category가 아닌 ct-type을 보는 toggleProbation 우회)
   const isProbation = (newCatNorm ===CONTRACT_TYPE.REGULAR_PROBATION || newCatNorm ===CONTRACT_TYPE.FIXED_PROBATION);
   const probSec = document.getElementById('ct-probation-section');
+  const probPeriodRow = document.getElementById('ct-row-probation-period');
   if(probSec) probSec.style.display = isProbation ? '' : 'none';
+  if(probPeriodRow) probPeriodRow.style.display = isProbation ? '' : 'none';
+  // 수습 계약: 계약 종료일 readonly + 힌트
+  if(typeof _setProbationEndReadonly === 'function') _setProbationEndReadonly(isProbation);
+  if(isProbation && typeof _autoCalcProbationEndDate === 'function') _autoCalcProbationEndDate();
   // 입사일·퇴사예정일 행 표시 제어
   const isFixed   = (newCatNorm ===CONTRACT_TYPE.FIXED || newCatNorm ===CONTRACT_TYPE.FIXED_PROBATION || newCatNorm ===CONTRACT_TYPE.DAILY);
   const isRegular = (newCatNorm ===CONTRACT_TYPE.REGULAR || newCatNorm ===CONTRACT_TYPE.REGULAR_PROBATION);

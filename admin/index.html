@@ -1655,7 +1655,7 @@
               <div class="form-group" id="ct-edit-row-hire">
                 <label>입사일 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
                 <input type="date" id="ct-edit-em-hire" oninput="autoFillAnnualLeave();_validateCtStartVsHire('ct-start','ct-edit-em-hire','ct-start-hint')" />
-                <span style="display:block;margin-top:4px;font-size:11px;color:#6b7280;">최초 입사일 — 연차 산정 기준. 재입사 등 사유 발생 시 수정하세요.</span>
+                <span style="display:block;margin-top:2px;font-size:11px;color:#6b7280;">최초 입사일 — 연차 산정 기준. 재입사 등 사유 발생 시 수정하세요.</span>
               </div>
               <div class="form-group" id="ct-edit-row-expire"><label>퇴사예정일</label><input type="date" id="ct-edit-em-expire" /></div>
 
@@ -1663,9 +1663,22 @@
               <div class="form-group">
                 <label>계약 시작일 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
                 <input type="date" id="ct-start" oninput="onCtStartChange();_validateCtStartVsHire('ct-start','ct-edit-em-hire','ct-start-hint');_checkProbMinWageWarning();_checkMinWageWarning();_checkAmendBtnState();_checkFixedTermDuration();" onchange="_validateCtStartVsHire('ct-start','ct-edit-em-hire','ct-start-hint');" />
-                <span id="ct-start-hint" style="display:block;margin-top:4px;font-size:11px;color:#6b7280;">이번 계약의 효력 발생일 — 재계약·연봉 갱신 시 갱신 기준일을 입력하세요.</span>
+                <span id="ct-start-hint" style="display:block;margin-top:2px;font-size:11px;color:#6b7280;">이 계약의 효력 발생일</span>
               </div>
-                            <div class="form-group" id="ct-row-end"><label>계약 종료일 <span id="ct-end-required" style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;display:none;">*</span></label><input type="date" id="ct-end" oninput="_checkFixedTermDuration();_checkAmendBtnState();" /><span id="ct-end-hint" style="display:none;margin-top:4px;font-size:11px;color:#6b7280;">수습기간을 입력하면 자동 반영됩니다.</span></div>
+              <!-- 수습기간 (계약 시작일 바로 다음, 수습계약 전용) -->
+              <div class="form-group" id="ct-row-probation-period" style="display:none;">
+                <label>수습기간 <span style="color:#dc2626;font-weight:900;">*</span></label>
+                <select id="ct-probation-months" onchange="_autoCalcProbationEndDate()">
+                  <option value="">-- 선택 --</option>
+                  <option value="1">1개월</option>
+                  <option value="2">2개월</option>
+                  <option value="3">3개월</option>
+                  <option value="4">4개월</option>
+                  <option value="5">5개월</option>
+                  <option value="6">6개월</option>
+                </select>
+              </div>
+                            <div class="form-group" id="ct-row-end"><label>계약 종료일 <span id="ct-end-required" style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;display:none;">*</span></label><input type="date" id="ct-end" oninput="_checkFixedTermDuration();_checkAmendBtnState();" /><span id="ct-end-hint" style="display:none;margin-top:2px;font-size:11px;color:#6b7280;">수습기간을 입력하면 자동 반영됩니다.</span></div>
                             <div class="form-group" id="ct-row-terminate" style="display:none;"><label style="color:#7c3aed;">계약 해지일</label><input type="date" id="ct-terminate-display" readonly style="background:#f5f3ff;border-color:#c4b5fd;color:#7c3aed;font-weight:700;" /></div>
                             <div class="form-group" id="ct-row-voided" style="display:none;"><label style="color:#7c3aed;">계약 파기일</label><input type="text" id="ct-voided-display" readonly style="background:#f5f3ff;border-color:#c4b5fd;color:#7c3aed;font-weight:700;" /></div>
               <!-- 계약기간 1개월 미만 경고 (계약직·계약직 수습 전용) -->
@@ -1686,7 +1699,7 @@
 
               <div class="form-group full"><span class="form-section-title" style="font-size:11px;">개인 정보</span></div>
               <div class="form-group"><label>주민등록번호 (앞7자리) <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><input type="text" id="ct-edit-em-id" placeholder="YYMMDD-N" maxlength="8" autocomplete="off" oninput="_onIdInput(this, _checkAmendBtnState)" /></div>
-              <div class="form-group"><label>성별 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><select id="ct-edit-em-gender"><option value="남">남</option><option value="여">여</option></select><span id="ct-edit-em-gender-hint" style="font-size:11px;margin-top:3px;display:block;color:#6b7280;">주민번호 입력 시 자동 설정됩니다</span></div>
+              <div class="form-group"><label>성별 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><select id="ct-edit-em-gender" disabled style="color:#374151;"><option value="남">남</option><option value="여">여</option></select><span id="ct-edit-em-gender-hint" style="font-size:11px;margin-top:3px;display:block;color:#6b7280;">주민번호 입력 시 자동 설정됩니다</span></div>
               <div class="form-group"><label>휴대전화 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><input type="text" id="ct-edit-em-phone" placeholder="010-0000-0000" maxlength="13" autocomplete="off" oninput="_onPhoneInput(this, _checkAmendBtnState)" /></div>
               <div class="form-group"><label>이메일 주소</label><input type="email" id="ct-edit-em-email" placeholder="example@email.com" oninput="_onEmailInput(this)" /></div>
               <div class="form-group full"><label>주소 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><input type="text" id="ct-edit-em-address" oninput="_checkAmendBtnState();" /></div>
@@ -1741,14 +1754,33 @@
               <div class="form-group">
                 <label>입사일 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
                 <input type="date" id="ct-em-hire" oninput="_onCtHireChange();autoFillAnnualLeave();_checkProbMinWageWarning();_checkMinWageWarning();_checkRegisterBtnState();" />
-                <span style="display:block;margin-top:4px;font-size:11px;color:#6b7280;">최초 입사일 — 퇴직급여·연차 산정 기준. 재계약 시 승계됩니다.</span>
+                <span style="display:block;margin-top:2px;font-size:11px;color:#6b7280;">최초 입사일 — 퇴직급여·연차 산정 기준. 재계약 시 승계됩니다.</span>
               </div>
               <div class="form-group">
                 <label>계약 시작일 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
                 <input type="date" id="ct-em-start" disabled oninput="onCtStartChange();_validateCtStartVsHire('ct-em-start','ct-em-hire','ct-em-start-hint');_checkProbMinWageWarning();_checkMinWageWarning();_checkFixedTermDuration();_checkRegisterBtnState();" onchange="_validateCtStartVsHire('ct-em-start','ct-em-hire','ct-em-start-hint');" />
-                <span id="ct-em-start-hint" style="display:block;margin-top:4px;font-size:11px;color:#6b7280;">입사일을 먼저 입력하세요.</span>
+                <span id="ct-em-start-hint" style="display:block;margin-top:2px;font-size:11px;color:#6b7280;">입사일을 먼저 입력하세요.</span>
               </div>
-              <div class="form-group" id="ct-new-row-expire" style="display:none;"><label>퇴사예정일 <span id="ct-expire-required" style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><input type="date" id="ct-em-expire" oninput="_checkFixedTermDuration();_checkRegisterBtnState();" /></div>
+              <!-- 수습기간 (신규 직원, 계약 시작일 바로 다음) -->
+              <div class="form-group" id="ct-new-row-probation-period" style="display:none;">
+                <label>수습기간 <span style="color:#dc2626;font-weight:900;">*</span></label>
+                <select id="ct-new-probation-months" onchange="_autoCalcProbationEndDate()">
+                  <option value="">-- 선택 --</option>
+                  <option value="1">1개월</option>
+                  <option value="2">2개월</option>
+                  <option value="3">3개월</option>
+                  <option value="4">4개월</option>
+                  <option value="5">5개월</option>
+                  <option value="6">6개월</option>
+                </select>
+              </div>
+              <!-- 계약 종료일 (신규, 수습 계약 전용 — 수습기간 자동 계산) -->
+              <div class="form-group" id="ct-new-row-end" style="display:none;">
+                <label>계약 종료일</label>
+                <input type="date" id="ct-new-end" readonly style="background:#f3f4f6;color:#374151;font-weight:500;" />
+                <span id="ct-new-end-hint" style="display:block;margin-top:2px;font-size:11px;color:#6b7280;">수습기간을 입력하면 자동 반영됩니다.</span>
+              </div>
+              <div class="form-group" id="ct-new-row-expire" style="display:none;"><label>계약 종료일 <span id="ct-expire-required" style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><input type="date" id="ct-em-expire" oninput="_checkFixedTermDuration();_checkRegisterBtnState();" /></div>
               <!-- 계약기간 1개월 미만 경고 (계약직·계약직 수습 전용) -->
               <div class="form-group full" id="ct-short-term-warning-row" style="display:none;">
                 <div style="display:flex;align-items:flex-start;gap:9px;background:#fff7ed;border:1.5px solid #fb923c;border-radius:8px;padding:10px 13px;font-size:12px;line-height:1.65;color:#7c2d12;">
@@ -1763,7 +1795,7 @@
 
               <div class="form-group full"><span class="form-section-title" style="font-size:11px;">개인 정보</span></div>
               <div class="form-group"><label>주민등록번호 (앞7자리) <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><input type="text" id="ct-em-id" placeholder="YYMMDD-N" maxlength="8" autocomplete="off" oninput="_onIdInput(this, _checkRegisterBtnState)" /></div>
-              <div class="form-group"><label>성별 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><select id="ct-em-gender"><option value="남">남</option><option value="여">여</option></select><span id="ct-em-gender-hint" style="font-size:11px;margin-top:3px;display:block;color:#6b7280;">주민번호 입력 시 자동 설정됩니다</span></div>
+              <div class="form-group"><label>성별 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><select id="ct-em-gender" disabled style="color:#374151;"><option value="남">남</option><option value="여">여</option></select><span id="ct-em-gender-hint" style="font-size:11px;margin-top:3px;display:block;color:#6b7280;">주민번호 입력 시 자동 설정됩니다</span></div>
               <div class="form-group"><label>휴대전화 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><input type="text" id="ct-em-phone" placeholder="010-0000-0000" maxlength="13" autocomplete="off" oninput="_onPhoneInput(this, _checkRegisterBtnState)" /></div>
               <div class="form-group"><label>이메일 주소</label><input type="email" id="ct-em-email" placeholder="example@email.com" oninput="_onEmailInput(this)" /></div>
               <div class="form-group full"><label>주소 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><input type="text" id="ct-em-address" /></div>
@@ -1897,6 +1929,57 @@
             <span id="ct-pay-day-default" style="font-size:11px;color:#9ca3af;"></span>
           </div>
         </div>
+        <!-- 수습 조건 (급여일 다음, 정규직 수습/계약직 수습 전용) -->
+        <div id="ct-probation-section" class="form-group full" style="display:none;margin-top:4px;">
+          <div style="background:#fefce8;border:1.5px solid #fde047;border-radius:10px;padding:16px 18px;">
+            <div style="font-size:12px;font-weight:700;color:#854d0e;margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+              <i class="fas fa-user-clock"></i> 수습 조건
+              <span style="font-size:11px;color:#dc2626;font-weight:600;margin-left:4px;">※ 아래 항목은 모두 필수 입력</span>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:11.5px;font-weight:600;color:#92400e;margin-bottom:8px;">수습 보수 산정 기준 <span style="color:#dc2626;font-weight:900;">*</span></div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <label id="ct-prob-basis-label-salary" style="display:flex;align-items:center;gap:7px;padding:8px 14px;border-radius:8px;border:1.5px solid #fbbf24;background:#fffbeb;cursor:pointer;font-size:12.5px;font-weight:600;color:#92400e;transition:all .15s;">
+                  <input type="radio" name="ct-probation-basis" id="ct-prob-basis-salary" value="salary" checked onchange="onProbationBasisChange()" style="accent-color:#d97706;width:14px;height:14px;" />
+                  <i class="fas fa-calculator" style="font-size:11px;color:#d97706;"></i> 약정 보수 대비 요율
+                </label>
+                <label id="ct-prob-basis-label-minwage" style="display:flex;align-items:center;gap:7px;padding:8px 14px;border-radius:8px;border:1.5px solid #e2e8f0;background:#f8fafc;cursor:pointer;font-size:12.5px;font-weight:600;color:#64748b;transition:all .15s;">
+                  <input type="radio" name="ct-probation-basis" id="ct-prob-basis-minwage" value="minwage" onchange="onProbationBasisChange()" style="accent-color:#d97706;width:14px;height:14px;" />
+                  <i class="fas fa-balance-scale" style="font-size:11px;color:#64748b;"></i> 최저임금 대비 요율
+                </label>
+                <label id="ct-prob-basis-label-direct" style="display:flex;align-items:center;gap:7px;padding:8px 14px;border-radius:8px;border:1.5px solid #e2e8f0;background:#f8fafc;cursor:pointer;font-size:12.5px;font-weight:600;color:#64748b;transition:all .15s;">
+                  <input type="radio" name="ct-probation-basis" id="ct-prob-basis-direct" value="direct" onchange="onProbationBasisChange()" style="accent-color:#d97706;width:14px;height:14px;" />
+                  <i class="fas fa-pen" style="font-size:11px;color:#64748b;"></i> 직접 입력
+                </label>
+              </div>
+            </div>
+            <div class="form-grid" style="gap:10px;">
+              <div class="form-group"></div>
+              <div class="form-group" id="ct-prob-pct-row">
+                <label id="ct-prob-pct-label">수습 임금 (약정 보수의 %) <span style="color:#dc2626;font-weight:900;">*</span></label>
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <input type="number" id="ct-probation-pct" min="0" max="200" step="1" value="80" oninput="calcProbationFromPct()" style="flex:1;" />
+                  <span style="font-size:12px;color:#92400e;font-weight:600;">%</span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label id="ct-prob-amt-label">수습 임금 (월 금액) <span style="color:#dc2626;font-weight:900;">*</span></label>
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <input type="number" id="ct-probation-amt" min="0" step="1000" placeholder="0" oninput="calcProbationFromAmt()" style="flex:1;" />
+                  <span style="font-size:12px;color:#92400e;font-weight:600;">원</span>
+                </div>
+              </div>
+              <div class="form-group full" style="margin-top:2px;">
+                <div id="ct-prob-info-box" style="font-size:11px;color:#a16207;background:#fef9c3;border-radius:6px;padding:6px 10px;">
+                  <i class="fas fa-info-circle" style="margin-right:4px;"></i><span id="ct-prob-info-text">월 약정임금 기준으로 계산됩니다. %를 입력하면 금액이, 금액을 입력하면 %가 자동 계산됩니다.</span>
+                </div>
+              </div>
+              <div class="form-group full" id="ct-prob-minwage-warning-row" style="display:none;margin-top:4px;">
+                <div id="ct-prob-minwage-warning-box" style="border-radius:7px;padding:9px 12px;font-size:11.5px;line-height:1.7;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="form-group">
           <label>통상시급 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span> <span style="font-size:11px;font-weight:400;color:#6b7280;">(직접 입력)</span></label>
           <div class="amount-wrap"><input type="text" inputmode="numeric" id="ct-hourly-input" data-amount placeholder="0" oninput="onAmountInput(this,calcContractSalary);_checkRegisterBtnState();_checkAmendBtnState();" /></div>
@@ -1995,77 +2078,6 @@
         <!-- 공용 최저임금 위반 경고 (정규직·계약직·일용직 공통) -->
         <div class="form-group full" id="ct-general-minwage-warning-row" style="display:none;margin-top:2px;margin-bottom:2px;">
           <div id="ct-general-minwage-warning-box" style="border-radius:8px;padding:10px 14px;font-size:11.5px;line-height:1.75;background:#fef2f2;border:1.5px solid #fca5a5;color:#991b1b;"></div>
-        </div>
-        <!-- 수습 조건 -->
-        <div id="ct-probation-section" class="form-group full" style="display:none;">
-          <div style="background:#fefce8;border:1.5px solid #fde047;border-radius:10px;padding:16px 18px;">
-            <div style="font-size:12px;font-weight:700;color:#854d0e;margin-bottom:12px;display:flex;align-items:center;gap:6px;">
-              <i class="fas fa-user-clock"></i> 수습 조건
-              <span style="font-size:11px;color:#ef4444;font-weight:600;margin-left:4px;">※ 아래 항목은 모두 필수 입력</span>
-            </div>
-            <!-- 산정기준 선택 -->
-            <div style="margin-bottom:14px;">
-              <div style="font-size:11.5px;font-weight:600;color:#92400e;margin-bottom:8px;">수습 보수 산정 기준 <span style="color:#ef4444;font-weight:900;">*</span></div>
-              <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                <label id="ct-prob-basis-label-salary" style="display:flex;align-items:center;gap:7px;padding:8px 14px;border-radius:8px;border:1.5px solid #fbbf24;background:#fffbeb;cursor:pointer;font-size:12.5px;font-weight:600;color:#92400e;transition:all .15s;">
-                  <input type="radio" name="ct-probation-basis" id="ct-prob-basis-salary" value="salary" checked onchange="onProbationBasisChange()" style="accent-color:#d97706;width:14px;height:14px;" />
-                  <i class="fas fa-calculator" style="font-size:11px;color:#d97706;"></i>
-                  약정 보수 대비 요율
-                </label>
-                <label id="ct-prob-basis-label-minwage" style="display:flex;align-items:center;gap:7px;padding:8px 14px;border-radius:8px;border:1.5px solid #e2e8f0;background:#f8fafc;cursor:pointer;font-size:12.5px;font-weight:600;color:#64748b;transition:all .15s;">
-                  <input type="radio" name="ct-probation-basis" id="ct-prob-basis-minwage" value="minwage" onchange="onProbationBasisChange()" style="accent-color:#d97706;width:14px;height:14px;" />
-                  <i class="fas fa-balance-scale" style="font-size:11px;color:#64748b;"></i>
-                  최저임금 대비 요율
-                </label>
-                <label id="ct-prob-basis-label-direct" style="display:flex;align-items:center;gap:7px;padding:8px 14px;border-radius:8px;border:1.5px solid #e2e8f0;background:#f8fafc;cursor:pointer;font-size:12.5px;font-weight:600;color:#64748b;transition:all .15s;">
-                  <input type="radio" name="ct-probation-basis" id="ct-prob-basis-direct" value="direct" onchange="onProbationBasisChange()" style="accent-color:#d97706;width:14px;height:14px;" />
-                  <i class="fas fa-pen" style="font-size:11px;color:#64748b;"></i>
-                  직접 입력
-                </label>
-              </div>
-            </div>
-            <div class="form-grid" style="gap:10px;">
-              <div class="form-group">
-                <label>수습기간 <span style="color:#ef4444;font-weight:900;">*</span></label>
-                <select id="ct-probation-months" onchange="_autoCalcProbationEndDate()">
-                  <option value="">-- 선택 --</option>
-                  <option value="1">1개월</option>
-                  <option value="2">2개월</option>
-                  <option value="3">3개월</option>
-                  <option value="4">4개월</option>
-                  <option value="5">5개월</option>
-                  <option value="6">6개월</option>
-                </select>
-              </div>
-              <div class="form-group"></div>
-              <!-- % 행: salary/minwage 기준일 때만 표시 -->
-              <div class="form-group" id="ct-prob-pct-row">
-                <label id="ct-prob-pct-label">수습 임금 (약정 보수의 %) <span style="color:#ef4444;font-weight:900;">*</span></label>
-                <div style="display:flex;align-items:center;gap:6px;">
-                  <input type="number" id="ct-probation-pct" min="0" max="200" step="1" value="80" oninput="calcProbationFromPct()" style="flex:1;" />
-                  <span style="font-size:12px;color:#92400e;font-weight:600;">%</span>
-                </div>
-              </div>
-              <!-- 금액 행: 항상 표시, direct일 때 직접 수정 가능 -->
-              <div class="form-group">
-                <label id="ct-prob-amt-label">수습 임금 (월 금액) <span style="color:#ef4444;font-weight:900;">*</span></label>
-                <div style="display:flex;align-items:center;gap:6px;">
-                  <input type="number" id="ct-probation-amt" min="0" step="1000" placeholder="0" oninput="calcProbationFromAmt()" style="flex:1;" />
-                  <span style="font-size:12px;color:#92400e;font-weight:600;">원</span>
-                </div>
-              </div>
-              <div class="form-group full" style="margin-top:2px;">
-                <div id="ct-prob-info-box" style="font-size:11px;color:#a16207;background:#fef9c3;border-radius:6px;padding:6px 10px;">
-                  <i class="fas fa-info-circle" style="margin-right:4px;"></i><span id="ct-prob-info-text">월 약정임금 기준으로 계산됩니다. %를 입력하면 금액이, 금액을 입력하면 %가 자동 계산됩니다.</span>
-                </div>
-              </div>
-              <!-- 최저임금 위반 경고 상자 (정규직수습+minwage/direct, 계약직수습+direct 조건에서 표시) -->
-              <div class="form-group full" id="ct-prob-minwage-warning-row" style="display:none;margin-top:4px;">
-                <div id="ct-prob-minwage-warning-box" style="border-radius:7px;padding:9px 12px;font-size:11.5px;line-height:1.7;">
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
         <div class="form-group full"><label>특이사항</label><input type="text" id="ct-note" /></div>
       </div>

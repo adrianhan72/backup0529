@@ -459,7 +459,6 @@ function generateContractHTMLFromData(c, emp, co){
       <div class="doc-section-title">__ART_PROB__</div>
       <table class="info-table">
         <colgroup><col style="width:32%"><col style="width:68%"></colgroup>
-        ${row('수습기간', `${probStartKr} ~ ${probEndDate} (${probMonths}개월)`)}
         ${row('수습 임금 (월)', `<strong>${fmt(probAmt)}원</strong> (약정임금의 ${probPct}%)`)}
       </table>
       <div class="doc-probation-box">
