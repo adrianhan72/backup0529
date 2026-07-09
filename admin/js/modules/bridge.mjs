@@ -25,13 +25,15 @@ export const isDataReady      = () => typeof window._dataReady !== 'undefined' &
 export const isHeavyDataReady = () => typeof window._heavyDataReady !== 'undefined' && window._heavyDataReady;
 
 // ── 글로벌 함수 참조 ──
-export const callGlobal = (name, ...args) => {
-  const fn = window[name];
-  if (typeof fn === 'function') return fn(...args);
-  return null;
-};
-
-export const hasGlobal = (name) => typeof window[name] === 'function';
+export { initBridgeModule };
 
 // ── 자주 사용되는 조합 ──
 // (개별 모듈에서 import { isCompanyActive } from './utils.mjs' 와 조합 사용)
+
+// ── 초기화 ──
+function initBridgeModule() {
+  console.log('[ESM Bridge] 브릿지 모듈 초기화');
+}
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initBridgeModule);
+else initBridgeModule();

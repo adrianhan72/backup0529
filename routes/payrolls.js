@@ -3,7 +3,10 @@
  */
 module.exports = function(db) {
   const { Router } = require('express');
+  const { authMiddleware } = require('../middleware/auth');
   const router = Router();
+
+  router.use(authMiddleware);
 
   router.get('/', (req, res) => {
     try { res.json(db.payrolls.find(req.query)); }

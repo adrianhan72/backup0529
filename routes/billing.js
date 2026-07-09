@@ -7,7 +7,10 @@
  */
 module.exports = function(db) {
   const { Router } = require('express');
+  const { authMiddleware } = require('../middleware/auth');
   const router = Router();
+
+  router.use(authMiddleware);
 
   // ── 청구서 ──
   router.get('/', (req, res) => {

@@ -11,7 +11,10 @@
  */
 module.exports = function(db) {
   const { Router } = require('express');
+  const { authMiddleware } = require('../middleware/auth');
   const router = Router();
+
+  router.use(authMiddleware);
 
   // 목록 (필터 지원)
   router.get('/', (req, res) => {
@@ -74,15 +77,14 @@ module.exports = function(db) {
       const original = db.contracts.findById(req.params.id);
       if (!original) return res.status(404).json({ error: '원본 계약을 찾을 수 없습니다' });
 
+      // 갱신 계약 생성 (민감 컬럼 제외)
+      const { id, created_at, updated_at, signed_file_data, signed_file_name, consent_file_data, consent_file_name, ...safeFields } = original;
       const newContract = {
-        ...original,
-        id: undefined,
+        ...safeFields,
         status: 'renewal_pending',
         previous_contract_id: req.params.id,
         ...req.body,
       };
-      delete newContract.created_at;
-      delete newContract.updated_at;
 
       const result = db.contracts.insert(newContract);
       res.status(201).json(result);

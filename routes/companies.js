@@ -12,7 +12,10 @@
  */
 module.exports = function(db) {
   const { Router } = require('express');
+  const { authMiddleware } = require('../middleware/auth');
   const router = Router();
+
+  router.use(authMiddleware);
 
   // ── 목록 ──
   router.get('/', (req, res) => {
@@ -93,7 +96,7 @@ module.exports = function(db) {
   // ── 수정 ──
   router.patch('/:id', (req, res) => {
     try {
-      const result = db.companies.patch(req.params.id, req.body);
+      db.companies.patch(req.params.id, req.body);
       res.json({ success: true, data: db.companies.findById(req.params.id) });
     } catch (e) {
       res.status(500).json({ error: e.message });
