@@ -20,13 +20,7 @@ const db = new DB(path.join(ROOT, 'data', 'app.db'));
 app.use(require('./middleware/cors')());
 app.use(express.json({ limit: '10mb' }));
 
-// ── Rate Limiting ──
-const loginLimiter = rateLimit({ windowMs: 60*1000, max: 5, message: { error: '로그인 시도 횟수 초과. 1분 후 다시 시도하세요.' } });
-const apiLimiter   = rateLimit({ windowMs: 60*1000, max: 100, message: { error: '요청 횟수 초과' } });
-app.use('/api/auth/login', loginLimiter);
-app.use('/api', apiLimiter);
-
-// ── Health Check ──
+// ── Health Check (Rate Limit 제외) ──
 app.get('/api/health', (req, res) => {
   try {
     db.connection.raw.prepare('SELECT 1').get();
@@ -35,6 +29,12 @@ app.get('/api/health', (req, res) => {
     res.status(503).json({ status: 'error', db: 'disconnected', error: e.message });
   }
 });
+
+// ── Rate Limiting ──
+const loginLimiter = rateLimit({ windowMs: 60*1000, max: 5, message: { error: '로그인 시도 횟수 초과. 1분 후 다시 시도하세요.' } });
+const apiLimiter   = rateLimit({ windowMs: 60*1000, max: 100, message: { error: '요청 횟수 초과' } });
+app.use('/api/auth/login', loginLimiter);
+app.use('/api', apiLimiter);
 
 // ── 라우트 ──
 app.use('/api/auth',        require('./routes/auth')(db));

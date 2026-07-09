@@ -79,6 +79,9 @@ module.exports = function(db) {
   // ── 생성 ──
   router.post('/', (req, res) => {
     try {
+      if (!req.body.company_name || !req.body.company_name.trim()) {
+        return res.status(400).json({ error: '고객사명은 필수입니다' });
+      }
       const result = db.companies.insert(req.body);
       res.status(201).json(result);
     } catch (e) {
