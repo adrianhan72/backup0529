@@ -1,4 +1,4 @@
--- SQLite Schema (auto-generated from DB)
+-- SQLite Schema
 -- Updated: 2026-07-09
 
 PRAGMA journal_mode = WAL;
