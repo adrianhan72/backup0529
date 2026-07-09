@@ -11,6 +11,7 @@ import './payroll.mjs';
 import './payroll-input.mjs';
 import './standards.mjs';
 import './wage-ledger.mjs';
+import './badges.mjs';          // Phase 3-3: updateMenuBadges ESM 오버라이드
 import './severance.mjs';
 import './loader.mjs';
 import './helpers.mjs';
