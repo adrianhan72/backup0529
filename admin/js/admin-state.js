@@ -6,7 +6,7 @@ var allLeaveLedgers=[];   // 연차휴가 관리대장 캐시 (annual_leave_ledg
 var allWLNotifications=[];   // 임금대장 미확인 알림 캐시
 let editId={company:null,contract:null};
 const ITEMS=10;
-let pages={emp:1,cont:1,pay:1};
+var pages={emp:1,cont:1,pay:1};
 
 // ─── 공통 헬퍼: 실질 이용중 고객사 판별 ──────────────────────────────────────
 // DB status=ACTIVE이더라도 contract_end_date가 오늘 이하면 해지 완료로 간주
@@ -71,12 +71,12 @@ async function _deleteDraft(id, table, label){
 
 // ─── 전역 필터·선택 상태 (showPage/init에서 참조하므로 최상단 선언) ───
 
-let currentContCompanyId = null;
-let currentPayCompanyId = null;
-let currentLsCompanyId = null;  // ← showPage에서 참조하므로 반드시 최상단 선언
+var currentContCompanyId = null;
+var currentPayCompanyId = null;
+var currentLsCompanyId = null;  // ← showPage에서 참조하므로 반드시 최상단 선언
 // ─── 크로스 페이지 공유 고객사 (어느 페이지에서 선택해도 다른 페이지에 자동 반영) ───
-let currentGlobalCompanyId = null;
-let currentGlobalCompanyName = '';
+var currentGlobalCompanyId = null;
+var currentGlobalCompanyName = '';
 
 
 // ─── PAYROLL INPUT MODAL ───
