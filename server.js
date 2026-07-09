@@ -2,11 +2,12 @@
  * 인사톡 노무톡 - Express 서버 (SQLite 버전)
  * 대화인사노무파트너스
  *
- * v2.38.0 — JWT + 라우트 분리, BaseRepository 기반
+ * v2.39.0 — Rate Limit + Health Check
  */
-const express = require('express');
-const path    = require('path');
-const { DB }  = require('./lib/database');
+const express    = require('express');
+const path       = require('path');
+const rateLimit  = require('express-rate-limit');
+const { DB }     = require('./lib/database');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -18,6 +19,22 @@ const db = new DB(path.join(ROOT, 'data', 'app.db'));
 // ── 미들웨어 ──
 app.use(require('./middleware/cors')());
 app.use(express.json({ limit: '10mb' }));
+
+// ── Rate Limiting ──
+const loginLimiter = rateLimit({ windowMs: 60*1000, max: 5, message: { error: '로그인 시도 횟수 초과. 1분 후 다시 시도하세요.' } });
+const apiLimiter   = rateLimit({ windowMs: 60*1000, max: 100, message: { error: '요청 횟수 초과' } });
+app.use('/api/auth/login', loginLimiter);
+app.use('/api', apiLimiter);
+
+// ── Health Check ──
+app.get('/api/health', (req, res) => {
+  try {
+    db.connection.raw.prepare('SELECT 1').get();
+    res.json({ status: 'ok', uptime: process.uptime(), db: 'connected', memory: process.memoryUsage().rss, version: '2.39.0', timestamp: new Date().toISOString() });
+  } catch (e) {
+    res.status(503).json({ status: 'error', db: 'disconnected', error: e.message });
+  }
+});
 
 // ── 라우트 ──
 app.use('/api/auth',        require('./routes/auth')(db));
