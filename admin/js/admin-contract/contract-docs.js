@@ -744,6 +744,11 @@ async function finalSaveContract(){
   setContractStep(3);
   document.getElementById('contract-preview-modal').classList.remove('open');
   try { await saveContract(); } catch(e){ console.error('[finalSaveContract] saveContract 오류:', e); toast('저장 중 오류가 발생했습니다: ' + e.message, 'error'); }
+  // 모달 닫기 + 페이지 새로고침
+  closeModal('contract-modal');
+  await loadContracts(); await loadEmployees();
+  renderContracts(); renderDashboard();
+  toast('근로계약이 등록되었습니다.', 'success');
 }
 
 // ── 인쇄 ──
