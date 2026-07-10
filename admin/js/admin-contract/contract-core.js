@@ -434,6 +434,9 @@ function openContractModal(id=null, preCompanyId=null){
   if(_bulkBar) _bulkBar.style.display = '';
   document.getElementById('ct-terminate-panel').style.display = 'none';
   document.getElementById('ct-renew-panel').style.display = 'none';
+  // 신규 등록/수정 모드: 첨부서류 섹션 숨김 (계약 등록 후 별도 업로드)
+  const _filesSectionInit = document.getElementById('ct-files-section');
+  if(_filesSectionInit) _filesSectionInit.style.display = 'none';
   const _amendPanelInit = document.getElementById('ct-amend-panel');
   if(_amendPanelInit) _amendPanelInit.style.display = 'none';
   const _cftPanelInit = document.getElementById('ct-fixed-terminate-panel');
