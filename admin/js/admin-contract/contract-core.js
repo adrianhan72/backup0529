@@ -536,7 +536,7 @@ function openContractModal(id=null, preCompanyId=null){
     { const _co = preCompanyId ? (allCompanies||[]).find(x=>x.id===preCompanyId) : null;
       const _nameEl = document.getElementById('ct-company-name'); if(_nameEl) _nameEl.textContent = _co?.company_name || ''; }
     // 고객사 급여산정기간·급여일 기본값 자동 채움
-    if(preCompanyId){ _autoFillCTPeriod(); _setCtPayDayDefault(preCompanyId); }
+    if(preCompanyId){ _autoFillCTPeriod(); _setCtPayDayDefault(preCompanyId); _suggestEmpNo(preCompanyId); }
     // 신규 모드: 프리셋 고객사의 allowance_config 적용 (값 초기화 포함)
     { const _newCo = preCompanyId ? (allCompanies||[]).find(x=>x.id===preCompanyId) : null;
       let _newCfg = _newCo?.allowance_config ?? null;

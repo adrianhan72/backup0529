@@ -160,6 +160,20 @@ function calcAnnualLeaveDays(hireDateStr, basisType, contractStartStr){
 }
 
 // 현재 폼의 입사일·고객사 정보를 읽어 연차일수 자동 계산 후 필드에 반영
+
+/** 사원번호 추천: 해당 회사 최대 사원번호 + 1 (해지/만료 포함) */
+function _suggestEmpNo(coId){
+  const input = document.getElementById('ct-em-empno');
+  if(!input || !coId) return;
+  let max = 0;
+  for (const emp of allEmployees) {
+    if (emp.company_id !== coId) continue;
+    const num = parseInt(emp.employee_number);
+    if (!isNaN(num) && num > max) max = num;
+  }
+  input.placeholder = `추천: ${String(max + 1).padStart(4, '0')}`;
+}
+
 /** 고객사 선택 시 ct-pay-period 셀렉트에 기본값 자동 세팅 */
 function _autoFillCTPeriod(){
   const coId = document.getElementById('ct-company')?.value || currentContCompanyId;
@@ -1458,6 +1472,9 @@ function onCtCompanyChange(){
     applyCTAllowanceConfig(null, true);
     return;
   }
+
+  // 사원번호 placeholder 추천
+  _suggestEmpNo(coId);
 
   let cfg = null;
   if(!isNewModeForCompany && startVal){
