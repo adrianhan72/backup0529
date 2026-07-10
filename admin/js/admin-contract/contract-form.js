@@ -1354,7 +1354,7 @@ function applyCTAllowanceConfig(cfg, clearValues = false){
         // 보육수당: 금액 + 부양가족 수 모두 초기화
         setAmountVal('ct-childcare', 0);
         const depEl = document.getElementById('ct-childcare-dependents');
-        if(depEl) depEl.value = 1;
+        if(depEl) depEl.value = 0;
       } else {
         const inputId = rowId.replace('ct-row-', 'ct-');
         setAmountVal(inputId, 0);
@@ -1695,7 +1695,7 @@ function _calcFixedOtFromPay(){
   const hw  = _getContractHourlyWage();
   const pay = getAmountVal('ct-fixed-ot-pay');
   const hEl = document.getElementById('ct-fixed-ot-hours');
-  if(hw > 0 && pay > 0 && hEl) hEl.value = Math.round(pay / hw / 1.5 * 10) / 10;
+  if(hw > 0 && pay > 0 && hEl) hEl.value = Math.round(pay / hw / 1.5 * 10000) / 10000;
 }
 function _calcFixedNightFromHours(){
   const hw = _getContractHourlyWage();
@@ -1706,7 +1706,7 @@ function _calcFixedNightFromPay(){
   const hw  = _getContractHourlyWage();
   const pay = getAmountVal('ct-fixed-night-pay');
   const hEl = document.getElementById('ct-fixed-night-hours');
-  if(hw > 0 && pay > 0 && hEl) hEl.value = Math.round(pay / hw / 0.5 * 10) / 10;
+  if(hw > 0 && pay > 0 && hEl) hEl.value = Math.round(pay / hw / 0.5 * 10000) / 10000;
 }
 function _calcFixedHolFromHours(){
   const hw = _getContractHourlyWage();
@@ -1717,7 +1717,7 @@ function _calcFixedHolFromPay(){
   const hw  = _getContractHourlyWage();
   const pay = getAmountVal('ct-fixed-hol-pay');
   const hEl = document.getElementById('ct-fixed-hol-hours');
-  if(hw > 0 && pay > 0 && hEl) hEl.value = Math.round(pay / hw / 1.5 * 10) / 10;
+  if(hw > 0 && pay > 0 && hEl) hEl.value = Math.round(pay / hw / 1.5 * 10000) / 10000;
 }
 
 /** ── 근로계약 관리 알림 카드 렌더링 ── */

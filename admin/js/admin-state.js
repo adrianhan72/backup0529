@@ -498,32 +498,33 @@ function formatComma(raw){
 }
 // input[data-amount] 요소의 oninput 핸들러: 커서 위치 유지 + 쉼표 삽입
 function onAmountInput(el, calcFn){
-  const raw = el.value.replace(/,/g,'');
-  if(raw===''||raw==='-'){el.value=raw;if(calcFn)calcFn();return;}
+  const raw = el.value.replace(/,/g,'').replace(/원$/,'');
+  if(raw===''||raw==='-'||raw==='0'){el.value=raw;if(calcFn)calcFn();return;}
   const isNeg = raw.startsWith('-');
   const digits = raw.replace(/[^0-9]/g,'');
   if(!digits){el.value=isNeg?'-':'';if(calcFn)calcFn();return;}
-  const formatted = (isNeg?'-':'')+parseInt(digits,10).toLocaleString('ko-KR');
+  const formatted = (isNeg?'-':'')+parseInt(digits,10).toLocaleString('ko-KR')+'원';
   const selEnd = el.selectionEnd;
   const oldLen = el.value.length;
   el.value = formatted;
-  // 커서 위치 보정 (쉼표 개수 변화 반영)
   const diff = formatted.length - oldLen;
-  try{ el.setSelectionRange(selEnd+diff, selEnd+diff); }catch(e){}
+  // 커서 위치 보정 (원 제외한 위치로)
+  const cursorPos = Math.min(selEnd+diff, formatted.length-1);
+  try{ el.setSelectionRange(cursorPos, cursorPos); }catch(e){}
   if(calcFn) calcFn();
 }
-// input[data-amount] 요소에 값 세팅 (숫자 → 쉼표 포맷)
+// input[data-amount] 요소에 값 세팅 (숫자 → 쉼표+원 포맷)
 function setAmountVal(id, num){
   const el = document.getElementById(id);
   if(!el) return;
   const n = Math.round(num||0);
-  el.value = n===0 ? '' : n.toLocaleString('ko-KR');
+  el.value = n===0 ? '' : n.toLocaleString('ko-KR')+'원';
 }
-// input[data-amount] 요소에서 숫자 읽기 (쉼표 제거 후 parseFloat)
+// input[data-amount] 요소에서 숫자 읽기 (쉼표·원 제거 후 parseFloat)
 function getAmountVal(id){
   const el = document.getElementById(id);
   if(!el) return 0;
-  return parseFloat(el.value.replace(/,/g,''))||0;
+  return parseFloat(el.value.replace(/,/g,'').replace(/원$/,''))||0;
 }
 
 function toast(msg,type='success'){

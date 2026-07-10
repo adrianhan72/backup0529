@@ -484,7 +484,7 @@ function openContractModal(id=null, preCompanyId=null){
   setAmountVal('ct-communication',0); setAmountVal('ct-fitness',0);
   setAmountVal('ct-self-dev',0); setAmountVal('ct-book',0); setAmountVal('ct-overseas',0);
   setAmountVal('ct-regular-bonus',0);
-  setAmountVal('ct-childcare',0); { const _ccDep=document.getElementById('ct-childcare-dependents'); if(_ccDep) _ccDep.value=1; }
+  setAmountVal('ct-childcare',0); { const _ccDep=document.getElementById('ct-childcare-dependents'); if(_ccDep) _ccDep.value=0; }
   setAmountVal('ct-hourly-input',0);
   // 고정 연장/야간/휴일근로수당 초기화
   setAmountVal('ct-fixed-ot-pay',    0); setAmountVal('ct-fixed-night-pay', 0); setAmountVal('ct-fixed-hol-pay',   0);
@@ -752,7 +752,7 @@ function openContractModal(id=null, preCompanyId=null){
       setAmountVal('ct-regular-bonus', c.regular_bonus||0);
       // 보육수당 복원
       setAmountVal('ct-childcare', c.childcare_allowance||0);
-      { const _ccDep=document.getElementById('ct-childcare-dependents'); if(_ccDep) _ccDep.value=c.childcare_dependents||1; }
+      { const _ccDep=document.getElementById('ct-childcare-dependents'); if(_ccDep) _ccDep.value=c.childcare_dependents||0; }
       // 급여 산정기간 복원
       _ctPeriodRestore(c.pay_period||'', c.pay_period_month||null, c.pay_period_day!=null?c.pay_period_day:null);
       const _pdEl = document.getElementById('ct-pay-day');
@@ -2036,7 +2036,7 @@ async function openAmendPreview(){
     overseas_allowance: ovseas_, overseas_pay_type: _getCTPayTypeVal('overseas'),
     regular_bonus: regBonus_,
     childcare_allowance: getAmountVal('ct-childcare')||0,
-    childcare_dependents: parseInt(document.getElementById('ct-childcare-dependents')?.value||1)||1,
+    childcare_dependents: parseInt(document.getElementById('ct-childcare-dependents')?.value||0)||0,
     pay_period: document.getElementById('ct-pay-period')?.value.trim() || '',
     pay_period_month: document.getElementById('ct-pay-period-month-hidden')?.value || null,
     pay_period_day: parseInt(document.getElementById('ct-pay-period-day-hidden')?.value) || null,
