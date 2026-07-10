@@ -268,16 +268,16 @@ function loadPITargetList(){
       const deptPos  = isVirtual ? (emp.position || '') : [emp.department, emp.position].filter(v=>v&&v.trim()).join('/');
 
       // ④-0 계약상태 배지
-      const _cs = actualContract ? (actualContract.status || '활성') : '';
+      const _cs = actualContract ? (actualContract.status || CONTRACT_STATUS.ACTIVE) : '';
       let contractStatusBadge;
       if(!actualContract){
         contractStatusBadge = `<span style="display:inline-block;background:#f5f3ff;color:#7c3aed;border:1px solid #c4b5fd;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">별도계약</span>`;
-      } else if(_cs === '서류미비'){
+      } else if(_cs === CONTRACT_STATUS.DOCS_INCOMPLETE){
         contractStatusBadge = `<span style="display:inline-block;background:#dcfce7;color:#15803d;border:1px solid #86efac;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;margin-right:3px;">유효</span>`
           + `<span style="display:inline-block;background:#fff7ed;color:#c2410c;border:1px solid #fdba74;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">서류미비</span>`;
-      } else if(_cs === '활성' || _cs === 'active'){
+      } else if(CONTRACT_ACTIVE_STATUSES.includes(_cs)){
         contractStatusBadge = `<span style="display:inline-block;background:#dcfce7;color:#15803d;border:1px solid #86efac;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">유효</span>`;
-      } else if(_cs === '계약예정'){
+      } else if(_cs === CONTRACT_STATUS.PENDING){
         contractStatusBadge = `<span style="display:inline-block;background:#e0e7ff;color:#3730a3;border:1px solid #a5b4fc;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">계약예정</span>`;
       } else {
         contractStatusBadge = `<span style="display:inline-block;background:#f3f4f6;color:#374151;border:1px solid #d1d5db;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">${_cs}</span>`;

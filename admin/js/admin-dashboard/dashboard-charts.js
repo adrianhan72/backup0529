@@ -61,7 +61,7 @@ function renderPIAllDraftBanner(){
     const yrMo   = (p.pay_year && p.pay_month) ? `${p.pay_year}년 ${p.pay_month}월` : '';
     const empCat = typeof contractTypeLabel === 'function' ? contractTypeLabel(emp?.employment_category) : (emp?.employment_category || '');
     // 급여일: 근로계약서 pay_day > 급여레코드 pay_date > 고객사 pay_day
-    const ct = (allContracts||[]).find(c => c.employee_id === p.employee_id && c.company_id === p.company_id && !c.is_draft && (c.status==='active'||c.status==='활성'));
+    const ct = (allContracts||[]).find(c => c.employee_id === p.employee_id && c.company_id === p.company_id && !c.is_draft && CONTRACT_ACTIVE_STATUSES.includes(c.status));
     const ctPayDay = ct?.pay_day;
     const coPayDay = co?.pay_day;
     const fallbackDay = p.pay_date ? (p.pay_date.includes('-') ? parseInt(p.pay_date.slice(8)) : parseInt(p.pay_date)) : 0;
@@ -277,8 +277,8 @@ function renderCompanyTrendChart(){
     allData.push(monthCoIds.length);
     under5Data.push(monthCoIds.filter(id => (coMeta[id]?.empCount || 0) < 5).length);
     over5Data.push(monthCoIds.filter(id => (coMeta[id]?.empCount || 0) >= 5).length);
-    activeData.push(monthCoIds.filter(id => coMeta[id]?.status === 'active').length);
-    inactiveData.push(monthCoIds.filter(id => coMeta[id]?.status === 'inactive').length);
+    activeData.push(monthCoIds.filter(id => coMeta[id]?.status === COMPANY_STATUS.ACTIVE).length);
+    inactiveData.push(monthCoIds.filter(id => coMeta[id]?.status === COMPANY_STATUS.INACTIVE).length);
   }
 
   const ctx = document.getElementById('company-trend-chart');

@@ -203,7 +203,7 @@ function renderContracts(){
       if(ALERT_ONLY_LABELS.has(label)) return false;
     }
     // 서류미비만 보기 필터 (status가 서류미비이거나 실제 파일이 누락된 경우)
-    if(filterDocsOnly && c.status!=='docs_incomplete' && c.status!=='서류미비' && !docsIncomplete) return false;
+    if(filterDocsOnly && c.status !== CONTRACT_STATUS.DOCS_INCOMPLETE && !docsIncomplete) return false;
     return true;
   }).sort((a,b)=>getEmpName(a.employee_id).localeCompare(getEmpName(b.employee_id),'ko'));
   const paged=f.slice((pages.cont-1)*ITEMS,pages.cont*ITEMS);
@@ -1187,6 +1187,55 @@ function _validateEmpNoUniqueness(empNo, companyId, selfEmpId, newContractStart,
 }
 
 /**
+ * 휴대폰번호 중복 검사
+ * 현재 유효상태(active, docs_incomplete)이거나 예정(pending, renewal_pending,
+ * terminate_pending) 상태인 근로계약의 휴대폰번호 중 중복이 있는지 확인
+ *
+ * @param {string} phoneDigits - 검사할 휴대폰번호 (숫자만, 11자리)
+ * @param {string} companyId   - 현재 고객사 ID
+ * @param {string|null} selfEmpId - 수정 모드 시 현재 직원 ID (자기 자신 제외)
+ * @returns {{ ok: boolean, msg: string }}
+ */
+function _validatePhoneUniqueness(phoneDigits, companyId, selfEmpId) {
+  if(!phoneDigits || !companyId) return { ok: true, msg: '' };
+  if(phoneDigits.length < 10) return { ok: true, msg: '' }; // 불완전한 번호는 통과
+
+  // 유효·예정 상태 정의
+  const CHECK_STATUSES = [
+    CONTRACT_STATUS.ACTIVE,
+    CONTRACT_STATUS.DOCS_INCOMPLETE,
+    CONTRACT_STATUS.PENDING,
+    CONTRACT_STATUS.RENEWAL_PENDING,
+    CONTRACT_STATUS.TERMINATE_PENDING,
+  ];
+
+  // 1. 같은 전화번호를 가진 직원 찾기 (자기 자신 제외)
+  const samePhoneEmps = allEmployees.filter(e =>
+    e.id !== selfEmpId &&
+    e.phone &&
+    e.phone.replace(/[^0-9]/g, '') === phoneDigits
+  );
+
+  if(!samePhoneEmps.length) return { ok: true, msg: '' };
+
+  // 2. 그 직원들 중 유효·예정 상태의 계약이 있는지 확인
+  for(const emp of samePhoneEmps) {
+    const hasActiveContract = allContracts.some(c =>
+      c.employee_id === emp.id &&
+      CHECK_STATUSES.includes(c.status)
+    );
+    if(hasActiveContract) {
+      return {
+        ok: false,
+        msg: `이미 이 휴대폰번호로 등록된 계약이 있습니다.`
+      };
+    }
+  }
+
+  return { ok: true, msg: '' };
+}
+
+/**
  * 신규 계약 모드: 동일 직원(이름·주민번호 동일)이 이전에 같은 번호를 사용했는지 연속성 검사
  * - 이전 계약과 새 계약 사이 공백이 있으면 → 재발행 필요
  * - 이전 계약 고용형태와 다르면 → 재발행 필요
@@ -1352,13 +1401,13 @@ function calcContractStatusDisplay(c, today){
   // 만료예정·종료예정은 레거시 값 → 계약유효로 표시 (유효한 계약)
   if(s==='만료예정'||s==='종료예정') return {badge:'badge-green', label:'유효', docsIncomplete};
   // 서류미비는 독립된 상태가 아님 — 유효/만료/해지 등 실제 상태를 유지하고 docsIncomplete 플래그로만 관리
-  if(s==='서류미비'||s==='docs_incomplete'){
+  if(s === CONTRACT_STATUS.DOCS_INCOMPLETE){
     // DB에 남아있는 레거시 값 → 유효로 폴백 (실제 상태는 DB 정리 완료)
     if(start && start > today) return {badge:'badge-indigo',  label:'계약예정', docsIncomplete:true};
     return {badge:'badge-green', label:'유효', docsIncomplete:true};
   }
   // 활성/유효 상태 — 서류와 무관하게 유효 계약으로 처리
-  if(s==='활성'||s==='유효'||s==='active'){
+  if(CONTRACT_ACTIVE_STATUSES.includes(s)){
     if(start && start > today) return {badge:'badge-amber', label:'갱신예정', docsIncomplete};
     // 계약직/일용직: 유효 종료일(terminate_date 우선, 없으면 contract_end)이 지났으면 만료 처리
     const ct = (c.contract_type || '').toLowerCase();

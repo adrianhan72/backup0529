@@ -2142,6 +2142,24 @@ async function saveDraftContract(reason){
   // ── 신규 직원인 경우 먼저 직원 생성 (임시저장도 직원 DB에 저장) ──
   if(isNew && !empId){
     const newEmpNo = document.getElementById('ct-em-empno')?.value.trim() || '';
+    const newEmpName = document.getElementById('ct-em-name')?.value.trim() || '';
+
+    // 사원번호·이름 누락 검사 (임시저장 최소 필수 입력)
+    if(!newEmpNo && !newEmpName){
+      toast('사원번호와 이름을 입력해 주세요.', 'error');
+      return;
+    }
+    if(!newEmpNo){
+      toast('사원번호를 입력해 주세요.', 'error');
+      document.getElementById('ct-em-empno')?.focus();
+      return;
+    }
+    if(!newEmpName){
+      toast('이름을 입력해 주세요.', 'error');
+      document.getElementById('ct-em-name')?.focus();
+      return;
+    }
+
     // 동일 사번 직원이 이미 있으면 재사용 (이전 저장 시도 실패 후 재시도 대응)
     const existingEmp = newEmpNo
       ? (allEmployees||[]).find(e => e.company_id === coId && e.employee_number === newEmpNo)
@@ -2734,6 +2752,12 @@ function _ctValidate(){
       } else {
         const _phoneChk = _validatePhoneNumber(_phoneVal);
         if(!_phoneChk.ok) _ctMarkError('ct-em-phone', '휴대전화 형식 오류', errors);
+        else {
+          // 휴대폰번호 중복 검사 (유효·예정 계약 기준)
+          const _phoneDigits = _phoneVal.replace(/[^0-9]/g, '');
+          const _phoneUniq = _validatePhoneUniqueness(_phoneDigits, coId, null);
+          if(!_phoneUniq.ok) _ctMarkError('ct-em-phone', _phoneUniq.msg, errors);
+        }
       }
     })();
     (function(){
@@ -2832,6 +2856,15 @@ function _ctValidate(){
       } else {
         const _phoneChkE = _validatePhoneNumber(_phoneValE);
         if(!_phoneChkE.ok) _ctMarkError('ct-edit-em-phone', '휴대전화 형식 오류', errors);
+        else {
+          // 휴대폰번호 중복 검사 (자기 자신 제외)
+          const _phoneDigitsE = _phoneValE.replace(/[^0-9]/g, '');
+          const _editEmpId = editId.contract
+            ? (allContracts.find(c => c.id === editId.contract)?.employee_id || '')
+            : '';
+          const _phoneUniqE = _validatePhoneUniqueness(_phoneDigitsE, coId, _editEmpId);
+          if(!_phoneUniqE.ok) _ctMarkError('ct-edit-em-phone', _phoneUniqE.msg, errors);
+        }
       }
     })();
     (function(){

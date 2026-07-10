@@ -373,7 +373,7 @@ function renderContCompanyList(){
   container.innerHTML = companies.map(c => {
     const isSelected = c.id === currentGlobalCompanyId;
     // 오늘 현재 유효한 계약 (활성 + 서류미비, 임시저장 제외)
-    const activeContracts = allContracts.filter(ct => ct.company_id === c.id && !ct.is_draft && (ct.status === '활성' || ct.status === 'active' || ct.status === '서류미비' || ct.status === 'docs_incomplete'));
+    const activeContracts = allContracts.filter(ct => ct.company_id === c.id && !ct.is_draft && CONTRACT_ACTIVE_STATUSES.includes(ct.status));
     const contractCnt = activeContracts.length;
     return `<button onclick="selectContCompany('${c.id}','${c.company_name.replace(/'/g,"\\'")}')"
       class="co-chip${isSelected?' selected':''}">

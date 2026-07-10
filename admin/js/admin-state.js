@@ -424,7 +424,7 @@ async function autoExpireFixedTermContracts(){
   const todayStr = new Date().toISOString().slice(0,10);
   const FIXED_TERM_TYPES = ['fixed_term', 'fixed_term_probation', 'daily', '계약직', '계약직 수습', '일용직'];
   const toExpire = allContracts.filter(c => {
-    if (c.status !== CONTRACT_STATUS.ACTIVE && c.status !== '활성') return false;
+    if (!CONTRACT_ACTIVE_STATUSES.includes(c.status)) return false;
     if (c.is_draft) return false;
     const effectiveEnd = c.terminate_date || c.contract_end || '';
     if (!effectiveEnd || effectiveEnd >= todayStr) return false;

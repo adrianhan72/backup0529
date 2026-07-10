@@ -159,7 +159,7 @@ async function _ctfUpload(type, contractId, inputEl){
 
     // ── 서류미비 → 유효 자동 전환 (양쪽 파일 모두 업로드 완료 시) ──
     const c = allContracts.find(x => x.id === contractId);
-    if(c && (c.status === 'docs_incomplete' || c.status === '서류미비')){
+    if(c && c.status === CONTRACT_STATUS.DOCS_INCOMPLETE){
       if(c.signed_file_data && c.consent_file_data){
         await fetch(`../tables/contracts/${contractId}`, {
           method: 'PATCH',

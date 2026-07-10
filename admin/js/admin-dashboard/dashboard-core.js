@@ -1150,7 +1150,7 @@ function renderDraftAlerts(){
       : '';
     const empCat = typeof contractTypeLabel === 'function' ? contractTypeLabel(emp?.employment_category) : (emp?.employment_category || '');
     // 급여일: 근로계약서 pay_day > 급여레코드 pay_date > 고객사 pay_day
-    const ct = (allContracts||[]).find(c => c.employee_id === p.employee_id && c.company_id === p.company_id && !c.is_draft && (c.status==='active'||c.status==='활성'));
+    const ct = (allContracts||[]).find(c => c.employee_id === p.employee_id && c.company_id === p.company_id && !c.is_draft && CONTRACT_ACTIVE_STATUSES.includes(c.status));
     const ctPayDay = ct?.pay_day;
     const coPayDay = co?.pay_day;
     const fallbackDay = p.pay_date ? (p.pay_date.includes('-') ? parseInt(p.pay_date.slice(8)) : parseInt(p.pay_date)) : 0;
