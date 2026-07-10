@@ -2657,6 +2657,13 @@ function _ctValidate(){
   const isNew     = !editId.contract && !_recontractEmpId;
   const isEditOrRecontract = !isNew;
 
+  // ── 공통: 근무시간표 (일괄적용 또는 개별 입력 필수) ──
+  const _schDays  = parseInt(document.getElementById('ct-days')?.value) || 0;
+  const _schHours = parseFloat(document.getElementById('ct-hours')?.value) || 0;
+  if(_schDays <= 0 || _schHours <= 0){
+    _ctMarkError('ct-schedule-table', '근무시간표 (일괄적용 또는 요일별 입력)', errors);
+  }
+
   // ── 공통: 회사 (모달 오픈 시 항상 설정됨) ──
   const coId = document.getElementById('ct-company').value;
 
