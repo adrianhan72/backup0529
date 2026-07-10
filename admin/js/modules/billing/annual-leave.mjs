@@ -7,12 +7,16 @@ import { CONTRACT_TYPE, CONTRACT_STATUS, COMPANY_STATUS, EMP_STATUS, CONTRACT_TY
 
 const _w = (name) => window[name];
 
+// CEN_PAGE_SIZE: company-notice.mjs와 공유 (원래 같은 전역 스코프)
+const CEN_PAGE_SIZE = 20;
+
 //  연차 관리 — 잔여 연차 조회 (page-annual-leave)
 //  + 사용촉진 발송 이력 (page-leave-promotion)
 // ==================================================================
 
 // ─── AL 페이지 전용 상태 ─────────────────────────────────────────
 let _alCompanyId   = '';    // 선택된 고객사 ID
+window._alCompanyId = '';   // cross-module bridge (admin-state.js loadHeavyData)
 let _alCompanyName = '';    // 선택된 고객사명
 let _alPage        = 1;     // 연차 테이블 현재 페이지
 const AL_PAGE_SIZE = 30;
@@ -1227,7 +1231,7 @@ export async function loadLeavePromotionHistory(force=false){
     // 고객사 필터 채우기
     _lpFillCompanyFilter();
   } catch(e){
-    console.error('[사용촉진 이력 조회 오류]', e);
+    /* DB 테이블 미존재: 빈 목록으로 조용히 처리 */
   }
 }
 

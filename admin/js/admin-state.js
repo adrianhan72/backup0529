@@ -4,7 +4,7 @@ var allCompanies=[], allEmployees=[], allContracts=[], allPayrolls=[], allBillin
 var allExecutives=[], allRelatedParties=[];   // 등기임원 / 특수관계인 급여대상자
 var allLeaveLedgers=[];   // 연차휴가 관리대장 캐시 (annual_leave_ledger 테이블 전체)
 var allWLNotifications=[];   // 임금대장 미확인 알림 캐시
-let editId={company:null,contract:null};
+var editId={company:null,contract:null};
 const ITEMS=10;
 var pages={emp:1,cont:1,pay:1};
 
@@ -106,7 +106,7 @@ function openPayrollInputModal(companyId){
 }
 
 // ─── 관리자 계정 캐시 ───
-let allAdminAccounts = [];   // { id, username, display_name } 목록
+var allAdminAccounts = [];   // { id, username, display_name } 목록
 
 async function loadAdminAccounts(){
   try{
@@ -175,8 +175,8 @@ function _closeDashLoadingModal(){
 })();
 
 // ─── INIT ───
-let _dataReady = false;       // 핵심 데이터 로드 완료
-let _heavyDataReady = false;  // 급여·청구 데이터 로드 완료
+var _dataReady = false;       // 핵심 데이터 로드 완료
+var _heavyDataReady = false;  // 급여·청구 데이터 로드 완료
 
 async function init(){
   try {
@@ -283,7 +283,7 @@ async function loadHeavyData(){
     }
     // 연차 관리 페이지가 열려 있고 고객사가 선택된 상태라면 테이블 재렌더링
     // (관리대장 데이터 + 급여 데이터 로드 완료 후 사용일수 반영)
-    if(_alCompanyId && document.getElementById('page-annual-leave')?.classList.contains('active')){
+    if(window._alCompanyId && document.getElementById('page-annual-leave')?.classList.contains('active')){
       renderAlTable();
     }
     // 좌측 메뉴 할일 배지 업데이트 (heavy 로드 완료 후 전체 데이터 확정)
@@ -354,7 +354,7 @@ async function loadCompanies(){
     return c;
   });
 }
-let allCompanyHistories=[];
+var allCompanyHistories=[];
 async function loadCompanyHistories(){
   const d=await api('../tables/company_history?limit=500');
   allCompanyHistories=(d.data||[]).map(h=>{
@@ -417,7 +417,7 @@ async function loadWLNotifications(){
 }
 
 // 대시보드 미발송 배너용 전체 발송 로그 캐시
-let _allSendLogs = [];
+var _allSendLogs = [];
 async function loadAllSendLogs(){
   const d = await api('../tables/payroll_send_logs?limit=500');
   _allSendLogs = d.data || [];
@@ -442,6 +442,11 @@ const won2=n=>Math.round(n||0).toLocaleString('ko-KR');
 const getCoName=id=>{const c=allCompanies.find(x=>x.id===id);return c?c.company_name:'-'};
 const getEmpName=id=>{const e=allEmployees.find(x=>x.id===id);if(e)return e.name;const ex=(allExecutives||[]).find(x=>x.id===id);if(ex)return ex.name;const rp=(allRelatedParties||[]).find(x=>x.id===id);if(rp)return rp.name;if(typeof id==='string'&&id.startsWith('rep_')){const parts=id.split('_');const idx=parseInt(parts.pop());const coId2=parts.join('_');const co2=(allCompanies||[]).find(c=>c.id===coId2);if(co2){let reps=[];try{reps=typeof co2.representatives==='string'?JSON.parse(co2.representatives):(co2.representatives||[]);}catch(e){}return (reps[idx]||{}).name||'-';}}return '-'};
 const empCatBadge=c=>(CAT_BADGE_CLS[c]||'badge-gray');
+
+// window 브릿지 (const → window 속성 미생성, .mjs _w() 패턴용)
+window.won2 = won2;
+window.getEmpName = getEmpName;
+window.empCatBadge = empCatBadge;
 
 // ─── 금액 입력 필드 포맷 유틸 ───
 // 숫자 문자열 → 천단위 쉼표 문자열 (음수 지원)

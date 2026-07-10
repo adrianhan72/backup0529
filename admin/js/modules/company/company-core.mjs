@@ -1404,7 +1404,7 @@ export async function _cmLoadExecutives(companyId) {
       id: r.id, name: r.name, position: r.position, phone: r.phone, id_number: r.id_number,
       bank_name: r.bank_name || '', bank_account: r.bank_account || '', bank_holder: r.bank_holder || ''
     }));
-  } catch(e) { console.error('[_cmLoadExecutives]', e); }
+  } catch(e) { /* DB 테이블 미존재: 조용히 처리 */ }
   _cmRenderExecutives();
 }
 
@@ -1418,7 +1418,7 @@ export async function _cmLoadRelated(companyId) {
       id: r.id, name: r.name, relationship: r.relationship, phone: r.phone, id_number: r.id_number,
       bank_name: r.bank_name || '', bank_account: r.bank_account || '', bank_holder: r.bank_holder || ''
     }));
-  } catch(e) { console.error('[_cmLoadRelated]', e); }
+  } catch(e) { /* DB 테이블 미존재: 조용히 처리 */ }
   _cmRenderRelated();
 }
 

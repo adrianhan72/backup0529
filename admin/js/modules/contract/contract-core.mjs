@@ -7,7 +7,7 @@ import { CONTRACT_TYPE, CONTRACT_STATUS, COMPANY_STATUS, EMP_STATUS, CONTRACT_TY
 
 const _w = (name) => window[name];
 
-﻿function _renderContAlertCards(){
+function _renderContAlertCards(){
   const wrap = document.getElementById('cont-alert-cards-wrap');
   if(!wrap || !currentContCompanyId) return;
 

@@ -7,7 +7,7 @@ import { CONTRACT_TYPE, CONTRACT_STATUS, COMPANY_STATUS, EMP_STATUS, CONTRACT_TY
 
 const _w = (name) => window[name];
 
-﻿// ─── 브랜드 서명 (모든 발송 메시지 하단 공통) ───
+// ─── 브랜드 서명 (모든 발송 메시지 하단 공통) ───
 const _BRAND_SIG = '─────────────────────\n인사톡 노무톡 · 대화인사노무파트너스';
 
 // ─── EMPLOYEES ───
@@ -235,7 +235,7 @@ export function _ctPeriodRestore(payPeriod, month, day){
 }
 
 export function autoFillAnnualLeave(){
-  const isEdit = !!(editId.contract || _recontractEmpId);
+  const isEdit = !!(window.editId.contract || window._recontractEmpId);
   const hireDateStr = isEdit
     ? (document.getElementById('ct-edit-em-hire')?.value || '')
     : (document.getElementById('ct-em-hire')?.value || '');
@@ -280,7 +280,7 @@ export function autoFillAnnualLeave(){
 
 export function toggleAnnualSal(){
   // 수정 모드(editId.contract 있음)이면 ct-type 기준, 신규이면 ct-em-category 기준
-  const rawCat = (editId.contract || _recontractEmpId)
+  const rawCat = (window.editId.contract || window._recontractEmpId)
     ? (document.getElementById('ct-type')?.value || '')
     : document.getElementById('ct-em-category').value;
   const cat = CONTRACT_TYPE_LEGACY_MAP[rawCat] || rawCat;
@@ -465,7 +465,7 @@ export function onProbationBasisChange(){
       const hireRaw = document.getElementById('ct-em-hire')?.value
         || document.getElementById('ct-start')?.value || '';
       const yr = hireRaw ? parseInt(hireRaw.slice(0,4)) : new Date().getFullYear();
-      const mw = (_allMinimumWages||[]).find(w => Number(w.year) === yr);
+      const mw = (window._allMinimumWages||[]).find(w => Number(w.year) === yr);
       const mwAmt = mw ? Number(mw.hourly_wage) : 0;
       const mwMonthly = mwAmt > 0 ? Math.round(mwAmt * 209) : 0;
       infoText.innerHTML = `${yr}년 최저시급 기준으로 계산됩니다.`
@@ -495,7 +495,7 @@ export function getProbationBase(){
       || document.getElementById('ct-em-hire')?.value
       || document.getElementById('ct-start')?.value || '';
     const yr = hireRaw ? parseInt(hireRaw.slice(0,4)) : new Date().getFullYear();
-    const mw = (_allMinimumWages||[]).find(w => Number(w.year) === yr);
+    const mw = (window._allMinimumWages||[]).find(w => Number(w.year) === yr);
     return mw ? Math.round(Number(mw.hourly_wage) * 209) : 0;
   }
   // 보수 대비: 월 약정임금(정규직) 또는 기본급(계약직)
@@ -559,7 +559,7 @@ export function _checkProbMinWageWarning(){
     || document.getElementById('ct-em-hire')?.value
     || document.getElementById('ct-start')?.value || '';
   const yr = hireRaw ? parseInt(hireRaw.slice(0,4)) : new Date().getFullYear();
-  const mw = (_allMinimumWages||[]).find(w => Number(w.year) === yr);
+  const mw = (window._allMinimumWages||[]).find(w => Number(w.year) === yr);
   const mwMonthly = mw ? Math.round(Number(mw.hourly_wage) * 209) : 0;
 
   if(mwMonthly <= 0){
@@ -666,7 +666,7 @@ export function _checkMinWageWarning(){
     || document.getElementById('ct-em-hire')?.value
     || document.getElementById('ct-start')?.value || '';
   const yr = hireRaw ? parseInt(hireRaw.slice(0,4)) : new Date().getFullYear();
-  const mw = (_allMinimumWages||[]).find(w => Number(w.year) === yr);
+  const mw = (window._allMinimumWages||[]).find(w => Number(w.year) === yr);
   if(!mw || Number(mw.hourly_wage) <= 0){ wRow.style.display='none'; _checkRegisterBtnState(); return; }
 
   const legalHourly  = Number(mw.hourly_wage);          // 법정 최저시급
@@ -1513,7 +1513,7 @@ export function _calcMonthlyStdHours(hpd, dpw){
 
 export function calcContractSalary(){
   // 수정 모드이면 ct-edit-em-category, 신규이면 ct-em-category 기준
-  const rawCat = (editId.contract || _recontractEmpId)
+  const rawCat = (window.editId.contract || window._recontractEmpId)
     ? (document.getElementById('ct-edit-em-category')?.value || document.getElementById('ct-em-category').value)
     : document.getElementById('ct-em-category').value;
   const cat = CONTRACT_TYPE_LEGACY_MAP[rawCat] || rawCat;

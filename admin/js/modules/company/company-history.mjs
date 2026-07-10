@@ -148,7 +148,7 @@ export function _renderCompanyHistory(companyId){
 
 export function _cmHistGoPage(p){
   _cmHistPage = p;
-  const companyId = editId.company;
+  const companyId = window.editId.company;
   if(companyId) _renderCompanyHistory(companyId);
 }
 
@@ -410,7 +410,7 @@ export function selectContCompany(companyId, companyName){
   const _ecEl = document.getElementById('cont-filter-empcat'); if(_ecEl) _ecEl.value='';
   const _stEl = document.getElementById('cont-filter-status'); if(_stEl) _stEl.value='유효';
   const _docEl = document.getElementById('cont-filter-docs-incomplete'); if(_docEl) _docEl.checked=false;
-  pages.cont = 1;
+  window.pages.cont = 1;
   _w('renderContracts')();
 }
 
@@ -482,7 +482,7 @@ export function selectPayCompany(companyId, companyName){
   // 글로벌 공유 변수만 업데이트 (다른 페이지 변수는 showPage()에서 처리)
   currentGlobalCompanyId = companyId;
   currentGlobalCompanyName = companyName;
-  pages.pay = 1;
+  window.pages.pay = 1;
   document.getElementById('pay-selected-company-label').innerHTML =
     `<i class="fas fa-money-bill-wave" style="margin-right:6px;"></i>${companyName} 급여 명세서`;
   document.getElementById('pay-company-select-card').style.display = 'none';
@@ -839,5 +839,6 @@ window.doChangeEndDate = doChangeEndDate;
 window.cancelTerminate = cancelTerminate;
 window._createTermNotice = _createTermNotice;
 window._createCancelNotice = _createCancelNotice;
-window.terminateCompany_DISABLED = terminateCompany_DISABLED;
-window.doTerminate_DISABLED = doTerminate_DISABLED;
+// [사용료 숨김] 아래 함수는 주석처리됨
+// window.terminateCompany_DISABLED = terminateCompany_DISABLED;
+// window.doTerminate_DISABLED = doTerminate_DISABLED;

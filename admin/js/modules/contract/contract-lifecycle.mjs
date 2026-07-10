@@ -936,8 +936,10 @@ export function openRecontractModal(srcContract){
   _prevEditCategory = document.getElementById('ct-edit-em-category')?.value || '';
   // saveContract 재계약 플래그 저장
   _recontractEmpId = srcContract.employee_id;
+  window._recontractEmpId = srcContract.employee_id; // sync
 }
 let _recontractEmpId = null;
+window._recontractEmpId = null; // cross-module bridge
 
 // ─── 종료 플로우 ───
 export function doContractTerminate(){
@@ -2597,6 +2599,7 @@ export async function saveContract(){
     }
   }
   _recontractEmpId = null; // 재계약 플래그 초기화
+  window._recontractEmpId = null; // sync
   _currentDraftId  = null; // 임시저장 ID 초기화
   _w('closeModal')('contract-modal');await _w('loadContracts')();await _w('loadEmployees')();_w('renderContracts')();_w('renderDashboard')();_w('toast')('근로계약서가 등록되었습니다. ✔');
 }

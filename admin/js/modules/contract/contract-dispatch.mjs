@@ -44,7 +44,7 @@ async function loadContractDispatchList(forceReload = false) {
     });
     window._contractDispatchList = rows;
   } catch (e) {
-    console.error('[발송이력 로드]', e);
+    /* DB 테이블 미존재: 빈 목록으로 조용히 처리 */
     window._contractDispatchList = [];
   }
 }

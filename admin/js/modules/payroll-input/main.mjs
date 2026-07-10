@@ -1,104 +1,15 @@
 /**
- * payroll-input/payroll-input-main.mjs — Phase 6: 완전 변환
+ * payroll-input/payroll-input-full.mjs — Phase 6: 급여대장 통합 (core+excel+save+main)
  * Node.js 자동변환 (convert-core.cjs)
  */
 import { getCompanies, getEmployees, getPayrolls, getContracts } from '../state.mjs';
+import { piContract, piEditPayrollId, piDraftId, _piEditSnapshot, _piContractLoading, _piPayTypes } from "./state.mjs";
 import { CONTRACT_TYPE, CONTRACT_STATUS, COMPANY_STATUS, EMP_STATUS, CONTRACT_TYPE_LEGACY_MAP, DISPATCH_METHOD, DISPATCH_STATUS } from '../constants.mjs';
-
 const _w = (name) => window[name];
-
-﻿// ============================================================================
-// 급여 입력 페이지 — 전직원 임금대장 일괄 업로드 모달
+// ─── PAYROLL INPUT ───
 // ============================================================================
-export function openPIUploadModal(){
-  const coId = window.currentGlobalCompanyId;
-  if(!coId){ _w('toast')('고객사를 먼저 선택하세요.','warning'); return; }
-
-  const yr = parseInt(document.getElementById('pi-year')?.value);
-  const mo = parseInt(document.getElementById('pi-month')?.value);
-
-  const co = getCompanies().find(c => c.id === coId);
-  const coName = co ? co.company_name : '';
-
-  // 부제목 업데이트
-  const subEl = document.getElementById('pi-upload-modal-sub');
-  if(subEl) subEl.textContent = `${coName}${yr && mo ? `ㆍ${yr}년 ${mo}월` : ''}`;
-
-  // 드롭존·라벨 초기화
-  const labelEl = document.getElementById('pi-upload-file-label');
-  if(labelEl) labelEl.textContent = '';
-  const progressEl = document.getElementById('pi-upload-progress');
-  if(progressEl) progressEl.style.display = 'none';
-
-  const modal = document.getElementById('pi-upload-modal');
-  if(modal){ modal.style.display = 'flex'; }
-}
-
-export function closePIUploadModal(){
-  const modal = document.getElementById('pi-upload-modal');
-  if(modal) modal.style.display = 'none';
-  // 파일 input 초기화
-  const fileInput = document.getElementById('pi-upload-file-input');
-  if(fileInput) fileInput.value = '';
-}
-
-/**
- * 전직원 임금대장 일괄 업로드 핸들러
- * - 기존 handleExcelUpload() + validateAndParseExcel() 로직을 그대로 재사용
- */
-export function handlePIBulkUpload(event){
-  const file = event.target.files && event.target.files[0];
-  if(!file) return;
-
-  // 파일명 표시
-  const labelEl = document.getElementById('pi-upload-file-label');
-  if(labelEl) labelEl.textContent = '📎 ' + file.name;
-
-  // 진행 표시
-  const progressEl = document.getElementById('pi-upload-progress');
-  if(progressEl) progressEl.style.display = 'block';
-
-  // 파일 input 초기화 (같은 파일 재업로드 허용)
-  if(event.target && event.target.value !== undefined) event.target.value = '';
-
-  // upload-file-name(기존 UI 라벨)도 동기화 (showUploadReport 내 참조 방지)
-  const legacyLabel = document.getElementById('upload-file-name');
-  if(legacyLabel) legacyLabel.textContent = '📎 ' + file.name;
-
-  const reader = new FileReader();
-  reader.onload = e => {
-    if(progressEl) progressEl.style.display = 'none';
-    try{
-      const wb = XLSX.read(e.target.result, { type:'array', cellStyles:true });
-      closePIUploadModal();
-      validateAndParseExcel(wb, file.name);
-    } catch(err){
-      if(progressEl) progressEl.style.display = 'none';
-      showUploadReport(false, [`파일을 읽는 중 오류가 발생했습니다: ${err.message}`], [], [], [], []);
-    }
-  };
-  reader.readAsArrayBuffer(file);
-}
-
-// ────────────────────────────────────────────────────────────────────────────
-// 지급대상자 목록 관련 함수
-// ────────────────────────────────────────────────────────────────────────────
-
-/**
- * 급여지급 년월 선택 카드(pi-period-section)의 가시성 동기화
- * - formVisible=true  : 폼(급여 입력/수정 중) → 년월 카드 숨김
- * - formVisible=false : 목록/초기 상태  → 년월 카드 표시
- */
-export function _syncPIPeriodSectionVisibility(formVisible){
-  const sec = document.getElementById('pi-period-section');
-  if(!sec) return;
-  sec.style.display = formVisible ? 'none' : '';
-}
-
-/**
- * '지급대상자 목록보기' 버튼 클릭 핸들러
- * - 선택된 년/월에 유효한 근로계약이 있는 해당 고객사 근로자 목록을 테이블로 표시
- */
+// 급여 입력 페이지 — 전월 임금대장 엑셀 다운로드
+// ============================================================================
 export function loadPITargetList(){
   const coId = window.currentGlobalCompanyId;
   if(!coId){ _w('toast')('고객사를 먼저 선택하세요.', 'warning'); return; }
@@ -2488,9 +2399,9 @@ export function calcWeeklyHolidayPay(){
 
 // ─── 통상임금 지급유형 관리 ───
 // 'fixed'=매월 정기지급(통상임금 포함), 'daily'=출근일수에 따름(통상임금 제외), ''=미선택
-const _piPayTypes = { transport:'', meal:'', childcare:'', research:'', communication:'', fitness:'', self_dev:'', book:'', overseas:'' };
+
 // loadPIContract() 실행 중 setPIPayType()의 calcPI() 중복 호출 방지 플래그
-let _piContractLoading = false;
+
 
 // ─── 차량교통비 항목 선택 관리 (차량유지비·교통비 중 택1) ───
 // 차량유지비 고정 (self_driving)
@@ -2982,10 +2893,10 @@ export function _resetPIInputsOnly(){
   _w('toast')('입력값을 초기화했습니다.', 'info');
 }
 // ─── 수정 모드 상태 ───
-let piEditPayrollId = null; // 수정 중인 payroll ID (null이면 신규)
+
 
 // ─── 원상복구 비교용 스냅샷 ───
-let _piEditSnapshot = null; // 수정 모드 진입·복원 직후 폼 상태 (JSON string)
+
 
 /** 스냅샷 비교 대상 폼 필드 ID 목록 */
 const _PI_SNAP_FIELDS = [
@@ -3225,15 +3136,10 @@ export function _showPISavedModal(empName, yr, mo, payrollId, isEdit){
 }
 
 // ─── 임시저장 상태 ───
-let piDraftId = null; // 현재 임시저장 레코드 ID (null이면 없음)
 
 
 
-// ══ window 등록 (레거시 호환) ══
-window.openPIUploadModal = openPIUploadModal;
-window.closePIUploadModal = closePIUploadModal;
-window.handlePIBulkUpload = handlePIBulkUpload;
-window._syncPIPeriodSectionVisibility = _syncPIPeriodSectionVisibility;
+
 window.loadPITargetList = loadPITargetList;
 window.hidePITargetList = hidePITargetList;
 window.selectPITarget = selectPITarget;

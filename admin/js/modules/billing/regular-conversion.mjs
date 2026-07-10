@@ -225,7 +225,7 @@ export async function rcLoadHistory(force=false){
     // 이력 필터 고객사 채우기
     _rcFillCompanyFilter('rc-log-filter-company');
   } catch(e){
-    console.error('[RC] 발송 이력 조회 오류', e);
+    /* DB 테이블 미존재: 조용히 처리 */
   }
 }
 

@@ -16,7 +16,7 @@ const _w = (name) => window[name];
   if(sessionStorage.getItem('admin_auth') === 'ok'){
     _alnShowApp();
     _alnUpdateTopbar();
-    init();
+    window.init();
   }
 })();
 

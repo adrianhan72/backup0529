@@ -7,9 +7,12 @@ import { CONTRACT_TYPE, CONTRACT_STATUS, COMPANY_STATUS, EMP_STATUS, CONTRACT_TY
 
 const _w = (name) => window[name];
 
-﻿// ─── WAGE LEDGER (임금대장) ───
+// ─── WAGE LEDGER (임금대장) ───
 let _wlCompanyId = null;
 let _wlCompanyName = '';
+// window 브릿지 (admin-state.js showPage 참조)
+window._wlCompanyId = null;
+window._wlCompanyName = '';
 
 /* ================================================================
    _w('updateMenuBadges')()
@@ -92,7 +95,7 @@ export function updateMenuBadges(){
   // allSeveranceNotices는 heavy 데이터 → 로드 전에는 빈 배열이므로 뱃지=0으로 표시됨
   // (과다가 아닌 과소 집계지만 일관성을 위해 동일하게 guard)
   if(_heavyReady){
-    _setBadge('badge-severance', (allSeveranceNotices||[]).length);
+    _setBadge('badge-severance', (window.allSeveranceNotices||[]).length);
   }
 
   // 7) 급여 입력 임시저장 미완료 → payroll-input

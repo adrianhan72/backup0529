@@ -281,7 +281,7 @@ export async function cenLoadHistory(force=false){
     });
     _cenHistoryLoaded = true;
   } catch(e){
-    console.error('[CEN 이력 로드 오류]', e);
+    /* DB 테이블 미존재: 빈 목록으로 조용히 처리 */
     _cenNoticeList = [];
   }
 }

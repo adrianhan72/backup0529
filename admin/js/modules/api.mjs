@@ -129,4 +129,5 @@ export async function updatePayroll(id, data) {
   return api(`/api/payrolls/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
 }
 
-// window 등록 없음 — 순수 ES 모듈
+// window 등록 (레거시 .js + .mjs _w() 패턴 호환)
+window.api = api;
