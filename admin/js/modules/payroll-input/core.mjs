@@ -1,11 +1,12 @@
 /**
- * payroll-input/payroll-input-full.mjs — Phase 6: 급여대장 통합 (core+excel+save+main)
+ * payroll-input/_full.mjs — Phase 6: 급여대장 통합
  * Node.js 자동변환 (convert-core.cjs)
  */
 import { getCompanies, getEmployees, getPayrolls, getContracts } from '../state.mjs';
 import { piContract, piEditPayrollId, piDraftId, _piEditSnapshot, _piContractLoading, _piPayTypes } from "./state.mjs";
 import { CONTRACT_TYPE, CONTRACT_STATUS, COMPANY_STATUS, EMP_STATUS, CONTRACT_TYPE_LEGACY_MAP, DISPATCH_METHOD, DISPATCH_STATUS } from '../constants.mjs';
 const _w = (name) => window[name];
+window._w = _w;
 // ─── PAYROLL INPUT ───
 // ============================================================================
 // 급여 입력 페이지 — 전월 임금대장 엑셀 다운로드
@@ -240,7 +241,7 @@ document.addEventListener('DOMContentLoaded', function(){
   const formSec = document.getElementById('pi-form-section');
   if(!formSec) return;
   function _onPIFormChange(){
-    // 신규 모드(piEditPayrollId===null): 초기화 버튼 활성 여부 갱신
+    // 신규 모드(window.piEditPayrollId ===null): 초기화 버튼 활성 여부 갱신
     // 수정 모드: 스냅샷과 비교해 원상복구 버튼 활성 여부 갱신
     // → 조건 없이 호출, _checkPIRestoreBtn() 내부에서 모드 판단
     _checkPIRestoreBtn();
@@ -253,7 +254,7 @@ document.addEventListener('DOMContentLoaded', function(){
   formSec.addEventListener('change', _onPIFormChange);
 });
 
-// ===============================================================================
+﻿// ===============================================================================
 // _probAutoCreateAndSave()
 //   케이스① (해당 월 전체가 수습 만료 이후): 채용확정 계약서를 자동 생성하고
 //   현재 폼에 입력된 급여를 채용확정 계약 기준으로 저장한다.
@@ -290,7 +291,7 @@ export async function _probAutoCreateAndSave(){
 
     // ── 2단계: piContract를 새 계약으로 교체 후 급여 저장 ──
     // 폼 값은 그대로 유지, piContract만 교체 → savePI() 내부에서 중복·산정 검증 통과 후 저장
-    piContract = getContracts().find(c => c.id === confirmedContract.id) || confirmedContract;
+    window.piContract = getContracts().find(c => c.id === confirmedContract.id) || confirmedContract;
 
     // 배너 숨김 (계약 변경으로 더 이상 케이스① 아님)
     const banner = document.getElementById('pi-prob-overrun-banner');
@@ -404,7 +405,7 @@ export async function _probAutoCreateAndSave(){
       await _w('api')(`../tables/payrolls/${dup.id}`, { method: 'DELETE' });
     }
     // 임시저장 레코드가 있으면 삭제
-    if(piDraftId){ try{ await _w('api')(`../tables/payrolls/${piDraftId}`,{method:'DELETE'}); }catch(e){} piDraftId=null; }
+    if(piDraftId){ try{ await _w('api')(`../tables/payrolls/${piDraftId}`,{method:'DELETE'}); }catch(e){} window.piDraftId =null; }
 
     await _w('api')('../tables/payrolls', {
       method: 'POST',
@@ -455,7 +456,7 @@ export function goPayrollInputNew(companyId, employeeId, year, month){
   document.getElementById('pi-year').value = year;
   document.getElementById('pi-month').value = month;
   // 신규 입력 모드 보장 (수정 배너 숨김)
-  piEditPayrollId = null;
+  window.piEditPayrollId = null;
   // pi-edit-banner 제거됨 — 드롭존만 복원
   document.getElementById('pi-upload-drop-zone').style.display = '';
   const saveBtn = document.querySelector('#page-payroll-input .btn-primary');
@@ -476,7 +477,7 @@ export function editPayroll(payrollId){
   // ★ 수정 모드 ID를 showPage 이전에 먼저 설정
   //   → selectPICompany()가 수정 모드 진입임을 감지해
   //     pi-form-section 숨김·년월 초기화를 건너뛸 수 있도록 함
-  piEditPayrollId=payrollId;
+  window.piEditPayrollId =payrollId;
   _updatePICancelBtn();
   // 급여 입력 페이지로 이동
   const piMenuItem=document.querySelector('[data-page="payroll-input"]');
@@ -594,7 +595,7 @@ export function _fillPayrollFields(p, cfgCo){
   if(!cfgCo) cfgCo = getCompanies().find(x=>x.id===p.company_id);
   // setPIPayType 내부의 calcPI 즉시 호출을 막아
   // 행 show/hide side-effect 없이 모든 pay_type 을 한 번에 세팅
-  _piContractLoading = true;
+  window._piContractLoading = true;
   // 지급 항목 채우기 (금액 필드는 setAmountVal로 쉼표 포맷 적용)
   setAmountVal('pi-base',       p.base_salary);
   // 주휴수당은 출근일수 기반 자동계산 — DB 저장값 복원 안 함 (calcPI에서 재계산)
@@ -697,7 +698,7 @@ export function _fillPayrollFields(p, cfgCo){
     if(wp) wp.style.display = (p.work_days||p.overtime_hours||p.night_hours||p.holiday_hours) ? '' : 'none';
   })();
   // 모든 pay_type 세팅 완료 → calcPI 잠금 해제
-  _piContractLoading = false;
+  window._piContractLoading = false;
   // 값 있는 옵셔널 행(보육수당 등) 강제 노출 재확인 후 비정기 섹션 이동 처리
   _forceShowNonZeroPIRows(p);
   _renderPIIrregularRows();
@@ -706,7 +707,7 @@ export function _fillPayrollFields(p, cfgCo){
   calcPI();
   // ── 스냅샷 저장: 모든 필드가 채워지고 calcPI까지 완료된 시점 ──
   if(piEditPayrollId){
-    _piEditSnapshot = _readPIFormSnapshot();
+    window._piEditSnapshot = _readPIFormSnapshot();
     _checkPIRestoreBtn(); // 진입 직후에는 비활성
   }
 }
@@ -723,7 +724,7 @@ export function restoreEditPayroll(){
   if(!p){ _w('toast')('원본 급여 데이터를 찾을 수 없습니다.', 'error'); return; }
 
   // 임시저장 draft가 있으면 메모리 참조만 해제 (DB는 유지 — 복원 후 다시 임시저장 가능)
-  piDraftId = null;
+  window.piDraftId = null;
 
   // ── 계약 기준 고객사 스냅샷 취득 (allowance_config pay_type fallback에 필요) ──
   const _restoreEmpCon = (getContracts()||[]).find(c =>
@@ -752,7 +753,7 @@ export function restoreEditPayroll(){
   // (calcPI가 pi-std-pay 등 계산 필드를 갱신하므로, 이 시점이 진짜 "원본 상태")
   calcAnnualLeaveTable();
   calcPI();
-  _piEditSnapshot = _readPIFormSnapshot(); // ← 복원 직후를 새 기준점으로
+  window._piEditSnapshot = _readPIFormSnapshot(); // ← 복원 직후를 새 기준점으로
 
   // 수정 모드 UI는 그대로 유지
   _updatePIBottomBtns();
@@ -766,13 +767,13 @@ export async function cancelEditPayroll(){
   // 수정 모드 중 임시저장한 draft 레코드가 있으면 삭제 (고아 레코드 방지)
   if(piDraftId){
     try { await _w('api')(`../tables/payrolls/${piDraftId}`, { method: 'DELETE' }); } catch(e){}
-    piDraftId = null;
+    window.piDraftId = null;
     await _w('loadPayrolls')();
     renderPIAllDraftBanner();
   }
   // ── 수정 모드 상태 완전 해제 ──
-  piEditPayrollId  = null;
-  _piEditSnapshot  = null;
+  window.piEditPayrollId = null;
+  window._piEditSnapshot = null;
   // ── 수정 배너 제거됨 — 엑셀 업로드 드롭존만 복원 ──
   const dropZone = document.getElementById('pi-upload-drop-zone');
   if(dropZone) dropZone.style.display = '';
@@ -787,7 +788,7 @@ export async function cancelEditPayroll(){
   _updatePICancelBtn();
   // ── 즉시 대상자 목록으로 복귀 ──
   // (clearPI()를 거치면 직원 선택 상태에서 목록으로 안 넘어가는 문제 해소)
-  piContract = null;
+  window.piContract = null;
   if(typeof clearPIFields === 'function') clearPIFields();
   const card = document.getElementById('pi-contract-card');
   if(card) card.style.display = 'none';
@@ -2753,7 +2754,7 @@ export async function downloadPayrollExcel(){
 
 // ==============================================================================
 
-// ==============================================================================
+﻿// ==============================================================================
 // _buildPIBody()
 //   현재 급여 입력 폼의 값으로 payroll 저장 body 객체를 생성한다.
 //   savePI(), savePIDraft() 양쪽에서 공유하는 공통 헬퍼.

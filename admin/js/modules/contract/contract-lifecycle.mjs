@@ -7,6 +7,7 @@ import { CONTRACT_TYPE, CONTRACT_STATUS, COMPANY_STATUS, EMP_STATUS, CONTRACT_TY
 import { N } from './contract-lifecycle-notices.mjs';
 
 const _w = (name) => window[name];
+window._w = _w;
 
 /** 인쇄 전용 CSS */
 
@@ -1378,6 +1379,7 @@ export async function confirmFixedTerminate(){
 // ── 임시저장 ──
 export async function saveDraftContract(reason){
   const activeEl = document.activeElement; // 포커스 보존
+  const coId = document.getElementById('ct-company')?.value;
 
   // 직원 ID: 수정모드→기존 계약에서, 재계약→_recontractEmpId, 신규→아직 없음
   let empId = window.editId.contract
@@ -1567,7 +1569,7 @@ export async function saveDraftContract(reason){
     const res = await _w('api')(`../tables/contracts/${draftId}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:bodyJSON});
     if(res && res.error){ _w('toast')('임시저장 실패: ' + res.error, 'error'); return; }
     savedId = draftId;
-    _currentDraftId = draftId;
+    _currentDraftId = draftId; window._currentDraftId = draftId;
     window._resumeDraftId = null;
   } else {
     // 최초 임시저장 → POST
@@ -1575,7 +1577,7 @@ export async function saveDraftContract(reason){
     const res = await _w('api')('../tables/contracts',{method:'POST',headers:{'Content-Type':'application/json'},body:bodyJSON});
     if(res && res.error){ console.error('[saveDraftContract] Server error:', res.error); _w('toast')('임시저장 실패: ' + res.error, 'error'); return; }
     savedId = res.id || draftBody.id;
-    _currentDraftId = savedId;
+    _currentDraftId = savedId; window._currentDraftId = savedId;
   }
   } catch(e){
     console.error('[saveDraftContract] Exception:', e);
@@ -1609,6 +1611,7 @@ export async function saveDraftContract(reason){
 
 // 임시저장 진행 중인 draft ID (신규 작성 시 추적용)
 let _currentDraftId = null;
+window._currentDraftId = null; // cross-module bridge (contract-core.mjs)
 
 // ── 주민등록번호 포맷·유효성 헬퍼 ──────────────────────────────────────────
 /**
@@ -2600,7 +2603,7 @@ export async function saveContract(){
   }
   _recontractEmpId = null; // 재계약 플래그 초기화
   window._recontractEmpId = null; // sync
-  _currentDraftId  = null; // 임시저장 ID 초기화
+  _currentDraftId = null; window._currentDraftId = null; // ID 초기화
   _w('closeModal')('contract-modal');await _w('loadContracts')();await _w('loadEmployees')();_w('renderContracts')();_w('renderDashboard')();_w('toast')('근로계약서가 등록되었습니다. ✔');
 }
 export async function deleteContract(id){

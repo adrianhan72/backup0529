@@ -21,6 +21,7 @@ let _cdpUnsentYM = null;
 // 레거시 브릿지
 // ═══════════════════════════════════════════
 const _w = (name) => window[name];
+window._w = _w;
 const _toast = (msg, type) => _w('toast') ? _w('toast')(msg, type) : alert(msg);
 
 // window._contractDispatchList 초기화

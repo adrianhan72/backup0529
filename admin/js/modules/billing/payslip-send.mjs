@@ -6,6 +6,7 @@ import { getCompanies, getEmployees, getPayrolls, getContracts } from '../state.
 import { CONTRACT_TYPE, CONTRACT_STATUS, COMPANY_STATUS, EMP_STATUS, CONTRACT_TYPE_LEGACY_MAP, DISPATCH_METHOD, DISPATCH_STATUS } from '../constants.mjs';
 
 const _w = (name) => window[name];
+window._w = _w;
 
 // ==========================================
 //   급여 명세서 발송 관리 페이지
@@ -261,7 +262,7 @@ export async function _pssKakaoSendRow(payrollId, empId){
     // ① PDF 생성
     _w('toast')(`${empName} — PDF 생성 중...`, 'info');
     const fileName = `${empName}_${yr}년${moStr}월_급여명세서.pdf`;
-    const blob     = await _generatePayslipBlob(payrollId);
+    const blob     = await _w('_generatePayslipBlob')(payrollId);
     const pdfFile  = new File([blob], fileName, { type:'application/pdf' });
 
     // ② 카카오 알림톡 발송
@@ -320,7 +321,7 @@ export async function _pssEmailSendRow(payrollId, empId){
     // ① PDF 생성
     _w('toast')(`${empName} — PDF 생성 중...`, 'info');
     const fileName = `${empName}_${yr}년${moStr}월_급여명세서.pdf`;
-    const blob     = await _generatePayslipBlob(payrollId);
+    const blob     = await _w('_generatePayslipBlob')(payrollId);
     const pdfFile  = new File([blob], fileName, { type:'application/pdf' });
 
     // ② 이메일 발송 (stub)
@@ -690,7 +691,7 @@ export async function confirmPssSend(){
     setStep('fa-spinner', true, 'PDF 생성 중...', 30);
     const moStr   = String(month).padStart(2,'0');
     const fileName = `${empName}_${year}년${moStr}월_급여명세서.pdf`;
-    const blob = await _generatePayslipBlob(payrollId);
+    const blob = await _w('_generatePayslipBlob')(payrollId);
     const pdfFile = new File([blob], fileName, { type: 'application/pdf' });
 
     // ② 카카오 발송
@@ -877,7 +878,7 @@ export async function _pssEmailSend(i){
 
   try{
     // PDF 생성
-    const blob     = await _generatePayslipBlob(item.payrollId);
+    const blob     = await _w('_generatePayslipBlob')(item.payrollId);
     const fileName = `${item.empName}_${yr}년${moStr}월_급여명세서.pdf`;
     const file     = new File([blob], fileName, { type:'application/pdf' });
 
@@ -1007,7 +1008,7 @@ export async function confirmPssBulkSend(){
     document.getElementById(`pss-brow-${i}`)?.scrollIntoView({ block:'nearest' });
     let blob;
     try{
-      blob = await _generatePayslipBlob(item.payrollId);
+      blob = await _w('_generatePayslipBlob')(item.payrollId);
     } catch(err){
       console.error(`[PDF 생성 실패] ${item.empName}`, err);
       _pssBulkSetStatus(i, 'fail'); failCnt++; _pssBulkUpdateProgress(); continue;

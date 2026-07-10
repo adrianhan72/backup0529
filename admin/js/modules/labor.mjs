@@ -6,6 +6,7 @@ import { getCompanies, getEmployees, getPayrolls, getContracts } from './state.m
 import { CONTRACT_TYPE, CONTRACT_STATUS, COMPANY_STATUS, EMP_STATUS, CONTRACT_TYPE_LEGACY_MAP, DISPATCH_METHOD, DISPATCH_STATUS } from './constants.mjs';
 
 const _w = (name) => window[name];
+window._w = _w;
 
 // ─── LABOR STATUS ───
 // window.currentLsCompanyId → 최상단 STATE 블록에서 선언됨

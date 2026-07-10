@@ -6,6 +6,7 @@ import { getCompanies, getEmployees, getPayrolls, getContracts } from '../state.
 import { CONTRACT_TYPE, CONTRACT_STATUS, COMPANY_STATUS, EMP_STATUS, CONTRACT_TYPE_LEGACY_MAP, DISPATCH_METHOD, DISPATCH_STATUS } from '../constants.mjs';
 
 const _w = (name) => window[name];
+window._w = _w;
 
 //  기간제 2년 초과 — 정규직 전환 의무 관리
 //  「기간제 및 단시간근로자 보호 등에 관한 법률」 제4조
@@ -235,7 +236,7 @@ export async function _2yrSendNotice(empId){
 
 ※ 본 안내는 대화인사노무파트너스에서 발송한 법적 의무 안내입니다.
 
-${_BRAND_SIG}`;
+${window._BRAND_SIG}`;
 
   try {
     // ① 고객사 인앱 알림

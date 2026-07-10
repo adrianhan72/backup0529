@@ -6,6 +6,7 @@ import { getCompanies, getEmployees, getContracts } from '../state.mjs';
 import { CONTRACT_TYPE, CONTRACT_STATUS, COMPANY_STATUS } from '../constants.mjs';
 
 const _w = (name) => window[name];
+window._w = _w;
 
 
 // ── 계약 조회 모달 첨부 서류 섹션 렌더링 (업로드/삭제/미리보기/다운로드) ──
@@ -213,7 +214,7 @@ export async function _ctfUpload(type, contractId, inputEl){
 
 자세한 내용은 근로 계약 관리 메뉴에서 확인하세요.
 
-${_BRAND_SIG}`,
+${window._BRAND_SIG}`,
           contractId : contractId,
           employeeId : c.employee_id, employeeName: _ufEmp.name || '',
           contractEnd: c.contract_end || '',
@@ -240,7 +241,7 @@ ${_BRAND_SIG}`,
 
 자세한 내용은 근로 계약 관리 메뉴에서 확인하세요.
 
-${_BRAND_SIG}`,
+${window._BRAND_SIG}`,
             contractId : contractId,
             employeeId : c.employee_id, employeeName: _ufEmp.name || '',
             contractEnd: c.contract_end || '',

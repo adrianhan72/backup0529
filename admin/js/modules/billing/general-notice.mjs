@@ -6,6 +6,7 @@ import { getCompanies, getEmployees, getPayrolls, getContracts } from '../state.
 import { CONTRACT_TYPE, CONTRACT_STATUS, COMPANY_STATUS, EMP_STATUS, CONTRACT_TYPE_LEGACY_MAP, DISPATCH_METHOD, DISPATCH_STATUS } from '../constants.mjs';
 
 const _w = (name) => window[name];
+window._w = _w;
 
 //  중요공지 관리 (page-general-notice)
 // ======================================================================
@@ -439,7 +440,7 @@ ${detail}
 급여 계산 시 변경된 기준이 자동 반영됩니다.
 상세 내용은 담당 노무사에게 문의하세요.
 
-${_BRAND_SIG}`;
+${window._BRAND_SIG}`;
 
   let cnt = 0;
   for(const co of targets){

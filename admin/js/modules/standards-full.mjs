@@ -6,6 +6,7 @@ import { getCompanies, getEmployees, getPayrolls, getContracts } from './state.m
 import { CONTRACT_TYPE, CONTRACT_STATUS, COMPANY_STATUS, EMP_STATUS, CONTRACT_TYPE_LEGACY_MAP, DISPATCH_METHOD, DISPATCH_STATUS } from './constants.mjs';
 
 const _w = (name) => window[name];
+window._w = _w;
 
 // ─── STANDARDS (년도별 산정기준) ───
 window._allInsuranceRates = [];
@@ -26,8 +27,10 @@ export async function loadStandards(){
 
 export function switchStdTab(tab){
   ['insurance','minwage','taxbracket'].forEach(t=>{
-    document.getElementById('std-tab-'+t).classList.toggle('active', t===tab);
-    document.getElementById('std-panel-'+t).style.display = t===tab ? '' : 'none';
+    const tabEl = document.getElementById('std-tab-'+t);
+    const panelEl = document.getElementById('std-panel-'+t);
+    if (tabEl) tabEl.classList.toggle('active', t===tab);
+    if (panelEl) panelEl.style.display = t===tab ? '' : 'none';
   });
   if(tab==='insurance') renderInsuranceRates();
   else if(tab==='minwage') renderMinimumWages();

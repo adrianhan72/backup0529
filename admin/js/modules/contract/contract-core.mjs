@@ -6,6 +6,7 @@ import { getCompanies, getEmployees, getPayrolls, getContracts } from '../state.
 import { CONTRACT_TYPE, CONTRACT_STATUS, COMPANY_STATUS, EMP_STATUS, CONTRACT_TYPE_LEGACY_MAP, DISPATCH_METHOD, DISPATCH_STATUS } from '../constants.mjs';
 
 const _w = (name) => window[name];
+window._w = _w;
 
 function _renderContAlertCards(){
   const wrap = document.getElementById('cont-alert-cards-wrap');
@@ -363,7 +364,7 @@ export function _validateCtStartVsHire(startId, hireId, hintId){
 export function openContractModal(id=null, preCompanyId=null){
   editId.contract=id;
   _recontractEmpId = null; // 재계약 플래그 초기화
-  if(!id) _currentDraftId = null; // 신규 작성 시 임시저장 ID 초기화
+  if(!id) window._currentDraftId = null; // 신규 작성 시 임시저장 ID 초기화
   // 임시저장 안내 텍스트 초기화
   const _draftInfoEl = document.getElementById('ct-draft-saved-info');
   if(_draftInfoEl){ _draftInfoEl.style.display='none'; _draftInfoEl.textContent=''; }
@@ -1341,6 +1342,7 @@ export function viewContract(id){
                       editCls:'btn-sb btn-sb-edit amber', destroyLabel:'<i class="fas fa-times-circle"></i> 갱신 취소' },
       };
       const tm = typeMap[effectiveStatus];
+      if (!tm) { console.warn('[viewContract] Unknown effectiveStatus:', effectiveStatus); return; }
       sbEl.className = `ct-status-banner ${tm.cls}`;
       document.getElementById('ct-sb-icon').textContent = tm.icon;
       document.getElementById('ct-sb-title-text').textContent = effectiveStatus;
@@ -1913,13 +1915,13 @@ export async function openAmendPreview(){
   await _w('_sendCompanyNotice')({
     companyId:coId, companyName:_co.company_name||'', noticeType:'contract_voided',
     title:`[계약 파기] ${_emp.name||''} — 기존 계약이 파기되었습니다 (수정재발행)`,
-    body:`안녕하세요${_coRep}.\n\n소속 근로자의 기존 근로계약이 수정재발행으로 인해 파기 처리되었습니다.\n\n■ 근로자: ${_emp.name||''}\n■ 파기된 계약 기간: ${_fmtD(origC.contract_start)}${origC.contract_end?' ~ '+_fmtD(origC.contract_end):''}\n■ 처리 일시: ${new Date().toLocaleString('ko-KR')}\n\n새 계약이 동시에 발행되었습니다. 자세한 내용은 근로 계약 관리 메뉴에서 확인하세요.\n\n${_BRAND_SIG}`,
+    body:`안녕하세요${_coRep}.\n\n소속 근로자의 기존 근로계약이 수정재발행으로 인해 파기 처리되었습니다.\n\n■ 근로자: ${_emp.name||''}\n■ 파기된 계약 기간: ${_fmtD(origC.contract_start)}${origC.contract_end?' ~ '+_fmtD(origC.contract_end):''}\n■ 처리 일시: ${new Date().toLocaleString('ko-KR')}\n\n새 계약이 동시에 발행되었습니다. 자세한 내용은 근로 계약 관리 메뉴에서 확인하세요.\n\n${window._BRAND_SIG}`,
     contractId:origId, employeeId:empId, employeeName:_emp.name||'', contractEnd:origC.contract_end||'',
   });
   await _w('_sendCompanyNotice')({
     companyId:coId, companyName:_co.company_name||'', noticeType:'contract_amended',
     title:`[계약 수정재발행] ${_emp.name||''} — 수정된 새 계약이 발행되었습니다`,
-    body:`안녕하세요${_coRep}.\n\n소속 근로자의 수정재발행 근로계약이 완료되었습니다.\n\n■ 근로자: ${_emp.name||''}\n■ 고용형태: ${cType}\n■ 새 계약 기간: ${_fmtD(start)}${end?' ~ '+_fmtD(end):' (기간 미정)'}\n■ 처리 일시: ${new Date().toLocaleString('ko-KR')}\n\n자세한 내용은 근로 계약 관리 메뉴에서 확인하세요.\n\n${_BRAND_SIG}`,
+    body:`안녕하세요${_coRep}.\n\n소속 근로자의 수정재발행 근로계약이 완료되었습니다.\n\n■ 근로자: ${_emp.name||''}\n■ 고용형태: ${cType}\n■ 새 계약 기간: ${_fmtD(start)}${end?' ~ '+_fmtD(end):' (기간 미정)'}\n■ 처리 일시: ${new Date().toLocaleString('ko-KR')}\n\n자세한 내용은 근로 계약 관리 메뉴에서 확인하세요.\n\n${window._BRAND_SIG}`,
     contractId:newContractId, employeeId:empId, employeeName:_emp.name||'', contractEnd:end,
   });
 

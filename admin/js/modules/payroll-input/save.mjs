@@ -1,11 +1,12 @@
 /**
- * payroll-input/payroll-input-full.mjs — Phase 6: 급여대장 통합 (core+excel+save+main)
+ * payroll-input/_full.mjs — Phase 6: 급여대장 통합
  * Node.js 자동변환 (convert-core.cjs)
  */
 import { getCompanies, getEmployees, getPayrolls, getContracts } from '../state.mjs';
 import { piContract, piEditPayrollId, piDraftId, _piEditSnapshot, _piContractLoading, _piPayTypes } from "./state.mjs";
 import { CONTRACT_TYPE, CONTRACT_STATUS, COMPANY_STATUS, EMP_STATUS, CONTRACT_TYPE_LEGACY_MAP, DISPATCH_METHOD, DISPATCH_STATUS } from '../constants.mjs';
 const _w = (name) => window[name];
+window._w = _w;
 // ─── PAYROLL INPUT ───
 // ============================================================================
 // 급여 입력 페이지 — 전월 임금대장 엑셀 다운로드
@@ -137,7 +138,7 @@ export async function savePIDraft(){
         p => p.employee_id === empId && p.pay_year === yr && p.pay_month === mo && p.is_draft
       );
       if(existingDraft){
-        piDraftId = existingDraft.id;
+        window.piDraftId = existingDraft.id;
         body.id   = piDraftId;
         await _w('api')(`../tables/payrolls/${piDraftId}`, {
           method: 'PUT',
@@ -146,7 +147,7 @@ export async function savePIDraft(){
         });
       } else {
         body.id = 'draft' + Date.now();
-        piDraftId = body.id;
+        window.piDraftId = body.id;
         await _w('api')('../tables/payrolls', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -198,7 +199,7 @@ export function _checkAndShowPIDraftBanner(empId, yr, mo){
   const draft = getPayrolls().find(
     p => p.employee_id === empId && p.pay_year === _yr && p.pay_month === _mo && p.is_draft
   );
-  if(!draft){ piDraftId = null; banner.style.display = 'none'; return; }
+  if(!draft){ window.piDraftId = null; banner.style.display = 'none'; return; }
 
   // 확정 레코드가 이미 있는 경우:
   //   - 수정 모드 draft(edit_source_id 있음) → 배너 표시 (수정 세션 진행 중)
@@ -211,7 +212,7 @@ export function _checkAndShowPIDraftBanner(empId, yr, mo){
     return;
   }
 
-  piDraftId = draft.id;
+  window.piDraftId = draft.id;
   const savedAt = draft.draft_saved_at
     ? new Date(draft.draft_saved_at).toLocaleString('ko-KR', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' })
     : '';
@@ -339,7 +340,7 @@ export function loadPIDraft(){
   if(draft.edit_source_id){
     const srcPayroll = getPayrolls().find(p => p.id === draft.edit_source_id);
     if(srcPayroll){
-      piEditPayrollId = draft.edit_source_id;
+      window.piEditPayrollId = draft.edit_source_id;
       _updatePICancelBtn();
       // 저장 버튼 → "수정 저장" 표기 + 수정 배너 표시
       document.querySelectorAll('#page-payroll-input .btn-primary').forEach(btn => {
@@ -353,13 +354,13 @@ export function loadPIDraft(){
       const emp2 = getEmployees().find(e => e.id === draft.employee_id) || {};
       // draft에 채워진 폼 상태를 원상복구 기준점으로 저장
       // (이후 사용자가 폼을 변경하면 원상복구 버튼이 활성화됨)
-      _piEditSnapshot = _readPIFormSnapshot();
+      window._piEditSnapshot = _readPIFormSnapshot();
       _checkPIRestoreBtn();
       _w('toast')(`✔ ${draft.pay_year}년 ${draft.pay_month}월 수정 임시저장을 불러왔습니다.\n[수정 저장]을 눌러 최종 반영하세요.`, 'info');
       return;
     }
     // edit_source_id가 있지만 원본 레코드가 없으면(삭제된 경우) 신규로 전환
-    piEditPayrollId = null;
+    window.piEditPayrollId = null;
   }
 
   const emp = getEmployees().find(e => e.id === draft.employee_id) || {};
@@ -376,7 +377,7 @@ export async function discardPIDraft(){
   if(!confirm('임시저장된 급여 입력을 삭제하시겠습니까?')) return;
   try {
     await _w('api')(`../tables/payrolls/${piDraftId}`, { method: 'DELETE' });
-    piDraftId = null;
+    window.piDraftId = null;
     await _w('loadPayrolls')();
     const banner = document.getElementById('pi-draft-banner');
     if(banner) banner.style.display = 'none';
@@ -479,7 +480,7 @@ export async function savePI(){
     // ── 임시저장 레코드 정리 (수정 모드에서 임시저장 후 확정 저장 시 고아 레코드 방지) ──
     if(piDraftId){
       try { await _w('api')(`../tables/payrolls/${piDraftId}`,{method:'DELETE'}); } catch(e){}
-      piDraftId = null;
+      window.piDraftId = null;
     } else {
       const orphanDraft = getPayrolls().find(p=>p.employee_id===empId&&Number(p.pay_year)===yr&&Number(p.pay_month)===mo&&!!p.is_draft);
       if(orphanDraft){ try{ await _w('api')(`../tables/payrolls/${orphanDraft.id}`,{method:'DELETE'}); }catch(e){} }
@@ -532,7 +533,7 @@ export async function savePI(){
     // ── 임시저장 레코드가 있으면 먼저 삭제 (확정 저장으로 대체) ──
     if(piDraftId){
       try { await _w('api')(`../tables/payrolls/${piDraftId}`,{method:'DELETE'}); } catch(e){}
-      piDraftId = null;
+      window.piDraftId = null;
     } else {
       // piDraftId가 없어도 혹시 남은 임시저장 레코드가 있으면 삭제
       const orphanDraft = getPayrolls().find(p=>p.employee_id===empId&&p.pay_year===yr&&p.pay_month===mo&&p.is_draft);
@@ -1010,7 +1011,7 @@ export async function savePISplit(){
     _w('toast')(`✔ ${yr}년 ${mo}월 급여 분리 저장 완료!\n수습 기간(${wdProb}일) + 채용확정 기간(${wdPost}일)\n고용형태: ${_w('contractTypeLabel')(confirmedType)}(으)로 변경됨`, 'success');
 
     // piContract 갱신 (새로 생성된 채용확정 계약으로 교체)
-    piContract = getContracts().find(c => c.id === confirmedContract.id) || confirmedContract;
+    window.piContract = getContracts().find(c => c.id === confirmedContract.id) || confirmedContract;
 
     // 케이스② 배너 숨김 (처리 완료)
     const banner = document.getElementById('pi-prob-overrun-banner');
@@ -1118,7 +1119,7 @@ export async function _syncPayrollToLedger(empId, year, month, annualUsedVal){
 }
 
 
-// ============================================================================
+﻿// ============================================================================
 // 급여 입력 페이지 — 전직원 임금대장 일괄 업로드 모달
 // ============================================================================
 export function openPIUploadModal(){

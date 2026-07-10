@@ -6,6 +6,7 @@ import { getCompanies, getEmployees, getContracts } from '../state.mjs';
 import { CONTRACT_TYPE, CONTRACT_STATUS } from '../constants.mjs';
 
 const _w = (name) => window[name];
+window._w = _w;
 
 export function _getContractPrintCSS(){
   return [

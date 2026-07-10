@@ -6,6 +6,7 @@ import { getCompanies, getEmployees, getPayrolls, getContracts } from '../state.
 import { CONTRACT_TYPE, CONTRACT_STATUS, COMPANY_STATUS, EMP_STATUS, CONTRACT_TYPE_LEGACY_MAP, DISPATCH_METHOD, DISPATCH_STATUS } from '../constants.mjs';
 
 const _w = (name) => window[name];
+window._w = _w;
 
 // ─── COMPANIES ───
 /* ─────────────────────────────────────────────────────────────────
@@ -453,7 +454,7 @@ export function checkAccessCodeDuplicate(){
   // 형식 통과 시 테두리 복원
   if(inputEl){ inputEl.style.borderColor = ''; inputEl.style.background = ''; }
   // 서버에서 중복 검사 (loadCompanies limit=100 이슈 회피)
-  const currentId = editId.company || _cmpData?.id;
+  const currentId = editId.company;
   fetch(`/api/companies/check-code?code=${encodeURIComponent(code)}&exclude=${currentId||''}`)
     .then(r => r.json())
     .then(data => {

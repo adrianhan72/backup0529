@@ -5,8 +5,6 @@
  * 기존 글로벌 api() 함수를 ES Module 패턴으로 대체합니다.
  */
 
-const BASE = '..';
-
 /**
  * 기본 API 호출
  * @param {string} url - 상대 URL
@@ -15,7 +13,7 @@ const BASE = '..';
  */
 async function api(url, options = {}) {
   const headers = { 'Content-Type': 'application/json', ...options.headers };
-  const res = await fetch(`${BASE}${url}`, { ...options, headers });
+  const res = await fetch(url, { ...options, headers });
   if (!res.ok) throw new Error(`API ${res.status}: ${url}`);
   return res.json();
 }

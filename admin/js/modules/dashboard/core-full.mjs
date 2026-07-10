@@ -6,6 +6,7 @@ import { getCompanies, getEmployees, getPayrolls, getContracts } from '../state.
 import { CONTRACT_TYPE, CONTRACT_STATUS, COMPANY_STATUS, EMP_STATUS, CONTRACT_TYPE_LEGACY_MAP, DISPATCH_METHOD, DISPATCH_STATUS } from '../constants.mjs';
 
 const _w = (name) => window[name];
+window._w = _w;
 
 // ─── DASHBOARD ───
 
@@ -1452,11 +1453,11 @@ export function goDraftPayroll(draftId){
     if(yrEl) yrEl.value = p.pay_year;
     if(moEl) moEl.value = p.pay_month;
 
-    piEditPayrollId = null;
+    window.piEditPayrollId = null;
     const editBanner = document.getElementById('pi-edit-banner');
     if(editBanner) editBanner.style.display = 'none';
 
-    piDraftId = draftId;
+    window.piDraftId = draftId;
     
     // 계약 로드 및 임시저장 복원
     setTimeout(() => {

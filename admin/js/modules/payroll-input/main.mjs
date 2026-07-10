@@ -1,11 +1,12 @@
 /**
- * payroll-input/payroll-input-full.mjs — Phase 6: 급여대장 통합 (core+excel+save+main)
+ * payroll-input/_full.mjs — Phase 6: 급여대장 통합
  * Node.js 자동변환 (convert-core.cjs)
  */
 import { getCompanies, getEmployees, getPayrolls, getContracts } from '../state.mjs';
 import { piContract, piEditPayrollId, piDraftId, _piEditSnapshot, _piContractLoading, _piPayTypes } from "./state.mjs";
 import { CONTRACT_TYPE, CONTRACT_STATUS, COMPANY_STATUS, EMP_STATUS, CONTRACT_TYPE_LEGACY_MAP, DISPATCH_METHOD, DISPATCH_STATUS } from '../constants.mjs';
 const _w = (name) => window[name];
+window._w = _w;
 // ─── PAYROLL INPUT ───
 // ============================================================================
 // 급여 입력 페이지 — 전월 임금대장 엑셀 다운로드
@@ -327,7 +328,7 @@ export function selectPITarget(empId, contractId, draftId=null){
 
   if(draftId){
     // ── '이어 입력': 임시저장 자동 복원 ──
-    if(typeof piDraftId !== 'undefined') piDraftId = draftId;
+    if(typeof piDraftId !== 'undefined') window.piDraftId = draftId;
     setTimeout(() => {
       if(typeof loadPIDraft === 'function') loadPIDraft();
     }, 400);
@@ -343,8 +344,8 @@ export function selectPITarget(empId, contractId, draftId=null){
       // ── 신규 입력 모드 진입: 수정 모드 잔존 상태 완전 해제 ──
       // 원상복구 후 목록 복귀 → 미입력 직원 선택 시 이전 piEditPayrollId가 남아
       // 수정 배너·비활성 버튼이 잔존하는 버그 방지
-      piEditPayrollId = null;
-      _piEditSnapshot = null;
+      window.piEditPayrollId = null;
+      window._piEditSnapshot = null;
       // pi-edit-banner 제거됨
       const _newDropZone = document.getElementById('pi-upload-drop-zone');
       if(_newDropZone) _newDropZone.style.display = '';
@@ -376,7 +377,7 @@ export function backToPITargetList(){
     return; // cancelEditPayroll 내부에서 loadPITargetList() 호출하므로 중복 방지
   }
   // 신규 모드에서 목록으로 복귀
-  piContract = null;
+  window.piContract = null;
   if(typeof clearPIFields === 'function') clearPIFields();
   const card = document.getElementById('pi-contract-card');
   if(card) card.style.display = 'none';
@@ -418,7 +419,7 @@ export async function loadPIEmployees(){
   (window.allRelatedParties||[]).filter(r=>r.company_id===co).sort((a,b)=>(a.name||'').localeCompare(b.name||'','ko')).forEach(r=>{s.innerHTML+=`<option value="${r.id}" data-type="related_party" style="color:#0891b2;">${r.name} (${r.relationship||'특수관계인'}) — 특수관계인</option>`;});
 
   document.getElementById('pi-contract-card').style.display='none';
-  piContract=null;clearPIFields();
+  window.piContract=null;clearPIFields();
 }
 // ── 연차 현황 표 계산·렌더링 ──
 export function calcAnnualLeaveTable(){
@@ -602,11 +603,11 @@ export function onAnnualAutoChkChange(){
 }
 
 export function loadPIContract(){
-  _piContractLoading = true;  // setPIPayType 내 calcPI 중복 호출 방지 시작
+  window._piContractLoading = true;  // setPIPayType 내 calcPI 중복 호출 방지 시작
   const empSel = document.getElementById('pi-employee');
   const empId = empSel?.value;
   const card=document.getElementById('pi-contract-card');
-  if(!empId){card.style.display='none';piContract=null;_piContractLoading=false;return;}
+  if(!empId){card.style.display='none';window.piContract =null;window._piContractLoading =false;return;}
 
   // 선택된 옵션의 data-type 확인 (등기임원/특수관계인 여부)
   const selectedOption = empSel?.selectedOptions?.[0];
@@ -628,7 +629,7 @@ export function loadPIContract(){
       return '';
     })() : '';
     const coIdForExec = personType === 'executive' ? exec?.company_id : empId.split('_').slice(0, -1).join('_');
-    piContract = {
+    window.piContract = {
       id: null, employee_id: empId, company_id: coIdForExec || '',
       contract_type: personType === 'executive' ? CONTRACT_TYPE.EXECUTIVE : CONTRACT_TYPE.REGULAR,
       contract_start: '', contract_end: '',
@@ -642,14 +643,14 @@ export function loadPIContract(){
       is_virtual: true, _personType: personType
     };
     card.style.display = 'none';
-    _piContractLoading = false;
+    window._piContractLoading = false;
     _applyPIDefaultWorkDays(false);
     return;
   }
 
   if(personType === 'related_party'){
     const rel = (window.allRelatedParties||[]).find(r => r.id === empId);
-    piContract = rel ? {
+    window.piContract = rel ? {
       id: null, employee_id: empId, company_id: rel.company_id,
       contract_type: CONTRACT_TYPE.RELATED_PARTY, contract_start: '', contract_end: '',
       hourly_wage: 0, base_salary: 0, daily_wage: 0, weekly_holiday_pay: 0,
@@ -662,7 +663,7 @@ export function loadPIContract(){
       is_virtual: true, _personType: 'related_party'
     } : null;
     card.style.display = 'none';
-    _piContractLoading = false;
+    window._piContractLoading = false;
     _applyPIDefaultWorkDays(false);
     return;
   }
@@ -680,7 +681,7 @@ export function loadPIContract(){
       // 복수 활성 계약: contract_start 기준 내림차순 → 가장 최근 계약 선택
       _piCandidates.sort((a,b)=>(b.contract_start||'').localeCompare(a.contract_start||''));
     }
-    piContract = _piCandidates[0] || null;
+    window.piContract = _piCandidates[0] || null;
   }
   // 기준 모드 UI 전환 (고객사마다 다를 수 있으므로 직원 선택 시도 재확인)
   _switchInsuranceModeUI();
@@ -995,7 +996,7 @@ export function loadPIContract(){
   }
   // setPIPayType 호출이 모두 끝났으므로 비정기 섹션 이동 처리 후 calcPI 1회 실행
   _renderPIIrregularRows();
-  _piContractLoading = false;
+  window._piContractLoading = false;
   calcPI();
 
   // ── 근로일수 · 총 근로시간 자동 입력 (직원 선택 시 항상 새로 계산) ──
@@ -1009,7 +1010,7 @@ export function loadPIContract(){
     const _empIdForDraft = document.getElementById('pi-employee')?.value;
     const _yrForDraft    = parseInt(document.getElementById('pi-year')?.value);
     const _moForDraft    = parseInt(document.getElementById('pi-month')?.value);
-    piDraftId = null; // 직원 바뀌면 초기화
+    window.piDraftId = null; // 직원 바뀌면 초기화
     if(_empIdForDraft && _yrForDraft && _moForDraft){
       _checkAndShowPIDraftBanner(_empIdForDraft, _yrForDraft, _moForDraft);
     } else {
@@ -1700,7 +1701,7 @@ export function onPIYearMonthChange(){
   // ── 연월 변경 시에도 임시저장 배너 갱신 ──
   const _empId2 = document.getElementById('pi-employee')?.value;
   if(_empId2){
-    piDraftId = null; // 연월 변경 시 초기화
+    window.piDraftId = null; // 연월 변경 시 초기화
     _checkAndShowPIDraftBanner(_empId2, yr, mo);
   }
 }
@@ -2122,7 +2123,8 @@ export function calcPIDeductions(gross){
   const advance=gv('pi-advance');
   const totalDed=pension+health+ltCare+empIns+incomeTax+localTax+yearEnd+healthAdj+healthAdjRetro+healthAdjYearend+ltcareAdjYearend+advance;
   const net=gross-totalDed;
-  document.getElementById('pi-ded-detail').innerHTML=`
+  const dedEl = document.getElementById('pi-ded-detail');
+  if (dedEl) dedEl.innerHTML=`
     <div style="display:flex;justify-content:space-between"><span style="color:#888">소득세 (부양가족 ${dependents}인)</span><span>${won(incomeTax)}</span></div>
     <div style="display:flex;justify-content:space-between"><span style="color:#888">주민세 (소득세×10%)</span><span>${won(localTax)}</span></div>
     <div style="display:flex;justify-content:space-between"><span style="color:#888">국민연금 (보수월액×${R.pensionLabel})</span><span>${won(pension)}</span></div>
@@ -2165,14 +2167,15 @@ export function calcPIFixed(gross){
   const advance=gv('pi-advance');
   const totalDed=pension+health+ltCare+empIns+incomeTax+localTax+yearEnd+healthAdj+healthAdjRetro+healthAdjYearend+ltcareAdjYearend+advance;
   const net=gross-totalDed;
-  document.getElementById('pi-ded-detail-fixed').innerHTML=`
+  const dedFixedEl = document.getElementById('pi-ded-detail-fixed');
+  if (dedFixedEl) dedFixedEl.innerHTML=`
     <div style="display:flex;justify-content:space-between"><span style="color:#888">소득세 (부양가족 ${dependents}인, 자동)</span><span>${won(incomeTax)}</span></div>
     <div style="display:flex;justify-content:space-between"><span style="color:#888">주민세 (소득세×10%, 자동)</span><span>${won(localTax)}</span></div>`;
   _piFinalize(gross,std,incomeTax,localTax,health,ltCare,pension,empIns,totalDed,net,yearEnd,healthAdj,healthAdjRetro,healthAdjYearend,ltcareAdjYearend,advance);
 }
 
 export function _piFinalize(gross,std,incomeTax,localTax,health,ltCare,pension,empIns,totalDed,net,yearEnd,healthAdj,healthAdjRetro,healthAdjYearend,ltcareAdjYearend,advance){
-  const updateAmounts=(g,d,n)=>{ document.getElementById(g).textContent=won(gross); document.getElementById(d).textContent=won(totalDed); document.getElementById(n).textContent=won(net); };
+  const updateAmounts=(g,d,n)=>{ const ge=document.getElementById(g); const de=document.getElementById(d); const ne=document.getElementById(n); if(ge)ge.textContent=won(gross); if(de)de.textContent=won(totalDed); if(ne)ne.textContent=won(net); };
   updateAmounts('pi-gross-disp','pi-ded-disp','pi-net-disp');
   updateAmounts('pi-gross-disp2','pi-ded-disp2','pi-net-disp2');
   const _pv=id=>parseFloat((document.getElementById(id)?.textContent||'').replace(/[^0-9]/g,'')||0);
@@ -2182,7 +2185,7 @@ export function _piFinalize(gross,std,incomeTax,localTax,health,ltCare,pension,e
     holPay:  _pv('pi-hol-pay-disp')   || _pv('pi-hol-pay-disp-simple')};
   // 모든 계산 완료 후 원상복구/초기화 버튼 상태 갱신
   // (calcPI가 pi-std-pay 등을 자동계산·갱신하므로, 이벤트 위임만으로는 최신 폼 상태를 반영 못할 수 있음)
-  // 신규 모드: piEditPayrollId===null이어도 _checkPIRestoreBtn()이 내부에서 항상 활성 처리
+  // 신규 모드: window.piEditPayrollId ===null이어도 _checkPIRestoreBtn()이 내부에서 항상 활성 처리
   // 수정 모드: 스냅샷 있을 때만 비교 (_checkPIRestoreBtn 내부에서 null 체크)
   _checkPIRestoreBtn();
 }
@@ -2812,7 +2815,7 @@ export function clearPI(){
   if(_pdEl){ _pdEl.readOnly=false; _pdEl.style.background=''; _pdEl.style.color=''; _pdEl.style.cursor=''; }
   const _pdBadge=document.getElementById('pi-paydate-badge'); if(_pdBadge) _pdBadge.style.display='none';
   _setPIContractReadonly(false); // 잠금 해제
-  piContract=null; clearPIFields();
+  window.piContract =null; clearPIFields();
   // 직원 초기화 시 회사 allowance_config로 항목 show/hide 복원
   const _clrCoId = window.currentGlobalCompanyId || document.getElementById('pi-company')?.value;
   const _clrCo   = getCompanies().find(c=>c.id===_clrCoId);
@@ -2871,8 +2874,8 @@ export function _resetPIInputsOnly(){
   if(_apRst){ _apRst.readOnly=false; _apRst.style.background=''; _apRst.style.color=''; _apRst.style.fontWeight=''; _apRst.style.cursor=''; }
 
   // 6) 수정 모드 해제
-  piEditPayrollId = null;
-  _piEditSnapshot = null;  // 스냅샷 초기화
+  window.piEditPayrollId = null;
+  window._piEditSnapshot = null;  // 스냅샷 초기화
   _updatePIBottomBtns();
 
   // 7) 근로 실적 패널 리셋 후 만근 기준 재계산
@@ -2939,7 +2942,7 @@ export function _checkPIRestoreBtn(){
     btn.style.cursor  = '';
     return;
   }
-  if(_piEditSnapshot === null){
+  if(window._piEditSnapshot === null){
     // 수정 모드이지만 스냅샷 아직 미생성(필드 채우기 진행 중) → 비활성
     btn.disabled      = true;
     btn.style.opacity = '0.4';

@@ -6,6 +6,7 @@ import { getCompanies, getEmployees, getPayrolls, getContracts } from '../state.
 import { CONTRACT_TYPE, CONTRACT_STATUS, COMPANY_STATUS, EMP_STATUS, CONTRACT_TYPE_LEGACY_MAP, DISPATCH_METHOD, DISPATCH_STATUS } from '../constants.mjs';
 
 const _w = (name) => window[name];
+window._w = _w;
 
 // 고객사 수정 이력 렌더링
 // ==============================================================================
@@ -402,11 +403,16 @@ export function selectContCompany(companyId, companyName){
   // 글로벌 공유 변수만 업데이트 (다른 페이지 변수는 showPage()에서 처리)
   currentGlobalCompanyId = companyId;
   currentGlobalCompanyName = companyName;
-  document.getElementById('cont-selected-company-label').innerHTML =
-    `<i class="fas fa-file-signature" style="margin-right:6px;"></i>${companyName} 근로계약 목록`;
-  document.getElementById('cont-company-select-card').style.display = 'none';
-  document.getElementById('cont-list-section').style.display = 'block';
-  document.getElementById('cont-search').value = '';
+  const labelEl = document.getElementById('cont-selected-company-label');
+  if (labelEl) {
+    labelEl.innerHTML = `<i class="fas fa-file-signature" style="margin-right:6px;"></i>${companyName} 근로계약 목록`;
+  }
+  const selectCard = document.getElementById('cont-company-select-card');
+  if (selectCard) selectCard.style.display = 'none';
+  const listSection = document.getElementById('cont-list-section');
+  if (listSection) listSection.style.display = 'block';
+  const searchEl = document.getElementById('cont-search');
+  if (searchEl) searchEl.value = '';
   const _ecEl = document.getElementById('cont-filter-empcat'); if(_ecEl) _ecEl.value='';
   const _stEl = document.getElementById('cont-filter-status'); if(_stEl) _stEl.value='유효';
   const _docEl = document.getElementById('cont-filter-docs-incomplete'); if(_docEl) _docEl.checked=false;
@@ -483,12 +489,16 @@ export function selectPayCompany(companyId, companyName){
   currentGlobalCompanyId = companyId;
   currentGlobalCompanyName = companyName;
   window.pages.pay = 1;
-  document.getElementById('pay-selected-company-label').innerHTML =
-    `<i class="fas fa-money-bill-wave" style="margin-right:6px;"></i>${companyName} 급여 명세서`;
-  document.getElementById('pay-company-select-card').style.display = 'none';
-  document.getElementById('pay-list-section').style.display = 'block';
-  document.getElementById('pay-excel-btn').style.display = '';
-  document.getElementById('pay-search').value = '';
+  const payLabel = document.getElementById('pay-selected-company-label');
+  if (payLabel) payLabel.innerHTML = `<i class="fas fa-money-bill-wave" style="margin-right:6px;"></i>${companyName} 급여 명세서`;
+  const payCard = document.getElementById('pay-company-select-card');
+  if (payCard) payCard.style.display = 'none';
+  const payList = document.getElementById('pay-list-section');
+  if (payList) payList.style.display = 'block';
+  const excelBtn = document.getElementById('pay-excel-btn');
+  if (excelBtn) excelBtn.style.display = '';
+  const searchEl = document.getElementById('pay-search');
+  if (searchEl) searchEl.value = '';
   initPayYearMonth();
   _w('renderPayrolls')();
 }

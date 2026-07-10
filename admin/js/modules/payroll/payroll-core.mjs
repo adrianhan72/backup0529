@@ -16,6 +16,7 @@ const ITEMS = 10;
 // 레거시 브릿지 (window 함수들)
 // ═══════════════════════════════════════════
 const _w = (name) => window[name];
+window._w = _w;
 
 // ─── PAYROLLS ───
 export function renderPayrolls() {
@@ -42,9 +43,11 @@ export function renderPayrolls() {
   }).sort((a, b) => _w('getEmpName')(a.employee_id).localeCompare(_w('getEmpName')(b.employee_id), 'ko'));
   const paged = f.slice((window.pages.pay - 1) * ITEMS, window.pages.pay * ITEMS);
   const tb = document.getElementById('pay-tbody');
+  if (!tb) return;
   if (!f.length) {
     tb.innerHTML = '<tr><td colspan="11" class="empty-state">급여 내역이 없습니다</td></tr>';
-    document.getElementById('pay-pagination').innerHTML = '';
+    const pagination = document.getElementById('pay-pagination');
+    if (pagination) pagination.innerHTML = '';
     return;
   }
   const allE = getEmployees();

@@ -6,6 +6,7 @@ import { getCompanies, getEmployees, getPayrolls, getContracts } from '../state.
 import { CONTRACT_TYPE, CONTRACT_STATUS, COMPANY_STATUS, EMP_STATUS, CONTRACT_TYPE_LEGACY_MAP, DISPATCH_METHOD, DISPATCH_STATUS } from '../constants.mjs';
 
 const _w = (name) => window[name];
+window._w = _w;
 
 //  정규직 전환 관리 페이지 (page-regular-conversion)
 //  「기간제 및 단시간근로자 보호 등에 관한 법률」 제4조
@@ -375,7 +376,7 @@ export function renderRcTemplate(){
 
 ※ 본 안내는 대화인사노무파트너스에서 발송한 법적 의무 안내입니다.
 
-${_BRAND_SIG}`;
+${window._BRAND_SIG}`;
 
   // 인앱 카드 미리보기 업데이트
   const setTxt = (id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v; };
@@ -409,7 +410,7 @@ ${_BRAND_SIG}`;
         <span style="color:#dc2626;font-weight:700;">${fmtDays(totalDays)}</span>
       </div>
     </div>`);
-  setTxt('rc-tmpl-inapp-foot', `※ 본 안내는 대화인사노무파트너스에서 발송한 법적 의무 안내입니다.\n\n${_BRAND_SIG}`);
+  setTxt('rc-tmpl-inapp-foot', `※ 본 안내는 대화인사노무파트너스에서 발송한 법적 의무 안내입니다.\n\n${window._BRAND_SIG}`);
 
   // 변수 안내 테이블
   const vars = [

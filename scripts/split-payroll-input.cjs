@@ -1,7 +1,7 @@
 // scripts/split-payroll-input.cjs — payroll-input-full.mjs 분할
 const fs = require('fs');
 
-const content = fs.readFileSync('admin/js/modules/payroll-input/payroll-input-full.mjs', 'utf-8');
+const content = fs.readFileSync('admin/js/modules/payroll-input/_full.mjs', 'utf-8');
 const lines = content.split('\n');
 
 // Boundaries (line numbers, 0-indexed)

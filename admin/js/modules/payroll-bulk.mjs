@@ -15,7 +15,8 @@ let _bulkSendRunning = false;
 // ═══════════════════════════════════════════
 // 레거시 브릿지 (아직 .mjs로 이전되지 않은 함수들)
 // ═══════════════════════════════════════════
-const _w = (name) => window[name];          // window 함수 참조
+const _w = (name) => window[name];
+window._w = _w;          // window 함수 참조
 const _api = (...args) => window.api(...args); // api() 레거시 (api.mjs import 가능)
 const _toast = (msg, type) => window.toast ? window.toast(msg, type) : alert(msg);
 
@@ -182,6 +183,7 @@ async function _generatePayslipBlob(payrollId) {
     } catch (err) { reject(err); }
   });
 }
+window._generatePayslipBlob = _generatePayslipBlob;
 
 /** 카카오 알림톡 발송 */
 async function _sendKakaoAlimtalk(phone, fileName, file) {

@@ -6,6 +6,7 @@ import { getCompanies, getEmployees, getPayrolls, getContracts } from '../state.
 import { CONTRACT_TYPE, CONTRACT_STATUS, COMPANY_STATUS, EMP_STATUS, CONTRACT_TYPE_LEGACY_MAP, DISPATCH_METHOD, DISPATCH_STATUS } from '../constants.mjs';
 
 const _w = (name) => window[name];
+window._w = _w;
 
 // CEN_PAGE_SIZE: company-notice.mjs와 공유 (원래 같은 전역 스코프)
 const CEN_PAGE_SIZE = 20;
@@ -1052,7 +1053,7 @@ ${refYear}년도 미사용 연차 유급휴가가 남아 있어 사용을 촉진
 담당 노무사: ${adminName}
 ※ 본 통지는 근로기준법 제61조에 따른 공식 연차 사용촉진 통지서입니다.
 
-${_BRAND_SIG}`;
+${window._BRAND_SIG}`;
 }
 
 /**
@@ -1077,7 +1078,7 @@ export function _buildLeavePromoCompanyBody(emp, co, al, refYear, adminName, wor
 해당 직원이 기한 내 연차를 미사용할 경우, 「근로기준법」 제61조에 따라 미사용 연차수당 지급 의무가 소멸될 수 있습니다.
 자세한 사항은 담당 노무사 ${adminName}에게 문의하시기 바랍니다.
 
-${_BRAND_SIG}`;
+${window._BRAND_SIG}`;
 }
 
 /** 연차 사용 기한 계산 헬퍼 */
@@ -1366,7 +1367,7 @@ export function renderCenHistory(){
   // 고객사 필터 옵션 동적 채우기 (최초 1회)
   const coSel = document.getElementById('cen-log-filter-company');
   if(coSel && coSel.options.length <= 1){
-    const uniqueCos = [...new Map(_cenNoticeList.map(r=>[r.company_id, r.company_name])).entries()]
+    const uniqueCos = [...new Map(window._cenNoticeList.map(r=>[r.company_id, r.company_name])).entries()]
       .sort((a,b)=>(a[1]||'').localeCompare(b[1]||'','ko'));
     uniqueCos.forEach(([id,name])=>{
       const opt=document.createElement('option');
@@ -1374,7 +1375,7 @@ export function renderCenHistory(){
     });
   }
 
-  let list = _cenNoticeList.filter(r=>{
+  let list = window._cenNoticeList.filter(r=>{
     if(filterMethod  && r.notice_method  !== filterMethod)  return false;
     if(filterCompany && r.company_id     !== filterCompany) return false;
     if(searchQ && !(r.employee_name||'').toLowerCase().includes(searchQ)) return false;
@@ -1382,8 +1383,8 @@ export function renderCenHistory(){
   }).sort((a,b)=>(a.employee_name||'').localeCompare(b.employee_name||'','ko'));
 
   const totalPages = Math.max(1, Math.ceil(list.length / CEN_PAGE_SIZE));
-  if(_cenHistoryPage > totalPages) _cenHistoryPage = totalPages;
-  const pageData = list.slice((_cenHistoryPage-1)*CEN_PAGE_SIZE, _cenHistoryPage*CEN_PAGE_SIZE);
+  if(window._cenHistoryPage > totalPages) window._cenHistoryPage = totalPages;
+  const pageData = list.slice((window._cenHistoryPage-1)*CEN_PAGE_SIZE, window._cenHistoryPage*CEN_PAGE_SIZE);
 
   if(!list.length){
     tbody.innerHTML = `<tr><td colspan="9" class="cen-empty">
@@ -1435,10 +1436,10 @@ export function renderCenHistory(){
       <td style="font-size:12px;color:#6b7280;">${_w('_resolveAdminName')(r.noticed_by)||'-'}</td>
     </tr>`).join('');
 
-  _cenRenderPagination('cen-log-pagination', list.length, _cenHistoryPage, 'setCenHistoryPage');
+  _cenRenderPagination('cen-log-pagination', list.length, window._cenHistoryPage, 'setCenHistoryPage');
 }
 
-export function setCenHistoryPage(p){ _cenHistoryPage = p; renderCenHistory(); }
+export function setCenHistoryPage(p){ window._cenHistoryPage = p; renderCenHistory(); }
 
 /** CEN 전용 페이지네이션 렌더 (CEN_PAGE_SIZE 기준) */
 export function _cenRenderPagination(containerId, total, page, fn){

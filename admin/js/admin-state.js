@@ -947,11 +947,14 @@ function selectPICompany(companyId, companyName){
   currentGlobalCompanyName = companyName;
 
   // 헤더 레이블
-  document.getElementById('pi-selected-company-label').textContent=companyName+' 급여 입력';
+  const labelEl = document.getElementById('pi-selected-company-label');
+  if (labelEl) labelEl.textContent = companyName+' 급여 입력';
 
   // 카드 전환 — 년월 선택 UI 표시
-  document.getElementById('pi-company-select-card').style.display='none';
-  document.getElementById('pi-input-section').style.display='';
+  const selectCard = document.getElementById('pi-company-select-card');
+  const inputSection = document.getElementById('pi-input-section');
+  if (selectCard) selectCard.style.display = 'none';
+  if (inputSection) inputSection.style.display = '';
 
   // ★ 수정 모드 진입(piEditPayrollId 설정됨) 중에는
   //   폼 섹션 숨김·년월 초기화를 건너뜀 — editPayroll()이 직접 처리

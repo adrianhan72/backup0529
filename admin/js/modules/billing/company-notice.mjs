@@ -6,16 +6,19 @@ import { getCompanies, getEmployees, getPayrolls, getContracts } from '../state.
 import { CONTRACT_TYPE, CONTRACT_STATUS, COMPANY_STATUS, EMP_STATUS, CONTRACT_TYPE_LEGACY_MAP, DISPATCH_METHOD, DISPATCH_STATUS } from '../constants.mjs';
 
 const _w = (name) => window[name];
+window._w = _w;
 
 // 계약만료 통지 관리 (CEN = Contract Expiry Notice)
 // ======================================================================
 
 /** 전역 상태 */
 let _cenNoticeList  = [];   // contract_expiry_notice 테이블 캐시
+window._cenNoticeList = []; // cross-module bridge (annual-leave.mjs)
 let _cenHistoryLoaded = false;
 let _cenTab         = 'target';  // 현재 탭
 let _cenTargetPage  = 1;
 let _cenHistoryPage = 1;
+window._cenHistoryPage = 1; // cross-module bridge (annual-leave.mjs)
 const CEN_PAGE_SIZE = 20;
 const CEN_NOTICE_DAYS = 29;  // 만료 N일 전 통지 대상
 
@@ -117,7 +120,7 @@ export function renderCenTemplate(){
 ${urgencyWorker}
 계약 갱신 또는 종료 여부를 담당 노무사와 미리 상의해 주시기 바랍니다.
 
-${_BRAND_SIG}`;
+${window._BRAND_SIG}`;
 
   const kakaoFooter =
 `※ 「기간제 및 단시간근로자 보호 등에 관한 법률」에 따른 계약만료 사전 통지입니다.
@@ -140,7 +143,7 @@ ${urgencyWorker}`;
 `본 메일은 「기간제 및 단시간근로자 보호 등에 관한 법률」 및 근로기준법에 따른 계약만료 사전 통지 메일입니다.
 수신을 원하지 않으시면 담당자에게 문의해 주세요.
 
-${_BRAND_SIG}`;
+${window._BRAND_SIG}`;
 
   // ── 4. 고객사 — 인앱 알림 ────────────────────────────────────
   const inappTitle  = `[계약만료 예정] ${empName} ${catLabel} — ${ddayStr}`;
@@ -157,7 +160,7 @@ ${urgencyCompany}`;
 문의: ${adminPhone} / ${adminEmail}
 ※ 「기간제 및 단시간근로자 보호 등에 관한 법률」에 따른 사전 통지
 
-${_BRAND_SIG}`;
+${window._BRAND_SIG}`;
 
   // ── 5. DOM 반영: 근로자 알림톡 ──────────────────────────────
   _setText('cen-tmpl-kakao-body',   kakaoBody);
@@ -636,7 +639,7 @@ ${urgencyCompany}
 
 ※ 「기간제 및 단시간근로자 보호 등에 관한 법률」에 따른 사전 통지
 
-${_BRAND_SIG}`;
+${window._BRAND_SIG}`;
 
   await fetch('../tables/company_notices', {
     method : 'POST',
@@ -693,7 +696,7 @@ export async function _cenSaveNotice({ contractId, method, status, recipient, no
   if(!res.ok) throw new Error(`HTTP ${res.status}`);
   const saved = await res.json();
   // 캐시에 즉시 반영
-  _cenNoticeList.unshift(saved);
+  _cenNoticeList.unshift(saved); window._cenNoticeList = _cenNoticeList; // sync
   return saved;
 }
 
