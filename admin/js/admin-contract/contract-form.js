@@ -900,9 +900,9 @@ function applyBulkSchedule(){
 // ── 시프트 그룹 렌더 헬퍼 ──
 function _shiftGroupHTML(key, idx, enabled, start, end, breaks){
   const dis = enabled ? '' : 'disabled';
-  const s = start || (enabled && idx===0 ? '09:00' : '');
-  const e = end   || (enabled && idx===0 ? '18:00' : '');
-  const defBreaks = (enabled && idx===0) ? [{s:'12:00', e:'13:00'}] : [{s:'', e:''}];
+  const s = start || '';
+  const e = end   || '';
+  const defBreaks = [{s:'', e:''}];
   const brks = (breaks && breaks.length) ? breaks : defBreaks;
   const sid = idx===0 ? '' : '-'+idx;
   return `<div class="shift-group" id="ct-sch-shift-${key}${sid}">
@@ -1087,7 +1087,7 @@ function initScheduleTable(){
     <tr class="${DAY_CLASSES[i]}" id="ct-sch-row-${key}">
       <td><span class="day-label" style="color:${color}">${DAYS_KR[i]}</span></td>
       <td class="td-shifts"><div class="shifts-container" id="ct-sch-shifts-${key}">${_shiftGroupHTML(key, 0, enabled, '', '', null)}</div></td>
-      <td><span class="computed-h" id="ct-sch-hrs-${key}">${enabled?'8시간':'-'}</span></td>
+      <td><span class="computed-h" id="ct-sch-hrs-${key}">-</span></td>
     </tr>`;
   }).join('');
   calcWorkHours();
