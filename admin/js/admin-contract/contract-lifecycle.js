@@ -2664,6 +2664,16 @@ function _ctValidate(){
     _ctMarkError('ct-schedule-table', '근무시간표 (일괄적용 또는 요일별 입력)', errors);
   }
 
+  // ── 공통: 보육수당 (통상임금 포함·매월 정기지급 시에만 필수) ──
+  const _ccRow = document.getElementById('ct-row-childcare');
+  if(_ccRow && _ccRow.style.display !== 'none' && _isFixedAllow('childcare')){
+    const _ccDep = parseInt(document.getElementById('ct-childcare-dependents')?.value);
+    if(isNaN(_ccDep) || _ccDep < 1)
+      _ctMarkError('ct-childcare-dependents', '보육수당 부양가족 수', errors);
+    if(!getAmountVal('ct-childcare'))
+      _ctMarkError('ct-childcare', '보육수당 월 지급액', errors);
+  }
+
   // ── 공통: 회사 (모달 오픈 시 항상 설정됨) ──
   const coId = document.getElementById('ct-company').value;
 
