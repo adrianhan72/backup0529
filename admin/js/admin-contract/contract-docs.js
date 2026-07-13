@@ -164,9 +164,9 @@ async function _ctfUpload(type, contractId, inputEl){
         await fetch(`../tables/contracts/${contractId}`, {
           method: 'PATCH',
           headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ status: 'active' })
+          body: JSON.stringify({ status: CONTRACT_STATUS.ACTIVE })
         });
-        if(idx !== -1) allContracts[idx].status = 'active';
+        if(idx !== -1) allContracts[idx].status = CONTRACT_STATUS.ACTIVE;
       }
     }
 

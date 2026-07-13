@@ -275,7 +275,7 @@ function renderRcHistory(){
     return `<tr>
       <td style="font-size:12px;color:#374151;white-space:nowrap;">${fmtDt(r.noticed_at)}</td>
       <td style="font-weight:600;color:#111827;">${r.employee_name||'-'}</td>
-      <td><span class="badge ${cls}" style="font-size:11px;">${r.contract_type||'-'}</span></td>
+      <td><span class="badge ${cls}" style="font-size:11px;">${contractTypeLabel(r.contract_type)||'-'}</span></td>
       <td style="font-size:12px;color:#374151;">${r.company_name||'-'}</td>
       <td style="font-size:12px;color:#6b7280;">${totalDaysText}</td>
       <td>${methodBadge(r.notice_method)}</td>

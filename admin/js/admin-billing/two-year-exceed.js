@@ -166,7 +166,7 @@ function render2YrTargetList(){
     const statusBadge = x.status === 'exceeded'
       ? `<span class="badge-2yr-over"><i class="fas fa-exclamation-circle"></i> 2년 초과</span>`
       : `<span class="badge-2yr-warn"><i class="fas fa-clock"></i> 주의 (1.5년+)</span>`;
-    const catText = (x.activeContract?.contract_type) || '계약직';
+    const catText = contractTypeLabel(x.activeContract?.contract_type) || '계약직';
     return `<tr>
       <td style="font-weight:700;color:#111827;">${x.empName}</td>
       <td style="font-size:12px;color:#374151;">${x.company}</td>
@@ -213,7 +213,7 @@ async function _2yrSendNotice(empId){
 소속 직원의 기간제 근로 누적 기간이 2년을 초과하여 법률에 따른 정규직 전환 의무가 발생하였음을 안내드립니다.
 
 ■ 직원명: ${item.empName}
-■ 고용형태: ${item.activeContract?.contract_type || '계약직'}
+■ 고용형태: ${contractTypeLabel(item.activeContract?.contract_type) || '계약직'}
 ■ 최초 계약일: ${item.firstStart || '-'}
 ■ 누적 계약기간: ${fmtDays(item.totalDays)}
 

@@ -259,7 +259,7 @@ function renderCompanyTrendChart(){
       ct.status !== CONTRACT_STATUS.VOIDED && ct.status !== CONTRACT_STATUS.CANCELED &&
       !repEmpIds.has(ct.employee_id)
     ).length;
-    coMeta[c.id] = { status: active ? 'active' : 'inactive', empCount };
+    coMeta[c.id] = { status: active ? COMPANY_STATUS.ACTIVE : COMPANY_STATUS.INACTIVE, empCount };
   });
 
   for(let i = months - 1; i >= 0; i--){

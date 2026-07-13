@@ -121,7 +121,8 @@ function loadPITargetList(){
 
   // 해당 고객사 + 해당 년월에 유효 계약이 있는 근로자 필터링
   // 유효 조건: is_draft=false, 파기되지 않음, 계약 기간이 해당 월과 겹침
-  const VALID_STATUSES = new Set([CONTRACT_STATUS.ACTIVE, CONTRACT_STATUS.PENDING, CONTRACT_STATUS.DOCS_INCOMPLETE]);
+  // terminate_pending 포함: 해지일 전까지는 급여 지급 대상
+  const VALID_STATUSES = new Set([CONTRACT_STATUS.ACTIVE, CONTRACT_STATUS.PENDING, CONTRACT_STATUS.DOCS_INCOMPLETE, CONTRACT_STATUS.TERMINATE_PENDING]);
   const targetContracts = allContracts.filter(c => {
     if(c.company_id !== coId) return false;
     if(c.is_draft) return false;
@@ -2287,7 +2288,10 @@ function _getPISmallFirmInfo(coId, yr, mo){
   const NONE = { isSmall:false, headcount:0, operDays:0, totalPersonDays:0 };
   if(!coId || !yr || !mo) return NONE;
 
-  const VALID_ST = new Set(['활성','active','계약예정','서류미비']);
+  // 상시근로자 산정 대상 상태:
+  //   active, docs_incomplete, terminate_pending → 포함 (현재 근로관계 유지)
+  //   pending, renewal_pending → 제외 (계약 시작일 미도래)
+  const VALID_ST = new Set([CONTRACT_STATUS.ACTIVE, CONTRACT_STATUS.DOCS_INCOMPLETE, CONTRACT_STATUS.TERMINATE_PENDING]);
   const monthStart = new Date(yr, mo-1, 1);
   const monthEnd   = new Date(yr, mo, 0);   // 말일
   const totalDays  = monthEnd.getDate();
@@ -2323,7 +2327,10 @@ function _getPISmallFirmInfo(coId, yr, mo){
   const dayWorkers = new Array(totalDays+1).fill(0);
   empContractMap.forEach(c => {
     const cs = c.contract_start ? new Date(c.contract_start) : monthStart;
-    const ce = c.contract_end   ? new Date(c.contract_end)   : monthEnd;
+    // 해지예정: 근로관계 종료일은 terminate_date 기준
+    const ce = c.status === CONTRACT_STATUS.TERMINATE_PENDING
+      ? (c.terminate_date ? new Date(c.terminate_date) : monthEnd)
+      : (c.contract_end ? new Date(c.contract_end) : monthEnd);
     for(let d = 1; d <= totalDays; d++){
       const day = new Date(yr, mo-1, d);
       if(day >= cs && day <= ce) dayWorkers[d]++;

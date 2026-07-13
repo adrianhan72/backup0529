@@ -1392,7 +1392,7 @@ function calcContractStatusDisplay(c, today){
     return {badge:'badge-rose', label:'해지예정', docsIncomplete};
   }
   if(s==='파기'||s==='voided')      return {badge:'badge-slate',  label:'파기', docsIncomplete};
-  if(s==='갱신됨')    return {badge:'badge-gray',   label:'만료', docsIncomplete}; // 레거시 → 만료로 표시
+  if(s==='갱신됨'||s==='renewed')    return {badge:'badge-gray',   label:'만료', docsIncomplete}; // 갱신으로 인한 계약 종료
   if(s==='만료'||s==='expired')    return {badge:'badge-gray',  label:'만료', docsIncomplete};
   if(s==='해지'||s==='terminated') return {badge:'badge-red',   label:'해지', docsIncomplete};
   // 만료예정·종료예정은 레거시 값 → 계약유효로 표시 (유효한 계약)
@@ -1408,8 +1408,7 @@ function calcContractStatusDisplay(c, today){
     if(start && start > today) return {badge:'badge-amber', label:'갱신예정', docsIncomplete};
     // 계약직/일용직: 유효 종료일(terminate_date 우선, 없으면 contract_end)이 지났으면 만료 처리
     const ct = (c.contract_type || '').toLowerCase();
-    const isFixedTerm = ct === 'fixed_term' || ct === 'fixed_term_probation' || ct === 'daily'
-                     || ct === '계약직' || ct === '계약직 수습' || ct === '일용직';
+    const isFixedTerm = ct === CONTRACT_TYPE.FIXED || ct === CONTRACT_TYPE.FIXED_PROBATION || ct === CONTRACT_TYPE.DAILY;
     const effectiveEnd = c.terminate_date || c.contract_end || '';
     if(isFixedTerm && effectiveEnd && effectiveEnd < today){
       return {badge:'badge-gray', label:'만료', docsIncomplete};
@@ -1658,6 +1657,21 @@ function viewContract(id){
   [document.getElementById('ct-action-label'), document.getElementById('ct-action-label-bottom')].forEach(el=>{
     if(el) el.textContent = '';
   });
+
+  // ── 갱신 계약 연관 링크 ──
+  const _renewLinkEl = document.getElementById('ct-renew-link');
+  if(_renewLinkEl && c){
+    let renewHTML = '';
+    if(c.renewed_from_id){
+      renewHTML = `<span style="font-size:11px;color:#6366f1;cursor:pointer;" onclick="viewContract('${c.renewed_from_id}')" title="원본 계약 보기">
+        <i class="fas fa-link"></i> 원본 계약</span>`;
+    } else if(c.renewed_to_id){
+      renewHTML = `<span style="font-size:11px;color:#6366f1;cursor:pointer;" onclick="viewContract('${c.renewed_to_id}')" title="갱신된 계약 보기">
+        <i class="fas fa-link"></i> 갱신 계약</span>`;
+    }
+    _renewLinkEl.innerHTML = renewHTML;
+    _renewLinkEl.style.display = renewHTML ? 'inline-block' : 'none';
+  }
 
   // 임시저장 계속 수정 버튼 (draft 전용)
   const draftEditBtn = document.getElementById('ct-btn-draft-edit');

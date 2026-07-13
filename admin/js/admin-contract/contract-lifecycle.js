@@ -760,20 +760,20 @@ async function savePendingContractEdit(){
     // 해지예정 수정: terminate_date(퇴사예정일) 재평가
     const newTermDate = document.getElementById('ct-terminate-date')?.value || c.terminate_date || '';
     if(newTermDate && newTermDate <= today3){
-      newStatus = '해지';       // 퇴사예정일이 오늘 이하이면 즉시 해지
+      newStatus = CONTRACT_STATUS.TERMINATED;       // 퇴사예정일이 오늘 이하이면 즉시 해지
     } else if(newTermDate){
-      newStatus = '해지예정';   // 퇴사예정일이 미래면 해지예정 유지
+      newStatus = CONTRACT_STATUS.TERMINATE_PENDING;   // 퇴사예정일이 미래면 해지예정 유지
     } else {
-      newStatus = '활성';       // 퇴사예정일을 지웠으면 활성 복귀
+      newStatus = CONTRACT_STATUS.ACTIVE;       // 퇴사예정일을 지웠으면 활성 복귀
     }
   } else {
     // 계약예정 / 갱신예정: 시작일 기준
     if(newStart <= today3){
-      newStatus = '활성';
+      newStatus = CONTRACT_STATUS.ACTIVE;
     }
     // 종료일이 이미 지났으면 만료
     if(newEnd && newEnd < today3){
-      newStatus = '만료';
+      newStatus = CONTRACT_STATUS.EXPIRED;
     }
   }
 
@@ -891,7 +891,7 @@ async function savePendingContractEdit(){
       const _pendCo  = allCompanies.find(x => x.id === c.company_id)  || {};
       const _coRep   = getCompanyRepGreeting(_pendCo);
       const _fmtD    = d => { if(!d) return '-'; const [y,m,dd]=d.split('-'); return `${parseInt(y)}년 ${parseInt(m)}월 ${parseInt(dd)}일`; };
-      if(isPreTermEdit && newStatus === '해지예정'){
+      if(isPreTermEdit && newStatus === CONTRACT_STATUS.TERMINATE_PENDING){
         // 해지 예약
         const _termDate = document.getElementById('ct-terminate-date')?.value || c.terminate_date || '';
         await _sendCompanyNotice({
@@ -916,7 +916,7 @@ ${_BRAND_SIG}`,
           employeeId  : c.employee_id, employeeName: _pendEmp.name || '',
           contractEnd : c.contract_end || '',
         });
-      } else if(isPreTermEdit && newStatus === '해지'){
+      } else if(isPreTermEdit && newStatus === CONTRACT_STATUS.TERMINATED){
         // 해지예정 → 즉시 해지로 전환
         await _sendCompanyNotice({
           companyId  : c.company_id, companyName: _pendCo.company_name || '',
@@ -1397,10 +1397,61 @@ function doContractRenew(){
 }
 
 /** 갱신 모드 취소: 계약 조회 모드로 복귀 */
-function cancelContractRenew(){
+async function cancelContractRenew(){
   const cid = editId.contract;
   if(!cid) return;
-  viewContract(cid);
+
+  const c = allContracts.find(x => x.id === cid);
+  if(!c) return;
+
+  // 갱신예정/계약예정 상태이고 renewed_from_id가 있는 경우만 갱신 취소 처리
+  const isPendingRenew = (c.status === CONTRACT_STATUS.PENDING || c.status === CONTRACT_STATUS.RENEWAL_PENDING)
+                      && c.renewed_from_id;
+
+  if(!isPendingRenew){
+    // 단순 갱신 패널 닫기 (갱신 확정 전 취소)
+    viewContract(cid);
+    return;
+  }
+
+  const origId = c.renewed_from_id;
+  const orig = allContracts.find(x => x.id === origId);
+
+  const confirmed = await _showConfirm({
+    message: `[갱신 취소] 다음 작업이 진행됩니다:\n\n`
+      + `① 갱신 예정 계약 → 파기 처리\n`
+      + `② 원본 계약 → 유효 상태로 복원\n`
+      + `③ 원본 계약의 해지일·종료일 데이터 삭제\n\n`
+      + `계속하시겠습니까?`,
+    okText: '갱신 취소',
+    okClass: 'btn-primary'
+  });
+  if(!confirmed) return;
+
+  try {
+    // 1. 원본 계약 복원: ACTIVE, 해지일/종료일 제거, renewed_to_id 제거
+    if(orig){
+      await api(`../tables/contracts/${origId}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          status: CONTRACT_STATUS.ACTIVE,
+          terminate_date: '',
+          contract_end: '',
+          renewed_to_id: null
+        })});
+    }
+
+    // 2. 갱신예정 계약 삭제 (또는 void 처리)
+    await api(`../tables/contracts/${cid}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({status: CONTRACT_STATUS.VOIDED})});
+
+    closeModal('contract-modal');
+    await loadContracts(); await loadEmployees();
+    renderContracts(); renderDashboard();
+    toast('갱신이 취소되고 원본 계약이 유효 상태로 복원되었습니다.', 'success');
+  } catch(e){
+    console.error('[cancelContractRenew]', e);
+    toast('갱신 취소 중 오류가 발생했습니다.', 'error');
+  }
 }
 async function confirmContractRenew(){
   const oldEndEl = document.getElementById('ct-renew-old-end');
@@ -1434,9 +1485,9 @@ async function confirmContractRenew(){
     if(!confirm(`기존 계약 종료일(${origEnd})보다 앞당겨진 날짜(${oldEnd})입니다.\n계약 종료일 단축은 [해지] 처리를 권장합니다.\n그래도 계속 진행하시겠습니까?`)) return;
   }
 
-  // 1. 기존 계약: 종료일 확정 + 상태 '해지' (갱신으로 인한 계약 종료, 기록 5년 보존)
+  // 1. 기존 계약: 종료일 확정 + 상태 '갱신됨' + 갱신계약 ID 연결
   await api(`../tables/contracts/${c.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({contract_end: oldEnd, status: CONTRACT_STATUS.TERMINATED})});
+    body:JSON.stringify({contract_end: oldEnd, status: CONTRACT_STATUS.RENEWED, renewed_to_id: null})});
 
   // 2. 신규 계약 생성 (현재 폼 입력값 + 기존 계약 병합)
   //    - 시작일이 오늘 이후면 '계약예정', 오늘이거나 이전이면 '활성'
@@ -1448,6 +1499,7 @@ async function confirmContractRenew(){
     status:         newStatus,
     is_draft:       false,
     terminate_date: '',
+    renewed_from_id: c.id,                                 // 원본 계약 ID 참조
     note: document.getElementById('ct-note')?.value || c.note || '',
   });
   // API 시스템 필드 및 DB 미존재 컬럼 제거 (id는 서버에서 UUID 생성)
@@ -1455,13 +1507,17 @@ async function confirmContractRenew(){
   const savedNew = await api('../tables/contracts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(newContract)});
   const newId = savedNew.id;
 
+  // 구계약에 갱신된 계약 ID 연결
+  await api(`../tables/contracts/${c.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({renewed_to_id: newId})});
+
   // ── 고객사 인앱 알림 발송 (갱신/갱신예약) ──
   {
     const _renewEmp = allEmployees.find(x => x.id === c.employee_id) || {};
     const _renewCo  = allCompanies.find(x => x.id === c.company_id)  || {};
     const _coRep    = getCompanyRepGreeting(_renewCo);
     const _fmtD     = d => { if(!d) return '-'; const [y,m,dd]=d.split('-'); return `${parseInt(y)}년 ${parseInt(m)}월 ${parseInt(dd)}일`; };
-    if(newStatus === '계약예정'){
+    if(newStatus === CONTRACT_STATUS.PENDING){
       // 갱신 예약
       await _sendCompanyNotice({
         companyId  : c.company_id, companyName: _renewCo.company_name || '',
@@ -1515,7 +1571,7 @@ ${_BRAND_SIG}`,
 
   closeModal('contract-modal');
   await loadContracts(); await loadEmployees(); renderContracts(); renderDashboard();
-  const label = newStatus === '계약예정' ? '계약예정 (시작일 미도래)' : '계약유효 (활성)';
+  const label = newStatus === CONTRACT_STATUS.PENDING ? '계약예정 (시작일 미도래)' : '계약유효 (활성)';
   toast(`연장 처리 완료. 전 계약: 해지 / 새 계약: ${label}`);
 }
 
@@ -1963,7 +2019,7 @@ function _cftValidate(){
       `→ 계약 상태: <span style="background:${statusBg};border:1px solid ${statusBorder};` +
       `border-radius:4px;padding:1px 8px;font-size:11.5px;font-weight:800;color:${statusColor};">` +
       `${newStatus}</span>` +
-      (newStatus === '해지'
+      (newStatus === CONTRACT_STATUS.TERMINATED
         ? ' <span style="font-size:11px;color:#9ca3af;">(직원 상태 → 퇴직)</span>'
         : '');
   }
@@ -2055,7 +2111,7 @@ async function confirmFixedTerminate(){
     reason ? `해지 사유: ${reason}` : null,
     note    ? `메모: ${note}`       : null,
     ``,
-    newStatus === '해지'
+    newStatus === CONTRACT_STATUS.TERMINATED
       ? `⚠ 직원 상태가 "퇴직"으로 변경됩니다.`
       : `ℹ 해지 예정일 이후 실제 해지 처리가 필요합니다.`,
     ``,
@@ -2082,7 +2138,7 @@ async function confirmFixedTerminate(){
 
     // 2) 직원 업데이트
     if(emp.id){
-      const empPatch = newStatus === '해지'
+      const empPatch = newStatus === CONTRACT_STATUS.TERMINATED
         ? { status: EMP_STATUS.RESIGNED, resign_date: termDate }
         : { resign_date: termDate };   // 해지예정: 재직 상태 유지, 날짜만 기록
       await api(`../tables/employees/${emp.id}`, {
@@ -2098,7 +2154,7 @@ async function confirmFixedTerminate(){
     renderContracts();
     renderDashboard();
 
-    const statusLabel = newStatus === '해지예정'
+    const statusLabel = newStatus === CONTRACT_STATUS.TERMINATE_PENDING
       ? `해지예정 (해지일: ${termDate})`
       : `해지 완료 (해지일: ${termDate})`;
     toast(`${empName} — ${statusLabel}`, 'success');
@@ -3272,7 +3328,7 @@ async function saveContract(){
 
   // 파일 완비 여부에 따라 최종 계약 상태 결정
   // 서류미비는 더 이상 상태값으로 저장하지 않음 (docsIncomplete 플래그로 관리)
-  const _isTerminalStatus = (contractStatus==='해지'||contractStatus==='만료'||contractStatus==='파기'||contractStatus==='expired'||contractStatus==='terminated');
+  const _isTerminalStatus = CONTRACT_TERMINAL_STATUSES.includes(contractStatus);
   if(!_isTerminalStatus && !isEditMode){
     const _hasBothFiles = !!(signedFileData && consentFileData);
   } else if(isEditMode && !_isTerminalStatus){
@@ -3351,7 +3407,7 @@ async function saveContract(){
     if(isEditMode){
       // ─ 계약 수정 완료 OR 해지 처리
       const _origC = allContracts.find(x => x.id === editId.contract) || {};
-      if(contractStatus === '해지'){
+      if(contractStatus === CONTRACT_STATUS.TERMINATED){
         // ── 계약 해지 ──
         await _sendCompanyNotice({
           companyId  : coId, companyName: _coName,
@@ -3413,7 +3469,7 @@ ${_BRAND_SIG}`,
 ■ 근로자: ${_empName}
 ■ 고용형태: ${contractTypeLabel(contractType)||contractType}
 ■ 새 계약 기간: ${_fmtDate(contractStart)}${contractEnd ? ' ~ ' + _fmtDate(contractEnd) : ' (기간 미정)'}
-■ 계약 상태: ${contractStatus === '계약예정' ? '계약예정 (시작일 미도래)' : '계약유효 (활성)'}
+■ 계약 상태: ${contractStatus === CONTRACT_STATUS.PENDING ? '계약예정 (시작일 미도래)' : '계약유효 (활성)'}
 ■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
 
 자세한 내용은 근로 계약 관리 메뉴에서 확인하세요.
@@ -3458,7 +3514,7 @@ async function deleteContract(id){
   if(!c) return toast('계약 정보를 찾을 수 없습니다.', 'error');
 
   // 파기된 계약만 삭제 허용
-  const isVoided = c.status === 'voided' || c.is_voided_by_amend;
+  const isVoided = c.status === CONTRACT_STATUS.VOIDED || c.is_voided_by_amend;
   if(!isVoided){
     toast('근로계약서는 보존 정책에 따라 삭제할 수 없습니다.', 'error');
     return;
