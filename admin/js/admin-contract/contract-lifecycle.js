@@ -2140,6 +2140,7 @@ async function saveDraftContract(reason){
   }
 
   // ── 신규 직원인 경우 먼저 직원 생성 (임시저장도 직원 DB에 저장) ──
+  const coId = document.getElementById('ct-company')?.value || '';
   if(isNew && !empId){
     const newEmpNo = document.getElementById('ct-em-empno')?.value.trim() || '';
     const newEmpName = document.getElementById('ct-em-name')?.value.trim() || '';
@@ -2191,6 +2192,13 @@ async function saveDraftContract(reason){
     })});
     empId = saved.id;
     await loadEmployees();
+  }
+  } // if(isNew && !empId) — 직원 생성 완료, 이후는 공통 임시저장 로직
+
+  // ── 임시저장 최소 검증 ──
+  if(!empId){
+    toast('직원 정보를 확인할 수 없습니다. 사원번호와 이름을 입력해 주세요.', 'error');
+    return;
   }
 
   // 현재 입력값 수집 + 영문 정규화
@@ -2364,7 +2372,6 @@ async function saveDraftContract(reason){
   if(activeEl && typeof activeEl.focus === 'function'){
     setTimeout(() => { try { activeEl.focus(); } catch(e) {} }, 100);
   }
-  } // if(isNew && !empId)
 } // saveDraftContract
 
 // 임시저장 진행 중인 draft ID (신규 작성 시 추적용)

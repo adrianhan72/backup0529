@@ -1401,13 +1401,13 @@ function calcContractStatusDisplay(c, today){
   // 만료예정·종료예정은 레거시 값 → 계약유효로 표시 (유효한 계약)
   if(s==='만료예정'||s==='종료예정') return {badge:'badge-green', label:'유효', docsIncomplete};
   // 서류미비는 독립된 상태가 아님 — 유효/만료/해지 등 실제 상태를 유지하고 docsIncomplete 플래그로만 관리
-  if(s === CONTRACT_STATUS.DOCS_INCOMPLETE){
+  if(c.status === CONTRACT_STATUS.DOCS_INCOMPLETE){
     // DB에 남아있는 레거시 값 → 유효로 폴백 (실제 상태는 DB 정리 완료)
     if(start && start > today) return {badge:'badge-indigo',  label:'계약예정', docsIncomplete:true};
     return {badge:'badge-green', label:'유효', docsIncomplete:true};
   }
   // 활성/유효 상태 — 서류와 무관하게 유효 계약으로 처리
-  if(CONTRACT_ACTIVE_STATUSES.includes(s)){
+  if(CONTRACT_ACTIVE_STATUSES.includes(c.status)){
     if(start && start > today) return {badge:'badge-amber', label:'갱신예정', docsIncomplete};
     // 계약직/일용직: 유효 종료일(terminate_date 우선, 없으면 contract_end)이 지났으면 만료 처리
     const ct = (c.contract_type || '').toLowerCase();
