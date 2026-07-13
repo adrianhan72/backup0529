@@ -1225,6 +1225,7 @@ async function _cmApplyAllowanceToContracts(companyId, effectiveDateStr, newCfg)
   const PT_MAP = {
     car:           'transport_pay_type',        // 차량지원비
     meal:          'meal_pay_type',
+    childcare:     'childcare_pay_type',        // 보육수당
     research:      'research_pay_type',
     communication: 'communication_pay_type',
     fitness:       'fitness_pay_type',

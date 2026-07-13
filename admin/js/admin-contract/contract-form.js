@@ -1367,7 +1367,7 @@ function applyCTAllowanceConfig(cfg, clearValues = false){
   });
   // pay_type 있는 수당: allowance_config에서 pay_type 읽어 반영
   // ※ _ctAllowCfgVisible 갱신 후 setCTPayType 호출해야 DOM 제거 로직이 올바르게 동작
-  const _PT_FIELDS = ['car','meal','research','communication','fitness','self_dev','book','overseas'];
+  const _PT_FIELDS = ['car','meal','childcare','research','communication','fitness','self_dev','book','overseas'];
   _PT_FIELDS.forEach(f => {
     const pt = (cfg && cfg[`${f}_pay_type`]) ? cfg[`${f}_pay_type`] : 'fixed';
     setCTPayType(f, pt);

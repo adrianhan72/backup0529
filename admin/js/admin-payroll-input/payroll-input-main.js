@@ -795,7 +795,7 @@ function loadPIContract(){
     }
     setAmountVal('pi-meal',          piContract.meal_allowance);
     setPIPayType('meal',             _ptOf(piContract.meal_pay_type,          'meal'));
-    setAmountVal('pi-childcare',     0);  // 보육수당: 매월 직접 입력 (계약서 고정값 미사용)
+    setAmountVal('pi-childcare',     piContract.childcare_allowance||0);
     setPIPayType('childcare',        _ptOf(piContract.childcare_pay_type,     'childcare'));
     setAmountVal('pi-research',      piContract.research_allowance||0);
     setPIPayType('research',         _ptOf(piContract.research_pay_type,      'research'));
@@ -804,14 +804,10 @@ function loadPIContract(){
     setPIPayType('self_dev',         _ptOf(piContract.self_dev_pay_type,      'self_dev'));
     setPIPayType('book',             _ptOf(piContract.book_pay_type,          'book'));
     setPIPayType('overseas',         _ptOf(piContract.overseas_pay_type,      'overseas'));
-    // 이전 달 부양가족 수 인계: 동일 직원의 최신 payroll 레코드에서 가져옴
+    // 부양가족 수: 계약서 보육수당 부양가족 수 자동 반영
     (function(){
-      const prevPayroll = (allPayrolls||[])
-        .filter(p=>p.employee_id===empId)
-        .sort((a,b)=>(b.pay_year-a.pay_year)||((b.pay_month||0)-(a.pay_month||0)))[0];
-      const prevDep = prevPayroll?.dependents ?? 1;
       const depEl = document.getElementById('pi-dependents');
-      if(depEl) depEl.value = Math.max(1, parseInt(prevDep)||1);
+      if(depEl) depEl.value = piContract.childcare_dependents || 0;
     })();
     // ── 이번달 사용연차 초기값: 관리대장에 해당 월 데이터가 있으면 우선 적용 + max 설정 ──
     {
@@ -2881,7 +2877,7 @@ function clearPI(){
   // ── 직원 미선택 상태: 기존 완전 초기화 ────────────────────────────────────
   document.getElementById('pi-employee').value='';
   document.getElementById('pi-contract-card').style.display='none';
-  const _depEl=document.getElementById('pi-dependents'); if(_depEl) _depEl.value=1;
+  const _depEl=document.getElementById('pi-dependents'); if(_depEl) _depEl.value=0;
   const _alBox=document.getElementById('pi-annual-leave-box'); if(_alBox) _alBox.style.display='none';
   // 근로 실적 자동산출 패널 초기화
   const _wp=document.getElementById('pi-work-auto-panel'); if(_wp) _wp.style.display='none';

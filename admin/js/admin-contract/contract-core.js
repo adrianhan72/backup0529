@@ -503,14 +503,12 @@ function openContractModal(id=null, preCompanyId=null){
 
   // 신규 직원 섹션 초기화
   ['ct-em-empno','ct-em-name','ct-em-id','ct-em-dept','ct-em-position','ct-em-job','ct-em-hire','ct-em-start','ct-em-expire','ct-em-phone','ct-em-email','ct-em-address'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});
-  const _emDepEl=document.getElementById('ct-em-dependents'); if(_emDepEl) _emDepEl.value=1;
   document.getElementById('ct-em-gender').value='남';
   document.getElementById('ct-em-category').value='';toggleEmExpire();toggleAnnualSal();toggleProbation();
   // 수정 직원 섹션 초기화
   ['ct-edit-em-empno','ct-edit-em-job','ct-edit-em-dept','ct-edit-em-position','ct-edit-em-hire','ct-edit-em-expire','ct-edit-em-id','ct-edit-em-phone','ct-edit-em-email','ct-edit-em-address','ct-edit-em-bank','ct-edit-em-account'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});
   const editCatEl=document.getElementById('ct-edit-em-category');if(editCatEl)editCatEl.value='';
   const editGenderEl=document.getElementById('ct-edit-em-gender');if(editGenderEl)editGenderEl.value='남';
-  const editDepEl=document.getElementById('ct-edit-em-dependents');if(editDepEl)editDepEl.value=1;
   document.getElementById('ct-probation-months').value='3';
   document.getElementById('ct-probation-pct').value='';
   document.getElementById('ct-probation-amt').value='';
@@ -578,7 +576,6 @@ function openContractModal(id=null, preCompanyId=null){
         document.getElementById('ct-edit-em-hire').value = _earliestStart || emp.hire_date || '';
         document.getElementById('ct-edit-em-expire').value    = emp.expire_date || emp.resign_date || '';
         document.getElementById('ct-edit-em-id').value        = emp.id_number || '';
-        const _editDepEl2=document.getElementById('ct-edit-em-dependents'); if(_editDepEl2) _editDepEl2.value= (emp.dependents ?? 0) < 1 ? 1 : emp.dependents;
         document.getElementById('ct-edit-em-phone').value     = emp.phone || '';
         document.getElementById('ct-edit-em-email').value     = emp.email || '';
         document.getElementById('ct-edit-em-address').value   = emp.address || '';
@@ -1631,7 +1628,7 @@ function viewContract(id){
   const isDraft       = !!c?.is_draft;                         // 임시저장 여부
   const isRegular     = (ct===CONTRACT_TYPE.REGULAR||ct===CONTRACT_TYPE.REGULAR_PROBATION);  // 무기한 계약 (만료일 없음)
   const isFixed       = (ct===CONTRACT_TYPE.FIXED||ct===CONTRACT_TYPE.FIXED_PROBATION||ct===CONTRACT_TYPE.DAILY);  // 기간제 계약
-  const isTerminated  = !isDraft && (c?.status===CONTRACT_STATUS.EXPIRED||c?.status===COMPANY_STATUS.INACTIVE||c?.status===CONTRACT_STATUS.EXPIRED||c?.status===CONTRACT_STATUS.TERMINATED||c?.status===CONTRACT_STATUS.VOIDED||c?.status===CONTRACT_STATUS.RENEWED);
+  const isTerminated  = !isDraft && (c?.status===CONTRACT_STATUS.EXPIRED||c?.status===CONTRACT_STATUS.TERMINATED||c?.status===CONTRACT_STATUS.VOIDED||c?.status===CONTRACT_STATUS.CANCELED||c?.status===CONTRACT_STATUS.RENEWED);
   const isPending     = !isDraft && (c?.status===CONTRACT_STATUS.RENEWAL_PENDING||c?.status===CONTRACT_STATUS.PENDING);  // 시작일 미도래
   const isPreTerminate= !isDraft && (c?.status===CONTRACT_STATUS.TERMINATE_PENDING);  // 퇴사예정일 설정된 정규직
   const isActive      = !isDraft && !isTerminated && !isPending && !isPreTerminate;
@@ -2086,6 +2083,7 @@ async function openAmendPreview(){
     regular_bonus: regBonus_,
     childcare_allowance: getAmountVal('ct-childcare')||0,
     childcare_dependents: parseInt(document.getElementById('ct-childcare-dependents')?.value||0)||0,
+    childcare_pay_type: _getCTPayTypeVal('childcare'),
     pay_period: document.getElementById('ct-pay-period')?.value.trim() || '',
     pay_period_month: document.getElementById('ct-pay-period-month-hidden')?.value || null,
     pay_period_day: parseInt(document.getElementById('ct-pay-period-day-hidden')?.value) || null,
