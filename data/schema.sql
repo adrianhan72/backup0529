@@ -291,30 +291,122 @@ CREATE TABLE IF NOT EXISTS payroll_send_logs (
 );
 
 CREATE TABLE IF NOT EXISTS payrolls (
+  -- 기본 키·관계
   id                  TEXT PRIMARY KEY,
   employee_id         TEXT REFERENCES employees(id),
-  company_id           TEXT REFERENCES companies(id),
+  company_id          TEXT REFERENCES companies(id),
+
+  -- 급여 기준
   pay_year            INTEGER,
   pay_month           INTEGER,
   pay_date            TEXT,
+
+  -- 근로시간
   work_days           REAL,
+  total_work_hours    REAL,
+  overtime_hours      REAL,
+  night_hours         REAL,
+  holiday_hours       REAL,
+
+  -- 기본 임금
+  hourly_wage         REAL,
   base_salary         REAL,
   weekly_holiday_pay  REAL,
   standard_monthly_pay REAL,
   gross_pay           REAL,
+
+  -- 4대보험
   national_pension    REAL,
   health_insurance    REAL,
   long_term_care      REAL,
   employment_insurance REAL,
+
+  -- 세금
   income_tax          REAL,
   local_income_tax    REAL,
+
+  -- 공제·실수령
   total_deduction     REAL,
   net_pay             REAL,
-  is_draft            INTEGER DEFAULT 0,
-  note                TEXT,
-  created_at          INTEGER,
-  updated_at          INTEGER
-, total_work_hours REAL, overtime_hours REAL, night_hours REAL, holiday_hours REAL, hourly_wage REAL, position_allowance REAL, skill_allowance REAL, license_allowance REAL, overtime_pay REAL, night_pay REAL, holiday_pay REAL, transport_type TEXT, transport_pay_type TEXT, transportation_allowance REAL, transportation_pay_type TEXT, self_driving_allowance REAL, self_driving_pay_type TEXT, meal_allowance REAL, meal_pay_type TEXT, childcare_allowance REAL, childcare_pay_type TEXT, childcare_dependents INTEGER DEFAULT 1, research_allowance REAL, research_pay_type TEXT, communication_allowance REAL, communication_pay_type TEXT, fitness_allowance REAL, fitness_pay_type TEXT, self_dev_allowance REAL, self_dev_pay_type TEXT, book_allowance REAL, book_pay_type TEXT, overseas_allowance REAL, overseas_pay_type TEXT, contract_etc_allowance REAL, annual_leave_used REAL, annual_leave_pay REAL, bonus_pay REAL, performance_pay REAL, actual_expense_pay REAL, communication_pay REAL, etc_allowance REAL, etc_allowance_memo TEXT, year_end_tax_adjust REAL, year_end_tax_adjust_memo TEXT, health_insurance_adjust REAL, health_insurance_adjust_memo TEXT, health_insurance_adjust_yearend REAL, health_insurance_adjust_yearend_memo TEXT, ltcare_adjust_yearend REAL, ltcare_adjust_yearend_memo TEXT, advance_deduction REAL, advance_deduction_memo TEXT, dependents INTEGER DEFAULT 1, draft_saved_at TEXT, edit_source_id TEXT, site_allowance REAL, remote_area_allowance REAL, regular_bonus REAL);
+
+  -- 각종 수당
+  position_allowance  REAL,
+  skill_allowance     REAL,
+  license_allowance   REAL,
+  site_allowance      REAL,
+  remote_area_allowance REAL,
+  regular_bonus       REAL,
+
+  -- 교통·식대·보육
+  transport_type             TEXT,
+  transport_pay_type         TEXT,
+  transportation_allowance   REAL,
+  transportation_pay_type    TEXT,
+  self_driving_allowance     REAL,
+  self_driving_pay_type      TEXT,
+  meal_allowance             REAL,
+  meal_pay_type              TEXT,
+  childcare_allowance        REAL,
+  childcare_pay_type         TEXT,
+  childcare_dependents       INTEGER DEFAULT 1,
+
+  -- 연구·통신·복지
+  research_allowance         REAL,
+  research_pay_type          TEXT,
+  communication_allowance    REAL,
+  communication_pay_type     TEXT,
+  fitness_allowance          REAL,
+  fitness_pay_type           TEXT,
+  self_dev_allowance         REAL,
+  self_dev_pay_type          TEXT,
+  book_allowance             REAL,
+  book_pay_type              TEXT,
+  overseas_allowance         REAL,
+  overseas_pay_type          TEXT,
+  contract_etc_allowance     REAL,
+
+  -- 연차·상여·성과·실비
+  annual_leave_used          REAL,
+  annual_leave_pay           REAL,
+  bonus_pay                  REAL,
+  performance_pay            REAL,
+  actual_expense_pay         REAL,
+  communication_pay          REAL,
+  etc_allowance              REAL,
+  etc_allowance_memo         TEXT,
+
+  -- 시간외 수당
+  overtime_pay               REAL,
+  night_pay                  REAL,
+  holiday_pay                REAL,
+
+  -- 연말정산
+  year_end_tax_adjust              REAL,
+  year_end_tax_adjust_memo         TEXT,
+  health_insurance_adjust          REAL,
+  health_insurance_adjust_memo     TEXT,
+  health_insurance_adjust_yearend  REAL,
+  health_insurance_adjust_yearend_memo TEXT,
+  ltcare_adjust_yearend            REAL,
+  ltcare_adjust_yearend_memo       TEXT,
+
+  -- 기타 공제
+  advance_deduction          REAL,
+  advance_deduction_memo     TEXT,
+
+  -- 부양가족
+  dependents                 INTEGER DEFAULT 1,
+
+  -- 임시저장
+  is_draft                   INTEGER DEFAULT 0,
+  draft_saved_at             TEXT,
+  edit_source_id             TEXT,
+
+  -- 비고·타임스탬프
+  note                       TEXT,
+  created_at                 INTEGER,
+  updated_at                 INTEGER
+);
 CREATE INDEX idx_payrolls_employee ON payrolls(employee_id);
 CREATE INDEX idx_payrolls_company  ON payrolls(company_id);
 CREATE INDEX idx_payrolls_ym       ON payrolls(pay_year, pay_month);
