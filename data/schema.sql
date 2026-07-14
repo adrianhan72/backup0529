@@ -336,6 +336,7 @@ CREATE TABLE IF NOT EXISTS payrolls (
   position_allowance  REAL,
   skill_allowance     REAL,
   license_allowance   REAL,
+  hazard_allowance    REAL,
   site_allowance      REAL,
   remote_area_allowance REAL,
   regular_bonus       REAL,

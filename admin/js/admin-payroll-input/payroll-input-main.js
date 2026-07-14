@@ -2586,6 +2586,7 @@ const _PI_OPT_ROWS = [
   { key:'position',      rowId:'pi-row-position' },
   { key:'skill',         rowId:'pi-row-skill' },
   { key:'license',       rowId:'pi-row-license' },
+  { key:'hazard',        rowId:'pi-row-hazard' },
   { key:'remote_area',   rowId:'pi-row-remote-area' },
   { key:'regular_bonus', rowId:'pi-row-bonus' },
   // ── 고정수당 설정 그룹 ──
@@ -2760,6 +2761,7 @@ function _forceShowNonZeroPIRows(p){
     position    : ['position_allowance'],
     skill       : ['skill_allowance'],
     license     : ['license_allowance'],
+    hazard      : ['hazard_allowance'],
     remote_area : ['remote_area_allowance'],
     research    : ['research_allowance'],
     communication: ['communication_pay'],

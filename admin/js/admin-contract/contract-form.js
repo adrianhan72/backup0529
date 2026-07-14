@@ -1317,7 +1317,7 @@ const _CT_PAY_TYPE_ROWS = {
 function setCTPayType(field, type){
   _ctPayTypes[field] = type;
   // 힌트 텍스트로 통상임금 포함여부를 표시하는 항목
-  const hintOnlyFields = ['car','meal','research','communication','fitness','self_dev','book','overseas'];
+  const hintOnlyFields = ['site','position','skill','license','hazard','remote_area','regular_bonus','car','meal','research','communication','fitness','self_dev','book','overseas'];
   if(hintOnlyFields.includes(field)){
     const htmlField = field.replace(/_/g, '-');
     const hintEl = document.getElementById(`ct-${htmlField}-type-hint`);
@@ -1724,7 +1724,7 @@ function calcContractSalary(){
 
     // 일일 수당 합계 (통상임금 포함 항목만)
     const dailyAllowFixed = position + car + remoteArea + meal
-      + site_ct + skill_ct + license_ct + research + comm_ct
+      + site_ct + skill_ct + license_ct + hazard_ct + research + comm_ct
       + fitness_ct + selfDev_ct + book_ct + overseas_ct + regularBonus_ct;
 
     document.getElementById('ct-weekly-hol-computed').textContent = '0원';

@@ -25,7 +25,8 @@ function _buildPIBody(){
     weekly_holiday_pay: gv('pi-weekly-hol'),
     position_allowance: gv('pi-position'),
     skill_allowance:    gv('pi-skill')   || 0,
-    license_allowance:  gv('pi-license') || 0,
+    license_allowance:  gv('pi-license'),
+    hazard_allowance:   gv('pi-hazard') || 0,
     overtime_pay:    c.otPay    || 0,
     night_pay:       c.nightPay || 0,
     holiday_pay:     c.holPay   || 0,
@@ -243,6 +244,7 @@ function loadPIDraft(){
   setAmountVal('pi-site',          draft.site_allowance     || 0);
   setAmountVal('pi-skill',         draft.skill_allowance    || 0);
   setAmountVal('pi-license',       draft.license_allowance  || 0);
+  setAmountVal('pi-hazard',        draft.hazard_allowance   || 0);
   // 차량유지비 복원 (항상 self_driving 고정)
   { const ta = draft.self_driving_allowance || draft.transportation_allowance || 0;
     const tp = draft.transport_pay_type || draft.self_driving_pay_type || draft.transportation_pay_type || '';
@@ -465,7 +467,7 @@ async function savePI(){
     const _cont = confirm('⚠️ 공제항목이 계산되지 않았습니다.\n보험요율 산정기준을 다시 확인해 주세요.\n\n그래도 저장하시겠습니까?');
     if(!_cont) return;
   }
-  const body={employee_id:empId,company_id:coId,pay_year:yr,pay_month:mo,work_days:gv('pi-work-days'),total_work_hours:gv('pi-total-hours'),overtime_hours:gv('pi-ot-hours'),night_hours:gv('pi-night-hours'),holiday_hours:gv('pi-hol-hours'),hourly_wage:piContract?piContract.hourly_wage:0,base_salary:gv('pi-base'),weekly_holiday_pay:gv('pi-weekly-hol'),position_allowance:gv('pi-position'),remote_area_allowance:gv('pi-remote-area')||0,site_allowance:gv('pi-site')||0,skill_allowance:gv('pi-skill'),license_allowance:gv('pi-license'),overtime_pay:c.otPay||0,night_pay:c.nightPay||0,holiday_pay:c.holPay||0,..._getPITransportFields(),transport_type:_piTransportType,transport_pay_type:_getPIPayTypeVal('transport'),meal_allowance:gv('pi-meal'),meal_pay_type:_getPIPayTypeVal('meal'),childcare_allowance:gv('pi-childcare'),childcare_pay_type:_getPIPayTypeVal('childcare'),research_allowance:gv('pi-research'),research_pay_type:_getPIPayTypeVal('research'),communication_pay_type:_getPIPayTypeVal('communication'),annual_leave_used:parseFloat(document.getElementById('pi-annual-used')?.value||0)||0,annual_leave_pay:gv('pi-annual-pay'),bonus_pay:gv('pi-bonus'),performance_pay:gv('pi-performance'),actual_expense_pay:gv('pi-actual-expense'),communication_pay:gv('pi-communication'),fitness_allowance:gv('pi-fitness')||0,fitness_pay_type:_getPIPayTypeVal('fitness'),self_dev_allowance:gv('pi-self-dev')||0,self_dev_pay_type:_getPIPayTypeVal('self_dev'),book_allowance:gv('pi-book')||0,book_pay_type:_getPIPayTypeVal('book'),overseas_allowance:gv('pi-overseas')||0,overseas_pay_type:_getPIPayTypeVal('overseas'),contract_etc_allowance:0,etc_allowance:gv('pi-etc-allowance'),etc_allowance_memo:document.getElementById('pi-etc-allowance-memo')?.value||'',gross_pay:c.gross||0,standard_monthly_pay:c.std||0,income_tax:c.incomeTax||0,local_income_tax:c.localTax||0,health_insurance:c.health||0,long_term_care:c.ltCare||0,national_pension:c.pension||0,employment_insurance:c.empIns||0,year_end_tax_adjust:gv('pi-yearend'),year_end_tax_adjust_memo:document.getElementById('pi-yearend-memo')?.value||'',health_insurance_adjust:gv('pi-health-adj'),health_insurance_adjust_memo:document.getElementById('pi-health-adj-memo')?.value||'',health_insurance_adjust_retro:gv('pi-health-adj-retro'),health_insurance_adjust_yearend:gv('pi-health-adj-yearend'),health_insurance_adjust_yearend_memo:document.getElementById('pi-health-adj-yearend-memo')?.value||'',ltcare_adjust_yearend:gv('pi-ltcare-adj-yearend'),ltcare_adjust_yearend_memo:document.getElementById('pi-ltcare-adj-yearend-memo')?.value||'',advance_deduction:gv('pi-advance'),advance_deduction_memo:document.getElementById('pi-advance-memo')?.value||'',total_deduction:c.totalDed||0,net_pay:c.net||0,pay_date:document.getElementById('pi-paydate')?.value||'',note:document.getElementById('pi-note')?.value||'',dependents:Math.max(1,parseInt(document.getElementById('pi-dependents')?.value||'1')||1)};
+  const body={employee_id:empId,company_id:coId,pay_year:yr,pay_month:mo,work_days:gv('pi-work-days'),total_work_hours:gv('pi-total-hours'),overtime_hours:gv('pi-ot-hours'),night_hours:gv('pi-night-hours'),holiday_hours:gv('pi-hol-hours'),hourly_wage:piContract?piContract.hourly_wage:0,base_salary:gv('pi-base'),weekly_holiday_pay:gv('pi-weekly-hol'),position_allowance:gv('pi-position'),remote_area_allowance:gv('pi-remote-area')||0,site_allowance:gv('pi-site')||0,skill_allowance:gv('pi-skill'),license_allowance:gv('pi-license'),hazard_allowance:gv('pi-hazard'),overtime_pay:c.otPay||0,night_pay:c.nightPay||0,holiday_pay:c.holPay||0,..._getPITransportFields(),transport_type:_piTransportType,transport_pay_type:_getPIPayTypeVal('transport'),meal_allowance:gv('pi-meal'),meal_pay_type:_getPIPayTypeVal('meal'),childcare_allowance:gv('pi-childcare'),childcare_pay_type:_getPIPayTypeVal('childcare'),research_allowance:gv('pi-research'),research_pay_type:_getPIPayTypeVal('research'),communication_pay_type:_getPIPayTypeVal('communication'),annual_leave_used:parseFloat(document.getElementById('pi-annual-used')?.value||0)||0,annual_leave_pay:gv('pi-annual-pay'),bonus_pay:gv('pi-bonus'),performance_pay:gv('pi-performance'),actual_expense_pay:gv('pi-actual-expense'),communication_pay:gv('pi-communication'),fitness_allowance:gv('pi-fitness')||0,fitness_pay_type:_getPIPayTypeVal('fitness'),self_dev_allowance:gv('pi-self-dev')||0,self_dev_pay_type:_getPIPayTypeVal('self_dev'),book_allowance:gv('pi-book')||0,book_pay_type:_getPIPayTypeVal('book'),overseas_allowance:gv('pi-overseas')||0,overseas_pay_type:_getPIPayTypeVal('overseas'),contract_etc_allowance:0,etc_allowance:gv('pi-etc-allowance'),etc_allowance_memo:document.getElementById('pi-etc-allowance-memo')?.value||'',gross_pay:c.gross||0,standard_monthly_pay:c.std||0,income_tax:c.incomeTax||0,local_income_tax:c.localTax||0,health_insurance:c.health||0,long_term_care:c.ltCare||0,national_pension:c.pension||0,employment_insurance:c.empIns||0,year_end_tax_adjust:gv('pi-yearend'),year_end_tax_adjust_memo:document.getElementById('pi-yearend-memo')?.value||'',health_insurance_adjust:gv('pi-health-adj'),health_insurance_adjust_memo:document.getElementById('pi-health-adj-memo')?.value||'',health_insurance_adjust_retro:gv('pi-health-adj-retro'),health_insurance_adjust_yearend:gv('pi-health-adj-yearend'),health_insurance_adjust_yearend_memo:document.getElementById('pi-health-adj-yearend-memo')?.value||'',ltcare_adjust_yearend:gv('pi-ltcare-adj-yearend'),ltcare_adjust_yearend_memo:document.getElementById('pi-ltcare-adj-yearend-memo')?.value||'',advance_deduction:gv('pi-advance'),advance_deduction_memo:document.getElementById('pi-advance-memo')?.value||'',total_deduction:c.totalDed||0,net_pay:c.net||0,pay_date:document.getElementById('pi-paydate')?.value||'',note:document.getElementById('pi-note')?.value||'',dependents:Math.max(1,parseInt(document.getElementById('pi-dependents')?.value||'1')||1)};
   if(piEditPayrollId){
     // ── 수정 모드: PUT ──
     await api(`../tables/payrolls/${piEditPayrollId}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
@@ -670,6 +672,7 @@ async function _autoCreateConfirmedContract(probEndDate){
     site_allowance:          piContract.site_allowance          || 0,
     skill_allowance:         piContract.skill_allowance         || 0,
     license_allowance:       piContract.license_allowance       || 0,
+    hazard_allowance:        piContract.hazard_allowance        || 0,
     transportation_allowance:piContract.transportation_allowance|| 0,
     transportation_pay_type: piContract.transportation_pay_type || 'fixed',
     self_driving_allowance:  piContract.self_driving_allowance  || 0,
@@ -873,6 +876,7 @@ async function savePISplit(){
     site_allowance:     round0((gv('pi-site') || 0) * ratioProb),
     skill_allowance:    round0((gv('pi-skill') || 0) * ratioProb),
     license_allowance:  round0((gv('pi-license') || 0) * ratioProb),
+    hazard_allowance:   round0((gv('pi-hazard') || 0) * ratioProb),
     ..._getPITransportFields(round0(gv('pi-transport') * ratioProb)),
     transport_type:    _piTransportType,
     transport_pay_type:_getPIPayTypeVal('transport'),
@@ -932,6 +936,7 @@ async function savePISplit(){
       site_allowance:     round0((confirmedContract.site_allowance || 0) * ratioPost),
       skill_allowance:    round0((confirmedContract.skill_allowance || 0) * ratioPost),
       license_allowance:  round0((confirmedContract.license_allowance || 0) * ratioPost),
+      hazard_allowance:   round0((confirmedContract.hazard_allowance || 0) * ratioPost),
       ...(()=>{ const tt2 = confirmedContract.transport_type || _piTransportType;
                  const ta2 = tt2==='transportation'?(confirmedContract.transportation_allowance||gv('pi-transport'))
                            : (confirmedContract.self_driving_allowance||gv('pi-transport'));

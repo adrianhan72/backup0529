@@ -88,6 +88,7 @@ async function _probAutoCreateAndSave(){
       site_allowance:     gv('pi-site')    || 0,
       skill_allowance:    gv('pi-skill')   || 0,
       license_allowance:  gv('pi-license') || 0,
+      hazard_allowance:   gv('pi-hazard') || 0,
       overtime_pay:    c.otPay    || 0,
       night_pay:       c.nightPay || 0,
       holiday_pay:     c.holPay   || 0,
@@ -348,6 +349,7 @@ function _fillPayrollFields(p, cfgCo){
   setAmountVal('pi-site',       p.site_allowance||0);
   setAmountVal('pi-skill',      p.skill_allowance||0);
   setAmountVal('pi-license',    p.license_allowance||0);
+  setAmountVal('pi-hazard',     p.hazard_allowance||0);
   // 차량유지비 복원 (항상 self_driving 고정)
   // ── pay_type 복원: DB 저장값 우선, 없으면 allowance_config 기본값 fallback ──
   // loadPIContract() 이후 실행되므로 allowance_config의 fixed 세팅이 이미 적용된 상태.
@@ -815,6 +817,7 @@ function validateAndParseExcel(wb, fileName){
       '현장수당':       'site_allowance',
       '기술수당':       'skill_allowance',
       '면허수당':       'license_allowance',
+      '위험수당':       'hazard_allowance',
       // '기타수당' 셀 → etc_allowance 필드로 저장
       // 화면·엑셀·파서 레이블 통일. 하위 호환을 위해 구 레이블도 같은 필드로 매핑
       '기타수당':       'etc_allowance',
