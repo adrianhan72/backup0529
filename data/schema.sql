@@ -226,7 +226,7 @@ CREATE TABLE IF NOT EXISTS contracts (
   note                  TEXT,
   created_at            INTEGER,
   updated_at            INTEGER
-, pay_day INTEGER, schedule_json TEXT, daily_wage REAL, position_allowance REAL, skill_allowance REAL, license_allowance REAL, site_allowance REAL, self_driving_allowance REAL, self_driving_pay_type TEXT, remote_area_allowance REAL, remote_area_pay_type TEXT, car_maintenance REAL, regular_bonus REAL, childcare_allowance REAL, childcare_dependents INTEGER, childcare_pay_type TEXT, contract_etc_allowance REAL, etc_allowance REAL, etc_allowance_memo TEXT, draft_saved_at INTEGER, edit_source_id TEXT, employment_category TEXT, transport_type TEXT, transportation_pay_type TEXT, pay_period_month TEXT, pay_period_day INTEGER, terminate_date TEXT);
+, pay_day INTEGER, schedule_json TEXT, daily_wage REAL, position_allowance REAL, skill_allowance REAL, license_allowance REAL, hazard_allowance REAL, site_allowance REAL, self_driving_allowance REAL, self_driving_pay_type TEXT, remote_area_allowance REAL, remote_area_pay_type TEXT, car_maintenance REAL, regular_bonus REAL, childcare_allowance REAL, childcare_dependents INTEGER, childcare_pay_type TEXT, contract_etc_allowance REAL, etc_allowance REAL, etc_allowance_memo TEXT, draft_saved_at INTEGER, edit_source_id TEXT, employment_category TEXT, transport_type TEXT, transportation_pay_type TEXT, pay_period_month TEXT, pay_period_day INTEGER, terminate_date TEXT, custom_ordinary_values TEXT);
 CREATE INDEX idx_contracts_employee ON contracts(employee_id);
 CREATE INDEX idx_contracts_company  ON contracts(company_id);
 

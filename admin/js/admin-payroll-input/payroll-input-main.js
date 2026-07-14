@@ -2519,15 +2519,17 @@ function _resetPIPayTypes(){
 }
 
 // ── 회사별 allowance_config 기반 급여 입력 항목 show/hide ──
-// 옵셔널 항목 정의: { key, rowId, ptField(있으면) }
+// ※ 입력 순서: 통상임금(ordinaryGroup) 먼저 → 고정수당(fixedGroup) 나중
 const _PI_OPT_ROWS = [
-  { key:'regular_bonus', rowId:'pi-row-bonus' },  // 정기 상여금: 통상임금 포함 고정
-  { key:'childcare',     rowId:'pi-row-childcare', ptField:'childcare' },  // 보육수당
+  // ── 통상임금 설정 그룹 ──
   { key:'site',          rowId:'pi-row-site' },
   { key:'position',      rowId:'pi-row-position' },
   { key:'skill',         rowId:'pi-row-skill' },
   { key:'license',       rowId:'pi-row-license' },
   { key:'remote_area',   rowId:'pi-row-remote-area' },
+  { key:'regular_bonus', rowId:'pi-row-bonus' },
+  // ── 고정수당 설정 그룹 ──
+  { key:'childcare',     rowId:'pi-row-childcare', ptField:'childcare' },
   { key:'research',      rowId:'pi-row-research',      ptField:'research' },
   { key:'communication', rowId:'pi-row-communication', ptField:'communication' },
   { key:'fitness',       rowId:'pi-row-fitness',       ptField:'fitness' },
@@ -2620,8 +2622,6 @@ function _renderPIIrregularRows(){
  */
 function applyPIAllowanceConfig(cfg){
   // ① 계약 내용 섹션 show/hide + pay_type 기본값 세팅
-  //    (비정기 이동은 여기서 하지 않고, setPIPayType 호출이 모두 끝난 뒤
-  //     loadPIContract / editPayroll 에서 _renderPIIrregularRows() 로 처리)
   _PI_OPT_ROWS.forEach(({ key, rowId, ptField }) => {
     const row = document.getElementById(rowId);
     const visible = !!(cfg && cfg[key]);
@@ -2633,6 +2633,56 @@ function applyPIAllowanceConfig(cfg){
       setPIPayType(ptField, defaultPt);
     }
   });
+  // ② 사용자 정의 통상임금 항목 렌더링
+  _renderPICustomOrdinaryRows(cfg);
+}
+
+// ── 급여 입력: 사용자 정의 통상임금 항목 ──
+const _PI_CUSTOM_ORD_CONTAINER = 'pi-custom-ord-container';
+let _piCustomOrdCount = 0;
+
+function _renderPICustomOrdinaryRows(cfg){
+  let container = document.getElementById(_PI_CUSTOM_ORD_CONTAINER);
+  if(!container){
+    const refRow = document.getElementById('pi-row-license');
+    if(!refRow) return;
+    container = document.createElement('div');
+    container.id = _PI_CUSTOM_ORD_CONTAINER;
+    refRow.parentNode.insertBefore(container, refRow.nextSibling);
+  }
+  container.querySelectorAll('.pi-custom-ord-row').forEach(r => r.remove());
+  _piCustomOrdCount = 0;
+
+  const items = (cfg && Array.isArray(cfg._custom_ordinary)) ? cfg._custom_ordinary : [];
+  if(!items.length){ container.style.display = 'none'; return; }
+  container.style.display = '';
+
+  items.forEach(item => {
+    if(!item || !item.name) return;
+    const idx = _piCustomOrdCount++;
+    const div = document.createElement('div');
+    div.className = 'pi-row pi-custom-ord-row';
+    div.id = `pi-row-custom-ord-${idx}`;
+    div.style.display = '';
+    div.innerHTML = `
+      <label>${item.name.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</label>
+      <input type="text" inputmode="numeric" id="pi-custom-ord-${idx}" data-amount oninput="onAmountInput(this,calcPI)" />
+    `;
+    container.appendChild(div);
+  });
+}
+
+/** 급여 입력 → 커스텀 통상임금 값 수집 */
+function _getPICustomOrdinaryValues(){
+  const items = [];
+  for(let i = 0; i < _piCustomOrdCount; i++){
+    const nameEl = document.querySelector(`#pi-row-custom-ord-${i} label`);
+    const amtEl  = document.getElementById(`pi-custom-ord-${i}`);
+    const name = nameEl ? nameEl.textContent.trim() : '';
+    const amount = (() => { const v=(amtEl?.value||'').replace(/[^\d]/g,''); return parseInt(v)||0; })();
+    if(name) items.push({ name, amount });
+  }
+  return items;
 }
 
 /**

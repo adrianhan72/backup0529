@@ -380,7 +380,7 @@ function _fillPayrollFields(p, cfgCo){
   setAmountVal('pi-self-dev',   p.self_dev_allowance     || 0);
   setAmountVal('pi-book',       p.book_allowance         || 0);
   setAmountVal('pi-overseas',   p.overseas_allowance     || 0);
-  document.getElementById('pi-dependents').value = p.dependents||1;
+  document.getElementById('pi-dependents').value = p.dependents||0;
   document.getElementById('pi-ot-hours').value=p.overtime_hours||0;
   document.getElementById('pi-night-hours').value=p.night_hours||0;
   document.getElementById('pi-hol-hours').value=p.holiday_hours||0;

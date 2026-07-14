@@ -22,20 +22,30 @@ function _fmtHistVal(val, field){
       const lines = [];
       const labels = {
         site:'현장수당', position:'직책수당', skill:'기술수당',
-        license:'면허수당', remote_area:'벽지수당',
+        license:'면허수당', hazard:'위험수당', remote_area:'벽지수당',
         car:'차량지원비', meal:'식대', childcare:'육아수당',
         regular_bonus:'정기상여금',
         research:'연구활동비', communication:'통신비', fitness:'체력증진비',
         self_dev:'자기계발비', book:'도서지원비', overseas:'해외근무수당',
       };
-      // pay_type 없는 항목(simple 항목)
-      const simpleFields = new Set(['site','position','skill','license','remote_area','regular_bonus']);
       Object.entries(labels).forEach(([k, lbl]) => {
         if(cfg[k]){
-          const ptSuffix = simpleFields.has(k) ? '' : `(${cfg[k+'_pay_type']||'포함'})`;
+          const ptSuffix = `(${cfg[k+'_pay_type']||'포함'})`;
           lines.push(`${lbl}${ptSuffix}`);
         }
       });
+      // 사용자 정의 통상임금 항목
+      if(Array.isArray(cfg._custom_ordinary)){
+        cfg._custom_ordinary.forEach(item => {
+          if(item && item.name) lines.push(`[${item.name}]`);
+        });
+      }
+      // 사용자 정의 고정수당 항목
+      if(Array.isArray(cfg._custom_fixed)){
+        cfg._custom_fixed.forEach(item => {
+          if(item && item.name) lines.push(`[${item.name}](${item.pay_type||'fixed'})`);
+        });
+      }
       return lines.length ? lines.join(', ') : '(없음)';
     } catch(e){ return String(val||''); }
   }
@@ -183,10 +193,8 @@ function _parseCo(co){
 }
 
 // == 급여 항목 설정(allowance_config) 헬퍼 ==
-// pay_type select가 있는 항목 목록
-const _CM_AW_PT_FIELDS = ['childcare','car','meal','research','communication','fitness','self_dev','book','overseas'];
-// pay_type select 없는 항목 (체크만) — regular_bonus: 통상임금 포함 고정
-const _CM_AW_SIMPLE_FIELDS = ['site','position','skill','license','remote_area','regular_bonus'];
+// 모든 항목에 pay_type select 적용 (통상임금 여부는 지급방식으로 결정)
+const _CM_AW_PT_FIELDS = ['site','position','skill','license','hazard','remote_area','regular_bonus','childcare','car','meal','research','communication','fitness','self_dev','book','overseas'];
 
 /** 체크박스 체크 시 pay_type select 활성/비활성 토글 */
 function cmAwTogglePayType(field, checked){
@@ -201,22 +209,138 @@ function cmAwTogglePayType(field, checked){
   }
 }
 
+// ── 사용자 정의 통상임금 항목 관리 ──
+let _cmAwCustomIdx = 0;
+
+/** "+" 버튼 클릭 → 통상임금 커스텀 항목 추가 (그리드 내 add-row 앞에 삽입) */
+function cmAwAddCustomItem(name = ''){
+  const addRow = document.getElementById('cm-aw-add-row');
+  if(!addRow) return;
+  const idx = _cmAwCustomIdx++;
+  const div = document.createElement('div');
+  div.className = 'cm-aw-row cm-aw-custom-row';
+  div.id = `cm-aw-custom-row-${idx}`;
+  div.innerHTML = `
+    <label class="cm-aw-check-label" style="min-width:auto;">
+      <input type="checkbox" id="cm-aw-custom-${idx}" class="cm-aw-cb" checked />
+      <input type="text" id="cm-aw-custom-name-${idx}" class="cm-aw-custom-input"
+        placeholder="항목명 입력" value="${name.replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}" style="width:110px;" />
+    </label>
+    <span class="cm-aw-hint">통상임금 포함</span>
+    <button type="button" class="cm-aw-custom-del" onclick="cmAwRemoveCustomItem(${idx})" title="삭제"><i class="fas fa-trash-alt"></i></button>
+  `;
+  addRow.parentNode.insertBefore(div, addRow);
+}
+
+/** 커스텀 항목 삭제 */
+function cmAwRemoveCustomItem(idx){
+  const row = document.getElementById(`cm-aw-custom-row-${idx}`);
+  if(row) row.remove();
+}
+
+/** 커스텀 항목 목록 수집 → [{name, checked}] */
+function _cmAwGetCustomItems(){
+  const items = [];
+  document.querySelectorAll('.cm-aw-custom-row').forEach(row => {
+    const cb = row.querySelector('input[type="checkbox"]');
+    const nameInput = row.querySelector('input[type="text"]');
+    const name = (nameInput?.value || '').trim();
+    if(name) items.push({ name, checked: cb?.checked ?? true });
+  });
+  return items;
+}
+
+/** 커스텀 항목 복원 (기존 항목 모두 제거 후 재생성) */
+function _cmAwRestoreCustomItems(items){
+  document.querySelectorAll('.cm-aw-custom-row').forEach(r => r.remove());
+  _cmAwCustomIdx = 0;
+  if(Array.isArray(items)){
+    items.forEach(item => cmAwAddCustomItem(item.name || ''));
+  }
+}
+
+// ── 고정수당 사용자 정의 항목 관리 ──
+let _cmAwFixedCustomIdx = 0;
+
+/** "+" 버튼 클릭 → 고정수당 커스텀 항목 추가 */
+function cmAwAddFixedCustomItem(name = '', payType = 'fixed'){
+  const addRow = document.getElementById('cm-aw-fixed-add-row');
+  if(!addRow) return;
+  const idx = _cmAwFixedCustomIdx++;
+  const div = document.createElement('div');
+  div.className = 'cm-aw-row cm-aw-custom-row cm-aw-fixed-custom-row';
+  div.id = `cm-aw-fixed-custom-row-${idx}`;
+  div.innerHTML = `
+    <label class="cm-aw-check-label" style="min-width:auto;">
+      <input type="checkbox" id="cm-aw-fixed-custom-${idx}" class="cm-aw-cb" checked onchange="cmAwToggleFixedCustomPayType(${idx},this.checked)" />
+      <input type="text" id="cm-aw-fixed-custom-name-${idx}" class="cm-aw-custom-input"
+        placeholder="항목명 입력" value="${name.replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}" style="width:110px;" />
+    </label>
+    <select id="cm-aw-fixed-custom-pt-${idx}" class="cm-aw-pt-select" style="flex:1;min-width:0;" ${payType ? '' : 'disabled'}>
+      <option value="">고정수당 포함여부</option>
+      <option value="fixed" ${payType==='fixed'?'selected':''}>매월 정기지급</option>
+      <option value="daily" ${payType==='daily'?'selected':''}>출근일수에 따름</option>
+      <option value="receipt" ${payType==='receipt'?'selected':''}>영수증 청구</option>
+    </select>
+    <button type="button" class="cm-aw-custom-del" onclick="cmAwRemoveFixedCustomItem(${idx})" title="삭제"><i class="fas fa-trash-alt"></i></button>
+  `;
+  addRow.parentNode.insertBefore(div, addRow);
+}
+
+/** 고정수당 커스텀 항목 삭제 */
+function cmAwRemoveFixedCustomItem(idx){
+  const row = document.getElementById(`cm-aw-fixed-custom-row-${idx}`);
+  if(row) row.remove();
+}
+
+/** 고정수당 커스텀 pay_type 토글 */
+function cmAwToggleFixedCustomPayType(idx, checked){
+  const sel = document.getElementById(`cm-aw-fixed-custom-pt-${idx}`);
+  if(!sel) return;
+  sel.disabled = !checked;
+  if(!checked) sel.value = '';
+  else if(!sel.value) sel.value = 'fixed';
+}
+
+/** 고정수당 커스텀 항목 수집 → [{name, checked, pay_type}] */
+function _cmAwGetFixedCustomItems(){
+  const items = [];
+  document.querySelectorAll('.cm-aw-fixed-custom-row').forEach(row => {
+    const cb = row.querySelector('input[type="checkbox"]');
+    const nameInput = row.querySelector('input[type="text"]');
+    const sel = row.querySelector('select');
+    const name = (nameInput?.value || '').trim();
+    if(name) items.push({ name, checked: cb?.checked ?? true, pay_type: sel?.value || 'fixed' });
+  });
+  return items;
+}
+
+/** 고정수당 커스텀 항목 복원 */
+function _cmAwRestoreFixedCustomItems(items){
+  document.querySelectorAll('.cm-aw-fixed-custom-row').forEach(r => r.remove());
+  _cmAwFixedCustomIdx = 0;
+  if(Array.isArray(items)){
+    items.forEach(item => cmAwAddFixedCustomItem(item.name || '', item.pay_type || 'fixed'));
+  }
+}
+
 /** allowance_config 필드명 → HTML id 변환 (self_dev → self-dev) */
 function _cmAwHtmlId(f){ return f.replace(/_/g, '-'); }
 
 /** 모달 → allowance_config 객체 수집 */
 function _cmGetAllowanceConfig(){
   const cfg = {};
-  _CM_AW_SIMPLE_FIELDS.forEach(f => {
-    cfg[f] = document.getElementById(`cm-aw-${_cmAwHtmlId(f)}`)?.checked || false;
-  });
   _CM_AW_PT_FIELDS.forEach(f => {
     const hid = _cmAwHtmlId(f);
     cfg[f] = document.getElementById(`cm-aw-${hid}`)?.checked || false;
     cfg[`${f}_pay_type`] = cfg[f]
-      ? (document.getElementById(`cm-aw-${hid}-pt`)?.value || '')
+      ? (document.getElementById(`cm-aw-${hid}-pt`)?.value || 'fixed')
       : '';
   });
+  // 사용자 정의 통상임금 항목
+  cfg._custom_ordinary = _cmAwGetCustomItems();
+  // 사용자 정의 고정수당 항목
+  cfg._custom_fixed = _cmAwGetFixedCustomItems();
   return cfg;
 }
 
@@ -226,10 +350,6 @@ const _CM_AW_DEFAULT_CHECKED = { car: 'fixed', meal: 'fixed' };
 
 function _cmSetAllowanceConfig(cfg){
   if(!cfg) cfg = {};
-  _CM_AW_SIMPLE_FIELDS.forEach(f => {
-    const cb = document.getElementById(`cm-aw-${_cmAwHtmlId(f)}`);
-    if(cb) cb.checked = !!cfg[f];
-  });
   _CM_AW_PT_FIELDS.forEach(f => {
     const hid = _cmAwHtmlId(f);
     const cb  = document.getElementById(`cm-aw-${hid}`);
@@ -243,6 +363,10 @@ function _cmSetAllowanceConfig(cfg){
     if(cb)  cb.checked = checked;
     if(sel){ sel.disabled = !checked; sel.value = payType; }
   });
+  // 사용자 정의 통상임금 항목 복원
+  _cmAwRestoreCustomItems(cfg._custom_ordinary || []);
+  // 사용자 정의 고정수당 항목 복원
+  _cmAwRestoreFixedCustomItems(cfg._custom_fixed || []);
 }
 // ── 대시보드 카드용 사용료 현황 계산 ──
 function getBillingInfoForDashCard(companyId){

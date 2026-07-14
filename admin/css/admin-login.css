@@ -255,10 +255,20 @@
 /* ?�?�?고객??모달 급여 ??�� ?�정 ?�?�?*/
 .cm-allowance-section { background:#f8faff; border:1.5px solid #e0e7ff; border-radius:10px; padding:14px 16px; }
 .cm-allowance-title   { font-size:13px; font-weight:700; color:#3730a3; margin-bottom:12px; display:flex; align-items:center; }
+.cm-aw-section-title  { grid-column:1/-1; font-size:11.5px; font-weight:700; color:#6366f1; padding:6px 0 2px; border-bottom:1.5px solid #e0e7ff; margin-bottom:2px; letter-spacing:0.3px; }
+.cm-aw-section-group  { display:contents; }
+.cm-aw-section-sep    { grid-column:1/-1; border-top:2px dashed #d1d5db; margin:6px 0 2px; }
 .cm-allowance-grid    { display:grid; grid-template-columns:1fr 1fr; gap:8px 16px; }
 @media(max-width:540px){ .cm-allowance-grid{ grid-template-columns:1fr; } }
 
 .cm-aw-row            { display:flex; align-items:center; gap:8px; min-height:32px; }
+.cm-aw-hint           { font-size:10.5px; color:#6b7280; align-self:center; white-space:nowrap; }
+.cm-aw-add-btn        { font-size:11.5px; color:#6366f1; background:none; border:1.5px dashed #c7d2fe; border-radius:6px; padding:4px 14px; cursor:pointer; transition:all .15s; }
+.cm-aw-add-btn:hover  { background:#eef2ff; border-color:#6366f1; }
+.cm-aw-custom-row     { display:flex; align-items:center; gap:6px; min-height:32px; }
+.cm-aw-custom-input   { flex:1; border:1px solid #d1d5db; border-radius:5px; padding:3px 8px; font-size:12px; min-width:0; }
+.cm-aw-custom-del     { cursor:pointer; color:#9ca3af; font-size:13px; padding:2px; transition:color .15s; background:none; border:none; }
+.cm-aw-custom-del:hover{ color:#ef4444; }
 .cm-aw-check-label    { display:flex; align-items:center; gap:6px; cursor:pointer; font-size:13px; color:#374151; white-space:nowrap; flex-shrink:0; min-width:90px; }
 .cm-aw-check-label input[type="checkbox"] { width:15px; height:15px; accent-color:#6366f1; cursor:pointer; flex-shrink:0; }
 

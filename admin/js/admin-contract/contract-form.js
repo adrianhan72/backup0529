@@ -302,13 +302,13 @@ function toggleAnnualSal(){
   const dailyWageLabel    = document.querySelector('#ct-row-daily-wage label');
 
   if(isRegularOnly){
-    if(salaryPeriodTitle) salaryPeriodTitle.innerHTML = '연봉 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span>';
-    if(labelAnnualSal)    labelAnnualSal.innerHTML    = '연봉 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span>';
+    if(salaryPeriodTitle) salaryPeriodTitle.innerHTML = '연봉 <span style="font-size:11px;font-weight:400;color:#6b7280;">(시급 기준 자동계산)</span>';
+    if(labelAnnualSal)    labelAnnualSal.innerHTML    = '연봉 <span style="font-size:11px;font-weight:400;color:#6b7280;">(자동계산 · 직접 입력 시)</span>';
     if(wageSectionTitle)  wageSectionTitle.textContent = '임금 조건 (월)';
-    if(labelMonthly)      labelMonthly.textContent    = '월 약정임금';
-  } else if(isFixedTerm){
-    if(salaryPeriodTitle) salaryPeriodTitle.innerHTML = '월 약정급여 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span>';
-    if(labelAnnualSal)    labelAnnualSal.innerHTML    = '월 약정급여 (통상월급) <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span>';
+    if(labelMonthly)      labelMonthly.textContent    = '월 약정임금 (자동계산)';
+  } else if(isFixedTerm || isRegularProb){
+    if(salaryPeriodTitle) salaryPeriodTitle.innerHTML = '월 약정급여 <span style="font-size:11px;font-weight:400;color:#6b7280;">(시급 기준 자동계산)</span>';
+    if(labelAnnualSal)    labelAnnualSal.innerHTML    = '월 약정급여 (통상월급) <span style="font-size:11px;font-weight:400;color:#6b7280;">(직접 입력 시)</span>';
     if(wageSectionTitle)  wageSectionTitle.textContent = '임금 조건 (월)';
     if(labelMonthly)      labelMonthly.textContent    = '월 약정임금 (자동계산)';
   } else if(isDaily){
@@ -326,7 +326,7 @@ function toggleAnnualSal(){
   // ── 연봉/월약정급여 입력 행 표시 제어 ──
   const rowSalPeriod = document.getElementById('ct-row-salary-period');
   const rowAnnualSal = document.getElementById('ct-row-annual-sal');
-  // 정규직 수습은 연봉 섹션 숨김 (수습 기간 중 연봉 의미 없음)
+  // 정규직은 연봉 입력, 정규직 수습은 시급 기반 자동계산(연봉 숨김), 계약직은 선택적
   const showAnnualRow = isRegularOnly || isFixedTerm;
   if(rowSalPeriod) rowSalPeriod.style.display = showAnnualRow ? '' : 'none';
   if(rowAnnualSal) rowAnnualSal.style.display  = showAnnualRow ? '' : 'none';
@@ -750,7 +750,33 @@ function _checkMinWageWarning(){
     const base   = getAmountVal('ct-base');
     if(base <= 0){ wRow.style.display='none'; _checkRegisterBtnState(); return; }
     const days   = parseFloat(document.getElementById('ct-days')?.value) || 5;
-    const wkHol  = Math.round(base / 5); // 월 주휴수당 = 기본급 ÷ 5
+    // 통상임금 = 기본급 + 통상임금 설정 항목 + 고정OT·야간·휴일근로수당
+    const fixedOt    = getAmountVal('ct-fixed-ot-pay')    || 0;
+    const fixedNight = getAmountVal('ct-fixed-night-pay') || 0;
+    const fixedHol   = getAmountVal('ct-fixed-hol-pay')   || 0;
+    // 통상임금 설정 그룹 (주휴수당 계산용 통상임금에 포함)
+    const _mwSite    = getAmountVal('ct-site')||0;
+    const _mwPos     = getAmountVal('ct-position')||0;
+    const _mwSkill   = getAmountVal('ct-skill')||0;
+    const _mwLicense = getAmountVal('ct-license')||0;
+    const _mwHazard  = getAmountVal('ct-hazard')||0;
+    const _mwRemote  = getAmountVal('ct-remote-area')||0;
+    const _ordinaryMW = (_isFixedAllow('site')? _mwSite : 0)
+      + (_isFixedAllow('position')? _mwPos : 0)
+      + (_isFixedAllow('skill')? _mwSkill : 0)
+      + (_isFixedAllow('license')? _mwLicense : 0)
+      + (_isFixedAllow('hazard')? _mwHazard : 0)
+      + (_isFixedAllow('remote_area')? _mwRemote : 0)
+      + (typeof _getCustomOrdinarySum==='function' ? _getCustomOrdinarySum() : 0);
+    // 시급 기반: 주휴수당 = 통상시급 × hpd × 4.345 [근로기준법 제55조]
+    const _mwHourly = getAmountVal('ct-hourly-input') || 0;
+    const _mwHpd = parseFloat(document.getElementById('ct-hours')?.value) || 8;
+    let wkHol;
+    if(_mwHourly > 0){
+      wkHol = Math.round(_mwHourly * _mwHpd * (365 / 12 / 7));
+    } else {
+      wkHol = Math.round((base + _ordinaryMW + fixedOt + fixedNight + fixedHol) / days);
+    }
     const pos    = getAmountVal('ct-position');
     const car    = getAmountVal('ct-car');
     const rmtArea= getAmountVal('ct-remote-area')||0;
@@ -760,18 +786,26 @@ function _checkMinWageWarning(){
     const site_w = getAmountVal('ct-site')||0;
     const skill_w= getAmountVal('ct-skill')||0;
     const lic_w  = getAmountVal('ct-license')||0;
+    const hazard_w=getAmountVal('ct-hazard')||0;
     const comm_w = getAmountVal('ct-communication')||0;
     const fit_w  = getAmountVal('ct-fitness')||0;
     const sdev_w = getAmountVal('ct-self-dev')||0;
     const book_w = getAmountVal('ct-book')||0;
     const ovs_w  = getAmountVal('ct-overseas')||0;
-    compareMonthly = base + wkHol + pos
+    // 최저임금 비교대상임금: 연장·야간·휴일근로수당 제외 (최저임금법 제6조의4)
+    compareMonthly = base + wkHol
+                   // ── 통상임금 설정 그룹 (pay_type='fixed'만 포함) ──
+                   + (_isFixedAllow('site')          ? site_w : 0)
+                   + (_isFixedAllow('position')      ? pos    : 0)
+                   + (_isFixedAllow('skill')         ? skill_w: 0)
+                   + (_isFixedAllow('license')       ? lic_w  : 0)
+                   + (_isFixedAllow('hazard')        ? hazard_w:0)
+                   + (_isFixedAllow('remote_area')   ? rmtArea : 0)
+                   // ── 고정수당 설정 그룹 ──
                    + (_isFixedAllow('car')         ? car    : 0)
-                   + rmtArea
                    + (_isFixedAllow('meal')        ? meal   : 0)
                    + (_isFixedAllow('research')    ? res    : 0)
                    + other
-                   + site_w + skill_w + lic_w
                    + (_isFixedAllow('communication') ? comm_w : 0)
                    + (_isFixedAllow('fitness')       ? fit_w  : 0)
                    + (_isFixedAllow('self_dev')      ? sdev_w : 0)
@@ -1316,25 +1350,25 @@ function _getCTPayTypeVal(field){ return _ctPayTypes[field] || 'fixed'; }
 // 해당 수당이 월 약정임금 합산 대상인지 반환 (fixed = 매월 정기지급 = 포함, 그 외 제외)
 function _isFixedAllow(field){ return _getCTPayTypeVal(field) === 'fixed'; }
 function _resetCTPayTypes(){
-  // remote-area는 항상 fixed이므로 reset 목록에서 제외
-  ['car','meal','research','communication','fitness','self_dev','book','overseas']
+  ['site','position','skill','license','hazard','remote_area','regular_bonus','car','meal','research','communication','fitness','self_dev','book','overseas']
     .forEach(f=>{ _ctPayTypes[f]='fixed'; setCTPayType(f,'fixed'); });
 }
 
 // ── 근로계약 모달 — 고객사별 옵셔널 수당 show/hide ──
 // ※ 순서는 고객사 설정(allowance_config) 화면 순서와 동일하게 유지
-// 고객사 설정 순서: regular_bonus → childcare → car → meal → site → position → skill → license → remote_area → research...
+// 고객사 설정 순서: site → position → skill → license → hazard → remote_area → regular_bonus → childcare → car → meal → research → communication → fitness → self_dev → book → overseas
 // 모든 수당 항목이 allowance_config 기준 조건부 표시 (car/meal 포함)
 const _CT_OPT_ROWS = [
-  { key:'regular_bonus', rowId:'ct-row-regular-bonus' }, // 정기 상여금: 통상임금 포함 고정
-  { key:'childcare',     rowId:'ct-row-childcare'     }, // 보육수당
-  { key:'car',           rowId:'ct-row-car'           }, // 차량지원비
-  { key:'meal',          rowId:'ct-row-meal'          }, // 식대
   { key:'site',          rowId:'ct-row-site'          }, // 현장수당
   { key:'position',      rowId:'ct-row-position'      }, // 직책수당
   { key:'skill',         rowId:'ct-row-skill'         }, // 기술수당
   { key:'license',       rowId:'ct-row-license'       }, // 면허수당
+  { key:'hazard',        rowId:'ct-row-hazard'        }, // 위험수당
   { key:'remote_area',   rowId:'ct-row-remote-area'   }, // 벽지수당
+  { key:'regular_bonus', rowId:'ct-row-regular-bonus' }, // 정기 상여금: 통상임금 포함 고정
+  { key:'childcare',     rowId:'ct-row-childcare'     }, // 보육수당
+  { key:'car',           rowId:'ct-row-car'           }, // 차량지원비
+  { key:'meal',          rowId:'ct-row-meal'          }, // 식대
   { key:'research',      rowId:'ct-row-research'      }, // 연구활동비
   { key:'communication', rowId:'ct-row-communication' }, // 통신비
   { key:'fitness',       rowId:'ct-row-fitness'       }, // 체력증진비
@@ -1362,12 +1396,11 @@ function applyCTAllowanceConfig(cfg, clearValues = false){
     }
   });
   // ── _ctAllowCfgVisible 상태 갱신 (pay_type 제거 로직용) ──
-  ['car','meal','childcare','research','communication','fitness','self_dev','book','overseas'].forEach(f => {
+  ['site','position','skill','license','hazard','remote_area','regular_bonus','car','meal','childcare','research','communication','fitness','self_dev','book','overseas'].forEach(f => {
     _ctAllowCfgVisible[f] = !!(cfg && cfg[f]);
   });
-  // pay_type 있는 수당: allowance_config에서 pay_type 읽어 반영
-  // ※ _ctAllowCfgVisible 갱신 후 setCTPayType 호출해야 DOM 제거 로직이 올바르게 동작
-  const _PT_FIELDS = ['car','meal','childcare','research','communication','fitness','self_dev','book','overseas'];
+  // 모든 수당에 pay_type 적용 (통상임금 여부는 지급방식으로 결정)
+  const _PT_FIELDS = ['site','position','skill','license','hazard','remote_area','regular_bonus','car','meal','childcare','research','communication','fitness','self_dev','book','overseas'];
   _PT_FIELDS.forEach(f => {
     const pt = (cfg && cfg[`${f}_pay_type`]) ? cfg[`${f}_pay_type`] : 'fixed';
     setCTPayType(f, pt);
@@ -1389,6 +1422,76 @@ function applyCTAllowanceConfig(cfg, clearValues = false){
       ccHint.textContent = (_ccPt === 'fixed') ? '통상임금 포함' : '통상임금 제외';
     }
   }
+  // ── 사용자 정의 통상임금 항목 렌더링 ──
+  _renderCustomOrdinaryRows(cfg);
+}
+
+// ── 사용자 정의 통상임금 항목 (계약서 모달) ──
+const _CUSTOM_ORD_CONTAINER_ID = 'ct-custom-ord-container';
+let _customOrdRowCount = 0;
+
+function _renderCustomOrdinaryRows(cfg){
+  let container = document.getElementById(_CUSTOM_ORD_CONTAINER_ID);
+  if(!container){
+    // 컨테이너가 없으면 ct-row-regular-bonus 다음에 생성
+    const refRow = document.getElementById('ct-row-regular-bonus');
+    if(!refRow) return;
+    container = document.createElement('div');
+    container.id = _CUSTOM_ORD_CONTAINER_ID;
+    refRow.parentNode.insertBefore(container, refRow.nextSibling);
+  }
+  // 기존 커스텀 행 제거
+  container.querySelectorAll('.ct-custom-ord-row').forEach(r => r.remove());
+  _customOrdRowCount = 0;
+
+  const items = (cfg && Array.isArray(cfg._custom_ordinary)) ? cfg._custom_ordinary : [];
+  if(!items.length){ container.style.display = 'none'; return; }
+  container.style.display = '';
+
+  items.forEach(item => {
+    if(!item || !item.name) return;
+    const idx = _customOrdRowCount++;
+    const div = document.createElement('div');
+    div.className = 'form-group ct-custom-ord-row';
+    div.id = `ct-row-custom-ord-${idx}`;
+    div.innerHTML = `
+      <label>${_hEsc(item.name)}<span class="daily-suffix" style="display:none;font-size:11px;color:#6b7280;margin-left:3px;">(일급)</span></label>
+      <div class="amount-wrap"><input type="text" inputmode="numeric" id="ct-custom-ord-${idx}" data-amount placeholder="0" oninput="onAmountInput(this,calcContractSalary)" /></div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+/** 계약서 모달 → 커스텀 통상임금 값 수집 [{name, amount}] */
+function _getCustomOrdinaryValues(){
+  const items = [];
+  for(let i = 0; i < _customOrdRowCount; i++){
+    const nameEl = document.querySelector(`#ct-row-custom-ord-${i} label`);
+    const amtEl  = document.getElementById(`ct-custom-ord-${i}`);
+    const name = nameEl ? nameEl.textContent.replace(/\(.*\)/,'').trim() : '';
+    const amount = getAmountVal(`ct-custom-ord-${i}`) || 0;
+    if(name) items.push({ name, amount });
+  }
+  return items;
+}
+
+/** DB 값 → 계약서 모달 커스텀 통상임금 필드 복원 */
+function _setCustomOrdinaryValues(values){
+  if(!Array.isArray(values)) return;
+  values.forEach((v, i) => {
+    if(v && v.amount) setAmountVal(`ct-custom-ord-${i}`, v.amount);
+  });
+}
+
+function _hEsc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+/** 커스텀 통상임금 항목 합계 */
+function _getCustomOrdinarySum(){
+  let sum = 0;
+  for(let i = 0; i < _customOrdRowCount; i++){
+    sum += getAmountVal(`ct-custom-ord-${i}`) || 0;
+  }
+  return sum;
 }
 
 /**
@@ -1596,6 +1699,7 @@ function calcContractSalary(){
   const site_ct    = getAmountVal('ct-site')||0;
   const skill_ct   = getAmountVal('ct-skill')||0;
   const license_ct = getAmountVal('ct-license')||0;
+  const hazard_ct  = getAmountVal('ct-hazard')||0;
   const comm_ct    = getAmountVal('ct-communication')||0;
   const fitness_ct = getAmountVal('ct-fitness')||0;
   const selfDev_ct = getAmountVal('ct-self-dev')||0;
@@ -1621,59 +1725,95 @@ function calcContractSalary(){
     return;
   }
 
-  // ── 월 약정임금 합산용 수당 (fixed 항목만) ──
-  // 정기 상여금은 통상임금 포함 고정 항목이므로 allAllow에 포함
-  const allAllow = position
-    + (_isFixedAllow('car')           ? car         : 0)
-    + remoteArea
-    + (_isFixedAllow('meal')          ? meal        : 0)
-    + (_isFixedAllow('research')      ? research    : 0)
-    + site_ct + skill_ct + license_ct
-    + (_isFixedAllow('communication') ? comm_ct     : 0)
-    + (_isFixedAllow('fitness')       ? fitness_ct  : 0)
-    + (_isFixedAllow('self_dev')      ? selfDev_ct  : 0)
-    + (_isFixedAllow('book')          ? book_ct     : 0)
-    + (_isFixedAllow('overseas')      ? overseas_ct : 0)
-    + regularBonus_ct;
+  // ── 월 약정임금 합산용 수당 (pay_type='fixed'만 통상임금 포함) ──
+  const allAllow = (() => {
+    // ── 통상임금 설정 그룹 (체크 = 통상임금 항상 포함) ──
+    const ordinaryGroup = (_isFixedAllow('site')          ? site_ct      : 0)
+      + (_isFixedAllow('position')       ? position       : 0)
+      + (_isFixedAllow('skill')          ? skill_ct       : 0)
+      + (_isFixedAllow('license')        ? license_ct     : 0)
+      + (_isFixedAllow('hazard')         ? hazard_ct      : 0)
+      + (_isFixedAllow('remote_area')    ? remoteArea     : 0)
+      + (_isFixedAllow('regular_bonus')  ? regularBonus_ct : 0)
+      // 사용자 정의 통상임금 항목
+      + _getCustomOrdinarySum();
+    // ── 고정수당 설정 그룹 (pay_type = fixed 일 때만 통상임금 포함) ──
+    const fixedGroup = (_isFixedAllow('car')           ? car         : 0)
+      + (_isFixedAllow('meal')          ? meal        : 0)
+      + (_isFixedAllow('research')      ? research    : 0)
+      + (_isFixedAllow('communication') ? comm_ct     : 0)
+      + (_isFixedAllow('fitness')       ? fitness_ct  : 0)
+      + (_isFixedAllow('self_dev')      ? selfDev_ct  : 0)
+      + (_isFixedAllow('book')          ? book_ct     : 0)
+      + (_isFixedAllow('overseas')      ? overseas_ct : 0);
+    return { total: ordinaryGroup + fixedGroup, ordinaryGroup };
+  })();
+  const _ordinaryGroup = allAllow.ordinaryGroup;
+  const _allAllowTotal = allAllow.total;
 
-  const annualSal = getAmountVal('ct-annual-sal'); // 정규직: 연봉 / 계약직: 월약정급여
+  // 고정 연장/야간/휴일근로수당 (통상임금 포함, 월 약정임금에 합산)
+  const fixedOtPay    = getAmountVal('ct-fixed-ot-pay')    || 0;
+  const fixedNightPay = getAmountVal('ct-fixed-night-pay') || 0;
+  const fixedHolPay   = getAmountVal('ct-fixed-hol-pay')   || 0;
+  const fixedExtraAll = fixedOtPay + fixedNightPay + fixedHolPay;
 
-  // 주 소정근로시간 파악 (단시간 비례 계산용) — 역산 블록보다 먼저 선언
+  const annualSal = getAmountVal('ct-annual-sal');
+  const hourlyWage = getAmountVal('ct-hourly-input') || 0;
+
+  // 주 소정근로시간 파악
   const _hpd = parseFloat(document.getElementById('ct-hours')?.value) || 8;
   const _dpw = parseFloat(document.getElementById('ct-days')?.value)  || 5;
   const _monthlyStdH = _calcMonthlyStdHours(_hpd, _dpw); // 법령 기준 월 산정시간
 
-  if(isRegularGroup && annualSal > 0){
-    // 정규직: 연봉 ÷ 12 → 기본급 역산
-    // 공식: monthly = base × (1 + 1/dpw) + allAllow
-    //   → base = (monthly - allAllow) × dpw / (dpw + 1)
+  // ── 시급 기반 자동계산: 정규직·계약직·계약직수습·정규직수습 ──
+  const isHourlyBased = isRegularGroup || isFixedTerm;
+  if(isHourlyBased && hourlyWage > 0){
+    // 월 통상임금 = 시급 × 월소정근로시간
+    const totalOrdinary = Math.round(hourlyWage * _monthlyStdH);
+    // 기본급 = 월 통상임금 - ordinaryGroup (통상임금 = 기본급 + 통상임금성 수당)
+    const autoBase = Math.max(0, totalOrdinary - _ordinaryGroup);
+    setAmountVal('ct-base', autoBase);
+    // 연봉/월약정급여: 정규직은 아래에서 연봉 자동계산, 그 외는 시급이 기준이므로 비움
+    if(cat !== CONTRACT_TYPE.REGULAR){
+      setAmountVal('ct-annual-sal', 0);
+    }
+  } else if(cat === CONTRACT_TYPE.REGULAR && annualSal > 0){
+    // 정규직(시급 미입력 시): 연봉 ÷ 12 → 기본급 역산
     const monthly0  = Math.round(annualSal / 12);
-    const autoBase  = Math.max(0, Math.round((monthly0 - allAllow) * _dpw / (_dpw + 1)));
+    const autoBase  = Math.max(0, Math.round((monthly0 - _allAllowTotal - fixedExtraAll) * _dpw / (_dpw + 1)));
     setAmountVal('ct-base', autoBase);
   } else if(isFixedTerm && annualSal > 0){
-    // 계약직: 월약정급여 → 기본급 역산
-    // 공식: monthly = base × (1 + 1/dpw) + allAllow
-    //   → base = (monthly - allAllow) × dpw / (dpw + 1)
-    const autoBase = Math.max(0, Math.round((annualSal - allAllow) * _dpw / (_dpw + 1)));
+    // 계약직: 월약정급여 → 기본급 역산 (시급 미입력 시 폴백)
+    const autoBase = Math.max(0, Math.round((annualSal - _allAllowTotal - fixedExtraAll) * _dpw / (_dpw + 1)));
     setAmountVal('ct-base', autoBase);
   }
 
   const base      = getAmountVal('ct-base');
-  // 주휴수당 = 기본급 ÷ 주 소정근로일수 (단시간 비례 적용)
-  // · 주 5일: base÷5, 주 4일: base÷4, 주 3일: base÷3
-  const weeklyHol = Math.round(base / _dpw);
+  // 주휴수당 = 통상시급 × 1일소정근로시간 × 월평균주수(4.345) [근로기준법 제55조]
+  const weeklyHol = (isHourlyBased && hourlyWage > 0)
+    ? Math.round(hourlyWage * _hpd * (365 / 12 / 7))
+    : Math.round((base + _ordinaryGroup + fixedExtraAll) / _dpw);
   document.getElementById('ct-weekly-hol-computed').textContent = won(weeklyHol);
 
   // 월 약정임금 표시
   let monthly;
-  if(isRegularGroup && annualSal > 0){
+  const isRegularHourly = cat === CONTRACT_TYPE.REGULAR && isHourlyBased && hourlyWage > 0;
+  if(isRegularHourly){
+    // 정규직 시급 기반: 월 약정임금 자동계산
+    monthly = base + weeklyHol + _allAllowTotal + fixedExtraAll;
+  } else if(cat === CONTRACT_TYPE.REGULAR && annualSal > 0){
     monthly = Math.round(annualSal / 12);
-  } else if(isFixedTerm && annualSal > 0){
-    monthly = annualSal; // 계약직은 입력값 자체가 월약정급여
+  } else if(isFixedTerm && annualSal > 0 && !isHourlyBased){
+    monthly = annualSal; // 시급 미입력 시 월약정급여 그대로
   } else {
-    monthly = base + weeklyHol + allAllow;
+    monthly = base + weeklyHol + _allAllowTotal + fixedExtraAll;
   }
   document.getElementById('ct-monthly-computed').textContent = won(monthly);
+
+  // 정규직 시급 기반: 연봉 = 월 약정임금 × 12 자동계산
+  if(isRegularHourly){
+    setAmountVal('ct-annual-sal', monthly * 12);
+  }
 
   syncProbation();
   _checkMinWageWarning();

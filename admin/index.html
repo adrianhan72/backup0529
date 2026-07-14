@@ -1045,92 +1045,150 @@
             <div class="cm-allowance-title"><i class="fas fa-sliders-h" style="color:#6366f1;margin-right:6px;"></i>급여 입력 항목 설정 <span style="font-size:11px;font-weight:400;color:#9ca3af;margin-left:4px;">(체크된 항목만 급여 입력에 노출)</span></div>
             <div class="cm-allowance-grid">
 
-              <!-- 정기 상여금 — 통상임금 포함 고정, pay_type 없음 -->
+              <!-- ── 통상임금 설정 소분류 ── -->
+              <div class="cm-aw-section-group">
+              <div class="cm-aw-section-title">통상임금 설정</div>
+
+              <!-- 현장수당 — pay_type: fixed/daily -->
               <div class="cm-aw-row">
                 <label class="cm-aw-check-label">
-                  <input type="checkbox" id="cm-aw-regular-bonus" class="cm-aw-cb" />
-                  <span>정기 상여금</span>
+                  <input type="checkbox" id="cm-aw-site" class="cm-aw-cb" onchange="cmAwTogglePayType('site',this.checked)" />
+                  <span>현장수당</span>
                 </label>
-                <span style="font-size:10.5px;color:#6b7280;align-self:center;">통상임금 포함</span>
+                <select id="cm-aw-site-pt" class="cm-aw-pt-select" disabled>
+                  <option value="">통상임금 포함여부</option>
+                  <option value="fixed">매월 정기지급</option>
+                  <option value="daily">출근일수에 따름</option>
+                </select>
               </div>
 
-              <!-- 보육수당 — 통상임금 포함여부 설정, 부양가족 수·금액은 급여 입력에서 편집 -->
+              <!-- 직책수당 — pay_type: fixed/daily -->
+              <div class="cm-aw-row">
+                <label class="cm-aw-check-label">
+                  <input type="checkbox" id="cm-aw-position" class="cm-aw-cb" onchange="cmAwTogglePayType('position',this.checked)" />
+                  <span>직책수당</span>
+                </label>
+                <select id="cm-aw-position-pt" class="cm-aw-pt-select" disabled>
+                  <option value="">통상임금 포함여부</option>
+                  <option value="fixed">매월 정기지급</option>
+                  <option value="daily">출근일수에 따름</option>
+                </select>
+              </div>
+
+              <!-- 기술수당 — pay_type: fixed/daily -->
+              <div class="cm-aw-row">
+                <label class="cm-aw-check-label">
+                  <input type="checkbox" id="cm-aw-skill" class="cm-aw-cb" onchange="cmAwTogglePayType('skill',this.checked)" />
+                  <span>기술수당</span>
+                </label>
+                <select id="cm-aw-skill-pt" class="cm-aw-pt-select" disabled>
+                  <option value="">통상임금 포함여부</option>
+                  <option value="fixed">매월 정기지급</option>
+                  <option value="daily">출근일수에 따름</option>
+                </select>
+              </div>
+
+              <!-- 면허수당 — pay_type: fixed/daily -->
+              <div class="cm-aw-row">
+                <label class="cm-aw-check-label">
+                  <input type="checkbox" id="cm-aw-license" class="cm-aw-cb" onchange="cmAwTogglePayType('license',this.checked)" />
+                  <span>면허수당</span>
+                </label>
+                <select id="cm-aw-license-pt" class="cm-aw-pt-select" disabled>
+                  <option value="">통상임금 포함여부</option>
+                  <option value="fixed">매월 정기지급</option>
+                  <option value="daily">출근일수에 따름</option>
+                </select>
+              </div>
+
+              <!-- 위험수당 — pay_type: fixed/daily -->
+              <div class="cm-aw-row">
+                <label class="cm-aw-check-label">
+                  <input type="checkbox" id="cm-aw-hazard" class="cm-aw-cb" onchange="cmAwTogglePayType('hazard',this.checked)" />
+                  <span>위험수당</span>
+                </label>
+                <select id="cm-aw-hazard-pt" class="cm-aw-pt-select" disabled>
+                  <option value="">통상임금 포함여부</option>
+                  <option value="fixed">매월 정기지급</option>
+                  <option value="daily">출근일수에 따름</option>
+                </select>
+              </div>
+
+              <!-- 벽지수당 — pay_type: fixed/daily -->
+              <div class="cm-aw-row">
+                <label class="cm-aw-check-label">
+                  <input type="checkbox" id="cm-aw-remote-area" class="cm-aw-cb" onchange="cmAwTogglePayType('remote_area',this.checked)" />
+                  <span>벽지수당</span>
+                </label>
+                <select id="cm-aw-remote-area-pt" class="cm-aw-pt-select" disabled>
+                  <option value="">통상임금 포함여부</option>
+                  <option value="fixed">매월 정기지급</option>
+                  <option value="daily">출근일수에 따름</option>
+                </select>
+              </div>
+
+              <!-- 정기 상여금 — pay_type: fixed/daily -->
+              <div class="cm-aw-row">
+                <label class="cm-aw-check-label">
+                  <input type="checkbox" id="cm-aw-regular-bonus" class="cm-aw-cb" onchange="cmAwTogglePayType('regular_bonus',this.checked)" />
+                  <span>정기 상여금</span>
+                </label>
+                <select id="cm-aw-regular-bonus-pt" class="cm-aw-pt-select" disabled>
+                  <option value="">통상임금 포함여부</option>
+                  <option value="fixed">매월 정기지급</option>
+                  <option value="daily">출근일수에 따름</option>
+                </select>
+              </div>
+
+              <!-- 사용자 정의 통상임금 항목 (JS에서 cm-aw-add-row 앞에 동적 추가) -->
+              <div class="cm-aw-row" id="cm-aw-add-row" style="justify-content:flex-start;">
+                <button type="button" class="cm-aw-add-btn" onclick="cmAwAddCustomItem()" title="통상임금 항목 추가">+ 항목 추가</button>
+              </div>
+              </div><!-- /cm-aw-section-group -->
+
+              <div class="cm-aw-section-sep"></div>
+
+              <!-- ── 고정수당 설정 소분류 ── -->
+              <div class="cm-aw-section-group">
+              <div class="cm-aw-section-title">고정수당 설정</div>
+
+              <!-- 보육수당 — 고정수당 포함여부 설정 -->
               <div class="cm-aw-row">
                 <label class="cm-aw-check-label">
                   <input type="checkbox" id="cm-aw-childcare" class="cm-aw-cb" onchange="cmAwTogglePayType('childcare',this.checked)" />
                   <span>보육수당</span>
                 </label>
                 <select id="cm-aw-childcare-pt" class="cm-aw-pt-select" disabled>
-                  <option value="">통상임금 포함여부</option>
+                  <option value="">고정수당 포함여부</option>
                   <option value="fixed">매월 정기지급</option>
                   <option value="daily">출근일수에 따름</option>
                 </select>
               </div>
 
-              <!-- 차량지원비 — 통상임금 포함여부만 설정, 금액은 근로계약/급여에서 입력 -->
+              <!-- 차량지원비 — 고정수당 포함여부 설정 -->
               <div class="cm-aw-row">
                 <label class="cm-aw-check-label">
                   <input type="checkbox" id="cm-aw-car" class="cm-aw-cb" onchange="cmAwTogglePayType('car',this.checked)" />
                   <span>차량지원비</span>
                 </label>
                 <select id="cm-aw-car-pt" class="cm-aw-pt-select" disabled>
-                  <option value="">통상임금 포함여부</option>
+                  <option value="">고정수당 포함여부</option>
                   <option value="fixed">매월 정기지급</option>
                   <option value="daily">출근일수에 따름</option>
                 </select>
               </div>
 
-              <!-- 식대 — 통상임금 포함여부만 설정, 금액은 근로계약/급여에서 입력 -->
+              <!-- 식대 — 고정수당 포함여부 설정 -->
               <div class="cm-aw-row">
                 <label class="cm-aw-check-label">
                   <input type="checkbox" id="cm-aw-meal" class="cm-aw-cb" onchange="cmAwTogglePayType('meal',this.checked)" />
                   <span>식대</span>
                 </label>
                 <select id="cm-aw-meal-pt" class="cm-aw-pt-select" disabled>
-                  <option value="">통상임금 포함여부</option>
+                  <option value="">고정수당 포함여부</option>
                   <option value="fixed">매월 정기지급</option>
                   <option value="daily">출근일수에 따름</option>
                 </select>
-              </div>
-
-              <!-- 현장수당 — 통상임금 항상 포함, pay_type 없음 -->
-              <div class="cm-aw-row">
-                <label class="cm-aw-check-label">
-                  <input type="checkbox" id="cm-aw-site" class="cm-aw-cb" />
-                  <span>현장수당</span>
-                </label>
-              </div>
-
-              <!-- 직책수당 — 통상임금 항상 포함 -->
-              <div class="cm-aw-row">
-                <label class="cm-aw-check-label">
-                  <input type="checkbox" id="cm-aw-position" class="cm-aw-cb" />
-                  <span>직책수당</span>
-                </label>
-              </div>
-
-              <!-- 기술수당 — 통상임금 항상 포함 -->
-              <div class="cm-aw-row">
-                <label class="cm-aw-check-label">
-                  <input type="checkbox" id="cm-aw-skill" class="cm-aw-cb" />
-                  <span>기술수당</span>
-                </label>
-              </div>
-
-              <!-- 면허수당 — 통상임금 항상 포함 -->
-              <div class="cm-aw-row">
-                <label class="cm-aw-check-label">
-                  <input type="checkbox" id="cm-aw-license" class="cm-aw-cb" />
-                  <span>면허수당</span>
-                </label>
-              </div>
-
-              <!-- 벽지수당 — 통상임금 항상 포함 -->
-              <div class="cm-aw-row">
-                <label class="cm-aw-check-label">
-                  <input type="checkbox" id="cm-aw-remote-area" class="cm-aw-cb" />
-                  <span>벽지수당</span>
-                </label>
               </div>
 
               <!-- 연구활동비 — pay_type: fixed/daily -->
@@ -1140,7 +1198,7 @@
                   <span>연구활동비</span>
                 </label>
                 <select id="cm-aw-research-pt" class="cm-aw-pt-select" disabled>
-                  <option value="">통상임금 포함여부</option>
+                  <option value="">고정수당 포함여부</option>
                   <option value="fixed">매월 정기지급</option>
                   <option value="daily">출근일수에 따름</option>
                 </select>
@@ -1153,7 +1211,7 @@
                   <span>통신비</span>
                 </label>
                 <select id="cm-aw-communication-pt" class="cm-aw-pt-select" disabled>
-                  <option value="">통상임금 포함여부</option>
+                  <option value="">고정수당 포함여부</option>
                   <option value="fixed">매월 정기지급</option>
                   <option value="daily">출근일수에 따름</option>
                 </select>
@@ -1166,7 +1224,7 @@
                   <span>체력증진비</span>
                 </label>
                 <select id="cm-aw-fitness-pt" class="cm-aw-pt-select" disabled>
-                  <option value="">통상임금 포함여부</option>
+                  <option value="">고정수당 포함여부</option>
                   <option value="fixed">매월 정기지급</option>
                   <option value="receipt">영수증 청구</option>
                 </select>
@@ -1179,7 +1237,7 @@
                   <span>자기계발비</span>
                 </label>
                 <select id="cm-aw-self-dev-pt" class="cm-aw-pt-select" disabled>
-                  <option value="">통상임금 포함여부</option>
+                  <option value="">고정수당 포함여부</option>
                   <option value="fixed">매월 정기지급</option>
                   <option value="receipt">영수증 청구</option>
                 </select>
@@ -1192,7 +1250,7 @@
                   <span>도서지원비</span>
                 </label>
                 <select id="cm-aw-book-pt" class="cm-aw-pt-select" disabled>
-                  <option value="">통상임금 포함여부</option>
+                  <option value="">고정수당 포함여부</option>
                   <option value="fixed">매월 정기지급</option>
                   <option value="receipt">영수증 청구</option>
                 </select>
@@ -1205,11 +1263,17 @@
                   <span>해외근무수당</span>
                 </label>
                 <select id="cm-aw-overseas-pt" class="cm-aw-pt-select" disabled>
-                  <option value="">통상임금 포함여부</option>
+                  <option value="">고정수당 포함여부</option>
                   <option value="fixed">매월 정기지급</option>
                   <option value="receipt">영수증 청구</option>
                 </select>
               </div>
+
+              <!-- 사용자 정의 고정수당 항목 (JS에서 cm-aw-fixed-add-row 앞에 동적 추가) -->
+              <div class="cm-aw-row" id="cm-aw-fixed-add-row" style="justify-content:flex-start;">
+                <button type="button" class="cm-aw-add-btn" onclick="cmAwAddFixedCustomItem()" title="고정수당 항목 추가">+ 항목 추가</button>
+              </div>
+              </div><!-- /cm-aw-section-group -->
 
             </div>
           </div>

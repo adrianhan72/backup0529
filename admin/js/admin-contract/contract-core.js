@@ -736,6 +736,9 @@ function openContractModal(id=null, preCompanyId=null){
       setAmountVal('ct-site',        c.site_allowance||0);
       setAmountVal('ct-skill',       c.skill_allowance||0);
       setAmountVal('ct-license',     c.license_allowance||0);
+      setAmountVal('ct-hazard',      c.hazard_allowance||0);
+      // 사용자 정의 통상임금 항목 복원
+      try { _setCustomOrdinaryValues(JSON.parse(c.custom_ordinary_values||'[]')); } catch(e){}
       setAmountVal('ct-communication',c.communication_allowance||0);
       setCTPayType('communication',  c.communication_pay_type||'fixed');
       setAmountVal('ct-fitness',     c.fitness_allowance||0);
@@ -783,8 +786,8 @@ function openContractModal(id=null, preCompanyId=null){
         setAmountVal('ct-annual-sal', c.monthly_salary_agreed||0);
       }
     }
-    // 수정(amend) 모드: 이름·고용형태 편집 가능, 갱신/재계약 모드는 openRecontractModal에서 잠금
-    _setEditNameCategoryLock(false);
+    // 수정/갱신/재계약 모드: 사원번호·이름은 유니크 식별자이므로 항상 잠금, 고용형태만 편집 가능
+    _setEditNameCategoryLock(true, false);
     // _prevEditCategory 초기화 (모달 열릴 때 즉시 Alert 방지)
     _prevEditCategory = document.getElementById('ct-edit-em-category')?.value || '';
     // 수정 모드: 데이터 복원 완료 후 연차일수 자동계산 힌트 표시
@@ -917,6 +920,11 @@ function _setEditNameCategoryLock(lock, lockCat = lock) {
   if(catEl)    { catEl.disabled    = lockCat; catEl.style.background    = lockCat ? '#f3f4f6' : ''; catEl.style.color     = lockCat ? '#6b7280' : ''; }
   if(nameLock) nameLock.style.display = lock    ? 'block' : 'none';
   if(catLock)  catLock.style.display  = lockCat ? 'block' : 'none';
+  // 사원번호 잠금 시 Alert 숨기고 텍스트 안내 표시
+  const empnoLockHint = document.getElementById('ct-edit-empno-lock-hint');
+  const empnoAlert    = document.getElementById('ct-edit-em-empno-alert');
+  if(empnoLockHint) empnoLockHint.style.display = lock ? 'block' : 'none';
+  if(empnoAlert && lock) empnoAlert.style.display = 'none';
 }
 /**
  * 직원명이 선택된 고객사의 대표자명·등기임원·특수관계인과 일치하면 경고 표시
@@ -1348,12 +1356,14 @@ function checkCtEditEmpNoUniqueness(){
 }
 
 function _showEmpNoAlert(alertEl, msg, type){
-  const isOk = (type === 'ok');
+  if(!alertEl) return;
+  const isOk  = (type === 'ok');
   alertEl.style.display = 'block';
   alertEl.style.background = isOk ? '#F0FDF4' : '#FFF1F2';
   alertEl.style.border     = `1.5px solid ${isOk ? '#86EFAC' : '#FCA5A5'}`;
   alertEl.style.color      = isOk ? '#166534' : '#991B1B';
-  alertEl.querySelector('.empno-alert-msg').textContent = msg;
+  const msgEl = alertEl.querySelector('.empno-alert-msg');
+  if(msgEl) msgEl.textContent = msg;
 }
 
 // ─── 동일 직원의 최초 계약 시작일 반환 (입사일 상속용) ───
@@ -1591,6 +1601,10 @@ function viewContract(id){
   // 모달 본문(modal-body) 읽기전용 - 액션 패널 제외
   const modalEl = document.querySelector('#contract-modal .modal');
   modalEl.classList.add('ct-readonly');
+  // 조회 모드: 편집 안내 힌트 숨김
+  ['ct-edit-name-lock-hint','ct-edit-empno-lock-hint','ct-edit-category-lock-hint'].forEach(id=>{
+    const el = document.getElementById(id); if(el) el.style.display = 'none';
+  });
   // modal-body 내 input/select/textarea 비활성화 (액션 패널 제외)
   // select는 disabled 대신 pointer-events로 차단 (브라우저 기본 opacity 방지)
   // 단, 입사일(ct-edit-em-hire)은 재입사 케이스를 위해 항상 편집 가능하게 유지
@@ -2088,7 +2102,8 @@ async function openAmendPreview(){
     meal_allowance: meal_, meal_pay_type: _getCTPayTypeVal('meal'),
     research_allowance: res_,
     research_pay_type: _getCTPayTypeVal('research'),
-    site_allowance: site_, skill_allowance: skill_, license_allowance: lic_,
+    site_allowance: site_, skill_allowance: skill_, license_allowance: lic_, hazard_allowance: getAmountVal('ct-hazard')||0,
+    custom_ordinary_values: JSON.stringify(typeof _getCustomOrdinaryValues==='function' ? _getCustomOrdinaryValues() : []),
     communication_allowance: comm_, communication_pay_type: _getCTPayTypeVal('communication'),
     fitness_allowance: fit_, fitness_pay_type: _getCTPayTypeVal('fitness'),
     self_dev_allowance: sdev_, self_dev_pay_type: _getCTPayTypeVal('self_dev'),

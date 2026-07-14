@@ -264,7 +264,7 @@ function loadPIDraft(){
   setAmountVal('pi-self-dev',   draft.self_dev_allowance     || 0);
   setAmountVal('pi-book',       draft.book_allowance         || 0);
   setAmountVal('pi-overseas',   draft.overseas_allowance     || 0);
-  document.getElementById('pi-dependents').value = draft.dependents || 1;
+  document.getElementById('pi-dependents').value = draft.dependents || 0;
   document.getElementById('pi-ot-hours').value   = draft.overtime_hours || 0;
   document.getElementById('pi-night-hours').value= draft.night_hours    || 0;
   document.getElementById('pi-hol-hours').value  = draft.holiday_hours  || 0;
