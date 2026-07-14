@@ -180,7 +180,10 @@ function _autoFillCTPeriod(){
   const co   = allCompanies.find(c => c.id === coId);
   const hint = document.getElementById('ct-pay-period-hint');
   if(hint && co?.pay_period){
-    hint.textContent = `(고객사 기본값: ${co.pay_period})`;
+    const _ppHint = (co.pay_period_month&&co.pay_period_day)
+      ? `${co.pay_period_month} ${co.pay_period_day}일부터 1개월간`
+      : (co.pay_period.includes('~') ? co.pay_period : co.pay_period);
+    hint.textContent = `(고객사 기본값: ${_ppHint})`;
     hint.style.display = 'inline';
   }
   // 셀렉트가 미선택 상태이고 고객사에 pay_period_month/day 값이 있으면 복원
@@ -1711,6 +1714,13 @@ function calcContractSalary(){
     // ── 일용직: 일 약정일급 + 일일 기준 수당 합산 ──
     const dailyWage  = getAmountVal('ct-daily-wage');
     const hours      = parseFloat(document.getElementById('ct-hours').value)||8;
+    const hWage      = getAmountVal('ct-hourly-input') || 0;
+
+    // 통상시급이 입력되어 있고 일급이 0이면 자동계산: 일급 = 시급 × 일소정근로시간
+    if(hWage > 0 && dailyWage <= 0){
+      const autoDaily = Math.round(hWage * hours);
+      setAmountVal('ct-daily-wage', autoDaily);
+    }
 
     // 일일 수당 합계 (통상임금 포함 항목만)
     const dailyAllowFixed = position + car + remoteArea + meal

@@ -115,9 +115,19 @@ function loadPITargetList(){
     return;
   }
 
-  // 해당 년월의 마지막 날
-  const periodStart = `${yr}-${String(mo).padStart(2,'0')}-01`;
-  const periodEnd   = new Date(yr, mo, 0).toISOString().slice(0,10); // 말일
+  // ── 급여 산정기간 계산 (고객사 pay_period_month/day 기준) ──
+  const _coPI = (allCompanies||[]).find(c => c.id === coId);
+  const _ppMo  = _coPI?.pay_period_month || '당월';
+  const _ppDay = parseInt(_coPI?.pay_period_day) || 1;
+  const _isJeonwol = _ppMo === '전월';
+  const _salStartMo = _isJeonwol ? (mo === 1 ? 12 : mo - 1) : mo;
+  const _salStartYr = (_isJeonwol && mo === 1) ? yr - 1 : yr;
+  const _salStart   = `${_salStartYr}-${String(_salStartMo).padStart(2,'0')}-${String(_ppDay).padStart(2,'0')}`;
+  // 급여 산정 종료일 = 시작일 + 1개월 - 1일
+  const _salEndDate = new Date(_salStartYr, _salStartMo - 1, _ppDay);
+  _salEndDate.setMonth(_salEndDate.getMonth() + 1);
+  _salEndDate.setDate(_salEndDate.getDate() - 1);
+  const _salEnd = _salEndDate.toISOString().slice(0,10);
 
   // 해당 고객사 + 해당 년월에 유효 계약이 있는 근로자 필터링
   // 유효 조건: is_draft=false, 파기되지 않음, 계약 기간이 해당 월과 겹침
@@ -128,11 +138,11 @@ function loadPITargetList(){
     if(c.is_draft) return false;
     if(c.is_voided_by_amend) return false;
     if(!VALID_STATUSES.has(c.status)) return false;
-    // 계약 시작일이 해당 월 말일 이전, 계약 종료일(없으면 무기한)이 해당 월 시작일 이후
+    // 계약 기간이 급여 산정기간과 겹치는지 확인
     const cStart = c.contract_start || '';
     const cEnd   = c.contract_end   || '';
-    if(cStart && cStart > periodEnd)   return false; // 아직 시작 안 함
-    if(cEnd   && cEnd   < periodStart) return false; // 이미 종료됨
+    if(cStart && cStart > _salEnd)   return false; // 계약 시작 전
+    if(cEnd   && cEnd   < _salStart) return false; // 계약 종료 후
     return true;
   });
 
@@ -853,6 +863,25 @@ function loadPIContract(){
 
         let _ppVal = piContract.pay_period || '';
 
+        // pay_period가 "월급"처럼 날짜 범위가 아닌 경우, 고객사 설정으로 산정기간 생성
+        if(!_ppVal || _ppVal === '월급' || _ppVal === '연봉' || !_ppVal.includes('.')){
+          const _coId2 = currentGlobalCompanyId || document.getElementById('pi-company')?.value;
+          const _co2   = allCompanies.find(c => c.id === _coId2);
+          const _coMo2 = _co2?.pay_period_month || '당월';
+          const _coDay2 = parseInt(_co2?.pay_period_day) || 1;
+          if(_ppYr && _ppMo){
+            const _isJeon = _coMo2 === '전월';
+            // 시작일: 전월이면 (급여월-1)의 지정일, 당월이면 급여월의 지정일
+            const _sMo2 = _isJeon ? (_ppMo === 1 ? 12 : _ppMo - 1) : _ppMo;
+            const _sYr2 = _isJeon && _ppMo === 1 ? _ppYr - 1 : _ppYr;
+            // 종료일: 시작일 + 1개월 - 1일
+            const _eDate2 = new Date(_sYr2, _sMo2 - 1, _coDay2);
+            _eDate2.setMonth(_eDate2.getMonth() + 1);
+            _eDate2.setDate(_eDate2.getDate() - 1);
+            _ppVal = `${_sYr2}.${String(_sMo2).padStart(2,'0')}.${String(_coDay2).padStart(2,'0')}~${_eDate2.getFullYear()}.${String(_eDate2.getMonth()+1).padStart(2,'0')}.${String(_eDate2.getDate()).padStart(2,'0')}`;
+          }
+        }
+
         if(_isPartialTarget && _endRaw && _ppYr && _ppMo){
           const _endDate   = new Date(_endRaw);
           const _monthEnd  = new Date(_ppYr, _ppMo, 0);   // 해당 월 말일
@@ -860,39 +889,50 @@ function loadPIContract(){
           // 만료일이 해당 월 말일보다 이전 → 부분월(만근 미달)
           if(_endDate < _monthEnd){
             // 고객사 pay_period_month / pay_period_day 컬럼으로 산정기간 시작일 결정
-            // fallback: pay_period 문자열 파싱 ("전월"/"당월" 시작 여부)
             const _coId  = currentGlobalCompanyId || document.getElementById('pi-company')?.value;
             const _co    = allCompanies.find(c => c.id === _coId);
-            const _coMo  = _co?.pay_period_month || null;  // '전월' | '당월' | null
-            const _coDay = parseInt(_co?.pay_period_day) || 1; // 시작일 (1~31)
+            const _coMo  = _co?.pay_period_month || null;
+            const _coDay = parseInt(_co?.pay_period_day) || 1;
 
-            // pay_period_month 컬럼 없으면 pay_period 문자열로 fallback
             const _isJeonwol = _coMo
               ? (_coMo === '전월')
               : (_co?.pay_period || '').replace(/\s/g,'').startsWith('전월');
 
             let _periodStartStr;
             if(_isJeonwol){
-              // 전월 N일: 급여 월의 전월 지정일
               const _prevMo = _ppMo === 1 ? 12 : _ppMo - 1;
               const _prevYr = _ppMo === 1 ? _ppYr - 1 : _ppYr;
               _periodStartStr = `${_prevYr}-${String(_prevMo).padStart(2,'0')}-${String(_coDay).padStart(2,'0')}`;
             } else {
-              // 당월 N일
               _periodStartStr = `${_ppYr}-${String(_ppMo).padStart(2,'0')}-${String(_coDay).padStart(2,'0')}`;
             }
 
-            // 만료일을 MM/DD 형식으로 표시
             const _endMo  = String(_endDate.getMonth() + 1).padStart(2,'0');
             const _endDay = String(_endDate.getDate()).padStart(2,'0');
             const _endYr  = _endDate.getFullYear();
-            // 시작일 파싱
             const _sDate = new Date(_periodStartStr);
             const _sMo   = String(_sDate.getMonth() + 1).padStart(2,'0');
             const _sDay  = String(_sDate.getDate()).padStart(2,'0');
             const _sYr   = _sDate.getFullYear();
 
             _ppVal = `${_sYr}.${_sMo}.${_sDay}~${_endYr}.${_endMo}.${_endDay}`;
+          }
+        }
+
+        // ── 계약 시작 부분월: 급여산정기간 시작일이 계약시작일 이후면 조정 ──
+        {
+          const _startRaw = piContract.salary_start_date || piContract.contract_start || '';
+          if(_startRaw && _ppVal && _ppVal.includes('~')){
+            const _startDate = new Date(_startRaw);
+            const _parts = _ppVal.split('~');
+            const _origStart = new Date(_parts[0].replace(/\./g,'-'));
+            // 계약시작일이 산정기간 시작일보다 이후 → 산정기간 시작일을 계약시작일로 조정
+            if(_startDate > _origStart){
+              const _sYr3 = _startDate.getFullYear();
+              const _sMo3 = String(_startDate.getMonth()+1).padStart(2,'0');
+              const _sDay3 = String(_startDate.getDate()).padStart(2,'0');
+              _ppVal = `${_sYr3}.${_sMo3}.${_sDay3}~${_parts[1]}`;
+            }
           }
         }
 
@@ -1013,11 +1053,31 @@ function loadPIContract(){
       }
 
       // 공통 하단 행
+      // 휴게시간: schedule_json에서 추출, 없으면 break_time fallback
+      let _breakDisplay = '-';
+      try {
+        const _sched = piContract.schedule_json ? JSON.parse(piContract.schedule_json) : null;
+        if(Array.isArray(_sched) && _sched.length){
+          const _breaks = new Set();
+          _sched.forEach(d => {
+            if(!d.active) return;
+            (d.shifts||[]).forEach(sh => {
+              (sh.breaks||[]).forEach(b => { if(b.s && b.e) _breaks.add(`${b.s}~${b.e}`); });
+              if(sh.brk_start && sh.brk_end) _breaks.add(`${sh.brk_start}~${sh.brk_end}`);
+            });
+          });
+          if(_breaks.size > 0) _breakDisplay = [..._breaks].join(', ');
+        }
+      } catch(e){}
+      if(_breakDisplay === '-' && piContract.break_time != null && piContract.break_time !== ''){
+        _breakDisplay = piContract.break_time + '시간';
+      }
+
       const _bottomLine = isPI_Daily
         ? `<b>기본근로:</b> 일${piContract.work_hours_per_day}h<br>` +
-          `<b>식대:</b> ${won(piContract.meal_allowance)} · 휴게: ${piContract.break_time != null && piContract.break_time !== '' ? piContract.break_time + '분' : '-'}`
+          `<b>식대:</b> ${won(piContract.meal_allowance)} · 휴게: ${_breakDisplay}`
         : `<b>기본근로:</b> 일${piContract.work_hours_per_day}h · 주${piContract.work_days_per_week}일<br>` +
-          `<b>식대:</b> ${won(piContract.meal_allowance)} · 휴게: ${piContract.break_time != null && piContract.break_time !== '' ? piContract.break_time + '분' : '-'}`;
+          `<b>식대:</b> ${won(piContract.meal_allowance)} · 휴게: ${_breakDisplay}`;
 
       document.getElementById('pi-contract-info').innerHTML =
         _piContractStatusBanner +

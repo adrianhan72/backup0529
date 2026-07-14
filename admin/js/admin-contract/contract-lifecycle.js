@@ -3360,6 +3360,18 @@ async function saveContract(){
     contractStatus = contractStart > today2new ? CONTRACT_STATUS.PENDING : CONTRACT_STATUS.ACTIVE;
   }
 
+  // ── 중복 활성 계약 방지: 신규/재계약 시 이미 활성 계약이 있으면 차단 ──
+  if(contractStatus === CONTRACT_STATUS.ACTIVE && (!editId.contract || isRecontract)){
+    const existingActive = allContracts.find(ac =>
+      ac.employee_id === empId &&
+      ac.id !== editId.contract &&
+      (ac.status === CONTRACT_STATUS.ACTIVE || ac.status === '활성')
+    );
+    if(existingActive){
+      return toast(`이 직원에게 이미 활성 계약(${existingActive.id.substring(0,8)}...)이 존재합니다. 기존 계약을 해지·만료 처리하거나 갱신해 주세요.`, 'error');
+    }
+  }
+
   // ── contract_type / status 영문 정규화 ──
   contractType   = CONTRACT_TYPE_LEGACY_MAP[contractType]     || contractType;
   contractStatus = CONTRACT_STATUS_LEGACY_MAP[contractStatus] || contractStatus;

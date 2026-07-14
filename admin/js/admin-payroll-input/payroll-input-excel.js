@@ -2068,7 +2068,7 @@ async function downloadPayrollExcel(){
     hdr(`${co.company_name}  |  ${yr}년 ${moStr}월 임금대장`,C.TITLE_BG,C.TITLE_FG,true,13)
   ]);
   data1.push([
-    txt(`사업자번호: ${co.business_number||'-'}  /  대표자: ${getCompanyRepName(co)}  /  급여지급일: ${co.pay_day||'-'}일  /  산정기간: ${co.pay_period_month&&co.pay_period_day?`${co.pay_period_month} ${co.pay_period_day}일부터 1개월간`:(co.pay_period||'-')}`,C.COINFO_BG,C.COINFO_FG,false,9)
+    txt(`사업자번호: ${co.business_number||'-'}  /  대표자: ${getCompanyRepName(co)}  /  급여지급일: ${co.pay_day||'-'}일  /  산정기간: ${co.pay_period_month&&co.pay_period_day?`${co.pay_period_month} ${co.pay_period_day}일부터 1개월간`:(co.pay_period&&co.pay_period.includes('~')?co.pay_period:'미설정')}`,C.COINFO_BG,C.COINFO_FG,false,9)
   ]);
   data1.push([txt('')]); // 공백
 
