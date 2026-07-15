@@ -2118,6 +2118,13 @@ function doContractAmend(){
       btn.style.pointerEvents = '';
     });
   }
+  // 근무시간표 재렌더링: readonly 해제 후 비활성 요일의 disabled 상태 복원
+  if(_amendC && _amendC.schedule_json){
+    try { if(typeof setScheduleFromJSON === 'function') setScheduleFromJSON(JSON.parse(_amendC.schedule_json)); }
+    catch(e){ if(typeof setScheduleFromLegacy === 'function') setScheduleFromLegacy(_amendC); }
+  } else if(_amendC && typeof setScheduleFromLegacy === 'function'){
+    setScheduleFromLegacy(_amendC);
+  }
 
   // 액션 버튼 숨김 (수정 중에는 다른 액션 불가)
   ['ct-btn-amend','ct-btn-amend2','ct-btn-renew','ct-btn-renew2',

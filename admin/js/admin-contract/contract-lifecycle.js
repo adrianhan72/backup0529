@@ -758,6 +758,13 @@ function editPendingContract(){
 
   // 해지예정 계약이면: 퇴사예정일 입력 패널을 수정 가능하게 열어줌
   const c = allContracts.find(x=>x.id===editId.contract);
+  // 근무시간표 재렌더링: readonly 해제 후 비활성 요일의 disabled 상태 복원
+  if(c && c.schedule_json){
+    try { if(typeof setScheduleFromJSON === 'function') setScheduleFromJSON(JSON.parse(c.schedule_json)); }
+    catch(e){ if(typeof setScheduleFromLegacy === 'function') setScheduleFromLegacy(c); }
+  } else if(c && typeof setScheduleFromLegacy === 'function'){
+    setScheduleFromLegacy(c);
+  }
   if(c?.status===CONTRACT_STATUS.TERMINATE_PENDING){
     const termPanel = document.getElementById('ct-terminate-panel');
     if(termPanel){
@@ -1498,6 +1505,14 @@ function doContractRenew(){
         btn.disabled = false; btn.style.cursor = ''; btn.style.pointerEvents = '';
       });
     }
+    // 근무시간표 재렌더링: readonly 해제 후 비활성 요일의 disabled 상태 복원
+    const _renewC = allContracts.find(x => x.id === editId.contract);
+    if(_renewC && _renewC.schedule_json){
+      try { if(typeof setScheduleFromJSON === 'function') setScheduleFromJSON(JSON.parse(_renewC.schedule_json)); }
+      catch(e){ if(typeof setScheduleFromLegacy === 'function') setScheduleFromLegacy(_renewC); }
+    } else if(_renewC && typeof setScheduleFromLegacy === 'function'){
+      setScheduleFromLegacy(_renewC);
+    }
   }
 
   // 액션 버튼 숨김 (갱신 중에는 다른 액션 불가)
@@ -1516,6 +1531,15 @@ function doContractRenew(){
   // amend 패널 숨김
   const amendPanel = document.getElementById('ct-amend-panel');
   if(amendPanel) amendPanel.style.display = 'none';
+
+  // 일괄설정 바 표시
+  const bulkBar = document.getElementById('ct-bulk-bar-wrap');
+  if(bulkBar) bulkBar.style.display = '';
+
+  // 단계바 표시
+  const stepBar = document.getElementById('ct-step-bar');
+  if(stepBar) stepBar.style.display = '';
+  if(typeof setContractStep === 'function') setContractStep(1);
 
   // 첨부서류 섹션 숨김 (갱신 모드에서는 불필요)
   const filesSection = document.getElementById('ct-files-section');
@@ -1965,7 +1989,12 @@ async function confirmContractTerminate(){
   toast(`퇴사일(${termDate})이 설정됐습니다. 계약 상태: ${statusLabel}`);
 }
 
-function editContract(id){openContractModal(id)}
+function editContract(id){
+  // 조회 모드(ct-readonly)에서 수정 모드로 전환 시 readonly 클래스 제거
+  const modalEl = document.querySelector('#contract-modal .modal');
+  if(modalEl) modalEl.classList.remove('ct-readonly');
+  openContractModal(id);
+}
 
 /** 임시저장 근로계약서 이어 작성: edit 모드 + 삭제버튼 표시 */
 function continueDraftContract(id){
