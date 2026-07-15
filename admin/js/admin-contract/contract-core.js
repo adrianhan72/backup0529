@@ -2025,6 +2025,7 @@ async function confirmTerminateDateChange(){
 
   toast('해지일이 변경되었습니다.');
   await Promise.all([loadContracts(), loadEmployees()]);
+  renderContracts(); renderDashboard();
   viewContract(cid);
 }
 
@@ -2332,7 +2333,8 @@ async function openAmendPreview(){
   const dWage_  = isDailyA ? getAmountVal('ct-daily-wage') : 0;
   const annualSalInput_ = getAmountVal('ct-annual-sal');
   const annual_ = isRegGrp ? annualSalInput_ : 0;
-  const wkHol_  = isDailyA ? 0 : Math.round(base_ / days_);  // 단시간 비례: ÷dpw
+  const _monthlyStdH = typeof _calcMonthlyStdHours==='function' ? _calcMonthlyStdHours(hours_,days_) : (hours_*days_*365/12/7);
+  const wkHol_  = isDailyA ? 0 : (_monthlyStdH > 0 ? Math.round(base_ / _monthlyStdH * hours_) : 0);
   const pos_    = getAmountVal('ct-position');
   const car_    = getAmountVal('ct-car');
   const meal_   = getAmountVal('ct-meal');
@@ -2393,6 +2395,12 @@ async function openAmendPreview(){
     pay_period_day: parseInt(document.getElementById('ct-pay-period-day-hidden')?.value) || null,
     pay_day: parseInt(document.getElementById('ct-pay-day')?.value) || null,
     car_maintenance: car_,
+    fixed_ot_pay:    getAmountVal('ct-fixed-ot-pay'),
+    fixed_ot_hours:  parseFloat(document.getElementById('ct-fixed-ot-hours')?.value)||0,
+    fixed_night_pay: getAmountVal('ct-fixed-night-pay'),
+    fixed_night_hours: parseFloat(document.getElementById('ct-fixed-night-hours')?.value)||0,
+    fixed_hol_pay:   getAmountVal('ct-fixed-hol-pay'),
+    fixed_hol_hours: parseFloat(document.getElementById('ct-fixed-hol-hours')?.value)||0,
     insurance_employment: origC.insurance_employment!==undefined ? origC.insurance_employment : true,
     insurance_industrial: origC.insurance_industrial!==undefined ? origC.insurance_industrial : true,
     insurance_pension:    origC.insurance_pension!==undefined    ? origC.insurance_pension    : true,
@@ -2459,6 +2467,8 @@ async function openAmendPreview(){
     const savedJson = await saved.json();
     newContractId = savedJson.id;
     allContracts.push({ ...newBody, id: newContractId });
+    // 즉시 목록 갱신 (모달 뒤에서 미리 업데이트)
+    renderContracts(); renderDashboard();
   } catch(e){
     console.error('[재발행 계약서 저장 오류]', e);
     toast('재발행 계약서 저장에 실패했습니다.', 'error');

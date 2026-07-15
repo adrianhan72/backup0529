@@ -950,6 +950,51 @@ const DAY_CLASSES = ['','','','','','day-sat','day-sun'];
 // 기본 근무 요일 (월~금 체크)
 const DAY_DEFAULTS = { mon:true, tue:true, wed:true, thu:true, fri:true, sat:false, sun:false };
 
+// ── 일괄설정 체크박스를 실제 스케줄 상태와 동기화 ──
+function _syncBulkCheckboxes(){
+  DAY_KEYS.forEach(key => {
+    const chk = document.getElementById('bulk-chk-'+key);
+    if(!chk) return;
+    // 첫 번째 시프트의 start 값이 있고 disabled가 아니면 활성 상태
+    const sEl = document.getElementById(`ct-sch-start-${key}`);
+    const isActive = sEl && !sEl.disabled && sEl.value;
+    chk.checked = isActive;
+  });
+  // weekday 체크박스 동기화
+  const allWeekdayChecked = ['mon','tue','wed','thu','fri'].every(d =>
+    document.getElementById('bulk-chk-'+d)?.checked
+  );
+  const weekdayChk = document.getElementById('bulk-chk-weekday');
+  if(weekdayChk) weekdayChk.checked = allWeekdayChecked;
+}
+
+// ── 일괄설정 바 시간을 첫 번째 활성 요일의 스케줄로 초기화 ──
+function _initBulkFromFirstActive(){
+  for(const key of DAY_KEYS){
+    const sEl = document.getElementById(`ct-sch-start-${key}`);
+    const eEl = document.getElementById(`ct-sch-end-${key}`);
+    if(!sEl || sEl.disabled || !sEl.value) continue;
+    // 첫 번째 활성 요일 찾음 → 일괄설정 바에 반영
+    _setTimePickerValue('bulk-start', sEl.value);
+    if(eEl) _setTimePickerValue('bulk-end', eEl.value);
+    // 휴게시간: 첫 번째 휴게 슬롯 복사
+    const slots = _getBrkSlots2(key, 0);
+    if(slots && slots.length > 0){
+      _setTimePickerValue('bulk-brks', slots[0].s || '');
+      _setTimePickerValue('bulk-brke', slots[0].e || '');
+    } else {
+      _setTimePickerValue('bulk-brks', '');
+      _setTimePickerValue('bulk-brke', '');
+    }
+    return; // 첫 번째 활성 요일만 사용
+  }
+  // 활성 요일이 없으면 기본값
+  _setTimePickerValue('bulk-start', '09:00');
+  _setTimePickerValue('bulk-end', '18:00');
+  _setTimePickerValue('bulk-brks', '12:00');
+  _setTimePickerValue('bulk-brke', '13:00');
+}
+
 // ── 일괄 설정 요일 체크박스 연동 ──
 function _bulkWeekdayToggle(){
   const weekdayChk = document.getElementById('bulk-chk-weekday').checked;
@@ -997,12 +1042,14 @@ function applyBulkSchedule(){
     if(!container) return;
     if(targets.has(key)){
       container.innerHTML = _shiftGroupHTML(key, 0, true, start, end, breaks);
+      if(typeof _refreshShiftConstraints === 'function') _refreshShiftConstraints(key);
       applied++;
     } else {
       container.innerHTML = _shiftGroupHTML(key, 0, false, '', '', []);
     }
   });
   calcWorkHours();
+  if(typeof _syncBulkCheckboxes === 'function') _syncBulkCheckboxes();
   toast(`${applied}개 요일에 근무시간이 일괄 적용되었습니다. ✔`, 'success');
 }
 
@@ -1213,6 +1260,7 @@ function _deactivateShift(key){
   if(!container) return;
   container.innerHTML = _shiftGroupHTML(key, 0, false, '', '', []);
   calcWorkHours();
+  if(typeof _syncBulkCheckboxes === 'function') _syncBulkCheckboxes();
 }
 
 // ── 시프트용 휴게 슬롯 HTML (idx 포함) ──
@@ -1246,6 +1294,7 @@ function _addShift(key){
       container.innerHTML = _shiftGroupHTML(key, 0, true, '', '', []);
       _refreshShiftConstraints(key);
       calcWorkHours();
+      if(typeof _syncBulkCheckboxes === 'function') _syncBulkCheckboxes();
       return;
     }
   }
@@ -1264,6 +1313,7 @@ function _addShift(key){
   container.appendChild(div.firstElementChild);
   _refreshShiftConstraints(key);
   calcWorkHours();
+  if(typeof _syncBulkCheckboxes === 'function') _syncBulkCheckboxes();
 }
 
 // ── 시프트 삭제 ──
@@ -1274,6 +1324,7 @@ function _removeShift(key, idx){
   if(shift) shift.remove();
   _refreshShiftConstraints(key);
   calcWorkHours();
+  if(typeof _syncBulkCheckboxes === 'function') _syncBulkCheckboxes();
 }
 
 // ── 시프트용 휴게 슬롯 추가 ──
@@ -1749,8 +1800,14 @@ function setScheduleFromJSON(schedule){
     container.innerHTML = shifts.map((sh, idx) =>
       _shiftGroupHTML(key, idx, true, sh.start, sh.end, sh.breaks)
     ).join('');
+    // 시프트 간 중첩 방지 제약 갱신
+    if(typeof _refreshShiftConstraints === 'function') _refreshShiftConstraints(key);
   });
+  // 일괄설정 바 시간을 첫 번째 활성 요일의 스케줄로 초기화
+  _initBulkFromFirstActive();
   calcWorkHours();
+  // 일괄설정 체크박스를 실제 스케줄 상태와 동기화
+  if(typeof _syncBulkCheckboxes === 'function') _syncBulkCheckboxes();
 }
 
 // 레거시 단일 시간 → 요일별 스케줄 변환
@@ -1773,8 +1830,14 @@ function setScheduleFromLegacy(c){
     if(!active){ container.innerHTML = _shiftGroupHTML(key, 0, false, '', '', []); return; }
     const breaks = brkMins > 0 ? [{s: toTime(brkStart), e: toTime(brkEnd)}] : [];
     container.innerHTML = _shiftGroupHTML(key, 0, true, start, end, breaks);
+    // 시프트 간 중첩 방지 제약 갱신
+    if(typeof _refreshShiftConstraints === 'function') _refreshShiftConstraints(key);
   });
+  // 일괄설정 바 시간을 첫 번째 활성 요일의 스케줄로 초기화
+  _initBulkFromFirstActive();
   calcWorkHours();
+  // 일괄설정 체크박스를 실제 스케줄 상태와 동기화
+  if(typeof _syncBulkCheckboxes === 'function') _syncBulkCheckboxes();
 }
 
 // initBreakSelects → initScheduleTable로 대체 (하위 호환 stub)
@@ -2339,9 +2402,10 @@ function calcContractSalary(){
 
   const base      = getAmountVal('ct-base');
   // 주휴수당 = 통상시급 × 1일소정근로시간 × 월평균주수(4.345) [근로기준법 제55조]
+  // 시급이 없을 때: (월 통상임금 ÷ 월 소정근로시간) × 1일 소정근로시간
   const weeklyHol = (isHourlyBased && hourlyWage > 0)
     ? Math.round(hourlyWage * _hpd * (365 / 12 / 7))
-    : Math.round((base + _ordinaryGroup + fixedExtraAll) / _dpw);
+    : (_monthlyStdH > 0 ? Math.round((base + _ordinaryGroup + fixedExtraAll) / _monthlyStdH * _hpd) : 0);
   document.getElementById('ct-weekly-hol-computed').textContent = won(weeklyHol);
 
   // 월 약정임금 = 기본급 + 주휴수당 + 각종 수당 + 고정 연장/야간/휴일

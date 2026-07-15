@@ -87,6 +87,7 @@ function _buildPIBody(){
       const _e = document.getElementById('pi-pay-period-end')?.value || '';
       return _s && _e ? `${_s}~${_e}` : '';
     })() : (piContract?.pay_period || ''),
+    absent_dates:       document.getElementById('pi-absent-dates')?.value || '',
   };
 }
 
@@ -288,6 +289,9 @@ function loadPIDraft(){
   const _etcMemoDraft = document.getElementById('pi-etc-allowance-memo');
   if(_etcMemoDraft) _etcMemoDraft.value = draft.etc_allowance_memo || '';
   document.getElementById('pi-work-days').value    = draft.work_days        || 0;
+  // 결근일 복원
+  { const _absEl = document.getElementById('pi-absent-dates');
+    if(_absEl){ _absEl.value = draft.absent_dates || ''; if(typeof _renderPIAbsentChips === 'function') _renderPIAbsentChips(); } }
   // 총 근로시간은 자동계산 (pi-total-hours 직접 세팅 제거)
   if(typeof calcPITotalHours === 'function') calcPITotalHours();
   { const autoLbl = document.getElementById('pi-workdays-auto-label'); if(autoLbl) autoLbl.style.display='none'; }

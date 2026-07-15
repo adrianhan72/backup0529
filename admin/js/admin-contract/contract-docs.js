@@ -1651,12 +1651,16 @@ function closeContractPrintModal(){
     window._amendFromContractModal = false;
     closeModal('contract-modal');
   }
-  // 수정 재발행(또는 재계약/갱신) 후 목록과 대시보드 갱신
+  // 수정 재발행 후 즉시 목록 갱신 (서버 동기화는 백그라운드)
   if(wasAmend){
-    loadContracts().then(() => {
+    renderContracts();
+    renderDashboard();
+    (async () => {
+      await loadContracts();
+      await loadEmployees();
       renderContracts();
       renderDashboard();
-    });
+    })();
   }
 }
 

@@ -1598,7 +1598,11 @@ function _applyPIDefaultWorkDays(forceOverwrite){
   const result = _calcPIDefaultWorkDays(piContract, yr, mo);
   if(result.workDays <= 0) return;
 
-  wdEl.value = result.workDays;
+  // 결근일 차감
+  const absentDays = (typeof _getPIAbsentDays === 'function') ? _getPIAbsentDays() : 0;
+  const finalWorkDays = Math.max(0, result.workDays - absentDays);
+
+  wdEl.value = finalWorkDays;
   // 총 근로시간은 자동계산 함수로 세팅 (thEl 직접 세팅 제거)
   if(typeof calcPITotalHours === 'function') calcPITotalHours();
   else thEl.value = result.totalHours; // fallback
@@ -1720,6 +1724,54 @@ function _updatePIWorkDaysAutoLabel(result){
 //     - 정규직/계약직 모두: readonly 적용, 배지 "고객사 설정 자동입력" 표시
 //     - pay_day 미설정 고객사: readonly 해제, 배지 "지급일 미설정" 경고
 // ──────────────────────────────────────────────────────────────────────────────
+
+// ──────────────────────────────────────────────────────────────────────────────
+// 결근일 관리
+// ──────────────────────────────────────────────────────────────────────────────
+function _addPIAbsentDate(){
+  const dateEl = document.getElementById('pi-absent-date');
+  if(!dateEl || !dateEl.value) return;
+  const hidden = document.getElementById('pi-absent-dates');
+  const dates = hidden && hidden.value ? hidden.value.split(',') : [];
+  if(dates.includes(dateEl.value)){ dateEl.value = ''; return; }
+  dates.push(dateEl.value);
+  dates.sort();
+  hidden.value = dates.join(',');
+  dateEl.value = '';
+  _renderPIAbsentChips();
+}
+
+function _removePIAbsentDate(dateStr){
+  const hidden = document.getElementById('pi-absent-dates');
+  if(!hidden) return;
+  const dates = hidden.value ? hidden.value.split(',') : [];
+  hidden.value = dates.filter(d => d !== dateStr).join(',');
+  _renderPIAbsentChips();
+}
+
+function _renderPIAbsentChips(){
+  const hidden = document.getElementById('pi-absent-dates');
+  const chips = document.getElementById('pi-absent-chips');
+  const count = document.getElementById('pi-absent-count');
+  const dates = hidden && hidden.value ? hidden.value.split(',') : [];
+  if(chips){
+    chips.innerHTML = dates.map(d =>
+      `<span style="display:inline-flex;align-items:center;gap:3px;background:#fef2f2;border:1px solid #fecaca;border-radius:4px;padding:2px 7px;font-size:11px;color:#991b1b;">
+        ${d}
+        <button type="button" onclick="_removePIAbsentDate('${d}')"
+          style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:13px;padding:0;line-height:1;">×</button>
+      </span>`
+    ).join('');
+  }
+  if(count) count.textContent = dates.length + '일';
+  if(typeof calcPIWorkActual === 'function') calcPIWorkActual();
+}
+
+function _getPIAbsentDays(){
+  const hidden = document.getElementById('pi-absent-dates');
+  return hidden && hidden.value ? hidden.value.split(',').length : 0;
+}
+
 function _applyPIPayDate(forceOverwrite){
   const pdEl    = document.getElementById('pi-paydate');
   const badgeEl = document.getElementById('pi-paydate-badge');
@@ -2220,8 +2272,8 @@ function _switchInsuranceModeUI(){
 //   반환: { otHours, nightHours, holHours, otPay, nightPay, holPay }
 // ──────────────────────────────────────────────────────────────────────────────
 function _calcFixedHoursFromSchedule(scheduleJson, workHoursPerDay, hourlyWage){
-  const hpd  = parseFloat(workHoursPerDay) || 8;
-  const hw   = parseFloat(hourlyWage) || 0;
+  const STATUTORY_DAILY = 8 * 60; // 법정 1일 소정근로시간 (480분)
+  const hw = parseFloat(hourlyWage) || 0;
   const result = { otHours:0, nightHours:0, holHours:0, otPay:0, nightPay:0, holPay:0 };
 
   if(!scheduleJson) return result;
@@ -2257,7 +2309,7 @@ function _calcFixedHoursFromSchedule(scheduleJson, workHoursPerDay, hourlyWage){
       const workMin = endMin - startMin - breakMin;
       if(workMin <= 0) return;
 
-      const standardMin = hpd * 60;
+      const standardMin = STATUTORY_DAILY;
 
       // ── 연장근로: 소정근로시간 초과분 ──
       const dailyOtMin = Math.max(0, workMin - standardMin);
