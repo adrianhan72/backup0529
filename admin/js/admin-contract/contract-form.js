@@ -408,13 +408,24 @@ function toggleAnnualSal(){
     }
     const _customOrd = document.getElementById('ct-custom-ord-container');
     if(_customOrd) _customOrd.style.display = 'none';
-    // 일용직: pay_type 초기화
+    // 일용직: pay_type 초기화 (DOM 제거 방지: remove 없이 값만 초기화)
     ['car','meal','research','communication','fitness','self_dev','book','overseas','childcare'].forEach(f => {
-      setCTPayType(f, '');
+      _ctPayTypes[f] = ''; // 내부 상태만 초기화 (setCTPayType 호출 안 함 → rowEl.remove() 방지)
+      const hintEl = document.getElementById('ct-'+f.replace(/_/g,'-')+'-type-hint');
+      if(hintEl){ hintEl.textContent = ''; hintEl.style.color = '#9ca3af'; }
     });
   } else {
     const dw = document.getElementById('ct-daily-wage');
     if(dw) dw.value = '';
+    // 일용직 → 타 고용형태 전환 시: 숨겨진 allowance 행 복원
+    if(typeof _CT_OPT_ROWS !== 'undefined' && typeof _ctAllowCfgVisible !== 'undefined'){
+      _CT_OPT_ROWS.forEach(({key, rowId}) => {
+        const el = document.getElementById(rowId);
+        if(el) el.style.display = _ctAllowCfgVisible[key] ? '' : 'none';
+      });
+    }
+    const _customOrd = document.getElementById('ct-custom-ord-container');
+    if(_customOrd) _customOrd.style.display = '';
   }
   calcContractSalary();
 }
@@ -423,7 +434,7 @@ function toggleAnnualSal(){
 function toggleProbation(){
   const rawCat = document.getElementById('ct-em-category')?.value 
               || document.getElementById('ct-type')?.value 
-              || '정규직';
+              || CONTRACT_TYPE.REGULAR;
   const cat = CONTRACT_TYPE_LEGACY_MAP[rawCat] || rawCat;
   const isProbation = cat ===CONTRACT_TYPE.REGULAR_PROBATION || cat ===CONTRACT_TYPE.FIXED_PROBATION;
   const sec = document.getElementById('ct-probation-section');
@@ -871,7 +882,7 @@ function _checkMinWageWarning(){
   if(compareHourly < legalHourly){
     const shortfall    = legalHourly - compareHourly;
     const shortMonthly = legalMonthly - compareMonthly;
-    const typeName = isDaily ? '일용직' : isRegular ? '정규직' : '계약직';
+    const typeName = isDaily ? CONTRACT_TYPE_LABEL[CONTRACT_TYPE.DAILY] : isRegular ? CONTRACT_TYPE_LABEL[CONTRACT_TYPE.REGULAR] : CONTRACT_TYPE_LABEL[CONTRACT_TYPE.FIXED];
 
     wBox.innerHTML =
       `<div style="display:flex;align-items:center;gap:7px;font-weight:800;font-size:12px;margin-bottom:6px;color:#b91c1c;">
@@ -1493,7 +1504,7 @@ function toggleCtEndDate(preserveValue=false){
   // ct-em-category 우선 (신규 모드), 없으면 ct-type (수정 모드)
   const rawCat = document.getElementById('ct-em-category')?.value 
               || document.getElementById('ct-type')?.value 
-              || '정규직';
+              || CONTRACT_TYPE.REGULAR;
   const type = CONTRACT_TYPE_LEGACY_MAP[rawCat] || rawCat;
   const endInput = document.getElementById('ct-end');
   const endRow   = document.getElementById('ct-row-end');

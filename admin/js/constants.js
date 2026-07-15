@@ -180,6 +180,13 @@ const PAYMENT_STATUS_LABEL = Object.freeze({
   [PAYMENT_STATUS.PAID]:    '완납',
 });
 
+const PAYMENT_STATUS_LEGACY_MAP = {
+  '납부대기': PAYMENT_STATUS.PENDING,
+  '일부납':   PAYMENT_STATUS.PARTIAL,
+  '미납':     PAYMENT_STATUS.UNPAID,
+  '완납':     PAYMENT_STATUS.PAID,
+};
+
 // ═══════════════════════════════════════════
 // 발송 방식
 // ═══════════════════════════════════════════

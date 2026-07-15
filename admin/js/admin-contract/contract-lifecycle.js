@@ -128,7 +128,7 @@ function generateContractHTMLFromData(c, emp, co){
   // 채용 확정 후 생성된 계약(contract_type='정규직') 계약서가 수습 양식으로
   // 출력되는 문제를 방지. emp.employment_category는 폴백으로만 사용.
   // 계약예정 상태인 경우 수습 카테고리 정규화 (채용확정 → 본계약 전환이므로 수습 아님)
-  const _ctTypeRaw = c.contract_type || emp.employment_category || '정규직';
+  const _ctTypeRaw = c.contract_type || emp.employment_category || CONTRACT_TYPE.REGULAR;
   // 영문 정규화 → 내부 비교용
   const _ctTypeNorm = typeof normalizeContractType === 'function'
     ? normalizeContractType(_ctTypeRaw) : _ctTypeRaw;
@@ -803,7 +803,7 @@ async function savePendingContractEdit(){
 
   // 급여 관련
   function getAmtVal(id){ const el=document.getElementById(id); if(!el)return 0; const v=el.value.replace(/[^\d]/g,''); return parseInt(v)||0; }
-  const _pendCtType   = c.contract_type || '정규직';
+  const _pendCtType   = c.contract_type || CONTRACT_TYPE.REGULAR;
   const _pendIsReg    = _pendCtType===CONTRACT_TYPE.REGULAR || _pendCtType===CONTRACT_TYPE.REGULAR_PROBATION;
   const _pendIsFixed  = _pendCtType===CONTRACT_TYPE.FIXED || _pendCtType===CONTRACT_TYPE.FIXED_PROBATION;
   const _pendIsDaily  = _pendCtType===CONTRACT_TYPE.DAILY;
@@ -1688,7 +1688,7 @@ function openRecontractModal(srcContract){
   // 직원 정보 채우기
   document.getElementById('ct-edit-emp-name').value = emp.name||'';
   // 재계약: 고용형태는 직원 인사정보(employment_category) 기준
-  const rcCtType = (emp && emp.employment_category) || srcContract.contract_type || '정규직';
+  const rcCtType = (emp && emp.employment_category) || srcContract.contract_type || CONTRACT_TYPE.REGULAR;
   const rcIsFixed = (rcCtType===CONTRACT_TYPE.FIXED||rcCtType===CONTRACT_TYPE.FIXED_PROBATION||rcCtType===CONTRACT_TYPE.DAILY);
   if(emp){
     document.getElementById('ct-edit-em-gender').value     = emp.gender||'남';
@@ -1725,7 +1725,7 @@ function openRecontractModal(srcContract){
   document.getElementById('ct-start').value   = '';
   document.getElementById('ct-type').value    = rcCtType; toggleCtEndDate(true); toggleProbation();
   document.getElementById('ct-end').value     = srcContract.contract_end||'';
-  document.getElementById('ct-status').value  = '활성';
+  document.getElementById('ct-status').value  = CONTRACT_STATUS.ACTIVE;
   document.getElementById('ct-annual').value  = srcContract.annual_leave_days||15;
   // 요일별 스케줄 복원 (재계약: 이전 계약 스케줄 그대로 복사)
   if(srcContract.schedule_json){
@@ -1735,7 +1735,7 @@ function openRecontractModal(srcContract){
     setScheduleFromLegacy(srcContract);
   }
 
-  const ct = srcContract.contract_type||'정규직';
+  const ct = srcContract.contract_type||CONTRACT_TYPE.REGULAR;
   const isDailySrc    = ct===CONTRACT_TYPE.DAILY;
   const isRegSrc      = ct===CONTRACT_TYPE.REGULAR||ct===CONTRACT_TYPE.REGULAR_PROBATION;
   const isFixedSrc    = ct===CONTRACT_TYPE.FIXED||ct===CONTRACT_TYPE.FIXED_PROBATION;
@@ -1916,7 +1916,7 @@ async function confirmContractTerminate(){
 
   closeModal('contract-modal');
   await loadContracts(); await loadEmployees(); renderContracts(); renderDashboard();
-  const statusLabel = newStatus === CONTRACT_STATUS.TERMINATED ? '해지' : '해지예정';
+  const statusLabel = newStatus === CONTRACT_STATUS.TERMINATED ? CONTRACT_STATUS_LABEL[CONTRACT_STATUS.TERMINATED] : CONTRACT_STATUS_LABEL[CONTRACT_STATUS.TERMINATE_PENDING];
   toast(`퇴사일(${termDate})이 설정됐습니다. 계약 상태: ${statusLabel}`);
 }
 
@@ -2371,7 +2371,7 @@ async function saveDraftContract(reason){
 
   // 현재 입력값 수집 + 영문 정규화
   const _rawCatDraft = isEditMode
-    ? (allContracts.find(x=>x.id===editId.contract)||{}).contract_type||'정규직'
+    ? (allContracts.find(x=>x.id===editId.contract)||{}).contract_type||CONTRACT_TYPE.REGULAR
     : (isNew ? document.getElementById('ct-em-category').value : document.getElementById('ct-type').value);
   const catForDraft = CONTRACT_TYPE_LEGACY_MAP[_rawCatDraft] || _rawCatDraft;
   const isDailyDraft = catForDraft ===CONTRACT_TYPE.DAILY;
@@ -3076,7 +3076,7 @@ function _ctValidate(){
 
     // ── 수정/재계약: 임금 관련 ──
     const _rawCatForCheck = (document.getElementById('ct-edit-em-category')?.value)
-      || (document.getElementById('ct-type')?.value) || '정규직';
+      || (document.getElementById('ct-type')?.value) || CONTRACT_TYPE.REGULAR;
     const catForCheck = CONTRACT_TYPE_LEGACY_MAP[_rawCatForCheck] || _rawCatForCheck;
     if(catForCheck ===CONTRACT_TYPE.DAILY){
       if(!getAmountVal('ct-daily-wage'))
@@ -3204,8 +3204,8 @@ async function saveContract(){
   // 정규직 계열 여부 판단 (신규: 구분 선택값, 수정/재계약: 계약유형 select)
   // 고용형태는 인사정보(ct-edit-em-category) 기준으로 읽음
   const _rawCatForSave = editId.contract
-    ? (document.getElementById('ct-edit-em-category')?.value||(allContracts.find(x=>x.id===editId.contract)||{}).contract_type||'정규직')
-    : (_recontractEmpId ? (document.getElementById('ct-edit-em-category')?.value||'정규직') : (document.getElementById('ct-em-category').value||'정규직'));
+    ? (document.getElementById('ct-edit-em-category')?.value||(allContracts.find(x=>x.id===editId.contract)||{}).contract_type||CONTRACT_TYPE.REGULAR)
+    : (_recontractEmpId ? (document.getElementById('ct-edit-em-category')?.value||CONTRACT_TYPE.REGULAR) : (document.getElementById('ct-em-category').value||CONTRACT_TYPE.REGULAR));
   const catForSave = CONTRACT_TYPE_LEGACY_MAP[_rawCatForSave] || _rawCatForSave;
   const isRegularGroup = catForSave ===CONTRACT_TYPE.REGULAR || catForSave ===CONTRACT_TYPE.REGULAR_PROBATION;
   const isFixedTermSave = catForSave ===CONTRACT_TYPE.FIXED || catForSave ===CONTRACT_TYPE.FIXED_PROBATION;
@@ -3411,17 +3411,17 @@ async function saveContract(){
     if(isFixedEdit && newEnd2 && newEnd2 !== origEnd2){
       if(newEnd2 < origStart2){
         // 시작일 이전으로 종료일 소급 → 해지
-        autoStatus = '해지';
+        autoStatus = CONTRACT_STATUS.TERMINATED;
       } else if(newEnd2 <= today3){
         // 현재 이전 날짜로 변경 → 즉시 해지 (계약 종료일 앞당김)
-        autoStatus = '해지';
+        autoStatus = CONTRACT_STATUS.TERMINATED;
       } else if(origEnd2 && newEnd2 > origEnd2){
         // 종료일 연장: 기존 계약 만료 + 새 계약 등록 정책 → 등록 차단 후 갱신 플로우 유도
         toast('계약 종료일을 연장하려면 [갱신] 버튼을 사용해 주세요.\n편집 저장으로는 종료일을 연장할 수 없습니다.', 'error');
         return;
       } else {
         // 종료일 앞당김 (원래보다 이전, 오늘 이후) → 해지로 처리
-        autoStatus = '해지';
+        autoStatus = CONTRACT_STATUS.TERMINATED;
       }
     }
     contractStatus= autoStatus;
@@ -3446,7 +3446,7 @@ async function saveContract(){
     const existingActive = allContracts.find(ac =>
       ac.employee_id === empId &&
       ac.id !== editId.contract &&
-      (ac.status === CONTRACT_STATUS.ACTIVE || ac.status === '활성')
+      ac.status === CONTRACT_STATUS.ACTIVE
     );
     if(existingActive){
       return toast(`이 직원에게 이미 활성 계약(${existingActive.id.substring(0,8)}...)이 존재합니다. 기존 계약을 해지·만료 처리하거나 갱신해 주세요.`, 'error');
@@ -3519,7 +3519,7 @@ async function saveContract(){
       const empUpdatePhone = document.getElementById('ct-edit-em-phone').value.trim();
       if(!empUpdatePhone) return toast('휴대전화 번호를 입력하세요.','error');
       // 계약직/일용직은 입사일=계약시작일, 만료일=계약종료일이므로 ct-start/ct-end 값 사용
-      const _ctTypeForSave = document.getElementById('ct-type').value||'정규직';
+      const _ctTypeForSave = document.getElementById('ct-type').value||CONTRACT_TYPE.REGULAR;
       const _isFixedForSave = (_ctTypeForSave===CONTRACT_TYPE.FIXED||_ctTypeForSave===CONTRACT_TYPE.FIXED_PROBATION||_ctTypeForSave===CONTRACT_TYPE.DAILY);
       const _nameElSave = document.getElementById('ct-edit-emp-name');
       const _catElSave  = document.getElementById('ct-edit-em-category');

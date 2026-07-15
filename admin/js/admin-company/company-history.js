@@ -411,13 +411,13 @@ function getBillingInfoForDashCard(companyId){
 
   let status;
   if(thisBill.payment_status ===PAYMENT_STATUS.PAID || (thisBill.payment_date && rem <= 0)){
-    status = prevUnpaid > 0 ? '일부납' : '완납';
+    status = prevUnpaid > 0 ? PAYMENT_STATUS.PARTIAL : PAYMENT_STATUS.PAID;
   } else if(paid > 0 && rem > 0){
-    status = '일부납';
+    status = PAYMENT_STATUS.PARTIAL;
   } else if(thisBill.due_date && thisBill.due_date < todayStr){
-    status = '미납';
+    status = PAYMENT_STATUS.UNPAID;
   } else {
-    status = '납부대기';
+    status = PAYMENT_STATUS.PENDING;
   }
 
   // 버튼 표시 여부 (관리 열에 버튼이 활성화된 경우)
@@ -906,7 +906,7 @@ async function doTerminate_DISABLED(withLoss){
   for(const b of unpaidBillings){
     const rem = (b.total_amount || 0) - (b.partial_paid_amount || 0);
     totalLoss += rem;
-    const updBody = {...b, payment_status:'완납', loss_amount:rem, loss_date:todayStr};
+    const updBody = {...b, payment_status: PAYMENT_STATUS.PAID, loss_amount:rem, loss_date:todayStr};
     await api(`../tables/billings/${b.id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(updBody)});
   }
   const compBody = {...c, status: CONTRACT_STATUS.TERMINATED, contract_end_date:todayStr, loss_amount:(c.loss_amount||0)+totalLoss, loss_date:todayStr};

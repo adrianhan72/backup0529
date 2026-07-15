@@ -179,11 +179,11 @@ function sevStatusBadge(emp, contract){
   if(!contract) return '<span style="font-size:11px;color:#9ca3af;">계약 없음</span>';
   const s = contract.status || '';
   const today = new Date().toISOString().slice(0,10);
-  if(s==='해지' || emp?.status===EMP_STATUS.RESIGNED || emp?.status===EMP_STATUS.RESIGNED){
+  if(contract.status === CONTRACT_STATUS.TERMINATED || emp?.status===EMP_STATUS.RESIGNED || emp?.status===EMP_STATUS.RESIGNED){
     const resignDate = emp?.resign_date || contract.terminate_date || contract.contract_end || '';
     return `<span style="display:inline-block;padding:2px 8px;border-radius:10px;background:#fee2e2;color:#dc2626;font-size:11px;font-weight:600;">해지·퇴직${resignDate?' ('+resignDate+')':''}</span>`;
   }
-  if(s==='만료' || s==='expired'){
+  if(contract.status === CONTRACT_STATUS.EXPIRED){
     return `<span style="display:inline-block;padding:2px 8px;border-radius:10px;background:#fef3c7;color:#b45309;font-size:11px;font-weight:600;">만료${contract.contract_end?' ('+contract.contract_end+')':''}</span>`;
   }
   // 활성 계약 중 종료일이 임박한 경우 (90일 이내)

@@ -63,7 +63,7 @@ function renderCenTemplate(){
   const selVal = sel ? sel.value : '__demo__';
 
   // ── 1. 데이터 준비 ────────────────────────────────────────────
-  let empName='홍길동', catLabel='계약직', coName='(주)샘플코리아',
+  let empName='홍길동', catLabel=CONTRACT_TYPE_LABEL[CONTRACT_TYPE.FIXED], coName='(주)샘플코리아',
       coRep='김대표', contractEnd='2025-07-18', daysLeft=29,
       phone='010-1234-5678', email='sample@example.com',
       adminPhone='02-000-0000', adminEmail='labor@example.com';

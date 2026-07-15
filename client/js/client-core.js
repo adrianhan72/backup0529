@@ -27,6 +27,21 @@ const TREND_ITEMS = [
 const trendOn = {};
 TREND_ITEMS.forEach(t => trendOn[t.key] = t.def);
 
+// ══ 공통 상태 정규화 헬퍼 (constants.js 의존) ══
+const _normEmpStatus = (status) => EMP_STATUS_LEGACY_MAP[status] || status || EMP_STATUS.ACTIVE;
+const _isEmpActive = (emp) => _normEmpStatus(emp.status) === EMP_STATUS.ACTIVE;
+const _isEmpResigned = (emp) => _normEmpStatus(emp.status) === EMP_STATUS.RESIGNED;
+const _normContractStatus = (status) => CONTRACT_STATUS_LEGACY_MAP[status] || status;
+const _isContractActive = (c) => {
+  const s = _normContractStatus(c.status);
+  if (s === '유효') return true; // client-side legacy value
+  return CONTRACT_ACTIVE_STATUSES.includes(s);
+};
+const _normContractType = (cat) => CONTRACT_TYPE_LEGACY_MAP[cat] || cat;
+const _normPaymentStatus = (status) => PAYMENT_STATUS_LEGACY_MAP[status] || status;
+const contractTypeLabel_c = (cat) => CONTRACT_TYPE_LABEL[_normContractType(cat)] || cat || '-';
+const empCatBadge = (cat) => CAT_BADGE_CLS[_normContractType(cat)] || 'badge-gray';
+
 // ══ LOGIN ══
 const LS_CODE_KEY = 'gs_saved_access_code';
 

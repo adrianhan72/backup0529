@@ -1119,8 +1119,8 @@ function _collectContractData(){
   // 고용형태는 인사정보 기준으로 읽음: 수정 모드는 ct-edit-em-category, 신규는 ct-em-category
   const _isEditModeCD = !!editId.contract;
   const ctType = _isEditModeCD
-    ? (document.getElementById('ct-edit-em-category')?.value||'정규직')
-    : (document.getElementById('ct-em-category')?.value||'정규직');
+    ? (document.getElementById('ct-edit-em-category')?.value||CONTRACT_TYPE.REGULAR)
+    : (document.getElementById('ct-em-category')?.value||CONTRACT_TYPE.REGULAR);
   const isEdit = !!editId.contract;
   const isDaily = ctType===CONTRACT_TYPE.DAILY;
   const isProbation = ctType===CONTRACT_TYPE.REGULAR_PROBATION || ctType===CONTRACT_TYPE.FIXED_PROBATION;
@@ -1507,7 +1507,7 @@ function openContractPrintModal(contractId){
 
   // c.contract_type 우선 참조 (채용확정 생성 계약예정은 c.contract_type이 실제 유형)
   // 계약예정 상태인 경우 수습 카테고리 정규화 (예: '계약직 수습' → '계약직')
-  const _ctTypeRaw = c.contract_type || emp.employment_category || '정규직';
+  const _ctTypeRaw = c.contract_type || emp.employment_category || CONTRACT_TYPE.REGULAR;
   const _ctTypeNorm = typeof normalizeContractType === 'function'
     ? normalizeContractType(_ctTypeRaw) : _ctTypeRaw;
   const _isPendingPrint = (c.status===CONTRACT_STATUS.PENDING);

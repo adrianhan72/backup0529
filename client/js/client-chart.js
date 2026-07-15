@@ -20,7 +20,7 @@ function setPsSubVal(val){
 function _buildPsSubChips(){
   const subBar   = document.getElementById('ps-sub-bar');
   const chipsEl  = document.getElementById('ps-sub-chips');
-  const activeEmps = allEmployees.filter(e=>e.status==='재직'||e.status==='active');
+  const activeEmps = allEmployees.filter(e=>_isEmpActive(e));
 
   if(psGroup === 'all'){
     subBar.style.display = 'none';
@@ -32,7 +32,7 @@ function _buildPsSubChips(){
   let values = [];
   if(psGroup === 'cat'){
     // 고용형태: 실제 데이터에 있는 것만, 정해진 순서로
-    const ORDER = ['정규직','정규직 수습','계약직','계약직 수습','일용직'];
+    const ORDER = [CONTRACT_TYPE_LABEL[CONTRACT_TYPE.REGULAR], CONTRACT_TYPE_LABEL[CONTRACT_TYPE.REGULAR_PROBATION], CONTRACT_TYPE_LABEL[CONTRACT_TYPE.FIXED], CONTRACT_TYPE_LABEL[CONTRACT_TYPE.FIXED_PROBATION], CONTRACT_TYPE_LABEL[CONTRACT_TYPE.DAILY]];
     const has = new Set(activeEmps.map(e=>e.employment_category).filter(Boolean));
     values = ORDER.filter(v=>has.has(v));
   } else if(psGroup === 'dept'){
@@ -44,10 +44,10 @@ function _buildPsSubChips(){
   subBar.style.display = '';
 
   // 고용형태 색상 매핑 (칩 dot 표시용)
-  const catDotColor = {
-    '정규직':'#3b82f6','정규직 수습':'#10b981',
-    '계약직':'#f59e0b','계약직 수습':'#f97316','일용직':'#a855f7'
-  };
+  const catDotColor = {};
+  Object.keys(CONTRACT_TYPE_LABEL).forEach(k => {
+    catDotColor[CONTRACT_TYPE_LABEL[k]] = CAT_BADGE_CLS[k] === 'badge-blue' ? '#3b82f6' : CAT_BADGE_CLS[k] === 'badge-cyan' ? '#10b981' : CAT_BADGE_CLS[k] === 'badge-purple' ? '#f59e0b' : CAT_BADGE_CLS[k] === 'badge-pink' ? '#f97316' : '#a855f7';
+  });
 
   const makeChip = (val, label, isActive) => {
     const dot = (psGroup === 'cat' && catDotColor[val])
@@ -77,7 +77,7 @@ function renderPayslipList(){
   const el = document.getElementById('payslip-list-content');
 
   // 재직 직원 기본 풀
-  let emps = allEmployees.filter(e=>e.status==='재직'||e.status==='active');
+  let emps = allEmployees.filter(e=>_isEmpActive(e));
 
   // 그룹·세부 필터 적용
   if(psGroup !== 'all' && psSubVal !== '__all__'){
@@ -198,7 +198,7 @@ function setPsFilter(cat){ psGroup='all'; psSubVal='__all__'; renderPayslipList(
 function openPayslipModal(payrollId){
   const p = allPayrolls.find(x=>x.id===payrollId); if(!p) return;
   const emp = allEmployees.find(x=>x.id===p.employee_id)||{};
-  const contract = allContracts.find(c=>c.employee_id===p.employee_id&&(c.status==='active'||c.status==='활성'));
+  const contract = allContracts.find(c=>c.employee_id===p.employee_id&&_isContractActive(c));
   const hw = contract?contract.hourly_wage:p.hourly_wage||0;
   const gross=p.gross_pay||0, net=p.net_pay||0, ded=(p.total_deduction||(gross-net));
 

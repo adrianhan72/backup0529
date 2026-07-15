@@ -96,8 +96,8 @@ function renderClientSevHistory(){
       .sort((a,b) => (a.contract_start||'').localeCompare(b.contract_start||''));
     const last = conts[conts.length - 1];
     if(!last) return false;
-    return last.status === '해지' || last.status === '만료' ||
-           last.status === 'expired' || last.status === 'terminated';
+    const lastStatus = _normContractStatus(last.status);
+    return lastStatus === CONTRACT_STATUS.TERMINATED || lastStatus === CONTRACT_STATUS.EXPIRED;
   });
 
   if(!resignedEmps.length){
@@ -118,7 +118,7 @@ function renderClientSevHistory(){
     const resignDate = lastC?.contract_end || emp.resign_date || today;
     const pays3 = _clientGetPrev3(emp.id, resignDate);
     const sev = _clientCalcSev(emp.id, hireDate, resignDate, pays3);
-    const statusBadge = lastC?.status === '해지'
+    const statusBadge = _normContractStatus(lastC?.status) === CONTRACT_STATUS.TERMINATED
       ? `<span style="background:#fee2e2;color:#dc2626;padding:2px 7px;border-radius:12px;font-size:10px;font-weight:700;">해지</span>`
       : `<span style="background:#fef3c7;color:#b45309;padding:2px 7px;border-radius:12px;font-size:10px;font-weight:700;">만료</span>`;
 

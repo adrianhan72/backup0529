@@ -70,7 +70,7 @@
         const emp = allEmployees.find(e=>e.id===c.employee_id);
         const _rawCat = c.contract_type || emp?.employment_category || '-';
         // 수습→정규 전환 계약은 probation 제거 후 표시
-        const empCat = _rawCat ===CONTRACT_TYPE.REGULAR_PROBATION ? '정규직' : _rawCat ===CONTRACT_TYPE.FIXED_PROBATION ? '계약직' : contractTypeLabel(_rawCat);
+        const empCat = _rawCat ===CONTRACT_TYPE.REGULAR_PROBATION ? CONTRACT_TYPE_LABEL[CONTRACT_TYPE.REGULAR] : _rawCat ===CONTRACT_TYPE.FIXED_PROBATION ? CONTRACT_TYPE_LABEL[CONTRACT_TYPE.FIXED] : contractTypeLabel(_rawCat);
         const catBadge = CAT_BADGE_CLS[_rawCat] || 'badge-gray';
         const diff = c.contract_start ? Math.ceil((new Date(c.contract_start)-new Date(today))/(1000*60*60*24)) : null;
         const dday = diff !== null ? (diff>0?`D-${diff}`:diff===0?'D-day':`D+${Math.abs(diff)}`) : '-';
@@ -94,7 +94,7 @@
       row: (c) => {
         const emp = allEmployees.find(e=>e.id===c.employee_id);
         const _rawCat = c.contract_type || emp?.employment_category || '-';
-        const empCat = _rawCat ===CONTRACT_TYPE.REGULAR_PROBATION ? '정규직 수습' : _rawCat ===CONTRACT_TYPE.FIXED_PROBATION ? '계약직 수습' : contractTypeLabel(_rawCat);
+        const empCat = _rawCat ===CONTRACT_TYPE.REGULAR_PROBATION ? CONTRACT_TYPE_LABEL[CONTRACT_TYPE.REGULAR_PROBATION] : _rawCat ===CONTRACT_TYPE.FIXED_PROBATION ? CONTRACT_TYPE_LABEL[CONTRACT_TYPE.FIXED_PROBATION] : contractTypeLabel(_rawCat);
         const catBadge = CAT_BADGE_CLS[_rawCat] || CAT_BADGE_CLS[empCat] || 'badge-gray';
         const termDate = c.terminate_date || c.contract_end || '';
         const diff = termDate ? Math.ceil((new Date(termDate)-new Date(today))/(1000*60*60*24)) : null;
@@ -118,7 +118,7 @@
       row: (c) => {
         const emp = allEmployees.find(e=>e.id===c.employee_id);
         const _rawCat = c.contract_type || emp?.employment_category || '-';
-        const empCat = _rawCat ===CONTRACT_TYPE.REGULAR_PROBATION ? '정규직 수습' : _rawCat ===CONTRACT_TYPE.FIXED_PROBATION ? '계약직 수습' : contractTypeLabel(_rawCat);
+        const empCat = _rawCat ===CONTRACT_TYPE.REGULAR_PROBATION ? CONTRACT_TYPE_LABEL[CONTRACT_TYPE.REGULAR_PROBATION] : _rawCat ===CONTRACT_TYPE.FIXED_PROBATION ? CONTRACT_TYPE_LABEL[CONTRACT_TYPE.FIXED_PROBATION] : contractTypeLabel(_rawCat);
         const catBadge = CAT_BADGE_CLS[_rawCat] || CAT_BADGE_CLS[empCat] || 'badge-gray';
         const termDate = c.terminate_date || '';
         const diff = termDate ? Math.ceil((new Date(termDate)-new Date(today))/(1000*60*60*24)) : null;
@@ -245,7 +245,7 @@ function renderContracts(){
   const today=new Date().toISOString().slice(0,10);
 
   // 알림 카드에서 관리되는 상태는 메인 테이블 기본 제외 (서류미비는 유효 계약이므로 메인 테이블에 포함)
-  const ALERT_ONLY_LABELS = new Set(['임시저장','갱신예정','계약예정']);
+  const ALERT_ONLY_LABELS = new Set(['임시저장',CONTRACT_STATUS_LABEL[CONTRACT_STATUS.RENEWAL_PENDING],CONTRACT_STATUS_LABEL[CONTRACT_STATUS.PENDING]]);
 
   let f=allContracts.filter(c=>{
     if(c.company_id!==currentContCompanyId) return false;
@@ -343,14 +343,14 @@ function renderContracts(){
     return `<tr>
       <td style="font-weight:600">${getEmpName(c.employee_id)}</td>
       <td><span class="badge ${catBadge}">${contractTypeLabel(empCat)}</span>${specialBadge}</td>
-      <td style="font-size:11.5px;${stName==='파기'?'text-decoration:line-through;color:#9ca3af;':''}">${periodTxt}</td>
+      <td style="font-size:11.5px;${(c.status===CONTRACT_STATUS.VOIDED||c.is_voided_by_amend)?'text-decoration:line-through;color:#9ca3af;':''}">${periodTxt}</td>
       <td class="amount">${won(c.hourly_wage)}/h</td>
       <td class="amount-blue">${isContDaily ? '<span style="color:#9ca3af;font-size:11px;">-</span>' : won(c.annual_salary)}</td>
       <td class="amount">${baseSalaryDisplay}</td>
       <td style="color:#f59e0b;font-weight:600">${isContDaily ? '<span style="color:#9ca3af;font-size:11px;">-</span>' : won(c.weekly_holiday_pay)}</td>
       <td class="amount-green">${isContDaily ? '<span style="color:#9ca3af;font-size:11px;">-</span>' : won(c.monthly_salary_agreed)}</td>
       <td>
-        ${docsIncomplete && stName !== '파기' ? `<span class="badge badge-orange">서류미비</span>` : `<span style="font-size:11px;color:#9ca3af;">-</span>`}
+        ${docsIncomplete && !(c.status===CONTRACT_STATUS.VOIDED||c.is_voided_by_amend) ? `<span class="badge badge-orange">서류미비</span>` : `<span style="font-size:11px;color:#9ca3af;">-</span>`}
       </td>
       <td>
         <span class="badge ${stBadge}">${stName}</span>
@@ -361,11 +361,11 @@ function renderContracts(){
           ? `<button class="btn btn-sm" disabled title="임시저장 상태에서는 출력할 수 없습니다"><i class="fas fa-file-contract"></i> 계약서</button>`
           : `<button class="btn btn-sm btn-indigo" onclick="openContractPrintModal('${c.id}')"><i class="fas fa-file-contract"></i> 계약서</button>`
         }
-        ${docsIncomplete && stName !== '파기'
+        ${docsIncomplete && !(c.status===CONTRACT_STATUS.VOIDED||c.is_voided_by_amend)
           ? `<button class="btn btn-sm btn-danger" onclick="openContractForUpload('${c.id}')"><i class="fas fa-upload"></i> 서류 업로드</button>`
           : ''
         }
-        ${stName === '파기'
+        ${(c.status===CONTRACT_STATUS.VOIDED||c.is_voided_by_amend)
           ? `<button class="btn btn-sm btn-secondary" onclick="deleteContract('${c.id}')"><i class="fas fa-trash-alt"></i> 삭제</button>`
           : ''
         }
@@ -695,9 +695,9 @@ function openContractModal(id=null, preCompanyId=null){
       document.getElementById('ct-start').value=c.contract_start||'';
       // 고용형태: c.contract_type 우선 참조 (채용확정 생성 계약예정은 c.contract_type이 실제 유형)
       // 계약예정 상태인 경우 수습 카테고리 정규화 (예: '계약직 수습' → '계약직')
-      const _ctValRaw = c.contract_type || (emp ? emp.employment_category : '') || '정규직';
+      const _ctValRaw = c.contract_type || (emp ? emp.employment_category : '') || CONTRACT_TYPE.REGULAR;
       const ctVal = _isPendingCt
-        ? (_ctValRaw ===CONTRACT_TYPE.REGULAR_PROBATION ? '정규직' : _ctValRaw ===CONTRACT_TYPE.FIXED_PROBATION ? '계약직' : _ctValRaw)
+        ? (_ctValRaw ===CONTRACT_TYPE.REGULAR_PROBATION ? CONTRACT_TYPE.REGULAR : _ctValRaw ===CONTRACT_TYPE.FIXED_PROBATION ? CONTRACT_TYPE.FIXED : _ctValRaw)
         : _ctValRaw;
       document.getElementById('ct-type').value=ctVal; toggleCtEndDate(true); toggleProbation();
       document.getElementById('ct-status').value=c.status||CONTRACT_STATUS.ACTIVE;
@@ -957,10 +957,13 @@ function _onEditCategoryChange() {
   // - 정규직 ↔ 정규직 수습
   // - 계약직 ↔ 계약직 수습
   const _sameGroup = (a, b) => {
-    const regGroup   = ['정규직', '정규직 수습'];
-    const fixedGroup = ['계약직', '계약직 수습'];
-    return (regGroup.includes(a) && regGroup.includes(b)) ||
-           (fixedGroup.includes(a) && fixedGroup.includes(b));
+    const normA = CONTRACT_TYPE_LEGACY_MAP[a] || a;
+    const normB = CONTRACT_TYPE_LEGACY_MAP[b] || b;
+    const aIsReg = normA === CONTRACT_TYPE.REGULAR || normA === CONTRACT_TYPE.REGULAR_PROBATION;
+    const bIsReg = normB === CONTRACT_TYPE.REGULAR || normB === CONTRACT_TYPE.REGULAR_PROBATION;
+    const aIsFixed = normA === CONTRACT_TYPE.FIXED || normA === CONTRACT_TYPE.FIXED_PROBATION;
+    const bIsFixed = normB === CONTRACT_TYPE.FIXED || normB === CONTRACT_TYPE.FIXED_PROBATION;
+    return (aIsReg && bIsReg) || (aIsFixed && bIsFixed);
   };
 
   // 이전 값이 있고, 그룹이 달라졌을 때 → Alert + 임금 초기화
@@ -1068,9 +1071,9 @@ function _checkRepSelf(nameInputId, repRowId, repChkId, altNamesId){
 
   // 어떤 카테고리와 일치하는지 파악 (메시지용)
   let matchCategory = '';
-  if(repNames.includes(empName)) matchCategory = '대표자';
-  else if(execNames.includes(empName)) matchCategory = '등기임원';
-  else if(relatedNames.includes(empName)) matchCategory = '특수관계인';
+if(repNames.includes(empName)) matchCategory = CONTRACT_TYPE_LABEL[CONTRACT_TYPE.REPRESENTATIVE];
+      else if(execNames.includes(empName)) matchCategory = CONTRACT_TYPE_LABEL[CONTRACT_TYPE.EXECUTIVE];
+      else if(relatedNames.includes(empName)) matchCategory = CONTRACT_TYPE_LABEL[CONTRACT_TYPE.RELATED_PARTY];
 
   if(isRep){
     // ── 대표자·등기임원·특수관계인명과 일치: 선택 UI 표시 ──
@@ -1078,16 +1081,16 @@ function _checkRepSelf(nameInputId, repRowId, repChkId, altNamesId){
     // 경고 메시지 동적 설정
     const msgEl = rowEl.querySelector('div:first-child');
     if(msgEl){
-      const categoryLabel = matchCategory === '대표자' ? '대표자명' :
-                            matchCategory === '등기임원' ? '등기임원명' :
-                            matchCategory === '특수관계인' ? '특수관계인명' : '대표자·등기임원·특수관계인명';
+      const categoryLabel = matchCategory === CONTRACT_TYPE_LABEL[CONTRACT_TYPE.REPRESENTATIVE] ? '대표자명' :
+                            matchCategory === CONTRACT_TYPE_LABEL[CONTRACT_TYPE.EXECUTIVE] ? '등기임원명' :
+                            matchCategory === CONTRACT_TYPE_LABEL[CONTRACT_TYPE.RELATED_PARTY] ? '특수관계인명' : '대표자·등기임원·특수관계인명';
       msgEl.innerHTML = `<i class="fas fa-info-circle"></i> 입력한 이름이 <strong>${categoryLabel}</strong>과 동일합니다.`;
     }
     // 체크박스 라벨 동적 설정
     const chkLabel = rowEl.querySelector('label span');
     if(chkLabel){
-      const selfLabel = matchCategory === '등기임원' ? '등기임원 본인입니다.' :
-                        matchCategory === '특수관계인' ? '특수관계인 본인입니다.' :
+      const selfLabel = matchCategory === CONTRACT_TYPE_LABEL[CONTRACT_TYPE.EXECUTIVE] ? '등기임원 본인입니다.' :
+                        matchCategory === CONTRACT_TYPE_LABEL[CONTRACT_TYPE.RELATED_PARTY] ? '특수관계인 본인입니다.' :
                         '대표자 본인입니다.';
       chkLabel.textContent = selfLabel;
     }
@@ -1496,46 +1499,53 @@ function calcContractStatusDisplay(c, today){
   // 임시저장 상태 최우선 처리 (임시저장은 서류미비와 무관)
   if(c.is_draft) return {badge:'badge-yellow', label:'임시저장', docsIncomplete: false};
   // 수정재발행으로 파기된 계약 (is_voided_by_amend 플래그 우선)
-  if(c.is_voided_by_amend) return {badge:'badge-slate', label:'파기', docsIncomplete};
-  // 상태 정규화: DB 영문값('pending' 등) → 한글 표시값('계약예정' 등)
-  const s = (CONTRACT_STATUS_LABEL[c.status] || c.status || '활성');
+  if(c.is_voided_by_amend) return {badge:'badge-slate', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.VOIDED], docsIncomplete};
   const start = c.contract_start || '';
-  // 명시적 상태 우선
-  if(s==='갱신예정'||s==='renewal_pending')  return {badge:'badge-amber',  label:'갱신예정', docsIncomplete};
-  if(s==='계약예정'||s==='pending')  return {badge:'badge-indigo', label:'계약예정', docsIncomplete};
-  if(s==='해지예정'||s==='terminate_pending'){
+  // 명시적 상태 우선 — c.status(영문 코드)를 CONTRACT_STATUS 상수와 직접 비교
+  if(c.status === CONTRACT_STATUS.RENEWAL_PENDING)
+    return {badge:'badge-amber', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.RENEWAL_PENDING], docsIncomplete};
+  if(c.status === CONTRACT_STATUS.PENDING)
+    return {badge:'badge-indigo', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.PENDING], docsIncomplete};
+  if(c.status === CONTRACT_STATUS.TERMINATE_PENDING){
     // terminate_date가 오늘 이하이면 이미 해지된 것으로 표시
     if(c.terminate_date && c.terminate_date <= today){
-      return {badge:'badge-red', label:'해지', docsIncomplete};
+      return {badge:'badge-red', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.TERMINATED], docsIncomplete};
     }
     // 해지예정은 여전히 유효한 계약 — 메인 목록에서는 '유효'로 표시 (알림 카드에서 별도 관리)
     return {badge:'badge-green', label:'유효', docsIncomplete, isTerminatePending: true};
   }
-  if(s==='파기'||s==='voided')      return {badge:'badge-slate',  label:'파기', docsIncomplete};
-  if(s==='갱신됨'||s==='renewed')    return {badge:'badge-gray',   label:'만료', docsIncomplete}; // 갱신으로 인한 계약 종료
-  if(s==='만료'||s==='expired')    return {badge:'badge-gray',  label:'만료', docsIncomplete};
-  if(s==='해지'||s==='terminated') return {badge:'badge-red',   label:'해지', docsIncomplete};
+  if(c.status === CONTRACT_STATUS.VOIDED)
+    return {badge:'badge-slate', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.VOIDED], docsIncomplete};
+  if(c.status === CONTRACT_STATUS.RENEWED)
+    return {badge:'badge-gray', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.EXPIRED], docsIncomplete}; // 갱신으로 인한 계약 종료
+  if(c.status === CONTRACT_STATUS.EXPIRED)
+    return {badge:'badge-gray', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.EXPIRED], docsIncomplete};
+  if(c.status === CONTRACT_STATUS.TERMINATED)
+    return {badge:'badge-red', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.TERMINATED], docsIncomplete};
   // 만료예정·종료예정은 레거시 값 → 계약유효로 표시 (유효한 계약)
-  if(s==='만료예정'||s==='종료예정') return {badge:'badge-green', label:'유효', docsIncomplete};
+  if(c.status === '만료예정' || c.status === '종료예정')
+    return {badge:'badge-green', label:'유효', docsIncomplete};
   // 서류미비는 독립된 상태가 아님 — 유효/만료/해지 등 실제 상태를 유지하고 docsIncomplete 플래그로만 관리
   if(c.status === CONTRACT_STATUS.DOCS_INCOMPLETE){
     // DB에 남아있는 레거시 값 → 유효로 폴백 (실제 상태는 DB 정리 완료)
-    if(start && start > today) return {badge:'badge-indigo',  label:'계약예정', docsIncomplete:true};
+    if(start && start > today) return {badge:'badge-indigo', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.PENDING], docsIncomplete:true};
     return {badge:'badge-green', label:'유효', docsIncomplete:true};
   }
   // 활성/유효 상태 — 서류와 무관하게 유효 계약으로 처리
   if(CONTRACT_ACTIVE_STATUSES.includes(c.status)){
-    if(start && start > today) return {badge:'badge-amber', label:'갱신예정', docsIncomplete};
+    if(start && start > today) return {badge:'badge-amber', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.RENEWAL_PENDING], docsIncomplete};
     // 계약직/일용직: 유효 종료일(terminate_date 우선, 없으면 contract_end)이 지났으면 만료 처리
     const ct = (c.contract_type || '').toLowerCase();
     const isFixedTerm = ct === CONTRACT_TYPE.FIXED || ct === CONTRACT_TYPE.FIXED_PROBATION || ct === CONTRACT_TYPE.DAILY;
     const effectiveEnd = c.terminate_date || c.contract_end || '';
     if(isFixedTerm && effectiveEnd && effectiveEnd < today){
-      return {badge:'badge-gray', label:'만료', docsIncomplete};
+      return {badge:'badge-gray', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.EXPIRED], docsIncomplete};
     }
     return {badge:'badge-green', label:'유효', docsIncomplete};
   }
-  return {badge:'badge-gray', label: s, docsIncomplete};
+  // 알 수 없는 상태 → LABEL 맵으로 폴백, 없으면 원본 값, 최종 폴백은 '활성'
+  const fallbackLabel = CONTRACT_STATUS_LABEL[c.status] || c.status || CONTRACT_STATUS_LABEL[CONTRACT_STATUS.ACTIVE];
+  return {badge:'badge-gray', label: fallbackLabel, docsIncomplete};
 }
 
 // ─── 조회 모드로 모달 열기 ───
@@ -1554,10 +1564,10 @@ function viewContract(id){
   // viewContract 에서도 동일 로직으로 한 번 더 보정한다 (연봉 섹션 표시 최종 확정).
   if(c){
     const emp2 = allEmployees.find(e => e.id === c.employee_id);
-    const _ctVal2Raw = c.contract_type || (emp2 ? emp2.employment_category : '') || '정규직';
+    const _ctVal2Raw = c.contract_type || (emp2 ? emp2.employment_category : '') || CONTRACT_TYPE.REGULAR;
     const _isPendingCt2 = (c.status===CONTRACT_STATUS.PENDING);
     const ctVal2 = _isPendingCt2
-      ? (_ctVal2Raw ===CONTRACT_TYPE.REGULAR_PROBATION ? '정규직' : _ctVal2Raw ===CONTRACT_TYPE.FIXED_PROBATION ? '계약직' : _ctVal2Raw)
+      ? (_ctVal2Raw ===CONTRACT_TYPE.REGULAR_PROBATION ? CONTRACT_TYPE.REGULAR : _ctVal2Raw ===CONTRACT_TYPE.FIXED_PROBATION ? CONTRACT_TYPE.FIXED : _ctVal2Raw)
       : _ctVal2Raw;
     const isReg = ctVal2 ===CONTRACT_TYPE.REGULAR;  // 정규직 수습 제외 (연봉제 미적용)
     ['ct-row-salary-period','ct-row-annual-sal'].forEach(sid=>{

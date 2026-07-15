@@ -16,10 +16,10 @@ function renderBilling(){
     return;
   }
 
-  // 상태 정규화 헬퍼
-  const isPaid     = b => b.payment_status==='완납'||b.payment_status==='paid';
-  const isPartial  = b => b.payment_status==='일부납';
-  const isWait     = b => b.payment_status==='납부대기';
+  // 상태 정규화 헬퍼 (constants.js 상수 사용)
+  const isPaid     = b => _normPaymentStatus(b.payment_status) === PAYMENT_STATUS.PAID;
+  const isPartial  = b => _normPaymentStatus(b.payment_status) === PAYMENT_STATUS.PARTIAL;
+  const isWait     = b => _normPaymentStatus(b.payment_status) === PAYMENT_STATUS.PENDING;
   const isLoss     = b => !!(b.loss_amount && b.loss_amount > 0);
   const getAmt     = b => b.total_amount||b.amount||0;
   const getPaid    = b => isPaid(b) ? getAmt(b) : (isPartial(b) ? (b.partial_paid_amount||0) : 0);
@@ -194,8 +194,8 @@ function renderBilling(){
 function renderMyco(){
   const el = document.getElementById('myco-content');
   const co = currentCompany;
-  const activeEmps = allEmployees.filter(e=>e.status==='재직'||e.status==='active');
-  const activeContracts = allContracts.filter(c=>c.status==='active'||c.status==='활성'||c.status==='유효');
+  const activeEmps = allEmployees.filter(e=>_isEmpActive(e));
+  const activeContracts = allContracts.filter(c=>_isContractActive(c));
 
   el.innerHTML = `
     <!-- 회사 헤더 -->
@@ -250,7 +250,10 @@ function renderMyco(){
     <div class="info-card">
       <div class="info-card-title"><i class="fas fa-users" style="color:#8b5cf6;"></i> 고용형태별 인원</div>
       ${['정규직','정규직 수습','계약직','계약직 수습','일용직'].map(cat=>{
-        const cnt = allEmployees.filter(e=>e.employment_category===cat||e.employment_category===cat.replace(' ','(')+')').length;
+        const cnt = allEmployees.filter(e=>{
+          const empCat = _normContractType(e.employment_category);
+          return CONTRACT_TYPE_LABEL[empCat] === cat;
+        }).length;
         return `<div class="info-row"><span class="il"><span class="badge ${empCatBadge(cat)}">${cat}</span></span><span class="iv">${cnt}명</span></div>`;
       }).join('')}
     </div>

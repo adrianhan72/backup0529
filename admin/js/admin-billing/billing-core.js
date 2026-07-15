@@ -59,7 +59,7 @@ async function generateMonthlyBilling(){
         employee_count:empCount,
         amount_per_employee:amountPerEmp,
         total_amount:totalAmount,
-        payment_status:'납부대기',
+        payment_status: PAYMENT_STATUS.PENDING,
         payment_date:'',
         partial_paid_amount: 0,
         remaining_amount: totalAmount,
@@ -159,7 +159,7 @@ async function generateBillingForCompany(companyId, companyName){
       employee_count:empCount,
       amount_per_employee:amountPerEmp,
       total_amount:totalAmount,
-      payment_status:'납부대기',
+      payment_status: PAYMENT_STATUS.PENDING,
       payment_date:'',
       partial_paid_amount: 0,
       remaining_amount: totalAmount,
@@ -369,14 +369,14 @@ function renderBillings(){
       const currentRemaining = (b.total_amount || 0) - paidAmount;
       
       // 상태 계산
-      let actualStatus = '납부대기';
+      let actualStatus = PAYMENT_STATUS.PENDING;
       if(b.payment_status ===PAYMENT_STATUS.PAID || (b.payment_date && currentRemaining <= 0)){
-        actualStatus = '완납';
+        actualStatus = PAYMENT_STATUS.PAID;
       }else if(paidAmount > 0 && currentRemaining > 0){
-        actualStatus = '일부납';
+        actualStatus = PAYMENT_STATUS.PARTIAL;
       }else{
         if(b.due_date && b.due_date < todayStr){
-          actualStatus = '미납';
+          actualStatus = PAYMENT_STATUS.UNPAID;
         }
       }
       
@@ -507,8 +507,8 @@ function renderBillings(){
     }
 
     // 실제 청구 데이터 처리
-    let actualStatus='납부대기';
-    let statusBadge='<span class="badge badge-blue">납부대기</span>';
+    let actualStatus=PAYMENT_STATUS.PENDING;
+    let statusBadge=`<span class="badge badge-blue">${PAYMENT_STATUS_LABEL[PAYMENT_STATUS.PENDING]}</span>`;
     let showButton=true;
 
     const paidAmount = b.partial_paid_amount || 0;
@@ -522,23 +522,23 @@ function renderBillings(){
     // 이번 달 완납 + 이월 미납금 여부로 상태 결정
     if(b.payment_status===PAYMENT_STATUS.PAID || (b.payment_date && currentRemaining<=0)){
       if(previousUnpaid > 0){
-        actualStatus='일부납';
-        statusBadge='<span class="badge badge-yellow">일부납</span>';
+        actualStatus=PAYMENT_STATUS.PARTIAL;
+        statusBadge=`<span class="badge badge-yellow">${PAYMENT_STATUS_LABEL[PAYMENT_STATUS.PARTIAL]}</span>`;
         unpaidList.push(b);
       } else {
-        actualStatus='완납';
-        statusBadge='<span class="badge badge-green">완납</span>';
+        actualStatus=PAYMENT_STATUS.PAID;
+        statusBadge=`<span class="badge badge-green">${PAYMENT_STATUS_LABEL[PAYMENT_STATUS.PAID]}</span>`;
         showButton=false;
         paidList.push(b);
       }
     }else if(paidAmount>0 && currentRemaining>0){
-      actualStatus='일부납';
-      statusBadge='<span class="badge badge-yellow">일부납</span>';
+      actualStatus=PAYMENT_STATUS.PARTIAL;
+      statusBadge=`<span class="badge badge-yellow">${PAYMENT_STATUS_LABEL[PAYMENT_STATUS.PARTIAL]}</span>`;
       unpaidList.push(b);
     }else{
       if(b.due_date&&b.due_date<todayStr){
-        actualStatus='미납';
-        statusBadge='<span class="badge badge-red">미납</span>';
+        actualStatus=PAYMENT_STATUS.UNPAID;
+        statusBadge=`<span class="badge badge-red">${PAYMENT_STATUS_LABEL[PAYMENT_STATUS.UNPAID]}</span>`;
         unpaidList.push(b);
       }else{
         waitingList.push(b);
@@ -631,7 +631,7 @@ async function confirmFullPayment(billingId){
     const today=new Date().toISOString().split('T')[0];
     const updated={
       ...bill,
-      payment_status:'완납',
+      payment_status: PAYMENT_STATUS.PAID,
       payment_date:today,
       partial_paid_amount: bill.total_amount,
       remaining_amount: 0
@@ -695,7 +695,7 @@ async function bulkPayment(){
       
       const updated = {
         ...bill,
-        payment_status: '완납',
+        payment_status: PAYMENT_STATUS.PAID,
         payment_date: today,
         partial_paid_amount: bill.total_amount,
         remaining_amount: 0
@@ -796,7 +796,7 @@ async function bulkCreateBilling(){
         employee_count: empCount,
         amount_per_employee: amountPerEmp,
         total_amount: totalAmount,
-        payment_status: '납부대기',
+        payment_status: PAYMENT_STATUS.PENDING,
         payment_date: '',
         partial_paid_amount: 0,
         remaining_amount: totalAmount,
@@ -877,18 +877,18 @@ function openPaymentHistoryModal(companyId, companyName){
       const payDate = b.payment_date || '-';
       
       // 상태 판단
-      let status = '납부대기';
-      let statusBadge = '<span class="badge badge-blue">납부대기</span>';
+      let status = PAYMENT_STATUS.PENDING;
+      let statusBadge = `<span class="badge badge-blue">${PAYMENT_STATUS_LABEL[PAYMENT_STATUS.PENDING]}</span>`;
       
       if(b.payment_status ===PAYMENT_STATUS.PAID || (b.payment_date && remaining <= 0)){
-        status = '완납';
-        statusBadge = '<span class="badge badge-green">완납</span>';
+        status = PAYMENT_STATUS.PAID;
+        statusBadge = `<span class="badge badge-green">${PAYMENT_STATUS_LABEL[PAYMENT_STATUS.PAID]}</span>`;
       } else if(paidAmt > 0 && remaining > 0){
-        status = '일부납';
-        statusBadge = '<span class="badge badge-yellow">일부납</span>';
+        status = PAYMENT_STATUS.PARTIAL;
+        statusBadge = `<span class="badge badge-yellow">${PAYMENT_STATUS_LABEL[PAYMENT_STATUS.PARTIAL]}</span>`;
       } else if(b.due_date && b.due_date < new Date().toISOString().split('T')[0]){
-        status = '미납';
-        statusBadge = '<span class="badge badge-red">미납</span>';
+        status = PAYMENT_STATUS.UNPAID;
+        statusBadge = `<span class="badge badge-red">${PAYMENT_STATUS_LABEL[PAYMENT_STATUS.UNPAID]}</span>`;
       }
       
       return `

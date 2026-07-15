@@ -170,7 +170,7 @@ function renderRcTargetList(){
   };
 
   tbody.innerHTML = pageData.map(x => {
-    const catText   = contractTypeLabel(x.activeContract?.contract_type) || '계약직';
+    const catText   = contractTypeLabel(x.activeContract?.contract_type) || CONTRACT_TYPE_LABEL[CONTRACT_TYPE.FIXED];
     const sendBtn   = x.rcStatus === 'exceeded'
       ? `<button onclick="rcSendNotice('${x.empId}')"
            style="background:linear-gradient(135deg,#dc2626,#b91c1c);color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px;">
@@ -317,7 +317,7 @@ function _rcFillTemplateSampleSel(){
   _calcRcFullList().filter(x => x.rcStatus === 'exceeded').forEach(x => {
     const opt = document.createElement('option');
     opt.value       = x.empId;
-    opt.textContent = `${x.empName} · ${x.activeContract?.contract_type||'계약직'} · ${x.company} · 누적 ${x.totalDays}일`;
+    opt.textContent = `${x.empName} · ${CONTRACT_TYPE_LABEL[x.activeContract?.contract_type] || x.activeContract?.contract_type || CONTRACT_TYPE_LABEL[CONTRACT_TYPE.FIXED]} · ${x.company} · 누적 ${x.totalDays}일`;
     sel.appendChild(opt);
   });
 }
@@ -335,8 +335,8 @@ function renderRcTemplate(){
   // 미리보기 데이터 구성 (실제 또는 예시)
   const empName    = item?.empName        || '홍길동';
   const coName     = item?.company        || '(주)예시기업';
-    const coRep      = item ? getCompanyRepName(allCompanies.find(c=>c.id===item.companyId)) : '대표자';
-  const catText    = item?.activeContract?.contract_type || '계약직';
+    const coRep      = item ? getCompanyRepName(allCompanies.find(c=>c.id===item.companyId)) : CONTRACT_TYPE_LABEL[CONTRACT_TYPE.REPRESENTATIVE];
+  const catText    = item?.activeContract?.contract_type || CONTRACT_TYPE.FIXED;
   const firstStart = item?.firstStart     || '2023-01-01';
   const totalDays  = item?.totalDays      || 750;
 

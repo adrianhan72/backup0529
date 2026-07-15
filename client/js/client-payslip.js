@@ -11,13 +11,13 @@ function _adjustPsStickyTop(){
 // ══ 근로계약 서브페이지 ══
 
 // 카테고리별 설정 (배경색, 아이콘, 텍스트색 등)
-const CAT_CONFIG = {
-  '정규직':     { bg:'linear-gradient(135deg,#1d4ed8,#3b82f6)', icon:'👔', avatarBg:'#3b82f6', label:'정규직' },
-  '정규직 수습':{ bg:'linear-gradient(135deg,#047857,#10b981)', icon:'🌱', avatarBg:'#10b981', label:'정규직 (수습)' },
-  '계약직':     { bg:'linear-gradient(135deg,#92400e,#f59e0b)', icon:'📋', avatarBg:'#f59e0b', label:'계약직' },
-  '계약직 수습':{ bg:'linear-gradient(135deg,#c2410c,#f97316)', icon:'📌', avatarBg:'#f97316', label:'계약직 (수습)' },
-  '일용직':     { bg:'linear-gradient(135deg,#6d28d9,#a855f7)', icon:'🔧', avatarBg:'#a855f7', label:'일용직' },
-};
+const CAT_CONFIG = Object.freeze({
+  [CONTRACT_TYPE_LABEL[CONTRACT_TYPE.REGULAR]]:           { bg:'linear-gradient(135deg,#1d4ed8,#3b82f6)', icon:'👔', avatarBg:'#3b82f6', label:'정규직' },
+  [CONTRACT_TYPE_LABEL[CONTRACT_TYPE.REGULAR_PROBATION]]: { bg:'linear-gradient(135deg,#047857,#10b981)', icon:'🌱', avatarBg:'#10b981', label:'정규직 (수습)' },
+  [CONTRACT_TYPE_LABEL[CONTRACT_TYPE.FIXED]]:             { bg:'linear-gradient(135deg,#92400e,#f59e0b)', icon:'📋', avatarBg:'#f59e0b', label:'계약직' },
+  [CONTRACT_TYPE_LABEL[CONTRACT_TYPE.FIXED_PROBATION]]:   { bg:'linear-gradient(135deg,#c2410c,#f97316)', icon:'📌', avatarBg:'#f97316', label:'계약직 (수습)' },
+  [CONTRACT_TYPE_LABEL[CONTRACT_TYPE.DAILY]]:             { bg:'linear-gradient(135deg,#6d28d9,#a855f7)', icon:'🔧', avatarBg:'#a855f7', label:'일용직' },
+});
 
 let _contractsBackPage = 'stats'; // 뒤로가기 대상
 
@@ -28,10 +28,10 @@ function showContractsByCategory(category){
 
   // 해당 카테고리 직원 필터 (재직 우선, 퇴직은 뒤로)
   const emps = allEmployees
-    .filter(e => e.employment_category === category)
+    .filter(e => _normContractType(e.employment_category) === _normContractType(category))
     .sort((a,b) => {
-      const aActive = (a.status==='재직'||a.status==='active') ? 0 : 1;
-      const bActive = (b.status==='재직'||b.status==='active') ? 0 : 1;
+      const aActive = _isEmpActive(a) ? 0 : 1;
+      const bActive = _isEmpActive(b) ? 0 : 1;
       if(aActive !== bActive) return aActive - bActive;
       return (a.name||'').localeCompare(b.name||'', 'ko');
     });
@@ -40,7 +40,7 @@ function showContractsByCategory(category){
   document.getElementById('contracts-page-badge').textContent = cfg.label + ' ' + emps.length + '명';
 
   // 히어로 배너
-  const activeCount  = emps.filter(e => e.status==='재직'||e.status==='active').length;
+  const activeCount  = emps.filter(e => _isEmpActive(e)).length;
   const retiredCount = emps.length - activeCount;
   document.getElementById('contracts-hero').innerHTML = `
     <div class="cat-hero" style="background:${cfg.bg};">
@@ -60,16 +60,15 @@ function showContractsByCategory(category){
       </div>`;
   } else {
     document.getElementById('contracts-list').innerHTML = emps.map(emp => {
-      const isActive  = emp.status==='재직'||emp.status==='active';
+      const isActive  = _isEmpActive(emp);
       const contracts = allContracts.filter(c => c.employee_id === emp.id)
                         .sort((a,b) => {
-                          // 유효 계약 먼저, 그 다음 최신 계약일 순
-                          const aAct = (a.status==='active'||a.status==='활성'||a.status==='유효') ? 0 : 1;
-                          const bAct = (b.status==='active'||b.status==='활성'||b.status==='유효') ? 0 : 1;
+                          const aAct = _isContractActive(a) ? 0 : 1;
+                          const bAct = _isContractActive(b) ? 0 : 1;
                           if(aAct !== bAct) return aAct - bAct;
                           return (b.contract_start||'').localeCompare(a.contract_start||'');
                         });
-      const activeContract = contracts.find(c => c.status==='active'||c.status==='활성'||c.status==='유효');
+      const activeContract = contracts.find(c => _isContractActive(c));
       const hasContract    = contracts.length > 0;
 
       // 계약 상태 뱃지
@@ -127,17 +126,17 @@ function openContractModal(empId){
   const emp = allEmployees.find(e => e.id === empId);
   if(!emp) return;
 
-  const isActive   = emp.status==='재직'||emp.status==='active';
+  const isActive   = _isEmpActive(emp);
   const category   = emp.employment_category || '-';
   const cfg        = CAT_CONFIG[category] || { bg:'linear-gradient(135deg,#374151,#6b7280)', icon:'👤', avatarBg:'#6b7280', label:category };
-  const isDaily    = category === '일용직';
+  const isDaily    = _normContractType(category) === CONTRACT_TYPE.DAILY;
 
   // 이 직원의 모든 계약 (유효→최신 순)
   const contracts = allContracts
     .filter(c => c.employee_id === empId)
     .sort((a,b) => {
-      const aAct = (a.status==='active'||a.status==='활성'||a.status==='유효') ? 0 : 1;
-      const bAct = (b.status==='active'||b.status==='활성'||b.status==='유효') ? 0 : 1;
+      const aAct = _isContractActive(a) ? 0 : 1;
+      const bAct = _isContractActive(b) ? 0 : 1;
       if(aAct !== bAct) return aAct - bAct;
       return (b.contract_start||'').localeCompare(a.contract_start||'');
     });
@@ -188,13 +187,13 @@ function openContractModal(empId){
 
   // 계약서 렌더링 (여러 건이면 모두 표시)
   const contractSections = contracts.map((c, idx) => {
-    const isAct   = c.status==='active'||c.status==='활성'||c.status==='유효';
+    const isAct   = _isContractActive(c);
     const catBadgeStyle = {
-      '정규직':       'background:#dbeafe;color:#1d4ed8;',
-      '정규직 수습':  'background:#d1fae5;color:#065f46;',
-      '계약직':       'background:#ede9fe;color:#6d28d9;',
-      '계약직 수습':  'background:#fce7f3;color:#be185d;',
-      '일용직':       'background:#ffedd5;color:#c2410c;',
+      [CONTRACT_TYPE_LABEL[CONTRACT_TYPE.REGULAR]]:           'background:#dbeafe;color:#1d4ed8;',
+      [CONTRACT_TYPE_LABEL[CONTRACT_TYPE.REGULAR_PROBATION]]: 'background:#d1fae5;color:#065f46;',
+      [CONTRACT_TYPE_LABEL[CONTRACT_TYPE.FIXED]]:             'background:#ede9fe;color:#6d28d9;',
+      [CONTRACT_TYPE_LABEL[CONTRACT_TYPE.FIXED_PROBATION]]:   'background:#fce7f3;color:#be185d;',
+      [CONTRACT_TYPE_LABEL[CONTRACT_TYPE.DAILY]]:             'background:#ffedd5;color:#c2410c;',
     }[category] || 'background:#f3f4f6;color:#374151;';
     const contType = `<span style="display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;${catBadgeStyle}">${category}</span>`;
 
@@ -203,7 +202,7 @@ function openContractModal(empId){
     if(isDaily){
       periodTxt = c.contract_start ? c.contract_start + ' ~ ' + (c.contract_end||'') : '-';
     } else if(category==='정규직'||category==='정규직 수습'){
-      periodTxt = (c.contract_start||'-') + ' ~ ' + (emp.status==='퇴직' && emp.resign_date ? emp.resign_date : '계속근로');
+      periodTxt = (c.contract_start||'-') + ' ~ ' + (_isEmpResigned(emp) && emp.resign_date ? emp.resign_date : '계속근로');
     } else {
       periodTxt = (c.contract_start||'-') + ' ~ ' + (c.contract_end||'미정');
     }
@@ -305,9 +304,6 @@ const wonM = n => {
   return v.toLocaleString('ko-KR') + '만원';
 };
 const fmt = n => Math.round(n||0).toLocaleString('ko-KR');
-const CAT_BADGE_CLS = { regular:'badge-blue', regular_probation:'badge-cyan', fixed_term:'badge-purple', fixed_probation:'badge-pink', daily:'badge-orange' };
-const CONTRACT_TYPE_LABEL = { regular:'정규직', regular_probation:'정규직 수습', fixed_term:'계약직', fixed_probation:'계약직 수습', daily:'일용직' };
-const empCatBadge = c => CAT_BADGE_CLS[c] || 'badge-gray';
 const getEmpName = id => (allEmployees.find(e=>e.id===id)||{}).name || '알수없음';
 
 // ══ 1. STATS PAGE ══
@@ -325,9 +321,12 @@ function renderStats(){
   if(hmLabel) hmLabel.textContent = `${statsYear}년 ${statsMonth}월`;
 
   const pays = allPayrolls.filter(p => p.pay_year==statsYear && p.pay_month==statsMonth);
-  const activeEmps = allEmployees.filter(e => e.status==='재직'||e.status==='active');
-  const retiredEmps = allEmployees.filter(e => e.status!=='재직'&&e.status!=='active');
-  const catCount = cat => allEmployees.filter(e => e.employment_category===cat).length;
+  const activeEmps = allEmployees.filter(e => _isEmpActive(e));
+  const retiredEmps = allEmployees.filter(e => !_isEmpActive(e));
+  const catCount = catLabel => allEmployees.filter(e => {
+    const norm = _normContractType(e.employment_category);
+    return CONTRACT_TYPE_LABEL[norm] === catLabel;
+  }).length;
 
   // 직원 현황
   document.getElementById('s-total-emp').textContent   = allEmployees.length;
@@ -344,7 +343,7 @@ function renderStats(){
   const net   = pays.reduce((a,p) => a+(p.net_pay||0), 0);
   const ded   = gross - net;
 
-  const activeContracts = allContracts.filter(c => c.status==='active'||c.status==='활성'||c.status==='유효');
+  const activeContracts = allContracts.filter(c => _isContractActive(c));
   document.getElementById('s-active-contract').textContent = activeContracts.length;
   document.getElementById('s-pay-month-badge').textContent = `${statsYear}년 ${statsMonth}월` + ' 기준';
   document.getElementById('s-gross').textContent = fmt(gross).includes('0') && gross===0 ? '0원' : fmt(gross)+'원';
@@ -654,8 +653,11 @@ function renderCtContracts(){
   const today = new Date().toISOString().slice(0, 10);
 
   // 계약 상태 판별 헬퍼
-  const isCtActive  = c => c.status==='active'||c.status==='활성'||c.status==='유효';
-  const isCtExpired = c => c.status==='만료'||c.status==='expired'||c.status==='해지'||c.status==='terminated'||c.status==='파기';
+  const isCtActive  = c => _isContractActive(c);
+  const isCtExpired = c => {
+    const s = _normContractStatus(c.status);
+    return s === CONTRACT_STATUS.EXPIRED || s === CONTRACT_STATUS.TERMINATED || s === CONTRACT_STATUS.VOIDED;
+  };
 
   // 전체 계약 (임시저장 제외)
   const allCts = allContracts.filter(c => !c.is_draft);
@@ -735,9 +737,9 @@ function renderCtContracts(){
         : `<span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:12px;font-size:10.5px;font-weight:700;">만료</span>`;
 
     // 직원 상태 뱃지
-    const empStatusBadge = (emp.status==='재직'||emp.status==='active')
+    const empStatusBadge = _isEmpActive(emp)
       ? `<span style="background:#eff6ff;color:#2563eb;padding:1px 6px;border-radius:10px;font-size:10px;font-weight:600;margin-left:4px;">재직</span>`
-      : (emp.status==='퇴직'||emp.status==='resigned')
+      : _isEmpResigned(emp)
         ? `<span style="background:#f3f4f6;color:#6b7280;padding:1px 6px;border-radius:10px;font-size:10px;font-weight:600;margin-left:4px;">퇴직</span>`
         : '';
 
@@ -805,12 +807,12 @@ function renderCtContracts(){
 // ══ 2. PAYSLIP PAGE ══
 
 // 고용형태 → 아바타 색상 매핑
-const PS_CAT_COLOR = {
-  '정규직':     '#3b82f6',
-  '정규직 수습':'#22c55e',
-  '계약직':     '#f59e0b',
-  '계약직 수습':'#f97316',
-  '일용직':     '#a855f7',
-};
+const PS_CAT_COLOR = Object.freeze({
+  [CONTRACT_TYPE_LABEL[CONTRACT_TYPE.REGULAR]]:           '#3b82f6',
+  [CONTRACT_TYPE_LABEL[CONTRACT_TYPE.REGULAR_PROBATION]]: '#22c55e',
+  [CONTRACT_TYPE_LABEL[CONTRACT_TYPE.FIXED]]:             '#f59e0b',
+  [CONTRACT_TYPE_LABEL[CONTRACT_TYPE.FIXED_PROBATION]]:   '#f97316',
+  [CONTRACT_TYPE_LABEL[CONTRACT_TYPE.DAILY]]:             '#a855f7',
+});
 
 // ── 1단계 대분류 탭 선택 ──

@@ -509,7 +509,7 @@ function openProbMgmtModal(contractId){
         ? `${Number(salaryAmt).toLocaleString()}원`
         : `${Number(salaryAmt).toLocaleString()}원/월`)
     : '미입력';
-  const newContractType = isRegular ? '정규직' : '계약직';
+  const newContractType = isRegular ? CONTRACT_TYPE.REGULAR : CONTRACT_TYPE.FIXED;
 
   // ── 채용 확정 완료 상태: 일반 옵션 카드 대신 확정 상세 뷰 렌더링 ──
   if(c.probmgmt_action === 'confirm'){
@@ -753,8 +753,8 @@ async function execProbConfirm(){
   if(!transferDate){ alert('채용 전환일자를 선택해 주세요.'); return; }
 
   const isRegular      = c.contract_type ===CONTRACT_TYPE.REGULAR_PROBATION;
-  const newType        = isRegular ? CONTRACT_TYPE.REGULAR : CONTRACT_TYPE.FIXED_TERM;
-  const newTypeLabel   = isRegular ? '정규직' : '계약직';
+  const newType        = isRegular ? CONTRACT_TYPE.REGULAR : CONTRACT_TYPE.FIXED;
+  const newTypeLabel   = isRegular ? CONTRACT_TYPE_LABEL[CONTRACT_TYPE.REGULAR] : CONTRACT_TYPE_LABEL[CONTRACT_TYPE.FIXED];
   const salaryAmt      = isRegular ? c.annual_salary : c.base_salary;
   const salaryLabel    = isRegular ? '연봉' : '월 급여';
   const salaryDisplay  = salaryAmt

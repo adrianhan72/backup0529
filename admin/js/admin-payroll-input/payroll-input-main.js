@@ -172,7 +172,7 @@ function loadPITargetList(){
     reps.forEach((r, i) => {
       if(r.name){
         targets.push({
-          emp: { id: `rep_${coId}_${i}`, name: r.name, company_id: coId, employment_category: '대표자' },
+          emp: { id: `rep_${coId}_${i}`, name: r.name, company_id: coId, employment_category: CONTRACT_TYPE.REPRESENTATIVE },
           contract: null, _type: 'representative'
         });
       }
@@ -182,7 +182,7 @@ function loadPITargetList(){
   // 등기임원
   (allExecutives||[]).filter(e => e.company_id === coId).forEach(e => {
     targets.push({
-      emp: { id: e.id, name: e.name, company_id: coId, employment_category: '등기임원', position: e.position, created_at: e.created_at },
+      emp: { id: e.id, name: e.name, company_id: coId, employment_category: CONTRACT_TYPE.EXECUTIVE, position: e.position, created_at: e.created_at },
       contract: null, _type: 'executive'
     });
   });
@@ -190,7 +190,7 @@ function loadPITargetList(){
   // 특수관계인
   (allRelatedParties||[]).filter(r => r.company_id === coId).forEach(r => {
     targets.push({
-      emp: { id: r.id, name: r.name, company_id: coId, employment_category: '특수관계인', position: r.relationship, created_at: r.created_at },
+      emp: { id: r.id, name: r.name, company_id: coId, employment_category: CONTRACT_TYPE.RELATED_PARTY, position: r.relationship, created_at: r.created_at },
       contract: null, _type: 'related_party'
     });
   });
@@ -255,7 +255,7 @@ function loadPITargetList(){
       const catRaw  = emp.employment_category || '';
       const cat     = CONTRACT_TYPE_LABEL[catRaw] || catRaw;
       // 대표자·등기임원·특수관계인 뱃지: 밝은회색 배경 + 짙은회색 글씨
-      const catStyle = (cat==='등기임원'||cat==='특수관계인'||cat==='대표자')
+      const catStyle = (catRaw===CONTRACT_TYPE.EXECUTIVE||catRaw===CONTRACT_TYPE.RELATED_PARTY||catRaw===CONTRACT_TYPE.REPRESENTATIVE)
         ? 'background:#e5e7eb;color:#374151;'
         : (CAT_BADGE[cat] || 'background:#f3f4f6;color:#374151;');
       
@@ -1321,7 +1321,7 @@ function _calcPIDefaultWorkDays(contract, year, month){
   const hpd = parseFloat(contract.work_hours_per_day) || 8;  // 일 소정근로시간
   const dpw = parseFloat(contract.work_days_per_week)  || 5;  // 주 소정근로일수
   const cType = contract.contract_type || '';
-  const isFixed = cType.includes('계약직');
+  const isFixed = cType === CONTRACT_TYPE.FIXED || cType === CONTRACT_TYPE.FIXED_PROBATION;
 
   // ── 해당 월의 첫날/마지막날 ─────────────────────────────────────────────
   const monthStart = new Date(year, month - 1, 1);
@@ -1510,7 +1510,7 @@ function _getPIFullMonthWorkDays(){
   if(!yr || !mo) return 0;
 
   const cType      = piContract.contract_type || '';
-  const isFixed    = cType.includes('계약직');   // 계약직 / 계약직 수습
+  const isFixed    = cType === CONTRACT_TYPE.FIXED || cType === CONTRACT_TYPE.FIXED_PROBATION;   // 계약직 / 계약직 수습
   const isProb     = cType ===CONTRACT_TYPE.REGULAR_PROBATION || cType ===CONTRACT_TYPE.FIXED_PROBATION;
   const dpw        = parseFloat(piContract.work_days_per_week) || 5;
   const monthStart = new Date(yr, mo - 1, 1);
@@ -1742,7 +1742,7 @@ function _checkPIProbationOverrun(){
     const postStart = postStartDateObj.toISOString().slice(0,10);
 
     // 확정 후 고용형태
-    const confirmedType = piContract.contract_type ===CONTRACT_TYPE.REGULAR_PROBATION ? '정규직' : '계약직';
+    const confirmedType = piContract.contract_type ===CONTRACT_TYPE.REGULAR_PROBATION ? CONTRACT_TYPE.REGULAR : CONTRACT_TYPE.FIXED;
 
     // split-info 렌더링
     const splitInfo = document.getElementById('pi-prob-split-info');
