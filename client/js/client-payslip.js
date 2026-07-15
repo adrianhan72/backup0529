@@ -771,7 +771,7 @@ function renderCtContracts(){
             ${empStatusBadge}
             ${dday}
           </div>
-          <div style="font-size:11px;color:#6b7280;margin-top:1px;">${emp.department||''} ${emp.position||''} · ${CONTRACT_TYPE_LABEL[empCat]||empCat}</div>
+          <div style="font-size:11px;color:#6b7280;margin-top:1px;">${emp.department||''} ${emp.position||''} · ${CONTRACT_TYPE_LABEL[empCat]||contractTypeLabel_c(empCat)||'-'}</div>
         </div>
         ${statusBadge}
       </div>
@@ -779,7 +779,7 @@ function renderCtContracts(){
       <div style="padding:10px 14px;display:grid;grid-template-columns:1fr 1fr;gap:6px;">
         <div style="background:#f9fafb;border-radius:8px;padding:7px 9px;">
           <div style="font-size:10px;color:#9ca3af;margin-bottom:2px;">계약유형</div>
-          <div style="font-size:12px;font-weight:600;color:#374151;"><span class="badge ${empCatBadge(empCat)}" style="font-size:10px;">${CONTRACT_TYPE_LABEL[empCat]||empCat}</span></div>
+          <div style="font-size:12px;font-weight:600;color:#374151;"><span class="badge ${empCatBadge(empCat)}" style="font-size:10px;">${CONTRACT_TYPE_LABEL[empCat]||contractTypeLabel_c(empCat)||'-'}</span></div>
         </div>
         <div style="background:#f9fafb;border-radius:8px;padding:7px 9px;">
           <div style="font-size:10px;color:#9ca3af;margin-bottom:2px;">소정근로</div>

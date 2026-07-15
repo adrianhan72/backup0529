@@ -1880,14 +1880,14 @@
             <span class="bulk-label">⚡ 일괄 설정</span>
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;width:100%;margin-top:6px;">
               <span style="font-size:11.5px;color:#475569;white-space:nowrap;">출근</span>
-              <input type="time" id="bulk-start" value="09:00" />
+              <span class="time-picker" id="tp-bulk-start"></span>
               <span style="font-size:11.5px;color:#475569;white-space:nowrap;">퇴근</span>
-              <input type="time" id="bulk-end" value="18:00" />
+              <span class="time-picker" id="tp-bulk-end"></span>
               <div class="bulk-divider"></div>
               <span style="font-size:11.5px;color:#7c3aed;white-space:nowrap;">휴게</span>
-              <input type="time" id="bulk-brks" class="bulk-brk" value="12:00" />
+              <span class="time-picker" id="tp-bulk-brks"></span>
               <span style="font-size:11px;color:#94a3b8;">~</span>
-              <input type="time" id="bulk-brke" class="bulk-brk" value="13:00" />
+              <span class="time-picker" id="tp-bulk-brke"></span>
             </div>
             <div class="bulk-apply-target" style="width:100%;margin-top:8px;">
               <label><input type="checkbox" id="bulk-chk-weekday" checked onchange="_bulkWeekdayToggle()" /> 평일(월~금)</label>
@@ -1925,6 +1925,15 @@
               주 근무일수: <span id="ct-wsh-days">0</span>일 &nbsp;|&nbsp;
               주 소정근로시간: <span id="ct-wsh-week-hours">0</span>시간 &nbsp;|&nbsp;
               일 평균 소정근로시간: <span id="ct-wsh-day-hours">0</span>시간
+              <span id="ct-wsh-ot-wrap" style="display:none;">&nbsp;|&nbsp;
+                고정연장: <span id="ct-wsh-ot-hours">0</span>h/주
+              </span>
+              <span id="ct-wsh-night-wrap" style="display:none;">&nbsp;|&nbsp;
+                고정야간: <span id="ct-wsh-night-hours">0</span>h/주
+              </span>
+              <span id="ct-wsh-hol-wrap" style="display:none;">&nbsp;|&nbsp;
+                고정휴일: <span id="ct-wsh-hol-hours">0</span>h/주
+              </span>
             </div>
           </div>
           <!-- 기존 호환성 hidden 필드 유지 -->
@@ -2002,42 +2011,36 @@
         <div class="form-group" id="ct-row-weekly-hol"><label>주휴수당 (자동계산)</label><div class="form-computed" id="ct-weekly-hol-computed">0원</div></div>
         <!-- 고정 연장/야간/휴일근로수당 (항상 표시, 시간↔수당 양방향 자동계산) -->
         <div class="form-group" id="ct-row-fixed-ot">
-          <label>고정 연장근로수당 <span style="font-size:11px;font-weight:400;color:#6b7280;">(선택)</span></label>
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-            <div style="display:flex;align-items:center;gap:4px;">
-              <input type="number" id="ct-fixed-ot-hours" placeholder="0" min="0" step="0.5"
-                style="width:88px;border:1px solid #d1d5db;border-radius:6px;padding:5px 8px;font-size:13px;"
-                oninput="_calcFixedOtFromHours()" />
-              <span style="font-size:11px;color:#6b7280;">h/월</span>
-            </div>
-            <span style="font-size:11px;color:#6b7280;white-space:nowrap;">또는</span>
-            <div class="amount-wrap" style="flex:1;min-width:95px;"><input type="text" inputmode="numeric" id="ct-fixed-ot-pay" data-amount placeholder="0" oninput="onAmountInput(this, _calcFixedOtFromPay)" /></div>
+          <label>고정 연장근로수당</label>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <input type="number" id="ct-fixed-ot-hours" placeholder="0" min="0" step="0.5" readonly
+              style="width:72px;border:1px solid #e5e7eb;border-radius:6px;padding:5px 8px;font-size:13px;background:#f9fafb;color:#374151;" />
+            <span style="font-size:11px;color:#6b7280;">h/월 <span style="color:#a78bfa;">(주×4.345)</span></span>
+            <span style="font-size:11px;color:#9ca3af;">,</span>
+            <div class="amount-wrap" style="flex:1;min-width:95px;"><input type="text" inputmode="numeric" id="ct-fixed-ot-pay" data-amount placeholder="0" readonly
+              style="background:#f9fafb;color:#374151;" /></div>
           </div>
         </div>
         <div class="form-group" id="ct-row-fixed-night">
-          <label>고정 야간근로수당 <span style="font-size:11px;font-weight:400;color:#6b7280;">(선택)</span></label>
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-            <div style="display:flex;align-items:center;gap:4px;">
-              <input type="number" id="ct-fixed-night-hours" placeholder="0" min="0" step="0.5"
-                style="width:88px;border:1px solid #d1d5db;border-radius:6px;padding:5px 8px;font-size:13px;"
-                oninput="_calcFixedNightFromHours()" />
-              <span style="font-size:11px;color:#6b7280;">h/월</span>
-            </div>
-            <span style="font-size:11px;color:#6b7280;white-space:nowrap;">또는</span>
-            <div class="amount-wrap" style="flex:1;min-width:95px;"><input type="text" inputmode="numeric" id="ct-fixed-night-pay" data-amount placeholder="0" oninput="onAmountInput(this, _calcFixedNightFromPay)" /></div>
+          <label>고정 야간근로수당</label>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <input type="number" id="ct-fixed-night-hours" placeholder="0" min="0" step="0.5" readonly
+              style="width:72px;border:1px solid #e5e7eb;border-radius:6px;padding:5px 8px;font-size:13px;background:#f9fafb;color:#374151;" />
+            <span style="font-size:11px;color:#6b7280;">h/월 <span style="color:#a78bfa;">(주×4.345)</span></span>
+            <span style="font-size:11px;color:#9ca3af;">,</span>
+            <div class="amount-wrap" style="flex:1;min-width:95px;"><input type="text" inputmode="numeric" id="ct-fixed-night-pay" data-amount placeholder="0" readonly
+              style="background:#f9fafb;color:#374151;" /></div>
           </div>
         </div>
         <div class="form-group" id="ct-row-fixed-hol">
-          <label>고정 휴일근로수당 <span style="font-size:11px;font-weight:400;color:#6b7280;">(선택)</span></label>
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-            <div style="display:flex;align-items:center;gap:4px;">
-              <input type="number" id="ct-fixed-hol-hours" placeholder="0" min="0" step="0.5"
-                style="width:88px;border:1px solid #d1d5db;border-radius:6px;padding:5px 8px;font-size:13px;"
-                oninput="_calcFixedHolFromHours()" />
-              <span style="font-size:11px;color:#6b7280;">h/월</span>
-            </div>
-            <span style="font-size:11px;color:#6b7280;white-space:nowrap;">또는</span>
-            <div class="amount-wrap" style="flex:1;min-width:95px;"><input type="text" inputmode="numeric" id="ct-fixed-hol-pay" data-amount placeholder="0" oninput="onAmountInput(this, _calcFixedHolFromPay)" /></div>
+          <label>고정 휴일근로수당</label>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <input type="number" id="ct-fixed-hol-hours" placeholder="0" min="0" step="0.5" readonly
+              style="width:72px;border:1px solid #e5e7eb;border-radius:6px;padding:5px 8px;font-size:13px;background:#f9fafb;color:#374151;" />
+            <span style="font-size:11px;color:#6b7280;">h/월 <span style="color:#a78bfa;">(주×4.345)</span></span>
+            <span style="font-size:11px;color:#9ca3af;">,</span>
+            <div class="amount-wrap" style="flex:1;min-width:95px;"><input type="text" inputmode="numeric" id="ct-fixed-hol-pay" data-amount placeholder="0" readonly
+              style="background:#f9fafb;color:#374151;" /></div>
           </div>
         </div>
         <!-- ── 조건부 표시: 고객사 allowance_config 기준 (_CT_OPT_ROWS) ── -->

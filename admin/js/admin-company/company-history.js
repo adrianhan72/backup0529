@@ -337,10 +337,12 @@ function _cmGetAllowanceConfig(){
       ? (document.getElementById(`cm-aw-${hid}-pt`)?.value || 'fixed')
       : '';
   });
-  // 사용자 정의 통상임금 항목
-  cfg._custom_ordinary = _cmAwGetCustomItems();
+  // 사용자 정의 통상임금 항목 (비어있으면 키 자체를 넣지 않아 DB와 diff 방지)
+  const _customOrdinary = _cmAwGetCustomItems();
+  if(_customOrdinary.length > 0) cfg._custom_ordinary = _customOrdinary;
   // 사용자 정의 고정수당 항목
-  cfg._custom_fixed = _cmAwGetFixedCustomItems();
+  const _customFixed = _cmAwGetFixedCustomItems();
+  if(_customFixed.length > 0) cfg._custom_fixed = _customFixed;
   return cfg;
 }
 
@@ -733,6 +735,14 @@ async function doChangeEndDate(){
   const newStatus = newDateStr <= todayStr ? COMPANY_STATUS.INACTIVE : COMPANY_STATUS.ACTIVE;
   const patch = { status: newStatus, contract_end_date: newDateStr };
   await api(`../tables/companies/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(patch)});
+  // ── 해지일 변경 이력 기록 ──
+  const _histCED = { id: 'cmhist_'+Date.now(), company_id: id, changed_at: Date.now(), effective_date: newDateStr,
+    changes: [{ field: 'contract_end_date', label: '계약 해지일', before: oldEndDateStr || '(없음)', after: newDateStr },
+              { field: 'status', label: '고객사 상태', before: c.status || '', after: newStatus }],
+    snapshot: { contract_end_date: oldEndDateStr, status: c.status }
+  };
+  await api('../tables/company_history',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(_histCED)}).catch(()=>{});
+  await loadCompanyHistories();
   closeModal('change-end-date-modal');
   await loadCompanies();
   populateFilters(); populatePICompanies(); renderCompanies(); renderDashboard();
@@ -756,6 +766,14 @@ async function cancelTerminate(id, name){
   if(!confirm(msg)) return;
   const patch = { status: COMPANY_STATUS.ACTIVE, contract_end_date: null };
   await api(`../tables/companies/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(patch)});
+  // ── 해지 취소 이력 기록 ──
+  const _histCancel = { id: 'cmhist_'+Date.now(), company_id: id, changed_at: Date.now(), effective_date: new Date().toISOString().slice(0,10),
+    changes: [{ field: 'contract_end_date', label: '계약 해지일', before: c?.contract_end_date || '', after: '(취소)' },
+              { field: 'status', label: '고객사 상태', before: c?.status || '', after: COMPANY_STATUS.ACTIVE }],
+    snapshot: { contract_end_date: c?.contract_end_date, status: c?.status }
+  };
+  await api('../tables/company_history',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(_histCancel)}).catch(()=>{});
+  await loadCompanyHistories();
   await loadCompanies();
   populateFilters(); populatePICompanies(); renderCompanies(); renderDashboard();
   // 해지 예정 취소 알림 발송 (완전 해지 취소든 예정 취소든 동일하게)
@@ -892,6 +910,14 @@ async function doTerminate_DISABLED(withLoss){
     }
     const body = {...c, status: CONTRACT_STATUS.TERMINATED, contract_end_date: todayStr};
     await api(`../tables/companies/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    // ── 해지 이력 기록 ──
+    const _histEntry = { id: 'cmhist_'+Date.now(), company_id: id, changed_at: Date.now(), effective_date: todayStr,
+      changes: [{ field: 'status', label: '고객사 상태', before: c.status || 'active', after: CONTRACT_STATUS.TERMINATED },
+                { field: 'contract_end_date', label: '해지일', before: c.contract_end_date || '', after: todayStr }],
+      snapshot: { status: c.status, contract_end_date: c.contract_end_date }
+    };
+    await api('../tables/company_history',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(_histEntry)}).catch(()=>{});
+    await loadCompanyHistories();
     closeModal('terminate-modal');
     await loadCompanies();populateFilters();populatePICompanies();renderCompanies();renderDashboard();
     toast(`"${c.company_name}" 해지 완료 (해지일: ${todayStr})`);
@@ -911,6 +937,15 @@ async function doTerminate_DISABLED(withLoss){
   }
   const compBody = {...c, status: CONTRACT_STATUS.TERMINATED, contract_end_date:todayStr, loss_amount:(c.loss_amount||0)+totalLoss, loss_date:todayStr};
   await api(`../tables/companies/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(compBody)});
+  // ── 해지 이력 기록 ──
+  const _histEntry2 = { id: 'cmhist_'+Date.now()+'_'+Math.random().toString(36).slice(2,6), company_id: id, changed_at: Date.now(), effective_date: todayStr,
+    changes: [{ field: 'status', label: '고객사 상태', before: c.status || 'active', after: CONTRACT_STATUS.TERMINATED },
+              { field: 'contract_end_date', label: '해지일', before: c.contract_end_date || '', after: todayStr },
+              { field: 'loss_amount', label: '손실 처리액', before: String(c.loss_amount||0), after: String((c.loss_amount||0)+totalLoss) }],
+    snapshot: { status: c.status, contract_end_date: c.contract_end_date, loss_amount: c.loss_amount }
+  };
+  await api('../tables/company_history',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(_histEntry2)}).catch(()=>{});
+  await loadCompanyHistories();
   closeModal('terminate-modal');
   await loadData();populateFilters();populatePICompanies();renderCompanies();renderDashboard();renderBillingTrendChart();
   toast(`"${c.company_name}" 손실 처리(${Math.round(totalLoss).toLocaleString('ko-KR')}원) 후 해지 완료`);

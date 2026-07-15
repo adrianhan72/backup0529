@@ -224,7 +224,7 @@ ${_BRAND_SIG}`,
 소속 근로자의 계약 관련 서류가 모두 완비되어 계약이 유효 상태로 전환되었습니다.
 
 ■ 근로자: ${_ufEmp.name||''}
-■ 고용형태: ${contractTypeLabel(c.contract_type)||c.contract_type||''}
+■ 고용형태: ${contractTypeLabel(c.contract_type)||''}
 ■ 계약 기간: ${c.contract_start||''}${c.contract_end ? ' ~ ' + c.contract_end : ''}
 ■ 완비 서류: 계약서 날인본 + 제3자 정보제공 동의서
 ■ 전환 일시: ${new Date().toLocaleString('ko-KR')}
@@ -1176,7 +1176,8 @@ function _collectContractData(){
     .map(s=>{
       const [hs,ms] = (s.brk_start||'00:00').split(':').map(Number);
       const [he,me] = (s.brk_end  ||'00:00').split(':').map(Number);
-      const mins = (he*60+me) - (hs*60+ms);
+      let mins = (he*60+me) - (hs*60+ms);
+      if(mins <= 0) mins += 24*60; // 익일 종료 휴게
       return { day: s.day, label: dayNames[s.day]||s.label, brk_start: s.brk_start, brk_end: s.brk_end, brk_mins: mins };
     });
 

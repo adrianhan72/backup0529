@@ -57,7 +57,11 @@ function buildScheduleTableHTML(activeDays){
   const toM = function(t){ if(!t) return null; var p=t.split(':'); return parseInt(p[0])*60+parseInt(p[1]); };
   const sortedDays = activeDays.slice().sort(function(a,b){ return dayOrder.indexOf(a.day)-dayOrder.indexOf(b.day); });
 
-  // breaks 배열 정규화: 없으면 레거시 brk_start/brk_end 폴백
+  const STATUTORY_DAILY = 8 * 60;
+  const STATUTORY_WEEKLY = 40 * 60;
+  const NIGHT_START = 22 * 60;
+  const NIGHT_END   = 30 * 60;
+
   var normBreaks = function(s){
     if(Array.isArray(s.breaks) && s.breaks.length) return s.breaks;
     if(s.brk_start||s.brk_end) return [{s:s.brk_start||'', e:s.brk_end||''}];
@@ -66,21 +70,53 @@ function buildScheduleTableHTML(activeDays){
   var totalBrkMins = function(s){
     return normBreaks(s).reduce(function(sum,b){
       var bs=toM(b.s), be=toM(b.e);
-      return sum+((bs!==null&&be!==null&&be>bs)?(be-bs):0);
+      if(bs===null||be===null) return sum;
+      if(be<=bs) be += 24*60;
+      return sum+(be-bs);
     },0);
   };
+  var nightMins = function(sm, em, brk){
+    // 근무시간과 22:00~06:00 교차분 (휴게시간 제외 전 근무시간 기준)
+    var rawMins = em - sm;
+    var overlap = Math.max(0, Math.min(em, NIGHT_END) - Math.max(sm, NIGHT_START))
+                + Math.max(0, Math.min(em, NIGHT_END + 24*60) - Math.max(sm, NIGHT_START + 24*60));
+    return Math.max(0, overlap);
+  };
+
+  var totalStatMins = 0, totalOtMins = 0, totalNightMins = 0, totalHolMins = 0;
 
   var rows = sortedDays.map(function(s){
     var isWork = !!(s.start && s.end);
     var cls   = s.day==='sat' ? 'day-sat' : s.day==='sun' ? 'day-sun' : '';
     var color = dayColors[s.day] || '#1e293b';
+    var isWeekend = s.day === 'sat' || s.day === 'sun';
     var sm=toM(s.start), em=toM(s.end);
+    if(sm!==null && em!==null && em<=sm) em += 24*60;
     var brk = totalBrkMins(s);
     var mins = (sm!==null&&em!==null&&em>sm) ? Math.max(0,em-sm-brk) : 0;
+
+    // 소정 vs 연장 분리
+    var dayStat = Math.min(mins, STATUTORY_DAILY);
+    var dayOt   = Math.max(0, mins - STATUTORY_DAILY);
+    totalStatMins += dayStat;
+    totalOtMins   += dayOt;
+
+    // 야간
+    var dayNight = (sm!==null&&em!==null) ? nightMins(sm, em, brk) : 0;
+    totalNightMins += dayNight;
+
+    // 휴일
+    if(isWeekend) totalHolMins += mins;
+
     var h = mins/60;
-    var hrs = mins===0 ? '-' : (Number.isInteger(h)?h:h.toFixed(1))+'시간';
+    var statH = dayStat/60;
+    var otH   = dayOt/60;
+    var hrs = mins===0 ? '-' :
+      (Number.isInteger(statH)?statH:statH.toFixed(1)) + 'h'
+      + (isWeekend ? '<span style="color:#dc2626;font-size:10px;">(휴일)</span>' : '')
+      + (otH>0 ? '<span style="color:#f59e0b;font-size:10px;"> +'+(Number.isInteger(otH)?otH:otH.toFixed(1))+'h(연장)</span>' : '');
+
     var chk = isWork ? '✔' : '';
-    // 휴게 슬롯 표시: 복수 슬롯을 줄바꿈으로
     var brkSlots = normBreaks(s);
     var brkCell = brkSlots.length
       ? brkSlots.map(function(b){ return (b.s||'') + (b.s&&b.e?' ~ ':'') + (b.e||''); }).join('<br/>')
@@ -88,15 +124,21 @@ function buildScheduleTableHTML(activeDays){
     return '<tr class="'+cls+'">'+'<td style="text-align:center;">'+chk+'</td>'+'<td style="text-align:center;"><span class="day-label" style="color:'+color+';">'+( daysKr[s.day]||s.day)+'</span></td>'+'<td style="text-align:center;">'+(s.start||'')+'</td>'+'<td style="text-align:center;">'+(s.end||'')+'</td>'+'<td class="td-brk" style="text-align:center;line-height:1.6;">'+brkCell+'</td>'+'<td style="text-align:center;"><span class="computed-h">'+hrs+'</span></td>'+'<td></td>'+'</tr>';
   }).join('');
 
-  var totalMins = sortedDays.reduce(function(sum,s){
-    var sm=toM(s.start),em=toM(s.end);
-    if(sm===null||em===null||em<=sm) return sum;
-    return sum+Math.max(0,em-sm-totalBrkMins(s));
-  },0);
+  // 주 40h 초과 → 연장 이관
+  if(totalStatMins > STATUTORY_WEEKLY){
+    totalOtMins += (totalStatMins - STATUTORY_WEEKLY);
+    totalStatMins = STATUTORY_WEEKLY;
+  }
+
   var wDays  = sortedDays.filter(function(s){ return !!(s.start && s.end); }).length;
-  var avgDay = wDays>0 ? totalMins/wDays/60 : 0;
-  var weekH  = totalMins/60;
+  var weekStatH = totalStatMins/60;
+  var avgDay = wDays>0 ? totalStatMins/wDays/60 : 0;
   var fmtH   = function(h){ return Number.isInteger(h)?h:h.toFixed(1); };
+
+  var extraLines = [];
+  if(totalOtMins > 0) extraLines.push('&nbsp;|&nbsp; 고정연장근로: <span>'+fmtH(totalOtMins/60)+'</span>h/주');
+  if(totalNightMins > 0) extraLines.push('&nbsp;|&nbsp; 고정야간근로: <span>'+fmtH(totalNightMins/60)+'</span>h/주');
+  if(totalHolMins > 0) extraLines.push('&nbsp;|&nbsp; 고정휴일근로: <span>'+fmtH(totalHolMins/60)+'</span>h/주');
 
   return '<div class="work-schedule-wrap">'
     +'<table class="work-schedule-table">'
@@ -106,15 +148,16 @@ function buildScheduleTableHTML(activeDays){
     +'<th style="width:88px;">출근</th>'
     +'<th style="width:88px;">퇴근</th>'
     +'<th class="th-brk">휴게시간</th>'
-    +'<th style="width:60px;">소정시간</th>'
+    +'<th style="width:72px;">근로시간</th>'
     +'<th>비고</th>'
     +'</tr></thead>'
     +'<tbody>'+rows+'</tbody>'
     +'</table>'
     +'<div class="wsh-total">'
     +'주 근무일수: <span>'+wDays+'</span>일 &nbsp;|&nbsp;'
-    +'주 소정근로시간: <span>'+fmtH(weekH)+'</span>시간 &nbsp;|&nbsp;'
-    +'일 평균 소정근로시간: <span>'+fmtH(avgDay)+'</span>시간'
+    +'주 소정근로시간: <span>'+fmtH(weekStatH)+'</span>시간 &nbsp;|&nbsp;'
+    +'일 평균 소정근로시간: <span>'+fmtH(Math.min(avgDay,8))+'</span>시간'
+    + extraLines.join('')
     +'</div>'
     +'</div>';
 }
@@ -204,7 +247,8 @@ function generateContractHTMLFromData(c, emp, co){
     const _toM      = t=>{ const p=t.split(':'); return parseInt(p[0])*60+parseInt(p[1]); };
     const _fmtT     = m=>`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
     const _sMins    = _toM(_start);
-    const _eMins    = _toM(_end);
+    let   _eMins    = _toM(_end);
+    if(_eMins <= _sMins) _eMins += 24*60; // 익일 종료
     const _halfWork = Math.round((_eMins - _sMins - _brkMins) / 2);
     const _brkStart = _brkMins > 0 ? _fmtT(_sMins + _halfWork) : '';
     const _brkEnd   = _brkMins > 0 ? _fmtT(_sMins + _halfWork + _brkMins) : '';
@@ -275,7 +319,8 @@ function generateContractHTMLFromData(c, emp, co){
     breakHTML = Object.entries(uniqBrk).map(([time, daysSet])=>{
       const [hs,ms] = time.split('~')[0].split(':').map(Number);
       const [he,me] = time.split('~')[1].split(':').map(Number);
-      const mins = (he*60+me)-(hs*60+ms);
+      let mins = (he*60+me)-(hs*60+ms);
+      if(mins <= 0) mins += 24*60; // 익일 종료 휴게
       return `[${[...daysSet].join('·')}] ${time} (${mins}분)`;
     }).join(', ');
   } else {
@@ -953,7 +998,7 @@ async function savePendingContractEdit(){
 소속 근로자의 계약 해지가 예약 처리되었습니다.
 
 ■ 근로자: ${_pendEmp.name||''}
-■ 고용형태: ${contractTypeLabel(c.contract_type)||c.contract_type||''}
+■ 고용형태: ${contractTypeLabel(c.contract_type)||''}
 ■ 계약 기간: ${_fmtD(c.contract_start)}${c.contract_end ? ' ~ ' + _fmtD(c.contract_end) : ''}
 ■ 해지 예정일: ${_fmtD(_termDate)}
 ■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
@@ -977,7 +1022,7 @@ ${_BRAND_SIG}`,
 소속 근로자의 근로계약이 해지 처리되었습니다.
 
 ■ 근로자: ${_pendEmp.name||''}
-■ 고용형태: ${contractTypeLabel(c.contract_type)||c.contract_type||''}
+■ 고용형태: ${contractTypeLabel(c.contract_type)||''}
 ■ 계약 기간: ${_fmtD(c.contract_start)}${c.contract_end ? ' ~ ' + _fmtD(c.contract_end) : ''}
 ■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
 
@@ -1000,9 +1045,9 @@ ${_BRAND_SIG}`,
 소속 근로자의 근로계약 내용이 수정되었습니다.
 
 ■ 근로자: ${_pendEmp.name||''}
-■ 고용형태: ${contractTypeLabel(c.contract_type)||c.contract_type||''}
+■ 고용형태: ${contractTypeLabel(c.contract_type)||''}
 ■ 계약 기간: ${_fmtD(newStart)}${newEnd ? ' ~ ' + _fmtD(newEnd) : ' (기간 미정)'}
-■ 계약 상태: ${newStatus}
+■ 계약 상태: ${CONTRACT_STATUS_LABEL[newStatus] || newStatus}
 ■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
 
 자세한 내용은 근로 계약 관리 메뉴에서 확인하세요.
@@ -1107,7 +1152,7 @@ async function cancelPreTerminate(){
 소속 근로자의 계약 해지 예정이 취소되어 기존 계약이 정상 유효 상태로 복귀되었습니다.
 
 ■ 근로자: ${empName}
-■ 고용형태: ${contractTypeLabel(c.contract_type)||c.contract_type||''}
+■ 고용형태: ${contractTypeLabel(c.contract_type)||''}
 ■ 계약 기간: ${_fmtD(c.contract_start)}${c.contract_end ? ' ~ ' + _fmtD(c.contract_end) : ' (기간 미정)'}
 ■ 취소된 해지일: ${termDate ? _fmtD(termDate) : '-'}
 ■ 현재 계약 상태: 계약유효 (활성) 복귀
@@ -1204,7 +1249,7 @@ async function doContractVoid(){
 소속 근로자의 근로계약이 파기 처리되었습니다.
 
 ■ 근로자: ${_voidEmp.name||''}
-■ 고용형태: ${contractTypeLabel(c.contract_type)||c.contract_type||''}
+■ 고용형태: ${contractTypeLabel(c.contract_type)||''}
 ■ 계약 기간: ${_fmtD(c.contract_start)}${c.contract_end ? ' ~ ' + _fmtD(c.contract_end) : ' (기간 미정)'}
 ■ 파기 사유: ${statusLabel} 상태의 계약 파기
 ■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
@@ -1611,7 +1656,7 @@ async function confirmContractRenew(){
 소속 근로자의 계약 갱신이 예약되었습니다.
 
 ■ 근로자: ${_renewEmp.name||''}
-■ 고용형태: ${contractTypeLabel(c.contract_type)||c.contract_type||''}
+■ 고용형태: ${contractTypeLabel(c.contract_type)||''}
 ■ 기존 계약 해지일: ${_fmtD(oldEnd)}
 ■ 새 계약 시작일: ${_fmtD(newStart)} (시작일 미도래 — 계약예정)
 ■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
@@ -1635,7 +1680,7 @@ ${_BRAND_SIG}`,
 소속 근로자의 계약 갱신이 완료되었습니다.
 
 ■ 근로자: ${_renewEmp.name||''}
-■ 고용형태: ${contractTypeLabel(c.contract_type)||c.contract_type||''}
+■ 고용형태: ${contractTypeLabel(c.contract_type)||''}
 ■ 기존 계약 해지일: ${_fmtD(oldEnd)}
 ■ 새 계약 시작일: ${_fmtD(newStart)}
 ■ 계약 상태: 계약유효 (활성)
@@ -3589,7 +3634,7 @@ async function saveContract(){
 소속 근로자의 근로계약이 해지 처리되었습니다.
 
 ■ 근로자: ${_empName}
-■ 고용형태: ${contractTypeLabel(contractType)||contractType}
+■ 고용형태: ${contractTypeLabel(contractType)||''}
 ■ 계약 시작일: ${_fmtDate(contractStart)}
 ■ 계약 종료일: ${_fmtDate(contractEnd || _origC.contract_end || '')}
 ■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
@@ -3613,7 +3658,7 @@ ${_BRAND_SIG}`,
 소속 근로자의 근로계약 내용이 수정되었습니다.
 
 ■ 근로자: ${_empName}
-■ 고용형태: ${contractTypeLabel(contractType)||contractType}
+■ 고용형태: ${contractTypeLabel(contractType)||''}
 ■ 계약 기간: ${_fmtDate(contractStart)}${contractEnd ? ' ~ ' + _fmtDate(contractEnd) : ' (기간 미정)'}
 ■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
 
@@ -3637,7 +3682,7 @@ ${_BRAND_SIG}`,
 소속 근로자의 재계약이 완료되었습니다.
 
 ■ 근로자: ${_empName}
-■ 고용형태: ${contractTypeLabel(contractType)||contractType}
+■ 고용형태: ${contractTypeLabel(contractType)||''}
 ■ 새 계약 기간: ${_fmtDate(contractStart)}${contractEnd ? ' ~ ' + _fmtDate(contractEnd) : ' (기간 미정)'}
 ■ 계약 상태: ${contractStatus === CONTRACT_STATUS.PENDING ? '계약예정 (시작일 미도래)' : '계약유효 (활성)'}
 ■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
@@ -3661,7 +3706,7 @@ ${_BRAND_SIG}`,
 소속 근로자의 근로계약이 새로 작성되었습니다.
 
 ■ 근로자: ${_empName}
-■ 고용형태: ${contractTypeLabel(contractType)||contractType}
+■ 고용형태: ${contractTypeLabel(contractType)||''}
 ■ 계약 기간: ${_fmtDate(contractStart)}${contractEnd ? ' ~ ' + _fmtDate(contractEnd) : ' (기간 미정)'}
 ■ 계약 상태: ${contractStatus === CONTRACT_STATUS.DOCS_INCOMPLETE ? '서류미비 (파일 업로드 필요)' : contractStatus === CONTRACT_STATUS.PENDING ? '계약예정' : '계약유효 (활성)'}
 ■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
@@ -3677,7 +3722,9 @@ ${_BRAND_SIG}`,
   }
   _recontractEmpId = null; // 재계약 플래그 초기화
   _currentDraftId  = null; // 임시저장 ID 초기화
-  closeModal('contract-modal');await loadContracts();await loadEmployees();renderContracts();renderDashboard();toast('근로계약서가 등록되었습니다. ✔');
+  closeModal('contract-modal');await loadContracts();await loadEmployees();renderContracts();renderDashboard();
+  const _ctIsEdit = !!editId.contract;
+  toast(_ctIsEdit ? '근로계약서가 수정되었습니다. ✔' : '근로계약서가 등록되었습니다. ✔');
 }
 async function deleteContract(id){
   const c = allContracts.find(x => x.id === id);

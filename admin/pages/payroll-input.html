@@ -297,7 +297,7 @@
                 <input type="date" id="pi-paydate" style="width:200px;" />
               </div>
               <!-- 급여 산정기간: 계약서에 입력된 값 readonly 표시 -->
-              <div class="pi-row">
+              <div class="pi-row" id="pi-row-pay-period-disp">
                 <label>급여 산정기간</label>
                 <div style="display:flex;align-items:center;gap:6px;">
                   <input type="text" id="pi-pay-period" readonly
@@ -305,12 +305,31 @@
                     placeholder="계약서 미입력" />
                 </div>
               </div>
+              <!-- 급여 산정기간 수동 입력 (계약 없는 대표자/등기임원/특수관계인 전용) -->
+              <div class="pi-row" id="pi-row-pay-period-input" style="display:none;">
+                <label>급여 산정기간 <span style="font-size:10px;font-weight:400;color:#f59e0b;">(직접 입력)</span></label>
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <input type="date" id="pi-pay-period-start" style="width:130px;" />
+                  <span style="color:#9ca3af;">~</span>
+                  <input type="date" id="pi-pay-period-end" style="width:130px;" />
+                </div>
+              </div>
               <!-- 통상시급: 계약서 hourly_wage readonly 표시 -->
-              <div class="pi-row">
+              <div class="pi-row" id="pi-row-hourly-wage-disp">
                 <label>통상시급</label>
                 <div style="display:flex;align-items:center;gap:4px;">
                   <span id="pi-hourly-wage-disp"
                     style="font-size:13px;font-weight:600;color:#1d4ed8;">-</span>
+                  <span style="font-size:11px;color:#9ca3af;">/h</span>
+                </div>
+              </div>
+              <!-- 통상시급 수동 입력 (계약 없는 대표자/등기임원/특수관계인 전용) -->
+              <div class="pi-row" id="pi-row-hourly-wage-input" style="display:none;">
+                <label>통상시급 <span style="font-size:10px;font-weight:400;color:#f59e0b;">(직접 입력)</span></label>
+                <div style="display:flex;align-items:center;gap:4px;">
+                  <input type="number" id="pi-hourly-wage-input" min="0" step="1" value="0"
+                    style="width:120px;padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;font-weight:600;"
+                    oninput="calcPI()" placeholder="시급 입력" />
                   <span style="font-size:11px;color:#9ca3af;">/h</span>
                 </div>
               </div>
@@ -328,9 +347,19 @@
                 <span id="pi-fixed-hol-pay-disp" style="font-size:13px;font-weight:600;color:#7c3aed;">0원</span>
               </div>
               <!-- 과세 기준 부양가족 수 (직원 정보에서 자동 반영) -->
-              <div class="pi-row">
+              <div class="pi-row" id="pi-row-tax-dependents-disp">
                 <label>과세 기준 부양가족 수 <span style="font-size:10px;font-weight:400;color:#9ca3af;">(본인 포함)</span></label>
                 <span id="pi-tax-dependents-disp" style="font-size:13px;font-weight:600;color:#374151;">1인</span>
+              </div>
+              <!-- 과세 기준 부양가족 수 수동 입력 (계약 없는 대표자/등기임원/특수관계인 전용) -->
+              <div class="pi-row" id="pi-row-tax-dependents-input" style="display:none;">
+                <label>과세 기준 부양가족 수 <span style="font-size:10px;font-weight:400;color:#f59e0b;">(직접 입력)</span> <span style="font-size:10px;font-weight:400;color:#9ca3af;">(본인 포함)</span></label>
+                <div style="display:flex;align-items:center;gap:4px;">
+                  <input type="number" id="pi-tax-dependents-input" min="1" max="11" step="1" value="1"
+                    style="width:80px;padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;font-weight:600;"
+                    oninput="_onPITaxDependentsChange()" />
+                  <span style="font-size:11px;color:#9ca3af;">인</span>
+                </div>
               </div>
               <!-- ══ 근로 실적 ══ -->
               <div class="pi-section-title green" style="margin-top:14px;"><i class="fas fa-clipboard-list"></i> 근로 실적</div>

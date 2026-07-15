@@ -11,9 +11,30 @@ let piContract=null;
  * @returns {boolean} 전원 입력완료 여부
  */
 function _isPIMonthFullyPaid(coId, yr, mo){
-  const VALID_STATUSES = new Set([CONTRACT_STATUS.ACTIVE, CONTRACT_STATUS.PENDING, CONTRACT_STATUS.DOCS_INCOMPLETE]);
-  const periodStart = `${yr}-${String(mo).padStart(2,'0')}-01`;
-  const periodEnd   = new Date(yr, mo, 0).toISOString().slice(0,10);
+  const VALID_STATUSES = new Set([CONTRACT_STATUS.ACTIVE, CONTRACT_STATUS.PENDING, CONTRACT_STATUS.DOCS_INCOMPLETE, CONTRACT_STATUS.TERMINATE_PENDING]);
+
+  // 고객사 산정기준으로 급여 산정기간 계산
+  const _co = (allCompanies||[]).find(c => c.id === coId);
+  const _ppMo  = _co?.pay_period_month || '당월';
+  const _ppDay = parseInt(_co?.pay_period_day) || 1;
+  const _isJeonwol = _ppMo === '전월';
+
+  let periodStart, periodEnd;
+  if(_isJeonwol){
+    const _prevMo = mo === 1 ? 12 : mo - 1;
+    const _prevYr = mo === 1 ? yr - 1 : yr;
+    periodStart = `${_prevYr}-${String(_prevMo).padStart(2,'0')}-${String(_ppDay).padStart(2,'0')}`;
+    const _eDate = new Date(_prevYr, _prevMo - 1, _ppDay);
+    _eDate.setMonth(_eDate.getMonth() + 1);
+    _eDate.setDate(_eDate.getDate() - 1);
+    periodEnd = _eDate.toISOString().slice(0,10);
+  } else {
+    periodStart = `${yr}-${String(mo).padStart(2,'0')}-${String(_ppDay).padStart(2,'0')}`;
+    const _eDate = new Date(yr, mo - 1, _ppDay);
+    _eDate.setMonth(_eDate.getMonth() + 1);
+    _eDate.setDate(_eDate.getDate() - 1);
+    periodEnd = _eDate.toISOString().slice(0,10);
+  }
 
   // 해당 월에 유효 계약이 있는 직원 Set
   const validEmpIds = new Set(

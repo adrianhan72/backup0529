@@ -570,6 +570,7 @@ function openContractModal(id=null, preCompanyId=null){
   document.getElementById('ct-annual').value=15;
   // 요일별 스케줄 테이블 초기화 (기본값: 월~금 09:00~18:00, 휴게 1h)
   initScheduleTable();
+  if(typeof _initBulkTimePickers === 'function') _initBulkTimePickers();
   document.getElementById('ct-annual-sal').value='';
   setAmountVal('ct-position',0);
   setAmountVal('ct-car',0); setAmountVal('ct-remote-area',0);

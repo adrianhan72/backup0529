@@ -974,8 +974,8 @@ function applyBulkSchedule(){
   const brke  = document.getElementById('bulk-brke').value;
 
   if(!start || !end){ toast('출근·퇴근 시간을 입력해 주세요.', 'error'); return; }
-  if(start >= end){ toast('퇴근 시간이 출근 시간보다 늦어야 합니다.', 'error'); return; }
-  if(brks && brke && brks >= brke){ toast('휴게 종료 시간이 시작 시간보다 늦어야 합니다.', 'error'); return; }
+  if(!timeToMins(start) || !timeToMins(end)){ toast('시간은 HH:MM(24시) 형식으로 입력해 주세요.', 'error'); return; }
+  if(brks && brke){ const _bs=timeToMins(brks),_be=timeToMins(brke); if(_bs!==null&&_be!==null&&_bs>=_be){ toast('휴게 종료 시간이 시작 시간보다 늦어야 합니다.', 'error'); return; } }
 
   const applyWeekday = document.getElementById('bulk-chk-weekday').checked;
   const targets = new Set();
@@ -1006,6 +1006,184 @@ function applyBulkSchedule(){
   toast(`${applied}개 요일에 근무시간이 일괄 적용되었습니다. ✔`, 'success');
 }
 
+// ── 24시제 시/분 선택 HTML 생성 ──
+// id: 숨겨진 input의 id (기존 코드 호환), value: "HH:MM", dis: disabled 여부, ph: placeholder 시
+function _timePickerHTML(id, value, dis, ph){
+  const v = value || '';
+  const [h, m] = v.split(':');
+  const selH = v ? (h || '00') : '';
+  const selM = v ? (m || '00') : '';
+  const hours = Array.from({length:24}, (_,i)=>String(i).padStart(2,'0'));
+  const mins  = ['00','05','10','15','20','25','30','35','40','45','50','55'];
+  const emptyOpt = '<option value="" ' + (v?'':'selected') + ' disabled>--</option>';
+  const optsH = emptyOpt + hours.map(hh => `<option value="${hh}" ${hh===selH?'selected':''}>${hh}</option>`).join('');
+  const optsM = emptyOpt + mins.map(mm => `<option value="${mm}" ${mm===selM?'selected':''}>${mm}</option>`).join('');
+  const d = dis ? 'disabled' : '';
+  return `<span class="time-picker" style="display:inline-flex;align-items:center;gap:1px;">
+    <select class="tp-h" data-tp="${id}" onchange="_syncTimePicker('${id}')" ${d}
+      style="width:44px;font-size:11px;padding:2px 0;text-align:center;border:1px solid #d1d5db;border-radius:3px 0 0 3px;appearance:none;background:#fff;">${optsH}</select>
+    <span style="font-size:10px;color:#94a3b8;line-height:1;">:</span>
+    <select class="tp-m" data-tp="${id}" onchange="_syncTimePicker('${id}')" ${d}
+      style="width:44px;font-size:11px;padding:2px 0;text-align:center;border:1px solid #d1d5db;border-radius:0 3px 3px 0;appearance:none;background:#fff;">${optsM}</select>
+    <input type="hidden" id="${id}" value="${v}" />
+  </span>`;
+}
+// ── 시/분 select → hidden input 동기화 + calcWorkHours 호출 ──
+function _syncTimePicker(id){
+  const wrap = document.querySelector(`[data-tp="${id}"]`)?.parentElement;
+  if(!wrap) return;
+  const hSel = wrap.querySelector('.tp-h');
+  const mSel = wrap.querySelector('.tp-m');
+  const hidden = document.getElementById(id);
+  if(hSel && mSel && hidden){
+    hidden.value = (hSel.value && mSel.value) ? hSel.value + ':' + mSel.value : '';
+    hidden.dispatchEvent(new Event('input', {bubbles:true}));
+    // 같은 요일 다른 시프트와 중첩 방지 제약 갱신
+    const m = id.match(/^ct-sch-(?:start|end)-(\w+)/);
+    if(m) _refreshShiftConstraints(m[1]);
+    if(typeof calcWorkHours === 'function') calcWorkHours();
+    // 통상시급 반영된 상태에서 근무시간표 변경 시 고정수당 금액 즉시 갱신
+    if(typeof _calcFixedOtFromHours === 'function') _calcFixedOtFromHours();
+    if(typeof _calcFixedNightFromHours === 'function') _calcFixedNightFromHours();
+    if(typeof _calcFixedHolFromHours === 'function') _calcFixedHolFromHours();
+  }
+}
+
+// ── 같은 요일 내 시프트 간 중첩 방지 ──
+function _refreshShiftConstraints(key){
+  // 모든 시프트의 start/end 수집
+  let shiftIdx = 0;
+  const shifts = [];
+  while(true){
+    const sid = shiftIdx === 0 ? '' : '-' + shiftIdx;
+    const sEl = document.getElementById(`ct-sch-start-${key}${sid}`);
+    if(!sEl){ if(shiftIdx===0){ shiftIdx++; continue; } break; }
+    const eEl = document.getElementById(`ct-sch-end-${key}${sid}`);
+    const sVal = sEl.value;
+    const eVal = eEl ? eEl.value : '';
+    // 시간+분 파싱
+    const toMin = t => { if(!t) return null; const [h,m]=t.split(':').map(Number); return h*60+m; };
+    shifts.push({ idx: shiftIdx, sid, start: sVal, end: eVal, sMin: toMin(sVal), eMin: toMin(eVal),
+      sId: `ct-sch-start-${key}${sid}`, eId: `ct-sch-end-${key}${sid}` });
+    shiftIdx++;
+  }
+
+  // 요일별 오류 초기화
+  const errEl = document.getElementById(`ct-sch-err-${key}`);
+  const blockedShifts = [];
+
+  // 각 시프트의 start/end select에 전달할 차단 시간 집합 계산
+  shifts.forEach(sh => {
+    if(sh.sMin === null || sh.eMin === null) return;
+    let eMin = sh.eMin;
+    if(eMin <= sh.sMin) eMin += 24*60;
+
+    const blockedStart = new Set();
+    const blockedEnd   = new Set();
+    let hasOverlap = false;
+
+    shifts.forEach(other => {
+      if(other.idx === sh.idx) return;
+      if(other.sMin === null || other.eMin === null) return;
+      let oeMin = other.eMin;
+      if(oeMin <= other.sMin) oeMin += 24*60;
+
+      const oFromH = other.sMin / 60 | 0;
+      const oToH   = Math.ceil(oeMin / 60);
+      // 종료시각이 속한 시간대까지만 차단 (18:30 → 18시까지, 19시는 해방)
+      const oToHExcl = oToH - 1;
+      for(let h = oFromH; h <= oToHExcl; h++) blockedStart.add((h + 24) % 24);
+
+      for(let h = other.sMin / 60 | 0; h < Math.ceil(oeMin / 60); h++){
+        const hMod = (h + 24) % 24;
+        if(hMod === (other.sMin / 60 | 0) % 24) continue;
+        blockedEnd.add(hMod);
+      }
+
+      // 중첩 여부 확인 (분 단위, 경계 허용)
+      if(sh.sMin < oeMin && eMin > other.sMin){
+        hasOverlap = true;
+      }
+    });
+
+    _constrainSelectHours(sh.sId, blockedStart);
+    _constrainSelectHours(sh.eId, blockedEnd);
+
+    if(hasOverlap) blockedShifts.push(sh.idx + 1);
+  });
+
+  // 오류 메시지
+  if(errEl){
+    if(blockedShifts.length > 0){
+      errEl.textContent = `⚠️ 시프트 ${blockedShifts.join(', ')}번 시간이 중첩됩니다. 다시 설정하세요.`;
+      errEl.style.display = '';
+    } else {
+      errEl.style.display = 'none';
+    }
+  }
+
+  // 시프트별 강조 표시
+  shifts.forEach(sh => {
+    const sid = sh.idx === 0 ? '' : '-' + sh.idx;
+    const shiftEl = document.getElementById(`ct-sch-shift-${key}${sid}`);
+    if(shiftEl) shiftEl.style.borderLeft = blockedShifts.includes(sh.idx + 1) ? '3px solid #ef4444' : '';
+  });
+}
+
+// ── select의 option에서 blockedHours에 해당하는 시간 제거 ──
+function _constrainSelectHours(inputId, blockedHours){
+  const hidden = document.getElementById(inputId);
+  if(!hidden) return;
+  const wrap = hidden.parentElement;
+  if(!wrap) return;
+  const hSel = wrap.querySelector('.tp-h');
+  if(!hSel) return;
+
+  const curVal = hSel.value;
+  const emptyOpt = '<option value="" disabled>--</option>';
+  const opts = [];
+  for(let h = 0; h < 24; h++){
+    const hh = String(h).padStart(2, '0');
+    if(blockedHours.has(h) && hh !== curVal) continue;
+    const sel = hh === curVal ? 'selected' : '';
+    const dis = blockedHours.has(h) ? 'disabled' : '';
+    opts.push(`<option value="${hh}" ${sel} ${dis}>${hh}</option>`);
+  }
+  hSel.innerHTML = emptyOpt + opts.join('');
+}
+// 외부에서 값 설정 시 select 동기화
+function _setTimePickerValue(id, value){
+  const hidden = document.getElementById(id);
+  if(!hidden) return;
+  hidden.value = value || '';
+  const wrap = hidden.parentElement;
+  if(!wrap) return;
+  const hSel = wrap.querySelector('.tp-h');
+  const mSel = wrap.querySelector('.tp-m');
+  if(!hSel || !mSel) return;
+  const [h, m] = (value||':').split(':');
+  if(h) hSel.value = h;
+  if(m) mSel.value = m;
+}
+
+// ── 일괄설정 바 시/분 선택기 초기화 ──
+function _initBulkTimePickers(){
+  const items = [
+    { id: 'bulk-start',  val: '09:00', ph: '09' },
+    { id: 'bulk-end',    val: '18:00', ph: '18' },
+    { id: 'bulk-brks',   val: '12:00', ph: '12' },
+    { id: 'bulk-brke',   val: '13:00', ph: '13' },
+  ];
+  items.forEach(({id, val, ph}) => {
+    const el = document.getElementById(`tp-${id}`);
+    if(!el) return;
+    el.innerHTML = _timePickerHTML(id, val, false, ph);
+    el.style.display = 'inline-flex';
+    el.style.alignItems = 'center';
+    el.style.gap = '1px';
+  });
+}
+
 // ── 시프트 그룹 렌더 헬퍼 ──
 function _shiftGroupHTML(key, idx, enabled, start, end, breaks){
   const isReadonly = document.querySelector('#contract-modal .modal')?.classList.contains('ct-readonly');
@@ -1017,9 +1195,9 @@ function _shiftGroupHTML(key, idx, enabled, start, end, breaks){
   const sid = idx===0 ? '' : '-'+idx;
   return `<div class="shift-group" id="ct-sch-shift-${key}${sid}">
     <span style="font-size:10.5px;color:#6b7280;white-space:nowrap;">출근</span>
-    <input type="time" id="ct-sch-start-${key}${sid}" value="${s}" oninput="calcWorkHours()" ${dis} />
+    ${_timePickerHTML(`ct-sch-start-${key}${sid}`, s, !enabled, '09')}
     <span style="font-size:10.5px;color:#6b7280;white-space:nowrap;">퇴근</span>
-    <input type="time" id="ct-sch-end-${key}${sid}" value="${e}" oninput="calcWorkHours()" ${dis} />
+    ${_timePickerHTML(`ct-sch-end-${key}${sid}`, e, !enabled, '18')}
     <span style="font-size:10.5px;color:#7c3aed;white-space:nowrap;">휴게</span>
     <div class="brk-slots-wrap" id="ct-sch-brkwrap-${key}${sid}">${_brkSlotsHTML2(key, idx, enabled, brks)}</div>
     ${idx===0
@@ -1039,18 +1217,16 @@ function _deactivateShift(key){
 
 // ── 시프트용 휴게 슬롯 HTML (idx 포함) ──
 function _brkSlotsHTML2(key, shiftIdx, enabled, breaks){
-  const isReadonly = document.querySelector('#contract-modal .modal')?.classList.contains('ct-readonly');
-  const dis = (enabled && !isReadonly) ? '' : 'disabled';
   const sid = shiftIdx===0 ? '' : '-'+shiftIdx;
   return breaks.map((b, idx) => {
+    const bidS = `ct-sch-brk-s-${key}${sid}-${idx}`;
+    const bidE = `ct-sch-brk-e-${key}${sid}-${idx}`;
     return `<div class="brk-slot-row" id="ct-sch-brkrow-${key}${sid}-${idx}">
-      <input type="time" class="brk-time" data-brk-key="${key}" data-shift-idx="${shiftIdx}" data-brk-idx="${idx}" data-brk-type="s"
-        value="${b.s||''}" oninput="calcWorkHours()" ${dis} />
+      ${_timePickerHTML(bidS, b.s||'', !enabled, '12')}
       <span class="brk-sep">~</span>
-      <input type="time" class="brk-time" data-brk-key="${key}" data-shift-idx="${shiftIdx}" data-brk-idx="${idx}" data-brk-type="e"
-        value="${b.e||''}" oninput="calcWorkHours()" ${dis} />
+      ${_timePickerHTML(bidE, b.e||'', !enabled, '13')}
       ${idx > 0
-        ? `<button type="button" class="btn-brk-del" onclick="_removeBrkSlot2('${key}',${shiftIdx},${idx})" ${dis} title="휴게 삭제">−</button>`
+        ? `<button type="button" class="btn-brk-del" onclick="_removeBrkSlot2('${key}',${shiftIdx},${idx})" ${!enabled?'disabled':''} title="휴게 삭제">−</button>`
         : ''}
     </div>`;
   }).join('');
@@ -1063,21 +1239,30 @@ function _addShift(key){
   const container = row?.querySelector('.td-shifts .shifts-container');
   if(!container) return;
   const existing = container.querySelectorAll('.shift-group');
-  // 첫 번째 시프트가 비활성 상태이면 활성화 (주말→평일 전환)
+  // 첫 번째 시프트가 비활성 상태이면 활성화
   if(existing.length === 1){
-    const firstStart = document.getElementById(`ct-sch-start-${key}`);
-    if(firstStart && firstStart.disabled){
-      container.innerHTML = _shiftGroupHTML(key, 0, true, '', '', null);
+    const firstSel = container.querySelector('.tp-h');
+    if(firstSel && firstSel.disabled){
+      container.innerHTML = _shiftGroupHTML(key, 0, true, '', '', []);
+      _refreshShiftConstraints(key);
       calcWorkHours();
       return;
     }
   }
-  // 이미 활성 상태면 새 시프트 추가
+  // 이미 활성 상태면 새 시프트 추가 (시작시간 = 이전 시프트 종료시간)
   const idx = existing.length;
-  const html = _shiftGroupHTML(key, idx, true, '', '', []);
+  // 이전 시프트의 종료시간 가져오기
+  let prevEnd = '';
+  if(idx > 0){
+    const prevSid = idx === 1 ? '' : '-' + (idx - 1);
+    const prevEndEl = document.getElementById(`ct-sch-end-${key}${prevSid}`);
+    if(prevEndEl) prevEnd = prevEndEl.value;
+  }
+  const html = _shiftGroupHTML(key, idx, true, prevEnd, '', []);
   const div = document.createElement('div');
   div.innerHTML = html;
   container.appendChild(div.firstElementChild);
+  _refreshShiftConstraints(key);
   calcWorkHours();
 }
 
@@ -1087,6 +1272,7 @@ function _removeShift(key, idx){
   const sid = idx===0 ? '' : '-'+idx;
   const shift = document.getElementById(`ct-sch-shift-${key}${sid}`);
   if(shift) shift.remove();
+  _refreshShiftConstraints(key);
   calcWorkHours();
 }
 
@@ -1100,10 +1286,12 @@ function _addBrkSlot2(key, shiftIdx){
   const row = document.createElement('div');
   row.className = 'brk-slot-row';
   row.id = `ct-sch-brkrow-${key}${sid}-${idx}`;
+  const bidS = `ct-sch-brk-s-${key}${sid}-${idx}`;
+  const bidE = `ct-sch-brk-e-${key}${sid}-${idx}`;
   row.innerHTML =
-    `<input type="time" class="brk-time" data-brk-key="${key}" data-shift-idx="${shiftIdx}" data-brk-idx="${idx}" data-brk-type="s" value="" oninput="calcWorkHours()" />`
+    _timePickerHTML(bidS, '', false, '12')
     + `<span class="brk-sep">~</span>`
-    + `<input type="time" class="brk-time" data-brk-key="${key}" data-shift-idx="${shiftIdx}" data-brk-idx="${idx}" data-brk-type="e" value="" oninput="calcWorkHours()" />`
+    + _timePickerHTML(bidE, '', false, '13')
     + `<button type="button" class="btn-brk-del" onclick="_removeBrkSlot2('${key}',${shiftIdx},${idx})" title="휴게 삭제">−</button>`;
   wrap.appendChild(row);
   calcWorkHours();
@@ -1131,9 +1319,9 @@ function _getBrkSlots2(key, shiftIdx){
   if(!wrap) return [];
   const rows = wrap.querySelectorAll('.brk-slot-row');
   const result = [];
-  rows.forEach(row=>{
-    const sEl = row.querySelector('[data-brk-type="s"]');
-    const eEl = row.querySelector('[data-brk-type="e"]');
+  rows.forEach((row, idx)=>{
+    const sEl = document.getElementById(`ct-sch-brk-s-${key}${sid}-${idx}`);
+    const eEl = document.getElementById(`ct-sch-brk-e-${key}${sid}-${idx}`);
     result.push({ s: sEl ? sEl.value : '', e: eEl ? eEl.value : '' });
   });
   return result;
@@ -1143,9 +1331,9 @@ function _getBrkSlots(key){
   if(!wrap) return [];
   const rows = wrap.querySelectorAll('.brk-slot-row');
   const result = [];
-  rows.forEach(row=>{
-    const sEl = row.querySelector('[data-brk-type="s"]');
-    const eEl = row.querySelector('[data-brk-type="e"]');
+  rows.forEach((row, idx)=>{
+    const sEl = document.getElementById(`ct-sch-brk-s-${key}-${idx}`);
+    const eEl = document.getElementById(`ct-sch-brk-e-${key}-${idx}`);
     result.push({ s: sEl ? sEl.value : '', e: eEl ? eEl.value : '' });
   });
   return result;
@@ -1155,16 +1343,15 @@ function _addBrkSlot(key){
   const wrap = document.getElementById(`ct-sch-brkwrap-${key}`);
   if(!wrap) return;
   const idx = wrap.querySelectorAll('.brk-slot-row').length;
-  const div = document.createElement('div');
-  div.innerHTML = _brkSlotsHTML(key, true, Array(idx).fill({s:'',e:''}).concat([{s:'',e:''}])).split('</div>').slice(-2,-1)[0] + '</div>';
-  // 간단하게 새 슬롯 행만 생성
   const newRow = document.createElement('div');
   newRow.className = 'brk-slot-row';
   newRow.id = `ct-sch-brkrow-${key}-${idx}`;
+  const bidS = `ct-sch-brk-s-${key}-${idx}`;
+  const bidE = `ct-sch-brk-e-${key}-${idx}`;
   newRow.innerHTML =
-    `<input type="time" class="brk-time" data-brk-key="${key}" data-brk-idx="${idx}" data-brk-type="s" value="" oninput="calcWorkHours()" />`
+    _timePickerHTML(bidS, '', false, '12')
     + `<span class="brk-sep">~</span>`
-    + `<input type="time" class="brk-time" data-brk-key="${key}" data-brk-idx="${idx}" data-brk-type="e" value="" oninput="calcWorkHours()" />`
+    + _timePickerHTML(bidE, '', false, '13')
     + `<button type="button" class="btn-brk-del" onclick="_removeBrkSlot('${key}',${idx})" title="휴게 슬롯 삭제">−</button>`;
   wrap.appendChild(newRow);
   calcWorkHours();
@@ -1188,10 +1375,7 @@ function _removeBrkSlot(key, idx){
 function _setBrkSlots(key, breaks, enabled){
   const wrap = document.getElementById(`ct-sch-brkwrap-${key}`);
   if(!wrap) return;
-  wrap.innerHTML = _brkSlotsHTML(key, enabled, breaks);
-  // +버튼 disabled 동기화
-  const addBtn = wrap.querySelector('.btn-brk-add');
-  if(addBtn) addBtn.disabled = !enabled;
+  wrap.innerHTML = _brkSlotsHTML2(key, 0, enabled, breaks);
 }
 
 function initScheduleTable(){
@@ -1203,56 +1387,151 @@ function initScheduleTable(){
     return `
     <tr class="${DAY_CLASSES[i]}" id="ct-sch-row-${key}">
       <td><span class="day-label" style="color:${color}">${DAYS_KR[i]}</span></td>
-      <td class="td-shifts"><div class="shifts-container" id="ct-sch-shifts-${key}">${_shiftGroupHTML(key, 0, enabled, '', '', null)}</div></td>
+      <td class="td-shifts">
+        <div class="shifts-container" id="ct-sch-shifts-${key}">${_shiftGroupHTML(key, 0, enabled, '', '', null)}</div>
+        <div class="shift-error" id="ct-sch-err-${key}" style="display:none;color:#ef4444;font-size:11px;margin-top:4px;width:100%;"></div>
+      </td>
       <td><span class="computed-h" id="ct-sch-hrs-${key}">-</span></td>
     </tr>`;
   }).join('');
   calcWorkHours();
 }
 
-function timeToMins(t){ if(!t) return null; const [h,m]=t.split(':').map(Number); return h*60+m; }
+function timeToMins(t){
+  if(!t || typeof t !== 'string') return null;
+  const m = t.match(/^(\d{1,2}):(\d{2})$/);
+  if(!m) return null;
+  const h = parseInt(m[1], 10), min = parseInt(m[2], 10);
+  if(h > 23 || min > 59) return null;
+  return h * 60 + min;
+}
 
 function calcWorkHours(){
-  let totalWeekMins = 0;
+  const STATUTORY_DAILY = 8 * 60;   // 법정 1일 소정근로시간 (480분)
+  const STATUTORY_WEEKLY = 40 * 60; // 법정 1주 소정근로시간 (2400분)
+  const NIGHT_START = 22 * 60;      // 야간 시작 22:00 (1320분)
+  const NIGHT_END   = 30 * 60;      // 야간 종료 익일 06:00 (1800분)
+
+  let totalStatMins = 0, totalOtMins = 0, totalNightMins = 0, totalHolMins = 0;
   let workDays = 0;
-  DAY_KEYS.forEach(key=>{
+
+  DAY_KEYS.forEach(key => {
     const hrsEl = document.getElementById(`ct-sch-hrs-${key}`);
-    let dayMins = 0;
-    // 모든 시프트 합산
+    const isWeekend = key === 'sat' || key === 'sun';
+    let dayMins = 0, dayNightMins = 0;
+
     let shiftIdx = 0;
-    while(true){
-      const sid = shiftIdx===0 ? '' : '-'+shiftIdx;
+    while (true) {
+      const sid = shiftIdx === 0 ? '' : '-' + shiftIdx;
       const sEl = document.getElementById(`ct-sch-start-${key}${sid}`);
-      if(!sEl){ if(shiftIdx===0){ shiftIdx++; continue; } break; }
+      if (!sEl) { if (shiftIdx === 0) { shiftIdx++; continue; } break; }
       const s = timeToMins(sEl.value);
-      const e = timeToMins((document.getElementById(`ct-sch-end-${key}${sid}`)||{}).value);
-      if(s===null || e===null || e<=s){ shiftIdx++; continue; }
+      const eRaw = (document.getElementById(`ct-sch-end-${key}${sid}`) || {}).value;
+      let e = timeToMins(eRaw);
+      if (s === null || e === null) { shiftIdx++; continue; }
+      if (e <= s) e += 24 * 60; // 익일 종료
+
       const slots = _getBrkSlots2(key, shiftIdx);
-      const totalBrk = slots.reduce((sum, b)=>{
+      const totalBrk = slots.reduce((sum, b) => {
         const bs = timeToMins(b.s), be = timeToMins(b.e);
-        return sum + ((bs!==null && be!==null && be>bs) ? (be-bs) : 0);
+        if (bs === null || be === null) return sum;
+        let bMin = be - bs;
+        if (bMin <= 0) bMin += 24 * 60;
+        return sum + bMin;
       }, 0);
-      dayMins += Math.max(0, e-s-totalBrk);
+
+      const shiftMins = Math.max(0, e - s - totalBrk);
+      dayMins += shiftMins;
+
+      // ── 야간근로: shift와 22:00~06:00 교차분 ──
+      const nightOverlap =
+        Math.max(0, Math.min(e, NIGHT_END) - Math.max(s, NIGHT_START)) +
+        Math.max(0, Math.min(e, NIGHT_END + 24 * 60) - Math.max(s, NIGHT_START + 24 * 60));
+      dayNightMins += Math.max(0, nightOverlap);
+
       shiftIdx++;
     }
-    if(dayMins > 0){
-      totalWeekMins += dayMins;
+
+    if (dayMins > 0) {
       workDays++;
-      const h = dayMins/60;
-      if(hrsEl) hrsEl.textContent = (Number.isInteger(h)?h:h.toFixed(1))+'시간';
+      // ── 소정근로 vs 연장 분리 ──
+      const dayStatMins = Math.min(dayMins, STATUTORY_DAILY);
+      const dayOtMins   = Math.max(0, dayMins - STATUTORY_DAILY);
+      totalStatMins += dayStatMins;
+      totalOtMins   += dayOtMins;
+
+      // ── 야간근로 ──
+      totalNightMins += dayNightMins;
+
+      // ── 휴일근로 ──
+      if (isWeekend) totalHolMins += dayMins;
+
+      // ── 셀 표시: 소정(최대8h) + 연장 ──
+      const statH = dayStatMins / 60;
+      const otH   = dayOtMins / 60;
+      if (hrsEl) {
+        let label = (Number.isInteger(statH) ? statH : statH.toFixed(1)) + 'h';
+        if (isWeekend) label += '<span style="color:#dc2626;font-size:10px;">(휴일)</span>';
+        if (otH > 0) label += '<span style="color:#f59e0b;font-size:10px;"> +' + (Number.isInteger(otH) ? otH : otH.toFixed(1)) + 'h(연장)</span>';
+        hrsEl.innerHTML = label;
+      }
     } else {
-      if(hrsEl) hrsEl.textContent = '-';
+      if (hrsEl) hrsEl.textContent = '-';
     }
   });
-  const avgDay = workDays > 0 ? totalWeekMins/workDays/60 : 0;
+
+  // ── 주 소정근로시간 40h 초과분 → 연장으로 이관 ──
+  if (totalStatMins > STATUTORY_WEEKLY) {
+    totalOtMins += (totalStatMins - STATUTORY_WEEKLY);
+    totalStatMins = STATUTORY_WEEKLY;
+  }
+
+  const weekStatH = totalStatMins / 60;
+  const weekOtH   = totalOtMins / 60;
+  const weekNightH = totalNightMins / 60;
+  const weekHolH   = totalHolMins / 60;
+  const avgDayH = workDays > 0 ? totalStatMins / workDays / 60 : 0;
+
+  const fmtH = h => Number.isInteger(h) ? h : h.toFixed(1);
+
+  // ── 요약 업데이트 ──
   const el_d = document.getElementById('ct-wsh-days');
   const el_w = document.getElementById('ct-wsh-week-hours');
   const el_a = document.getElementById('ct-wsh-day-hours');
-  if(el_d) el_d.textContent = workDays;
-  if(el_w) el_w.textContent = (totalWeekMins/60%1===0) ? totalWeekMins/60 : (totalWeekMins/60).toFixed(1);
-  if(el_a) el_a.textContent = avgDay%1===0 ? avgDay : avgDay.toFixed(1);
-  const hrsHid = document.getElementById('ct-hours'); if(hrsHid) hrsHid.value = avgDay.toFixed(2);
-  const daysHid = document.getElementById('ct-days'); if(daysHid) daysHid.value = workDays;
+  if (el_d) el_d.textContent = workDays;
+  if (el_w) el_w.textContent = fmtH(weekStatH);
+  if (el_a) el_a.textContent = fmtH(Math.min(avgDayH, 8)); // 일 평균 최대 8h
+
+  // ── 연장/야간/휴일 표시 ──
+  const el_ot = document.getElementById('ct-wsh-ot-hours');
+  const el_otW = document.getElementById('ct-wsh-ot-wrap');
+  const el_ni = document.getElementById('ct-wsh-night-hours');
+  const el_niW = document.getElementById('ct-wsh-night-wrap');
+  const el_ho = document.getElementById('ct-wsh-hol-hours');
+  const el_hoW = document.getElementById('ct-wsh-hol-wrap');
+
+  if (el_ot) el_ot.textContent = fmtH(weekOtH);
+  if (el_otW) el_otW.style.display = weekOtH > 0 ? '' : 'none';
+  if (el_ni) el_ni.textContent = fmtH(weekNightH);
+  if (el_niW) el_niW.style.display = weekNightH > 0 ? '' : 'none';
+  if (el_ho) el_ho.textContent = fmtH(weekHolH);
+  if (el_hoW) el_hoW.style.display = weekHolH > 0 ? '' : 'none';
+
+  // ── hidden 필드 (소정근로시간 기준) ──
+  const hrsHid = document.getElementById('ct-hours');
+  if (hrsHid) hrsHid.value = Math.min(avgDayH, 8).toFixed(2);
+  const daysHid = document.getElementById('ct-days');
+  if (daysHid) daysHid.value = workDays;
+
+  // ── 월 환산 고정연장/야간/휴일근로시간 (주 × 4.345) ──
+  const WEEKS_PER_MONTH = 4.345;
+  const elOtH = document.getElementById('ct-fixed-ot-hours');
+  const elNiH = document.getElementById('ct-fixed-night-hours');
+  const elHoH = document.getElementById('ct-fixed-hol-hours');
+  if (elOtH) { elOtH.value = (weekOtH * WEEKS_PER_MONTH).toFixed(1); _calcFixedOtFromHours(); }
+  if (elNiH) { elNiH.value = (weekNightH * WEEKS_PER_MONTH).toFixed(1); _calcFixedNightFromHours(); }
+  if (elHoH) { elHoH.value = (weekHolH * WEEKS_PER_MONTH).toFixed(1); _calcFixedHolFromHours(); }
+
   calcContractSalary();
 }
 
@@ -1480,7 +1759,9 @@ function setScheduleFromLegacy(c){
   const end   = c.day_end||'18:00';
   const brkMins = c.break_mins||60;
   const sMins = timeToMins(start)||540;
-  const halfWork = Math.round(((timeToMins(end)||1080) - sMins - brkMins) / 2);
+  let eMins = timeToMins(end)||1080;
+  if(eMins <= sMins) eMins += 24*60; // 익일 종료
+  const halfWork = Math.round((eMins - sMins - brkMins) / 2);
   const brkStart = sMins + halfWork;
   const brkEnd   = brkStart + brkMins;
   const toTime = m => `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
@@ -2076,6 +2357,11 @@ function calcContractSalary(){
   _checkMinWageWarning();
   _checkRegisterBtnState();
   _checkAmendBtnState();
+
+  // 통상시급 변경 시 고정수당 금액 재계산
+  _calcFixedOtFromHours();
+  _calcFixedNightFromHours();
+  _calcFixedHolFromHours();
 }
 
 // ── 고정 연장/야간/휴일근로수당 양방향 자동계산 ──
@@ -2086,35 +2372,17 @@ function _getContractHourlyWage(){
 function _calcFixedOtFromHours(){
   const hw = _getContractHourlyWage();
   const h  = parseFloat(document.getElementById('ct-fixed-ot-hours')?.value)||0;
-  if(hw > 0 && h > 0) setAmountVal('ct-fixed-ot-pay', Math.round(hw * h * 1.5));
-}
-function _calcFixedOtFromPay(){
-  const hw  = _getContractHourlyWage();
-  const pay = getAmountVal('ct-fixed-ot-pay');
-  const hEl = document.getElementById('ct-fixed-ot-hours');
-  if(hw > 0 && pay > 0 && hEl) hEl.value = Math.round(pay / hw / 1.5 * 10000) / 10000;
+  setAmountVal('ct-fixed-ot-pay', (hw > 0 && h > 0) ? Math.round(hw * h * 1.5) : 0);
 }
 function _calcFixedNightFromHours(){
   const hw = _getContractHourlyWage();
   const h  = parseFloat(document.getElementById('ct-fixed-night-hours')?.value)||0;
-  if(hw > 0 && h > 0) setAmountVal('ct-fixed-night-pay', Math.round(hw * h * 0.5));
-}
-function _calcFixedNightFromPay(){
-  const hw  = _getContractHourlyWage();
-  const pay = getAmountVal('ct-fixed-night-pay');
-  const hEl = document.getElementById('ct-fixed-night-hours');
-  if(hw > 0 && pay > 0 && hEl) hEl.value = Math.round(pay / hw / 0.5 * 10000) / 10000;
+  setAmountVal('ct-fixed-night-pay', (hw > 0 && h > 0) ? Math.round(hw * h * 0.5) : 0);
 }
 function _calcFixedHolFromHours(){
   const hw = _getContractHourlyWage();
   const h  = parseFloat(document.getElementById('ct-fixed-hol-hours')?.value)||0;
-  if(hw > 0 && h > 0) setAmountVal('ct-fixed-hol-pay', Math.round(hw * h * 1.5));
-}
-function _calcFixedHolFromPay(){
-  const hw  = _getContractHourlyWage();
-  const pay = getAmountVal('ct-fixed-hol-pay');
-  const hEl = document.getElementById('ct-fixed-hol-hours');
-  if(hw > 0 && pay > 0 && hEl) hEl.value = Math.round(pay / hw / 1.5 * 10000) / 10000;
+  setAmountVal('ct-fixed-hol-pay', (hw > 0 && h > 0) ? Math.round(hw * h * 1.5) : 0);
 }
 
 /** ── 근로계약 관리 알림 카드 렌더링 ── */

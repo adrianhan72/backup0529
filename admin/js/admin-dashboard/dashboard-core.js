@@ -496,7 +496,7 @@ function openProbMgmtModal(contractId){
   document.getElementById('probmgmt-modal-title').textContent = `수습 근로자 처리 — ${t.empName}`;
   document.getElementById('probmgmt-modal-info').innerHTML =
     `<strong>${t.empName}</strong> (${t.coName})<br>
-     계약 유형: ${c.contract_type} · 수습기간: ${t.probMonths}개월<br>
+     계약 유형: ${contractTypeLabel(c.contract_type)} · 수습기간: ${t.probMonths}개월<br>
      수습 만료일: <strong>${t.probEnd}</strong>
      <span class="probmgmt-dday ${ddayCls}" style="margin-left:8px;">D-${t.daysLeft}</span>`;
 

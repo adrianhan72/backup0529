@@ -17,7 +17,7 @@ async function _probAutoCreateAndSave(){
   const confirmedType = piContract.contract_type ===CONTRACT_TYPE.REGULAR_PROBATION ? CONTRACT_TYPE.REGULAR : CONTRACT_TYPE.FIXED;
 
   const confirmMsg =
-    `수습 계약(${piContract.contract_type})을 기반으로\n` +
+    `수습 계약(${contractTypeLabel(piContract.contract_type)})을 기반으로\n` +
     `채용확정 근로계약서(${confirmedType})를 자동 생성하고\n` +
     `${yr}년 ${mo}월 급여를 저장합니다.\n\n` +
     `· 수습 종료일: ${probEnd}\n` +

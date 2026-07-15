@@ -964,20 +964,26 @@ function _cmValEqual(a, b){
   // JSON 배열/객체 정규화 비교
   const normalize = v => {
     if(v === null || v === undefined) return '';
-    if(typeof v === 'object') return JSON.stringify(v, Object.keys(v).sort());
+    if(typeof v === 'object'){
+      // 빈 객체/배열은 null과 동등하게 처리
+      const s = Array.isArray(v) ? JSON.stringify(v) : JSON.stringify(v, Object.keys(v).sort());
+      if(s === '{}' || s === '[]') return '';
+      return s;
+    }
     if(typeof v === 'string'){
       const t = v.trim();
+      if(t === '[]' || t === '{}') return ''; // 빈 JSON은 null/empty와 동등
       if((t.startsWith('{') || t.startsWith('[')) && (t.endsWith('}') || t.endsWith(']'))){
-        try { const p = JSON.parse(t); return JSON.stringify(p, Object.keys(p).sort()); } catch(e){}
+        try { const p = JSON.parse(t); const s2 = JSON.stringify(p, Object.keys(p).sort()); if(s2 === '{}' || s2 === '[]') return ''; return s2; } catch(e){}
       }
     }
     return String(v||'');
   };
-  const isJsonLike = v => (typeof v === 'object') || (typeof v === 'string' && v.trim().startsWith('{')) || (typeof v === 'string' && v.trim().startsWith('['));
-  if(isJsonLike(a) || isJsonLike(b)){
-    return normalize(a) === normalize(b);
-  }
-  return String(a||'') === String(b||'');
+  // null/empty를 먼저 한 번 더 체크 (normalize 후 둘 다 ''이면 동등)
+  const na = normalize(a);
+  const nb = normalize(b);
+  if(na === '' && nb === '') return true;
+  return na === nb;
 }
 
 async function saveCompany(){
@@ -1062,62 +1068,123 @@ async function saveCompany(){
   // ── 수정 모드: diff 계산 → 변경 있을 때만 적용일 검증 + company_history 기록 ──
   let _effDateStr = ''; // 상위 스코프에서 선언 (등기임원 이력에서도 사용)
   if(editId.company){
-    // ① diff 계산 (적용일 검증보다 먼저)
+    // ① 회사 정보 diff 계산 (allowance_config는 빈 커스텀 배열 제거 후 비교)
     const prev = allCompanies.find(x=>x.id===editId.company) || {};
+    // allowance_config 양쪽 정규화: 빈 _custom_ordinary / _custom_fixed 제거
+    const _normAllowanceCfg = (v) => {
+      if(!v) return v;
+      let obj = v;
+      if(typeof v === 'string'){ try { obj = JSON.parse(v); } catch(e){ return v; } }
+      if(typeof obj === 'object' && !Array.isArray(obj)){
+        if(Array.isArray(obj._custom_ordinary) && obj._custom_ordinary.length === 0) delete obj._custom_ordinary;
+        if(Array.isArray(obj._custom_fixed) && obj._custom_fixed.length === 0) delete obj._custom_fixed;
+        return JSON.stringify(obj, Object.keys(obj).sort());
+      }
+      return v;
+    };
+    const _prevNorm = { ...prev, allowance_config: _normAllowanceCfg(prev.allowance_config) };
+    const _bodyNorm = { ...body, allowance_config: _normAllowanceCfg(body.allowance_config) };
     const changedFields = Object.keys(_CM_FIELD_LABELS).filter(f =>
-      !_cmValEqual(prev[f], body[f])
+      !_cmValEqual(_prevNorm[f], _bodyNorm[f])
     );
+    const _fieldChangeLines = changedFields.map(f => `• ${_CM_FIELD_LABELS[f]}`);
 
-    // ② 변경된 필드가 없으면 바로 저장 (검증 스킵)
-    if(changedFields.length === 0){
-      // 변경 없음 → 바로 저장 완료
-    } else {
-      // 변경 확인 다이얼로그
-      const changeSummary = changedFields.map(f => `• ${_CM_FIELD_LABELS[f]}`).join('\n');
+    // ①-2 등기임원/특수관계인 변경 감지 (confirm 전에 미리 수집)
+    const _newExecsPre = _cmCollectExecutives();
+    const _newRelsPre  = _cmCollectRelated();
+    const _prevExecsPre = await api(`../tables/registered_executives?company_id=${editId.company}`).then(r => (r?.data || [])).catch(() => []);
+    const _prevRelsPre  = await api(`../tables/related_party_workers?company_id=${editId.company}`).then(r => (r?.data || [])).catch(() => []);
+
+    const _execChangeLines = [];
+    const _prevExecNamesPre = _prevExecsPre.map(e => e.name);
+    const _newExecNamesPre  = _newExecsPre.map(e => e.name);
+    _newExecsPre.forEach(e => { if(!_prevExecNamesPre.includes(e.name)) _execChangeLines.push(`• 등기임원 ${e.name} 추가`); });
+    _prevExecsPre.forEach(e => { if(!_newExecNamesPre.includes(e.name)) _execChangeLines.push(`• 등기임원 ${e.name} 삭제`); });
+    // 동일 이름 항목의 상세 변경 감지 (직책, 전화, 주민번호, 은행 등)
+    _newExecsPre.forEach(ne => {
+      const pe = _prevExecsPre.find(p => p.name === ne.name);
+      if(!pe) return;
+      const diffs = [];
+      if(ne.position !== pe.position) diffs.push(`직책: ${pe.position||'(없음)'} → ${ne.position||'(없음)'}`);
+      if(ne.phone    !== pe.phone)    diffs.push(`전화: ${pe.phone||'(없음)'} → ${ne.phone||'(없음)'}`);
+      if(ne.id_number!== pe.id_number) diffs.push(`주민번호 변경`);
+      if(ne.bank_name!== pe.bank_name) diffs.push(`은행: ${pe.bank_name||'(없음)'} → ${ne.bank_name||'(없음)'}`);
+      if(ne.bank_account!== pe.bank_account) diffs.push(`계좌번호 변경`);
+      if(diffs.length > 0) _execChangeLines.push(`• 등기임원 ${ne.name} 정보 변경 (${diffs.join(', ')})`);
+    });
+
+    const _relChangeLines = [];
+    const _prevRelNamesPre = _prevRelsPre.map(r => r.name);
+    const _newRelNamesPre  = _newRelsPre.map(r => r.name);
+    _newRelsPre.forEach(r => { if(!_prevRelNamesPre.includes(r.name)) _relChangeLines.push(`• 특수관계인 ${r.name} 추가`); });
+    _prevRelsPre.forEach(r => { if(!_newRelNamesPre.includes(r.name)) _relChangeLines.push(`• 특수관계인 ${r.name} 삭제`); });
+    // 동일 이름 항목의 상세 변경 감지
+    _newRelsPre.forEach(nr => {
+      const pr = _prevRelsPre.find(p => p.name === nr.name);
+      if(!pr) return;
+      const diffs = [];
+      if(nr.relationship !== pr.relationship) diffs.push(`관계: ${pr.relationship||'(없음)'} → ${nr.relationship||'(없음)'}`);
+      if(nr.phone        !== pr.phone)        diffs.push(`전화: ${pr.phone||'(없음)'} → ${nr.phone||'(없음)'}`);
+      if(nr.id_number    !== pr.id_number)     diffs.push(`주민번호 변경`);
+      if(nr.bank_name    !== pr.bank_name)     diffs.push(`은행: ${pr.bank_name||'(없음)'} → ${nr.bank_name||'(없음)'}`);
+      if(nr.bank_account !== pr.bank_account)  diffs.push(`계좌번호 변경`);
+      if(diffs.length > 0) _relChangeLines.push(`• 특수관계인 ${nr.name} 정보 변경 (${diffs.join(', ')})`);
+    });
+
+    const _allChangeLines = [..._fieldChangeLines, ..._execChangeLines, ..._relChangeLines];
+    const _hasExecRelChanges = _execChangeLines.length > 0 || _relChangeLines.length > 0;
+
+    // ② 변경 확인 다이얼로그 (회사 정보 + 등기임원/특수관계인 모두 표시)
+    if(_allChangeLines.length > 0){
+      const changeSummary = _allChangeLines.join('\n');
       if(!confirm(`다음 항목이 수정되었습니다:\n\n${changeSummary}\n\n계속 진행하시겠습니까?`)) return;
 
-      // ② 적용일 검증
-      const _effDateEl  = document.getElementById('cm-effective-date');
-      _effDateStr = _effDateEl?.value || '';
-      const _effDateMin = _effDateEl?.min   || '';
-      if(!_effDateStr){
-        return toast('수정 내용 적용일을 선택하세요.', 'error');
+      // 적용일 검증 (회사 정보 변경 시에만 필요)
+      if(changedFields.length > 0){
+        const _effDateEl  = document.getElementById('cm-effective-date');
+        _effDateStr = _effDateEl?.value || '';
+        const _effDateMin = _effDateEl?.min   || '';
+        if(!_effDateStr){
+          return toast('수정 내용 적용일을 선택하세요.', 'error');
+        }
+        if(_effDateMin && _effDateStr < _effDateMin){
+          _effDateEl.style.borderColor = '#e94560';
+          setTimeout(() => { _effDateEl.style.borderColor = ''; }, 2000);
+          return toast(`적용일은 최종 급여 지급일(${_effDateMin}) 이후여야 합니다.`, 'error');
+        }
       }
-      if(_effDateMin && _effDateStr < _effDateMin){
-        _effDateEl.style.borderColor = '#e94560';
-        setTimeout(() => { _effDateEl.style.borderColor = ''; }, 2000);
-        return toast(`적용일은 최종 급여 지급일(${_effDateMin}) 이후여야 합니다.`, 'error');
-      }
 
-      // ③ 고객사 정보 PUT 먼저 저장 (저장 성공 후 이력 기록)
-      body.id=editId.company;
-      const putRes = await api(`../tables/companies/${editId.company}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-      if(!putRes){ toast('저장에 실패했습니다.', 'error'); return; }
+      // ③ 고객사 정보 PUT (변경된 필드가 있을 때만)
+      if(changedFields.length > 0){
+        body.id=editId.company;
+        const putRes = await api(`../tables/companies/${editId.company}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+        if(!putRes){ toast('저장에 실패했습니다.', 'error'); return; }
 
-      // ④ 변경 이력 기록
-      const changes = changedFields.map(f => ({
-        field:     f,
-        label:     _CM_FIELD_LABELS[f],
-        before:    (prev[f] !== null && typeof prev[f]==='object') ? JSON.stringify(prev[f]) : String(prev[f]??''),
-        after:     (body[f] !== null && typeof body[f]==='object') ? JSON.stringify(body[f]) : String(body[f]??''),
-      }));
-      const snapshot = Object.fromEntries(
-        Object.keys(_CM_FIELD_LABELS).map(f=>[f, prev[f]])
-      );
-      const histEntry = {
-        id:           'cmhist_'+Date.now(),
-        company_id:   editId.company,
-        changed_at:   Date.now(),
-        effective_date: _effDateStr,
-        changes:      changes,
-        snapshot:     snapshot,
-      };
-      await api('../tables/company_history',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(histEntry)});
-      await loadCompanyHistories();
+        // ④ 변경 이력 기록
+        const changes = changedFields.map(f => ({
+          field:     f,
+          label:     _CM_FIELD_LABELS[f],
+          before:    (prev[f] !== null && typeof prev[f]==='object') ? JSON.stringify(prev[f]) : String(prev[f]??''),
+          after:     (body[f] !== null && typeof body[f]==='object') ? JSON.stringify(body[f]) : String(body[f]??''),
+        }));
+        const snapshot = Object.fromEntries(
+          Object.keys(_CM_FIELD_LABELS).map(f=>[f, prev[f]])
+        );
+        const histEntry = {
+          id:           'cmhist_'+Date.now(),
+          company_id:   editId.company,
+          changed_at:   Date.now(),
+          effective_date: _effDateStr,
+          changes:      changes,
+          snapshot:     snapshot,
+        };
+        await api('../tables/company_history',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(histEntry)});
+        await loadCompanyHistories();
 
-      // ⑤ 적용일 이후 계약에 allowance_config 반영
-      if(changedFields.includes('allowance_config')){
-        await _cmApplyAllowanceToContracts(editId.company, _effDateStr, newAllowanceCfg);
+        // ⑤ 적용일 이후 계약에 allowance_config 반영
+        if(changedFields.includes('allowance_config')){
+          await _cmApplyAllowanceToContracts(editId.company, _effDateStr, newAllowanceCfg);
+        }
       }
     }
   } else if(_currentCompanyDraftId){
@@ -1126,6 +1193,13 @@ async function saveCompany(){
   } else {
     body.id='comp'+Date.now();
     await api('../tables/companies',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    // ── 신규 등록 이력 기록 ──
+    const _histNew = { id: 'cmhist_'+Date.now(), company_id: body.id, changed_at: Date.now(), effective_date: new Date().toISOString().slice(0,10),
+      changes: [{ field: 'status', label: '고객사 상태', before: '', after: 'active' }],
+      snapshot: {}
+    };
+    await api('../tables/company_history',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(_histNew)}).catch(()=>{});
+    await loadCompanyHistories();
   }
   _currentCompanyDraftId = null;
 
@@ -1174,12 +1248,36 @@ async function saveCompany(){
     const _newExecNames  = _newExecs.map(e => e.name);
     _newExecs.forEach(e => { if(!_prevExecNames.includes(e.name)) _execChanges.push(`등기임원 ${e.name} 추가`); });
     _prevExecs.forEach(e => { if(!_newExecNames.includes(e.name)) _execChanges.push(`등기임원 ${e.name} 삭제`); });
+    // 동일 이름 상세 변경 감지
+    _newExecs.forEach(ne => {
+      const pe = _prevExecs.find(p => p.name === ne.name);
+      if(!pe) return;
+      const diffs = [];
+      if(ne.position !== pe.position) diffs.push(`직책: ${pe.position||'(없음)'} → ${ne.position||'(없음)'}`);
+      if(ne.phone    !== pe.phone)    diffs.push(`전화: ${pe.phone||'(없음)'} → ${ne.phone||'(없음)'}`);
+      if(ne.id_number!== pe.id_number) diffs.push(`주민번호 변경`);
+      if(ne.bank_name!== pe.bank_name) diffs.push(`은행 변경`);
+      if(ne.bank_account!== pe.bank_account) diffs.push(`계좌번호 변경`);
+      if(diffs.length > 0) _execChanges.push(`등기임원 ${ne.name}: ${diffs.join(', ')}`);
+    });
 
     const _relChanges = [];
     const _prevRelNames = _prevRels.map(r => r.name);
     const _newRelNames  = _newRels.map(r => r.name);
     _newRels.forEach(r => { if(!_prevRelNames.includes(r.name)) _relChanges.push(`특수관계인 ${r.name} 추가`); });
     _prevRels.forEach(r => { if(!_newRelNames.includes(r.name)) _relChanges.push(`특수관계인 ${r.name} 삭제`); });
+    // 동일 이름 상세 변경 감지
+    _newRels.forEach(nr => {
+      const pr = _prevRels.find(p => p.name === nr.name);
+      if(!pr) return;
+      const diffs = [];
+      if(nr.relationship !== pr.relationship) diffs.push(`관계: ${pr.relationship||'(없음)'} → ${nr.relationship||'(없음)'}`);
+      if(nr.phone        !== pr.phone)        diffs.push(`전화: ${pr.phone||'(없음)'} → ${nr.phone||'(없음)'}`);
+      if(nr.id_number    !== pr.id_number)     diffs.push(`주민번호 변경`);
+      if(nr.bank_name    !== pr.bank_name)     diffs.push(`은행 변경`);
+      if(nr.bank_account !== pr.bank_account)  diffs.push(`계좌번호 변경`);
+      if(diffs.length > 0) _relChanges.push(`특수관계인 ${nr.name}: ${diffs.join(', ')}`);
+    });
 
     if(_execChanges.length > 0 || _relChanges.length > 0){
       const histEntry = {
@@ -1198,7 +1296,9 @@ async function saveCompany(){
     }
   }
 
-  closeModal('company-modal');await loadCompanies();populateFilters();populatePICompanies();renderCompanies();renderDashboard();toast('고객사가 등록되었습니다. ✔');
+  closeModal('company-modal');await loadCompanies();populateFilters();populatePICompanies();renderCompanies();renderDashboard();
+  const _isEdit = !!editId.company;
+  toast(_isEdit ? '고객사 정보가 수정되었습니다. ✔' : '고객사가 등록되었습니다. ✔');
 }
 /**
  * 적용일 이후 시작되는 모든 계약에 변경된 allowance_config pay_type 을 일괄 반영.
@@ -1255,7 +1355,7 @@ async function _cmApplyAllowanceToContracts(companyId, effectiveDateStr, newCfg)
 
   if(updated > 0){
     await loadContracts();
-    toast(`${effectiveDateStr} 이후 시작 계약 ${updated}건에 급여 항목 설정이 반영되었습니다.`, 'success');
+    toast(`${effectiveDateStr} 이후 시작 계약 ${updated}건에 수당 항목 설정이 반영되었습니다.`, 'success');
   }
 }
 

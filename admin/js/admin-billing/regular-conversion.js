@@ -317,7 +317,7 @@ function _rcFillTemplateSampleSel(){
   _calcRcFullList().filter(x => x.rcStatus === 'exceeded').forEach(x => {
     const opt = document.createElement('option');
     opt.value       = x.empId;
-    opt.textContent = `${x.empName} · ${CONTRACT_TYPE_LABEL[x.activeContract?.contract_type] || x.activeContract?.contract_type || CONTRACT_TYPE_LABEL[CONTRACT_TYPE.FIXED]} · ${x.company} · 누적 ${x.totalDays}일`;
+    opt.textContent = `${x.empName} · ${CONTRACT_TYPE_LABEL[x.activeContract?.contract_type] || CONTRACT_TYPE_LABEL[CONTRACT_TYPE.FIXED]} · ${x.company} · 누적 ${x.totalDays}일`;
     sel.appendChild(opt);
   });
 }

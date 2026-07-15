@@ -20,7 +20,7 @@ function _buildPIBody(){
     overtime_hours:  gv('pi-ot-hours'),
     night_hours:     gv('pi-night-hours'),
     holiday_hours:   gv('pi-hol-hours'),
-    hourly_wage:     piContract ? piContract.hourly_wage : 0,
+    hourly_wage:     (piContract?.is_virtual) ? (parseFloat(document.getElementById('pi-hourly-wage-input')?.value) || 0) : (piContract ? piContract.hourly_wage : 0),
     base_salary:     gv('pi-base'),
     weekly_holiday_pay: gv('pi-weekly-hol'),
     position_allowance: gv('pi-position'),
@@ -80,6 +80,13 @@ function _buildPIBody(){
     pay_date:           document.getElementById('pi-paydate')?.value || '',
     note:               document.getElementById('pi-note')?.value   || '',
     dependents: Math.max(1, parseInt(document.getElementById('pi-dependents')?.value || '1') || 1),
+    tax_dependents: (piContract?.is_virtual) ? (parseInt(document.getElementById('pi-tax-dependents-input')?.value) || 1) : (parseInt(document.getElementById('pi-dependents')?.value) || 1),
+    // 가상 직원 수동 입력 pay_period
+    pay_period_month: (piContract?.is_virtual) ? (() => {
+      const _s = document.getElementById('pi-pay-period-start')?.value || '';
+      const _e = document.getElementById('pi-pay-period-end')?.value || '';
+      return _s && _e ? `${_s}~${_e}` : '';
+    })() : (piContract?.pay_period || ''),
   };
 }
 
@@ -423,11 +430,11 @@ async function savePI(){
     _showPIStandardsWarn(yr, mo, _stdCheck.missing);
     return;
   }
-  // ── 계약 유효성 검증 ──
+  // ── 계약 유효성 검증 (가상 직원은 예외) ──
   if(!piContract){
     return toast('유효한 근로계약서가 없습니다. 계약서를 먼저 등록·완료해 주세요.','error');
   }
-  if(piContract.is_draft){
+  if(!piContract.is_virtual && piContract.is_draft){
     return toast('근로계약서가 임시저장 상태입니다. 계약서 등록을 완료한 후 급여를 입력해 주세요.','error');
   }
   // ── 보험요율 캐시 로드 여부 확인 (백그라운드 로드가 아직 완료되지 않은 경우 방어) ──
@@ -905,7 +912,7 @@ async function savePISplit(){
     total_deduction:   round0((c.totalDed || 0) * ratioProb),
     net_pay:           round0((c.net || 0) * ratioProb),
     note: `[수습 기간] ${fmtNote(monthStart)} ~ ${fmtNote(probEnd)} (${wdProb}일 / ${whProb}h)\n` +
-          `수습 계약(${piContract.contract_type}) 기준 — 계약ID: ${piContract.id}`,
+          `수습 계약(${contractTypeLabel(piContract.contract_type)}) 기준 — 계약ID: ${piContract.id}`,
   };
 
   // 버튼 비활성
