@@ -208,6 +208,10 @@ async function init(){
     initMonthFilter(); initPIMonths(); initPIYears();
     renderDashboard(); renderCompanies(); renderContracts();
     populateFilters(); populatePICompanies(); initBreakSelects();
+    
+    // ── 페어 계약 새 창에서 열기: sessionStorage에 저장된 계약 자동 조회 ──
+    _restorePairContractWindow();
+    
     if(document.getElementById('page-contracts')?.classList.contains('active')){
       renderContCompanyList();
     }
@@ -400,6 +404,34 @@ async function autoActivatePendingContracts(){
   }));
 }
 
+/**
+ * 페어 계약 새 창 복원: sessionStorage에 저장된 계약 ID가 있으면 해당 계약 조회
+ */
+function _restorePairContractWindow(){
+  try {
+    const _pairId = sessionStorage.getItem('_pairContractId');
+    const _pairCoId = sessionStorage.getItem('_pairCompanyId') || '';
+    if(_pairId && allContracts.length > 0){
+      sessionStorage.removeItem('_pairContractId');
+      sessionStorage.removeItem('_pairCompanyId');
+      const _c = allContracts.find(x => x.id === _pairId);
+      if(_c){
+        // 고객사 선택 후 계약 조회
+        currentContCompanyId = _pairCoId || _c.company_id;
+        currentGlobalCompanyId = currentContCompanyId;
+        showPage('contracts', document.querySelector('[data-page="contracts"]'));
+        setTimeout(() => {
+          if(typeof selectContCompany === 'function'){
+            const _co = allCompanies.find(x => x.id === currentContCompanyId);
+            selectContCompany(currentContCompanyId, _co?.company_name || '');
+          }
+          setTimeout(() => viewContract(_pairId), 800);
+        }, 500);
+      }
+    }
+  } catch(e){}
+}
+
 /* 해지예정/퇴사예정 상태 중 terminate_date <= 오늘인 계약을 해지로 전환 */
 async function autoProcessTerminatePendingContracts(){
   const todayStr = new Date().toISOString().slice(0,10);
@@ -415,6 +447,8 @@ async function autoProcessTerminatePendingContracts(){
       });
       const idx = allContracts.findIndex(x => x.id === c.id);
       if(idx > -1) allContracts[idx].status = CONTRACT_STATUS.TERMINATED;
+      // P6: 갱신 페어가 있으면 정리 (계약이 해지되었으므로 페어 링크 무효화)
+      if(typeof breakPair === 'function') breakPair(c).catch(e => console.warn('[자동해지 페어정리]', e));
     } catch(e){ console.warn('[자동해지전환 오류]', c.id, e); }
   }));
 }

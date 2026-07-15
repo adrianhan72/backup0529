@@ -610,35 +610,38 @@ function validateAndParseExcel(wb, fileName){
 
   // ── 연도별 요율 조회 헬퍼 ──
   // _allInsuranceRates: [{insurance_type, year, period_start, period_end, rate, ...}]
-  function getRateForYearMonth(type, year, month){
-    const dateStr = `${year}-${String(month).padStart(2,'0')}-01`;
-    // 기간이 있는 경우 기간 내 매칭
-    const byPeriod = _allInsuranceRates.find(r =>
+  // 적용기간 내 요율이 없으면 최신 요율을 지속 적용 (갱신되지 않아도 유효)
+  function _findLatestRate(type, dateStr){
+    // ① 적용기간 내 정확히 매칭
+    let r = _allInsuranceRates.find(r =>
       r.insurance_type===type &&
       r.period_start && r.period_end &&
       dateStr >= r.period_start && dateStr <= r.period_end
     );
+    // ② 매칭 실패 시: 연도 매칭
+    if(!r){
+      const yr = parseInt(dateStr.slice(0,4));
+      r = _allInsuranceRates.find(r => r.insurance_type===type && Number(r.year)===yr);
+    }
+    // ③ 그래도 없으면: 해당 유형의 최신 요율 (period_end 내림차순)
+    if(!r){
+      const candidates = _allInsuranceRates.filter(r=>r.insurance_type===type);
+      candidates.sort((a,b)=>(b.period_end||'').localeCompare(a.period_end||''));
+      r = candidates[0] || null;
+    }
+    return r;
+  }
+  function getRateForYearMonth(type, year, month){
+    const dateStr = `${year}-${String(month).padStart(2,'0')}-01`;
+    const r = _findLatestRate(type, dateStr);
     // DB의 rate는 % 단위 (예: 12.95)로 저장 → /100 하여 소수 비율(0.1295)로 반환
-    if(byPeriod) return (parseFloat(byPeriod.rate)||0) / 100;
-    // 기간 없이 연도만 있는 경우
-    const byYear = _allInsuranceRates.find(r =>
-      r.insurance_type===type && Number(r.year)===year
-    );
-    return byYear ? (parseFloat(byYear.rate)||0) / 100 : 0;
+    return r ? (parseFloat(r.rate)||0) / 100 : 0;
   }
 
   function getCapForYearMonth(type, year, month){
     const dateStr = `${year}-${String(month).padStart(2,'0')}-01`;
-    const byPeriod = _allInsuranceRates.find(r =>
-      r.insurance_type===type &&
-      r.period_start && r.period_end &&
-      dateStr >= r.period_start && dateStr <= r.period_end
-    );
-    if(byPeriod) return parseFloat(byPeriod.cap_amount)||0;
-    const byYear = _allInsuranceRates.find(r =>
-      r.insurance_type===type && Number(r.year)===year
-    );
-    return byYear ? parseFloat(byYear.cap_amount)||0 : 0;
+    const r = _findLatestRate(type, dateStr);
+    return r ? parseFloat(r.cap_amount)||0 : 0;
   }
 
   // ========================================

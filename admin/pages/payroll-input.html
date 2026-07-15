@@ -327,6 +327,11 @@
                 <label style="color:#7c3aed;">고정 휴일근로수당</label>
                 <span id="pi-fixed-hol-pay-disp" style="font-size:13px;font-weight:600;color:#7c3aed;">0원</span>
               </div>
+              <!-- 과세 기준 부양가족 수 (직원 정보에서 자동 반영) -->
+              <div class="pi-row">
+                <label>과세 기준 부양가족 수 <span style="font-size:10px;font-weight:400;color:#9ca3af;">(본인 포함)</span></label>
+                <span id="pi-tax-dependents-disp" style="font-size:13px;font-weight:600;color:#374151;">1인</span>
+              </div>
               <!-- ══ 근로 실적 ══ -->
               <div class="pi-section-title green" style="margin-top:14px;"><i class="fas fa-clipboard-list"></i> 근로 실적</div>
               <div class="pi-row">
@@ -415,7 +420,7 @@
               <div class="pi-row" id="pi-row-childcare" style="display:none;">
                 <label>보육수당</label>
                 <div class="pi-row-right">
-                  <span class="pi-dep-wrap">부양가족 <input type="number" id="pi-dependents" min="0" value="0" oninput="calcPI()" class="pi-dep-input" /> 인</span>
+                  <span class="pi-dep-wrap">만 6세 이하 자녀 <input type="number" id="pi-dependents" min="0" value="0" oninput="calcPI()" class="pi-dep-input" /> 인</span>
                   <input type="text" inputmode="numeric" id="pi-childcare" data-amount oninput="onAmountInput(this,calcPI)" class="pi-row-amount" />
                 </div>
               </div>

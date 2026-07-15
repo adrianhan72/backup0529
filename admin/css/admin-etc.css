@@ -32,9 +32,15 @@
     .cont-alert-card-chevron{font-size:11px;transition:transform .2s;}
     .cont-alert-card-chevron.open{transform:rotate(180deg);}
     .cont-alert-card-body{border-top:1px solid rgba(0,0,0,.07);}
-    .cont-alert-table{width:100%;border-collapse:collapse;font-size:12.5px;}
-    .cont-alert-table th{padding:8px 14px;font-size:11.5px;font-weight:700;text-align:left;white-space:nowrap;}
-    .cont-alert-table td{padding:9px 14px;vertical-align:middle;border-top:1px solid rgba(0,0,0,.05);}
+    .cont-alert-table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:12.5px;}
+    .cont-alert-table th{padding:8px 10px;font-size:11.5px;font-weight:700;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .cont-alert-table th:nth-child(1){width:22%;}
+    .cont-alert-table th:nth-child(2){width:13%;}
+    .cont-alert-table th:nth-child(3){width:24%;}
+    .cont-alert-table th:nth-child(4){width:11%;}
+    .cont-alert-table th:nth-child(5){width:30%;}
+    .cont-alert-table td{padding:9px 10px;vertical-align:middle;border-top:1px solid rgba(0,0,0,.05);overflow:hidden;text-overflow:ellipsis;}
+    .cont-alert-table td:last-child{white-space:nowrap;}
     .cont-alert-table tr:hover td{filter:brightness(.97);}
     /* ?�시?�????amber */
     .cont-alert-draft{border:none;border-bottom:1.5px solid #fcd34d;}
@@ -68,7 +74,15 @@
     .cont-alert-pending .cont-alert-card-body{background:#f5f6ff;}
     .cont-alert-pending .cont-alert-table th{background:#eef2ff;color:#3730a3;}
     .cont-alert-pending .cont-alert-table td{color:#374151;}
-    /* ?��??�정 ??rose */
+    /* 갱신-해지예정 — amber/brown (갱신 페어) */
+    .cont-alert-renew-terminate{border:none;border-bottom:1.5px solid #fdba74;}
+    .cont-alert-renew-terminate .cont-alert-card-head{background:linear-gradient(90deg,#fff7ed,#ffedd5);}
+    .cont-alert-renew-terminate .cont-alert-card-title{color:#7c2d12;}
+    .cont-alert-renew-terminate .cont-alert-card-count{background:#ffedd5;color:#c2410c;border:1px solid #fdba74;}
+    .cont-alert-renew-terminate .cont-alert-card-body{background:#fff9f5;}
+    .cont-alert-renew-terminate .cont-alert-table th{background:#fff7ed;color:#7c2d12;}
+    .cont-alert-renew-terminate .cont-alert-table td{color:#374151;}
+    /* 해지예정(퇴사) — rose/red */
     .cont-alert-preterminate{border:none;border-bottom:1.5px solid #fda4af;}
     .cont-alert-preterminate .cont-alert-card-head{background:linear-gradient(90deg,#fff1f2,#ffe4e6);}
     .cont-alert-preterminate .cont-alert-card-title{color:#9f1239;}

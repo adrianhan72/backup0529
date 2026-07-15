@@ -15,7 +15,7 @@ const VALID_TABLES = new Set([
   'company_notices','admin_accounts','insurance_rates','minimum_wages',
   'annual_leave_promotions','annual_leave_ledger','company_history',
   'wage_ledger_notifications',
-  'registered_executives','related_party_workers',
+  'registered_executives','related_party_workers','tax_brackets','tax_bracket_rows',
 ]);
 
 function resolveTable(name, db) {
@@ -29,6 +29,63 @@ module.exports = function(db) {
   const router = Router();
 
   router.use(authMiddleware);
+
+  // ── 급여 저장 전 서버 측 산정기준 검증 미들웨어 ──
+  function validateStandardsBeforePayrollSave(req, res, next) {
+    const table = resolveTable(req.params.t, db);
+    if (!table || table.tableName !== 'payrolls') return next();
+    if (req.method !== 'POST' && req.method !== 'PUT' && req.method !== 'PATCH') return next();
+
+    const INSURANCE_TYPES = ['national_pension', 'health', 'long_term_care', 'employment'];
+    const TYPE_LABELS = { national_pension:'국민연금', health:'건강보험', long_term_care:'장기요양보험', employment:'고용보험' };
+
+    // ① 4대보험 요율 데이터 존재 확인
+    const missingRates = INSURANCE_TYPES.filter(type => {
+      const cnt = db.insurance_rates.connection.raw.prepare(
+        'SELECT COUNT(*) AS cnt FROM insurance_rates WHERE insurance_type = ?'
+      ).get(type).cnt;
+      return cnt === 0;
+    });
+
+    if (missingRates.length > 0) {
+      const labels = missingRates.map(t => TYPE_LABELS[t]).join(', ');
+      return res.status(400).json({
+        error: `산정기준 누락: ${labels} 요율 데이터가 없습니다. 년도별 산정기준에서 먼저 등록해 주세요.`,
+        code: 'MISSING_INSURANCE_RATES',
+        missingTypes: missingRates
+      });
+    }
+
+    // ② 보험요율 적용기간 초과 여부 확인 (경고만)
+    const payYear  = req.body.pay_year  || (req.body.pay_date ? parseInt(req.body.pay_date.slice(0,4)) : null);
+    const payMonth = req.body.pay_month || (req.body.pay_date ? parseInt(req.body.pay_date.slice(5,7)) : null);
+
+    if (payYear && payMonth) {
+      const payDate = `${payYear}-${String(payMonth).padStart(2,'0')}-01`;
+      const hasCurrentRates = INSURANCE_TYPES.every(type => {
+        return db.insurance_rates.connection.raw.prepare(
+          'SELECT COUNT(*) AS cnt FROM insurance_rates WHERE insurance_type = ? AND ? >= period_start AND ? <= period_end'
+        ).get(type, payDate, payDate).cnt > 0;
+      });
+
+      if (!hasCurrentRates) {
+        // 적용기간 내 요율은 없지만 최신 요율로 폴백 가능 → 경고만 헤더에 추가
+        res.set('X-Standards-Warning', 'outdated-rates');
+      }
+    }
+
+    // ③ 최저임금 데이터 존재 확인 (경고만)
+    const mwCnt = db.minimum_wages.connection.raw.prepare(
+      'SELECT COUNT(*) AS cnt FROM minimum_wages'
+    ).get().cnt;
+    if (mwCnt === 0) {
+      res.set('X-Standards-Warning-MinWage', 'missing');
+    }
+
+    next();
+  }
+
+  router.use(validateStandardsBeforePayrollSave);
 
   /** GET /tables/:t */
   router.get('/:t', (req, res) => {

@@ -220,6 +220,18 @@ function generateContractHTMLFromData(c, emp, co){
       };
     });
   }
+  // ── schedule_json 중첩 구조(shifts[0].start) → 평면 구조(start/end) 변환 ──
+  activeDays = activeDays.map(s => {
+    const shift = (Array.isArray(s.shifts) && s.shifts.length > 0) ? s.shifts[0] : {};
+    return {
+      day: s.day,
+      start: shift.start || s.start || '',
+      end: shift.end || s.end || '',
+      breaks: Array.isArray(shift.breaks) ? shift.breaks : (Array.isArray(s.breaks) ? s.breaks : []),
+      brk_start: shift.brk_start || s.brk_start || '',
+      brk_end: shift.brk_end || s.brk_end || ''
+    };
+  });
   const dayNamesK  = {mon:'월',tue:'화',wed:'수',thu:'목',fri:'금',sat:'토',sun:'일'};
   const dayNamesFull = {mon:'월요일',tue:'화요일',wed:'수요일',thu:'목요일',fri:'금요일',sat:'토요일',sun:'일요일'};
 
@@ -909,6 +921,8 @@ async function savePendingContractEdit(){
       if(idEl)      empPatch.id_number         = idEl.value;
       if(depsEl)    empPatch.dependents        = parseInt(depsEl.value)||0;
       if(addrEl)    empPatch.address           = addrEl.value;
+      const taxDepEl = document.getElementById('ct-edit-em-tax-dependents');
+      if(taxDepEl)  empPatch.tax_dependents    = parseInt(taxDepEl.value)||1;
       const emailEl = document.getElementById('ct-edit-em-email');
       if(emailEl)   empPatch.email             = emailEl.value;
       const empnoEl = document.getElementById('ct-edit-em-empno');
@@ -941,7 +955,7 @@ async function savePendingContractEdit(){
 ■ 근로자: ${_pendEmp.name||''}
 ■ 고용형태: ${contractTypeLabel(c.contract_type)||c.contract_type||''}
 ■ 계약 기간: ${_fmtD(c.contract_start)}${c.contract_end ? ' ~ ' + _fmtD(c.contract_end) : ''}
-■ 퇴사 예정일: ${_fmtD(_termDate)}
+■ 해지 예정일: ${_fmtD(_termDate)}
 ■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
 
 자세한 내용은 근로 계약 관리 메뉴에서 확인하세요.
@@ -1055,9 +1069,11 @@ async function cancelPreTerminate(){
   if(!confirmed) return;
 
   try {
-    // 1) 계약 상태 복귀
+    // 1) 계약 상태 복귀 + 페어 관계 정리
     await api(`../tables/contracts/${c.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({status: CONTRACT_STATUS.ACTIVE, terminate_date:''})});
+    // 갱신 페어가 있는 경우 해제 (P4)
+    if(typeof breakPair === 'function') await breakPair(c);
 
     // 2) 직원 상태 복원 (resign_date 컬럼 없음 — expire_date 사용)
     if(emp.id && emp.status===EMP_STATUS.RESIGNED){
@@ -1317,7 +1333,7 @@ function _collectRenewFormFields(){
 
 /**
  * 갱신 신규 계약 시작일 유효성 검사
- * @param {string} oldEnd - 기존 계약 종료일 (YYYY-MM-DD)
+ * @param {string} oldEnd - 기존 계약 해지일 (YYYY-MM-DD)
  */
 function _validateRenewNewStart(oldEnd){
   const newStartEl = document.getElementById('ct-renew-new-start');
@@ -1328,7 +1344,7 @@ function _validateRenewNewStart(oldEnd){
     return false;
   }
   if(ns <= oldEnd){
-    if(newStartErr){ newStartErr.textContent = '신규 계약 시작일은 기존 계약 종료일보다 이후여야 합니다.'; newStartErr.style.display = 'block'; }
+    if(newStartErr){ newStartErr.textContent = '신규 계약 시작일은 기존 계약 해지일보다 이후여야 합니다.'; newStartErr.style.display = 'block'; }
     newStartEl.style.borderColor = '#dc2626';
     return false;
   }
@@ -1338,26 +1354,56 @@ function _validateRenewNewStart(oldEnd){
 }
 
 function doContractRenew(){
+  // P9: 이중 갱신 방지 가드
+  const _renewC = allContracts.find(x => x.id === editId.contract);
+  if(_renewC && _renewC.renewed_to_id){
+    const _existingNew = allContracts.find(x => x.id === _renewC.renewed_to_id);
+    if(_existingNew && _existingNew.status !== CONTRACT_STATUS.VOIDED){
+      toast('이 계약은 이미 갱신된 계약입니다. 기존 갱신 계약을 확인하세요.', 'error');
+      return;
+    }
+  }
+  
   // 종료 패널 숨김
   document.getElementById('ct-terminate-panel').style.display = 'none';
   const rp = document.getElementById('ct-renew-panel');
   if(!rp) return;
   rp.style.display = 'block';
 
+  // ── 갱신 모드: 계약정보 섹션 숨김 (해지일·시작일은 갱신 카드 내에서 설정) ──
+  ['ct-start','ct-row-end','ct-row-terminate','ct-row-voided','ct-row-renewed-pair-end','ct-row-probation-period','ct-probation-row','ct-probation-end-col'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el){
+      const parent = el.closest('.form-group');
+      if(parent) parent.style.display = 'none';
+      else el.style.display = 'none';
+    }
+  });
+  // ct-start-hint, ct-end-hint 숨김
+  ['ct-start-hint','ct-end-hint','ct-renewed-pair-hint'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.style.display = 'none';
+  });
+  // 계약정보 섹션 타이틀도 숨김
+  const _sectionTitles = document.querySelectorAll('.form-section-title');
+  _sectionTitles.forEach(el => {
+    if(el.textContent.includes('계약 정보')) el.style.display = 'none';
+  });
+
   const oldEndEl = document.getElementById('ct-renew-old-end');
   const newStartEl = document.getElementById('ct-renew-new-start');
   const newStartErr = document.getElementById('ct-renew-new-start-err');
 
-  // 기존 계약 종료일: 사용자가 직접 입력 (기본값 없음)
+  // 기존 계약 해지일: 사용자가 직접 입력 (기본값 없음)
   oldEndEl.value = '';
   oldEndEl.disabled = false;
-  // 신규 계약 시작일: 비활성 상태로 시작 (기존 종료일 입력 후 활성화)
+  // 신규 계약 시작일: 비활성 상태로 시작 (해지일 입력 후 활성화)
   newStartEl.value = '';
   newStartEl.disabled = true;
   newStartEl.removeAttribute('min');
   if(newStartErr) newStartErr.style.display = 'none';
 
-  // ── 기존 계약 종료일 변경 시 신규 시작일 활성화 + 유효성 검사 ──
+  // ── 기존 계약 해지일 변경 시 신규 시작일 활성화 + 유효성 검사 ──
   oldEndEl.onchange = function(){
     const oe = oldEndEl.value;
     if(oe){
@@ -1458,7 +1504,7 @@ async function cancelContractRenew(){
     message: `[갱신 취소] 다음 작업이 진행됩니다:\n\n`
       + `① 갱신 예정 계약 → 파기 처리\n`
       + `② 원본 계약 → 유효 상태로 복원\n`
-      + `③ 원본 계약의 해지일·종료일 데이터 삭제\n\n`
+      + `③ 원본 계약의 해지일 데이터 삭제 (계약 종료일은 보존)\n\n`
       + `계속하시겠습니까?`,
     okText: '갱신 취소',
     okClass: 'btn-primary'
@@ -1466,13 +1512,12 @@ async function cancelContractRenew(){
   if(!confirmed) return;
 
   try {
-    // 1. 원본 계약 복원: ACTIVE, 해지일/종료일 제거, renewed_to_id 제거
+    // 1. 원본 계약 복원: ACTIVE, 해지일 제거, renewed_to_id 제거 (contract_end는 보존)
     if(orig){
       await api(`../tables/contracts/${origId}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
           status: CONTRACT_STATUS.ACTIVE,
           terminate_date: '',
-          contract_end: '',
           renewed_to_id: null
         })});
     }
@@ -1498,7 +1543,7 @@ async function confirmContractRenew(){
   if(!oldEnd){
     oldEndEl?.focus();
     oldEndEl?.scrollIntoView({behavior:'smooth',block:'center'});
-    return toast('기존 계약 종료일을 입력하세요.','error');
+    return toast('기존 계약 해지일을 입력하세요.','error');
   }
   if(!newStart){
     newStartEl?.focus();
@@ -1508,7 +1553,7 @@ async function confirmContractRenew(){
   if(newStart <= oldEnd){
     newStartEl?.focus();
     newStartEl?.scrollIntoView({behavior:'smooth',block:'center'});
-    return toast('신규 계약 시작일은 기존 계약 종료일보다 이후여야 합니다.','error');
+    return toast('신규 계약 시작일은 기존 계약 해지일보다 이후여야 합니다.','error');
   }
 
   const c = allContracts.find(x=>x.id===editId.contract);
@@ -1517,16 +1562,12 @@ async function confirmContractRenew(){
   const today = new Date().toISOString().slice(0,10);
   const origEnd = c.contract_end || '';
 
-  // 종료일이 원래보다 앞당겨졌는지 확인 → 연장(만료)이 아닌 단축 경고
+  // 해지일이 원래 계약 종료일보다 앞당겨졌는지 확인
   if(origEnd && oldEnd < origEnd){
-    if(!confirm(`기존 계약 종료일(${origEnd})보다 앞당겨진 날짜(${oldEnd})입니다.\n계약 종료일 단축은 [해지] 처리를 권장합니다.\n그래도 계속 진행하시겠습니까?`)) return;
+    if(!confirm(`원래 계약 종료일(${origEnd})보다 앞당겨진 해지일(${oldEnd})입니다.\n계약 종료일 이전 해지는 [해지]로 처리됩니다.\n그래도 계속 진행하시겠습니까?`)) return;
   }
 
-  // 1. 기존 계약: 종료일 확정 + 상태 '갱신됨' + 갱신계약 ID 연결
-  await api(`../tables/contracts/${c.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({contract_end: oldEnd, status: CONTRACT_STATUS.RENEWED, renewed_to_id: null})});
-
-  // 2. 신규 계약 생성 (현재 폼 입력값 + 기존 계약 병합)
+  // 1. 신규 계약 생성 (현재 폼 입력값 + 기존 계약 병합)
   //    - 시작일이 오늘 이후면 '계약예정', 오늘이거나 이전이면 '활성'
   const newStatus = newStart > today ? CONTRACT_STATUS.PENDING : CONTRACT_STATUS.ACTIVE;
   const _renewFields = _collectRenewFormFields();
@@ -1544,9 +1585,13 @@ async function confirmContractRenew(){
   const savedNew = await api('../tables/contracts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(newContract)});
   const newId = savedNew.id;
 
-  // 구계약에 갱신된 계약 ID 연결
+  // 2. 기존 계약: 해지일 기록 + 상태 '갱신됨' + renewed_to_id (contract_end는 보존)
   await api(`../tables/contracts/${c.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({renewed_to_id: newId})});
+    body:JSON.stringify({terminate_date: oldEnd, status: CONTRACT_STATUS.RENEWED, renewed_to_id: newId})});
+  // 로컬 갱신
+  c.terminate_date = oldEnd;
+  c.status = CONTRACT_STATUS.RENEWED;
+  c.renewed_to_id = newId;
 
   // ── 고객사 인앱 알림 발송 (갱신/갱신예약) ──
   {
@@ -1567,7 +1612,7 @@ async function confirmContractRenew(){
 
 ■ 근로자: ${_renewEmp.name||''}
 ■ 고용형태: ${contractTypeLabel(c.contract_type)||c.contract_type||''}
-■ 기존 계약 종료일: ${_fmtD(oldEnd)}
+■ 기존 계약 해지일: ${_fmtD(oldEnd)}
 ■ 새 계약 시작일: ${_fmtD(newStart)} (시작일 미도래 — 계약예정)
 ■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
 
@@ -1591,7 +1636,7 @@ ${_BRAND_SIG}`,
 
 ■ 근로자: ${_renewEmp.name||''}
 ■ 고용형태: ${contractTypeLabel(c.contract_type)||c.contract_type||''}
-■ 기존 계약 종료일: ${_fmtD(oldEnd)}
+■ 기존 계약 해지일: ${_fmtD(oldEnd)}
 ■ 새 계약 시작일: ${_fmtD(newStart)}
 ■ 계약 상태: 계약유효 (활성)
 ■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
@@ -1678,7 +1723,7 @@ function openRecontractModal(srcContract){
 
   // 계약 조건 복사
   document.getElementById('ct-start').value   = '';
-  document.getElementById('ct-type').value    = rcCtType; toggleCtEndDate(true);
+  document.getElementById('ct-type').value    = rcCtType; toggleCtEndDate(true); toggleProbation();
   document.getElementById('ct-end').value     = srcContract.contract_end||'';
   document.getElementById('ct-status').value  = '활성';
   document.getElementById('ct-annual').value  = srcContract.annual_leave_days||15;
@@ -1734,6 +1779,24 @@ function openRecontractModal(srcContract){
     setAmountVal('ct-annual-sal', srcContract.annual_salary||0);
     setAmountVal('ct-base',       srcContract.base_salary);
   }
+  // ── 통상임금·고정수당: 일용직은 모두 0 처리 ──
+  if(isDailySrc){
+    setAmountVal('ct-position',    0);
+    setAmountVal('ct-car',         0); setCTPayType('car', '');
+    setAmountVal('ct-remote-area', 0);
+    setAmountVal('ct-meal',        0); setCTPayType('meal', '');
+    setAmountVal('ct-research',    0); setCTPayType('research', '');
+    setAmountVal('ct-site',        0);
+    setAmountVal('ct-skill',       0);
+    setAmountVal('ct-license',     0);
+    setAmountVal('ct-communication',0); setCTPayType('communication', '');
+    setAmountVal('ct-fitness',     0); setCTPayType('fitness', '');
+    setAmountVal('ct-self-dev',    0); setCTPayType('self_dev', '');
+    setAmountVal('ct-book',        0); setCTPayType('book', '');
+    setAmountVal('ct-overseas',    0); setCTPayType('overseas', '');
+    setAmountVal('ct-childcare',   0);
+    { const _ccDep=document.getElementById('ct-childcare-dependents'); if(_ccDep) _ccDep.value=0; }
+  } else {
   setAmountVal('ct-position',    srcContract.position_allowance||0);
   // 차량지원비 = 구 교통비 + 구 자가운전보조금 합산 (레거시 하위호환)
   setAmountVal('ct-car', (parseFloat(srcContract.transportation_allowance||srcContract.car_maintenance||0)) + (parseFloat(srcContract.self_driving_allowance||0)));
@@ -1760,6 +1823,7 @@ function openRecontractModal(srcContract){
   // 보육수당 복원
   setAmountVal('ct-childcare',   srcContract.childcare_allowance||0);
   { const _ccDep=document.getElementById('ct-childcare-dependents'); if(_ccDep) _ccDep.value=srcContract.childcare_dependents||0; }
+  }
   document.getElementById('ct-note').value = '';
   calcContractSalary();
 
@@ -1817,7 +1881,20 @@ async function confirmContractTerminate(){
 
   // 계약 만료일(contract_end)보다 이후 날짜는 입력 불가
   if(c.contract_end && termDate >= c.contract_end){
-    return toast(`해지예정일은 계약 만료일(${c.contract_end}) 이전이어야 합니다.`, 'error');
+    return toast(`퇴사예정일은 계약 만료일(${c.contract_end}) 이전이어야 합니다.`, 'error');
+  }
+
+  // P5: 갱신 페어 존재 시 경고 및 페어 해제
+  if(typeof findPairContract === 'function'){
+    const _existPair = findPairContract(c);
+    if(_existPair){
+      const _confirmed = confirm(
+        `이 계약은 갱신 페어(${_existPair.employee_name || '알 수 없음'})와 연결되어 있습니다.\n` +
+        `퇴사/해지 처리 시 페어 관계가 해제됩니다.\n계속 진행하시겠습니까?`
+      );
+      if(!_confirmed) return;
+      if(typeof breakPair === 'function') await breakPair(c);
+    }
   }
 
   // 오늘 이전 → 즉시 해지, 오늘 또는 이후 → 해지예정
@@ -2272,6 +2349,7 @@ async function saveDraftContract(reason){
       expire_date: document.getElementById('ct-em-expire').value,
       status: EMP_STATUS.ACTIVE,
       dependents: parseInt(document.getElementById('ct-childcare-dependents')?.value)||0,
+      tax_dependents: parseInt(document.getElementById('ct-em-tax-dependents')?.value)||1,
       phone: document.getElementById('ct-em-phone').value,
       email: document.getElementById('ct-em-email').value,
       address: document.getElementById('ct-em-address').value,
@@ -3107,6 +3185,7 @@ async function saveContract(){
       expire_date: document.getElementById('ct-em-expire').value,
       status: EMP_STATUS.ACTIVE,
       dependents: parseInt(document.getElementById('ct-childcare-dependents')?.value)||0,
+      tax_dependents: parseInt(document.getElementById('ct-em-tax-dependents')?.value)||1,
       phone: document.getElementById('ct-em-phone').value,
       email: document.getElementById('ct-em-email').value,
       address: document.getElementById('ct-em-address').value,
@@ -3232,7 +3311,9 @@ async function saveContract(){
           ? document.getElementById('ct-start')?.value
           : (document.getElementById('ct-em-start')?.value || document.getElementById('ct-em-hire')?.value));
     const _contractYear = _hireRaw ? parseInt(_hireRaw.slice(0,4)) : new Date().getFullYear();
-    const _mw = _allMinimumWages.find(w => Number(w.year) === _contractYear);
+    // 최저임금: 해당 연도 데이터가 없으면 최신 연도 데이터로 폴백
+    const _mw = _allMinimumWages.find(w => Number(w.year) === _contractYear)
+      || (_allMinimumWages||[]).sort((a,b)=>b.year-a.year)[0];
 
     if(_mw && Number(_mw.hourly_wage) > 0){
       const _legalMinWage = Number(_mw.hourly_wage);
@@ -3425,7 +3506,7 @@ async function saveContract(){
     const _hasBothFilesEdit = !!(signedFileData && consentFileData);
   }
 
-  const body={employee_id:empId,company_id:coId,contract_start:contractStart,contract_end:contractEnd,contract_type:contractType,status:contractStatus,probation_months:probMonths,probation_pct:probPct,probation_amt:probAmt,probation_basis:probBasis,work_hours_per_day:avgDayHours,work_days_per_week:isDailySave?0:workDaysCount,schedule_json:JSON.stringify(scheduleJSON),annual_leave_days:isDailySave?0:parseFloat(document.getElementById('ct-annual').value)||15,annual_salary:annual,monthly_salary_agreed:monthly,base_salary:baseSalaryForSave,daily_wage:dailyWageForSave,weekly_holiday_pay:weeklyHol,fixed_ot_pay:getAmountVal('ct-fixed-ot-pay'),fixed_ot_hours:parseFloat(document.getElementById('ct-fixed-ot-hours')?.value)||0,fixed_night_pay:getAmountVal('ct-fixed-night-pay'),fixed_night_hours:parseFloat(document.getElementById('ct-fixed-night-hours')?.value)||0,fixed_hol_pay:getAmountVal('ct-fixed-hol-pay'),fixed_hol_hours:parseFloat(document.getElementById('ct-fixed-hol-hours')?.value)||0,hourly_wage:hourlyWage,position_allowance:getAmountVal('ct-position'),transportation_allowance:getAmountVal('ct-car'),transportation_pay_type:_getCTPayTypeVal('car'),self_driving_allowance:0,self_driving_pay_type:'fixed',remote_area_allowance:getAmountVal('ct-remote-area'),remote_area_pay_type:'fixed',meal_allowance:getAmountVal('ct-meal'),meal_pay_type:_getCTPayTypeVal('meal'),research_allowance:getAmountVal('ct-research'),research_pay_type:_getCTPayTypeVal('research'),site_allowance:getAmountVal('ct-site'),skill_allowance:getAmountVal('ct-skill'),license_allowance:getAmountVal('ct-license'),hazard_allowance:getAmountVal('ct-hazard'),custom_ordinary_values:JSON.stringify(typeof _getCustomOrdinaryValues==='function'?_getCustomOrdinaryValues():[]),communication_allowance:getAmountVal('ct-communication'),communication_pay_type:_getCTPayTypeVal('communication'),fitness_allowance:getAmountVal('ct-fitness'),fitness_pay_type:_getCTPayTypeVal('fitness'),self_dev_allowance:getAmountVal('ct-self-dev'),self_dev_pay_type:_getCTPayTypeVal('self_dev'),book_allowance:getAmountVal('ct-book'),book_pay_type:_getCTPayTypeVal('book'),overseas_allowance:getAmountVal('ct-overseas'),overseas_pay_type:_getCTPayTypeVal('overseas'),car_maintenance:getAmountVal('ct-car'),regular_bonus:getAmountVal('ct-regular-bonus')||0,childcare_allowance:getAmountVal('ct-childcare')||0,childcare_dependents:parseInt(document.getElementById('ct-childcare-dependents')?.value||0)||0,childcare_pay_type:_getCTPayTypeVal('childcare'),pay_period:document.getElementById('ct-pay-period')?.value.trim()||'',pay_period_month:document.getElementById('ct-pay-period-month-hidden')?.value||null,pay_period_day:parseInt(document.getElementById('ct-pay-period-day-hidden')?.value)||null,pay_day:parseInt(document.getElementById('ct-pay-day')?.value)||null,insurance_employment:true,insurance_industrial:true,insurance_pension:true,insurance_health:true,note:document.getElementById('ct-note').value,salary_start_date:document.getElementById('ct-salary-start')?.value||'',salary_end_date:document.getElementById('ct-salary-end')?.value||'',is_draft:false,draft_saved_at:null,signed_file_name:signedFileName,signed_file_data:signedFileData,consent_file_name:consentFileName,consent_file_data:consentFileData};
+  const body={employee_id:empId,company_id:coId,contract_start:contractStart,contract_end:contractEnd,contract_type:contractType,status:contractStatus,probation_months:probMonths,probation_pct:probPct,probation_amt:probAmt,probation_basis:probBasis,probation_end_date:document.getElementById('ct-probation-end-date')?.value||null,work_hours_per_day:avgDayHours,work_days_per_week:isDailySave?0:workDaysCount,schedule_json:JSON.stringify(scheduleJSON),annual_leave_days:parseFloat(document.getElementById('ct-annual')?.value)||15,annual_salary:annual,monthly_salary_agreed:monthly,base_salary:baseSalaryForSave,daily_wage:dailyWageForSave,weekly_holiday_pay:weeklyHol,fixed_ot_pay:getAmountVal('ct-fixed-ot-pay'),fixed_ot_hours:parseFloat(document.getElementById('ct-fixed-ot-hours')?.value)||0,fixed_night_pay:getAmountVal('ct-fixed-night-pay'),fixed_night_hours:parseFloat(document.getElementById('ct-fixed-night-hours')?.value)||0,fixed_hol_pay:getAmountVal('ct-fixed-hol-pay'),fixed_hol_hours:parseFloat(document.getElementById('ct-fixed-hol-hours')?.value)||0,hourly_wage:hourlyWage,position_allowance:getAmountVal('ct-position'),transportation_allowance:getAmountVal('ct-car'),transportation_pay_type:_getCTPayTypeVal('car'),self_driving_allowance:0,self_driving_pay_type:'fixed',remote_area_allowance:getAmountVal('ct-remote-area'),remote_area_pay_type:'fixed',meal_allowance:getAmountVal('ct-meal'),meal_pay_type:_getCTPayTypeVal('meal'),research_allowance:getAmountVal('ct-research'),research_pay_type:_getCTPayTypeVal('research'),site_allowance:getAmountVal('ct-site'),skill_allowance:getAmountVal('ct-skill'),license_allowance:getAmountVal('ct-license'),hazard_allowance:getAmountVal('ct-hazard'),custom_ordinary_values:JSON.stringify(typeof _getCustomOrdinaryValues==='function'?_getCustomOrdinaryValues():[]),communication_allowance:getAmountVal('ct-communication'),communication_pay_type:_getCTPayTypeVal('communication'),fitness_allowance:getAmountVal('ct-fitness'),fitness_pay_type:_getCTPayTypeVal('fitness'),self_dev_allowance:getAmountVal('ct-self-dev'),self_dev_pay_type:_getCTPayTypeVal('self_dev'),book_allowance:getAmountVal('ct-book'),book_pay_type:_getCTPayTypeVal('book'),overseas_allowance:getAmountVal('ct-overseas'),overseas_pay_type:_getCTPayTypeVal('overseas'),car_maintenance:getAmountVal('ct-car'),regular_bonus:getAmountVal('ct-regular-bonus')||0,childcare_allowance:getAmountVal('ct-childcare')||0,childcare_dependents:parseInt(document.getElementById('ct-childcare-dependents')?.value||0)||0,childcare_pay_type:_getCTPayTypeVal('childcare'),pay_period:document.getElementById('ct-pay-period')?.value.trim()||'',pay_period_month:document.getElementById('ct-pay-period-month-hidden')?.value||null,pay_period_day:parseInt(document.getElementById('ct-pay-period-day-hidden')?.value)||null,pay_day:parseInt(document.getElementById('ct-pay-day')?.value)||null,insurance_employment:true,insurance_industrial:true,insurance_pension:true,insurance_health:true,note:document.getElementById('ct-note').value,salary_start_date:document.getElementById('ct-salary-start')?.value||'',salary_end_date:document.getElementById('ct-salary-end')?.value||'',is_draft:false,draft_saved_at:null,signed_file_name:signedFileName,signed_file_data:signedFileData,consent_file_name:consentFileName,consent_file_data:consentFileData};
 
   let _savedContractId_ = '';
 

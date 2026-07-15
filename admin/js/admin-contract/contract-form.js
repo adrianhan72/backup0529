@@ -4,11 +4,14 @@ const _BRAND_SIG = '────────────────────
 // ─── EMPLOYEES ───
 // ─── CONTRACTS ───
 function toggleEmExpire(){
-  const rawCat = document.getElementById('ct-em-category').value;
+  const rawCat = document.getElementById('ct-em-category')?.value;
+  if(!rawCat) return;
   const cat = CONTRACT_TYPE_LEGACY_MAP[rawCat] || rawCat;
   const expInput   = document.getElementById('ct-em-expire');
   const expRow     = document.getElementById('ct-new-row-expire');
   const expReqSpan = document.getElementById('ct-expire-required');
+  // 요소가 없으면 중단 (UI 재구성으로 제거됨)
+  if(!expInput || !expRow) return;
   // 계약직·계약직 수습·일용직만 퇴사예정일 표시 (정규직·정규직 수습은 무기한 계약이므로 숨김)
   const isFixed    = cat ===CONTRACT_TYPE.FIXED || cat ===CONTRACT_TYPE.FIXED_PROBATION || cat ===CONTRACT_TYPE.DAILY;
   const isRequired = isFixed;
@@ -242,10 +245,8 @@ function _ctPeriodRestore(payPeriod, month, day){
 }
 
 function autoFillAnnualLeave(){
-  const isEdit = !!(editId.contract || _recontractEmpId);
-  const hireDateStr = isEdit
-    ? (document.getElementById('ct-edit-em-hire')?.value || '')
-    : (document.getElementById('ct-em-hire')?.value || '');
+  // 입사일은 계약 정보 섹션에서 통합 관리 (ct-edit-em-hire)
+  const hireDateStr = document.getElementById('ct-edit-em-hire')?.value || '';
   if(!hireDateStr) return; // 입사일 없으면 계산 안 함
 
   // 고객사 ID로 annual_leave_basis 조회
@@ -304,12 +305,12 @@ function toggleAnnualSal(){
   const labelMonthly      = document.getElementById('ct-label-monthly');
   const dailyWageLabel    = document.querySelector('#ct-row-daily-wage label');
 
-  if(isRegularOnly){
-    if(salaryPeriodTitle) salaryPeriodTitle.innerHTML = '연봉 <span style="font-size:11px;font-weight:400;color:#6b7280;">(시급 기준 자동계산)</span>';
-    if(labelAnnualSal)    labelAnnualSal.innerHTML    = '연봉 <span style="font-size:11px;font-weight:400;color:#6b7280;">(자동계산 · 직접 입력 시)</span>';
+  if(isRegularOnly || isRegularProb){
+    if(salaryPeriodTitle) salaryPeriodTitle.innerHTML = '연봉 <span style="font-size:11px;font-weight:400;color:#6b7280;">(월약정임금 × 12 자동계산)</span>';
+    if(labelAnnualSal)    labelAnnualSal.innerHTML    = '연봉 <span style="font-size:11px;font-weight:400;color:#6b7280;">(자동계산)</span>';
     if(wageSectionTitle)  wageSectionTitle.textContent = '임금 조건 (월)';
     if(labelMonthly)      labelMonthly.textContent    = '월 약정임금 (자동계산)';
-  } else if(isFixedTerm || isRegularProb){
+  } else if(isFixedTerm){
     if(salaryPeriodTitle) salaryPeriodTitle.innerHTML = '월 약정급여 <span style="font-size:11px;font-weight:400;color:#6b7280;">(시급 기준 자동계산)</span>';
     if(labelAnnualSal)    labelAnnualSal.innerHTML    = '월 약정급여 (통상월급) <span style="font-size:11px;font-weight:400;color:#6b7280;">(직접 입력 시)</span>';
     if(wageSectionTitle)  wageSectionTitle.textContent = '임금 조건 (월)';
@@ -329,8 +330,8 @@ function toggleAnnualSal(){
   // ── 연봉/월약정급여 입력 행 표시 제어 ──
   const rowSalPeriod = document.getElementById('ct-row-salary-period');
   const rowAnnualSal = document.getElementById('ct-row-annual-sal');
-  // 정규직은 연봉 입력, 정규직 수습은 시급 기반 자동계산(연봉 숨김), 계약직은 선택적
-  const showAnnualRow = isRegularOnly || isFixedTerm;
+  // 정규직·정규직 수습만 연봉 입력 행 표시 (계약직은 임금조건 섹션의 월 약정임금으로 대체)
+  const showAnnualRow = isRegularOnly || isRegularProb;
   if(rowSalPeriod) rowSalPeriod.style.display = showAnnualRow ? '' : 'none';
   if(rowAnnualSal) rowAnnualSal.style.display  = showAnnualRow ? '' : 'none';
 
@@ -339,15 +340,19 @@ function toggleAnnualSal(){
   // 계약직: 자동계산 표시 / 정규직: 표시 / 일용직: 숨김(일일 기준이므로)
   if(rowMonthly) rowMonthly.style.display = isDaily ? 'none' : '';
 
-  // 주 근무일수 / 연차일수 / 주휴수당 행 (일용직 숨김)
+  // 주 근무일수 / 연차일수 / 주휴수당 행
   const rowDays       = document.getElementById('ct-row-days');
   const rowAnnualLeave= document.getElementById('ct-row-annual');
   const rowBase       = document.getElementById('ct-row-base');
   const rowWeeklyHol  = document.getElementById('ct-row-weekly-hol');
   const rowDailyWage  = document.getElementById('ct-row-daily-wage');
   if(rowDays)       rowDays.style.display       = isDaily ? 'none' : '';
-  if(rowAnnualLeave) rowAnnualLeave.style.display= isDaily ? 'none' : '';
-  if(rowWeeklyHol)  rowWeeklyHol.style.display  = isDaily ? 'none' : '';
+  if(rowAnnualLeave) rowAnnualLeave.style.display= '';  // 모든 고용형태 표시 (일용직도 연차 발생 가능)
+  const rowAnnualGuide= document.getElementById('ct-row-annual-guide');
+  if(rowAnnualGuide) rowAnnualGuide.style.display= '';   // 모든 고용형태 표시
+  const dailyNote = document.getElementById('ct-annual-daily-note');
+  if(dailyNote) dailyNote.style.display = isDaily ? '' : 'none';  // 일용직 연차 안내는 일용직만
+  if(rowWeeklyHol)  rowWeeklyHol.style.display  = '';  // 모든 고용형태 표시 (근로기준법 제55조 주휴일 적용)
   if(rowDailyWage)  rowDailyWage.style.display  = isDaily ? '' : 'none';
 
   // 기본급 행: 정규직·계약직은 자동계산(readonly 파란색), 일용직은 숨김
@@ -382,6 +387,31 @@ function toggleAnnualSal(){
     document.getElementById('ct-monthly-computed').textContent = '0원';
     document.getElementById('ct-days').value = 5;
     document.getElementById('ct-annual').value = 0;
+    // 일용직: 고정 연장/야간/휴일근로수당 숨김
+    ['ct-row-fixed-ot','ct-row-fixed-night','ct-row-fixed-hol'].forEach(id => {
+      const el = document.getElementById(id); if(el) el.style.display = 'none';
+    });
+    // 일용직: 모든 통상임금 및 고정수당 항목 숨김 + 값 초기화
+    if(typeof _CT_OPT_ROWS !== 'undefined'){
+      _CT_OPT_ROWS.forEach(({key, rowId}) => {
+        const el = document.getElementById(rowId); if(el) el.style.display = 'none';
+        // 값 초기화
+        if(key === 'childcare'){
+          setAmountVal('ct-childcare', 0);
+          const depEl = document.getElementById('ct-childcare-dependents');
+          if(depEl) depEl.value = 0;
+        } else {
+          const inputId = rowId.replace('ct-row-', 'ct-');
+          setAmountVal(inputId, 0);
+        }
+      });
+    }
+    const _customOrd = document.getElementById('ct-custom-ord-container');
+    if(_customOrd) _customOrd.style.display = 'none';
+    // 일용직: pay_type 초기화
+    ['car','meal','research','communication','fitness','self_dev','book','overseas','childcare'].forEach(f => {
+      setCTPayType(f, '');
+    });
   } else {
     const dw = document.getElementById('ct-daily-wage');
     if(dw) dw.value = '';
@@ -391,17 +421,24 @@ function toggleAnnualSal(){
 // onSalaryStartChange 제거 — salary_start_date = contract_start 통합으로 불필요
 
 function toggleProbation(){
-  const rawCat = document.getElementById('ct-em-category').value;
+  const rawCat = document.getElementById('ct-em-category')?.value 
+              || document.getElementById('ct-type')?.value 
+              || '정규직';
   const cat = CONTRACT_TYPE_LEGACY_MAP[rawCat] || rawCat;
   const isProbation = cat ===CONTRACT_TYPE.REGULAR_PROBATION || cat ===CONTRACT_TYPE.FIXED_PROBATION;
   const sec = document.getElementById('ct-probation-section');
-  const periodRow = document.getElementById('ct-row-probation-period');
+  const probRow = document.getElementById('ct-probation-row');  // 수습기간+종료일 2열 행
+  const probPeriodRow = document.getElementById('ct-row-probation-period'); // 수습기간 select
   const newPeriodRow = document.getElementById('ct-new-row-probation-period');
   const newEndRow = document.getElementById('ct-new-row-end');
   if(sec) sec.style.display = isProbation ? '' : 'none';
-  if(periodRow) periodRow.style.display = isProbation ? '' : 'none';
+  if(probRow) probRow.style.display = isProbation ? 'grid' : 'none';
+  if(probPeriodRow) probPeriodRow.style.display = isProbation ? '' : 'none';
   if(newPeriodRow) newPeriodRow.style.display = isProbation ? '' : 'none';
   if(newEndRow) newEndRow.style.display = isProbation ? '' : 'none';
+  // 수습 종료일 열: probation 여부에 따라 표시
+  const probEndCol = document.getElementById('ct-probation-end-col');
+  if(probEndCol) probEndCol.style.display = isProbation ? '' : 'none';
   if(!isProbation){
     // 수습기간 select 초기화 (활성 섹션 기준)
     const _probMonEl = document.getElementById('ct-probation-months') || document.getElementById('ct-new-probation-months');
@@ -430,7 +467,6 @@ function toggleProbation(){
 // 수습 계약: 계약 종료일 필드 readonly 토글 + 힌트
 function _setProbationEndReadonly(readonly){
   const endEl = document.getElementById('ct-end');
-  const hintEl = document.getElementById('ct-end-hint');
   if(endEl){
     endEl.readOnly = readonly;
     if(readonly){
@@ -441,14 +477,21 @@ function _setProbationEndReadonly(readonly){
       endEl.style.cursor = '';
     }
   }
-  if(hintEl) hintEl.style.display = readonly ? '' : 'none';
+  // ct-end-hint 제거됨 (신규 레이아웃)
 }
 
 // 수습기간 변경 시 계약 종료일 자동 계산 (시작일 + 수습개월 - 1일)
 function _autoCalcProbationEndDate(){
   const monthsEl = document.getElementById('ct-new-probation-months') || document.getElementById('ct-probation-months');
   const months = parseInt(monthsEl?.value) || 0;
-  if(!months) return;
+  const probEndWrap = document.getElementById('ct-probation-end-wrap');
+  if(!months) { 
+    const peEl = document.getElementById('ct-probation-end-date'); if(peEl) peEl.value = '';
+    if(probEndWrap) probEndWrap.style.display = 'none';
+    return; 
+  }
+  // 수습 종료일 wrap 표시
+  if(probEndWrap) probEndWrap.style.display = '';
 
   // 계약 시작일: 값이 실제로 있는 필드를 우선 사용
   const startElNew = document.getElementById('ct-em-start');
@@ -461,9 +504,9 @@ function _autoCalcProbationEndDate(){
   startDate.setDate(startDate.getDate() - 1);
   const endStr = startDate.toISOString().slice(0,10);
 
-  // 수정/재계약 모드: ct-end, 신규 모드: ct-new-end (신규 우선)
-  const endEl = document.getElementById('ct-new-end') || document.getElementById('ct-end');
-  if(endEl) endEl.value = endStr;
+  // 수습 종료일 필드에 자동 계산값 표시 (contract_end와 별도)
+  const probEndEl = document.getElementById('ct-probation-end-date');
+  if(probEndEl) probEndEl.value = endStr;
 }
 
 // ── 산정기준 라디오 변경 핸들러 ──
@@ -528,7 +571,9 @@ function onProbationBasisChange(){
       const hireRaw = document.getElementById('ct-em-hire')?.value
         || document.getElementById('ct-start')?.value || '';
       const yr = hireRaw ? parseInt(hireRaw.slice(0,4)) : new Date().getFullYear();
-      const mw = (_allMinimumWages||[]).find(w => Number(w.year) === yr);
+      // 최저임금: 해당 연도 데이터가 없으면 최신 연도 데이터로 폴백
+      const mw = (_allMinimumWages||[]).find(w => Number(w.year) === yr)
+        || (_allMinimumWages||[]).sort((a,b)=>b.year-a.year)[0];
       const mwAmt = mw ? Number(mw.hourly_wage) : 0;
       const mwMonthly = mwAmt > 0 ? Math.round(mwAmt * 209) : 0;
       infoText.innerHTML = `${yr}년 최저시급 기준으로 계산됩니다.`
@@ -558,7 +603,9 @@ function getProbationBase(){
       || document.getElementById('ct-em-hire')?.value
       || document.getElementById('ct-start')?.value || '';
     const yr = hireRaw ? parseInt(hireRaw.slice(0,4)) : new Date().getFullYear();
-    const mw = (_allMinimumWages||[]).find(w => Number(w.year) === yr);
+    // 최저임금: 해당 연도 데이터가 없으면 최신 연도 데이터로 폴백
+    const mw = (_allMinimumWages||[]).find(w => Number(w.year) === yr)
+      || (_allMinimumWages||[]).sort((a,b)=>b.year-a.year)[0];
     return mw ? Math.round(Number(mw.hourly_wage) * 209) : 0;
   }
   // 보수 대비: 월 약정임금(정규직) 또는 기본급(계약직)
@@ -950,7 +997,8 @@ function applyBulkSchedule(){
 
 // ── 시프트 그룹 렌더 헬퍼 ──
 function _shiftGroupHTML(key, idx, enabled, start, end, breaks){
-  const dis = enabled ? '' : 'disabled';
+  const isReadonly = document.querySelector('#contract-modal .modal')?.classList.contains('ct-readonly');
+  const dis = (enabled && !isReadonly) ? '' : 'disabled';
   const s = start || '';
   const e = end   || '';
   const defBreaks = [{s:'', e:''}];
@@ -971,6 +1019,7 @@ function _shiftGroupHTML(key, idx, enabled, start, end, breaks){
 
 // ── 첫 번째 시프트 비활성화 ──
 function _deactivateShift(key){
+  if(document.querySelector('#contract-modal .modal')?.classList.contains('ct-readonly')) return;
   const container = document.getElementById(`ct-sch-shifts-${key}`);
   if(!container) return;
   container.innerHTML = _shiftGroupHTML(key, 0, false, '', '', []);
@@ -979,7 +1028,8 @@ function _deactivateShift(key){
 
 // ── 시프트용 휴게 슬롯 HTML (idx 포함) ──
 function _brkSlotsHTML2(key, shiftIdx, enabled, breaks){
-  const dis = enabled ? '' : 'disabled';
+  const isReadonly = document.querySelector('#contract-modal .modal')?.classList.contains('ct-readonly');
+  const dis = (enabled && !isReadonly) ? '' : 'disabled';
   const sid = shiftIdx===0 ? '' : '-'+shiftIdx;
   return breaks.map((b, idx) => {
     return `<div class="brk-slot-row" id="ct-sch-brkrow-${key}${sid}-${idx}">
@@ -997,6 +1047,7 @@ function _brkSlotsHTML2(key, shiftIdx, enabled, breaks){
 
 // ── 시프트 추가 ──
 function _addShift(key){
+  if(document.querySelector('#contract-modal .modal')?.classList.contains('ct-readonly')) return;
   const row = document.getElementById(`ct-sch-row-${key}`);
   const container = row?.querySelector('.td-shifts .shifts-container');
   if(!container) return;
@@ -1021,6 +1072,7 @@ function _addShift(key){
 
 // ── 시프트 삭제 ──
 function _removeShift(key, idx){
+  if(document.querySelector('#contract-modal .modal')?.classList.contains('ct-readonly')) return;
   const sid = idx===0 ? '' : '-'+idx;
   const shift = document.getElementById(`ct-sch-shift-${key}${sid}`);
   if(shift) shift.remove();
@@ -1029,6 +1081,7 @@ function _removeShift(key, idx){
 
 // ── 시프트용 휴게 슬롯 추가 ──
 function _addBrkSlot2(key, shiftIdx){
+  if(document.querySelector('#contract-modal .modal')?.classList.contains('ct-readonly')) return;
   const sid = shiftIdx===0 ? '' : '-'+shiftIdx;
   const wrap = document.getElementById(`ct-sch-brkwrap-${key}${sid}`);
   if(!wrap) return;
@@ -1046,6 +1099,7 @@ function _addBrkSlot2(key, shiftIdx){
 }
 
 function _removeBrkSlot2(key, shiftIdx, idx){
+  if(document.querySelector('#contract-modal .modal')?.classList.contains('ct-readonly')) return;
   const sid = shiftIdx===0 ? '' : '-'+shiftIdx;
   const wrap = document.getElementById(`ct-sch-brkwrap-${key}${sid}`);
   if(!wrap) return;
@@ -1086,6 +1140,7 @@ function _getBrkSlots(key){
   return result;
 }
 function _addBrkSlot(key){
+  if(document.querySelector('#contract-modal .modal')?.classList.contains('ct-readonly')) return;
   const wrap = document.getElementById(`ct-sch-brkwrap-${key}`);
   if(!wrap) return;
   const idx = wrap.querySelectorAll('.brk-slot-row').length;
@@ -1104,6 +1159,7 @@ function _addBrkSlot(key){
   calcWorkHours();
 }
 function _removeBrkSlot(key, idx){
+  if(document.querySelector('#contract-modal .modal')?.classList.contains('ct-readonly')) return;
   const wrap = document.getElementById(`ct-sch-brkwrap-${key}`);
   if(!wrap) return;
   const row = document.getElementById(`ct-sch-brkrow-${key}-${idx}`);
@@ -1131,8 +1187,7 @@ function initScheduleTable(){
   const tbody = document.getElementById('ct-schedule-tbody');
   if(!tbody) return;
   tbody.innerHTML = DAY_KEYS.map((key,i)=>{
-    const isWknd = key==='sat'||key==='sun';
-    const enabled = !isWknd;
+    const enabled = false; // 모든 요일 비활성 상태로 시작 (+버튼 또는 일괄설정으로 활성화)
     const color = i>=5 ? (i===5?'#2563eb':'#dc2626') : '#1e293b';
     return `
     <tr class="${DAY_CLASSES[i]}" id="ct-sch-row-${key}">
@@ -1188,6 +1243,177 @@ function calcWorkHours(){
   const hrsHid = document.getElementById('ct-hours'); if(hrsHid) hrsHid.value = avgDay.toFixed(2);
   const daysHid = document.getElementById('ct-days'); if(daysHid) daysHid.value = workDays;
   calcContractSalary();
+}
+
+// ─── 갱신 페어 유틸리티 (단일 진리 원천) ───
+
+/**
+ * 계약의 갱신 페어 상대방을 찾는다. 단일 탐색 함수.
+ * @param {object} c - 계약 객체
+ * @returns {object|null} 페어 계약 또는 null
+ */
+function findPairContract(c){
+  if(!c) return null;
+  
+  // Tier 1: renewed_from_id 직접 참조
+  if(c.renewed_from_id){
+    const pair = allContracts.find(x => x.id === c.renewed_from_id);
+    if(pair) return pair;
+  }
+  
+  // Tier 2: renewed_to_id 직접 참조
+  if(c.renewed_to_id){
+    const pair = allContracts.find(x => x.id === c.renewed_to_id);
+    if(pair) return pair;
+  }
+  
+  // Tier 3: 동일 company_id + employee_id + 상태 기반 (company_id 가드 포함)
+  const pair = allContracts.find(x =>
+    x.company_id === c.company_id &&
+    x.employee_id === c.employee_id &&
+    x.id !== c.id &&
+    (x.status === CONTRACT_STATUS.RENEWAL_PENDING ||
+     x.status === CONTRACT_STATUS.RENEWED ||
+     x.status === CONTRACT_STATUS.TERMINATE_PENDING ||
+     (x.status === CONTRACT_STATUS.VOIDED && x.is_voided_by_amend))
+  );
+  if(pair) return pair;
+  
+  // Tier 4: 날짜 기반 (동일 company_id + employee_id)
+  if(c.terminate_date){
+    const _nextDay = new Date(c.terminate_date);
+    _nextDay.setDate(_nextDay.getDate() + 1);
+    const _nextStr = _nextDay.toISOString().slice(0, 10);
+    const datePair = allContracts.find(x =>
+      x.company_id === c.company_id &&
+      x.employee_id === c.employee_id &&
+      x.id !== c.id &&
+      x.contract_start === _nextStr
+    );
+    if(datePair) return datePair;
+  }
+  if(c.contract_start){
+    const _prevDay = new Date(c.contract_start);
+    _prevDay.setDate(_prevDay.getDate() - 1);
+    const _prevStr = _prevDay.toISOString().slice(0, 10);
+    const datePair = allContracts.find(x =>
+      x.company_id === c.company_id &&
+      x.employee_id === c.employee_id &&
+      x.id !== c.id &&
+      (x.terminate_date === _prevStr || x.contract_end === _prevStr)
+    );
+    if(datePair) return datePair;
+  }
+  
+  return null;
+}
+
+/**
+ * 페어 발견 시 in-memory 필드 보정 + DB 저장 시도
+ */
+function _persistPairLink(contract, pairContract, direction){
+  if(!contract || !pairContract) return;
+  let needsPatch = false;
+  const patchBody = {};
+  
+  if(direction === 'renewed_from'){
+    if(!contract.renewed_from_id || contract.renewed_from_id !== pairContract.id){
+      contract.renewed_from_id = pairContract.id;
+      patchBody.renewed_from_id = pairContract.id;
+      needsPatch = true;
+    }
+  } else if(direction === 'renewed_to'){
+    if(!contract.renewed_to_id || contract.renewed_to_id !== pairContract.id){
+      contract.renewed_to_id = pairContract.id;
+      patchBody.renewed_to_id = pairContract.id;
+      needsPatch = true;
+    }
+  }
+  
+  if(needsPatch){
+    fetch(`../tables/contracts/${contract.id}`, {
+      method: 'PATCH',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(patchBody)
+    }).catch(e => console.warn('[페어 링크 저장 실패]', e));
+  }
+}
+
+/**
+ * 페어 날짜 동기화: 갱신 시작일 변경 → 원본 해지일 조정
+ * contract_end는 보존하고 terminate_date만 변경
+ */
+async function syncPairDates(oldContract, newStartDate){
+  if(!oldContract || !newStartDate) return;
+  
+  const newPairEnd = (() => {
+    const d = new Date(newStartDate);
+    d.setDate(d.getDate() - 1);
+    return d.toISOString().slice(0, 10);
+  })();
+  
+  const currentEnd = oldContract.terminate_date || oldContract.contract_end || '';
+  if(newPairEnd === currentEnd) return; // 변경 없음
+  
+  try {
+    await fetch(`../tables/contracts/${oldContract.id}`, {
+      method: 'PATCH',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ terminate_date: newPairEnd })
+    });
+    oldContract.terminate_date = newPairEnd;
+  } catch(e){
+    console.warn('[페어 날짜 동기화 실패]', e);
+  }
+}
+
+/**
+ * 페어 계약을 새 브라우저 창에서 열기 (side-by-side 비교용)
+ */
+function _openContractPairWindow(contractId){
+  if(!contractId) return;
+  // 현재 선택된 고객사 정보를 sessionStorage에 저장하여 새 창에서 복원
+  try {
+    sessionStorage.setItem('_pairContractId', contractId);
+    sessionStorage.setItem('_pairCompanyId', currentContCompanyId || '');
+  } catch(e){}
+  window.open('/admin/', '_blank', 'width=1400,height=900');
+}
+
+/**
+ * 페어 관계 해제: 양쪽 renewed_from_id/renewed_to_id 정리
+ */
+async function breakPair(contract){
+  if(!contract) return;
+  
+  const pair = findPairContract(contract);
+  const updates = [];
+  
+  if(pair){
+    // 상대방 정리
+    const pairPatch = {};
+    if(pair.renewed_from_id === contract.id) { pairPatch.renewed_from_id = null; pair.renewed_from_id = null; }
+    if(pair.renewed_to_id === contract.id)   { pairPatch.renewed_to_id = null;   pair.renewed_to_id = null; }
+    if(Object.keys(pairPatch).length){
+      updates.push(fetch(`../tables/contracts/${pair.id}`, {
+        method: 'PATCH', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(pairPatch)
+      }));
+    }
+  }
+  
+  // 자신 정리
+  if(contract.renewed_from_id || contract.renewed_to_id){
+    const selfPatch = {};
+    if(contract.renewed_from_id) { selfPatch.renewed_from_id = null; contract.renewed_from_id = null; }
+    if(contract.renewed_to_id)   { selfPatch.renewed_to_id = null;   contract.renewed_to_id = null; }
+    updates.push(fetch(`../tables/contracts/${contract.id}`, {
+      method: 'PATCH', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(selfPatch)
+    }));
+  }
+  
+  await Promise.allSettled(updates);
 }
 
 // 스케줄 → JSON 직렬화 (저장용)
@@ -1264,26 +1490,42 @@ function initBreakSelects(){ initScheduleTable(); }
 function getBreakMins(hId,mId){ return 0; }
 function setBreakMins(hId,mId,totalMins){}
 function toggleCtEndDate(preserveValue=false){
-  const rawType = document.getElementById('ct-type').value;
-  const type = CONTRACT_TYPE_LEGACY_MAP[rawType] || rawType;
+  // ct-em-category 우선 (신규 모드), 없으면 ct-type (수정 모드)
+  const rawCat = document.getElementById('ct-em-category')?.value 
+              || document.getElementById('ct-type')?.value 
+              || '정규직';
+  const type = CONTRACT_TYPE_LEGACY_MAP[rawCat] || rawCat;
   const endInput = document.getElementById('ct-end');
   const endRow   = document.getElementById('ct-row-end');
   const endReqSpan = document.getElementById('ct-end-required');
-  // 계약직·계약직 수습·일용직·정규직 수습만 계약 종료일 표시 (정규직만 무기한 계약으로 숨김)
-  const isFixed    = type ===CONTRACT_TYPE.FIXED || type ===CONTRACT_TYPE.DAILY || type ===CONTRACT_TYPE.FIXED_PROBATION;
-  const isRegularOnly = type ===CONTRACT_TYPE.REGULAR;
-  // 계약직·계약직 수습·일용직 모두 종료일 필수 (* 표시), 정규직 수습은 수습기간 자동계산
-  const isRequired = isFixed;
-  if(endRow)     endRow.style.display    = isRegularOnly ? 'none' : '';
-  if(endReqSpan) endReqSpan.style.display = isRequired ? '' : 'none';
+  const hireRow = document.getElementById('ct-contract-hire-row');
+  
+  const isFixed = type ===CONTRACT_TYPE.FIXED || type ===CONTRACT_TYPE.DAILY || type ===CONTRACT_TYPE.FIXED_PROBATION;
+  const isRegularOrProbation = type ===CONTRACT_TYPE.REGULAR || type ===CONTRACT_TYPE.REGULAR_PROBATION;
+  
+  // 레이아웃 전환: 입사일 span 조정
+  // 계약직 유형: 입사일이 전체 행 차지 (span 2), 시작일+종료일이 다음 행에 2열로 배치
+  // 정규직 유형: 입사일+시작일이 한 행에 2열 배치, 종료일 숨김
+  if (hireRow) {
+    hireRow.style.gridColumn = isFixed ? '1 / -1' : '';
+  }
+  if (endRow) {
+    endRow.style.display = isRegularOrProbation ? 'none' : '';
+  }
+  if (endReqSpan) {
+    endReqSpan.style.display = isFixed ? '' : 'none';
+  }
+  
   // 조회 모드(ct-readonly)이거나 preserveValue=true이면 값을 지우지 않음
   const modalEl = document.querySelector('#contract-modal .modal');
   const isReadonly = modalEl && modalEl.classList.contains('ct-readonly');
-  endInput.disabled = !isFixed;
-  endInput.style.background = isFixed ? '' : '#f3f4f6';
-  endInput.style.color = isFixed ? '' : '#9ca3af';
-  endInput.style.cursor = isFixed ? '' : 'not-allowed';
-  if(!isFixed && !preserveValue && !isReadonly) endInput.value = '';
+  if (endInput) {
+    endInput.disabled = !isFixed;
+    endInput.style.background = isFixed ? '' : '#f3f4f6';
+    endInput.style.color = isFixed ? '' : '#9ca3af';
+    endInput.style.cursor = isFixed ? '' : 'not-allowed';
+    if(!isFixed && !preserveValue && !isReadonly) endInput.value = '';
+  }
 }
 // ── 계약 양식 통상임금 지급유형 관리 ──
 // pay_type 있는 수당 전체: car/remote-area/meal (버튼 UI) + research/communication/fitness/self_dev/book/overseas (고객사 설정)
@@ -1382,9 +1624,16 @@ const _CT_OPT_ROWS = [
 // clearValues=true: 숨기는 항목의 입력값도 0으로 초기화 (신규/고객사변경 시)
 // clearValues=false: show/hide만 적용 (수정 모드 — 값은 loadCT에서 복원)
 function applyCTAllowanceConfig(cfg, clearValues = false){
+  // 일용직: 통상임금 및 고정수당 항목 전체 숨김 (cfg 무시)
+  const rawCat = (editId.contract || _recontractEmpId)
+    ? (document.getElementById('ct-type')?.value || '')
+    : (document.getElementById('ct-em-category')?.value || '');
+  const cat = CONTRACT_TYPE_LEGACY_MAP[rawCat] || rawCat;
+  const isDaily = cat === CONTRACT_TYPE.DAILY;
+  
   _CT_OPT_ROWS.forEach(({ key, rowId }) => {
     const rowEl = document.getElementById(rowId);
-    const visible = !!(cfg && cfg[key]);
+    const visible = isDaily ? false : !!(cfg && cfg[key]);
     if(rowEl) rowEl.style.display = visible ? '' : 'none';
     if(!visible && clearValues){
       if(key === 'childcare'){
@@ -1408,8 +1657,8 @@ function applyCTAllowanceConfig(cfg, clearValues = false){
     const pt = (cfg && cfg[`${f}_pay_type`]) ? cfg[`${f}_pay_type`] : 'fixed';
     setCTPayType(f, pt);
   });
-  // ── 신규 작성 시 car/meal 기본값 설정 ──
-  if(clearValues){
+  // ── 신규 작성 시 car/meal 기본값 설정 (일용직 제외) ──
+  if(clearValues && !isDaily){
     if(cfg){
       const _carPt  = cfg.car_pay_type  || 'fixed';
       const _mealPt = cfg.meal_pay_type || 'fixed';
@@ -1427,6 +1676,15 @@ function applyCTAllowanceConfig(cfg, clearValues = false){
   }
   // ── 사용자 정의 통상임금 항목 렌더링 ──
   _renderCustomOrdinaryRows(cfg);
+  
+  // 일용직: 고정 연장/야간/휴일근로수당 + 사용자 정의 항목 숨김
+  if(isDaily){
+    ['ct-row-fixed-ot','ct-row-fixed-night','ct-row-fixed-hol'].forEach(id => {
+      const el = document.getElementById(id); if(el) el.style.display = 'none';
+    });
+    const _customOrd = document.getElementById('ct-custom-ord-container');
+    if(_customOrd) _customOrd.style.display = 'none';
+  }
 }
 
 // ── 사용자 정의 통상임금 항목 (계약서 모달) ──
@@ -1624,7 +1882,11 @@ function _setCtPayDayDefault(coId){
 // 수정 모드 하위호환: allowance_config와 무관하게 DB에 저장된 값이 있는 항목 강제 노출
 // ※ 단, 통상임금 불포함(daily/receipt) 수당은 근로계약 임금조건에 노출하지 않으므로
 //    pay_type이 fixed인 항목만 force-show 대상으로 한정
+// ※ 일용직(contract_type='daily')은 통상임금·고정수당 항목을 전혀 노출하지 않음
 function _forceShowNonZeroCTRows(c){
+  // 일용직: 통상임금·고정수당 항목 강제노출 금지
+  const ctType = c.contract_type || '';
+  if(ctType === CONTRACT_TYPE.DAILY) return;
   const _fieldMap = {
     regular_bonus : 'regular_bonus',       // 계약서 DB 컬럼
     childcare     : 'childcare_allowance', // 보육수당
@@ -1676,11 +1938,9 @@ function _calcMonthlyStdHours(hpd, dpw){
   hpd = parseFloat(hpd) || 8;
   dpw = parseFloat(dpw) || 5;
   const weeklyH    = hpd * dpw;                     // 주 소정근로시간
-  const weeklyHolH = hpd;                           // 주휴시간 = 1일 소정근로시간
-  // 전일제(주 40h 이상): 고용노동부·대법원 통례 209h 적용
-  if(weeklyH >= 40) return 209;
-  // 단시간: (주소정근로h + 주휴h) × 52 ÷ 12
-  return Math.round((weeklyH + weeklyHolH) * 52 / 12);
+  // 소정근로시간만 반환 (주휴 제외) — 주휴수당은 별도 계산
+  // 전일제(주 40h): 8h×5d×4.345≈174h
+  return Math.round(weeklyH * 365 / 12 / 7);
 }
 
 function calcContractSalary(){
@@ -1783,19 +2043,6 @@ function calcContractSalary(){
     // 기본급 = 월 통상임금 - ordinaryGroup (통상임금 = 기본급 + 통상임금성 수당)
     const autoBase = Math.max(0, totalOrdinary - _ordinaryGroup);
     setAmountVal('ct-base', autoBase);
-    // 연봉/월약정급여: 정규직은 아래에서 연봉 자동계산, 그 외는 시급이 기준이므로 비움
-    if(cat !== CONTRACT_TYPE.REGULAR){
-      setAmountVal('ct-annual-sal', 0);
-    }
-  } else if(cat === CONTRACT_TYPE.REGULAR && annualSal > 0){
-    // 정규직(시급 미입력 시): 연봉 ÷ 12 → 기본급 역산
-    const monthly0  = Math.round(annualSal / 12);
-    const autoBase  = Math.max(0, Math.round((monthly0 - _allAllowTotal - fixedExtraAll) * _dpw / (_dpw + 1)));
-    setAmountVal('ct-base', autoBase);
-  } else if(isFixedTerm && annualSal > 0){
-    // 계약직: 월약정급여 → 기본급 역산 (시급 미입력 시 폴백)
-    const autoBase = Math.max(0, Math.round((annualSal - _allAllowTotal - fixedExtraAll) * _dpw / (_dpw + 1)));
-    setAmountVal('ct-base', autoBase);
   }
 
   const base      = getAmountVal('ct-base');
@@ -1805,23 +2052,12 @@ function calcContractSalary(){
     : Math.round((base + _ordinaryGroup + fixedExtraAll) / _dpw);
   document.getElementById('ct-weekly-hol-computed').textContent = won(weeklyHol);
 
-  // 월 약정임금 표시
-  let monthly;
-  const isRegularHourly = cat === CONTRACT_TYPE.REGULAR && isHourlyBased && hourlyWage > 0;
-  if(isRegularHourly){
-    // 정규직 시급 기반: 월 약정임금 자동계산
-    monthly = base + weeklyHol + _allAllowTotal + fixedExtraAll;
-  } else if(cat === CONTRACT_TYPE.REGULAR && annualSal > 0){
-    monthly = Math.round(annualSal / 12);
-  } else if(isFixedTerm && annualSal > 0 && !isHourlyBased){
-    monthly = annualSal; // 시급 미입력 시 월약정급여 그대로
-  } else {
-    monthly = base + weeklyHol + _allAllowTotal + fixedExtraAll;
-  }
+  // 월 약정임금 = 기본급 + 주휴수당 + 각종 수당 + 고정 연장/야간/휴일
+  const monthly = base + weeklyHol + _allAllowTotal + fixedExtraAll;
   document.getElementById('ct-monthly-computed').textContent = won(monthly);
 
-  // 정규직 시급 기반: 연봉 = 월 약정임금 × 12 자동계산
-  if(isRegularHourly){
+  // 정규직·정규직 수습: 연봉 = 월 약정임금 × 12 자동계산 (직접입력 불가)
+  if(isRegularGroup){
     setAmountVal('ct-annual-sal', monthly * 12);
   }
 

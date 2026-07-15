@@ -4,12 +4,31 @@ let _allMinimumWages   = [];
 
 async function loadStandards(){
   try{
-    const [rd, wd] = await Promise.all([
+    const [rd, wd, td] = await Promise.all([
       api('../tables/insurance_rates?limit=200'),
-      api('../tables/minimum_wages?limit=100')
+      api('../tables/minimum_wages?limit=100'),
+      api('../tables/tax_bracket_rows?limit=10000')
     ]);
     _allInsuranceRates = (rd.data||[]).sort((a,b)=> b.year - a.year || (b.period_start||'').localeCompare(a.period_start||''));
     _allMinimumWages   = (wd.data||[]).sort((a,b)=> b.year - a.year);
+    // DB에서 과세기준표 로드 → 정규화된 행을 _TAX_BRACKET_DATA 배열 형식으로 변환
+    if(td && td.data && td.data.length){
+      const byYear = {};
+      td.data.forEach(row => {
+        const yr = row.year;
+        if(!byYear[yr]) byYear[yr] = [];
+        byYear[yr].push([
+          row.from_amount, row.to_amount,
+          row.dep1_tax||0, row.dep2_tax||0, row.dep3_tax||0, row.dep4_tax||0,
+          row.dep5_tax||0, row.dep6_tax||0, row.dep7_tax||0, row.extra_per_dep||0
+        ]);
+      });
+      // 각 연도별로 from_amount 오름차순 정렬 후 _TAX_BRACKET_DATA에 병합 (DB 우선)
+      Object.keys(byYear).forEach(yr => {
+        byYear[yr].sort((a,b) => a[0] - b[0]);
+        _TAX_BRACKET_DATA[Number(yr)] = byYear[yr];
+      });
+    }
   }catch(e){ console.error('[산정기준] 로드 실패',e); }
 }
 
@@ -500,8 +519,13 @@ const _TAX_BRACKET_DATA = {
   ],
 };
 
-// 현재 선택 연도 (과세 기준 탭)
-let _taxBracketYear = new Date().getFullYear();
+// 현재 선택 연도 (과세 기준 탭) — 해당 연도 데이터 없으면 최신 연도로 폴백
+let _taxBracketYear = (() => {
+  const curYr = new Date().getFullYear();
+  if(_TAX_BRACKET_DATA[curYr]) return curYr;
+  const availYears = Object.keys(_TAX_BRACKET_DATA).map(Number).sort((a,b)=>b-a);
+  return availYears[0] || curYr;
+})();
 // 현재 선택 부양가족 수 (1~7+, 기본 1인)
 let _taxBracketDep  = 1;
 
@@ -529,24 +553,24 @@ function _getTaxForDep(row, dep){
 function _isNewTaxFormat(year){ return (year >= 2025); }
 
 function renderTaxBracketPanel(){
-  const curYear = new Date().getFullYear();
-  const years   = [curYear, curYear-1, curYear-2, curYear-3, curYear-4];
+  // 데이터가 있는 연도만 탭으로 표시 (내림차순)
+  const dataYears = Object.keys(_TAX_BRACKET_DATA).map(Number).sort((a,b)=>b-a);
+  // 최신 데이터 연도 = "현재" 기준
+  const latestDataYear = dataYears[0] || new Date().getFullYear();
 
   // ── 연도 탭 렌더 ──
   const tabsEl = document.getElementById('tax-year-tabs');
   if(tabsEl){
-    tabsEl.innerHTML = years.map(y => {
-      const hasData = !!_TAX_BRACKET_DATA[y];
+    tabsEl.innerHTML = dataYears.map(y => {
       const active  = y === _taxBracketYear;
       return `<button onclick="selectTaxBracketYear(${y})"
         style="padding:6px 18px;border-radius:20px;font-size:12.5px;font-weight:700;
                border:1.5px solid ${active?'#3b82f6':'#e2e8f0'};
                background:${active?'#eff6ff':'#f8fafc'};
                color:${active?'#1d4ed8':'#64748b'};
-               cursor:${hasData?'pointer':'not-allowed'};
-               opacity:${hasData?'1':'0.45'};
+               cursor:pointer;
                font-family:inherit;transition:all .15s;">
-        ${y}년${y===curYear?' <span style="font-size:10px;background:#3b82f6;color:#fff;padding:1px 5px;border-radius:8px;margin-left:2px;">현재</span>':''}
+        ${y}년${y===latestDataYear?' <span style="font-size:10px;background:#3b82f6;color:#fff;padding:1px 5px;border-radius:8px;margin-left:2px;">현재</span>':''}
       </button>`;
     }).join('');
   }
@@ -554,7 +578,12 @@ function renderTaxBracketPanel(){
 }
 
 function selectTaxBracketYear(y){
-  if(!_TAX_BRACKET_DATA[y]) return;
+  // 해당 연도 데이터가 없으면 최신 연도로 폴백
+  if(!_TAX_BRACKET_DATA[y]){
+    const availYears = Object.keys(_TAX_BRACKET_DATA).map(Number).sort((a,b)=>b-a);
+    if(availYears.length === 0) return;
+    y = availYears[0];
+  }
   _taxBracketYear = y;
   // 구형 연도 선택 시 부양가족 1인으로 초기화
   if(!_isNewTaxFormat(y)) _taxBracketDep = 1;
@@ -567,6 +596,357 @@ function selectTaxBracketDep(dep){
   // 검색값 유지 시 재검색
   const sv = document.getElementById('tax-bracket-search')?.value;
   if(sv) searchTaxBracket();
+}
+
+// ── 간이세액표 엑셀 다운로드 (인원기준별 시트 구성, 화면 표와 동일 구조) ──
+function downloadTaxBracketExcel(){
+  const year = _taxBracketYear;
+  const rows = _TAX_BRACKET_DATA[year];
+  if(!rows || !rows.length) return toast('다운로드할 데이터가 없습니다.', 'warning');
+
+  const isNew = _isNewTaxFormat(year);
+  const maxDep = isNew ? 11 : 1;
+
+  const WB = XLSX.utils.book_new();
+
+  // 스타일 정의
+  const hdrFill1  = { fgColor:{rgb:'EFF6FF'} }; // 소득세 헤더 (연한 파랑)
+  const hdrFill1b = { fgColor:{rgb:'DBEAFE'} }; // 소득세 서브헤더
+  const hdrFill2  = { fgColor:{rgb:'F0FDF4'} }; // 지방소득세 헤더 (연한 초록)
+  const hdrFill2b = { fgColor:{rgb:'DCFCE7'} }; // 지방소득세 서브헤더
+  const tfootFill = { fgColor:{rgb:'F8FAFC'} }; // 푸터
+
+  const hdrBorder = { top:{style:'thin'},bottom:{style:'thin'},left:{style:'thin'},right:{style:'thin'} };
+  const hdrBase   = { font:{bold:true,sz:11}, alignment:{horizontal:'center',vertical:'center',wrapText:true}, border:hdrBorder };
+  const cellBase  = { alignment:{horizontal:'center',vertical:'center'}, border:hdrBorder };
+  const cellRight = { alignment:{horizontal:'right',vertical:'center'}, border:hdrBorder };
+  const cellCenter= { alignment:{horizontal:'center',vertical:'center'}, border:hdrBorder };
+  const wonFmt    = '#,##0';
+  const pctFmt    = '0.00"%"';
+
+  // 실효세율 헬퍼
+  const effRate = (income, tax) => income > 0 ? tax / income * 100 : 0;
+
+  for(let dep = 1; dep <= maxDep; dep++){
+    const depLabel = dep === 1 ? '1인(본인)' : `${dep}인`;
+    const sheetName = depLabel;
+    const COL = 5; // 5열
+
+    // ── 행 데이터 구성 ──
+    const data = [];
+
+    // Row 0: 헤더 1행 (병합 표현은 XLSX 특성상 rowspan/colspan 불가 → 텍스트로 표현)
+    data.push([
+      '월 과세급여 구간',
+      `소득세 (부양가족 ${dep}인)`, '',  // colspan=2
+      '지방소득세', ''                   // colspan=2
+    ]);
+
+    // Row 1: 헤더 2행
+    data.push([
+      '',
+      '금액 (원)', '실효세율 (%)',
+      '금액 (원)', '실효세율 (%)'
+    ]);
+
+    // Row 2+: 데이터 행
+    rows.forEach(row => {
+      const from     = row[0];
+      const to       = row[1];
+      let incomeTax  = 0;
+      if(isNew){
+        incomeTax = _getTaxForDep(row, dep);
+      } else {
+        incomeTax = row[2] || 0;
+      }
+      const localTax = Math.floor(incomeTax * 0.1 / 10) * 10;
+      const midIncome = (from + to) / 2;
+      const rangeLabel = `${(from/10000).toFixed(0)}만원 이상 ~ ${(to/10000).toFixed(0)}만원 미만`;
+
+      data.push([
+        rangeLabel,
+        incomeTax === 0 ? '0' : incomeTax,
+        incomeTax === 0 ? '비과세' : effRate(midIncome, incomeTax),
+        localTax === 0 ? '0' : localTax,
+        localTax === 0 ? '비과세' : effRate(midIncome, localTax)
+      ]);
+    });
+
+    // 푸터 행
+    data.push([]); // 공백행
+    const extraPerDep = isNew ? (rows[0]?.[9] || 0) : 0;
+    const footerLines = [
+      `※ 소득세법 시행령 별표 2 근로소득 간이세액표 / 부양가족 ${dep}인 기준 / 지방소득세 = 소득세 × 10%`,
+      isNew ? `※ 8인 이상은 7인 세액에서 1인 초과마다 ${extraPerDep.toLocaleString('ko-KR')}원 차감 · 실제 공제액은 공제 항목에 따라 달라질 수 있습니다.`
+            : `※ 실제 공제액은 공제 항목에 따라 달라질 수 있습니다.`
+    ];
+    footerLines.forEach(line => data.push([line, '', '', '', '']));
+
+    // ── 시트 생성 ──
+    const ws = XLSX.utils.aoa_to_sheet(data);
+
+    // 열 너비
+    ws['!cols'] = [{wch:28},{wch:16},{wch:13},{wch:16},{wch:13}];
+
+    // 데이터 영역 끝 인덱스 (공백행 직전)
+    const dataEnd = data.length - footerLines.length - 1;
+
+    // 병합: 헤더 + 푸터
+    ws['!merges'] = [
+      { s:{r:0,c:0}, e:{r:1,c:0} },                // 월 과세급여 구간 rowspan=2
+      { s:{r:0,c:1}, e:{r:0,c:2} },                // 소득세 colspan=2
+      { s:{r:0,c:3}, e:{r:0,c:4} },                // 지방소득세 colspan=2
+      { s:{r:dataEnd+1,c:0}, e:{r:dataEnd+1,c:4} }, // 푸터 1행 (A~E 병합)
+      { s:{r:dataEnd+2,c:0}, e:{r:dataEnd+2,c:4} }, // 푸터 2행 (A~E 병합)
+    ];
+
+    // ── 스타일 적용 ──
+    for(let r = 0; r < data.length; r++){
+      for(let c = 0; c < COL; c++){
+        const cellRef = XLSX.utils.encode_cell({r,c});
+        if(!ws[cellRef]) continue;
+
+        if(r === 0){
+          // 헤더 1행
+          ws[cellRef].s = { ...hdrBase, fill: c === 0 ? hdrFill1 : (c >= 3 ? hdrFill2 : hdrFill1) };
+          if(c === 1) ws[cellRef].s.font = { ...hdrBase.font, color:{rgb:'1D4ED8'} };
+          if(c === 3) ws[cellRef].s.font = { ...hdrBase.font, color:{rgb:'065F46'} };
+        } else if(r === 1){
+          // 헤더 2행
+          ws[cellRef].s = { ...hdrBase, font:{bold:true,sz:10},
+            fill: (c===1 ? hdrFill1 : c===2 ? hdrFill1b : c===3 ? hdrFill2 : c===4 ? hdrFill2b : hdrFill1) };
+          if(c===1||c===2) ws[cellRef].s.font = { ...ws[cellRef].s.font, color:{rgb:'1D4ED8'} };
+          if(c===3||c===4) ws[cellRef].s.font = { ...ws[cellRef].s.font, color:{rgb:'065F46'} };
+        } else if(r >= dataEnd){
+          // 푸터 영역
+          ws[cellRef].s = { ...cellBase, font:{sz:10,color:{rgb:'9CA3AF'}}, fill:tfootFill,
+            alignment:{horizontal:'left',vertical:'center',wrapText:true} };
+        } else {
+          // 데이터 행
+          const isZero = (c === 1 || c === 3) && data[r][c] === '0';
+          const isRate = (c === 2 || c === 4);
+          ws[cellRef].s = isRate ? { ...cellCenter, font:{sz:10} } : { ...cellRight, font:{sz:10} };
+          if(isZero) ws[cellRef].s.font = { ...ws[cellRef].s.font, color:{rgb:'10B981'}, bold:true };
+          if(c >= 1 && c <= 4 && !isZero && !isRate && typeof data[r][c] === 'number'){
+            ws[cellRef].z = wonFmt;
+          }
+          // zebra stripe
+          if((r - 2) % 2 === 1 && !isZero){
+            ws[cellRef].s.fill = { fgColor:{rgb:'FAFBFF'} };
+          }
+        }
+      }
+    }
+
+    // 헤더 1행 rowspan 셀의 실제 값은 row 0에만 있고 row 1은 '' → row 1의 c0은 비워둠
+    // (XLSX 병합 시 첫 셀 값만 유지)
+
+    XLSX.utils.book_append_sheet(WB, ws, sheetName);
+  }
+
+  const fileName = `간이세액표_${year}년.xlsx`;
+  XLSX.writeFile(WB, fileName, { cellStyles: true });
+}
+
+// ── 과세기준표 엑셀 업로드 ──
+async function handleTaxBracketUpload(event){
+  const file = event.target.files && event.target.files[0];
+  const statusEl = document.getElementById('tax-upload-status');
+  if(!file){
+    if(statusEl) statusEl.textContent = '';
+    return;
+  }
+
+  // ① 파일명에서 년도 추출
+  const fnMatch = file.name.match(/간이세액표[_\s]*(\d{4})년?\.xlsx?$/i);
+  if(!fnMatch){
+    if(statusEl) statusEl.innerHTML = '<span style="color:#ef4444;">⚠️ 파일명 형식이 올바르지 않습니다. (예: 간이세액표_2026년.xlsx)</span>';
+    event.target.value = '';
+    return;
+  }
+  const fileYear = parseInt(fnMatch[1]);
+
+  // ② 기존 데이터 존재 시 덮어쓰기 확인
+  if(_TAX_BRACKET_DATA[fileYear]){
+    const confirmed = confirm(
+      `${fileYear}년 과세기준표가 이미 존재합니다.\n\n업로드한 파일로 덮어쓰시겠습니까?\n\n※ 기존 데이터는 새 데이터로 완전히 대체됩니다.`
+    );
+    if(!confirmed){
+      if(statusEl) statusEl.innerHTML = '<span style="color:#9ca3af;">업로드가 취소되었습니다.</span>';
+      event.target.value = '';
+      return;
+    }
+  }
+
+  if(statusEl) statusEl.innerHTML = '<span style="color:#6366f1;">📂 파일 검증 중...</span>';
+
+  // ② 파일 읽기
+  const reader = new FileReader();
+  reader.onload = async e => {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array' });
+      const sheetNames = wb.SheetNames;
+
+      // ③ 시트명 개수 검증 (신형 11개, 구형 1개)
+      if(sheetNames.length !== 1 && sheetNames.length !== 11){
+        throw new Error(`시트 개수가 올바르지 않습니다. (1개 또는 11개 필요, 현재 ${sheetNames.length}개)`);
+      }
+
+      // ④ 각 시트 검증 및 데이터 파싱
+      const isNewFormat = sheetNames.length === 11;
+      const expectedSheets = isNewFormat
+        ? ['1인(본인)','2인','3인','4인','5인','6인','7인','8인','9인','10인','11인']
+        : ['1인(본인)'];
+
+      for(let i = 0; i < expectedSheets.length; i++){
+        if(sheetNames[i] !== expectedSheets[i]){
+          throw new Error(`시트명이 일치하지 않습니다. (기대: "${expectedSheets[i]}", 실제: "${sheetNames[i]}")`);
+        }
+      }
+
+      // ⑤ 첫 번째 시트로 테이블 구조 검증 및 데이터 추출
+      const ws1 = wb.Sheets[sheetNames[0]];
+      const raw1 = XLSX.utils.sheet_to_json(ws1, { header: 1, defval: '', blankrows: false });
+
+      // ── 테이블 구조 검증 ──
+      const ERR_STRUCT = '테이블 구조가 달라서 업로드를 할 수 없습니다. 파일을 다시 확인하시고 올바른 형식으로 다시 업로드하시기 바랍니다.';
+      if(raw1.length < 3) throw new Error(ERR_STRUCT);
+
+      const hdr0 = raw1[0];
+      const hdr1 = raw1[1];
+
+      // 헤더 1행 검증: ['월 과세급여 구간', '소득세 ...', '', '지방소득세', '']
+      if(!Array.isArray(hdr0) || hdr0.length !== 5) throw new Error(ERR_STRUCT);
+      const h0c0 = String(hdr0[0]||''); // '월 과세급여 구간'
+      const h0c1 = String(hdr0[1]||''); // '소득세 (부양가족...'
+      const h0c3 = String(hdr0[3]||''); // '지방소득세'
+      if(!h0c0.includes('과세급여') || !h0c1.includes('소득세') || !h0c3.includes('지방소득세')){
+        throw new Error(ERR_STRUCT);
+      }
+
+      // 헤더 2행 검증: ['', '금액 (원)', '실효세율 (%)', '금액 (원)', '실효세율 (%)']
+      if(!Array.isArray(hdr1) || hdr1.length !== 5) throw new Error(ERR_STRUCT);
+      const h1c1 = String(hdr1[1]||''); // '금액 (원)' — 소득세 금액
+      const h1c2 = String(hdr1[2]||''); // '실효세율 (%)' — 소득세 실효세율
+      const h1c3 = String(hdr1[3]||''); // '금액 (원)' — 지방소득세 금액
+      const h1c4 = String(hdr1[4]||''); // '실효세율 (%)' — 지방소득세 실효세율
+      if(!h1c1.includes('금액') || !h1c2.includes('실효세율') || !h1c3.includes('금액') || !h1c4.includes('실효세율')){
+        throw new Error(ERR_STRUCT);
+      }
+
+      // 데이터 행 추출 (row 2부터, 푸터 전까지)
+      const taxData = [];
+      for(let r = 2; r < raw1.length; r++){
+        const row = raw1[r];
+        if(!row || !row[0] || typeof row[0] !== 'string') continue;
+        if(row[0].startsWith('※')) break; // 푸터 도달 → 중단
+
+        // 열 개수 검증
+        if(!Array.isArray(row) || row.length < 5) throw new Error(ERR_STRUCT);
+
+        // 구간 파싱: "106만원 이상 ~ 108만원 미만"
+        const rangeMatch = row[0].match(/(\d+)만원\s*이상\s*~\s*(\d+)만원\s*미만/);
+        if(!rangeMatch) continue; // 데이터 행이 아님
+
+        const from = parseInt(rangeMatch[1]) * 10000;
+        const to   = parseInt(rangeMatch[2]) * 10000;
+        const rowData = [from, to];
+
+        if(isNewFormat){
+          // 신형: 각 시트에서 소득세 열(1) 값 추출
+          // 먼저 첫 시트에서 1인 데이터만 추출 (다른 시트에서 나머지 인원 데이터 채움)
+          const taxVal = row[1];
+          rowData.push(taxVal === '0' || taxVal === 0 ? 0 : (parseInt(String(taxVal).replace(/[^\d]/g,'')) || 0));
+        } else {
+          // 구형: 소득세만 (지방소득세 = 소득세 × 10%)
+          const taxVal = row[1];
+          rowData.push(taxVal === '0' || taxVal === 0 ? 0 : (parseInt(String(taxVal).replace(/[^\d]/g,'')) || 0));
+        }
+        taxData.push(rowData);
+      }
+
+      if(taxData.length < 10) throw new Error('데이터 행이 너무 적습니다. (최소 10행 필요)');
+
+      // ⑥ 신형: 나머지 시트(2~11인)에서 소득세 데이터 추출
+      if(isNewFormat){
+        for(let si = 1; si < 11; si++){
+          const ws = wb.Sheets[sheetNames[si]];
+          const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', blankrows: false });
+          for(let r = 2; r < raw.length && r - 2 < taxData.length; r++){
+            const row = raw[r];
+            if(!row || row[0] && row[0].startsWith('※')) break;
+            if(!Array.isArray(row) || row.length < 5) throw new Error(ERR_STRUCT);
+            if(!row[1] && row[1] !== 0) continue;
+            const taxVal = row[1];
+            const val = taxVal === '0' || taxVal === 0 ? 0 : (parseInt(String(taxVal).replace(/[^\d]/g,'')) || 0);
+            const idx = r - 2;
+            if(idx < taxData.length){
+              taxData[idx].push(val);
+            }
+          }
+        }
+      }
+
+      // ⑦ 구형: 추가 공제단위 계산 후 마지막 열에 추가
+      if(!isNewFormat){
+        // 구형은 [이상, 미만, 소득세] 3열 → 신형 호환을 위해 1~7인 복제 + 공제단위 0
+        taxData.forEach(row => {
+          const tax = row[2] || 0;
+          for(let d = 3; d <= 8; d++) row.push(tax); // 2~7인
+          row.push(0); // 8인+공제단위: 0
+        });
+      }
+
+      // ⑧ DB 저장 (정규화: tax_bracket_rows)
+      // 기존 데이터 삭제 후 개별 행 삽입
+      const existingRowsResp = await api(`../tables/tax_bracket_rows?year=${fileYear}&limit=10000`);
+      const existingRows = (existingRowsResp && existingRowsResp.data) ? existingRowsResp.data : [];
+
+      // 기존 행 삭제
+      for (const er of existingRows) {
+        await api(`../tables/tax_bracket_rows/${er.id}`, { method: 'DELETE' });
+      }
+
+      // 새 행 삽입
+      for (let i = 0; i < taxData.length; i++) {
+        const row = taxData[i];
+        const rowId = `tax_${fileYear}_${String(i).padStart(3, '0')}`;
+        const rowBody = {
+          id: rowId,
+          year: fileYear,
+          from_amount: row[0],
+          to_amount: row[1],
+          dep1_tax: row[2] || 0,
+          dep2_tax: row[3] || 0,
+          dep3_tax: row[4] || 0,
+          dep4_tax: row[5] || 0,
+          dep5_tax: row[6] || 0,
+          dep6_tax: row[7] || 0,
+          dep7_tax: row[8] || 0,
+          extra_per_dep: row[9] || 0
+        };
+        await api('../tables/tax_bracket_rows', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(rowBody)
+        });
+      }
+
+      // ⑨ 메모리에 반영
+      _TAX_BRACKET_DATA[fileYear] = taxData;
+
+      // ⑩ UI 갱신
+      _taxBracketYear = fileYear;
+      if(!_isNewTaxFormat(fileYear)) _taxBracketDep = 1;
+      renderTaxBracketPanel();
+
+      if(statusEl) statusEl.innerHTML = `<span style="color:#16a34a;">✅ ${fileYear}년 과세기준표가 성공적으로 추가되었습니다.</span>`;
+      toast(`${fileYear}년 과세기준표 추가 완료 ✔`, 'success');
+    } catch(err){
+      console.error('[과세기준표 업로드]', err);
+      if(statusEl) statusEl.innerHTML = `<span style="color:#ef4444;">⚠️ ${err.message}</span>`;
+    }
+    event.target.value = '';
+  };
+  reader.readAsArrayBuffer(file);
 }
 
 function _renderTaxBracketTable(year){
@@ -758,6 +1138,16 @@ function searchTaxBracket(){
       resultEl.innerHTML = `<span style="color:#9ca3af;">표 범위 외 (${Math.round(val/10000)}만원대)</span>`;
     }
   }
+}
+
+// ── 상한금액 필드 토글: 국민연금일 때만 표시 ──
+function toggleStdCapField(){
+  const type    = document.getElementById('std-new-type')?.value || '';
+  const capRow  = document.getElementById('std-new-cap-row');
+  const capInput= document.getElementById('std-new-cap');
+  const isPension = type === 'national_pension';
+  if(capRow) capRow.style.display = isPension ? '' : 'none';
+  if(!isPension && capInput) capInput.value = ''; // 숨길 때 값 초기화
 }
 
 // ── 4대보험 요율 저장 ──

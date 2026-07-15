@@ -1149,8 +1149,21 @@ function _collectContractData(){
 
   // 근무 스케줄 파싱
   const schedule = (typeof getScheduleJSON==='function') ? getScheduleJSON() : [];
-  const activeDays = schedule.filter(s=>s.active);
+  let activeDays = schedule.filter(s=>s.active);
   const dayNames = {mon:'월',tue:'화',wed:'수',thu:'목',fri:'금',sat:'토',sun:'일'};
+
+  // ── schedule_json 중첩 구조(shifts[0].start) → 평면 구조(start/end) 변환 ──
+  activeDays = activeDays.map(s => {
+    const shift = (Array.isArray(s.shifts) && s.shifts.length > 0) ? s.shifts[0] : {};
+    return {
+      day: s.day, label: s.label,
+      start: shift.start || s.start || '',
+      end: shift.end || s.end || '',
+      breaks: Array.isArray(shift.breaks) ? shift.breaks : (Array.isArray(s.breaks) ? s.breaks : []),
+      brk_start: shift.brk_start || s.brk_start || '',
+      brk_end: shift.brk_end || s.brk_end || ''
+    };
+  });
 
   // 요일별 시간 정리 (같은 시간대이면 대표만)
   const workDays = activeDays.map(s=>dayNames[s.day]||s.label).join(', ');

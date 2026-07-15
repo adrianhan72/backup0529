@@ -7,13 +7,31 @@
   // 현재 고객사 계약 전체 분류
   const companyContracts = allContracts.filter(c => c.company_id === currentContCompanyId);
 
-  const ALERT_LABELS = ['갱신예정','계약예정','해지예정'];
+  const ALERT_LABELS = ['갱신예정','계약예정','해지예정','해지예정-갱신'];
   const groups = {};
   ALERT_LABELS.forEach(l => groups[l] = []);
 
   companyContracts.forEach(c => {
-    const {label} = calcContractStatusDisplay(c, today);
-    if(groups[label] !== undefined) groups[label].push(c);
+    // 알림 카드 분류는 DB 상태값 기준 (calcContractStatusDisplay는 표시용)
+    const _status = c.status;
+    if(_status === CONTRACT_STATUS.TERMINATE_PENDING && c.terminate_date && c.terminate_date <= today){
+      return; // 이미 해지일 도과 → 알림 카드에서 제외
+    }
+    if(_status === CONTRACT_STATUS.RENEWAL_PENDING){
+      groups['갱신예정'].push(c);
+    } else if(_status === CONTRACT_STATUS.PENDING){
+      groups['계약예정'].push(c);
+    } else if(_status === CONTRACT_STATUS.TERMINATE_PENDING){
+      // 갱신 페어 여부 판별 (중앙 유틸리티 사용)
+      const _pair = typeof findPairContract === 'function' ? findPairContract(c) : null;
+      const _isRenewPair = !!_pair && (
+        _pair.status === CONTRACT_STATUS.RENEWAL_PENDING ||
+        _pair.status === CONTRACT_STATUS.RENEWED ||
+        (_pair.status === CONTRACT_STATUS.VOIDED && _pair.is_voided_by_amend)
+      );
+      groups[_isRenewPair ? '해지예정-갱신' : '해지예정'].push(c);
+    }
+    // 그 외 상태는 알림 카드 대상 아님 — 무시
   });
 
   // 카드 정의 (임시저장 카드는 _renderContractsBanners 로 통일)
@@ -37,6 +55,7 @@
           <td style="font-size:12px;color:#6b7280;">${c.contract_start||'-'}</td>
           <td><span style="font-weight:700;color:${ddayColor};font-size:12.5px;">${dday}</span></td>
           <td style="white-space:nowrap;">
+            ${(c.renewed_from_id||c.renewed_to_id) ? `<button class="btn btn-sm" style="background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;margin-right:3px;padding:3px 6px;font-size:10px;" onclick="_openContractPairWindow('${c.renewed_from_id||c.renewed_to_id}')" title="페어 계약 새 창에서 열기"><i class="fas fa-external-link-alt"></i></button>` : ''}
             <button onclick="viewContract('${c.id}')" class="btn btn-sm btn-indigo"><i class="fas fa-search"></i> 조회</button>
           </td>`;
       }
@@ -61,6 +80,31 @@
           <td style="font-size:12px;color:#6b7280;">${c.contract_start||'-'}</td>
           <td><span style="font-weight:700;color:${ddayColor};font-size:12.5px;">${dday}</span></td>
           <td style="white-space:nowrap;">
+            ${(c.renewed_from_id||c.renewed_to_id) ? `<button class="btn btn-sm" style="background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;margin-right:3px;padding:3px 6px;font-size:10px;" onclick="_openContractPairWindow('${c.renewed_from_id||c.renewed_to_id}')" title="페어 계약 새 창에서 열기"><i class="fas fa-external-link-alt"></i></button>` : ''}
+            <button onclick="viewContract('${c.id}')" class="btn btn-sm btn-indigo"><i class="fas fa-search"></i> 조회</button>
+          </td>`;
+      }
+    },
+    {
+      key: '해지예정-갱신', cls: 'cont-alert-renew-terminate',
+      icon: 'fas fa-sync-alt', iconColor: '#c2410c',
+      title: '해지 예정 (갱신)',
+      desc: '갱신 계약의 시작으로 인해 해지 예정된 계약입니다. 갱신 계약 시작일에 자동 해지됩니다.',
+      cols: ['직원명','고용형태','해지 예정일','D-day','관리'],
+      row: (c) => {
+        const emp = allEmployees.find(e=>e.id===c.employee_id);
+        const _rawCat = c.contract_type || emp?.employment_category || '-';
+        const empCat = _rawCat ===CONTRACT_TYPE.REGULAR_PROBATION ? '정규직 수습' : _rawCat ===CONTRACT_TYPE.FIXED_PROBATION ? '계약직 수습' : contractTypeLabel(_rawCat);
+        const catBadge = CAT_BADGE_CLS[_rawCat] || CAT_BADGE_CLS[empCat] || 'badge-gray';
+        const termDate = c.terminate_date || c.contract_end || '';
+        const diff = termDate ? Math.ceil((new Date(termDate)-new Date(today))/(1000*60*60*24)) : null;
+        const dday = diff !== null ? (diff>0?`D-${diff}`:diff===0?'D-day':`D+${Math.abs(diff)}`) : '-';
+        const ddayColor = diff !== null && diff <= 14 ? '#dc2626' : '#be123c';
+        return `<td style="font-weight:700;color:#1f2937;">${getEmpName(c.employee_id)}</td>
+          <td><span class="badge ${catBadge}" style="font-size:11px;">${empCat}</span></td>
+          <td style="font-size:12px;color:#9f1239;font-weight:600;">${termDate||'-'}</td>
+          <td><span style="font-weight:700;color:${ddayColor};font-size:12.5px;">${dday}</span></td>
+          <td style="white-space:nowrap;">
             <button onclick="viewContract('${c.id}')" class="btn btn-sm btn-indigo"><i class="fas fa-search"></i> 조회</button>
           </td>`;
       }
@@ -68,9 +112,9 @@
     {
       key: '해지예정', cls: 'cont-alert-preterminate',
       icon: 'fas fa-user-clock', iconColor: '#be123c',
-      title: '해지 예정 (퇴사예정)',
-      desc: '퇴사예정일이 설정된 계약입니다. 해지 처리를 준비하세요.',
-      cols: ['직원명','고용형태','퇴사 예정일','D-day','관리'],
+      title: '해지 예정 (퇴사)',
+      desc: '퇴사예정일이 설정된 계약입니다. 퇴사 처리를 준비하세요.',
+      cols: ['직원명','고용형태','해지 예정일','D-day','관리'],
       row: (c) => {
         const emp = allEmployees.find(e=>e.id===c.employee_id);
         const _rawCat = c.contract_type || emp?.employment_category || '-';
@@ -85,6 +129,7 @@
           <td style="font-size:12px;color:#9f1239;font-weight:600;">${termDate||'-'}</td>
           <td><span style="font-weight:700;color:${ddayColor};font-size:12.5px;">${dday}</span></td>
           <td style="white-space:nowrap;">
+            ${(c.renewed_from_id||c.renewed_to_id) ? `<button class="btn btn-sm" style="background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;margin-right:3px;padding:3px 6px;font-size:10px;" onclick="_openContractPairWindow('${c.renewed_from_id||c.renewed_to_id}')" title="페어 계약 새 창에서 열기"><i class="fas fa-external-link-alt"></i></button>` : ''}
             <button onclick="viewContract('${c.id}')" class="btn btn-sm btn-indigo"><i class="fas fa-search"></i> 조회</button>
           </td>`;
       }
@@ -142,6 +187,38 @@ function _toggleContAlertCard(headEl){
   chevron.classList.toggle('open', !isOpen);
 }
 
+// ── 갱신·해지 요약 배너 ──
+function _renderSummaryBanner(){
+  const banner = document.getElementById('cont-summary-banner');
+  if(!banner || !currentContCompanyId) { if(banner) banner.style.display = 'none'; return; }
+  
+  const coContracts = allContracts.filter(c => c.company_id === currentContCompanyId);
+  const today = new Date().toISOString().slice(0,10);
+  
+  const renewalPending = coContracts.filter(c => c.status === CONTRACT_STATUS.RENEWAL_PENDING).length;
+  const terminatePending = coContracts.filter(c => 
+    c.status === CONTRACT_STATUS.TERMINATE_PENDING && c.terminate_date && c.terminate_date > today
+  ).length;
+  
+  if(renewalPending === 0 && terminatePending === 0){
+    banner.style.display = 'none';
+    return;
+  }
+  
+  let html = '<span style="font-weight:700;color:#1e293b;">📋 예정된 계약 변경</span>';
+  if(renewalPending > 0){
+    html += `<span style="display:inline-flex;align-items:center;gap:4px;background:#fef9c3;color:#92400e;padding:3px 10px;border-radius:12px;font-weight:600;font-size:11px;">
+      <i class="fas fa-sync-alt"></i> 갱신 예정 ${renewalPending}건</span>`;
+  }
+  if(terminatePending > 0){
+    html += `<span style="display:inline-flex;align-items:center;gap:4px;background:#ffe4e6;color:#9f1239;padding:3px 10px;border-radius:12px;font-weight:600;font-size:11px;">
+      <i class="fas fa-user-clock"></i> 해지 예정 ${terminatePending}건</span>`;
+  }
+  
+  banner.innerHTML = html;
+  banner.style.display = 'flex';
+}
+
 function renderContracts(){
   if(!document.getElementById('cont-list-section')) return;
   // 고객사 선택 여부와 무관하게 상단 배너 항상 갱신
@@ -156,6 +233,9 @@ function renderContracts(){
 
   // ── 알림 카드 렌더링 ──
   _renderContAlertCards();
+  
+  // ── 갱신·해지 요약 배너 (U8) ──
+  _renderSummaryBanner();
 
   const q=(document.getElementById('cont-search')?.value||'').toLowerCase();
   const filterEmpCat=(document.getElementById('cont-filter-empcat')?.value||'');
@@ -165,7 +245,7 @@ function renderContracts(){
   const today=new Date().toISOString().slice(0,10);
 
   // 알림 카드에서 관리되는 상태는 메인 테이블 기본 제외 (서류미비는 유효 계약이므로 메인 테이블에 포함)
-  const ALERT_ONLY_LABELS = new Set(['임시저장','갱신예정','계약예정','해지예정']);
+  const ALERT_ONLY_LABELS = new Set(['임시저장','갱신예정','계약예정']);
 
   let f=allContracts.filter(c=>{
     if(c.company_id!==currentContCompanyId) return false;
@@ -253,6 +333,13 @@ function renderContracts(){
         specialBadge = `<span class="badge" style="background:#e5e7eb;color:#374151;margin-left:4px;">특수관계인</span>`;
       }
     }
+    // 페어 계약 링크 (새 창 비교용)
+    const _pairId = c.renewed_from_id || c.renewed_to_id;
+    const _pairLink = _pairId
+      ? `<button class="btn btn-sm" style="background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;margin-right:4px;" 
+            onclick="_openContractPairWindow('${_pairId}')" title="페어 계약을 새 창에서 열어 비교하기">
+            <i class="fas fa-external-link-alt"></i> 비교</button>`
+      : '';
     return `<tr>
       <td style="font-weight:600">${getEmpName(c.employee_id)}</td>
       <td><span class="badge ${catBadge}">${contractTypeLabel(empCat)}</span>${specialBadge}</td>
@@ -269,7 +356,7 @@ function renderContracts(){
         <span class="badge ${stBadge}">${stName}</span>
       </td>
       <td style="white-space:nowrap;">
-        <button class="btn btn-sm btn-indigo" onclick="viewContract('${c.id}')"><i class="fas fa-search"></i> 조회</button>
+        ${_pairLink}<button class="btn btn-sm btn-indigo" onclick="viewContract('${c.id}')"><i class="fas fa-search"></i> 조회</button>
         ${c.is_draft
           ? `<button class="btn btn-sm" disabled title="임시저장 상태에서는 출력할 수 없습니다"><i class="fas fa-file-contract"></i> 계약서</button>`
           : `<button class="btn btn-sm btn-indigo" onclick="openContractPrintModal('${c.id}')"><i class="fas fa-file-contract"></i> 계약서</button>`
@@ -330,9 +417,9 @@ function _ctClearErrors(){
 
 // ── 계약 시작일 ↔ 입사일 연동 ──
 function _onCtHireChange(){
-  const hireEl = document.getElementById('ct-em-hire');
-  const startEl = document.getElementById('ct-em-start');
-  const hintEl = document.getElementById('ct-em-start-hint');
+  const hireEl = document.getElementById('ct-edit-em-hire') || document.getElementById('ct-em-hire');
+  const startEl = document.getElementById('ct-start') || document.getElementById('ct-em-start');
+  const hintEl = document.getElementById('ct-start-hint') || document.getElementById('ct-em-start-hint');
   if(!startEl || !hintEl) return;
   if(hireEl && hireEl.value){
     startEl.disabled = false;
@@ -341,7 +428,7 @@ function _onCtHireChange(){
     startEl.style.cursor = '';
     // 입사일 변경 시 이미 입력된 계약 시작일도 재검증
     if(startEl.value){
-      _validateCtStartVsHire('ct-em-start','ct-em-hire','ct-em-start-hint');
+      _validateCtStartVsHire(startEl.id, hireEl?.id || 'ct-em-hire', hintEl.id);
     } else {
       hintEl.style.color = '#6b7280';
       hintEl.textContent = '이 계약의 효력 발생일';
@@ -386,9 +473,11 @@ function _disableProbationPeriod(){
   probMonEl.style.background = '#f3f4f6';
   probMonEl.style.color = '#9ca3af';
   probMonEl.style.cursor = 'not-allowed';
-  // 계약 종료일도 초기화
-  const endEl = document.getElementById('ct-new-end') || document.getElementById('ct-end');
-  if(endEl) endEl.value = '';
+  // 수습 종료일 초기화 및 숨김
+  const probEndEl = document.getElementById('ct-probation-end-date');
+  if(probEndEl) probEndEl.value = '';
+  const probEndWrap = document.getElementById('ct-probation-end-wrap');
+  if(probEndWrap) probEndWrap.style.display = 'none';
 }
 
 function _validateCtStartVsHire(startId, hireId, hintId){
@@ -445,26 +534,31 @@ function openContractModal(id=null, preCompanyId=null){
   window._isAmendMode = false;
   // 통합 상태 배너 초기화
   _resetStatusBanner();
-  // readonly 클래스 제거 + 모든 필드 활성화
+  // readonly 클래스 제거 + 모든 필드 활성화 (단, viewContract에서 미리 설정된 경우 유지)
   const modalEl = document.querySelector('#contract-modal .modal');
-  modalEl.classList.remove('ct-readonly');
-  modalEl.querySelectorAll('input,select,textarea').forEach(el=>{
-    // 성별 필드는 항상 readonly (주민번호 자동설정 전용)
-    if(el.id === 'ct-em-gender' || el.id === 'ct-edit-em-gender') return;
-    el.disabled = false;
-    el.tabIndex = 0;
-    el.style.pointerEvents = '';
-    el.style.background = '';
-    el.style.color = '';
-    el.style.cursor = '';
-  });
-  // 지급유형 버튼 + 휴게시간 추가 버튼 재활성화 (신규/수정 모드)
-  modalEl.querySelectorAll('.modal-body .pi-pay-type-btn').forEach(btn=>{
-    btn.disabled = false; btn.style.cursor = ''; btn.style.pointerEvents = '';
-  });
-  modalEl.querySelectorAll('.modal-body .btn-brk-add').forEach(btn=>{
-    btn.disabled = false; btn.style.cursor = ''; btn.style.pointerEvents = '';
-  });
+  const _wasReadonly = modalEl.classList.contains('ct-readonly');
+  if(!_wasReadonly){
+    modalEl.classList.remove('ct-readonly');
+    modalEl.querySelectorAll('input,select,textarea').forEach(el=>{
+      // 성별 필드는 항상 readonly (주민번호 자동설정 전용)
+      if(el.id === 'ct-em-gender' || el.id === 'ct-edit-em-gender') return;
+      el.disabled = false;
+      el.tabIndex = 0;
+      el.style.pointerEvents = '';
+      el.style.background = '';
+      el.style.color = '';
+      el.style.cursor = '';
+    });
+  }
+  // 지급유형 버튼 + 휴게시간 추가 버튼 재활성화 (신규/수정 모드에서만)
+  if(!_wasReadonly){
+    modalEl.querySelectorAll('.modal-body .pi-pay-type-btn').forEach(btn=>{
+      btn.disabled = false; btn.style.cursor = ''; btn.style.pointerEvents = '';
+    });
+    modalEl.querySelectorAll('.modal-body .btn-brk-add').forEach(btn=>{
+      btn.disabled = false; btn.style.cursor = ''; btn.style.pointerEvents = '';
+    });
+  }
   ['ct-start','ct-end','ct-annual-sal','ct-base','ct-note','ct-pay-period','ct-pay-period-month-hidden','ct-pay-period-day-hidden','ct-pay-day'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});
   { const _tdEl=document.getElementById('ct-terminate-display'); if(_tdEl) _tdEl.value=''; }
   { const _trEl=document.getElementById('ct-row-terminate'); if(_trEl) _trEl.style.display='none'; }
@@ -502,13 +596,15 @@ function openContractModal(id=null, preCompanyId=null){
   document.getElementById('ct-monthly-computed').textContent='0원';document.getElementById('ct-weekly-hol-computed').textContent='0원';
 
   // 신규 직원 섹션 초기화
-  ['ct-em-empno','ct-em-name','ct-em-id','ct-em-dept','ct-em-position','ct-em-job','ct-em-hire','ct-em-start','ct-em-expire','ct-em-phone','ct-em-email','ct-em-address'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});
+  ['ct-em-empno','ct-em-name','ct-em-id','ct-em-dept','ct-em-position','ct-em-job','ct-em-hire','ct-em-phone','ct-em-email','ct-em-address'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});
   document.getElementById('ct-em-gender').value='남';
   document.getElementById('ct-em-category').value='';toggleEmExpire();toggleAnnualSal();toggleProbation();
+  { const _tdEl = document.getElementById('ct-em-tax-dependents'); if(_tdEl) _tdEl.value = 1; }
   // 수정 직원 섹션 초기화
   ['ct-edit-em-empno','ct-edit-em-job','ct-edit-em-dept','ct-edit-em-position','ct-edit-em-hire','ct-edit-em-expire','ct-edit-em-id','ct-edit-em-phone','ct-edit-em-email','ct-edit-em-address','ct-edit-em-bank','ct-edit-em-account'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});
   const editCatEl=document.getElementById('ct-edit-em-category');if(editCatEl)editCatEl.value='';
   const editGenderEl=document.getElementById('ct-edit-em-gender');if(editGenderEl)editGenderEl.value='남';
+  { const _tdEl = document.getElementById('ct-edit-em-tax-dependents'); if(_tdEl) _tdEl.value = 1; }
   document.getElementById('ct-probation-months').value='3';
   document.getElementById('ct-probation-pct').value='';
   document.getElementById('ct-probation-amt').value='';
@@ -543,10 +639,10 @@ function openContractModal(id=null, preCompanyId=null){
     document.getElementById('ct-new-emp-section').style.display = 'block';
     document.getElementById('ct-edit-emp-info').style.display = 'none';
     // 계약 시작일: 입사일 입력 전까지 비활성화
-    const _startNew = document.getElementById('ct-em-start');
-    const _hintNew = document.getElementById('ct-em-start-hint');
+    const _startNew = document.getElementById('ct-start');
     if(_startNew){ _startNew.disabled = true; _startNew.value = ''; }
-    if(_hintNew){ _hintNew.style.color = '#9ca3af'; _hintNew.textContent = '입사일을 먼저 입력하세요.'; }
+    // 계약 종료일: toggleCtEndDate()에서 고용형태에 따라 자동 제어
+    toggleCtEndDate();
     document.getElementById('ct-title').textContent = '근로계약서 추가';
   } else {
     // 수정: 기존 직원 정보 표시, 신규 입력 섹션 숨김 (draft도 employee_id 있으므로 정상 동작)
@@ -581,6 +677,8 @@ function openContractModal(id=null, preCompanyId=null){
         document.getElementById('ct-edit-em-address').value   = emp.address || '';
         document.getElementById('ct-edit-em-bank').value      = emp.bank_name || '';
         document.getElementById('ct-edit-em-account').value   = emp.bank_account || '';
+        const _taxDepEl = document.getElementById('ct-edit-em-tax-dependents');
+        if(_taxDepEl) _taxDepEl.value = emp.tax_dependents || 1;
         const _empnoEl = document.getElementById('ct-edit-em-empno'); if(_empnoEl) _empnoEl.value = emp.employee_number || '';
         const _editRepChk = document.getElementById('ct-edit-em-is-rep');
         if(_editRepChk) _editRepChk.checked = emp.is_representative ? true : false;
@@ -601,7 +699,7 @@ function openContractModal(id=null, preCompanyId=null){
       const ctVal = _isPendingCt
         ? (_ctValRaw ===CONTRACT_TYPE.REGULAR_PROBATION ? '정규직' : _ctValRaw ===CONTRACT_TYPE.FIXED_PROBATION ? '계약직' : _ctValRaw)
         : _ctValRaw;
-      document.getElementById('ct-type').value=ctVal; toggleCtEndDate(true);
+      document.getElementById('ct-type').value=ctVal; toggleCtEndDate(true); toggleProbation();
       document.getElementById('ct-status').value=c.status||CONTRACT_STATUS.ACTIVE;
       // 계약직/일용직: 입사일·퇴사예정일 행 숨김 (계약 시작일·종료일과 동일하므로 중복)
       // 정규직/정규직 수습: 무기한 계약이므로 퇴사예정일 행 숨김
@@ -634,35 +732,19 @@ function openContractModal(id=null, preCompanyId=null){
           voidedRowEl.style.display = 'none';
         }
       }
-      const hireRowEl   = document.getElementById('ct-edit-row-hire');
       const expireRowEl = document.getElementById('ct-edit-row-expire');
-      const endRowEl    = document.getElementById('ct-row-end');
-      // 입사일은 고용형태 무관하게 항상 표시
-      if(hireRowEl)   hireRowEl.style.display   = '';
+      // 입사일은 계약 정보 섹션으로 이동 — 항상 표시됨
       // 정규직이면 퇴사예정일 숨김, 계약직이면 입사일과 함께 숨김 (종료일과 동일)
       if(expireRowEl) expireRowEl.style.display  = (isFixedType || isRegularType) ? 'none' : '';
-      // 계약 종료일 행: 정규직(수습 제외)만 숨김 (기간의 정함 없음)
-      // 정규직 수습은 수습기간 만료일 = 계약 종료일이므로 표시됨
-      const isRegularNoProbation = ctVal === CONTRACT_TYPE.REGULAR;
-      if(endRowEl){
-        if(isRegularNoProbation){
-          endRowEl.style.display = 'none';
-        } else {
-          endRowEl.style.display = '';
-          const endLabel = endRowEl.querySelector('label');
-          if(endLabel){
-            endLabel.innerHTML = '계약 종료일 <span id="ct-end-required" style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;display:none;">*</span>';
-          }
-        }
-      }
-      // 계약유형에 따라 연봉 행 표시 제어
-      // ctVal = emp.employment_category || c.contract_type (위 5920줄에서 이미 결정된 값)
-      const isRegEdit  = ctVal===CONTRACT_TYPE.REGULAR || ctVal===CONTRACT_TYPE.REGULAR_PROBATION;
+      // 계약 종료일 행: toggleCtEndDate에서 고용형태별 레이아웃 자동 제어
+      toggleCtEndDate(true);
+      // 계약유형에 따라 연봉 행 표시 제어 (수습은 연봉제 미적용 — 정규직만)
+      const isRegEdit  = ctVal===CONTRACT_TYPE.REGULAR;  // 정규직 수습 제외
       const isProbEdit = ctVal===CONTRACT_TYPE.REGULAR_PROBATION || ctVal===CONTRACT_TYPE.FIXED_PROBATION;
       const isDailyEdit= ctVal===CONTRACT_TYPE.DAILY;
       const rowM=document.getElementById('ct-row-monthly');
       if(rowM) rowM.style.display=isRegEdit?'':'none';
-      // 연봉 섹션 (연봉 필드 포함)
+      // 연봉 섹션 (연봉 필드 포함) — 정규직만, 수습 제외
       ['ct-row-salary-period','ct-row-annual-sal'].forEach(id=>{
         const el=document.getElementById(id); if(el) el.style.display=isRegEdit?'':'none';
       });
@@ -673,15 +755,20 @@ function openContractModal(id=null, preCompanyId=null){
       const rowWeeklyHolE = document.getElementById('ct-row-weekly-hol');
       const rowDailyWageE = document.getElementById('ct-row-daily-wage');
       if(rowDaysE) rowDaysE.style.display = isDailyEdit ? 'none' : '';
-      if(rowAnnualE) rowAnnualE.style.display = isDailyEdit ? 'none' : '';
+      // 일용직도 근로기준법 제55조(주휴일)·제60조(연차) 적용 대상이므로 필드 표시
+      if(rowAnnualE) rowAnnualE.style.display = '';  // 모든 고용형태 표시
       if(rowBaseE) rowBaseE.style.display = isDailyEdit ? 'none' : '';
-      if(rowWeeklyHolE) rowWeeklyHolE.style.display = isDailyEdit ? 'none' : '';
+      if(rowWeeklyHolE) rowWeeklyHolE.style.display = isDailyEdit ? '' : '';  // 일용직도 표시
       if(rowDailyWageE) rowDailyWageE.style.display = isDailyEdit ? '' : 'none';
       // 수습 섹션 복원
       const probSec=document.getElementById('ct-probation-section');
+      const probRow=document.getElementById('ct-probation-row');
       const probPeriodRow=document.getElementById('ct-row-probation-period');
+      const probEndCol=document.getElementById('ct-probation-end-col');
       if(probSec) probSec.style.display=isProbEdit?'':'none';
+      if(probRow) probRow.style.display=isProbEdit?'grid':'none';
       if(probPeriodRow) probPeriodRow.style.display=isProbEdit?'':'none';
+      if(probEndCol) probEndCol.style.display=isProbEdit?'':'none';
       if(isProbEdit){
         const _probMonEl = document.getElementById('ct-probation-months') || document.getElementById('ct-new-probation-months');
         if(_probMonEl) _probMonEl.value = c.probation_months||'';
@@ -692,6 +779,9 @@ function openContractModal(id=null, preCompanyId=null){
         const _rbEl = document.querySelector(`input[name="ct-probation-basis"][value="${_basis}"]`);
         if(_rbEl){ _rbEl.checked = true; }
         onProbationBasisChange();
+        // 수습 종료일 복원
+        const _probEndEl = document.getElementById('ct-probation-end-date');
+        if(_probEndEl) _probEndEl.value = c.probation_end_date || '';
         // 수습 계약: 계약 종료일 readonly + 힌트
         if(typeof _setProbationEndReadonly === 'function') _setProbationEndReadonly(true);
       }
@@ -723,6 +813,26 @@ function openContractModal(id=null, preCompanyId=null){
         setAmountVal('ct-base', c.base_salary);
         const dwEl = document.getElementById('ct-daily-wage'); if(dwEl) dwEl.value='';
       }
+      // ── 통상임금·고정수당 항목: 일용직은 모두 0/NULL 처리 ──
+      if(isDailyEdit){
+        setAmountVal('ct-position',    0);
+        setAmountVal('ct-car',         0);  setCTPayType('car', '');
+        setAmountVal('ct-remote-area', 0);
+        setAmountVal('ct-meal',        0);  setCTPayType('meal', '');
+        setAmountVal('ct-research',    0);  setCTPayType('research', '');
+        setAmountVal('ct-site',        0);
+        setAmountVal('ct-skill',       0);
+        setAmountVal('ct-license',     0);
+        setAmountVal('ct-hazard',      0);
+        setAmountVal('ct-communication',0); setCTPayType('communication', '');
+        setAmountVal('ct-fitness',     0);  setCTPayType('fitness', '');
+        setAmountVal('ct-self-dev',    0);  setCTPayType('self_dev', '');
+        setAmountVal('ct-book',        0);  setCTPayType('book', '');
+        setAmountVal('ct-overseas',    0);  setCTPayType('overseas', '');
+        setAmountVal('ct-regular-bonus',0);
+        setAmountVal('ct-childcare',   0);
+        { const _ccDep=document.getElementById('ct-childcare-dependents'); if(_ccDep) _ccDep.value=0; }
+      } else {
       setAmountVal('ct-position',    c.position_allowance||0);
       // 차량지원비 = 구 교통비 + 구 자가운전보조금 합산 (레거시 데이터 하위호환)
       setAmountVal('ct-car', (parseFloat(c.transportation_allowance||c.car_maintenance||0)) + (parseFloat(c.self_driving_allowance||0)));
@@ -753,6 +863,7 @@ function openContractModal(id=null, preCompanyId=null){
       // 보육수당 복원
       setAmountVal('ct-childcare', c.childcare_allowance||0);
       { const _ccDep=document.getElementById('ct-childcare-dependents'); if(_ccDep) _ccDep.value=c.childcare_dependents||0; }
+      }
       // 급여 산정기간 복원
       _ctPeriodRestore(c.pay_period||'', c.pay_period_month||null, c.pay_period_day!=null?c.pay_period_day:null);
       const _pdEl = document.getElementById('ct-pay-day');
@@ -766,13 +877,20 @@ function openContractModal(id=null, preCompanyId=null){
       document.getElementById('ct-monthly-computed').textContent=won(c.monthly_salary_agreed);
       document.getElementById('ct-weekly-hol-computed').textContent=won(c.weekly_holiday_pay);
       setAmountVal('ct-hourly-input', c.hourly_wage||0);
-      // 고정 연장/야간/휴일근로수당 복원
+      // 고정 연장/야간/휴일근로수당 복원 (일용직은 0)
+      if(isDailyEdit){
+        setAmountVal('ct-fixed-ot-pay',    0); setAmountVal('ct-fixed-night-pay', 0); setAmountVal('ct-fixed-hol-pay', 0);
+        const _fotH = document.getElementById('ct-fixed-ot-hours');    if(_fotH)    _fotH.value    = '';
+        const _fniH = document.getElementById('ct-fixed-night-hours'); if(_fniH)    _fniH.value    = '';
+        const _fhoH = document.getElementById('ct-fixed-hol-hours');   if(_fhoH)    _fhoH.value    = '';
+      } else {
       setAmountVal('ct-fixed-ot-pay',    c.fixed_ot_pay   ||0);
       setAmountVal('ct-fixed-night-pay', c.fixed_night_pay||0);
       setAmountVal('ct-fixed-hol-pay',   c.fixed_hol_pay  ||0);
       const _fotH = document.getElementById('ct-fixed-ot-hours');    if(_fotH)    _fotH.value    = c.fixed_ot_hours   ||'';
       const _fniH = document.getElementById('ct-fixed-night-hours'); if(_fniH)    _fniH.value    = c.fixed_night_hours||'';
       const _fhoH = document.getElementById('ct-fixed-hol-hours');   if(_fhoH)    _fhoH.value    = c.fixed_hol_hours  ||'';
+      }
       // ── 연봉/월약정급여 섹션 표시 최종 강제 적용 (ctVal 기준 — emp.employment_category 우선) ──
       const isFixedEdit2 = ctVal===CONTRACT_TYPE.FIXED || ctVal===CONTRACT_TYPE.FIXED_PROBATION;
       const showSalRow = isRegEdit || isFixedEdit2;
@@ -859,21 +977,12 @@ function _onEditCategoryChange() {
   toggleAnnualSal();
   // 계약 종료일 행 표시 제어
   toggleCtEndDate(true);
-  // 수습 섹션 제어 (ct-em-category가 아닌 ct-type을 보는 toggleProbation 우회)
-  const isProbation = (newCatNorm ===CONTRACT_TYPE.REGULAR_PROBATION || newCatNorm ===CONTRACT_TYPE.FIXED_PROBATION);
-  const probSec = document.getElementById('ct-probation-section');
-  const probPeriodRow = document.getElementById('ct-row-probation-period');
-  if(probSec) probSec.style.display = isProbation ? '' : 'none';
-  if(probPeriodRow) probPeriodRow.style.display = isProbation ? '' : 'none';
-  // 수습 계약: 계약 종료일 readonly + 힌트
-  if(typeof _setProbationEndReadonly === 'function') _setProbationEndReadonly(isProbation);
-  if(isProbation && typeof _autoCalcProbationEndDate === 'function') _autoCalcProbationEndDate();
-  // 입사일·퇴사예정일 행 표시 제어
+  // 수습 섹션 제어 (toggleProbation이 ct-type 또는 ct-em-category에서 읽음)
+  toggleProbation();
+  // 입사일·퇴사예정일 행 표시 제어 (입사일은 계약 정보 섹션으로 이동 — 항상 표시됨)
   const isFixed   = (newCatNorm ===CONTRACT_TYPE.FIXED || newCatNorm ===CONTRACT_TYPE.FIXED_PROBATION || newCatNorm ===CONTRACT_TYPE.DAILY);
   const isRegular = (newCatNorm ===CONTRACT_TYPE.REGULAR || newCatNorm ===CONTRACT_TYPE.REGULAR_PROBATION);
-  const hireRowEl   = document.getElementById('ct-edit-row-hire');
   const expireRowEl = document.getElementById('ct-edit-row-expire');
-  if(hireRowEl)   hireRowEl.style.display   = '';
   if(expireRowEl) expireRowEl.style.display  = (isFixed || isRegular) ? 'none' : '';
 }
 
@@ -1399,7 +1508,8 @@ function calcContractStatusDisplay(c, today){
     if(c.terminate_date && c.terminate_date <= today){
       return {badge:'badge-red', label:'해지', docsIncomplete};
     }
-    return {badge:'badge-rose', label:'해지예정', docsIncomplete};
+    // 해지예정은 여전히 유효한 계약 — 메인 목록에서는 '유효'로 표시 (알림 카드에서 별도 관리)
+    return {badge:'badge-green', label:'유효', docsIncomplete, isTerminatePending: true};
   }
   if(s==='파기'||s==='voided')      return {badge:'badge-slate',  label:'파기', docsIncomplete};
   if(s==='갱신됨'||s==='renewed')    return {badge:'badge-gray',   label:'만료', docsIncomplete}; // 갱신으로 인한 계약 종료
@@ -1430,7 +1540,10 @@ function calcContractStatusDisplay(c, today){
 
 // ─── 조회 모드로 모달 열기 ───
 function viewContract(id){
-  // 먼저 openContractModal로 데이터를 채운다
+  // 먼저 ct-readonly 클래스를 추가하여 openContractModal이 readonly 상태로 렌더링되도록 한다
+  const _modalEl = document.querySelector('#contract-modal .modal');
+  if(_modalEl) _modalEl.classList.add('ct-readonly');
+  // openContractModal로 데이터를 채운다
   openContractModal(id);
 
   const c = allContracts.find(x=>x.id===id);
@@ -1446,7 +1559,7 @@ function viewContract(id){
     const ctVal2 = _isPendingCt2
       ? (_ctVal2Raw ===CONTRACT_TYPE.REGULAR_PROBATION ? '정규직' : _ctVal2Raw ===CONTRACT_TYPE.FIXED_PROBATION ? '계약직' : _ctVal2Raw)
       : _ctVal2Raw;
-    const isReg = ctVal2 ===CONTRACT_TYPE.REGULAR || ctVal2 ===CONTRACT_TYPE.REGULAR_PROBATION;
+    const isReg = ctVal2 ===CONTRACT_TYPE.REGULAR;  // 정규직 수습 제외 (연봉제 미적용)
     ['ct-row-salary-period','ct-row-annual-sal'].forEach(sid=>{
       const el = document.getElementById(sid);
       if(el) el.style.display = isReg ? '' : 'none';
@@ -1598,12 +1711,24 @@ function viewContract(id){
     }
   }
 
-  // 모달 본문(modal-body) 읽기전용 - 액션 패널 제외
+  // 모달 본문(modal-body) 읽기전용 - 액션 패널 제외 (ct-readonly는 openContractModal 호출 전에 이미 추가됨)
   const modalEl = document.querySelector('#contract-modal .modal');
-  modalEl.classList.add('ct-readonly');
   // 조회 모드: 편집 안내 힌트 숨김
   ['ct-edit-name-lock-hint','ct-edit-empno-lock-hint','ct-edit-category-lock-hint'].forEach(id=>{
     const el = document.getElementById(id); if(el) el.style.display = 'none';
+  });
+  // ── 계약정보 섹션 복원 (갱신 모드에서 숨겨진 항목만 복원, 타입별 표시는 openContractModal이 제어) ──
+  const _startParent = document.getElementById('ct-start')?.closest('.form-group');
+  if(_startParent && _startParent.style.display === 'none') _startParent.style.display = '';
+  const _probRow = document.getElementById('ct-probation-row');
+  if(_probRow && _probRow.style.display === 'none') _probRow.style.display = 'grid';
+  const _probPeriodRow = document.getElementById('ct-row-probation-period');
+  if(_probPeriodRow && _probPeriodRow.style.display === 'none') _probPeriodRow.style.display = '';
+  const _probEndCol = document.getElementById('ct-probation-end-col');
+  if(_probEndCol && _probEndCol.style.display === 'none') _probEndCol.style.display = '';
+  // 계약정보 섹션 타이틀 복원
+  document.querySelectorAll('.form-section-title').forEach(el => {
+    if(el.textContent.includes('계약 정보') && el.style.display === 'none') el.style.display = '';
   });
   // modal-body 내 input/select/textarea 비활성화 (액션 패널 제외)
   // select는 disabled 대신 pointer-events로 차단 (브라우저 기본 opacity 방지)
@@ -1634,6 +1759,47 @@ function viewContract(id){
       btn.style.cursor = 'not-allowed';
       btn.style.pointerEvents = 'none';
     });
+    bodyEl.querySelectorAll('.btn-brk-del').forEach(btn=>{
+      btn.disabled = true;
+      btn.style.cursor = 'not-allowed';
+      btn.style.pointerEvents = 'none';
+    });
+  }
+
+  // ── 갱신 페어 계약: 조회 모드에서도 원본 계약 해지일 표시 ──
+  const _pairOrigC = (c && typeof findPairContract === 'function') ? findPairContract(c) : null;
+  // 페어 발견 시 in-memory 보정
+  if(_pairOrigC && c && !c.renewed_from_id && !c.renewed_to_id){
+    if(c.status === CONTRACT_STATUS.RENEWAL_PENDING){
+      if(typeof _persistPairLink === 'function') _persistPairLink(c, _pairOrigC, 'renewed_from');
+    } else if(c.status === CONTRACT_STATUS.RENEWED || c.status === CONTRACT_STATUS.TERMINATE_PENDING){
+      if(typeof _persistPairLink === 'function') _persistPairLink(c, _pairOrigC, 'renewed_to');
+    }
+  }
+  if(_pairOrigC){
+    const _pairRow = document.getElementById('ct-row-renewed-pair-end');
+    const _pairInput = document.getElementById('ct-renewed-pair-end');
+    const _pairHint = document.getElementById('ct-renewed-pair-hint');
+    if(_pairRow && _pairInput && _pairHint){
+      const _pairEnd = _pairOrigC.contract_end || _pairOrigC.terminate_date || '';
+      _pairInput.value = _pairEnd;
+      _pairInput.disabled = true;
+      _pairInput.style.background = '#f8f9fb';
+      _pairInput.style.color = '#374151';
+      _pairRow.style.display = '';
+      if(_pairEnd){
+        _pairHint.textContent = `원본 계약(${_pairEnd.replace(/-/g, '.')})의 해지일 — 갱신된 계약의 시작일은 ${c.contract_start ? c.contract_start.replace(/-/g, '.') : '?'}입니다.`;
+        _pairHint.style.color = '#6b7280';
+      } else {
+        _pairHint.textContent = '원본 계약의 해지일이 설정되지 않았습니다.';
+        _pairHint.style.color = '#9ca3af';
+      }
+      // 발견한 페어 ID를 renewed_from_id에 보정 (이후 amend 등에서 활용)
+      if(!c.renewed_from_id) c.renewed_from_id = _pairOrigC.id;
+    }
+  } else {
+    const _pairRow2 = document.getElementById('ct-row-renewed-pair-end');
+    if(_pairRow2) _pairRow2.style.display = 'none';
   }
 
   // 버튼 표시 로직
@@ -1676,12 +1842,15 @@ function viewContract(id){
   const _renewLinkEl = document.getElementById('ct-renew-link');
   if(_renewLinkEl && c){
     let renewHTML = '';
-    if(c.renewed_from_id){
-      renewHTML = `<span style="font-size:11px;color:#6366f1;cursor:pointer;" onclick="viewContract('${c.renewed_from_id}')" title="원본 계약 보기">
-        <i class="fas fa-link"></i> 원본 계약</span>`;
-    } else if(c.renewed_to_id){
-      renewHTML = `<span style="font-size:11px;color:#6366f1;cursor:pointer;" onclick="viewContract('${c.renewed_to_id}')" title="갱신된 계약 보기">
-        <i class="fas fa-link"></i> 갱신 계약</span>`;
+    const _pairId = c.renewed_from_id || c.renewed_to_id;
+    if(_pairId){
+      const _isFrom = !!c.renewed_from_id;
+      const _label = _isFrom ? '원본 계약' : '갱신 계약';
+      renewHTML = `<span style="font-size:11px;color:#6366f1;cursor:pointer;margin-right:4px;" onclick="viewContract('${_pairId}')" title="${_label} 보기">
+        <i class="fas fa-link"></i> ${_label}</span>
+      <span style="font-size:10px;color:#d1d5db;margin:0 3px;">|</span>
+      <span style="font-size:11px;color:#059669;cursor:pointer;" onclick="_openContractPairWindow('${_pairId}')" title="Ctrl+Click 또는 새 창에서 ${_label}을 열어 비교">
+        <i class="fas fa-external-link-alt"></i> 비교</span>`;
     }
     _renewLinkEl.innerHTML = renewHTML;
     _renewLinkEl.style.display = renewHTML ? 'inline-block' : 'none';
@@ -1979,6 +2148,9 @@ function doContractAmend(){
   _checkMinWageWarning();
   _checkAmendBtnState();
 
+  // ── 갱신 페어 계약: 원본 계약 해지일 표시 ──
+  _initRenewedPairEndField(_amendC);
+
   // ── 상태 배너 숨김 (amend 패널과 하단 버튼으로 대체) ──
   const sbEl = document.getElementById('ct-status-banner');
   if(sbEl) sbEl.style.display = 'none';
@@ -1995,6 +2167,97 @@ function cancelContractAmend(){
   const cid = editId.contract;
   if(!cid) return;
   viewContract(cid);
+}
+
+// ── 갱신 페어 계약: amend 모드에서 원본 계약 해지일 필드 초기화 ──
+function _initRenewedPairEndField(amendC){
+  const rowEl = document.getElementById('ct-row-renewed-pair-end');
+  const inputEl = document.getElementById('ct-renewed-pair-end');
+  const hintEl = document.getElementById('ct-renewed-pair-hint');
+  if(!rowEl || !inputEl || !hintEl || !amendC) return;
+  
+  // 중앙 유틸리티로 페어 탐색
+  const origC = (typeof findPairContract === 'function') ? findPairContract(amendC) : null;
+  if(!origC){
+    rowEl.style.display = 'none';
+    return;
+  }
+  
+  // 페어 발견 시 in-memory 보정
+  if(!amendC.renewed_from_id && !amendC.renewed_to_id && typeof _persistPairLink === 'function'){
+    if(amendC.status === CONTRACT_STATUS.RENEWAL_PENDING){
+      _persistPairLink(amendC, origC, 'renewed_from');
+    } else if(amendC.status === CONTRACT_STATUS.RENEWED){
+      _persistPairLink(amendC, origC, 'renewed_to');
+    }
+  }
+  
+  // 원본 계약의 종료일 또는 해지일
+  const pairEnd = origC.contract_end || origC.terminate_date || '';
+  inputEl.value = pairEnd;
+  rowEl.style.display = '';
+  
+  // 힌트 텍스트
+  if(pairEnd){
+    const fmtDate = pairEnd.replace(/-/g, '.');
+    hintEl.textContent = `원본 계약(${fmtDate})의 해지일 — 갱신 계약 시작일은 이 날짜 이후여야 합니다.`;
+  } else {
+    hintEl.textContent = '원본 계약의 해지일이 설정되지 않았습니다.';
+  }
+  
+  // 시작일이 해지일보다 앞서는지 초기 검증
+  _validateRenewedPairDates();
+}
+
+// ── 갱신 페어 해지일 변경 시 검증 ──
+function _onRenewedPairEndChange(){
+  _validateRenewedPairDates();
+  if(typeof _checkAmendBtnState === 'function') _checkAmendBtnState();
+}
+
+// ── 갱신 계약 시작일 vs 원본 해지일 검증 및 자동 조정 ──
+function _validateRenewedPairDates(){
+  const pairEndEl = document.getElementById('ct-renewed-pair-end');
+  const startEl = document.getElementById('ct-start');
+  const hintEl = document.getElementById('ct-renewed-pair-hint');
+  const startHintEl = document.getElementById('ct-start-hint');
+  
+  if(!pairEndEl || !startEl) return;
+  
+  const rowEl = document.getElementById('ct-row-renewed-pair-end');
+  if(!rowEl || rowEl.style.display === 'none') return;
+  
+  const pairEnd = pairEndEl.value;
+  const start = startEl.value;
+  
+  if(!pairEnd || !start) return;
+  
+  // 해지일이 시작일보다 같거나 이후인 경우 → 시작일을 해지일+1로 조정해야 함
+  // 또는 해지일을 시작일-1로 조정
+  if(start <= pairEnd){
+    // 해지일을 시작일 -1일로 자동 조정
+    const startDate = new Date(start);
+    startDate.setDate(startDate.getDate() - 1);
+    const newPairEnd = startDate.toISOString().slice(0, 10);
+    
+    pairEndEl.value = newPairEnd;
+    
+    const fmtNew = newPairEnd.replace(/-/g, '.');
+    if(hintEl){
+      hintEl.innerHTML = `<i class="fas fa-sync-alt" style="color:#7c3aed;margin-right:4px;"></i>연결된 해지 예정 계약의 해지일도 <strong>${fmtNew}</strong>로 함께 변경됩니다.`;
+      hintEl.style.color = '#7c3aed';
+    }
+    if(startHintEl){
+      startHintEl.textContent = '갱신 계약의 효력 발생일 (원본 해지일 다음 날)';
+    }
+  } else {
+    // 정상: 시작일 > 해지일
+    if(hintEl){
+      const fmtPair = pairEnd.replace(/-/g, '.');
+      hintEl.textContent = `원본 계약(${fmtPair})의 해지일 — 갱신 계약 시작일은 이 날짜 이후여야 합니다.`;
+      hintEl.style.color = '#6b7280';
+    }
+  }
 }
 
 // 수정완료 버튼 활성화 여부 판단 (수정 모드 전용)
@@ -2086,13 +2349,14 @@ async function openAmendPreview(){
     probation_pct:    isProbA?(parseFloat(document.getElementById('ct-probation-pct').value)||0):0,
     probation_amt:    isProbA?(parseFloat(document.getElementById('ct-probation-amt').value)||0):0,
     probation_basis:  isProbA?(document.querySelector('input[name="ct-probation-basis"]:checked')?.value||'salary'):'salary',
+    probation_end_date: document.getElementById('ct-probation-end-date')?.value||null,
     work_hours_per_day: hours_, work_days_per_week: isDailyA?0:days_,
     schedule_json: (() => {
       const _newSch = getScheduleJSON();
       const _hasActive = Array.isArray(_newSch) && _newSch.some(d => d.active);
       return _hasActive ? JSON.stringify(_newSch) : (origC.schedule_json || JSON.stringify(_newSch));
     })(),
-    annual_leave_days: isDailyA?0:(parseFloat(document.getElementById('ct-annual').value)||15),
+    annual_leave_days: (parseFloat(document.getElementById('ct-annual')?.value)||15),
     annual_salary: annual_, monthly_salary_agreed: monthly_, base_salary: base_,
     daily_wage: dWage_, weekly_holiday_pay: wkHol_, hourly_wage: hWage_,
     position_allowance: pos_,
@@ -2164,6 +2428,8 @@ async function openAmendPreview(){
     ...commonFields,
     status: newStatus,
     amended_from: origId, is_voided_by_amend: false,
+    // 갱신 페어 관계 유지: renewed_from_id를 새 계약으로 이전
+    renewed_from_id: origC.renewed_from_id || null,
     // 계약서 날인본: 수정 시 반드시 재업로드 필요 → 초기화
     signed_file_name: '',
     signed_file_data: '',
@@ -2186,6 +2452,34 @@ async function openAmendPreview(){
     console.error('[재발행 계약서 저장 오류]', e);
     toast('재발행 계약서 저장에 실패했습니다.', 'error');
     return;
+  }
+
+  // ③-1 갱신 페어 관계 갱신: 원본 계약의 renewed_to_id를 새 계약 ID로 업데이트 + 해지일 동기화
+  const _pairContract = (typeof findPairContract === 'function') ? findPairContract(origC) : null;
+  if(_pairContract){
+    const _pairEndEl = document.getElementById('ct-renewed-pair-end');
+    const _newPairEnd = _pairEndEl?.value || '';
+    const _origPairEnd = _pairContract.terminate_date || '';
+    
+    // renewed_to_id 갱신 + terminate_date 동기화 (contract_end는 보존)
+    const _patchBody = { renewed_to_id: newContractId };
+    if(_newPairEnd && _newPairEnd !== _origPairEnd){
+      _patchBody.terminate_date = _newPairEnd;
+    }
+    
+    try {
+      await fetch(`../tables/contracts/${_pairContract.id}`, {
+        method: 'PATCH',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(_patchBody)
+      });
+      _pairContract.renewed_to_id = newContractId;
+      if(_newPairEnd && _newPairEnd !== _origPairEnd){
+        _pairContract.terminate_date = _newPairEnd;
+      }
+    } catch(e){
+      console.warn('[갱신 페어 갱신 실패]', e);
+    }
   }
 
   // ④ 발송 이력 기록

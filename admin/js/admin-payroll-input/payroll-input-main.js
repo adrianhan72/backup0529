@@ -793,6 +793,23 @@ function loadPIContract(){
     setAmountVal('pi-base',          isPI_Daily ? (piContract.daily_wage||0) : piContract.base_salary);
     // 주휴수당은 출근일수 기반 자동계산 → 계약서 고정값 사용 안 함, 0으로 초기화 (calcPI에서 재계산)
     setAmountVal('pi-weekly-hol',    0);
+    // ── 통상임금·고정수당: 일용직은 모두 0 처리 ──
+    if(isPI_Daily){
+      setAmountVal('pi-remote-area',   0);
+      setAmountVal('pi-site',          0);
+      setAmountVal('pi-position',      0);
+      setAmountVal('pi-transport',     0); setPIPayType('transport', '');
+      setAmountVal('pi-meal',          0); setPIPayType('meal', '');
+      setAmountVal('pi-childcare',     0); setPIPayType('childcare', '');
+      setAmountVal('pi-research',      0); setPIPayType('research', '');
+      setPIPayType('communication',   '');
+      setPIPayType('fitness',         '');
+      setPIPayType('self_dev',        '');
+      setPIPayType('book',            '');
+      setPIPayType('overseas',        '');
+      const depEl = document.getElementById('pi-dependents');
+      if(depEl) depEl.value = 0;
+    } else {
     setAmountVal('pi-remote-area',     piContract.remote_area_allowance||0);
     setAmountVal('pi-site',           piContract.site_allowance||0);
     setAmountVal('pi-position',      piContract.position_allowance);
@@ -815,11 +832,16 @@ function loadPIContract(){
     setPIPayType('self_dev',         _ptOf(piContract.self_dev_pay_type,      'self_dev'));
     setPIPayType('book',             _ptOf(piContract.book_pay_type,          'book'));
     setPIPayType('overseas',         _ptOf(piContract.overseas_pay_type,      'overseas'));
-    // 부양가족 수: 계약서 보육수당 부양가족 수 자동 반영
+    // 부양가족 수: 직원 정보의 과세기준 부양가족 수 반영 (12/31 기준)
     (function(){
       const depEl = document.getElementById('pi-dependents');
-      if(depEl) depEl.value = piContract.childcare_dependents || 0;
+      const depDisp = document.getElementById('pi-tax-dependents-disp');
+      const emp = (allEmployees||[]).find(e => e.id === empId);
+      const val = (emp && typeof emp.tax_dependents === 'number' && emp.tax_dependents >= 1) ? emp.tax_dependents : 1;
+      if(depEl) depEl.value = val;
+      if(depDisp) depDisp.textContent = val + '인';
     })();
+    }
     // ── 이번달 사용연차 초기값: 관리대장에 해당 월 데이터가 있으면 우선 적용 + max 설정 ──
     {
       const _alInitEl = document.getElementById('pi-annual-used');
@@ -1255,11 +1277,18 @@ function _checkPIStandardsReady(yr, mo, companyId){
     { key:'employment',       label:'고용보험' },
   ];
   const missing = types
-    .filter(t => !_allInsuranceRates.find(r =>
-      r.insurance_type === t.key &&
-      payDate >= (r.period_start||'') &&
-      payDate <= (r.period_end||'9999-12-31')
-    ))
+    .filter(t => {
+      // ① 적용기간 내 매칭
+      const exact = _allInsuranceRates.find(r =>
+        r.insurance_type === t.key &&
+        payDate >= (r.period_start||'') &&
+        payDate <= (r.period_end||'9999-12-31')
+      );
+      if(exact) return false; // 있음 → 누락 아님
+      // ② 매칭 실패 시: 해당 유형의 데이터가 하나라도 있으면 누락 아님 (최신 요율 지속 적용)
+      const any = _allInsuranceRates.some(r => r.insurance_type === t.key);
+      return !any;
+    })
     .map(t => t.label);
 
   return missing.length === 0 ? { ok: true } : { ok: false, missing };
@@ -1997,14 +2026,22 @@ function _showPIStandardsWarn(yr, mo, missing){
 }
 
 // ── 현재 급여 지급 년월 기준 적용 요율 조회 ──
+// 적용기간 내 요율이 없으면 최신 요율을 지속 적용 (갱신되지 않아도 유효)
 function _getPIRates(){
   const yr = parseInt(document.getElementById('pi-year')?.value) || new Date().getFullYear();
   const mo = parseInt(document.getElementById('pi-month')?.value) || (new Date().getMonth()+1);
   const payDate = `${yr}-${String(mo).padStart(2,'0')}-01`;
   const find = (type) => {
-    const r = _allInsuranceRates.find(r=>
+    // ① 적용기간 내 정확히 매칭되는 요율
+    let r = _allInsuranceRates.find(r=>
       r.insurance_type===type && payDate >= r.period_start && payDate <= r.period_end
     );
+    // ② 매칭 실패 시: 해당 유형의 최신 요율 (period_end 기준 내림차순)
+    if(!r){
+      const candidates = _allInsuranceRates.filter(r=>r.insurance_type===type);
+      candidates.sort((a,b)=>(b.period_end||'').localeCompare(a.period_end||''));
+      r = candidates[0] || null;
+    }
     return r;
   };
   const pension  = find('national_pension');
@@ -2231,6 +2268,62 @@ function calcPIManual(){
   else calcPIDeductions(gross);
 }
 
+// ── 소득세 계산: 간이세액표 기반 (데이터 없으면 하드코딩 근사식 폴백) ──
+// 입력: std(보수월액), dependents(부양가족 수)
+// 반환: { incomeTax, localTax, fromTable, usedYear }
+function _calcIncomeTax(std, dependents){
+  if(std <= 0) return { incomeTax:0, localTax:0, fromTable:false, usedYear:null };
+
+  // ① 급여 년도 기준 과세기준표 조회
+  const yr = parseInt(document.getElementById('pi-year')?.value) || new Date().getFullYear();
+  let tableYear = yr;
+  let rows = (typeof _TAX_BRACKET_DATA !== 'undefined') ? _TAX_BRACKET_DATA[yr] : null;
+
+  // ② 해당 연도 없으면 최신 연도 폴백
+  if(!rows && typeof _TAX_BRACKET_DATA !== 'undefined'){
+    const availYears = Object.keys(_TAX_BRACKET_DATA).map(Number).sort((a,b)=>b-a);
+    if(availYears.length > 0){
+      tableYear = availYears[0];
+      rows = _TAX_BRACKET_DATA[tableYear];
+    }
+  }
+
+  // ③ 간이세액표 조회
+  if(rows && rows.length > 0 && typeof _getTaxForDep === 'function'){
+    const row = rows.find(r => std >= r[0] && std < r[1]);
+    if(row){
+      const incomeTax = _getTaxForDep(row, dependents);
+      const localTax = Math.floor(incomeTax * 0.1 / 10) * 10;
+      return { incomeTax, localTax, fromTable:true, usedYear:tableYear };
+    }
+    // 표 범위 초과: 최고 구간 초과 시 마지막 행 기준
+    const lastRow = rows[rows.length - 1];
+    if(std >= lastRow[0]){
+      const incomeTax = _getTaxForDep(lastRow, dependents);
+      const localTax = Math.floor(incomeTax * 0.1 / 10) * 10;
+      return { incomeTax, localTax, fromTable:true, usedYear:tableYear };
+    }
+    // 표 범위 미만 (106만원 미만): 소득세 0
+    return { incomeTax:0, localTax:0, fromTable:true, usedYear:tableYear };
+  }
+
+  // ④ 폴백: 하드코딩 근사식 (과세기준표 데이터 없을 때만)
+  const R = _getPIRates();
+  const taxBase = std - Math.round(std * (R.pensionRate + R.healthRate + R.employRate)) - 150000;
+  let incomeTax = 0;
+  if(taxBase > 0){
+    if(taxBase <= 1060000) incomeTax = 0;
+    else if(taxBase <= 1500000) incomeTax = Math.round((taxBase - 1060000) * 0.06);
+    else if(taxBase <= 3000000) incomeTax = Math.round(26400 + (taxBase - 1500000) * 0.15);
+    else if(taxBase <= 4500000) incomeTax = Math.round(251400 + (taxBase - 3000000) * 0.24);
+    else if(taxBase <= 8000000) incomeTax = Math.round(611400 + (taxBase - 4500000) * 0.35);
+    else incomeTax = Math.round(1836400 + (taxBase - 8000000) * 0.38);
+    incomeTax = Math.max(0, incomeTax - Math.max(0, (dependents - 1) * 15000));
+  }
+  const localTax = Math.floor(incomeTax * 0.1 / 10) * 10;
+  return { incomeTax, localTax, fromTable:false, usedYear:null };
+}
+
 // ── 요율 기준 자동 계산 ──
 function calcPIDeductions(gross){
   const std=gv('pi-std-pay')||gross;
@@ -2241,26 +2334,17 @@ function calcPIDeductions(gross){
   const health  = Math.round(std * R.healthRate);
   const ltCare  = Math.round(health * R.ltcareRate);
   const empIns  = Math.round(std * R.employRate);
-  // 간이세액표 근사 계산
-  const taxBase=std-pension-health-ltCare-empIns-150000;
-  let incomeTax=0;
-  if(taxBase>0){
-    if(taxBase<=1060000) incomeTax=0;
-    else if(taxBase<=1500000) incomeTax=Math.round((taxBase-1060000)*0.06);
-    else if(taxBase<=3000000) incomeTax=Math.round(26400+(taxBase-1500000)*0.15);
-    else if(taxBase<=4500000) incomeTax=Math.round(251400+(taxBase-3000000)*0.24);
-    else if(taxBase<=8000000) incomeTax=Math.round(611400+(taxBase-4500000)*0.35);
-    else incomeTax=Math.round(1836400+(taxBase-8000000)*0.38);
-    incomeTax=Math.max(0,incomeTax-Math.max(0,(dependents-1)*15000));
-  }
-  const localTax=Math.floor(incomeTax*0.1/10)*10;
+  // 소득세: 간이세액표 기반 (없으면 하드코딩 근사식 폴백)
+  const taxResult = _calcIncomeTax(std, dependents);
+  const incomeTax = taxResult.incomeTax;
+  const localTax = taxResult.localTax;
   const yearEnd=gv('pi-yearend'), healthAdj=gv('pi-health-adj'), healthAdjRetro=gv('pi-health-adj-retro');
   const healthAdjYearend=gv('pi-health-adj-yearend'), ltcareAdjYearend=gv('pi-ltcare-adj-yearend');
   const advance=gv('pi-advance');
   const totalDed=pension+health+ltCare+empIns+incomeTax+localTax+yearEnd+healthAdj+healthAdjRetro+healthAdjYearend+ltcareAdjYearend+advance;
   const net=gross-totalDed;
   document.getElementById('pi-ded-detail').innerHTML=`
-    <div style="display:flex;justify-content:space-between"><span style="color:#888">소득세 (부양가족 ${dependents}인)</span><span>${won(incomeTax)}</span></div>
+    <div style="display:flex;justify-content:space-between"><span style="color:#888">소득세 (부양가족 ${dependents}인${taxResult.fromTable?' · '+taxResult.usedYear+'년 간이세액표':''})</span><span>${won(incomeTax)}</span></div>
     <div style="display:flex;justify-content:space-between"><span style="color:#888">주민세 (소득세×10%)</span><span>${won(localTax)}</span></div>
     <div style="display:flex;justify-content:space-between"><span style="color:#888">국민연금 (보수월액×${R.pensionLabel})</span><span>${won(pension)}</span></div>
     <div style="display:flex;justify-content:space-between"><span style="color:#888">건강보험 (보수월액×${R.healthLabel})</span><span>${won(health)}</span></div>
@@ -2284,26 +2368,17 @@ function calcPIFixed(gross){
   const ltCare  = gv('pi-ltcare-fixed');
   const empIns  = gv('pi-employ-fixed');
   const dependents=Math.max(1,parseInt(document.getElementById('pi-dependents')?.value||'1')||1);
-  // 소득세는 자동계산
-  const taxBase=std-pension-health-ltCare-empIns-150000;
-  let incomeTax=0;
-  if(taxBase>0){
-    if(taxBase<=1060000) incomeTax=0;
-    else if(taxBase<=1500000) incomeTax=Math.round((taxBase-1060000)*0.06);
-    else if(taxBase<=3000000) incomeTax=Math.round(26400+(taxBase-1500000)*0.15);
-    else if(taxBase<=4500000) incomeTax=Math.round(251400+(taxBase-3000000)*0.24);
-    else if(taxBase<=8000000) incomeTax=Math.round(611400+(taxBase-4500000)*0.35);
-    else incomeTax=Math.round(1836400+(taxBase-8000000)*0.38);
-    incomeTax=Math.max(0,incomeTax-Math.max(0,(dependents-1)*15000));
-  }
-  const localTax=Math.floor(incomeTax*0.1/10)*10;
+  // 소득세: 간이세액표 기반 (없으면 하드코딩 근사식 폴백)
+  const taxResult = _calcIncomeTax(std, dependents);
+  const incomeTax = taxResult.incomeTax;
+  const localTax = taxResult.localTax;
   const yearEnd=gv('pi-yearend'), healthAdj=gv('pi-health-adj'), healthAdjRetro=gv('pi-health-adj-retro');
   const healthAdjYearend=gv('pi-health-adj-yearend'), ltcareAdjYearend=gv('pi-ltcare-adj-yearend');
   const advance=gv('pi-advance');
   const totalDed=pension+health+ltCare+empIns+incomeTax+localTax+yearEnd+healthAdj+healthAdjRetro+healthAdjYearend+ltcareAdjYearend+advance;
   const net=gross-totalDed;
   document.getElementById('pi-ded-detail-fixed').innerHTML=`
-    <div style="display:flex;justify-content:space-between"><span style="color:#888">소득세 (부양가족 ${dependents}인, 자동)</span><span>${won(incomeTax)}</span></div>
+    <div style="display:flex;justify-content:space-between"><span style="color:#888">소득세 (부양가족 ${dependents}인, 자동${taxResult.fromTable?' · '+taxResult.usedYear+'년 간이세액표':''})</span><span>${won(incomeTax)}</span></div>
     <div style="display:flex;justify-content:space-between"><span style="color:#888">주민세 (소득세×10%, 자동)</span><span>${won(localTax)}</span></div>`;
   _piFinalize(gross,std,incomeTax,localTax,health,ltCare,pension,empIns,totalDed,net,yearEnd,healthAdj,healthAdjRetro,healthAdjYearend,ltcareAdjYearend,advance);
 }
@@ -2682,20 +2757,27 @@ function _renderPIIrregularRows(){
  * @param {object|null} cfg  allCompanies[*].allowance_config
  */
 function applyPIAllowanceConfig(cfg){
+  // 일용직: 통상임금·고정수당 항목 전체 숨김 (cfg 무시)
+  const isPI_Daily = piContract && piContract.contract_type === CONTRACT_TYPE.DAILY;
+  
   // ① 계약 내용 섹션 show/hide + pay_type 기본값 세팅
   _PI_OPT_ROWS.forEach(({ key, rowId, ptField }) => {
     const row = document.getElementById(rowId);
-    const visible = !!(cfg && cfg[key]);
+    const visible = isPI_Daily ? false : !!(cfg && cfg[key]);
     if(row) row.style.display = visible ? '' : 'none';
     if(ptField){
-      const defaultPt = visible
+      const defaultPt = (visible && !isPI_Daily)
         ? (cfg[`${key}_pay_type`] || 'fixed')
         : '';
       setPIPayType(ptField, defaultPt);
     }
   });
-  // ② 사용자 정의 통상임금 항목 렌더링
-  _renderPICustomOrdinaryRows(cfg);
+  // ② 사용자 정의 통상임금 항목 렌더링 (일용직 제외)
+  if(!isPI_Daily) _renderPICustomOrdinaryRows(cfg);
+  else {
+    const container = document.getElementById(_PI_CUSTOM_ORD_CONTAINER);
+    if(container){ container.style.display = 'none'; container.querySelectorAll('.pi-custom-ord-row').forEach(r => r.remove()); }
+  }
 }
 
 // ── 급여 입력: 사용자 정의 통상임금 항목 ──
