@@ -1,0 +1,122 @@
+    <div id="page-consent-dispatch" class="page">
+      <!-- 상단 안내 -->
+      <div style="background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #93c5fd;border-radius:12px;padding:16px 22px;margin-bottom:20px;display:flex;align-items:flex-start;gap:12px;">
+        <i class="fas fa-file-shield" style="color:#3b82f6;font-size:18px;margin-top:2px;"></i>
+        <div>
+          <div style="font-size:12.5px;color:#1e40af;line-height:1.7;">
+            계약 등록 시 근로자에게 발송되는 제3자 정보제공 동의서 이력을 확인합니다.
+            알림톡 · 이메일 · 수동교부(출력 교부) 모든 방식이 기록됩니다.
+          </div>
+        </div>
+      </div>
+
+      <!-- 미발송 동의서 카드 -->
+      <div class="card" style="margin-bottom:16px;">
+        <div style="padding:16px 20px 0;">
+          <div class="pss-section-head" style="margin-bottom:12px;">
+            <div class="pss-section-title">
+              <i class="fas fa-exclamation-triangle" style="color:#f59e0b;"></i>
+              미발송 동의서
+              <span class="pss-count-badge red" id="cns-unsent-total-badge">0</span>
+            </div>
+            <button class="cdp-send-btn-all" id="cns-unsent-send-all-btn" onclick="cnsSendAllKakao()" disabled>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg>
+              일괄 알림톡 발송
+            </button>
+          </div>
+          <div class="cdp-month-tabs" id="cns-unsent-month-tabs">
+            <div class="pss-loading"><i class="fas fa-spinner fa-spin"></i> 로딩 중...</div>
+          </div>
+          <div style="border-top:1px solid #f3f4f6;margin:0 -20px 0;"></div>
+        </div>
+        <div id="cns-unsent-all-clear" class="pss-all-clear" style="display:none;margin:16px 20px;">
+          <i class="fas fa-check-circle" style="font-size:20px;color:#16a34a;flex-shrink:0;"></i>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:#166534;">미발송 동의서 없음</div>
+            <div style="font-size:11.5px;color:#15803d;margin-top:2px;">신규 등록된 모든 근로계약의 동의서가 발송 처리되었습니다.</div>
+          </div>
+        </div>
+        <div id="cns-unsent-table-wrap" class="table-wrap" style="padding:0 20px 16px;">
+          <table id="cns-unsent-table" style="width:100%;border-collapse:collapse;font-size:13px;">
+            <thead>
+              <tr>
+                <th>직원명</th><th>고용구분</th><th>고객사</th><th>입사일</th>
+                <th>연락처</th><th>이메일</th>
+                <th style="text-align:center;">계약서</th>
+                <th style="text-align:center;">개별 관리</th>
+              </tr>
+            </thead>
+            <tbody id="cns-unsent-tbody">
+              <tr><td colspan="8" class="pss-loading"><i class="fas fa-spinner fa-spin"></i> 로딩 중...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 발송 이력 통합 카드 -->
+      <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;">
+        <div style="padding:14px 20px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-size:14px;font-weight:700;color:#111827;display:flex;align-items:center;gap:8px;">
+            <i class="fas fa-history" style="color:#6366f1;"></i> 발송 이력
+          </span>
+          <button onclick="(async()=>{await loadConsentDispatchList(true);await renderConsentDispatchPage();})()" class="btn btn-sm btn-secondary" title="새로고침"><i class="fas fa-sync-alt"></i> 새로고침</button>
+        </div>
+        <div style="padding:14px 20px;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#fafafa;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="font-size:12px;color:#6b7280;font-weight:600;white-space:nowrap;">발송 방식</span>
+            <select id="cns-filter-method" onchange="_cnsPage=1;renderConsentDispatchPage()" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 10px;font-size:12.5px;color:#374151;background:#fff;cursor:pointer;font-family:inherit;">
+              <option value="">전체</option><option value="kakao">알림톡</option><option value="email">이메일</option><option value="manual">수동교부</option>
+            </select>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="font-size:12px;color:#6b7280;font-weight:600;white-space:nowrap;">발송 상태</span>
+            <select id="cns-filter-status" onchange="_cnsPage=1;renderConsentDispatchPage()" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 10px;font-size:12.5px;color:#374151;background:#fff;cursor:pointer;font-family:inherit;">
+              <option value="">전체</option><option value="completed">완료</option><option value="failed">실패</option><option value="pending">대기</option>
+            </select>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="font-size:12px;color:#6b7280;font-weight:600;white-space:nowrap;">고객사</span>
+            <select id="cns-filter-company" onchange="_cnsPage=1;renderConsentDispatchPage()" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 10px;font-size:12.5px;color:#374151;background:#fff;cursor:pointer;max-width:160px;font-family:inherit;">
+              <option value="">전체</option>
+            </select>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="font-size:12px;color:#6b7280;font-weight:600;white-space:nowrap;">기간</span>
+            <input type="date" id="cns-filter-date-from" onchange="_cnsPage=1;renderConsentDispatchPage()" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 8px;font-size:12.5px;color:#374151;background:#fff;cursor:pointer;font-family:inherit;" />
+            <span style="font-size:12px;color:#9ca3af;">~</span>
+            <input type="date" id="cns-filter-date-to" onchange="_cnsPage=1;renderConsentDispatchPage()" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 8px;font-size:12.5px;color:#374151;background:#fff;cursor:pointer;font-family:inherit;" />
+            <button onclick="document.getElementById('cns-filter-date-from').value='';document.getElementById('cns-filter-date-to').value='';renderConsentDispatchPage();" title="기간 초기화" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:7px;background:#fff;cursor:pointer;font-size:11px;color:#9ca3af;line-height:1;font-family:inherit;">✕</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;margin-left:auto;">
+            <div style="position:relative;">
+              <i class="fas fa-search" style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:12px;pointer-events:none;"></i>
+              <input type="text" id="cns-search" placeholder="직원명·수신처 검색" oninput="renderConsentDispatchPage()" style="padding:6px 10px 6px 28px;border:1px solid #d1d5db;border-radius:7px;font-size:12.5px;width:180px;font-family:inherit;" />
+            </div>
+          </div>
+        </div>
+        <div style="padding:10px 20px;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;">
+          <span id="cns-record-count" style="font-size:12.5px;color:#6b7280;font-weight:600;"></span>
+        </div>
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;font-size:13px;">
+            <thead>
+              <tr style="background:#f9fafb;border-bottom:2px solid #e5e7eb;">
+                <th style="padding:10px 12px;text-align:left;font-weight:700;color:#374151;white-space:nowrap;">발송 일시</th>
+                <th style="padding:10px 12px;text-align:left;font-weight:700;color:#374151;white-space:nowrap;">고객사</th>
+                <th style="padding:10px 12px;text-align:left;font-weight:700;color:#374151;white-space:nowrap;">직원명</th>
+                <th style="padding:10px 12px;text-align:left;font-weight:700;color:#374151;white-space:nowrap;">계약 유형</th>
+                <th style="padding:10px 12px;text-align:center;font-weight:700;color:#374151;white-space:nowrap;">발송 방식</th>
+                <th style="padding:10px 12px;text-align:left;font-weight:700;color:#374151;white-space:nowrap;">수신처</th>
+                <th style="padding:10px 12px;text-align:center;font-weight:700;color:#374151;white-space:nowrap;">결과</th>
+                <th style="padding:10px 12px;text-align:left;font-weight:700;color:#374151;white-space:nowrap;">처리자</th>
+                <th style="padding:10px 12px;text-align:center;font-weight:700;color:#374151;white-space:nowrap;">계약서</th>
+              </tr>
+            </thead>
+            <tbody id="cns-tbody">
+              <tr><td colspan="9" style="text-align:center;padding:40px;color:#9ca3af;"><i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i> 데이터 로딩 중...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="cns-pagination" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:14px 20px;border-top:1px solid #f3f4f6;"></div>
+      </div>
+    </div><!-- /page-consent-dispatch -->

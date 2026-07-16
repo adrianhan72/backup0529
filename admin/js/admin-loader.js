@@ -29,6 +29,7 @@ const PAGE_REGISTRY = {
   'severance':            { external: true },
   'labor-status':         { external: true },
   'contract-dispatch':    { external: true },
+  'consent-dispatch':     { external: true },
   'contract-expiry-notice': { external: true },
   'regular-conversion':   { external: true },
   'company-notice-log':   { external: true },

@@ -137,6 +137,8 @@ CREATE TABLE IF NOT EXISTS company_notices (
 );
 CREATE INDEX idx_company_notices_company ON company_notices(company_id);
 
+CREATE TABLE IF NOT EXISTS consent_dispatch (id TEXT PRIMARY KEY, contract_id TEXT, employee_id TEXT, employee_name TEXT, company_id TEXT, company_name TEXT, contract_type TEXT, dispatch_method TEXT, dispatch_status TEXT, recipient TEXT, dispatched_at TEXT, dispatched_by TEXT, note TEXT, contract_start TEXT, contract_end TEXT, created_at INTEGER, updated_at INTEGER);
+
 CREATE TABLE IF NOT EXISTS contract_dispatch (
   id              TEXT PRIMARY KEY,
   contract_id     TEXT REFERENCES contracts(id),

@@ -91,6 +91,7 @@
     <div class="menu-section">직원 관리</div>
     <div class="menu-item" data-page="contracts" onclick="showPage('contracts',this)"><i class="fas fa-file-signature"></i> 근로 계약 관리<span class="menu-todo-badge" id="badge-contracts" style="display:none;"></span></div>
     <div class="menu-item" data-page="contract-dispatch" onclick="showPage('contract-dispatch',this)"><i class="fas fa-paper-plane"></i> 계약서 발송 관리<span class="menu-todo-badge" id="badge-contract-dispatch" style="display:none;"></span></div>
+    <div class="menu-item" data-page="consent-dispatch" onclick="showPage('consent-dispatch',this)"><i class="fas fa-file-shield"></i> 정보제공동의서 관리<span class="menu-todo-badge" id="badge-consent-dispatch" style="display:none;"></span></div>
     <div class="menu-item" data-page="contract-expiry-notice" onclick="showPage('contract-expiry-notice',this)"><i class="fas fa-bell"></i> 계약만료 통지 관리<span class="menu-todo-badge" id="badge-contract-expiry-notice" style="display:none;"></span></div>
     <div class="menu-item" data-page="regular-conversion" onclick="showPage('regular-conversion',this)"><i class="fas fa-user-check"></i> 정규직 전환 관리<span class="menu-todo-badge" id="badge-regular-conversion" style="display:none;"></span></div>
     <div class="menu-item" data-page="probation-mgmt" onclick="showPage('probation-mgmt',this)"><i class="fas fa-user-clock"></i> 수습 근로자 관리<span class="menu-todo-badge" id="badge-probation-mgmt" style="display:none;"></span></div>
@@ -137,6 +138,7 @@
 
     <!-- ══ 근로계약서 발송 관리 ══ -->
     <div id="page-contract-dispatch" class="page"></div><!-- /page-contract-dispatch -->
+    <div id="page-consent-dispatch" class="page"></div><!-- /page-consent-dispatch -->
 
     <!-- 퇴직금 정산내역표 팝업 모달 -->
     <!-- ── 퇴직급여 > 계약 조건 조회 모달 ── -->
@@ -2889,6 +2891,7 @@
   <script src="js/admin-contract/contract-core.js"></script>
   <script src="js/admin-contract/contract-docs.js"></script>
   <script src="js/admin-contract/contract-dispatch.js"></script>
+  <script src="js/admin-contract/consent-dispatch.js"></script>
   <script src="js/admin-contract/contract-lifecycle.js"></script>
   <script src="js/admin-contract.js"></script>
   <!-- admin-payroll 모듈 -->
