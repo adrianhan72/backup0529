@@ -96,29 +96,28 @@
       <!-- ─── 탭: 발송 이력 ─── -->
       <div id="rc-panel-history" style="display:none;">
         <div class="card" style="overflow:hidden;">
-          <div class="cen-filter-bar">
-            <select id="rc-log-filter-company" onchange="renderRcHistory()" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 10px;font-size:12.5px;background:#fff;cursor:pointer;font-family:inherit;color:#374151;max-width:160px;">
-              <option value="">전체 고객사</option>
-            </select>
-            <div class="search-input" style="margin:0;flex:1;min-width:120px;max-width:200px;">
-              <i class="fas fa-search"></i>
-              <input type="text" id="rc-log-search" placeholder="직원명 검색" oninput="renderRcHistory()" />
+          <div style="padding:12px 20px;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#fafafa;">
+            <div style="display:flex;align-items:center;gap:5px;">
+              <span style="font-size:11.5px;font-weight:600;color:#6b7280;white-space:nowrap;">고객사</span>
+              <select id="rc-log-filter-company" onchange="renderRcHistory()" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 10px;font-size:12px;background:#fff;cursor:pointer;font-family:inherit;color:#374151;max-width:140px;">
+                <option value="">전체</option>
+              </select>
             </div>
-          </div>
-          <!-- 기간 필터 (두 번째 행) -->
-          <div class="cen-filter-bar" style="padding-top:8px;">
-            <span style="font-size:12px;font-weight:600;color:#6b7280;white-space:nowrap;">기간</span>
-            <input type="date" id="rc-log-filter-date-from"
-              style="border:1px solid #d1d5db;border-radius:7px;padding:5px 8px;font-size:12.5px;background:#fff;cursor:pointer;font-family:inherit;color:#374151;" />
-            <span style="font-size:12px;color:#9ca3af;">~</span>
-            <input type="date" id="rc-log-filter-date-to"
-              style="border:1px solid #d1d5db;border-radius:7px;padding:5px 8px;font-size:12.5px;background:#fff;cursor:pointer;font-family:inherit;color:#374151;" />
-            <button onclick="_rcDoSearch()" class="btn btn-danger btn-sm" style="height:32px;">조회</button>
-            <span id="rc-date-notice" style="font-size:11px;color:#9ca3af;">(최대 3개월간의 기간으로 조회하실 수 있습니다.)</span>
-          </div>
-            <button onclick="(async()=>{await rcLoadHistory(true);renderRcHistory();})()" style="padding:6px 12px;border:1px solid #d1d5db;border-radius:7px;background:#fff;cursor:pointer;font-size:12px;color:#6b7280;display:inline-flex;align-items:center;gap:5px;font-family:inherit;">
-              <i class="fas fa-sync-alt"></i> 새로고침
-            </button>
+            <div style="display:flex;align-items:center;gap:5px;">
+              <span style="font-size:11.5px;font-weight:600;color:#6b7280;white-space:nowrap;">기간</span>
+              <input type="date" id="rc-log-filter-date-from" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 6px;font-size:12px;background:#fff;cursor:pointer;font-family:inherit;color:#374151;" />
+              <span style="font-size:11px;color:#9ca3af;">~</span>
+              <input type="date" id="rc-log-filter-date-to" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 6px;font-size:12px;background:#fff;cursor:pointer;font-family:inherit;color:#374151;" />
+              <button onclick="_rcDoSearch()" class="btn btn-danger btn-sm" style="height:32px;">조회</button>
+              <span id="rc-date-notice" style="font-size:10.5px;color:#9ca3af;white-space:nowrap;">(최대 3개월)</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;margin-left:auto;">
+              <div style="position:relative;">
+                <i class="fas fa-search" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:11px;pointer-events:none;"></i>
+                <input type="text" id="rc-log-search" placeholder="직원명 검색" oninput="renderRcHistory()" style="padding:6px 10px 6px 26px;border:1px solid #d1d5db;border-radius:7px;font-size:12px;width:140px;font-family:inherit;" />
+              </div>
+              <button onclick="(async()=>{await rcLoadHistory(true);renderRcHistory();})()" class="btn btn-sm btn-secondary"><i class="fas fa-sync-alt"></i></button>
+            </div>
           </div>
           <div style="overflow-x:auto;padding:0 0 8px;">
             <table class="cen-log-table">

@@ -120,7 +120,11 @@
 
     /* ── 발송관리 필터: select 높이·chevron 통일 ── */
     #cdp-filter-method, #cdp-filter-status, #cdp-filter-company,
-    #cns-filter-method, #cns-filter-status, #cns-filter-company {
+    #cns-filter-method, #cns-filter-status, #cns-filter-company,
+    #cnl-filter-company, #cnl-filter-type,
+    #lp-filter-company, #lp-filter-method,
+    #cen-log-filter-method, #cen-log-filter-company,
+    #rc-log-filter-company {
       height: 32px !important;
       box-sizing: border-box !important;
       padding-right: 28px !important;

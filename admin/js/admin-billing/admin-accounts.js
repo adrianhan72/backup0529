@@ -58,16 +58,12 @@ function _aaRenderTable(){
            <i class="fas fa-pen"></i></button>`
       : '';
 
-    // ── 비밀번호 변경 버튼 (마스터 세션 + 본인 제외) ──
+    // ── 비밀번호 변경 버튼 (마스터 세션) ──
     const pwBtn = isMasterSession
-      ? (isSelf
-          ? `<button class="btn btn-sm btn-icon" disabled title="본인 계정은 변경 대상에서 제외됩니다"
-               style="background:#f3f4f6;color:#d1d5db;cursor:not-allowed;">
-               <i class="fas fa-key"></i></button>`
-          : `<button class="btn btn-warning btn-sm btn-icon"
-               onclick="openChangePwModal('${a.id}','${_esc(a.username)}','${_esc(a.display_name||a.username)}')"
-               title="비밀번호 변경">
-               <i class="fas fa-key"></i></button>`)
+      ? `<button class="btn btn-warning btn-sm btn-icon"
+           onclick="openChangePwModal('${a.id}','${_esc(a.username)}','${_esc(a.display_name||a.username)}')"
+           title="${isSelf ? '본인 비밀번호 변경' : '비밀번호 변경'}">
+           <i class="fas fa-key"></i></button>`
       : '';
 
     // ── 배지 ──

@@ -1,57 +1,50 @@
     <div id="page-company-notice-log" class="page">
 
       <!-- 필터 바 -->
-      <div class="card" style="margin-bottom:12px;">
-        <div class="filter-bar" style="flex-wrap:wrap;gap:8px;">
-          <!-- 고객사 드롭다운 -->
-          <select id="cnl-filter-company" onchange="cnlOnCompanyChange()" style="padding:7px 10px;border:1px solid #d1d5db;border-radius:7px;font-size:13px;color:#374151;background:#fff;cursor:pointer;min-width:160px;">
-            <option value="">전체 고객사</option>
-          </select>
-          <!-- 알림 유형 드롭다운 -->
-          <select id="cnl-filter-type" onchange="_cnlPage=1;renderCnlReserveCard();renderCnlTable();" style="padding:7px 10px;border:1px solid #d1d5db;border-radius:7px;font-size:13px;color:#374151;background:#fff;cursor:pointer;">
-            <option value="">전체 유형</option>
-            <option value="welcome">가입환영</option>
-            <option value="contract_renewed">근로계약 갱신</option>
-            <option value="contract_renewal_scheduled">근로계약 갱신 예약</option>
-            <option value="contract_expiry">근로계약 만료 통지</option>
-            <option value="contract_updated">근로계약 수정</option>
-            <option value="contract_amended">근로계약 수정</option>
-            <option value="contract_renewed_new">근로계약 재계약</option>
-            <option value="contract_voided">근로계약 파기</option>
-            <option value="contract_terminated">근로계약 해지</option>
-            <option value="contract_termination_scheduled">근로계약 해지 예약</option>
-            <option value="contract_termination_cancelled">근로계약 해지 취소</option>
-            <option value="contract_signed_uploaded">근로계약서 날인본 등록</option>
-            <option value="contract_dispatched">근로계약서 발송</option>
-            <option value="payroll_input_complete">급여 입력/수정</option>
-            <option value="payslip_individual_sent">급여명세서 개별</option>
-            <option value="payslip_bulk_sent">급여명세서 일괄</option>
-            <option value="contract_consent_uploaded">동의서 날인본 등록</option>
-            <option value="contract_fully_documented">서류 완비</option>
-            <option value="contract_created">신규 근로계약</option>
-            <option value="leave_promotion">연차 사용촉진</option>
-            <option value="notice">이용안내</option>
-            <option value="regular_conversion">정규직 전환</option>
-            <option value="general">중요공지</option>
-            <option value="severance_paid">퇴직급여 지급</option>
-          </select>
-          <!-- 제목 검색 -->
-          <div class="search-input" style="margin:0;">
-            <i class="fas fa-search"></i>
-            <input type="text" id="cnl-search" placeholder="제목 검색" oninput="renderCnlReserveCard();renderCnlTable();" style="width:200px;" />
+      <div class="card" style="margin-bottom:12px;overflow:hidden;">
+        <div style="padding:12px 20px;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#fafafa;">
+          <!-- 고객사 -->
+          <div style="display:flex;align-items:center;gap:5px;">
+            <span style="font-size:11.5px;color:#6b7280;font-weight:600;white-space:nowrap;">고객사</span>
+            <select id="cnl-filter-company" onchange="cnlOnCompanyChange()" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 10px;font-size:12px;color:#374151;background:#fff;cursor:pointer;font-family:inherit;max-width:140px;">
+              <option value="">전체</option>
+            </select>
           </div>
-          <button onclick="cnlReload()" class="btn btn-sm btn-secondary"><i class="fas fa-sync-alt"></i> 새로고침</button>
-        </div>
-        <!-- 기간 필터 (두 번째 행) -->
-        <div class="filter-bar" style="flex-wrap:wrap;gap:8px;margin-top:8px;padding-top:8px;">
-          <span style="font-size:12px;color:#6b7280;font-weight:600;white-space:nowrap;">기간</span>
-          <input type="date" id="cnl-filter-date-from"
-            style="border:1px solid #d1d5db;border-radius:7px;padding:5px 8px;font-size:12.5px;color:#374151;background:#fff;cursor:pointer;font-family:inherit;" />
-          <span style="font-size:12px;color:#9ca3af;">~</span>
-          <input type="date" id="cnl-filter-date-to"
-            style="border:1px solid #d1d5db;border-radius:7px;padding:5px 8px;font-size:12.5px;color:#374151;background:#fff;cursor:pointer;font-family:inherit;" />
-          <button onclick="_cnlDoSearch()" class="btn btn-danger btn-sm" style="height:32px;">조회</button>
-          <span id="cnl-date-notice" style="font-size:11px;color:#9ca3af;">(최대 3개월간의 기간으로 조회하실 수 있습니다.)</span>
+          <!-- 알림 유형 -->
+          <div style="display:flex;align-items:center;gap:5px;">
+            <span style="font-size:11.5px;color:#6b7280;font-weight:600;white-space:nowrap;">유형</span>
+            <select id="cnl-filter-type" onchange="_cnlPage=1;renderCnlReserveCard();renderCnlTable();" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 10px;font-size:12px;color:#374151;background:#fff;cursor:pointer;font-family:inherit;max-width:130px;">
+              <option value="">전체</option>
+              <option value="welcome">가입환영</option>
+              <option value="contract_created">신규 근로계약</option>
+              <option value="contract_dispatched">계약서 발송</option>
+              <option value="payslip_individual_sent">급여명세서 개별</option>
+              <option value="payslip_bulk_sent">급여명세서 일괄</option>
+              <option value="contract_expiry">계약만료 통지</option>
+              <option value="regular_conversion">정규직 전환</option>
+              <option value="leave_promotion">연차 사용촉진</option>
+              <option value="severance_paid">퇴직급여 지급</option>
+              <option value="notice">이용안내</option>
+              <option value="general">중요공지</option>
+            </select>
+          </div>
+          <!-- 기간 -->
+          <div style="display:flex;align-items:center;gap:5px;">
+            <span style="font-size:11.5px;color:#6b7280;font-weight:600;white-space:nowrap;">기간</span>
+            <input type="date" id="cnl-filter-date-from" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 6px;font-size:12px;color:#374151;background:#fff;cursor:pointer;font-family:inherit;" />
+            <span style="font-size:11px;color:#9ca3af;">~</span>
+            <input type="date" id="cnl-filter-date-to" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 6px;font-size:12px;color:#374151;background:#fff;cursor:pointer;font-family:inherit;" />
+            <button onclick="_cnlDoSearch()" class="btn btn-danger btn-sm" style="height:32px;">조회</button>
+            <span id="cnl-date-notice" style="font-size:10.5px;color:#9ca3af;white-space:nowrap;">(최대 3개월)</span>
+          </div>
+          <!-- 검색 + 새로고침 (우측) -->
+          <div style="display:flex;align-items:center;gap:6px;margin-left:auto;">
+            <div style="position:relative;">
+              <i class="fas fa-search" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:11px;pointer-events:none;"></i>
+              <input type="text" id="cnl-search" placeholder="제목 검색" oninput="renderCnlReserveCard();renderCnlTable();" style="padding:6px 10px 6px 26px;border:1px solid #d1d5db;border-radius:7px;font-size:12px;width:150px;font-family:inherit;" />
+            </div>
+            <button onclick="cnlReload()" class="btn btn-sm btn-secondary"><i class="fas fa-sync-alt"></i></button>
+          </div>
         </div>
       </div>
 
