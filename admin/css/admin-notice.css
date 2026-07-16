@@ -154,11 +154,12 @@
     .ctf-voided-banner{background:linear-gradient(135deg,#fef2f2,#fee2e2);border:1.5px solid #fca5a5;border-radius:8px;padding:8px 12px;margin-top:8px;font-size:11.5px;color:#991b1b;display:flex;align-items:center;gap:7px;line-height:1.6;}
     .ctf-row.ctf-row-voided{border-color:#fca5a5;background:#fff5f5;}
     /* ?�무?�???�비??계약???�로??*/
-    .cm-svc-section{margin-top:18px;padding-top:14px;border-top:1.5px solid #e5e7eb;}
-    .cm-svc-section-title{font-size:12.5px;font-weight:700;color:#374151;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+    .cm-svc-section{margin-top:8px;}
+    .cm-svc-section-title{font-size:12px;font-weight:700;color:#e94560;padding:10px 0 3px;border-bottom:1px dashed #ffd0d8;margin-bottom:6px;display:flex;align-items:center;gap:6px;}
     .cm-svc-upload-area{display:flex;flex-direction:column;gap:8px;}
-    .cm-svc-upload-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:#f8fafc;border:1.5px dashed #94a3b8;border-radius:8px;color:#475569;font-size:12.5px;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit;}
-    .cm-svc-upload-btn:hover{background:#eff6ff;border-color:#6366f1;color:#4f46e5;}
+    .cm-svc-upload-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:#dc2626;border:1px solid #b91c1c;border-radius:8px;color:#fff!important;font-size:12.5px;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit;}
+    .cm-svc-upload-btn i{color:#fff!important;}
+    .cm-svc-upload-btn:hover{background:#b91c1c;}
     .cm-svc-file-preview{display:flex;flex-direction:column;gap:6px;margin-top:4px;}
     .cm-svc-file-info{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:8px;}
     .cm-svc-file-name{flex:1;font-size:12px;font-weight:600;color:#15803d;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
@@ -181,12 +182,9 @@
     .cm-svc-file-item-btns{display:flex;gap:4px;flex-shrink:0;}
     .cm-svc-file-item-btn{display:inline-flex;align-items:center;gap:3px;padding:4px 8px;border-radius:5px;border:1px solid #e2e8f0;background:#fff;color:#374151;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;}
     .cm-svc-file-item-btn:hover{background:#f1f5f9;}
-    .cm-svc-file-item-btn.dl{border-color:#6366f1;color:#4f46e5;}
-    .cm-svc-file-item-btn.dl:hover{background:#eef2ff;}
-    .cm-svc-file-item-btn.rm{border-color:#f87171;color:#dc2626;}
-    .cm-svc-file-item-btn.rm:hover{background:#fef2f2;}
-    .cm-svc-add-more{display:inline-flex;align-items:center;gap:5px;padding:6px 13px;background:#f8fafc;border:1.5px dashed #94a3b8;border-radius:7px;color:#475569;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit;margin-top:4px;}
-    .cm-svc-add-more:hover{background:#eff6ff;border-color:#6366f1;color:#4f46e5;}
+    .cm-svc-add-more{display:inline-flex;align-items:center;gap:5px;padding:6px 13px;background:#dc2626;border:1px solid #b91c1c;border-radius:7px;color:#fff!important;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit;margin-top:4px;}
+    .cm-svc-add-more i{color:#fff!important;}
+    .cm-svc-add-more:hover{background:#b91c1c;}
     .ctf-badge-voided{background:#fef2f2;color:#b91c1c;border:1px solid #fca5a5;}
 
     /* ?�═ 계약만료 ?��? 관�?(cen = Contract Expiry Notice) ?�═ */

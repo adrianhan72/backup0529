@@ -349,10 +349,10 @@ function _setAccessCode(code){
 // ── 대표자 정보 동적 행 ──
 let _cmRepIdx = 0;
 function _cmRepRowHTML(idx, data = { name: '', phone: '', email: '' }) {
-  return `<div class="cm-rep-row" id="cm-rep-row-${idx}" style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
-    <div style="flex:1;min-width:120px;"><input type="text" id="cm-rep-name-${idx}" placeholder="대표자명" value="${_esc(data.name)}" style="width:100%;border:1.5px solid #e0e0e0;border-radius:8px;padding:7px 12px;font-size:13px;font-family:inherit;box-sizing:border-box;" /></div>
-    <div style="flex:1;min-width:140px;"><input type="text" id="cm-rep-phone-${idx}" placeholder="연락처" value="${_esc(data.phone)}" style="width:100%;border:1.5px solid #e0e0e0;border-radius:8px;padding:7px 12px;font-size:13px;font-family:inherit;box-sizing:border-box;" /></div>
-    <div style="flex:1;min-width:160px;"><input type="text" id="cm-rep-email-${idx}" placeholder="이메일" value="${_esc(data.email)}" style="width:100%;border:1.5px solid #e0e0e0;border-radius:8px;padding:7px 12px;font-size:13px;font-family:inherit;box-sizing:border-box;" /></div>
+  return `<div class="cm-rep-row" id="cm-rep-row-${idx}" style="display:flex;align-items:flex-end;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+    <div class="form-group" style="flex:1;min-width:100px;"><label>대표자명</label><input type="text" id="cm-rep-name-${idx}" placeholder="대표자명" value="${_esc(data.name)}" style="width:100%;box-sizing:border-box;" /></div>
+    <div class="form-group" style="flex:1;min-width:110px;"><label>연락처</label><input type="text" id="cm-rep-phone-${idx}" placeholder="연락처" value="${_esc(data.phone)}" style="width:100%;box-sizing:border-box;" /></div>
+    <div class="form-group" style="flex:2;min-width:180px;"><label>이메일</label><input type="text" id="cm-rep-email-${idx}" placeholder="이메일" value="${_esc(data.email)}" style="width:100%;box-sizing:border-box;" /></div>
     ${idx > 0 ? `<button type="button" onclick="_cmRemoveRepRow(${idx})" class="btn btn-sm btn-secondary" style="flex-shrink:0;"><i class="fas fa-trash-alt"></i></button>` : `<span style="width:32px;flex-shrink:0;"></span>`}
   </div>`;
 }
@@ -507,11 +507,11 @@ function _cmSvcRenderList(){
       <span class="cm-svc-file-item-name" title="${f.name}">${f.name}</span>
       <span class="cm-svc-file-item-size">${_cmSvcFormatSize(f.size)}</span>
       <div class="cm-svc-file-item-btns">
-        <button type="button" class="cm-svc-file-item-btn dl" onclick="cmSvcDownloadOne(${idx})">
+        <button type="button" class="ctf-btn ctf-btn-download" onclick="cmSvcDownloadOne(${idx})">
           <i class="fas fa-download"></i> 다운로드
         </button>
-        <button type="button" class="cm-svc-file-item-btn rm" onclick="cmSvcRemoveOne(${idx})">
-          <i class="fas fa-times"></i>
+        <button type="button" class="btn btn-sm btn-secondary" onclick="cmSvcRemoveOne(${idx})">
+          <i class="fas fa-trash-alt"></i>
         </button>
       </div>
     </div>`).join('');
@@ -1371,10 +1371,10 @@ let _cmRelatedParties = [];
 function _cmExecutiveHTML(idx, data = { name: '', position: '', phone: '', id_number: '', bank_name: '', bank_account: '', bank_holder: '' }) {
   const esc = (s) => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   return `
-  <div class="cm-person-card" id="cm-exec-card-${idx}" style="background:#f8fafc;border:1.5px solid #e0e0e0;border-radius:10px;padding:14px;margin-bottom:10px;">
+  <div class="cm-person-card" id="cm-exec-card-${idx}" style="background:#f8faff;border:1.5px solid #e0e7ff;border-radius:10px;padding:14px 16px;margin-bottom:10px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
       <span style="font-size:13px;font-weight:700;color:#374151;">등기임원 #${idx+1}</span>
-      <button type="button" class="btn btn-sm btn-secondary" onclick="_cmRemoveExecutive(${idx})" style="padding:2px 10px;font-size:11px;"><i class="fas fa-times"></i> 삭제</button>
+      <button type="button" class="btn btn-sm btn-secondary" onclick="_cmRemoveExecutive(${idx})"><i class="fas fa-trash-alt"></i></button>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;">
       <div class="cm-person-fg"><label>이름 <span style="color:#c00;">*</span></label><input type="text" id="cm-exec-name-${idx}" value="${esc(data.name)}" placeholder="이름" /></div>
@@ -1383,7 +1383,7 @@ function _cmExecutiveHTML(idx, data = { name: '', position: '', phone: '', id_nu
       <div class="cm-person-fg"><label>주민번호 앞7자리 <span style="color:#c00;">*</span></label><input type="text" id="cm-exec-idnum-${idx}" value="${esc(data.id_number)}" placeholder="YYMMDD-N" maxlength="8" oninput="_onIdInput(this)" /></div>
     </div>
     <div style="margin-top:10px;border-top:1px dashed #d1d5db;padding-top:10px;">
-      <span style="font-size:11px;color:#6b7280;font-weight:600;">급여지급계좌 (선택)</span>
+      <div class="cm-aw-section-title" style="margin-bottom:6px;">급여지급계좌 <span style="font-size:10.5px;font-weight:400;color:#9ca3af;">(선택)</span></div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px 10px;margin-top:6px;">
         <div class="cm-person-fg"><label>은행명</label><input type="text" id="cm-exec-bank-${idx}" value="${esc(data.bank_name)}" placeholder="예: 국민은행" /></div>
         <div class="cm-person-fg"><label>계좌번호</label><input type="text" id="cm-exec-account-${idx}" value="${esc(data.bank_account)}" placeholder="000-0000-000000" /></div>
@@ -1396,10 +1396,10 @@ function _cmExecutiveHTML(idx, data = { name: '', position: '', phone: '', id_nu
 function _cmRelatedHTML(idx, data = { name: '', relationship: '', phone: '', id_number: '', bank_name: '', bank_account: '', bank_holder: '' }) {
   const esc = (s) => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   return `
-  <div class="cm-person-card" id="cm-rel-card-${idx}" style="background:#f8fafc;border:1.5px solid #e0e0e0;border-radius:10px;padding:14px;margin-bottom:10px;">
+  <div class="cm-person-card" id="cm-rel-card-${idx}" style="background:#f8faff;border:1.5px solid #e0e7ff;border-radius:10px;padding:14px 16px;margin-bottom:10px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
       <span style="font-size:13px;font-weight:700;color:#374151;">특수관계인 #${idx+1}</span>
-      <button type="button" class="btn btn-sm btn-secondary" onclick="_cmRemoveRelated(${idx})" style="padding:2px 10px;font-size:11px;"><i class="fas fa-times"></i> 삭제</button>
+      <button type="button" class="btn btn-sm btn-secondary" onclick="_cmRemoveRelated(${idx})"><i class="fas fa-trash-alt"></i></button>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;">
       <div class="cm-person-fg"><label>이름 <span style="color:#c00;">*</span></label><input type="text" id="cm-rel-name-${idx}" value="${esc(data.name)}" placeholder="이름" /></div>
@@ -1408,7 +1408,7 @@ function _cmRelatedHTML(idx, data = { name: '', relationship: '', phone: '', id_
       <div class="cm-person-fg"><label>주민번호 앞7자리 <span style="color:#c00;">*</span></label><input type="text" id="cm-rel-idnum-${idx}" value="${esc(data.id_number)}" placeholder="YYMMDD-N" maxlength="8" oninput="_onIdInput(this)" /></div>
     </div>
     <div style="margin-top:10px;border-top:1px dashed #d1d5db;padding-top:10px;">
-      <span style="font-size:11px;color:#6b7280;font-weight:600;">급여지급계좌 (선택)</span>
+      <div class="cm-aw-section-title" style="margin-bottom:6px;">급여지급계좌 <span style="font-size:10.5px;font-weight:400;color:#9ca3af;">(선택)</span></div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px 10px;margin-top:6px;">
         <div class="cm-person-fg"><label>은행명</label><input type="text" id="cm-rel-bank-${idx}" value="${esc(data.bank_name)}" placeholder="예: 국민은행" /></div>
         <div class="cm-person-fg"><label>계좌번호</label><input type="text" id="cm-rel-account-${idx}" value="${esc(data.bank_account)}" placeholder="000-0000-000000" /></div>

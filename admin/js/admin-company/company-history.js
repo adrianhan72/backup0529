@@ -67,11 +67,11 @@ function _renderCompanyHistory(companyId){
     return;
   }
   sec.style.display = '';
-  // 이력 섹션 열린 상태로 표시
+  // 이력 섹션 닫힌 상태로 표시
   const _histBody = document.getElementById('cm-history-body');
   const _histIcon = document.getElementById('cm-history-toggle-icon');
-  if(_histBody) _histBody.style.display = '';
-  if(_histIcon) _histIcon.className = 'fas fa-chevron-up';
+  if(_histBody) _histBody.style.display = 'none';
+  if(_histIcon) _histIcon.className = 'fas fa-chevron-down';
 
   // 총 페이지
   const total = rows.length;
@@ -226,7 +226,6 @@ function cmAwAddCustomItem(name = ''){
       <input type="text" id="cm-aw-custom-name-${idx}" class="cm-aw-custom-input"
         placeholder="항목명 입력" value="${name.replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}" style="width:110px;" />
     </label>
-    <span class="cm-aw-hint">통상임금 포함</span>
     <button type="button" class="cm-aw-custom-del" onclick="cmAwRemoveCustomItem(${idx})" title="삭제"><i class="fas fa-trash-alt"></i></button>
   `;
   addRow.parentNode.insertBefore(div, addRow);
@@ -333,9 +332,7 @@ function _cmGetAllowanceConfig(){
   _CM_AW_PT_FIELDS.forEach(f => {
     const hid = _cmAwHtmlId(f);
     cfg[f] = document.getElementById(`cm-aw-${hid}`)?.checked || false;
-    cfg[`${f}_pay_type`] = cfg[f]
-      ? (document.getElementById(`cm-aw-${hid}-pt`)?.value || 'fixed')
-      : '';
+    cfg[`${f}_pay_type`] = cfg[f] ? 'fixed' : '';
   });
   // 사용자 정의 통상임금 항목 (비어있으면 키 자체를 넣지 않아 DB와 diff 방지)
   const _customOrdinary = _cmAwGetCustomItems();

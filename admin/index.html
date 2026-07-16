@@ -920,7 +920,9 @@
     <div class="modal-header"><span class="modal-title" id="cm-title">고객사 추가</span><button class="modal-close" onclick="closeModal('company-modal')"><i class="fas fa-times"></i></button></div>
     <div class="modal-body">
       <div class="form-grid">
-        <div class="form-group full"><span class="form-section-title">기본 정보</span></div>
+        <div class="form-group full"><span class="form-section-title">기본 정보</span>
+          <div class="cm-allowance-section">
+            <div class="form-grid">
         <div class="form-group"><label>회사명 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><input type="text" id="cm-name" /></div>
         <div class="form-group"><label>사업자등록번호 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><input type="text" id="cm-biz" placeholder="000-00-00000" /></div>
         <div class="form-group"><label>업종</label><input type="text" id="cm-industry" /></div>
@@ -930,7 +932,7 @@
           <label>앱 접근 코드</label>
           <div style="position:relative;display:flex;align-items:center;">
             <input type="text" id="cm-code-display" style="flex:1;letter-spacing:2px;" placeholder="접근 코드" readonly oninput="_onCmCodeInput()" />
-            <button type="button" id="cm-code-action-btn" onclick="_toggleCmCodeEdit()" class="btn btn-sm btn-slate" style="position:absolute;right:4px;top:50%;transform:translateY(-50%);padding:4px 8px;font-size:11px;">변경</button>
+            <button type="button" id="cm-code-action-btn" onclick="_toggleCmCodeEdit()" class="btn btn-sm btn-warning" style="position:absolute;right:4px;top:50%;transform:translateY(-50%);padding:4px 8px;font-size:11px;">변경</button>
           </div>
           <div id="cm-code-msg" style="font-size:11px;margin-top:4px;color:#9ca3af;"><i class="fas fa-info-circle"></i> 숫자와 알파벳을 포함한 6글자 이상</div>
           <input type="hidden" id="cm-code" />
@@ -938,14 +940,42 @@
         <div class="form-group full"><label>사업장 주소 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><input type="text" id="cm-addr" /></div>
         <div class="form-group full"><label>메모</label><textarea id="cm-note" rows="3" style="width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:8px 12px;font-size:13.5px;font-family:inherit;color:#333;resize:vertical;outline:none;line-height:1.6;box-sizing:border-box;"></textarea></div>
 
+        <!-- 노무대행 서비스 계약서 날인본 -->
+        <div class="form-group full">
+          <label>노무대행 서비스 계약서 날인본 <span class="lbl-desc">(선택사항)</span></label>
+          <div id="cm-svc-no-file">
+            <label class="cm-svc-upload-btn" for="cm-svc-file-input">
+              <i class="fas fa-upload"></i> 파일 업로드 (이미지 여러 장 · ZIP · PDF)
+            </label>
+            <input type="file" id="cm-svc-file-input"
+              accept="image/*,application/pdf,application/zip,application/x-zip-compressed,.zip"
+              multiple style="display:none;" onchange="cmSvcFileChange(this)" />
+            <p class="cm-svc-hint"><i class="fas fa-info-circle"></i> JPG·PNG 이미지(복수 선택 가능), PDF, ZIP 파일을 업로드할 수 있습니다. 업로드 후 저장하면 첨부됩니다.</p>
+          </div>
+          <div id="cm-svc-file-list-wrap" style="display:none;">
+            <div id="cm-svc-file-list" class="cm-svc-file-list"></div>
+            <label class="cm-svc-add-more" for="cm-svc-file-add-input">
+              <i class="fas fa-plus"></i> 파일 추가
+            </label>
+            <input type="file" id="cm-svc-file-add-input"
+              accept="image/*,application/pdf,application/zip,application/x-zip-compressed,.zip"
+              multiple style="display:none;" onchange="cmSvcFileAdd(this)" />
+          </div>
+        </div>
+            </div>
+          </div>
+        </div>
+
         <!-- ══ 대표자 정보 섹션 ══ -->
-        <div class="form-group full" style="border-top:1.5px solid #e5e7eb;padding-top:12px;margin-top:4px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-            <span class="form-section-title" style="margin-bottom:0;">대표자 정보</span>
+        <div class="form-group full">
+          <div class="form-section-title" style="justify-content:space-between;">
+            <span>대표자 정보</span>
             <button type="button" onclick="_cmAddRepRow()" class="btn btn-sm btn-indigo"><i class="fas fa-plus"></i> 추가하기</button>
           </div>
-          <div id="cm-rep-rows">
-            <!-- 동적 생성: _cmRepRowHTML(idx) -->
+          <div class="cm-allowance-section">
+            <div id="cm-rep-rows" style="margin-top:14px;">
+              <!-- 동적 생성: _cmRepRowHTML(idx) -->
+            </div>
           </div>
         </div>
 
@@ -954,47 +984,11 @@
         <input type="hidden" id="cm-phone" />
         <input type="hidden" id="cm-email" />
 
-        <!-- 노무대행 서비스 계약서 섹션 -->
-        <div class="form-group full">
-          <div class="cm-svc-section">
-            <div class="cm-svc-section-title">
-              <i class="fas fa-file-signature" style="color:#6366f1;"></i>
-              노무대행 서비스 계약서 날인본
-              <span style="font-size:11px;font-weight:400;color:#9ca3af;margin-left:4px;">(선택사항)</span>
-            </div>
-            <div class="cm-svc-upload-area">
-              <!-- 파일 없을 때 업로드 영역 -->
-              <div id="cm-svc-no-file">
-                <label class="cm-svc-upload-btn" for="cm-svc-file-input">
-                  <i class="fas fa-upload"></i> 파일 업로드 (이미지 여러 장 · ZIP · PDF)
-                </label>
-                <input type="file" id="cm-svc-file-input"
-                  accept="image/*,application/pdf,application/zip,application/x-zip-compressed,.zip"
-                  multiple style="display:none;" onchange="cmSvcFileChange(this)" />
-                <p class="cm-svc-hint"><i class="fas fa-info-circle"></i> JPG·PNG 이미지(복수 선택 가능), PDF, ZIP 파일을 업로드할 수 있습니다. 업로드 후 저장하면 첨부됩니다.</p>
-              </div>
-              <!-- 파일 목록 -->
-              <div id="cm-svc-file-list-wrap" style="display:none;">
-                <div id="cm-svc-file-list" class="cm-svc-file-list"></div>
-                <!-- 파일 추가 버튼 -->
-                <label class="cm-svc-add-more" for="cm-svc-file-add-input">
-                  <i class="fas fa-plus"></i> 파일 추가
-                </label>
-                <input type="file" id="cm-svc-file-add-input"
-                  accept="image/*,application/pdf,application/zip,application/x-zip-compressed,.zip"
-                  multiple style="display:none;" onchange="cmSvcFileAdd(this)" />
-              </div>
-            </div>
-          </div>
-        </div>
-
         <!-- ══ 관리 기준 ══ -->
         <div class="form-group full">
-          <div style="display:flex;align-items:center;gap:8px;padding:10px 0 4px;border-top:1.5px solid #e5e7eb;margin-top:4px;">
-            <i class="fas fa-sliders-h" style="color:#6366f1;font-size:13px;"></i>
-            <span style="font-size:13px;font-weight:700;color:#374151;letter-spacing:0.3px;">관리 기준</span>
-          </div>
-        </div>
+          <span class="form-section-title">관리 기준</span>
+          <div class="cm-allowance-section">
+            <div class="form-grid">
         <div class="form-group">
           <label>급여 산정기간 <span class="lbl-req">*</span></label>
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
@@ -1038,11 +1032,14 @@
             <option value="입사일 기준">입사일 기준</option>
           </select>
         </div>
+            </div>
+          </div>
+        </div>
 
         <!-- ══ 급여 항목 설정 ══ -->
         <div class="form-group full">
+          <span class="form-section-title"><span>급여 입력 항목 설정</span><span style="font-size:10.5px;font-weight:400;color:#9ca3af;">(체크된 항목만 급여 입력에 노출)</span></span>
           <div class="cm-allowance-section">
-            <div class="cm-allowance-title"><i class="fas fa-sliders-h" style="color:#6366f1;margin-right:6px;"></i>급여 입력 항목 설정 <span style="font-size:11px;font-weight:400;color:#9ca3af;margin-left:4px;">(체크된 항목만 급여 입력에 노출)</span></div>
             <div class="cm-allowance-grid">
 
               <!-- ── 통상임금 설정 소분류 ── -->
@@ -1052,92 +1049,57 @@
               <!-- 현장수당 — pay_type: fixed/daily -->
               <div class="cm-aw-row">
                 <label class="cm-aw-check-label">
-                  <input type="checkbox" id="cm-aw-site" class="cm-aw-cb" onchange="cmAwTogglePayType('site',this.checked)" />
+                  <input type="checkbox" id="cm-aw-site" class="cm-aw-cb" />
                   <span>현장수당</span>
                 </label>
-                <select id="cm-aw-site-pt" class="cm-aw-pt-select" disabled>
-                  <option value="">통상임금 포함여부</option>
-                  <option value="fixed">매월 정기지급</option>
-                  <option value="daily">출근일수에 따름</option>
-                </select>
               </div>
 
               <!-- 직책수당 — pay_type: fixed/daily -->
               <div class="cm-aw-row">
                 <label class="cm-aw-check-label">
-                  <input type="checkbox" id="cm-aw-position" class="cm-aw-cb" onchange="cmAwTogglePayType('position',this.checked)" />
+                  <input type="checkbox" id="cm-aw-position" class="cm-aw-cb" />
                   <span>직책수당</span>
                 </label>
-                <select id="cm-aw-position-pt" class="cm-aw-pt-select" disabled>
-                  <option value="">통상임금 포함여부</option>
-                  <option value="fixed">매월 정기지급</option>
-                  <option value="daily">출근일수에 따름</option>
-                </select>
               </div>
 
               <!-- 기술수당 — pay_type: fixed/daily -->
               <div class="cm-aw-row">
                 <label class="cm-aw-check-label">
-                  <input type="checkbox" id="cm-aw-skill" class="cm-aw-cb" onchange="cmAwTogglePayType('skill',this.checked)" />
+                  <input type="checkbox" id="cm-aw-skill" class="cm-aw-cb" />
                   <span>기술수당</span>
                 </label>
-                <select id="cm-aw-skill-pt" class="cm-aw-pt-select" disabled>
-                  <option value="">통상임금 포함여부</option>
-                  <option value="fixed">매월 정기지급</option>
-                  <option value="daily">출근일수에 따름</option>
-                </select>
               </div>
 
               <!-- 면허수당 — pay_type: fixed/daily -->
               <div class="cm-aw-row">
                 <label class="cm-aw-check-label">
-                  <input type="checkbox" id="cm-aw-license" class="cm-aw-cb" onchange="cmAwTogglePayType('license',this.checked)" />
+                  <input type="checkbox" id="cm-aw-license" class="cm-aw-cb" />
                   <span>면허수당</span>
                 </label>
-                <select id="cm-aw-license-pt" class="cm-aw-pt-select" disabled>
-                  <option value="">통상임금 포함여부</option>
-                  <option value="fixed">매월 정기지급</option>
-                  <option value="daily">출근일수에 따름</option>
-                </select>
               </div>
 
               <!-- 위험수당 — pay_type: fixed/daily -->
               <div class="cm-aw-row">
                 <label class="cm-aw-check-label">
-                  <input type="checkbox" id="cm-aw-hazard" class="cm-aw-cb" onchange="cmAwTogglePayType('hazard',this.checked)" />
+                  <input type="checkbox" id="cm-aw-hazard" class="cm-aw-cb" />
                   <span>위험수당</span>
                 </label>
-                <select id="cm-aw-hazard-pt" class="cm-aw-pt-select" disabled>
-                  <option value="">통상임금 포함여부</option>
-                  <option value="fixed">매월 정기지급</option>
-                  <option value="daily">출근일수에 따름</option>
-                </select>
               </div>
 
               <!-- 벽지수당 — pay_type: fixed/daily -->
               <div class="cm-aw-row">
                 <label class="cm-aw-check-label">
-                  <input type="checkbox" id="cm-aw-remote-area" class="cm-aw-cb" onchange="cmAwTogglePayType('remote_area',this.checked)" />
+                  <input type="checkbox" id="cm-aw-remote-area" class="cm-aw-cb" />
                   <span>벽지수당</span>
                 </label>
-                <select id="cm-aw-remote-area-pt" class="cm-aw-pt-select" disabled>
-                  <option value="">통상임금 포함여부</option>
-                  <option value="fixed">매월 정기지급</option>
-                  <option value="daily">출근일수에 따름</option>
-                </select>
               </div>
 
               <!-- 정기 상여금 — pay_type: fixed/daily -->
               <div class="cm-aw-row">
                 <label class="cm-aw-check-label">
-                  <input type="checkbox" id="cm-aw-regular-bonus" class="cm-aw-cb" onchange="cmAwTogglePayType('regular_bonus',this.checked)" />
+                  <input type="checkbox" id="cm-aw-regular-bonus" class="cm-aw-cb" />
                   <span>정기 상여금</span>
                 </label>
-                <select id="cm-aw-regular-bonus-pt" class="cm-aw-pt-select" disabled>
-                  <option value="">통상임금 포함여부</option>
-                  <option value="fixed">매월 정기지급</option>
-                  <option value="daily">출근일수에 따름</option>
-                </select>
               </div>
 
               <!-- 사용자 정의 통상임금 항목 (JS에서 cm-aw-add-row 앞에 동적 추가) -->
@@ -1146,9 +1108,11 @@
               </div>
               </div><!-- /cm-aw-section-group -->
 
+              <hr style="grid-column:1/-1;border:none;border-top:1px solid #e0e7ff;margin:10px 0;" />
+
               <!-- ── 고정수당 설정 소분류 ── -->
               <div class="cm-aw-section-group">
-              <div class="cm-aw-section-title">고정수당 설정</div>
+              <div class="cm-aw-section-title">수당별 고정지급 여부 설정</div>
 
               <!-- 보육수당 — 고정수당 포함여부 설정 -->
               <div class="cm-aw-row">
@@ -1281,23 +1245,19 @@
     </div>
 
     <!-- ── 등기임원 섹션 ── -->
-    <div id="cm-executives-section" style="border-top:1px solid #e5e7eb;padding:16px 20px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-        <span style="font-weight:700;font-size:12.5px;color:#374151;display:flex;align-items:center;gap:7px;">
-          <i class="fas fa-user-tie" style="color:#4f46e5;font-size:13px;"></i> 등기임원
-          <span style="font-size:10.5px;font-weight:400;color:#9ca3af;">(대표이사는 입력하지 않아도 됩니다.)</span>
-        </span>
+    <div id="cm-executives-section" style="padding:16px 20px;">
+      <div class="form-section-title" style="justify-content:space-between;">
+        <span><i class="fas fa-user-tie"></i> 등기임원
+          <span style="font-size:10.5px;font-weight:400;color:#9ca3af;">(대표이사는 입력하지 않아도 됩니다.)</span></span>
         <button type="button" class="btn btn-sm btn-indigo" onclick="_cmAddExecutive()"><i class="fas fa-plus"></i> 추가</button>
       </div>
       <div id="cm-executives-list"></div>
     </div>
 
     <!-- ── 특수관계인 급여대상자 섹션 ── -->
-    <div id="cm-related-section" style="border-top:1px solid #e5e7eb;padding:16px 20px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-        <span style="font-weight:700;font-size:12.5px;color:#374151;display:flex;align-items:center;gap:7px;">
-          <i class="fas fa-users" style="color:#0891b2;font-size:13px;"></i> 특수관계인 급여대상자
-        </span>
+    <div id="cm-related-section" style="padding:16px 20px;">
+      <div class="form-section-title" style="justify-content:space-between;">
+        <span><i class="fas fa-users"></i> 특수관계인 급여대상자</span>
         <button type="button" class="btn btn-sm btn-indigo" onclick="_cmAddRelated()"><i class="fas fa-plus"></i> 추가</button>
       </div>
       <div id="cm-related-list"></div>
@@ -1331,7 +1291,7 @@
     </div>
 
     <!-- ── 수정 내용 적용일 (수정 모드 전용) ── -->
-    <div id="cm-effective-date-row" style="display:none;border-top:1px solid #e5e7eb;padding:14px 20px 0;background:#fffbeb;">
+    <div id="cm-effective-date-row" style="display:none;border-top:1px solid #e5e7eb;padding:14px 20px 20px;background:#fffbeb;">
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
         <i class="fas fa-calendar-check" style="color:#d97706;font-size:14px;"></i>
         <span style="font-size:13px;font-weight:700;color:#92400e;">수정 내용 적용일</span>
@@ -1343,7 +1303,7 @@
       <div id="cm-effective-date-warn" style="display:none;margin-top:6px;font-size:11.5px;color:#dc2626;padding-left:24px;">
         <i class="fas fa-exclamation-triangle" style="margin-right:4px;"></i><span id="cm-effective-date-warn-msg"></span>
       </div>
-      <div style="margin-top:6px;padding-left:24px;font-size:11px;color:#9ca3af;">
+      <div style="margin-top:6px;padding-left:24px;font-size:12.5px;color:#374151;">
         적용일 이후 시작되는 모든 근로계약에 변경된 급여 항목 설정이 일괄 반영됩니다.
       </div>
     </div>

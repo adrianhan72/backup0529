@@ -417,7 +417,7 @@ function _updateDashUnsentContractBanner(){
   section.style.display = '';
   section.innerHTML = `
     <div onclick="showPage('contract-dispatch', document.querySelector('.menu-item[data-page=\\'contract-dispatch\\']'))"
-         style="cursor:pointer;background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #3b82f6;border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:14px;"
+         style="cursor:pointer;background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #3b82f6;border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:14px;box-shadow:0 2px 10px rgba(0,0,0,.07);"
          >
       <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#3b82f6,#2563eb);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
         <i class="fas fa-file-contract" style="color:#fff;font-size:17px;"></i>
@@ -452,7 +452,7 @@ function _updateDashUnsentBanner(){
   section.style.display = '';
   section.innerHTML = `
     <div onclick="showPage('payslip-send', document.querySelector('.menu-item[data-page=\\'payslip-send\\']'))"
-         style="cursor:pointer;background:linear-gradient(135deg,#fff7ed,#fef3c7);border:1px solid #f59e0b;border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:14px;"
+         style="cursor:pointer;background:linear-gradient(135deg,#fff7ed,#fef3c7);border:1px solid #f59e0b;border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:14px;box-shadow:0 2px 10px rgba(0,0,0,.07);"
          >
       <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#f59e0b,#d97706);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
         <i class="fas fa-exclamation-triangle" style="color:#fff;font-size:17px;"></i>

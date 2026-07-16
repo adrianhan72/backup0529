@@ -117,7 +117,7 @@
     .stat-info .stat-value{font-size:22px;font-weight:700;color:#1a1a2e;margin-top:3px}
     .stat-info .stat-sub{font-size:10.5px;color:#aaa;margin-top:1px}
     .card{background:#fff;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.06);overflow:hidden}
-    .card-header{padding:16px 22px 12px;border-bottom:1px solid #f0f2f5;display:flex;align-items:center;justify-content:space-between}
+    .card-header{padding:16px 22px 12px;border-bottom:1px solid #f0f2f5;display:flex;align-items:center;justify-content:space-between;min-height:67px;box-sizing:border-box;}
     .card-title{font-size:14px;font-weight:700;color:#1a1a2e}
     .table-wrap{overflow-x:auto}
     table{width:100%;border-collapse:collapse;font-size:13px}

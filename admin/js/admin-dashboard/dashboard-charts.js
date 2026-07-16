@@ -227,8 +227,8 @@ let companyTrendChartInstance = null;
 function renderCompanyTrendChart(){
   const rangeEl = document.getElementById('dash-chart-range');
   const months = rangeEl ? parseInt(rangeEl.value) : 12;
-  const filterEl = document.getElementById('dash-company-filter');
-  const filter = filterEl ? filterEl.value : 'employee';
+  const filterEl = document.querySelector('input[name="dash-company-filter"]:checked');
+  const filter = filterEl ? filterEl.value : 'contract';
 
   const now = new Date();
   const labels = [];
@@ -499,18 +499,7 @@ function renderEmployeeTrendChart(){
           labels: {
             boxWidth: 12, boxHeight: 12,
             borderRadius: 4, useBorderRadius: true,
-            font: { size: 11, family: "'Noto Sans KR', sans-serif" },
-            color: '#555'
-          }
-        },
-        tooltip: {
-          backgroundColor: 'rgba(26,26,46,0.92)',
-          titleColor: '#fff', bodyColor: '#ddd',
-          padding: 12, cornerRadius: 8,
-          titleFont: { size: 12, family: "'Noto Sans KR', sans-serif" },
-          bodyFont: { size: 12, family: "'Noto Sans KR', sans-serif" },
-          callbacks: {
-            label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y}명`
+            font: { size: 12, family: "'Noto Sans KR', sans-serif" },
           }
         }
       },
