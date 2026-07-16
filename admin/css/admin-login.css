@@ -270,7 +270,7 @@
 .cm-aw-check-label    { display:flex; align-items:center; gap:6px; cursor:pointer; font-size:13px; color:#374151; white-space:nowrap; flex-shrink:0; min-width:90px; }
 .cm-aw-check-label input[type="checkbox"] { width:15px; height:15px; accent-color:#6366f1; cursor:pointer; flex-shrink:0; }
 
-.cm-aw-pt-select      { flex:1; min-width:0; border:1px solid #d1d5db; border-radius:6px; padding:4px 6px;
+.cm-aw-pt-select      { flex:0 0 auto; margin-left:auto; width:150px; border:1px solid #d1d5db; border-radius:6px; padding:4px 24px 4px 8px;
                          font-size:11.5px; font-family:inherit; color:#374151; background:#fff;
                          cursor:pointer; outline:none; transition:border-color .15s, opacity .15s; }
 .cm-aw-pt-select:disabled { background:#f3f4f6; color:#9ca3af; cursor:not-allowed; }

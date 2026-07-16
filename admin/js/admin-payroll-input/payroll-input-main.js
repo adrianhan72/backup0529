@@ -2543,10 +2543,24 @@ function calcPI(){
   const _fixedHolPay   = _fixedCalc.holPay;
   const gross=gv('pi-base')+gv('pi-weekly-hol')+gv('pi-site')+gv('pi-remote-area')+gv('pi-position')+gv('pi-skill')+gv('pi-license')+gv('pi-transport')+gv('pi-meal')+gv('pi-childcare')+gv('pi-research')+otPay+nightPay+holPay+_fixedOtPay+_fixedNightPay+_fixedHolPay+gv('pi-annual-pay')+gv('pi-bonus')+gv('pi-performance')+gv('pi-actual-expense')+gv('pi-communication')+gv('pi-fitness')+gv('pi-self-dev')+gv('pi-book')+gv('pi-overseas')+gv('pi-etc-allowance');
   // 통상임금 기준: 매월 정기지급 항목만 포함 (출근일수에 따름은 제외)
+  // 단, 비과세 항목(childcare/car/meal/research)은 fixed 여부와 관계없이 월 20만원 한도로 포함
+  const _TAX_EXEMPT_CAP = 200000;
+  const _piTaxCfg = (() => {
+    const co = allCompanies.find(c => c.id === currentGlobalCompanyId);
+    if (!co?.allowance_config) return {};
+    const cfg = co.allowance_config;
+    return typeof cfg === 'string' ? (() => { try { return JSON.parse(cfg); } catch(e) { return {}; } })() : cfg;
+  })();
+  const _teVal = (field) => {
+    if (!_piTaxCfg[`${field}_tax_exempt`]) return 0;
+    const amt = gv(`pi-${field === 'car' ? 'transport' : field}`);
+    return Math.min(amt, _TAX_EXEMPT_CAP);
+  };
   const std=gv('pi-base')+gv('pi-weekly-hol')+gv('pi-site')+gv('pi-remote-area')+gv('pi-position')
-    +(_getPIPayTypeVal('transport')==='fixed'    ?gv('pi-transport')    :0)
-    +(_getPIPayTypeVal('meal')==='fixed'         ?gv('pi-meal')         :0)
-    +(_getPIPayTypeVal('research')==='fixed'     ?gv('pi-research')     :0)
+    + _teVal('car')
+    + _teVal('meal')
+    + _teVal('research')
+    + _teVal('childcare')
     +(_getPIPayTypeVal('communication')==='fixed'?gv('pi-communication'):0)
     +(_getPIPayTypeVal('fitness')==='fixed'    ?gv('pi-fitness')    :0)
     +(_getPIPayTypeVal('self_dev')==='fixed'   ?gv('pi-self-dev')   :0)
@@ -2554,7 +2568,6 @@ function calcPI(){
     +(_getPIPayTypeVal('overseas')==='fixed'   ?gv('pi-overseas')   :0)
     +gv('pi-skill')
     +gv('pi-license')
-    +(_getPIPayTypeVal('childcare')==='fixed'    ?gv('pi-childcare')    :0)
     +otPay+nightPay+holPay+gv('pi-annual-pay');
   const curStd=gv('pi-std-pay');
   if(!curStd||curStd===0) setAmountVal('pi-std-pay', std);

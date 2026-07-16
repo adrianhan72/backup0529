@@ -195,6 +195,7 @@ function _parseCo(co){
 // == 급여 항목 설정(allowance_config) 헬퍼 ==
 // 모든 항목에 pay_type select 적용 (통상임금 여부는 지급방식으로 결정)
 const _CM_AW_PT_FIELDS = ['site','position','skill','license','hazard','remote_area','regular_bonus','childcare','car','meal','research','communication','fitness','self_dev','book','overseas'];
+const _CM_AW_TAX_EXEMPT = ['childcare','car','meal','research'];
 
 /** 체크박스 체크 시 pay_type select 활성/비활성 토글 */
 function cmAwTogglePayType(field, checked){
@@ -333,6 +334,7 @@ function _cmGetAllowanceConfig(){
     const hid = _cmAwHtmlId(f);
     cfg[f] = document.getElementById(`cm-aw-${hid}`)?.checked || false;
     cfg[`${f}_pay_type`] = cfg[f] ? 'fixed' : '';
+    if(_CM_AW_TAX_EXEMPT.includes(f)) cfg[`${f}_tax_exempt`] = true;
   });
   // 사용자 정의 통상임금 항목 (비어있으면 키 자체를 넣지 않아 DB와 diff 방지)
   const _customOrdinary = _cmAwGetCustomItems();
