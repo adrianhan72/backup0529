@@ -1246,25 +1246,53 @@ function _lpFillCompanyFilter(){
 }
 
 /** LP 테이블 렌더링 */
+function _lpDoSearch(){
+  const fromEl = document.getElementById('lp-filter-date-from');
+  const toEl = document.getElementById('lp-filter-date-to');
+  const noticeEl = document.getElementById('lp-date-notice');
+  if(!fromEl || !toEl) return;
+  const fromVal = fromEl.value, toVal = toEl.value;
+  const resetBorder = () => { fromEl.style.borderColor = '#d1d5db'; toEl.style.borderColor = '#d1d5db'; };
+  if(fromVal && toVal){
+    const from = new Date(fromVal);
+    const to = new Date(toVal);
+    if(!isNaN(from.getTime()) && !isNaN(to.getTime())){
+      const maxFrom = new Date(to);
+      maxFrom.setMonth(maxFrom.getMonth() - 3);
+      if(from < maxFrom){
+        fromEl.style.borderColor = '#dc2626';
+        toEl.style.borderColor = '#dc2626';
+        if(noticeEl) noticeEl.style.color = '#dc2626';
+        toast('조회 기간은 최대 3개월까지 가능합니다.', 'error');
+        return;
+      }
+    }
+  }
+  resetBorder();
+  if(noticeEl) noticeEl.style.color = '#9ca3af';
+  _lpPage = 1;
+  renderLpTable();
+}
+
 function renderLpTable(){
   const tbody = document.getElementById('lp-tbody');
   if(!tbody) return;
 
   const filterCo     = document.getElementById('lp-filter-company')?.value  || '';
   const filterMethod = document.getElementById('lp-filter-method')?.value   || '';
-  const fromVal      = document.getElementById('lp-filter-month-from')?.value || '';
-  const toVal        = document.getElementById('lp-filter-month-to')?.value   || '';
+  const fromVal      = document.getElementById('lp-filter-date-from')?.value || '';
+  const toVal        = document.getElementById('lp-filter-date-to')?.value   || '';
   const searchQ      = (document.getElementById('lp-search')?.value||'').trim().toLowerCase();
 
   let list = _lpHistoryList.filter(r => {
     if(filterCo     && r.company_id        !== filterCo)     return false;
-    // 근로자 발송 방식 필터 (worker_send_method 기준)
     if(filterMethod && r.worker_send_method !== filterMethod) return false;
     if(searchQ      && !(r.employee_name||'').toLowerCase().includes(searchQ)) return false;
-    // 기간 필터 (YYYY-MM 비교)
-    const ym = (r.sent_at||'').slice(0,7);
-    if(fromVal && ym < fromVal) return false;
-    if(toVal   && ym > toVal)   return false;
+    if(fromVal || toVal){
+      const sentDt = (r.sent_at||'').slice(0,10);
+      if(fromVal && sentDt < fromVal) return false;
+      if(toVal   && sentDt > toVal)   return false;
+    }
     return true;
   }).sort((a,b)=>(a.employee_name||'').localeCompare(b.employee_name||'','ko'));
 
@@ -1342,6 +1370,34 @@ function renderLpTable(){
 // ==================================================================
 
 /** 발송 이력 렌더링 */
+function _cenDoSearch(){
+  const fromEl = document.getElementById('cen-log-filter-date-from');
+  const toEl = document.getElementById('cen-log-filter-date-to');
+  const noticeEl = document.getElementById('cen-date-notice');
+  if(!fromEl || !toEl) return;
+  const fromVal = fromEl.value, toVal = toEl.value;
+  const resetBorder = () => { fromEl.style.borderColor = '#d1d5db'; toEl.style.borderColor = '#d1d5db'; };
+  if(fromVal && toVal){
+    const from = new Date(fromVal);
+    const to = new Date(toVal);
+    if(!isNaN(from.getTime()) && !isNaN(to.getTime())){
+      const maxFrom = new Date(to);
+      maxFrom.setMonth(maxFrom.getMonth() - 3);
+      if(from < maxFrom){
+        fromEl.style.borderColor = '#dc2626';
+        toEl.style.borderColor = '#dc2626';
+        if(noticeEl) noticeEl.style.color = '#dc2626';
+        toast('조회 기간은 최대 3개월까지 가능합니다.', 'error');
+        return;
+      }
+    }
+  }
+  resetBorder();
+  if(noticeEl) noticeEl.style.color = '#9ca3af';
+  _cenHistoryPage = 1;
+  renderCenHistory();
+}
+
 function renderCenHistory(){
   const tbody = document.getElementById('cen-log-tbody');
   if(!tbody) return;
@@ -1349,6 +1405,8 @@ function renderCenHistory(){
   const filterMethod  = document.getElementById('cen-log-filter-method')?.value  || '';
   const filterCompany = document.getElementById('cen-log-filter-company')?.value || '';
   const searchQ       = (document.getElementById('cen-log-search')?.value || '').trim().toLowerCase();
+  const dateFrom      = document.getElementById('cen-log-filter-date-from')?.value || '';
+  const dateTo        = document.getElementById('cen-log-filter-date-to')?.value || '';
 
   // 고객사 필터 옵션 동적 채우기 (최초 1회)
   const coSel = document.getElementById('cen-log-filter-company');
@@ -1365,6 +1423,11 @@ function renderCenHistory(){
     if(filterMethod  && r.notice_method  !== filterMethod)  return false;
     if(filterCompany && r.company_id     !== filterCompany) return false;
     if(searchQ && !(r.employee_name||'').toLowerCase().includes(searchQ)) return false;
+    if(dateFrom || dateTo){
+      const sentDt = (r.sent_at || '').slice(0,10);
+      if(dateFrom && sentDt < dateFrom) return false;
+      if(dateTo   && sentDt > dateTo)   return false;
+    }
     return true;
   }).sort((a,b)=>(a.employee_name||'').localeCompare(b.employee_name||'','ko'));
 

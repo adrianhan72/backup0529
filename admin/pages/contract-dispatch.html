@@ -37,7 +37,7 @@
         </div>
 
         <!-- 전원 발송 완료 메시지 -->
-        <div id="cdp-unsent-all-clear" class="pss-all-clear" style="display:none;margin:16px 20px;">
+        <div id="cdp-unsent-all-clear" class="pss-all-clear" style="display:none;margin:16px 0;padding:0 20px;">
           <i class="fas fa-check-circle" style="font-size:20px;color:#16a34a;flex-shrink:0;"></i>
           <div>
             <div style="font-size:13px;font-weight:700;color:#166534;">미발송 계약서 없음</div>
@@ -46,7 +46,7 @@
         </div>
 
         <!-- 미발송 테이블 -->
-        <div id="cdp-unsent-table-wrap" class="table-wrap" style="padding:0 20px 16px;">
+        <div id="cdp-unsent-table-wrap" class="table-wrap" style="padding:0 0 16px;">
           <table id="cdp-unsent-table" style="width:100%;border-collapse:collapse;font-size:13px;">
             <thead>
               <tr>
@@ -111,13 +111,13 @@
           <!-- 기간 필터 -->
           <div style="display:flex;align-items:center;gap:6px;">
             <span style="font-size:12px;color:#6b7280;font-weight:600;white-space:nowrap;">기간</span>
-            <input type="date" id="cdp-filter-date-from" onchange="_cdpPage=1;renderContractDispatchPage()"
+            <input type="date" id="cdp-filter-date-from"
               style="border:1px solid #d1d5db;border-radius:7px;padding:5px 8px;font-size:12.5px;color:#374151;background:#fff;cursor:pointer;font-family:inherit;" />
             <span style="font-size:12px;color:#9ca3af;">~</span>
-            <input type="date" id="cdp-filter-date-to" onchange="_cdpPage=1;renderContractDispatchPage()"
+            <input type="date" id="cdp-filter-date-to"
               style="border:1px solid #d1d5db;border-radius:7px;padding:5px 8px;font-size:12.5px;color:#374151;background:#fff;cursor:pointer;font-family:inherit;" />
-            <button onclick="document.getElementById('cdp-filter-date-from').value='';document.getElementById('cdp-filter-date-to').value='';renderContractDispatchPage();"
-              title="기간 초기화" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:7px;background:#fff;cursor:pointer;font-size:11px;color:#9ca3af;line-height:1;font-family:inherit;">✕</button>
+            <button onclick="_cdpDoSearch()" class="btn btn-danger btn-sm" style="height:32px;">조회</button>
+            <span id="cdp-date-notice" style="font-size:11px;color:#9ca3af;">(최대 3개월간의 기간으로 조회하실 수 있습니다.)</span>
           </div>
           <!-- 키워드 검색 -->
           <div style="display:flex;align-items:center;gap:6px;margin-left:auto;">

@@ -11,7 +11,7 @@ const TABLE_ALIAS = {
 };
 const VALID_TABLES = new Set([
   'companies','employees','contracts','payrolls','billing',
-  'payroll_send_logs','contract_dispatch','contract_expiry_notice',
+  'payroll_send_logs','contract_dispatch','consent_dispatch','contract_expiry_notice',
   'company_notices','admin_accounts','insurance_rates','minimum_wages',
   'annual_leave_promotions','annual_leave_ledger','company_history',
   'wage_ledger_notifications',

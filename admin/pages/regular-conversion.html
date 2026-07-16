@@ -104,6 +104,18 @@
               <i class="fas fa-search"></i>
               <input type="text" id="rc-log-search" placeholder="직원명 검색" oninput="renderRcHistory()" />
             </div>
+          </div>
+          <!-- 기간 필터 (두 번째 행) -->
+          <div class="cen-filter-bar" style="padding-top:8px;">
+            <span style="font-size:12px;font-weight:600;color:#6b7280;white-space:nowrap;">기간</span>
+            <input type="date" id="rc-log-filter-date-from"
+              style="border:1px solid #d1d5db;border-radius:7px;padding:5px 8px;font-size:12.5px;background:#fff;cursor:pointer;font-family:inherit;color:#374151;" />
+            <span style="font-size:12px;color:#9ca3af;">~</span>
+            <input type="date" id="rc-log-filter-date-to"
+              style="border:1px solid #d1d5db;border-radius:7px;padding:5px 8px;font-size:12.5px;background:#fff;cursor:pointer;font-family:inherit;color:#374151;" />
+            <button onclick="_rcDoSearch()" class="btn btn-danger btn-sm" style="height:32px;">조회</button>
+            <span id="rc-date-notice" style="font-size:11px;color:#9ca3af;">(최대 3개월간의 기간으로 조회하실 수 있습니다.)</span>
+          </div>
             <button onclick="(async()=>{await rcLoadHistory(true);renderRcHistory();})()" style="padding:6px 12px;border:1px solid #d1d5db;border-radius:7px;background:#fff;cursor:pointer;font-size:12px;color:#6b7280;display:inline-flex;align-items:center;gap:5px;font-family:inherit;">
               <i class="fas fa-sync-alt"></i> 새로고침
             </button>

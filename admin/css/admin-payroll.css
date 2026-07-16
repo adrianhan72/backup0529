@@ -9,12 +9,12 @@
     .dash-alert-banner-sub{font-size:11.5px;margin-top:2px;}
     .dash-alert-banner-count{font-size:16px;font-weight:800;}
     .dash-alert-banner-arrow{font-size:13px;flex-shrink:0;}
-    .dash-alert-banner.expiry{background:linear-gradient(135deg,#fff7ed,#ffedd5);border:1px solid #fb923c;}
-    .dash-alert-banner.expiry .dash-alert-banner-icon{background:linear-gradient(135deg,#f97316,#ea580c);}
-    .dash-alert-banner.expiry .dash-alert-banner-title{color:#7c2d12;}
-    .dash-alert-banner.expiry .dash-alert-banner-sub{color:#c2410c;}
-    .dash-alert-banner.expiry .dash-alert-banner-count{color:#ea580c;}
-    .dash-alert-banner.expiry .dash-alert-banner-arrow{color:#f97316;}
+    .dash-alert-banner.expiry{background:linear-gradient(135deg,#fdf2f8,#fce7f3);border:1px solid #f472b6;}
+    .dash-alert-banner.expiry .dash-alert-banner-icon{background:linear-gradient(135deg,#ec4899,#db2777);}
+    .dash-alert-banner.expiry .dash-alert-banner-title{color:#831843;}
+    .dash-alert-banner.expiry .dash-alert-banner-sub{color:#9d174d;}
+    .dash-alert-banner.expiry .dash-alert-banner-count{color:#db2777;}
+    .dash-alert-banner.expiry .dash-alert-banner-arrow{color:#f472b6;}
     .dash-alert-banner.regular{background:linear-gradient(135deg,#fdf4ff,#f3e8ff);border:1px solid #c084fc;}
     .dash-alert-banner.regular .dash-alert-banner-icon{background:linear-gradient(135deg,#9333ea,#7c3aed);}
     .dash-alert-banner.regular .dash-alert-banner-title{color:#3b0764;}
@@ -23,7 +23,7 @@
     .dash-alert-banner.regular .dash-alert-banner-arrow{color:#a855f7;}
     .dash-alert-banner-list{padding:0 18px 12px;display:flex;flex-wrap:wrap;gap:6px;}
     .dash-alert-banner-chip{display:inline-flex;align-items:center;gap:5px;border-radius:20px;padding:3px 11px;font-size:12px;font-weight:600;white-space:nowrap;}
-    .dash-alert-banner.expiry .dash-alert-banner-chip{background:#ffedd5;color:#9a3412;border:1px solid #fdba74;}
+    .dash-alert-banner.expiry .dash-alert-banner-chip{background:#fce7f3;color:#9d174d;border:1px solid #f9a8d4;}
     .dash-alert-banner.expiry .dash-alert-banner-chip.urgent{background:#fee2e2;color:#991b1b;border-color:#fca5a5;}
     .dash-alert-banner.regular .dash-alert-banner-chip{background:#f3e8ff;color:#6b21a8;border:1px solid #d8b4fe;}
     .dash-alert-banner.regular .dash-alert-banner-chip.exceeded{background:#fae8ff;color:#86198f;border-color:#e879f9;}

@@ -10,6 +10,36 @@ let _cnlList        = [];   // 전체 로드된 원본 목록
 let _cnlPage        = 1;
 let _cnlLoaded      = false;
 
+// ── 기간 검증: 최대 3개월 제한 (조회 버튼 클릭 시) ──
+function _cnlDoSearch(){
+  const fromEl = document.getElementById('cnl-filter-date-from');
+  const toEl = document.getElementById('cnl-filter-date-to');
+  const noticeEl = document.getElementById('cnl-date-notice');
+  if(!fromEl || !toEl) return;
+  const fromVal = fromEl.value, toVal = toEl.value;
+  const resetBorder = () => { fromEl.style.borderColor = '#d1d5db'; toEl.style.borderColor = '#d1d5db'; };
+  if(fromVal && toVal){
+    const from = new Date(fromVal);
+    const to = new Date(toVal);
+    if(!isNaN(from.getTime()) && !isNaN(to.getTime())){
+      const maxFrom = new Date(to);
+      maxFrom.setMonth(maxFrom.getMonth() - 3);
+      if(from < maxFrom){
+        fromEl.style.borderColor = '#dc2626';
+        toEl.style.borderColor = '#dc2626';
+        if(noticeEl) noticeEl.style.color = '#dc2626';
+        toast('조회 기간은 최대 3개월까지 가능합니다.', 'error');
+        return;
+      }
+    }
+  }
+  resetBorder();
+  if(noticeEl) noticeEl.style.color = '#9ca3af';
+  _cnlPage = 1;
+  renderCnlReserveCard();
+  renderCnlTable();
+}
+
 // ── notice_type → 한글 레이블 ──
 const CNL_TYPE_LABEL = {
   contract_created              : '신규 근로계약',
@@ -306,6 +336,8 @@ function renderCnlTable(){
   const filterCompany = document.getElementById('cnl-filter-company')?.value || '';
   const filterType    = document.getElementById('cnl-filter-type')?.value || '';
   const searchQ       = (document.getElementById('cnl-search')?.value || '').trim().toLowerCase();
+  const dateFrom      = document.getElementById('cnl-filter-date-from')?.value || '';
+  const dateTo        = document.getElementById('cnl-filter-date-to')?.value || '';
 
   // scheduled 제외 + 필터 적용 (발송완료/취소됨만)
   let list = _cnlList.filter(n => {
@@ -313,6 +345,11 @@ function renderCnlTable(){
     if(filterCompany && n.company_id !== filterCompany) return false;
     if(filterType    && n.notice_type !== filterType)   return false;
     if(searchQ       && !(n.title||'').toLowerCase().includes(searchQ)) return false;
+    if(dateFrom || dateTo){
+      const sentDt = (n.scheduled_at || n.created_at || '').slice(0,10);
+      if(dateFrom && sentDt < dateFrom) return false;
+      if(dateTo   && sentDt > dateTo)   return false;
+    }
     return true;
   });
 

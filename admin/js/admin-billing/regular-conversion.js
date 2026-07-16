@@ -223,16 +223,51 @@ async function rcLoadHistory(force=false){
 /**
  * 발송 이력 테이블 렌더링
  */
+function _rcDoSearch(){
+  const fromEl = document.getElementById('rc-log-filter-date-from');
+  const toEl = document.getElementById('rc-log-filter-date-to');
+  const noticeEl = document.getElementById('rc-date-notice');
+  if(!fromEl || !toEl) return;
+  const fromVal = fromEl.value, toVal = toEl.value;
+  const resetBorder = () => { fromEl.style.borderColor = '#d1d5db'; toEl.style.borderColor = '#d1d5db'; };
+  if(fromVal && toVal){
+    const from = new Date(fromVal);
+    const to = new Date(toVal);
+    if(!isNaN(from.getTime()) && !isNaN(to.getTime())){
+      const maxFrom = new Date(to);
+      maxFrom.setMonth(maxFrom.getMonth() - 3);
+      if(from < maxFrom){
+        fromEl.style.borderColor = '#dc2626';
+        toEl.style.borderColor = '#dc2626';
+        if(noticeEl) noticeEl.style.color = '#dc2626';
+        toast('조회 기간은 최대 3개월까지 가능합니다.', 'error');
+        return;
+      }
+    }
+  }
+  resetBorder();
+  if(noticeEl) noticeEl.style.color = '#9ca3af';
+  _rcHistoryPage = 1;
+  renderRcHistory();
+}
+
 function renderRcHistory(){
   const tbody = document.getElementById('rc-log-tbody');
   if(!tbody) return;
 
   const filterCo = document.getElementById('rc-log-filter-company')?.value || '';
   const searchQ  = (document.getElementById('rc-log-search')?.value || '').trim().toLowerCase();
+  const dateFrom = document.getElementById('rc-log-filter-date-from')?.value || '';
+  const dateTo   = document.getElementById('rc-log-filter-date-to')?.value || '';
 
   let list = _rcHistoryList.filter(r => {
     if(filterCo && r.company_id !== filterCo) return false;
     if(searchQ  && !(r.employee_name||'').toLowerCase().includes(searchQ)) return false;
+    if(dateFrom || dateTo){
+      const sentDt = (r.sent_at || r.notice_sent_at || '').slice(0,10);
+      if(dateFrom && sentDt < dateFrom) return false;
+      if(dateTo   && sentDt > dateTo)   return false;
+    }
     return true;
   }).sort((a,b)=>(a.employee_name||'').localeCompare(b.employee_name||'','ko'));
 

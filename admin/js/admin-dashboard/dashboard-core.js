@@ -1335,9 +1335,9 @@ function renderSignedAlerts(){
 
 // 제3자 정보제공동의서 미등록 알림 카드
 function renderConsentAlerts(){
-  // [사용안함] 서류미비 계약도 유효 계약으로 처리하므로 알림 카드 제거
-  const sec = document.getElementById('dash-consent-section');
-  if(sec){ sec.style.display='none'; sec.innerHTML=''; }
+  if (typeof _updateDashConsentBanner === 'function') {
+    _updateDashConsentBanner();
+  }
 }
 
 // ─── 대시보드 알림 카드 아코디언 토글 ───

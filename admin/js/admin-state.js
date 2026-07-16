@@ -25,6 +25,22 @@ function _hasActiveContract(companyId){
     ct.company_id === companyId && ct.status === CONTRACT_STATUS.ACTIVE
   );
 }
+// ── 발송관리 기본 기간: 최근 2개월 (오늘~2개월 전) ──
+function _setDefaultDateRange(fromId, toId){
+  const toEl = document.getElementById(toId);
+  const fromEl = document.getElementById(fromId);
+  if(!fromEl || !toEl) return;
+  // 이미 사용자가 설정한 값이 있으면 덮어쓰지 않음
+  if(fromEl.value || toEl.value) return;
+  const now = new Date();
+  const y = now.getFullYear(), m = now.getMonth(), d = now.getDate();
+  const pad = n => String(n).padStart(2, '0');
+  toEl.value = `${y}-${pad(m+1)}-${pad(d)}`;
+  // 2개월 전 (월 경계 보정)
+  let fromY = y, fromM = m - 2, fromD = d;
+  if(fromM < 0){ fromY--; fromM += 12; }
+  fromEl.value = `${fromY}-${pad(fromM+1)}-${pad(fromD)}`;
+}
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
@@ -265,6 +281,7 @@ async function loadHeavyData(){
     // 대시보드 미발송 배너 갱신
     _updateDashUnsentContractBanner();
     _updateDashUnsentBanner();
+    _updateDashConsentBanner();
     // 임금대장 메뉴 뱃지 갱신
     _updateWLMenuBadge();
     // 대시보드 계약만료 통지 / 정규직 전환 / 퇴직금 지급 이력 배너 갱신 (heavy 로드 완료 후)
@@ -721,6 +738,7 @@ async function showPage(name,el){
       return;
     }
     // 글로벌 공유: 선택된 고객사가 있으면 자동 선택
+    _setDefaultDateRange('pss-filter-date-from', 'pss-filter-date-to');
     renderPssCompanyList();
     if(currentGlobalCompanyId){
       const _gco = allCompanies.find(c=>c.id===currentGlobalCompanyId && isCompanyActive(c));
@@ -803,6 +821,7 @@ async function showPage(name,el){
       await loadContractDispatchList(true);
       renderCdpUnsentMonthTabs();   // 미발송 년월 탭
       renderCdpUnsentList();        // 미발송 목록
+      _setDefaultDateRange('cdp-filter-date-from', 'cdp-filter-date-to');
       await renderContractDispatchPage();
     })();
   }
@@ -817,6 +836,7 @@ async function showPage(name,el){
       await loadConsentDispatchList(true);
       renderCnsUnsentMonthTabs();   // 미발송 년월 탭
       renderCnsUnsentList();        // 미발송 목록
+      _setDefaultDateRange('cns-filter-date-from', 'cns-filter-date-to');
       await renderConsentDispatchPage();
     })();
   }
@@ -828,7 +848,7 @@ async function showPage(name,el){
       if(el) el.classList.add('active');
       return;
     }
-    (async()=>{ await initCenPage(); render2YrStats(); })();
+    (async()=>{ await initCenPage(); render2YrStats(); _setDefaultDateRange('cen-log-filter-date-from', 'cen-log-filter-date-to'); })();
   }
   if(name==='regular-conversion'){
     if(!_dataReady){
@@ -837,7 +857,7 @@ async function showPage(name,el){
       if(el) el.classList.add('active');
       return;
     }
-    (async()=>{ await initRcPage(); })();
+    (async()=>{ await initRcPage(); _setDefaultDateRange('rc-log-filter-date-from', 'rc-log-filter-date-to'); })();
   }
   if(name==='probation-mgmt'){
     if(!_dataReady){
@@ -903,13 +923,13 @@ async function showPage(name,el){
       if(el) el.classList.add('active');
       return;
     }
-    (async()=>{ await initLpPage(); })();
+    (async()=>{ await initLpPage(); _setDefaultDateRange('lp-filter-date-from', 'lp-filter-date-to'); })();
   }
   if(name==='companies'){
     renderCompanies(); // _dataReady false면 스켈레톤, true면 실제 카드 출력
   }
   if(name==='company-notice-log'){
-    (async()=>{ await initCnlPage(); })();
+    (async()=>{ await initCnlPage(); _setDefaultDateRange('cnl-filter-date-from', 'cnl-filter-date-to'); })();
   }
   if(name==='general-notice'){
     if(!_dataReady){
@@ -926,6 +946,7 @@ async function showPage(name,el){
     renderDashboard();
     _updateDashUnsentContractBanner();
     _updateDashUnsentBanner();
+    _updateDashConsentBanner();
   }
   if(el) el.classList.add('active');
   }catch(e){console.error('[showPage 오류]',name,e);}

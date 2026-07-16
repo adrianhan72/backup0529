@@ -100,7 +100,12 @@
     .cdp-month-tab .cdp-tab-badge.unsent{ background:#ef4444;color:#fff; }
     #cdp-unsent-table th{ background:#fff7ed;color:#92400e;padding:9px 12px;font-size:12px;font-weight:700;border-bottom:2px solid #fed7aa;text-align:left;white-space:nowrap; }
     #cdp-unsent-table td{ padding:10px 12px;font-size:12.5px;vertical-align:middle;border-bottom:1px solid #fff3e0; }
+    #cdp-unsent-table td .btn-sm{ vertical-align:middle; }
     #cdp-unsent-table tr:hover td{ background:#fffbeb; }
+    #cns-unsent-table th{ background:#fff7ed;color:#92400e;padding:9px 12px;font-size:12px;font-weight:700;border-bottom:2px solid #fed7aa;text-align:left;white-space:nowrap; }
+    #cns-unsent-table td{ padding:10px 12px;font-size:12.5px;vertical-align:middle;border-bottom:1px solid #fff3e0; }
+    #cns-unsent-table td .btn-sm{ vertical-align:middle; }
+    #cns-unsent-table tr:hover td{ background:#fffbeb; }
     .cdp-send-btn-all{ background:#f9d000;color:#3b1f00;border:1px solid #eab308;border-radius:8px;padding:7px 16px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px;transition:background .18s; }
     .cdp-send-btn-all:hover{ background:#eab308; }
     .cdp-send-btn-all:disabled{ background:#cccccc!important;color:#f2f2f2!important;border:1px solid #cccccc!important;cursor:not-allowed!important;opacity:1; }
@@ -112,6 +117,32 @@
     .pss-empty{ text-align:center;padding:28px 0;color:#9ca3af;font-size:13px; }
     /* 로딩 */
     .pss-loading{ text-align:center;padding:20px;color:#9ca3af;font-size:13px; }
+
+    /* ── 발송관리 필터: select 높이·chevron 통일 ── */
+    #cdp-filter-method, #cdp-filter-status, #cdp-filter-company,
+    #cns-filter-method, #cns-filter-status, #cns-filter-company {
+      height: 32px !important;
+      box-sizing: border-box !important;
+      padding-right: 28px !important;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='none' stroke='%236b7280' stroke-width='1.5' stroke-linecap='round' d='M3 4.5l3 3 3-3'/%3E%3C/svg%3E") !important;
+      background-repeat: no-repeat !important;
+      background-position: right 8px center !important;
+      background-size: 12px !important;
+      appearance: none !important;
+      -webkit-appearance: none !important;
+      -moz-appearance: none !important;
+    }
+    /* ── 발송관리 필터: date input 높이 통일 ── */
+    #cdp-filter-date-from, #cdp-filter-date-to,
+    #cns-filter-date-from, #cns-filter-date-to,
+    #cnl-filter-date-from, #cnl-filter-date-to,
+    #pss-filter-date-from, #pss-filter-date-to,
+    #lp-filter-date-from, #lp-filter-date-to,
+    #cen-log-filter-date-from, #cen-log-filter-date-to,
+    #rc-log-filter-date-from, #rc-log-filter-date-to {
+      height: 32px !important;
+      box-sizing: border-box !important;
+    }
 
     /* ?�?�?관리자 로그???�면 ?�?�?*/
     #admin-login-screen{

@@ -24,9 +24,13 @@
             <option value="phone">유선 직접 안내</option>
           </select>
           <!-- 기간 필터 -->
-          <input type="month" id="lp-filter-month-from" onchange="_lpPage=1;renderLpTable()" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 10px;font-size:12.5px;font-family:inherit;color:#374151;" />
+          <input type="date" id="lp-filter-date-from"
+            style="border:1px solid #d1d5db;border-radius:7px;padding:5px 8px;font-size:12.5px;font-family:inherit;color:#374151;" />
           <span style="font-size:12px;color:#9ca3af;">~</span>
-          <input type="month" id="lp-filter-month-to" onchange="_lpPage=1;renderLpTable()" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 10px;font-size:12.5px;font-family:inherit;color:#374151;" />
+          <input type="date" id="lp-filter-date-to"
+            style="border:1px solid #d1d5db;border-radius:7px;padding:5px 8px;font-size:12.5px;font-family:inherit;color:#374151;" />
+          <button onclick="_lpDoSearch()" class="btn btn-danger btn-sm" style="height:32px;">조회</button>
+          <span id="lp-date-notice" style="font-size:11px;color:#9ca3af;">(최대 3개월간의 기간으로 조회하실 수 있습니다.)</span>
           <div class="search-input" style="margin:0;flex:1;min-width:120px;max-width:200px;">
             <i class="fas fa-search"></i>
             <input type="text" id="lp-search" placeholder="직원명 검색" oninput="renderLpTable()" />

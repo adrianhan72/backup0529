@@ -2,6 +2,35 @@ window._contractDispatchList = window._contractDispatchList || [];
 let _cdpPage = 1;
 const _cdpPageSize = 10;
 
+// ── 기간 검증: 최대 3개월 제한 (조회 버튼 클릭 시) ──
+function _cdpDoSearch(){
+  const fromEl = document.getElementById('cdp-filter-date-from');
+  const toEl = document.getElementById('cdp-filter-date-to');
+  const noticeEl = document.getElementById('cdp-date-notice');
+  if(!fromEl || !toEl) return;
+  const fromVal = fromEl.value, toVal = toEl.value;
+  const resetBorder = () => { fromEl.style.borderColor = '#d1d5db'; toEl.style.borderColor = '#d1d5db'; };
+  if(fromVal && toVal){
+    const from = new Date(fromVal);
+    const to = new Date(toVal);
+    if(!isNaN(from.getTime()) && !isNaN(to.getTime())){
+      const maxFrom = new Date(to);
+      maxFrom.setMonth(maxFrom.getMonth() - 3);
+      if(from < maxFrom){
+        fromEl.style.borderColor = '#dc2626';
+        toEl.style.borderColor = '#dc2626';
+        if(noticeEl) noticeEl.style.color = '#dc2626';
+        toast('조회 기간은 최대 3개월까지 가능합니다.', 'error');
+        return;
+      }
+    }
+  }
+  resetBorder();
+  if(noticeEl) noticeEl.style.color = '#9ca3af';
+  _cdpPage = 1;
+  renderContractDispatchPage();
+}
+
 /** DB에서 전체 발송 이력 로드 (최신순) */
 async function loadContractDispatchList(forceReload = false){
   if(!forceReload && window._contractDispatchList.length > 0) return;

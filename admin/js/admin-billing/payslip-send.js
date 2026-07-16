@@ -8,6 +8,35 @@ let _pssCompanyName = '';
 let _pssYM          = { year: new Date().getFullYear(), month: new Date().getMonth()+1 }; // 선택된 년월
 let _pssSendLogs    = [];   // 이 고객사의 전체 발송 이력 캐시
 let _pssSelectedMethod = 'kakao';   // 단건 모달 선택 방법
+
+// ── 기간 검증: 최대 3개월 제한 (조회 버튼 클릭 시) ──
+function _pssDoSearch(){
+  const fromEl = document.getElementById('pss-filter-date-from');
+  const toEl = document.getElementById('pss-filter-date-to');
+  const noticeEl = document.getElementById('pss-date-notice');
+  if(!fromEl || !toEl) return;
+  const fromVal = fromEl.value, toVal = toEl.value;
+  const resetBorder = () => { fromEl.style.borderColor = '#d1d5db'; toEl.style.borderColor = '#d1d5db'; };
+  if(fromVal && toVal){
+    const from = new Date(fromVal);
+    const to = new Date(toVal);
+    if(!isNaN(from.getTime()) && !isNaN(to.getTime())){
+      const maxFrom = new Date(to);
+      maxFrom.setMonth(maxFrom.getMonth() - 3);
+      if(from < maxFrom){
+        fromEl.style.borderColor = '#dc2626';
+        toEl.style.borderColor = '#dc2626';
+        if(noticeEl) noticeEl.style.color = '#dc2626';
+        toast('조회 기간은 최대 3개월까지 가능합니다.', 'error');
+        return;
+      }
+    }
+  }
+  resetBorder();
+  if(noticeEl) noticeEl.style.color = '#9ca3af';
+  _pssLogPage = 1;
+  renderPssLogs();
+}
 let _pssBulkMethod     = 'kakao';   // 일괄 모달 선택 방법
 let _pssConfirmTarget  = null;      // 단건 발송 대상 {payrollId, empId, empName, phone, year, month}
 let _pssLogPage = 1;
@@ -482,6 +511,18 @@ function renderPssLogs(){
     logs = logs.filter(l => {
       const emp = allEmployees.find(e => e.id === l.employee_id) || {};
       return (emp.name || '').toLowerCase().includes(q);
+    });
+  }
+
+  // 기간 필터
+  const dateFrom = document.getElementById('pss-filter-date-from')?.value || '';
+  const dateTo   = document.getElementById('pss-filter-date-to')?.value || '';
+  if(dateFrom || dateTo){
+    logs = logs.filter(l => {
+      const sentDt = (l.sent_at || '').slice(0,10);
+      if(dateFrom && sentDt < dateFrom) return false;
+      if(dateTo   && sentDt > dateTo)   return false;
+      return true;
     });
   }
 
