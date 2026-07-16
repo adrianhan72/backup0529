@@ -19,9 +19,31 @@ async function loadConsentDispatchList(forceReload = false) {
       return tb.localeCompare(ta);
     });
     window._consentDispatchList = rows;
+    _updateCnsMenuBadge();
   } catch (e) {
     console.error('[동의서발송이력 로드]', e);
     window._consentDispatchList = [];
+  }
+}
+
+// ── 사이드바 메뉴 뱃지 업데이트 ──
+function _updateCnsMenuBadge() {
+  const badge = document.getElementById('badge-consent-dispatch');
+  if (!badge) return;
+  const consentEmpIds = new Set(
+    (window._consentDispatchList || []).filter(r => r.dispatch_status === 'sent' || r.dispatch_status === 'completed').map(r => r.employee_id)
+  );
+  const unsent = (allContracts || []).filter(c =>
+    !c.is_draft &&
+    ![CONTRACT_STATUS.VOIDED, CONTRACT_STATUS.CANCELED, CONTRACT_STATUS.TERMINATED].includes(c.status) &&
+    !c.is_voided_by_amend &&
+    !consentEmpIds.has(c.employee_id)
+  );
+  if (unsent.length > 0) {
+    badge.textContent = unsent.length;
+    badge.style.display = '';
+  } else {
+    badge.style.display = 'none';
   }
 }
 
@@ -320,6 +342,7 @@ async function _cnsSaveDispatchRecord({ method, status, recipient, note, contrac
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     window._consentDispatchList.push(body);
     window._consentDispatchList.sort((a, b) => (b.dispatched_at || '').localeCompare(a.dispatched_at || ''));
+    _updateCnsMenuBadge();
   } catch (e) {
     console.error('[동의서발송 저장]', e);
     toast('발송 기록 저장에 실패했습니다.', 'error');
@@ -329,6 +352,7 @@ async function _cnsSaveDispatchRecord({ method, status, recipient, note, contrac
 
 async function _cnsRefreshUnsent() {
   await loadConsentDispatchList(true);
+  _updateCnsMenuBadge();
   renderCnsUnsentMonthTabs();
   await renderConsentDispatchPage();
 }

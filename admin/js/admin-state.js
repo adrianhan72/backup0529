@@ -243,7 +243,7 @@ async function init(){
 async function loadHeavyData(){
   try {
     const t0 = performance.now();
-     await Promise.all([loadPayrolls(), loadBillings(), loadAllSendLogs(), loadWLNotifications(), cenLoadHistory(), loadSeveranceNotices(), loadContractDispatchList(true), loadLeaveLedgers()]);
+     await Promise.all([loadPayrolls(), loadBillings(), loadAllSendLogs(), loadWLNotifications(), cenLoadHistory(), loadSeveranceNotices(), loadContractDispatchList(true), loadConsentDispatchList(true), loadLeaveLedgers()]);
     const elapsed = Math.round(performance.now() - t0);
     _heavyDataReady = true;
     // 현재 보이는 페이지에 맞게 추가 렌더링
