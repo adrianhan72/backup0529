@@ -806,6 +806,20 @@ async function showPage(name,el){
       await renderContractDispatchPage();
     })();
   }
+  if(name==='consent-dispatch'){
+    if(!_dataReady){
+      const tbody = document.getElementById('cns-unsent-tbody');
+      if(tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:#9ca3af;"><i class="fas fa-circle-notch fa-spin" style="color:#6366f1;margin-right:8px;"></i>고객사 데이터 불러오는 중...</td></tr>`;
+      if(el) el.classList.add('active');
+      return;
+    }
+    (async()=>{
+      await loadConsentDispatchList(true);
+      renderCnsUnsentMonthTabs();   // 미발송 년월 탭
+      renderCnsUnsentList();        // 미발송 목록
+      await renderConsentDispatchPage();
+    })();
+  }
   if(name==='contract-expiry-notice'){
     if(!_dataReady){
       // 테이블 tbody에 이미 초기 스피너가 있으므로 그대로 유지 — 데이터 로드 완료 후 재진입 시 렌더
