@@ -1728,15 +1728,17 @@ function viewContract(id){
   ['ct-edit-name-lock-hint','ct-edit-empno-lock-hint','ct-edit-category-lock-hint'].forEach(id=>{
     const el = document.getElementById(id); if(el) el.style.display = 'none';
   });
-  // ── 계약정보 섹션 복원 (갱신 모드에서 숨겨진 항목만 복원, 타입별 표시는 openContractModal이 제어) ──
+  // ── 계약정보 섹션 복원 (갱신 모드에서 숨겨진 항목만 복원, 수습 여부 확인) ──
   const _startParent = document.getElementById('ct-start')?.closest('.form-group');
   if(_startParent && _startParent.style.display === 'none') _startParent.style.display = '';
   const _probRow = document.getElementById('ct-probation-row');
-  if(_probRow && _probRow.style.display === 'none') _probRow.style.display = 'grid';
   const _probPeriodRow = document.getElementById('ct-row-probation-period');
-  if(_probPeriodRow && _probPeriodRow.style.display === 'none') _probPeriodRow.style.display = '';
   const _probEndCol = document.getElementById('ct-probation-end-col');
-  if(_probEndCol && _probEndCol.style.display === 'none') _probEndCol.style.display = '';
+  // 수습(정규직 수습·계약직 수습)일 때만 수습기간·종료일 표시
+  const _isProb = c && (c.contract_type === CONTRACT_TYPE.REGULAR_PROBATION || c.contract_type === CONTRACT_TYPE.FIXED_PROBATION);
+  if(_probRow) _probRow.style.display = _isProb ? 'grid' : 'none';
+  if(_probPeriodRow) _probPeriodRow.style.display = _isProb ? '' : 'none';
+  if(_probEndCol) _probEndCol.style.display = _isProb ? '' : 'none';
   // 계약정보 섹션 타이틀 복원
   document.querySelectorAll('.form-section-title').forEach(el => {
     if(el.textContent.includes('계약 정보') && el.style.display === 'none') el.style.display = '';
@@ -1754,9 +1756,6 @@ function viewContract(id){
     } else {
       el.disabled = true;
     }
-    el.style.background = '#f8f9fb';
-    el.style.color = '#374151';
-    el.style.cursor = 'default';
   });
   // 지급유형 버튼(매월 정기지급/출근일수에 따름) + 휴게시간 추가 버튼 비활성화
   if(bodyEl){
@@ -1795,8 +1794,6 @@ function viewContract(id){
       const _pairEnd = _pairOrigC.contract_end || _pairOrigC.terminate_date || '';
       _pairInput.value = _pairEnd;
       _pairInput.disabled = true;
-      _pairInput.style.background = '#f8f9fb';
-      _pairInput.style.color = '#374151';
       _pairRow.style.display = '';
       if(_pairEnd){
         _pairHint.textContent = `원본 계약(${_pairEnd.replace(/-/g, '.')})의 해지일 — 갱신된 계약의 시작일은 ${c.contract_start ? c.contract_start.replace(/-/g, '.') : '?'}입니다.`;

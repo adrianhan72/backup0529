@@ -112,8 +112,9 @@ function buildScheduleTableHTML(activeDays){
     var statH = dayStat/60;
     var otH   = dayOt/60;
     var hrs = mins===0 ? '-' :
-      (Number.isInteger(statH)?statH:statH.toFixed(1)) + 'h'
-      + (isWeekend ? '<span style="color:#dc2626;font-size:10px;">(휴일)</span>' : '')
+      (isWeekend
+        ? '<span style="color:#dc2626;font-size:10px;">+' + (Number.isInteger(statH)?statH:statH.toFixed(1)) + 'h (휴일)</span>'
+        : (Number.isInteger(statH)?statH:statH.toFixed(1)) + 'h')
       + (otH>0 ? '<span style="color:#f59e0b;font-size:10px;"> +'+(Number.isInteger(otH)?otH:otH.toFixed(1))+'h(연장)</span>' : '');
 
     var chk = isWork ? '✔' : '';
@@ -131,14 +132,18 @@ function buildScheduleTableHTML(activeDays){
   }
 
   var wDays  = sortedDays.filter(function(s){ return !!(s.start && s.end); }).length;
+  // 주 소정근무일수: 최대 5일
+  var statDays = Math.min(wDays, 5);
   var weekStatH = totalStatMins/60;
-  var avgDay = wDays>0 ? totalStatMins/wDays/60 : 0;
+  // 일 평균 소정근로시간: 총 주간근로시간 ÷ 5, 최대 8h
+  var totalWeekMins = totalStatMins + totalOtMins + totalNightMins + totalHolMins;
+  var avgDay = totalWeekMins > 0 ? totalWeekMins / 5 / 60 : 0;
   var fmtH   = function(h){ return Number.isInteger(h)?h:h.toFixed(1); };
 
   var extraLines = [];
-  if(totalOtMins > 0) extraLines.push('&nbsp;|&nbsp; 고정연장근로: <span>'+fmtH(totalOtMins/60)+'</span>h/주');
-  if(totalNightMins > 0) extraLines.push('&nbsp;|&nbsp; 고정야간근로: <span>'+fmtH(totalNightMins/60)+'</span>h/주');
-  if(totalHolMins > 0) extraLines.push('&nbsp;|&nbsp; 고정휴일근로: <span>'+fmtH(totalHolMins/60)+'</span>h/주');
+  if(totalOtMins > 0) extraLines.push('<span class="wsh-item">&bull; 고정연장근로시간: <span class="wsh-val">'+fmtH(totalOtMins/60)+'</span>h/주</span>');
+  if(totalNightMins > 0) extraLines.push('<span class="wsh-item">&bull; 고정야간근로시간: <span class="wsh-val">'+fmtH(totalNightMins/60)+'</span>h/주</span>');
+  if(totalHolMins > 0) extraLines.push('<span class="wsh-item">&bull; 고정휴일근로시간: <span class="wsh-val">'+fmtH(totalHolMins/60)+'</span>h/주</span>');
 
   return '<div class="work-schedule-wrap">'
     +'<table class="work-schedule-table">'
@@ -154,10 +159,10 @@ function buildScheduleTableHTML(activeDays){
     +'<tbody>'+rows+'</tbody>'
     +'</table>'
     +'<div class="wsh-total">'
-    +'주 근무일수: <span>'+wDays+'</span>일 &nbsp;|&nbsp;'
-    +'주 소정근로시간: <span>'+fmtH(weekStatH)+'</span>시간 &nbsp;|&nbsp;'
-    +'일 평균 소정근로시간: <span>'+fmtH(Math.min(avgDay,8))+'</span>시간'
-    + extraLines.join('')
+    +'<div class="wsh-row"><span class="wsh-item">&bull; 주 소정근무일수: <span class="wsh-val">'+statDays+'</span>일</span>'
+    +'<span class="wsh-item">&bull; 주 소정근로시간: <span class="wsh-val">'+fmtH(weekStatH)+'</span>시간</span>'
+    +'<span class="wsh-item">&bull; 일 평균 소정근로시간: <span class="wsh-val">'+fmtH(Math.min(avgDay,8))+'</span>시간</span></div>'
+    +(extraLines.length > 0 ? '<div class="wsh-row wsh-extra">' + extraLines.join(' ') + '</div>' : '')
     +'</div>'
     +'</div>';
 }

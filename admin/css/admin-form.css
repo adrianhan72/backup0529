@@ -71,8 +71,12 @@
     }
     .shift-add{width:22px!important;height:22px!important;font-size:12px!important;line-height:1!important;padding:0!important;}
     .shift-del{width:22px!important;height:22px!important;font-size:12px!important;line-height:1!important;padding:0!important;}
-    .wsh-total{font-size:12px;color:#374151;margin-top:8px;padding:7px 12px;background:#f8fafc;border-radius:7px;border:1px solid #e2e8f0;display:flex;gap:16px;flex-wrap:wrap;}
-    .wsh-total span{font-weight:700;color:#0369a1;}
+    .wsh-total{font-size:12px;color:#374151;margin-top:8px;padding:7px 12px;background:#f8fafc;border-radius:7px;border:1px solid #e2e8f0;display:flex;flex-direction:column;gap:4px;}
+    .wsh-total .wsh-row{display:flex;width:100%;gap:0;}
+    .wsh-total .wsh-item{flex:1;text-align:left;}
+    .wsh-total span{font-weight:400;color:#374151;}
+    .wsh-total .wsh-val{color:#0369a1;}
+    .wsh-total .wsh-extra{font-size:11.5px;}
     /* ?�켈?�톤 로딩 */
     .skel-text{display:inline-block;background:linear-gradient(90deg,#e2e8f0 25%,#f1f5f9 50%,#e2e8f0 75%);background-size:200% 100%;border-radius:4px;height:14px;vertical-align:middle;}
     @keyframes skelPulse{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
@@ -251,8 +255,16 @@
 .cm-person-fg { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .cm-person-fg label { font-size: 11px; font-weight: 600; color: #6b7280; }
 .cm-person-fg input {
-  border: 1.5px solid #e0e0e0; border-radius: 7px; padding: 6px 10px;
+  border: 1.5px solid #9080e4; border-radius: 7px; padding: 6px 10px;
   font-size: 12.5px; font-family: inherit; width: 100%; box-sizing: border-box;
-  background: #fff; transition: border-color 0.2s;
+  background: #f8f9fb; transition: border-color 0.2s;
 }
 .cm-person-fg input:focus { border-color: #6366f1; outline: none; box-shadow: 0 0 0 2px rgba(99,102,241,0.12); }
+
+/* ── 근로계약 수당 섹션 구분 헤더 ── */
+.ct-allowance-section-header {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 20px 0 4px 0; margin: 0;
+  border-top: 1.5px dashed #cbd5e1;
+  font-size: 12.5px; font-weight: 700; color: #3730a3;
+}

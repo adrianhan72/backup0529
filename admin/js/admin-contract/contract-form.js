@@ -306,19 +306,19 @@ function toggleAnnualSal(){
   const dailyWageLabel    = document.querySelector('#ct-row-daily-wage label');
 
   if(isRegularOnly || isRegularProb){
-    if(salaryPeriodTitle) salaryPeriodTitle.innerHTML = '연봉 <span style="font-size:11px;font-weight:400;color:#6b7280;">(월약정임금 × 12 자동계산)</span>';
+    if(salaryPeriodTitle) salaryPeriodTitle.textContent = '연봉';
     if(labelAnnualSal)    labelAnnualSal.innerHTML    = '연봉 <span style="font-size:11px;font-weight:400;color:#6b7280;">(자동계산)</span>';
     if(wageSectionTitle)  wageSectionTitle.textContent = '임금 조건 (월)';
-    if(labelMonthly)      labelMonthly.textContent    = '월 약정임금 (자동계산)';
+    if(labelMonthly)      labelMonthly.innerHTML      = '월 약정임금 <span class="lbl-desc">(자동계산)</span>';
   } else if(isFixedTerm){
     if(salaryPeriodTitle) salaryPeriodTitle.innerHTML = '월 약정급여 <span style="font-size:11px;font-weight:400;color:#6b7280;">(시급 기준 자동계산)</span>';
     if(labelAnnualSal)    labelAnnualSal.innerHTML    = '월 약정급여 (통상월급) <span style="font-size:11px;font-weight:400;color:#6b7280;">(직접 입력 시)</span>';
     if(wageSectionTitle)  wageSectionTitle.textContent = '임금 조건 (월)';
-    if(labelMonthly)      labelMonthly.textContent    = '월 약정임금 (자동계산)';
+    if(labelMonthly)      labelMonthly.innerHTML      = '월 약정임금 <span class="lbl-desc">(자동계산)</span>';
   } else if(isDaily){
     if(salaryPeriodTitle) salaryPeriodTitle.innerHTML = '일 약정일급 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span>';
     if(wageSectionTitle)  wageSectionTitle.textContent = '임금 조건 (일일 기준)';
-    if(labelMonthly)      labelMonthly.textContent    = '일 약정임금 (자동계산)';
+    if(labelMonthly)      labelMonthly.innerHTML      = '일 약정임금 <span class="lbl-desc">(자동계산)</span>';
     if(dailyWageLabel)    dailyWageLabel.innerHTML    = '일 약정일급 (통상일급) <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span>';
   }
 
@@ -363,15 +363,9 @@ function toggleAnnualSal(){
     if(isRegularGroup || isFixedTerm){
       // 정규직·계약직 모두 기본급 자동계산
       ctBaseInput.readOnly = true;
-      ctBaseInput.style.background = '#f0f4f8';
-      ctBaseInput.style.color      = '#0369a1';
-      ctBaseInput.style.cursor     = 'default';
       if(ctBaseAutoMark) ctBaseAutoMark.style.display = 'inline';
     } else {
       ctBaseInput.readOnly = false;
-      ctBaseInput.style.background = '';
-      ctBaseInput.style.color      = '';
-      ctBaseInput.style.cursor     = '';
       if(ctBaseAutoMark) ctBaseAutoMark.style.display = 'none';
     }
   }
@@ -811,7 +805,7 @@ function _checkMinWageWarning(){
     const base   = getAmountVal('ct-base');
     if(base <= 0){ wRow.style.display='none'; _checkRegisterBtnState(); return; }
     const days   = parseFloat(document.getElementById('ct-days')?.value) || 5;
-    // 통상임금 = 기본급 + 통상임금 설정 항목 + 고정OT·야간·휴일근로수당
+    // 통상임금 = 기본급 + 통상임금 설정 항목 (고정OT·야간·휴일, 식대, 차량지원비는 통상임금 제외)
     const fixedOt    = getAmountVal('ct-fixed-ot-pay')    || 0;
     const fixedNight = getAmountVal('ct-fixed-night-pay') || 0;
     const fixedHol   = getAmountVal('ct-fixed-hol-pay')   || 0;
@@ -836,7 +830,10 @@ function _checkMinWageWarning(){
     if(_mwHourly > 0){
       wkHol = Math.round(_mwHourly * _mwHpd * (365 / 12 / 7));
     } else {
-      wkHol = Math.round((base + _ordinaryMW + fixedOt + fixedNight + fixedHol) / days);
+      // 주휴수당 폴백: (기본급 + 통상임금성 수당) ÷ 월소정근로시간 × 1일소정근로시간
+      // 고정OT·야간·휴일근로수당은 통상임금에서 제외 (근로기준법 시행령 제6조)
+      const _mwMonthlyStdH = _calcMonthlyStdHours(_mwHpd, days);
+      wkHol = _mwMonthlyStdH > 0 ? Math.round((base + _ordinaryMW) / _mwMonthlyStdH * _mwHpd) : 0;
     }
     const pos    = getAmountVal('ct-position');
     const car    = getAmountVal('ct-car');
@@ -853,7 +850,7 @@ function _checkMinWageWarning(){
     const sdev_w = getAmountVal('ct-self-dev')||0;
     const book_w = getAmountVal('ct-book')||0;
     const ovs_w  = getAmountVal('ct-overseas')||0;
-    // 최저임금 비교대상임금: 연장·야간·휴일근로수당 제외 (최저임금법 제6조의4)
+    // 최저임금 비교대상임금: 연장·야간·휴일, 식대, 차량지원비, 연구활동비, 통신비, 자기계발비, 도서지원비, 해외근무수당 제외
     compareMonthly = base + wkHol
                    // ── 통상임금 설정 그룹 (pay_type='fixed'만 포함) ──
                    + (_isFixedAllow('site')          ? site_w : 0)
@@ -862,16 +859,8 @@ function _checkMinWageWarning(){
                    + (_isFixedAllow('license')       ? lic_w  : 0)
                    + (_isFixedAllow('hazard')        ? hazard_w:0)
                    + (_isFixedAllow('remote_area')   ? rmtArea : 0)
-                   // ── 고정수당 설정 그룹 ──
-                   + (_isFixedAllow('car')         ? car    : 0)
-                   + (_isFixedAllow('meal')        ? meal   : 0)
-                   + (_isFixedAllow('research')    ? res    : 0)
                    + other
-                   + (_isFixedAllow('communication') ? comm_w : 0)
-                   + (_isFixedAllow('fitness')       ? fit_w  : 0)
-                   + (_isFixedAllow('self_dev')      ? sdev_w : 0)
-                   + (_isFixedAllow('book')          ? book_w : 0)
-                   + (_isFixedAllow('overseas')      ? ovs_w  : 0);
+                   + 0;
     compareHourly  = compareMonthly > 0 ? Math.round(compareMonthly / MAGIC.MONTHLY_STD_HOURS) : 0;
     compareLabel   = `기본급 ${fmt(base)}원 + 주휴 ${fmt(wkHol)}원 + 수당 합계 → 월 ${fmt(compareMonthly)}원 (시급 ${fmt(compareHourly)}원)`;
   }
@@ -1517,12 +1506,12 @@ function calcWorkHours(){
       // ── 휴일근로 ──
       if (isWeekend) totalHolMins += dayMins;
 
-      // ── 셀 표시: 소정(최대8h) + 연장 ──
+      // ── 셀 표시: 소정(최대8h), 휴일(붉은색 +h), 연장(주황색 +h) ──
       const statH = dayStatMins / 60;
       const otH   = dayOtMins / 60;
       if (hrsEl) {
         let label = (Number.isInteger(statH) ? statH : statH.toFixed(1)) + 'h';
-        if (isWeekend) label += '<span style="color:#dc2626;font-size:10px;">(휴일)</span>';
+        if (isWeekend) label = '<span style="color:#dc2626;font-size:10px;">+' + label + ' (휴일)</span>';
         if (otH > 0) label += '<span style="color:#f59e0b;font-size:10px;"> +' + (Number.isInteger(otH) ? otH : otH.toFixed(1)) + 'h(연장)</span>';
         hrsEl.innerHTML = label;
       }
@@ -1541,7 +1530,12 @@ function calcWorkHours(){
   const weekOtH   = totalOtMins / 60;
   const weekNightH = totalNightMins / 60;
   const weekHolH   = totalHolMins / 60;
-  const avgDayH = workDays > 0 ? totalStatMins / workDays / 60 : 0;
+
+  // 주 소정근무일수: 최대 5일, 초과분은 고정 연장/야간/휴일로 확인
+  const statWorkDays = Math.min(workDays, 5);
+  // 일 평균 소정근로시간: 총 주간근로시간 ÷ 5, 최대 8h, 초과분은 고정 연장/야간/휴일
+  const totalWeekMins = totalStatMins + totalOtMins + totalNightMins + totalHolMins;
+  const avgDayH = totalWeekMins > 0 ? totalWeekMins / 5 / 60 : 0;
 
   const fmtH = h => Number.isInteger(h) ? h : h.toFixed(1);
 
@@ -1549,7 +1543,7 @@ function calcWorkHours(){
   const el_d = document.getElementById('ct-wsh-days');
   const el_w = document.getElementById('ct-wsh-week-hours');
   const el_a = document.getElementById('ct-wsh-day-hours');
-  if (el_d) el_d.textContent = workDays;
+  if (el_d) el_d.textContent = statWorkDays;
   if (el_w) el_w.textContent = fmtH(weekStatH);
   if (el_a) el_a.textContent = fmtH(Math.min(avgDayH, 8)); // 일 평균 최대 8h
 
@@ -1913,16 +1907,24 @@ const _CT_PAY_TYPE_ROWS = {
 
 function setCTPayType(field, type){
   _ctPayTypes[field] = type;
+  // 통상임금 무조건 제외 항목 (pay_type=fixed라도 통상임금 미포함)
+  const ALWAYS_EXCLUDED = ['car','meal','research','communication','fitness','self_dev','book','overseas','childcare',
+    'fixed_ot','fixed_night','fixed_hol'];
   // 힌트 텍스트로 통상임금 포함여부를 표시하는 항목
   const hintOnlyFields = ['site','position','skill','license','hazard','remote_area','regular_bonus','car','meal','research','communication','fitness','self_dev','book','overseas'];
   if(hintOnlyFields.includes(field)){
     const htmlField = field.replace(/_/g, '-');
     const hintEl = document.getElementById(`ct-${htmlField}-type-hint`);
     if(hintEl){
-      const labels = { fixed: '통상임금 포함', daily: '통상임금 제외 (출근일수 비례)', receipt: '통상임금 제외 (영수증 청구)' };
-      const colors = { fixed: '#9ca3af', daily: '#f59e0b', receipt: '#f59e0b' };
-      hintEl.textContent = labels[type] || '통상임금 포함';
-      hintEl.style.color  = colors[type]  || '#9ca3af';
+      const isAlwaysExcluded = ALWAYS_EXCLUDED.includes(field);
+      const labels = {
+        fixed: isAlwaysExcluded ? '통상임금 제외' : '통상임금 포함',
+        daily: '통상임금 제외 (출근일수 비례)',
+        receipt: '통상임금 제외 (영수증 청구)'
+      };
+      const colors = { fixed: isAlwaysExcluded ? '#f59e0b' : '#9ca3af', daily: '#f59e0b', receipt: '#f59e0b' };
+      hintEl.textContent = labels[type] || (isAlwaysExcluded ? '통상임금 제외' : '통상임금 포함');
+      hintEl.style.color  = colors[type]  || (isAlwaysExcluded ? '#f59e0b' : '#9ca3af');
     }
 
     // ── 통상임금 불포함(daily/receipt) 항목은 근로계약 임금조건에서 DOM 완전 제거 ──
@@ -2021,12 +2023,13 @@ function applyCTAllowanceConfig(cfg, clearValues = false){
       if(cfg.meal) setAmountVal('ct-meal', _mealPt === 'fixed' ? 200000 : 0);
     }
   }
-  // 보육수당 pay_type 힌트 갱신
+  // 보육수당 pay_type 힌트 갱신 (통상임금 항상 제외)
   if(cfg && cfg.childcare){
     const _ccPt = cfg.childcare_pay_type || 'fixed';
     const ccHint = document.getElementById('ct-childcare-type-hint');
     if(ccHint){
-      ccHint.textContent = (_ccPt === 'fixed') ? '통상임금 포함' : '통상임금 제외';
+      ccHint.textContent = '통상임금 제외';
+      ccHint.style.color  = '#f59e0b';
     }
   }
   // ── 사용자 정의 통상임금 항목 렌더링 ──
@@ -2350,9 +2353,9 @@ function calcContractSalary(){
     return;
   }
 
-  // ── 월 약정임금 합산용 수당 (pay_type='fixed'만 통상임금 포함) ──
+  // ── 월 약정임금 합산용 수당 (pay_type='fixed'만 통상임금 포함, 식대·차량지원비는 제외) ──
   const allAllow = (() => {
-    // ── 통상임금 설정 그룹 (체크 = 통상임금 항상 포함) ──
+    // ── 통상임금 설정 그룹 (pay_type='fixed' && 통상임금 포함 항목만) ──
     const ordinaryGroup = (_isFixedAllow('site')          ? site_ct      : 0)
       + (_isFixedAllow('position')       ? position       : 0)
       + (_isFixedAllow('skill')          ? skill_ct       : 0)
@@ -2360,23 +2363,24 @@ function calcContractSalary(){
       + (_isFixedAllow('hazard')         ? hazard_ct      : 0)
       + (_isFixedAllow('remote_area')    ? remoteArea     : 0)
       + (_isFixedAllow('regular_bonus')  ? regularBonus_ct : 0)
-      // 사용자 정의 통상임금 항목
+      // 사용자 정의 통상임금 항목 (고객사 정보 → 통상임금 설정)
       + _getCustomOrdinarySum();
-    // ── 고정수당 설정 그룹 (pay_type = fixed 일 때만 통상임금 포함) ──
-    const fixedGroup = (_isFixedAllow('car')           ? car         : 0)
+    // ── 통상임금 제외 수당 그룹 (pay_type=fixed라도 제외, 월 약정임금에는 합산) ──
+    // 식대, 차량지원비, 연구활동비, 통신비, 자기계발비, 도서지원비, 해외근무수당, 체력증진비
+    const nonOrdinaryGroup = (_isFixedAllow('car')           ? car         : 0)
       + (_isFixedAllow('meal')          ? meal        : 0)
       + (_isFixedAllow('research')      ? research    : 0)
       + (_isFixedAllow('communication') ? comm_ct     : 0)
-      + (_isFixedAllow('fitness')       ? fitness_ct  : 0)
       + (_isFixedAllow('self_dev')      ? selfDev_ct  : 0)
       + (_isFixedAllow('book')          ? book_ct     : 0)
-      + (_isFixedAllow('overseas')      ? overseas_ct : 0);
-    return { total: ordinaryGroup + fixedGroup, ordinaryGroup };
+      + (_isFixedAllow('overseas')      ? overseas_ct : 0)
+      + (_isFixedAllow('fitness')       ? fitness_ct  : 0);
+    return { total: ordinaryGroup + nonOrdinaryGroup, ordinaryGroup };
   })();
   const _ordinaryGroup = allAllow.ordinaryGroup;
   const _allAllowTotal = allAllow.total;
 
-  // 고정 연장/야간/휴일근로수당 (통상임금 포함, 월 약정임금에 합산)
+  // 고정 연장/야간/휴일근로수당 (통상임금 제외, 월 약정임금에 합산)
   const fixedOtPay    = getAmountVal('ct-fixed-ot-pay')    || 0;
   const fixedNightPay = getAmountVal('ct-fixed-night-pay') || 0;
   const fixedHolPay   = getAmountVal('ct-fixed-hol-pay')   || 0;
@@ -2403,9 +2407,10 @@ function calcContractSalary(){
   const base      = getAmountVal('ct-base');
   // 주휴수당 = 통상시급 × 1일소정근로시간 × 월평균주수(4.345) [근로기준법 제55조]
   // 시급이 없을 때: (월 통상임금 ÷ 월 소정근로시간) × 1일 소정근로시간
+  // 고정OT·야간·휴일근로수당은 통상임금에서 제외 (근로기준법 시행령 제6조)
   const weeklyHol = (isHourlyBased && hourlyWage > 0)
     ? Math.round(hourlyWage * _hpd * (365 / 12 / 7))
-    : (_monthlyStdH > 0 ? Math.round((base + _ordinaryGroup + fixedExtraAll) / _monthlyStdH * _hpd) : 0);
+    : (_monthlyStdH > 0 ? Math.round((base + _ordinaryGroup) / _monthlyStdH * _hpd) : 0);
   document.getElementById('ct-weekly-hol-computed').textContent = won(weeklyHol);
 
   // 월 약정임금 = 기본급 + 주휴수당 + 각종 수당 + 고정 연장/야간/휴일

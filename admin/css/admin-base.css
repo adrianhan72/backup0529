@@ -142,13 +142,16 @@
        ?�외: cm-aw-pt-select, pi-pay-type-select
     ?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═ */
     select:not(.cm-aw-pt-select):not(.pi-pay-type-select) {
-      border: 1px solid #e0e0e0;
-      border-radius: 8px;
-      padding: 7px 28px 7px 12px;
+      border: 1px solid #9080e4;
+      border-radius: 7px;
+      height: 38px;
+      box-sizing: border-box;
+      padding: 6px 28px 6px 12px;
       background: #f8f9fb url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='none' stroke='%236b7280' stroke-width='1.5' stroke-linecap='round' d='M3 4.5l3 3 3-3'/%3E%3C/svg%3E") no-repeat right 8px center;
       background-size: 14px;
-      font-size: 12.5px;
-      color: #333;
+      font-size: 13px;
+      color: #000;
+      font-weight: 400;
       font-family: inherit;
       cursor: pointer;
       outline: none;
@@ -164,9 +167,10 @@
       border-color: #6366f1;
     }
     select:not(.cm-aw-pt-select):not(.pi-pay-type-select):disabled {
-      background: #f3f4f6;
-      color: #9ca3af;
-      cursor: not-allowed;
+      background: #f1f5f9;
+      color: #555;
+      border: 1px solid #e8eaed;
+      cursor: default;
     }
 
     /* ?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═

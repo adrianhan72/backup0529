@@ -116,7 +116,7 @@
     }
     .btn-draft-del-sm:hover:not(:disabled){background:#6b7280;}
     /* ?�?� 계약??조회 첨�? ?�류 ?�로???�션 ?�?� */
-    .ctf-section{margin:16px 0 0;padding:0 24px 20px;}
+    .ctf-section{background:#FFFEF7;border:1.5px solid #fde047;border-radius:10px;padding:16px 18px;margin:16px 0 20px;}
     .ctf-section-title{font-size:13px;font-weight:700;color:#374151;margin-bottom:10px;padding-bottom:7px;border-bottom:1.5px solid #e5e7eb;display:flex;align-items:center;gap:6px;}
     .ctf-row{display:flex;flex-direction:column;gap:6px;padding:12px 14px;border-radius:10px;border:1.5px solid #e5e7eb;background:#f9fafb;transition:border-color .2s;}
     .ctf-row+.ctf-row{margin-top:8px;}
@@ -125,7 +125,7 @@
     .ctf-row-label{flex:1;min-width:0;}
     .ctf-row-label .ctf-label-title{font-size:12.5px;font-weight:700;color:#1f2937;}
     .ctf-row-label .ctf-label-file{font-size:11.5px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;}
-    .ctf-row-label .ctf-label-none{font-size:11.5px;color:#d1d5db;font-style:italic;margin-top:1px;}
+    .ctf-row-label .ctf-label-none{font-size:11.5px;color:#db2777;font-style:italic;margin-top:1px;}
     .ctf-row-actions{display:flex;gap:5px;flex-shrink:0;}
     .ctf-btn{display:inline-flex;align-items:center;gap:4px;padding:5px 11px;border-radius:7px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap;}
     .ctf-btn-upload{background:#dc2626;color:#fff;border:1px solid #b91c1c;}
@@ -142,7 +142,7 @@
     .ctf-preview-wrap img{width:100%;max-height:260px;object-fit:contain;display:block;background:#f8f9fb;}
     .ctf-status-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:700;margin-left:4px;}
     .ctf-badge-ok{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;}
-    .ctf-badge-none{background:#f9fafb;color:#9ca3af;border:1px solid #e5e7eb;}
+    .ctf-badge-none{background:#fce7f3;color:#9f1239;border:1.5px solid #f9a8d4;}
     .ctf-uploading{display:none;align-items:center;gap:6px;font-size:11.5px;color:#6b7280;margin-top:6px;}
     .ctf-uploading i{color:#6366f1;}
     /* ?�?� ?�기 ?�터마크 (?�정?�발?�으�??�기??계약???�인�? ?�?� */

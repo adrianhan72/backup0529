@@ -1,5 +1,5 @@
 -- SQLite Schema
--- Updated: 2026-07-15
+-- Updated: 2026-07-16
 
 PRAGMA journal_mode = WAL;
 
