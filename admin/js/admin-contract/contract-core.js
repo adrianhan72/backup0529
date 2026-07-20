@@ -1880,7 +1880,7 @@ function viewContract(id){
     }
     if(isVoidedAmend){
       return `${idHTML} <span class="badge ${badgeCls}" style="margin-left:6px;">${statusLabel}</span>`
-        + `&nbsp;<span style="background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;border-radius:20px;padding:1px 9px;font-size:10.5px;font-weight:700;"><i class="fas fa-ban" style="margin-right:3px;"></i>수정재발행 파기</span>`;
+        + `&nbsp;<span style="background:#fef2f2;color:#dc2626;border-radius:20px;padding:1px 9px;font-size:10.5px;font-weight:700;"><i class="fas fa-ban" style="margin-right:3px;"></i>수정재발행 파기</span>`;
     }
     return `${idHTML} <span class="badge ${badgeCls}" style="margin-left:6px;">${statusLabel}</span>`;
   };

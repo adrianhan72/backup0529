@@ -1,16 +1,17 @@
-    <div id="page-annual-leave" class="page">
+﻿    <div id="page-annual-leave" class="page">
 
-      <!-- 고객사 선택 카드 -->
+      <!-- 고객사 선택 -->
       <div id="al-company-select-card">
-        <div class="card" style="margin-bottom:16px;padding:20px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;border-bottom:1px solid #e5e7eb;padding-bottom:12px;">
-            <div class="co-card-title" style="margin-bottom:0;"><i class="fas fa-building"></i>고객사를 선택하세요</div>
-            <div class="search-input" style="margin:0;max-width:200px;">
-              <i class="fas fa-search"></i>
-              <input type="text" id="al-company-search" placeholder="고객사명 검색" oninput="renderAlCompanyChips()" />
-            </div>
+        <div class="section-title">
+          <i class="fas fa-building"></i>
+          <span>고객사를 선택하세요</span>
+          <div class="filt-search-wrap" style="margin-left:auto;">
+            <i class="fas fa-search"></i>
+            <input type="text" id="al-company-search" class="filt-search" style="width:160px;" placeholder="고객사명 검색" oninput="renderAlCompanyChips()" />
           </div>
-          <div id="al-company-chips" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:20px;">
+        </div>
+        <div class="card" style="margin-bottom:16px;overflow:hidden;">
+          <div id="al-company-chips" style="padding:20px;display:flex;flex-wrap:wrap;gap:8px;">
             <div style="color:#9ca3af;font-size:12.5px;padding:8px 0;display:flex;align-items:center;gap:6px;">
               <i class="fas fa-circle-notch fa-spin"></i> 고객사 목록 불러오는 중...
             </div>
@@ -45,7 +46,7 @@
               <i class="fas fa-search"></i>
               <input type="text" id="al-emp-search" placeholder="직원명 검색" oninput="renderAlTable()" style="width:140px;" />
             </div>
-            <button onclick="renderAlTable()" class="btn btn-sm btn-secondary" title="새로고침"><i class="fas fa-sync-alt"></i></button>
+            <button onclick="renderAlTable()" class="btn btn-sm btn-secondary btn-refresh" title="새로고침"><i class="fas fa-sync-alt"></i></button>
           </div>
 
           <!-- 요약 통계 카드 4개 -->

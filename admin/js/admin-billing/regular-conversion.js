@@ -158,7 +158,7 @@ function renderRcTargetList(){
 
   const statusBadge = s => {
     if(s === 'exceeded') return `<span class="badge-2yr-over"><i class="fas fa-exclamation-circle"></i> 전환 의무</span>`;
-    if(s === 'urgent')   return `<span class="badge-2yr-warn" style="background:#fff7ed;color:#9a3412;border-color:#fb923c;"><i class="fas fa-fire"></i> 임박</span>`;
+    if(s === 'urgent')   return `<span class="badge-2yr-warn" style="background:#fff7ed;color:#9a3412;"><i class="fas fa-fire"></i> 임박</span>`;
     return `<span class="badge-2yr-warn"><i class="fas fa-clock"></i> 주의</span>`;
   };
 

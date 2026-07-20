@@ -504,7 +504,7 @@ function renderContCompanyList(){
       class="co-chip${isSelected?' selected':''}">
       <i class="fas fa-building" style="font-size:11px;"></i>
       ${c.company_name}
-      <span class="co-chip-badge count">계약 ${contractCnt}</span>
+      ${contractCnt > 0 ? `<span class="count-badge">${contractCnt}</span>` : ''}
     </button>`;
   }).join('');
 }
@@ -587,7 +587,7 @@ function renderPayCompanyList(){
       class="co-chip${isSelected?' selected':''}">
       <i class="fas fa-building" style="font-size:11px;"></i>
       ${c.company_name}
-      <span class="co-chip-badge count">${payCnt}건</span>
+      ${payCnt > 0 ? `<span class="count-badge">${payCnt}</span>` : ''}
     </button>`;
   }).join('');
 }

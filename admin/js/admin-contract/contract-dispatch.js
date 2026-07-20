@@ -299,7 +299,7 @@ function renderCdpUnsentMonthTabs(){
 
   // 총 미발송 건수 배지 업데이트
   const totalBadge = document.getElementById('cdp-unsent-total-badge');
-  if(totalBadge) totalBadge.textContent = allUnsent.length;
+  if(totalBadge) totalBadge.textContent = `(총 ${allUnsent.length}건)`;
 
   if(!ymList.length){
     wrap.innerHTML = '';
@@ -316,7 +316,7 @@ function renderCdpUnsentMonthTabs(){
     return `<div class="cdp-month-tab${isActive ? ' active' : ''}"
       onclick="cdpSelectUnsentYM(${ym.year},${ym.month})">
       ${ym.year}년 ${String(ym.month).padStart(2,'0')}월
-      <span class="cdp-tab-badge unsent">${ym.count}</span>
+      ${ym.count > 0 ? `<span class="count-badge">${ym.count}</span>` : ''}
     </div>`;
   }).join('');
 }

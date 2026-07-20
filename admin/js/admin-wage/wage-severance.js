@@ -11,7 +11,7 @@ function renderSevCompanyList(){
   const chips = document.getElementById('sev-company-chips');
   if(!chips) return;
   const q = (document.getElementById('sev-company-search')?.value||'').toLowerCase();
-  const list = allCompanies.filter(c => !c.is_draft && (c.status===COMPANY_STATUS.ACTIVE||c.status===COMPANY_STATUS.INACTIVE) &&
+  const list = allCompanies.filter(c => !c.is_draft && c.status===COMPANY_STATUS.ACTIVE &&
     (c.company_name||'').toLowerCase().includes(q))
     .sort((a,b)=>(a.company_name||'').localeCompare(b.company_name||'','ko'));
   if(!list.length){
@@ -20,12 +20,10 @@ function renderSevCompanyList(){
   }
   chips.innerHTML = list.map(c => {
     const isSel = _sevCompanyId === c.id;
-    const isTerminated = c.status===COMPANY_STATUS.INACTIVE;
     return `<button onclick="selectSevCompany('${c.id}','${(c.company_name||'').replace(/'/g,"\\'")}') "
-      class="co-chip${isSel?' selected':''}${isTerminated?' terminated':''}">
+      class="co-chip${isSel?' selected':''}">
       <i class="fas fa-building" style="font-size:11px;"></i>
       ${c.company_name||''}
-      ${isTerminated?'<span class="co-chip-badge count">(해지)</span>':''}
     </button>`;
   }).join('');
 }

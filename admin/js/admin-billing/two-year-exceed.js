@@ -1,4 +1,4 @@
-//  기간제 2년 초과 — 정규직 전환 의무 관리
+﻿//  기간제 2년 초과 — 정규직 전환 의무 관리
 //  「기간제 및 단시간근로자 보호 등에 관한 법률」 제4조
 // ==================================================================
 
@@ -112,7 +112,7 @@ function _updateDash2YrBanner(){
       </div>
       <div style="flex:1;min-width:0;">
         <div style="font-size:13.5px;font-weight:700;color:#7f1d1d;">
-          정규직 전환 의무 대상 <span style="color:#dc2626;font-size:16px;font-weight:800;">${exceeded.length}명</span>이 있습니다
+          정규직 전환 의무 대상 <span style="color:#dc2626;font-size:16px;font-weight:800;">${exceeded.length}명</span>
         </div>
         <div style="font-size:12px;color:#b91c1c;margin-top:3px;">기간제 근로자 2년 초과 — 클릭하여 ${PAGE_LABELS['regular-conversion']} 페이지로 이동</div>
       </div>

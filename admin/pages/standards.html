@@ -91,7 +91,7 @@
               <div class="form-group"><label>월급여 (원)</label><input type="number" id="mw-new-monthly" placeholder="예: 2156880" /></div>
               <div class="form-group"><label>비고</label><input type="text" id="mw-new-note" placeholder="선택입력" /></div>
             </div>
-            <button class="std-update-btn std-update-btn-green" onclick="saveMinimumWage()"><i class="fas fa-check-circle"></i> 업데이트</button>
+            <button class="std-update-btn" onclick="saveMinimumWage()"><i class="fas fa-check-circle"></i> 업데이트</button>
           </div>
         </div>
 
@@ -127,9 +127,7 @@
               파일명에서 년도를 추출하여 해당 년도의 과세기준표를 생성합니다. (예: 간이세액표_2026년.xlsx)
             </p>
             <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-              <label style="padding:8px 18px;border-radius:6px;border:1.5px solid #6366f1;background:#eef2ff;color:#4338ca;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;"
-                onmouseover="this.style.background='#6366f1';this.style.color='#fff'"
-                onmouseout="this.style.background='#eef2ff';this.style.color='#4338ca'">
+              <label class="std-update-btn" style="cursor:pointer;">
                 <i class="fas fa-file-excel"></i> 엑셀 파일 선택
                 <input type="file" id="tax-upload-input" accept=".xlsx,.xls" style="display:none;" onchange="handleTaxBracketUpload(event)" />
               </label>

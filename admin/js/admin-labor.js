@@ -9,7 +9,7 @@ function renderLsCompanyList(){
   if(!container) return;
 
   const companies = allCompanies.filter(c =>
-    c.status === COMPANY_STATUS.ACTIVE && (!q || c.company_name.toLowerCase().includes(q))
+    isCompanyActive(c) && (!q || c.company_name.toLowerCase().includes(q))
   ).sort((a,b) => (a.company_name||'').localeCompare(b.company_name||'', 'ko'));
 
   if(!companies.length){
@@ -29,8 +29,7 @@ function renderLsCompanyList(){
       class="co-chip${isSelected?' selected':''}">
       <i class="fas fa-building" style="font-size:11px;"></i>
       ${c.company_name}
-      <span class="co-chip-badge count">${empCnt}명</span>
-      <span class="co-chip-badge count">계약 ${contractCnt}</span>
+      ${contractCnt > 0 ? `<span class="count-badge">${contractCnt}</span>` : ''}
     </button>`;
   }).join('');
 }

@@ -108,6 +108,57 @@ function togglePIAllDraftBanner(headerEl){
   }
 }
 
+// ── 선택 고객사 전용 임시저장 배너 ──
+function renderPICoDraftBanner(){
+  const banner = document.getElementById('pi-co-draft-banner');
+  if(!banner) return;
+  const coId = currentGlobalCompanyId;
+  if(!coId){ banner.style.display='none'; return; }
+
+  const drafts = (allPayrolls||[])
+    .filter(p => !!p.is_draft && p.company_id === coId)
+    .sort((a, b) => ((b.updated_at||0) - (a.updated_at||0)));
+  
+  if(!drafts.length){ banner.style.display='none'; return; }
+
+  function _fmt(ts){
+    if(!ts) return '';
+    const d = new Date(ts);
+    if(isNaN(d.getTime())) return '';
+    return `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} `
+         + `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  }
+
+  banner.style.display = 'block';
+  banner.innerHTML = `
+    <div style="background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1.5px solid #fde68a;border-radius:10px;padding:12px 18px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${drafts.length > 0 ? '10px' : '0'};">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <i class="fas fa-clock-rotate-left" style="color:#d97706;font-size:15px;"></i>
+          <span style="font-size:13px;font-weight:700;color:#92400e;">임시저장된 급여 입력</span>
+          <span style="background:#fef3c7;color:#b45309;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;">${drafts.length}건</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        ${drafts.map(p => {
+          const emp = (allEmployees||[]).find(e => e.id === p.employee_id);
+          const yrMo = (p.pay_year && p.pay_month) ? `${p.pay_year}년 ${p.pay_month}월` : '';
+          return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:rgba(255,255,255,.7);border-radius:8px;border:1px solid #fde68a;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:13px;font-weight:600;color:#1e293b;">${emp?.name||'(미지정)'}</span>
+              <span style="font-size:11px;color:#92400e;">${yrMo}</span>
+              <span style="font-size:10px;color:#a16207;">${_fmt(p.updated_at)} 저장</span>
+            </div>
+            <div style="display:flex;gap:6px;">
+              <button onclick="goDraftPayroll('${p.id}')" class="btn-draft-edit-sm"><i class="fas fa-pencil-alt"></i>이어 입력</button>
+              <button onclick="_deleteDraft('${p.id}','payrolls','${emp?.name||'미지정'} ${yrMo}')" class="btn-draft-del-sm"><i class="fas fa-trash-alt"></i> 삭제</button>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+}
+
 function renderDashboard(){
   // 임시저장 알림 카드 (최우선 렌더)
   renderDraftAlerts();
@@ -127,7 +178,7 @@ function renderDashboard(){
 
   // 이용중 고객사 건수 뱃지 업데이트
   const activeCountEl = document.getElementById('active-count');
-  if(activeCountEl) activeCountEl.textContent=`(${activeCompanyCount})`;
+  if(activeCountEl) activeCountEl.textContent=`(총 ${activeCompanyCount}건)`;
 
   // 고객사 목록 렌더링
   renderDashboardCompanies();

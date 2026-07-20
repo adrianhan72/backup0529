@@ -189,7 +189,7 @@ function renderWLCompanyList(){
   const chips = document.getElementById('wl-company-chips');
   if(!chips) return;
   const list = allCompanies.filter(c =>
-    !c.is_draft && c.status===COMPANY_STATUS.ACTIVE && (!q || (c.company_name||'').toLowerCase().includes(q))
+    !c.is_draft && isCompanyActive(c) && (!q || (c.company_name||'').toLowerCase().includes(q))
   ).sort((a,b) => (a.company_name||'').localeCompare(b.company_name||'','ko'));
   if(!list.length){
     chips.innerHTML = `<div style="font-size:12.5px;color:#9ca3af;padding:8px 0;">${q ? `"${q}" 검색 결과가 없습니다` : '이용 중인 고객사가 없습니다'}</div>`;
@@ -511,16 +511,9 @@ function renderWageLedger(){
   // ① 해당 월에 유효했던 계약 중 임시저장
   const draftContracts = activeInMonth.filter(c => c.is_draft);
 
-  // ② 해당 월에 유효했던 계약 중 서류미비
-  //    (is_draft=false이고 날인본 또는 동의서 미등록)
-  const docsIncomplete = activeInMonth.filter(c => {
-    if(c.is_draft) return false;
-    return !(c.signed_file_data) || !(c.consent_file_data);
-  });
-
-  // ③ 해당 월에 유효했던 계약 중 서류완비된 계약의 직원 → 급여 미입력 확인
+  // ② 해당 월에 유효했던 계약 중 서류미비 포함 모든 유효계약 → 급여 미입력 확인
   const validContracts = activeInMonth.filter(c =>
-    !c.is_draft && !!(c.signed_file_data) && !!(c.consent_file_data)
+    !c.is_draft && c.status !== CONTRACT_STATUS.VOIDED && c.status !== CONTRACT_STATUS.CANCELED
   );
   const validEmpIds = [...new Set(validContracts.map(c => c.employee_id))];
   // 확정 저장된 급여 직원 집합 (is_draft=false 만)
@@ -532,8 +525,8 @@ function renderWageLedger(){
   // 임시저장만 있는 직원 (확정 저장 없음)
   const draftOnlyPay   = validEmpIds.filter(eid => !confirmedPayEmpIds.has(eid) &&  draftPayEmpIds.has(eid));
 
-  // 하나라도 조건 미충족 → 차단 UI 표시
-  const hasBlock = draftContracts.length > 0 || docsIncomplete.length > 0 || missingPay.length > 0 || draftOnlyPay.length > 0;
+  // 하나라도 조건 미충족 → 차단 UI 표시 (서류미비는 차단 사유에서 제외)
+  const hasBlock = draftContracts.length > 0 || missingPay.length > 0 || draftOnlyPay.length > 0;
 
   if(hasBlock){
     _setWLBtns(false);
@@ -573,40 +566,7 @@ function renderWageLedger(){
       </div>
     </div>`;
 
-    // 카드②: 서류미비 계약
-    const docsCard = docsIncomplete.length === 0 ? '' : `
-    <div class="wl-block-card">
-      <div class="wl-block-card-head">
-        <div class="wl-block-card-icon docs"><i class="fas fa-file-upload"></i></div>
-        <div class="wl-block-card-title">${yr}년 ${mo}월 유효 계약 중 서류 미등록 — 날인본·동의서 첨부 필요</div>
-        <span class="wl-block-card-badge docs">${docsIncomplete.length}건</span>
-      </div>
-      <div class="wl-block-item-list">
-        ${docsIncomplete.map(c => {
-          const ei = _empInfo(c.employee_id);
-          const missSigned  = !c.signed_file_data;
-          const missConsent = !c.consent_file_data;
-          const missList = [
-            missSigned  ? '계약서 날인본' : null,
-            missConsent ? '개인정보 제3자 제공 동의서 날인본' : null,
-          ].filter(Boolean).join(', ');
-          return `<div class="wl-block-item">
-            <div class="wl-block-item-left">
-              <div class="wl-block-item-avatar">${_empInitial(ei.name)}</div>
-              <div>
-                <div class="wl-block-item-name">${ei.name}</div>
-                <div class="wl-block-item-sub" style="color:#c2410c;">미등록: ${missList}</div>
-              </div>
-            </div>
-            <button class="wl-block-item-link docs" onclick="viewContract('${c.id}')">
-              <i class="fas fa-upload"></i> 서류 등록 →
-            </button>
-          </div>`;
-        }).join('')}
-      </div>
-    </div>`;
-
-    // 카드③: 급여 미입력 + 임시저장 중 직원 통합 표시
+    // 카드②: 급여 미입력 + 임시저장 중 직원 통합 표시
     const allPayPending = [...draftOnlyPay, ...missingPay]; // 임시저장 먼저
     const payCard = allPayPending.length === 0 ? '' : (() => {
       const draftSet = new Set(draftOnlyPay);
@@ -672,7 +632,6 @@ function renderWageLedger(){
         </div>
       </div>
       ${draftCard}
-      ${docsCard}
       ${payCard}
     </div>`;
     return;

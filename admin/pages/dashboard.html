@@ -19,17 +19,19 @@
       <div id="dash-signed-section" style="display:none;margin-bottom:18px;"></div>
 
       <!-- 급여 입력 카드 -->
-      <div class="card" style="margin-top:24px;margin-bottom:18px;">
-        <div class="card-header">
-          <span class="card-title">💰 이번 달 급여 미입력 <span id="active-count" style="font-size:13px;font-weight:600;color:#6b7280;"></span></span>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <div class="filt-search-wrap">
-              <i class="fas fa-search"></i>
-              <input type="text" id="dash-company-search" class="filt-search" style="width:160px;" placeholder="고객사명 검색" oninput="renderDashboardCompanies()" />
-            </div>
+      <div class="section-title">
+        <i class="fas fa-coins"></i>
+        <span>이번 달 급여 미입력</span>
+        <span id="active-count" style="font-size:12px;color:#64748b;font-weight:600;"></span>
+        <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+          <div class="filt-search-wrap">
+            <i class="fas fa-search"></i>
+            <input type="text" id="dash-company-search" class="filt-search" style="width:160px;" placeholder="고객사명 검색" oninput="renderDashboardCompanies()" />
           </div>
         </div>
-        <div id="dash-companies" style="padding:0 0 4px;"></div>
+      </div>
+      <div class="card" style="margin-bottom:18px;overflow:hidden;">
+        <div id="dash-companies" style="padding:0;"></div>
       </div>
       
       <!-- [사용료 숨김] 사용료 징수현황 카드 4종 + 매출추이 차트 - 원복 시 아래 주석 해제

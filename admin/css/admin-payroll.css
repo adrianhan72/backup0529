@@ -58,6 +58,14 @@
     .dash-alert-banner.severance .dash-alert-banner-arrow{color:#f472b6;}
     .dash-alert-banner.severance .dash-alert-banner-chip{background:#fce7f3;color:#9d174d;border:1px solid #f9a8d4;}
     .dash-alert-banner.severance .dash-alert-banner-chip.unread{background:#fdf2f8;color:#831843;border-color:#f472b6;font-weight:700;}
+    /* ── 비활성(건수 0) 상태 ── */
+    .dash-alert-banner.inactive{background:#f9fafb!important;border-color:#e5e7eb!important;pointer-events:none!important;cursor:default!important;}
+    .dash-alert-banner.inactive .dash-alert-banner-icon{background:#d1d5db!important;}
+    .dash-alert-banner.inactive .dash-alert-banner-title{color:#6b7280!important;}
+    .dash-alert-banner.inactive .dash-alert-banner-sub{color:#9ca3af!important;}
+    .dash-alert-banner.inactive .dash-alert-banner-count{color:#9ca3af!important;}
+    .dash-alert-banner.inactive .dash-alert-banner-arrow{display:none!important;}
+    .dash-alert-banner.inactive .dash-alert-banner-chip{background:#f3f4f6!important;color:#9ca3af!important;border-color:#e5e7eb!important;}
     /* 수습 만료 통지: 청록(teal) 계열 */
     .dash-alert-banner.probation{background:linear-gradient(135deg,#f0fdfa,#ccfbf1);border:1px solid #2dd4bf;}
     .dash-alert-banner.probation .dash-alert-banner-icon{background:linear-gradient(135deg,#0d9488,#0f766e);}
@@ -97,13 +105,11 @@
     .prob-acc-emp-dday.urgent{background:#fee2e2;color:#991b1b;}
     .prob-acc-emp-dday.normal{background:#f1f5f9;color:#475569;}
     .prob-acc-emp-action{margin-left:auto;flex-shrink:0;}
-    /* 수습 근로자 관리 페이지 — 고객사 선택 칩 */
-    .probmgmt-co-chip{display:inline-flex;align-items:center;gap:7px;padding:7px 14px;border-radius:10px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:13px;font-weight:600;color:#374151;cursor:pointer;transition:all .15s;}
-    .probmgmt-co-chip:hover{border-color:#2dd4bf;background:#f0fdfa;color:#134e4a;}
-    .probmgmt-co-chip.selected{border-color:#0d9488;background:linear-gradient(135deg,#f0fdfa,#ccfbf1);color:#134e4a;}
-    .probmgmt-co-chip .chip-badge{font-size:11px;padding:1px 7px;border-radius:12px;font-weight:700;}
-    .probmgmt-co-chip .chip-badge.has-urgent{background:#fee2e2;color:#991b1b;}
-    .probmgmt-co-chip .chip-badge.normal{background:#d1fae5;color:#065f46;}
+    /* 수습 근로자 관리 페이지 — 고객사 선택 칩 (.co-chip 공통 스타일 통일) */
+    .probmgmt-co-chip{cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:20px;border:1.5px solid #e5e7eb;background:#fff;font-size:12.5px;font-weight:600;color:#374151;font-family:inherit;transition:border-color .15s,background .15s,color .15s;white-space:nowrap;}
+    .probmgmt-co-chip:hover{border-color:#6366f1;color:#4f46e5;background:#f5f3ff;box-shadow:0 0 0 2px rgba(99,102,241,.25);}
+    .probmgmt-co-chip.selected{border-color:#6366f1;background:#4f46e5;color:#fff;}
+
     /* 수습 근로자 관리 페이지 */
     .probmgmt-notice-banner{display:flex;align-items:flex-start;gap:14px;padding:14px 18px;border-radius:12px;margin-bottom:18px;background:linear-gradient(135deg,#f0fdfa,#ccfbf1);border:1px solid #2dd4bf;}
     .probmgmt-table-wrap{overflow:auto;border-radius:0 0 12px 12px;border:1px solid #e2e8f0;}
@@ -193,7 +199,7 @@
     .cen-email-info-row{display:flex;gap:8px;font-size:12.5px;line-height:1.9;}
     .cen-email-info-label{color:#64748b;font-weight:600;min-width:80px;flex-shrink:0;}
     .cen-email-info-val{color:#1e293b;font-weight:700;}
-    .cen-email-dday-badge{display:inline-flex;align-items:center;padding:1px 10px;border-radius:20px;font-size:11.5px;font-weight:800;background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;margin-left:6px;}
+    .cen-email-dday-badge{display:inline-flex;align-items:center;padding:1px 10px;border-radius:20px;font-size:11.5px;font-weight:800;background:#fef2f2;color:#dc2626;margin-left:6px;}
     .cen-email-cta{background:linear-gradient(135deg,#1e3a5f,#0f172a);color:#fff;border:none;border-radius:9px;padding:11px 0;font-size:13px;font-weight:700;width:100%;text-align:center;cursor:default;margin-bottom:14px;display:block;}
     .cen-email-notice{font-size:11px;color:#9ca3af;line-height:1.7;border-top:1px solid #f1f5f9;padding-top:12px;}
     .cen-email-footer{background:#f3f4f6;padding:12px 20px;border-radius:0 0 10px 10px;text-align:center;font-size:11px;color:#9ca3af;}
@@ -209,8 +215,8 @@
     /* 그룹 헤더 */
     .cen-tmpl-group-head{display:flex;align-items:center;gap:10px;padding:14px 20px 10px;border-top:2px solid #f3f4f6;}
     .cen-tmpl-group-badge{display:inline-flex;align-items:center;gap:7px;padding:5px 16px;border-radius:20px;font-size:12.5px;font-weight:700;}
-    .cen-tmpl-group-badge.worker{background:linear-gradient(135deg,#eff6ff,#dbeafe);color:#1d4ed8;border:1.5px solid #93c5fd;}
-    .cen-tmpl-group-badge.company{background:linear-gradient(135deg,#f0fdf4,#dcfce7);color:#166534;border:1.5px solid #86efac;}
+    .cen-tmpl-group-badge.worker{background:linear-gradient(135deg,#eff6ff,#dbeafe);color:#1d4ed8;}
+    .cen-tmpl-group-badge.company{background:linear-gradient(135deg,#f0fdf4,#dcfce7);color:#166534;}
     .cen-tmpl-group-desc{font-size:12px;color:#6b7280;}
     /* 인앱 알림 뱃지 */
     .cen-tmpl-section-badge.inapp{background:linear-gradient(135deg,#4f46e5,#6366f1);color:#fff;}

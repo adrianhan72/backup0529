@@ -1,4 +1,4 @@
-// ==========================================
+﻿// ==========================================
 //   급여 명세서 발송 관리 페이지
 // ==========================================
 
@@ -70,7 +70,7 @@ function renderPssCompanyList(){
   wrap.innerHTML = list.map(c => {
     const unsent = unsentByCompany[c.id] || 0;
     const badgeHtml = unsent > 0
-      ? `<span class="pss-co-unsent-badge">${unsent}</span>`
+      ? `<span class="count-badge">${unsent}</span>`
       : '';
     const isSelected = _pssCompanyId === c.id;
     return `
@@ -156,7 +156,7 @@ function renderPssMonthTabs(){
     const unsentCnt = _pssGetUnsentList(ym.year, ym.month).length;
     const moStr     = String(ym.month).padStart(2,'0');
     return `<div class="pss-month-tab${isActive?' active':''}" onclick="selectPssYM(${ym.year},${ym.month})">
-      ${ym.year}년 ${moStr}월<span class="pss-tab-badge unsent">${unsentCnt}</span>
+      ${ym.year}년 ${moStr}월${unsentCnt > 0 ? `<span class="count-badge">${unsentCnt}</span>` : ''}
     </div>`;
   }).join('');
 }
@@ -220,7 +220,7 @@ function renderPssUnsentList(){
   if(!tbody) return;
 
   const unsentList = _pssGetUnsentList(_pssYM.year, _pssYM.month);
-  countBadge.textContent = unsentList.length;
+  countBadge.textContent = `(총 ${unsentList.length}건)`;
 
   const tableWrap = document.getElementById('pss-unsent-table-wrap');
 
@@ -437,27 +437,32 @@ function _updateDashUnsentContractBanner(){
   const unsentList = _cdpGetUnsentContracts();
   const totalUnsent = unsentList.length;
 
-  if(totalUnsent === 0){
-    section.style.display = 'none';
-    section.innerHTML = '';
-    return;
-  }
+  const ctrUnsentInactive = totalUnsent === 0;
+  const ctrUnsentBg = ctrUnsentInactive ? '#f9fafb' : '#eff6ff';
+  const ctrUnsentBg2 = ctrUnsentInactive ? '#f3f4f6' : '#dbeafe';
+  const ctrUnsentBorder = ctrUnsentInactive ? '#e5e7eb' : '#3b82f6';
+  const ctrUnsentIconBg = ctrUnsentInactive ? '#d1d5db' : '#3b82f6';
+  const ctrUnsentIconBg2 = ctrUnsentInactive ? '#9ca3af' : '#2563eb';
+  const ctrUnsentTitle = ctrUnsentInactive ? '#6b7280' : '#1e40af';
+  const ctrUnsentCount = ctrUnsentInactive ? '#9ca3af' : '#2563eb';
+  const ctrUnsentSub = ctrUnsentInactive ? '#9ca3af' : '#3b82f6';
+  const ctrUnsentArrow = ctrUnsentInactive ? '#d1d5db' : '#3b82f6';
 
   section.style.display = '';
   section.innerHTML = `
     <div onclick="showPage('contract-dispatch', document.querySelector('.menu-item[data-page=\\'contract-dispatch\\']'))"
-         style="cursor:pointer;background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #3b82f6;border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:14px;box-shadow:0 2px 10px rgba(0,0,0,.07);"
+         style="cursor:pointer;background:linear-gradient(135deg,${ctrUnsentBg},${ctrUnsentBg2});border:1px solid ${ctrUnsentBorder};border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:14px;box-shadow:0 2px 10px rgba(0,0,0,.07);"
          >
-      <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#3b82f6,#2563eb);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+      <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,${ctrUnsentIconBg},${ctrUnsentIconBg2});display:flex;align-items:center;justify-content:center;flex-shrink:0;">
         <i class="fas fa-file-contract" style="color:#fff;font-size:17px;"></i>
       </div>
       <div style="flex:1;min-width:0;">
-        <div style="font-size:13.5px;font-weight:700;color:#1e40af;">
-          근로계약서 미발송 <span style="color:#2563eb;font-size:16px;font-weight:800;">${totalUnsent}건</span>이 있습니다
+        <div style="font-size:13.5px;font-weight:700;color:${ctrUnsentTitle};">
+          근로계약서 미발송 <span style="color:${ctrUnsentCount};font-size:16px;font-weight:800;">${totalUnsent}건</span>
         </div>
-        <div style="font-size:12px;color:#3b82f6;margin-top:3px;">클릭하여 ${PAGE_LABELS['contract-dispatch']} 페이지로 이동</div>
+        <div style="font-size:12px;color:${ctrUnsentSub};margin-top:3px;">클릭하여 ${PAGE_LABELS['contract-dispatch']} 페이지로 이동</div>
       </div>
-      <div style="color:#3b82f6;font-size:14px;flex-shrink:0;"><i class="fas fa-chevron-right"></i></div>
+      ` + (ctrUnsentInactive ? '' : '<div style="color:' + ctrUnsentArrow + ';font-size:14px;flex-shrink:0;"><i class="fas fa-chevron-right"></i></div>') + `
     </div>`;
   // 메뉴 배지 동기화
   if(typeof updateMenuBadges === 'function') updateMenuBadges();
@@ -472,28 +477,32 @@ function _updateDashUnsentBanner(){
   const sentPayrollIds = new Set(_allSendLogs.map(l => l.payroll_id));
   const totalUnsent = allPayrolls.filter(p => !sentPayrollIds.has(p.id)).length;
 
-
-  if(totalUnsent === 0){
-    section.style.display = 'none';
-    section.innerHTML = '';
-    return;
-  }
+  const piUnsentInactive = totalUnsent === 0;
+  const piUnsentBg = piUnsentInactive ? '#f9fafb' : '#fff7ed';
+  const piUnsentBg2 = piUnsentInactive ? '#f3f4f6' : '#fef3c7';
+  const piUnsentBorder = piUnsentInactive ? '#e5e7eb' : '#f59e0b';
+  const piUnsentIconBg = piUnsentInactive ? '#d1d5db' : '#f59e0b';
+  const piUnsentIconBg2 = piUnsentInactive ? '#9ca3af' : '#d97706';
+  const piUnsentTitle = piUnsentInactive ? '#6b7280' : '#92400e';
+  const piUnsentCount = piUnsentInactive ? '#9ca3af' : '#d97706';
+  const piUnsentSub = piUnsentInactive ? '#9ca3af' : '#b45309';
+  const piUnsentArrow = piUnsentInactive ? '#d1d5db' : '#d97706';
 
   section.style.display = '';
   section.innerHTML = `
     <div onclick="showPage('payslip-send', document.querySelector('.menu-item[data-page=\\'payslip-send\\']'))"
-         style="cursor:pointer;background:linear-gradient(135deg,#fff7ed,#fef3c7);border:1px solid #f59e0b;border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:14px;box-shadow:0 2px 10px rgba(0,0,0,.07);"
+         style="cursor:pointer;background:linear-gradient(135deg,${piUnsentBg},${piUnsentBg2});border:1px solid ${piUnsentBorder};border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:14px;box-shadow:0 2px 10px rgba(0,0,0,.07);"
          >
-      <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#f59e0b,#d97706);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+      <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,${piUnsentIconBg},${piUnsentIconBg2});display:flex;align-items:center;justify-content:center;flex-shrink:0;">
         <i class="fas fa-exclamation-triangle" style="color:#fff;font-size:17px;"></i>
       </div>
       <div style="flex:1;min-width:0;">
-        <div style="font-size:13.5px;font-weight:700;color:#92400e;">
-          급여명세서 미발송 <span style="color:#d97706;font-size:16px;font-weight:800;">${totalUnsent}건</span>이 있습니다
+        <div style="font-size:13.5px;font-weight:700;color:${piUnsentTitle};">
+          급여명세서 미발송 <span style="color:${piUnsentCount};font-size:16px;font-weight:800;">${totalUnsent}건</span>
         </div>
-        <div style="font-size:12px;color:#b45309;margin-top:3px;">클릭하여 ${PAGE_LABELS['payslip-send']} 페이지로 이동</div>
+        <div style="font-size:12px;color:${piUnsentSub};margin-top:3px;">클릭하여 ${PAGE_LABELS['payslip-send']} 페이지로 이동</div>
       </div>
-      <div style="color:#d97706;font-size:14px;flex-shrink:0;"><i class="fas fa-chevron-right"></i></div>
+      ` + (piUnsentInactive ? '' : '<div style="color:' + piUnsentArrow + ';font-size:14px;flex-shrink:0;"><i class="fas fa-chevron-right"></i></div>') + `
     </div>`;
   if(typeof _updateDashTodoGrid === 'function') _updateDashTodoGrid();
 }
@@ -531,7 +540,7 @@ function renderPssLogs(){
   // 최신순 정렬
   logs.sort((a,b) => (b.sent_at||'').localeCompare(a.sent_at||''));
 
-  countBadge.textContent = logs.length;
+  countBadge.textContent = `(총 ${logs.length}건)`;
 
   if(!logs.length){
     tbody.innerHTML = `<tr><td colspan="7" class="pss-empty">발송 이력이 없습니다.</td></tr>`;

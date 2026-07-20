@@ -195,9 +195,11 @@ function loadPITargetList(){
     });
   });
 
-  // ① pi-all-draft-banner 숨기기 (목록 표시 중에는 최상단 배너 숨김)
+  // ① 임시저장 배너 숨기기 (목록 표시 중에는 배너 숨김)
   const allDraftBanner = document.getElementById('pi-all-draft-banner');
   if(allDraftBanner) allDraftBanner.style.display = 'none';
+  const coDraftBanner = document.getElementById('pi-co-draft-banner');
+  if(coDraftBanner) coDraftBanner.style.display = 'none';
 
   // ② 임시저장 직원 Map: empId → draftPayrollId
   const draftEmpMap = new Map(
@@ -282,40 +284,40 @@ function loadPITargetList(){
       const _cs = actualContract ? (actualContract.status || CONTRACT_STATUS.ACTIVE) : '';
       let contractStatusBadge;
       if(!actualContract){
-        contractStatusBadge = `<span style="display:inline-block;background:#f5f3ff;color:#7c3aed;border:1px solid #c4b5fd;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">별도계약</span>`;
+        contractStatusBadge = `<span style="display:inline-block;background:#f5f3ff;color:#7c3aed;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">별도계약</span>`;
       } else if(_cs === CONTRACT_STATUS.DOCS_INCOMPLETE){
-        contractStatusBadge = `<span style="display:inline-block;background:#dcfce7;color:#15803d;border:1px solid #86efac;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;margin-right:3px;">유효</span>`
-          + `<span style="display:inline-block;background:#fff7ed;color:#c2410c;border:1px solid #fdba74;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">서류미비</span>`;
+        contractStatusBadge = `<span style="display:inline-block;background:#dcfce7;color:#15803d;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;margin-right:3px;">유효</span>`
+          + `<span style="display:inline-block;background:#fff7ed;color:#c2410c;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">서류미비</span>`;
       } else if(CONTRACT_ACTIVE_STATUSES.includes(_cs)){
-        contractStatusBadge = `<span style="display:inline-block;background:#dcfce7;color:#15803d;border:1px solid #86efac;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">유효</span>`;
+        contractStatusBadge = `<span style="display:inline-block;background:#dcfce7;color:#15803d;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">유효</span>`;
       } else if(_cs === CONTRACT_STATUS.PENDING){
-        contractStatusBadge = `<span style="display:inline-block;background:#e0e7ff;color:#3730a3;border:1px solid #a5b4fc;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">계약예정</span>`;
+        contractStatusBadge = `<span style="display:inline-block;background:#e0e7ff;color:#3730a3;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">계약예정</span>`;
       } else if(_cs === CONTRACT_STATUS.RENEWAL_PENDING){
-        contractStatusBadge = `<span style="display:inline-block;background:#fef3c7;color:#92400e;border:1px solid #fcd34d;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">갱신예정</span>`;
+        contractStatusBadge = `<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">갱신예정</span>`;
       } else if(_cs === CONTRACT_STATUS.TERMINATE_PENDING){
-        contractStatusBadge = `<span style="display:inline-block;background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">해지예정</span>`;
+        contractStatusBadge = `<span style="display:inline-block;background:#fee2e2;color:#991b1b;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">해지예정</span>`;
       } else if(_cs === CONTRACT_STATUS.TERMINATED){
-        contractStatusBadge = `<span style="display:inline-block;background:#f3f4f6;color:#374151;border:1px solid #d1d5db;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">${CONTRACT_STATUS_LABEL[CONTRACT_STATUS.TERMINATED]}</span>`;
+        contractStatusBadge = `<span style="display:inline-block;background:#f3f4f6;color:#374151;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">${CONTRACT_STATUS_LABEL[CONTRACT_STATUS.TERMINATED]}</span>`;
       } else if(_cs === CONTRACT_STATUS.EXPIRED){
-        contractStatusBadge = `<span style="display:inline-block;background:#f3f4f6;color:#374151;border:1px solid #d1d5db;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">${CONTRACT_STATUS_LABEL[CONTRACT_STATUS.EXPIRED]}</span>`;
+        contractStatusBadge = `<span style="display:inline-block;background:#f3f4f6;color:#374151;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">${CONTRACT_STATUS_LABEL[CONTRACT_STATUS.EXPIRED]}</span>`;
       } else if(_cs === CONTRACT_STATUS.VOIDED){
-        contractStatusBadge = `<span style="display:inline-block;background:#f3f4f6;color:#374151;border:1px solid #d1d5db;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">${CONTRACT_STATUS_LABEL[CONTRACT_STATUS.VOIDED]}</span>`;
+        contractStatusBadge = `<span style="display:inline-block;background:#f3f4f6;color:#374151;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">${CONTRACT_STATUS_LABEL[CONTRACT_STATUS.VOIDED]}</span>`;
       } else if(_cs === CONTRACT_STATUS.CANCELED){
-        contractStatusBadge = `<span style="display:inline-block;background:#f3f4f6;color:#374151;border:1px solid #d1d5db;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">${CONTRACT_STATUS_LABEL[CONTRACT_STATUS.CANCELED]}</span>`;
+        contractStatusBadge = `<span style="display:inline-block;background:#f3f4f6;color:#374151;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">${CONTRACT_STATUS_LABEL[CONTRACT_STATUS.CANCELED]}</span>`;
       } else if(_cs === CONTRACT_STATUS.RENEWED){
-        contractStatusBadge = `<span style="display:inline-block;background:#dbeafe;color:#1e40af;border:1px solid #93c5fd;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">${CONTRACT_STATUS_LABEL[CONTRACT_STATUS.RENEWED]}</span>`;
+        contractStatusBadge = `<span style="display:inline-block;background:#dbeafe;color:#1e40af;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">${CONTRACT_STATUS_LABEL[CONTRACT_STATUS.RENEWED]}</span>`;
       } else {
-        contractStatusBadge = `<span style="display:inline-block;background:#f3f4f6;color:#374151;border:1px solid #d1d5db;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">${CONTRACT_STATUS_LABEL[_cs] || _cs || '알 수 없음'}</span>`;
+        contractStatusBadge = `<span style="display:inline-block;background:#f3f4f6;color:#374151;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">${CONTRACT_STATUS_LABEL[_cs] || _cs || '알 수 없음'}</span>`;
       }
 
       // ④ 급여입력 여부 배지: isDraft(황색) > isPaid(녹색) > 미입력(주황)
       let statusBadge;
       if(isDraft){
-        statusBadge = `<span style="display:inline-flex;align-items:center;gap:4px;background:#fefce8;color:#a16207;border:1px solid #fde047;border-radius:6px;padding:3px 10px;font-size:11.5px;font-weight:700;"><i class="fas fa-clock"></i> 임시저장</span>`;
+        statusBadge = `<span style="display:inline-flex;align-items:center;gap:4px;background:#fefce8;color:#a16207;border-radius:6px;padding:3px 10px;font-size:11.5px;font-weight:700;"><i class="fas fa-clock"></i> 임시저장</span>`;
       } else if(isPaid){
-        statusBadge = `<span style="display:inline-flex;align-items:center;gap:4px;background:#f0fdf4;color:#16a34a;border:1px solid #86efac;border-radius:6px;padding:3px 10px;font-size:11.5px;font-weight:700;"><i class="fas fa-check-circle"></i> 입력완료</span>`;
+        statusBadge = `<span style="display:inline-flex;align-items:center;gap:4px;background:#f0fdf4;color:#16a34a;border-radius:6px;padding:3px 10px;font-size:11.5px;font-weight:700;"><i class="fas fa-check-circle"></i> 입력완료</span>`;
       } else {
-        statusBadge = `<span style="display:inline-flex;align-items:center;gap:4px;background:#fff7ed;color:#c2410c;border:1px solid #fdba74;border-radius:6px;padding:3px 10px;font-size:11.5px;font-weight:700;"><i class="fas fa-exclamation-circle"></i> 미입력</span>`;
+        statusBadge = `<span style="display:inline-flex;align-items:center;gap:4px;background:#fff7ed;color:#c2410c;border-radius:6px;padding:3px 10px;font-size:11.5px;font-weight:700;"><i class="fas fa-exclamation-circle"></i> 미입력</span>`;
       }
 
       // ⑤ 관리 버튼
@@ -324,7 +326,7 @@ function loadPITargetList(){
       const targetContractId = contract ? contract.id : '';
       if(isDraft){
         actionBtn = `<button onclick="selectPITarget('${targetEmpId}','${targetContractId}','${draftId}')"
-          style="display:inline-flex;align-items:center;gap:5px;padding:7px 16px;background:#d97706;color:#fff;border:1px solid #b45309;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">
+          style="display:inline-flex;align-items:center;gap:5px;padding:7px 16px;background:#d97706;color:#fff;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">
           <i class="fas fa-play-circle"></i> 이어 입력
         </button>`;
       } else if(isPaid){
@@ -366,8 +368,12 @@ function loadPITargetList(){
 function hidePITargetList(){
   const sec = document.getElementById('pi-target-list-section');
   if(sec) sec.style.display='none';
-  // pi-all-draft-banner 복원
-  if(typeof renderPIAllDraftBanner === 'function') renderPIAllDraftBanner();
+  // 고객사 선택 여부에 따라 적절한 배너 복원
+  if(currentGlobalCompanyId){
+    if(typeof renderPICoDraftBanner === 'function') renderPICoDraftBanner();
+  } else {
+    if(typeof renderPIAllDraftBanner === 'function') renderPIAllDraftBanner();
+  }
 }
 
 /**
@@ -445,7 +451,7 @@ function selectPITarget(empId, contractId, draftId=null){
   const nameEl  = document.getElementById('pi-form-emp-name');
   const badgeEl = document.getElementById('pi-form-emp-badge');
   if(nameEl)  nameEl.textContent  = `${emp.name} (${yr}년 ${mo}월)`;
-  if(badgeEl){ badgeEl.textContent = cat; badgeEl.style.cssText = `font-size:11px;font-weight:600;padding:2px 8px;border-radius:5px;border:1px solid;${badgeStyle}`; }
+  if(badgeEl){ badgeEl.textContent = cat; badgeEl.style.cssText = `font-size:11px;font-weight:600;padding:2px 8px;border-radius:5px;${badgeStyle}`; }
 
   // 숨김 select 동기화 (기존 loadPIContract 의존)
   const empSel = document.getElementById('pi-employee');
@@ -1096,10 +1102,10 @@ function loadPIContract(){
     })();
     // 서류미비/계약예정 상태 안내 배너 (활성이 아닌 경우) — 계약 조건은 정상 표시, 유효 계약으로 처리
     const _piContractStatusBanner = piContract.status===CONTRACT_STATUS.DOCS_INCOMPLETE
-      ? `<div style="background:#fef9c3;border:1px solid #fbbf24;border-radius:6px;padding:6px 10px;margin-bottom:8px;font-size:12px;color:#92400e;">
+      ? `<div style="background:#fef9c3;border-radius:6px;padding:6px 10px;margin-bottom:8px;font-size:12px;color:#92400e;">
            ⚠️ <b>서류미비</b> 상태 — 유효 계약으로 급여 처리됩니다. 날인 서류를 <a href="#" onclick="event.preventDefault();openContractForUpload('${piContract.id}')" style="color:#b45309;font-weight:700;text-decoration:underline;cursor:pointer;">보완</a>해 주세요.</div>`
       : piContract.status===CONTRACT_STATUS.PENDING
-      ? `<div style="background:#fef9c3;border:1px solid #fbbf24;border-radius:6px;padding:6px 10px;margin-bottom:8px;font-size:12px;color:#92400e;">
+      ? `<div style="background:#fef9c3;border-radius:6px;padding:6px 10px;margin-bottom:8px;font-size:12px;color:#92400e;">
            ⚠️ <b>계약예정</b> 상태 — 계약 효력 개시 전입니다.</div>`
       : '';
     // ── 계약정보 카드 본문 빌드 ──────────────────────────────────────────────
@@ -1756,7 +1762,7 @@ function _renderPIAbsentChips(){
   const dates = hidden && hidden.value ? hidden.value.split(',') : [];
   if(chips){
     chips.innerHTML = dates.map(d =>
-      `<span style="display:inline-flex;align-items:center;gap:3px;background:#fef2f2;border:1px solid #fecaca;border-radius:4px;padding:2px 7px;font-size:11px;color:#991b1b;">
+      `<span style="display:inline-flex;align-items:center;gap:3px;background:#fef2f2;border-radius:4px;padding:2px 7px;font-size:11px;color:#991b1b;">
         ${d}
         <button type="button" onclick="_removePIAbsentDate('${d}')"
           style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:13px;padding:0;line-height:1;">×</button>
@@ -3061,7 +3067,7 @@ function _renderPIIrregularRows(){
       const badge = document.createElement('span');
       badge.className = 'pi-irreg-pt-badge';
       badge.textContent = badgeText;
-      badge.style.cssText = 'font-size:10px;font-weight:400;color:#6b7280;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:4px;padding:1px 6px;margin-left:4px;vertical-align:middle;white-space:nowrap;';
+      badge.style.cssText = 'font-size:10px;font-weight:400;color:#6b7280;background:#f3f4f6;border-radius:4px;padding:1px 6px;margin-left:4px;vertical-align:middle;white-space:nowrap;';
       label.appendChild(badge);
     }
 

@@ -17,14 +17,19 @@
     .al-table th.right{text-align:right;}
     .al-table td{padding:10px 13px;border-bottom:1px solid #f3f4f6;vertical-align:middle;}
     .al-table td.right{text-align:right;}
-    .al-table tbody tr:hover td{background:#fafbff;}
+    .al-table tbody tr:nth-child(even) td{background:#f8fafc;}
+    .al-table tbody tr:hover td{background:#eef2ff;}
     .al-table .num{font-variant-numeric:tabular-nums;}
+    /* 급여입력 지급대상자 목록 스트라이프/hover */
+    #pi-target-list-section table tbody tr:nth-child(even) td{background:#f8fafc;}
+    #pi-target-list-section table tbody tr:hover td{background:#eef2ff;}
+
     /* ?�여 ?�차 강조 */
     .al-remain-ok{color:#059669;font-weight:700;}
     .al-remain-warn{color:#d97706;font-weight:700;}
     .al-remain-danger{color:#dc2626;font-weight:700;}
     /* 배�? */
-    .al-badge-basis{display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;font-size:10.5px;font-weight:700;background:#ede9fe;color:#6d28d9;border:1px solid #c4b5fd;}
+    .al-badge-basis{display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;font-size:10.5px;font-weight:700;background:#ede9fe;color:#6d28d9;}
     /* 관�?버튼 ??Teal */
     .al-ledger-btn{
       display:inline-flex;align-items:center;gap:5px;
@@ -292,21 +297,23 @@
     .amount-blue{font-weight:600;color:#3b82f6}
     .company-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:18px;padding:22px}
     .company-card{border:1px solid #e8eaed;border-radius:12px;padding:18px;cursor:pointer;transition:all .2s;position:relative}
-    .company-card:hover{border-color:#e94560;}
+    .company-card:hover{border-color:#6366f1;box-shadow:0 0 0 2px rgba(99,102,241,.25);}
     .company-card h3{font-size:14px;font-weight:700;margin-bottom:5px}
     .company-card p{font-size:11.5px;color:#888;line-height:1.9}
     .company-card .code-badge{position:absolute;top:14px;right:14px;background:#f0f2f5;padding:3px 9px;border-radius:20px;font-size:10.5px;color:#555;font-weight:600}
     /* 고객???�터 버튼 */
     .company-filter-btn{background:#f8f9fb;color:#6b7280;border:1px solid #e5e7eb;padding:6px 12px;font-size:11.5px;transition:all .2s}
-    .company-filter-btn:hover{background:#e94560;color:#fff;border-color:#e94560;}
+    .company-filter-btn:hover{background:#6366f1;color:#fff;border-color:#6366f1;}
     .company-filter-btn span{font-size:10.5px;opacity:.8}
     /* ?�?�보??고객???�이�?*/
     .dash-co-table{width:100%;border-collapse:collapse;}
-    .dash-co-table thead th{font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.04em;padding:8px 14px;border-bottom:1.5px solid #f0f2f5;white-space:nowrap;}
+    .dash-co-table thead tr{background:linear-gradient(135deg,#f1f5f9,#e8ecf3);border-bottom:2px solid #e2e8f0;}
+    .dash-co-table thead th{font-size:12px;font-weight:700;color:#475569;padding:12px 14px;white-space:nowrap;}
     .dash-co-table thead th:last-child{text-align:right;}
     .dash-co-table tbody tr{border-bottom:1px solid #f5f6f8;transition:background .12s;}
+    .dash-co-table tbody tr:nth-child(even){background:#f8fafc;}
     .dash-co-table tbody tr:last-child{border-bottom:none;}
-    .dash-co-table tbody tr:hover{background:#fafbff;}
+    .dash-co-table tbody tr:hover{background:#eef2ff;}
     .dash-co-table tbody td{padding:11px 14px;vertical-align:middle;font-size:13px;}
     .dash-co-table tbody td:last-child{text-align:right;}
     .dash-co-name{font-weight:700;color:#1e293b;}
@@ -421,16 +428,8 @@
     .wl-menu-badge{animation:wl-badge-pulse 1.8s ease-in-out infinite;}
     @keyframes wl-badge-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.75;transform:scale(1.12)}}
 
-    /* 좌측 메뉴 ?�일 배�? */
-    .menu-todo-badge{
-      display:inline-flex;align-items:center;justify-content:center;
-      min-width:18px;height:18px;
-      background:#e94560;color:#fff;
-      font-size:10px;font-weight:800;
-      border-radius:9px;padding:0 5px;
-      margin-left:auto;letter-spacing:0;line-height:1;
-      flex-shrink:0;
-    }
+    /* 좌측 메뉴 ?�일 배�? (.count-badge + menu-todo-badge) */
+    .menu-todo-badge{ margin-left:auto; }
     .menu-item{display:flex;align-items:center;gap:10px;}
     .menu-item .menu-todo-badge{margin-left:auto;}
 
@@ -618,12 +617,14 @@
     .wl-block-card-badge.draft{background:#fef3c7;color:#92400e;}
     .wl-block-card-badge.docs {background:#fde8d8;color:#c2410c;}
     .wl-block-card-badge.pay  {background:#dbeafe;color:#1d4ed8;}
-    .wl-block-item-list{padding:10px 18px 4px;}
+    .wl-block-item-list{padding:10px 0 4px;}
     .wl-block-item{
       display:flex;align-items:center;justify-content:space-between;
-      padding:8px 0;border-bottom:1px dashed #f1f5f9;gap:10px;
+      padding:8px 18px;border-bottom:1px dashed #f1f5f9;gap:10px;
     }
     .wl-block-item:last-child{border-bottom:none;}
+    .wl-block-item:nth-child(even){background:#f8fafc;}
+    .wl-block-item:hover{background:#eef2ff;}
     .wl-block-item-left{display:flex;align-items:center;gap:8px;min-width:0;}
     .wl-block-item-avatar{
       width:28px;height:28px;border-radius:50%;
@@ -792,6 +793,9 @@
       font-size:11px;
       color:#1e293b;
       height:26px;        /* 모든 ?�이???� ?�이 ?�일 */
+    }
+    .wl-ledger-tbl tbody tr:hover td{ filter:brightness(.94); }
+    .wl-ledger-tbl tbody tr.wl-data-row:nth-child(even) td:not([class*="wl-td-"]){ background:#f8fafc; }
       box-sizing:border-box;
     }
     /* ?�자 ?�측 ?�렬 */

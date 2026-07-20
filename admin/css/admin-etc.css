@@ -1,7 +1,27 @@
-﻿    /* ── 전역 섹션 제목 (아이콘 + 텍스트) ── */
+﻿    /* ── 전역 테이블 스트라이프 + hover ── */
+    .table-wrap table tbody tr:nth-child(even){ background:#f8fafc; }
+    .table-wrap table tbody tr:hover{ background:#eef2ff; }
+
+    /* ── 전역 섹션 제목 (아이콘 + 텍스트) ── */
     .section-title{ display:flex;align-items:center;gap:8px;margin-top:28px;margin-bottom:12px; }
     .section-title i{ color:#6366f1;font-size:14px; }
     .section-title span{ font-size:15px;font-weight:800;color:#1e293b; }
+
+    /* ── 통합 건수 뱃지 (메뉴·칩·탭 공통) ── */
+    .count-badge{ display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;background:#e94560;color:#fff;font-size:10px;font-weight:800;border-radius:9px;padding:0 5px;line-height:1;flex-shrink:0; }
+    .co-chip.selected .count-badge,
+    .probmgmt-co-chip.selected .count-badge,
+    #pss-company-chips .company-chip.selected .count-badge{ background:rgba(255,255,255,.25);color:#fff; }
+    .cdp-month-tab .count-badge,
+    .pss-month-tab .count-badge{ margin-left:5px; }
+
+    /* ── 새로고침 버튼 아이콘 색상 흰색 통일 ── */
+    .btn-secondary .fas, .btn-secondary .fa, .btn-secondary .fa-solid,
+    .btn-secondary i{ color:#fff; }
+
+    /* ── 새로고침 버튼 배경/테두리 (btn-secondary보다 어둡게) ── */
+    .btn-refresh, .btn-secondary.btn-refresh{ background:#6b7280;border-color:#4b5563; }
+    .btn-refresh:hover:not(:disabled), .btn-secondary.btn-refresh:hover:not(:disabled){ background:#4b5563;border-color:#374151; }
 
     /* ── 근로계약 관리 / 대시보드 공통: 할일 목록 3열 그리드 ── */
     .cont-todo-grid, .dash-todo-grid{ display:flex;flex-wrap:wrap;gap:10px;margin-bottom:4px; }
@@ -30,9 +50,9 @@
     .pss-section-head{ display:flex;align-items:center;justify-content:space-between;margin-bottom:10px; }
     .pss-section-title{ font-size:13.5px;font-weight:800;color:#1f2937;display:flex;align-items:center;gap:7px; }
     .pss-count-badge{ display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;border-radius:11px;font-size:11px;font-weight:700;padding:0 6px; }
-    .pss-count-badge.red{ background:#fef2f2;color:#dc2626;border:1px solid #fca5a5; }
-    .pss-count-badge.green{ background:#dcfce7;color:#16a34a;border:1px solid #86efac; }
-    .pss-count-badge.blue{ background:#eff6ff;color:#2563eb;border:1px solid #93c5fd; }
+.pss-count-badge.red{ background:#fef2f2;color:#dc2626; }
+.pss-count-badge.green{ background:#dcfce7;color:#16a34a; }
+.pss-count-badge.blue{ background:#eff6ff;color:#2563eb; }
     /* ?�═ 근로계약 관�????�림 카드 ?�═ */
     .cont-alert-card{border-radius:0;overflow:hidden;margin-bottom:0;}
     .cont-alert-card-head{display:flex;align-items:center;justify-content:space-between;padding:11px 18px;cursor:pointer;user-select:none;}
@@ -140,10 +160,9 @@
     /* 계약??발송 관�???미발??카드 */
     .cdp-month-tabs{ display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px; }
     .cdp-month-tab{ padding:6px 14px;border-radius:20px;border:1.5px solid #e5e7eb;background:#fff;font-size:12px;font-weight:600;color:#6b7280;cursor:pointer;transition:all .15s; }
-    .cdp-month-tab:hover{ border-color:#6366f1;color:#4f46e5; }
+    .cdp-month-tab:hover{ border-color:#6366f1;color:#4f46e5;box-shadow:0 0 0 2px rgba(99,102,241,.25); }
     .cdp-month-tab.active{ background:#4f46e5;border-color:#4f46e5;color:#fff; }
-    .cdp-month-tab .cdp-tab-badge{ display:inline-flex;align-items:center;justify-content:center;min-width:17px;height:17px;border-radius:50%;font-size:10px;font-weight:700;margin-left:5px;padding:0 3px; }
-    .cdp-month-tab .cdp-tab-badge.unsent{ background:#ef4444;color:#fff; }
+
     #cdp-unsent-table th{ background:#fff7ed;color:#92400e;padding:9px 12px;font-size:12px;font-weight:700;border-bottom:2px solid #fed7aa;text-align:left;white-space:nowrap; }
     #cdp-unsent-table td{ padding:10px 12px;font-size:12.5px;vertical-align:middle;border-bottom:1px solid #fff3e0; }
     #cdp-unsent-table td .btn-sm{ vertical-align:middle; }

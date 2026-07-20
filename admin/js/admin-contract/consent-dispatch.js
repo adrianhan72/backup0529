@@ -1,4 +1,4 @@
-/**
+﻿/**
  * consent-dispatch.js — 제3자 정보제공 동의서 발송 관리
  * 계약서 발송 관리(contract-dispatch.js)와 동일 구조
  */
@@ -268,7 +268,7 @@ function renderCnsUnsentMonthTabs() {
 
   // 총 미발송 건수 배지 업데이트
   const totalBadge = document.getElementById('cns-unsent-total-badge');
-  if (totalBadge) totalBadge.textContent = allUnsent.length;
+  if (totalBadge) totalBadge.textContent = `(총 ${allUnsent.length}건)`;
 
   const months = Object.keys(monthMap).sort().reverse().slice(0, 12);
   if (months.length === 0) {
@@ -279,7 +279,7 @@ function renderCnsUnsentMonthTabs() {
   let html = '';
   months.forEach((ym, i) => {
     const [y, m] = ym.split('-');
-    html += `<div class="cdp-month-tab${i === 0 ? ' active' : ''}" onclick="cnsSelectUnsentYM(${y},${parseInt(m)})">${y}년 ${String(m).padStart(2,'0')}월 <span class="cdp-tab-badge unsent">${monthMap[ym]}</span></div>`;
+    html += `<div class="cdp-month-tab${i === 0 ? ' active' : ''}" onclick="cnsSelectUnsentYM(${y},${parseInt(m)})">${y}년 ${String(m).padStart(2,'0')}월 ${monthMap[ym] > 0 ? `<span class="count-badge">${monthMap[ym]}</span>` : ''}</div>`;
   });
   tabsEl.innerHTML = html;
 
@@ -460,27 +460,32 @@ function _updateDashConsentBanner() {
   const unsentList = _cnsGetUnsentContracts();
   const totalUnsent = unsentList.length;
 
-  if (totalUnsent === 0) {
-    section.style.display = 'none';
-    section.innerHTML = '';
-    return;
-  }
+  const consentInactive = totalUnsent === 0;
+  const consentBg = consentInactive ? '#f9fafb' : '#f0fdf4';
+  const consentBg2 = consentInactive ? '#f3f4f6' : '#dcfce7';
+  const consentBorder = consentInactive ? '#e5e7eb' : '#22c55e';
+  const consentIconBg = consentInactive ? '#d1d5db' : '#22c55e';
+  const consentIconBg2 = consentInactive ? '#9ca3af' : '#16a34a';
+  const consentTitle = consentInactive ? '#6b7280' : '#166534';
+  const consentCount = consentInactive ? '#9ca3af' : '#16a34a';
+  const consentSub = consentInactive ? '#9ca3af' : '#22c55e';
+  const consentArrow = consentInactive ? '#d1d5db' : '#22c55e';
 
   section.style.display = '';
   section.innerHTML = `
     <div onclick="showPage('consent-dispatch', document.querySelector('.menu-item[data-page=\\'consent-dispatch\\']'))"
-         style="cursor:pointer;background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1px solid #22c55e;border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:14px;box-shadow:0 2px 10px rgba(0,0,0,.07);"
+         style="cursor:pointer;background:linear-gradient(135deg,${consentBg},${consentBg2});border:1px solid ${consentBorder};border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:14px;box-shadow:0 2px 10px rgba(0,0,0,.07);"
          >
-      <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#22c55e,#16a34a);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+      <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,${consentIconBg},${consentIconBg2});display:flex;align-items:center;justify-content:center;flex-shrink:0;">
         <i class="fas fa-file-shield" style="color:#fff;font-size:17px;"></i>
       </div>
       <div style="flex:1;min-width:0;">
-        <div style="font-size:13.5px;font-weight:700;color:#166534;">
-          정보제공동의서 미발송 <span style="color:#16a34a;font-size:16px;font-weight:800;">${totalUnsent}건</span>이 있습니다
+        <div style="font-size:13.5px;font-weight:700;color:${consentTitle};">
+          정보제공동의서 미발송 <span style="color:${consentCount};font-size:16px;font-weight:800;">${totalUnsent}건</span>
         </div>
-        <div style="font-size:12px;color:#22c55e;margin-top:3px;">클릭하여 ${PAGE_LABELS['consent-dispatch']} 페이지로 이동</div>
+        <div style="font-size:12px;color:${consentSub};margin-top:3px;">클릭하여 ${PAGE_LABELS['consent-dispatch']} 페이지로 이동</div>
       </div>
-      <div style="color:#22c55e;font-size:14px;flex-shrink:0;"><i class="fas fa-chevron-right"></i></div>
+      ` + (consentInactive ? '' : '<div style="color:' + consentArrow + ';font-size:14px;flex-shrink:0;"><i class="fas fa-chevron-right"></i></div>') + `
     </div>`;
   if(typeof _updateDashTodoGrid === 'function') _updateDashTodoGrid();
 }

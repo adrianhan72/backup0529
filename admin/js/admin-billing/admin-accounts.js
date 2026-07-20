@@ -52,7 +52,7 @@ function _aaRenderTable(){
 
     // ── 표시 이름 변경 버튼 (마스터 세션 + 마스터 계정 행만) ──
     const nameBtn = (isMasterSession && isMaster)
-      ? `<button class="btn btn-sm btn-icon" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;"
+      ? `<button class="btn btn-sm btn-icon" style="background:#2563eb;color:#fff;border:1px solid #1d4ed8;"
            onclick="openChangeNameModal('${a.id}','${_esc(a.display_name||a.username)}')"
            title="표시 이름 변경">
            <i class="fas fa-pen"></i></button>`

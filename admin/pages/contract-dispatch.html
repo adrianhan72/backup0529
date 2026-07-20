@@ -1,37 +1,21 @@
-    <div id="page-contract-dispatch" class="page">
-      <!-- 상단 안내 -->
-      <div style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1px solid #bbf7d0;border-radius:12px;padding:16px 22px;margin-bottom:20px;display:flex;align-items:flex-start;gap:12px;">
-        <i class="fas fa-paper-plane" style="color:#16a34a;font-size:18px;margin-top:2px;"></i>
-        <div>
-          <div style="font-size:12.5px;color:#166534;line-height:1.7;">
-            근로계약서 조회 화면에서 발송된 이력을 최신순으로 확인합니다.
-            알림톡 · 이메일 · 수동교부(출력 교부) 모든 방식이 기록됩니다.
-          </div>
-        </div>
+﻿    <div id="page-contract-dispatch" class="page">
+
+      <!-- 미발송 계약서 섹션 -->
+      <div class="section-title">
+        <i class="fas fa-exclamation-triangle" style="color:#f59e0b;"></i>
+        <span>미발송 계약서</span>
+        <span id="cdp-unsent-total-badge" style="font-size:12px;color:#64748b;font-weight:600;">(총 0건)</span>
+        <button class="cdp-send-btn-all" id="cdp-unsent-send-all-btn" onclick="cdpSendAllKakao()" disabled style="margin-left:auto;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg>
+          일괄 알림톡 발송
+        </button>
       </div>
-
-      <!-- 미발송 계약서 카드 -->
-      <div class="card" style="margin-bottom:16px;">
+      <div class="card" style="margin-bottom:16px;overflow:hidden;">
         <div style="padding:16px 20px 0;">
-
-          <!-- 헤더 -->
-          <div class="pss-section-head" style="margin-bottom:12px;">
-            <div class="pss-section-title">
-              <i class="fas fa-exclamation-triangle" style="color:#f59e0b;"></i>
-              미발송 계약서
-              <span class="pss-count-badge red" id="cdp-unsent-total-badge">0</span>
-            </div>
-            <button class="cdp-send-btn-all" id="cdp-unsent-send-all-btn" onclick="cdpSendAllKakao()" disabled>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg>
-              일괄 알림톡 발송
-            </button>
-          </div>
-
           <!-- 입사 년월 탭 -->
           <div class="cdp-month-tabs" id="cdp-unsent-month-tabs">
             <div class="pss-loading"><i class="fas fa-spinner fa-spin"></i> 로딩 중...</div>
           </div>
-
           <!-- 구분선 -->
           <div style="border-top:1px solid #f3f4f6;margin:0 -20px 0;"></div>
         </div>
@@ -72,7 +56,7 @@
         <i class="fas fa-history"></i>
         <span>발송 이력</span>
         <span id="cdp-record-count" style="font-size:12px;color:#64748b;font-weight:600;"></span>
-        <button onclick="(async()=>{await loadContractDispatchList(true);await renderContractDispatchPage();})()" class="btn btn-sm btn-secondary" style="margin-left:auto;" title="목록 새로 고침"><i class="fas fa-sync-alt"></i> 목록 새로 고침</button>
+        <button onclick="(async()=>{await loadContractDispatchList(true);await renderContractDispatchPage();})()" class="btn btn-sm btn-secondary btn-refresh" style="margin-left:auto;" title="목록 새로 고침"><i class="fas fa-sync-alt"></i> 목록 새로 고침</button>
       </div>
 
       <!-- ── 필터 바 ── -->

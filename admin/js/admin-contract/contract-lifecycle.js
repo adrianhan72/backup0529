@@ -2209,7 +2209,7 @@ function _cftValidate(){
   // 상태 힌트 (확정 버튼 옆)
   if(statusHint){
     statusHint.innerHTML =
-      `→ 계약 상태: <span style="background:${statusBg};border:1px solid ${statusBorder};` +
+      `→ 계약 상태: <span style="background:${statusBg};` +
       `border-radius:4px;padding:1px 8px;font-size:11.5px;font-weight:800;color:${statusColor};">` +
       `${newStatus}</span>` +
       (newStatus === CONTRACT_STATUS.TERMINATED

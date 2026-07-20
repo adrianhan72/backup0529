@@ -125,7 +125,7 @@
     /* ?�택 ?�료 ??출근?�수???�름(daily) */
     .pi-pay-type-select.pi-pt-daily{border-color:#f59e0b;background:#fef3c7;color:#92400e;}
     /* 매월 ?�기지�??�기?�용 배�? (select ?�???�시 ???�집 불�?) */
-    .pi-pt-fixed-badge{display:inline-flex;align-items:center;height:28px;padding:0 10px;border-radius:4px;border:1px solid #3b82f6;background:#eff6ff;color:#1d4ed8;font-size:12px;font-weight:600;white-space:nowrap;flex-shrink:0;user-select:none;cursor:default;}
+    .pi-pt-fixed-badge{display:inline-flex;align-items:center;height:28px;padding:0 10px;border-radius:4px;background:#eff6ff;color:#1d4ed8;font-size:12px;font-weight:600;white-space:nowrap;flex-shrink:0;user-select:none;cursor:default;}
     /* 주휴?�당 ?�동계산 배�? */
     .pi-auto-badge{display:inline-flex;align-items:center;height:17px;padding:0 6px;border-radius:3px;background:#dcfce7;color:#15803d;font-size:10px;font-weight:700;margin-left:4px;vertical-align:middle;user-select:none;}
     /* 주휴?�당 ?�동계산 ?�기?�용 ?�력 */
@@ -182,7 +182,7 @@
       transition:border-color .15s,background .15s,color .15s;
       white-space:nowrap;
     }
-    .co-chip:hover{ border-color:#6366f1;color:#4f46e5;background:#f5f3ff; }
+    .co-chip:hover{ border-color:#6366f1;color:#4f46e5;background:#f5f3ff;box-shadow:0 0 0 2px rgba(99,102,241,.25); }
     .co-chip.selected{
       border-color:#6366f1;
       background:#4f46e5;
@@ -204,8 +204,6 @@
       font-size:10.5px;font-weight:700;border-radius:10px;
       padding:1px 7px;line-height:1.4;
     }
-    .co-chip-badge.count{ background:#eef2ff;color:#6366f1; }
-    .co-chip.selected .co-chip-badge.count{ background:rgba(255,255,255,.25);color:#fff; }
     .co-chip-badge.new-dot{
       background:#e94560;color:#fff;font-size:10px;font-weight:800;
       border-radius:10px;padding:1px 6px;
@@ -221,18 +219,9 @@
     /* ?�═ 급여 명세??발송 관�??�═ */
     /* pss �???공통 .co-chip ?�용 (alias) */
     #pss-company-chips .company-chip{ cursor:pointer;padding:7px 14px;border-radius:20px;border:1.5px solid #e5e7eb;background:#fff;font-size:12.5px;font-weight:600;color:#374151;transition:all .15s;display:inline-flex;align-items:center;gap:6px; }
-    #pss-company-chips .company-chip:hover{ border-color:#6366f1;color:#4f46e5;background:#f5f3ff; }
+    #pss-company-chips .company-chip:hover{ border-color:#6366f1;color:#4f46e5;background:#f5f3ff;box-shadow:0 0 0 2px rgba(99,102,241,.25); }
     #pss-company-chips .company-chip.selected{ border-color:#6366f1;background:#4f46e5;color:#fff; }
-    #pss-company-chips .company-chip .pss-co-unsent-badge{
-      display:inline-flex;align-items:center;justify-content:center;
-      min-width:17px;height:17px;padding:0 5px;
-      background:#e94560;color:#fff;
-      font-size:10px;font-weight:800;border-radius:9px;
-      line-height:1;letter-spacing:0;
-    }
-    #pss-company-chips .company-chip.selected .pss-co-unsent-badge{
-      background:rgba(255,255,255,.3);color:#fff;
-    }
+
     /* 미발???�림 배너 */
     .pss-alert-banner{ display:flex;align-items:center;gap:10px;padding:12px 18px;background:linear-gradient(90deg,#fff7ed,#fef3c7);border:1.5px solid #f59e0b;border-radius:10px;margin-bottom:14px; }
     .pss-alert-banner .pss-alert-icon{ font-size:20px;color:#d97706;flex-shrink:0; }
@@ -242,11 +231,9 @@
     /* ???�택 ??*/
     .pss-month-tabs{ display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px; }
     .pss-month-tab{ padding:6px 14px;border-radius:20px;border:1.5px solid #e5e7eb;background:#fff;font-size:12px;font-weight:600;color:#6b7280;cursor:pointer;transition:all .15s; }
-    .pss-month-tab:hover{ border-color:#6366f1;color:#4f46e5; }
+    .pss-month-tab:hover{ border-color:#6366f1;color:#4f46e5;box-shadow:0 0 0 2px rgba(99,102,241,.25); }
     .pss-month-tab.active{ background:#4f46e5;border-color:#4f46e5;color:#fff; }
-    .pss-month-tab .pss-tab-badge{ display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:50%;font-size:10px;font-weight:700;margin-left:5px; }
-    .pss-month-tab .pss-tab-badge.unsent{ background:#ef4444;color:#fff; }
-    .pss-month-tab .pss-tab-badge.sent{ background:#10b981;color:#fff; }
+
     /* 미발???�이�?*/
     #pss-unsent-table th{ background:#fff7ed;color:#92400e;padding:9px 12px;font-size:12px;font-weight:700;border-bottom:2px solid #fed7aa;text-align:left; }
     #pss-unsent-table td{ padding:10px 12px;font-size:12.5px;vertical-align:middle;border-bottom:1px solid #fff3e0; }

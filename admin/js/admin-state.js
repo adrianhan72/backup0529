@@ -1054,12 +1054,12 @@ function renderPICompanyList(){
   }
   chips.innerHTML=filtered.map(c=>{
     const isSelected = c.id === currentGlobalCompanyId;
-    const empCnt = allEmployees.filter(e => e.company_id===c.id && (e.status===EMP_STATUS.ACTIVE||e.status===EMP_STATUS.ACTIVE)).length;
+    const payCnt = allPayrolls.filter(p => !p.is_draft && p.company_id === c.id).length;
     return `<button onclick="selectPICompany('${c.id}','${c.company_name.replace(/'/g,"\\'")}');"
       class="co-chip${isSelected?' selected':''}">
       <i class="fas fa-building" style="font-size:11px;"></i>
       ${c.company_name}
-      <span class="co-chip-badge count">${empCnt}명</span>
+      ${payCnt > 0 ? `<span class="count-badge">${payCnt}</span>` : ''}
     </button>`;
   }).join('');
 }
@@ -1098,11 +1098,16 @@ function selectPICompany(companyId, companyName){
     if(periodSec) periodSec.style.display='';
     // ★ 임시저장 배너: 고객사+년월 선택 단계에서만 표시
     // 목록·폼이 숨겨진 이 시점(년월 선택 단계)에서만 배너를 갱신·표시
-    if(typeof renderPIAllDraftBanner === 'function') renderPIAllDraftBanner();
+    // ★ 급여 입력: 고객사 선택 시 전체 임시저장 배너 숨기고 해당 고객사 배너 표시
+    const _adb = document.getElementById('pi-all-draft-banner');
+    if(_adb) _adb.style.display = 'none';
+    if(typeof renderPICoDraftBanner === 'function') renderPICoDraftBanner();
   } else {
     // 수정 모드 진입 시 임시저장 배너 숨김
     const _adb = document.getElementById('pi-all-draft-banner');
     if(_adb) _adb.style.display = 'none';
+    const _cdb = document.getElementById('pi-co-draft-banner');
+    if(_cdb) _cdb.style.display = 'none';
   }
 
   // 고객사 allowance_config 기반 옵셔널 항목 show/hide
@@ -1146,8 +1151,10 @@ function clearPICompanySelect(){
   if(typeof piEditPayrollId !== 'undefined' && piEditPayrollId){
     if(typeof cancelEditPayroll === 'function') cancelEditPayroll();
   }
-  // pi-all-draft-banner 복원 (고객사 선택 해제 시)
+  // pi-all-draft-banner 복원, 고객사 전용 배너 숨김
   if(typeof renderPIAllDraftBanner === 'function') renderPIAllDraftBanner();
+  const _coDraft = document.getElementById('pi-co-draft-banner');
+  if(_coDraft) _coDraft.style.display = 'none';
 }
 function renderPagination(containerId,total,page,fn){
   const pages2=Math.ceil(total/ITEMS);

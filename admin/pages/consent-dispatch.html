@@ -1,29 +1,17 @@
-    <div id="page-consent-dispatch" class="page">
-      <!-- 상단 안내 -->
-      <div style="background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #93c5fd;border-radius:12px;padding:16px 22px;margin-bottom:20px;display:flex;align-items:flex-start;gap:12px;">
-        <i class="fas fa-file-shield" style="color:#3b82f6;font-size:18px;margin-top:2px;"></i>
-        <div>
-          <div style="font-size:12.5px;color:#1e40af;line-height:1.7;">
-            계약 등록 시 근로자에게 발송되는 제3자 정보제공 동의서 이력을 확인합니다.
-            알림톡 · 이메일 · 수동교부(출력 교부) 모든 방식이 기록됩니다.
-          </div>
-        </div>
-      </div>
+﻿    <div id="page-consent-dispatch" class="page">
 
-      <!-- 미발송 동의서 카드 -->
-      <div class="card" style="margin-bottom:16px;">
+      <!-- 미발송 동의서 섹션 -->
+      <div class="section-title">
+        <i class="fas fa-exclamation-triangle" style="color:#f59e0b;"></i>
+        <span>미발송 동의서</span>
+        <span id="cns-unsent-total-badge" style="font-size:12px;color:#64748b;font-weight:600;">(총 0건)</span>
+        <button class="cdp-send-btn-all" id="cns-unsent-send-all-btn" onclick="cnsSendAllKakao()" disabled style="margin-left:auto;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg>
+          일괄 알림톡 발송
+        </button>
+      </div>
+      <div class="card" style="margin-bottom:16px;overflow:hidden;">
         <div style="padding:16px 20px 0;">
-          <div class="pss-section-head" style="margin-bottom:12px;">
-            <div class="pss-section-title">
-              <i class="fas fa-exclamation-triangle" style="color:#f59e0b;"></i>
-              미발송 동의서
-              <span class="pss-count-badge red" id="cns-unsent-total-badge">0</span>
-            </div>
-            <button class="cdp-send-btn-all" id="cns-unsent-send-all-btn" onclick="cnsSendAllKakao()" disabled>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg>
-              일괄 알림톡 발송
-            </button>
-          </div>
           <div class="cdp-month-tabs" id="cns-unsent-month-tabs">
             <div class="pss-loading"><i class="fas fa-spinner fa-spin"></i> 로딩 중...</div>
           </div>
@@ -58,7 +46,7 @@
         <i class="fas fa-history"></i>
         <span>발송 이력</span>
         <span id="cns-record-count" style="font-size:12px;color:#64748b;font-weight:600;"></span>
-        <button onclick="(async()=>{await loadConsentDispatchList(true);await renderConsentDispatchPage();})()" class="btn btn-sm btn-secondary" style="margin-left:auto;" title="목록 새로 고침"><i class="fas fa-sync-alt"></i> 목록 새로 고침</button>
+        <button onclick="(async()=>{await loadConsentDispatchList(true);await renderConsentDispatchPage();})()" class="btn btn-sm btn-secondary btn-refresh" style="margin-left:auto;" title="목록 새로 고침"><i class="fas fa-sync-alt"></i> 목록 새로 고침</button>
       </div>
 
       <!-- ── 필터 바 ── -->

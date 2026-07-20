@@ -1,4 +1,4 @@
-// ─── DASHBOARD ───
+﻿// ─── DASHBOARD ───
 
 
 // ── 대시보드 임시저장 알림 카드 ──
@@ -28,7 +28,7 @@ function renderDashExpiryBanner(){
         <div class="dash-alert-banner-title">
           계약만료 통지 대상
           <span class="dash-alert-banner-count">${total}명</span>이 있습니다
-          ${urgent.length ? `<span style="display:inline-flex;align-items:center;gap:3px;background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:20px;padding:1px 8px;font-size:11px;font-weight:700;margin-left:6px;"><i class="fas fa-exclamation-circle" style="font-size:9px;"></i> D-7 이내 ${urgent.length}명</span>` : ''}
+          ${urgent.length ? `<span style="display:inline-flex;align-items:center;gap:3px;background:#fee2e2;color:#991b1b;border-radius:20px;padding:1px 8px;font-size:11px;font-weight:700;margin-left:6px;"><i class="fas fa-exclamation-circle" style="font-size:9px;"></i> D-7 이내 ${urgent.length}명</span>` : ''}
         </div>
         <div class="dash-alert-banner-sub">29일 이내 계약 만료 예정 — 클릭하여 ${PAGE_LABELS['contract-expiry-notice']} 페이지로 이동</div>
       </div>
@@ -61,7 +61,7 @@ function renderDashRegularBanner(){
       <div class="dash-alert-banner-body">
         <div class="dash-alert-banner-title">
           정규직 전환 의무 대상
-          <span class="dash-alert-banner-count">${exceeded.length}명</span>이 있습니다
+          <span class="dash-alert-banner-count">${exceeded.length}명</span>
         </div>
         <div class="dash-alert-banner-sub">기간제 2년 초과 — 클릭하여 ${PAGE_LABELS['regular-conversion']} 페이지로 이동</div>
       </div>
@@ -219,7 +219,7 @@ function renderDashProbationBanner(){
       <div class="dash-alert-banner-body">
         <div class="dash-alert-banner-title">
           관리가 필요한 수습 근로자
-          <span class="dash-alert-banner-count">${total}명</span>이 있습니다
+          <span class="dash-alert-banner-count">${total}명</span>
         </div>
         <div class="dash-alert-banner-sub">수습기간 3개월 초과 근로자 해고 시 30일 전 서면 통지 의무</div>
       </div>
@@ -258,7 +258,7 @@ function renderProbMgmtCompanyList(){
   const coIds = [...new Set(allTargets.map(t => t.contract.company_id))];
 
   let filtered = allCompanies.filter(c =>
-    coIds.includes(c.id) && (!q || c.company_name.toLowerCase().includes(q))
+    coIds.includes(c.id) && isCompanyActive(c) && (!q || c.company_name.toLowerCase().includes(q))
   ).sort((a,b) => (a.company_name||'').localeCompare(b.company_name||'','ko'));
 
   if(!filtered.length){
@@ -272,13 +272,13 @@ function renderProbMgmtCompanyList(){
     const severCnt   = coTargets.filter(t => t.probMonths > 3 && t.daysLeft < 30).length;
     const isSelected = c.id === _probMgmtSelectedCoId;
     const noticeBadge   = noticeCnt > 0
-      ? `<span class="chip-badge" style="background:#dbeafe;color:#1e40af;border:1px solid #93c5fd;">서면통지대상 ${noticeCnt}명</span>`
+      ? `<span class="count-badge">${noticeCnt}</span>`
       : '';
     const severBadge    = severCnt > 0
-      ? `<span class="chip-badge has-urgent">해고예고수당대상 ${severCnt}명</span>`
+      ? `<span class="count-badge">${severCnt}</span>`
       : '';
-    const defaultBadge  = (!noticeCnt && !severCnt)
-      ? `<span class="chip-badge normal">${coTargets.length}명</span>`
+    const defaultBadge  = (!noticeCnt && !severCnt && coTargets.length > 0)
+      ? `<span class="count-badge">${coTargets.length}</span>`
       : '';
     return `<button class="probmgmt-co-chip${isSelected?' selected':''}"
       onclick="selectProbMgmtCompany('${c.id}','${c.company_name.replace(/'/g,"\\'")}')">
@@ -645,9 +645,9 @@ function updateProbExtendPreview(){
 
   let noteHtml = '';
   if(months > 3 && daysLeft >= 30)
-    noteHtml = `<span style="background:#dbeafe;color:#1e40af;border:1px solid #93c5fd;border-radius:12px;padding:1px 8px;font-size:11px;font-weight:600;margin-left:6px;">서면통지대상</span>`;
+    noteHtml = `<span style="background:#dbeafe;color:#1e40af;border-radius:12px;padding:1px 8px;font-size:11px;font-weight:600;margin-left:6px;">서면통지대상</span>`;
   else if(months > 3 && daysLeft < 30)
-    noteHtml = `<span style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:12px;padding:1px 8px;font-size:11px;font-weight:600;margin-left:6px;">해고예고수당대상</span>`;
+    noteHtml = `<span style="background:#fee2e2;color:#991b1b;border-radius:12px;padding:1px 8px;font-size:11px;font-weight:600;margin-left:6px;">해고예고수당대상</span>`;
 
   preview.innerHTML = `연장 후 수습 만료일: <strong>${newEndStr}</strong> (D-${daysLeft})${noteHtml}`;
 }
@@ -997,7 +997,7 @@ function renderDashSeveranceBanner(){
       <div class="dash-alert-banner-body">
         <div class="dash-alert-banner-title">
           확인되지 않은 퇴직금 지급 이력
-          <span class="dash-alert-banner-count">${total}건</span>이 있습니다
+          <span class="dash-alert-banner-count">${total}건</span>
         </div>
         <div class="dash-alert-banner-sub">퇴직금 정산내역서 발송 완료 — 클릭하여 ${PAGE_LABELS['severance']} 페이지로 이동</div>
       </div>
@@ -1171,9 +1171,9 @@ function renderDraftAlerts(){
         임시저장 미완료 항목
       </div>
       <div class="dash-ac-badges">
-        ${draftCompanies.length ? `<span class="dash-ac-badge" style="background:rgba(245,158,11,.15);border-color:#fde68a;color:#92400e;"><i class="fas fa-building" style="margin-right:4px;font-size:10px;"></i>고객사 ${draftCompanies.length}건</span>` : ''}
-        ${draftContracts.length ? `<span class="dash-ac-badge" style="background:rgba(99,102,241,.12);border-color:#c7d2fe;color:#3730a3;"><i class="fas fa-file-contract" style="margin-right:4px;font-size:10px;"></i>계약서 ${draftContracts.length}건</span>` : ''}
-        ${draftPayrolls.length  ? `<span class="dash-ac-badge" style="background:rgba(22,163,74,.1);border-color:#86efac;color:#15803d;"><i class="fas fa-file-invoice-dollar" style="margin-right:4px;font-size:10px;"></i>급여 ${draftPayrolls.length}건</span>` : ''}
+        ${draftCompanies.length ? `<span class="dash-ac-badge" style="background:rgba(245,158,11,.15);color:#92400e;"><i class="fas fa-building" style="margin-right:4px;font-size:10px;"></i>고객사 ${draftCompanies.length}건</span>` : ''}
+        ${draftContracts.length ? `<span class="dash-ac-badge" style="background:rgba(99,102,241,.12);color:#3730a3;"><i class="fas fa-file-contract" style="margin-right:4px;font-size:10px;"></i>계약서 ${draftContracts.length}건</span>` : ''}
+        ${draftPayrolls.length  ? `<span class="dash-ac-badge" style="background:rgba(22,163,74,.1);color:#15803d;"><i class="fas fa-file-invoice-dollar" style="margin-right:4px;font-size:10px;"></i>급여 ${draftPayrolls.length}건</span>` : ''}
       </div>
     </div>
     <div class="draft-alert-card-body">${coGroup}${ctGroup}${piGroup}</div>
@@ -1252,7 +1252,7 @@ function _renderContractsBanners(){
           임시저장 미완료 항목
         </div>
         <div class="dash-ac-badges">
-          <span class="dash-ac-badge" style="background:rgba(99,102,241,.12);border-color:#c7d2fe;color:#3730a3;"><i class="fas fa-file-contract" style="margin-right:4px;font-size:10px;"></i>계약서 ${drafts.length}건</span>
+          <span class="dash-ac-badge" style="background:rgba(99,102,241,.12);color:#3730a3;"><i class="fas fa-file-contract" style="margin-right:4px;font-size:10px;"></i>계약서 ${drafts.length}건</span>
         </div>
       </div>
       <div class="draft-alert-card-body">
@@ -1286,7 +1286,7 @@ function _renderContractsBanners(){
         <div class="dash-alert-banner-head">
           <div class="dash-alert-banner-icon"><i class="fas fa-file-contract"></i></div>
           <div class="dash-alert-banner-body">
-            <div class="dash-alert-banner-title">근로계약서 미발송 <span class="dash-alert-banner-count">${unsignedContracts.length}건</span>이 있습니다</div>
+            <div class="dash-alert-banner-title">근로계약서 미발송 <span class="dash-alert-banner-count">${unsignedContracts.length}건</span></div>
             <div class="dash-alert-banner-sub">클릭하여 ${PAGE_LABELS['contract-dispatch']} 페이지로 이동</div>
           </div>
           <div class="dash-alert-banner-arrow"><i class="fas fa-chevron-right"></i></div>
@@ -1310,7 +1310,7 @@ function _renderContractsBanners(){
         <div class="dash-alert-banner-head">
           <div class="dash-alert-banner-icon"><i class="fas fa-file-shield"></i></div>
           <div class="dash-alert-banner-body">
-            <div class="dash-alert-banner-title">정보제공동의서 미발송 <span class="dash-alert-banner-count">${unsignedConsent.length}건</span>이 있습니다</div>
+            <div class="dash-alert-banner-title">정보제공동의서 미발송 <span class="dash-alert-banner-count">${unsignedConsent.length}건</span></div>
             <div class="dash-alert-banner-sub">클릭하여 ${PAGE_LABELS['consent-dispatch']} 페이지로 이동</div>
           </div>
           <div class="dash-alert-banner-arrow"><i class="fas fa-chevron-right"></i></div>
@@ -1330,7 +1330,7 @@ function _renderContractsBanners(){
         <div class="dash-alert-banner-head">
           <div class="dash-alert-banner-icon"><i class="fas fa-file-contract"></i></div>
           <div class="dash-alert-banner-body">
-            <div class="dash-alert-banner-title">계약만료 통지 대상 <span class="dash-alert-banner-count">${targets.length}명</span>이 있습니다</div>
+            <div class="dash-alert-banner-title">계약만료 통지 대상 <span class="dash-alert-banner-count">${targets.length}명</span></div>
             <div class="dash-alert-banner-sub">29일 이내 계약 만료 예정 — 클릭하여 ${PAGE_LABELS['contract-expiry-notice']} 페이지로 이동</div>
           </div>
           <div class="dash-alert-banner-arrow"><i class="fas fa-chevron-right"></i></div>
@@ -1351,7 +1351,7 @@ function _renderContractsBanners(){
         <div class="dash-alert-banner-head">
           <div class="dash-alert-banner-icon"><i class="fas fa-user-check"></i></div>
           <div class="dash-alert-banner-body">
-            <div class="dash-alert-banner-title">정규직 전환 의무 대상 <span class="dash-alert-banner-count">${exceeded.length}명</span>이 있습니다</div>
+            <div class="dash-alert-banner-title">정규직 전환 의무 대상 <span class="dash-alert-banner-count">${exceeded.length}명</span></div>
             <div class="dash-alert-banner-sub">기간제 2년 초과 — 클릭하여 ${PAGE_LABELS['regular-conversion']} 페이지로 이동</div>
           </div>
           <div class="dash-alert-banner-arrow"><i class="fas fa-chevron-right"></i></div>
@@ -1374,7 +1374,7 @@ function _renderContractsBanners(){
         <div class="dash-alert-banner-head">
           <div class="dash-alert-banner-icon"><i class="fas fa-user-clock"></i></div>
           <div class="dash-alert-banner-body">
-            <div class="dash-alert-banner-title">관리가 필요한 수습 근로자 <span class="dash-alert-banner-count">${total}명</span>이 있습니다</div>
+            <div class="dash-alert-banner-title">관리가 필요한 수습 근로자 <span class="dash-alert-banner-count">${total}명</span></div>
             <div class="dash-alert-banner-sub">수습기간 3개월 초과 근로자 해고 시 30일 전 서면 통지 의무</div>
           </div>
           <div class="dash-alert-banner-arrow"><i class="fas fa-chevron-right"></i></div>

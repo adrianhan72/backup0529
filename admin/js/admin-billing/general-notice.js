@@ -1,4 +1,4 @@
-//  중요공지 관리 (page-general-notice)
+﻿//  중요공지 관리 (page-general-notice)
 // ======================================================================
 
 // ── 상태 변수 ──
@@ -27,7 +27,7 @@ function renderGnCompanyChips(){
   const chips = document.getElementById('gn-company-chips');
   if(!chips) return;
   const list = allCompanies
-    .filter(c => !c.is_draft && c.status===COMPANY_STATUS.ACTIVE && (!q || (c.company_name||'').toLowerCase().includes(q)))
+    .filter(c => !c.is_draft && isCompanyActive(c) && (!q || (c.company_name||'').toLowerCase().includes(q)))
     .sort((a,b) => (a.company_name||'').localeCompare(b.company_name||'','ko'));
   if(!list.length){
     chips.innerHTML = `<div style="font-size:12.5px;color:#9ca3af;padding:8px 0;">${q ? `"${q}" 검색 결과가 없습니다` : '이용 중인 고객사가 없습니다'}</div>`;
@@ -52,26 +52,36 @@ function toggleGnCompany(id){
   renderGnCompanyChips();
 }
 
-function gnSelectAll(){
+function gnToggleSelectAll(){
   const q = (document.getElementById('gn-company-search')?.value || '').toLowerCase();
-  allCompanies
-    .filter(c => !c.is_draft && c.status===COMPANY_STATUS.ACTIVE && (!q || (c.company_name||'').toLowerCase().includes(q)))
-    .forEach(c => _gnSelectedIds.add(c.id));
-  renderGnCompanyChips();
-}
-
-function gnDeselectAll(){
-  _gnSelectedIds.clear();
+  const total = allCompanies.filter(c => !c.is_draft && isCompanyActive(c) && (!q || (c.company_name||'').toLowerCase().includes(q))).length;
+  if(total > 0 && _gnSelectedIds.size >= total){
+    _gnSelectedIds.clear();
+  } else {
+    allCompanies
+      .filter(c => !c.is_draft && isCompanyActive(c) && (!q || (c.company_name||'').toLowerCase().includes(q)))
+      .forEach(c => _gnSelectedIds.add(c.id));
+  }
   renderGnCompanyChips();
 }
 
 function _updateGnSelectBtn(){
   const q = (document.getElementById('gn-company-search')?.value || '').toLowerCase();
-  const total = allCompanies.filter(c => !c.is_draft && c.status===COMPANY_STATUS.ACTIVE && (!q || (c.company_name||'').toLowerCase().includes(q))).length;
-  const btn = document.querySelector('.gn-sel-btn.select');
+  const total = allCompanies.filter(c => !c.is_draft && isCompanyActive(c) && (!q || (c.company_name||'').toLowerCase().includes(q))).length;
+  const btn = document.getElementById('gn-toggle-all-btn');
   if(!btn) return;
   const isAll = total > 0 && _gnSelectedIds.size >= total;
-  btn.classList.toggle('active', isAll);
+  const icon = btn.querySelector('i');
+  if(isAll){
+    btn.classList.add('deselect');
+    btn.classList.remove('select');
+    if(icon){ icon.className = 'fas fa-square'; }
+    btn.innerHTML = '<i class="fas fa-square"></i> 전체해제';
+  } else {
+    btn.classList.add('select');
+    btn.classList.remove('deselect');
+    btn.innerHTML = '<i class="fas fa-check-square"></i> 전체선택';
+  }
 }
 
 function _updateGnSelectedCount(){
@@ -415,7 +425,7 @@ async function cancelGnScheduled(recordId){
 // ─────────────────────────────────────────────
 async function _gnSendStandardsUpdateNotice(updateType, detail){
   const adminName = _getAdminUsername();
-  const targets   = allCompanies.filter(c => !c.is_draft && c.status===COMPANY_STATUS.ACTIVE);
+  const targets   = allCompanies.filter(c => !c.is_draft && isCompanyActive(c));
   if(!targets.length) return;
   const title = `[산정기준 업데이트] ${updateType} 기준이 변경되었습니다`;
   const body  =

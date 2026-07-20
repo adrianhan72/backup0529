@@ -41,7 +41,7 @@ function _renderCompaniesDraftBanner(){
         <div style="display:flex;align-items:center;gap:8px;">
           <span class="pulse-dot"></span>
           <span class="dash-ac-title draft-alert-title" style="font-size:13.5px;">임시저장 미완료 고객사</span>
-          <span class="dash-ac-badge" style="background:#fef3c7;border:1px solid #fde68a;color:#92400e;border-radius:20px;padding:2px 9px;font-size:11.5px;font-weight:700;">${drafts.length}건</span>
+          <span class="dash-ac-badge" style="background:#fef3c7;color:#92400e;border-radius:20px;padding:2px 9px;font-size:11.5px;font-weight:700;">${drafts.length}건</span>
         </div>
         <span style="font-size:11.5px;color:#b45309;">클릭하여 이어 작성할 수 있습니다</span>
       </div>
@@ -200,9 +200,14 @@ function renderCompanies(){
               <div style="padding:8px 10px;background:#fff3f3;border:1px solid #fca5a5;border-radius:6px;font-size:11px;color:#b91c1c;line-height:1.5;margin-bottom:8px;">
                 <i class="fas fa-info-circle"></i> 해지고객사의 데이터 보존년한은 해지일로부터 5년입니다
               </div>
-              <button class="btn btn-sm btn-secondary" style="width:100%;" onclick="cancelTerminate('${c.id}','${c.company_name}')">
-                <i class="fas fa-undo"></i>해지 취소
-              </button>
+              <div style="display:flex;gap:6px;">
+                <button class="btn btn-sm btn-indigo" style="flex:1;" onclick="viewCompanyInfo('${c.id}')">
+                  <i class="fas fa-building"></i>고객정보
+                </button>
+                <button class="btn btn-sm btn-secondary" style="flex:1;" onclick="cancelTerminate('${c.id}','${c.company_name}')">
+                  <i class="fas fa-undo"></i>해지 취소
+                </button>
+              </div>
              </div>`
           : isTerminatePending
           ? `<div style="margin-top:10px;">
@@ -666,6 +671,7 @@ async function deleteDraftCompany(){
 }
 
 function openCompanyModal(id=null){
+  window._cmViewOnly = false; // 기본: 편집 모드
   // 임시저장 항목인지 먼저 확인
   const _cmpData = id ? allCompanies.find(x=>x.id===id) : null;
   const _isDraft = !!(_cmpData && _cmpData.is_draft);
@@ -825,6 +831,28 @@ function openCompanyModal(id=null){
   openModal('company-modal');
 }
 function editCompany(id){openCompanyModal(id)}
+
+// ── 해지 고객사 정보 조회 (readonly 모달) ──
+function viewCompanyInfo(id){
+  openCompanyModal(id);
+  window._cmViewOnly = true; // readonly 플래그 (openCompanyModal 이후 설정)
+  // 모든 입력 필드 readonly 처리
+  const modal = document.getElementById('company-modal');
+  if(!modal) return;
+  modal.querySelectorAll('input, textarea, select').forEach(el => { el.disabled = true; el.readOnly = true; });
+  // 버튼 숨김
+  const btns = modal.querySelectorAll('button:not(.modal-close)');
+  btns.forEach(b => b.style.display = 'none');
+  // 타이틀 변경
+  const title = document.getElementById('cm-title');
+  if(title) title.textContent = '고객사 정보 (조회 전용)';
+  // 이력 섹션은 표시
+  const histSec = document.getElementById('cm-history-section');
+  if(histSec) histSec.style.display = '';
+  // 적용일 행 숨김
+  const effRow = document.getElementById('cm-effective-date-row');
+  if(effRow) effRow.style.display = 'none';
+}
 
 // ── 수정 내용 적용일 UI 초기화 ──
 function _cmInitEffectiveDateUI(companyId){
@@ -1422,12 +1450,22 @@ function _cmRenderExecutives() {
   const list = document.getElementById('cm-executives-list');
   if (!list) return;
   list.innerHTML = _cmExecutives.map((d, i) => _cmExecutiveHTML(i, d)).join('');
+  // readonly 모드: 등록 내역 없으면 섹션 숨김
+  if (window._cmViewOnly) {
+    const sec = document.getElementById('cm-executives-section');
+    if (sec) sec.style.display = _cmExecutives.length ? '' : 'none';
+  }
 }
 
 function _cmRenderRelated() {
   const list = document.getElementById('cm-related-list');
   if (!list) return;
   list.innerHTML = _cmRelatedParties.map((d, i) => _cmRelatedHTML(i, d)).join('');
+  // readonly 모드: 등록 내역 없으면 섹션 숨김
+  if (window._cmViewOnly) {
+    const sec = document.getElementById('cm-related-section');
+    if (sec) sec.style.display = _cmRelatedParties.length ? '' : 'none';
+  }
 }
 
 function _cmAddExecutive() {

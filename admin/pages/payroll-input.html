@@ -36,16 +36,19 @@
 
       <input type="file" id="excel-upload-input" accept=".xlsx,.xls" style="display:none;" onchange="handleExcelUpload(event)" />
 
-      <!-- ① 고객사 선택 카드 -->
-      <div class="card" id="pi-company-select-card" style="margin-bottom:16px;padding:20px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;border-bottom:1px solid #e5e7eb;padding-bottom:12px;">
-          <div class="co-card-title" style="margin-bottom:0;"><i class="fas fa-building"></i>고객사를 선택하세요</div>
-          <div class="search-input" style="max-width:220px;">
+      <!-- ① 고객사 선택 -->
+      <div id="pi-company-select-card">
+        <div class="section-title">
+          <i class="fas fa-building"></i>
+          <span>고객사를 선택하세요</span>
+          <div class="filt-search-wrap" style="margin-left:auto;">
             <i class="fas fa-search"></i>
-            <input type="text" id="pi-company-search" placeholder="고객사명 검색" oninput="renderPICompanyList()" />
+            <input type="text" id="pi-company-search" class="filt-search" style="width:160px;" placeholder="고객사명 검색" oninput="renderPICompanyList()" />
           </div>
         </div>
-        <div id="pi-company-chips" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:20px;"></div>
+        <div class="card" style="margin-bottom:16px;overflow:hidden;">
+          <div id="pi-company-chips" style="padding:20px;display:flex;flex-wrap:wrap;gap:8px;"></div>
+        </div>
       </div>
 
       <!-- ② 고객사 선택 후 입력 섹션 -->
@@ -55,6 +58,9 @@
           <span id="pi-selected-company-label" style="font-size:14px;font-weight:700;color:#fff;"></span>
           <button onclick="clearPICompanySelect()" class="btn btn-icon-dark" title="고객사 선택 해제"><i class="fas fa-times"></i></button>
         </div>
+
+        <!-- ── 해당 고객사 임시저장 목록 ── -->
+        <div id="pi-co-draft-banner" style="display:none;"></div>
 
         <!-- 숨김 호환용 select (기존 JS 참조 유지) -->
         <select id="pi-company" style="display:none;"></select>

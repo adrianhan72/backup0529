@@ -214,7 +214,7 @@ function renderAlCompanyChips(){
     return `<button class="co-chip${_alCompanyId===c.id?' selected':''}" onclick="selectAlCompany('${c.id}','${(c.company_name||'').replace(/'/g,"\\'")}')">
       <i class="fas fa-building" style="font-size:11px;"></i>
       ${c.company_name||'-'}
-      <span class="co-chip-badge count">${empCnt}명</span>
+      ${empCnt > 0 ? `<span class="count-badge">${empCnt}</span>` : ''}
     </button>`;
   }).join('');
 }
