@@ -4,31 +4,28 @@
       <!-- 년도별 산정기준 업데이트 알림 배너 -->
       <div id="dash-standards-banner" style="display:none;margin-bottom:18px;"></div>
       <!-- dash-2yr-section 제거됨: renderDashRegularBanner()로 통합 표시 -->
-      <!-- 근로계약서 미발송 알림 배너 -->
-      <div id="dash-contract-unsent-section" style="display:none;margin-bottom:18px;"></div>
-      <!-- 제3자 정보제공동의서 미발송 알림 카드 -->
-      <div id="dash-consent-section" style="display:none;margin-bottom:18px;"></div>
-      <!-- 급여명세서 미발송 알림 배너 -->
-      <div id="dash-unsent-section" style="display:none;margin-bottom:18px;"></div>
-      <!-- 계약만료 통지 대상 배너 -->
-      <div id="dash-expiry-banner" style="display:none;margin-bottom:18px;"></div>
-      <!-- 정규직 전환 의무 대상 배너 -->
-      <div id="dash-regular-banner" style="display:none;margin-bottom:18px;"></div>
-      <!-- 수습 근로자 관리 배너 -->
-      <div id="dash-probation-banner" style="display:none;margin-bottom:18px;"></div>
+      <!-- 근로계약서 미발송 ~ 수습근로자 관리 배너: 3열 그리드 -->
+      <div class="dash-todo-grid" style="display:none;">
+        <div id="dash-contract-unsent-section" style="display:none;"></div>
+        <div id="dash-consent-section" style="display:none;"></div>
+        <div id="dash-unsent-section" style="display:none;"></div>
+        <div id="dash-expiry-banner" style="display:none;"></div>
+        <div id="dash-regular-banner" style="display:none;"></div>
+        <div id="dash-probation-banner" style="display:none;"></div>
+      </div>
       <!-- 퇴직금 지급 이력 배너 (임시저장 위) -->
       <div id="dash-severance-banner" style="display:none;margin-bottom:18px;"></div>
       <!-- 계약서 날인본 미등록 알림 카드 -->
       <div id="dash-signed-section" style="display:none;margin-bottom:18px;"></div>
 
       <!-- 급여 입력 카드 -->
-      <div class="card" style="margin-bottom:18px;">
+      <div class="card" style="margin-top:24px;margin-bottom:18px;">
         <div class="card-header">
           <span class="card-title">💰 이번 달 급여 미입력 <span id="active-count" style="font-size:13px;font-weight:600;color:#6b7280;"></span></span>
           <div style="display:flex;align-items:center;gap:8px;">
-            <div class="search-input" style="margin:0;">
+            <div class="filt-search-wrap">
               <i class="fas fa-search"></i>
-              <input type="text" id="dash-company-search" placeholder="고객사명 검색" oninput="renderDashboardCompanies()" style="width:160px;" />
+              <input type="text" id="dash-company-search" class="filt-search" style="width:160px;" placeholder="고객사명 검색" oninput="renderDashboardCompanies()" />
             </div>
           </div>
         </div>

@@ -1,13 +1,35 @@
 ﻿    <div id="page-contracts" class="page">
-      <!-- 근로 계약 관리 페이지 전체 배너 (고객사 선택과 무관) -->
-      <div id="contracts-draft-banner"   style="display:none;margin-bottom:10px;"></div>
-      <div id="contracts-signed-banner"  style="display:none;margin-bottom:10px;"></div>
-      <div id="contracts-consent-banner" style="display:none;margin-bottom:14px;"></div>
+      <!-- ══ 할일 목록 섹션 (고객사 선택 전 글로벌 배너 6종) ══ -->
+      <div id="cont-todo-section" style="display:none;">
+        <div class="section-title">
+          <i class="fas fa-clipboard-list"></i>
+          <span>할일 목록</span>
+        </div>
+        <div id="contracts-draft-banner"    style="display:none;margin-bottom:10px;"></div>
+        <div class="cont-todo-grid" style="display:none;">
+          <div id="contracts-signed-banner"   style="display:none;"></div>
+          <div id="contracts-consent-banner"  style="display:none;"></div>
+          <div id="contracts-expiry-banner"   style="display:none;"></div>
+          <div id="contracts-regular-banner"  style="display:none;"></div>
+          <div id="contracts-probation-banner" style="display:none;"></div>
+        </div>
+      </div>
+
+      <!-- ══ 고객사별 근로계약 관리 섹션 ══ -->
+      <div class="section-title">
+        <i class="fas fa-building"></i>
+        <span>고객사별 근로계약 관리</span>
+      </div>
       <!-- 고객사 선택 카드 -->
       <div class="card" id="cont-company-select-card" style="margin-bottom:16px;padding:20px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;border-bottom:1px solid #e5e7eb;padding-bottom:12px;">
           <div style="font-size:13px;font-weight:700;color:#374151;"><i class="fas fa-building" style="color:#6366f1;margin-right:6px;"></i>고객사를 선택하세요</div>
-          <div class="search-input" style="max-width:220px;"><i class="fas fa-search"></i><input type="text" id="cont-company-search" placeholder="고객사명 검색" oninput="renderContCompanyList()" /></div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div class="filt-search-wrap">
+              <i class="fas fa-search"></i>
+              <input type="text" id="cont-company-search" class="filt-search" style="width:160px;" placeholder="고객사명 검색" oninput="renderContCompanyList()" />
+            </div>
+          </div>
         </div>
         <div id="cont-company-chips" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:20px;"></div>
       </div>
@@ -15,10 +37,10 @@
       <!-- 선택된 고객사 목록 섹션 -->
       <div id="cont-list-section" style="display:none;">
 
-        <!-- 선택 고객사 헤더 + 목록 카드 세트 -->
+        <!-- 선택 고객사 헤더 + 알림 카드 세트 -->
         <div style="border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08);">
           <!-- 선택 고객사 헤더 -->
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:linear-gradient(90deg,#1e1b4b,#312e81);border-bottom:1px solid rgba(255,255,255,.1);">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:linear-gradient(90deg,#1e1b4b,#312e81);border-bottom:1px solid rgba(255,255,255,.1);border-radius:12px 12px 0 0;">
             <span id="cont-selected-company-label" style="font-size:14px;font-weight:700;color:#fff;"></span>
             <div style="display:flex;align-items:center;gap:10px;">
               <button class="btn btn-primary" id="cont-add-btn" onclick="openContractModal(null, currentContCompanyId)"><i class="fas fa-plus"></i> 신규계약 작성</button>
@@ -28,15 +50,23 @@
 
         <!-- ── 갱신·해지 요약 배너 ── -->
         <div id="cont-summary-banner" style="display:none;margin:10px 18px;padding:10px 16px;background:linear-gradient(90deg,#f8fafc,#f1f5f9);border:1px solid #e2e8f0;border-radius:8px;font-size:12px;color:#475569;gap:16px;align-items:center;flex-wrap:wrap;"></div>
-        <!-- ── 알림 카드 영역: 임시저장 / 서류미비 / 갱신예정 / 계약예정 / 해지예정 ── -->
-        <div id="cont-alert-cards-wrap" style="margin-bottom:0;"></div>
+        <!-- ── 회사별 아코디언 카드 영역: 계약예정 / 임시저장 / 미발송 / 미동의 / 만료통지 / 정규직전환 / 수습 ── -->
+        <div id="cont-co-cards-wrap" style="margin-bottom:0;"></div>
+        </div><!-- /선택 고객사 헤더+카드 세트 -->
 
         <!-- 숨겨진 필터 (goContractsByCompany 호환용) -->
         <select id="cont-company-filter" style="display:none;"></select>
-        <div class="card" style="border-radius:0;box-shadow:none;margin-bottom:0;border-top:none;">
-          <div class="filter-bar" style="flex-wrap:wrap;gap:8px;">
-            <div class="search-input"><i class="fas fa-search"></i><input type="text" id="cont-search" placeholder="직원명 검색" oninput="renderContracts()" /></div>
-            <select id="cont-filter-empcat" onchange="filterContracts()" class="">
+
+        <!-- ── 근로계약 목록 ── -->
+        <div class="section-title">
+          <i class="fas fa-list"></i>
+          <span>근로계약 목록</span>
+        </div>
+
+        <!-- 필터 바 -->
+        <div class="card" style="margin-bottom:12px;overflow:hidden;">
+          <div class="filt-bar">
+            <select id="cont-filter-empcat" onchange="filterContracts()" class="filt-select">
               <option value="">고용형태 전체</option>
               <option value="regular">정규직</option>
               <option value="regular_probation">정규직 수습</option>
@@ -47,8 +77,12 @@
               <option value="related_party">특수관계인</option>
               <option value="representative">대표자</option>
             </select>
+            <div class="filt-search-wrap">
+              <i class="fas fa-search"></i>
+              <input type="text" id="cont-search" class="filt-search" style="width:140px;" placeholder="직원명 검색" oninput="renderContracts()" />
+            </div>
             <div id="cont-filter-status-group" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-              <span style="font-size:11.5px;color:#6b7280;font-weight:600;">상태:</span>
+              <span class="filt-label">상태:</span>
               <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;color:#374151;user-select:none;"><input type="checkbox" class="cont-filter-status-cb" value="전체" onchange="_toggleAllStatus(this)" style="accent-color:#6366f1;" />전체</label>
               <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;color:#374151;user-select:none;"><input type="checkbox" class="cont-filter-status-cb" value="유효" checked onchange="_onStatusFilterChange()" style="accent-color:#6366f1;" />유효</label>
               <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;color:#374151;user-select:none;"><input type="checkbox" class="cont-filter-status-cb" value="만료" onchange="_onStatusFilterChange()" style="accent-color:#6366f1;" />만료</label>
@@ -59,9 +93,15 @@
               <input type="checkbox" id="cont-filter-docs-incomplete" onchange="filterContracts()" style="accent-color:#ea580c;width:15px;height:15px;" />
               서류미비 상태만 보기
             </label>
-            <span style="font-size:11.5px;color:#9ca3af;margin:0 2px;">또는</span>
-            <div class="search-input" style="min-width:280px;"><i class="fas fa-hashtag" style="color:#9ca3af;"></i><input type="text" id="cont-filter-id" placeholder="계약서 고유 ID" oninput="filterContracts()" style="font-size:12px;width:100%;" /></div>
+            <div class="filt-search-wrap" style="margin-left:auto;">
+              <i class="fas fa-hashtag"></i>
+              <input type="text" id="cont-filter-id" class="filt-search" style="width:180px;" placeholder="계약서 고유 ID" oninput="filterContracts()" />
+            </div>
           </div>
+        </div>
+
+        <!-- 근로계약 목록 테이블 카드 -->
+        <div class="card" style="padding:0;overflow:hidden;">
           <div class="table-wrap">
             <table>
               <thead><tr><th>직원명</th><th>고용형태</th><th>계약기간</th><th>통상시급</th><th>연봉</th><th>기본급</th><th>주휴수당</th><th>약정임금(월)</th><th>서류날인본</th><th>상태</th><th>관리</th></tr></thead>
@@ -70,7 +110,6 @@
           </div>
           <div class="pagination" id="cont-pagination"></div>
         </div>
-        </div><!-- /선택 고객사 헤더+목록 세트 wrapper -->
       </div>
     </div>
 

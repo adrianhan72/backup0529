@@ -2424,8 +2424,8 @@ async function saveDraftContract(reason){
       id_number: document.getElementById('ct-em-id').value,
       department: document.getElementById('ct-em-dept').value,
       position: document.getElementById('ct-em-position').value,
-      hire_date: document.getElementById('ct-em-hire').value,
-      expire_date: document.getElementById('ct-em-expire').value,
+      hire_date: document.getElementById('ct-edit-em-hire')?.value || '',
+      expire_date: document.getElementById('ct-end')?.value || '',
       status: EMP_STATUS.ACTIVE,
       dependents: parseInt(document.getElementById('ct-childcare-dependents')?.value)||0,
       tax_dependents: parseInt(document.getElementById('ct-em-tax-dependents')?.value)||1,
@@ -2454,6 +2454,7 @@ async function saveDraftContract(reason){
     : (isNew ? document.getElementById('ct-em-category').value : document.getElementById('ct-type').value);
   const catForDraft = CONTRACT_TYPE_LEGACY_MAP[_rawCatDraft] || _rawCatDraft;
   const isDailyDraft = catForDraft ===CONTRACT_TYPE.DAILY;
+  const isRegDraft   = catForDraft ===CONTRACT_TYPE.REGULAR || catForDraft ===CONTRACT_TYPE.REGULAR_PROBATION;
 
   const scheduleJSON = getScheduleJSON();
   const workDays = parseInt(document.getElementById('ct-days').value)||0;
@@ -2461,10 +2462,10 @@ async function saveDraftContract(reason){
 
   // 신규 모드: ct-em-start(계약시작일) 전용 필드 사용. 없으면 ct-em-hire 폴백(하위호환)
   const contractStart = isNew
-    ? (document.getElementById('ct-em-start')?.value || document.getElementById('ct-em-hire').value||'')
+    ? (document.getElementById('ct-start')?.value || document.getElementById('ct-edit-em-hire')?.value||'')
     : (document.getElementById('ct-start').value||'');
   const contractEnd = isNew
-    ? (document.getElementById('ct-em-expire').value||'')
+    ? (document.getElementById('ct-end')?.value||'')
     : (document.getElementById('ct-end').value||'');
 
   // 정규직(수습 제외)은 계약 종료일을 항상 빈 값으로 강제
@@ -2583,7 +2584,7 @@ async function saveDraftContract(reason){
     note:                 document.getElementById('ct-note').value||'',
     salary_start_date:    (editId.contract || _recontractEmpId)
       ? (document.getElementById('ct-start')?.value || '')
-      : (document.getElementById('ct-em-start')?.value || document.getElementById('ct-em-hire')?.value || ''),
+      : (document.getElementById('ct-start')?.value || document.getElementById('ct-edit-em-hire')?.value || ''),
     salary_end_date:      '',
     is_draft:             true,
     draft_saved_at:       Date.now(),
@@ -2998,16 +2999,16 @@ function _ctValidate(){
     }
     if(!document.getElementById('ct-em-name').value.trim())
       _ctMarkError('ct-em-name', '이름', errors);
-    if(!document.getElementById('ct-em-hire').value)
-      _ctMarkError('ct-em-hire', '입사일', errors);
-    if(!document.getElementById('ct-em-start')?.value)
-      _ctMarkError('ct-em-start', '계약 시작일', errors);
+    if(!document.getElementById('ct-edit-em-hire')?.value)
+      _ctMarkError('ct-edit-em-hire', '입사일', errors);
+    if(!document.getElementById('ct-start')?.value)
+      _ctMarkError('ct-start', '계약 시작일', errors);
     // 계약 시작일은 입사일보다 이전일 수 없음
     (function(){
-      const _hire = document.getElementById('ct-em-hire')?.value;
-      const _start = document.getElementById('ct-em-start')?.value;
+      const _hire = document.getElementById('ct-edit-em-hire')?.value;
+      const _start = document.getElementById('ct-start')?.value;
       if(_hire && _start && _start < _hire){
-        _ctMarkError('ct-em-start', '계약 시작일은 입사일보다 이전일 수 없습니다', errors);
+        _ctMarkError('ct-start', '계약 시작일은 입사일보다 이전일 수 없습니다', errors);
       }
     })();
     (function(){
@@ -3076,8 +3077,8 @@ function _ctValidate(){
     }
     // ── 계약직·계약직 수습·일용직: 계약 종료일(퇴사예정일) 필수 ──
     if(cat ===CONTRACT_TYPE.FIXED || cat ===CONTRACT_TYPE.FIXED_PROBATION || cat ===CONTRACT_TYPE.DAILY){
-      if(!document.getElementById('ct-em-expire')?.value)
-        _ctMarkError('ct-em-expire', '계약 종료일', errors);
+      if(!document.getElementById('ct-end')?.value)
+        _ctMarkError('ct-end', '계약 종료일', errors);
     }
     // ── 수습 계약: 수습 조건 전체 필수 ──
     if(cat ===CONTRACT_TYPE.REGULAR_PROBATION || cat ===CONTRACT_TYPE.FIXED_PROBATION){
@@ -3250,7 +3251,7 @@ async function saveContract(){
   // ── 신규 직원인 경우 먼저 직원 저장 ──
   if(!empId && !editId.contract && !_recontractEmpId){
     const newName = document.getElementById('ct-em-name').value.trim();
-    const newHire  = document.getElementById('ct-em-hire').value.trim();
+    const newHire  = document.getElementById('ct-edit-em-hire')?.value?.trim() || '';
     const newId    = document.getElementById('ct-em-id').value.trim();
     const newJob = document.getElementById('ct-em-job').value.trim();
     const newAddress = document.getElementById('ct-em-address').value.trim();
@@ -3266,8 +3267,8 @@ async function saveContract(){
       id_number: document.getElementById('ct-em-id').value,
       department: document.getElementById('ct-em-dept').value,
       position: document.getElementById('ct-em-position').value,
-      hire_date: document.getElementById('ct-em-hire').value,
-      expire_date: document.getElementById('ct-em-expire').value,
+      hire_date: document.getElementById('ct-edit-em-hire')?.value || '',
+      expire_date: document.getElementById('ct-end')?.value || '',
       status: EMP_STATUS.ACTIVE,
       dependents: parseInt(document.getElementById('ct-childcare-dependents')?.value)||0,
       tax_dependents: parseInt(document.getElementById('ct-em-tax-dependents')?.value)||1,
@@ -3394,7 +3395,7 @@ async function saveContract(){
       ? document.getElementById('ct-start')?.value
       : (_recontractEmpId
           ? document.getElementById('ct-start')?.value
-          : (document.getElementById('ct-em-start')?.value || document.getElementById('ct-em-hire')?.value));
+          : (document.getElementById('ct-start')?.value || document.getElementById('ct-edit-em-hire')?.value));
     const _contractYear = _hireRaw ? parseInt(_hireRaw.slice(0,4)) : new Date().getFullYear();
     // 최저임금: 해당 연도 데이터가 없으면 최신 연도 데이터로 폴백
     const _mw = _allMinimumWages.find(w => Number(w.year) === _contractYear)
@@ -3517,10 +3518,10 @@ async function saveContract(){
     const today2  = new Date().toISOString().slice(0,10);
     contractStatus= contractStart > today2 ? CONTRACT_STATUS.PENDING : CONTRACT_STATUS.ACTIVE;
   } else {
-    // 신규 모드: ct-em-start(계약시작일) 전용 필드 사용. 없으면 ct-em-hire 폴백(하위호환)
-    contractStart = document.getElementById('ct-em-start')?.value
-                 || document.getElementById('ct-em-hire').value;
-    contractEnd   = document.getElementById('ct-em-expire').value;
+    // 신규 모드: ct-start(계약시작일) 전용 필드 사용. 없으면 ct-edit-em-hire 폴백(하위호환)
+    contractStart = document.getElementById('ct-start')?.value
+                 || document.getElementById('ct-edit-em-hire')?.value || '';
+    contractEnd   = document.getElementById('ct-end')?.value || '';
     contractType  = document.getElementById('ct-em-category').value;
     const today2new = new Date().toISOString().slice(0,10);
     contractStatus = contractStart > today2new ? CONTRACT_STATUS.PENDING : CONTRACT_STATUS.ACTIVE;

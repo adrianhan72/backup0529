@@ -67,86 +67,78 @@
         </div>
       </div>
 
-      <!-- 발송 이력 통합 카드 -->
-      <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;">
+      <!-- ── 타이틀 + 새로고침 ── -->
+      <div class="section-title">
+        <i class="fas fa-history"></i>
+        <span>발송 이력</span>
+        <span id="cdp-record-count" style="font-size:12px;color:#64748b;font-weight:600;"></span>
+        <button onclick="(async()=>{await loadContractDispatchList(true);await renderContractDispatchPage();})()" class="btn btn-sm btn-secondary" style="margin-left:auto;" title="목록 새로 고침"><i class="fas fa-sync-alt"></i> 목록 새로 고침</button>
+      </div>
 
-        <!-- 카드 헤더 -->
-        <div style="padding:14px 20px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;">
-          <span style="font-size:14px;font-weight:700;color:#111827;display:flex;align-items:center;gap:8px;">
-            <i class="fas fa-history" style="color:#6366f1;"></i>
-            발송 이력
-          </span>
-          <button onclick="(async()=>{await loadContractDispatchList(true);await renderContractDispatchPage();})()" class="btn btn-sm btn-secondary" title="새로고침"><i class="fas fa-sync-alt"></i> 새로고침</button>
-        </div>
-
-        <!-- 검색 조건 -->
-        <div style="padding:14px 20px;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#fafafa;">
-          <!-- 발송 방식 필터 -->
-          <div style="display:flex;align-items:center;gap:6px;">
-            <span style="font-size:12px;color:#6b7280;font-weight:600;white-space:nowrap;">발송 방식</span>
-            <select id="cdp-filter-method" onchange="_cdpPage=1;renderContractDispatchPage()" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 10px;font-size:12.5px;color:#374151;background:#fff;cursor:pointer;font-family:inherit;">
+      <!-- ── 필터 바 ── -->
+      <div class="card" style="margin-bottom:12px;overflow:hidden;">
+        <div class="filt-bar">
+          <!-- 고객사 -->
+          <div style="display:flex;align-items:center;gap:5px;">
+            <span class="filt-label">고객사</span>
+            <select id="cdp-filter-company" onchange="_cdpPage=1;renderContractDispatchPage()" class="filt-select" style="max-width:240px;">
+              <option value="">전체</option>
+            </select>
+          </div>
+          <!-- 발송 방식 -->
+          <div style="display:flex;align-items:center;gap:5px;">
+            <span class="filt-label">발송 방식</span>
+            <select id="cdp-filter-method" onchange="_cdpPage=1;renderContractDispatchPage()" class="filt-select">
               <option value="">전체</option>
               <option value="kakao">알림톡</option>
               <option value="email">이메일</option>
               <option value="manual">수동교부</option>
             </select>
           </div>
-          <!-- 발송 상태 필터 -->
-          <div style="display:flex;align-items:center;gap:6px;">
-            <span style="font-size:12px;color:#6b7280;font-weight:600;white-space:nowrap;">발송 상태</span>
-            <select id="cdp-filter-status" onchange="_cdpPage=1;renderContractDispatchPage()" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 10px;font-size:12.5px;color:#374151;background:#fff;cursor:pointer;font-family:inherit;">
+          <!-- 발송 상태 -->
+          <div style="display:flex;align-items:center;gap:5px;">
+            <span class="filt-label">발송 상태</span>
+            <select id="cdp-filter-status" onchange="_cdpPage=1;renderContractDispatchPage()" class="filt-select">
               <option value="">전체</option>
               <option value="completed">완료</option>
               <option value="failed">실패</option>
               <option value="pending">대기</option>
             </select>
           </div>
-          <!-- 고객사 필터 -->
-          <div style="display:flex;align-items:center;gap:6px;">
-            <span style="font-size:12px;color:#6b7280;font-weight:600;white-space:nowrap;">고객사</span>
-            <select id="cdp-filter-company" onchange="_cdpPage=1;renderContractDispatchPage()" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 10px;font-size:12.5px;color:#374151;background:#fff;cursor:pointer;max-width:160px;font-family:inherit;">
-              <option value="">전체</option>
-            </select>
+          <!-- 기간 -->
+          <div style="display:flex;align-items:center;gap:5px;">
+            <span class="filt-label">기간</span>
+            <input type="date" id="cdp-filter-date-from" class="filt-date" />
+            <span style="font-size:11px;color:#9ca3af;">~</span>
+            <input type="date" id="cdp-filter-date-to" class="filt-date" />
+            <button onclick="_cdpDoSearch()" class="filt-btn-search">조회</button>
+            <span id="cdp-date-notice" style="font-size:10.5px;color:#9ca3af;white-space:nowrap;">(최대 3개월)</span>
           </div>
-          <!-- 기간 필터 -->
-          <div style="display:flex;align-items:center;gap:6px;">
-            <span style="font-size:12px;color:#6b7280;font-weight:600;white-space:nowrap;">기간</span>
-            <input type="date" id="cdp-filter-date-from"
-              style="border:1px solid #d1d5db;border-radius:7px;padding:5px 8px;font-size:12.5px;color:#374151;background:#fff;cursor:pointer;font-family:inherit;" />
-            <span style="font-size:12px;color:#9ca3af;">~</span>
-            <input type="date" id="cdp-filter-date-to"
-              style="border:1px solid #d1d5db;border-radius:7px;padding:5px 8px;font-size:12.5px;color:#374151;background:#fff;cursor:pointer;font-family:inherit;" />
-            <button onclick="_cdpDoSearch()" class="btn btn-danger btn-sm" style="height:32px;">조회</button>
-            <span id="cdp-date-notice" style="font-size:11px;color:#9ca3af;">(최대 3개월간의 기간으로 조회하실 수 있습니다.)</span>
-          </div>
-          <!-- 키워드 검색 -->
+          <!-- 검색 (우측) -->
           <div style="display:flex;align-items:center;gap:6px;margin-left:auto;">
-            <div style="position:relative;">
-              <i class="fas fa-search" style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:12px;pointer-events:none;"></i>
-              <input type="text" id="cdp-search" placeholder="직원명·수신처 검색" oninput="renderContractDispatchPage()" style="padding:6px 10px 6px 28px;border:1px solid #d1d5db;border-radius:7px;font-size:12.5px;width:180px;font-family:inherit;" />
+            <div class="filt-search-wrap">
+              <i class="fas fa-search"></i>
+              <input type="text" id="cdp-search" class="filt-search" style="width:150px;" placeholder="직원명·수신처 검색" oninput="renderContractDispatchPage()" />
             </div>
           </div>
         </div>
+      </div>
 
-        <!-- 건수 -->
-        <div style="padding:10px 20px;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;">
-          <span id="cdp-record-count" style="font-size:12.5px;color:#6b7280;font-weight:600;"></span>
-        </div>
-
-        <!-- 테이블 -->
+      <!-- ── 발송 이력 테이블 ── -->
+      <div class="card" style="padding:0;overflow:hidden;">
         <div style="overflow-x:auto;">
           <table style="width:100%;border-collapse:collapse;font-size:13px;">
             <thead>
-              <tr style="background:#f9fafb;border-bottom:2px solid #e5e7eb;">
-                <th style="padding:10px 12px;text-align:left;font-weight:700;color:#374151;white-space:nowrap;">발송 일시</th>
-                <th style="padding:10px 12px;text-align:left;font-weight:700;color:#374151;white-space:nowrap;">고객사</th>
-                <th style="padding:10px 12px;text-align:left;font-weight:700;color:#374151;white-space:nowrap;">직원명</th>
-                <th style="padding:10px 12px;text-align:left;font-weight:700;color:#374151;white-space:nowrap;">계약 유형</th>
-                <th style="padding:10px 12px;text-align:center;font-weight:700;color:#374151;white-space:nowrap;">발송 방식</th>
-                <th style="padding:10px 12px;text-align:left;font-weight:700;color:#374151;white-space:nowrap;">수신처</th>
-                <th style="padding:10px 12px;text-align:center;font-weight:700;color:#374151;white-space:nowrap;">결과</th>
-                <th style="padding:10px 12px;text-align:left;font-weight:700;color:#374151;white-space:nowrap;">처리자</th>
-                <th style="padding:10px 12px;text-align:center;font-weight:700;color:#374151;white-space:nowrap;">계약서</th>
+              <tr style="background:linear-gradient(135deg,#f1f5f9,#e8ecf3);border-bottom:2px solid #e2e8f0;">
+                <th style="padding:11px 14px;text-align:left;font-weight:700;color:#475569;white-space:nowrap;">발송 일시</th>
+                <th style="padding:11px 14px;text-align:left;font-weight:700;color:#475569;white-space:nowrap;">고객사</th>
+                <th style="padding:11px 14px;text-align:left;font-weight:700;color:#475569;white-space:nowrap;">직원명</th>
+                <th style="padding:11px 14px;text-align:left;font-weight:700;color:#475569;white-space:nowrap;">계약 유형</th>
+                <th style="padding:11px 14px;text-align:center;font-weight:700;color:#475569;white-space:nowrap;">발송 방식</th>
+                <th style="padding:11px 14px;text-align:left;font-weight:700;color:#475569;white-space:nowrap;">수신처</th>
+                <th style="padding:11px 14px;text-align:center;font-weight:700;color:#475569;white-space:nowrap;">결과</th>
+                <th style="padding:11px 14px;text-align:left;font-weight:700;color:#475569;white-space:nowrap;">처리자</th>
+                <th style="padding:11px 14px;text-align:center;font-weight:700;color:#475569;white-space:nowrap;">계약서</th>
               </tr>
             </thead>
             <tbody id="cdp-tbody">
@@ -156,8 +148,7 @@
             </tbody>
           </table>
         </div>
-
         <!-- 페이지네이션 -->
-        <div id="cdp-pagination" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:14px 20px;border-top:1px solid #f3f4f6;"></div>
+        <div id="cdp-pagination" style="padding:8px 16px;border-top:1px solid #f1f5f9;"></div>
       </div>
     </div><!-- /page-contract-dispatch -->

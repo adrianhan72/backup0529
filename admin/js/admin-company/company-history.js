@@ -516,7 +516,7 @@ function selectContCompany(companyId, companyName){
   currentGlobalCompanyId = companyId;
   currentGlobalCompanyName = companyName;
   document.getElementById('cont-selected-company-label').innerHTML =
-    `<i class="fas fa-file-signature" style="margin-right:6px;"></i>${companyName} 근로계약 목록`;
+    `<i class="fas fa-file-signature" style="margin-right:6px;"></i>${companyName} 근로계약 현황`;
   document.getElementById('cont-company-select-card').style.display = 'none';
   document.getElementById('cont-list-section').style.display = 'block';
   document.getElementById('cont-search').value = '';
@@ -538,6 +538,7 @@ function clearContCompanySelect(){
   document.getElementById('cont-company-search').value = '';
   renderContCompanyList();
   const _docEl2 = document.getElementById('cont-filter-docs-incomplete'); if(_docEl2) _docEl2.checked=false;
+  if(typeof renderContracts === 'function') renderContracts();
 }
 
 // 고객사 관리 카드 → 근로계약서 관리 바로가기

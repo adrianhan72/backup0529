@@ -431,7 +431,7 @@
       margin-left:auto;letter-spacing:0;line-height:1;
       flex-shrink:0;
     }
-    .menu-item{display:flex;align-items:center;gap:0;}
+    .menu-item{display:flex;align-items:center;gap:10px;}
     .menu-item .menu-todo-badge{margin-left:auto;}
 
     /* ?�═ ?�금?�??카드 ?�이?�웃 ?�═ */

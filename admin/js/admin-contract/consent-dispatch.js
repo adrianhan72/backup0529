@@ -203,18 +203,32 @@ async function renderConsentDispatchPage() {
 
   // 페이지네이션
   const pagerEl = document.getElementById('cns-pagination');
-  if (pagerEl && totalPages > 1) {
-    let html = '';
-    html += `<button onclick="_cnsPage=1;renderConsentDispatchPage()" ${_cnsPage === 1 ? 'disabled' : ''} style="padding:4px 10px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:12px;">&laquo;</button>`;
-    html += `<button onclick="_cnsPage=Math.max(1,_cnsPage-1);renderConsentDispatchPage()" ${_cnsPage === 1 ? 'disabled' : ''} style="padding:4px 10px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:12px;">&lsaquo;</button>`;
-    for (let p = Math.max(1, _cnsPage - 3); p <= Math.min(totalPages, _cnsPage + 3); p++) {
-      html += `<button onclick="_cnsPage=${p};renderConsentDispatchPage()" style="padding:4px 10px;border:1px solid ${p === _cnsPage ? '#6366f1' : '#d1d5db'};border-radius:6px;background:${p === _cnsPage ? '#eef2ff' : '#fff'};cursor:pointer;font-size:12px;font-weight:${p === _cnsPage ? '700' : '400'};">${p}</button>`;
+  if (pagerEl) {
+    const total = filtered.length;
+    if (total <= _cnsPageSize) { pagerEl.innerHTML = ''; }
+    else {
+      const s = Math.min((_cnsPage-1)*_cnsPageSize+1, total);
+      const e = Math.min(_cnsPage*_cnsPageSize, total);
+      const makeBtn = (label, page, disabled=false, active=false) =>
+        `<button onclick="_cnsPage=${page};renderConsentDispatchPage()"
+           style="min-width:30px;height:30px;padding:0 8px;border:1px solid ${active?'#6366f1':'#d1d5db'};
+                  border-radius:6px;background:${active?'#6366f1':'#fff'};color:${active?'#fff':'#374151'};
+                  font-size:12px;cursor:${disabled?'default':'pointer'};
+                  font-family:inherit;font-weight:${active?'700':'400'};"
+           ${disabled?'disabled':''}>${label}</button>`;
+      const btns = [];
+      btns.push(makeBtn('‹', Math.max(1,_cnsPage-1), _cnsPage===1));
+      const start = Math.max(1, _cnsPage-2), end = Math.min(totalPages, _cnsPage+2);
+      if(start > 1){ btns.push(makeBtn('1',1)); if(start>2) btns.push(`<span style="color:#9ca3af;font-size:12px;padding:0 4px;">…</span>`); }
+      for(let p=start;p<=end;p++) btns.push(makeBtn(p,p,false,p===_cnsPage));
+      if(end < totalPages){ if(end<totalPages-1) btns.push(`<span style="color:#9ca3af;font-size:12px;padding:0 4px;">…</span>`); btns.push(makeBtn(totalPages,totalPages)); }
+      btns.push(makeBtn('›', Math.min(totalPages,_cnsPage+1), _cnsPage===totalPages));
+      pagerEl.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 4px;">
+          <span style="font-size:12.5px;color:#64748b;">총 <strong>${total}</strong>건 중 ${s}–${e}번째</span>
+          <div style="display:flex;align-items:center;gap:4px;">${btns.join('')}</div>
+        </div>`;
     }
-    html += `<button onclick="_cnsPage=Math.min(totalPages,_cnsPage+1);renderConsentDispatchPage()" ${_cnsPage === totalPages ? 'disabled' : ''} style="padding:4px 10px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:12px;">&rsaquo;</button>`;
-    html += `<button onclick="_cnsPage=${totalPages};renderConsentDispatchPage()" ${_cnsPage === totalPages ? 'disabled' : ''} style="padding:4px 10px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:12px;">&raquo;</button>`;
-    pagerEl.innerHTML = html;
-  } else if (pagerEl) {
-    pagerEl.innerHTML = '';
   }
 }
 
@@ -464,8 +478,9 @@ function _updateDashConsentBanner() {
         <div style="font-size:13.5px;font-weight:700;color:#166534;">
           정보제공동의서 미발송 <span style="color:#16a34a;font-size:16px;font-weight:800;">${totalUnsent}건</span>이 있습니다
         </div>
-        <div style="font-size:12px;color:#22c55e;margin-top:3px;">클릭하여 정보제공동의서 발송 관리 페이지로 이동합니다.</div>
+        <div style="font-size:12px;color:#22c55e;margin-top:3px;">클릭하여 ${PAGE_LABELS['consent-dispatch']} 페이지로 이동</div>
       </div>
       <div style="color:#22c55e;font-size:14px;flex-shrink:0;"><i class="fas fa-chevron-right"></i></div>
     </div>`;
+  if(typeof _updateDashTodoGrid === 'function') _updateDashTodoGrid();
 }

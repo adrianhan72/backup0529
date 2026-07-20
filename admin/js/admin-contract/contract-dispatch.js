@@ -207,40 +207,33 @@ function _cdpAttachBtn(contractId){
 function _renderCdpPagination(totalPages, filtered){
   const el = document.getElementById('cdp-pagination');
   if(!el) return;
-  if(totalPages <= 1){ el.innerHTML=''; return; }
+  const total = filtered.length;
+  if(total <= _cdpPageSize){ el.innerHTML = ''; return; }
 
-  const btnStyle = (active, disabled) => `
-    min-width:32px;height:32px;padding:0 10px;border-radius:6px;
-    border:1px solid ${active?'#6366f1':'#e5e7eb'};
-    background:${active?'#6366f1':'#fff'};
-    color:${active?'#fff':'#374151'};
-    font-size:13px;font-family:inherit;font-weight:${active?700:400};
-    cursor:${disabled?'not-allowed':'pointer'};
-    transition:background .15s,border-color .15s;
-  `;
-  const btn = (label, page, disabled=false, active=false) =>
-    `<button onclick="_cdpGoPage(${page})" ${disabled?'disabled':''} style="${btnStyle(active,disabled)}">${label}</button>`;
+  const s = Math.min((_cdpPage-1)*_cdpPageSize+1, total);
+  const e = Math.min(_cdpPage*_cdpPageSize, total);
 
-  let html = '';
-  // 이전
-  html += btn('&lsaquo;', _cdpPage-1, _cdpPage===1);
-  // 페이지 번호: 현재 기준 앞뒤 2개씩, 최대 5개
-  const half  = 2;
-  let   start = Math.max(1, _cdpPage - half);
-  let   end   = Math.min(totalPages, start + half*2);
-  if(end - start < half*2) start = Math.max(1, end - half*2);
-  if(start > 1){
-    html += btn(1, 1);
-    if(start > 2) html += `<span style="padding:0 4px;color:#9ca3af;font-size:13px;">…</span>`;
-  }
-  for(let i=start; i<=end; i++) html += btn(i, i, false, i===_cdpPage);
-  if(end < totalPages){
-    if(end < totalPages-1) html += `<span style="padding:0 4px;color:#9ca3af;font-size:13px;">…</span>`;
-    html += btn(totalPages, totalPages);
-  }
-  // 다음
-  html += btn('&rsaquo;', _cdpPage+1, _cdpPage===totalPages);
-  el.innerHTML = html;
+  const makeBtn = (label, page, disabled=false, active=false) =>
+    `<button onclick="_cdpGoPage(${page})"
+       style="min-width:30px;height:30px;padding:0 8px;border:1px solid ${active?'#6366f1':'#d1d5db'};
+              border-radius:6px;background:${active?'#6366f1':'#fff'};color:${active?'#fff':'#374151'};
+              font-size:12px;cursor:${disabled?'default':'pointer'};
+              font-family:inherit;font-weight:${active?'700':'400'};"
+       ${disabled?'disabled':''}>${label}</button>`;
+
+  const btns = [];
+  btns.push(makeBtn('‹', Math.max(1,_cdpPage-1), _cdpPage===1));
+  const start = Math.max(1, _cdpPage-2), end = Math.min(totalPages, _cdpPage+2);
+  if(start > 1){ btns.push(makeBtn('1',1)); if(start>2) btns.push(`<span style="color:#9ca3af;font-size:12px;padding:0 4px;">…</span>`); }
+  for(let p=start;p<=end;p++) btns.push(makeBtn(p,p,false,p===_cdpPage));
+  if(end < totalPages){ if(end<totalPages-1) btns.push(`<span style="color:#9ca3af;font-size:12px;padding:0 4px;">…</span>`); btns.push(makeBtn(totalPages,totalPages)); }
+  btns.push(makeBtn('›', Math.min(totalPages,_cdpPage+1), _cdpPage===totalPages));
+
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 4px;">
+      <span style="font-size:12.5px;color:#64748b;">총 <strong>${total}</strong>건 중 ${s}–${e}번째</span>
+      <div style="display:flex;align-items:center;gap:4px;">${btns.join('')}</div>
+    </div>`;
 }
 function _cdpGoPage(p){
   _cdpPage = p;
@@ -566,7 +559,7 @@ async function _saveDispatchRecord({ method: dispatchMethod, status: dispatchSta
         ■ 발송 방법: ${_methodLabel}
         ■ 발송 시각: ${new Date().toLocaleString('ko-KR')}
 
-        자세한 내용은 근로계약서 발송 관리 메뉴에서 확인하세요.
+        자세한 내용은 ${PAGE_LABELS['contract-dispatch']} 메뉴에서 확인하세요.
 
         ${_BRAND_SIG}`,
                 contractId  : cId,

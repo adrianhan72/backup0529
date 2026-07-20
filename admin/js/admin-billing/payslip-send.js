@@ -455,12 +455,13 @@ function _updateDashUnsentContractBanner(){
         <div style="font-size:13.5px;font-weight:700;color:#1e40af;">
           근로계약서 미발송 <span style="color:#2563eb;font-size:16px;font-weight:800;">${totalUnsent}건</span>이 있습니다
         </div>
-        <div style="font-size:12px;color:#3b82f6;margin-top:3px;">클릭하여 계약서 발송 관리 페이지로 이동합니다.</div>
+        <div style="font-size:12px;color:#3b82f6;margin-top:3px;">클릭하여 ${PAGE_LABELS['contract-dispatch']} 페이지로 이동</div>
       </div>
       <div style="color:#3b82f6;font-size:14px;flex-shrink:0;"><i class="fas fa-chevron-right"></i></div>
     </div>`;
   // 메뉴 배지 동기화
   if(typeof updateMenuBadges === 'function') updateMenuBadges();
+  if(typeof _updateDashTodoGrid === 'function') _updateDashTodoGrid();
 }
 
 function _updateDashUnsentBanner(){
@@ -490,10 +491,11 @@ function _updateDashUnsentBanner(){
         <div style="font-size:13.5px;font-weight:700;color:#92400e;">
           급여명세서 미발송 <span style="color:#d97706;font-size:16px;font-weight:800;">${totalUnsent}건</span>이 있습니다
         </div>
-        <div style="font-size:12px;color:#b45309;margin-top:3px;">클릭하여 급여 명세서 발송 관리 페이지로 이동합니다.</div>
+        <div style="font-size:12px;color:#b45309;margin-top:3px;">클릭하여 ${PAGE_LABELS['payslip-send']} 페이지로 이동</div>
       </div>
       <div style="color:#d97706;font-size:14px;flex-shrink:0;"><i class="fas fa-chevron-right"></i></div>
     </div>`;
+  if(typeof _updateDashTodoGrid === 'function') _updateDashTodoGrid();
 }
 
 // ─── 발송 이력 렌더 ───

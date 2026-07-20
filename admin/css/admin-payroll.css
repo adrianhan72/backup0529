@@ -1,4 +1,4 @@
-﻿    /* ── 대시보드 계약만료 통지 / 정규직 전환 배너 ── */
+﻿    /* ── 대시보드 / 근로계약 관리 공통 알림 배너 ── */
     .dash-alert-banner{border-radius:12px;padding:0;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.07);cursor:pointer;}
     .dash-alert-banner:hover{}
     .dash-alert-banner-head{display:flex;align-items:center;gap:14px;padding:14px 20px;}
@@ -9,22 +9,44 @@
     .dash-alert-banner-sub{font-size:11.5px;margin-top:2px;}
     .dash-alert-banner-count{font-size:16px;font-weight:800;}
     .dash-alert-banner-arrow{font-size:13px;flex-shrink:0;}
+    .dash-alert-banner-list{padding:0 18px 12px;display:flex;flex-wrap:wrap;gap:6px;}
+    .dash-alert-banner-chip{display:inline-flex;align-items:center;gap:5px;border-radius:20px;padding:3px 11px;font-size:12px;font-weight:600;white-space:nowrap;}
+    /* ── 색상 변형 ── */
+    .dash-alert-banner.draft{background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1px solid #fcd34d;}
+    .dash-alert-banner.draft .dash-alert-banner-icon{background:linear-gradient(135deg,#f59e0b,#d97706);}
+    .dash-alert-banner.draft .dash-alert-banner-title{color:#78350f;}
+    .dash-alert-banner.draft .dash-alert-banner-sub{color:#92400e;}
+    .dash-alert-banner.draft .dash-alert-banner-count{color:#d97706;}
+    .dash-alert-banner.draft .dash-alert-banner-arrow{color:#fbbf24;}
+    .dash-alert-banner.draft .dash-alert-banner-chip{background:#fef3c7;color:#92400e;border:1px solid #fcd34d;}
+    .dash-alert-banner.contract-unsent{background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #3b82f6;}
+    .dash-alert-banner.contract-unsent .dash-alert-banner-icon{background:linear-gradient(135deg,#3b82f6,#2563eb);}
+    .dash-alert-banner.contract-unsent .dash-alert-banner-title{color:#1e40af;}
+    .dash-alert-banner.contract-unsent .dash-alert-banner-sub{color:#3b82f6;}
+    .dash-alert-banner.contract-unsent .dash-alert-banner-count{color:#2563eb;}
+    .dash-alert-banner.contract-unsent .dash-alert-banner-arrow{color:#60a5fa;}
+    .dash-alert-banner.contract-unsent .dash-alert-banner-chip{background:#dbeafe;color:#1e40af;border:1px solid #93c5fd;}
+    .dash-alert-banner.consent{background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1px solid #22c55e;}
+    .dash-alert-banner.consent .dash-alert-banner-icon{background:linear-gradient(135deg,#22c55e,#16a34a);}
+    .dash-alert-banner.consent .dash-alert-banner-title{color:#166534;}
+    .dash-alert-banner.consent .dash-alert-banner-sub{color:#22c55e;}
+    .dash-alert-banner.consent .dash-alert-banner-count{color:#16a34a;}
+    .dash-alert-banner.consent .dash-alert-banner-arrow{color:#22c55e;}
+    .dash-alert-banner.consent .dash-alert-banner-chip{background:#dcfce7;color:#166534;border:1px solid #86efac;}
     .dash-alert-banner.expiry{background:linear-gradient(135deg,#fdf2f8,#fce7f3);border:1px solid #f472b6;}
     .dash-alert-banner.expiry .dash-alert-banner-icon{background:linear-gradient(135deg,#ec4899,#db2777);}
     .dash-alert-banner.expiry .dash-alert-banner-title{color:#831843;}
     .dash-alert-banner.expiry .dash-alert-banner-sub{color:#9d174d;}
     .dash-alert-banner.expiry .dash-alert-banner-count{color:#db2777;}
     .dash-alert-banner.expiry .dash-alert-banner-arrow{color:#f472b6;}
+    .dash-alert-banner.expiry .dash-alert-banner-chip{background:#fce7f3;color:#9d174d;border:1px solid #f9a8d4;}
+    .dash-alert-banner.expiry .dash-alert-banner-chip.urgent{background:#fee2e2;color:#991b1b;border-color:#fca5a5;}
     .dash-alert-banner.regular{background:linear-gradient(135deg,#fdf4ff,#f3e8ff);border:1px solid #c084fc;}
     .dash-alert-banner.regular .dash-alert-banner-icon{background:linear-gradient(135deg,#9333ea,#7c3aed);}
     .dash-alert-banner.regular .dash-alert-banner-title{color:#3b0764;}
     .dash-alert-banner.regular .dash-alert-banner-sub{color:#7e22ce;}
     .dash-alert-banner.regular .dash-alert-banner-count{color:#9333ea;}
     .dash-alert-banner.regular .dash-alert-banner-arrow{color:#a855f7;}
-    .dash-alert-banner-list{padding:0 18px 12px;display:flex;flex-wrap:wrap;gap:6px;}
-    .dash-alert-banner-chip{display:inline-flex;align-items:center;gap:5px;border-radius:20px;padding:3px 11px;font-size:12px;font-weight:600;white-space:nowrap;}
-    .dash-alert-banner.expiry .dash-alert-banner-chip{background:#fce7f3;color:#9d174d;border:1px solid #f9a8d4;}
-    .dash-alert-banner.expiry .dash-alert-banner-chip.urgent{background:#fee2e2;color:#991b1b;border-color:#fca5a5;}
     .dash-alert-banner.regular .dash-alert-banner-chip{background:#f3e8ff;color:#6b21a8;border:1px solid #d8b4fe;}
     .dash-alert-banner.regular .dash-alert-banner-chip.exceeded{background:#fae8ff;color:#86198f;border-color:#e879f9;}
     /* 퇴직금 지급 이력: 분홍/자주 */

@@ -54,18 +54,18 @@
       <div id="rc-panel-target">
         <!-- 필터 바 -->
         <div class="cen-filter-bar">
-          <select id="rc-filter-company" onchange="_rcTargetPage=1;renderRcTargetList()" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 10px;font-size:12.5px;background:#fff;cursor:pointer;font-family:inherit;color:#374151;max-width:160px;">
+          <select id="rc-filter-company" onchange="_rcTargetPage=1;renderRcTargetList()" class="filt-select" style="max-width:160px;">
             <option value="">전체 고객사</option>
           </select>
-          <select id="rc-filter-status" onchange="_rcTargetPage=1;renderRcTargetList()" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 10px;font-size:12.5px;background:#fff;cursor:pointer;font-family:inherit;color:#374151;">
+          <select id="rc-filter-status" onchange="_rcTargetPage=1;renderRcTargetList()" class="filt-select">
             <option value="">전체 상태</option>
             <option value="exceeded">전환 의무 (2년 초과)</option>
             <option value="urgent">임박 (90일 이내)</option>
             <option value="warning">주의 (180일 이내)</option>
           </select>
-          <div class="search-input" style="margin:0;flex:1;min-width:120px;max-width:200px;">
+          <div class="filt-search-wrap">
             <i class="fas fa-search"></i>
-            <input type="text" id="rc-search" placeholder="직원명 검색" oninput="renderRcTargetList()" />
+            <input type="text" id="rc-search" class="filt-search" style="width:140px;" placeholder="직원명 검색" oninput="renderRcTargetList()" />
           </div>
           <button onclick="renderRcTargetList()" class="btn btn-sm btn-secondary"><i class="fas fa-sync-alt"></i> 새로고침</button>
         </div>
@@ -96,25 +96,25 @@
       <!-- ─── 탭: 발송 이력 ─── -->
       <div id="rc-panel-history" style="display:none;">
         <div class="card" style="overflow:hidden;">
-          <div style="padding:12px 20px;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#fafafa;">
+          <div class="filt-bar">
             <div style="display:flex;align-items:center;gap:5px;">
-              <span style="font-size:11.5px;font-weight:600;color:#6b7280;white-space:nowrap;">고객사</span>
-              <select id="rc-log-filter-company" onchange="renderRcHistory()" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 10px;font-size:12px;background:#fff;cursor:pointer;font-family:inherit;color:#374151;max-width:140px;">
+              <span class="filt-label">고객사</span>
+              <select id="rc-log-filter-company" onchange="renderRcHistory()" class="filt-select" style="max-width:140px;">
                 <option value="">전체</option>
               </select>
             </div>
             <div style="display:flex;align-items:center;gap:5px;">
-              <span style="font-size:11.5px;font-weight:600;color:#6b7280;white-space:nowrap;">기간</span>
-              <input type="date" id="rc-log-filter-date-from" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 6px;font-size:12px;background:#fff;cursor:pointer;font-family:inherit;color:#374151;" />
+              <span class="filt-label">기간</span>
+              <input type="date" id="rc-log-filter-date-from" class="filt-date" />
               <span style="font-size:11px;color:#9ca3af;">~</span>
-              <input type="date" id="rc-log-filter-date-to" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 6px;font-size:12px;background:#fff;cursor:pointer;font-family:inherit;color:#374151;" />
-              <button onclick="_rcDoSearch()" class="btn btn-danger btn-sm" style="height:32px;">조회</button>
+              <input type="date" id="rc-log-filter-date-to" class="filt-date" />
+              <button onclick="_rcDoSearch()" class="filt-btn-search">조회</button>
               <span id="rc-date-notice" style="font-size:10.5px;color:#9ca3af;white-space:nowrap;">(최대 3개월)</span>
             </div>
             <div style="display:flex;align-items:center;gap:6px;margin-left:auto;">
-              <div style="position:relative;">
-                <i class="fas fa-search" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:11px;pointer-events:none;"></i>
-                <input type="text" id="rc-log-search" placeholder="직원명 검색" oninput="renderRcHistory()" style="padding:6px 10px 6px 26px;border:1px solid #d1d5db;border-radius:7px;font-size:12px;width:140px;font-family:inherit;" />
+              <div class="filt-search-wrap">
+                <i class="fas fa-search"></i>
+                <input type="text" id="rc-log-search" class="filt-search" style="width:140px;" placeholder="직원명 검색" oninput="renderRcHistory()" />
               </div>
               <button onclick="(async()=>{await rcLoadHistory(true);renderRcHistory();})()" class="btn btn-sm btn-secondary"><i class="fas fa-sync-alt"></i></button>
             </div>

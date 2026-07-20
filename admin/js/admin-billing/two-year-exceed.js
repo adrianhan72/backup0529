@@ -114,7 +114,7 @@ function _updateDash2YrBanner(){
         <div style="font-size:13.5px;font-weight:700;color:#7f1d1d;">
           정규직 전환 의무 대상 <span style="color:#dc2626;font-size:16px;font-weight:800;">${exceeded.length}명</span>이 있습니다
         </div>
-        <div style="font-size:12px;color:#b91c1c;margin-top:3px;">기간제 근로자 2년 초과 — 클릭하여 정규직 전환 통지 관리로 이동</div>
+        <div style="font-size:12px;color:#b91c1c;margin-top:3px;">기간제 근로자 2년 초과 — 클릭하여 ${PAGE_LABELS['regular-conversion']} 페이지로 이동</div>
       </div>
       <div style="color:#dc2626;font-size:14px;flex-shrink:0;"><i class="fas fa-chevron-right"></i></div>
     </div>`;

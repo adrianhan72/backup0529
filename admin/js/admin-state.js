@@ -74,7 +74,7 @@ async function _deleteDraft(id, table, label){
     // 대시보드 및 배너 갱신
     if(typeof renderDraftAlerts === 'function') renderDraftAlerts();
     if(typeof _renderContractsBanners === 'function') _renderContractsBanners();
-    if(typeof _renderContAlertCards === 'function') _renderContAlertCards();
+    if(typeof _renderContCoSummaryCards === 'function') _renderContCoSummaryCards();
     if(typeof _renderCompaniesDraftBanner === 'function') _renderCompaniesDraftBanner();
     if(typeof renderPIAllDraftBanner === 'function') renderPIAllDraftBanner();
     if(typeof renderDashboard === 'function') renderDashboard();
@@ -224,6 +224,7 @@ async function init(){
     initMonthFilter(); initPIMonths(); initPIYears();
     renderDashboard(); renderCompanies(); renderContracts();
     populateFilters(); populatePICompanies(); initBreakSelects();
+    _syncMenuLabels();  // PAGE_LABELS 기준으로 사이드바 메뉴명 동기화
     
     // ── 페어 계약 새 창에서 열기: sessionStorage에 저장된 계약 자동 조회 ──
     _restorePairContractWindow();
@@ -613,6 +614,19 @@ function closeModal(id){
     if(cmDraftInfo){ cmDraftInfo.style.display='none'; cmDraftInfo.textContent=''; }
   }
 }
+/** PAGE_LABELS 기준으로 사이드바 메뉴명을 일괄 동기화 */
+function _syncMenuLabels(){
+  document.querySelectorAll('.menu-item[data-page]').forEach(el => {
+    const page = el.dataset.page;
+    if(PAGE_LABELS[page]){
+      const textNodes = Array.from(el.childNodes).filter(n => n.nodeType === 3);
+      if(textNodes.length > 0){
+        textNodes[0].textContent = ' ' + PAGE_LABELS[page];
+      }
+    }
+  });
+}
+
 async function showPage(name,el){
     if(window._loadExternalPage) { await _loadExternalPage(name); }
   try{
@@ -624,7 +638,7 @@ async function showPage(name,el){
   // 페이지 전환 시 스크롤 최상단 이동
   window.scrollTo(0,0);
   document.querySelector('.content')?.scrollTo(0,0);
-  document.getElementById('topbar-title').textContent={dashboard:'대시보드',companies:'고객사 관리',['company-notice-log']:'고객사앱 알림 이력',['general-notice']:'중요공지 관리',billing:'시스템 사용료 관리',contracts:'근로 계약 관리',['contract-dispatch']:'근로계약서 발송 관리',['consent-dispatch']:'정보제공동의서 관리',['contract-expiry-notice']:'계약만료 통지 관리',['regular-conversion']:'정규직 전환 관리',['probation-mgmt']:'수습 근로자 관리',payrolls:'급여 명세서 조회',['payroll-input']:'급여 입력',['labor-status']:'급여 통계 조회',['payslip-send']:'급여 명세서 발송 관리',['admin-accounts']:'관리자 계정 관리',['wage-ledger']:'임금대장',standards:'년도별 산정기준',severance:'퇴직급여 관리',['annual-leave']:'연차 관리',['leave-promotion']:'사용촉진 발송 이력'}[name]||name;
+  document.getElementById('topbar-title').textContent = PAGE_LABELS[name] || name;
   // 도움말 버튼: 근로 계약 관리 페이지에서만 표시
   const _helpBtn = document.getElementById('topbar-help-btn');
   if(_helpBtn) _helpBtn.style.display = (name === 'contracts') ? '' : 'none';

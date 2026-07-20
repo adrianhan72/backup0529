@@ -13,18 +13,18 @@
 
       <!-- 필터 바 -->
       <div class="card" style="margin-bottom:16px;overflow:hidden;">
-        <div style="padding:12px 20px;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#fafafa;">
+        <div class="filt-bar">
           <!-- 고객사 -->
           <div style="display:flex;align-items:center;gap:5px;">
-            <span style="font-size:11.5px;color:#6b7280;font-weight:600;white-space:nowrap;">고객사</span>
-            <select id="lp-filter-company" onchange="_lpPage=1;renderLpTable()" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 10px;font-size:12px;background:#fff;cursor:pointer;font-family:inherit;color:#374151;max-width:150px;">
+            <span class="filt-label">고객사</span>
+            <select id="lp-filter-company" onchange="_lpPage=1;renderLpTable()" class="filt-select" style="max-width:150px;">
               <option value="">전체</option>
             </select>
           </div>
           <!-- 발송 방식 -->
           <div style="display:flex;align-items:center;gap:5px;">
-            <span style="font-size:11.5px;color:#6b7280;font-weight:600;white-space:nowrap;">방식</span>
-            <select id="lp-filter-method" onchange="_lpPage=1;renderLpTable()" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 10px;font-size:12px;background:#fff;cursor:pointer;font-family:inherit;color:#374151;">
+            <span class="filt-label">방식</span>
+            <select id="lp-filter-method" onchange="_lpPage=1;renderLpTable()" class="filt-select">
               <option value="">전체</option>
               <option value="kakao">카카오 알림톡</option>
               <option value="email">이메일</option>
@@ -33,18 +33,18 @@
           </div>
           <!-- 기간 -->
           <div style="display:flex;align-items:center;gap:5px;">
-            <span style="font-size:11.5px;color:#6b7280;font-weight:600;white-space:nowrap;">기간</span>
-            <input type="date" id="lp-filter-date-from" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 6px;font-size:12px;font-family:inherit;color:#374151;" />
+            <span class="filt-label">기간</span>
+            <input type="date" id="lp-filter-date-from" class="filt-date" />
             <span style="font-size:11px;color:#9ca3af;">~</span>
-            <input type="date" id="lp-filter-date-to" style="border:1px solid #d1d5db;border-radius:7px;padding:5px 6px;font-size:12px;font-family:inherit;color:#374151;" />
-            <button onclick="_lpDoSearch()" class="btn btn-danger btn-sm" style="height:32px;">조회</button>
+            <input type="date" id="lp-filter-date-to" class="filt-date" />
+            <button onclick="_lpDoSearch()" class="filt-btn-search">조회</button>
             <span id="lp-date-notice" style="font-size:10.5px;color:#9ca3af;white-space:nowrap;">(최대 3개월)</span>
           </div>
           <!-- 검색 + 새로고침 (우측) -->
           <div style="display:flex;align-items:center;gap:6px;margin-left:auto;">
-            <div style="position:relative;">
-              <i class="fas fa-search" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:11px;pointer-events:none;"></i>
-              <input type="text" id="lp-search" placeholder="직원명 검색" oninput="renderLpTable()" style="padding:6px 10px 6px 26px;border:1px solid #d1d5db;border-radius:7px;font-size:12px;width:140px;font-family:inherit;" />
+            <div class="filt-search-wrap">
+              <i class="fas fa-search"></i>
+              <input type="text" id="lp-search" class="filt-search" style="width:140px;" placeholder="직원명 검색" oninput="renderLpTable()" />
             </div>
             <button onclick="(async()=>{await loadLeavePromotionHistory(true);renderLpTable();})()" class="btn btn-sm btn-secondary"><i class="fas fa-sync-alt"></i></button>
           </div>

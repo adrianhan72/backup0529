@@ -175,12 +175,18 @@ async function cnlLoadData(){
 
 /** 새로고침 */
 async function cnlReload(){
-  _cnlLoaded = false;
   const btn = document.querySelector('[onclick="cnlReload()"]');
-  const icon = btn?.querySelector('i');
-  if(icon){ icon.classList.add('fa-spin'); btn.disabled = true; }
-  await cnlLoadData();
-  if(icon){ icon.classList.remove('fa-spin'); btn.disabled = false; }
+  if(!btn || btn.disabled) return; // prevent double-click
+  const icon = btn.querySelector('i');
+  try {
+    _cnlLoaded = false;
+    if(icon) icon.classList.add('fa-spin');
+    btn.disabled = true;
+    await cnlLoadData();
+  } finally {
+    if(icon) icon.classList.remove('fa-spin');
+    btn.disabled = false;
+  }
 }
 
 /** 예약 현황 카드 렌더 (gn_status === 'scheduled' 건만) */
@@ -384,7 +390,7 @@ function renderCnlTable(){
     const y = d.getFullYear(), mo = String(d.getMonth()+1).padStart(2,'0'),
           dd = String(d.getDate()).padStart(2,'0'),
           hh = String(d.getHours()).padStart(2,'0'), mm = String(d.getMinutes()).padStart(2,'0');
-    return `${y}.${mo}.${dd}<br><span style="color:#94a3b8;font-size:11.5px;">${hh}:${mm}</span>`;
+    return `${y}.${mo}.${dd} <span style="color:#94a3b8;font-size:11px;">${hh}:${mm}</span>`;
   };
 
   const typeBadge = t => {
@@ -417,7 +423,7 @@ function renderCnlTable(){
 
     // 고객사 셀 (전체 모드일 때만 표시)
     const coCell = showCoCol
-      ? `<td style="padding:10px 14px;font-size:12.5px;font-weight:700;color:#4f46e5;white-space:nowrap;max-width:130px;overflow:hidden;text-overflow:ellipsis;" title="${(n.company_name||'').replace(/"/g,'&quot;')}">${n.company_name||'-'}</td>`
+      ? `<td style="padding:10px 14px;font-size:12.5px;font-weight:700;color:#4f46e5;white-space:nowrap;max-width:140px;overflow:hidden;text-overflow:ellipsis;" title="${(n.company_name||'').replace(/"/g,'&quot;')}">${n.company_name||'-'}</td>`
       : '';
 
     const titleShort = (n.title||'').length > 40 ? (n.title||'').slice(0,40)+'…' : (n.title||'-');
@@ -435,9 +441,9 @@ function renderCnlTable(){
       <td style="padding:10px 14px;">${typeBadge(n.notice_type)}</td>
       <td style="padding:10px 14px;font-size:12.5px;color:#1e293b;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
           title="${(n.title||'').replace(/"/g,'&quot;')}">${titleShort}</td>
-      <td style="padding:10px 14px;text-align:center;">${confirmCell}</td>
-      <td style="padding:10px 14px;font-size:12px;color:#64748b;white-space:nowrap;">${_resolveAdminName(n.sent_by)||'-'}</td>
-      <td style="padding:10px 14px;text-align:center;">
+      <td style="padding:10px 8px;text-align:center;white-space:nowrap;">${confirmCell}</td>
+      <td style="padding:10px 8px;font-size:12px;color:#64748b;white-space:nowrap;">${_resolveAdminName(n.sent_by)||'-'}</td>
+      <td style="padding:10px 8px;text-align:center;">
         <button onclick="openCnlDetail(${safeIdx})" class="btn btn-indigo btn-sm">
           <i class="fas fa-eye"></i>
         </button>
