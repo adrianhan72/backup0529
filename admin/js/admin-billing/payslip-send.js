@@ -46,39 +46,8 @@ let _pssBulkSendRunning   = false;  // 일괄 카카오 발송 중 플래그
 
 // ─── 고객사 선택 칩 렌더 ───
 function renderPssCompanyList(){
-  const q = (document.getElementById('pss-company-search')?.value || '').toLowerCase();
-  const wrap = document.getElementById('pss-company-chips');
-  if(!wrap) return;
-  const list = allCompanies.filter(c =>
-    isCompanyActive(c) &&
-    (!q || (c.company_name||'').toLowerCase().includes(q))
-  ).sort((a,b) => (a.company_name||'').localeCompare(b.company_name||'', 'ko'));
-  if(!list.length){
-    wrap.innerHTML = '<span style="font-size:12px;color:#9ca3af;">검색 결과가 없습니다.</span>';
-    return;
-  }
-
-  // 고객사별 미발송 건수 사전 계산
-  const sentPayrollIds = new Set((_allSendLogs||[]).map(l => l.payroll_id));
-  const unsentByCompany = {};
-  (allPayrolls||[]).forEach(p => {
-    if(!sentPayrollIds.has(p.id)){
-      unsentByCompany[p.company_id] = (unsentByCompany[p.company_id] || 0) + 1;
-    }
-  });
-
-  wrap.innerHTML = list.map(c => {
-    const unsent = unsentByCompany[c.id] || 0;
-    const badgeHtml = unsent > 0
-      ? `<span class="count-badge">${unsent}</span>`
-      : '';
-    const isSelected = _pssCompanyId === c.id;
-    return `
-      <div class="company-chip${isSelected ? ' selected' : ''}"
-           onclick="selectPssCompany('${c.id}','${(c.company_name||'').replace(/'/g,"\\'")}')">
-        <i class="fas fa-building" style="font-size:10px;opacity:.7;"></i>${c.company_name}${badgeHtml}
-      </div>`;
-  }).join('');
+  // 드롭다운 기반으로 전환: 미발송 섹션의 고객사 드롭다운 갱신
+  _pssPopulateUnsentCoDropdown();
 }
 
 // ─── 고객사 선택 ───
@@ -88,38 +57,82 @@ async function selectPssCompany(id, name){
   currentGlobalCompanyId   = id;
   currentGlobalCompanyName = name;
 
-  document.getElementById('pss-company-select-card').style.display = 'none';
-  document.getElementById('pss-main-section').style.display = '';
-  document.getElementById('pss-selected-company-label').innerHTML =
-    `<i class="fas fa-building" style="margin-right:6px;color:#7c3aed;"></i>${name} — 급여명세서 발송 관리`;
-
-  // 이력 로드 중 tbody 스피너 표시
-  const _pssUTb = document.getElementById('pss-unsent-tbody');
-  const _pssLTb = document.getElementById('pss-log-tbody');
-  const _spinRow = (cols) => `<tr><td colspan="${cols}" style="text-align:center;padding:32px;color:#9ca3af;"><i class="fas fa-circle-notch fa-spin" style="color:#7c3aed;margin-right:8px;"></i>불러오는 중...</td></tr>`;
-  if(_pssUTb) _pssUTb.innerHTML = _spinRow(6);
-  if(_pssLTb) _pssLTb.innerHTML = _spinRow(6);
+  // 탭 초기화: 미발송 탭으로
+  _pssSwitchTab('unsent');
 
   // 발송 이력 로드 → 년월 탭 → 목록 렌더
   await _pssLoadLogs();
-  renderPssMonthTabs();   // 탭 렌더 (가장 최근 년월 자동 선택)
+  _pssPopulateUnsentCoDropdown();
+  renderPssMonthTabs();
   renderPssUnsentList();
   renderPssLogs();
   _pssUpdateStats();
 }
 
+// ─── 탭 전환 ───
+function _pssSwitchTab(tab){
+  document.querySelectorAll('#page-payslip-send .std-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('pss-tab-'+tab)?.classList.add('active');
+  document.getElementById('pss-unsent-section').style.display = tab==='unsent' ? '' : 'none';
+  document.getElementById('pss-history-section').style.display = tab==='history' ? '' : 'none';
+  if(tab === 'history'){ _pssPopulateHistoryCoFilter(); renderPssLogs(); }
+  if(tab === 'unsent'){ renderPssUnsentList(); }
+}
+
+// ─── 고객사 드롭다운 (미발송 섹션) ───
+function _pssToggleCoDropdown(){
+  const list = document.getElementById('pss-unsent-co-list');
+  if(!list) return;
+  list.style.display = list.style.display === 'none' ? '' : 'none';
+}
+function _pssSelectCo(coId){
+  _pssCompanyId = coId || null;
+  _pssCompanyName = coId ? (allCompanies.find(c=>c.id===coId)||{}).company_name || '' : '';
+  document.getElementById('pss-unsent-co-label').textContent = coId ? _pssCompanyName : '전체 고객사';
+  document.getElementById('pss-unsent-co-list').style.display = 'none';
+  currentGlobalCompanyId = coId || null;
+  currentGlobalCompanyName = coId ? _pssCompanyName : '';
+  _pssLoadLogs().then(()=>{ renderPssMonthTabs(); renderPssUnsentList(); _pssUpdateStats(); });
+}
+function _pssPopulateUnsentCoDropdown(){
+  const list = document.getElementById('pss-unsent-co-list');
+  const badge = document.getElementById('pss-unsent-co-badge');
+  if(!list) return;
+  const unsentByCo = {}; let totalUnsent = 0;
+  (allPayrolls||[]).forEach(p=>{
+    if(_pssGetSentPayrollIds(_pssYM.year, _pssYM.month).has(p.id)) return;
+    unsentByCo[p.company_id] = (unsentByCo[p.company_id]||0)+1;
+    totalUnsent++;
+  });
+  if(badge) badge.textContent = totalUnsent;
+  const allLabel = `전체 고객사 (${allCompanies.length})`;
+  list.innerHTML = `<div class="cust-dropdown-item" onclick="_pssSelectCo(null)">${allLabel}</div>`
+    + allCompanies.map(c=>{
+      const cnt = unsentByCo[c.id]||0;
+      return `<div class="cust-dropdown-item" onclick="_pssSelectCo('${c.id}')">${c.company_name}${cnt>0?`<span class="count-badge" style="margin-left:auto;">${cnt}</span>`:''}</div>`;
+    }).join('');
+  // 초기 데이터 로드 (전체 고객사 기준)
+  if(!_pssSendLogs.length){
+    _pssLoadLogs().then(()=>{ renderPssMonthTabs(); renderPssUnsentList(); });
+  }
+}
+function _pssPopulateHistoryCoFilter(){
+  const sel = document.getElementById('pss-filter-company');
+  if(!sel || sel.options.length > 1) return;
+  sel.innerHTML = '<option value="">전체</option>'
+    + allCompanies.map(c=>`<option value="${c.id}">${c.company_name}</option>`).join('');
+}
+
 // ─── 고객사 선택 해제 ───
 function clearPssCompanySelect(){
   _pssCompanyId = null;
-  document.getElementById('pss-company-select-card').style.display = '';
-  document.getElementById('pss-main-section').style.display = 'none';
-  renderPssCompanyList();
+  _pssSelectCo(null);
 }
 
 // ─── 발송 이력 로드 (전체, 이 고객사) ───
 async function _pssLoadLogs(){
   const data = await api(`../tables/payroll_send_logs?limit=500`);
-  _pssSendLogs = (data.data || []).filter(l => l.company_id === _pssCompanyId);
+  _pssSendLogs = (data.data || []).filter(l => !_pssCompanyId || l.company_id === _pssCompanyId);
 }
 
 // ─── 년월 탭 렌더 ───
@@ -130,7 +143,7 @@ function renderPssMonthTabs(){
   // 미발송이 있는 년월만 수집 → 최신순 정렬
   const ymSet = new Map(); // 'YYYY-MM' → {year, month}
   allPayrolls
-    .filter(p => p.company_id === _pssCompanyId)
+    .filter(p => !_pssCompanyId || p.company_id === _pssCompanyId)
     .forEach(p => {
       const key = `${Number(p.pay_year)}-${String(Number(p.pay_month)).padStart(2,'0')}`;
       ymSet.set(key, { year: Number(p.pay_year), month: Number(p.pay_month) });
@@ -176,7 +189,7 @@ function _pssGetMonthPayrolls(year, month){
   const yr = year  ?? _pssYM.year;
   const mo = month ?? _pssYM.month;
   return allPayrolls.filter(p => {
-    if(p.company_id !== _pssCompanyId) return false;
+    if(_pssCompanyId && p.company_id !== _pssCompanyId) return false;
     if(Number(p.pay_year)  !== yr) return false;
     if(Number(p.pay_month) !== mo) return false;
     // 계약이 임시저장 상태인 직원 제외
@@ -214,45 +227,47 @@ function _pssGetUnsentList(year, month){
 // ─── 미발송 목록 렌더 ───
 function renderPssUnsentList(){
   const tbody = document.getElementById('pss-unsent-tbody');
-  const allClearMsg = document.getElementById('pss-all-clear-msg');
-  const sendAllBtn  = document.getElementById('pss-send-all-btn');
-  const countBadge  = document.getElementById('pss-unsent-count');
+  const allClearMsg = document.getElementById('pss-unsent-all-clear');
   if(!tbody) return;
 
   const unsentList = _pssGetUnsentList(_pssYM.year, _pssYM.month);
-  countBadge.textContent = `(총 ${unsentList.length}건)`;
-
-  const tableWrap = document.getElementById('pss-unsent-table-wrap');
 
   if(!unsentList.length){
     tbody.innerHTML = '';
-    allClearMsg.style.display = '';
-    sendAllBtn.disabled = true;
-    if(tableWrap) tableWrap.style.display = 'none';
+    if(allClearMsg) allClearMsg.style.display = '';
+    pssUpdateBatchBtns();
     return;
   }
-  allClearMsg.style.display = 'none';
-  sendAllBtn.disabled = false;
-  if(tableWrap) tableWrap.style.display = '';
+  if(allClearMsg) allClearMsg.style.display = 'none';
 
   tbody.innerHTML = unsentList.map((p, idx) => {
     const emp      = allEmployees.find(e => e.id === p.employee_id) || {};
     const cat      = emp.employment_category || '-';
     const phone    = emp.phone || emp.mobile || '';
     const email    = emp.email || '';
+    const hasPhone = !!(phone.trim());
     const hasEmail = !!(email.trim());
-    const emailBtnStyle = hasEmail
-      ? 'background:#dbeafe;color:#1d4ed8;border:1px solid #93c5fd;cursor:pointer;'
-      : 'background:#f3f4f6;color:#d1d5db;border:1px solid #e5e7eb;cursor:not-allowed;';
+    const kakaoClass = hasPhone ? 'btn btn-kakao btn-sm' : 'btn btn-sm';
+    const emailClass = hasEmail ? 'btn btn-sky btn-sm' : 'btn btn-sm';
     return `<tr id="pss-urow-${idx}">
+      <td class="ctr"><input type="checkbox" class="pss-row-chk" data-payroll-id="${p.id}" onchange="pssUpdateBatchBtns()" /></td>
       <td style="font-weight:700;color:#111827;">${emp.name || '-'}</td>
       <td><span class="badge ${empCatBadge(cat)}">${contractTypeLabel(cat)}</span></td>
       <td style="color:#6b7280;font-size:12px;">${phone || '<span style="color:#d1d5db;">미등록</span>'}</td>
       <td style="font-size:12px;">${hasEmail ? `<span style="color:#374151;">${email}</span>` : '<span style="color:#d1d5db;">미등록</span>'}</td>
       <td style="text-align:center;white-space:nowrap;">
-        <button onclick="_pssKakaoSendRow('${p.id}','${p.employee_id}')" style="background:#fee500;color:#3b1f00;border:1px solid #eab308;border-radius:6px;padding:4px 9px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;margin-right:3px;display:inline-flex;align-items:center;gap:4px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg>알림톡 발송</button>
-        <button onclick="_pssEmailSendRow('${p.id}','${p.employee_id}')" ${hasEmail ? '' : 'disabled'} style="${emailBtnStyle}border-radius:6px;padding:4px 9px;font-size:11.5px;font-weight:600;font-family:inherit;margin-right:3px;">✉ 이메일 발송</button>
-        <button onclick="_pssManualDoneRow('${p.id}','${p.employee_id}')" style="background:#f0fdf4;color:#166534;border:1px solid #86efac;border-radius:6px;padding:4px 9px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;"><i class="fas fa-hand-paper"></i> 수동교부 완료</button>
+        <button onclick="_pssKakaoSendRow('${p.id}','${p.employee_id}')" ${hasPhone ? '' : 'disabled'}
+          class="${kakaoClass}" style="margin-right:3px;">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg>알림톡
+        </button>
+        <button onclick="_pssEmailSendRow('${p.id}','${p.employee_id}')" ${hasEmail ? '' : 'disabled'}
+          class="${emailClass}" style="margin-right:3px;">
+          ✉ 이메일
+        </button>
+        <button onclick="_pssManualDoneRow('${p.id}','${p.employee_id}')"
+          class="btn btn-success btn-sm">
+          <i class="fas fa-hand-paper"></i> 수동교부
+        </button>
       </td>
     </tr>`;
   }).join('');
@@ -511,10 +526,24 @@ function _updateDashUnsentBanner(){
 function renderPssLogs(){
   const tbody   = document.getElementById('pss-log-tbody');
   const pagWrap = document.getElementById('pss-log-pagination');
-  const countBadge = document.getElementById('pss-log-count');
   if(!tbody) return;
 
   let logs = [..._pssSendLogs];
+
+  // 고객사 필터
+  const coFilter = document.getElementById('pss-filter-company')?.value || '';
+  if(coFilter){
+    logs = logs.filter(l => {
+      const p = allPayrolls.find(x => x.id === l.payroll_id);
+      return p && p.company_id === coFilter;
+    });
+  }
+
+  // 발송 방식 필터
+  const methodFilter = document.getElementById('pss-filter-method')?.value || '';
+  if(methodFilter){
+    logs = logs.filter(l => l.dispatch_method === methodFilter);
+  }
 
   // 직원명 검색 필터
   const q = (document.getElementById('pss-log-search')?.value || '').trim().toLowerCase();
@@ -541,10 +570,8 @@ function renderPssLogs(){
   // 최신순 정렬
   logs.sort((a,b) => (b.sent_at||'').localeCompare(a.sent_at||''));
 
-  countBadge.textContent = `(총 ${logs.length}건)`;
-
   if(!logs.length){
-    tbody.innerHTML = `<tr><td colspan="7" class="pss-empty">발송 이력이 없습니다.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" class="pss-empty">발송 이력이 없습니다.</td></tr>`;
     pagWrap.innerHTML = '';
     return;
   }
@@ -553,22 +580,18 @@ function renderPssLogs(){
   const paged = logs.slice((_pssLogPage-1)*PSS_LOG_ITEMS, _pssLogPage*PSS_LOG_ITEMS);
 
   const methodBadge = m => {
-    const METHOD_CLS = {
-      [DISPATCH_METHOD.KAKAO]:  'badge-yellow',
-      [DISPATCH_METHOD.EMAIL]:  'badge-blue',
-      [DISPATCH_METHOD.MANUAL]: 'badge-green',
-      '수정재발행':              'badge-pink',
+    const cfg = {
+      [DISPATCH_METHOD.KAKAO]:  { bg:'#f9d000', color:'#3b1f00', icon:'M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z', isSvg:true },
+      [DISPATCH_METHOD.EMAIL]:  { bg:'#dbeafe', color:'#1e40af', fa:'fa-envelope' },
+      [DISPATCH_METHOD.MANUAL]: { bg:'#d1fae5', color:'#065f46', fa:'fa-hand-paper' },
+      '수정재발행':              { bg:'#fce7f3', color:'#9d174d', fa:'fa-sync-alt' },
     };
-    const badgeCls = METHOD_CLS[m] || 'badge-gray';
-    const iconCfg = {
-      [DISPATCH_METHOD.KAKAO]: `<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg>`,
-      [DISPATCH_METHOD.EMAIL]: '<i class="fas fa-envelope"></i>',
-      [DISPATCH_METHOD.MANUAL]: '<i class="fas fa-hand-holding"></i>',
-      '수정재발행': '<i class="fas fa-sync-alt"></i>',
-    };
-    const icon = iconCfg[m] || '<i class="fas fa-question"></i>';
+    const c = cfg[m] || { bg:'#f3f4f6', color:'#374151', fa:'fa-question' };
     const label = DISPATCH_METHOD_LABEL[m] || m || '-';
-    return `<span class="badge ${badgeCls}">${icon} ${label}</span>`;
+    const icon = c.isSvg
+      ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="${c.color}"><path d="${c.icon}"/></svg>`
+      : `<i class="fas ${c.fa}" style="font-size:11px;"></i>`;
+    return `<span style="display:inline-flex;align-items:center;gap:4px;background:${c.bg};color:${c.color};padding:2px 9px;border-radius:20px;font-size:11.5px;white-space:nowrap;">${icon}${label}</span>`;
   };
 
   tbody.innerHTML = paged.map(l => {
@@ -585,7 +608,6 @@ function renderPssLogs(){
       <td style="font-size:12px;color:#374151;">${l.pay_year||'-'}년 ${l.pay_month||'-'}월</td>
       <td style="font-size:12px;color:#374151;">${sentDt}</td>
       <td>${methodBadge(meth)}</td>
-      <td style="font-size:12px;color:#6b7280;">${_resolveAdminName(l.sent_by)||'-'}</td>
       <td style="font-size:11.5px;color:#6b7280;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${(l.note||'').replace(/"/g,'&quot;')}">${l.note||'-'}</td>
     </tr>`;
   }).join('');
@@ -799,17 +821,17 @@ function _pssBulkRenderTable(){
     const emailCell = hasEmail
       ? `<span style="font-size:12px;color:#374151;">${item.email}</span>`
       : `<span style="color:#d1d5db;font-size:12px;">미등록</span>`;
-    const emailBtnStyle = hasEmail
-      ? 'background:#dbeafe;color:#1d4ed8;border:1px solid #93c5fd;cursor:pointer;'
-      : 'background:#f3f4f6;color:#d1d5db;border:1px solid #e5e7eb;cursor:not-allowed;';
+    const emailClass = hasEmail ? 'btn btn-sky btn-sm' : 'btn btn-sm';
     return `<tr id="pss-brow-${i}">
       <td style="font-weight:700;color:#111827;">${item.empName}</td>
       <td style="color:#6b7280;font-size:12.5px;">${item.phone || '<span style="color:#d1d5db;">미등록</span>'}</td>
       <td>${emailCell}</td>
       <td id="pss-bstatus-${i}">${_pssBulkStatusHtml('idle')}</td>
       <td id="pss-baction-${i}" style="text-align:center;white-space:nowrap;">
-        <button onclick="_pssEmailSend(${i})" ${hasEmail ? '' : 'disabled'} style="${emailBtnStyle}border-radius:6px;padding:4px 9px;font-size:11.5px;font-weight:600;font-family:inherit;margin-right:4px;">✉ 이메일 발송</button>
-        <button onclick="_pssManualDone(${i})" style="background:#f0fdf4;color:#166534;border:1px solid #86efac;border-radius:6px;padding:4px 9px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;">✔ 수동 교부 완료</button>
+        <button onclick="_pssEmailSend(${i})" ${hasEmail ? '' : 'disabled'}
+          class="${emailClass}" style="margin-right:4px;">✉ 이메일</button>
+        <button onclick="_pssManualDone(${i})"
+          class="btn btn-success btn-sm">✔ 수동교부</button>
       </td>
     </tr>`;
   }).join('');
@@ -1119,5 +1141,58 @@ async function confirmPssBulkSend(){
   }
 
   renderPssUnsentList(); renderPssLogs(); renderPssMonthTabs(); _pssUpdateStats();
+}
+
+// ─── 체크박스 전체 선택 ───
+function pssToggleAll(el){
+  document.querySelectorAll('.pss-row-chk').forEach(cb => { cb.checked = el.checked; });
+  pssUpdateBatchBtns();
+}
+// ─── 배치 버튼 활성/비활성 ───
+function pssUpdateBatchBtns(){
+  const checked = document.querySelectorAll('.pss-row-chk:checked');
+  const hasAny = checked.length > 0;
+  ['pss-batch-kakao-btn','pss-batch-email-btn','pss-batch-manual-btn'].forEach(id => {
+    const btn = document.getElementById(id);
+    if(btn) btn.disabled = !hasAny;
+  });
+}
+// ─── 배치 알림톡 ───
+async function pssBatchKakao(){
+  const checked = [...document.querySelectorAll('.pss-row-chk:checked')];
+  if(!checked.length){ toast('선택된 항목이 없습니다.', 'warning'); return; }
+  if(!confirm(`선택된 ${checked.length}건을 알림톡으로 일괄 발송하시겠습니까?`)) return;
+  for(const cb of checked){
+    const pid = cb.dataset.payrollId;
+    const row = cb.closest('tr');
+    const empName = row?.children[1]?.textContent || '';
+    const empId = allPayrolls.find(p=>p.id===pid)?.employee_id;
+    if(pid && empId) await _pssKakaoSendRow(pid, empId);
+  }
+  renderPssUnsentList(); renderPssLogs(); _pssUpdateStats();
+}
+// ─── 배치 이메일 ───
+async function pssBatchEmail(){
+  const checked = [...document.querySelectorAll('.pss-row-chk:checked')];
+  if(!checked.length){ toast('선택된 항목이 없습니다.', 'warning'); return; }
+  if(!confirm(`선택된 ${checked.length}건을 이메일로 일괄 발송하시겠습니까?`)) return;
+  for(const cb of checked){
+    const pid = cb.dataset.payrollId;
+    const empId = allPayrolls.find(p=>p.id===pid)?.employee_id;
+    if(pid && empId) await _pssEmailSendRow(pid, empId);
+  }
+  renderPssUnsentList(); renderPssLogs(); _pssUpdateStats();
+}
+// ─── 배치 수동교부 ───
+async function pssBatchManual(){
+  const checked = [...document.querySelectorAll('.pss-row-chk:checked')];
+  if(!checked.length){ toast('선택된 항목이 없습니다.', 'warning'); return; }
+  if(!confirm(`선택된 ${checked.length}건을 수동교부 완료 처리하시겠습니까?`)) return;
+  for(const cb of checked){
+    const pid = cb.dataset.payrollId;
+    const empId = allPayrolls.find(p=>p.id===pid)?.employee_id;
+    if(pid && empId) await _pssManualDoneRow(pid, empId);
+  }
+  renderPssUnsentList(); renderPssLogs(); _pssUpdateStats();
 }
 

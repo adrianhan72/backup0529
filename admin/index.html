@@ -318,9 +318,9 @@
                 <span style="color:#f59e0b;">납부대기고객</span>
               </label>
             </div>
-            <div class="search-input" style="margin:0;">
+            <div class="filt-search-wrap" style="margin:0;">
               <i class="fas fa-search"></i>
-              <input type="text" id="billing-search" placeholder="고객사명 검색" oninput="renderBillings()" style="width:180px;" />
+              <input type="text" id="billing-search" class="filt-search" placeholder="고객사명 검색" oninput="renderBillings()" style="width:180px;" />
             </div>
           </div>
         </div>
@@ -745,12 +745,12 @@
         <!-- 3개 발송 버튼 -->
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <button id="al-btn-kakao" onclick="confirmSendLeavePromotion('알림톡')"
-            style="display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:8px;border:none;background:#fee500;color:#3b1f00;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;transition:opacity .15s;">
+            class="btn btn-kakao" style="padding:9px 18px;font-size:12.5px;">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg>
             카카오 알림톡
           </button>
           <button id="al-btn-email" onclick="confirmSendLeavePromotion('이메일')"
-            style="display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:8px;border:none;background:#2563eb;color:#fff;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;transition:opacity .15s;">
+            class="btn btn-blue" style="padding:9px 18px;font-size:12.5px;">
             <i class="fas fa-envelope"></i> 이메일
           </button>
           <button id="al-btn-phone" onclick="confirmSendLeavePromotion('유선직접안내')"

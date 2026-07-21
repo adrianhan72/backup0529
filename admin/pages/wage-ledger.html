@@ -44,33 +44,27 @@
       <!-- 임금대장 메인 섹션 -->
       <div id="wl-main-section" style="display:none;">
         <!-- 선택 고객사 헤더 + 목록 카드 세트 -->
-        <div style="border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08);">
-          <!-- 선택 고객사 헤더 -->
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:linear-gradient(90deg,#1e1b4b,#312e81);border-radius:10px;margin-bottom:12px;">
-            <span id="wl-selected-company-label" style="font-size:14px;font-weight:700;color:#fff;"></span>
-            <button onclick="clearWLCompanySelect()" class="btn btn-icon-dark" title="고객사 선택 해제"><i class="fas fa-times"></i></button>
-          </div>
+        <!-- 선택 고객사 헤더 -->
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:linear-gradient(90deg,#1e1b4b,#312e81);border-radius:10px;margin-bottom:12px;">
+          <span id="wl-selected-company-label" style="font-size:14px;font-weight:700;color:#fff;"></span>
+          <button onclick="clearWLCompanySelect()" class="btn btn-icon-dark" title="고객사 선택 해제"><i class="fas fa-times"></i></button>
+        </div>
 
-          <div class="card" style="border-radius:0;box-shadow:none;margin-bottom:0;border-top:none;">
-            <!-- 필터 바 -->
-            <div class="filter-bar wl-filter-bar" style="justify-content:space-between;flex-wrap:wrap;gap:10px;">
-              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-                <select class="" id="wl-year-filter" onchange="renderWageLedger()"></select>
-                <select class="" id="wl-month-filter" onchange="renderWageLedger()"></select>
-              </div>
-              <div style="display:flex;gap:8px;">
-                <button class="wl-excel-btn" onclick="downloadWageLedgerExcel()" disabled><i class="fas fa-file-excel"></i> 엑셀 다운로드</button>
-                <button class="wl-pdf-btn" onclick="downloadWageLedgerPdf()" disabled><i class="fas fa-file-pdf"></i> PDF 다운로드</button>
-                <button class="wl-print-btn" onclick="printWageLedger()" disabled><i class="fas fa-print"></i> 인쇄</button>
-              </div>
-            </div>
-
-            <!-- 임금대장 테이블 영역 -->
-            <div class="wl-wrap">
-              <div id="wl-table-area" style="min-height:200px;"></div>
-            </div>
+        <!-- ── 필터 바 ── -->
+        <div class="filt-bar wl-filter-bar" style="justify-content:space-between;background:#fff;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.06);margin-bottom:12px;">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <select id="wl-year-filter" onchange="renderWageLedger()" class="filt-select"></select>
+            <select id="wl-month-filter" onchange="renderWageLedger()" class="filt-select"></select>
           </div>
-        </div><!-- /선택 고객사 헤더+목록 세트 wrapper -->
+          <div style="display:flex;gap:8px;">
+            <button class="wl-excel-btn" onclick="downloadWageLedgerExcel()" disabled><i class="fas fa-file-excel"></i> 엑셀 다운로드</button>
+            <button class="wl-pdf-btn" onclick="downloadWageLedgerPdf()" disabled><i class="fas fa-file-pdf"></i> PDF 다운로드</button>
+            <button class="wl-print-btn" onclick="printWageLedger()" disabled><i class="fas fa-print"></i> 인쇄</button>
+          </div>
+        </div>
+
+        <!-- ── 임금대장 테이블 영역 ── -->
+        <div id="wl-table-area" style="min-height:200px;"></div>
       </div>
     </div>
 

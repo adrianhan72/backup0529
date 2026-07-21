@@ -227,10 +227,7 @@ function _showPIDownloadFallbackConfirm(prevYr, prevMo, foundYr, foundMo, coName
             취소
           </button>
           <button id="pi-dl-fb-ok"
-            style="padding:9px 22px;background:linear-gradient(135deg,#10b981,#059669);
-                   border:none;border-radius:9px;font-size:13px;font-weight:700;
-                   color:#fff;cursor:pointer;font-family:inherit;
-                   box-shadow:0 2px 8px rgba(16,185,129,.3);">
+            class="btn btn-success" style="padding:9px 22px;font-size:13px;box-shadow:0 2px 8px rgba(16,185,129,.3);">
             <i class="fas fa-file-excel" style="margin-right:6px;"></i>${foundYr}년 ${foundMo}월 다운로드
           </button>
         </div>

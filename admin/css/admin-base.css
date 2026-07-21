@@ -138,13 +138,18 @@
     .btn-sky:hover:not(:disabled){background:#0369a1;}
     .btn-sky:active:not(:disabled){background:#075985;}
 
+    /* Blue (밝은 파랑 — 이메일·안내 발송 등) */
+    .btn-blue{background:#2563eb;border-color:#1d4ed8;}
+    .btn-blue:hover:not(:disabled){background:#1d4ed8;}
+    .btn-blue:active:not(:disabled){background:#1e40af;}
+
     /* ?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═
        ?�?�운 select ??form input�??�이·간격 ?�일
        좌측 ?�스???�백 = ?�측 ?�살???�백 = 8px
        ?�외: cm-aw-pt-select, pi-pay-type-select
     ?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═ */
     select:not(.cm-aw-pt-select):not(.pi-pay-type-select):not(.filt-select) {
-      border: 1px solid #9080e4;
+      border: 1px solid #d1d5db;
       border-radius: 7px;
       height: 38px;
       box-sizing: border-box;
@@ -165,8 +170,10 @@
     select:not(.cm-aw-pt-select):not(.pi-pay-type-select):not(.filt-select):hover {
       border-color: #9ca3af;
     }
-    select:not(.cm-aw-pt-select):not(.pi-pay-type-select):focus {
+    select:not(.cm-aw-pt-select):not(.pi-pay-type-select):not(.filt-select):focus {
       border-color: #6366f1;
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(99,102,241,.25);
     }
     select:not(.cm-aw-pt-select):not(.pi-pay-type-select):disabled {
       background: #f1f5f9;

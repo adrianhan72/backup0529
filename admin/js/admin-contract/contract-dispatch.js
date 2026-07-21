@@ -1,6 +1,93 @@
 window._contractDispatchList = window._contractDispatchList || [];
 let _cdpPage = 1;
 const _cdpPageSize = 10;
+let _cdpUnsentCoId = ''; // 미발송 섹션 고객사 필터
+
+// ── 탭 전환 ──
+function _cdpSwitchTab(tab){
+  const unsentEl = document.getElementById('cdp-unsent-section');
+  const historyEl = document.getElementById('cdp-history-section');
+  const tabUnsent = document.getElementById('cdp-tab-unsent');
+  const tabHistory = document.getElementById('cdp-tab-history');
+  if(tab === 'unsent'){
+    if(unsentEl) unsentEl.style.display = '';
+    if(historyEl) historyEl.style.display = 'none';
+    if(tabUnsent) tabUnsent.classList.add('active');
+    if(tabHistory) tabHistory.classList.remove('active');
+  } else {
+    if(unsentEl) unsentEl.style.display = 'none';
+    if(historyEl) historyEl.style.display = '';
+    if(tabUnsent) tabUnsent.classList.remove('active');
+    if(tabHistory) tabHistory.classList.add('active');
+  }
+}
+
+// ── 커스텀 고객사 드롭다운 토글 ──
+function _cdpToggleCoDropdown(){
+  const list = document.getElementById('cdp-unsent-co-list');
+  const btn = document.getElementById('cdp-unsent-co-btn');
+  if(!list || !btn) return;
+  const isOpen = list.style.display === 'block';
+  if(isOpen){ list.style.display = 'none'; return; }
+  const rect = btn.getBoundingClientRect();
+  list.style.top = (rect.bottom + 4) + 'px';
+  list.style.left = rect.left + 'px';
+  list.style.width = Math.min(window.innerWidth - rect.left - 20, 800) + 'px';
+  list.style.display = 'block';
+  setTimeout(() => {
+    const handler = e => {
+      const dd = document.getElementById('cdp-unsent-co-dropdown');
+      if(dd && !dd.contains(e.target)){ list.style.display = 'none'; document.removeEventListener('click', handler); }
+    };
+    document.addEventListener('click', handler);
+  }, 0);
+}
+
+// ── 고객사 선택 ──
+function _cdpSelectCo(coId, coName){
+  _cdpUnsentCoId = coId;
+  document.getElementById('cdp-unsent-co-label').textContent = coName || '전체 고객사';
+  const unsent = _cdpGetUnsentContracts();
+  const cnt = coId ? unsent.filter(c => c.company_id === coId).length : unsent.length;
+  document.getElementById('cdp-unsent-co-badge').textContent = cnt;
+  document.getElementById('cdp-unsent-co-list').style.display = 'none';
+  renderCdpUnsentMonthTabs();
+  renderCdpUnsentList();
+}
+
+// ── 고객사 드롭다운 채우기 ──
+function _cdpPopulateUnsentCompanySelect(){
+  const btn = document.getElementById('cdp-unsent-co-btn');
+  const list = document.getElementById('cdp-unsent-co-list');
+  if(!btn || !list) return;
+  const activeCos = allCompanies.filter(c => isCompanyActive(c));
+  const unsent = _cdpGetUnsentContracts();
+  const totalCount = unsent.length;
+  const countByCo = {};
+  unsent.forEach(c => { countByCo[c.company_id] = (countByCo[c.company_id]||0) + 1; });
+  const label = document.getElementById('cdp-unsent-co-label');
+  const badgeEl = document.getElementById('cdp-unsent-co-badge');
+  if(currentGlobalCompanyId){
+    _cdpUnsentCoId = currentGlobalCompanyId;
+    const co = allCompanies.find(c => c.id === currentGlobalCompanyId);
+    if(label) label.textContent = co ? co.company_name : '전체 고객사';
+    const selCnt = currentGlobalCompanyId ? (countByCo[currentGlobalCompanyId]||0) : totalCount;
+    if(badgeEl) badgeEl.textContent = selCnt;
+  } else {
+    if(label) label.textContent = '전체 고객사';
+    if(badgeEl) badgeEl.textContent = totalCount;
+  }
+  list.innerHTML =
+    `<div class="cust-dropdown-item${!_cdpUnsentCoId?' selected':''}" onclick="_cdpSelectCo('','전체 고객사')">
+      <span>전체 고객사</span><span class="count-badge">${totalCount}</span>
+    </div>` +
+    activeCos.map(c => {
+      const cnt = countByCo[c.id] || 0;
+      return `<div class="cust-dropdown-item${_cdpUnsentCoId===c.id?' selected':''}" onclick="_cdpSelectCo('${c.id}','${c.company_name.replace(/'/g,"\\'")}')">
+        <span>${c.company_name}</span><span class="count-badge">${cnt}</span>
+      </div>`;
+    }).join('');
+}
 
 // ── 기간 검증: 최대 3개월 제한 (조회 버튼 클릭 시) ──
 function _cdpDoSearch(){
@@ -253,9 +340,12 @@ function _cdpGetUnsentContracts(year, month){
     if(!c.contract_start || !c.employee_id || !c.company_id || !c.contract_type) return false;
     // 이미 발송 이력 있으면 제외
     if(sentIds.has(c.id)) return false;
+    // 고객사 필터
+    if(_cdpUnsentCoId && c.company_id !== _cdpUnsentCoId) return false;
     // 년월 필터 (contract_start 앞 7자리 'YYYY-MM' 기준)
     if(year !== undefined && month !== undefined){
-      const ym = (c.contract_start || '').slice(0, 7); // 'YYYY-MM'
+      const raw = c.contract_start || '';
+      const ym = typeof raw === 'string' ? raw.slice(0, 7) : String(raw).slice(0, 7);
       const targetYM = `${year}-${String(month).padStart(2,'0')}`;
       if(ym !== targetYM) return false;
     }
@@ -314,16 +404,13 @@ function cdpSelectUnsentYM(year, month){
 }
 
 function _renderCdpUnsentAllClear(show){
-  const msg      = document.getElementById('cdp-unsent-all-clear');
-  const tblWrap  = document.getElementById('cdp-unsent-table-wrap');
-  const btnKakao = document.getElementById('cdp-batch-kakao-btn');
-  const btnEmail = document.getElementById('cdp-batch-email-btn');
-  const btnManual= document.getElementById('cdp-batch-manual-btn');
-  if(msg)     msg.style.display     = show ? '' : 'none';
-  if(tblWrap) tblWrap.style.display = show ? 'none' : '';
-  if(btnKakao) btnKakao.disabled   = show;
-  if(btnEmail) btnEmail.disabled   = show;
-  if(btnManual)btnManual.disabled  = show;
+  const msg       = document.getElementById('cdp-unsent-all-clear');
+  const tblWrap   = document.getElementById('cdp-unsent-table-wrap');
+  const monthCard = document.getElementById('cdp-unsent-month-card');
+  if(msg)       msg.style.display       = show ? '' : 'none';
+  if(tblWrap)   tblWrap.style.display   = show ? 'none' : '';
+  if(monthCard) monthCard.style.display = show ? 'none' : '';
+  cdpUpdateBatchBtns();
 }
 
 /** 전체 선택/해제 */
@@ -504,6 +591,7 @@ function renderCdpUnsentList(){
       </td>
     </tr>`;
   }).join('');
+  cdpUpdateBatchBtns();
 }
 
 /** 개별 알림톡 발송 */

@@ -461,7 +461,7 @@ function openProbMgmtModal(contractId){
     const isExpired = _today2 > _probEndDate2;
 
     const pdfBtnHtml = pendingId
-      ? `<button onclick="event.stopPropagation();openContractInNewWindow('${pendingId}')" style="display:inline-flex;align-items:center;gap:6px;background:#1e3a5f;color:#fff;border:none;border-radius:8px;padding:7px 16px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;"><i class="fas fa-file-pdf"></i> 근로계약서 PDF 보기 (새창)</button>`
+      ? `<button onclick="event.stopPropagation();openContractInNewWindow('${pendingId}')" class="btn btn-slate" style="padding:7px 16px;font-size:12.5px;"><i class="fas fa-file-pdf"></i> 근로계약서 PDF 보기 (새창)</button>`
       : `<span style="font-size:12.5px;color:#9ca3af;">계약서를 찾을 수 없습니다.</span>`;
 
     const revokeDisabledAttr = isExpired ? 'disabled' : '';

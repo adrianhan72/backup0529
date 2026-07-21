@@ -100,10 +100,10 @@
     .prob-acc-emp-type.regular{background:#d1fae5;color:#065f46;}
     .prob-acc-emp-type.contract{background:#ffedd5;color:#9a3412;}
     .prob-acc-emp-end{font-size:12px;color:#0f766e;font-weight:600;min-width:90px;}
-.prob-acc-emp-dday{display:inline-flex;align-items:center;padding:1px 8px;border-radius:20px;font-size:11.5px;font-weight:500;}
-    .prob-acc-emp-dday.soon{background:#ccfbf1;color:#115e59;}
-    .prob-acc-emp-dday.urgent{background:#fee2e2;color:#991b1b;}
-    .prob-acc-emp-dday.normal{background:#f1f5f9;color:#475569;}
+.prob-acc-emp-dday{display:inline-flex;align-items:center;gap:3px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500;}
+.prob-acc-emp-dday.soon{background:rgba(6,182,212,.1);color:#0891b2;}
+.prob-acc-emp-dday.urgent{background:rgba(239,68,68,.1);color:#ef4444;}
+.prob-acc-emp-dday.normal{background:rgba(100,116,139,.1);color:#475569;}
     .prob-acc-emp-action{margin-left:auto;flex-shrink:0;}
     /* 수습 근로자 관리 페이지 — 고객사 선택 칩 (.co-chip 공통 스타일 통일) */
     .probmgmt-co-chip{cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:20px;border:1.5px solid #e5e7eb;background:#fff;font-size:12.5px;font-weight:600;color:#374151;font-family:inherit;transition:border-color .15s,background .15s,color .15s;white-space:nowrap;}
@@ -118,12 +118,12 @@
     .probmgmt-table td{padding:11px 14px;border-bottom:1px solid #f1f5f9;vertical-align:middle;}
     .probmgmt-table tr:last-child td{border-bottom:none;}
     .probmgmt-table tr:hover td{background:#f8fafc;}
-.probmgmt-dday{display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;font-size:11.5px;font-weight:500;}
-    .probmgmt-dday.soon{background:#ccfbf1;color:#115e59;}
-    .probmgmt-dday.urgent{background:#fee2e2;color:#991b1b;}
-    .probmgmt-dday.normal{background:#f1f5f9;color:#475569;}
-    .probmgmt-action-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;border:none;background:#0f766e;color:#fff;transition:opacity .15s;}
-    .probmgmt-action-btn:hover{opacity:.85;}
+.probmgmt-dday{display:inline-flex;align-items:center;gap:3px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500;}
+    .probmgmt-dday.soon{background:rgba(6,182,212,.1);color:#0891b2;}
+    .probmgmt-dday.urgent{background:rgba(239,68,68,.1);color:#ef4444;}
+    .probmgmt-dday.normal{background:rgba(100,116,139,.1);color:#475569;}
+    .probmgmt-action-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;border:1px solid #115e59;background:#0f766e;color:#fff;transition:background .18s;}
+    .probmgmt-action-btn:hover{background:#115e59;}
     .probmgmt-empty{padding:36px;text-align:center;color:#9ca3af;font-size:13.5px;}
     .probmgmt-stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:18px;}
     .probmgmt-stat-card{background:#fff;border-radius:12px;padding:14px 18px;border:1px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,.05);}
@@ -148,8 +148,8 @@
     .probmgmt-opt-desc{font-size:12px;color:#6b7280;line-height:1.55;}
     .probmgmt-modal-footer{padding:14px 22px;border-top:1px solid #f1f5f9;display:flex;justify-content:flex-end;gap:8px;}
     .probmgmt-modal-cancel{padding:8px 18px;border-radius:8px;border:1px solid #e2e8f0;background:#f8fafc;font-size:13px;font-weight:600;color:#374151;cursor:pointer;}
-    .probmgmt-modal-confirm{padding:8px 20px;border-radius:8px;border:none;background:#0f766e;color:#fff;font-size:13px;font-weight:700;cursor:pointer;transition:opacity .15s;}
-    .probmgmt-modal-confirm:hover{opacity:.88;}
+    .probmgmt-modal-confirm{padding:8px 20px;border-radius:8px;border:1px solid #115e59;background:#0f766e;color:#fff;font-size:13px;font-weight:700;cursor:pointer;transition:background .18s;}
+    .probmgmt-modal-confirm:hover{background:#115e59;}
     /* 카드 내 확장 UI */
     .probmgmt-opt-expand{display:none;margin-top:12px;padding:14px 16px;border-radius:10px;border:1.5px solid #e2e8f0;background:#f8fafc;}
     .probmgmt-opt.selected .probmgmt-opt-expand{display:block;}
@@ -160,12 +160,12 @@
     .probmgmt-opt-expand-input:focus{border-color:#0d9488;}
     .probmgmt-opt-expand-val{font-size:13.5px;font-weight:700;color:#0f766e;background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px;padding:6px 14px;}
     .probmgmt-opt-expand-hint{font-size:11.5px;color:#6b7280;line-height:1.6;margin-bottom:10px;}
-    .probmgmt-opt-action-btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:9px;border:none;font-size:13px;font-weight:700;cursor:pointer;transition:opacity .15s;}
+    .probmgmt-opt-action-btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:9px;border:1px solid transparent;font-size:13px;font-weight:700;cursor:pointer;transition:background .18s;}
     .probmgmt-opt-action-btn:hover{filter:brightness(.85);}
-    .probmgmt-opt-action-btn.primary{background:#0f766e;color:#fff;}
-    .probmgmt-opt-action-btn.danger{background:#dc2626;color:#fff;}
-    .probmgmt-opt-action-btn.warning{background:#d97706;color:#fff;}
-    .probmgmt-opt-action-btn.info{background:#2563eb;color:#fff;}
+    .probmgmt-opt-action-btn.primary{background:#0f766e;color:#fff;border-color:#115e59;}
+    .probmgmt-opt-action-btn.danger{background:#dc2626;color:#fff;border-color:#b91c1c;}
+    .probmgmt-opt-action-btn.warning{background:#d97706;color:#fff;border-color:#b45309;}
+    .probmgmt-opt-action-btn.info{background:#2563eb;color:#fff;border-color:#1d4ed8;}
 
     /* ── 메시지 예시 탭 ── */
     .cen-tmpl-wrap{display:grid;grid-template-columns:1fr 1fr;gap:24px;padding:20px;}
@@ -186,7 +186,7 @@
     .cen-kakao-bubble-divider{border:none;border-top:1px solid #e5e7eb;margin:10px 0;}
     .cen-kakao-bubble-footer{font-size:11px;color:#9ca3af;line-height:1.6;}
     .cen-kakao-btn-area{margin-top:8px;display:flex;flex-direction:column;gap:6px;}
-    .cen-kakao-btn{background:#fee500;border:none;border-radius:8px;padding:9px 0;font-size:12.5px;font-weight:700;color:#3b1f00;cursor:default;width:100%;text-align:center;}
+    .cen-kakao-btn{background:#fee500;border:1px solid #eab308;border-radius:8px;padding:9px 0;font-size:12.5px;font-weight:700;color:#3b1f00;cursor:default;width:100%;text-align:center;}
     /* 이메일 카드 */
     .cen-email-card{background:#f3f4f6;border-radius:14px;padding:4px;overflow:hidden;}
     .cen-email-header{background:linear-gradient(135deg,#1e3a5f,#0f172a);padding:16px 20px;border-radius:10px 10px 0 0;}
@@ -199,8 +199,8 @@
     .cen-email-info-row{display:flex;gap:8px;font-size:12.5px;line-height:1.9;}
     .cen-email-info-label{color:#64748b;font-weight:600;min-width:80px;flex-shrink:0;}
     .cen-email-info-val{color:#1e293b;font-weight:700;}
-.cen-email-dday-badge{display:inline-flex;align-items:center;padding:1px 10px;border-radius:20px;font-size:11.5px;font-weight:500;background:#fef2f2;color:#dc2626;margin-left:6px;}
-    .cen-email-cta{background:linear-gradient(135deg,#1e3a5f,#0f172a);color:#fff;border:none;border-radius:9px;padding:11px 0;font-size:13px;font-weight:700;width:100%;text-align:center;cursor:default;margin-bottom:14px;display:block;}
+.cen-email-dday-badge{display:inline-flex;align-items:center;gap:3px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500;background:rgba(239,68,68,.1);color:#ef4444;margin-left:6px;}
+    .cen-email-cta{background:linear-gradient(135deg,#1e3a5f,#0f172a);color:#fff;border:1px solid #0f172a;border-radius:9px;padding:11px 0;font-size:13px;font-weight:700;width:100%;text-align:center;cursor:default;margin-bottom:14px;display:block;}
     .cen-email-notice{font-size:11px;color:#9ca3af;line-height:1.7;border-top:1px solid #f1f5f9;padding-top:12px;}
     .cen-email-footer{background:#f3f4f6;padding:12px 20px;border-radius:0 0 10px 10px;text-align:center;font-size:11px;color:#9ca3af;}
     /* 변수 안내 테이블 */

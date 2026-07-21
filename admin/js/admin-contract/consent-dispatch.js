@@ -5,6 +5,91 @@
 window._consentDispatchList = window._consentDispatchList || [];
 let _cnsPage = 1;
 const _cnsPageSize = 10;
+let _cnsUnsentCoId = '';
+
+// ── 탭 전환 ──
+function _cnsSwitchTab(tab){
+  const unsentEl = document.getElementById('cns-unsent-section');
+  const historyEl = document.getElementById('cns-history-section');
+  const tabUnsent = document.getElementById('cns-tab-unsent');
+  const tabHistory = document.getElementById('cns-tab-history');
+  if(tab === 'unsent'){
+    if(unsentEl) unsentEl.style.display = '';
+    if(historyEl) historyEl.style.display = 'none';
+    if(tabUnsent) tabUnsent.classList.add('active');
+    if(tabHistory) tabHistory.classList.remove('active');
+  } else {
+    if(unsentEl) unsentEl.style.display = 'none';
+    if(historyEl) historyEl.style.display = '';
+    if(tabUnsent) tabUnsent.classList.remove('active');
+    if(tabHistory) tabHistory.classList.add('active');
+  }
+}
+
+// ── 커스텀 고객사 드롭다운 토글 ──
+function _cnsToggleCoDropdown(){
+  const list = document.getElementById('cns-unsent-co-list');
+  const btn = document.getElementById('cns-unsent-co-btn');
+  if(!list || !btn) return;
+  const isOpen = list.style.display === 'block';
+  if(isOpen){ list.style.display = 'none'; return; }
+  const rect = btn.getBoundingClientRect();
+  list.style.top = (rect.bottom + 4) + 'px';
+  list.style.left = rect.left + 'px';
+  list.style.width = Math.min(window.innerWidth - rect.left - 20, 800) + 'px';
+  list.style.display = 'block';
+  setTimeout(() => {
+    const handler = e => {
+      const dd = document.getElementById('cns-unsent-co-dropdown');
+      if(dd && !dd.contains(e.target)){ list.style.display = 'none'; document.removeEventListener('click', handler); }
+    };
+    document.addEventListener('click', handler);
+  }, 0);
+}
+
+function _cnsSelectCo(coId, coName){
+  _cnsUnsentCoId = coId;
+  document.getElementById('cns-unsent-co-label').textContent = coName || '전체 고객사';
+  const unsent = _cnsGetUnsentContracts();
+  const cnt = coId ? unsent.filter(c => c.company_id === coId).length : unsent.length;
+  document.getElementById('cns-unsent-co-badge').textContent = cnt;
+  document.getElementById('cns-unsent-co-list').style.display = 'none';
+  renderCnsUnsentMonthTabs();
+  renderCnsUnsentList();
+}
+
+function _cnsPopulateUnsentCompanySelect(){
+  const btn = document.getElementById('cns-unsent-co-btn');
+  const list = document.getElementById('cns-unsent-co-list');
+  if(!btn || !list) return;
+  const activeCos = allCompanies.filter(c => isCompanyActive(c));
+  const unsent = _cnsGetUnsentContracts();
+  const totalCount = unsent.length;
+  const countByCo = {};
+  unsent.forEach(c => { countByCo[c.company_id] = (countByCo[c.company_id]||0) + 1; });
+  const label = document.getElementById('cns-unsent-co-label');
+  const badgeEl = document.getElementById('cns-unsent-co-badge');
+  if(currentGlobalCompanyId){
+    _cnsUnsentCoId = currentGlobalCompanyId;
+    const co = allCompanies.find(c => c.id === currentGlobalCompanyId);
+    if(label) label.textContent = co ? co.company_name : '전체 고객사';
+    const selCnt = currentGlobalCompanyId ? (countByCo[currentGlobalCompanyId]||0) : totalCount;
+    if(badgeEl) badgeEl.textContent = selCnt;
+  } else {
+    if(label) label.textContent = '전체 고객사';
+    if(badgeEl) badgeEl.textContent = totalCount;
+  }
+  list.innerHTML =
+    `<div class="cust-dropdown-item${!_cnsUnsentCoId?' selected':''}" onclick="_cnsSelectCo('','전체 고객사')">
+      <span>전체 고객사</span><span class="count-badge">${totalCount}</span>
+    </div>` +
+    activeCos.map(c => {
+      const cnt = countByCo[c.id] || 0;
+      return `<div class="cust-dropdown-item${_cnsUnsentCoId===c.id?' selected':''}" onclick="_cnsSelectCo('${c.id}','${c.company_name.replace(/'/g,"\\'")}')">
+        <span>${c.company_name}</span><span class="count-badge">${cnt}</span>
+      </div>`;
+    }).join('');
+}
 
 // ── 기간 검증: 최대 3개월 제한 (조회 버튼 클릭 시) ──
 function _cnsDoSearch(){
@@ -134,16 +219,17 @@ async function renderConsentDispatchPage() {
   };
 
   const methodBadge = m => {
-    const METHOD_CLS = { kakao:'badge-yellow', email:'badge-blue', manual:'badge-green' };
-    const badgeCls = METHOD_CLS[m] || 'badge-gray';
-    const iconCfg = {
-      kakao: `<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg>`,
-      email: '<i class="fas fa-envelope"></i>',
-      manual: '<i class="fas fa-hand-paper"></i>',
+    const cfg = {
+      [DISPATCH_METHOD.KAKAO]:  { bg:'#f9d000', color:'#3b1f00', icon:'M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z', isSvg:true },
+      [DISPATCH_METHOD.EMAIL]:  { bg:'#dbeafe', color:'#1e40af', fa:'fa-envelope' },
+      [DISPATCH_METHOD.MANUAL]: { bg:'#d1fae5', color:'#065f46', fa:'fa-hand-paper' },
     };
-    const iconHtml = iconCfg[m] || '<i class="fas fa-question"></i>';
+    const c = cfg[m] || { bg:'#f3f4f6', color:'#374151', fa:'fa-question' };
     const label = { kakao:'알림톡', email:'이메일', manual:'수동교부' }[m] || m || '-';
-    return `<span class="badge ${badgeCls}">${iconHtml} ${label}</span>`;
+    const icon = c.isSvg
+      ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="${c.color}"><path d="${c.icon}"/></svg>`
+      : `<i class="fas ${c.fa}" style="font-size:11px;"></i>`;
+    return `<span style="display:inline-flex;align-items:center;gap:4px;background:${c.bg};color:${c.color};padding:2px 9px;border-radius:20px;font-size:11.5px;white-space:nowrap;">${icon}${label}</span>`;
   };
 
   const statusBadge = s => {
@@ -220,7 +306,8 @@ function _cnsGetUnsentContracts(year, month) {
     !c.is_draft &&
     ![CONTRACT_STATUS.VOIDED, CONTRACT_STATUS.CANCELED, CONTRACT_STATUS.TERMINATED].includes(c.status) &&
     !c.is_voided_by_amend &&
-    !consentEmpIds.has(c.employee_id)
+    !consentEmpIds.has(c.employee_id) &&
+    (!_cnsUnsentCoId || c.company_id === _cnsUnsentCoId)
   );
 
   if (year && month) {
@@ -280,9 +367,7 @@ function renderCnsUnsentList() {
   const tbody = document.getElementById('cns-unsent-tbody');
   const clearEl = document.getElementById('cns-unsent-all-clear');
   const wrapEl = document.getElementById('cns-unsent-table-wrap');
-  const btnKakao = document.getElementById('cns-batch-kakao-btn');
-  const btnEmail = document.getElementById('cns-batch-email-btn');
-  const btnManual= document.getElementById('cns-batch-manual-btn');
+  const monthCard = document.getElementById('cns-unsent-month-card');
   if (!tbody) return;
 
   let contracts;
@@ -292,17 +377,16 @@ function renderCnsUnsentList() {
     contracts = _cnsGetUnsentContracts();
   }
 
-  if (btnKakao) btnKakao.disabled = contracts.length === 0;
-  if (btnEmail) btnEmail.disabled = contracts.length === 0;
-  if (btnManual)btnManual.disabled= contracts.length === 0;
-
   if (contracts.length === 0) {
     if (clearEl) clearEl.style.display = '';
     if (wrapEl) wrapEl.style.display = 'none';
+    if (monthCard) monthCard.style.display = 'none';
+    cnsUpdateBatchBtns();
     return;
   }
   if (clearEl) clearEl.style.display = 'none';
   if (wrapEl) wrapEl.style.display = '';
+  if (monthCard) monthCard.style.display = '';
 
   tbody.innerHTML = contracts.map(c => {
     const emp = (allEmployees || []).find(e => e.id === c.employee_id);
@@ -343,6 +427,7 @@ function renderCnsUnsentList() {
       </td>
     </tr>`;
   }).join('');
+  cnsUpdateBatchBtns();
 }
 
 // ── 개별 발송 ──

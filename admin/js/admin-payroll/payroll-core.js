@@ -43,7 +43,7 @@ function renderPayrolls(){
     <td style="font-size:11.5px;color:#8b5cf6;">${won2(irregularTotal)}</td>
     <td class="amount-red">${won2(p.total_deduction)}</td>
     <td class="amount-green" style="font-size:13px;font-weight:700;">${won2(p.net_pay)}</td>
-    <td onclick="event.stopPropagation()" style="text-align:center;"><button onclick="editPayroll('${p.id}')" style="background:#f59e0b;color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;"><i class="fas fa-pen" style="margin-right:3px;"></i>수정</button></td>
+    <td onclick="event.stopPropagation()" style="text-align:center;"><button onclick="editPayroll('${p.id}')" class="btn btn-warning btn-sm" style="padding:5px 10px;font-size:11.5px;"><i class="fas fa-pen" style="margin-right:3px;"></i>수정</button></td>
   </tr>`;
   }).join('');
   renderPagination('pay-pagination',f.length,pages.pay,'setPayPage');

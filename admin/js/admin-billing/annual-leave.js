@@ -375,8 +375,7 @@ function renderAlTable(){
 
     // 관리 버튼 (붉은색)
     const ledgerBtn = `<button class="al-ledger-btn"
-        onclick="openLeaveLedger('${emp.id}','${(emp.name||'').replace(/'/g,"\\'")}',${refYear})"
-        style="background:#e94560;color:#fff;border:none;">
+        onclick="openLeaveLedger('${emp.id}','${(emp.name||'').replace(/'/g,"\\'")}',${refYear})">
         <i class="fas fa-clipboard-list"></i> 관리
       </button>`;
 

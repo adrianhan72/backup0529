@@ -30,10 +30,11 @@ app.post('/api/kakao/send', (req, res) => {
 });
 
 // ── 정적 파일 ──
-app.use('/admin',   express.static(path.join(ROOT, 'admin')));
-app.use('/client',  express.static(path.join(ROOT, 'client')));
-app.use('/scripts', express.static(path.join(ROOT, 'scripts')));
-app.use('/docs',    express.static(path.join(ROOT, 'docs')));
+const staticOpts = { maxAge: 0, etag: false };
+app.use('/admin',   express.static(path.join(ROOT, 'admin'), staticOpts));
+app.use('/client',  express.static(path.join(ROOT, 'client'), staticOpts));
+app.use('/scripts', express.static(path.join(ROOT, 'scripts'), staticOpts));
+app.use('/docs',    express.static(path.join(ROOT, 'docs'), staticOpts));
 
 // ── 보안 ──
 require('./middleware/security')(app);

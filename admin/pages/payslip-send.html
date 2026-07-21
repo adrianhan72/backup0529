@@ -1,134 +1,139 @@
 ﻿    <div id="page-payslip-send" class="page">
 
+      <!-- 탭 메뉴 -->
+      <div class="std-tab-bar" style="margin-top:0;">
+        <button class="std-tab active" id="pss-tab-unsent" onclick="_pssSwitchTab('unsent')">미발송 명세서</button>
+        <button class="std-tab" id="pss-tab-history" onclick="_pssSwitchTab('history')">발송 이력</button>
+      </div>
+
+      <!-- 미발송 명세서 섹션 -->
+      <div id="pss-unsent-section">
+      <div class="std-tab-panel">
       <!-- 고객사 선택 -->
-      <div id="pss-company-select-card">
-        <div class="section-title">
-          <i class="fas fa-building"></i>
-          <span>고객사를 선택하세요</span>
-          <div class="filt-search-wrap" style="margin-left:auto;">
-            <i class="fas fa-search"></i>
-            <input type="text" id="pss-company-search" class="filt-search" style="width:160px;" placeholder="고객사명 검색" oninput="renderPssCompanyList()" />
+      <div style="margin-bottom:12px;">
+        <div class="cust-dropdown" id="pss-unsent-co-dropdown" style="position:relative;">
+          <div id="pss-unsent-co-btn" class="cust-dropdown-btn" onclick="_pssToggleCoDropdown()">
+            <span id="pss-unsent-co-label" class="cust-co-label">전체 고객사</span>
+            <span id="pss-unsent-co-badge" class="count-badge cust-co-count">0</span>
+            <i class="fas fa-chevron-down cust-co-arrow"></i>
           </div>
+          <div id="pss-unsent-co-list" class="cust-dropdown-list" style="display:none;"></div>
         </div>
-        <div class="card" style="margin-bottom:16px;overflow:hidden;">
-          <div id="pss-company-chips" style="padding:20px;display:flex;flex-wrap:wrap;gap:8px;"></div>
+      </div>
+      <!-- 발송 년월 선택 카드 -->
+      <div class="card" id="pss-unsent-month-card" style="margin-bottom:12px;overflow:hidden;">
+        <div style="padding:14px 20px;">
+          <div class="cdp-month-tabs" id="pss-month-tabs">
+            <div class="pss-loading"><i class="fas fa-spinner fa-spin"></i> 로딩 중...</div>
+          </div>
         </div>
       </div>
 
-      <!-- 선택된 고객사 메인 섹션 -->
-      <div id="pss-main-section" style="display:none;">
+      <!-- 미발송 목록 카드 -->
+      <div class="card" style="margin-bottom:16px;padding:0;overflow:hidden;">
+        <div id="pss-unsent-all-clear" class="pss-all-clear" style="display:none;margin:16px 0;padding:0 20px;">
+          <i class="fas fa-check-circle" style="font-size:20px;color:#16a34a;flex-shrink:0;"></i>
+          <span style="font-size:13px;color:#166534;">미발송 명세서 없음. (선택된 모든 급여명세서가 발송 처리되었습니다.)</span>
+        </div>
+        <div id="pss-unsent-table-wrap" class="table-wrap" style="padding:0 0 16px;">
+          <table id="pss-unsent-table" class="tbl-std">
+            <thead>
+              <tr>
+                <th class="ctr" style="width:36px;"><input type="checkbox" id="pss-chk-all" onchange="pssToggleAll(this)" title="전체 선택" /></th>
+                <th>직원명</th>
+                <th>고용구분</th>
+                <th>연락처</th>
+                <th>이메일</th>
+                <th class="ctr">개별 관리</th>
+              </tr>
+            </thead>
+            <tbody id="pss-unsent-tbody">
+              <tr><td colspan="6" class="pss-loading"><i class="fas fa-spinner fa-spin"></i> 로딩 중...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-        <!-- ① 선택 고객사 헤더 + 발송 월 선택 + 미발송 목록 세트 -->
-        <div style="border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:16px;">
+      <!-- 일괄 발송 버튼 -->
+      <div style="display:flex;justify-content:center;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+        <button class="cdp-send-btn-all" id="pss-batch-kakao-btn" onclick="pssBatchKakao()" disabled>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg>
+          선택 일괄 알림톡 발송
+        </button>
+        <button class="cdp-send-btn-all" id="pss-batch-email-btn" onclick="pssBatchEmail()" disabled style="background:#2563eb;border-color:#1d4ed8;color:#fff;">
+          <i class="fas fa-envelope"></i> 선택 일괄 이메일 발송
+        </button>
+        <button class="cdp-send-btn-all" id="pss-batch-manual-btn" onclick="pssBatchManual()" disabled style="background:#10b981;border-color:#059669;color:#fff;">
+          <i class="fas fa-hand-paper"></i> 선택 일괄 수동교부 처리
+        </button>
+      </div>
 
-          <!-- 선택 고객사 헤더 -->
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:linear-gradient(90deg,#1e1b4b,#312e81);border-radius:10px;margin-bottom:12px;">
-            <span id="pss-selected-company-label" style="font-size:14px;font-weight:700;color:#fff;"></span>
-            <button onclick="clearPssCompanySelect()" class="btn btn-icon-dark" title="고객사 선택 해제"><i class="fas fa-times"></i></button>
+      </div><!-- /std-tab-panel -->
+      </div><!-- /pss-unsent-section -->
+
+      <!-- 발송 이력 섹션 -->
+      <div id="pss-history-section" style="display:none;">
+      <div class="std-tab-panel">
+
+      <!-- ── 필터 바 ── -->
+      <div class="card" style="margin-bottom:12px;overflow:hidden;">
+        <div class="filt-bar">
+          <!-- 고객사 -->
+          <div style="display:flex;align-items:center;gap:5px;">
+            <span class="filt-label">고객사</span>
+            <select id="pss-filter-company" onchange="_pssLogPage=1;renderPssLogs()" class="filt-select" style="max-width:240px;">
+              <option value="">전체</option>
+            </select>
           </div>
-
-        <!-- 발송 월 선택 + 미발송 목록 카드 (border-radius 제거, 세트 내부) -->
-        <div class="card" style="border-radius:0;box-shadow:none;margin-bottom:0;border-top:none;">
-          <div style="padding:16px 20px 0;">
-
-            <!-- 월 선택 탭 영역 -->
-            <div class="pss-section-head" style="margin-bottom:10px;">
-              <div class="pss-section-title"><i class="fas fa-calendar-alt" style="color:#6366f1;"></i>발송 월 선택</div>
-              <span style="font-size:11.5px;color:#9ca3af;">급여 명세서 미발송 건이 있는 모든 년월</span>
-            </div>
-            <div class="pss-month-tabs" id="pss-month-tabs" style="margin-bottom:16px;">
-              <div class="pss-loading"><i class="fas fa-spinner fa-spin"></i> 로딩 중...</div>
-            </div>
-
-            <!-- 구분선 -->
-            <div style="border-top:1px solid #f3f4f6;margin:0 -20px 16px;"></div>
-
-            <!-- 미발송 목록 헤더 -->
-            <div class="pss-section-head">
-              <div class="pss-section-title">
-                <i class="fas fa-exclamation-triangle" style="color:#f59e0b;"></i>
-                미발송 목록
-                <span id="pss-unsent-count" style="font-size:12px;color:#64748b;font-weight:600;">(총 0건)</span>
-              </div>
-              <button class="pss-send-btn-all" id="pss-send-all-btn" onclick="openPssSendAllModal()" disabled>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0;"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg> 일괄 알림톡 발송
-              </button>
-            </div>
-
-            <!-- 미발송 없을 때 -->
-            <div id="pss-all-clear-msg" class="pss-all-clear" style="display:none;margin-top:12px;">
-              <i class="fas fa-check-circle" style="font-size:20px;color:#16a34a;flex-shrink:0;"></i>
-              <div>
-                <div style="font-size:13px;font-weight:700;color:#166534;">이 달 전원 발송 완료</div>
-                <div style="font-size:11.5px;color:#15803d;margin-top:2px;">선택된 월의 급여명세서가 모든 근로자에게 발송되었습니다.</div>
-              </div>
-            </div>
+          <!-- 발송 방식 -->
+          <div style="display:flex;align-items:center;gap:5px;">
+            <span class="filt-label">발송 방식</span>
+            <select id="pss-filter-method" onchange="_pssLogPage=1;renderPssLogs()" class="filt-select">
+              <option value="">전체</option>
+              <option value="kakao">알림톡</option>
+              <option value="email">이메일</option>
+              <option value="manual">수동교부</option>
+            </select>
           </div>
-
-          <!-- 미발송 테이블 -->
-          <div id="pss-unsent-table-wrap" class="table-wrap" style="padding:0 0 16px;">
-            <table id="pss-unsent-table" class="tbl-std">
-              <thead>
-                <tr>
-                  <th>직원명</th>
-                  <th>고용구분</th>
-                  <th>연락처</th>
-                  <th>이메일</th>
-                  <th class="ctr">개별 관리</th>
-                </tr>
-              </thead>
-              <tbody id="pss-unsent-tbody">
-                <tr><td colspan="5" class="pss-loading"><i class="fas fa-spinner fa-spin"></i> 로딩 중...</td></tr>
-              </tbody>
-            </table>
+          <!-- 기간 -->
+          <div style="display:flex;align-items:center;gap:5px;">
+            <span class="filt-label">기간</span>
+            <input type="date" id="pss-filter-date-from" class="filt-date" onchange="_pssLogPage=1;renderPssLogs()" />
+            <span style="font-size:11px;color:#9ca3af;">~</span>
+            <input type="date" id="pss-filter-date-to" class="filt-date" onchange="_pssLogPage=1;renderPssLogs()" />
+          </div>
+          <button onclick="_pssLogPage=1;renderPssLogs()" class="filt-btn-search">조회</button>
+          <!-- 검색 (우측) -->
+          <div class="filt-search-wrap" style="margin-left:auto;">
+            <i class="fas fa-search"></i>
+            <input type="text" id="pss-log-search" class="filt-search" style="width:140px;" placeholder="직원명 검색" oninput="_pssLogPage=1;renderPssLogs()" />
           </div>
         </div>
-        </div><!-- /선택 고객사 헤더+발송월+미발송 세트 wrapper -->
+      </div>
 
-        <!-- ② 발송 이력 섹션 -->
-        <div class="section-title">
-          <i class="fas fa-history"></i>
-          <span>발송 이력</span>
-          <span id="pss-log-count" style="font-size:12px;color:#64748b;font-weight:600;">(총 0건)</span>
-          <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
-            <div class="filt-search-wrap">
-              <i class="fas fa-search"></i>
-              <input type="text" id="pss-log-search" class="filt-search" style="width:140px;" placeholder="직원명 검색" oninput="_pssLogPage=1;renderPssLogs()">
-            </div>
-          </div>
+      <!-- 발송 이력 테이블 카드 -->
+      <div class="card" style="overflow:hidden;padding:0;">
+        <div class="table-wrap" style="padding:0 0 16px;">
+          <table id="pss-log-table" class="tbl-std">
+            <thead>
+              <tr>
+                <th>직원명</th>
+                <th>고용구분</th>
+                <th>대상 월</th>
+                <th>발송 일시</th>
+                <th>발송 방식</th>
+                <th>비고</th>
+              </tr>
+            </thead>
+            <tbody id="pss-log-tbody">
+              <tr><td colspan="6" class="pss-empty">발송 이력이 없습니다.</td></tr>
+            </tbody>
+          </table>
         </div>
-        <div class="card" style="overflow:hidden;">
-          <div style="padding:16px 20px 0;">
-            <!-- 기간 필터 -->
-            <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;">
-              <span style="font-size:12px;color:#6b7280;font-weight:600;white-space:nowrap;">기간</span>
-              <input type="date" id="pss-filter-date-from" class="filt-date" />
-              <span style="font-size:11px;color:#9ca3af;">~</span>
-              <input type="date" id="pss-filter-date-to" class="filt-date" />
-              <button onclick="_pssDoSearch()" class="filt-btn-search">조회</button>
-              <span id="pss-date-notice" style="font-size:11px;color:#9ca3af;">(최대 3개월간의 기간으로 조회하실 수 있습니다.)</span>
-            </div>
-          </div>
-          <div class="table-wrap" style="padding:0 0 16px;">
-            <table id="pss-log-table" class="tbl-std">
-              <thead>
-                <tr>
-                  <th>직원명</th>
-                  <th>고용구분</th>
-                  <th>대상 월</th>
-                  <th>발송 일시</th>
-                  <th>발송 방식</th>
-                  <th>처리 관리자</th>
-                  <th>비고</th>
-                </tr>
-              </thead>
-              <tbody id="pss-log-tbody">
-                <tr><td colspan="7" class="pss-empty">발송 이력이 없습니다.</td></tr>
-              </tbody>
-            </table>
-          </div>
-          <div id="pss-log-pagination" style="padding:0 20px 16px;"></div>
-        </div>
+        <div id="pss-log-pagination" style="padding:0 20px 16px;"></div>
+      </div>
 
-      </div><!-- /pss-main-section -->
+      </div><!-- /std-tab-panel -->
+      </div><!-- /pss-history-section -->
+
     </div><!-- /page-payslip-send -->

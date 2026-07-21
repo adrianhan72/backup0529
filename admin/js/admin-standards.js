@@ -1037,9 +1037,9 @@ function _renderTaxBracketTable(year){
 
     <!-- 검색 입력 + 부양가족 선택 결과 -->
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
-      <div class="search-input" style="max-width:260px;">
+      <div class="filt-search-wrap" style="max-width:260px;">
         <i class="fas fa-search"></i>
-        <input type="number" id="tax-bracket-search" placeholder="월 과세급여 입력 (원)"
+        <input type="number" id="tax-bracket-search" class="filt-search" placeholder="월 과세급여 입력 (원)"
                oninput="searchTaxBracket()" style="font-family:inherit;"
                value="${document.getElementById('tax-bracket-search')?.value||''}" />
       </div>

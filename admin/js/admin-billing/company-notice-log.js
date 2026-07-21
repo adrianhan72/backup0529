@@ -229,6 +229,13 @@ function renderCnlReserveCard(){
       padding:3px 9px;border-radius:20px;font-size:11.5px;white-space:nowrap;">${label}</span>`;
   };
 
+  const dispatchMethodBadge = n => {
+    if(n.sent_by){
+      return '<span class="badge badge-indigo"><i class="fas fa-user-cog"></i> 관리자 수동발송</span>';
+    }
+    return '<span class="badge badge-slate"><i class="fas fa-robot"></i> 시스템 자동발송</span>';
+  };
+
   tbody.innerHTML = list.map((n, idx) => {
     const coCell = showCoCol
       ? `<td style="font-size:12.5px;font-weight:700;color:#111827;white-space:nowrap;max-width:140px;overflow:hidden;text-overflow:ellipsis;"
@@ -241,6 +248,7 @@ function renderCnlReserveCard(){
       <td style="white-space:nowrap;font-size:12.5px;color:#374151;">${fmtDt(displayTime)}</td>
       ${coCell}
       <td>${typeBadge(n.notice_type)}</td>
+      <td class="ctr">${dispatchMethodBadge(n)}</td>
       <td style="font-size:12.5px;color:#1e293b;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
           title="${(n.title||'').replace(/"/g,'&quot;')}">${titleShort}</td>
       <td style="font-size:12px;color:#64748b;white-space:nowrap;">${_resolveAdminName(n.sent_by)||'-'}</td>
@@ -301,6 +309,8 @@ function openCnlDetailById(recordId){
       <div style="display:grid;grid-template-columns:90px 1fr;gap:2px 0;">
         <span style="color:#64748b;font-weight:600;">알림 유형</span>
         <span><span style="display:inline-block;background:${typeClr.bg};color:${typeClr.color};padding:2px 10px;border-radius:20px;font-size:11.5px;">${typeLbl}</span></span>
+        <span style="color:#64748b;font-weight:600;">발송방식</span>
+        <span>${n.sent_by ? '<span class="badge badge-indigo"><i class="fas fa-user-cog"></i> 관리자 수동발송</span>' : '<span class="badge badge-slate"><i class="fas fa-robot"></i> 시스템 자동발송</span>'}</span>
         <span style="color:#64748b;font-weight:600;">${timeLabel}</span>
         <span style="color:#1e293b;font-weight:600;">${fmtDtFull(displayTime)}</span>
         <span style="color:#64748b;font-weight:600;">고객사</span>
@@ -361,7 +371,7 @@ function renderCnlTable(){
   if(_cnlPage > totalPages) _cnlPage = totalPages;
   const pageData = list.slice((_cnlPage-1)*CNL_PAGE_SIZE, _cnlPage*CNL_PAGE_SIZE);
 
-  const colSpan = showCoCol ? 7 : 6;
+  const colSpan = showCoCol ? 8 : 7;
 
   if(!list.length){
     tbody.innerHTML = `<tr><td colspan="${colSpan}" style="text-align:center;padding:40px 20px;color:#94a3b8;font-size:13px;">
@@ -401,6 +411,14 @@ function renderCnlTable(){
     return `<span style="display:inline-flex;align-items:center;gap:3px;background:#dcfce7;color:#166534;padding:2px 9px;border-radius:12px;font-size:11px;white-space:nowrap;"><i class="fas fa-check" style="font-size:9px;"></i>발송완료</span>`;
   };
 
+  // 발송방식 배지: sent_by 유무로 자동/수동 구분
+  const dispatchMethodBadge = n => {
+    if(n.sent_by){
+      return '<span class="badge badge-indigo"><i class="fas fa-user-cog"></i> 관리자 수동발송</span>';
+    }
+    return '<span class="badge badge-slate"><i class="fas fa-robot"></i> 시스템 자동발송</span>';
+  };
+
   tbody.innerHTML = pageData.map((n, idx) => {
     const isGeneral = n.notice_type === 'general';
     const gnSt = isGeneral ? (n.gn_status || 'sent') : null;
@@ -422,6 +440,7 @@ function renderCnlTable(){
       <td style="white-space:nowrap;font-size:12.5px;color:#374151;">${fmtDt(n.sent_at)}</td>
       ${coCell}
       <td>${typeBadge(n.notice_type)}</td>
+      <td class="ctr">${dispatchMethodBadge(n)}</td>
       <td style="font-size:12.5px;color:#1e293b;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
           title="${(n.title||'').replace(/"/g,'&quot;')}">${titleShort}</td>
       <td class="ctr" style="white-space:nowrap;">${confirmCell}</td>
@@ -516,6 +535,8 @@ function openCnlDetail(listIdx){
       <div style="display:grid;grid-template-columns:90px 1fr;gap:2px 0;">
         <span style="color:#64748b;font-weight:600;">알림 유형</span>
         <span><span style="display:inline-block;background:${typeClr.bg};color:${typeClr.color};padding:2px 10px;border-radius:20px;font-size:11.5px;">${typeLbl}</span></span>
+        <span style="color:#64748b;font-weight:600;">발송방식</span>
+        <span>${n.sent_by ? '<span class="badge badge-indigo"><i class="fas fa-user-cog"></i> 관리자 수동발송</span>' : '<span class="badge badge-slate"><i class="fas fa-robot"></i> 시스템 자동발송</span>'}</span>
         <span style="color:#64748b;font-weight:600;">${timeLabel}</span>
         <span style="color:#1e293b;font-weight:600;">${fmtDtFull(displayTime)}</span>
         <span style="color:#64748b;font-weight:600;">고객사</span>

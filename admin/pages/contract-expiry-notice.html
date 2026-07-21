@@ -51,44 +51,45 @@
       </div>
 
       <!-- ─── 탭: 통지 대상 ─── -->
-      <div id="cen-panel-target">
-        <div class="card" style="overflow:hidden;">
-          <!-- 필터 바 -->
-          <div class="cen-filter-bar">
-            <!-- 고객사 필터 -->
-            <div style="display:flex;align-items:center;gap:6px;">
-              <span style="font-size:12px;font-weight:600;color:#6b7280;white-space:nowrap;">고객사</span>
-              <select id="cen-filter-company" onchange="_cenTargetPage=1;renderCenTargetList()" class="filt-select" style="max-width:150px;">
-                <option value="">전체</option>
-              </select>
-            </div>
-            <!-- 고용형태 필터 -->
-            <div style="display:flex;align-items:center;gap:6px;">
-              <span style="font-size:12px;font-weight:600;color:#6b7280;white-space:nowrap;">고용형태</span>
-              <select id="cen-filter-empcat" onchange="_cenTargetPage=1;renderCenTargetList()" class="filt-select">
-                <option value="">전체</option>
-                <option value="fixed_term">계약직</option>
-                <option value="fixed_probation">계약직 수습</option>
-                <option value="daily">일용직</option>
-              </select>
-            </div>
-            <!-- D-day 범위 필터 -->
-            <div style="display:flex;align-items:center;gap:6px;">
-              <span style="font-size:12px;font-weight:600;color:#6b7280;white-space:nowrap;">기간</span>
-              <select id="cen-filter-range" onchange="_cenTargetPage=1;renderCenTargetList()" class="filt-select">
-                <option value="">전체 (29일 이내)</option>
-                <option value="urgent">긴급 (7일 이내)</option>
-                <option value="soon">임박 (8~14일)</option>
-                <option value="normal">일반 (15~29일)</option>
-              </select>
-            </div>
-            <!-- 검색 -->
-            <div class="filt-search-wrap">
-              <i class="fas fa-search"></i>
-              <input type="text" id="cen-search" class="filt-search" style="width:140px;" placeholder="직원명 검색" oninput="renderCenTargetList()" />
-            </div>
+      <div id="cen-panel-target" class="cen-tab-panel">
+        <!-- 필터 바 카드 -->
+        <div class="filt-bar" style="margin-bottom:10px;border:1px solid #e5e7eb;border-radius:8px;padding:10px 18px;background:#fff;">
+          <!-- 고객사 필터 -->
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="font-size:12px;font-weight:600;color:#6b7280;white-space:nowrap;">고객사</span>
+            <select id="cen-filter-company" onchange="_cenTargetPage=1;renderCenTargetList()" class="filt-select" style="max-width:150px;">
+              <option value="">전체</option>
+            </select>
           </div>
+          <!-- 고용형태 필터 -->
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="font-size:12px;font-weight:600;color:#6b7280;white-space:nowrap;">고용형태</span>
+            <select id="cen-filter-empcat" onchange="_cenTargetPage=1;renderCenTargetList()" class="filt-select">
+              <option value="">전체</option>
+              <option value="fixed_term">계약직</option>
+              <option value="fixed_probation">계약직 수습</option>
+              <option value="daily">일용직</option>
+            </select>
+          </div>
+          <!-- D-day 범위 필터 -->
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="font-size:12px;font-weight:600;color:#6b7280;white-space:nowrap;">기간</span>
+            <select id="cen-filter-range" onchange="_cenTargetPage=1;renderCenTargetList()" class="filt-select">
+              <option value="">전체 (29일 이내)</option>
+              <option value="urgent">긴급 (7일 이내)</option>
+              <option value="soon">임박 (8~14일)</option>
+              <option value="normal">일반 (15~29일)</option>
+            </select>
+          </div>
+          <!-- 검색 -->
+          <div class="filt-search-wrap" style="margin-left:auto;">
+            <i class="fas fa-search"></i>
+            <input type="text" id="cen-search" class="filt-search" style="width:140px;" placeholder="직원명 검색" oninput="renderCenTargetList()" />
+          </div>
+        </div>
 
+        <!-- 테이블 카드 -->
+        <div class="card" style="padding:0;overflow:hidden;">
           <!-- 일괄 발송 버튼 바 -->
           <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 18px;background:#fafafa;border-bottom:1px solid #e5e7eb;flex-wrap:wrap;gap:8px;">
             <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:#374151;cursor:pointer;">
@@ -133,41 +134,42 @@
       </div>
 
       <!-- ─── 탭: 발송 이력 ─── -->
-      <div id="cen-panel-history" style="display:none;">
-        <div class="card" style="overflow:hidden;">
-          <!-- 이력 필터 바 -->
-          <div class="filt-bar">
-            <div style="display:flex;align-items:center;gap:5px;">
-              <span class="filt-label">발송 방식</span>
-              <select id="cen-log-filter-method" onchange="renderCenHistory()" class="filt-select">
-                <option value="">전체</option>
-                <option value="kakao">알림톡</option>
-                <option value="email">이메일</option>
-                <option value="manual">수동교부</option>
-              </select>
-            </div>
-            <div style="display:flex;align-items:center;gap:5px;">
-              <span class="filt-label">고객사</span>
-              <select id="cen-log-filter-company" onchange="renderCenHistory()" class="filt-select" style="max-width:140px;">
-                <option value="">전체</option>
-              </select>
-            </div>
-            <div style="display:flex;align-items:center;gap:5px;">
-              <span class="filt-label">기간</span>
-              <input type="date" id="cen-log-filter-date-from" class="filt-date" />
-              <span style="font-size:11px;color:#9ca3af;">~</span>
-              <input type="date" id="cen-log-filter-date-to" class="filt-date" />
-              <button onclick="_cenDoSearch()" class="filt-btn-search">조회</button>
-              <span id="cen-date-notice" style="font-size:10.5px;color:#9ca3af;white-space:nowrap;">(최대 3개월)</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:6px;margin-left:auto;">
-              <div class="filt-search-wrap">
-                <i class="fas fa-search"></i>
-                <input type="text" id="cen-log-search" class="filt-search" style="width:140px;" placeholder="직원명 검색" oninput="renderCenHistory()" />
-              </div>
+      <div id="cen-panel-history" class="cen-tab-panel" style="display:none;">
+        <!-- 이력 필터 바 카드 -->
+        <div class="filt-bar" style="margin-bottom:10px;border:1px solid #e5e7eb;border-radius:8px;padding:10px 18px;background:#fff;">
+          <div style="display:flex;align-items:center;gap:5px;">
+            <span class="filt-label">발송 방식</span>
+            <select id="cen-log-filter-method" onchange="renderCenHistory()" class="filt-select">
+              <option value="">전체</option>
+              <option value="kakao">알림톡</option>
+              <option value="email">이메일</option>
+              <option value="manual">수동교부</option>
+            </select>
+          </div>
+          <div style="display:flex;align-items:center;gap:5px;">
+            <span class="filt-label">고객사</span>
+            <select id="cen-log-filter-company" onchange="renderCenHistory()" class="filt-select" style="max-width:140px;">
+              <option value="">전체</option>
+            </select>
+          </div>
+          <div style="display:flex;align-items:center;gap:5px;">
+            <span class="filt-label">기간</span>
+            <input type="date" id="cen-log-filter-date-from" class="filt-date" />
+            <span style="font-size:11px;color:#9ca3af;">~</span>
+            <input type="date" id="cen-log-filter-date-to" class="filt-date" />
+            <button onclick="_cenDoSearch()" class="filt-btn-search">조회</button>
+            <span id="cen-date-notice" style="font-size:10.5px;color:#9ca3af;white-space:nowrap;">(최대 3개월)</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;margin-left:auto;">
+            <div class="filt-search-wrap">
+              <i class="fas fa-search"></i>
+              <input type="text" id="cen-log-search" class="filt-search" style="width:140px;" placeholder="직원명 검색" oninput="renderCenHistory()" />
             </div>
           </div>
-          <!-- 이력 테이블 -->
+        </div>
+
+        <!-- 이력 테이블 카드 -->
+        <div class="card" style="padding:0;overflow:hidden;">
           <div style="overflow-x:auto;padding:0 0 8px;">
             <table class="cen-log-table" id="cen-log-table">
               <thead>
@@ -193,7 +195,7 @@
       </div>
 
       <!-- ─── 탭: 메시지 예시 ─── -->
-      <div id="cen-panel-template" style="display:none;">
+      <div id="cen-panel-template" class="cen-tab-panel" style="display:none;">
 
         <!-- 샘플 선택 바 -->
         <div class="cen-tmpl-sample-bar">

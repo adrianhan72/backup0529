@@ -581,10 +581,13 @@ function renderWageLedger(){
           ? `임시저장 중${savedAt ? '  ·  ' + savedAt : ''}`
           : (ei.dept || ei.pos ? (ei.dept + (ei.pos ? ' · '+ei.pos : '')) : '미입력');
         const subColor = isDraft ? '#15803d' : '#64748b';
-        const btnCls   = isDraft ? 'pay-draft' : 'pay';
+        const btnCls   = isDraft ? 'btn btn-teal btn-sm' : 'btn btn-danger btn-sm';
         const btnLabel = isDraft
-          ? `<i class="fas fa-edit"></i> 이어서 입력 →`
-          : `<i class="fas fa-keyboard"></i> 급여 입력 →`;
+          ? `<i class="fas fa-play-circle"></i> 이어 입력`
+          : `<i class="fas fa-calculator"></i> 급여 입력`;
+        const btnStyle = isDraft
+          ? 'padding:5px 12px;font-size:11.5px;'
+          : 'padding:5px 12px;font-size:11.5px;';
         const badge    = isDraft
           ? `<span class="wl-block-item-draft-badge"><i class="fas fa-save" style="font-size:9px;"></i> 임시저장</span>`
           : '';
@@ -596,7 +599,7 @@ function renderWageLedger(){
               <div class="wl-block-item-sub" style="color:${subColor};">${subText}</div>
             </div>
           </div>
-          <button class="wl-block-item-link ${btnCls}" onclick="_wlGoToPayInput('${eid}')">
+          <button class="${btnCls}" style="${btnStyle}" onclick="_wlGoToPayInput('${eid}')">
             ${btnLabel}
           </button>
         </div>`;

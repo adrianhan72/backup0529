@@ -91,6 +91,33 @@ function _renderContCoSummaryCards(){
   wrap.innerHTML = '';
   if(outer) outer.innerHTML = '';
 
+  // ── 이동형 카드 렌더링 함수 (클릭 시 페이지 이동) ──
+  function renderNavCard(icon, iconColor, title, count, desc, extraClass, targetPage){
+    if(count === 0) return;
+    if(!outer) return;
+    const div = document.createElement('div');
+    div.className = `cont-co-card ${extraClass||''}`;
+    div.style.cursor = 'pointer';
+    div.innerHTML = `
+      <div class="cont-alert-card-head">
+        <div class="cont-alert-card-title">
+          <i class="${icon}" style="color:${iconColor};font-size:15px;"></i>
+          ${title}
+          <span class="count-badge">${count}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:11.5px;font-weight:500;opacity:.7;">${desc}</span>
+          <i class="fas fa-chevron-right" style="font-size:11px;"></i>
+        </div>
+      </div>`;
+    div.addEventListener('click', () => {
+      currentGlobalCompanyId = currentContCompanyId;
+      const menuItem = document.querySelector(`.menu-item[data-page="${targetPage}"]`);
+      if(menuItem) showPage(targetPage, menuItem);
+    });
+    outer.append(div);
+  }
+
   // ── 바깥 카드 렌더링 함수 (wrapper 외부, 기본 닫힘) ──
   function renderOuterCard(key, icon, iconColor, title, count, desc, cols, rowsHtml, extraClass){
     if(count === 0) return;
@@ -180,29 +207,17 @@ function _renderContCoSummaryCards(){
       const savedAt = fmtTime(c.updated_at);
       return `<tr>${empNameCell(c.employee_id)}${catBadgeCell(c,emp)}<td style="font-size:11px;color:#9ca3af;">${savedAt||'-'}</td><td style="white-space:nowrap;"><button onclick="goDraftContract('${c.id}')" class="btn-draft-edit-sm"><i class="fas fa-pencil-alt"></i> 이어 작성</button> <button onclick="_deleteDraft('${c.id}','contracts','${emp?.name||''}')" class="btn btn-sm btn-secondary"><i class="fas fa-trash-alt"></i> 삭제</button></td></tr>`;
     }).join('');
-    renderOuterCard('draft', 'fas fa-file-contract', '#b45309', '임시저장 중인 근로계약서', draftContracts.length,
+    renderOuterCard('draft', 'fas fa-file-contract', '#d97706', '임시저장 중인 근로계약서', draftContracts.length,
       '작성 중 저장된 계약서입니다.', ['직원명','고용형태','저장 시각','관리'], rows, 'cont-alert-draft');
   }
 
-  // ── ③ 근로계약서 미발송 (날인본) ──
-  if(unsignedContracts.length > 0){
-    const rows = unsignedContracts.map(c => {
-      const emp = allEmployees.find(e=>e.id===c.employee_id);
-      return `<tr>${empNameCell(c.employee_id)}${catBadgeCell(c,emp)}<td style="font-size:11px;color:#9ca3af;">${c.contract_start||'-'} ~ ${c.contract_end||'정규직'}</td><td style="white-space:nowrap;"><button onclick="viewContract('${c.id}')" class="btn btn-sm btn-indigo"><i class="fas fa-search"></i> 조회</button></td></tr>`;
-    }).join('');
-    renderOuterCard('unsigned', 'fas fa-file-signature', '#d97706', '근로계약서 미발송', unsignedContracts.length,
-      '날인본이 등록되지 않은 계약입니다.', ['직원명','고용형태','계약기간','관리'], rows, 'cont-alert-docs');
-  }
+  // ── ③ 근로계약서 미발송 → 발송 페이지로 이동 ──
+  renderNavCard('fas fa-file-signature', '#2563eb', '근로계약서 미발송', unsignedContracts.length,
+    '클릭하여 근로계약서 발송 페이지로 이동', 'cont-alert-docs', 'contract-dispatch');
 
-  // ── ④ 정보제공동의서 미발송 ──
-  if(unsignedConsent.length > 0){
-    const rows = unsignedConsent.map(c => {
-      const emp = allEmployees.find(e=>e.id===c.employee_id);
-      return `<tr>${empNameCell(c.employee_id)}${catBadgeCell(c,emp)}<td style="font-size:11px;color:#9ca3af;">${c.contract_start||'-'} ~ ${c.contract_end||'정규직'}</td><td style="white-space:nowrap;"><button onclick="viewContract('${c.id}')" class="btn btn-sm btn-indigo"><i class="fas fa-search"></i> 조회</button></td></tr>`;
-    }).join('');
-    renderOuterCard('consent', 'fas fa-file-alt', '#7c3aed', '정보제공동의서 미발송', unsignedConsent.length,
-      '제3자 정보제공동의서가 등록되지 않은 계약입니다.', ['직원명','고용형태','계약기간','관리'], rows, 'cont-alert-preterminate');
-  }
+  // ── ④ 정보제공동의서 미발송 → 동의서 페이지로 이동 ──
+  renderNavCard('fas fa-file-alt', '#16a34a', '정보제공동의서 미발송', unsignedConsent.length,
+    '클릭하여 정보제공동의서 관리 페이지로 이동', 'cont-alert-preterminate', 'consent-dispatch');
 
   // ── ⑤ 계약만료 통지대상 ──
   if(expiryTargets.length > 0){
@@ -212,7 +227,7 @@ function _renderContCoSummaryCards(){
       const ddayColor = diff <= 7 ? '#dc2626' : '#b45309';
       return `<tr>${empNameCell(c.employee_id)}${catBadgeCell(c,emp)}<td style="font-size:12px;color:#6b7280;">${c.contract_end||'-'}</td><td><span style="font-weight:700;color:${ddayColor};font-size:12.5px;">D-${diff}</span></td><td style="white-space:nowrap;"><button onclick="viewContract('${c.id}')" class="btn btn-sm btn-indigo"><i class="fas fa-search"></i> 조회</button></td></tr>`;
     }).join('');
-    renderCard('expiry', 'fas fa-file-contract', '#dc2626', '계약만료 통지 대상', expiryTargets.length,
+    renderCard('expiry', 'fas fa-file-contract', '#db2777', '계약만료 통지 대상', expiryTargets.length,
       '29일 이내 계약 만료 예정입니다.', ['직원명','고용형태','만료 예정일','D-day','관리'], rows, 'cont-alert-renew');
   }
 
@@ -221,7 +236,7 @@ function _renderContCoSummaryCards(){
     const rows = regularTargets.map(x => {
       return `<tr><td style="font-weight:700;color:#1f2937;">${x.empName||'-'}</td><td><span class="badge badge-gray">계약직</span></td><td style="font-size:11px;color:#9ca3af;">2년 초과</td><td style="white-space:nowrap;"><button onclick="viewContract('${x.contractId}')" class="btn btn-sm btn-indigo"><i class="fas fa-search"></i> 조회</button></td></tr>`;
     }).join('');
-    renderCard('regular', 'fas fa-user-check', '#0891b2', '정규직 전환 의무 대상', regularTargets.length,
+    renderCard('regular', 'fas fa-user-check', '#7c3aed', '정규직 전환 의무 대상', regularTargets.length,
       '기간제 2년 초과 근로자입니다.', ['직원명','고용형태','사유','관리'], rows, 'cont-alert-renew-terminate');
   }
 
@@ -237,8 +252,8 @@ function _renderContCoSummaryCards(){
     const extraDesc = [];
     if(noticeCount>0) extraDesc.push(`서면통지 ${noticeCount}명`);
     if(severanceCount>0) extraDesc.push(`해고예고수당 ${severanceCount}명`);
-    renderCard('probation', 'fas fa-user-clock', '#0d9488', '관리가 필요한 수습 근로자', probationTargets.length,
-      (extraDesc.length>0?extraDesc.join(' · ')+' — ':'')+'수습기간 3개월 초과 시 해고예고 의무 발생', ['직원명','고용형태','수습 만료일','D-day','관리'], rows, 'cont-alert-preterminate');
+    renderCard('probation', 'fas fa-user-clock', '#0f766e', '관리가 필요한 수습 근로자', probationTargets.length,
+      (extraDesc.length>0?extraDesc.join(' · ')+' — ':'')+'수습기간 3개월 초과 시 해고예고 의무 발생', ['직원명','고용형태','수습 만료일','D-day','관리'], rows, 'cont-alert-probation');
   }
 }
 
@@ -1759,9 +1774,9 @@ function viewContract(id){
         const contractEndKr = fmtDate(c.contract_end) || '—';
         dateHtml = `계약 해지일: <span id="ct-sb-term-text"><strong>${termKr}</strong></span>`
           + `<span id="ct-sb-term-edit" style="display:none;"><input type="date" id="ct-sb-term-input" value="${termDate}" style="border:1.5px solid #6366f1;border-radius:6px;padding:3px 8px;font-size:13px;font-family:inherit;width:140px;" /></span>`
-          + ` <button id="ct-sb-term-change-btn" onclick="changeTerminateDate()" style="background:#d97706;color:#fff;border:none;border-radius:5px;padding:2px 10px;font-size:11.5px;cursor:pointer;margin-left:4px;transition:all .15s;" onmouseenter="this.style.background='#b45309'" onmouseleave="this.style.background='#d97706'">변경</button>`
-          + ` <button id="ct-sb-term-confirm-btn" onclick="confirmTerminateDateChange()" style="display:none;background:#6366f1;color:#fff;border:none;border-radius:5px;padding:2px 10px;font-size:11.5px;cursor:pointer;margin-left:4px;">확인</button>`
-          + ` <button id="ct-sb-term-cancel-btn" onclick="cancelTerminateDateChange()" style="display:none;background:#9ca3af;color:#fff;border:1px solid #6b7280;border-radius:5px;padding:2px 10px;font-size:11.5px;cursor:pointer;margin-left:2px;">취소</button>`;
+          + ` <button id="ct-sb-term-change-btn" onclick="changeTerminateDate()" class="btn btn-teal" style="padding:2px 10px;font-size:11.5px;margin-left:4px;">변경</button>`
+          + ` <button id="ct-sb-term-confirm-btn" onclick="confirmTerminateDateChange()" class="btn btn-indigo" style="display:none;padding:2px 10px;font-size:11.5px;margin-left:4px;">확인</button>`
+          + ` <button id="ct-sb-term-cancel-btn" onclick="cancelTerminateDateChange()" class="btn btn-secondary" style="display:none;padding:2px 10px;font-size:11.5px;margin-left:2px;">취소</button>`;
         if(!isRegType && c.contract_end){
           dateHtml += `<span style="font-size:11.5px;margin-left:12px;">(원래 계약 종료일: ${contractEndKr})</span>`;
         }
@@ -1925,7 +1940,7 @@ function viewContract(id){
   const {badge:stBadgeCls, label:stLabel} = calcContractStatusDisplay(c||{}, today);
   const _buildLabelHTML = (id, statusLabel, badgeCls, isDraftFlag, isVoidedAmend) => {
     const idHTML = `<span style="font-weight:500;color:#9ca3af;">계약서 고유 ID: ${id||'—'}</span>`
-      + ` <button onclick="event.stopPropagation();_copyContractId('${id||''}')" title="ID 복사" style="background:none;border:none;cursor:pointer;color:#9ca3af;padding:2px 4px;font-size:11px;border-radius:4px;transition:color .15s;" onmouseenter="this.style.color='#6366f1'" onmouseleave="this.style.color='#9ca3af'"><i class="far fa-copy"></i> 복사</button>`;
+      + ` <button onclick="event.stopPropagation();_copyContractId('${id||''}')" title="ID 복사" class="btn btn-secondary" style="padding:2px 6px;font-size:11px;"><i class="far fa-copy"></i> 복사</button>`;
     if(isDraftFlag){
       return `${idHTML} <span class="badge badge-yellow">임시저장</span>`;
     }

@@ -99,10 +99,11 @@
     /* ?�?� draft action buttons (outline type) ?�?� */
     .btn-draft-edit-sm{
       display:inline-flex;align-items:center;gap:3px;
-      padding:3px 8px;border-radius:6px;
+      padding:5px 10px;border-radius:6px;
       font-size:11px;font-weight:600;font-family:inherit;
       cursor:pointer;white-space:nowrap;flex-shrink:0;
       border:1px solid #d97706;background:#f59e0b;color:#fff;
+      min-height:28px;box-sizing:border-box;
       transition:background .18s;
     }
     .btn-draft-edit-sm:hover:not(:disabled){background:#d97706;}
@@ -200,10 +201,12 @@
     .cen-table td{padding:10px 13px;vertical-align:middle;border-bottom:1px solid #f3f4f6;}
     .cen-table tr:hover td{background:#f9fafb;}
     /* D-day 배�? */
-.cen-dday{display:inline-flex;align-items:center;justify-content:center;padding:2px 10px;border-radius:20px;font-size:12px;font-weight:500;white-space:nowrap;}
-    .cen-dday.urgent{background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;}
-    .cen-dday.soon{background:#fff7ed;color:#c2410c;border:1px solid #fdba74;}
-    .cen-dday.normal{background:#fefce8;color:#92400e;border:1px solid #fde047;}
+.cen-dday{display:inline-flex;align-items:center;gap:3px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500;white-space:nowrap;}
+    .cen-dday.urgent{background:rgba(239,68,68,.1);color:#ef4444;}
+    .cen-dday.soon{background:rgba(234,88,12,.1);color:#ea580c;}
+    .cen-dday.normal{background:rgba(100,116,139,.1);color:#475569;}
+    /* 개별통지 버튼 높이 통일 */
+    .cen-table .btn-sm{height:30px;padding:4px 10px;vertical-align:middle;display:inline-flex;align-items:center;gap:4px;}
     /* 발송 방식 ?�택 버튼 ??Outline Indigo with Selected state */
     .cen-method-btn{
       padding:6px 13px;border-radius:7px;
@@ -229,10 +232,11 @@
     }
     .cen-method-btn:disabled,.cen-method-btn[disabled]{background:#cccccc;color:#f2f2f2;border:1px solid #cccccc;cursor:not-allowed;pointer-events:none;opacity:1;}
     /* ?�력 ??*/
-    .cen-tab-bar{display:flex;gap:4px;border-bottom:2px solid #e5e7eb;margin-bottom:16px;}
-    .cen-tab{padding:8px 18px;border-radius:8px 8px 0 0;border:1px solid #cccccc;background:none;font-size:13px;font-weight:600;color:#6b7280;cursor:pointer;font-family:inherit;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;}
-    .cen-tab.active{color:#4f46e5;border-bottom-color:#4f46e5;background:#f5f3ff;}
-    .cen-tab:hover:not(.active){color:#374151;background:#f9fafb;}
+    .cen-tab-bar{display:flex;gap:4px;margin-bottom:0;}
+.cen-tab-panel,.std-tab-panel{background:#f5f3ff;padding:20px;border-radius:0 0 12px 12px;box-shadow:none;border:1px solid #6366f1;}
+.cen-tab,.std-tab{padding:8px 18px;border-radius:8px 8px 0 0;border:1px solid #cccccc;background:none;font-size:13px;font-weight:600;color:#6b7280;cursor:pointer;font-family:inherit;border-bottom:2px solid transparent;transition:all .15s;}
+.cen-tab.active,.std-tab.active{color:#4f46e5;border-color:#6366f1;border-bottom-color:transparent;background:#f5f3ff;}
+.cen-tab:hover:not(.active),.std-tab:hover:not(.active){color:#374151;background:#f9fafb;}
     /* ?�력 ?�이�?*/
     .cen-log-table{width:100%;border-collapse:collapse;font-size:12.5px;}
     .cen-log-table th{padding:9px 12px;font-size:11.5px;font-weight:700;text-align:left;border-bottom:2px solid #e5e7eb;white-space:nowrap;background:#f8f9fb;}

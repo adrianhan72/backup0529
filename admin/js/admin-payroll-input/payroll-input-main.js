@@ -195,13 +195,7 @@ function loadPITargetList(){
     });
   });
 
-  // ① 임시저장 배너 숨기기 (목록 표시 중에는 배너 숨김)
-  const allDraftBanner = document.getElementById('pi-all-draft-banner');
-  if(allDraftBanner) allDraftBanner.style.display = 'none';
-  const coDraftBanner = document.getElementById('pi-co-draft-banner');
-  if(coDraftBanner) coDraftBanner.style.display = 'none';
-
-  // ② 임시저장 직원 Map: empId → draftPayrollId
+  // ① 임시저장 직원 Map: empId → draftPayrollId
   const draftEmpMap = new Map(
     (allPayrolls||[])
       .filter(p => p.company_id===coId && p.pay_year===yr && p.pay_month===mo && p.is_draft)
@@ -318,25 +312,25 @@ function loadPITargetList(){
       const targetContractId = contract ? contract.id : '';
       if(isDraft){
         actionBtn = `<button onclick="selectPITarget('${targetEmpId}','${targetContractId}','${draftId}')"
-          style="display:inline-flex;align-items:center;gap:5px;padding:7px 16px;background:#d97706;color:#fff;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">
+          class="btn btn-teal" style="padding:7px 16px;font-size:12px;">
           <i class="fas fa-play-circle"></i> 이어 입력
         </button>`;
       } else if(isPaid){
         const paidPid = paidPayrollMap.get(emp.id) || '';
         actionBtn = `<div style="display:inline-flex;gap:4px;align-items:center;flex-wrap:nowrap;">
           <button onclick="openPayslipModal('${paidPid}')"
-            style="display:inline-flex;align-items:center;justify-content:center;gap:4px;width:68px;padding:7px 0;background:#6366f1;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">
+            class="btn btn-indigo btn-sm" style="width:68px;padding:7px 0;">
             <i class="fas fa-search"></i> 조회
           </button>
           <button onclick="selectPITarget('${targetEmpId}','${targetContractId}')"
-            style="display:inline-flex;align-items:center;justify-content:center;gap:5px;width:68px;padding:7px 0;background:#f59e0b;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">
+            class="btn btn-warning btn-sm" style="width:68px;padding:7px 0;">
             <i class="fas fa-edit"></i> 수정
           </button>
         </div>`;
       } else {
         actionBtn = `<button onclick="selectPITarget('${targetEmpId}','${targetContractId}')"
-          style="display:inline-flex;align-items:center;justify-content:center;gap:5px;width:140px;padding:7px 0;background:#e94560;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">
-          <i class="fas fa-calculator"></i> 입력
+          class="btn btn-danger btn-sm" style="width:150px;padding:7px 0;">
+          <i class="fas fa-calculator"></i> 급여 입력
         </button>`;
       }
 
@@ -3621,7 +3615,7 @@ function _showPIDraftEditModeAlert(){
         수정 모드에서는 임시저장을<br>지원하지 않습니다.
       </div>
       <button onclick="document.getElementById('pi-draft-edit-alert-modal').remove()"
-        style="width:100%;padding:12px;background:#6366f1;color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">
+        class="btn btn-indigo" style="width:100%;padding:12px;font-size:14px;">
         확인
       </button>
     </div>`;
@@ -3681,7 +3675,7 @@ function _showPIDraftSavedModal(yr, mo, timeStr){
           <i class="fas fa-pen" style="margin-right:5px;"></i>계속 입력
         </button>
         <button onclick="document.getElementById('pi-draft-saved-modal').remove(); backToPITargetList();"
-          style="flex:1;padding:11px;background:#6366f1;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
+          class="btn btn-indigo" style="flex:1;padding:11px;font-size:13px;">
           <i class="fas fa-list" style="margin-right:5px;"></i>목록으로 돌아가기
         </button>
       </div>
@@ -3719,7 +3713,7 @@ function _showPISavedModal(empName, yr, mo, payrollId, isEdit){
       <div style="display:flex;gap:10px;">
         <button
           onclick="document.getElementById('pi-saved-modal').remove(); openPayslipModal('${payrollId}');"
-          style="flex:1;padding:12px 8px;background:#6366f1;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
+          class="btn btn-indigo" style="flex:1;padding:12px 8px;font-size:13px;">
           <i class="fas fa-file-invoice-dollar" style="margin-right:5px;"></i>급여명세서 보기
         </button>
         <button

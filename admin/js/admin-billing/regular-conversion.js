@@ -173,7 +173,7 @@ function renderRcTargetList(){
     const catText   = contractTypeLabel(x.activeContract?.contract_type) || CONTRACT_TYPE_LABEL[CONTRACT_TYPE.FIXED];
     const sendBtn   = x.rcStatus === 'exceeded'
       ? `<button onclick="rcSendNotice('${x.empId}')"
-           style="background:linear-gradient(135deg,#dc2626,#b91c1c);color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px;">
+           class="btn btn-danger btn-sm" style="padding:5px 12px;font-size:11.5px;">
            <i class="fas fa-paper-plane"></i> 안내 발송
          </button>`
       : `<span style="font-size:11.5px;color:#9ca3af;">전환 의무 미도달</span>`;

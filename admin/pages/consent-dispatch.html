@@ -1,13 +1,27 @@
 ﻿    <div id="page-consent-dispatch" class="page">
 
+      <!-- 탭 메뉴 -->
+      <div class="std-tab-bar" style="margin-top:0;">
+        <button class="std-tab active" id="cns-tab-unsent" onclick="_cnsSwitchTab('unsent')">미발송 동의서</button>
+        <button class="std-tab" id="cns-tab-history" onclick="_cnsSwitchTab('history')">발송 이력</button>
+      </div>
+
       <!-- 미발송 동의서 섹션 -->
-      <div class="section-title">
-        <i class="fas fa-exclamation-triangle" style="color:#f59e0b;"></i>
-        <span>미발송 동의서</span>
-        <span id="cns-unsent-total-badge" style="font-size:12px;color:#64748b;">(총 0건)</span>
+      <div id="cns-unsent-section">
+      <div class="std-tab-panel">
+      <!-- 고객사 선택 -->
+      <div style="margin-bottom:12px;">
+        <div class="cust-dropdown" id="cns-unsent-co-dropdown" style="position:relative;">
+          <div id="cns-unsent-co-btn" class="cust-dropdown-btn" onclick="_cnsToggleCoDropdown()">
+            <span id="cns-unsent-co-label" class="cust-co-label">전체 고객사</span>
+            <span id="cns-unsent-co-badge" class="count-badge cust-co-count">0</span>
+            <i class="fas fa-chevron-down cust-co-arrow"></i>
+          </div>
+          <div id="cns-unsent-co-list" class="cust-dropdown-list" style="display:none;"></div>
+        </div>
       </div>
       <!-- 입사 년월 선택 카드 -->
-      <div class="card" style="margin-bottom:12px;overflow:hidden;">
+      <div class="card" id="cns-unsent-month-card" style="margin-bottom:12px;overflow:hidden;">
         <div style="padding:14px 20px;">
           <div class="cdp-month-tabs" id="cns-unsent-month-tabs">
             <div class="pss-loading"><i class="fas fa-spinner fa-spin"></i> 로딩 중...</div>
@@ -19,10 +33,7 @@
       <div class="card" style="margin-bottom:16px;padding:0;overflow:hidden;">
         <div id="cns-unsent-all-clear" class="pss-all-clear" style="display:none;margin:16px 0;padding:0 20px;">
           <i class="fas fa-check-circle" style="font-size:20px;color:#16a34a;flex-shrink:0;"></i>
-          <div>
-            <div style="font-size:13px;font-weight:700;color:#166534;">미발송 동의서 없음</div>
-            <div style="font-size:11.5px;color:#15803d;margin-top:2px;">신규 등록된 모든 근로계약의 동의서가 발송 처리되었습니다.</div>
-          </div>
+          <span style="font-size:13px;color:#166534;">미발송 동의서 없음. (신규 등록된 모든 근로계약의 동의서가 발송 처리되었습니다.)</span>
         </div>
         <div id="cns-unsent-table-wrap" class="table-wrap" style="padding:0 0 16px;">
           <table id="cns-unsent-table" class="tbl-std">
@@ -46,7 +57,7 @@
       <div style="display:flex;justify-content:center;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
         <button class="cdp-send-btn-all" id="cns-batch-kakao-btn" onclick="cnsBatchKakao()" disabled>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg>
-          선택 일괄 알림발송
+          선택 일괄 알림톡 발송
         </button>
         <button class="cdp-send-btn-all" id="cns-batch-email-btn" onclick="cnsBatchEmail()" disabled style="background:#2563eb;border-color:#1d4ed8;color:#fff;">
           <i class="fas fa-envelope"></i> 선택 일괄 이메일 발송
@@ -56,12 +67,12 @@
         </button>
       </div>
 
-      <!-- ── 타이틀 + 새로고침 ── -->
-      <div class="section-title">
-        <i class="fas fa-history"></i>
-        <span>발송 이력</span>
-        <span id="cns-record-count" style="font-size:12px;color:#64748b;font-weight:600;"></span>
-      </div>
+      </div><!-- /std-tab-panel -->
+      </div><!-- /cns-unsent-section -->
+
+      <!-- 발송 이력 섹션 -->
+      <div id="cns-history-section" style="display:none;">
+      <div class="std-tab-panel">
 
       <!-- ── 필터 바 ── -->
       <div class="card" style="margin-bottom:12px;overflow:hidden;">
@@ -129,6 +140,9 @@
           </table>
         </div>
         <!-- 페이지네이션 -->
-        <div id="cns-pagination" style="padding:8px 16px;border-top:1px solid #f1f5f9;"></div>
+        <div id="cns-pagination" style="padding:8px 16px;"></div>
       </div>
+
+      </div><!-- /std-tab-panel -->
+      </div><!-- /cns-history-section -->
     </div><!-- /page-consent-dispatch -->

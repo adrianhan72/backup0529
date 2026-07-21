@@ -748,12 +748,8 @@ async function showPage(name,el){
     document.getElementById('pay-excel-btn').style.display = 'none';
   }
   if(name==='payslip-send'){
-    // 데이터 미준비 — 칩 영역 스피너
+    // 데이터 미준비 — 스피너 표시
     if(!_dataReady){
-      const chips = document.getElementById('pss-company-chips');
-      if(chips) chips.innerHTML = `<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#9ca3af;padding:8px 0;"><div style="width:18px;height:18px;border:2px solid #e2e8f0;border-top-color:#6366f1;border-radius:50%;animation:tblSpin .7s linear infinite;flex-shrink:0;"></div>고객사 목록 불러오는 중...</div>`;
-      document.getElementById('pss-company-select-card').style.display = '';
-      document.getElementById('pss-main-section').style.display = 'none';
       if(el) el.classList.add('active');
       return;
     }
@@ -764,9 +760,7 @@ async function showPage(name,el){
       const _gco = allCompanies.find(c=>c.id===currentGlobalCompanyId && isCompanyActive(c));
       if(_gco){ if(el) el.classList.add('active'); selectPssCompany(currentGlobalCompanyId, _gco.company_name); return; }
     }
-    // 선택된 고객사 없음 — 고객사 선택 화면 표시
-    document.getElementById('pss-company-select-card').style.display = '';
-    document.getElementById('pss-main-section').style.display = 'none';
+    if(el) el.classList.add('active');
   }
   if(name==='admin-accounts'){
     renderAdminAccounts();
@@ -839,6 +833,7 @@ async function showPage(name,el){
     // 페이지 진입 시 항상 DB에서 최신 이력 강제 재조회 후 렌더링
     (async()=>{
       await loadContractDispatchList(true);
+      if(typeof _cdpPopulateUnsentCompanySelect === 'function') _cdpPopulateUnsentCompanySelect();
       renderCdpUnsentMonthTabs();   // 미발송 년월 탭
       renderCdpUnsentList();        // 미발송 목록
       _setDefaultDateRange('cdp-filter-date-from', 'cdp-filter-date-to');
@@ -854,6 +849,7 @@ async function showPage(name,el){
     }
     (async()=>{
       await loadConsentDispatchList(true);
+      if(typeof _cnsPopulateUnsentCompanySelect === 'function') _cnsPopulateUnsentCompanySelect();
       renderCnsUnsentMonthTabs();   // 미발송 년월 탭
       renderCnsUnsentList();        // 미발송 목록
       _setDefaultDateRange('cns-filter-date-from', 'cns-filter-date-to');

@@ -11,19 +11,8 @@
     .filt-label{ font-size:11.5px;font-weight:600;color:#6b7280;white-space:nowrap; }
     .filt-select{ height:34px;padding:0 28px 0 10px;border:1.5px solid #d1d5db;border-radius:7px;font-size:12px;color:#374151;background:#fff;cursor:pointer;font-family:inherit;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%239ca3af'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center; }
     .filt-date{ height:34px;padding:0 10px;border:1.5px solid #d1d5db;border-radius:7px;font-size:12px;color:#374151;font-family:inherit; }
-    .filt-btn-search{ height:34px;padding:0 16px;background:#6366f1;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit; }
-    .filt-btn-search:hover{ background:#4f46e5; }
-    .filt-search-wrap{ position:relative;display:inline-flex;align-items:center; }
-    .filt-search-wrap i{ position:absolute;left:10px;color:#9ca3af;font-size:12px;pointer-events:none; }
-    .filt-search{ height:34px;padding:0 10px 0 30px;border:1.5px solid #d1d5db;border-radius:7px;font-size:12px;color:#374151;font-family:inherit;outline:none; }
-    .filt-search:focus{ border-color:#6366f1;box-shadow:0 0 0 2px rgba(99,102,241,.25); }
-    .filt-search::placeholder{ color:#9ca3af; }
-    /* 검색 입력 (section-title 내 배치 등) */
-    .search-input{ position:relative;display:inline-flex;align-items:center; }
-    .search-input i{ position:absolute;left:10px;color:#9ca3af;font-size:12px;pointer-events:none; }
-    .search-input input{ height:34px;padding:0 10px 0 30px;border:1.5px solid #d1d5db;border-radius:7px;font-size:12px;color:#374151;font-family:inherit;outline:none; }
-    .search-input input:focus{ border-color:#6366f1;box-shadow:0 0 0 2px rgba(99,102,241,.25); }
-    .search-input input::placeholder{ color:#9ca3af; }
+    .filt-btn-search{ height:34px;padding:0 16px;background:#6366f1;color:#fff;border:1px solid #4338ca;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .18s; }
+    .filt-btn-search:hover{ background:#4338ca; }
 
     /* ── 글로벌 테이블 스타일 (.tbl-std) ── */
     .tbl-std{ width:100%;border-collapse:collapse;font-size:13px; }
@@ -46,7 +35,7 @@
     .section-title{ display:flex;align-items:center;gap:8px;margin-top:28px;margin-bottom:12px; }
     .section-title:first-child{ margin-top:12px; }
     .section-title i{ color:#6366f1;font-size:14px; }
-    .section-title span{ font-size:15px;font-weight:800;color:#1e293b; }
+    .section-title > span{ font-size:15px;font-weight:800;color:#1e293b; }
 
     /* ── 통합 건수 뱃지 (메뉴·칩·탭 공통) ── */
 .count-badge{ display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;background:#e94560;color:#fff;font-size:10px;font-weight:500;border-radius:9px;padding:0 5px;line-height:1;flex-shrink:0; }
@@ -92,7 +81,7 @@
 .pss-count-badge.green{ background:#dcfce7;color:#16a34a; }
 .pss-count-badge.blue{ background:#eff6ff;color:#2563eb; }
     /* ?�═ 근로계약 관�????�림 카드 ?�═ */
-    .cont-alert-card{border-radius:0;overflow:hidden;margin-bottom:0;}
+    .cont-alert-card{overflow:hidden;margin-bottom:0;}
     .cont-alert-card-head{display:flex;align-items:center;justify-content:space-between;padding:11px 18px;cursor:pointer;user-select:none;}
     .cont-alert-card-head:hover{filter:brightness(.97);}
     .cont-alert-card-title{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:800;}
@@ -111,58 +100,78 @@
     .cont-alert-table td:last-child{white-space:nowrap;}
     .cont-alert-table tbody tr:nth-child(even) td{background:#f8fafc;}
     .cont-alert-table tbody tr:hover td{background:#eef2ff;}
-    /* ?�시?�????amber */
-    .cont-alert-draft{border:none;border-bottom:1.5px solid #fcd34d;}
-    .cont-alert-draft .cont-alert-card-head{background:linear-gradient(90deg,#fffbeb,#fef3c7);}
-    .cont-alert-draft .cont-alert-card-title{color:#92400e;}
-/* ?�류미비 ??orange */
-    .cont-alert-docs{border:none;border-bottom:1.5px solid #fdba74;}
-    .cont-alert-docs .cont-alert-card-head{background:linear-gradient(90deg,#fff7ed,#ffedd5);}
-    .cont-alert-docs .cont-alert-card-title{color:#9a3412;}
-/* 갱신?�정 ??amber/gold */
-    .cont-alert-renew{border:none;border-bottom:1.5px solid #fde047;}
-    .cont-alert-renew .cont-alert-card-head{background:linear-gradient(90deg,#fefce8,#fef9c3);}
-    .cont-alert-renew .cont-alert-card-title{color:#713f12;}
-/* 계약?�정 ??indigo */
-    .cont-alert-pending{border:none;border-bottom:1.5px solid #a5b4fc;}
-    .cont-alert-pending .cont-alert-card-head{background:linear-gradient(90deg,#eef2ff,#e0e7ff);}
+    /* 임시저장 — amber (대시보드 draft와 통일) */
+    .cont-alert-draft{border:1px solid #fcd34d;border-radius:12px;overflow:hidden;margin-bottom:0;}
+    .cont-alert-draft .cont-alert-card-head{background:linear-gradient(135deg,#fffbeb,#fef3c7);}
+    .cont-alert-draft .cont-alert-card-title{color:#78350f;}
+/* 계약서미발송 — blue (대시보드 contract-unsent와 통일) */
+    .cont-alert-docs{border:1px solid #3b82f6;border-radius:12px;overflow:hidden;margin-bottom:0;}
+    .cont-alert-docs .cont-alert-card-head{background:linear-gradient(135deg,#eff6ff,#dbeafe);}
+    .cont-alert-docs .cont-alert-card-title{color:#1e40af;}
+/* 만료예정 — pink (대시보드 expiry와 통일) */
+    .cont-alert-renew{border:1px solid #f472b6;border-radius:12px;overflow:hidden;margin-bottom:0;}
+    .cont-alert-renew .cont-alert-card-head{background:linear-gradient(135deg,#fdf2f8,#fce7f3);}
+    .cont-alert-renew .cont-alert-card-title{color:#831843;}
+/* 계약예정 — indigo (대시보드에 없음, 유지) */
+    .cont-alert-pending{border:1px solid #a5b4fc;border-radius:12px;overflow:hidden;margin-bottom:0;}
+    .cont-alert-pending .cont-alert-card-head{background:linear-gradient(135deg,#eef2ff,#e0e7ff);}
     .cont-alert-pending .cont-alert-card-title{color:#3730a3;}
-/* 갱신-해지예정 — amber/brown (갱신 페어) */
-    .cont-alert-renew-terminate{border:none;border-bottom:1.5px solid #fdba74;}
-    .cont-alert-renew-terminate .cont-alert-card-head{background:linear-gradient(90deg,#fff7ed,#ffedd5);}
-    .cont-alert-renew-terminate .cont-alert-card-title{color:#7c2d12;}
-/* 해지예정(퇴사) — rose/red */
-    .cont-alert-preterminate{border:none;border-bottom:1.5px solid #fda4af;}
-    .cont-alert-preterminate .cont-alert-card-head{background:linear-gradient(90deg,#fff1f2,#ffe4e6);}
-    .cont-alert-preterminate .cont-alert-card-title{color:#9f1239;}
+/* 정규직전환 — purple (대시보드 regular와 통일) */
+    .cont-alert-renew-terminate{border:1px solid #c084fc;border-radius:12px;overflow:hidden;margin-bottom:0;}
+    .cont-alert-renew-terminate .cont-alert-card-head{background:linear-gradient(135deg,#fdf4ff,#f3e8ff);}
+    .cont-alert-renew-terminate .cont-alert-card-title{color:#3b0764;}
+/* 동의서미발송 — green (대시보드 consent와 통일) */
+    .cont-alert-preterminate{border:1px solid #22c55e;border-radius:12px;overflow:hidden;margin-bottom:0;}
+    .cont-alert-preterminate .cont-alert-card-head{background:linear-gradient(135deg,#f0fdf4,#dcfce7);}
+    .cont-alert-preterminate .cont-alert-card-title{color:#166534;}
+/* 수습 — teal (대시보드 probation과 통일) */
+    .cont-alert-probation{border:1px solid #2dd4bf;border-radius:12px;overflow:hidden;margin-bottom:0;}
+    .cont-alert-probation .cont-alert-card-head{background:linear-gradient(135deg,#f0fdfa,#ccfbf1);}
+    .cont-alert-probation .cont-alert-card-title{color:#134e4a;}
 /* ── 회사별 아코디언 카드 (cont-co-cards-wrap 내) ── */
     #cont-co-cards-wrap { margin-bottom:8px; }
     .cont-co-card { border-radius:12px;overflow:hidden;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.08); }
     .cont-co-card-body { border-top:1px solid rgba(0,0,0,.07);background:#fff; }
     /* cont-co-card 에서도 기존 alert-card 색상 클래스 재사용 */
-    .cont-co-card.cont-alert-pending { border:none; }
-    .cont-co-card.cont-alert-pending .cont-alert-card-head { background:linear-gradient(90deg,#eef2ff,#e0e7ff); }
+    .cont-co-card.cont-alert-pending { border:1px solid #a5b4fc; }
+    .cont-co-card.cont-alert-pending .cont-alert-card-head { background:linear-gradient(135deg,#eef2ff,#e0e7ff); }
     .cont-co-card.cont-alert-pending .cont-alert-card-title { color:#3730a3; }
-.cont-co-card.cont-alert-draft { border:none; }
-    .cont-co-card.cont-alert-draft .cont-alert-card-head { background:linear-gradient(90deg,#fffbeb,#fef3c7); }
-    .cont-co-card.cont-alert-draft .cont-alert-card-title { color:#92400e; }
-.cont-co-card.cont-alert-docs { border:none; }
-    .cont-co-card.cont-alert-docs .cont-alert-card-head { background:linear-gradient(90deg,#fff7ed,#ffedd5); }
-    .cont-co-card.cont-alert-docs .cont-alert-card-title { color:#9a3412; }
-.cont-co-card.cont-alert-renew { border:none; }
-    .cont-co-card.cont-alert-renew .cont-alert-card-head { background:linear-gradient(90deg,#fefce8,#fef9c3); }
-    .cont-co-card.cont-alert-renew .cont-alert-card-title { color:#713f12; }
-.cont-co-card.cont-alert-renew-terminate { border:none; }
-    .cont-co-card.cont-alert-renew-terminate .cont-alert-card-head { background:linear-gradient(90deg,#fff7ed,#ffedd5); }
-    .cont-co-card.cont-alert-renew-terminate .cont-alert-card-title { color:#7c2d12; }
-.cont-co-card.cont-alert-preterminate { border:none; }
-    .cont-co-card.cont-alert-preterminate .cont-alert-card-head { background:linear-gradient(90deg,#fff1f2,#ffe4e6); }
-    .cont-co-card.cont-alert-preterminate .cont-alert-card-title { color:#9f1239; }
+    .cont-co-card.cont-alert-draft { border:1px solid #fcd34d; }
+    .cont-co-card.cont-alert-draft .cont-alert-card-head { background:linear-gradient(135deg,#fffbeb,#fef3c7); }
+    .cont-co-card.cont-alert-draft .cont-alert-card-title { color:#78350f; }
+    .cont-co-card.cont-alert-docs { border:1px solid #3b82f6; }
+    .cont-co-card.cont-alert-docs .cont-alert-card-head { background:linear-gradient(135deg,#eff6ff,#dbeafe); }
+    .cont-co-card.cont-alert-docs .cont-alert-card-title { color:#1e40af; }
+    .cont-co-card.cont-alert-renew { border:1px solid #f472b6; }
+    .cont-co-card.cont-alert-renew .cont-alert-card-head { background:linear-gradient(135deg,#fdf2f8,#fce7f3); }
+    .cont-co-card.cont-alert-renew .cont-alert-card-title { color:#831843; }
+    .cont-co-card.cont-alert-renew-terminate { border:1px solid #c084fc; }
+    .cont-co-card.cont-alert-renew-terminate .cont-alert-card-head { background:linear-gradient(135deg,#fdf4ff,#f3e8ff); }
+    .cont-co-card.cont-alert-renew-terminate .cont-alert-card-title { color:#3b0764; }
+    .cont-co-card.cont-alert-preterminate { border:1px solid #22c55e; }
+    .cont-co-card.cont-alert-preterminate .cont-alert-card-head { background:linear-gradient(135deg,#f0fdf4,#dcfce7); }
+    .cont-co-card.cont-alert-preterminate .cont-alert-card-title { color:#166534; }
+    .cont-co-card.cont-alert-probation { border:1px solid #2dd4bf; }
+    .cont-co-card.cont-alert-probation .cont-alert-card-head { background:linear-gradient(135deg,#f0fdfa,#ccfbf1); }
+    .cont-co-card.cont-alert-probation .cont-alert-card-title { color:#134e4a; }
 /* 계약??발송 관�???미발??카드 */
     .cdp-month-tabs{ display:flex;flex-wrap:wrap;gap:6px; }
     .cdp-month-tab{ padding:6px 14px;border-radius:20px;border:1.5px solid #e5e7eb;background:#fff;font-size:12px;font-weight:600;color:#6b7280;cursor:pointer;transition:all .15s;min-width:130px;text-align:center; }
     .cdp-month-tab:hover{ border-color:#6366f1;color:#4f46e5;box-shadow:0 0 0 2px rgba(99,102,241,.25); }
     .cdp-month-tab.active{ background:#4f46e5;border-color:#4f46e5;color:#fff; }
+
+    /* 커스텀 드롭다운 */
+    .cust-dropdown{ display:inline-block; }
+    .cust-dropdown-btn{ display:inline-flex;align-items:center;justify-content:space-between;min-width:180px;height:34px;padding:0 12px;border:1.5px solid #d1d5db;border-radius:7px;background:#fff;font-size:12px;font-weight:600;color:#374151;cursor:pointer;font-family:inherit;white-space:nowrap; }
+    .cust-dropdown-btn:hover{ border-color:#6366f1; }
+    .cust-dropdown-btn .cust-co-label{ font-size:12px;font-weight:600;color:#374151; }
+    .cust-dropdown-btn .cust-co-count{ margin-left:6px; }
+    .cust-dropdown-btn .cust-co-arrow{ font-size:10px;margin-left:6px;color:#9ca3af; }
+    .cust-dropdown-list{ position:fixed;z-index:1000;min-width:320px;background:#fff;border:2px solid #6366f1;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.18);padding:20px;display:flex;flex-wrap:wrap; }
+    .cust-dropdown-item{ display:inline-flex;align-items:center;gap:6px;padding:8px 14px;margin:5px;border-radius:20px;border:1.5px solid #e5e7eb;background:#fff;font-size:12px;font-weight:500;color:#374151;cursor:pointer;white-space:nowrap;transition:all .15s; }
+    .cust-dropdown-item:hover{ border-color:#6366f1;color:#4f46e5;box-shadow:0 0 0 2px rgba(99,102,241,.25); }
+    .cust-dropdown-item.selected{ background:#4f46e5;border-color:#4f46e5;color:#fff; }
+    .cust-dropdown-item .count-badge{ font-size:10px;font-weight:500;color:#fff;background:#e94560; }
 
     /* 미발송 계약서·동의서 테이블 — .tbl-std로 통합 관리 */
     #cdp-unsent-table td .btn-sm,
@@ -388,7 +397,7 @@
     }
     .filt-search-wrap i {
       position:absolute;left:9px;top:50%;transform:translateY(-50%);
-      color:#9ca3af;font-size:11px;pointer-events:none;z-index:1;
+      color:#9ca3af;font-size:12px;pointer-events:none;z-index:1;
     }
     .filt-btn {
       height:32px;box-sizing:border-box;

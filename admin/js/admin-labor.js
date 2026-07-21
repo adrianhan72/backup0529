@@ -750,7 +750,7 @@ function renderLaborStatus(){
       const payBadge = hasPay
         ? `<span class="badge badge-green">급여입력됨</span>`
         : `<button onclick="goPayrollInputNew('${c.company_id}','${c.employee_id}',${yr},${mo})"
-            style="padding:3px 10px;font-size:11px;font-weight:600;border:none;border-radius:6px;background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:4px;">
+            class="btn btn-blue btn-sm" style="padding:3px 10px;font-size:11px;">
             <i class="fas fa-plus"></i> 입력
           </button>`;
       // 계약 상태 뱃지
