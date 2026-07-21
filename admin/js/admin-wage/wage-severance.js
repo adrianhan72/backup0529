@@ -77,10 +77,8 @@ function switchSevTab(tab){
   document.getElementById('sev-tab-history').style.display = isStatus ? 'none' : '';
   const sBtn = document.getElementById('sev-tab-status-btn');
   const hBtn = document.getElementById('sev-tab-history-btn');
-  // history 탭 (첫번째, 항상 표시)
-  if(hBtn){ hBtn.style.borderBottomColor = isStatus?'transparent':'#6366f1'; hBtn.style.color=isStatus?'#9ca3af':'#4c1d95'; hBtn.style.fontWeight=isStatus?'600':'700'; }
-  // status 탭 (두번째, 해지 고객사에서는 숨김)
-  if(sBtn){ sBtn.style.borderBottomColor = isStatus?'#f59e0b':'transparent'; sBtn.style.color=isStatus?'#92400e':'#9ca3af'; sBtn.style.fontWeight=isStatus?'700':'600'; }
+  if(sBtn){ sBtn.classList.toggle('active', isStatus); }
+  if(hBtn){ hBtn.classList.toggle('active', !isStatus); }
 }
 
 // ── 재직 기간 계산 (년·개월·일 텍스트) ──

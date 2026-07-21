@@ -1,7 +1,7 @@
 ﻿    <div id="page-standards" class="page">
-      <div class="card" style="padding:20px 24px;">
-        <!-- 탭 바 -->
-        <div class="std-tab-bar">
+
+      <!-- 탭 바 -->
+      <div class="std-tab-bar">
           <button class="std-tab active" id="std-tab-insurance" onclick="switchStdTab('insurance')">
             <i class="fas fa-shield-alt" style="margin-right:6px;"></i>4대보험료 요율표
           </button>
@@ -14,7 +14,7 @@
         </div>
 
         <!-- 탭1: 4대보험료 요율표 -->
-        <div id="std-panel-insurance">
+        <div id="std-panel-insurance" class="std-tab-panel">
           <div style="font-size:12px;color:#6b7280;margin-bottom:14px;padding:10px 14px;background:#fffbeb;border-radius:8px;border-left:3px solid #f59e0b;">
             <strong>💡 월 보수액</strong>이란 비과세 수당(차량지원비·식대·보육수당 등)을 제외한 세전 월 급여 총액을 의미합니다. 장기요양보험료는 건강보험료를 기준으로 산정합니다.
           </div>
@@ -75,7 +75,7 @@
         </div>
 
         <!-- 탭2: 연도별 최저임금표 -->
-        <div id="std-panel-minwage" style="display:none;">
+        <div id="std-panel-minwage" class="std-tab-panel" style="display:none;">
           <div class="table-wrap">
             <table class="mw-table" id="std-minwage-table">
               <thead><tr><th>연도</th><th>시급 (원)</th><th>월급여 (원)</th><th>비고</th></tr></thead>
@@ -96,7 +96,7 @@
         </div>
 
         <!-- 탭3: 과세 기준 -->
-        <div id="std-panel-taxbracket" style="display:none;">
+        <div id="std-panel-taxbracket" class="std-tab-panel" style="display:none;">
           <!-- 안내 배너 -->
           <div style="font-size:12px;color:#1e40af;margin-bottom:16px;padding:11px 15px;background:#eff6ff;border-radius:8px;border-left:3px solid #3b82f6;line-height:1.7;">
             <strong>💡 근로소득 간이세액표 (소득세법 시행령 별표 2)</strong><br>
@@ -136,8 +136,7 @@
           </div>
         </div>
 
-      </div>
-    </div>
+    </div><!-- /page-standards -->
 
     <!-- ══ WAGE LEDGER (임금대장) ══ -->
     <div id="page-wage-ledger" class="page">

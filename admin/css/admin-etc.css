@@ -21,6 +21,7 @@
     .tbl-std th.ctr{ text-align:center; }
     .tbl-std td.ctr{ text-align:center; }
     .tbl-std td{ padding:10px 14px;vertical-align:middle;border-bottom:1px solid #f1f5f9; }
+    .tbl-std tbody tr td{ background:#fff; }
     .tbl-std tbody tr:nth-child(even) td{ background:#f8fafc; }
     .tbl-std tbody tr:hover td{ background:#eef2ff; }
     /* table-wrap도 동일 규칙 적용 */
@@ -28,6 +29,7 @@
     .table-wrap table thead tr{ background:#f1f5f9;border-bottom:2px solid #e2e8f0; }
     .table-wrap table th{ padding:10px 14px;text-align:left;font-weight:700;color:#475569;font-size:12px;white-space:nowrap; }
     .table-wrap table td{ padding:10px 14px;vertical-align:middle;border-bottom:1px solid #f1f5f9; }
+    .table-wrap table tbody tr{ background:#fff; }
     .table-wrap table tbody tr:nth-child(even){ background:#f8fafc; }
     .table-wrap table tbody tr:hover{ background:#eef2ff; }
 

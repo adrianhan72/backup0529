@@ -16,10 +16,8 @@
 
       <!-- 메인 섹션 -->
       <div id="sev-main-section" style="display:none;">
-        <!-- 선택 고객사 헤더 + 탭 + 목록 세트 -->
-        <div style="border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08);">
 
-          <!-- 선택 고객사 헤더 -->
+        <!-- 선택 고객사 헤더 -->
           <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:linear-gradient(90deg,#1e1b4b,#312e81);border-radius:10px;margin-bottom:12px;">
             <span id="sev-selected-company-label" style="font-size:14px;font-weight:700;color:#fff;"></span>
             <div style="display:flex;align-items:center;gap:10px;">
@@ -28,26 +26,23 @@
             </div>
           </div>
 
-          <!-- 탭바 -->
-          <div id="sev-tab-bar" style="display:flex;gap:0;margin-bottom:0;border-bottom:2px solid #f3f4f6;background:#fff;">
-            <button id="sev-tab-history-btn" onclick="switchSevTab('history')"
-              style="padding:9px 22px;font-size:13px;font-weight:700;border:1px solid transparent;background:none;cursor:pointer;border-bottom:2px solid #6366f1;margin-bottom:-2px;color:#4c1d95;">
-              <i class="fas fa-history" style="margin-right:5px;"></i>지급 발생 이력
-            </button>
-            <button id="sev-tab-status-btn" onclick="switchSevTab('status')"
-              style="padding:9px 22px;font-size:13px;font-weight:600;border:1px solid transparent;background:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;color:#9ca3af;">
+          <!-- 탭 메뉴 -->
+          <div class="std-tab-bar" style="margin-top:0;">
+            <button class="std-tab active" id="sev-tab-status-btn" onclick="switchSevTab('status')">
               <i class="fas fa-users" style="margin-right:5px;"></i>근로자별 퇴직급여 추계
+            </button>
+            <button class="std-tab" id="sev-tab-history-btn" onclick="switchSevTab('history')">
+              <i class="fas fa-history" style="margin-right:5px;"></i>지급 발생 이력
             </button>
           </div>
 
           <!-- 탭1: 근로자별 퇴직급여 추계 -->
-          <div id="sev-tab-status" style="display:none;">
-            <div style="background:#fff;padding:18px 20px;">
-              <div style="font-size:12px;color:#6b7280;margin-bottom:12px;display:flex;align-items:center;gap:6px;">
-                <i class="fas fa-info-circle" style="color:#f59e0b;"></i>
-                퇴직급여 추계액은 오늘 기준으로 계산한 예상액입니다. 실제 퇴직 시점에 따라 달라질 수 있습니다.
-                (1년 미만 재직자 제외 · 일용직 제외)
-              </div>
+          <div id="sev-tab-status">
+          <div class="std-tab-panel">
+            <div style="font-size:12px;color:#6b7280;margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+              <i class="fas fa-info-circle" style="color:#f59e0b;"></i>
+              1년 미만 재직자와 일용직을 제외한 모든 근로자의 퇴직급여 추계액과 현황을 확인할 수 있습니다.
+            </div>
               <div id="sev-status-table-wrap" style="overflow-x:auto;">
                 <table class="tbl-std">
                   <thead>
@@ -108,14 +103,15 @@
                 </div>
               </div>
             </div>
-          </div>
+          </div><!-- /std-tab-panel -->
+          </div><!-- /sev-tab-status -->
 
           <!-- 탭2: 지급 발생 이력 -->
-          <div id="sev-tab-history" style="display:block;">
-            <div style="background:#fff;padding:18px 20px;">
-              <div style="font-size:12px;color:#6b7280;margin-bottom:12px;display:flex;align-items:center;gap:6px;">
-                <i class="fas fa-info-circle" style="color:#6366f1;"></i>
-                퇴사(계약 만료·해지) 처리된 근로자의 퇴직금 발생 이력입니다. 행을 클릭하면 정산내역표를 확인할 수 있습니다.
+          <div id="sev-tab-history" style="display:none;">
+          <div class="std-tab-panel">
+            <div style="font-size:12px;color:#6b7280;margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+              <i class="fas fa-info-circle" style="color:#6366f1;"></i>
+              퇴사(계약 만료·해지) 처리된 근로자의 퇴직금 발생 이력입니다. 행을 클릭하면 정산내역표를 확인할 수 있습니다.
               </div>
               <div id="sev-history-table-wrap" style="overflow-x:auto;">
                 <table class="tbl-std">
@@ -137,8 +133,8 @@
                 </table>
               </div>
             </div>
-          </div>
+          </div><!-- /std-tab-panel -->
+          </div><!-- /sev-tab-history -->
 
-        </div><!-- /선택 고객사 헤더+탭+목록 세트 wrapper -->
-      </div>
+      </div><!-- /sev-main-section -->
     </div><!-- /page-severance -->
