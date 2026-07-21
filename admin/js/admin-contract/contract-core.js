@@ -6,7 +6,8 @@
  */
 function _renderContCoSummaryCards(){
   const wrap = document.getElementById('cont-co-cards-wrap');
-  if(!wrap || !currentContCompanyId){ if(wrap) wrap.innerHTML=''; return; }
+  const outer = document.getElementById('cont-co-cards-outer');
+  if(!wrap || !currentContCompanyId){ if(wrap) wrap.innerHTML=''; if(outer) outer.innerHTML=''; return; }
 
   const coId = currentContCompanyId;
   const today = new Date().toISOString().slice(0,10);
@@ -88,8 +89,40 @@ function _renderContCoSummaryCards(){
 
   // 기존 카드 모두 제거
   wrap.innerHTML = '';
+  if(outer) outer.innerHTML = '';
 
-  // ── 카드 렌더링 함수 ──
+  // ── 바깥 카드 렌더링 함수 (wrapper 외부, 기본 닫힘) ──
+  function renderOuterCard(key, icon, iconColor, title, count, desc, cols, rowsHtml, extraClass){
+    if(count === 0) return;
+    if(!outer) return;
+    const isOpen = prevOpen[key] === true;
+    const div = document.createElement('div');
+    div.className = `cont-co-card ${extraClass||''}`;
+    div.dataset.cardKey = key;
+    div.innerHTML = `
+      <div class="cont-alert-card-head" onclick="_toggleContCoCard(this)" style="cursor:pointer;">
+        <div class="cont-alert-card-title">
+          <i class="${icon}" style="color:${iconColor};font-size:15px;"></i>
+          ${title}
+          <span class="count-badge">${count}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:11.5px;font-weight:500;opacity:.7;">${desc}</span>
+          <i class="fas fa-chevron-down cont-alert-card-chevron${isOpen?' open':''}"></i>
+        </div>
+      </div>
+      <div class="cont-co-card-body" style="display:${isOpen?'':'none'};">
+        <div style="overflow-x:auto;">
+          <table class="cont-alert-table">
+            <thead><tr>${cols.map(col=>`<th>${col}</th>`).join('')}</tr></thead>
+            <tbody>${rowsHtml}</tbody>
+          </table>
+        </div>
+      </div>`;
+    outer.append(div);
+  }
+
+  // ── 안쪽 카드 렌더링 함수 (wrapper 내부, 기본 열림) ──
   function renderCard(key, icon, iconColor, title, count, desc, cols, rowsHtml, extraClass){
     if(count === 0) return;
     const isOpen = prevOpen[key] !== false;
@@ -101,7 +134,7 @@ function _renderContCoSummaryCards(){
         <div class="cont-alert-card-title">
           <i class="${icon}" style="color:${iconColor};font-size:15px;"></i>
           ${title}
-          <span class="cont-alert-card-count">${count}</span>
+          <span class="count-badge">${count}</span>
         </div>
         <div style="display:flex;align-items:center;gap:10px;">
           <span style="font-size:11.5px;font-weight:500;opacity:.7;">${desc}</span>
@@ -128,9 +161,9 @@ function _renderContCoSummaryCards(){
       const diff = c.contract_start ? Math.ceil((new Date(c.contract_start)-new Date(today))/(1000*60*60*24)) : null;
       const dday = diff !== null ? (diff>0?`D-${diff}`:diff===0?'D-day':`D+${Math.abs(diff)}`) : '-';
       const ddayColor = diff !== null && diff <= 7 ? '#dc2626' : '#4338ca';
-      return `<tr>${empNameCell(c.employee_id)}${catBadgeCell(c,emp)}<td style="font-size:12px;color:#6b7280;">${c.contract_start||'-'}</td><td><span style="font-weight:700;color:${ddayColor};font-size:12.5px;">${dday}</span></td><td style="white-space:nowrap;"><button onclick="viewContract('${c.id}')" class="btn btn-sm btn-indigo"><i class="fas fa-search"></i> 조회</button></td></tr>`;
+      return `<tr>${empNameCell(c.employee_id)}${catBadgeCell(c,emp)}<td style="font-size:12px;color:#6b7280;">${c.contract_start||'-'}</td><td><span style="font-weight:700;color:${ddayColor};font-size:12.5px;">${dday}</span></td><td style="white-space:nowrap;"><button onclick="viewContract('${c.id}')" class="btn btn-sm btn-indigo"><i class="fas fa-search"></i> 조회</button> <button onclick="openContractModal('${c.id}', currentContCompanyId)" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i> 수정 및 재발행</button> <button onclick="_cancelPendingFromList('${c.id}')" class="btn btn-sm btn-secondary"><i class="fas fa-ban"></i> 계약취소</button></td></tr>`;
     }).join('');
-    renderCard('pending', 'fas fa-calendar-alt', '#4338ca', '계약 예정', pendingContracts.length,
+    renderOuterCard('pending', 'fas fa-calendar-alt', '#4338ca', '계약 예정', pendingContracts.length,
       '시작일이 미도래한 신규 계약입니다.', ['직원명','고용형태','계약 시작일','D-day','관리'], rows, 'cont-alert-pending');
   }
 
@@ -145,9 +178,9 @@ function _renderContCoSummaryCards(){
     const rows = draftContracts.map(c => {
       const emp = allEmployees.find(e=>e.id===c.employee_id);
       const savedAt = fmtTime(c.updated_at);
-      return `<tr>${empNameCell(c.employee_id)}${catBadgeCell(c,emp)}<td style="font-size:11px;color:#9ca3af;">${savedAt||'-'}</td><td style="white-space:nowrap;"><button onclick="goDraftContract('${c.id}')" class="btn btn-sm" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d;"><i class="fas fa-pencil-alt"></i> 이어 작성</button> <button onclick="_deleteDraft('${c.id}','contracts','${emp?.name||''}')" class="btn btn-sm" style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;"><i class="fas fa-trash-alt"></i> 삭제</button></td></tr>`;
+      return `<tr>${empNameCell(c.employee_id)}${catBadgeCell(c,emp)}<td style="font-size:11px;color:#9ca3af;">${savedAt||'-'}</td><td style="white-space:nowrap;"><button onclick="goDraftContract('${c.id}')" class="btn-draft-edit-sm"><i class="fas fa-pencil-alt"></i> 이어 작성</button> <button onclick="_deleteDraft('${c.id}','contracts','${emp?.name||''}')" class="btn btn-sm btn-secondary"><i class="fas fa-trash-alt"></i> 삭제</button></td></tr>`;
     }).join('');
-    renderCard('draft', 'fas fa-file-contract', '#b45309', '임시저장 중인 근로계약서', draftContracts.length,
+    renderOuterCard('draft', 'fas fa-file-contract', '#b45309', '임시저장 중인 근로계약서', draftContracts.length,
       '작성 중 저장된 계약서입니다.', ['직원명','고용형태','저장 시각','관리'], rows, 'cont-alert-draft');
   }
 
@@ -157,7 +190,7 @@ function _renderContCoSummaryCards(){
       const emp = allEmployees.find(e=>e.id===c.employee_id);
       return `<tr>${empNameCell(c.employee_id)}${catBadgeCell(c,emp)}<td style="font-size:11px;color:#9ca3af;">${c.contract_start||'-'} ~ ${c.contract_end||'정규직'}</td><td style="white-space:nowrap;"><button onclick="viewContract('${c.id}')" class="btn btn-sm btn-indigo"><i class="fas fa-search"></i> 조회</button></td></tr>`;
     }).join('');
-    renderCard('unsigned', 'fas fa-file-signature', '#d97706', '근로계약서 미발송', unsignedContracts.length,
+    renderOuterCard('unsigned', 'fas fa-file-signature', '#d97706', '근로계약서 미발송', unsignedContracts.length,
       '날인본이 등록되지 않은 계약입니다.', ['직원명','고용형태','계약기간','관리'], rows, 'cont-alert-docs');
   }
 
@@ -167,7 +200,7 @@ function _renderContCoSummaryCards(){
       const emp = allEmployees.find(e=>e.id===c.employee_id);
       return `<tr>${empNameCell(c.employee_id)}${catBadgeCell(c,emp)}<td style="font-size:11px;color:#9ca3af;">${c.contract_start||'-'} ~ ${c.contract_end||'정규직'}</td><td style="white-space:nowrap;"><button onclick="viewContract('${c.id}')" class="btn btn-sm btn-indigo"><i class="fas fa-search"></i> 조회</button></td></tr>`;
     }).join('');
-    renderCard('consent', 'fas fa-file-alt', '#7c3aed', '정보제공동의서 미발송', unsignedConsent.length,
+    renderOuterCard('consent', 'fas fa-file-alt', '#7c3aed', '정보제공동의서 미발송', unsignedConsent.length,
       '제3자 정보제공동의서가 등록되지 않은 계약입니다.', ['직원명','고용형태','계약기간','관리'], rows, 'cont-alert-preterminate');
   }
 
@@ -206,6 +239,24 @@ function _renderContCoSummaryCards(){
     if(severanceCount>0) extraDesc.push(`해고예고수당 ${severanceCount}명`);
     renderCard('probation', 'fas fa-user-clock', '#0d9488', '관리가 필요한 수습 근로자', probationTargets.length,
       (extraDesc.length>0?extraDesc.join(' · ')+' — ':'')+'수습기간 3개월 초과 시 해고예고 의무 발생', ['직원명','고용형태','수습 만료일','D-day','관리'], rows, 'cont-alert-preterminate');
+  }
+}
+
+/** 계약예정 계약취소 (아코디언 카드 전용) */
+async function _cancelPendingFromList(contractId){
+  const c = allContracts.find(x => x.id === contractId);
+  if(!c) return;
+  const emp = allEmployees.find(e => e.id === c.employee_id);
+  const empName = emp?.name || '(직원 미지정)';
+  if(!confirm(`[계약예정 취소]\n\n${empName}\n계약 시작일: ${c.contract_start||'-'}\n\n예정된 근로계약을 취소하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
+  try {
+    await api(`../tables/contracts/${contractId}`, { method: 'DELETE' });
+    await loadContracts();
+    toast('계약예정이 취소되었습니다.');
+    if(typeof renderContracts === 'function') renderContracts();
+    if(typeof renderDashboard === 'function') renderDashboard();
+  } catch(e) {
+    toast('계약 취소 중 오류가 발생했습니다.', 'error');
   }
 }
 
@@ -1874,7 +1925,7 @@ function viewContract(id){
   const {badge:stBadgeCls, label:stLabel} = calcContractStatusDisplay(c||{}, today);
   const _buildLabelHTML = (id, statusLabel, badgeCls, isDraftFlag, isVoidedAmend) => {
     const idHTML = `<span style="font-weight:500;color:#9ca3af;">계약서 고유 ID: ${id||'—'}</span>`
-      + ` <button onclick="event.stopPropagation();_copyContractId('${id||''}')" title="ID 복사" style="background:none;border:none;cursor:pointer;color:#9ca3af;padding:2px 4px;font-size:11px;border-radius:4px;transition:color .15s;" onmouseenter="this.style.color='#6366f1'" onmouseleave="this.style.color='#9ca3af'"><i class="far fa-copy"></i></button>`;
+      + ` <button onclick="event.stopPropagation();_copyContractId('${id||''}')" title="ID 복사" style="background:none;border:none;cursor:pointer;color:#9ca3af;padding:2px 4px;font-size:11px;border-radius:4px;transition:color .15s;" onmouseenter="this.style.color='#6366f1'" onmouseleave="this.style.color='#9ca3af'"><i class="far fa-copy"></i> 복사</button>`;
     if(isDraftFlag){
       return `${idHTML} <span class="badge badge-yellow" style="margin-left:6px;">임시저장</span>`;
     }

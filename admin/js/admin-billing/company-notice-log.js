@@ -258,10 +258,10 @@ function renderCnlReserveCard(){
       <td style="padding:10px 14px;font-size:12px;color:#64748b;white-space:nowrap;">${_resolveAdminName(n.sent_by)||'-'}</td>
       <td style="padding:10px 14px;text-align:center;">
         <div style="display:flex;gap:4px;justify-content:center;align-items:center;flex-wrap:nowrap;">
-          <button onclick="cancelGnScheduled('${n.id}')" class="btn btn-danger btn-sm">
+          <button onclick="cancelGnScheduled('${n.id}')" class="btn btn-secondary btn-sm">
             <i class="fas fa-ban"></i> 취소
           </button>
-          <button onclick="openGnEditModal('${n.id}')" class="btn btn-indigo btn-sm">
+          <button onclick="openGnEditModal('${n.id}')" class="btn btn-warning btn-sm">
             <i class="fas fa-edit"></i> 수정
           </button>
           <button onclick="openCnlDetailById('${n.id}')" class="btn btn-indigo btn-sm">
@@ -445,7 +445,7 @@ function renderCnlTable(){
       <td style="padding:10px 8px;font-size:12px;color:#64748b;white-space:nowrap;">${_resolveAdminName(n.sent_by)||'-'}</td>
       <td style="padding:10px 8px;text-align:center;">
         <button onclick="openCnlDetail(${safeIdx})" class="btn btn-indigo btn-sm">
-          <i class="fas fa-eye"></i>
+          <i class="fas fa-eye"></i> 보기
         </button>
       </td>
     </tr>`;

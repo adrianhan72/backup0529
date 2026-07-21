@@ -473,8 +473,8 @@ function _updateDashConsentBanner() {
 
   section.style.display = '';
   section.innerHTML = `
-    <div onclick="showPage('consent-dispatch', document.querySelector('.menu-item[data-page=\\'consent-dispatch\\']'))"
-         style="cursor:pointer;background:linear-gradient(135deg,${consentBg},${consentBg2});border:1px solid ${consentBorder};border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:14px;box-shadow:0 2px 10px rgba(0,0,0,.07);"
+    <div ${consentInactive ? '' : `onclick="showPage('consent-dispatch', document.querySelector('.menu-item[data-page=\\'consent-dispatch\\']'))"`}
+         style="cursor:${consentInactive ? 'default' : 'pointer'};background:linear-gradient(135deg,${consentBg},${consentBg2});border:1px solid ${consentBorder};border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:14px;box-shadow:0 2px 10px rgba(0,0,0,.07);"
          >
       <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,${consentIconBg},${consentIconBg2});display:flex;align-items:center;justify-content:center;flex-shrink:0;">
         <i class="fas fa-file-shield" style="color:#fff;font-size:17px;"></i>
@@ -483,7 +483,7 @@ function _updateDashConsentBanner() {
         <div style="font-size:13.5px;font-weight:700;color:${consentTitle};">
           정보제공동의서 미발송 <span style="color:${consentCount};font-size:16px;font-weight:800;">${totalUnsent}건</span>
         </div>
-        <div style="font-size:12px;color:${consentSub};margin-top:3px;">클릭하여 ${PAGE_LABELS['consent-dispatch']} 페이지로 이동</div>
+        <div style="font-size:12px;color:${consentSub};margin-top:3px;">${consentInactive ? '미발송 동의서가 없습니다' : `클릭하여 ${PAGE_LABELS['consent-dispatch']} 페이지로 이동`}</div>
       </div>
       ` + (consentInactive ? '' : '<div style="color:' + consentArrow + ';font-size:14px;flex-shrink:0;"><i class="fas fa-chevron-right"></i></div>') + `
     </div>`;

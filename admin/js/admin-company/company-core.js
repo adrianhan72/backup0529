@@ -354,11 +354,13 @@ function _setAccessCode(code){
 // ── 대표자 정보 동적 행 ──
 let _cmRepIdx = 0;
 function _cmRepRowHTML(idx, data = { name: '', phone: '', email: '' }) {
+  const totalRows = document.querySelectorAll('#cm-rep-rows .cm-rep-row').length;
+  const isOnlyOne = totalRows <= 1;
   return `<div class="cm-rep-row" id="cm-rep-row-${idx}" style="display:flex;align-items:flex-end;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
     <div class="form-group" style="flex:1;min-width:100px;"><label>대표자명</label><input type="text" id="cm-rep-name-${idx}" placeholder="대표자명" value="${_esc(data.name)}" style="width:100%;box-sizing:border-box;" /></div>
     <div class="form-group" style="flex:1;min-width:110px;"><label>연락처</label><input type="text" id="cm-rep-phone-${idx}" placeholder="연락처" value="${_esc(data.phone)}" style="width:100%;box-sizing:border-box;" /></div>
     <div class="form-group" style="flex:2;min-width:180px;"><label>이메일</label><input type="text" id="cm-rep-email-${idx}" placeholder="이메일" value="${_esc(data.email)}" style="width:100%;box-sizing:border-box;" /></div>
-    ${idx > 0 ? `<button type="button" onclick="_cmRemoveRepRow(${idx})" class="btn btn-sm btn-secondary" style="flex-shrink:0;"><i class="fas fa-trash-alt"></i></button>` : `<span style="width:32px;flex-shrink:0;"></span>`}
+    <button type="button" onclick="_cmRemoveRepRow(${idx})" class="btn btn-sm btn-secondary" style="flex-shrink:0;" ${isOnlyOne ? 'disabled' : ''}><i class="fas fa-trash-alt"></i> 삭제</button>
   </div>`;
 }
 function _cmAddRepRow(data = { name: '', phone: '', email: '' }) {
@@ -368,10 +370,26 @@ function _cmAddRepRow(data = { name: '', phone: '', email: '' }) {
   const row = document.createElement('div');
   row.innerHTML = _cmRepRowHTML(idx, data);
   container.appendChild(row.firstElementChild);
+  // 2행 이상이면 모든 삭제 버튼 활성화
+  const allRows = container.querySelectorAll('.cm-rep-row');
+  if (allRows.length >= 2) {
+    allRows.forEach(r => {
+      const btn = r.querySelector('button');
+      if (btn) btn.disabled = false;
+    });
+  }
 }
 function _cmRemoveRepRow(idx) {
   const row = document.getElementById('cm-rep-row-' + idx);
   if (row) row.remove();
+  // 남은 행이 1개면 모든 삭제 버튼 비활성화
+  const remaining = document.querySelectorAll('#cm-rep-rows .cm-rep-row');
+  if (remaining.length <= 1) {
+    remaining.forEach(r => {
+      const btn = r.querySelector('button');
+      if (btn) btn.disabled = true;
+    });
+  }
 }
 function _cmCollectReps() {
   const reps = [];
@@ -1402,7 +1420,7 @@ function _cmExecutiveHTML(idx, data = { name: '', position: '', phone: '', id_nu
   <div class="cm-person-card" id="cm-exec-card-${idx}" style="background:#f8faff;border:1.5px solid #e0e7ff;border-radius:10px;padding:14px 16px;margin-bottom:10px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
       <span style="font-size:13px;font-weight:700;color:#374151;">등기임원 #${idx+1}</span>
-      <button type="button" class="btn btn-sm btn-secondary" onclick="_cmRemoveExecutive(${idx})"><i class="fas fa-trash-alt"></i></button>
+      <button type="button" class="btn btn-sm btn-secondary" onclick="_cmRemoveExecutive(${idx})"><i class="fas fa-trash-alt"></i> 삭제</button>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;">
       <div class="cm-person-fg"><label>이름 <span style="color:#c00;">*</span></label><input type="text" id="cm-exec-name-${idx}" value="${esc(data.name)}" placeholder="이름" /></div>
@@ -1427,7 +1445,7 @@ function _cmRelatedHTML(idx, data = { name: '', relationship: '', phone: '', id_
   <div class="cm-person-card" id="cm-rel-card-${idx}" style="background:#f8faff;border:1.5px solid #e0e7ff;border-radius:10px;padding:14px 16px;margin-bottom:10px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
       <span style="font-size:13px;font-weight:700;color:#374151;">특수관계인 #${idx+1}</span>
-      <button type="button" class="btn btn-sm btn-secondary" onclick="_cmRemoveRelated(${idx})"><i class="fas fa-trash-alt"></i></button>
+      <button type="button" class="btn btn-sm btn-secondary" onclick="_cmRemoveRelated(${idx})"><i class="fas fa-trash-alt"></i> 삭제</button>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;">
       <div class="cm-person-fg"><label>이름 <span style="color:#c00;">*</span></label><input type="text" id="cm-rel-name-${idx}" value="${esc(data.name)}" placeholder="이름" /></div>

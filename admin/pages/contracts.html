@@ -33,22 +33,26 @@
       <!-- 선택된 고객사 목록 섹션 -->
       <div id="cont-list-section" style="display:none;">
 
-        <!-- 선택 고객사 헤더 + 알림 카드 세트 -->
-        <div style="border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08);">
-          <!-- 선택 고객사 헤더 -->
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:linear-gradient(90deg,#1e1b4b,#312e81);border-bottom:1px solid rgba(255,255,255,.1);border-radius:12px 12px 0 0;">
-            <span id="cont-selected-company-label" style="font-size:14px;font-weight:700;color:#fff;"></span>
-            <div style="display:flex;align-items:center;gap:10px;">
-              <button class="btn btn-primary" id="cont-add-btn" onclick="openContractModal(null, currentContCompanyId)"><i class="fas fa-plus"></i> 신규계약 작성</button>
-              <button onclick="clearContCompanySelect()" class="btn btn-icon-dark" title="고객사 선택 해제"><i class="fas fa-times"></i></button>
-            </div>
+        <!-- 선택 고객사 헤더 (최상단) -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:12px 18px;background:linear-gradient(90deg,#1e1b4b,#312e81);border-radius:10px;">
+          <span id="cont-selected-company-label" style="font-size:14px;font-weight:700;color:#fff;"></span>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <button class="btn btn-primary" id="cont-add-btn" onclick="openContractModal(null, currentContCompanyId)"><i class="fas fa-plus"></i> 신규계약 작성</button>
+            <button onclick="clearContCompanySelect()" class="btn btn-icon-dark" title="고객사 선택 해제"><i class="fas fa-times"></i></button>
           </div>
+        </div>
+
+        <!-- ── 계약예정 / 임시저장 / 계약서미발송 / 동의서미발송 (wrapper 바깥 분리) ── -->
+        <div id="cont-co-cards-outer" style="margin-bottom:8px;"></div>
+
+        <!-- 알림 카드 세트 -->
+        <div style="border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08);">
 
         <!-- ── 갱신·해지 요약 배너 ── -->
         <div id="cont-summary-banner" style="display:none;margin:10px 18px;padding:10px 16px;background:linear-gradient(90deg,#f8fafc,#f1f5f9);border:1px solid #e2e8f0;border-radius:8px;font-size:12px;color:#475569;gap:16px;align-items:center;flex-wrap:wrap;"></div>
-        <!-- ── 회사별 아코디언 카드 영역: 계약예정 / 임시저장 / 미발송 / 미동의 / 만료통지 / 정규직전환 / 수습 ── -->
+        <!-- ── 만료통지 / 정규직전환 / 수습 (wrapper 내부) ── -->
         <div id="cont-co-cards-wrap" style="margin-bottom:0;"></div>
-        </div><!-- /선택 고객사 헤더+카드 세트 -->
+        </div><!-- /알림 카드 세트 -->
 
         <!-- 숨겨진 필터 (goContractsByCompany 호환용) -->
         <select id="cont-company-filter" style="display:none;"></select>

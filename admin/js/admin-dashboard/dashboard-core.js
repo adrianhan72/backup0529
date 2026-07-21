@@ -11,28 +11,27 @@ function renderDashExpiryBanner(){
   if(!sec) return;
 
   const targets = _cenGetTargetContracts();   // 이미 만료일 임박순 정렬됨
-  if(!targets.length){ sec.style.display='none'; sec.innerHTML=''; _updateDashTodoGrid(); return; }
-
-  const urgent = targets.filter(c => c._daysLeft <= 7);   // D-7 이내
   const total  = targets.length;
+  const urgent = targets.filter(c => c._daysLeft <= 7);   // D-7 이내
+  const inactive = total === 0;
 
   sec.style.display = '';
   sec.innerHTML = `
-  <div class="dash-alert-banner expiry"
-       onclick="showPage('contract-expiry-notice', document.querySelector('.menu-item[data-page=\\'contract-expiry-notice\\']'))">
+  <div class="dash-alert-banner expiry${inactive ? ' inactive' : ''}"
+       ${inactive ? '' : `onclick="showPage('contract-expiry-notice', document.querySelector('.menu-item[data-page=\\'contract-expiry-notice\\']'))"`}>
     <div class="dash-alert-banner-head">
-      <div class="dash-alert-banner-icon">
+      <div class="dash-alert-banner-icon" style="background:${inactive ? '#d1d5db' : ''};">
         <i class="fas fa-file-contract"></i>
       </div>
       <div class="dash-alert-banner-body">
-        <div class="dash-alert-banner-title">
+        <div class="dash-alert-banner-title${inactive ? ' inactive' : ''}">
           계약만료 통지 대상
-          <span class="dash-alert-banner-count">${total}명</span>이 있습니다
+          <span class="dash-alert-banner-count" style="color:${inactive ? '#9ca3af' : ''};">${total}명</span>
           ${urgent.length ? `<span style="display:inline-flex;align-items:center;gap:3px;background:#fee2e2;color:#991b1b;border-radius:20px;padding:1px 8px;font-size:11px;font-weight:700;margin-left:6px;"><i class="fas fa-exclamation-circle" style="font-size:9px;"></i> D-7 이내 ${urgent.length}명</span>` : ''}
         </div>
-        <div class="dash-alert-banner-sub">29일 이내 계약 만료 예정 — 클릭하여 ${PAGE_LABELS['contract-expiry-notice']} 페이지로 이동</div>
+        <div class="dash-alert-banner-sub" style="color:${inactive ? '#9ca3af' : ''};">${inactive ? '만료 예정인 계약이 없습니다' : `29일 이내 계약 만료 예정 — 클릭하여 ${PAGE_LABELS['contract-expiry-notice']} 페이지로 이동`}</div>
       </div>
-      <div class="dash-alert-banner-arrow"><i class="fas fa-chevron-right"></i></div>
+      ${inactive ? '' : '<div class="dash-alert-banner-arrow"><i class="fas fa-chevron-right"></i></div>'}
     </div>
   </div>`;
   _updateDashTodoGrid();
@@ -48,24 +47,25 @@ function renderDashRegularBanner(){
 
   const list     = _calc2YrExceedList();
   const exceeded = list.filter(x => x.status === 'exceeded');
-  if(!exceeded.length){ sec.style.display='none'; sec.innerHTML=''; _updateDashTodoGrid(); return; }
+  const total    = exceeded.length;
+  const inactive = total === 0;
 
   sec.style.display = '';
   sec.innerHTML = `
-  <div class="dash-alert-banner regular"
-       onclick="showPage('regular-conversion', document.querySelector('.menu-item[data-page=\\'regular-conversion\\']'))">
+  <div class="dash-alert-banner regular${inactive ? ' inactive' : ''}"
+       ${inactive ? '' : `onclick="showPage('regular-conversion', document.querySelector('.menu-item[data-page=\\'regular-conversion\\']'))"`}>
     <div class="dash-alert-banner-head">
-      <div class="dash-alert-banner-icon">
+      <div class="dash-alert-banner-icon" style="background:${inactive ? '#d1d5db' : ''};">
         <i class="fas fa-user-check"></i>
       </div>
       <div class="dash-alert-banner-body">
-        <div class="dash-alert-banner-title">
+        <div class="dash-alert-banner-title${inactive ? ' inactive' : ''}">
           정규직 전환 의무 대상
-          <span class="dash-alert-banner-count">${exceeded.length}명</span>
+          <span class="dash-alert-banner-count" style="color:${inactive ? '#9ca3af' : ''};">${total}명</span>
         </div>
-        <div class="dash-alert-banner-sub">기간제 2년 초과 — 클릭하여 ${PAGE_LABELS['regular-conversion']} 페이지로 이동</div>
+        <div class="dash-alert-banner-sub" style="color:${inactive ? '#9ca3af' : ''};">${inactive ? '2년 초과 기간제 근로자가 없습니다' : `기간제 2년 초과 — 클릭하여 ${PAGE_LABELS['regular-conversion']} 페이지로 이동`}</div>
       </div>
-      <div class="dash-alert-banner-arrow"><i class="fas fa-chevron-right"></i></div>
+      ${inactive ? '' : '<div class="dash-alert-banner-arrow"><i class="fas fa-chevron-right"></i></div>'}
     </div>
   </div>`;
   _updateDashTodoGrid();
@@ -202,28 +202,27 @@ function renderDashProbationBanner(){
   if(!sec) return;
 
   const targets = _getProbationNoticeTargets();
-  if(!targets.length){ sec.style.display = 'none'; sec.innerHTML = ''; return; }
-
   const noticTargets = targets.filter(t => t.probMonths > 3 && t.daysLeft >= 30);
   const urgentAll = targets.filter(t => t.probMonths > 3 && t.daysLeft < 30);
   const total = noticTargets.length + urgentAll.length;
+  const inactive = total === 0;
 
   sec.style.display = '';
   sec.innerHTML = `
-  <div class="dash-alert-banner probation"
-       onclick="showPage('probation-mgmt', document.querySelector('.menu-item[data-page=\\'probation-mgmt\\']'))">
+  <div class="dash-alert-banner probation${inactive ? ' inactive' : ''}"
+       ${inactive ? '' : `onclick="showPage('probation-mgmt', document.querySelector('.menu-item[data-page=\\'probation-mgmt\\']'))"`}>
     <div class="dash-alert-banner-head">
-      <div class="dash-alert-banner-icon">
+      <div class="dash-alert-banner-icon" style="background:${inactive ? '#d1d5db' : ''};">
         <i class="fas fa-user-clock"></i>
       </div>
       <div class="dash-alert-banner-body">
-        <div class="dash-alert-banner-title">
+        <div class="dash-alert-banner-title${inactive ? ' inactive' : ''}">
           관리가 필요한 수습 근로자
-          <span class="dash-alert-banner-count">${total}명</span>
+          <span class="dash-alert-banner-count" style="color:${inactive ? '#9ca3af' : ''};">${total}명</span>
         </div>
-        <div class="dash-alert-banner-sub">수습기간 3개월 초과 근로자 해고 시 30일 전 서면 통지 의무</div>
+        <div class="dash-alert-banner-sub" style="color:${inactive ? '#9ca3af' : ''};">${inactive ? '수습기간 3개월 초과 근로자가 없습니다' : '수습기간 3개월 초과 근로자 해고 시 30일 전 서면 통지 의무'}</div>
       </div>
-      <div class="dash-alert-banner-arrow"><i class="fas fa-chevron-right"></i></div>
+      ${inactive ? '' : '<div class="dash-alert-banner-arrow"><i class="fas fa-chevron-right"></i></div>'}
     </div>
   </div>`;
   _updateDashTodoGrid();

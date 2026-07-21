@@ -227,7 +227,7 @@ function cmAwAddCustomItem(name = ''){
       <input type="text" id="cm-aw-custom-name-${idx}" class="cm-aw-custom-input"
         placeholder="항목명 입력" value="${name.replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}" style="width:110px;" />
     </label>
-    <button type="button" class="cm-aw-custom-del" onclick="cmAwRemoveCustomItem(${idx})" title="삭제"><i class="fas fa-trash-alt"></i></button>
+    <button type="button" class="cm-aw-custom-del" onclick="cmAwRemoveCustomItem(${idx})" title="삭제"><i class="fas fa-trash-alt"></i> 삭제</button>
   `;
   addRow.parentNode.insertBefore(div, addRow);
 }
@@ -282,7 +282,7 @@ function cmAwAddFixedCustomItem(name = '', payType = 'fixed'){
       <option value="daily" ${payType==='daily'?'selected':''}>출근일수에 따름</option>
       <option value="receipt" ${payType==='receipt'?'selected':''}>영수증 청구</option>
     </select>
-    <button type="button" class="cm-aw-custom-del" onclick="cmAwRemoveFixedCustomItem(${idx})" title="삭제"><i class="fas fa-trash-alt"></i></button>
+    <button type="button" class="cm-aw-custom-del" onclick="cmAwRemoveFixedCustomItem(${idx})" title="삭제"><i class="fas fa-trash-alt"></i> 삭제</button>
   `;
   addRow.parentNode.insertBefore(div, addRow);
 }

@@ -116,7 +116,7 @@
                 <i class="fas fa-search"></i>
                 <input type="text" id="rc-log-search" class="filt-search" style="width:140px;" placeholder="직원명 검색" oninput="renderRcHistory()" />
               </div>
-              <button onclick="(async()=>{await rcLoadHistory(true);renderRcHistory();})()" class="btn btn-sm btn-secondary"><i class="fas fa-sync-alt"></i></button>
+              <button onclick="(async()=>{await rcLoadHistory(true);renderRcHistory();})()" class="btn btn-sm btn-secondary btn-refresh"><i class="fas fa-sync-alt"></i> 새로고침</button>
             </div>
           </div>
           <div style="overflow-x:auto;padding:0 0 8px;">
