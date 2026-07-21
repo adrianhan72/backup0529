@@ -40,7 +40,7 @@
       <div class="cen-tab-bar">
         <button class="cen-tab active" id="cen-tab-target" onclick="cenSwitchTab('target')">
           <i class="fas fa-exclamation-circle" style="margin-right:5px;"></i>통지 대상
-          <span id="cen-tab-target-badge" style="display:inline-flex;align-items:center;justify-content:center;background:#ef4444;color:#fff;border-radius:10px;font-size:10px;font-weight:700;padding:1px 6px;margin-left:5px;">0</span>
+          <span id="cen-tab-target-badge" style="display:inline-flex;align-items:center;justify-content:center;background:#ef4444;color:#fff;border-radius:10px;font-size:10px;padding:1px 6px;margin-left:5px;">0</span>
         </button>
         <button class="cen-tab" id="cen-tab-history" onclick="cenSwitchTab('history')">
           <i class="fas fa-history" style="margin-right:5px;"></i>발송 이력
@@ -87,8 +87,6 @@
               <i class="fas fa-search"></i>
               <input type="text" id="cen-search" class="filt-search" style="width:140px;" placeholder="직원명 검색" oninput="renderCenTargetList()" />
             </div>
-            <!-- 새로고침 -->
-            <button onclick="cenRefresh()" class="btn btn-sm btn-secondary btn-refresh"><i class="fas fa-sync-alt"></i> 새로고침</button>
           </div>
 
           <!-- 일괄 발송 버튼 바 -->
@@ -115,9 +113,9 @@
               <thead>
                 <tr>
                   <th style="width:36px;text-align:center;"><input type="checkbox" class="cen-chk" id="cen-thead-chk" onchange="cenToggleAll(this)" /></th>
+                  <th>고객사</th>
                   <th>직원명</th>
                   <th>고용형태</th>
-                  <th>고객사</th>
                   <th>계약 만료일</th>
                   <th>D-day</th>
                   <th>연락처</th>
@@ -167,7 +165,6 @@
                 <i class="fas fa-search"></i>
                 <input type="text" id="cen-log-search" class="filt-search" style="width:140px;" placeholder="직원명 검색" oninput="renderCenHistory()" />
               </div>
-              <button onclick="(async()=>{await cenLoadHistory(true);renderCenHistory();})()" class="btn btn-sm btn-secondary btn-refresh"><i class="fas fa-sync-alt"></i> 새로고침</button>
             </div>
           </div>
           <!-- 이력 테이블 -->
@@ -176,9 +173,9 @@
               <thead>
                 <tr>
                   <th>발송 일시</th>
+                  <th>고객사</th>
                   <th>직원명</th>
                   <th>고용형태</th>
-                  <th>고객사</th>
                   <th>계약 만료일</th>
                   <th>발송 방식</th>
                   <th>상태</th>

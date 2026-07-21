@@ -46,7 +46,6 @@
               <i class="fas fa-search"></i>
               <input type="text" id="lp-search" class="filt-search" style="width:140px;" placeholder="직원명 검색" oninput="renderLpTable()" />
             </div>
-            <button onclick="(async()=>{await loadLeavePromotionHistory(true);renderLpTable();})()" class="btn btn-sm btn-secondary btn-refresh"><i class="fas fa-sync-alt"></i> 새로고침</button>
           </div>
         </div>
       </div>
@@ -68,9 +67,9 @@
             <thead>
               <tr>
                 <th>발송 일시</th>
+                <th>고객사</th>
                 <th>직원명</th>
                 <th>고용형태</th>
-                <th>고객사</th>
                 <th class="right">총 발생</th>
                 <th class="right">사용</th>
                 <th class="right">잔여</th>

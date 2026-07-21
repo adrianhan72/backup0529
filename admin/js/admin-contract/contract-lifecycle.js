@@ -7,7 +7,7 @@ function _getContractPrintCSS(){
     'h2{text-align:center;font-size:19px;font-weight:900;letter-spacing:5px;margin-bottom:4px;color:#0f172a;padding-bottom:8px;border-bottom:3px double #0f172a;}',
     '.doc-subtitle{text-align:center;font-size:11.5px;color:#64748b;margin-bottom:20px;margin-top:4px;}',
     '.doc-type-banner{text-align:center;margin-bottom:14px;}',
-    '.doc-type-badge{display:inline-block;padding:3px 14px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:1px;}',
+    '.doc-type-badge{display:inline-block;padding:3px 14px;border-radius:20px;font-size:11px;font-weight:400;letter-spacing:1px;}',
     '.doc-parties{background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:10px 14px;margin-bottom:16px;font-size:12px;line-height:1.8;}',
     '.doc-section{margin-bottom:14px;}',
     '.doc-section-title{font-size:12.5px;font-weight:800;color:#0f172a;background:#f1f5f9;border-left:4px solid #4f46e5;padding:5px 10px;margin-bottom:6px;border-radius:0 3px 3px 0;}',
@@ -376,8 +376,8 @@ function generateContractHTMLFromData(c, emp, co){
   const dailyWage         = parseFloat(c.daily_wage||c.base_salary||0);
   // 통상임금 지급유형 뱃지 생성 헬퍼
   const payTypeBadge = (type) => type==='fixed'
-    ? '<span style="font-size:10px;color:#1d4ed8;background:#dbeafe;border-radius:4px;padding:1px 6px;margin-left:6px;font-weight:700;">매월 정기지급 (통상임금 포함)</span>'
-    : '<span style="font-size:10px;color:#92400e;background:#fef3c7;border-radius:4px;padding:1px 6px;margin-left:6px;font-weight:700;">출근일수에 따름 (통상임금 제외)</span>';
+    ? '<span style="font-size:10px;color:#1d4ed8;background:#dbeafe;border-radius:4px;padding:1px 6px;margin-left:6px;">매월 정기지급 (통상임금 포함)</span>'
+    : '<span style="font-size:10px;color:#92400e;background:#fef3c7;border-radius:4px;padding:1px 6px;margin-left:6px;">출근일수에 따름 (통상임금 제외)</span>';
   // 통상임금 포함 여부: fixed = 포함, 그 외(daily/receipt) = 제외
   const isFixedType = (type) => (type||'fixed') === 'fixed';
 
@@ -403,15 +403,6 @@ function generateContractHTMLFromData(c, emp, co){
   const hireDateStr = emp.hire_date || '';
 
 
-
-  // ── 유형별 배지 색상 ──
-  const typeBadgeStyle = {
-    '정규직':      'background:#dbeafe;color:#1d4ed8;',
-    '정규직 수습': 'background:#cffafe;color:#0e7490;',
-    '계약직':      'background:#ede9fe;color:#6d28d9;',
-    '계약직 수습': 'background:#fce7f3;color:#9d174d;',
-    '일용직':      'background:#fef3c7;color:#b45309;',
-  }[ctType] || 'background:#f3f4f6;color:#374151;';
 
   // ── 유형별 제목 ──
   const titleByType = {
@@ -627,7 +618,7 @@ function generateContractHTMLFromData(c, emp, co){
     <table class="info-table">
       <colgroup><col style="width:32%"><col style="width:68%"></colgroup>
       ${row('계약기간', contractPeriod)}
-      ${row('고용형태', `<span style="${typeBadgeStyle}padding:1px 8px;border-radius:10px;font-weight:700;font-size:11px;">${ctType}</span>`)}
+      ${row('고용형태', `<span class="badge ${empCatBadge(_ctTypeRaw)}">${ctType}</span>`)}
       ${isProb ? row('수습기간', `${probStartKr} ~ ${probEndDate} (${probMonths}개월)`) : ''}
     </table>
     <p style="font-size:13px;line-height:1.9;color:#374151;padding:8px 0 4px;">
@@ -2192,9 +2183,7 @@ function _cftValidate(){
   // 유효 — 상태 계산
   const isFuture   = termDate > today;
   const newStatus  = isFuture ? CONTRACT_STATUS.TERMINATE_PENDING : CONTRACT_STATUS.TERMINATED;
-  const statusColor= isFuture ? '#c2410c'  : '#dc2626';
-  const statusBg   = isFuture ? '#fff7ed'  : '#fef2f2';
-  const statusBorder= isFuture? '#fdba74'  : '#fca5a5';
+  const statusCls  = isFuture ? 'badge-orange' : 'badge-red';
 
   // 날짜 힌트
   if(hintEl){
@@ -2209,9 +2198,7 @@ function _cftValidate(){
   // 상태 힌트 (확정 버튼 옆)
   if(statusHint){
     statusHint.innerHTML =
-      `→ 계약 상태: <span style="background:${statusBg};` +
-      `border-radius:4px;padding:1px 8px;font-size:11.5px;font-weight:800;color:${statusColor};">` +
-      `${newStatus}</span>` +
+      `→ 계약 상태: <span class="badge ${statusCls}">${newStatus}</span>` +
       (newStatus === CONTRACT_STATUS.TERMINATED
         ? ' <span style="font-size:11px;color:#9ca3af;">(직원 상태 → 퇴직)</span>'
         : '');

@@ -100,7 +100,7 @@
     .prob-acc-emp-type.regular{background:#d1fae5;color:#065f46;}
     .prob-acc-emp-type.contract{background:#ffedd5;color:#9a3412;}
     .prob-acc-emp-end{font-size:12px;color:#0f766e;font-weight:600;min-width:90px;}
-    .prob-acc-emp-dday{display:inline-flex;align-items:center;padding:1px 8px;border-radius:20px;font-size:11.5px;font-weight:700;}
+.prob-acc-emp-dday{display:inline-flex;align-items:center;padding:1px 8px;border-radius:20px;font-size:11.5px;font-weight:500;}
     .prob-acc-emp-dday.soon{background:#ccfbf1;color:#115e59;}
     .prob-acc-emp-dday.urgent{background:#fee2e2;color:#991b1b;}
     .prob-acc-emp-dday.normal{background:#f1f5f9;color:#475569;}
@@ -118,7 +118,7 @@
     .probmgmt-table td{padding:11px 14px;border-bottom:1px solid #f1f5f9;vertical-align:middle;}
     .probmgmt-table tr:last-child td{border-bottom:none;}
     .probmgmt-table tr:hover td{background:#f8fafc;}
-    .probmgmt-dday{display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;font-size:11.5px;font-weight:700;}
+.probmgmt-dday{display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;font-size:11.5px;font-weight:500;}
     .probmgmt-dday.soon{background:#ccfbf1;color:#115e59;}
     .probmgmt-dday.urgent{background:#fee2e2;color:#991b1b;}
     .probmgmt-dday.normal{background:#f1f5f9;color:#475569;}
@@ -199,7 +199,7 @@
     .cen-email-info-row{display:flex;gap:8px;font-size:12.5px;line-height:1.9;}
     .cen-email-info-label{color:#64748b;font-weight:600;min-width:80px;flex-shrink:0;}
     .cen-email-info-val{color:#1e293b;font-weight:700;}
-    .cen-email-dday-badge{display:inline-flex;align-items:center;padding:1px 10px;border-radius:20px;font-size:11.5px;font-weight:800;background:#fef2f2;color:#dc2626;margin-left:6px;}
+.cen-email-dday-badge{display:inline-flex;align-items:center;padding:1px 10px;border-radius:20px;font-size:11.5px;font-weight:500;background:#fef2f2;color:#dc2626;margin-left:6px;}
     .cen-email-cta{background:linear-gradient(135deg,#1e3a5f,#0f172a);color:#fff;border:none;border-radius:9px;padding:11px 0;font-size:13px;font-weight:700;width:100%;text-align:center;cursor:default;margin-bottom:14px;display:block;}
     .cen-email-notice{font-size:11px;color:#9ca3af;line-height:1.7;border-top:1px solid #f1f5f9;padding-top:12px;}
     .cen-email-footer{background:#f3f4f6;padding:12px 20px;border-radius:0 0 10px 10px;text-align:center;font-size:11px;color:#9ca3af;}

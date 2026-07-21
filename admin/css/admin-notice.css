@@ -6,13 +6,13 @@
     .dash-ac-title{font-size:14px;font-weight:800;display:flex;align-items:center;gap:7px;}
     .dash-ac-sub{font-size:11.5px;font-weight:500;margin-top:2px;}
     .dash-ac-badges{display:flex;align-items:center;gap:6px;flex-shrink:0;flex-wrap:wrap;}
-    .dash-ac-badge{font-size:11.5px;font-weight:700;border-radius:20px;padding:2px 10px;white-space:nowrap;}
+.dash-ac-badge{font-size:11.5px;font-weight:500;border-radius:20px;padding:2px 10px;white-space:nowrap;}
     .dash-ac-toggle{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;transition:background .15s,transform .25s;border:1px solid #cccccc;outline:none;cursor:pointer;}
     .dash-ac-body{overflow:hidden;max-height:0;transition:max-height .4s cubic-bezier(.4,0,.2,1);}
     .dash-ac-body.open{max-height:9999px;padding-top:6px;}
     .dash-ac-group-row{display:flex;align-items:center;gap:8px;padding:8px 0;flex-wrap:nowrap;}
     .dash-ac-group-label{font-size:14px;font-weight:800;color:#111827;text-transform:uppercase;letter-spacing:.04em;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-    .dash-ac-group-badge{font-size:11.5px;font-weight:700;border-radius:20px;padding:2px 10px;}
+    .dash-ac-group-badge{font-size:11.5px;font-weight:500;border-radius:20px;padding:2px 10px;}
     /* ?�시?�?????�랑 */
     .draft-alert-card{border:1px solid #fbbf24;box-shadow:0 4px 18px rgba(245,158,11,.13);}
     .draft-alert-card-header{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:13px 20px 12px;background:linear-gradient(90deg,#fffbeb 0%,#fef9ec 100%);border-bottom:1px solid #fde68a;}
@@ -34,7 +34,7 @@
     .pi-adb-left{display:flex;align-items:center;gap:9px;flex:1;min-width:0;}
     .pi-adb-icon{width:32px;height:32px;border-radius:9px;background:rgba(245,158,11,.15);color:#d97706;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
     .pi-adb-title{font-size:13.5px;font-weight:700;color:#92400e;}
-    .pi-adb-badge{display:inline-flex;align-items:center;justify-content:center;background:#f59e0b;color:#fff;font-size:11px;font-weight:800;border-radius:20px;padding:1px 9px;margin-left:6px;letter-spacing:.01em;}
+.pi-adb-badge{display:inline-flex;align-items:center;justify-content:center;background:#f59e0b;color:#fff;font-size:11px;font-weight:500;border-radius:20px;padding:1px 9px;margin-left:6px;letter-spacing:.01em;}
     .pi-adb-chevron{width:26px;height:26px;border-radius:8px;background:#fde68a;color:#92400e;display:flex;align-items:center;justify-content:center;font-size:12px;transition:transform .25s;flex-shrink:0;border:1px solid #cccccc;outline:none;cursor:pointer;}
     .pi-adb-body{overflow:hidden;max-height:0;transition:max-height .4s cubic-bezier(.4,0,.2,1);background:#fff;}
     .pi-adb-body.open{max-height:9999px;}
@@ -140,7 +140,7 @@
     .ctf-preview-wrap{margin-top:8px;display:none;border-radius:8px;overflow:hidden;border:1px solid #e5e7eb;}
     .ctf-preview-wrap.show{display:block;}
     .ctf-preview-wrap img{width:100%;max-height:260px;object-fit:contain;display:block;background:#f8f9fb;}
-    .ctf-status-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:700;margin-left:4px;}
+.ctf-status-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:500;margin-left:4px;}
     .ctf-badge-ok{background:#f0fdf4;color:#16a34a;}
     .ctf-badge-none{background:#fce7f3;color:#9f1239;}
     .ctf-uploading{display:none;align-items:center;gap:6px;font-size:11.5px;color:#6b7280;margin-top:6px;}
@@ -200,7 +200,7 @@
     .cen-table td{padding:10px 13px;vertical-align:middle;border-bottom:1px solid #f3f4f6;}
     .cen-table tr:hover td{background:#f9fafb;}
     /* D-day 배�? */
-    .cen-dday{display:inline-flex;align-items:center;justify-content:center;padding:2px 10px;border-radius:20px;font-size:12px;font-weight:800;white-space:nowrap;}
+.cen-dday{display:inline-flex;align-items:center;justify-content:center;padding:2px 10px;border-radius:20px;font-size:12px;font-weight:500;white-space:nowrap;}
     .cen-dday.urgent{background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;}
     .cen-dday.soon{background:#fff7ed;color:#c2410c;border:1px solid #fdba74;}
     .cen-dday.normal{background:#fefce8;color:#92400e;border:1px solid #fde047;}

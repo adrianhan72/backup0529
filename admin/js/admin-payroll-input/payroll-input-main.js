@@ -208,12 +208,12 @@ function loadPITargetList(){
       .map(p => [p.employee_id, p.id])
   );
 
-  // ③ 확정 저장 직원 Set (is_draft=false 만)
-  const paidEmpIds = new Set(
-    (allPayrolls||[])
-      .filter(p => p.company_id===coId && p.pay_year===yr && p.pay_month===mo && !p.is_draft)
-      .map(p => p.employee_id)
-  );
+  // ③ 확정 저장 직원 Set (is_draft=false 만) + payrollId 매핑
+  const paidPayrollMap = new Map(); // employee_id → payroll_id
+  (allPayrolls||[])
+    .filter(p => p.company_id===coId && p.pay_year===yr && p.pay_month===mo && !p.is_draft)
+    .forEach(p => paidPayrollMap.set(p.employee_id, p.id));
+  const paidEmpIds = new Set(paidPayrollMap.keys());
 
   // 제목·배지 업데이트
   const moLabel = `${yr}년 ${mo}월`;
@@ -232,11 +232,6 @@ function loadPITargetList(){
       ${moLabel}에 유효한 근로계약이 있는 직원이 없습니다.
     </td></tr>`;
   } else {
-    const CAT_BADGE = {
-      '정규직':'background:#dbeafe;color:#1d4ed8;','정규직 수습':'background:#cffafe;color:#0e7490;',
-      '계약직':'background:#ede9fe;color:#6d28d9;','계약직 수습':'background:#fce7f3;color:#9d174d;',
-      '일용직':'background:#fef3c7;color:#92400e;'
-    };
     tbody.innerHTML = targets.map(({emp, contract, _type}) => {
       // 대표자·등기임원·특수관계인: 가상 계약 데이터
       const isVirtual = !contract;
@@ -256,10 +251,8 @@ function loadPITargetList(){
       
       const catRaw  = emp.employment_category || '';
       const cat     = CONTRACT_TYPE_LABEL[catRaw] || catRaw;
-      // 대표자·등기임원·특수관계인 뱃지: 밝은회색 배경 + 짙은회색 글씨
-      const catStyle = (catRaw===CONTRACT_TYPE.EXECUTIVE||catRaw===CONTRACT_TYPE.RELATED_PARTY||catRaw===CONTRACT_TYPE.REPRESENTATIVE)
-        ? 'background:#e5e7eb;color:#374151;'
-        : (CAT_BADGE[cat] || 'background:#f3f4f6;color:#374151;');
+      // 고용형태 뱃지: 글로벌 CAT_BADGE_CLS 사용
+      const catBadgeCls = empCatBadge(catRaw);
       
       // 계약 기간: 실제 계약이 있으면 계약기간, 없으면 등록일~무기한
       // 대표자: 등록일 없으면 고객사 자문계약 시작일 기준
@@ -280,44 +273,43 @@ function loadPITargetList(){
       const draftId  = isDraft ? draftEmpMap.get(emp.id) : null;
       const deptPos  = isVirtual ? (emp.position || '') : [emp.department, emp.position].filter(v=>v&&v.trim()).join('/');
 
-      // ④-0 계약상태 배지
+      // ④-0 계약상태 배지 (CSS class 사용)
       const _cs = actualContract ? (actualContract.status || CONTRACT_STATUS.ACTIVE) : '';
       let contractStatusBadge;
       if(!actualContract){
-        contractStatusBadge = `<span style="display:inline-block;background:#f5f3ff;color:#7c3aed;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">별도계약</span>`;
+        contractStatusBadge = '<span class="badge badge-purple">별도계약</span>';
       } else if(_cs === CONTRACT_STATUS.DOCS_INCOMPLETE){
-        contractStatusBadge = `<span style="display:inline-block;background:#dcfce7;color:#15803d;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;margin-right:3px;">유효</span>`
-          + `<span style="display:inline-block;background:#fff7ed;color:#c2410c;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">서류미비</span>`;
+        contractStatusBadge = '<span class="badge badge-green">유효</span> <span class="badge badge-orange">서류미비</span>';
       } else if(CONTRACT_ACTIVE_STATUSES.includes(_cs)){
-        contractStatusBadge = `<span style="display:inline-block;background:#dcfce7;color:#15803d;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">유효</span>`;
+        contractStatusBadge = '<span class="badge badge-green">유효</span>';
       } else if(_cs === CONTRACT_STATUS.PENDING){
-        contractStatusBadge = `<span style="display:inline-block;background:#e0e7ff;color:#3730a3;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">계약예정</span>`;
+        contractStatusBadge = '<span class="badge badge-indigo">계약예정</span>';
       } else if(_cs === CONTRACT_STATUS.RENEWAL_PENDING){
-        contractStatusBadge = `<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">갱신예정</span>`;
+        contractStatusBadge = '<span class="badge badge-amber">갱신예정</span>';
       } else if(_cs === CONTRACT_STATUS.TERMINATE_PENDING){
-        contractStatusBadge = `<span style="display:inline-block;background:#fee2e2;color:#991b1b;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">해지예정</span>`;
+        contractStatusBadge = '<span class="badge badge-red">해지예정</span>';
       } else if(_cs === CONTRACT_STATUS.TERMINATED){
-        contractStatusBadge = `<span style="display:inline-block;background:#f3f4f6;color:#374151;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">${CONTRACT_STATUS_LABEL[CONTRACT_STATUS.TERMINATED]}</span>`;
+        contractStatusBadge = `<span class="badge badge-gray">${CONTRACT_STATUS_LABEL[CONTRACT_STATUS.TERMINATED]}</span>`;
       } else if(_cs === CONTRACT_STATUS.EXPIRED){
-        contractStatusBadge = `<span style="display:inline-block;background:#f3f4f6;color:#374151;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">${CONTRACT_STATUS_LABEL[CONTRACT_STATUS.EXPIRED]}</span>`;
+        contractStatusBadge = `<span class="badge badge-gray">${CONTRACT_STATUS_LABEL[CONTRACT_STATUS.EXPIRED]}</span>`;
       } else if(_cs === CONTRACT_STATUS.VOIDED){
-        contractStatusBadge = `<span style="display:inline-block;background:#f3f4f6;color:#374151;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">${CONTRACT_STATUS_LABEL[CONTRACT_STATUS.VOIDED]}</span>`;
+        contractStatusBadge = `<span class="badge badge-gray">${CONTRACT_STATUS_LABEL[CONTRACT_STATUS.VOIDED]}</span>`;
       } else if(_cs === CONTRACT_STATUS.CANCELED){
-        contractStatusBadge = `<span style="display:inline-block;background:#f3f4f6;color:#374151;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">${CONTRACT_STATUS_LABEL[CONTRACT_STATUS.CANCELED]}</span>`;
+        contractStatusBadge = `<span class="badge badge-gray">${CONTRACT_STATUS_LABEL[CONTRACT_STATUS.CANCELED]}</span>`;
       } else if(_cs === CONTRACT_STATUS.RENEWED){
-        contractStatusBadge = `<span style="display:inline-block;background:#dbeafe;color:#1e40af;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">${CONTRACT_STATUS_LABEL[CONTRACT_STATUS.RENEWED]}</span>`;
+        contractStatusBadge = `<span class="badge badge-blue">${CONTRACT_STATUS_LABEL[CONTRACT_STATUS.RENEWED]}</span>`;
       } else {
-        contractStatusBadge = `<span style="display:inline-block;background:#f3f4f6;color:#374151;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;">${CONTRACT_STATUS_LABEL[_cs] || _cs || '알 수 없음'}</span>`;
+        contractStatusBadge = `<span class="badge badge-gray">${CONTRACT_STATUS_LABEL[_cs] || _cs || '알 수 없음'}</span>`;
       }
 
-      // ④ 급여입력 여부 배지: isDraft(황색) > isPaid(녹색) > 미입력(주황)
+      // ④ 급여입력 여부 배지 (CSS class 사용)
       let statusBadge;
       if(isDraft){
-        statusBadge = `<span style="display:inline-flex;align-items:center;gap:4px;background:#fefce8;color:#a16207;border-radius:6px;padding:3px 10px;font-size:11.5px;font-weight:700;"><i class="fas fa-clock"></i> 임시저장</span>`;
+        statusBadge = '<span class="badge badge-amber"><i class="fas fa-clock"></i> 임시저장</span>';
       } else if(isPaid){
-        statusBadge = `<span style="display:inline-flex;align-items:center;gap:4px;background:#f0fdf4;color:#16a34a;border-radius:6px;padding:3px 10px;font-size:11.5px;font-weight:700;"><i class="fas fa-check-circle"></i> 입력완료</span>`;
+        statusBadge = '<span class="badge badge-green"><i class="fas fa-check-circle"></i> 입력완료</span>';
       } else {
-        statusBadge = `<span style="display:inline-flex;align-items:center;gap:4px;background:#fff7ed;color:#c2410c;border-radius:6px;padding:3px 10px;font-size:11.5px;font-weight:700;"><i class="fas fa-exclamation-circle"></i> 미입력</span>`;
+        statusBadge = '<span class="badge badge-red"><i class="fas fa-exclamation-circle"></i> 미입력</span>';
       }
 
       // ⑤ 관리 버튼
@@ -330,13 +322,20 @@ function loadPITargetList(){
           <i class="fas fa-play-circle"></i> 이어 입력
         </button>`;
       } else if(isPaid){
-        actionBtn = `<button onclick="selectPITarget('${targetEmpId}','${targetContractId}')"
-          style="display:inline-flex;align-items:center;gap:5px;padding:7px 16px;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">
-          <i class="fas fa-edit"></i> 수정
-        </button>`;
+        const paidPid = paidPayrollMap.get(emp.id) || '';
+        actionBtn = `<div style="display:inline-flex;gap:4px;align-items:center;flex-wrap:nowrap;">
+          <button onclick="openPayslipModal('${paidPid}')"
+            style="display:inline-flex;align-items:center;justify-content:center;gap:4px;width:68px;padding:7px 0;background:#6366f1;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">
+            <i class="fas fa-search"></i> 조회
+          </button>
+          <button onclick="selectPITarget('${targetEmpId}','${targetContractId}')"
+            style="display:inline-flex;align-items:center;justify-content:center;gap:5px;width:68px;padding:7px 0;background:#f59e0b;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">
+            <i class="fas fa-edit"></i> 수정
+          </button>
+        </div>`;
       } else {
         actionBtn = `<button onclick="selectPITarget('${targetEmpId}','${targetContractId}')"
-          style="display:inline-flex;align-items:center;gap:5px;padding:7px 16px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">
+          style="display:inline-flex;align-items:center;justify-content:center;gap:5px;width:140px;padding:7px 0;background:#e94560;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">
           <i class="fas fa-calculator"></i> 입력
         </button>`;
       }
@@ -346,7 +345,7 @@ function loadPITargetList(){
           ${emp.name}${deptPos?`<span style="font-size:11px;color:#9ca3af;font-weight:400;margin-left:5px;">${deptPos}</span>`:''}
         </td>
         <td style="padding:12px 14px;">
-          <span style="font-size:11.5px;font-weight:600;border-radius:5px;padding:2px 9px;${catStyle}">${cat}</span>
+          <span class="badge ${catBadgeCls}">${cat}</span>
         </td>
         <td style="padding:12px 14px;font-size:12px;color:#6b7280;">
           ${cStart} ~ ${cEnd}
@@ -437,21 +436,11 @@ function selectPITarget(empId, contractId, draftId=null){
   // emp.employment_category는 갱신이 지연될 수 있으므로 contract_type을 우선 사용.
   const catRaw = contract ? (contract.contract_type || emp.employment_category) : (emp.employment_category || '');
   const cat     = CONTRACT_TYPE_LABEL[catRaw] || catRaw || '';
-  const CAT_COLORS = {
-    '정규직':'background:#dbeafe;color:#1d4ed8;border-color:#93c5fd;',
-    '정규직 수습':'background:#cffafe;color:#0e7490;border-color:#67e8f9;',
-    '계약직':'background:#ede9fe;color:#6d28d9;border-color:#c4b5fd;',
-    '계약직 수습':'background:#fce7f3;color:#9d174d;border-color:#f9a8d4;',
-    '일용직':'background:#fef3c7;color:#92400e;border-color:#fcd34d;',
-    '등기임원':'background:#e5e7eb;color:#374151;border-color:#d1d5db;',
-    '특수관계인':'background:#e5e7eb;color:#374151;border-color:#d1d5db;',
-    '대표자':'background:#e5e7eb;color:#374151;border-color:#d1d5db;'
-  };
-  const badgeStyle = CAT_COLORS[cat] || 'background:#f3f4f6;color:#374151;border-color:#e5e7eb;';
+  const catBadgeCls = empCatBadge(catRaw);
   const nameEl  = document.getElementById('pi-form-emp-name');
   const badgeEl = document.getElementById('pi-form-emp-badge');
   if(nameEl)  nameEl.textContent  = `${emp.name} (${yr}년 ${mo}월)`;
-  if(badgeEl){ badgeEl.textContent = cat; badgeEl.style.cssText = `font-size:11px;font-weight:600;padding:2px 8px;border-radius:5px;${badgeStyle}`; }
+  if(badgeEl){ badgeEl.textContent = cat; badgeEl.className = `badge ${catBadgeCls}`; }
 
   // 숨김 select 동기화 (기존 loadPIContract 의존)
   const empSel = document.getElementById('pi-employee');
@@ -3632,7 +3621,7 @@ function _showPIDraftEditModeAlert(){
         수정 모드에서는 임시저장을<br>지원하지 않습니다.
       </div>
       <button onclick="document.getElementById('pi-draft-edit-alert-modal').remove()"
-        style="width:100%;padding:12px;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">
+        style="width:100%;padding:12px;background:#6366f1;color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">
         확인
       </button>
     </div>`;
@@ -3692,7 +3681,7 @@ function _showPIDraftSavedModal(yr, mo, timeStr){
           <i class="fas fa-pen" style="margin-right:5px;"></i>계속 입력
         </button>
         <button onclick="document.getElementById('pi-draft-saved-modal').remove(); backToPITargetList();"
-          style="flex:1;padding:11px;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
+          style="flex:1;padding:11px;background:#6366f1;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
           <i class="fas fa-list" style="margin-right:5px;"></i>목록으로 돌아가기
         </button>
       </div>
@@ -3730,7 +3719,7 @@ function _showPISavedModal(empName, yr, mo, payrollId, isEdit){
       <div style="display:flex;gap:10px;">
         <button
           onclick="document.getElementById('pi-saved-modal').remove(); openPayslipModal('${payrollId}');"
-          style="flex:1;padding:12px 8px;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
+          style="flex:1;padding:12px 8px;background:#6366f1;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
           <i class="fas fa-file-invoice-dollar" style="margin-right:5px;"></i>급여명세서 보기
         </button>
         <button

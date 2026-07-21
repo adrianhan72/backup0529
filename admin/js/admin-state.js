@@ -5,7 +5,7 @@ let allLeaveLedgers=[];   // 연차휴가 관리대장 캐시 (annual_leave_ledg
 let allWLNotifications=[];   // 임금대장 미확인 알림 캐시
 let editId={company:null,contract:null};
 const ITEMS=10;
-let pages={emp:1,cont:1,pay:1};
+let pages={cont:1,pay:1};
 
 // ─── 공통 헬퍼: 실질 이용중 고객사 판별 ──────────────────────────────────────
 // DB status=ACTIVE이더라도 contract_end_date가 오늘 이하면 해지 완료로 간주
@@ -642,6 +642,12 @@ async function showPage(name,el){
   // 도움말 버튼: 근로 계약 관리 페이지에서만 표시
   const _helpBtn = document.getElementById('topbar-help-btn');
   if(_helpBtn) _helpBtn.style.display = (name === 'contracts') ? '' : 'none';
+  // 페이지 새로고침 버튼: 데이터 재조회가 필요한 페이지에서만 표시
+  const _refreshBtn = document.getElementById('topbar-refresh-btn');
+  if(_refreshBtn) {
+    const _refreshPages = ['company-notice-log','contract-dispatch','consent-dispatch','contract-expiry-notice','annual-leave','leave-promotion','regular-conversion'];
+    _refreshBtn.style.display = _refreshPages.includes(name) ? '' : 'none';
+  }
   if(name==='labor-status'){
     // 데이터 미준비 — 칩 영역 스피너
     if(!_dataReady){
@@ -964,6 +970,62 @@ async function showPage(name,el){
   }
   if(el) el.classList.add('active');
   }catch(e){console.error('[showPage 오류]',name,e);}
+}
+
+/**
+ * 페이지 새로고침 (topbar 버튼)
+ * 현재 활성 페이지의 모든 데이터를 서버에서 재조회 후 페이지 전체를 다시 빌드한다.
+ */
+async function refreshCurrentPage(){
+  const _refreshBtn = document.getElementById('topbar-refresh-btn');
+  if(!_refreshBtn || _refreshBtn.disabled) return;
+  const _icon = _refreshBtn.querySelector('i');
+  try {
+    if(_icon) _icon.classList.add('fa-spin');
+    _refreshBtn.disabled = true;
+
+    const _activePage = document.querySelector('.page.active');
+    if(!_activePage) return;
+    const _pageId = _activePage.id; // e.g. 'page-company-notice-log'
+    const _name = _pageId.replace('page-', '');
+
+    switch(_name){
+      case 'company-notice-log':
+        await cnlReload();
+        break;
+      case 'contract-dispatch':
+        await loadContracts();
+        await _cdpRefreshUnsent();
+        break;
+      case 'consent-dispatch':
+        await loadContracts();
+        await _cnsRefreshUnsent();
+        break;
+      case 'contract-expiry-notice':
+        await loadContracts();
+        await cenRefresh();
+        break;
+      case 'annual-leave':
+        await Promise.all([loadPayrolls(), loadLeaveLedgers()]);
+        renderAlTable();
+        break;
+      case 'leave-promotion':
+        await loadLeavePromotionHistory(true);
+        renderLpTable();
+        break;
+      case 'regular-conversion':
+        await loadContracts();
+        await rcRefresh();
+        break;
+    }
+    toast('페이지가 새로고침되었습니다.', 'success');
+  } catch(e){
+    console.error('[refreshCurrentPage 오류]', e);
+    toast('새로고침 중 오류가 발생했습니다.', 'error');
+  } finally {
+    if(_icon) _icon.classList.remove('fa-spin');
+    _refreshBtn.disabled = false;
+  }
 }
 // 대시보드 카드 버튼 클릭: 사용료 관리 페이지로 이동하며 필터 적용
 /* [사용료 숨김] goBillingWithFilter 함수 - 원복 시 아래 주석 해제

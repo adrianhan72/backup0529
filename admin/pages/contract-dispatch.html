@@ -4,22 +4,19 @@
       <div class="section-title">
         <i class="fas fa-exclamation-triangle" style="color:#f59e0b;"></i>
         <span>미발송 계약서</span>
-        <span id="cdp-unsent-total-badge" style="font-size:12px;color:#64748b;font-weight:600;">(총 0건)</span>
-        <button class="cdp-send-btn-all" id="cdp-unsent-send-all-btn" onclick="cdpSendAllKakao()" disabled style="margin-left:auto;">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg>
-          일괄 알림톡 발송
-        </button>
+        <span id="cdp-unsent-total-badge" style="font-size:12px;color:#64748b;">(총 0건)</span>
       </div>
-      <div class="card" style="margin-bottom:16px;overflow:hidden;">
-        <div style="padding:16px 20px 0;">
-          <!-- 입사 년월 탭 -->
+      <!-- 입사 년월 선택 카드 -->
+      <div class="card" style="margin-bottom:12px;overflow:hidden;">
+        <div style="padding:14px 20px;">
           <div class="cdp-month-tabs" id="cdp-unsent-month-tabs">
             <div class="pss-loading"><i class="fas fa-spinner fa-spin"></i> 로딩 중...</div>
           </div>
-          <!-- 구분선 -->
-          <div style="border-top:1px solid #f3f4f6;margin:0 -20px 0;"></div>
         </div>
+      </div>
 
+      <!-- 미발송 목록 카드 -->
+      <div class="card" style="margin-bottom:16px;padding:0;overflow:hidden;">
         <!-- 전원 발송 완료 메시지 -->
         <div id="cdp-unsent-all-clear" class="pss-all-clear" style="display:none;margin:16px 0;padding:0 20px;">
           <i class="fas fa-check-circle" style="font-size:20px;color:#16a34a;flex-shrink:0;"></i>
@@ -31,24 +28,41 @@
 
         <!-- 미발송 테이블 -->
         <div id="cdp-unsent-table-wrap" class="table-wrap" style="padding:0 0 16px;">
-          <table id="cdp-unsent-table" style="width:100%;border-collapse:collapse;font-size:13px;">
+          <table id="cdp-unsent-table" class="tbl-std">
             <thead>
               <tr>
+                <th class="ctr" style="width:36px;"><input type="checkbox" id="cdp-chk-all" onchange="cdpToggleAll(this)" title="전체 선택" /></th>
+                <th>고객사</th>
                 <th>직원명</th>
                 <th>고용구분</th>
-                <th>고객사</th>
                 <th>입사일</th>
                 <th>연락처</th>
                 <th>이메일</th>
-                <th style="text-align:center;">계약서</th>
-                <th style="text-align:center;">개별 관리</th>
+                <th class="ctr">계약서</th>
+                <th class="ctr">개별 관리</th>
               </tr>
             </thead>
             <tbody id="cdp-unsent-tbody">
-              <tr><td colspan="8" class="pss-loading"><i class="fas fa-spinner fa-spin"></i> 로딩 중...</td></tr>
+              <tr><td colspan="9" class="pss-loading"><i class="fas fa-spinner fa-spin"></i> 로딩 중...</td></tr>
             </tbody>
           </table>
         </div>
+      </div>
+
+      <!-- 일괄 발송 버튼 -->
+      <div style="display:flex;justify-content:center;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+        <button class="cdp-send-btn-all" id="cdp-batch-kakao-btn" onclick="cdpBatchKakao()" disabled>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg>
+          선택 일괄 알림발송
+        </button>
+        <button class="cdp-send-btn-all" id="cdp-batch-email-btn" onclick="cdpBatchEmail()" disabled style="background:#2563eb;border-color:#1d4ed8;color:#fff;">
+          <i class="fas fa-envelope"></i> 선택 일괄 이메일 발송
+        </button>
+        <button class="cdp-send-btn-all" id="cdp-batch-manual-btn" onclick="cdpBatchManual()" disabled style="background:#10b981;border-color:#059669;color:#fff;">
+          <i class="fas fa-hand-paper"></i> 선택 일괄 수동교부 처리
+        </button>
+      </div>
+        </button>
       </div>
 
       <!-- ── 타이틀 + 새로고침 ── -->
@@ -56,7 +70,6 @@
         <i class="fas fa-history"></i>
         <span>발송 이력</span>
         <span id="cdp-record-count" style="font-size:12px;color:#64748b;font-weight:600;"></span>
-        <button onclick="(async()=>{await loadContractDispatchList(true);await renderContractDispatchPage();})()" class="btn btn-sm btn-secondary btn-refresh" style="margin-left:auto;" title="목록 새로고침"><i class="fas fa-sync-alt"></i> 목록 새로고침</button>
       </div>
 
       <!-- ── 필터 바 ── -->
@@ -111,18 +124,18 @@
       <!-- ── 발송 이력 테이블 ── -->
       <div class="card" style="padding:0;overflow:hidden;">
         <div style="overflow-x:auto;">
-          <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <table class="tbl-std">
             <thead>
-              <tr style="background:linear-gradient(135deg,#f1f5f9,#e8ecf3);border-bottom:2px solid #e2e8f0;">
-                <th style="padding:11px 14px;text-align:left;font-weight:700;color:#475569;white-space:nowrap;">발송 일시</th>
-                <th style="padding:11px 14px;text-align:left;font-weight:700;color:#475569;white-space:nowrap;">고객사</th>
-                <th style="padding:11px 14px;text-align:left;font-weight:700;color:#475569;white-space:nowrap;">직원명</th>
-                <th style="padding:11px 14px;text-align:left;font-weight:700;color:#475569;white-space:nowrap;">계약 유형</th>
-                <th style="padding:11px 14px;text-align:center;font-weight:700;color:#475569;white-space:nowrap;">발송 방식</th>
-                <th style="padding:11px 14px;text-align:left;font-weight:700;color:#475569;white-space:nowrap;">수신처</th>
-                <th style="padding:11px 14px;text-align:center;font-weight:700;color:#475569;white-space:nowrap;">결과</th>
-                <th style="padding:11px 14px;text-align:left;font-weight:700;color:#475569;white-space:nowrap;">처리자</th>
-                <th style="padding:11px 14px;text-align:center;font-weight:700;color:#475569;white-space:nowrap;">계약서</th>
+              <tr>
+                <th>발송 일시</th>
+                <th>고객사</th>
+                <th>직원명</th>
+                <th>계약 유형</th>
+                <th class="ctr">발송 방식</th>
+                <th>수신처</th>
+                <th class="ctr">결과</th>
+                <th>처리자</th>
+                <th class="ctr">계약서</th>
               </tr>
             </thead>
             <tbody id="cdp-tbody">

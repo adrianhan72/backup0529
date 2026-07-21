@@ -22,7 +22,7 @@
         <!-- 선택 고객사 헤더 + 목록 카드 세트 -->
         <div style="border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08);">
           <!-- 선택 고객사 헤더 -->
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:linear-gradient(90deg,#1e1b4b,#312e81);border-bottom:1px solid rgba(255,255,255,.1);">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:linear-gradient(90deg,#1e1b4b,#312e81);border-radius:10px;margin-bottom:12px;">
             <span id="pay-selected-company-label" style="font-size:14px;font-weight:700;color:#fff;"></span>
             <button onclick="clearPayCompanySelect()" class="btn btn-icon-dark" title="고객사 선택 해제"><i class="fas fa-times"></i></button>
           </div>
@@ -39,15 +39,15 @@
               </button>
             </div>
             <div class="table-wrap">
-              <table>
+              <table class="tbl-std">
                 <thead>
                   <tr>
                     <th>직원명</th><th>고용구분</th><th>근로일수</th><th>연장H</th>
-                    <th style="background:#dbeafe;color:#1d4ed8;">지급총액</th>
-                    <th style="background:#eff6ff;color:#1e40af;">매월지급</th>
-                    <th style="background:#eff6ff;color:#1e40af;">추가근로수당</th>
-                    <th style="background:#eff6ff;color:#1e40af;">부정기지급</th>
-                    <th>공제합계</th><th style="color:#059669;font-weight:700;">영수액</th><th style="width:60px;"></th>
+                    <th>지급총액</th>
+                    <th>매월지급</th>
+                    <th>추가근로수당</th>
+                    <th>부정기지급</th>
+                    <th>공제합계</th><th>영수액</th><th style="width:60px;"></th>
                   </tr>
                 </thead>
                 <tbody id="pay-tbody"></tbody>

@@ -27,7 +27,7 @@ function renderDashExpiryBanner(){
         <div class="dash-alert-banner-title${inactive ? ' inactive' : ''}">
           계약만료 통지 대상
           <span class="dash-alert-banner-count" style="color:${inactive ? '#9ca3af' : ''};">${total}명</span>
-          ${urgent.length ? `<span style="display:inline-flex;align-items:center;gap:3px;background:#fee2e2;color:#991b1b;border-radius:20px;padding:1px 8px;font-size:11px;font-weight:700;margin-left:6px;"><i class="fas fa-exclamation-circle" style="font-size:9px;"></i> D-7 이내 ${urgent.length}명</span>` : ''}
+          ${urgent.length ? `<span style="display:inline-flex;align-items:center;gap:3px;background:#fee2e2;color:#991b1b;border-radius:20px;padding:1px 8px;font-size:11px;margin-left:6px;"><i class="fas fa-exclamation-circle" style="font-size:9px;"></i> D-7 이내 ${urgent.length}명</span>` : ''}
         </div>
         <div class="dash-alert-banner-sub" style="color:${inactive ? '#9ca3af' : ''};">${inactive ? '만료 예정인 계약이 없습니다' : `29일 이내 계약 만료 예정 — 클릭하여 ${PAGE_LABELS['contract-expiry-notice']} 페이지로 이동`}</div>
       </div>
@@ -354,14 +354,9 @@ function renderProbationMgmtTable(){
     return;
   }
 
-  // 처리결과 레이블/색상 맵
+  // 처리결과 레이블 맵
   const _actionLabels = { confirm:'채용확정', cancel:'채용취소', dismiss:'조기해고', extend:'수습연장' };
-  const _actionStyles = {
-    confirm: 'background:#d1fae5;color:#065f46;',
-    cancel:  'background:#fee2e2;color:#991b1b;',
-    dismiss: 'background:#fff7ed;color:#c2410c;',
-    extend:  'background:#eff6ff;color:#1d4ed8;',
-  };
+  const _actionBadgeMap = { confirm:'badge-green', cancel:'badge-red', dismiss:'badge-orange', extend:'badge-blue' };
 
   tbody.innerHTML = targets.map(t => {
     const { empName, probEnd, probMonths, daysLeft, contract: c } = t;
@@ -370,13 +365,11 @@ function renderProbationMgmtTable(){
     if(daysLeft <= 30)      ddayCls = 'urgent';
     else if(daysLeft <= 45) ddayCls = 'soon';
     else                    ddayCls = 'normal';
-    // 계약 유형 뱃지
-    const typeBadge = c.contract_type ===CONTRACT_TYPE.REGULAR_PROBATION
-      ? `<span style="background:#d1fae5;color:#065f46;border-radius:5px;padding:1px 7px;font-size:11px;font-weight:700;">정규직 수습</span>`
-      : `<span style="background:#ffedd5;color:#9a3412;border-radius:5px;padding:1px 7px;font-size:11px;font-weight:700;">계약직 수습</span>`;
+    // 계약 유형 뱃지 (글로벌 CAT_BADGE_CLS 사용)
+    const typeBadge = `<span class="badge ${empCatBadge(c.contract_type)}">${CONTRACT_TYPE_LABEL[c.contract_type] || c.contract_type}</span>`;
     // 처리결과 셀
     const actionCell = c.probmgmt_action
-      ? `<span style="${_actionStyles[c.probmgmt_action]||'background:#f1f5f9;color:#64748b;'}border-radius:5px;padding:2px 8px;font-size:11.5px;font-weight:700;">${_actionLabels[c.probmgmt_action]||c.probmgmt_action}</span>`
+      ? `<span class="badge ${_actionBadgeMap[c.probmgmt_action] || 'badge-gray'}">${_actionLabels[c.probmgmt_action]||c.probmgmt_action}</span>`
       : `<span style="color:#d1d5db;font-size:12px;">—</span>`;
     // 처리일시 셀
     let actionAtCell = `<span style="color:#d1d5db;font-size:12px;">—</span>`;

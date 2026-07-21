@@ -178,9 +178,9 @@ function renderRcTargetList(){
          </button>`
       : `<span style="font-size:11.5px;color:#9ca3af;">전환 의무 미도달</span>`;
     return `<tr>
+      <td style="font-size:12px;color:#111827;font-weight:700;">${x.company}</td>
       <td style="font-weight:700;color:#111827;">${x.empName}</td>
-      <td style="font-size:12px;color:#374151;">${x.company}</td>
-      <td><span class="badge badge-purple" style="font-size:11px;">${catText}</span></td>
+      <td><span class="badge ${empCatBadge(x.activeContract?.contract_type)}">${catText}</span></td>
       <td style="font-size:12px;color:#6b7280;">${x.firstStart || '-'}</td>
       <td style="font-size:12px;font-weight:600;color:${x.rcStatus==='exceeded'?'#dc2626':x.rcStatus==='urgent'?'#ea580c':'#d97706'};">${fmtDays(x.totalDays)}</td>
       <td>${remainDays(x.totalDays)}</td>
@@ -264,7 +264,8 @@ function renderRcHistory(){
     if(filterCo && r.company_id !== filterCo) return false;
     if(searchQ  && !(r.employee_name||'').toLowerCase().includes(searchQ)) return false;
     if(dateFrom || dateTo){
-      const sentDt = (r.sent_at || r.notice_sent_at || '').slice(0,10);
+      const raw = r.sent_at || r.notice_sent_at || '';
+      const sentDt = typeof raw === 'string' ? raw.slice(0,10) : String(raw).slice(0,10);
       if(dateFrom && sentDt < dateFrom) return false;
       if(dateTo   && sentDt > dateTo)   return false;
     }
@@ -303,15 +304,15 @@ function renderRcHistory(){
   };
 
   tbody.innerHTML = pageData.map(r => {
-    const cls = CAT_BADGE_CLS[r.contract_type] || 'badge-purple';
+    const cls = CAT_BADGE_CLS[r.contract_type] || 'badge-gray';
     // 누적 기간 — note 필드에서 일수 파싱 시도
     const noteMatch = (r.note||'').match(/누적\s*([\d]+)일/);
     const totalDaysText = noteMatch ? `${noteMatch[1]}일` : '-';
     return `<tr>
       <td style="font-size:12px;color:#374151;white-space:nowrap;">${fmtDt(r.noticed_at)}</td>
+      <td style="font-size:12px;color:#111827;font-weight:700;">${r.company_name||'-'}</td>
       <td style="font-weight:600;color:#111827;">${r.employee_name||'-'}</td>
-      <td><span class="badge ${cls}" style="font-size:11px;">${contractTypeLabel(r.contract_type)||'-'}</span></td>
-      <td style="font-size:12px;color:#374151;">${r.company_name||'-'}</td>
+      <td><span class="badge ${cls}">${contractTypeLabel(r.contract_type)||'-'}</span></td>
       <td style="font-size:12px;color:#6b7280;">${totalDaysText}</td>
       <td>${methodBadge(r.notice_method)}</td>
       <td style="font-size:12px;color:#6b7280;">${_resolveAdminName(r.noticed_by)||'-'}</td>
@@ -491,22 +492,19 @@ async function rcRefresh(){
  */
 function _rcBuildPagination(total, current, pageVar, renderFn){
   if(total <= 1) return '';
+  const totalPages = Math.max(1, Math.ceil(total / 10));
+  const s = Math.min((current-1)*10+1, total);
+  const e = Math.min(current*10, total);
+  const mBtn = (label, pg, disabled, active) =>
+    `<button class="page-btn${active?' active':''}" onclick="${pageVar}=${pg};${renderFn}();"${disabled?' disabled':''}>${label}</button>`;
   const btns = [];
-  const makeBtn = (label, page, disabled=false, active=false) =>
-    `<button onclick="${pageVar}=${page};${renderFn}();"
-       style="min-width:30px;height:30px;padding:0 8px;border:1px solid ${active?'#6366f1':'#d1d5db'};
-              border-radius:6px;background:${active?'#6366f1':'#fff'};color:${active?'#fff':'#374151'};
-              font-size:12px;cursor:${disabled?'default':'pointer'};font-family:inherit;font-weight:${active?'700':'400'};" 
-       ${disabled?'disabled':''}>
-       ${label}
-     </button>`;
-  btns.push(makeBtn('‹', Math.max(1,current-1), current===1));
-  const start = Math.max(1, current-2), end = Math.min(total, current+2);
-  if(start > 1) btns.push(makeBtn('1',1), start>2?`<span style="color:#9ca3af;font-size:12px;padding:0 4px;">…</span>`:'');
-  for(let p=start;p<=end;p++) btns.push(makeBtn(p,p,false,p===current));
-  if(end < total) btns.push(end<total-1?`<span style="color:#9ca3af;font-size:12px;padding:0 4px;">…</span>`:'', makeBtn(total,total));
-  btns.push(makeBtn('›', Math.min(total,current+1), current===total));
-  return `<div style="display:flex;align-items:center;justify-content:center;gap:4px;padding:12px 0;">${btns.join('')}</div>`;
+  btns.push(mBtn('<i class="fas fa-chevron-left"></i>', Math.max(1,current-1), current<=1, false));
+  const start = Math.max(1, current-2), end = Math.min(totalPages, current+2);
+  if(start > 1){ btns.push(mBtn('1',1,false,false)); if(start>2) btns.push('<span class="page-ellipsis">…</span>'); }
+  for(let p=start;p<=end;p++) btns.push(mBtn(p,p,false,p===current));
+  if(end < totalPages){ if(end<totalPages-1) btns.push('<span class="page-ellipsis">…</span>'); btns.push(mBtn(totalPages,totalPages,false,false)); }
+  btns.push(mBtn('<i class="fas fa-chevron-right"></i>', Math.min(totalPages,current+1), current>=totalPages, false));
+  return `<div class="pagination"><span class="page-info">${total}건 중 ${s}-${e}</span><div class="page-btns">${btns.join('')}</div></div>`;
 }
 
 // ==================================================================

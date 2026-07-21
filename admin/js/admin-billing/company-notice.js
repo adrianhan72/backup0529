@@ -291,7 +291,11 @@ function _cenGetTargetContracts(){
   const nowYM = new Date().toISOString().slice(0,7); // 'YYYY-MM'
   const noticedThisMonth = new Set(
     _cenNoticeList
-      .filter(r => (r.noticed_at || r.created_at || '').slice(0,7) === nowYM)
+      .filter(r => {
+        const raw = r.noticed_at || r.created_at || '';
+        const ym = typeof raw === 'string' ? raw.slice(0,7) : String(raw).slice(0,7);
+        return ym === nowYM;
+      })
       .map(r => r.contract_id)
       .filter(Boolean)
   );
@@ -332,7 +336,11 @@ function renderCenStats(){
   const normal = targets.filter(c=>c._daysLeft>=15).length;
 
   const nowYM = new Date().toISOString().slice(0,7);
-  const done  = _cenNoticeList.filter(r=>(r.noticed_at||r.created_at||'').slice(0,7)===nowYM).length;
+  const done  = _cenNoticeList.filter(r=>{
+    const raw = r.noticed_at || r.created_at || '';
+    const ym = typeof raw === 'string' ? raw.slice(0,7) : String(raw).slice(0,7);
+    return ym === nowYM;
+  }).length;
 
   document.getElementById('cen-stat-urgent').textContent = urgent;
   document.getElementById('cen-stat-soon').textContent   = soon;
@@ -394,9 +402,9 @@ function renderCenTargetList(){
         <input type="checkbox" class="cen-chk cen-row-chk" data-idx="${globalIdx}" data-contract-id="${c.id}"
           onchange="cenUpdateSelectedCount()" />
       </td>
-      <td style="font-weight:700;color:#1f2937;">${empName}</td>
-      <td><span class="badge ${CAT_BADGE_CLS[normalizeContractType(c._cat)]||'badge-gray'}" style="font-size:11px;">${contractTypeLabel(c._cat)}</span></td>
-      <td style="font-size:12px;color:#374151;">${coName}</td>
+      <td style="font-size:12px;color:#111827;font-weight:700;">${coName}</td>
+      <td style="font-weight:700;color:#111827;font-weight:700;">${empName}</td>
+      <td><span class="badge ${CAT_BADGE_CLS[normalizeContractType(c._cat)]||'badge-gray'}">${contractTypeLabel(c._cat)}</span></td>
       <td style="font-size:12px;color:#6b7280;font-weight:600;">${c.contract_end}</td>
       <td>${fmtDday(c._daysLeft)}</td>
       <td style="font-size:12px;">${hasPhone ? phone : '<span style="color:#d1d5db;">미등록</span>'}</td>

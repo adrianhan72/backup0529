@@ -136,7 +136,7 @@ function renderPICoDraftBanner(){
         <div style="display:flex;align-items:center;gap:8px;">
           <i class="fas fa-clock-rotate-left" style="color:#d97706;font-size:15px;"></i>
           <span style="font-size:13px;font-weight:700;color:#92400e;">임시저장된 급여 입력</span>
-          <span style="background:#fef3c7;color:#b45309;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;">${drafts.length}건</span>
+          <span style="background:#fef3c7;color:#b45309;font-size:11px;padding:2px 8px;border-radius:10px;">${drafts.length}건</span>
         </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;">
@@ -804,7 +804,7 @@ function _buildDashCompanyRow(c){
   const safeId   = c.id.replace(/'/g, "\\'");
   let statusCell;
   if(pendingCnt > 0){
-    statusCell = `<span class="dash-co-pending"><i class="fas fa-exclamation-circle" style="font-size:11px;margin-right:3px;"></i>${pendingCnt}명 미입력</span>`;
+    statusCell = `<span class="dash-co-pending"><i class="fas fa-exclamation-circle"></i> ${pendingCnt}명 미입력</span>`;
   } else if(totalValid === 0){
     statusCell = `<span style="font-size:12px;color:#9ca3af;">유효계약 없음</span>`;
   } else {

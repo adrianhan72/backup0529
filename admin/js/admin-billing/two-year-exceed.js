@@ -170,7 +170,7 @@ function render2YrTargetList(){
     return `<tr>
       <td style="font-weight:700;color:#111827;">${x.empName}</td>
       <td style="font-size:12px;color:#374151;">${x.company}</td>
-      <td><span class="badge badge-purple" style="font-size:11px;">${catText}</span></td>
+      <td><span class="badge ${empCatBadge(x.activeContract?.contract_type)}">${catText}</span></td>
       <td style="font-size:12px;color:#6b7280;">${x.firstStart || '-'}</td>
       <td style="font-size:12px;font-weight:600;color:${x.status==='exceeded'?'#dc2626':'#d97706'};">${fmtDays(x.totalDays)}</td>
       <td>${statusBadge}</td>

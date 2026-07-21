@@ -5,19 +5,19 @@
         <div class="section-title">
           <i class="fas fa-clock" style="color:#f59e0b;"></i>
           <span>예약 현황</span>
-          <span id="cnl-reserve-badge" style="background:#fef3c7;color:#b45309;font-size:12px;font-weight:700;padding:2px 10px;border-radius:20px;"></span>
+          <span id="cnl-reserve-badge" style="background:#fef3c7;color:#b45309;font-size:12px;padding:2px 10px;border-radius:20px;"></span>
         </div>
-        <div class="card" style="padding:0;overflow:hidden;border:1.5px solid #fde68a;">
-          <div style="overflow-x:auto;">
-            <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <div class="card" style="padding:0;overflow:hidden;">
+          <div class="table-wrap" style="overflow-x:auto;">
+            <table class="tbl-std" style="table-layout:fixed;">
               <thead>
-                <tr style="background:linear-gradient(135deg,#fffbeb,#fef3c7);border-bottom:2px solid #fde68a;">
-                  <th style="padding:10px 14px;text-align:left;font-weight:700;color:#92400e;white-space:nowrap;width:150px;">예약 일시</th>
-                  <th style="padding:10px 14px;text-align:left;font-weight:700;color:#92400e;white-space:nowrap;width:130px;" id="cnl-reserve-th-company">고객사</th>
-                  <th style="padding:10px 14px;text-align:left;font-weight:700;color:#92400e;white-space:nowrap;width:130px;">알림 유형</th>
-                  <th style="padding:10px 14px;text-align:left;font-weight:700;color:#92400e;">제목</th>
-                  <th style="padding:10px 14px;text-align:left;font-weight:700;color:#92400e;white-space:nowrap;width:70px;">발송자</th>
-                  <th style="padding:10px 14px;text-align:center;font-weight:700;color:#92400e;width:160px;">작업</th>
+                <tr>
+                  <th style="width:155px;">예약 일시</th>
+                  <th style="width:140px;" id="cnl-reserve-th-company">고객사</th>
+                  <th style="width:145px;">알림 유형</th>
+                  <th style="width:25%;min-width:180px;">제목</th>
+                  <th style="width:80px;">발송자</th>
+                  <th class="ctr" style="width:175px;">작업</th>
                 </tr>
               </thead>
               <tbody id="cnl-reserve-tbody"></tbody>
@@ -32,8 +32,7 @@
         <div class="section-title">
           <i class="fas fa-paper-plane"></i>
           <span>발송 이력</span>
-          <span id="cnl-total-badge" style="font-size:12px;color:#64748b;font-weight:600;"></span>
-          <button onclick="cnlReload()" class="btn btn-sm btn-secondary btn-refresh" style="margin-left:auto;"><i class="fas fa-sync-alt"></i> 목록 새로고침</button>
+          <span id="cnl-total-badge" style="font-size:12px;color:#64748b;"></span>
         </div>
 
         <!-- 필터 바 -->
@@ -86,16 +85,16 @@
         <!-- 이력 테이블 -->
         <div class="card tbl-loading-wrap" id="cnl-table-card" style="padding:0;overflow:hidden;">
           <div style="overflow-x:auto;">
-            <table style="width:100%;border-collapse:collapse;font-size:13px;">
+            <table class="tbl-std" style="table-layout:fixed;">
               <thead>
-                <tr style="background:linear-gradient(135deg,#f1f5f9,#e8ecf3);border-bottom:2px solid #e2e8f0;">
-                  <th style="padding:11px 14px;text-align:left;font-weight:700;color:#475569;white-space:nowrap;width:128px;">발송 일시</th>
-                  <th style="padding:11px 14px;text-align:left;font-weight:700;color:#475569;white-space:nowrap;width:130px;" id="cnl-th-company">고객사</th>
-                  <th style="padding:11px 14px;text-align:left;font-weight:700;color:#475569;white-space:nowrap;width:148px;">알림 유형</th>
-                  <th style="padding:11px 14px;text-align:left;font-weight:700;color:#475569;">제목</th>
-                  <th style="padding:11px 14px;text-align:center;font-weight:700;color:#475569;width:82px;">확인</th>
-                  <th style="padding:11px 14px;text-align:left;font-weight:700;color:#475569;white-space:nowrap;width:62px;">발송자</th>
-                  <th style="padding:11px 14px;text-align:center;font-weight:700;color:#475569;width:70px;">상세</th>
+                <tr>
+                  <th style="width:140px;">발송 일시</th>
+                  <th style="width:140px;" id="cnl-th-company">고객사</th>
+                  <th style="width:155px;">알림 유형</th>
+                  <th style="width:25%;min-width:180px;">제목</th>
+                  <th class="ctr" style="width:90px;">확인</th>
+                  <th style="width:75px;">발송자</th>
+                  <th class="ctr" style="width:75px;">상세</th>
                 </tr>
               </thead>
               <tbody id="cnl-tbody"></tbody>

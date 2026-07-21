@@ -1,4 +1,4 @@
-//  고객사앱 알림 이력 (page-company-notice-log)
+﻿//  고객사앱 알림 이력 (page-company-notice-log)
 // ======================================================================
 
 const CNL_PAGE_SIZE = 20;  // 페이지당 20건
@@ -173,20 +173,10 @@ async function cnlLoadData(){
   renderCnlTable();
 }
 
-/** 새로고침 */
+/** 새로고침 (topbar 버튼에서 호출) */
 async function cnlReload(){
-  const btn = document.querySelector('[onclick="cnlReload()"]');
-  if(!btn || btn.disabled) return; // prevent double-click
-  const icon = btn.querySelector('i');
-  try {
-    _cnlLoaded = false;
-    if(icon) icon.classList.add('fa-spin');
-    btn.disabled = true;
-    await cnlLoadData();
-  } finally {
-    if(icon) icon.classList.remove('fa-spin');
-    btn.disabled = false;
-  }
+  _cnlLoaded = false;
+  await cnlLoadData();
 }
 
 /** 예약 현황 카드 렌더 (gn_status === 'scheduled' 건만) */
@@ -229,34 +219,32 @@ function renderCnlReserveCard(){
     const y = d.getFullYear(), mo = String(d.getMonth()+1).padStart(2,'0'),
           dd = String(d.getDate()).padStart(2,'0'),
           hh = String(d.getHours()).padStart(2,'0'), mm = String(d.getMinutes()).padStart(2,'0');
-    return `${y}.${mo}.${dd} <span style="color:#b45309;font-size:11.5px;font-weight:700;">${hh}:${mm}</span>`;
+    return `${y}.${mo}.${dd} <span style="color:#475569;font-size:11.5px;">${hh}:${mm}</span>`;
   };
 
   const typeBadge = t => {
     const label = CNL_TYPE_LABEL[t] || t || '-';
     const clr   = CNL_TYPE_COLOR[t] || { bg:'#f3f4f6', color:'#374151' };
     return `<span style="display:inline-block;background:${clr.bg};color:${clr.color};
-      padding:3px 9px;border-radius:20px;font-size:11.5px;font-weight:700;white-space:nowrap;">${label}</span>`;
+      padding:3px 9px;border-radius:20px;font-size:11.5px;white-space:nowrap;">${label}</span>`;
   };
 
   tbody.innerHTML = list.map((n, idx) => {
-    const rowBg = idx % 2 === 0 ? '#fffdf0' : '#fff';
     const coCell = showCoCol
-      ? `<td style="padding:10px 14px;font-size:12.5px;font-weight:700;color:#92400e;white-space:nowrap;max-width:130px;overflow:hidden;text-overflow:ellipsis;"
+      ? `<td style="font-size:12.5px;font-weight:700;color:#111827;white-space:nowrap;max-width:140px;overflow:hidden;text-overflow:ellipsis;"
              title="${(n.company_name||'').replace(/"/g,'&quot;')}">${n.company_name||'-'}</td>`
       : '';
     const titleShort = (n.title||'').length > 40 ? (n.title||'').slice(0,40)+'…' : (n.title||'-');
     const displayTime = n.gn_scheduled_at || n.sent_at;
 
-    return `<tr style="background:${rowBg};border-bottom:1px solid #fef3c7;"
-               onmouseover="this.style.background='#fef9c3'" onmouseout="this.style.background='${rowBg}'">
-      <td style="padding:10px 14px;white-space:nowrap;font-size:12.5px;color:#374151;">${fmtDt(displayTime)}</td>
+    return `<tr>
+      <td style="white-space:nowrap;font-size:12.5px;color:#374151;">${fmtDt(displayTime)}</td>
       ${coCell}
-      <td style="padding:10px 14px;">${typeBadge(n.notice_type)}</td>
-      <td style="padding:10px 14px;font-size:12.5px;color:#1e293b;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+      <td>${typeBadge(n.notice_type)}</td>
+      <td style="font-size:12.5px;color:#1e293b;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
           title="${(n.title||'').replace(/"/g,'&quot;')}">${titleShort}</td>
-      <td style="padding:10px 14px;font-size:12px;color:#64748b;white-space:nowrap;">${_resolveAdminName(n.sent_by)||'-'}</td>
-      <td style="padding:10px 14px;text-align:center;">
+      <td style="font-size:12px;color:#64748b;white-space:nowrap;">${_resolveAdminName(n.sent_by)||'-'}</td>
+      <td class="ctr">
         <div style="display:flex;gap:4px;justify-content:center;align-items:center;flex-wrap:nowrap;">
           <button onclick="cancelGnScheduled('${n.id}')" class="btn btn-secondary btn-sm">
             <i class="fas fa-ban"></i> 취소
@@ -294,25 +282,25 @@ function openCnlDetailById(recordId){
   const isGeneral = n.notice_type === 'general';
   const gnSt = isGeneral ? (n.gn_status || 'sent') : null;
   const gnStatusTxt = gnSt === 'scheduled'
-    ? `<span style="display:inline-flex;align-items:center;gap:3px;background:#fef3c7;color:#b45309;padding:2px 10px;border-radius:20px;font-size:11.5px;font-weight:700;"><i class="fas fa-clock" style="font-size:9px;"></i> 예약 대기</span>`
+    ? `<span style="display:inline-flex;align-items:center;gap:3px;background:#fef3c7;color:#b45309;padding:2px 10px;border-radius:20px;font-size:11.5px;"><i class="fas fa-clock" style="font-size:9px;"></i> 예약 대기</span>`
     : gnSt === 'cancelled'
-    ? `<span style="display:inline-flex;align-items:center;gap:3px;background:#fee2e2;color:#991b1b;padding:2px 10px;border-radius:20px;font-size:11.5px;font-weight:700;"><i class="fas fa-ban" style="font-size:9px;"></i> 취소됨</span>`
-    : `<span style="display:inline-flex;align-items:center;gap:3px;background:#dcfce7;color:#166534;padding:2px 10px;border-radius:20px;font-size:11.5px;font-weight:700;"><i class="fas fa-check" style="font-size:9px;"></i> 발송 완료</span>`;
+    ? `<span style="display:inline-flex;align-items:center;gap:3px;background:#fee2e2;color:#991b1b;padding:2px 10px;border-radius:20px;font-size:11.5px;"><i class="fas fa-ban" style="font-size:9px;"></i> 취소됨</span>`
+    : `<span style="display:inline-flex;align-items:center;gap:3px;background:#dcfce7;color:#166534;padding:2px 10px;border-radius:20px;font-size:11.5px;"><i class="fas fa-check" style="font-size:9px;"></i> 발송 완료</span>`;
   const displayTime  = (isGeneral && gnSt === 'scheduled') ? (n.gn_scheduled_at || n.sent_at) : n.sent_at;
   const timeLabel    = (isGeneral && gnSt === 'scheduled') ? '예약 일시' : '발송 일시';
   const gnStatusRow  = (isGeneral && gnSt !== 'sent') ? `<span style="color:#64748b;font-weight:600;">발송 상태</span><span>${gnStatusTxt}</span>` : '';
-  const employeeRow  = !isGeneral ? `<span style="color:#64748b;font-weight:600;">근로자</span><span style="color:#4f46e5;font-weight:700;">${n.employee_name||'—'}</span>` : '';
+  const employeeRow  = !isGeneral ? `<span style="color:#64748b;font-weight:600;">근로자</span><span style="color:#4f46e5;">${n.employee_name||'—'}</span>` : '';
   const _isReadDetail = v => v === true || v === 'true' || v === 1 || v === '1';
   const readTxt = _isReadDetail(n.is_read)
-    ? `<span style="color:#166534;font-weight:700;"><i class="fas fa-check-circle"></i> 읽음</span>`
-    : `<span style="color:#dc2626;font-weight:700;"><i class="fas fa-circle" style="font-size:10px;"></i> 미확인</span>`;
+    ? `<span style="color:#166534;"><i class="fas fa-check-circle"></i> 읽음</span>`
+    : `<span style="color:#dc2626;"><i class="fas fa-circle" style="font-size:10px;"></i> 미확인</span>`;
   const readRow = (isGeneral && gnSt === 'cancelled') ? '' : `<span style="color:#64748b;font-weight:600;">확인 여부</span><span>${readTxt}</span>`;
 
   body.innerHTML = `
     <div style="background:${isGeneral?'#fffbeb':'#f8fafc'};border:1px solid ${isGeneral?'#fde68a':'#e2e8f0'};border-radius:10px;padding:14px 16px;margin-bottom:16px;font-size:12.5px;line-height:2;">
       <div style="display:grid;grid-template-columns:90px 1fr;gap:2px 0;">
         <span style="color:#64748b;font-weight:600;">알림 유형</span>
-        <span><span style="display:inline-block;background:${typeClr.bg};color:${typeClr.color};padding:2px 10px;border-radius:20px;font-size:11.5px;font-weight:700;">${typeLbl}</span></span>
+        <span><span style="display:inline-block;background:${typeClr.bg};color:${typeClr.color};padding:2px 10px;border-radius:20px;font-size:11.5px;">${typeLbl}</span></span>
         <span style="color:#64748b;font-weight:600;">${timeLabel}</span>
         <span style="color:#1e293b;font-weight:600;">${fmtDtFull(displayTime)}</span>
         <span style="color:#64748b;font-weight:600;">고객사</span>
@@ -352,7 +340,8 @@ function renderCnlTable(){
     if(filterType    && n.notice_type !== filterType)   return false;
     if(searchQ       && !(n.title||'').toLowerCase().includes(searchQ)) return false;
     if(dateFrom || dateTo){
-      const sentDt = (n.scheduled_at || n.created_at || '').slice(0,10);
+      const raw = n.sent_at || n.scheduled_at || n.created_at || '';
+      const sentDt = typeof raw === 'string' ? raw.slice(0,10) : String(raw).slice(0,10);
       if(dateFrom && sentDt < dateFrom) return false;
       if(dateTo   && sentDt > dateTo)   return false;
     }
@@ -397,33 +386,28 @@ function renderCnlTable(){
     const label = CNL_TYPE_LABEL[t] || t || '-';
     const clr   = CNL_TYPE_COLOR[t]  || { bg:'#f3f4f6', color:'#374151' };
     return `<span style="display:inline-block;background:${clr.bg};color:${clr.color};
-      padding:3px 9px;border-radius:20px;font-size:11.5px;font-weight:700;white-space:nowrap;">${label}</span>`;
+      padding:3px 9px;border-radius:20px;font-size:11.5px;white-space:nowrap;">${label}</span>`;
   };
 
   const _isRead = v => v === true || v === 'true' || v === 1 || v === '1';
   const readBadge = n =>
     _isRead(n.is_read)
-      ? `<span style="display:inline-flex;align-items:center;gap:3px;background:#dcfce7;color:#166534;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700;">
-           <i class="fas fa-check" style="font-size:10px;"></i> 읽음
-         </span>`
-      : `<span style="display:inline-flex;align-items:center;gap:3px;background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700;">
-           <i class="fas fa-circle" style="font-size:7px;"></i> 미확인
-         </span>`;
+      ? '<span class="badge badge-green"><i class="fas fa-check"></i> 읽음</span>'
+      : '<span class="badge badge-red"><i class="fas fa-circle"></i> 미확인</span>';
 
   // gn_status 배지 (general 타입 전용, 발송이력에는 sent/cancelled만 도달)
   const gnStatusBadge = st => {
-    if(st === 'cancelled') return `<span style="display:inline-flex;align-items:center;gap:3px;background:#fee2e2;color:#991b1b;padding:2px 9px;border-radius:12px;font-size:11px;font-weight:700;white-space:nowrap;"><i class="fas fa-ban" style="font-size:9px;"></i>취소됨</span>`;
-    return `<span style="display:inline-flex;align-items:center;gap:3px;background:#dcfce7;color:#166534;padding:2px 9px;border-radius:12px;font-size:11px;font-weight:700;white-space:nowrap;"><i class="fas fa-check" style="font-size:9px;"></i>발송완료</span>`;
+    if(st === 'cancelled') return `<span style="display:inline-flex;align-items:center;gap:3px;background:#fee2e2;color:#991b1b;padding:2px 9px;border-radius:12px;font-size:11px;white-space:nowrap;"><i class="fas fa-ban" style="font-size:9px;"></i>취소됨</span>`;
+    return `<span style="display:inline-flex;align-items:center;gap:3px;background:#dcfce7;color:#166534;padding:2px 9px;border-radius:12px;font-size:11px;white-space:nowrap;"><i class="fas fa-check" style="font-size:9px;"></i>발송완료</span>`;
   };
 
   tbody.innerHTML = pageData.map((n, idx) => {
-    const rowBg = idx % 2 === 0 ? '#fff' : '#fafbfc';
     const isGeneral = n.notice_type === 'general';
     const gnSt = isGeneral ? (n.gn_status || 'sent') : null;
 
     // 고객사 셀 (전체 모드일 때만 표시)
     const coCell = showCoCol
-      ? `<td style="padding:10px 14px;font-size:12.5px;font-weight:700;color:#4f46e5;white-space:nowrap;max-width:140px;overflow:hidden;text-overflow:ellipsis;" title="${(n.company_name||'').replace(/"/g,'&quot;')}">${n.company_name||'-'}</td>`
+      ? `<td style="font-size:12.5px;font-weight:700;color:#111827;white-space:nowrap;max-width:140px;overflow:hidden;text-overflow:ellipsis;" title="${(n.company_name||'').replace(/"/g,'&quot;')}">${n.company_name||'-'}</td>`
       : '';
 
     const titleShort = (n.title||'').length > 40 ? (n.title||'').slice(0,40)+'…' : (n.title||'-');
@@ -434,16 +418,15 @@ function renderCnlTable(){
       ? (gnSt === 'sent' ? readBadge(n) : gnStatusBadge(gnSt))
       : readBadge(n);
 
-    return `<tr style="background:${rowBg};border-bottom:1px solid #f1f5f9;"
-               onmouseover="this.style.background='#f0f4ff'" onmouseout="this.style.background='${rowBg}'">
-      <td style="padding:10px 14px;white-space:nowrap;font-size:12.5px;color:#374151;">${fmtDt(n.sent_at)}</td>
+    return `<tr>
+      <td style="white-space:nowrap;font-size:12.5px;color:#374151;">${fmtDt(n.sent_at)}</td>
       ${coCell}
-      <td style="padding:10px 14px;">${typeBadge(n.notice_type)}</td>
-      <td style="padding:10px 14px;font-size:12.5px;color:#1e293b;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+      <td>${typeBadge(n.notice_type)}</td>
+      <td style="font-size:12.5px;color:#1e293b;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
           title="${(n.title||'').replace(/"/g,'&quot;')}">${titleShort}</td>
-      <td style="padding:10px 8px;text-align:center;white-space:nowrap;">${confirmCell}</td>
-      <td style="padding:10px 8px;font-size:12px;color:#64748b;white-space:nowrap;">${_resolveAdminName(n.sent_by)||'-'}</td>
-      <td style="padding:10px 8px;text-align:center;">
+      <td class="ctr" style="white-space:nowrap;">${confirmCell}</td>
+      <td style="font-size:12px;color:#64748b;white-space:nowrap;">${_resolveAdminName(n.sent_by)||'-'}</td>
+      <td class="ctr">
         <button onclick="openCnlDetail(${safeIdx})" class="btn btn-indigo btn-sm">
           <i class="fas fa-eye"></i> 보기
         </button>
@@ -463,25 +446,16 @@ function renderCnlPagination(total){
   if(totalPages <= 1 && total <= CNL_PAGE_SIZE){ container.innerHTML = ''; return; }
   const s = Math.min((_cnlPage-1)*CNL_PAGE_SIZE+1, total);
   const e = Math.min(_cnlPage*CNL_PAGE_SIZE, total);
-  const makeBtn = (label, page, disabled=false, active=false) =>
-    `<button onclick="_cnlPage=${page};renderCnlTable();"
-       style="min-width:30px;height:30px;padding:0 8px;border:1px solid ${active?'#6366f1':'#d1d5db'};
-              border-radius:6px;background:${active?'#6366f1':'#fff'};color:${active?'#fff':'#374151'};
-              font-size:12px;cursor:${disabled?'default':'pointer'};
-              font-family:inherit;font-weight:${active?'700':'400'};"
-       ${disabled?'disabled':''}>${label}</button>`;
+  const mBtn = (label, pg, disabled, active) =>
+    `<button class="page-btn${active?' active':''}" onclick="_cnlPage=${pg};renderCnlTable();"${disabled?' disabled':''}>${label}</button>`;
   const btns = [];
-  btns.push(makeBtn('‹', Math.max(1,_cnlPage-1), _cnlPage===1));
+  btns.push(mBtn('<i class="fas fa-chevron-left"></i>', Math.max(1,_cnlPage-1), _cnlPage<=1, false));
   const start = Math.max(1, _cnlPage-2), end = Math.min(totalPages, _cnlPage+2);
-  if(start > 1){ btns.push(makeBtn('1',1)); if(start>2) btns.push(`<span style="color:#9ca3af;font-size:12px;padding:0 4px;">…</span>`); }
-  for(let p=start;p<=end;p++) btns.push(makeBtn(p,p,false,p===_cnlPage));
-  if(end < totalPages){ if(end<totalPages-1) btns.push(`<span style="color:#9ca3af;font-size:12px;padding:0 4px;">…</span>`); btns.push(makeBtn(totalPages,totalPages)); }
-  btns.push(makeBtn('›', Math.min(totalPages,_cnlPage+1), _cnlPage===totalPages));
-  container.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 4px;">
-      <span style="font-size:12.5px;color:#64748b;">총 <strong>${total}</strong>건 중 ${s}–${e}번째</span>
-      <div style="display:flex;align-items:center;gap:4px;">${btns.join('')}</div>
-    </div>`;
+  if(start > 1){ btns.push(mBtn('1',1,false,false)); if(start>2) btns.push('<span class="page-ellipsis">…</span>'); }
+  for(let p=start;p<=end;p++) btns.push(mBtn(p,p,false,p===_cnlPage));
+  if(end < totalPages){ if(end<totalPages-1) btns.push('<span class="page-ellipsis">…</span>'); btns.push(mBtn(totalPages,totalPages,false,false)); }
+  btns.push(mBtn('<i class="fas fa-chevron-right"></i>', Math.min(totalPages,_cnlPage+1), _cnlPage>=totalPages, false));
+  container.innerHTML = `<div class="pagination"><span class="page-info">총 <strong>${total}</strong>건 중 ${s}–${e}번째</span><div class="page-btns">${btns.join('')}</div></div>`;
 }
 
 /** 상세 모달 열기 */
@@ -511,17 +485,17 @@ function openCnlDetail(listIdx){
   const typeLbl = CNL_TYPE_LABEL[n.notice_type] || n.notice_type || '-';
   const typeClr = CNL_TYPE_COLOR[n.notice_type] || { bg:'#f3f4f6', color:'#374151' };
   const readTxt = n.is_read
-    ? `<span style="color:#166534;font-weight:700;"><i class="fas fa-check-circle"></i> 읽음 (${fmtDtFull(n.read_at)})</span>`
-    : `<span style="color:#dc2626;font-weight:700;"><i class="fas fa-circle" style="font-size:10px;"></i> 미확인</span>`;
+    ? `<span style="color:#166534;"><i class="fas fa-check-circle"></i> 읽음 (${fmtDtFull(n.read_at)})</span>`
+    : `<span style="color:#dc2626;"><i class="fas fa-circle" style="font-size:10px;"></i> 미확인</span>`;
 
   // general 타입 전용: gn_status 처리
   const isGeneral = n.notice_type === 'general';
   const gnSt = isGeneral ? (n.gn_status || 'sent') : null;
   const gnStatusTxt = gnSt === 'scheduled'
-    ? `<span style="display:inline-flex;align-items:center;gap:3px;background:#fef3c7;color:#b45309;padding:2px 10px;border-radius:20px;font-size:11.5px;font-weight:700;"><i class="fas fa-clock" style="font-size:9px;"></i> 예약 대기</span>`
+    ? `<span style="display:inline-flex;align-items:center;gap:3px;background:#fef3c7;color:#b45309;padding:2px 10px;border-radius:20px;font-size:11.5px;"><i class="fas fa-clock" style="font-size:9px;"></i> 예약 대기</span>`
     : gnSt === 'cancelled'
-    ? `<span style="display:inline-flex;align-items:center;gap:3px;background:#fee2e2;color:#991b1b;padding:2px 10px;border-radius:20px;font-size:11.5px;font-weight:700;"><i class="fas fa-ban" style="font-size:9px;"></i> 취소됨</span>`
-    : `<span style="display:inline-flex;align-items:center;gap:3px;background:#dcfce7;color:#166534;padding:2px 10px;border-radius:20px;font-size:11.5px;font-weight:700;"><i class="fas fa-check" style="font-size:9px;"></i> 발송 완료</span>`;
+    ? `<span style="display:inline-flex;align-items:center;gap:3px;background:#fee2e2;color:#991b1b;padding:2px 10px;border-radius:20px;font-size:11.5px;"><i class="fas fa-ban" style="font-size:9px;"></i> 취소됨</span>`
+    : `<span style="display:inline-flex;align-items:center;gap:3px;background:#dcfce7;color:#166534;padding:2px 10px;border-radius:20px;font-size:11.5px;"><i class="fas fa-check" style="font-size:9px;"></i> 발송 완료</span>`;
   const displayTime = (isGeneral && gnSt === 'scheduled') ? (n.gn_scheduled_at || n.sent_at) : n.sent_at;
   const timeLabel   = (isGeneral && gnSt === 'scheduled') ? '예약 일시' : '발송 일시';
 
@@ -531,7 +505,7 @@ function openCnlDetail(listIdx){
         <span>${gnStatusTxt}</span>` : '';
   const employeeRow = !isGeneral ? `
         <span style="color:#64748b;font-weight:600;">근로자</span>
-        <span style="color:#4f46e5;font-weight:700;">${n.employee_name||'—'}</span>` : '';
+        <span style="color:#4f46e5;">${n.employee_name||'—'}</span>` : '';
   const readRow = (isGeneral && gnSt !== 'sent') ? '' : `
         <span style="color:#64748b;font-weight:600;">확인 여부</span>
         <span>${readTxt}</span>`;
@@ -541,7 +515,7 @@ function openCnlDetail(listIdx){
     <div style="background:${isGeneral?'#fffbeb':'#f8fafc'};border:1px solid ${isGeneral?'#fde68a':'#e2e8f0'};border-radius:10px;padding:14px 16px;margin-bottom:16px;font-size:12.5px;line-height:2;">
       <div style="display:grid;grid-template-columns:90px 1fr;gap:2px 0;">
         <span style="color:#64748b;font-weight:600;">알림 유형</span>
-        <span><span style="display:inline-block;background:${typeClr.bg};color:${typeClr.color};padding:2px 10px;border-radius:20px;font-size:11.5px;font-weight:700;">${typeLbl}</span></span>
+        <span><span style="display:inline-block;background:${typeClr.bg};color:${typeClr.color};padding:2px 10px;border-radius:20px;font-size:11.5px;">${typeLbl}</span></span>
         <span style="color:#64748b;font-weight:600;">${timeLabel}</span>
         <span style="color:#1e293b;font-weight:600;">${fmtDtFull(displayTime)}</span>
         <span style="color:#64748b;font-weight:600;">고객사</span>

@@ -134,17 +134,19 @@ function _renderCompanyHistory(companyId){
   const pager = document.getElementById('cm-history-pager');
   if(!pager) return;
   if(totalPages <= 1){ pager.innerHTML = ''; return; }
-  let pHtml = `<div class="cm-hist-pager">`;
-  pHtml += `<button class="cm-hist-page-btn" ${_cmHistPage<=1?'disabled':''} onclick="_cmHistGoPage(${_cmHistPage-1})"><i class="fas fa-chevron-left"></i></button>`;
-  // 최대 5개 페이지 버튼
+  const s = Math.min((_cmHistPage-1)*_CM_HIST_PAGE_SIZE+1, total);
+  const e = Math.min(_cmHistPage*_CM_HIST_PAGE_SIZE, total);
+  const mBtn = (label, pg, disabled, active) =>
+    `<button class="page-btn${active?' active':''}" onclick="_cmHistGoPage(${pg})"${disabled?' disabled':''}>${label}</button>`;
+  const btns = [];
+  btns.push(mBtn('<i class="fas fa-chevron-left"></i>', _cmHistPage-1, _cmHistPage<=1, false));
   const pStart = Math.max(1, _cmHistPage-2);
   const pEnd   = Math.min(totalPages, pStart+4);
   for(let p=pStart; p<=pEnd; p++){
-    pHtml += `<button class="cm-hist-page-btn${p===_cmHistPage?' active':''}" onclick="_cmHistGoPage(${p})">${p}</button>`;
+    btns.push(mBtn(p, p, false, p===_cmHistPage));
   }
-  pHtml += `<button class="cm-hist-page-btn" ${_cmHistPage>=totalPages?'disabled':''} onclick="_cmHistGoPage(${_cmHistPage+1})"><i class="fas fa-chevron-right"></i></button>`;
-  pHtml += `<span class="cm-hist-page-info">${_cmHistPage} / ${totalPages} 페이지 (총 ${total}건)</span></div>`;
-  pager.innerHTML = pHtml;
+  btns.push(mBtn('<i class="fas fa-chevron-right"></i>', _cmHistPage+1, _cmHistPage>=totalPages, false));
+  pager.innerHTML = `<div class="pagination"><span class="page-info">총 <strong>${total}</strong>건 중 ${s}–${e}번째</span><div class="page-btns">${btns.join('')}</div></div>`;
 }
 
 function _cmHistGoPage(p){

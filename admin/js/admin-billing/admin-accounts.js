@@ -68,9 +68,9 @@ function _aaRenderTable(){
 
     // ── 배지 ──
     const masterBadge = isMaster
-      ? '<span class="badge badge-red" style="margin-left:6px;font-size:10px;"><i class="fas fa-crown" style="margin-right:2px;"></i>마스터</span>' : '';
+      ? '<span class="badge badge-red" style="margin-left:6px;"><i class="fas fa-crown" style="margin-right:2px;"></i>마스터</span>' : '';
     const selfBadge = isSelf
-      ? '<span class="badge badge-blue" style="margin-left:6px;font-size:10px;">접속 중</span>' : '';
+      ? '<span class="badge badge-blue" style="margin-left:6px;">접속 중</span>' : '';
 
     // ── 등록일 ──
     const dt    = a.created_at ? new Date(Number(a.created_at)) : null;

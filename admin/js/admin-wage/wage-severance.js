@@ -179,23 +179,23 @@ function sevStatusBadge(emp, contract){
   const today = new Date().toISOString().slice(0,10);
   if(contract.status === CONTRACT_STATUS.TERMINATED || emp?.status===EMP_STATUS.RESIGNED || emp?.status===EMP_STATUS.RESIGNED){
     const resignDate = emp?.resign_date || contract.terminate_date || contract.contract_end || '';
-    return `<span style="display:inline-block;padding:2px 8px;border-radius:10px;background:#fee2e2;color:#dc2626;font-size:11px;font-weight:600;">해지·퇴직${resignDate?' ('+resignDate+')':''}</span>`;
+    return `<span class="badge badge-red">해지·퇴직${resignDate?' ('+resignDate+')':''}</span>`;
   }
   if(contract.status === CONTRACT_STATUS.EXPIRED){
-    return `<span style="display:inline-block;padding:2px 8px;border-radius:10px;background:#fef3c7;color:#b45309;font-size:11px;font-weight:600;">만료${contract.contract_end?' ('+contract.contract_end+')':''}</span>`;
+    return `<span class="badge badge-amber">만료${contract.contract_end?' ('+contract.contract_end+')':''}</span>`;
   }
   // 활성 계약 중 종료일이 임박한 경우 (90일 이내)
   if(contract.contract_end && contract.contract_type !== CONTRACT_TYPE.REGULAR){
     const endDate = new Date(contract.contract_end);
     const diffDays = Math.ceil((endDate - new Date()) / 86400000);
     if(!isNaN(endDate) && diffDays >= 0 && diffDays <= 90){
-      return `<span style="display:inline-block;padding:2px 8px;border-radius:10px;background:#fef9c3;color:#854d0e;font-size:11px;font-weight:600;">만료예정 D-${diffDays} (${contract.contract_end})</span>`;
+      return `<span class="badge badge-yellow">만료예정 D-${diffDays} (${contract.contract_end})</span>`;
     }
     if(!isNaN(endDate) && diffDays < 0){
-      return `<span style="display:inline-block;padding:2px 8px;border-radius:10px;background:#fef3c7;color:#b45309;font-size:11px;font-weight:600;">만료 (${contract.contract_end})</span>`;
+      return `<span class="badge badge-amber">만료 (${contract.contract_end})</span>`;
     }
   }
-  return `<span style="display:inline-block;padding:2px 8px;border-radius:10px;background:#dcfce7;color:#15803d;font-size:11px;font-weight:600;">재직중</span>`;
+  return '<span class="badge badge-green">재직중</span>';
 }
 
 // ── 메인 렌더 (탭1 + 탭2 모두) ──
@@ -302,7 +302,7 @@ function renderSevStatusTab(){
     if(empContracts.length === 0){
       // 계약 데이터 없음 — 입사일만 표시
       contractRows = `<tr>
-        <td style="padding:7px 10px;font-size:12px;color:#9ca3af;border-bottom:1px dashed #f3f4f6;" colspan="2">계약 데이터 없음</td>
+        <td style="font-size:12px;color:#9ca3af;border-bottom:1px dashed #f3f4f6;" colspan="2">계약 데이터 없음</td>
       </tr>`;
     } else {
       empContracts.forEach((c, idx) => {
@@ -311,47 +311,43 @@ function renderSevStatusTab(){
         const cEndForCalc = c.contract_end || todayStr;
         const cTenure = calcTenure(c.contract_start || hireDate, cEndForCalc);
         const isLast = idx === empContracts.length - 1;
-        const rowBg = idx % 2 === 0 ? '' : 'background:#fafaf8;';
         const numBadge = `<span style="display:inline-block;min-width:18px;height:18px;line-height:18px;text-align:center;border-radius:50%;background:#fef3c7;color:#92400e;font-size:10px;font-weight:700;margin-right:5px;">${idx+1}</span>`;
         const cStatus = c.status===COMPANY_STATUS.INACTIVE ? '<span style="font-size:10px;color:#dc2626;background:#fee2e2;padding:1px 5px;border-radius:4px;margin-left:4px;">해지</span>'
           : (c.status===CONTRACT_STATUS.EXPIRED||c.status===CONTRACT_STATUS.EXPIRED) ? '<span style="font-size:10px;color:#b45309;background:#fef3c7;padding:1px 5px;border-radius:4px;margin-left:4px;">만료</span>'
           : (c.status===EMP_STATUS.ACTIVE||c.status===CONTRACT_STATUS.ACTIVE||c.status === '유효') ? '<span style="font-size:10px;color:#15803d;background:#dcfce7;padding:1px 5px;border-radius:4px;margin-left:4px;">진행중</span>'
           : '';
-        contractRows += `<tr style="${rowBg}border-bottom:1px dashed ${isLast?'#fcd34d':'#f3f4f6'};cursor:pointer;"
+        contractRows += `<tr style="border-bottom:1px dashed ${isLast?'#fcd34d':'#f3f4f6'};cursor:pointer;"
           onclick="openSevContractModal('${c.id}','${(emp.name||'').replace(/'/g,"&#39;")}',${idx})"
-          onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='${rowBg?'#fafaf8':''}'"
           title="클릭하여 계약 조건 상세 보기">
-          <td style="padding:6px 10px;font-size:12px;color:#374151;">
+          <td style="font-size:12px;color:#374151;">
             ${numBadge}<span style="font-weight:500;">${cStart}</span>
             <span style="color:#9ca3af;margin:0 3px;">~</span>
             <span style="font-weight:500;">${cEnd}</span>${cStatus}
             <i class="fas fa-search" style="font-size:10px;color:#93c5fd;margin-left:5px;opacity:.8;"></i>
           </td>
-          <td style="padding:6px 10px;font-size:12px;color:#6b7280;text-align:right;">${cTenure.text}</td>
+          <td style="font-size:12px;color:#6b7280;text-align:right;">${cTenure.text}</td>
         </tr>`;
       });
     }
 
     // 총 재직기간 합산 행
     const totalRow = `<tr style="background:#fffbeb;border-top:1px solid #fcd34d;">
-      <td style="padding:7px 10px;font-size:12px;font-weight:700;color:#92400e;">
+      <td style="font-size:12px;font-weight:700;color:#92400e;">
         <i class="fas fa-sigma" style="font-size:10px;margin-right:4px;"></i>
         총 재직기간 &nbsp;<span style="font-weight:400;font-size:11px;color:#78716c;">(${fmtDate(hireDate)} ~ ${todayStr})</span>
       </td>
-      <td style="padding:7px 10px;text-align:right;">${totalDaysLabel}</td>
+      <td style="text-align:right;">${totalDaysLabel}</td>
     </tr>`;
 
     // ── 메인 그룹 행 (성명·부서 등은 첫 번째 계약 행에 rowspan) ──
     rows.push(`
       <tr style="border-top:2px solid #fde68a;">
-        <td rowspan="${mainRowspan}" style="padding:10px 10px;font-weight:700;font-size:13px;color:${nameColor};vertical-align:top;border-right:1px solid #fef3c7;">${emp.name||'-'}</td>
-        <td rowspan="${mainRowspan}" style="padding:10px 10px;color:#374151;vertical-align:top;border-right:1px solid #fef3c7;">${[emp.department,emp.position].filter(Boolean).join(' / ')||'-'}</td>
-        <td rowspan="${mainRowspan}" style="padding:10px 10px;color:#374151;vertical-align:top;border-right:1px solid #fef3c7;">${contractTypeLabel(emp.employment_category) || '-'}</td>
+        <td rowspan="${mainRowspan}" style="font-weight:700;font-size:13px;color:${nameColor};vertical-align:top;border-right:1px solid #fef3c7;">${emp.name||'-'}</td>
+        <td rowspan="${mainRowspan}" style="color:#374151;vertical-align:top;border-right:1px solid #fef3c7;">${[emp.department,emp.position].filter(Boolean).join(' / ')||'-'}</td>
+        <td rowspan="${mainRowspan}" style="color:#374151;vertical-align:top;border-right:1px solid #fef3c7;">${contractTypeLabel(emp.employment_category) || '-'}</td>
         ${empContracts.length > 0 ? `
-          <td style="padding:6px 10px;font-size:12px;color:#374151;cursor:pointer;"
+          <td style="font-size:12px;color:#374151;cursor:pointer;"
             onclick="openSevContractModal('${empContracts[0].id}','${(emp.name||'').replace(/'/g,"&#39;")}',0)"
-            onmouseover="this.parentElement.style.background='#eff6ff'"
-            onmouseout="this.parentElement.style.background=''"
             title="클릭하여 계약 조건 상세 보기">
             <span style="display:inline-block;min-width:18px;height:18px;line-height:18px;text-align:center;border-radius:50%;background:#fef3c7;color:#92400e;font-size:10px;font-weight:700;margin-right:5px;">1</span>
             <span style="font-weight:500;">${fmtDate(empContracts[0].contract_start)}</span>
@@ -362,7 +358,7 @@ function renderSevStatusTab(){
               :(empContracts[0].status===EMP_STATUS.ACTIVE||empContracts[0].status===CONTRACT_STATUS.ACTIVE||empContracts[0].status==='유효')?'<span style="font-size:10px;color:#15803d;background:#dcfce7;padding:1px 5px;border-radius:4px;margin-left:4px;">진행중</span>':''}
             <i class="fas fa-search" style="font-size:10px;color:#93c5fd;margin-left:5px;opacity:.8;"></i>
           </td>
-          <td style="padding:6px 10px;font-size:12px;color:#6b7280;text-align:right;cursor:pointer;"
+          <td style="font-size:12px;color:#6b7280;text-align:right;cursor:pointer;"
             onclick="openSevContractModal('${empContracts[0].id}','${(emp.name||'').replace(/'/g,"&#39;")}',0)"
             title="클릭하여 계약 조건 상세 보기">${calcTenure(empContracts[0].contract_start||hireDate, empContracts[0].contract_end||todayStr).text}</td>
         ` : `<td style="padding:6px 10px;font-size:12px;color:#9ca3af;" colspan="2">계약 데이터 없음</td>`}

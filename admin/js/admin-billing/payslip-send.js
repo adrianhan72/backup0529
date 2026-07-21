@@ -245,12 +245,12 @@ function renderPssUnsentList(){
       ? 'background:#dbeafe;color:#1d4ed8;border:1px solid #93c5fd;cursor:pointer;'
       : 'background:#f3f4f6;color:#d1d5db;border:1px solid #e5e7eb;cursor:not-allowed;';
     return `<tr id="pss-urow-${idx}">
-      <td style="font-weight:700;color:#1f2937;">${emp.name || '-'}</td>
-      <td><span class="badge ${empCatBadge(cat)}" style="font-size:10.5px;padding:2px 7px;">${contractTypeLabel(cat)}</span></td>
+      <td style="font-weight:700;color:#111827;">${emp.name || '-'}</td>
+      <td><span class="badge ${empCatBadge(cat)}">${contractTypeLabel(cat)}</span></td>
       <td style="color:#6b7280;font-size:12px;">${phone || '<span style="color:#d1d5db;">미등록</span>'}</td>
       <td style="font-size:12px;">${hasEmail ? `<span style="color:#374151;">${email}</span>` : '<span style="color:#d1d5db;">미등록</span>'}</td>
       <td style="text-align:center;white-space:nowrap;">
-        <button onclick="_pssKakaoSendRow('${p.id}','${p.employee_id}')" style="background:linear-gradient(135deg,#ffe033,#f9d000);color:#3b1f00;border:1px solid #eab308;border-radius:6px;padding:4px 9px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;margin-right:3px;display:inline-flex;align-items:center;gap:4px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg>알림톡 발송</button>
+        <button onclick="_pssKakaoSendRow('${p.id}','${p.employee_id}')" style="background:#fee500;color:#3b1f00;border:1px solid #eab308;border-radius:6px;padding:4px 9px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;margin-right:3px;display:inline-flex;align-items:center;gap:4px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg>알림톡 발송</button>
         <button onclick="_pssEmailSendRow('${p.id}','${p.employee_id}')" ${hasEmail ? '' : 'disabled'} style="${emailBtnStyle}border-radius:6px;padding:4px 9px;font-size:11.5px;font-weight:600;font-family:inherit;margin-right:3px;">✉ 이메일 발송</button>
         <button onclick="_pssManualDoneRow('${p.id}','${p.employee_id}')" style="background:#f0fdf4;color:#166534;border:1px solid #86efac;border-radius:6px;padding:4px 9px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;"><i class="fas fa-hand-paper"></i> 수동교부 완료</button>
       </td>
@@ -530,7 +530,8 @@ function renderPssLogs(){
   const dateTo   = document.getElementById('pss-filter-date-to')?.value || '';
   if(dateFrom || dateTo){
     logs = logs.filter(l => {
-      const sentDt = (l.sent_at || '').slice(0,10);
+      const raw = l.sent_at || '';
+      const sentDt = typeof raw === 'string' ? raw.slice(0,10) : String(raw).slice(0,10);
       if(dateFrom && sentDt < dateFrom) return false;
       if(dateTo   && sentDt > dateTo)   return false;
       return true;
@@ -552,18 +553,22 @@ function renderPssLogs(){
   const paged = logs.slice((_pssLogPage-1)*PSS_LOG_ITEMS, _pssLogPage*PSS_LOG_ITEMS);
 
   const methodBadge = m => {
-    const cfg = {
-      [DISPATCH_METHOD.KAKAO]:  { bg:'#f9d000', color:'#3b1f00', icon:'M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z', isSvg:true },
-      [DISPATCH_METHOD.EMAIL]:  { bg:'#dbeafe', color:'#1e40af', fa:'fa-envelope' },
-      [DISPATCH_METHOD.MANUAL]: { bg:'#d1fae5', color:'#065f46', fa:'fa-hand-holding' },
-      '수정재발행':              { bg:'#fce7f3', color:'#9d174d', fa:'fa-sync-alt' },
+    const METHOD_CLS = {
+      [DISPATCH_METHOD.KAKAO]:  'badge-yellow',
+      [DISPATCH_METHOD.EMAIL]:  'badge-blue',
+      [DISPATCH_METHOD.MANUAL]: 'badge-green',
+      '수정재발행':              'badge-pink',
     };
-    const c = cfg[m] || { bg:'#f3f4f6', color:'#374151', fa:'fa-question' };
+    const badgeCls = METHOD_CLS[m] || 'badge-gray';
+    const iconCfg = {
+      [DISPATCH_METHOD.KAKAO]: `<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg>`,
+      [DISPATCH_METHOD.EMAIL]: '<i class="fas fa-envelope"></i>',
+      [DISPATCH_METHOD.MANUAL]: '<i class="fas fa-hand-holding"></i>',
+      '수정재발행': '<i class="fas fa-sync-alt"></i>',
+    };
+    const icon = iconCfg[m] || '<i class="fas fa-question"></i>';
     const label = DISPATCH_METHOD_LABEL[m] || m || '-';
-    const icon = c.isSvg
-      ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="${c.color}"><path d="${c.icon}"/></svg>`
-      : `<i class="fas ${c.fa}" style="font-size:11px;"></i>`;
-    return `<span style="display:inline-flex;align-items:center;gap:4px;background:${c.bg};color:${c.color};padding:2px 9px;border-radius:20px;font-size:11.5px;font-weight:700;white-space:nowrap;">${icon}${label}</span>`;
+    return `<span class="badge ${badgeCls}">${icon} ${label}</span>`;
   };
 
   tbody.innerHTML = paged.map(l => {
@@ -576,7 +581,7 @@ function renderPssLogs(){
     const meth = l.send_method || 'manual';
     return `<tr>
       <td style="font-weight:700;">${emp.name||l.employee_id||'-'}</td>
-      <td><span class="badge ${empCatBadge(cat)}" style="font-size:10.5px;padding:2px 7px;">${contractTypeLabel(cat)}</span></td>
+      <td><span class="badge ${empCatBadge(cat)}">${contractTypeLabel(cat)}</span></td>
       <td style="font-size:12px;color:#374151;">${l.pay_year||'-'}년 ${l.pay_month||'-'}월</td>
       <td style="font-size:12px;color:#374151;">${sentDt}</td>
       <td>${methodBadge(meth)}</td>
@@ -619,7 +624,7 @@ function openPssConfirmModal(payrollId, empId, year, month){
   document.getElementById('pss-confirm-info').innerHTML = `
     <div style="display:flex;flex-direction:column;gap:6px;">
       <div><span style="color:#7c3aed;font-weight:700;font-size:13.5px;">${emp.name||'-'}</span>
-        <span class="badge ${empCatBadge(emp.employment_category||'-')}" style="font-size:10.5px;padding:2px 7px;margin-left:6px;">${contractTypeLabel(emp.employment_category) || '-'}</span>
+        <span class="badge ${empCatBadge(emp.employment_category||'-')}" style="margin-left:6px;">${contractTypeLabel(emp.employment_category) || '-'}</span>
       </div>
       <div style="color:#374151;">📅 <b>${yr}년 ${moStr}월</b> 급여명세서</div>
       <div style="color:#374151;">💰 실수령액 <b>${won2(p.net_pay)}원</b></div>
@@ -797,12 +802,12 @@ function _pssBulkRenderTable(){
     const emailBtnStyle = hasEmail
       ? 'background:#dbeafe;color:#1d4ed8;border:1px solid #93c5fd;cursor:pointer;'
       : 'background:#f3f4f6;color:#d1d5db;border:1px solid #e5e7eb;cursor:not-allowed;';
-    return `<tr id="pss-brow-${i}" style="border-bottom:1px solid #f3f4f6;">
-      <td style="padding:9px 12px;font-weight:700;color:#1a1a2e;">${item.empName}</td>
-      <td style="padding:9px 12px;color:#6b7280;font-size:12.5px;">${item.phone || '<span style="color:#d1d5db;">미등록</span>'}</td>
-      <td style="padding:9px 12px;">${emailCell}</td>
-      <td id="pss-bstatus-${i}" style="padding:9px 12px;">${_pssBulkStatusHtml('idle')}</td>
-      <td id="pss-baction-${i}" style="padding:9px 12px;text-align:center;white-space:nowrap;">
+    return `<tr id="pss-brow-${i}">
+      <td style="font-weight:700;color:#111827;">${item.empName}</td>
+      <td style="color:#6b7280;font-size:12.5px;">${item.phone || '<span style="color:#d1d5db;">미등록</span>'}</td>
+      <td>${emailCell}</td>
+      <td id="pss-bstatus-${i}">${_pssBulkStatusHtml('idle')}</td>
+      <td id="pss-baction-${i}" style="text-align:center;white-space:nowrap;">
         <button onclick="_pssEmailSend(${i})" ${hasEmail ? '' : 'disabled'} style="${emailBtnStyle}border-radius:6px;padding:4px 9px;font-size:11.5px;font-weight:600;font-family:inherit;margin-right:4px;">✉ 이메일 발송</button>
         <button onclick="_pssManualDone(${i})" style="background:#f0fdf4;color:#166534;border:1px solid #86efac;border-radius:6px;padding:4px 9px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;">✔ 수동 교부 완료</button>
       </td>

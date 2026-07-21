@@ -41,7 +41,7 @@ function _renderCompaniesDraftBanner(){
         <div style="display:flex;align-items:center;gap:8px;">
           <span class="pulse-dot"></span>
           <span class="dash-ac-title draft-alert-title" style="font-size:13.5px;">임시저장 미완료 고객사</span>
-          <span class="dash-ac-badge" style="background:#fef3c7;color:#92400e;border-radius:20px;padding:2px 9px;font-size:11.5px;font-weight:700;">${drafts.length}건</span>
+          <span class="dash-ac-badge" style="background:#fef3c7;color:#92400e;border-radius:20px;padding:2px 9px;font-size:11.5px;">${drafts.length}건</span>
         </div>
         <span style="font-size:11.5px;color:#b45309;">클릭하여 이어 작성할 수 있습니다</span>
       </div>
@@ -153,17 +153,17 @@ function renderCompanies(){
              <div style="font-size:10px;color:#0369a1;margin-bottom:2px;">이번 달 급여 총액 <span style="color:#16a34a;font-weight:700;">(${paidCount}/${totalTarget}건 완료)</span></div>
              <div style="font-size:15px;font-weight:700;color:#0c4a6e;">${Math.round(totalNetPay).toLocaleString('ko-KR')}<span style="font-size:11px;font-weight:500;">원</span></div>
            </div>
-           <button class="btn btn-sm btn-warning" onclick="openPayrollInputModal('${c.id}')">
-             <i class="fas fa-edit"></i> 내역 수정
+           <button class="btn btn-sm btn-primary" onclick="openPayrollInputModal('${c.id}')">
+             <i class="fas fa-list"></i> 목록 확인
            </button>
          </div>`;
       } else {
-        // 미완료 → 미입력 + 진행률 표시
-        const progressTxt=paidCount>0?`${paidCount}/${totalTarget}건 입력`:`0/${totalTarget}건 입력`;
+        // 미완료 → 미입력 건수 강조 표시
+        const pendingCnt = totalTarget - paidCount;
         payrollSection=`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;margin-top:10px;">
            <div>
              <div style="font-size:10px;color:#c2410c;margin-bottom:2px;">이번 달 급여</div>
-             <div style="font-size:13px;font-weight:600;color:#9a3412;">미입력 ⏳ <span style="font-size:11px;font-weight:500;color:#b45309;">(${progressTxt})</span></div>
+             <div style="font-size:13px;font-weight:800;color:#e94560;">${pendingCnt}/${totalTarget}건 미입력</div>
            </div>
            <button class="btn btn-sm btn-danger" onclick="openPayrollInputModal('${c.id}')">
              <i class="fas fa-plus-circle"></i> 급여 입력

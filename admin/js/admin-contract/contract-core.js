@@ -13,12 +13,12 @@ function _renderContCoSummaryCards(){
   const today = new Date().toISOString().slice(0,10);
 
   // 공통 헬퍼: 직원명 + 고용형태 뱃지 렌더링
-  function empNameCell(empId){ return `<td style="font-weight:700;color:#1f2937;">${getEmpName(empId)}</td>`; }
+  function empNameCell(empId){ return `<td style="font-weight:700;color:#111827;">${getEmpName(empId)}</td>`; }
   function catBadgeCell(c, emp){
     const _rawCat = c.contract_type || emp?.employment_category || '-';
     const label = contractTypeLabel(_rawCat);
     const cls = CAT_BADGE_CLS[_rawCat] || 'badge-gray';
-    return `<td><span class="badge ${cls}" style="font-size:11px;">${label}</span></td>`;
+    return `<td><span class="badge ${cls}">${label}</span></td>`;
   }
   function ddayCell(dateStr, urgentColor, normalColor){
     const diff = dateStr ? Math.ceil((new Date(dateStr)-new Date(today))/(1000*60*60*24)) : null;
@@ -219,7 +219,7 @@ function _renderContCoSummaryCards(){
   // ── ⑥ 정규직 전환 의무 대상 ──
   if(regularTargets.length > 0){
     const rows = regularTargets.map(x => {
-      return `<tr><td style="font-weight:700;color:#1f2937;">${x.empName||'-'}</td><td><span class="badge badge-gray" style="font-size:11px;">계약직</span></td><td style="font-size:11px;color:#9ca3af;">2년 초과</td><td style="white-space:nowrap;"><button onclick="viewContract('${x.contractId}')" class="btn btn-sm btn-indigo"><i class="fas fa-search"></i> 조회</button></td></tr>`;
+      return `<tr><td style="font-weight:700;color:#1f2937;">${x.empName||'-'}</td><td><span class="badge badge-gray">계약직</span></td><td style="font-size:11px;color:#9ca3af;">2년 초과</td><td style="white-space:nowrap;"><button onclick="viewContract('${x.contractId}')" class="btn btn-sm btn-indigo"><i class="fas fa-search"></i> 조회</button></td></tr>`;
     }).join('');
     renderCard('regular', 'fas fa-user-check', '#0891b2', '정규직 전환 의무 대상', regularTargets.length,
       '기간제 2년 초과 근로자입니다.', ['직원명','고용형태','사유','관리'], rows, 'cont-alert-renew-terminate');
@@ -422,16 +422,16 @@ function renderContracts(){
         let reps = [];
         try { reps = typeof co.representatives === 'string' ? JSON.parse(co.representatives) : (co.representatives || []); } catch(e){}
         if(Array.isArray(reps) && reps.some(r => r.name === empName)){
-          specialBadge = `<span class="badge" style="background:#e5e7eb;color:#374151;margin-left:4px;">대표자</span>`;
+          specialBadge = `<span class="badge badge-gray">대표자</span>`;
         }
       }
       // 등기임원 확인
       if(!specialBadge && (allExecutives||[]).some(e => e.company_id === c.company_id && e.name === empName)){
-        specialBadge = `<span class="badge" style="background:#e5e7eb;color:#374151;margin-left:4px;">등기임원</span>`;
+        specialBadge = `<span class="badge badge-gray">등기임원</span>`;
       }
       // 특수관계인 확인
       if(!specialBadge && (allRelatedParties||[]).some(r => r.company_id === c.company_id && r.name === empName)){
-        specialBadge = `<span class="badge" style="background:#e5e7eb;color:#374151;margin-left:4px;">특수관계인</span>`;
+        specialBadge = `<span class="badge badge-gray">특수관계인</span>`;
       }
     }
     // 페어 계약 링크 (새 창 비교용)
@@ -1927,13 +1927,13 @@ function viewContract(id){
     const idHTML = `<span style="font-weight:500;color:#9ca3af;">계약서 고유 ID: ${id||'—'}</span>`
       + ` <button onclick="event.stopPropagation();_copyContractId('${id||''}')" title="ID 복사" style="background:none;border:none;cursor:pointer;color:#9ca3af;padding:2px 4px;font-size:11px;border-radius:4px;transition:color .15s;" onmouseenter="this.style.color='#6366f1'" onmouseleave="this.style.color='#9ca3af'"><i class="far fa-copy"></i> 복사</button>`;
     if(isDraftFlag){
-      return `${idHTML} <span class="badge badge-yellow" style="margin-left:6px;">임시저장</span>`;
+      return `${idHTML} <span class="badge badge-yellow">임시저장</span>`;
     }
     if(isVoidedAmend){
-      return `${idHTML} <span class="badge ${badgeCls}" style="margin-left:6px;">${statusLabel}</span>`
-        + `&nbsp;<span style="background:#fef2f2;color:#dc2626;border-radius:20px;padding:1px 9px;font-size:10.5px;font-weight:700;"><i class="fas fa-ban" style="margin-right:3px;"></i>수정재발행 파기</span>`;
+      return `${idHTML} <span class="badge ${badgeCls}" >${statusLabel}</span>`
+        + `&nbsp;<span class="badge badge-red"><i class="fas fa-ban"></i> 수정재발행 파기</span>`;
     }
-    return `${idHTML} <span class="badge ${badgeCls}" style="margin-left:6px;">${statusLabel}</span>`;
+    return `${idHTML} <span class="badge ${badgeCls}">${statusLabel}</span>`;
   };
   const _titleInfoEl = document.getElementById('ct-title-info');
   if(_titleInfoEl && c){

@@ -339,7 +339,7 @@ function renderAlTable(){
 
   tbody.innerHTML = pageData.map(({emp, contract, al, ledger, effectiveUsed, carryover, effectiveRemain, effectivePay}) => {
     const cat      = emp.employment_category || contract.contract_type || '-';
-    const badgeCls = CAT_BADGE_CLS[cat] || 'badge-purple';
+    const badgeCls = CAT_BADGE_CLS[cat] || 'badge-gray';
 
     // 잔여 연차 색상
     const remainCls = effectiveRemain <= 0
@@ -373,17 +373,16 @@ function renderAlTable(){
          </button>`
       : `<span style="font-size:11.5px;color:#d1d5db;">-</span>`;
 
-    // 관리 버튼 — 저장된 관리대장 있으면 체크 표시
-    const ledgerBtn = `<button class="al-ledger-btn${ledger?' has-ledger':''}"
+    // 관리 버튼 (붉은색)
+    const ledgerBtn = `<button class="al-ledger-btn"
         onclick="openLeaveLedger('${emp.id}','${(emp.name||'').replace(/'/g,"\\'")}',${refYear})"
-        style="${ledger?'background:linear-gradient(135deg,#0f766e,#065f46);':''}"
-        title="${ledger?'관리대장 저장됨':'관리대장 미입력'}">
-        <i class="fas fa-clipboard-${ledger?'check':'list'}"></i> 관리
+        style="background:#e94560;color:#fff;border:none;">
+        <i class="fas fa-clipboard-list"></i> 관리
       </button>`;
 
     return `<tr>
       <td style="font-weight:700;color:#111827;">${emp.name||'-'}</td>
-      <td><span class="badge ${badgeCls}" style="font-size:11px;">${contractTypeLabel(cat)}</span></td>
+      <td><span class="badge ${badgeCls}">${contractTypeLabel(cat)}</span></td>
       <td style="font-size:12px;color:#6b7280;">${emp.hire_date||contract.contract_start||'-'}</td>
       <td class="right num" style="font-weight:600;">${fmtD(al.totalDays)}${carryoverBadge}</td>
       <td class="right" style="line-height:1.3;padding:6px 13px;">${usedCell}</td>
@@ -1289,7 +1288,8 @@ function renderLpTable(){
     if(filterMethod && r.worker_send_method !== filterMethod) return false;
     if(searchQ      && !(r.employee_name||'').toLowerCase().includes(searchQ)) return false;
     if(fromVal || toVal){
-      const sentDt = (r.sent_at||'').slice(0,10);
+      const raw = r.sent_at || '';
+      const sentDt = typeof raw === 'string' ? raw.slice(0,10) : String(raw).slice(0,10);
       if(fromVal && sentDt < fromVal) return false;
       if(toVal   && sentDt > toVal)   return false;
     }
@@ -1320,22 +1320,25 @@ function renderLpTable(){
     const d = new Date(ts);
     return isNaN(d)?'-':d.toLocaleString('ko-KR',{year:'2-digit',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
   };
-  // 발송 방식 배지 (통일 스타일)
+  // 발송 방식 배지 (CSS class 사용)
   const workerMethodBadge = m => {
-    const cfg = {
-      [DISPATCH_METHOD.KAKAO]: { bg:'#f9d000', color:'#3b1f00', icon:'M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z', isSvg:true },
-      [DISPATCH_METHOD.EMAIL]: { bg:'#dbeafe', color:'#1e40af', fa:'fa-envelope' },
-      'phone':                 { bg:'#d1fae5', color:'#065f46', fa:'fa-phone-alt' },
+    const METHOD_BADGE_CLS = {
+      [DISPATCH_METHOD.KAKAO]: 'badge-yellow',
+      [DISPATCH_METHOD.EMAIL]: 'badge-blue',
+      'phone':                 'badge-green',
     };
-    const c = cfg[m] || { bg:'#f3f4f6', color:'#374151', fa:'fa-question' };
+    const badgeCls = METHOD_BADGE_CLS[m] || 'badge-gray';
     const label = DISPATCH_METHOD_LABEL[m] || (m==='phone'?'유선직접안내':m) || '-';
-    const icon = c.isSvg
-      ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="${c.color}"><path d="${c.icon}"/></svg>`
-      : `<i class="fas ${c.fa}" style="font-size:11px;"></i>`;
-    return `<span style="display:inline-flex;align-items:center;gap:4px;background:${c.bg};color:${c.color};padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;">${icon}${label}</span>`;
+    const iconCfg = {
+      [DISPATCH_METHOD.KAKAO]: `<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg>`,
+      [DISPATCH_METHOD.EMAIL]: '<i class="fas fa-envelope"></i>',
+      'phone':                 '<i class="fas fa-phone-alt"></i>',
+    };
+    const icon = iconCfg[m] || '<i class="fas fa-question"></i>';
+    return `<span class="badge ${badgeCls}">${icon} ${label}</span>`;
   };
   // 고객사 앱 알림 고정 배지
-  const companyNoticeBadge = `<span style="background:#dcfce7;color:#166534;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:4px;"><i class="fas fa-check" style="font-size:10px;"></i>인앱 발송</span>`;
+  const companyNoticeBadge = '<span class="badge badge-green"><i class="fas fa-check"></i> 인앱 발송</span>';
 
   const fmtD = v => {
     if(v == null || isNaN(v)) return '-';
@@ -1345,12 +1348,12 @@ function renderLpTable(){
   };
 
   tbody.innerHTML = pageData.map(r=>{
-    const cls = CAT_BADGE_CLS[r.contract_type]||'badge-purple';
+    const cls = CAT_BADGE_CLS[r.contract_type]||'badge-gray';
     return `<tr>
       <td style="font-size:12px;color:#374151;white-space:nowrap;">${fmtDt(r.sent_at)}</td>
+      <td style="font-size:12px;color:#111827;font-weight:700;">${r.company_name||'-'}</td>
       <td style="font-weight:600;color:#111827;">${r.employee_name||'-'}</td>
-      <td><span class="badge ${cls}" style="font-size:11px;">${contractTypeLabel(r.contract_type)}</span></td>
-      <td style="font-size:12px;color:#374151;">${r.company_name||'-'}</td>
+      <td><span class="badge ${cls}">${contractTypeLabel(r.contract_type)}</span></td>
       <td class="right num">${fmtD(r.total_leave_days)}</td>
       <td class="right num" style="color:#6b7280;">${fmtD(r.used_leave_days)}</td>
       <td class="right num" style="color:#6366f1;font-weight:700;">${fmtD(r.remaining_leave_days)}</td>
@@ -1424,7 +1427,8 @@ function renderCenHistory(){
     if(filterCompany && r.company_id     !== filterCompany) return false;
     if(searchQ && !(r.employee_name||'').toLowerCase().includes(searchQ)) return false;
     if(dateFrom || dateTo){
-      const sentDt = (r.sent_at || '').slice(0,10);
+      const raw = r.sent_at || '';
+      const sentDt = typeof raw === 'string' ? raw.slice(0,10) : String(raw).slice(0,10);
       if(dateFrom && sentDt < dateFrom) return false;
       if(dateTo   && sentDt > dateTo)   return false;
     }
@@ -1449,35 +1453,45 @@ function renderCenHistory(){
     return isNaN(d)?'-':d.toLocaleString('ko-KR',{year:'2-digit',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
   };
   const methodBadge = m => {
-    const cfg = {
-      [DISPATCH_METHOD.KAKAO]:  { bg:'#f9d000', color:'#3b1f00', icon:'M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z', isSvg:true },
-      [DISPATCH_METHOD.EMAIL]:  { bg:'#dbeafe', color:'#1e40af', fa:'fa-envelope' },
-      [DISPATCH_METHOD.MANUAL]: { bg:'#d1fae5', color:'#065f46', fa:'fa-hand-holding' },
-      '수정재발행':              { bg:'#fce7f3', color:'#9d174d', fa:'fa-sync-alt' },
+    const METHOD_CLS = {
+      [DISPATCH_METHOD.KAKAO]:  'badge-yellow',
+      [DISPATCH_METHOD.EMAIL]:  'badge-blue',
+      [DISPATCH_METHOD.MANUAL]: 'badge-green',
+      '수정재발행':              'badge-pink',
     };
-    const c = cfg[m] || { bg:'#f3f4f6', color:'#374151', fa:'fa-question' };
+    const badgeCls = METHOD_CLS[m] || 'badge-gray';
+    const iconCfg = {
+      [DISPATCH_METHOD.KAKAO]: `<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg>`,
+      [DISPATCH_METHOD.EMAIL]: '<i class="fas fa-envelope"></i>',
+      [DISPATCH_METHOD.MANUAL]: '<i class="fas fa-hand-holding"></i>',
+      '수정재발행': '<i class="fas fa-sync-alt"></i>',
+    };
+    const icon = iconCfg[m] || '<i class="fas fa-question"></i>';
     const label = DISPATCH_METHOD_LABEL[m] || m || '-';
-    const icon = c.isSvg
-      ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="${c.color}"><path d="${c.icon}"/></svg>`
-      : `<i class="fas ${c.fa}" style="font-size:11px;"></i>`;
-    return `<span style="display:inline-flex;align-items:center;gap:4px;background:${c.bg};color:${c.color};padding:2px 9px;border-radius:20px;font-size:11.5px;font-weight:700;white-space:nowrap;">${icon}${label}</span>`;
+    return `<span class="badge ${badgeCls}">${icon} ${label}</span>`;
   };
   const statusBadge = s => {
-    const cfg = {
-      [DISPATCH_STATUS.COMPLETED]: { bg:'#dcfce7',color:'#166534', fa:'fa-check-circle' },
-      [DISPATCH_STATUS.FAILED]:    { bg:'#fee2e2',color:'#991b1b', fa:'fa-times-circle' },
-      [DISPATCH_STATUS.PENDING]:   { bg:'#e0e7ff',color:'#3730a3', fa:'fa-clock' },
+    const STATUS_CLS = {
+      [DISPATCH_STATUS.COMPLETED]: 'badge-green',
+      [DISPATCH_STATUS.FAILED]:    'badge-red',
+      [DISPATCH_STATUS.PENDING]:   'badge-indigo',
     };
-    const c = cfg[s] || { bg:'#f3f4f6', color:'#374151', fa:'fa-circle' };
+    const badgeCls = STATUS_CLS[s] || 'badge-gray';
+    const iconCfg = {
+      [DISPATCH_STATUS.COMPLETED]: '<i class="fas fa-check-circle"></i>',
+      [DISPATCH_STATUS.FAILED]:    '<i class="fas fa-times-circle"></i>',
+      [DISPATCH_STATUS.PENDING]:   '<i class="fas fa-clock"></i>',
+    };
+    const icon = iconCfg[s] || '<i class="fas fa-circle"></i>';
     const label = DISPATCH_STATUS_LABEL[s] || s || '-';
-    return `<span style="display:inline-flex;align-items:center;gap:4px;background:${c.bg};color:${c.color};padding:2px 9px;border-radius:20px;font-size:11.5px;font-weight:700;"><i class="fas ${c.fa}" style="font-size:10px;"></i>${label}</span>`;
+    return `<span class="badge ${badgeCls}">${icon} ${label}</span>`;
   };
   tbody.innerHTML = pageData.map((r,idx)=>`
     <tr style="${idx%2?'background:#fafafa':''}" onmouseover="this.style.background='#f0f9ff'" onmouseout="this.style.background='${idx%2?'#fafafa':''}'">
       <td style="white-space:nowrap;">${fmtDt(r.noticed_at)}</td>
-      <td style="font-weight:700;color:#4f46e5;">${r.employee_name||'-'}</td>
-      <td><span class="badge ${CAT_BADGE_CLS[r.contract_type]||'badge-gray'}" style="font-size:11px;">${contractTypeLabel(r.contract_type)}</span></td>
-      <td style="font-size:12px;color:#374151;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.company_name||''}">${r.company_name||'-'}</td>
+      <td style="font-size:12px;color:#111827;font-weight:700;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.company_name||''}">${r.company_name||'-'}</td>
+      <td style="font-weight:700;color:#111827;">${r.employee_name||'-'}</td>
+      <td><span class="badge ${CAT_BADGE_CLS[r.contract_type]||'badge-gray'}">${contractTypeLabel(r.contract_type)}</span></td>
       <td style="font-size:12px;color:#6b7280;">${r.contract_end||'-'}</td>
       <td>${methodBadge(r.notice_method)}</td>
       <td>${statusBadge(r.notice_status)}</td>

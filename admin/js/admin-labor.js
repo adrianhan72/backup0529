@@ -748,7 +748,7 @@ function renderLaborStatus(){
       // 이달 급여 입력 여부
       const hasPay = thisPayEmpIds.has(c.employee_id);
       const payBadge = hasPay
-        ? `<span class="badge badge-green" style="font-size:10.5px;">급여입력됨</span>`
+        ? `<span class="badge badge-green">급여입력됨</span>`
         : `<button onclick="goPayrollInputNew('${c.company_id}','${c.employee_id}',${yr},${mo})"
             style="padding:3px 10px;font-size:11px;font-weight:600;border:none;border-radius:6px;background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:4px;">
             <i class="fas fa-plus"></i> 입력
@@ -758,11 +758,11 @@ function renderLaborStatus(){
       const stBadge = stBadge2; const stLabel2 = stName2;
       return `<tr>
         <td style="font-weight:600;">${getEmpName(c.employee_id)}</td>
-        <td><span class="badge ${catBadge}" style="font-size:10.5px;">${contractTypeLabel(empCat)}</span></td>
+        <td><span class="badge ${catBadge}">${contractTypeLabel(empCat)}</span></td>
         <td style="font-size:11px;color:#555;">${periodTxt}</td>
         <td style="font-size:11.5px;color:#666;">${workInfo}</td>
         <td class="amount-green" style="font-weight:600;">${won(c.monthly_salary_agreed)}</td>
-        <td><span class="badge ${stBadge}" style="font-size:10.5px;">${stLabel2}</span></td>
+        <td><span class="badge ${stBadge}">${stLabel2}</span></td>
         <td>${payBadge}</td>
       </tr>`;
     }).join('');

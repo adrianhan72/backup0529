@@ -34,7 +34,7 @@ function renderPayrolls(){
     const payCat = payEmp.employment_category||'-';
     return `<tr class="pay-tbody-row" onclick="openPayslipModal('${p.id}')" title="클릭하면 급여명세서를 볼 수 있습니다">
     <td style="font-weight:600">${getEmpName(p.employee_id)}</td>
-    <td><span class="badge ${empCatBadge(payCat)}" style="font-size:10.5px;padding:2px 7px;">${contractTypeLabel(payCat)}</span></td>
+    <td><span class="badge ${empCatBadge(payCat)}">${contractTypeLabel(payCat)}</span></td>
     <td>${p.work_days||'-'}일</td>
     <td>${p.overtime_hours||0}h</td>
     <td class="amount-blue">${won2(p.gross_pay)}</td>
@@ -43,7 +43,7 @@ function renderPayrolls(){
     <td style="font-size:11.5px;color:#8b5cf6;">${won2(irregularTotal)}</td>
     <td class="amount-red">${won2(p.total_deduction)}</td>
     <td class="amount-green" style="font-size:13px;font-weight:700;">${won2(p.net_pay)}</td>
-    <td onclick="event.stopPropagation()" style="text-align:center;"><button onclick="editPayroll('${p.id}')" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;"><i class="fas fa-pen" style="margin-right:3px;"></i>수정</button></td>
+    <td onclick="event.stopPropagation()" style="text-align:center;"><button onclick="editPayroll('${p.id}')" style="background:#f59e0b;color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;"><i class="fas fa-pen" style="margin-right:3px;"></i>수정</button></td>
   </tr>`;
   }).join('');
   renderPagination('pay-pagination',f.length,pages.pay,'setPayPage');

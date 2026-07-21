@@ -18,20 +18,11 @@
       <!-- 선택된 고객사 메인 섹션 -->
       <div id="pss-main-section" style="display:none;">
 
-        <!-- 법적 의무 배너 (상단 고정) -->
-        <div class="pss-legal-banner">
-          <i class="fas fa-balance-scale"></i>
-          <div>
-            <strong>급여명세서 교부 의무 (근로기준법 제48조)</strong> — 사용자는 임금 지급 시 임금명세서를 근로자에게 교부하여야 합니다.
-            위반 시 500만 원 이하 과태료가 부과됩니다. 미발송 항목을 신속히 처리하고 모든 발송 이력을 보관하세요.
-          </div>
-        </div>
-
         <!-- ① 선택 고객사 헤더 + 발송 월 선택 + 미발송 목록 세트 -->
         <div style="border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:16px;">
 
           <!-- 선택 고객사 헤더 -->
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:linear-gradient(90deg,#1e1b4b,#312e81);border-bottom:1px solid rgba(255,255,255,.1);">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:linear-gradient(90deg,#1e1b4b,#312e81);border-radius:10px;margin-bottom:12px;">
             <span id="pss-selected-company-label" style="font-size:14px;font-weight:700;color:#fff;"></span>
             <button onclick="clearPssCompanySelect()" class="btn btn-icon-dark" title="고객사 선택 해제"><i class="fas fa-times"></i></button>
           </div>
@@ -75,15 +66,15 @@
           </div>
 
           <!-- 미발송 테이블 -->
-          <div id="pss-unsent-table-wrap" class="table-wrap" style="padding:0 20px 16px;">
-            <table id="pss-unsent-table" style="width:100%;border-collapse:collapse;font-size:13px;">
+          <div id="pss-unsent-table-wrap" class="table-wrap" style="padding:0 0 16px;">
+            <table id="pss-unsent-table" class="tbl-std">
               <thead>
                 <tr>
                   <th>직원명</th>
                   <th>고용구분</th>
                   <th>연락처</th>
                   <th>이메일</th>
-                  <th style="text-align:center;">개별 관리</th>
+                  <th class="ctr">개별 관리</th>
                 </tr>
               </thead>
               <tbody id="pss-unsent-tbody">
@@ -118,8 +109,8 @@
               <span id="pss-date-notice" style="font-size:11px;color:#9ca3af;">(최대 3개월간의 기간으로 조회하실 수 있습니다.)</span>
             </div>
           </div>
-          <div class="table-wrap" style="padding:0 20px 16px;">
-            <table id="pss-log-table" style="width:100%;border-collapse:collapse;font-size:13px;">
+          <div class="table-wrap" style="padding:0 0 16px;">
+            <table id="pss-log-table" class="tbl-std">
               <thead>
                 <tr>
                   <th>직원명</th>

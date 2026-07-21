@@ -105,7 +105,7 @@ function _updateWLMenuBadge(){
     const badge = document.createElement('span');
     badge.className = 'wl-menu-badge';
     badge.textContent = 'N';
-    badge.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;background:#e94560;color:#fff;font-size:10px;font-weight:800;border-radius:10px;padding:1px 6px;margin-left:6px;letter-spacing:0;line-height:1.4;vertical-align:middle;';
+    badge.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;background:#e94560;color:#fff;font-size:10px;font-weight:400;border-radius:10px;padding:1px 6px;margin-left:6px;letter-spacing:0;line-height:1.4;vertical-align:middle;';
     menuItem.appendChild(badge);
   }
 }

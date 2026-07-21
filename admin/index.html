@@ -117,6 +117,7 @@
     <div style="display:flex;align-items:center;gap:6px;">
       <div class="topbar-title" id="topbar-title">대시보드</div>
       <button id="topbar-help-btn" class="btn-help" onclick="openContractHelp()" title="도움말" style="display:none;">?</button>
+      <button id="topbar-refresh-btn" class="btn btn-sm btn-secondary btn-refresh" onclick="refreshCurrentPage()" style="display:none;" title="페이지 새로고침"><i class="fas fa-sync-alt"></i> 페이지 새로고침</button>
     </div>
     <div style="display:flex;align-items:center;gap:10px;">
       <span style="font-size:11.5px;color:#888;"><i class="fas fa-circle" style="color:#10b981;font-size:7px;margin-right:3px;"></i><span id="topbar-admin-name" data-name="마스터관리자">마스터관리자 님 접속 중</span></span>
@@ -237,7 +238,7 @@
               style="width:100%;padding:10px 13px;border:1.5px solid #d1d5db;border-radius:8px;
                      font-size:13.5px;color:#1e293b;box-sizing:border-box;outline:none;
                      font-family:inherit;transition:border .15s;"
-              onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#d1d5db'" />
+              onfocus="this.style.borderColor='#6366f1';this.style.boxShadow='0 0 0 2px rgba(99,102,241,.25)'" onblur="this.style.borderColor='#d1d5db';this.style.boxShadow='none'" />
           </div>
           <!-- 본문 -->
           <div>
@@ -248,7 +249,7 @@
               style="width:100%;padding:11px 13px;border:1.5px solid #d1d5db;border-radius:8px;
                      font-size:13px;color:#1e293b;box-sizing:border-box;outline:none;resize:vertical;
                      font-family:inherit;line-height:1.8;transition:border .15s;"
-              onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#d1d5db'"></textarea>
+              onfocus="this.style.borderColor='#6366f1';this.style.boxShadow='0 0 0 2px rgba(99,102,241,.25)'" onblur="this.style.borderColor='#d1d5db';this.style.boxShadow='none'"></textarea>
           </div>
           <!-- 예약 발송 -->
           <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;padding:13px 16px;">
@@ -261,7 +262,7 @@
               <input id="gn-scheduled-at" type="datetime-local"
                 style="padding:8px 12px;border:1.5px solid #d1d5db;border-radius:7px;font-size:13px;
                        font-family:inherit;outline:none;color:#1e293b;transition:border .15s;"
-                onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#d1d5db'" />
+                onfocus="this.style.borderColor='#6366f1';this.style.boxShadow='0 0 0 2px rgba(99,102,241,.25)'" onblur="this.style.borderColor='#d1d5db';this.style.boxShadow='none'" />
               <div style="font-size:11.5px;color:#9ca3af;margin-top:5px;">
                 <i class="fas fa-info-circle"></i> 예약 시각이 지나면 관리자 페이지 또는 고객사 앱 접속 시 자동 발송됩니다.
               </div>
@@ -704,7 +705,7 @@
       <span style="font-size:11.5px;color:#9ca3af;flex:1;"><i class="fas fa-info-circle" style="color:#6366f1;margin-right:4px;"></i>저장 시 해당 연도 관리대장에 기록됩니다.</span>
       <button class="btn btn-secondary" onclick="closeModal('al-ledger-modal')" style="position:relative;overflow:hidden;">닫기</button>
       <button class="btn btn-primary" id="ledger-save-btn" onclick="saveLeaveLedger()"
-        style="position:relative;overflow:hidden;background:linear-gradient(135deg,#0d9488,#0f766e);border-color:#0d9488;">
+        style="position:relative;overflow:hidden;background:#0d9488;border-color:#0d9488;">
         <i class="fas fa-save"></i> 저장
       </button>
     </div>
@@ -749,7 +750,7 @@
             카카오 알림톡
           </button>
           <button id="al-btn-email" onclick="confirmSendLeavePromotion('이메일')"
-            style="display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:8px;border:none;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;transition:opacity .15s;">
+            style="display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:8px;border:none;background:#2563eb;color:#fff;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;transition:opacity .15s;">
             <i class="fas fa-envelope"></i> 이메일
           </button>
           <button id="al-btn-phone" onclick="confirmSendLeavePromotion('유선직접안내')"
@@ -1555,7 +1556,7 @@
     <div id="ct-status-banner" class="ct-status-banner">
       <div class="banner-icon" id="ct-sb-icon">⚠️</div>
       <div class="banner-body">
-        <div class="banner-title"><span id="ct-sb-title-icon"></span>&nbsp;<span id="ct-sb-title-text"></span>&nbsp;<span id="ct-sb-dday" style="display:inline-block;color:#fff;border-radius:20px;padding:1px 11px;font-size:11.5px;font-weight:700;margin-left:4px;"></span></div>
+        <div class="banner-title"><span id="ct-sb-title-icon"></span>&nbsp;<span id="ct-sb-title-text"></span>&nbsp;<span id="ct-sb-dday" style="display:inline-block;color:#fff;border-radius:20px;padding:1px 11px;font-size:11.5px;margin-left:4px;"></span></div>
         <div class="banner-date" id="ct-sb-date"></div>
         <div class="banner-actions">
           <button class="btn-sb btn-sb-edit" id="ct-sb-btn-edit" onclick="doContractAmend()"><i class="fas fa-pencil-alt"></i> 수정 및 재발행</button>

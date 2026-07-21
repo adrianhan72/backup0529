@@ -84,7 +84,8 @@ async function renderContractDispatchPage(){
     if(filterCompany && r.company_id       !== filterCompany) return false;
     // 기간 필터: dispatched_at (ISO 문자열 'YYYY-MM-DDT...' 앞 10자리로 비교)
     if(filterDateFrom || filterDateTo){
-      const recDate = (r.dispatched_at || r.created_at || '').slice(0, 10); // 'YYYY-MM-DD'
+      const raw = r.dispatched_at || r.created_at || '';
+      const recDate = typeof raw === 'string' ? raw.slice(0, 10) : String(raw).slice(0, 10);
       if(filterDateFrom && recDate < filterDateFrom) return false;
       if(filterDateTo   && recDate > filterDateTo)   return false;
     }
@@ -129,7 +130,7 @@ async function renderContractDispatchPage(){
     const cfg = {
       [DISPATCH_METHOD.KAKAO]:  { bg:'#f9d000', color:'#3b1f00', icon:'M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z', isSvg:true },
       [DISPATCH_METHOD.EMAIL]:  { bg:'#dbeafe', color:'#1e40af', fa:'fa-envelope' },
-      [DISPATCH_METHOD.MANUAL]: { bg:'#d1fae5', color:'#065f46', fa:'fa-hand-holding' },
+      [DISPATCH_METHOD.MANUAL]: { bg:'#d1fae5', color:'#065f46', fa:'fa-hand-paper' },
       '수정재발행':              { bg:'#fce7f3', color:'#9d174d', fa:'fa-sync-alt' },
     };
     const c = cfg[m] || { bg:'#f3f4f6', color:'#374151', fa:'fa-question' };
@@ -137,7 +138,7 @@ async function renderContractDispatchPage(){
     const icon = c.isSvg
       ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="${c.color}"><path d="${c.icon}"/></svg>`
       : `<i class="fas ${c.fa}" style="font-size:11px;"></i>`;
-    return `<span style="display:inline-flex;align-items:center;gap:4px;background:${c.bg};color:${c.color};padding:2px 9px;border-radius:20px;font-size:11.5px;font-weight:700;white-space:nowrap;">${icon}${label}</span>`;
+    return `<span style="display:inline-flex;align-items:center;gap:4px;background:${c.bg};color:${c.color};padding:2px 9px;border-radius:20px;font-size:11.5px;white-space:nowrap;">${icon}${label}</span>`;
   };
 
   const statusBadge = s => {
@@ -148,7 +149,7 @@ async function renderContractDispatchPage(){
     };
     const c = cfg[s] || { bg:'#f3f4f6', color:'#374151', fa:'fa-circle' };
     const label = DISPATCH_STATUS_LABEL[s] || s || '-';
-    return `<span style="display:inline-flex;align-items:center;gap:4px;background:${c.bg};color:${c.color};padding:2px 9px;border-radius:20px;font-size:11.5px;font-weight:700;">
+    return `<span style="display:inline-flex;align-items:center;gap:4px;background:${c.bg};color:${c.color};padding:2px 9px;border-radius:20px;font-size:11.5px;">
       <i class="fas ${c.fa}" style="font-size:10px;"></i>${label}
     </span>`;
   };
@@ -163,22 +164,20 @@ async function renderContractDispatchPage(){
       [CONTRACT_TYPE.DAILY]:             { bg:'rgba(234,88,12,.1)',color:'#ea580c' },
     };
     const c = cfg[normalized] || { bg:'#f3f4f6',color:'#374151' };
-    return `<span style="background:${c.bg};color:${c.color};padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;">${contractTypeLabel(t)}</span>`;
+    return `<span style="background:${c.bg};color:${c.color};padding:2px 8px;border-radius:20px;font-size:11px;">${contractTypeLabel(t)}</span>`;
   };
 
   tbody.innerHTML = pageData.map((r, idx) => {
-    const rowBg = idx % 2 === 0 ? '' : 'background:#fafafa;';
-    return `<tr style="${rowBg}border-bottom:1px solid #f3f4f6;transition:background .1s;"
-      onmouseover="this.style.background='#f0f9ff'" onmouseout="this.style.background='${idx%2===0?'':'#fafafa'}'">
-      <td style="padding:9px 12px;color:#374151;white-space:nowrap;">${fmtDt(r.dispatched_at)}</td>
-      <td style="padding:9px 12px;font-weight:600;color:#1a1a2e;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.company_name||''}">${r.company_name||'-'}</td>
-      <td style="padding:9px 12px;font-weight:700;color:#4f46e5;">${r.employee_name||'-'}</td>
-      <td style="padding:9px 12px;">${typeBadge(r.contract_type)}</td>
-      <td style="padding:9px 12px;text-align:center;">${methodBadge(r.dispatch_method)}</td>
-      <td style="padding:9px 12px;font-size:12px;color:#374151;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.recipient||''}">${r.recipient||'-'}</td>
-      <td style="padding:9px 12px;text-align:center;">${statusBadge(r.dispatch_status)}</td>
-      <td style="padding:9px 12px;font-size:12px;color:#6b7280;">${_resolveAdminName(r.dispatched_by)||'-'}</td>
-      <td style="padding:9px 12px;text-align:center;white-space:nowrap;">${_cdpAttachBtn(r.contract_id)}</td>
+    return `<tr>
+      <td style="color:#374151;white-space:nowrap;">${fmtDt(r.dispatched_at)}</td>
+      <td style="font-weight:600;color:#111827;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.company_name||''}">${r.company_name||'-'}</td>
+      <td style="font-weight:700;color:#111827;">${r.employee_name||'-'}</td>
+      <td>${typeBadge(r.contract_type)}</td>
+      <td class="ctr">${methodBadge(r.dispatch_method)}</td>
+      <td style="font-size:12px;color:#374151;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.recipient||''}">${r.recipient||'-'}</td>
+      <td class="ctr">${statusBadge(r.dispatch_status)}</td>
+      <td style="font-size:12px;color:#6b7280;">${_resolveAdminName(r.dispatched_by)||'-'}</td>
+      <td class="ctr" style="white-space:nowrap;">${_cdpAttachBtn(r.contract_id)}</td>
     </tr>`;
   }).join('');
 
@@ -209,31 +208,18 @@ function _renderCdpPagination(totalPages, filtered){
   if(!el) return;
   const total = filtered.length;
   if(total <= _cdpPageSize){ el.innerHTML = ''; return; }
-
   const s = Math.min((_cdpPage-1)*_cdpPageSize+1, total);
   const e = Math.min(_cdpPage*_cdpPageSize, total);
-
-  const makeBtn = (label, page, disabled=false, active=false) =>
-    `<button onclick="_cdpGoPage(${page})"
-       style="min-width:30px;height:30px;padding:0 8px;border:1px solid ${active?'#6366f1':'#d1d5db'};
-              border-radius:6px;background:${active?'#6366f1':'#fff'};color:${active?'#fff':'#374151'};
-              font-size:12px;cursor:${disabled?'default':'pointer'};
-              font-family:inherit;font-weight:${active?'700':'400'};"
-       ${disabled?'disabled':''}>${label}</button>`;
-
+  const mBtn = (label, pg, disabled, active) =>
+    `<button class="page-btn${active?' active':''}" onclick="_cdpGoPage(${pg})"${disabled?' disabled':''}>${label}</button>`;
   const btns = [];
-  btns.push(makeBtn('‹', Math.max(1,_cdpPage-1), _cdpPage===1));
+  btns.push(mBtn('<i class="fas fa-chevron-left"></i>', Math.max(1,_cdpPage-1), _cdpPage<=1, false));
   const start = Math.max(1, _cdpPage-2), end = Math.min(totalPages, _cdpPage+2);
-  if(start > 1){ btns.push(makeBtn('1',1)); if(start>2) btns.push(`<span style="color:#9ca3af;font-size:12px;padding:0 4px;">…</span>`); }
-  for(let p=start;p<=end;p++) btns.push(makeBtn(p,p,false,p===_cdpPage));
-  if(end < totalPages){ if(end<totalPages-1) btns.push(`<span style="color:#9ca3af;font-size:12px;padding:0 4px;">…</span>`); btns.push(makeBtn(totalPages,totalPages)); }
-  btns.push(makeBtn('›', Math.min(totalPages,_cdpPage+1), _cdpPage===totalPages));
-
-  el.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 4px;">
-      <span style="font-size:12.5px;color:#64748b;">총 <strong>${total}</strong>건 중 ${s}–${e}번째</span>
-      <div style="display:flex;align-items:center;gap:4px;">${btns.join('')}</div>
-    </div>`;
+  if(start > 1){ btns.push(mBtn('1',1,false,false)); if(start>2) btns.push('<span class="page-ellipsis">…</span>'); }
+  for(let p=start;p<=end;p++) btns.push(mBtn(p,p,false,p===_cdpPage));
+  if(end < totalPages){ if(end<totalPages-1) btns.push('<span class="page-ellipsis">…</span>'); btns.push(mBtn(totalPages,totalPages,false,false)); }
+  btns.push(mBtn('<i class="fas fa-chevron-right"></i>', Math.min(totalPages,_cdpPage+1), _cdpPage>=totalPages, false));
+  el.innerHTML = `<div class="pagination"><span class="page-info">총 <strong>${total}</strong>건 중 ${s}–${e}번째</span><div class="page-btns">${btns.join('')}</div></div>`;
 }
 function _cdpGoPage(p){
   _cdpPage = p;
@@ -330,10 +316,140 @@ function cdpSelectUnsentYM(year, month){
 function _renderCdpUnsentAllClear(show){
   const msg      = document.getElementById('cdp-unsent-all-clear');
   const tblWrap  = document.getElementById('cdp-unsent-table-wrap');
-  const sendAll  = document.getElementById('cdp-unsent-send-all-btn');
+  const btnKakao = document.getElementById('cdp-batch-kakao-btn');
+  const btnEmail = document.getElementById('cdp-batch-email-btn');
+  const btnManual= document.getElementById('cdp-batch-manual-btn');
   if(msg)     msg.style.display     = show ? '' : 'none';
   if(tblWrap) tblWrap.style.display = show ? 'none' : '';
-  if(sendAll) sendAll.disabled      = show;
+  if(btnKakao) btnKakao.disabled   = show;
+  if(btnEmail) btnEmail.disabled   = show;
+  if(btnManual)btnManual.disabled  = show;
+}
+
+/** 전체 선택/해제 */
+function cdpToggleAll(el){
+  document.querySelectorAll('.cdp-row-chk').forEach(cb => { cb.checked = el.checked; });
+  cdpUpdateBatchBtns();
+}
+
+/** 선택된 계약 ID 목록 */
+function cdpGetSelectedIds(){
+  return [...document.querySelectorAll('.cdp-row-chk:checked')].map(cb => cb.dataset.contractId);
+}
+
+/** 배치 버튼 활성/비활성 */
+function cdpUpdateBatchBtns(){
+  const sel = cdpGetSelectedIds();
+  const btnKakao = document.getElementById('cdp-batch-kakao-btn');
+  const btnEmail = document.getElementById('cdp-batch-email-btn');
+  const btnManual= document.getElementById('cdp-batch-manual-btn');
+  if(btnKakao) btnKakao.disabled = sel.length === 0;
+  if(btnEmail) btnEmail.disabled = sel.length === 0;
+  if(btnManual)btnManual.disabled= sel.length === 0;
+  // 전체 선택 체크박스 동기화
+  const allCb = document.getElementById('cdp-chk-all');
+  const allRows = document.querySelectorAll('.cdp-row-chk');
+  if(allCb && allRows.length > 0) allCb.checked = sel.length === allRows.length;
+}
+
+/** 선택 일괄 알림톡 발송 */
+async function cdpBatchKakao(){
+  const ids = cdpGetSelectedIds();
+  if(!ids.length){ toast('선택된 항목이 없습니다.', 'warning'); return; }
+  const list = _cdpGetUnsentContracts(_cdpUnsentYM.year, _cdpUnsentYM.month).filter(c => ids.includes(c.id));
+  const valid = list.filter(c => { const emp = allEmployees.find(e => e.id === c.employee_id); return emp && emp.phone; });
+  if(!valid.length){ toast('알림톡 발송 가능한 대상이 없습니다. (전화번호 미등록)', 'warning'); return; }
+  if(!confirm(`[선택 일괄 알림톡]\n\n선택된 ${ids.length}건 중 ${valid.length}건을\n알림톡으로 발송하시겠습니까?`)) return;
+  const btn = document.getElementById('cdp-batch-kakao-btn');
+  const origHTML = btn ? btn.innerHTML : '';
+  if(btn){ btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 발송 중...'; }
+  let ok = 0;
+  try {
+    for(const c of valid){
+      const emp = allEmployees.find(e => e.id === c.employee_id) || {};
+      try{
+        await _saveDispatchRecord({ method: DISPATCH_METHOD.KAKAO, status: DISPATCH_STATUS.COMPLETED, recipient: emp.phone || '', note:`선택 일괄 알림톡 — ${emp.name}`, contractId: c.id });
+        ok++;
+      } catch(e){}
+    }
+    toast(`선택 알림톡 완료 — ${ok}/${valid.length}건`, 'success');
+  } finally {
+    if(btn){ btn.disabled = false; btn.innerHTML = origHTML; }
+    resetCdpSelection();
+    await _cdpRefreshUnsent();
+  }
+}
+
+/** 선택 일괄 이메일 발송 */
+async function cdpBatchEmail(){
+  const ids = cdpGetSelectedIds();
+  if(!ids.length){ toast('선택된 항목이 없습니다.', 'warning'); return; }
+  const list = _cdpGetUnsentContracts(_cdpUnsentYM.year, _cdpUnsentYM.month).filter(c => ids.includes(c.id));
+  const valid = list.filter(c => { const emp = allEmployees.find(e => e.id === c.employee_id); return emp && emp.email; });
+  const noEmail = list.filter(c => { const emp = allEmployees.find(e => e.id === c.employee_id); return !emp || !emp.email; });
+  if(noEmail.length > 0){
+    // 이메일 없는 항목 자동 선택 해제
+    noEmail.forEach(c => {
+      const cb = document.querySelector(`.cdp-row-chk[data-contract-id="${c.id}"]`);
+      if(cb) cb.checked = false;
+    });
+    cdpUpdateBatchBtns();
+    const names = noEmail.map(c => (allEmployees.find(e=>e.id===c.employee_id)||{}).name||'?').join(', ');
+    toast(`이메일 미등록 ${noEmail.length}건 선택 해제: ${names}`, 'warning');
+  }
+  if(!valid.length){ toast('이메일 발송 가능한 대상이 없습니다.', 'warning'); return; }
+  if(!confirm(`[선택 일괄 이메일]\n\n이메일이 있는 ${valid.length}건을\n이메일로 발송하시겠습니까?`)) return;
+  const btn = document.getElementById('cdp-batch-email-btn');
+  const origHTML = btn ? btn.innerHTML : '';
+  if(btn){ btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 발송 중...'; }
+  let ok = 0;
+  try {
+    for(const c of valid){
+      const emp = allEmployees.find(e => e.id === c.employee_id) || {};
+      try{
+        await _saveDispatchRecord({ method: DISPATCH_METHOD.EMAIL, status: DISPATCH_STATUS.COMPLETED, recipient: emp.email || '', note:`선택 일괄 이메일 — ${emp.name}`, contractId: c.id });
+        ok++;
+      } catch(e){}
+    }
+    toast(`선택 이메일 완료 — ${ok}/${valid.length}건`, 'success');
+  } finally {
+    if(btn){ btn.disabled = false; btn.innerHTML = origHTML; }
+    resetCdpSelection();
+    await _cdpRefreshUnsent();
+  }
+}
+
+/** 선택 일괄 수동교부 처리 */
+async function cdpBatchManual(){
+  const ids = cdpGetSelectedIds();
+  if(!ids.length){ toast('선택된 항목이 없습니다.', 'warning'); return; }
+  if(!confirm(`[선택 일괄 수동교부]\n\n선택된 ${ids.length}건을\n수동교부 완료 처리하시겠습니까?`)) return;
+  const btn = document.getElementById('cdp-batch-manual-btn');
+  const origHTML = btn ? btn.innerHTML : '';
+  if(btn){ btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 처리 중...'; }
+  let ok = 0;
+  try {
+    for(const c of _cdpGetUnsentContracts(_cdpUnsentYM.year, _cdpUnsentYM.month).filter(c => ids.includes(c.id))){
+      const emp = allEmployees.find(e => e.id === c.employee_id) || {};
+      try{
+        await _saveDispatchRecord({ method: DISPATCH_METHOD.MANUAL, status: DISPATCH_STATUS.COMPLETED, recipient:'직접배부', note:`선택 일괄 수동교부 — ${emp.name}`, contractId: c.id });
+        ok++;
+      } catch(e){}
+    }
+    toast(`선택 수동교부 완료 — ${ok}/${ids.length}건`, 'success');
+  } finally {
+    if(btn){ btn.disabled = false; btn.innerHTML = origHTML; }
+    resetCdpSelection();
+    await _cdpRefreshUnsent();
+  }
+}
+
+/** 선택 초기화 */
+function resetCdpSelection(){
+  document.querySelectorAll('.cdp-row-chk').forEach(cb => { cb.checked = false; });
+  const allCb = document.getElementById('cdp-chk-all');
+  if(allCb) allCb.checked = false;
+  cdpUpdateBatchBtns();
 }
 
 /** 미발송 목록 테이블 렌더 */
@@ -364,9 +480,10 @@ function renderCdpUnsentList(){
     const kakaoClass = hasPhone ? 'btn btn-kakao btn-sm' : 'btn btn-sm';
     const emailClass = hasEmail ? 'btn btn-sky btn-sm' : 'btn btn-sm';
     return `<tr id="cdp-urow-${idx}">
-      <td style="font-weight:700;color:#1f2937;">${emp.name || '-'}</td>
-      <td><span class="badge ${empCatBadge(cat)}" style="font-size:10.5px;padding:2px 7px;">${contractTypeLabel(cat)}</span></td>
-      <td style="font-size:12px;color:#374151;">${co.company_name || '-'}</td>
+      <td class="ctr"><input type="checkbox" class="cdp-row-chk" data-contract-id="${c.id}" onchange="cdpUpdateBatchBtns()" /></td>
+      <td style="font-size:12px;color:#111827;font-weight:700;">${co.company_name || '-'}</td>
+      <td style="font-weight:700;color:#111827;">${emp.name || '-'}</td>
+      <td><span class="badge ${empCatBadge(cat)}">${contractTypeLabel(cat)}</span></td>
       <td style="font-size:12px;color:#6b7280;">${c.contract_start || '-'}</td>
       <td style="font-size:12px;color:#6b7280;">${phone || '<span style="color:#d1d5db;">미등록</span>'}</td>
       <td style="font-size:12px;">${hasEmail ? `<span style="color:#374151;">${email}</span>` : '<span style="color:#d1d5db;">미등록</span>'}</td>

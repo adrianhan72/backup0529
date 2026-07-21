@@ -40,7 +40,7 @@
       <div class="cen-tab-bar">
         <button class="cen-tab active" id="rc-tab-target" onclick="rcSwitchTab('target')">
           <i class="fas fa-users" style="margin-right:5px;"></i>전환 대상
-          <span id="rc-tab-target-badge" style="display:inline-flex;align-items:center;justify-content:center;background:#dc2626;color:#fff;border-radius:10px;font-size:10px;font-weight:700;padding:1px 6px;margin-left:5px;display:none;">0</span>
+          <span id="rc-tab-target-badge" style="display:inline-flex;align-items:center;justify-content:center;background:#dc2626;color:#fff;border-radius:10px;font-size:10px;padding:1px 6px;margin-left:5px;display:none;">0</span>
         </button>
         <button class="cen-tab" id="rc-tab-history" onclick="rcSwitchTab('history')">
           <i class="fas fa-history" style="margin-right:5px;"></i>발송 이력
@@ -67,15 +67,14 @@
             <i class="fas fa-search"></i>
             <input type="text" id="rc-search" class="filt-search" style="width:140px;" placeholder="직원명 검색" oninput="renderRcTargetList()" />
           </div>
-          <button onclick="renderRcTargetList()" class="btn btn-sm btn-secondary"><i class="fas fa-sync-alt"></i> 새로고침</button>
         </div>
         <div class="card" style="overflow:hidden;padding:0;">
           <div style="overflow-x:auto;">
             <table style="width:100%;border-collapse:collapse;font-size:12.5px;">
               <thead>
                 <tr style="background:#f8fafc;">
-                  <th style="padding:9px 12px;text-align:left;font-weight:600;color:#374151;border-bottom:2px solid #e5e7eb;white-space:nowrap;">직원명</th>
                   <th style="padding:9px 12px;text-align:left;font-weight:600;color:#374151;border-bottom:2px solid #e5e7eb;white-space:nowrap;">고객사</th>
+                  <th style="padding:9px 12px;text-align:left;font-weight:600;color:#374151;border-bottom:2px solid #e5e7eb;white-space:nowrap;">직원명</th>
                   <th style="padding:9px 12px;text-align:left;font-weight:600;color:#374151;border-bottom:2px solid #e5e7eb;white-space:nowrap;">고용형태</th>
                   <th style="padding:9px 12px;text-align:left;font-weight:600;color:#374151;border-bottom:2px solid #e5e7eb;white-space:nowrap;">최초 계약일</th>
                   <th style="padding:9px 12px;text-align:left;font-weight:600;color:#374151;border-bottom:2px solid #e5e7eb;white-space:nowrap;">누적 기간</th>
@@ -116,7 +115,6 @@
                 <i class="fas fa-search"></i>
                 <input type="text" id="rc-log-search" class="filt-search" style="width:140px;" placeholder="직원명 검색" oninput="renderRcHistory()" />
               </div>
-              <button onclick="(async()=>{await rcLoadHistory(true);renderRcHistory();})()" class="btn btn-sm btn-secondary btn-refresh"><i class="fas fa-sync-alt"></i> 새로고침</button>
             </div>
           </div>
           <div style="overflow-x:auto;padding:0 0 8px;">
@@ -124,9 +122,9 @@
               <thead>
                 <tr>
                   <th>발송 일시</th>
+                  <th>고객사</th>
                   <th>직원명</th>
                   <th>고용형태</th>
-                  <th>고객사</th>
                   <th>누적 기간</th>
                   <th>발송 방식</th>
                   <th>발송자</th>
