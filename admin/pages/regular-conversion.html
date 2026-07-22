@@ -1,48 +1,21 @@
     <div id="page-regular-conversion" class="page">
 
-      <!-- 상단 안내 배너 -->
-      <div class="cen-notice-banner danger">
-        <i class="fas fa-gavel" style="color:#dc2626;font-size:20px;margin-top:2px;flex-shrink:0;"></i>
-        <div>
-          <div style="font-size:12.5px;color:#991b1b;line-height:1.75;">
-            「기간제 및 단시간근로자 보호 등에 관한 법률」 제4조: 계약직 근로자를 <strong>2년을 초과하여 사용하면 기간의 정함이 없는 근로계약(정규직)을 체결한 것으로 간주</strong>됩니다.<br>
-            전환 대상자에게 안내를 발송하고 정규직 근로계약서를 재작성해 주세요.<br>
-            <span style="font-size:11.5px;color:#b91c1c;">※ 누적 기간: 동일 직원의 계약직·계약직 수습 계약 전체 합산 (파기·취소 제외)</span>
-          </div>
-        </div>
+      <!-- 섹션 타이틀 -->
+      <div class="section-title" style="margin-top:12px;">
+        <i class="fas fa-user-check"></i>
+        <span>고객사앱 정규직 전환 의무 안내문 자동 발송</span>
       </div>
 
-      <!-- 요약 통계 카드 -->
-      <div class="cen-summary-grid" id="rc-summary-grid">
-        <div class="cen-stat-card" style="border-left:4px solid #dc2626;">
-          <div class="cen-stat-label">전환 의무 발생 <span style="font-size:10px;color:#9ca3af;">(2년 초과)</span></div>
-          <div class="cen-stat-val" id="rc-stat-exceeded" style="color:#dc2626;">0</div>
-          <div class="cen-stat-sub">즉시 조치 필요</div>
-        </div>
-        <div class="cen-stat-card" style="border-left:4px solid #f97316;">
-          <div class="cen-stat-label">임박 <span style="font-size:10px;color:#9ca3af;">(1년 9개월~2년)</span></div>
-          <div class="cen-stat-val" id="rc-stat-urgent" style="color:#ea580c;">0</div>
-          <div class="cen-stat-sub">~2년까지 90일 이내</div>
-        </div>
-        <div class="cen-stat-card" style="border-left:4px solid #eab308;">
-          <div class="cen-stat-label">주의 <span style="font-size:10px;color:#9ca3af;">(1년 6개월~1년 9개월)</span></div>
-          <div class="cen-stat-val" id="rc-stat-warning" style="color:#a16207;">0</div>
-          <div class="cen-stat-sub">~2년까지 180일 이내</div>
-        </div>
-        <div class="cen-stat-card" style="border-left:4px solid #6366f1;">
-          <div class="cen-stat-label">이번 달 안내 완료</div>
-          <div class="cen-stat-val" id="rc-stat-done" style="color:#4f46e5;">0</div>
-          <div class="cen-stat-sub">이번 달 발송 이력</div>
-        </div>
+      <!-- 안내 본문 -->
+      <div style="font-size:13px;color:#374151;line-height:1.8;margin-bottom:16px;">
+        「기간제 및 단시간근로자 보호 등에 관한 법률」 제4조에 따라, 계약직·일용직·수습 근로자의 누적 근로기간이 <strong>2년(730일)에 도달하기 30일 전(누적 700일)</strong>부터 매일 오전 9시에 시스템에서 자동으로 <strong>고객사 앱 알림함</strong>으로 사전 고지 안내를 발송합니다.<br>
+        <span style="font-size:11.5px;color:#6b7280;">※ 누적 근로일수: 직원의 입사일(최초 계약 시작일)부터 현재까지의 기간을 기준으로 산정합니다 (파기·취소된 계약 제외).</span><br>
+        <span style="font-size:11.5px;color:#6b7280;">※ 계약 종료일까지의 기간이 730일 이내인 경우(자연 만료로 전환 의무 미발생)에는 고지 대상에서 제외됩니다.</span>
       </div>
 
-      <!-- 탭 -->
+      <!-- 탭: 발송 이력 / 메시지 예시 -->
       <div class="cen-tab-bar">
-        <button class="cen-tab active" id="rc-tab-target" onclick="rcSwitchTab('target')">
-          <i class="fas fa-users" style="margin-right:5px;"></i>전환 대상
-          <span id="rc-tab-target-badge" style="display:inline-flex;align-items:center;justify-content:center;background:#dc2626;color:#fff;border-radius:10px;font-size:10px;padding:1px 6px;margin-left:5px;display:none;">0</span>
-        </button>
-        <button class="cen-tab" id="rc-tab-history" onclick="rcSwitchTab('history')">
+        <button class="cen-tab active" id="rc-tab-history" onclick="rcSwitchTab('history')">
           <i class="fas fa-history" style="margin-right:5px;"></i>발송 이력
         </button>
         <button class="cen-tab" id="rc-tab-template" onclick="rcSwitchTab('template')">
@@ -50,56 +23,22 @@
         </button>
       </div>
 
-      <!-- ─── 탭: 전환 대상 ─── -->
-      <div id="rc-panel-target" class="cen-tab-panel">
-        <!-- 필터 바 카드 -->
-        <div class="filt-bar" style="margin-bottom:10px;border:1px solid #e5e7eb;border-radius:8px;padding:10px 18px;background:#fff;">
-          <select id="rc-filter-company" onchange="_rcTargetPage=1;renderRcTargetList()" class="filt-select" style="max-width:160px;">
-            <option value="">전체 고객사</option>
-          </select>
-          <select id="rc-filter-status" onchange="_rcTargetPage=1;renderRcTargetList()" class="filt-select">
-            <option value="">전체 상태</option>
-            <option value="exceeded">전환 의무 (2년 초과)</option>
-            <option value="urgent">임박 (90일 이내)</option>
-            <option value="warning">주의 (180일 이내)</option>
-          </select>
-          <div class="filt-search-wrap" style="margin-left:auto;">
-            <i class="fas fa-search"></i>
-            <input type="text" id="rc-search" class="filt-search" style="width:140px;" placeholder="직원명 검색" oninput="renderRcTargetList()" />
-          </div>
-        </div>
-        <div class="card" style="overflow:hidden;padding:0;">
-          <div style="overflow-x:auto;">
-            <table style="width:100%;border-collapse:collapse;font-size:12.5px;">
-              <thead>
-                <tr style="background:#f8fafc;">
-                  <th style="padding:9px 12px;text-align:left;font-weight:600;color:#374151;border-bottom:2px solid #e5e7eb;white-space:nowrap;">고객사</th>
-                  <th style="padding:9px 12px;text-align:left;font-weight:600;color:#374151;border-bottom:2px solid #e5e7eb;white-space:nowrap;">직원명</th>
-                  <th style="padding:9px 12px;text-align:left;font-weight:600;color:#374151;border-bottom:2px solid #e5e7eb;white-space:nowrap;">고용형태</th>
-                  <th style="padding:9px 12px;text-align:left;font-weight:600;color:#374151;border-bottom:2px solid #e5e7eb;white-space:nowrap;">최초 계약일</th>
-                  <th style="padding:9px 12px;text-align:left;font-weight:600;color:#374151;border-bottom:2px solid #e5e7eb;white-space:nowrap;">누적 기간</th>
-                  <th style="padding:9px 12px;text-align:left;font-weight:600;color:#374151;border-bottom:2px solid #e5e7eb;white-space:nowrap;">2년까지 잔여</th>
-                  <th style="padding:9px 12px;text-align:left;font-weight:600;color:#374151;border-bottom:2px solid #e5e7eb;white-space:nowrap;">상태</th>
-                  <th style="padding:9px 12px;text-align:center;font-weight:600;color:#374151;border-bottom:2px solid #e5e7eb;white-space:nowrap;">안내 발송</th>
-                </tr>
-              </thead>
-              <tbody id="rc-target-tbody">
-                <tr><td colspan="8" style="text-align:center;padding:40px;color:#aaa;"><i class="fas fa-spinner fa-spin"></i> 불러오는 중...</td></tr>
-              </tbody>
-            </table>
-          </div>
-          <div class="pagination" id="rc-target-pagination"></div>
-        </div>
-      </div>
-
       <!-- ─── 탭: 발송 이력 ─── -->
-      <div id="rc-panel-history" class="cen-tab-panel" style="display:none;">
+      <div id="rc-panel-history" class="cen-tab-panel">
         <!-- 이력 필터 바 카드 -->
         <div class="filt-bar" style="margin-bottom:10px;border:1px solid #e5e7eb;border-radius:8px;padding:10px 18px;background:#fff;">
           <div style="display:flex;align-items:center;gap:5px;">
             <span class="filt-label">고객사</span>
             <select id="rc-log-filter-company" onchange="renderRcHistory()" class="filt-select" style="max-width:140px;">
               <option value="">전체</option>
+            </select>
+          </div>
+          <div style="display:flex;align-items:center;gap:5px;">
+            <span class="filt-label">고지유형</span>
+            <select id="rc-log-filter-type" onchange="renderRcHistory()" class="filt-select">
+              <option value="">전체</option>
+              <option value="advance">사전 고지</option>
+              <option value="violation">전환 의무 위반</option>
             </select>
           </div>
           <div style="display:flex;align-items:center;gap:5px;">
@@ -118,6 +57,11 @@
           </div>
         </div>
 
+        <!-- 힌트 -->
+        <div style="text-align:right;margin-bottom:6px;">
+          <span style="font-size:11px;color:#9ca3af;">(누적 근무일수와 전환 의무일까지 잔여일은 발송시점 기준)</span>
+        </div>
+
         <!-- 이력 테이블 카드 -->
         <div class="card" style="padding:0;overflow:hidden;">
           <div style="overflow-x:auto;padding:0 0 8px;">
@@ -125,17 +69,18 @@
               <thead>
                 <tr>
                   <th>발송 일시</th>
+                  <th>고지유형</th>
                   <th>고객사</th>
                   <th>직원명</th>
                   <th>고용형태</th>
-                  <th>누적 기간</th>
+                  <th>누적 근무일수</th>
+                  <th>전환 의무일까지</th>
                   <th>발송 방식</th>
                   <th>발송자</th>
-                  <th>비고</th>
                 </tr>
               </thead>
               <tbody id="rc-log-tbody">
-                <tr><td colspan="8" class="cen-empty"><i class="fas fa-spinner fa-spin"></i> 불러오는 중...</td></tr>
+                <tr><td colspan="9" class="cen-empty"><i class="fas fa-spinner fa-spin"></i> 불러오는 중...</td></tr>
               </tbody>
             </table>
           </div>
@@ -145,67 +90,70 @@
 
       <!-- ─── 탭: 메시지 예시 ─── -->
       <div id="rc-panel-template" class="cen-tab-panel" style="display:none;">
-        <!-- 샘플 선택 바 -->
-        <div class="cen-tmpl-sample-bar">
-          <label><i class="fas fa-user" style="margin-right:4px;color:#dc2626;"></i>미리보기 샘플</label>
-          <select id="rc-tmpl-sample-sel" class="cen-tmpl-sample-select" onchange="renderRcTemplate()">
-            <option value="__demo__">— 예시 데이터로 보기 —</option>
-          </select>
-          <span style="font-size:11.5px;color:#9ca3af;">전환 대상 직원을 선택하면 실제 데이터로 미리보기가 갱신됩니다.</span>
-        </div>
 
-        <!-- 섹션: 고객사 인앱 알림 -->
-        <div class="cen-tmpl-group-head">
-          <div class="cen-tmpl-group-badge company">
-            <i class="fas fa-building"></i> 고객사 발송
-          </div>
-          <span class="cen-tmpl-group-desc">고객사 전용 앱 알림함으로 발송 — 정규직 전환 의무 안내</span>
+        <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+        <!-- 섹션 A: 사전 고지 (700~730일)              -->
+        <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+        <div class="section-title">
+          <i class="fas fa-bell"></i>
+          <span>사전 고지 (누적 700~730일)</span>
+          <span style="font-size:12px;color:#9ca3af;font-weight:400;">2년 도달 30일 전 — 전환 의무 발생에 대비해 사전 안내</span>
         </div>
         <div class="cen-tmpl-wrap" style="grid-template-columns:1fr;">
           <div>
             <div class="cen-tmpl-section-head">
-              <span class="cen-tmpl-section-badge inapp"><i class="fas fa-bell"></i> 인앱 알림</span>
-              <span style="font-size:11.5px;color:#9ca3af;">고객사 앱 알림함에 표시 · 읽음 처리 가능</span>
+              <span class="cen-tmpl-section-badge inapp">
+                <i class="fas fa-bell"></i> 인앱 알림
+              </span>
             </div>
-            <!-- 인앱 알림 미리보기 — 모바일 앱 알림함 카드 스타일 (실제 앱과 동일) -->
             <div class="cen-inapp-phone-wrap">
               <div class="cen-inapp-phone-bar">
                 <span style="font-size:10px;color:#fff;opacity:.8;">알림함</span>
                 <i class="fas fa-bell" style="color:#fff;font-size:12px;"></i>
               </div>
-              <!-- 읽지 않은 알림 카드 (강조) -->
-              <div class="cen-inapp-notif-card unread">
-                <div class="cen-inapp-notif-icon"><i class="fas fa-user-check"></i></div>
-                <div class="cen-inapp-notif-content">
-                  <div class="cen-inapp-notif-title" id="rc-tmpl-inapp-title">정규직 전환 의무 안내</div>
-                  <div class="cen-inapp-notif-body" id="rc-tmpl-inapp-body">로딩 중...</div>
-                  <div class="cen-inapp-notif-time" id="rc-tmpl-inapp-time">방금 전</div>
+              <div class="cen-inapp-notif-card unread" style="flex-direction:column;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <div class="cen-inapp-notif-icon"><i class="fas fa-clock"></i></div>
+                  <div id="rc-tmpl-inapp-title-1" style="font-size:14px;font-weight:700;color:#111827;flex:1;">로딩 중...</div>
+                  <div class="cen-inapp-unread-dot"></div>
                 </div>
-                <div class="cen-inapp-unread-dot"></div>
+                <div id="rc-tmpl-inapp-plain-1" style="font-size:11.5px;color:#4b5563;line-height:1.6;white-space:pre-wrap;font-family:inherit;margin-top:8px;padding-left:44px;">로딩 중...</div>
               </div>
-              <!-- 이전 알림 (흐리게) -->
-              <div class="cen-inapp-notif-card" style="opacity:.45;">
-                <div class="cen-inapp-notif-icon" style="background:#f3f4f6;color:#9ca3af;"><i class="fas fa-won-sign"></i></div>
-                <div class="cen-inapp-notif-content">
-                  <div class="cen-inapp-notif-title" style="color:#9ca3af;">급여명세서 발송 완료</div>
-                  <div class="cen-inapp-notif-body" style="color:#c4c9d4;">2025년 5월 급여명세서가 발송됐습니다.</div>
-                  <div class="cen-inapp-notif-time">3일 전</div>
-                </div>
-              </div>
-            </div>
-            <!-- 전체 메시지 본문 카드 (알림 상세 시트와 동일) -->
-            <div class="cen-inapp-full-card">
-              <div class="cen-inapp-full-head">
-                <i class="fas fa-user-check" style="color:#4f46e5;"></i>
-                <span id="rc-tmpl-inapp-full-title">정규직 전환 의무 안내</span>
-                <span class="cen-inapp-new-badge">NEW</span>
-              </div>
-              <div class="cen-inapp-full-body" id="rc-tmpl-inapp-full-body">로딩 중...</div>
-              <div class="cen-inapp-full-infobox" id="rc-tmpl-inapp-infobox"></div>
-              <div class="cen-inapp-full-foot" id="rc-tmpl-inapp-foot">로딩 중...</div>
             </div>
           </div>
-        </div><!-- /고객사 wrap -->
+        </div>
+
+        <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+        <!-- 섹션 B: 전환 의무 발생 (730일 초과)         -->
+        <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+        <div class="section-title" style="margin-top:24px;">
+          <i class="fas fa-exclamation-triangle"></i>
+          <span>전환 의무 발생 (누적 730일 초과)</span>
+          <span style="font-size:12px;color:#9ca3af;font-weight:400;">관련법 위반 경고 — 즉시 정규직 계약 등록 필요</span>
+        </div>
+        <div class="cen-tmpl-wrap" style="grid-template-columns:1fr;">
+          <div>
+            <div class="cen-tmpl-section-head">
+              <span class="cen-tmpl-section-badge inapp">
+                <i class="fas fa-bell"></i> 인앱 알림
+              </span>
+            </div>
+            <div class="cen-inapp-phone-wrap">
+              <div class="cen-inapp-phone-bar">
+                <span style="font-size:10px;color:#fff;opacity:.8;">알림함</span>
+                <i class="fas fa-bell" style="color:#fff;font-size:12px;"></i>
+              </div>
+              <div class="cen-inapp-notif-card unread" style="flex-direction:column;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <div class="cen-inapp-notif-icon"><i class="fas fa-gavel"></i></div>
+                  <div id="rc-tmpl-inapp-title-2" style="font-size:14px;font-weight:700;color:#111827;flex:1;">로딩 중...</div>
+                  <div class="cen-inapp-unread-dot"></div>
+                </div>
+                <div id="rc-tmpl-inapp-plain-2" style="font-size:11.5px;color:#4b5563;line-height:1.6;white-space:pre-wrap;font-family:inherit;margin-top:8px;padding-left:44px;">로딩 중...</div>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <!-- 변수 안내 -->
         <div style="padding:0 20px 24px;">

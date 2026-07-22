@@ -2459,6 +2459,26 @@ async function saveDraftContract(reason){
   const isRegNoProbDraft = catForDraft === CONTRACT_TYPE.REGULAR;
   const finalContractEnd = isRegNoProbDraft ? '' : contractEnd;
 
+  // ── 정규직 전환 의무 검사 (임시저장 시에도 적용) ──
+  const TARGET_TYPES_DRAFT = ['fixed_term', 'fixed_probation', 'regular_probation', 'daily'];
+  if(TARGET_TYPES_DRAFT.includes(catForDraft) && finalContractEnd){
+    const _hireDraft = document.getElementById('ct-edit-em-hire')?.value || '';
+    if(_hireDraft){
+      const _hireDt = new Date(_hireDraft);
+      const _endDt  = new Date(finalContractEnd);
+      if(!isNaN(_hireDt.getTime()) && !isNaN(_endDt.getTime())){
+        const _daysFromHire = Math.ceil((_endDt - _hireDt) / (1000 * 60 * 60 * 24));
+        if(_daysFromHire > 730){
+          const _maxEnd = new Date(_hireDt);
+          _maxEnd.setDate(_maxEnd.getDate() + 730);
+          const _maxEndStr = _maxEnd.toISOString().slice(0, 10);
+          toast(`입사일로부터 730일을 초과하면 정규직 전환 의무 대상이 됩니다. 계약 종료일을 ${_maxEndStr} 이내로 설정하세요.`, 'error');
+          return;
+        }
+      }
+    }
+  }
+
   const baseDraft       = getAmountVal('ct-base')||0;
   const annualDraft     = getAmountVal('ct-annual-sal')||0;
   const dailyDraft      = getAmountVal('ct-daily-wage')||0;
@@ -3204,6 +3224,37 @@ function _ctValidate(){
   const _shortTermRow = document.getElementById('ct-short-term-warning-row');
   if(_shortTermRow && _shortTermRow.style.display !== 'none')
     errors.push('계약기간 1개월 미만 — 일용직으로 변경하거나 종료일을 조정해 주세요.');
+
+  // ── 정규직 전환 의무 검사 (계약직·계약직 수습·정규직 수습·일용직) ──
+  // 입사일로부터 730일을 초과하는 계약 종료일 설정 불가
+  (function(){
+    const _ctTypeEl = document.getElementById('ct-type');
+    const _ctType = (_ctTypeEl?.value || '').trim();
+    const TARGET_TYPES = ['fixed_term', 'fixed_probation', 'regular_probation', 'daily'];
+    if(!TARGET_TYPES.includes(_ctType)) return;
+
+    const _hireEl = document.getElementById('ct-edit-em-hire');
+    const _hire = _hireEl?.value || '';
+    if(!_hire) return; // 입사일 없으면 검사 불가
+
+    const _endEl = document.getElementById('ct-end');
+    const _end = _endEl?.value || '';
+    if(!_end) return; // 종료일 없으면 검사 불가 (다른 검사에서 걸러짐)
+
+    const hireDate = new Date(_hire);
+    const endDate  = new Date(_end);
+    if(isNaN(hireDate.getTime()) || isNaN(endDate.getTime())) return;
+
+    const daysFromHire = Math.ceil((endDate - hireDate) / (1000 * 60 * 60 * 24));
+    if(daysFromHire > 730){
+      const maxEndDate = new Date(hireDate);
+      maxEndDate.setDate(maxEndDate.getDate() + 730);
+      const maxEndStr = maxEndDate.toISOString().slice(0, 10);
+      _ctMarkError('ct-end',
+        `입사일로부터 730일을 초과하면 정규직 전환 의무 대상이 됩니다. 계약 종료일을 ${maxEndStr} 이내로 설정하세요.`,
+        errors);
+    }
+  })();
 
   if(errors.length){
     _ctShowErrors(errors);

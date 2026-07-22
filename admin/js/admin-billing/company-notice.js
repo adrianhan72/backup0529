@@ -4,19 +4,17 @@
 /** 전역 상태 */
 let _cenNoticeList  = [];   // contract_expiry_notice 테이블 캐시
 let _cenHistoryLoaded = false;
-let _cenTab         = 'target';  // 현재 탭
-let _cenTargetPage  = 1;
+let _cenTab         = 'history';  // 현재 탭 (발송이력 기본)
 let _cenHistoryPage = 1;
 const CEN_PAGE_SIZE = 20;
 const CEN_NOTICE_DAYS = 29;  // 만료 N일 전 통지 대상
+let _cenContact      = null; // 대표 연락처 캐시
 
 /** 탭 전환 */
 function cenSwitchTab(tab){
   _cenTab = tab;
-  document.getElementById('cen-tab-target').classList.toggle('active',   tab==='target');
   document.getElementById('cen-tab-history').classList.toggle('active',  tab==='history');
   document.getElementById('cen-tab-template').classList.toggle('active', tab==='template');
-  document.getElementById('cen-panel-target').style.display   = tab==='target'   ? '' : 'none';
   document.getElementById('cen-panel-history').style.display  = tab==='history'  ? '' : 'none';
   document.getElementById('cen-panel-template').style.display = tab==='template' ? '' : 'none';
   if(tab==='history'){
@@ -42,16 +40,7 @@ function cenSwitchTab(tab){
  * - 목록이 없으면 "예시 데이터로 보기"만 유지
  */
 function _cenFillTemplateSampleSel(){
-  const sel = document.getElementById('cen-tmpl-sample-sel');
-  if(!sel) return;
-  sel.innerHTML = '<option value="__demo__">— 예시 데이터로 보기 —</option>';
-  (_cenNoticeList || []).forEach(item => {
-    const emp = item.emp || {}, co = item.co || {};
-    const opt = document.createElement('option');
-    opt.value       = item.c?.id || '';
-    opt.textContent = `${emp.name||'(이름없음)'} · ${item.cat||''} · ${co.company_name||''} · D-${item.daysLeft}`;
-    sel.appendChild(opt);
-  });
+  // 미리보기 샘플 선택 바 제거됨 — 항상 예시 데이터 사용
 }
 
 /**
@@ -59,28 +48,11 @@ function _cenFillTemplateSampleSel(){
  * 근로자용(알림톡·이메일) + 고객사용(인앱 알림) 두 섹션 모두 갱신
  */
 function renderCenTemplate(){
-  const sel    = document.getElementById('cen-tmpl-sample-sel');
-  const selVal = sel ? sel.value : '__demo__';
-
-  // ── 1. 데이터 준비 ────────────────────────────────────────────
+  // ── 1. 데이터 준비 (항상 예시 데이터) ──────────────────────────
   let empName='홍길동', catLabel=CONTRACT_TYPE_LABEL[CONTRACT_TYPE.FIXED], coName='(주)샘플코리아',
       coRep='김대표', contractEnd='2025-07-18', daysLeft=29,
       phone='010-1234-5678', email='sample@example.com',
       adminPhone='02-000-0000', adminEmail='labor@example.com';
-
-  if(selVal !== '__demo__'){
-    const item = (_cenNoticeList||[]).find(x => x.c?.id === selVal);
-    if(item){
-      empName     = item.emp?.name          || empName;
-      catLabel    = item.cat                || catLabel;
-      coName      = item.co?.company_name   || coName;
-      coRep       = getCompanyRepName(item.co) || coRep;
-      contractEnd = item.c?.contract_end    || contractEnd;
-      daysLeft    = item.daysLeft           ?? daysLeft;
-      phone       = item.emp?.phone         || phone;
-      email       = item.emp?.email         || email;
-    }
-  }
 
   const [ey,em,ed] = contractEnd.split('-');
   const endKr    = `${parseInt(ey)}년 ${parseInt(em)}월 ${parseInt(ed)}일`;
@@ -95,135 +67,81 @@ function renderCenTemplate(){
                        : daysLeft <= 14 ? '조속히 갱신 또는 종료 여부를 확인해 주시기 바랍니다.'
                        :                 '미리 갱신 여부를 검토하시어 원활한 인사 관리가 되시길 바랍니다.';
 
-  // ── 2. 근로자 — 알림톡 ────────────────────────────────────────
-  const kakaoBody =
+  // ── 2. 공통 본문 ────────────────────────────────────────────
+  const messageBody =
 `안녕하세요, ${empName}님.
 
-귀하의 근로계약이 곧 만료될 예정입니다.
+귀하의 근로계약이 아래와 같이 만료될 예정입니다.
 
+■ 소속회사: ${coName}
 ■ 고용형태: ${catLabel}
-■ 만료 예정일: ${endKr}
-■ 남은 기간: ${ddayStr}
+■ 만료예정: ${endKr}
 
-${urgencyWorker}
-계약 갱신 또는 종료 여부를 담당 노무사와 미리 상의해 주시기 바랍니다.
+남은 계약기간 내에 계약 갱신 또는 종료 여부를 소속회사와 상의하시기 바랍니다.`;
 
-${_BRAND_SIG}`;
+  const contactPhone = _cenContact?.phone || '02)3487-8841';
+  const contactFax   = _cenContact?.fax   || '02)3487-8882';
+  const contactEmail = _cenContact?.email || 'eunyangpark@naver.com';
+  const contactText  = `문의 전화: ${contactPhone} | Fax: ${contactFax}`;
 
+  // ── 3. 근로자 — 알림톡 ────────────────────────────────────────
+  const kakaoBody = messageBody;
   const kakaoFooter =
-`※ 「기간제 및 단시간근로자 보호 등에 관한 법률」에 따른 계약만료 사전 통지입니다.
-문의: ${adminPhone}`;
+`${_BRAND_SIG}
+${contactText}
 
-  // ── 3. 근로자 — 이메일 ────────────────────────────────────────
-  const emailSubject = `[계약만료 안내] ${empName}님의 ${catLabel} 계약이 ${ddayStr} 후 만료됩니다`;
-  const emailIntro =
-`항상 성실히 근무해 주셔서 감사합니다.
+* 이 메시지는 「기간제 및 단시간근로자 보호 등에 관한 법률」에 따른 계약만료 사전 통지로, 계약만료 예정일까지 잔여기간이 29일 이하인 경우 시스템에서 자동발송됩니다.`;
 
-귀하의 근로계약 만료일이 다가와 사전에 안내드립니다.
-${urgencyWorker}`;
-
-  const emailBody2 =
-`계약 갱신을 희망하시거나 만료 처리에 관한 문의 사항이 있으시면 담당 노무사에게 연락해 주시기 바랍니다.
-
-고용 유지 또는 종료 여부와 관계없이 퇴직금, 실업급여 등 귀하의 권리를 충분히 안내해 드리겠습니다.`;
-
+  // ── 4. 근로자 — 이메일 ────────────────────────────────────────
+  const emailSubject = `[근로계약 만료 예정일 안내] ${empName}님의 ${catLabel} 계약`;
+  const emailIntro = messageBody;
+  const emailBody2 = '';
   const emailNotice =
-`본 메일은 「기간제 및 단시간근로자 보호 등에 관한 법률」 및 근로기준법에 따른 계약만료 사전 통지 메일입니다.
-수신을 원하지 않으시면 담당자에게 문의해 주세요.
-
-${_BRAND_SIG}`;
+`<div style="font-size:14px;font-weight:700;color:#111827;margin-bottom:6px;">인사톡 노무톡 · 대화인사노무파트너스</div>
+<div style="font-size:12px;color:#6b7280;margin-bottom:10px;">문의 전화: <span style="color:#4f46e5;font-weight:600;">${contactPhone}</span> | Fax: <span style="color:#4f46e5;font-weight:600;">${contactFax}</span></div>
+<div style="font-size:11px;color:#9ca3af;line-height:1.7;border-top:1px solid #f1f5f9;padding-top:10px;">* 본 메일은 「기간제 및 단시간근로자 보호 등에 관한 법률」에 따른 계약만료 사전 통지로, 계약만료 예정일까지 잔여기간이 29일 이하인 경우 시스템에서 자동발송됩니다.</div>`;
 
   // ── 4. 고객사 — 인앱 알림 ────────────────────────────────────
-  const inappTitle  = `[계약만료 예정] ${empName} ${catLabel} — ${ddayStr}`;
-  const inappShort  = `${empName}(${catLabel})님 계약이 ${endKr} 만료됩니다. (${ddayStr})`;
+  const inappTitle  = `[근로계약 만료 예정일 안내] ${empName} ${catLabel}`;
+  const inappShort  = `${empName}(${catLabel})님 계약이 ${endKr} 만료됩니다.`;
 
   const inappFullBody =
 `안녕하세요, ${coName} ${coRep} 사장님.
 
 소속 직원의 근로계약 만료일이 다가와 안내드립니다.
-${urgencyCompany}`;
+
+■ 직원명: ${empName}
+■ 고용형태: ${catLabel}
+■ 만료예정: ${endKr}
+
+위 직원에게는 「기간제 및 단시간근로자 보호 등에 관한 법률」의 사전 통지 의무에 따라 안내를 발송하였습니다. 계약 만료일 전에 근로계약의 갱신/연장/종료 여부를 확정하셔서 저희 담당자에게 알려주시기 바랍니다.`;
 
   const inappFoot =
-`담당 노무사에게 갱신 여부를 확인해 주세요.
-문의: ${adminPhone} / ${adminEmail}
-※ 「기간제 및 단시간근로자 보호 등에 관한 법률」에 따른 사전 통지
+`───────────────────────────
+인사톡 노무톡 · 대화인사노무파트너스 담당자
+전화: ${contactPhone}
+E-mail: ${contactEmail}
+팩스: ${contactFax}`;
 
-${_BRAND_SIG}`;
-
-  // ── 5. DOM 반영: 근로자 알림톡 ──────────────────────────────
-  _setText('cen-tmpl-kakao-body',   kakaoBody);
-  _setText('cen-tmpl-kakao-footer', kakaoFooter);
+  // ── 5. DOM 반영: 근로자 알림톡 (플레인 텍스트) ────────────
+  const kakaoPlain = `[근로계약 만료 예정일 안내]\n\n${kakaoBody}\n\n${kakaoFooter}`;
+  _setText('cen-tmpl-kakao-plain', kakaoPlain);
 
   // ── 6. DOM 반영: 근로자 이메일 ──────────────────────────────
   _setText('cen-tmpl-email-subject',  `📋 ${emailSubject}`);
   _setText('cen-tmpl-email-to',       `수신: ${email || '이메일 미등록'}`);
-  _setText('cen-tmpl-email-greeting', `안녕하세요, ${empName}님.`);
   _setText('cen-tmpl-email-intro',    emailIntro);
   _setText('cen-tmpl-email-body2',    emailBody2);
-  _setText('cen-tmpl-email-notice',   emailNotice);
-  _setText('cen-tmpl-email-footer',   `${coName} 담당 노무사 · ${adminPhone} · ${adminEmail}`);
+  const body2El = document.getElementById('cen-tmpl-email-body2');
+  if(body2El) body2El.style.display = emailBody2 ? '' : 'none';
+  const emailNoticeEl = document.getElementById('cen-tmpl-email-notice');
+  if(emailNoticeEl) emailNoticeEl.innerHTML = emailNotice;
 
-  const infoBox = document.getElementById('cen-tmpl-email-infobox');
-  if(infoBox) infoBox.innerHTML = `
-    <div class="cen-email-info-row"><span class="cen-email-info-label">직원명</span><span class="cen-email-info-val">${empName}</span></div>
-    <div class="cen-email-info-row"><span class="cen-email-info-label">고용형태</span><span class="cen-email-info-val">${catLabel}</span></div>
-    <div class="cen-email-info-row"><span class="cen-email-info-label">소속 회사</span><span class="cen-email-info-val">${coName}</span></div>
-    <div class="cen-email-info-row">
-      <span class="cen-email-info-label">계약 만료일</span>
-      <span class="cen-email-info-val">${endKr} <span class="cen-email-dday-badge ${ddayClass}">${ddayStr}</span></span>
-    </div>`;
+  // ── 7. DOM 반영: 고객사 인앱 알림 ────────
+  _setText('cen-tmpl-inapp-title', '[근로계약 만료 예정일 안내]');
+  const inappPlain = `${inappFullBody}\n\n${inappFoot}`;
+  _setText('cen-tmpl-inapp-plain', inappPlain);
 
-  // ── 7. DOM 반영: 고객사 인앱 알림 ───────────────────────────
-  _setText('cen-tmpl-inapp-title',      inappTitle);
-  _setText('cen-tmpl-inapp-body',       inappShort);
-  _setText('cen-tmpl-inapp-full-title', inappTitle);
-  _setText('cen-tmpl-inapp-full-body',  inappFullBody);
-  _setText('cen-tmpl-inapp-foot',       inappFoot);
-
-  const inappInfoBox = document.getElementById('cen-tmpl-inapp-infobox');
-  if(inappInfoBox) inappInfoBox.innerHTML = `
-    <div class="cen-email-info-row"><span class="cen-email-info-label">직원명</span><span class="cen-email-info-val">${empName}</span></div>
-    <div class="cen-email-info-row"><span class="cen-email-info-label">고용형태</span><span class="cen-email-info-val">${catLabel}</span></div>
-    <div class="cen-email-info-row">
-      <span class="cen-email-info-label">계약 만료일</span>
-      <span class="cen-email-info-val">${endKr} <span class="cen-email-dday-badge ${ddayClass}">${ddayStr}</span></span>
-    </div>`;
-
-  // 시간 표시
-  const now = new Date();
-  _setText('cen-tmpl-inapp-time', `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`);
-
-  // ── 8. 변수 안내 테이블 ──────────────────────────────────────
-  const vars = [
-    ['{직원명}',     '수신 근로자의 이름',                    empName,           '근로자·고객사 공통'],
-    ['{고용형태}',   '계약직 / 계약직(수습) / 일용직',         catLabel,          '근로자·고객사 공통'],
-    ['{회사명}',     '소속 고객사 회사명',                    coName,            '근로자·고객사 공통'],
-    ['{대표자명}',   '고객사 대표자명 (사장님 호칭)',           coRep,             '고객사 전용'],
-    ['{계약만료일}', '계약 종료일 (YYYY년 MM월 DD일)',         endKr,             '근로자·고객사 공통'],
-    ['{남은기간}',   'D-day 형식 (D-29 ~ D-0)',              ddayStr,           '근로자·고객사 공통'],
-    ['{수신번호}',   '알림톡 수신 직원 휴대폰 번호',            phone||'미등록',   '근로자 알림톡'],
-    ['{수신이메일}', '이메일 수신 직원 이메일 주소',             email||'미등록',   '근로자 이메일'],
-    ['{긴급도_근로자}', '남은 기간별 근로자 촉구 문구',         urgencyWorker,     '근로자 전용'],
-    ['{긴급도_고객사}', '남은 기간별 고객사 촉구 문구',         urgencyCompany,    '고객사 전용'],
-  ];
-  const tbody = document.getElementById('cen-tmpl-var-tbody');
-  if(tbody){
-    tbody.innerHTML = vars.map(([v, desc, ex, target]) => `
-      <tr>
-        <td><span class="cen-var-chip">${v}</span></td>
-        <td style="color:#374151;">${desc}</td>
-        <td style="color:#6b7280;font-size:11.5px;">${ex}</td>
-        <td><span style="background:#f3f4f6;color:#374151;border-radius:20px;padding:1px 8px;font-size:10.5px;font-weight:600;white-space:nowrap;">${target}</span></td>
-      </tr>`).join('');
-  }
-
-  // 변수 안내 헤더도 컬럼 추가 반영
-  const varHead = document.querySelector('#cen-tmpl-var-tbody')?.closest('table')?.querySelector('thead tr');
-  if(varHead && varHead.children.length === 3){
-    const th = document.createElement('th');
-    th.textContent = '적용 대상';
-    varHead.appendChild(th);
-  }
 }
 
 /** 텍스트 설정 헬퍼 */
@@ -234,14 +152,16 @@ function _setText(id, text){
 
 /** showPage 진입 시 초기화 */
 async function initCenPage(){
+  // 대표 연락처 정보 로드 (없으면 캐시)
+  if(!_cenContact) {
+    try { _cenContact = await getRepresentativeContact(); } catch(e) { _cenContact = {}; }
+  }
   // 고객사 필터 옵션 채우기
-  _cenFillCompanyFilter('cen-filter-company');
   _cenFillCompanyFilter('cen-log-filter-company');
   // 통지 이력 로드 (캐시 없으면)
   if(!_cenHistoryLoaded) await cenLoadHistory(true);
-  // 통지 대상 렌더
-  renderCenTargetList();
-  renderCenStats();
+  // 발송 이력 렌더 (기본 탭)
+  renderCenHistory();
 }
 
 /** 고객사 필터 select 옵션 자동 채우기 */
@@ -327,115 +247,6 @@ function _cenGetTargetContracts(){
     return { ...c, _emp: emp, _co: co, _cat: cat, _daysLeft: daysLeft };
   }).sort((a,b) => a._daysLeft - b._daysLeft); // 만료 임박순
 }
-
-/** 요약 통계 업데이트 */
-function renderCenStats(){
-  const targets = _cenGetTargetContracts();
-  const urgent = targets.filter(c=>c._daysLeft<=7).length;
-  const soon   = targets.filter(c=>c._daysLeft>=8&&c._daysLeft<=14).length;
-  const normal = targets.filter(c=>c._daysLeft>=15).length;
-
-  const nowYM = new Date().toISOString().slice(0,7);
-  const done  = _cenNoticeList.filter(r=>{
-    const raw = r.noticed_at || r.created_at || '';
-    const ym = typeof raw === 'string' ? raw.slice(0,7) : String(raw).slice(0,7);
-    return ym === nowYM;
-  }).length;
-
-  document.getElementById('cen-stat-urgent').textContent = urgent;
-  document.getElementById('cen-stat-soon').textContent   = soon;
-  document.getElementById('cen-stat-normal').textContent = normal;
-  document.getElementById('cen-stat-done').textContent   = done;
-  document.getElementById('cen-tab-target-badge').textContent = targets.length;
-}
-
-/** 통지 대상 목록 테이블 렌더링 */
-function renderCenTargetList(){
-  const tbody = document.getElementById('cen-target-tbody');
-  if(!tbody) return;
-
-  const filterCompany = document.getElementById('cen-filter-company')?.value || '';
-  const filterEmpCat  = document.getElementById('cen-filter-empcat')?.value  || '';
-  const filterRange   = document.getElementById('cen-filter-range')?.value   || '';
-  const searchQ       = (document.getElementById('cen-search')?.value || '').trim().toLowerCase();
-
-  let list = _cenGetTargetContracts().filter(c => {
-    if(filterCompany && c.company_id !== filterCompany) return false;
-    if(filterEmpCat  && c._cat !== filterEmpCat) return false;
-    if(filterRange === 'urgent' && c._daysLeft > 7) return false;
-    if(filterRange === 'soon'   && (c._daysLeft < 8 || c._daysLeft > 14)) return false;
-    if(filterRange === 'normal' && c._daysLeft < 15) return false;
-    if(searchQ && !(c._emp?.name||'').toLowerCase().includes(searchQ)) return false;
-    return true;
-  }).sort((a,b)=>(a._emp?.name||'').localeCompare(b._emp?.name||'','ko'));
-
-  const totalPages = Math.max(1, Math.ceil(list.length / CEN_PAGE_SIZE));
-  if(_cenTargetPage > totalPages) _cenTargetPage = totalPages;
-  const pageData = list.slice((_cenTargetPage-1)*CEN_PAGE_SIZE, _cenTargetPage*CEN_PAGE_SIZE);
-
-  if(!list.length){
-    tbody.innerHTML = `<tr><td colspan="9" class="cen-empty">
-      <i class="fas fa-check-circle" style="color:#10b981;"></i>
-      29일 이내 계약만료 통지 대상이 없습니다.
-    </td></tr>`;
-    document.getElementById('cen-target-pagination').innerHTML = '';
-    _cenUpdateBulkBtns();
-    return;
-  }
-
-  const fmtDday = (d) => {
-    if(d === 0) return `<span class="cen-dday urgent">D-day</span>`;
-    const cls = d<=7?'urgent':d<=14?'soon':'normal';
-    return `<span class="cen-dday ${cls}">D-${d}</span>`;
-  };
-
-  tbody.innerHTML = pageData.map((c, idx) => {
-    const globalIdx = (_cenTargetPage-1)*CEN_PAGE_SIZE + idx;
-    const empName  = c._emp?.name || '(알 수 없음)';
-    const coName   = c._co?.company_name || '-';
-    const phone    = c._emp?.phone || '';
-    const email    = c._emp?.email || '';
-    const hasPhone = !!phone.trim();
-    const hasEmail = !!email.trim();
-    return `<tr>
-      <td style="text-align:center;">
-        <input type="checkbox" class="cen-chk cen-row-chk" data-idx="${globalIdx}" data-contract-id="${c.id}"
-          onchange="cenUpdateSelectedCount()" />
-      </td>
-      <td style="font-size:12px;color:#111827;font-weight:700;">${coName}</td>
-      <td style="font-weight:700;color:#111827;font-weight:700;">${empName}</td>
-      <td><span class="badge ${CAT_BADGE_CLS[normalizeContractType(c._cat)]||'badge-gray'}">${contractTypeLabel(c._cat)}</span></td>
-      <td style="font-size:12px;color:#6b7280;font-weight:600;">${c.contract_end}</td>
-      <td>${fmtDday(c._daysLeft)}</td>
-      <td style="font-size:12px;">${hasPhone ? phone : '<span style="color:#d1d5db;">미등록</span>'}</td>
-      <td style="font-size:12px;">${hasEmail ? `<span style="color:#374151;">${email}</span>` : '<span style="color:#d1d5db;">미등록</span>'}</td>
-      <td style="text-align:center;white-space:nowrap;">
-        <button onclick="cenSendOne('${c.id}','알림톡')" ${hasPhone?'':'disabled'}
-          class="${hasPhone ? 'btn btn-kakao btn-sm' : 'btn btn-sm'}" style="margin-right:3px;">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg>알림톡
-        </button>
-        <button onclick="cenSendOne('${c.id}','이메일')" ${hasEmail?'':'disabled'}
-          class="${hasEmail ? 'btn btn-sky btn-sm' : 'btn btn-sm'}" style="margin-right:3px;">
-          ✉ 이메일
-        </button>
-        <button onclick="cenSendOne('${c.id}','수동교부')"
-          class="btn btn-success btn-sm">
-          <i class="fas fa-hand-paper"></i> 수동교부
-        </button>
-      </td>
-    </tr>`;
-  }).join('');
-
-  // 전체 선택 체크박스 상태 갱신
-  document.getElementById('cen-chk-all').checked = false;
-  document.getElementById('cen-thead-chk').checked = false;
-  cenUpdateSelectedCount();
-
-  // 페이지네이션
-  _cenRenderPagination('cen-target-pagination', list.length, _cenTargetPage, 'setCenTargetPage');
-}
-
-function setCenTargetPage(p){ _cenTargetPage = p; renderCenTargetList(); }
 
 /** 선택 건수 업데이트 및 일괄 버튼 상태 */
 function cenUpdateSelectedCount(){
@@ -700,8 +511,6 @@ async function _cenSaveNotice({ contractId, method, status, recipient, note, day
 async function cenRefresh(){
   _cenHistoryLoaded = false;
   await cenLoadHistory(true);
-  renderCenTargetList();
-  renderCenStats();
   render2YrStats();
   renderDashRegularBanner();
   if(_cenTab === 'history') renderCenHistory();

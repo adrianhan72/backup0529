@@ -17,9 +17,10 @@
  */
 function _calc2YrExceedList(){
   const TWO_YEARS_DAYS = 730; // 2년 = 365×2
+  const NOTICE_BEFORE  = 30;  // 730일 30일 전부터 사전 고지
   const WARN_DAYS      = 548; // 경고 시작: 1년 6개월(365×1.5)
 
-  // 직원별로 계약직 계열 계약 그룹핑
+  // 직원별로 계약직·계약직 수습·일용직 계약 그룹핑
   const byEmp = {};
   allContracts.forEach(c => {
     if(c.is_draft) return;
@@ -27,7 +28,7 @@ function _calc2YrExceedList(){
     if([CONTRACT_STATUS.CANCELED, CONTRACT_STATUS.VOIDED].includes(c.status)) return false; // 파기·취소는 제외
     const emp = allEmployees.find(e => e.id === c.employee_id);
     const cat = emp?.employment_category || c.contract_type || '';
-    if(![CONTRACT_TYPE.FIXED, CONTRACT_TYPE.FIXED_PROBATION].includes(cat)) return; // 계약직 계열만
+    if(![CONTRACT_TYPE.FIXED, CONTRACT_TYPE.FIXED_PROBATION, CONTRACT_TYPE.DAILY, CONTRACT_TYPE.REGULAR_PROBATION].includes(cat)) return; // 계약직·수습·일용직 계열
     if(!c.contract_start) return;
     if(!byEmp[c.employee_id]) byEmp[c.employee_id] = [];
     byEmp[c.employee_id].push(c);
@@ -38,24 +39,30 @@ function _calc2YrExceedList(){
   const result = [];
 
   Object.entries(byEmp).forEach(([empId, contracts]) => {
-    // 누적 일수 계산: 각 계약의 (종료일 or 오늘) - 시작일
-    let totalDays = 0;
-    contracts.forEach(c => {
-      const s = new Date(c.contract_start);
-      const e = c.contract_end ? new Date(c.contract_end) : today;
-      const days = Math.max(0, Math.ceil((e - s) / (1000*60*60*24)));
-      totalDays += days;
-    });
-
-    if(totalDays < WARN_DAYS) return; // 1년 6개월 미만은 표시 안 함
-
-    const emp = allEmployees.find(e => e.id === empId);
-    const co  = allCompanies.find(x => x.id === (contracts[0].company_id || emp?.company_id));
-
-    // 최초 계약 시작일
+    // 누적 일수 계산: 최초 입사일(최초 계약 시작일)부터 오늘까지
     const firstStart = contracts
       .map(c => c.contract_start)
       .sort()[0];
+    const s = new Date(firstStart);
+    const totalDays = Math.max(0, Math.ceil((today - s) / (1000*60*60*24)));
+
+    // 700일 미만이면 표시 안 함 (사전 고지 대상 아님)
+    if(totalDays < TWO_YEARS_DAYS - NOTICE_BEFORE) return;
+
+    // 계약 종료일까지의 기간이 730일 이내면 제외 (자연 만료로 전환 의무 미발생)
+    const furthestEnd = contracts
+      .map(c => c.contract_end)
+      .filter(Boolean)
+      .sort()
+      .reverse()[0]; // 가장 먼 종료일
+    if(furthestEnd){
+      const e = new Date(furthestEnd);
+      const daysToEnd = Math.max(0, Math.ceil((e - s) / (1000*60*60*24)));
+      if(daysToEnd < TWO_YEARS_DAYS) return; // 계약 종료일이 730일 이내 → 제외
+    }
+
+    const emp = allEmployees.find(e => e.id === empId);
+    const co  = allCompanies.find(x => x.id === (contracts[0].company_id || emp?.company_id));
 
     // 현재 활성/서류미비/계약예정 계약
     const activeContract = contracts.find(c =>
@@ -82,11 +89,11 @@ function _calc2YrExceedList(){
   });
 }
 
-/** 2년 초과 통계 업데이트 (대시보드 배너 + RC 페이지 배지) */
+/** 2년 초과 통계 업데이트 (대시보드 배너) */
 function render2YrStats(){
   const list     = _calc2YrExceedList();
   const exceeded = list.filter(x => x.status === 'exceeded').length;
-  // RC 탭 배지 (rc-tab-target-badge)
+  // RC 탭 배지 제거됨 (전환 대상 탭 삭제) — 안전하게 null 체크
   const rcBadge = document.getElementById('rc-tab-target-badge');
   if(rcBadge){
     rcBadge.textContent   = exceeded;
@@ -214,8 +221,8 @@ async function _2yrSendNotice(empId){
 
 ■ 직원명: ${item.empName}
 ■ 고용형태: ${contractTypeLabel(item.activeContract?.contract_type) || CONTRACT_TYPE_LABEL[CONTRACT_TYPE.FIXED]}
-■ 최초 계약일: ${item.firstStart || '-'}
-■ 누적 계약기간: ${fmtDays(item.totalDays)}
+■ 입사일: ${item.firstStart || '-'}
+■ 누적 근로일수: ${fmtDays(item.totalDays)}
 
 ◆ 관련 법령
 「기간제 및 단시간근로자 보호 등에 관한 법률」 제4조:

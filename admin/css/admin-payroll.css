@@ -181,16 +181,16 @@
     .cen-kakao-profile-img{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#fee500,#f9c300);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
     .cen-kakao-profile-name{font-size:12px;font-weight:700;color:#3b1f00;}
     .cen-kakao-bubble{background:#fff;border-radius:0 12px 12px 12px;padding:14px 16px;max-width:92%;box-shadow:0 1px 3px rgba(0,0,0,.12);}
-    .cen-kakao-bubble-title{font-size:13.5px;font-weight:800;color:#1a1a1a;margin-bottom:10px;line-height:1.5;}
+    .cen-kakao-bubble-title{font-size:13.5px;font-weight:500;color:#1a1a1a;margin-bottom:10px;line-height:1.5;}
     .cen-kakao-bubble-body{font-size:12.5px;color:#333;line-height:1.8;white-space:pre-wrap;}
     .cen-kakao-bubble-divider{border:none;border-top:1px solid #e5e7eb;margin:10px 0;}
-    .cen-kakao-bubble-footer{font-size:11px;color:#9ca3af;line-height:1.6;}
+    .cen-kakao-bubble-footer{font-size:11px;color:#9ca3af;line-height:1.6;white-space:pre-wrap;}
     .cen-kakao-btn-area{margin-top:8px;display:flex;flex-direction:column;gap:6px;}
     .cen-kakao-btn{background:#fee500;border:1px solid #eab308;border-radius:8px;padding:9px 0;font-size:12.5px;font-weight:700;color:#3b1f00;cursor:default;width:100%;text-align:center;}
     /* 이메일 카드 */
     .cen-email-card{background:#f3f4f6;border-radius:14px;padding:4px;overflow:hidden;}
     .cen-email-header{background:linear-gradient(135deg,#1e3a5f,#0f172a);padding:16px 20px;border-radius:10px 10px 0 0;}
-    .cen-email-header-title{font-size:14px;font-weight:800;color:#fff;margin-bottom:2px;}
+    .cen-email-header-title{font-size:14px;font-weight:500;color:#fff;margin-bottom:2px;}
     .cen-email-header-sub{font-size:11.5px;color:#94a3b8;}
     .cen-email-body{background:#fff;padding:20px 22px;}
     .cen-email-greeting{font-size:13.5px;font-weight:700;color:#1e293b;margin-bottom:12px;}
@@ -228,7 +228,7 @@
     .cen-inapp-notif-icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#4f46e5,#6366f1);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
     .cen-inapp-notif-content{flex:1;min-width:0;}
     .cen-inapp-notif-title{font-size:12.5px;font-weight:700;color:#111827;margin-bottom:3px;}
-    .cen-inapp-notif-body{font-size:11.5px;color:#4b5563;line-height:1.5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px;}
+    .cen-inapp-notif-body{font-size:11.5px;color:#4b5563;line-height:1.5;white-space:pre-wrap;max-width:220px;}
     .cen-inapp-notif-time{font-size:10.5px;color:#9ca3af;margin-top:4px;}
     .cen-inapp-unread-dot{width:8px;height:8px;background:#6366f1;border-radius:50%;flex-shrink:0;margin-top:4px;}
     /* 인앱 알림 — 전체 메시지 카드 */

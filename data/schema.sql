@@ -1,5 +1,5 @@
 -- SQLite Schema
--- Updated: 2026-07-16
+-- Updated: 2026-07-22
 
 PRAGMA journal_mode = WAL;
 
@@ -387,6 +387,8 @@ CREATE TABLE IF NOT EXISTS related_party_workers (
   bank_holder TEXT, created_at INTEGER, updated_at INTEGER
 );
 CREATE INDEX idx_related_party_workers_company ON related_party_workers(company_id);
+
+CREATE TABLE IF NOT EXISTS representative_contact (id TEXT PRIMARY KEY, phone TEXT, email TEXT, fax TEXT, updated_at INTEGER, outbound_email TEXT DEFAULT NULL, outbound_password TEXT DEFAULT NULL, outbound_smtp_host TEXT DEFAULT NULL, outbound_smtp_port TEXT DEFAULT NULL);
 
 CREATE TABLE IF NOT EXISTS tax_bracket_rows (
     id            TEXT PRIMARY KEY,

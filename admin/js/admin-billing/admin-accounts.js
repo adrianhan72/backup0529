@@ -19,6 +19,7 @@ async function renderAdminAccounts(){
     const data = await res.json();
     _aaAccounts = data.data || [];
     _aaRenderTable();
+    _loadRepresentativeContact();
   } catch(e){
     tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:32px;color:#ef4444;">불러오기 실패</td></tr>';
   }
@@ -378,6 +379,92 @@ async function submitChangePw(){
     toast('저장에 실패했습니다.', 'error');
     btn.disabled = false;
     btn.innerHTML = '<i class="fas fa-check"></i> 변경';
+  }
+}
+
+// ── 대표 연락처 정보 ────────────────────────────────────────────────
+let _rcContactData = null;
+
+async function _loadRepresentativeContact(){
+  try {
+    const res = await fetch('../tables/representative_contact/default');
+    if(!res.ok) return;
+    const data = await res.json();
+    _rcContactData = data;
+    const phoneEl = document.getElementById('rc-phone');
+    const emailEl = document.getElementById('rc-email');
+    const faxEl   = document.getElementById('rc-fax');
+    if(phoneEl) phoneEl.value = data.phone || '';
+    if(emailEl) emailEl.value = data.email || '';
+    if(faxEl)   faxEl.value   = data.fax   || '';
+    // 발신전용 이메일
+    const oeEmailEl    = document.getElementById('oe-email');
+    const oePwEl       = document.getElementById('oe-password');
+    const oeHostEl     = document.getElementById('oe-smtp-host');
+    const oePortEl     = document.getElementById('oe-smtp-port');
+    if(oeEmailEl) oeEmailEl.value = data.outbound_email     || '';
+    if(oePwEl)    oePwEl.value    = data.outbound_password  || '';
+    if(oeHostEl)  oeHostEl.value  = data.outbound_smtp_host || '';
+    if(oePortEl)  oePortEl.value  = data.outbound_smtp_port || '';
+  } catch(e) {
+    console.warn('[대표 연락처 로드 오류]', e);
+  }
+}
+
+async function saveRepresentativeContact(){
+  const phone = document.getElementById('rc-phone')?.value.trim() || '';
+  const email = document.getElementById('rc-email')?.value.trim() || '';
+  const fax   = document.getElementById('rc-fax')?.value.trim()   || '';
+  
+  try {
+    await fetch('../tables/representative_contact/default', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, email, fax, updated_at: Date.now() })
+    });
+    _rcContactData = { phone, email, fax };
+    const msg = document.getElementById('rc-saved-msg');
+    if(msg){ msg.style.display = ''; setTimeout(() => { msg.style.display = 'none'; }, 2000); }
+  } catch(e) {
+    console.error('[대표 연락처 저장 오류]', e);
+    toast('저장에 실패했습니다.', 'error');
+  }
+}
+
+/** 대표 연락처 정보 조회 (다른 페이지에서 호출) */
+async function getRepresentativeContact(){
+  if(_rcContactData) return _rcContactData;
+  try {
+    const res = await fetch('../tables/representative_contact/default');
+    if(!res.ok) return { phone: '', email: '', fax: '' };
+    _rcContactData = await res.json();
+    return _rcContactData;
+  } catch(e) {
+    return { phone: '', email: '', fax: '' };
+  }
+}
+
+// ── 발신전용 이메일 계정 ──────────────────────────────────────────
+async function saveOutboundEmail(){
+  const outbound_email     = document.getElementById('oe-email')?.value.trim()     || '';
+  const outbound_password  = document.getElementById('oe-password')?.value.trim()  || '';
+  const outbound_smtp_host = document.getElementById('oe-smtp-host')?.value.trim() || '';
+  const outbound_smtp_port = document.getElementById('oe-smtp-port')?.value.trim() || '';
+  
+  try {
+    await fetch('../tables/representative_contact/default', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ outbound_email, outbound_password, outbound_smtp_host, outbound_smtp_port, updated_at: Date.now() })
+    });
+    if(_rcContactData) {
+      Object.assign(_rcContactData, { outbound_email, outbound_password, outbound_smtp_host, outbound_smtp_port });
+    }
+    const msg = document.getElementById('oe-saved-msg');
+    if(msg){ msg.style.display = ''; setTimeout(() => { msg.style.display = 'none'; }, 2000); }
+  } catch(e) {
+    console.error('[발신전용 이메일 저장 오류]', e);
+    toast('저장에 실패했습니다.', 'error');
   }
 }
 

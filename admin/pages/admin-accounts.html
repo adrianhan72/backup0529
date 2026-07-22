@@ -1,7 +1,9 @@
 ﻿    <div id="page-admin-accounts" class="page">
 
-      <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
-        <button id="aa-add-btn" class="btn btn-primary" onclick="openAdminAccountModal()">
+      <div class="section-title" style="margin-top:0;">
+        <i class="fas fa-user-cog"></i>
+        <span>관리자 계정 목록</span>
+        <button id="aa-add-btn" class="btn btn-primary" onclick="openAdminAccountModal()" style="margin-left:auto;">
           <i class="fas fa-plus"></i> 신규 계정 등록
         </button>
       </div>
@@ -21,6 +23,68 @@
             <tr><td colspan="5" style="text-align:center;padding:32px;color:#aaa;"><i class="fas fa-spinner fa-spin"></i> 불러오는 중...</td></tr>
           </tbody>
         </table>
+      </div>
+
+      <!-- 대표 연락처 정보 -->
+      <div class="section-title" style="margin-top:24px;">
+        <i class="fas fa-address-book"></i>
+        <span>대표 연락처 정보</span>
+        <span style="font-size:12px;color:#9ca3af;font-weight:400;">알림 메시지 및 안내문에 표시되는 담당자 연락처</span>
+      </div>
+      <div class="card" style="overflow:hidden;padding:20px;">
+        <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end;">
+          <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:180px;">
+            <label style="font-size:12px;font-weight:600;color:#374151;">전화번호</label>
+            <input type="text" id="rc-phone" class="form-input" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" placeholder="예: 02)3487-8841" />
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:180px;">
+            <label style="font-size:12px;font-weight:600;color:#374151;">이메일</label>
+            <input type="email" id="rc-email" class="form-input" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" placeholder="예: labor@example.com" />
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:180px;">
+            <label style="font-size:12px;font-weight:600;color:#374151;">팩스</label>
+            <input type="text" id="rc-fax" class="form-input" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" placeholder="예: 02)3487-8882" />
+          </div>
+          <button id="rc-save-btn" class="btn btn-primary" onclick="saveRepresentativeContact()" style="padding:8px 20px;height:38px;white-space:nowrap;">
+            <i class="fas fa-save"></i> 저장
+          </button>
+        </div>
+        <div id="rc-saved-msg" style="margin-top:8px;font-size:12px;color:#059669;display:none;">
+          <i class="fas fa-check-circle"></i> 저장되었습니다.
+        </div>
+      </div>
+
+      <!-- 발신전용 이메일 계정 -->
+      <div class="section-title" style="margin-top:24px;">
+        <i class="fas fa-envelope"></i>
+        <span>발신전용 이메일 계정</span>
+        <span style="font-size:12px;color:#9ca3af;font-weight:400;">시스템 알림 메일 발송에 사용되는 SMTP 계정 정보</span>
+      </div>
+      <div class="card" style="overflow:hidden;padding:20px;">
+        <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end;">
+          <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:180px;">
+            <label style="font-size:12px;font-weight:600;color:#374151;">발신 이메일 주소</label>
+            <input type="email" id="oe-email" class="form-input" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" placeholder="예: noreply@example.com" />
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:180px;">
+            <label style="font-size:12px;font-weight:600;color:#374151;">비밀번호</label>
+            <input type="password" id="oe-password" class="form-input" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" placeholder="이메일 계정 비밀번호" />
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:160px;">
+            <label style="font-size:12px;font-weight:600;color:#374151;">SMTP 서버</label>
+            <input type="text" id="oe-smtp-host" class="form-input" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" placeholder="예: smtp.gmail.com" />
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;flex:0 0 100px;">
+            <label style="font-size:12px;font-weight:600;color:#374151;">포트</label>
+            <input type="text" id="oe-smtp-port" class="form-input" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" placeholder="예: 587" />
+          </div>
+          <button id="oe-save-btn" class="btn btn-primary" onclick="saveOutboundEmail()" style="padding:8px 20px;height:38px;white-space:nowrap;">
+            <i class="fas fa-save"></i> 저장
+          </button>
+        </div>
+        <div id="oe-saved-msg" style="margin-top:8px;font-size:12px;color:#059669;display:none;">
+          <i class="fas fa-check-circle"></i> 저장되었습니다.
+        </div>
       </div>
     </div><!-- /page-admin-accounts -->
 

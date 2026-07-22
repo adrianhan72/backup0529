@@ -858,13 +858,10 @@ async function showPage(name,el){
   }
   if(name==='contract-expiry-notice'){
     if(!_dataReady){
-      // 테이블 tbody에 이미 초기 스피너가 있으므로 그대로 유지 — 데이터 로드 완료 후 재진입 시 렌더
-      const tbody = document.getElementById('cen-target-tbody');
-      if(tbody) tbody.innerHTML = `<tr><td colspan="9" class="cen-empty"><i class="fas fa-circle-notch fa-spin" style="color:#6366f1;"></i>&nbsp;고객사 데이터 불러오는 중...</td></tr>`;
       if(el) el.classList.add('active');
       return;
     }
-    (async()=>{ await initCenPage(); render2YrStats(); _setDefaultDateRange('cen-log-filter-date-from', 'cen-log-filter-date-to'); })();
+    (async()=>{ await initCenPage(); _setDefaultDateRange('cen-log-filter-date-from', 'cen-log-filter-date-to'); renderCenHistory(); })();
   }
   if(name==='regular-conversion'){
     if(!_dataReady){

@@ -1424,7 +1424,10 @@ function renderCenHistory(){
   let list = _cenNoticeList.filter(r=>{
     if(filterMethod  && r.notice_method  !== filterMethod)  return false;
     if(filterCompany && r.company_id     !== filterCompany) return false;
-    if(searchQ && !(r.employee_name||'').toLowerCase().includes(searchQ)) return false;
+    if(searchQ && !(
+      (r.employee_name||'').toLowerCase().includes(searchQ) ||
+      (r.recipient||'').toLowerCase().includes(searchQ)
+    )) return false;
     if(dateFrom || dateTo){
       const raw = r.sent_at || '';
       const sentDt = typeof raw === 'string' ? raw.slice(0,10) : String(raw).slice(0,10);
@@ -1495,7 +1498,7 @@ function renderCenHistory(){
       <td>${methodBadge(r.notice_method)}</td>
       <td>${statusBadge(r.notice_status)}</td>
       <td style="font-size:12px;color:#374151;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.recipient||''}">${r.recipient||'-'}</td>
-      <td style="font-size:12px;color:#6b7280;">${_resolveAdminName(r.noticed_by)||'-'}</td>
+      <td style="font-size:12px;color:#6b7280;">${r.noticed_by ? _resolveAdminName(r.noticed_by) : '<span style="font-size:11px;color:#6366f1;">시스템 자동발송</span>'}</td>
     </tr>`).join('');
 
   _cenRenderPagination('cen-log-pagination', list.length, _cenHistoryPage, 'setCenHistoryPage');
