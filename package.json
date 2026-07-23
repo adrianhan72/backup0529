@@ -24,6 +24,7 @@
     "helmet": "^8.2.0",
     "jsonwebtoken": "^9.0.3",
     "monaco-editor": "^0.44.0",
+    "multer": "^2.2.0",
     "node-cron": "^4.6.0",
     "uuid": "^9.0.0"
   },

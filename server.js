@@ -30,12 +30,38 @@ app.post('/api/kakao/send', (req, res) => {
   res.json({ ok: true, stub: true, message: '카카오 전송 (스텁)' });
 });
 
+// ── 파일 업로드 API ──
+const multer = require('multer');
+const uploadStorage = multer.diskStorage({
+  destination: path.join(ROOT, 'data', 'uploads', 'contracts'),
+  filename: (req, file, cb) => {
+    const contractId = req.params.id || 'temp';
+    const dir = path.join(ROOT, 'data', 'uploads', 'contracts', contractId);
+    require('fs').mkdirSync(dir, { recursive: true });
+    const ext = path.extname(file.originalname);
+    const prefix = file.fieldname === 'signed' ? 'signed' : 'consent';
+    cb(null, path.join(contractId, prefix + ext));
+  }
+});
+const upload = multer({ storage: uploadStorage, limits: { fileSize: 10 * 1024 * 1024 } });
+
+app.post('/api/upload/:id', upload.fields([
+  { name: 'signed', maxCount: 1 },
+  { name: 'consent', maxCount: 1 }
+]), (req, res) => {
+  const files = {};
+  if (req.files['signed']) files.signed = '/uploads/contracts/' + req.files['signed'][0].filename;
+  if (req.files['consent']) files.consent = '/uploads/contracts/' + req.files['consent'][0].filename;
+  res.json({ ok: true, files });
+});
+
 // ── 정적 파일 ──
 const staticOpts = { maxAge: 0, etag: false };
 app.use('/admin',   express.static(path.join(ROOT, 'admin'), staticOpts));
 app.use('/client',  express.static(path.join(ROOT, 'client'), staticOpts));
 app.use('/scripts', express.static(path.join(ROOT, 'scripts'), staticOpts));
 app.use('/docs',    express.static(path.join(ROOT, 'docs'), staticOpts));
+app.use('/uploads', express.static(path.join(ROOT, 'data', 'uploads'), staticOpts));
 
 // ── 보안 ──
 require('./middleware/security')(app);
