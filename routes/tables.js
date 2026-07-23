@@ -195,5 +195,19 @@ module.exports = function(db) {
     }
   });
 
+  /** GET /tables/payrolls/:id/items — payrolls + payroll_items 조인 */
+  router.get('/payrolls/:id/items', (req, res) => {
+    try {
+      const payroll = db.payrolls.findById(req.params.id);
+      if (!payroll) return res.status(404).json({ error: 'Payroll not found' });
+      const itemsRepo = new PayrollItemsRepository(db.connection);
+      const items = itemsRepo.findByPayroll(req.params.id);
+      res.json({ ...payroll, items });
+    } catch (e) {
+      console.error('[GET /tables/payrolls/:id/items]', e.message);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
   return router;
 };

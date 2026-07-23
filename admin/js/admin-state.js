@@ -525,6 +525,91 @@ async function loadPayrollItems(payrollId = null){
   allPayrollItems = all;
   return all;
 }
+
+/** payroll_items[] → payrolls 평면 객체로 변환 (UI 호환용) */
+function payrollItemsToFlat(items) {
+  const flat = {};
+  if (!Array.isArray(items)) return flat;
+  for (const item of items) {
+    const def = ALLOWANCE_TYPES.find(a => a.type === item.item_type);
+    if (!def) continue;
+    // item_type → payrolls 컬럼명 매핑
+    const colMap = {
+      weekly_holiday: 'weekly_holiday_pay', position: 'position_allowance',
+      skill: 'skill_allowance', license: 'license_allowance',
+      overtime: 'overtime_pay', night: 'night_pay', holiday: 'holiday_pay',
+      transportation: 'transportation_allowance', self_driving: 'self_driving_allowance',
+      meal: 'meal_allowance', childcare: 'childcare_allowance',
+      research: 'research_allowance', communication: 'communication_allowance',
+      fitness: 'fitness_allowance', self_dev: 'self_dev_allowance',
+      book: 'book_allowance', overseas: 'overseas_allowance',
+      contract_etc: 'contract_etc_allowance', annual_leave: 'annual_leave_pay',
+      bonus: 'bonus_pay', performance: 'performance_pay',
+      actual_expense: 'actual_expense_pay', comm_expense: 'communication_pay',
+      etc: 'etc_allowance', site: 'site_allowance',
+      remote_area: 'remote_area_allowance', regular_bonus: 'regular_bonus',
+      hazard: 'hazard_allowance',
+    };
+    const colName = colMap[item.item_type];
+    if (colName) flat[colName] = item.amount || 0;
+    if (def.hasPayType && item.pay_type) {
+      const payTypeColMap = {
+        transportation: 'transportation_pay_type', self_driving: 'self_driving_pay_type',
+        meal: 'meal_pay_type', childcare: 'childcare_pay_type',
+        research: 'research_pay_type', communication: 'communication_pay_type',
+        fitness: 'fitness_pay_type', self_dev: 'self_dev_pay_type',
+        book: 'book_pay_type', overseas: 'overseas_pay_type',
+        etc: 'etc_allowance_memo',
+      };
+      const ptCol = payTypeColMap[item.item_type];
+      if (ptCol) flat[ptCol] = item.pay_type;
+    }
+    if (item.item_type === 'etc') flat['etc_allowance_memo'] = item.memo || '';
+  }
+  return flat;
+}
+
+/** payrolls 평면 객체 → payroll_items[] 로 변환 */
+function payrollFlatToItems(flat) {
+  const items = [];
+  ALLOWANCE_TYPES.forEach((def, idx) => {
+    const colMap = {
+      weekly_holiday: 'weekly_holiday_pay', position: 'position_allowance',
+      skill: 'skill_allowance', license: 'license_allowance',
+      overtime: 'overtime_pay', night: 'night_pay', holiday: 'holiday_pay',
+      transportation: 'transportation_allowance', self_driving: 'self_driving_allowance',
+      meal: 'meal_allowance', childcare: 'childcare_allowance',
+      research: 'research_allowance', communication: 'communication_allowance',
+      fitness: 'fitness_allowance', self_dev: 'self_dev_allowance',
+      book: 'book_allowance', overseas: 'overseas_allowance',
+      contract_etc: 'contract_etc_allowance', annual_leave: 'annual_leave_pay',
+      bonus: 'bonus_pay', performance: 'performance_pay',
+      actual_expense: 'actual_expense_pay', comm_expense: 'communication_pay',
+      etc: 'etc_allowance', site: 'site_allowance',
+      remote_area: 'remote_area_allowance', regular_bonus: 'regular_bonus',
+      hazard: 'hazard_allowance',
+    };
+    const colName = colMap[def.type];
+    const amount = parseFloat(flat[colName]) || 0;
+    if (amount === 0 && def.type !== 'etc') return;
+    const item = { item_type: def.type, amount, sort_order: idx };
+    if (def.hasPayType) {
+      const ptMap = {
+        transportation: 'transportation_pay_type', self_driving: 'self_driving_pay_type',
+        meal: 'meal_pay_type', childcare: 'childcare_pay_type',
+        research: 'research_pay_type', communication: 'communication_pay_type',
+        fitness: 'fitness_pay_type', self_dev: 'self_dev_pay_type',
+        book: 'book_pay_type', overseas: 'overseas_pay_type',
+        etc: 'etc_allowance_memo',
+      };
+      item.pay_type = flat[ptMap[def.type]] || null;
+      if (def.type === 'etc') item.memo = flat['etc_allowance_memo'] || '';
+    }
+    items.push(item);
+  });
+  return items;
+}
+
 async function loadWLNotifications(){
   const d=await api('../tables/wage_ledger_notifications?limit=500');
   allWLNotifications=(d.data||[]).filter(n=>!n.is_read);
