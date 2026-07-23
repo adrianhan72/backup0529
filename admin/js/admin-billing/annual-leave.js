@@ -1046,9 +1046,9 @@ ${_BRAND_SIG}`;
 function _buildLeavePromoCompanyBody(emp, co, al, refYear, adminName, workerMethod){
   const coRep   = getCompanyRepName(co);
   const endDate = _calcLeaveEndDate(emp, al, refYear);
-  const methodLabel = workerMethod === '유선직접안내'
+  const methodLabel = workerMethod === DISPATCH_METHOD.PHONE
     ? '유선(전화) 직접 안내'
-    : workerMethod ===DISPATCH_METHOD.KAKAO ? '카카오 알림톡' : workerMethod;
+    : DISPATCH_METHOD_LABEL[workerMethod] || workerMethod;
   const today = new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'});
   return `안녕하세요${coRep ? `, ${coRep} 사장님` : ''}.
 
@@ -1077,7 +1077,7 @@ function _calcLeaveEndDate(emp, al, refYear){
 
 /**
  * 사용촉진 발송 실행
- * @param {string} method  '알림톡' | '이메일' | '유선직접안내'
+ * @param {string} method  DISPATCH_METHOD.KAKAO | DISPATCH_METHOD.EMAIL | DISPATCH_METHOD.PHONE
  */
 async function confirmSendLeavePromotion(method){
   if(!_alPromoEmpId || !_alPromoData){ toast('발송 대상 정보가 없습니다.','error'); return; }
@@ -1094,13 +1094,14 @@ async function confirmSendLeavePromotion(method){
   }
 
   // 발송 확인
-  const confirmMsg = method === '유선직접안내'
+  const methodLabel = method === DISPATCH_METHOD.PHONE ? DISPATCH_METHOD_LABEL[DISPATCH_METHOD.PHONE] : (DISPATCH_METHOD_LABEL[method] || method);
+  const confirmMsg = method === DISPATCH_METHOD.PHONE
     ? `[유선 직접 안내 완료 선언]\n\n${emp.name} 님에게 전화로 ${refYear}년 연차 사용촉진 안내를 완료하셨습니까?\n잔여 연차: ${al.remainDays}일\n\n완료 선언 시 이력이 기록되고 고객사 앱에 발송 사실이 통보됩니다.`
-    : `[연차 사용촉진 ${method} 발송]\n\n${emp.name} 님 (${co?.company_name||''})\n잔여 연차: ${al.remainDays}일\n수신: ${ method===DISPATCH_METHOD.KAKAO ? emp.phone : emp.email }\n\n발송 후 고객사 앱에 자동으로 통보됩니다.\n\n발송하시겠습니까?`;
+    : `[연차 사용촉진 ${methodLabel} 발송]\n\n${emp.name} 님 (${co?.company_name||''})\n잔여 연차: ${al.remainDays}일\n수신: ${ method===DISPATCH_METHOD.KAKAO ? emp.phone : emp.email }\n\n발송 후 고객사 앱에 자동으로 통보됩니다.\n\n발송하시겠습니까?`;
   if(!confirm(confirmMsg)) return;
 
   // 버튼 비활성
-  const btnMap = { '알림톡':'al-btn-kakao', '이메일':'al-btn-email', '유선직접안내':'al-btn-phone' };
+  const btnMap = { [DISPATCH_METHOD_LABEL[DISPATCH_METHOD.KAKAO]]:'al-btn-kakao', [DISPATCH_METHOD_LABEL[DISPATCH_METHOD.EMAIL]]:'al-btn-email', [DISPATCH_METHOD_LABEL[DISPATCH_METHOD.PHONE]]:'al-btn-phone' };
   const activeBtn = document.getElementById(btnMap[method]);
   if(activeBtn){ activeBtn.disabled=true; activeBtn.innerHTML=`<i class="fas fa-circle-notch fa-spin"></i> 처리 중...`; }
 
@@ -1129,7 +1130,6 @@ async function confirmSendLeavePromotion(method){
     });
 
     // ── ③ 발송 이력 저장 ──
-    const methodLabel = method === '유선직접안내' ? '유선직접안내' : method;
     await fetch('../tables/annual_leave_promotions', {
       method : 'POST',
       headers: {'Content-Type':'application/json'},
@@ -1147,15 +1147,15 @@ async function confirmSendLeavePromotion(method){
         worker_send_method   : methodLabel,
         sent_at              : new Date().toISOString(),
         sent_by              : adminName,
-        note: method === '유선직접안내'
+        note: method === DISPATCH_METHOD.PHONE
           ? `${refYear}년 기준 — 유선 직접 안내 완료 (이력 기록)`
-          : `${refYear}년 기준 — 근로자 ${method} 발송 + 고객사 앱 통보`,
+          : `${refYear}년 기준 — 근로자 ${methodLabel} 발송 + 고객사 앱 통보`,
       }),
     });
 
-    const successMsg = method === '유선직접안내'
+    const successMsg = method === DISPATCH_METHOD.PHONE
       ? `✅ ${emp.name} — 유선 직접 안내 완료 기록 + 고객사 앱 통보`
-      : `✅ ${emp.name} — ${method} 발송 완료 + 고객사 앱 통보`;
+      : `✅ ${emp.name} — ${methodLabel} 발송 완료 + 고객사 앱 통보`;
     toast(successMsg, 'success');
     closeModal('al-promo-modal');
     _lpHistoryLoaded = false;
@@ -1310,14 +1310,14 @@ function renderLpTable(){
     const METHOD_BADGE_CLS = {
       [DISPATCH_METHOD.KAKAO]: 'badge-yellow',
       [DISPATCH_METHOD.EMAIL]: 'badge-blue',
-      'phone':                 'badge-green',
+      [DISPATCH_METHOD.PHONE]:  'badge-green',
     };
     const badgeCls = METHOD_BADGE_CLS[m] || 'badge-gray';
-    const label = DISPATCH_METHOD_LABEL[m] || (m==='phone'?'유선직접안내':m) || '-';
+    const label = DISPATCH_METHOD_LABEL[m] || m || '-';
     const iconCfg = {
       [DISPATCH_METHOD.KAKAO]: `<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg>`,
       [DISPATCH_METHOD.EMAIL]: '<i class="fas fa-envelope"></i>',
-      'phone':                 '<i class="fas fa-phone-alt"></i>',
+      [DISPATCH_METHOD.PHONE]:  '<i class="fas fa-phone-alt"></i>',
     };
     const icon = iconCfg[m] || '<i class="fas fa-question"></i>';
     return `<span class="badge ${badgeCls}">${icon} ${label}</span>`;
@@ -1445,7 +1445,7 @@ function renderCenHistory(){
       [DISPATCH_METHOD.KAKAO]:  'badge-yellow',
       [DISPATCH_METHOD.EMAIL]:  'badge-blue',
       [DISPATCH_METHOD.MANUAL]: 'badge-green',
-      '수정재발행':              'badge-pink',
+      [DISPATCH_METHOD.REISSUE]: 'badge-pink',
     };
     const badgeCls = METHOD_CLS[m] || 'badge-gray';
     const iconCfg = {

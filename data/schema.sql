@@ -330,6 +330,20 @@ CREATE TABLE IF NOT EXISTS minimum_wages (
   updated_at    INTEGER
 );
 
+CREATE TABLE IF NOT EXISTS payroll_items (
+      id          TEXT PRIMARY KEY,
+      payroll_id  TEXT NOT NULL REFERENCES payrolls(id) ON DELETE CASCADE,
+      item_type   TEXT NOT NULL,
+      amount      REAL DEFAULT 0,
+      pay_type    TEXT,
+      memo        TEXT,
+      sort_order  INTEGER DEFAULT 0,
+      created_at  INTEGER,
+      updated_at  INTEGER
+    );
+CREATE INDEX idx_payroll_items_payroll ON payroll_items(payroll_id);
+CREATE INDEX idx_payroll_items_type ON payroll_items(item_type);
+
 CREATE TABLE IF NOT EXISTS payroll_send_logs (
   id            TEXT PRIMARY KEY,
   company_id    TEXT REFERENCES companies(id),

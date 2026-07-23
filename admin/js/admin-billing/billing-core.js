@@ -1015,7 +1015,7 @@ async function confirmPartialPayment(){
     
     const updated={
       ...bill,
-      payment_status: isFullyPaid ? '완납' : '일부납',
+      payment_status: isFullyPaid ? PAYMENT_STATUS.PAID : PAYMENT_STATUS.PARTIAL,
       payment_date: isFullyPaid ? today : bill.payment_date,
       partial_paid_amount: totalPaid,
       remaining_amount: remaining

@@ -218,7 +218,7 @@ async function renderContractDispatchPage(){
       [DISPATCH_METHOD.KAKAO]:  { bg:'#f9d000', color:'#3b1f00', icon:'M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z', isSvg:true },
       [DISPATCH_METHOD.EMAIL]:  { bg:'#dbeafe', color:'#1e40af', fa:'fa-envelope' },
       [DISPATCH_METHOD.MANUAL]: { bg:'#d1fae5', color:'#065f46', fa:'fa-hand-paper' },
-      '수정재발행':              { bg:'#fce7f3', color:'#9d174d', fa:'fa-sync-alt' },
+      [DISPATCH_METHOD.REISSUE]: { bg:'#fce7f3', color:'#9d174d', fa:'fa-sync-alt' },
     };
     const c = cfg[m] || { bg:'#f3f4f6', color:'#374151', fa:'fa-question' };
     const label = DISPATCH_METHOD_LABEL[m] || m || '-';
@@ -745,7 +745,7 @@ async function _saveDispatchRecord({ method: dispatchMethod, status: dispatchSta
       const _coRep  = getCompanyRepGreeting(_dispCo);
       const _methodLabel = dispatchMethod ===DISPATCH_METHOD.KAKAO ? '카카오 알림톡'
         : dispatchMethod ===DISPATCH_METHOD.EMAIL ? '이메일'
-        : dispatchMethod === '수정재발행' ? '수정재발행 (계약서 변경 후 재발행)'
+        : dispatchMethod === DISPATCH_METHOD.REISSUE ? '수정재발행 (계약서 변경 후 재발행)'
         : dispatchMethod ===DISPATCH_METHOD.MANUAL ? '수동교부'
         : dispatchMethod;
       const _fmtD = d => { if(!d) return '-'; const [y,m,dd]=d.split('-'); return `${parseInt(y)}년 ${parseInt(m)}월 ${parseInt(dd)}일`; };

@@ -466,7 +466,7 @@ function openProbMgmtModal(contractId){
           `</tr>` +
           `<tr style="border-bottom:1px solid #bbf7d0;">` +
             `<th style="text-align:left;padding:7px 4px;color:#6b7280;font-weight:600;">전환 계약 유형</th>` +
-            `<td style="padding:7px 4px;color:#1e293b;font-weight:700;">${newContractType}</td>` +
+            `<td style="padding:7px 4px;color:#1e293b;font-weight:700;">${contractTypeLabel(newContractType)}</td>` +
           `</tr>` +
           (pendingStart
             ? `<tr style="border-bottom:1px solid #bbf7d0;">` +

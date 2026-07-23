@@ -630,7 +630,7 @@ async function _autoCreateConfirmedContract(probEndDate){
   if(!piContract) throw new Error('piContract가 없습니다.');
 
   // 채용확정 고용형태 결정
-  const confirmedType = piContract.contract_type ===CONTRACT_TYPE.REGULAR_PROBATION ? '정규직' : '계약직';
+  const confirmedType = piContract.contract_type ===CONTRACT_TYPE.REGULAR_PROBATION ? CONTRACT_TYPE.REGULAR : CONTRACT_TYPE.FIXED;
 
   // 실제 입사일 = 원본 수습 계약의 contract_start
   // (수습 계약의 contract_start는 수습 시작일 = 입사일)

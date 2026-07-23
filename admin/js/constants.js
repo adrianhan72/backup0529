@@ -191,15 +191,19 @@ const PAYMENT_STATUS_LEGACY_MAP = {
 // 발송 방식
 // ═══════════════════════════════════════════
 const DISPATCH_METHOD = Object.freeze({
-  KAKAO:  'kakao',
-  EMAIL:  'email',
-  MANUAL: 'manual',
+  KAKAO:   'kakao',
+  EMAIL:   'email',
+  MANUAL:  'manual',
+  PHONE:   'phone',
+  REISSUE: 'reissue',
 });
 
 const DISPATCH_METHOD_LABEL = Object.freeze({
-  [DISPATCH_METHOD.KAKAO]:  '알림톡',
-  [DISPATCH_METHOD.EMAIL]:  '이메일',
-  [DISPATCH_METHOD.MANUAL]: '수동교부',
+  [DISPATCH_METHOD.KAKAO]:   '알림톡',
+  [DISPATCH_METHOD.EMAIL]:   '이메일',
+  [DISPATCH_METHOD.MANUAL]:  '수동교부',
+  [DISPATCH_METHOD.PHONE]:   '유선직접안내',
+  [DISPATCH_METHOD.REISSUE]: '수정재발행',
 });
 
 // ═══════════════════════════════════════════

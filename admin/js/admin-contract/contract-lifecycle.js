@@ -2202,7 +2202,7 @@ function _cftValidate(){
   // 상태 힌트 (확정 버튼 옆)
   if(statusHint){
     statusHint.innerHTML =
-      `→ 계약 상태: <span class="badge ${statusCls}">${newStatus}</span>` +
+      `→ 계약 상태: <span class="badge ${statusCls}">${contractStatusLabel(newStatus)}</span>` +
       (newStatus === CONTRACT_STATUS.TERMINATED
         ? ' <span style="font-size:11px;color:#9ca3af;">(직원 상태 → 퇴직)</span>'
         : '');

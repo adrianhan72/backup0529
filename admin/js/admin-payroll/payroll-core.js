@@ -310,8 +310,8 @@ function openPayslipModal(payrollId){
   (function _renderPsContractWage(){
     const fmtW  = v => v ? Number(v).toLocaleString('ko-KR') + '원' : '';
     const cat   = e.employment_category || (ct ? ct.contract_type : '') || '';
-    const isReg      = ['정규직','정규직 수습'].includes(cat);
-    const isCont     = ['계약직','계약직 수습'].includes(cat);
+    const isReg      = [CONTRACT_TYPE.REGULAR, CONTRACT_TYPE.REGULAR_PROBATION].includes(normalizeContractType(cat));
+    const isCont     = [CONTRACT_TYPE.FIXED, CONTRACT_TYPE.FIXED_PROBATION].includes(normalizeContractType(cat));
     const isDaily    = cat ===CONTRACT_TYPE.DAILY;
     const isRegOrCont = isReg || isCont;
 

@@ -673,7 +673,7 @@ function openContractModal(id=null, preCompanyId=null){
   if(typeof _CT_OPT_ROWS !== 'undefined'){
     _CT_OPT_ROWS.forEach(({rowId})=>{ const el=document.getElementById(rowId); if(el) el.style.display='none'; });
   }
-  document.getElementById('ct-type').value='정규직';
+  document.getElementById('ct-type').value=CONTRACT_TYPE.REGULAR;
   document.getElementById('ct-status').value=CONTRACT_STATUS.ACTIVE;toggleCtEndDate();
   document.getElementById('ct-monthly-computed').textContent='0원';document.getElementById('ct-weekly-hol-computed').textContent='0원';
 
@@ -744,8 +744,8 @@ function openContractModal(id=null, preCompanyId=null){
         const _empCatKorean = contractTypeLabel(_empCatRaw) || '-';
         const _isPendingDisplay = _isPendingCt;
         document.getElementById('ct-edit-em-category').value = _isPendingDisplay
-          ? (_empCatRaw ===CONTRACT_TYPE.REGULAR_PROBATION ? '정규직' : _empCatRaw ===CONTRACT_TYPE.FIXED_PROBATION ? '계약직' : _empCatKorean)
-          : _empCatKorean;
+          ? (_empCatRaw ===CONTRACT_TYPE.REGULAR_PROBATION ? CONTRACT_TYPE.REGULAR : _empCatRaw ===CONTRACT_TYPE.FIXED_PROBATION ? CONTRACT_TYPE.FIXED : _empCatRaw)
+          : _empCatRaw;
         document.getElementById('ct-edit-em-job').value       = emp.job_description || '';
         document.getElementById('ct-edit-em-dept').value      = emp.department || '';
         document.getElementById('ct-edit-em-position').value  = emp.position || '';
@@ -1604,7 +1604,7 @@ function calcContractStatusDisplay(c, today){
     return {badge:'badge-gray', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.EXPIRED], docsIncomplete};
   if(c.status === CONTRACT_STATUS.TERMINATED)
     return {badge:'badge-red', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.TERMINATED], docsIncomplete};
-  // 만료예정·종료예정은 레거시 값 → 계약유효로 표시 (유효한 계약)
+  // 만료예정·종료예정은 레거시 한글 상태값 → 계약유효로 표시 (CONTRACT_STATUS에 없는 과거 데이터)
   if(c.status === '만료예정' || c.status === '종료예정')
     return {badge:'badge-green', label:'유효', docsIncomplete};
   // 서류미비는 독립된 상태가 아님 — 유효/만료/해지 등 실제 상태를 유지하고 docsIncomplete 플래그로만 관리
@@ -2592,7 +2592,7 @@ async function openAmendPreview(){
   const _emp = allEmployees.find(e => e.id === empId) || {};
   const _co  = allCompanies.find(x => x.id === coId)  || {};
   await _saveDispatchRecord({
-    method:'수정재발행', status: DISPATCH_STATUS.COMPLETED, recipient: _emp.phone||_emp.email||'',
+    method: DISPATCH_METHOD.REISSUE, status: DISPATCH_STATUS.COMPLETED, recipient: _emp.phone||_emp.email||'',
     note: `계약 내용 수정 후 재발행 완료 (원본 ID: ${origId})`, contractId: newContractId,
   });
 

@@ -237,7 +237,7 @@ async function renderConsentDispatchPage() {
     const badgeCls = STATUS_CLS[s] || 'badge-gray';
     const iconCfg = { completed:'<i class="fas fa-check-circle"></i>', sent:'<i class="fas fa-check-circle"></i>', failed:'<i class="fas fa-times-circle"></i>', pending:'<i class="fas fa-clock"></i>' };
     const icon = iconCfg[s] || '<i class="fas fa-circle"></i>';
-    const label = { completed:'완료', sent:'완료', failed:'실패', pending:'대기' }[s] || s || '-';
+    const label = DISPATCH_STATUS_LABEL[s] || s || '-';
     return `<span class="badge ${badgeCls}">${icon} ${label}</span>`;
   };
 
