@@ -202,9 +202,7 @@ async function _ctfUpload(type, contractId, inputEl){
 ■ 파일명: ${file.name}
 ■ 업로드 일시: ${new Date().toLocaleString('ko-KR')}
 
-자세한 내용은 근로 계약 관리 메뉴에서 확인하세요.
-
-${_BRAND_SIG}`,
+`,
           contractId : contractId,
           employeeId : c.employee_id, employeeName: _ufEmp.name || '',
           contractEnd: c.contract_end || '',
@@ -229,9 +227,7 @@ ${_BRAND_SIG}`,
 ■ 완비 서류: 계약서 날인본 + 제3자 정보제공 동의서
 ■ 전환 일시: ${new Date().toLocaleString('ko-KR')}
 
-자세한 내용은 근로 계약 관리 메뉴에서 확인하세요.
-
-${_BRAND_SIG}`,
+`,
             contractId : contractId,
             employeeId : c.employee_id, employeeName: _ufEmp.name || '',
             contractEnd: c.contract_end || '',

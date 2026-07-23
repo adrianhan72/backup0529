@@ -335,10 +335,11 @@ async function submitGnNotice(){
 async function _gnFireScheduled(recordId, co, title, body, adminName){
   const nowISO = new Date().toISOString();
   try {
-    // 기존 레코드를 sent 상태로 패치
+    const foot = await _getContactFoot();
+    // 기존 레코드를 sent 상태로 패치 + 담당자 연락처 footer 추가
     await fetch(`../tables/company_notices/${recordId}`, {
       method:'PATCH', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ gn_status:'sent', sent_at: nowISO, is_read: false })
+      body: JSON.stringify({ gn_status:'sent', sent_at: nowISO, is_read: false, body: body + '\n\n' + foot })
     });
     toast(`📣 [${co.name}] 예약 공지가 발송되었습니다.`, 'success');
     // 알림 발송 이력 페이지가 열려 있으면 이력 갱신
@@ -440,7 +441,7 @@ ${detail}
 급여 계산 시 변경된 기준이 자동 반영됩니다.
 상세 내용은 담당 노무사에게 문의하세요.
 
-${_BRAND_SIG}`;
+`;
 
   let cnt = 0;
   for(const co of targets){

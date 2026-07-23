@@ -9,7 +9,7 @@ let _rcTab           = 'history'; // 현재 탭: 'history' | 'template' (전환 
 const RC_PAGE_SIZE   = 20;   // 테이블 페이지당 행 수
 let _rcTargetPage    = 1;    // 전환 대상 현재 페이지
 let _rcHistoryPage   = 1;    // 발송 이력 현재 페이지
-let _rcContact       = null; // 대표 연락처 캐시
+let _rcContactCache       = null; // 대표 연락처 캐시
 
 // ─── 상태 분류 임계값 (일수) ─────────────────────────────────────
 const RC_EXCEEDED_DAYS = 730; // 2년 초과 → 전환 의무 발생
@@ -43,13 +43,13 @@ async function initRcPage(){
   _rcHistoryPage = 1;
 
   // 대표 연락처 정보 로드
-  if(!_rcContact) {
-    try { _rcContact = await getRepresentativeContact(); } catch(e) { _rcContact = {}; }
+  if(!_rcContactCache) {
+    try { _rcContactCache = await getRepresentativeContact(); } catch(e) { _rcContactCache = {}; }
   }
 
   // 이력 로드 중 tbody 로딩 표시
   const _rcLogTbody = document.getElementById('rc-log-tbody');
-  if(_rcLogTbody) _rcLogTbody.innerHTML = `<tr><td colspan="9" class="cen-empty"><i class="fas fa-spinner fa-spin"></i> 불러오는 중...</td></tr>`;
+  if(_rcLogTbody) _rcLogTbody.innerHTML = `<tr><td colspan="10" class="cen-empty"><i class="fas fa-spinner fa-spin"></i> 불러오는 중...</td></tr>`;
 
   // 이력 강제 재조회
   _rcHistoryLoaded = false;
@@ -79,7 +79,7 @@ function rcSwitchTab(tab){
   if(tab === 'history'){
     if(!_rcHistoryLoaded){
       const _htbody = document.getElementById('rc-log-tbody');
-      if(_htbody) _htbody.innerHTML = `<tr><td colspan="9" class="cen-empty"><i class="fas fa-spinner fa-spin"></i> 불러오는 중...</td></tr>`;
+      if(_htbody) _htbody.innerHTML = `<tr><td colspan="10" class="cen-empty"><i class="fas fa-spinner fa-spin"></i> 불러오는 중...</td></tr>`;
       (async()=>{ await rcLoadHistory(true); renderRcHistory(); })();
     } else {
       renderRcHistory();
@@ -183,7 +183,7 @@ function renderRcHistory(){
   };
 
   if(!list.length){
-    tbody.innerHTML = `<tr><td colspan="9" class="cen-empty"><i class="fas fa-inbox"></i> 발송 이력이 없습니다.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10" class="cen-empty"><i class="fas fa-inbox"></i> 발송 이력이 없습니다.</td></tr>`;
     document.getElementById('rc-log-pagination').innerHTML = '';
     return;
   }
@@ -247,6 +247,7 @@ function renderRcHistory(){
       <td style="font-size:12px;">${ddayHtml}</td>
       <td><span class="badge badge-purple"><i class="fas fa-bell" style="font-size:11px;margin-right:3px;"></i>인앱 알림</span></td>
       <td style="font-size:12px;">${senderLabel(r.sent_by)}</td>
+      <td>${r.is_read ? '<span class="badge badge-green" style="background:#dcfce7;color:#16a34a;">읽음</span>' : '<span class="badge badge-gray" style="background:#f3f4f6;color:#9ca3af;">미확인</span>'}</td>
     </tr>`;
   }).join('');
 
@@ -286,6 +287,11 @@ function renderRcTemplate(){
     return (y > 0 ? `${y}년 ` : '') + (m > 0 ? `${m}개월 ` : '') + `(총 ${d}일)`;
   };
 
+  const contactPhone = _rcContactCache?.phone || '02)3487-8841';
+  const contactEmail = _rcContactCache?.email || 'eunyangpark@naver.com';
+  const contactFax   = _rcContactCache?.fax   || '02)3487-8882';
+  const contactFoot  = `─────────────────────\n인사톡 노무톡 · 대화인사노무파트너스 담당자\n전화: ${contactPhone}\nE-mail: ${contactEmail}\n팩스: ${contactFax}`;
+
   // ──────────────────────────────────────────────
   // 섹션 A: 사전 고지 (700~730일)
   // ──────────────────────────────────────────────
@@ -313,9 +319,9 @@ function renderRcTemplate(){
 ◆ 필요 조치
 2년 도달 전에 정규직 근로계약서를 준비하시고, 담당 노무사에게 계약서 작성을 요청해 주세요.
 
-※ 본 안내는 대화인사노무파트너스에서 발송한 법적 의무 사전 고지입니다.
+※ 본 안내는 대화인사노무파트너스에서 대표님께만 보내드리는 법적 의무 사전 고지로 해당 근로자에게는 통보되지 않습니다.
 
-${_BRAND_SIG}`;
+${contactFoot}`;
 
     setTxt('rc-tmpl-inapp-title-1', title);
     setTxt('rc-tmpl-inapp-plain-1', plain);
@@ -349,33 +355,12 @@ ${_BRAND_SIG}`;
 2. 계약서 작성 후 근로계약 관리 메뉴에서 정규직 계약을 등록하세요.
 3. 이미 정규직 계약이 등록된 경우 이 메시지를 무시하셔도 됩니다.
 
-※ 본 안내는 대화인사노무파트너스에서 발송한 법적 의무 위반 경고입니다.
+※ 본 안내는 대화인사노무파트너스에서 대표님께만 보내드리는 법적 의무 위반 발생 고지로 해당 근로자에게는 통보되지 않습니다.
 
-${_BRAND_SIG}`;
+${contactFoot}`;
 
     setTxt('rc-tmpl-inapp-title-2', title);
     setTxt('rc-tmpl-inapp-plain-2', plain);
-  }
-
-  // 변수 안내 테이블 (공통)
-  const vars = [
-    ['{empName}',    '직원명',              '홍길동 / 김영희'],
-    ['{company}',    '고객사명',            '(주)예시기업'],
-    ['{coRep}',      '고객사 대표자명',     '김대표'],
-    ['{catText}',    '고용형태',            '계약직'],
-    ['{firstStart}', '입사일',              '2024-01-15'],
-    ['{totalDays}',  '누적 근로일수',       '715일'],
-    ['{fmtPeriod}',  '누적 기간 텍스트',    '2년 (총 715일)'],
-    ['{today}',      '발송 일자',           new Date().toLocaleDateString('ko-KR')],
-  ];
-  const varTbody = document.getElementById('rc-tmpl-var-tbody');
-  if(varTbody){
-    varTbody.innerHTML = vars.map(([v,d,e])=>`
-      <tr>
-        <td><code style="background:#f3f4f6;padding:2px 6px;border-radius:4px;font-size:12px;color:#dc2626;">${v}</code></td>
-        <td style="font-size:12.5px;color:#374151;">${d}</td>
-        <td style="font-size:12.5px;color:#6b7280;">${e}</td>
-      </tr>`).join('');
   }
 }
 

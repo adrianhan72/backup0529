@@ -520,7 +520,7 @@ async function savePI(){
 ■ 지급일: ${body.pay_date||'-'}
 ■ 수정 일시: ${new Date().toLocaleString('ko-KR')}
 
-고객사 앱의 급여명세서 메뉴에서 수정된 상세 내역을 확인하세요.`,
+급여명세서 메뉴에서 수정된 상세 내역을 확인하실 수 있습니다.`,
           employeeId  : empId, employeeName: _piEmp.name || '',
         });
       }
@@ -577,7 +577,7 @@ async function savePI(){
 ■ 지급일: ${body.pay_date||'-'}
 ■ 입력 일시: ${new Date().toLocaleString('ko-KR')}
 
-고객사 앱의 급여명세서 메뉴에서 상세 내역을 확인하세요.`,
+급여명세서 메뉴에서 상세 내역을 확인하실 수 있습니다.`,
           employeeId  : empId, employeeName: _piEmp.name || '',
         });
       }

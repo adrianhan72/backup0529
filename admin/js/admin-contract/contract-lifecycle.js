@@ -37,6 +37,26 @@ function _getContractPrintCSS(){
     '.daily-highlight{font-weight:700;color:#d97706;}',
     '.doc-probation-box{background:#fefce8;border:1.5px solid #fde047;border-radius:7px;padding:10px 13px;margin-top:6px;font-size:11.5px;line-height:1.8;color:#854d0e;}',
     '.doc-daily-note{background:#fff7ed;border:1.5px solid #fed7aa;border-radius:7px;padding:10px 13px;margin-top:8px;font-size:11.5px;line-height:1.8;color:#9a3412;}',
+    // ── 근무시간표 ──
+    '.work-schedule-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:4px;}',
+    '.work-schedule-table{width:100%;min-width:580px;border-collapse:collapse;font-size:12px;}',
+    '.work-schedule-table th{background:#1e293b;color:#fff;padding:7px 6px;text-align:center;font-weight:600;font-size:11.5px;white-space:nowrap;}',
+    '.work-schedule-table th.th-brk{background:#7c3aed;}',
+    '.work-schedule-table td{padding:5px 4px;border-bottom:1px solid #f1f5f9;text-align:center;vertical-align:middle;}',
+    '.work-schedule-table td.td-brk{background:rgba(124,58,237,0.04);}',
+    '.work-schedule-table tr.day-sat td{background:#eff6ff;}',
+    '.work-schedule-table tr.day-sat td.td-brk{background:#e0e7ff;}',
+    '.work-schedule-table tr.day-sun td{background:#fff5f5;}',
+    '.work-schedule-table tr.day-sun td.td-brk{background:#fce7f3;}',
+    '.work-schedule-table tr:last-child td{border-bottom:none;}',
+    '.work-schedule-table .day-label{font-weight:700;font-size:12.5px;}',
+    '.work-schedule-table .computed-h{font-size:11.5px;color:#0369a1;font-weight:600;min-width:48px;display:inline-block;}',
+    '.wsh-total{font-size:12px;color:#374151;margin-top:8px;padding:7px 12px;background:#f8fafc;border-radius:7px;border:1px solid #e2e8f0;display:flex;flex-direction:column;gap:4px;}',
+    '.wsh-total .wsh-row{display:flex;width:100%;gap:0;}',
+    '.wsh-total .wsh-item{flex:1;text-align:left;}',
+    '.wsh-total span{font-weight:400;color:#374151;}',
+    '.wsh-total .wsh-val{color:#0369a1;}',
+    '.wsh-total .wsh-extra{font-size:11.5px;}',
     '@media print{@page{margin:15mm 14mm;}body{padding:0;font-size:11.5px;max-width:100%;}',
     '.doc-section-title{-webkit-print-color-adjust:exact;print-color-adjust:exact;}',
     '.info-table th{-webkit-print-color-adjust:exact;print-color-adjust:exact;}',
@@ -589,19 +609,17 @@ function generateContractHTMLFromData(c, emp, co){
 
   <div class="doc-section">
     <div class="doc-section-title">${art('(의무)')}</div>
-    <p style="font-size:13px;line-height:1.9;color:#374151;padding:6px 0;">
+    <p class="doc-text" style="padding:6px 0;">
       "근로자"는 당사에 채용됨에 따라 상호 신뢰를 바탕으로 근로계약을 체결하며 당사의 운영규정을 준수하고 성실히 업무를 수행할 의무를 진다.
     </p>
   </div>
 
-  <div class="doc-divider"></div>
-
   <div class="doc-section">
     <div class="doc-section-title">${art('(근무장소 및 업무내용)')}</div>
-    <p style="font-size:13px;line-height:1.9;color:#374151;padding:4px 0 4px;">
+    <p class="doc-text" style="padding:4px 0 4px;">
       ① "근로자"는 아래의 근무장소에서 근무함을 원칙으로 한다. 다만, "사용자"는 업무상 필요한 경우 "근로자"의 근무장소를 변경할 수 있다.
     </p>
-    <p style="font-size:13px;line-height:1.9;color:#374151;padding:4px 0 8px;">
+    <p class="doc-text" style="padding:4px 0 8px;">
       ② "근로자"의 담당업무는 아래와 같으며, 그 외 "사용자"가 지시하는 업무 및 "사용자"가 별도로 부여한 업무를 수행한다. 다만, "사용자"는 업무상 필요한 경우 "근로자"의 담당업무를 변경할 수 있다.
     </p>
     <table class="info-table">
@@ -621,17 +639,17 @@ function generateContractHTMLFromData(c, emp, co){
       ${row('고용형태', `<span class="badge ${empCatBadge(_ctTypeRaw)}">${ctType}</span>`)}
       ${isProb ? row('수습기간', `${probStartKr} ~ ${probEndDate} (${probMonths}개월)`) : ''}
     </table>
-    <p style="font-size:13px;line-height:1.9;color:#374151;padding:8px 0 4px;">
+    <p class="doc-text" style="padding:8px 0 4px;">
       ① 계약의 갱신은 계약기간 만료 1개월 전 협의하는 것으로 하며, 만료 전까지 당사자간 별도의 의사표시 또는 협의가 없는 경우 고용기간이 종료되는 것으로 한다.
     </p>
-    <p style="font-size:13px;line-height:1.9;color:#374151;padding:4px 0 4px;">
+    <p class="doc-text" style="padding:4px 0 4px;">
       ② 정규 근로시간은 주 40시간제를 원칙으로 하며, 근무시간은 다음과 같다.
     </p>
     ${buildScheduleTableHTML(activeDays)}
-    <p style="font-size:13px;line-height:1.9;color:#374151;padding:8px 0 4px;">
+    <p class="doc-text" style="padding:8px 0 4px;">
       ③ 제②항에 명시된 시간 외에 "사용자"는 "근로자"에게 업무상의 필요에 의하여 연장근무, 야간근무 및 휴일근무를 명할 수 있으며 "근로자"는 이에 포괄적으로 합의한 것으로 본다.
     </p>
-    <p style="font-size:13px;line-height:1.9;color:#374151;padding:4px 0 4px;">
+    <p class="doc-text" style="padding:4px 0 4px;">
       ④ "근로자"는 업무상 연장, 야간 및 휴일 근로가 필요한 경우 "사용자"에게 연장근로신청서 등을 제출하여 사전 승인을 받아야 한다. 사전 승인 없는 임의의 연장 등은 인정하지 아니할 수 있다.
     </p>
   </div>
@@ -643,9 +661,9 @@ function generateContractHTMLFromData(c, emp, co){
   </div>
   <div class="doc-section">
     <div class="doc-section-title">${art('(휴일)')}</div>
-    <p style="font-size:13px;line-height:1.9;color:#374151;padding:4px 0 4px;">① "사용자"는 1주일에 소정근로일수를 개근한 경우 주휴일을 부여한다.</p>
-    <p style="font-size:13px;line-height:1.9;color:#374151;padding:4px 0 4px;">② 주휴일과 근로자의 날(5월 1일)은 유급휴일로, 토요일은 무급휴일로 한다. 단, 휴일이 중복되는 경우 1일의 휴일로 처리한다.</p>
-    <p style="font-size:13px;line-height:1.9;color:#374151;padding:4px 0 4px;">③ 기타 휴일에 관한 사항은 "공휴일에 관한 법률"에 따른다.</p>
+    <p class="doc-text" style="padding:4px 0 4px;">① "사용자"는 1주일에 소정근로일수를 개근한 경우 주휴일을 부여한다.</p>
+    <p class="doc-text" style="padding:4px 0 4px;">② 주휴일과 근로자의 날(5월 1일)은 유급휴일로, 토요일은 무급휴일로 한다. 단, 휴일이 중복되는 경우 1일의 휴일로 처리한다.</p>
+    <p class="doc-text" style="padding:4px 0 4px;">③ 기타 휴일에 관한 사항은 "공휴일에 관한 법률"에 따른다.</p>
   </div>` : ''}
   ${salarySection.replace('__ART_SALARY__', art('(임금)'))}
   ${retirementSection.replace('__ART_RETIREMENT__', art('(퇴직급여)'))}
@@ -1006,9 +1024,7 @@ async function savePendingContractEdit(){
 ■ 해지 예정일: ${_fmtD(_termDate)}
 ■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
 
-자세한 내용은 근로 계약 관리 메뉴에서 확인하세요.
-
-${_BRAND_SIG}`,
+`,
           contractId  : c.id,
           employeeId  : c.employee_id, employeeName: _pendEmp.name || '',
           contractEnd : c.contract_end || '',
@@ -1029,9 +1045,7 @@ ${_BRAND_SIG}`,
 ■ 계약 기간: ${_fmtD(c.contract_start)}${c.contract_end ? ' ~ ' + _fmtD(c.contract_end) : ''}
 ■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
 
-자세한 내용은 근로 계약 관리 메뉴에서 확인하세요.
-
-${_BRAND_SIG}`,
+`,
           contractId  : c.id,
           employeeId  : c.employee_id, employeeName: _pendEmp.name || '',
           contractEnd : c.contract_end || '',
@@ -1053,9 +1067,7 @@ ${_BRAND_SIG}`,
 ■ 계약 상태: ${CONTRACT_STATUS_LABEL[newStatus] || newStatus}
 ■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
 
-자세한 내용은 근로 계약 관리 메뉴에서 확인하세요.
-
-${_BRAND_SIG}`,
+`,
           contractId  : c.id,
           employeeId  : c.employee_id, employeeName: _pendEmp.name || '',
           contractEnd : newEnd,
@@ -1161,9 +1173,7 @@ async function cancelPreTerminate(){
 ■ 현재 계약 상태: 계약유효 (활성) 복귀
 ■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
 
-자세한 내용은 근로 계약 관리 메뉴에서 확인하세요.
-
-${_BRAND_SIG}`,
+`,
       contractId  : c.id,
       employeeId  : c.employee_id, employeeName: empName,
       contractEnd : c.contract_end || '',
@@ -1257,9 +1267,7 @@ async function doContractVoid(){
 ■ 파기 사유: ${statusLabel} 상태의 계약 파기
 ■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
 
-자세한 내용은 근로 계약 관리 메뉴에서 확인하세요.
-
-${_BRAND_SIG}`,
+`,
       contractId  : c.id,
       employeeId  : c.employee_id, employeeName: _voidEmp.name || '',
       contractEnd : c.contract_end || '',
@@ -1681,9 +1689,7 @@ async function confirmContractRenew(){
 ■ 새 계약 시작일: ${_fmtD(newStart)} (시작일 미도래 — 계약예정)
 ■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
 
-자세한 내용은 근로 계약 관리 메뉴에서 확인하세요.
-
-${_BRAND_SIG}`,
+`,
         contractId  : newId,
         employeeId  : c.employee_id, employeeName: _renewEmp.name || '',
         contractEnd : '',
@@ -1706,9 +1712,7 @@ ${_BRAND_SIG}`,
 ■ 계약 상태: 계약유효 (활성)
 ■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
 
-자세한 내용은 근로 계약 관리 메뉴에서 확인하세요.
-
-${_BRAND_SIG}`,
+`,
         contractId  : newId,
         employeeId  : c.employee_id, employeeName: _renewEmp.name || '',
         contractEnd : '',
@@ -3718,9 +3722,7 @@ async function saveContract(){
 ■ 계약 종료일: ${_fmtDate(contractEnd || _origC.contract_end || '')}
 ■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
 
-자세한 내용은 근로 계약 관리 메뉴에서 확인하세요.
-
-${_BRAND_SIG}`,
+`,
           contractId  : _savedContractId,
           employeeId  : empId, employeeName: _empName,
           contractEnd : contractEnd || _origC.contract_end || '',
@@ -3741,9 +3743,7 @@ ${_BRAND_SIG}`,
 ■ 계약 기간: ${_fmtDate(contractStart)}${contractEnd ? ' ~ ' + _fmtDate(contractEnd) : ' (기간 미정)'}
 ■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
 
-자세한 내용은 근로 계약 관리 메뉴에서 확인하세요.
-
-${_BRAND_SIG}`,
+`,
           contractId  : _savedContractId,
           employeeId  : empId, employeeName: _empName,
           contractEnd : contractEnd,
@@ -3766,9 +3766,7 @@ ${_BRAND_SIG}`,
 ■ 계약 상태: ${contractStatus === CONTRACT_STATUS.PENDING ? '계약예정 (시작일 미도래)' : '계약유효 (활성)'}
 ■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
 
-자세한 내용은 근로 계약 관리 메뉴에서 확인하세요.
-
-${_BRAND_SIG}`,
+`,
         contractId  : _savedContractId,
         employeeId  : empId, employeeName: _empName,
         contractEnd : contractEnd,
@@ -3790,9 +3788,7 @@ ${_BRAND_SIG}`,
 ■ 계약 상태: ${contractStatus === CONTRACT_STATUS.DOCS_INCOMPLETE ? '서류미비 (파일 업로드 필요)' : contractStatus === CONTRACT_STATUS.PENDING ? '계약예정' : '계약유효 (활성)'}
 ■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
 
-자세한 내용은 근로 계약 관리 메뉴에서 확인하세요.
-
-${_BRAND_SIG}`,
+`,
         contractId  : _savedContractId,
         employeeId  : empId, employeeName: _empName,
         contractEnd : contractEnd,

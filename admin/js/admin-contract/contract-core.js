@@ -58,22 +58,6 @@ function _renderContCoSummaryCards(){
     !c.consent_file_name);
 
   // ═══════════════════════════════════════════
-  // CARD 5: 계약만료 통지대상
-  // ═══════════════════════════════════════════
-  let expiryTargets = [];
-  if(typeof _cenGetTargetContracts === 'function'){
-    expiryTargets = _cenGetTargetContracts().filter(c => c.company_id === coId);
-  }
-
-  // ═══════════════════════════════════════════
-  // CARD 6: 정규직 전환 의무 대상
-  // ═══════════════════════════════════════════
-  let regularTargets = [];
-  if(typeof _calc2YrExceedList === 'function'){
-    regularTargets = _calc2YrExceedList().filter(x => x.companyId === coId && x.status === 'exceeded');
-  }
-
-  // ═══════════════════════════════════════════
   // CARD 7: 수습근로자 관리 대상
   // ═══════════════════════════════════════════
   let probationTargets = [];
@@ -219,27 +203,6 @@ function _renderContCoSummaryCards(){
   renderNavCard('fas fa-file-alt', '#16a34a', '정보제공동의서 미발송', unsignedConsent.length,
     '클릭하여 정보제공동의서 관리 페이지로 이동', 'cont-alert-preterminate', 'consent-dispatch');
 
-  // ── ⑤ 계약만료 통지대상 ──
-  if(expiryTargets.length > 0){
-    const rows = expiryTargets.map(c => {
-      const emp = allEmployees.find(e=>e.id===c.employee_id);
-      const diff = c._daysLeft;
-      const ddayColor = diff <= 7 ? '#dc2626' : '#b45309';
-      return `<tr>${empNameCell(c.employee_id)}${catBadgeCell(c,emp)}<td style="font-size:12px;color:#6b7280;">${c.contract_end||'-'}</td><td><span style="font-weight:700;color:${ddayColor};font-size:12.5px;">D-${diff}</span></td><td style="white-space:nowrap;"><button onclick="viewContract('${c.id}')" class="btn btn-sm btn-indigo"><i class="fas fa-search"></i> 조회</button></td></tr>`;
-    }).join('');
-    renderCard('expiry', 'fas fa-file-contract', '#db2777', '계약만료 통지 대상', expiryTargets.length,
-      '29일 이내 계약 만료 예정입니다.', ['직원명','고용형태','만료 예정일','D-day','관리'], rows, 'cont-alert-renew');
-  }
-
-  // ── ⑥ 정규직 전환 의무 대상 ──
-  if(regularTargets.length > 0){
-    const rows = regularTargets.map(x => {
-      return `<tr><td style="font-weight:700;color:#1f2937;">${x.empName||'-'}</td><td><span class="badge badge-gray">계약직</span></td><td style="font-size:11px;color:#9ca3af;">2년 초과</td><td style="white-space:nowrap;"><button onclick="viewContract('${x.contractId}')" class="btn btn-sm btn-indigo"><i class="fas fa-search"></i> 조회</button></td></tr>`;
-    }).join('');
-    renderCard('regular', 'fas fa-user-check', '#7c3aed', '정규직 전환 의무 대상', regularTargets.length,
-      '기간제 2년 초과 근로자입니다.', ['직원명','고용형태','사유','관리'], rows, 'cont-alert-renew-terminate');
-  }
-
   // ── ⑦ 수습근로자 관리 대상 ──
   if(probationTargets.length > 0){
     const rows = probationTargets.map(t => {
@@ -327,7 +290,7 @@ function _renderSummaryBanner(){
 function renderContracts(){
   if(!document.getElementById('cont-list-section')) return;
 
-  // 고객사 미선택 시: 글로벌 배너 6종 표시, 회사별 카드/테이블 숨김
+  // 고객사 미선택 시: 글로벌 배너 표시, 회사별 카드/테이블 숨김
   if(!currentContCompanyId){
     _renderContractsBanners();
     // 글로벌 배너는 _renderContractsBanners()가 알아서 표시/숨김 처리
@@ -335,11 +298,13 @@ function renderContracts(){
     return;
   }
 
-  // 고객사 선택 시: 글로벌 배너 6종 + 할일 목록 섹션 숨김, 회사별 아코디언 카드 + 테이블 표시
+  // 고객사 선택 시: 글로벌 배너 + 할일 목록/진행중인 업무 섹션 숨김, 회사별 아코디언 카드 + 테이블 표시
   const todoSec = document.getElementById('cont-todo-section');
   if(todoSec) todoSec.style.display = 'none';
+  const progressSec = document.getElementById('cont-progress-section');
+  if(progressSec) progressSec.style.display = 'none';
   ['contracts-draft-banner','contracts-signed-banner','contracts-consent-banner',
-   'contracts-expiry-banner','contracts-regular-banner','contracts-probation-banner'
+   'contracts-probation-banner'
   ].forEach(id => {
     const el = document.getElementById(id);
     if(el){ el.style.display='none'; el.innerHTML=''; }
@@ -2637,13 +2602,13 @@ async function openAmendPreview(){
   await _sendCompanyNotice({
     companyId:coId, companyName:_co.company_name||'', noticeType:'contract_voided',
     title:`[계약 파기] ${_emp.name||''} — 기존 계약이 파기되었습니다 (수정재발행)`,
-    body:`안녕하세요${_coRep}.\n\n소속 근로자의 기존 근로계약이 수정재발행으로 인해 파기 처리되었습니다.\n\n■ 근로자: ${_emp.name||''}\n■ 파기된 계약 기간: ${_fmtD(origC.contract_start)}${origC.contract_end?' ~ '+_fmtD(origC.contract_end):''}\n■ 처리 일시: ${new Date().toLocaleString('ko-KR')}\n\n새 계약이 동시에 발행되었습니다. 자세한 내용은 근로 계약 관리 메뉴에서 확인하세요.\n\n${_BRAND_SIG}`,
+    body:`안녕하세요${_coRep}.\n\n소속 근로자의 기존 근로계약이 수정재발행으로 인해 파기 처리되었습니다.\n\n■ 근로자: ${_emp.name||''}\n■ 파기된 계약 기간: ${_fmtD(origC.contract_start)}${origC.contract_end?' ~ '+_fmtD(origC.contract_end):''}\n■ 처리 일시: ${new Date().toLocaleString('ko-KR')}\n\n새 계약이 동시에 발행되었습니다. `,
     contractId:origId, employeeId:empId, employeeName:_emp.name||'', contractEnd:origC.contract_end||'',
   });
   await _sendCompanyNotice({
     companyId:coId, companyName:_co.company_name||'', noticeType:'contract_amended',
     title:`[계약 수정재발행] ${_emp.name||''} — 수정된 새 계약이 발행되었습니다`,
-    body:`안녕하세요${_coRep}.\n\n소속 근로자의 수정재발행 근로계약이 완료되었습니다.\n\n■ 근로자: ${_emp.name||''}\n■ 고용형태: ${cType}\n■ 새 계약 기간: ${_fmtD(start)}${end?' ~ '+_fmtD(end):' (기간 미정)'}\n■ 처리 일시: ${new Date().toLocaleString('ko-KR')}\n\n자세한 내용은 근로 계약 관리 메뉴에서 확인하세요.\n\n${_BRAND_SIG}`,
+    body:`안녕하세요${_coRep}.\n\n소속 근로자의 수정재발행 근로계약이 완료되었습니다.\n\n■ 근로자: ${_emp.name||''}\n■ 고용형태: ${contractTypeLabel(cType)}\n■ 새 계약 기간: ${_fmtD(start)}${end?' ~ '+_fmtD(end):' (기간 미정)'}\n■ 처리 일시: ${new Date().toLocaleString('ko-KR')}\n\n`,
     contractId:newContractId, employeeId:empId, employeeName:_emp.name||'', contractEnd:end,
   });
 

@@ -796,7 +796,6 @@ async function cancelTerminate(id, name){
  */
 async function _createTermNotice(company, endDateStr, oldEndDateStr){
   if(!company) return;
-  const adminName = typeof _getAdminUsername === 'function' ? _getAdminUsername() : '관리자';
   const title = oldEndDateStr
     ? '[서비스 해지 예정일 변경 안내]'
     : '[서비스 해지 예정 안내]';
@@ -804,21 +803,11 @@ async function _createTermNotice(company, endDateStr, oldEndDateStr){
     ? `해지예정일이 ${oldEndDateStr}에서 ${endDateStr}로 변경되었습니다.`
     : `${endDateStr}부로 서비스 이용이 해지될 예정입니다. 감사합니다.`;
   try {
-    await fetch('../tables/company_notices', {
-      method : 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body   : JSON.stringify({
-        company_id   : company.id,
-        company_name : company.company_name || '',
-        notice_type  : 'notice',
-        title,
-        body,
-        sent_at      : new Date().toISOString(),
-        sent_by      : adminName,
-        is_read      : 0,
-      }),
+    await _sendCompanyNotice({
+      companyId  : company.id, companyName: company.company_name || '',
+      noticeType : 'notice',
+      title, body,
     });
-
   } catch(e){
     console.warn('[해지예정알림] 발송 실패:', e);
   }
@@ -829,25 +818,14 @@ async function _createTermNotice(company, endDateStr, oldEndDateStr){
  */
 async function _createCancelNotice(company){
   if(!company) return;
-  const adminName = typeof _getAdminUsername === 'function' ? _getAdminUsername() : '관리자';
   const title = '[서비스 해지 취소 안내]';
   const body  = '예약되었던 서비스 이용 해지가 정상적으로 취소처리되었습니다. 서비스를 계속 이용하실 수 있습니다.';
   try {
-    await fetch('../tables/company_notices', {
-      method : 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body   : JSON.stringify({
-        company_id   : company.id,
-        company_name : company.company_name || '',
-        notice_type  : 'notice',
-        title,
-        body,
-        sent_at      : new Date().toISOString(),
-        sent_by      : adminName,
-        is_read      : 0,
-      }),
+    await _sendCompanyNotice({
+      companyId  : company.id, companyName: company.company_name || '',
+      noticeType : 'notice',
+      title, body,
     });
-
   } catch(e){
     console.warn('[해지취소알림] 발송 실패:', e);
   }

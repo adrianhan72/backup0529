@@ -56,22 +56,6 @@ function updateMenuBadges(){
   const draftContractCount = (allContracts||[]).filter(c => !!c.is_draft).length;
   _setBadge('badge-contracts', draftContractCount);
 
-  // 4) 계약만료 통지 → contract-expiry-notice
-  // _cenNoticeList(통지 이력)가 heavy 데이터 → 로드 전에는 "이미 통지된 계약" 필터 미작동 → 과다 집계
-  if(typeof _cenHistoryLoaded !== 'undefined' && !_cenHistoryLoaded){
-    // loadHeavyData() 완료 후 updateMenuBadges() 재호출 시 올바른 값으로 갱신됨
-  } else {
-    const expiryTargets = typeof _cenGetTargetContracts === 'function' ? _cenGetTargetContracts() : [];
-    _setBadge('badge-contract-expiry-notice', expiryTargets.length);
-  }
-
-  // 5) 정규직 전환 의무 대상 → regular-conversion
-  // allContracts 기반 계산 → critical path 완료 후 정확 (heavy 데이터 불필요)
-  const regularList = typeof _calc2YrExceedList === 'function'
-    ? _calc2YrExceedList().filter(x => x.status === 'exceeded')
-    : [];
-  _setBadge('badge-regular-conversion', regularList.length);
-
   // 5-1) 해고 시 서면통지 대상자 수 → probation-mgmt 뱃지
   // 수습기간 3개월 초과 + 만료일까지 30일 이상 남은 인원
   const probTargets = typeof _getProbationAllTargets === 'function'

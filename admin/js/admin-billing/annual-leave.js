@@ -1061,8 +1061,7 @@ function _buildLeavePromoCompanyBody(emp, co, al, refYear, adminName, workerMeth
 
 해당 직원이 기한 내 연차를 미사용할 경우, 「근로기준법」 제61조에 따라 미사용 연차수당 지급 의무가 소멸될 수 있습니다.
 자세한 사항은 담당 노무사 ${adminName}에게 문의하시기 바랍니다.
-
-${_BRAND_SIG}`;
+`;
 }
 
 /** 연차 사용 기한 계산 헬퍼 */
@@ -1119,27 +1118,14 @@ async function confirmSendLeavePromotion(method){
     // 유선직접안내는 별도 발송 없음 — 이력만 기록
 
     // ── ② 고객사 앱 알림 (항상 발송) ──
-    const coBody  = _buildLeavePromoCompanyBody(emp, co, al, refYear, adminName, method);
     const coTitle = `[연차 사용촉진 통보] ${emp.name} — ${refYear}년 잔여 ${al.remainDays}일`;
-    await fetch('../tables/company_notices', {
-      method : 'POST',
-      headers: {'Content-Type':'application/json'},
-      body   : JSON.stringify({
-        company_id       : co?.id||'',
-        company_name     : co?.company_name||'',
-        notice_type      : 'leave_promotion',
-        title            : coTitle,
-        body             : coBody,
-        contract_id      : contract?.id||'',
-        employee_id      : emp.id,
-        employee_name    : emp.name,
-        contract_end     : '',
-        days_until_expiry: 0,
-        sent_at          : new Date().toISOString(),
-        sent_by          : adminName,
-        is_read          : false,
-        read_at          : '',
-      }),
+    await _sendCompanyNotice({
+      companyId  : co?.id||'', companyName: co?.company_name||'',
+      noticeType : 'leave_promotion',
+      title      : coTitle,
+      body       : _buildLeavePromoCompanyBody(emp, co, al, refYear, adminName, method),
+      contractId : contract?.id||'',
+      employeeId : emp.id, employeeName: emp.name,
     });
 
     // ── ③ 발송 이력 저장 ──
@@ -1496,9 +1482,9 @@ function renderCenHistory(){
       <td><span class="badge ${CAT_BADGE_CLS[r.contract_type]||'badge-gray'}">${contractTypeLabel(r.contract_type)}</span></td>
       <td style="font-size:12px;color:#6b7280;">${r.contract_end||'-'}</td>
       <td>${methodBadge(r.notice_method)}</td>
-      <td>${statusBadge(r.notice_status)}</td>
       <td style="font-size:12px;color:#374151;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.recipient||''}">${r.recipient||'-'}</td>
       <td style="font-size:12px;color:#6b7280;">${r.noticed_by ? _resolveAdminName(r.noticed_by) : '<span style="font-size:11px;color:#6366f1;">시스템 자동발송</span>'}</td>
+      <td>${r.is_read ? '<span class="badge badge-green"><i class="fas fa-check"></i> 읽음</span>' : '<span class="badge badge-red"><i class="fas fa-circle"></i> 미확인</span>'}</td>
     </tr>`).join('');
 
   _cenRenderPagination('cen-log-pagination', list.length, _cenHistoryPage, 'setCenHistoryPage');

@@ -139,6 +139,10 @@ cron.schedule('0 9 * * *', async () => {
     const TWO_YEARS_DAYS = 730;
     const NOTICE_BEFORE  = 30;  // 730일 30일 전부터 사전 고지
 
+    // 대표 연락처 정보 조회
+    const contact = db.get(`SELECT * FROM representative_contact WHERE id = 'default'`) || {};
+    const contactFoot = `─────────────────────\n인사톡 노무톡 · 대화인사노무파트너스 담당자\n전화: ${contact.phone || '02)3487-8841'}\nE-mail: ${contact.email || 'eunyangpark@naver.com'}\n팩스: ${contact.fax || '02)3487-8882'}`;
+
     // 계약직·계약직 수습·정규직 수습·일용직 계약의 누적 기간 계산 (최초 입사일 기준)
     // 조건: 누적 700일 이상 AND 계약 종료일까지 730일 이상
     const rows = db.all(`
@@ -184,6 +188,10 @@ cron.schedule('0 9 * * *', async () => {
         ? `소속 직원의 기간제 근로 누적 기간이 2년(730일)을 초과하여 법률에 따른 정규직 전환 의무가 발생하였음을 안내드립니다.`
         : `소속 직원의 기간제 근로 누적 기간이 2년(730일) 도달 30일 전입니다. 정규직 전환 의무 발생에 대비해 미리 준비해 주세요.`;
 
+      const bodyFooter = isExceeded
+        ? `※ 본 안내는 대화인사노무파트너스에서 대표님께만 보내드리는 법적 의무 위반 발생 고지로 해당 근로자에게는 통보되지 않습니다.`
+        : `※ 본 안내는 대화인사노무파트너스에서 대표님께만 보내드리는 법적 의무 사전 고지로 해당 근로자에게는 통보되지 않습니다.`;
+
       const body =
 `안녕하세요, ${r.company_name} 사장님.
 
@@ -200,10 +208,9 @@ ${bodyIntro}
 ◆ 필요 조치
 담당 노무사에게 정규직 근로계약서 재작성을 요청해 주세요.
 
-※ 본 안내는 대화인사노무파트너스에서 발송한 법적 의무 안내입니다.
+${bodyFooter}
 
-─────────────────────
-인사톡 노무톡 · 대화인사노무파트너스`;
+${contactFoot}`;
 
       db.run(`INSERT INTO company_notices (id, company_id, company_name, notice_type, title, body, contract_id, employee_id, employee_name, contract_end, days_until_expiry, sent_at, sent_by, is_read, read_at, gn_status, gn_scheduled_at)
         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, [
@@ -225,6 +232,10 @@ cron.schedule('0 9 * * 1', async () => {
   try {
     const today = new Date().toISOString().slice(0, 10);
     const TWO_YEARS_DAYS = 730;
+
+    // 대표 연락처 정보 조회
+    const contactW = db.get(`SELECT * FROM representative_contact WHERE id = 'default'`) || {};
+    const contactFootW = `─────────────────────\n인사톡 노무톡 · 대화인사노무파트너스 담당자\n전화: ${contactW.phone || '02)3487-8841'}\nE-mail: ${contactW.email || 'eunyangpark@naver.com'}\n팩스: ${contactW.fax || '02)3487-8882'}`;
 
     // 이미 730일 초과 + 정규직 계약 없는 근로자
     const rows = db.all(`
@@ -287,11 +298,10 @@ cron.schedule('0 9 * * 1', async () => {
 ◆ 필요 조치
 아직 정규직 근로계약서가 등록되지 않았습니다. 담당 노무사에게 정규직 근로계약서 작성을 요청해 주세요.
 
-※ 본 안내는 대화인사노무파트너스에서 발송한 법적 의무 안내입니다.
+※ 본 안내는 대화인사노무파트너스에서 대표님께만 보내드리는 법적 의무 위반 발생 고지로 해당 근로자에게는 통보되지 않습니다.
 ※ 정규직 계약이 이미 등록된 경우 이 메시지를 무시하셔도 됩니다.
 
-─────────────────────
-인사톡 노무톡 · 대화인사노무파트너스`;
+${contactFootW}`;
 
       db.run(`INSERT INTO company_notices (id, company_id, company_name, notice_type, title, body, contract_id, employee_id, employee_name, contract_end, days_until_expiry, sent_at, sent_by, is_read, read_at, gn_status, gn_scheduled_at)
         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, [
@@ -312,6 +322,10 @@ cron.schedule('0 9 * * *', async () => {
   try {
     const today = new Date().toISOString().slice(0, 10);
     const NOTICE_DAYS = 30; // 수습만료 30일 전부터 통지
+
+    // 대표 연락처 정보 조회
+    const contactP = db.get(`SELECT * FROM representative_contact WHERE id = 'default'`) || {};
+    const contactFootP = `─────────────────────\n인사톡 노무톡 · 대화인사노무파트너스 담당자\n전화: ${contactP.phone || '02)3487-8841'}\nE-mail: ${contactP.email || 'eunyangpark@naver.com'}\n팩스: ${contactP.fax || '02)3487-8882'}`;
 
     // 수습 계약 중 수습기간 3개월 초과, 만료일 30일 이내인 건 조회
     // probation_end_date 우선, 없으면 contract_start + probation_months(기본3)으로 계산
@@ -364,8 +378,7 @@ cron.schedule('0 9 * * *', async () => {
 
 ※ 본 안내는 대화인사노무파트너스에서 발송한 법적 의무 안내입니다.
 
-─────────────────────
-인사톡 노무톡 · 대화인사노무파트너스`;
+${contactFootP}`;
 
       db.run(`INSERT INTO company_notices (id, company_id, company_name, notice_type, title, body, contract_id, employee_id, employee_name, contract_end, days_until_expiry, sent_at, sent_by, is_read, read_at, gn_status, gn_scheduled_at)
         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, [

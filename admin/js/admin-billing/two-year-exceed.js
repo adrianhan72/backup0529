@@ -101,32 +101,6 @@ function render2YrStats(){
   }
 }
 
-/** 대시보드 배너 업데이트 */
-function _updateDash2YrBanner(){
-  const section = document.getElementById('dash-2yr-section');
-  if(!section) return;
-  const list     = _calc2YrExceedList();
-  const exceeded = list.filter(x => x.status === 'exceeded');
-  if(!exceeded.length){ section.style.display='none'; section.innerHTML=''; return; }
-
-  section.style.display = '';
-  section.innerHTML = `
-    <div onclick="showPage('regular-conversion', document.querySelector('.menu-item[data-page=\\'regular-conversion\\']'));"
-         style="cursor:pointer;background:linear-gradient(135deg,#fff1f2,#fee2e2);border:1.5px solid #f87171;border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:14px;"
-         >
-      <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#ef4444,#dc2626);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-        <i class="fas fa-gavel" style="color:#fff;font-size:17px;"></i>
-      </div>
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:13.5px;font-weight:700;color:#7f1d1d;">
-          정규직 전환 의무 대상 <span style="color:#dc2626;font-size:16px;font-weight:800;">${exceeded.length}명</span>
-        </div>
-        <div style="font-size:12px;color:#b91c1c;margin-top:3px;">기간제 근로자 2년 초과 — 클릭하여 ${PAGE_LABELS['regular-conversion']} 페이지로 이동</div>
-      </div>
-      <div style="color:#dc2626;font-size:14px;flex-shrink:0;"><i class="fas fa-chevron-right"></i></div>
-    </div>`;
-}
-
 /** 정규직 전환 대상 테이블 렌더링 */
 function render2YrTargetList(){
   const tbody = document.getElementById('2yr-tbody');
@@ -231,31 +205,16 @@ async function _2yrSendNotice(empId){
 ◆ 필요 조치
 담당 노무사에게 정규직 근로계약서 재작성을 요청해 주세요.
 
-※ 본 안내는 대화인사노무파트너스에서 발송한 법적 의무 안내입니다.
-
-${_BRAND_SIG}`;
+※ 본 안내는 대화인사노무파트너스에서 대표님께만 보내드리는 법적 의무 위반 발생 고지로 해당 근로자에게는 통보되지 않습니다.`;
 
   try {
     // ① 고객사 인앱 알림
-    await fetch('../tables/company_notices', {
-      method : 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body   : JSON.stringify({
-        company_id   : co.id,
-        company_name : co.company_name || '',
-        notice_type  : 'regular_conversion',
-        title,
-        body,
-        contract_id  : item.activeContract?.id || '',
-        employee_id  : empId,
-        employee_name: item.empName,
-        contract_end : '',
-        days_until_expiry: 0,
-        sent_at      : new Date().toISOString(),
-        sent_by      : adminName,
-        is_read      : false,
-        read_at      : '',
-      }),
+    await _sendCompanyNotice({
+      companyId   : co.id, companyName: co.company_name || '',
+      noticeType  : 'regular_conversion',
+      title, body,
+      contractId  : item.activeContract?.id || '',
+      employeeId  : empId, employeeName: item.empName,
     });
 
     // ② 계약만료 통지 이력 테이블에도 이력 저장
@@ -285,6 +244,17 @@ ${_BRAND_SIG}`;
     console.error('[정규직 전환 안내 발송 오류]', e);
     toast('발송 중 오류가 발생했습니다.', 'error');
   }
+}
+
+let _2yrContactCache = null;
+function _2yrGetContactFoot(){
+  if(!_2yrContactCache){
+    // 비동기 로드 전 기본값
+    getRepresentativeContact().then(c => { _2yrContactCache = c; });
+    return `─────────────────────\n인사톡 노무톡 · 대화인사노무파트너스 담당자\n전화: 02)3487-8841\nE-mail: eunyangpark@naver.com\n팩스: 02)3487-8882`;
+  }
+  const c = _2yrContactCache;
+  return `─────────────────────\n인사톡 노무톡 · 대화인사노무파트너스 담당자\n전화: ${c.phone || '02)3487-8841'}\nE-mail: ${c.email || 'eunyangpark@naver.com'}\n팩스: ${c.fax || '02)3487-8882'}`;
 }
 
 // ==================================================================

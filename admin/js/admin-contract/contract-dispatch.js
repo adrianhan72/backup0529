@@ -759,14 +759,13 @@ async function _saveDispatchRecord({ method: dispatchMethod, status: dispatchSta
         소속 근로자에게 근로계약서가 발송되었습니다.
 
         ■ 근로자: ${empName}
-        ■ 고용형태: ${ctType||''}
+        ■ 고용형태: ${contractTypeLabel(ctType)||''}
         ■ 계약 기간: ${_fmtD(ctStart)}${ctEnd ? ' ~ ' + _fmtD(ctEnd) : ''}
         ■ 발송 방법: ${_methodLabel}
         ■ 발송 시각: ${new Date().toLocaleString('ko-KR')}
 
-        자세한 내용은 ${PAGE_LABELS['contract-dispatch']} 메뉴에서 확인하세요.
 
-        ${_BRAND_SIG}`,
+        `,
                 contractId  : cId,
                 employeeId  : empId, employeeName: empName,
                 contractEnd : ctEnd,

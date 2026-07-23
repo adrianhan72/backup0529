@@ -57,7 +57,7 @@
 
     /* ── 근로계약 관리 / 대시보드 공통: 할일 목록 3열 그리드 ── */
     .cont-todo-grid, .dash-todo-grid{ display:flex;flex-wrap:wrap;gap:10px;margin-bottom:4px; }
-    .cont-todo-grid > div, .dash-todo-grid > div{ flex:1 1 calc(33.333% - 7px);min-width:280px; }
+    .cont-todo-grid > div, .dash-todo-grid > div{ flex:1 1 calc(25% - 8px);min-width:220px; }
     .cont-todo-grid .dash-alert-banner, .dash-todo-grid .dash-alert-banner{ height:100%; }
 
     .pss-send-btn:hover{ opacity:.88; }

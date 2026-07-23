@@ -474,9 +474,7 @@ async function _bulkEmailSend(idx){
 ■ 발송 방법: 이메일 (${item.email})
 ■ 발송 시각: ${new Date().toLocaleString('ko-KR')}
 
-발송 상세 내역은 급여명세서 발송 관리 메뉴에서 확인하세요.
-
-${_BRAND_SIG}`,
+`,
         employeeId : item.empId, employeeName: item.empName,
       });
     }

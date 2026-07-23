@@ -2,86 +2,19 @@
 
 
 // ── 대시보드 임시저장 알림 카드 ──
-/* ─────────────────────────────────────────────────────────────────
-   renderDashExpiryBanner()
-   계약만료 통지 대상(D-29 이내 미통지)을 모아 배너로 표시
-   ───────────────────────────────────────────────────────────────── */
-function renderDashExpiryBanner(){
-  const sec = document.getElementById('dash-expiry-banner');
-  if(!sec) return;
-
-  const targets = _cenGetTargetContracts();   // 이미 만료일 임박순 정렬됨
-  const total  = targets.length;
-  const urgent = targets.filter(c => c._daysLeft <= 7);   // D-7 이내
-  const inactive = total === 0;
-
-  sec.style.display = '';
-  sec.innerHTML = `
-  <div class="dash-alert-banner expiry${inactive ? ' inactive' : ''}"
-       ${inactive ? '' : `onclick="showPage('contract-expiry-notice', document.querySelector('.menu-item[data-page=\\'contract-expiry-notice\\']'))"`}>
-    <div class="dash-alert-banner-head">
-      <div class="dash-alert-banner-icon" style="background:${inactive ? '#d1d5db' : ''};">
-        <i class="fas fa-file-contract"></i>
-      </div>
-      <div class="dash-alert-banner-body">
-        <div class="dash-alert-banner-title${inactive ? ' inactive' : ''}">
-          계약만료 통지 대상
-          <span class="dash-alert-banner-count" style="color:${inactive ? '#9ca3af' : ''};">${total}명</span>
-          ${urgent.length ? `<span style="display:inline-flex;align-items:center;gap:3px;background:#fee2e2;color:#991b1b;border-radius:20px;padding:1px 8px;font-size:11px;margin-left:6px;"><i class="fas fa-exclamation-circle" style="font-size:9px;"></i> D-7 이내 ${urgent.length}명</span>` : ''}
-        </div>
-        <div class="dash-alert-banner-sub" style="color:${inactive ? '#9ca3af' : ''};">${inactive ? '만료 예정인 계약이 없습니다' : `29일 이내 계약 만료 예정 — 클릭하여 ${PAGE_LABELS['contract-expiry-notice']} 페이지로 이동`}</div>
-      </div>
-      ${inactive ? '' : '<div class="dash-alert-banner-arrow"><i class="fas fa-chevron-right"></i></div>'}
-    </div>
-  </div>`;
-  _updateDashTodoGrid();
-}
-
-/* ─────────────────────────────────────────────────────────────────
-   renderDashRegularBanner()
-   정규직 전환 의무 대상(2년 초과)을 모아 배너로 표시
-   ───────────────────────────────────────────────────────────────── */
-function renderDashRegularBanner(){
-  const sec = document.getElementById('dash-regular-banner');
-  if(!sec) return;
-
-  const list     = _calc2YrExceedList();
-  const exceeded = list.filter(x => x.status === 'exceeded');
-  const total    = exceeded.length;
-  const inactive = total === 0;
-
-  sec.style.display = '';
-  sec.innerHTML = `
-  <div class="dash-alert-banner regular${inactive ? ' inactive' : ''}"
-       ${inactive ? '' : `onclick="showPage('regular-conversion', document.querySelector('.menu-item[data-page=\\'regular-conversion\\']'))"`}>
-    <div class="dash-alert-banner-head">
-      <div class="dash-alert-banner-icon" style="background:${inactive ? '#d1d5db' : ''};">
-        <i class="fas fa-user-check"></i>
-      </div>
-      <div class="dash-alert-banner-body">
-        <div class="dash-alert-banner-title${inactive ? ' inactive' : ''}">
-          정규직 전환 의무 대상
-          <span class="dash-alert-banner-count" style="color:${inactive ? '#9ca3af' : ''};">${total}명</span>
-        </div>
-        <div class="dash-alert-banner-sub" style="color:${inactive ? '#9ca3af' : ''};">${inactive ? '2년 초과 기간제 근로자가 없습니다' : `기간제 2년 초과 — 클릭하여 ${PAGE_LABELS['regular-conversion']} 페이지로 이동`}</div>
-      </div>
-      ${inactive ? '' : '<div class="dash-alert-banner-arrow"><i class="fas fa-chevron-right"></i></div>'}
-    </div>
-  </div>`;
-  _updateDashTodoGrid();
-}
-
 /* ── 대시보드 할일 그리드 표시/숨김 ── */
 function _updateDashTodoGrid(){
   const grid = document.querySelector('.dash-todo-grid');
-  if(!grid) return;
+  const todoSec = document.getElementById('dash-todo-section');
+  if(!grid || !todoSec) return;
   const ids = ['dash-contract-unsent-section','dash-consent-section','dash-unsent-section',
-               'dash-expiry-banner','dash-regular-banner','dash-probation-banner'];
+               'dash-probation-banner'];
   const anyVisible = ids.some(id => {
     const el = document.getElementById(id);
     return el && el.style.display !== 'none' && el.innerHTML.trim().length > 0;
   });
   grid.style.display = anyVisible ? '' : 'none';
+  todoSec.style.display = anyVisible ? '' : 'none';
 }
 
 /* ─────────────────────────────────────────────────────────────────
@@ -246,6 +179,7 @@ function selectProbMgmtCompanyFromDash(coId, coName, contractId){
    ───────────────────────────────────────────────────────────────── */
 let _probMgmtSelectedCoId   = null;
 let _probMgmtSelectedCoName = '';
+let _rcContact              = null; // 대표 연락처 캐시
 
 function renderProbMgmtCompanyList(){
   const chips = document.getElementById('probmgmt-company-chips');
@@ -288,7 +222,7 @@ function renderProbMgmtCompanyList(){
   }).join('');
 }
 
-function selectProbMgmtCompany(coId, coName){
+async function selectProbMgmtCompany(coId, coName){
   _probMgmtSelectedCoId   = coId;
   _probMgmtSelectedCoName = coName;
   // 글로벌 공유 변수 업데이트 — 다른 페이지(근로 계약 관리 등) 이동 시 고객사 유지
@@ -303,8 +237,49 @@ function selectProbMgmtCompany(coId, coName){
   // 검색어 초기화 후 테이블 렌더
   const srch = document.getElementById('probmgmt-search');
   if(srch) srch.value = '';
+  // 대표 연락처 로드
+  if(!_rcContact) { try { _rcContact = await getRepresentativeContact(); } catch(e) { _rcContact = {}; } }
   renderProbationMgmtTable();
+  renderProbMgmtTemplate();
   renderProbMgmtCompanyList(); // 칩 선택 상태 갱신
+}
+
+async function renderProbMgmtTemplate(){
+  const section = document.getElementById('probmgmt-template-section');
+  if(!section){ section.style.display = 'none'; return; }
+  section.style.display = '';
+
+  const setTxt = (id,v) => { const el = document.getElementById(id); if(el) el.textContent = v; };
+
+  const phone = _rcContact?.phone || '02)3487-8841';
+  const email = _rcContact?.email || 'eunyangpark@naver.com';
+  const fax   = _rcContact?.fax   || '02)3487-8882';
+
+  const title = '[수습만료 예정] 홍길동 — 수습기간 6개월 (D-25)';
+  const plain =
+`안녕하세요, (주)예시기업 김대표 사장님.
+
+소속 직원의 수습기간 만료일이 다가와 안내드립니다.
+
+■ 직원명: 홍길동
+■ 고용형태: 정규직 수습
+■ 수습기간: 6개월
+■ 수습 만료일: 2026.08.16 (D-25)
+
+◆ 중요 안내
+수습기간이 3개월을 초과하는 근로자의 경우, 해고 시 「근로기준법」에 따른 해고예고(30일 전 서면통지) 의무가 발생합니다.
+만료 30일 전까지 본채용 여부를 결정하시어 담당 노무사에게 알려주시기 바랍니다.
+
+※ 본 안내는 대화인사노무파트너스에서 발송한 법적 의무 안내입니다.
+
+─────────────────────
+인사톡 노무톡 · 대화인사노무파트너스 담당자
+전화: ${phone}
+E-mail: ${email}
+팩스: ${fax}`;
+
+  setTxt('probmgmt-tmpl-title', title);
+  setTxt('probmgmt-tmpl-plain', plain);
 }
 
 function clearProbMgmtCompany(){
@@ -1011,6 +986,8 @@ function renderDraftAlerts(){
 
   if(total === 0){
     sec.style.display='none'; sec.innerHTML='';
+    const progressSec = document.getElementById('dash-progress-section');
+    if(progressSec) progressSec.style.display = 'none';
     if(typeof updateMenuBadges === 'function') updateMenuBadges();
     return;
   }
@@ -1117,8 +1094,7 @@ function renderDraftAlerts(){
   // 아코디언 그룹 — 고객사
   const coGroup = draftCompanies.length ? `
     <div class="dash-ac-group-row" style="padding:8px 20px;">
-      <span class="dash-ac-group-label"><i class="fas fa-building" style="margin-right:5px;font-size:14px;color:#111827;"></i>고객사</span>
-      <span class="dash-ac-group-badge co">${draftCompanies.length}건</span>
+      <span class="dash-ac-group-label"><i class="fas fa-building" style="margin-right:5px;font-size:14px;color:#111827;"></i>고객사 <span class="count-badge">${draftCompanies.length}</span></span>
       <button class="dash-ac-toggle" onclick="toggleDashAccordion('draft-co-body',this,event)" title="펼치기/접기" style="background:rgba(245,158,11,.18);color:#92400e;margin-left:2px;">
         <i class="fas fa-chevron-down"></i>
       </button>
@@ -1130,8 +1106,7 @@ function renderDraftAlerts(){
   // 아코디언 그룹 — 근로계약서
   const ctGroup = draftContracts.length ? `
     <div class="dash-ac-group-row" style="padding:8px 20px;${draftCompanies.length ? 'border-top:1px solid #fde68a;' : ''}">
-      <span class="dash-ac-group-label"><i class="fas fa-file-contract" style="margin-right:5px;font-size:14px;color:#111827;"></i>근로계약서</span>
-      <span class="dash-ac-group-badge ct">${draftContracts.length}건</span>
+      <span class="dash-ac-group-label"><i class="fas fa-file-contract" style="margin-right:5px;font-size:14px;color:#111827;"></i>근로계약서 <span class="count-badge">${draftContracts.length}</span></span>
       <button class="dash-ac-toggle" onclick="toggleDashAccordion('draft-ct-body',this,event)" title="펼치기/접기" style="background:rgba(99,102,241,.15);color:#3730a3;margin-left:2px;">
         <i class="fas fa-chevron-down"></i>
       </button>
@@ -1144,8 +1119,7 @@ function renderDraftAlerts(){
   const hasPrevForPi = (draftCompanies.length + draftContracts.length) > 0;
   const piGroup = draftPayrolls.length ? `
     <div class="dash-ac-group-row" style="padding:8px 20px;${hasPrevForPi ? 'border-top:1px solid #fde68a;' : ''}">
-      <span class="dash-ac-group-label"><i class="fas fa-file-invoice-dollar" style="margin-right:5px;font-size:14px;color:#111827;"></i>급여 입력</span>
-      <span class="dash-ac-group-badge pi">${draftPayrolls.length}건</span>
+      <span class="dash-ac-group-label"><i class="fas fa-file-invoice-dollar" style="margin-right:5px;font-size:14px;color:#111827;"></i>급여 입력 <span class="count-badge">${draftPayrolls.length}</span></span>
       <button class="dash-ac-toggle" onclick="toggleDashAccordion('draft-pi-body',this,event)" title="펼치기/접기" style="background:rgba(22,163,74,.18);color:#15803d;margin-left:2px;">
         <i class="fas fa-chevron-down"></i>
       </button>
@@ -1162,14 +1136,11 @@ function renderDraftAlerts(){
         <span class="pulse-dot"></span>
         임시저장 미완료 항목
       </div>
-      <div class="dash-ac-badges">
-        ${draftCompanies.length ? `<span class="dash-ac-badge" style="background:rgba(245,158,11,.15);color:#92400e;"><i class="fas fa-building" style="margin-right:4px;font-size:10px;"></i>고객사 ${draftCompanies.length}건</span>` : ''}
-        ${draftContracts.length ? `<span class="dash-ac-badge" style="background:rgba(99,102,241,.12);color:#3730a3;"><i class="fas fa-file-contract" style="margin-right:4px;font-size:10px;"></i>계약서 ${draftContracts.length}건</span>` : ''}
-        ${draftPayrolls.length  ? `<span class="dash-ac-badge" style="background:rgba(22,163,74,.1);color:#15803d;"><i class="fas fa-file-invoice-dollar" style="margin-right:4px;font-size:10px;"></i>급여 ${draftPayrolls.length}건</span>` : ''}
-      </div>
     </div>
     <div class="draft-alert-card-body">${coGroup}${ctGroup}${piGroup}</div>
   </div>`;
+  const progressSec = document.getElementById('dash-progress-section');
+  if(progressSec) progressSec.style.display = '';
   // 메뉴 배지 + 고객사 관리 페이지 배너 동기화
   if(typeof updateMenuBadges === 'function') updateMenuBadges();
   if(typeof _renderCompaniesDraftBanner === 'function') _renderCompaniesDraftBanner();
@@ -1243,14 +1214,10 @@ function _renderContractsBanners(){
           <span class="pulse-dot"></span>
           임시저장 미완료 항목
         </div>
-        <div class="dash-ac-badges">
-          <span class="dash-ac-badge" style="background:rgba(99,102,241,.12);color:#3730a3;"><i class="fas fa-file-contract" style="margin-right:4px;font-size:10px;"></i>계약서 ${drafts.length}건</span>
-        </div>
       </div>
       <div class="draft-alert-card-body">
         <div class="dash-ac-group-row" style="padding:8px 20px;">
-          <span class="dash-ac-group-label"><i class="fas fa-file-contract" style="margin-right:5px;font-size:14px;color:#111827;"></i>근로계약서</span>
-          <span class="dash-ac-group-badge ct">${drafts.length}건</span>
+          <span class="dash-ac-group-label"><i class="fas fa-file-contract" style="margin-right:5px;font-size:14px;color:#111827;"></i>근로계약서 <span class="count-badge">${drafts.length}</span></span>
           <button class="dash-ac-toggle" onclick="toggleDashAccordion('cont-draft-ct-body',this,event)" title="펼치기/접기" style="background:rgba(99,102,241,.15);color:#3730a3;margin-left:2px;">
             <i class="fas fa-chevron-down"></i>
           </button>
@@ -1272,16 +1239,19 @@ function _renderContractsBanners(){
       CONTRACT_ACTIVE_STATUSES.includes(c.status) &&
       !c.signed_file_name
     );
-    if(!unsignedContracts.length){ sec.style.display='none'; sec.innerHTML=''; return; }
+    const cnt = unsignedContracts.length;
+    const inactive = cnt === 0;
     sec.style.display = '';
-    sec.innerHTML = `<div class="dash-alert-banner contract-unsent" onclick="showPage('contract-dispatch',document.querySelector('.menu-item[data-page=\\'contract-dispatch\\']'))">
+    sec.innerHTML = `<div class="dash-alert-banner contract-unsent${inactive ? ' inactive' : ''}"
+         ${inactive ? '' : `onclick="showPage('contract-dispatch',document.querySelector('.menu-item[data-page=\\'contract-dispatch\\']'))"`}
+         style="cursor:${inactive ? 'default' : 'pointer'}">
         <div class="dash-alert-banner-head">
-          <div class="dash-alert-banner-icon"><i class="fas fa-file-contract"></i></div>
+          <div class="dash-alert-banner-icon" style="background:${inactive ? '#d1d5db' : ''};"><i class="fas fa-file-contract"></i></div>
           <div class="dash-alert-banner-body">
-            <div class="dash-alert-banner-title">근로계약서 미발송 <span class="dash-alert-banner-count">${unsignedContracts.length}건</span></div>
-            <div class="dash-alert-banner-sub">클릭하여 ${PAGE_LABELS['contract-dispatch']} 페이지로 이동</div>
+            <div class="dash-alert-banner-title${inactive ? ' inactive' : ''}">근로계약서 미발송 <span class="dash-alert-banner-count" style="color:${inactive ? '#9ca3af' : ''};">${cnt}건</span></div>
+            <div class="dash-alert-banner-sub" style="color:${inactive ? '#9ca3af' : ''};">${inactive ? '미발송 계약서가 없습니다' : `클릭하여 ${PAGE_LABELS['contract-dispatch']} 페이지로 이동`}</div>
           </div>
-          <div class="dash-alert-banner-arrow"><i class="fas fa-chevron-right"></i></div>
+          ${inactive ? '' : '<div class="dash-alert-banner-arrow"><i class="fas fa-chevron-right"></i></div>'}
         </div>
       </div>`;
   })();
@@ -1296,57 +1266,19 @@ function _renderContractsBanners(){
       CONTRACT_ACTIVE_STATUSES.includes(c.status) &&
       !c.consent_file_name
     );
-    if(!unsignedConsent.length){ sec.style.display='none'; sec.innerHTML=''; return; }
+    const cnt2 = unsignedConsent.length;
+    const inactive2 = cnt2 === 0;
     sec.style.display = '';
-    sec.innerHTML = `<div class="dash-alert-banner consent" onclick="showPage('consent-dispatch',document.querySelector('.menu-item[data-page=\\'consent-dispatch\\']'))">
+    sec.innerHTML = `<div class="dash-alert-banner consent${inactive2 ? ' inactive' : ''}"
+         ${inactive2 ? '' : `onclick="showPage('consent-dispatch',document.querySelector('.menu-item[data-page=\\'consent-dispatch\\']'))"`}
+         style="cursor:${inactive2 ? 'default' : 'pointer'}">
         <div class="dash-alert-banner-head">
-          <div class="dash-alert-banner-icon"><i class="fas fa-file-shield"></i></div>
+          <div class="dash-alert-banner-icon" style="background:${inactive2 ? '#d1d5db' : ''};"><i class="fas fa-file-shield"></i></div>
           <div class="dash-alert-banner-body">
-            <div class="dash-alert-banner-title">정보제공동의서 미발송 <span class="dash-alert-banner-count">${unsignedConsent.length}건</span></div>
-            <div class="dash-alert-banner-sub">클릭하여 ${PAGE_LABELS['consent-dispatch']} 페이지로 이동</div>
+            <div class="dash-alert-banner-title${inactive2 ? ' inactive' : ''}">정보제공동의서 미발송 <span class="dash-alert-banner-count" style="color:${inactive2 ? '#9ca3af' : ''};">${cnt2}건</span></div>
+            <div class="dash-alert-banner-sub" style="color:${inactive2 ? '#9ca3af' : ''};">${inactive2 ? '미발송 동의서가 없습니다' : `클릭하여 ${PAGE_LABELS['consent-dispatch']} 페이지로 이동`}</div>
           </div>
-          <div class="dash-alert-banner-arrow"><i class="fas fa-chevron-right"></i></div>
-        </div>
-      </div>`;
-  })();
-
-  // ── ④ 계약만료 통지대상 배너 ──
-  (function(){
-    const sec = document.getElementById('contracts-expiry-banner');
-    if(!sec) return;
-    if(typeof _cenGetTargetContracts !== 'function'){ sec.style.display='none'; return; }
-    const targets = _cenGetTargetContracts();
-    if(!targets.length){ sec.style.display='none'; sec.innerHTML=''; return; }
-    sec.style.display = '';
-    sec.innerHTML = `<div class="dash-alert-banner expiry" onclick="showPage('contract-expiry-notice',document.querySelector('.menu-item[data-page=\\'contract-expiry-notice\\']'))">
-        <div class="dash-alert-banner-head">
-          <div class="dash-alert-banner-icon"><i class="fas fa-file-contract"></i></div>
-          <div class="dash-alert-banner-body">
-            <div class="dash-alert-banner-title">계약만료 통지 대상 <span class="dash-alert-banner-count">${targets.length}명</span></div>
-            <div class="dash-alert-banner-sub">29일 이내 계약 만료 예정 — 클릭하여 ${PAGE_LABELS['contract-expiry-notice']} 페이지로 이동</div>
-          </div>
-          <div class="dash-alert-banner-arrow"><i class="fas fa-chevron-right"></i></div>
-        </div>
-      </div>`;
-  })();
-
-  // ── ⑤ 정규직 전환 의무 대상 배너 ──
-  (function(){
-    const sec = document.getElementById('contracts-regular-banner');
-    if(!sec) return;
-    if(typeof _calc2YrExceedList !== 'function'){ sec.style.display='none'; return; }
-    const list = _calc2YrExceedList();
-    const exceeded = list.filter(x => x.status === 'exceeded');
-    if(!exceeded.length){ sec.style.display='none'; sec.innerHTML=''; _updateDashTodoGrid(); return; }
-    sec.style.display = '';
-    sec.innerHTML = `<div class="dash-alert-banner regular" onclick="showPage('regular-conversion',document.querySelector('.menu-item[data-page=\\'regular-conversion\\']'))">
-        <div class="dash-alert-banner-head">
-          <div class="dash-alert-banner-icon"><i class="fas fa-user-check"></i></div>
-          <div class="dash-alert-banner-body">
-            <div class="dash-alert-banner-title">정규직 전환 의무 대상 <span class="dash-alert-banner-count">${exceeded.length}명</span></div>
-            <div class="dash-alert-banner-sub">기간제 2년 초과 — 클릭하여 ${PAGE_LABELS['regular-conversion']} 페이지로 이동</div>
-          </div>
-          <div class="dash-alert-banner-arrow"><i class="fas fa-chevron-right"></i></div>
+          ${inactive2 ? '' : '<div class="dash-alert-banner-arrow"><i class="fas fa-chevron-right"></i></div>'}
         </div>
       </div>`;
   })();
@@ -1357,42 +1289,47 @@ function _renderContractsBanners(){
     if(!sec) return;
     if(typeof _getProbationNoticeTargets !== 'function'){ sec.style.display='none'; return; }
     const targets = _getProbationNoticeTargets();
-    if(!targets.length){ sec.style.display='none'; sec.innerHTML=''; return; }
     const noticTargets = targets.filter(t => t.probMonths > 3 && t.daysLeft >= 30);
     const urgentAll = targets.filter(t => t.probMonths > 3 && t.daysLeft < 30);
     const total = noticTargets.length + urgentAll.length;
+    const inactive3 = total === 0;
     sec.style.display = '';
-    sec.innerHTML = `<div class="dash-alert-banner probation" onclick="showPage('probation-mgmt',document.querySelector('.menu-item[data-page=\\'probation-mgmt\\']'))">
+    sec.innerHTML = `<div class="dash-alert-banner probation${inactive3 ? ' inactive' : ''}"
+         ${inactive3 ? '' : `onclick="showPage('probation-mgmt',document.querySelector('.menu-item[data-page=\\'probation-mgmt\\']'))"`}
+         style="cursor:${inactive3 ? 'default' : 'pointer'}">
         <div class="dash-alert-banner-head">
-          <div class="dash-alert-banner-icon"><i class="fas fa-user-clock"></i></div>
+          <div class="dash-alert-banner-icon" style="background:${inactive3 ? '#d1d5db' : ''};"><i class="fas fa-user-clock"></i></div>
           <div class="dash-alert-banner-body">
-            <div class="dash-alert-banner-title">관리가 필요한 수습 근로자 <span class="dash-alert-banner-count">${total}명</span></div>
-            <div class="dash-alert-banner-sub">수습기간 3개월 초과 근로자 해고 시 30일 전 서면 통지 의무</div>
+            <div class="dash-alert-banner-title${inactive3 ? ' inactive' : ''}">관리가 필요한 수습 근로자 <span class="dash-alert-banner-count" style="color:${inactive3 ? '#9ca3af' : ''};">${total}명</span></div>
+            <div class="dash-alert-banner-sub" style="color:${inactive3 ? '#9ca3af' : ''};">${inactive3 ? '수습기간 3개월 초과 근로자가 없습니다' : '수습기간 3개월 초과 근로자 해고 시 30일 전 서면 통지 의무'}</div>
           </div>
-          <div class="dash-alert-banner-arrow"><i class="fas fa-chevron-right"></i></div>
+          ${inactive3 ? '' : '<div class="dash-alert-banner-arrow"><i class="fas fa-chevron-right"></i></div>'}
         </div>
       </div>`;
   })();
 
-  // ── 할일 목록 섹션 표시/숨김 (3열 그리드 포함) ──
+  // ── 할일 목록 섹션 표시/숨김 (4열 그리드 포함) ──
   (function(){
     const todoSec = document.getElementById('cont-todo-section');
     const grid = document.querySelector('.cont-todo-grid');
     if(!todoSec) return;
-    const allIds = ['contracts-draft-banner','contracts-signed-banner','contracts-consent-banner',
-                    'contracts-expiry-banner','contracts-regular-banner','contracts-probation-banner'];
     const gridIds = ['contracts-signed-banner','contracts-consent-banner',
-                     'contracts-expiry-banner','contracts-regular-banner','contracts-probation-banner'];
-    const anyVisible = allIds.some(id => {
-      const el = document.getElementById(id);
-      return el && el.style.display !== 'none' && el.innerHTML.trim().length > 0;
-    });
+                     'contracts-probation-banner'];
     const anyGridVisible = gridIds.some(id => {
       const el = document.getElementById(id);
       return el && el.style.display !== 'none' && el.innerHTML.trim().length > 0;
     });
-    todoSec.style.display = anyVisible ? '' : 'none';
+    todoSec.style.display = anyGridVisible ? '' : 'none';
     if(grid) grid.style.display = anyGridVisible ? '' : 'none';
+  })();
+
+  // ── 진행 중인 업무 섹션 표시/숨김 ──
+  (function(){
+    const progressSec = document.getElementById('cont-progress-section');
+    if(!progressSec) return;
+    const draftEl = document.getElementById('contracts-draft-banner');
+    const hasDrafts = draftEl && draftEl.style.display !== 'none' && draftEl.innerHTML.trim().length > 0;
+    progressSec.style.display = hasDrafts ? '' : 'none';
   })();
 }
 

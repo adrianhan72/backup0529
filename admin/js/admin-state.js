@@ -292,9 +292,7 @@ async function loadHeavyData(){
     renderPIAllDraftBanner();
     if(document.getElementById('page-dashboard')?.classList.contains('active')){
       renderDraftAlerts();      // 급여 임시저장 포함 전체 임시저장 카드 갱신 (allPayrolls 로드 완료 후)
-      renderDashExpiryBanner();
       renderDashProbationBanner();
-      renderDashRegularBanner();
       renderDashSeveranceBanner();
     }
     // 수습 근로자 관리 페이지 활성화 시 고객사 칩 갱신
@@ -903,9 +901,12 @@ async function showPage(name,el){
     }
     // 고객사 선택 카드 표시 (이미 선택된 경우 유지)
     if(_probMgmtSelectedCoId){
+      const lbl = document.getElementById('probmgmt-selected-label');
+      if(lbl) lbl.textContent = _probMgmtSelectedCoName + ' — 수습 근로자 관리';
       document.getElementById('probmgmt-company-select-card').style.display = 'none';
       document.getElementById('probmgmt-content-section').style.display     = '';
       renderProbationMgmtTable();
+      renderProbMgmtTemplate();
     } else {
       document.getElementById('probmgmt-company-select-card').style.display = '';
       document.getElementById('probmgmt-content-section').style.display     = 'none';

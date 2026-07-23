@@ -165,12 +165,8 @@ function renderDashboard(){
   // [사용안함] 서류미비 계약도 유효 계약으로 처리 → 날인본/동의서 알림 카드 제거
   // renderSignedAlerts();
   // renderConsentAlerts();
-  // 계약만료 통지 대상 배너 (임시저장 위)
-  renderDashExpiryBanner();
-  // 수습 만료 통지 대상 배너 (계약만료 ~ 정규직 전환 사이)
+  // 수습 만료 통지 대상 배너
   renderDashProbationBanner();
-  // 정규직 전환 의무 대상 배너 (임시저장 위)
-  renderDashRegularBanner();
   // 퇴직금 지급 이력 배너 (임시저장 위)
   renderDashSeveranceBanner();
 

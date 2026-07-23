@@ -1,18 +1,26 @@
 ﻿    <div id="page-contracts" class="page">
-      <!-- ══ 할일 목록 섹션 (고객사 선택 전 글로벌 배너 6종) ══ -->
+      <!-- ══ 진행 중인 업무 섹션 ══ -->
+      <div id="cont-progress-section" style="display:none;">
+        <div class="section-title">
+          <i class="fas fa-spinner"></i>
+          <span>진행 중인 업무</span>
+        </div>
+        <div id="contracts-draft-banner" style="display:none;margin-bottom:10px;"></div>
+      </div>
+
+      <!-- ══ 할일 목록 섹션 (고객사 선택 전 글로벌 배너) ══ -->
       <div id="cont-todo-section" style="display:none;">
         <div class="section-title">
           <i class="fas fa-clipboard-list"></i>
           <span>할일 목록</span>
         </div>
-        <div id="contracts-draft-banner"    style="display:none;margin-bottom:10px;"></div>
         <div class="cont-todo-grid" style="display:none;">
           <div id="contracts-signed-banner"   style="display:none;"></div>
           <div id="contracts-consent-banner"  style="display:none;"></div>
-          <div id="contracts-expiry-banner"   style="display:none;"></div>
-          <div id="contracts-regular-banner"  style="display:none;"></div>
           <div id="contracts-probation-banner" style="display:none;"></div>
         </div>
+      </div>
+        <div id="contracts-draft-banner" style="display:none;margin-bottom:10px;"></div>
       </div>
 
       <!-- 고객사 선택 -->

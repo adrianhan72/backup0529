@@ -389,6 +389,7 @@ async function _sendCompanyNotice({
 }){
   if(!companyId || !noticeType || !title || !body) return;
   const adminName = _getAdminUsername();
+  const foot = await _getContactFoot();
   try {
     await fetch('../tables/company_notices', {
       method : 'POST',
@@ -398,7 +399,7 @@ async function _sendCompanyNotice({
         company_name : companyName,
         notice_type  : noticeType,
         title,
-        body,
+        body: body + '\n\n' + foot,
         contract_id  : contractId,
         employee_id  : employeeId,
         employee_name: employeeName,
@@ -421,7 +422,6 @@ async function _sendCompanyNotice({
  */
 async function _cenSendCompanyNotice({ c, emp, co, daysLeft }){
   if(!c || !co) return;
-  const adminName = _getAdminUsername();
   const cat       = emp?.employment_category || c.contract_type || '';
     const coRep     = getCompanyRepName(co);
   const ddayStr   = daysLeft === 0 ? 'D-day' : `D-${daysLeft}`;
@@ -431,7 +431,7 @@ async function _cenSendCompanyNotice({ c, emp, co, daysLeft }){
                        : daysLeft <= 14 ? '조속히 갱신 또는 종료 여부를 확인해 주시기 바랍니다.'
                        :                 '미리 갱신 여부를 검토하시어 원활한 인사 관리가 되시길 바랍니다.';
 
-  const title = `[계약만료 예정] ${emp?.name||''} ${cat} — ${ddayStr}`;
+  const title = `[계약만료 예정] ${emp?.name||''} ${contractTypeLabel(cat)} — ${ddayStr}`;
   const body  =
 `안녕하세요${coRep ? `, ${coRep} 사장님` : ''}.
 
@@ -439,34 +439,21 @@ async function _cenSendCompanyNotice({ c, emp, co, daysLeft }){
 ${urgencyCompany}
 
 ■ 직원명: ${emp?.name||''}
-■ 고용형태: ${cat}
+■ 고용형태: ${contractTypeLabel(cat)}
 ■ 계약 만료일: ${endKr} (${ddayStr})
 
 담당 노무사에게 갱신 여부를 확인해 주세요.
 
-※ 「기간제 및 단시간근로자 보호 등에 관한 법률」에 따른 사전 통지
+※ 「기간제 및 단시간근로자 보호 등에 관한 법률」에 따른 사전 통지`;
 
-${_BRAND_SIG}`;
-
-  await fetch('../tables/company_notices', {
-    method : 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body   : JSON.stringify({
-      company_id        : co.id,
-      company_name      : co.company_name || '',
-      notice_type       : 'contract_expiry',
-      title,
-      body,
-      contract_id       : c.id,
-      employee_id       : emp?.id || '',
-      employee_name     : emp?.name || '',
-      contract_end      : c.contract_end || '',
-      days_until_expiry : daysLeft,
-      sent_at           : new Date().toISOString(),
-      sent_by           : adminName,
-      is_read           : false,
-      read_at           : '',
-    }),
+  await _sendCompanyNotice({
+    companyId   : co.id, companyName: co.company_name || '',
+    noticeType  : 'contract_expiry',
+    title, body,
+    contractId  : c.id,
+    employeeId  : emp?.id || '', employeeName: emp?.name || '',
+    contractEnd : c.contract_end || '',
+    extraData   : { days_until_expiry: daysLeft },
   });
 }
 
@@ -512,7 +499,6 @@ async function cenRefresh(){
   _cenHistoryLoaded = false;
   await cenLoadHistory(true);
   render2YrStats();
-  renderDashRegularBanner();
   if(_cenTab === 'history') renderCenHistory();
 }
 
