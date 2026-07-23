@@ -16,7 +16,7 @@ const VALID_TABLES = new Set([
   'annual_leave_promotions','annual_leave_ledger','company_history',
   'wage_ledger_notifications',
   'registered_executives','related_party_workers','tax_brackets','tax_bracket_rows',
-  'representative_contact',
+  'representative_contact','payroll_items',
 ]);
 
 function resolveTable(name, db) {
@@ -88,6 +88,30 @@ module.exports = function(db) {
 
   router.use(validateStandardsBeforePayrollSave);
 
+  // ── payrolls 저장 시 payroll_items 동기화 ──
+  const { PayrollItemsRepository } = require('../lib/repositories/payrollItemsRepository');
+  const { v4: uuid } = require('uuid');
+
+  function syncPayrollItems(payrollId, body) {
+    if (!payrollId || !body) return;
+    const itemsRepo = new PayrollItemsRepository(db.connection);
+    const items = [];
+    let sortOrder = 0;
+    for (const [colName, itemType, hasPayType, payTypeCol] of PayrollItemsRepository.ALLOWANCE_MAP) {
+      const amount = parseFloat(body[colName]) || 0;
+      if (amount === 0 && itemType !== 'etc') continue;
+      const payType = hasPayType && payTypeCol ? (body[payTypeCol] || null) : null;
+      const memo = colName === 'etc_allowance' ? (body['etc_allowance_memo'] || null) : null;
+      items.push({
+        id: uuid(), payroll_id: payrollId, item_type: itemType,
+        amount, pay_type: payType, memo, sort_order: sortOrder,
+        created_at: Date.now(), updated_at: Date.now()
+      });
+      sortOrder++;
+    }
+    if (items.length > 0) itemsRepo.replaceItems(payrollId, items);
+  }
+
   /** GET /tables/:t */
   router.get('/:t', (req, res) => {
     try {
@@ -118,7 +142,9 @@ module.exports = function(db) {
     try {
       const table = resolveTable(req.params.t, db);
       if (!table) return res.status(400).json({ error: `Unknown table: ${req.params.t}` });
-      res.status(201).json(table.insert(req.body));
+      const result = table.insert(req.body);
+      if (table.tableName === 'payrolls') syncPayrollItems(result.id, req.body);
+      res.status(201).json(result);
     } catch (e) {
       console.error(`[POST /tables/${req.params.t}]`, e.message);
       const status = e.message.startsWith('Invalid column') ? 400 : 500;
@@ -131,7 +157,9 @@ module.exports = function(db) {
     try {
       const table = resolveTable(req.params.t, db);
       if (!table) return res.status(400).json({ error: `Unknown table: ${req.params.t}` });
-      res.json(table.upsert(req.params.id, req.body));
+      const result = table.upsert(req.params.id, req.body);
+      if (table.tableName === 'payrolls') syncPayrollItems(result.id, req.body);
+      res.json(result);
     } catch (e) {
       console.error(`[PUT /tables/${req.params.t}/:id]`, e.message);
       const status = e.message.startsWith('Invalid column') ? 400 : 500;
@@ -146,6 +174,7 @@ module.exports = function(db) {
       if (!table) return res.status(400).json({ error: `Unknown table: ${req.params.t}` });
       const row = table.patch(req.params.id, req.body);
       if (!row) return res.status(404).json({ error: 'Not found' });
+      if (table.tableName === 'payrolls') syncPayrollItems(row.id, req.body);
       res.json(row);
     } catch (e) {
       console.error(`[PATCH /tables/${req.params.t}/:id]`, e.message);
