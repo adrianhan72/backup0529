@@ -506,6 +506,25 @@ async function loadPayrolls(){
   }
   allPayrolls=all;
 }
+/** payroll_items 글로벌 캐시 + 로더 */
+let allPayrollItems = [];
+async function loadPayrollItems(payrollId = null){
+  if (payrollId) {
+    const d = await api(`../tables/payroll_items?payroll_id=${payrollId}&limit=100&sort=sort_order`);
+    return d.data || [];
+  }
+  // 전체 로드 (필요 시)
+  let page = 1, all = [];
+  while (true) {
+    const d = await api(`../tables/payroll_items?limit=500&page=${page}`);
+    const chunk = d.data || [];
+    all = all.concat(chunk);
+    if (all.length >= (d.total || 0) || chunk.length < 500) break;
+    page++;
+  }
+  allPayrollItems = all;
+  return all;
+}
 async function loadWLNotifications(){
   const d=await api('../tables/wage_ledger_notifications?limit=500');
   allWLNotifications=(d.data||[]).filter(n=>!n.is_read);

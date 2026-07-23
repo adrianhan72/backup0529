@@ -238,6 +238,41 @@ const NOTICE_TYPE = Object.freeze({
 });
 
 // ═══════════════════════════════════════════
+// 수당 항목 유형 (payroll_items.item_type)
+// payrolls 정규화 — 28종 수당을 payroll_items로 분리
+// ═══════════════════════════════════════════
+const ALLOWANCE_TYPES = Object.freeze([
+  { type: 'weekly_holiday',   label: '주휴수당',           hasPayType: false, sortOrder: 0 },
+  { type: 'position',         label: '직책수당',           hasPayType: false, sortOrder: 1 },
+  { type: 'skill',            label: '기술수당',           hasPayType: false, sortOrder: 2 },
+  { type: 'license',          label: '면허수당',           hasPayType: false, sortOrder: 3 },
+  { type: 'overtime',         label: '연장근로수당',       hasPayType: false, sortOrder: 4 },
+  { type: 'night',            label: '야간근로수당',       hasPayType: false, sortOrder: 5 },
+  { type: 'holiday',          label: '휴일근로수당',       hasPayType: false, sortOrder: 6 },
+  { type: 'transportation',   label: '교통비',             hasPayType: true,  sortOrder: 7 },
+  { type: 'self_driving',     label: '자가운전보조금',     hasPayType: true,  sortOrder: 8 },
+  { type: 'meal',             label: '식대',               hasPayType: true,  sortOrder: 9 },
+  { type: 'childcare',        label: '보육수당',           hasPayType: true,  sortOrder: 10 },
+  { type: 'research',         label: '연구수당',           hasPayType: true,  sortOrder: 11 },
+  { type: 'communication',    label: '통신비',             hasPayType: true,  sortOrder: 12 },
+  { type: 'fitness',          label: '건강유지비',         hasPayType: true,  sortOrder: 13 },
+  { type: 'self_dev',         label: '자기계발비',         hasPayType: true,  sortOrder: 14 },
+  { type: 'book',             label: '도서구입비',         hasPayType: true,  sortOrder: 15 },
+  { type: 'overseas',         label: '해외근무수당',       hasPayType: true,  sortOrder: 16 },
+  { type: 'contract_etc',     label: '계약기타수당',       hasPayType: false, sortOrder: 17 },
+  { type: 'annual_leave',     label: '연차수당',           hasPayType: false, sortOrder: 18 },
+  { type: 'bonus',            label: '상여금',             hasPayType: false, sortOrder: 19 },
+  { type: 'performance',      label: '성과급',             hasPayType: false, sortOrder: 20 },
+  { type: 'actual_expense',   label: '실비변상',           hasPayType: false, sortOrder: 21 },
+  { type: 'comm_expense',     label: '통신비(실비)',       hasPayType: false, sortOrder: 22 },
+  { type: 'etc',              label: '기타수당',           hasPayType: true,  sortOrder: 23 },
+  { type: 'site',             label: '현장수당',           hasPayType: false, sortOrder: 24 },
+  { type: 'remote_area',      label: '오지근무수당',       hasPayType: false, sortOrder: 25 },
+  { type: 'regular_bonus',    label: '정기상여금',         hasPayType: false, sortOrder: 26 },
+  { type: 'hazard',           label: '위험수당',           hasPayType: false, sortOrder: 27 },
+]);
+
+// ═══════════════════════════════════════════
 // 4대보험 유형
 // ═══════════════════════════════════════════
 const INSURANCE_TYPE = Object.freeze({
