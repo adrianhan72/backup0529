@@ -4,4 +4,3 @@ data/db.json
 data/app.db-shm
 data/app.db-wal
 data/backup/
-data/generated/
