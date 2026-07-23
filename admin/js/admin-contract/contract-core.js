@@ -414,11 +414,20 @@ function renderContracts(){
         specialBadge = `<span class="badge badge-gray">특수관계인</span>`;
       }
     }
-    // 페어 계약 링크 (새 창 비교용)
-    const _pairId = c.renewed_from_id || c.renewed_to_id;
+    // 페어 계약 링크 (새 창 비교용) — 갱신(renewal) 페어인 경우에만 표시, 수정/재발행 파기계약은 제외
+    const _isVoidedAmend = c.status === CONTRACT_STATUS.VOIDED || c.is_voided_by_amend;
+    const _rawPairId = _isVoidedAmend ? null : (c.renewed_from_id || c.renewed_to_id);
+    // 페어 상대방도 파기계약이면 갱신 페어가 아니므로 비교 제외
+    let _pairId = null;
+    if(_rawPairId){
+      const _pairC = allContracts.find(x => x.id === _rawPairId);
+      if(_pairC && !(_pairC.status === CONTRACT_STATUS.VOIDED || _pairC.is_voided_by_amend)){
+        _pairId = _rawPairId;
+      }
+    }
     const _pairLink = _pairId
       ? `<button class="btn btn-sm" style="background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;margin-right:4px;" 
-            onclick="_openContractPairWindow('${_pairId}')" title="페어 계약을 새 창에서 열어 비교하기">
+            onclick="_openContractPairWindow('${_pairId}')" title="이전 계약을 새 창에서 열어 비교할 수 있습니다.">
             <i class="fas fa-external-link-alt"></i> 비교</button>`
       : '';
     return `<tr>
@@ -437,7 +446,7 @@ function renderContracts(){
         <span class="badge ${stBadge}">${stName}</span>
       </td>
       <td style="white-space:nowrap;">
-        ${_pairLink}<button class="btn btn-sm btn-indigo" onclick="viewContract('${c.id}')"><i class="fas fa-search"></i> 조회</button>
+        <button class="btn btn-sm btn-indigo" onclick="viewContract('${c.id}')"><i class="fas fa-search"></i> 조회</button>
         ${c.is_draft
           ? `<button class="btn btn-sm" disabled title="임시저장 상태에서는 출력할 수 없습니다"><i class="fas fa-file-contract"></i> 계약서</button>`
           : `<button class="btn btn-sm btn-indigo" onclick="openContractPrintModal('${c.id}')"><i class="fas fa-file-contract"></i> 계약서</button>`
@@ -450,6 +459,7 @@ function renderContracts(){
           ? `<button class="btn btn-sm btn-secondary" onclick="deleteContract('${c.id}')"><i class="fas fa-trash-alt"></i> 삭제</button>`
           : ''
         }
+        ${_pairLink}
       </td>
     </tr>`;
   }).join('');
@@ -587,6 +597,7 @@ function _validateCtStartVsHire(startId, hireId, hintId){
 function openContractModal(id=null, preCompanyId=null){
   editId.contract=id;
   _recontractEmpId = null; // 재계약 플래그 초기화
+  _recontractSourceId = null;
   if(!id) _currentDraftId = null; // 신규 작성 시 임시저장 ID 초기화
   // 임시저장 안내 텍스트 초기화
   const _draftInfoEl = document.getElementById('ct-draft-saved-info');
@@ -1883,8 +1894,8 @@ function viewContract(id){
         _pairHint.textContent = '원본 계약의 해지일이 설정되지 않았습니다.';
         _pairHint.style.color = '#9ca3af';
       }
-      // 발견한 페어 ID를 renewed_from_id에 보정 (이후 amend 등에서 활용)
-      if(!c.renewed_from_id) c.renewed_from_id = _pairOrigC.id;
+      // 발견한 페어 ID를 renewed_from_id에 보정 (갱신 페어인 경우에만 — 수정/재발행 파기계약은 제외)
+      if(!c.renewed_from_id && (c.status === CONTRACT_STATUS.RENEWAL_PENDING || c.status === CONTRACT_STATUS.ACTIVE)) c.renewed_from_id = _pairOrigC.id;
     }
   } else {
     const _pairRow2 = document.getElementById('ct-row-renewed-pair-end');
@@ -1927,18 +1938,27 @@ function viewContract(id){
     if(el) el.textContent = '';
   });
 
-  // ── 갱신 계약 연관 링크 ──
+  // ── 갱신 계약 연관 링크 (수정/재발행 파기계약은 페어에서 제외) ──
   const _renewLinkEl = document.getElementById('ct-renew-link');
   if(_renewLinkEl && c){
     let renewHTML = '';
-    const _pairId = c.renewed_from_id || c.renewed_to_id;
+    const _isVoidedAmend = c.status === CONTRACT_STATUS.VOIDED || c.is_voided_by_amend;
+    const _rawPairId = _isVoidedAmend ? null : (c.renewed_from_id || c.renewed_to_id);
+    // 페어 상대방도 파기계약이면 갱신 페어가 아니므로 비교 제외
+    let _pairId = null;
+    if(_rawPairId){
+      const _pairC = allContracts.find(x => x.id === _rawPairId);
+      if(_pairC && !(_pairC.status === CONTRACT_STATUS.VOIDED || _pairC.is_voided_by_amend)){
+        _pairId = _rawPairId;
+      }
+    }
     if(_pairId){
       const _isFrom = !!c.renewed_from_id;
       const _label = _isFrom ? '원본 계약' : '갱신 계약';
       renewHTML = `<span style="font-size:11px;color:#6366f1;cursor:pointer;margin-right:4px;" onclick="viewContract('${_pairId}')" title="${_label} 보기">
         <i class="fas fa-link"></i> ${_label}</span>
       <span style="font-size:10px;color:#d1d5db;margin:0 3px;">|</span>
-      <span style="font-size:11px;color:#059669;cursor:pointer;" onclick="_openContractPairWindow('${_pairId}')" title="Ctrl+Click 또는 새 창에서 ${_label}을 열어 비교">
+      <span style="font-size:11px;color:#059669;cursor:pointer;" onclick="_openContractPairWindow('${_pairId}')" title="이전 계약을 새 창에서 열어 비교할 수 있습니다.">
         <i class="fas fa-external-link-alt"></i> 비교</span>`;
     }
     _renewLinkEl.innerHTML = renewHTML;

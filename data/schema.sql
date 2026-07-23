@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS annual_leave_ledger (
   leave_pay_estimate REAL,
   created_at        INTEGER,
   updated_at        INTEGER
-);
+, contract_id TEXT, status TEXT);
 
 CREATE TABLE IF NOT EXISTS annual_leave_promotions (
   id                    TEXT PRIMARY KEY,

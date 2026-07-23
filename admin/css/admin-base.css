@@ -54,7 +54,6 @@
     .btn-print .btn-ripple,
     .btn-final-reg .btn-ripple,
     .std-update-btn .btn-ripple,
-    .al-promo-btn .btn-ripple,
     .cen-bulk-btn .btn-ripple{
       position:absolute;border-radius:50%;
       background:rgba(255,255,255,.35);

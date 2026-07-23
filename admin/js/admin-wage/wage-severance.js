@@ -170,6 +170,25 @@ function calcSeverancePay(empId, hireDate, baseDate, pays3){
   return { amount, ordinary3, average3, tenure, daily1, days3, dailyOrdinary, dailyAverage };
 }
 
+/**
+ * 연속된 계약 체인 반환 (employee.hire_date 기준)
+ * 갱신·재계약 시 연속성이 인정되면 hire_date가 유지되고,
+ * 단절 시에만 hire_date가 새 시작일로 변경되므로,
+ * hire_date 이후의 모든 계약이 곧 연속 체인이다.
+ * @param {string} employeeId
+ * @returns {object[]} 시작일 오름차순 정렬된 연속 계약 배열
+ */
+function getContinuousContractChain(employeeId){
+  const emp = allEmployees.find(e => e.id === employeeId);
+  if(!emp || !emp.hire_date) return [];
+
+  return allContracts
+    .filter(c => c.employee_id === employeeId
+      && !c.is_draft
+      && c.contract_start >= emp.hire_date)
+    .sort((a, b) => (a.contract_start || '').localeCompare(b.contract_start || ''));
+}
+
 // ── 계약 상태 뱃지 HTML ──
 function sevStatusBadge(emp, contract){
   if(!contract) return '<span style="font-size:11px;color:#9ca3af;">계약 없음</span>';
@@ -248,13 +267,10 @@ function renderSevStatusTab(){
   let rows = [];
 
   emps.sort((a,b)=>(a.name||'').localeCompare(b.name||'','ko')).forEach(emp => {
-    // 해당 직원의 모든 계약을 시작일 오름차순 정렬 (임시저장 제외)
-    const empContracts = allContracts
-      .filter(c => c.employee_id === emp.id && !c.is_draft)
-      .sort((a,b) => (a.contract_start||'').localeCompare(b.contract_start||''));
+    // ── 연속된 계약 체인만 추적 (최종 계약에서 역방향으로 끊기지 않은 계약들) ──
+    const empContracts = getContinuousContractChain(emp.id);
 
     // ── 오늘 기준 유효 계약이 없는 직원은 퇴직급여 추계 대상 제외 ──
-    // 유효 계약 조건: contract_start <= today AND (contract_end 없음 OR contract_end >= today)
     const hasActiveContract = empContracts.some(c => {
       const started = !c.contract_start || c.contract_start <= todayStr;
       const notEnded = !c.contract_end || c.contract_end >= todayStr;
@@ -264,7 +280,7 @@ function renderSevStatusTab(){
 
     const lastContract = empContracts[empContracts.length - 1] || null;
 
-    // 최초 입사일: 계약 중 가장 빠른 시작일, 없으면 emp.hire_date
+    // 최초 입사일: 연속 체인의 첫 계약 시작일, 없으면 emp.hire_date
     const firstContractStart = empContracts.length > 0 ? (empContracts[0].contract_start || '') : '';
     const hireDate = firstContractStart || emp.hire_date || '';
 
@@ -451,10 +467,8 @@ function renderSevHistoryTab(){
   const resignedEmps = allEmployees.filter(e => {
     if(e.company_id !== _sevCompanyId) return false;
     if(e.employment_category ===CONTRACT_TYPE.DAILY) return false;
-    // 해당 직원의 마지막 계약 확인
-    const conts = allContracts
-      .filter(c => c.employee_id === e.id && !c.is_draft)
-      .sort((a,b) => (a.contract_start||'').localeCompare(b.contract_start||''));
+    // 연속 계약 체인의 마지막 계약 확인
+    const conts = getContinuousContractChain(e.id);
     const last = conts[conts.length - 1];
     if(!last) return false;
     // 마지막 계약 status가 해지 또는 만료로 명시된 경우만

@@ -1409,6 +1409,98 @@ function _validateRenewNewStart(oldEnd){
   return true;
 }
 
+const _yearHolidayCache = {};
+
+/**
+ * 해당 날짜가 공휴일 또는 근로자의 날(5/1)인지 확인
+ * @param {Date} d
+ * @returns {boolean}
+ */
+function _isHoliday(d){
+  const y = d.getFullYear();
+  const m = d.getMonth() + 1;
+  const day = d.getDate();
+  const dateStr = `${String(m).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+
+  return _getYearHolidays(y).has(dateStr);
+}
+
+/**
+ * 해당 연도의 모든 공휴일 Set(MM-DD)을 반환 (대체공휴일 포함, 연도별 캐싱)
+ * @param {number} y
+ * @returns {Set<string>}
+ */
+function _getYearHolidays(y){
+  if(_yearHolidayCache[y]) return _yearHolidayCache[y];
+
+  // ── 매년 고정 공휴일 ──
+  const fixed = [
+    '01-01', // 신정
+    '03-01', // 삼일절
+    '05-01', // 근로자의 날
+    '05-05', // 어린이날
+    '06-06', // 현충일
+    '08-15', // 광복절
+    '10-03', // 개천절
+    '10-09', // 한글날
+    '12-25', // 성탄절
+  ];
+
+  // ── 연도별 음력 공휴일 (설날 3일, 석가탄신일, 추석 3일) ──
+  const LUNAR_HOLIDAYS = {
+    2024: ['02-09','02-10','02-11', '05-15', '09-16','09-17','09-18'],
+    2025: ['01-28','01-29','01-30', '05-05', '10-05','10-06','10-07'],
+    2026: ['02-16','02-17','02-18', '05-24', '09-24','09-25','09-26'],
+    2027: ['02-05','02-06','02-07', '05-13', '09-14','09-15','09-16'],
+    2028: ['01-25','01-26','01-27', '05-02', '10-02','10-03','10-04'],
+  };
+
+  const allDates = new Set([...fixed, ...(LUNAR_HOLIDAYS[y] || [])]);
+
+  // ── 대체공휴일 동적 계산 ──
+  // 공휴일이 토(6)/일(0)이면 다음 평일(기존 공휴일 제외)을 대체공휴일로 추가
+  for (const mmdd of [...allDates]){
+    const [mStr, dStr] = mmdd.split('-');
+    const hDate = new Date(y, parseInt(mStr)-1, parseInt(dStr));
+    const dow = hDate.getDay(); // 0=일, 6=토
+    if(dow === 0 || dow === 6){
+      // 다음 평일 찾기 (최대 7일 탐색)
+      let next = new Date(hDate);
+      for(let i=0; i<7; i++){
+        next.setDate(next.getDate() + 1);
+        const nextDow = next.getDay();
+        if(nextDow === 0 || nextDow === 6) continue; // 주말 건너뜀
+        const nextMMDD = `${String(next.getMonth()+1).padStart(2,'0')}-${String(next.getDate()).padStart(2,'0')}`;
+        if(next.getFullYear() !== y) break; // 연도 넘어가면 중단
+        if(!allDates.has(nextMMDD)){ // 기존 공휴일이 아니면 대체공휴일로 추가
+          allDates.add(nextMMDD);
+          break;
+        }
+      }
+    }
+  }
+
+  _yearHolidayCache[y] = allDates;
+  return allDates;
+}
+
+/**
+ * 두 날짜 사이에 평일(월~금, 공휴일 제외)이 존재하는지 확인
+ * @param {string} oldEnd - YYYY-MM-DD
+ * @param {string} newStart - YYYY-MM-DD
+ * @returns {boolean} true = 평일 갭 있음 (연속계약 아님), false = 연속계약 또는 주말·공휴일만 갭
+ */
+function _hasWeekdayGap(oldEnd, newStart){
+  const oldD = new Date(oldEnd);
+  const newD = new Date(newStart);
+  // oldEnd 다음날부터 newStart 전날까지 검사
+  for (let d = new Date(oldD.getTime() + 86400000); d < newD; d.setDate(d.getDate() + 1)) {
+    const day = d.getDay(); // 0=일, 6=토
+    if (day !== 0 && day !== 6 && !_isHoliday(d)) return true; // 평일(공휴일 제외) 발견 → 단절된 계약
+  }
+  return false; // 주말·공휴일만 있거나 연속된 경우
+}
+
 function doContractRenew(){
   // P9: 이중 갱신 방지 가드
   const _renewC = allContracts.find(x => x.id === editId.contract);
@@ -1635,6 +1727,23 @@ async function confirmContractRenew(){
   const today = new Date().toISOString().slice(0,10);
   const origEnd = c.contract_end || '';
 
+  // ── 계약 연속성 검사: 해지일~시작일 사이에 평일 갭이 있으면 입사일 변경 ──
+  const _emp = allEmployees.find(e => e.id === c.employee_id);
+  const _oldHireDate = _emp?.hire_date || '';
+  const _hasGap = _hasWeekdayGap(oldEnd, newStart);
+  if(_hasGap && _emp){
+    const _fmtOld = oldEnd.replace(/-/g, '.');
+    const _fmtNew = newStart.replace(/-/g, '.');
+    if(!confirm(
+      `⚠️ 계약 연속성 단절 안내\n\n` +
+      `기존 계약 해지일(${_fmtOld})과 신규 계약 시작일(${_fmtNew}) 사이에 평일 공백이 있습니다.\n` +
+      `이 경우 근로계약의 연속성이 단절된 것으로 보아 입사일이 신규 계약 시작일(${_fmtNew})로 변경됩니다.\n\n` +
+      `현재 입사일: ${_oldHireDate.replace(/-/g, '.')}\n` +
+      `변경될 입사일: ${_fmtNew}\n\n` +
+      `계속 진행하시겠습니까?`
+    )) return;
+  }
+
   // 해지일이 원래 계약 종료일보다 앞당겨졌는지 확인
   if(origEnd && oldEnd < origEnd){
     if(!confirm(`원래 계약 종료일(${origEnd})보다 앞당겨진 해지일(${oldEnd})입니다.\n계약 종료일 이전 해지는 [해지]로 처리됩니다.\n그래도 계속 진행하시겠습니까?`)) return;
@@ -1665,6 +1774,20 @@ async function confirmContractRenew(){
   c.terminate_date = oldEnd;
   c.status = CONTRACT_STATUS.RENEWED;
   c.renewed_to_id = newId;
+
+  // ── 계약 연속성 단절 시 근로자 입사일 변경 ──
+  if(_hasGap && _emp){
+    try {
+      await api(`../tables/employees/${_emp.id}`, {
+        method: 'PATCH', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ hire_date: newStart })
+      });
+      _emp.hire_date = newStart;
+      toast(`계약 연속성 단절로 입사일이 ${newStart.replace(/-/g, '.')}(으)로 변경되었습니다.`, 'warning');
+    } catch(e){
+      console.error('[입사일 변경 실패]', e);
+    }
+  }
 
   // ── 고객사 인앱 알림 발송 (갱신/갱신예약) ──
   {
@@ -3559,6 +3682,24 @@ async function saveContract(){
     contractType  = document.getElementById('ct-type').value;
     const today2  = new Date().toISOString().slice(0,10);
     contractStatus= contractStart > today2 ? CONTRACT_STATUS.PENDING : CONTRACT_STATUS.ACTIVE;
+
+    // ── 재계약 연속성 검사: 기존 계약 해지/만료일과 연속되면 계약 연장으로 처리 ──
+    const _srcContract = allContracts.find(x => x.id === _recontractSourceId);
+    const _srcEndDate = _srcContract?.terminate_date || _srcContract?.contract_end || '';
+    if(_srcContract && _srcEndDate && contractStart && !_hasWeekdayGap(_srcEndDate, contractStart)){
+      const _fmtOld = _srcEndDate.replace(/-/g, '.');
+      const _fmtNew = contractStart.replace(/-/g, '.');
+      const _empRecon = allEmployees.find(e => e.id === _srcContract.employee_id);
+      const _oldHire = _empRecon?.hire_date || '';
+      if(!confirm(
+        `🔗 계약 연장 안내\n\n` +
+        `기존 계약 종료일(${_fmtOld})과 신규 계약 시작일(${_fmtNew})이 연속되어\n` +
+        `계약의 연장으로 처리됩니다.\n\n` +
+        `• 입사일(${_oldHire.replace(/-/g, '.')})이 유지됩니다.\n` +
+        `• 기존 계약과 새 계약이 페어로 관리됩니다.\n\n` +
+        `계속 진행하시겠습니까?`
+      )) return;
+    }
   } else {
     // 신규 모드: ct-start(계약시작일) 전용 필드 사용. 없으면 ct-edit-em-hire 폴백(하위호환)
     contractStart = document.getElementById('ct-start')?.value
@@ -3636,6 +3777,15 @@ async function saveContract(){
 
   const body={employee_id:empId,company_id:coId,contract_start:contractStart,contract_end:contractEnd,contract_type:contractType,status:contractStatus,probation_months:probMonths,probation_pct:probPct,probation_amt:probAmt,probation_basis:probBasis,probation_end_date:document.getElementById('ct-probation-end-date')?.value||null,work_hours_per_day:avgDayHours,work_days_per_week:isDailySave?0:workDaysCount,schedule_json:JSON.stringify(scheduleJSON),annual_leave_days:parseFloat(document.getElementById('ct-annual')?.value)||15,annual_salary:annual,monthly_salary_agreed:monthly,base_salary:baseSalaryForSave,daily_wage:dailyWageForSave,weekly_holiday_pay:weeklyHol,fixed_ot_pay:getAmountVal('ct-fixed-ot-pay'),fixed_ot_hours:parseFloat(document.getElementById('ct-fixed-ot-hours')?.value)||0,fixed_night_pay:getAmountVal('ct-fixed-night-pay'),fixed_night_hours:parseFloat(document.getElementById('ct-fixed-night-hours')?.value)||0,fixed_hol_pay:getAmountVal('ct-fixed-hol-pay'),fixed_hol_hours:parseFloat(document.getElementById('ct-fixed-hol-hours')?.value)||0,hourly_wage:hourlyWage,position_allowance:getAmountVal('ct-position'),transportation_allowance:getAmountVal('ct-car'),transportation_pay_type:_getCTPayTypeVal('car'),self_driving_allowance:0,self_driving_pay_type:'fixed',remote_area_allowance:getAmountVal('ct-remote-area'),remote_area_pay_type:'fixed',meal_allowance:getAmountVal('ct-meal'),meal_pay_type:_getCTPayTypeVal('meal'),research_allowance:getAmountVal('ct-research'),research_pay_type:_getCTPayTypeVal('research'),site_allowance:getAmountVal('ct-site'),skill_allowance:getAmountVal('ct-skill'),license_allowance:getAmountVal('ct-license'),hazard_allowance:getAmountVal('ct-hazard'),custom_ordinary_values:JSON.stringify(typeof _getCustomOrdinaryValues==='function'?_getCustomOrdinaryValues():[]),communication_allowance:getAmountVal('ct-communication'),communication_pay_type:_getCTPayTypeVal('communication'),fitness_allowance:getAmountVal('ct-fitness'),fitness_pay_type:_getCTPayTypeVal('fitness'),self_dev_allowance:getAmountVal('ct-self-dev'),self_dev_pay_type:_getCTPayTypeVal('self_dev'),book_allowance:getAmountVal('ct-book'),book_pay_type:_getCTPayTypeVal('book'),overseas_allowance:getAmountVal('ct-overseas'),overseas_pay_type:_getCTPayTypeVal('overseas'),car_maintenance:getAmountVal('ct-car'),regular_bonus:getAmountVal('ct-regular-bonus')||0,childcare_allowance:getAmountVal('ct-childcare')||0,childcare_dependents:parseInt(document.getElementById('ct-childcare-dependents')?.value||0)||0,childcare_pay_type:_getCTPayTypeVal('childcare'),pay_period:document.getElementById('ct-pay-period')?.value.trim()||'',pay_period_month:document.getElementById('ct-pay-period-month-hidden')?.value||null,pay_period_day:parseInt(document.getElementById('ct-pay-period-day-hidden')?.value)||null,pay_day:parseInt(document.getElementById('ct-pay-day')?.value)||null,insurance_employment:true,insurance_industrial:true,insurance_pension:true,insurance_health:true,note:document.getElementById('ct-note').value,salary_start_date:document.getElementById('ct-salary-start')?.value||'',salary_end_date:document.getElementById('ct-salary-end')?.value||'',is_draft:false,draft_saved_at:null,signed_file_name:signedFileName,signed_file_data:signedFileData,consent_file_name:consentFileName,consent_file_data:consentFileData};
 
+  // 재계약 연장 페어: renewed_from_id 추가 (기존 계약과 연속되는 경우)
+  if(_recontractSourceId){
+    const _srcRecon = allContracts.find(x => x.id === _recontractSourceId);
+    const _srcReconEnd = _srcRecon?.terminate_date || _srcRecon?.contract_end || '';
+    if(_srcRecon && _srcReconEnd && contractStart && !_hasWeekdayGap(_srcReconEnd, contractStart)){
+      body.renewed_from_id = _recontractSourceId;
+    }
+  }
+
   let _savedContractId_ = '';
 
   if(isEditMode){
@@ -3686,6 +3836,18 @@ async function saveContract(){
       delete body.id;
       const _saved = await api('../tables/contracts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
       _savedContractId_ = _saved.id;
+    }
+    // ── 재계약 연장 페어: 기존 계약에 renewed_to_id 설정 ──
+    if(body.renewed_from_id && _savedContractId_){
+      try {
+        await api(`../tables/contracts/${body.renewed_from_id}`, {
+          method: 'PATCH', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ renewed_to_id: _savedContractId_ })
+        });
+        // 로컬 캐시에도 반영
+        const _oldPair = allContracts.find(x => x.id === body.renewed_from_id);
+        if(_oldPair) _oldPair.renewed_to_id = _savedContractId_;
+      } catch(e){ console.warn('[재계약 페어링 실패]', e); }
     }
   }
   // ── 고객사 인앱 알림 발송 ──
@@ -3796,11 +3958,78 @@ async function saveContract(){
     }
   }
   _recontractEmpId = null; // 재계약 플래그 초기화
+  _recontractSourceId = null;
   _currentDraftId  = null; // 임시저장 ID 초기화
   closeModal('contract-modal');await loadContracts();await loadEmployees();renderContracts();renderDashboard();
   const _ctIsEdit = !!editId.contract;
   toast(_ctIsEdit ? '근로계약서가 수정되었습니다. ✔' : '근로계약서가 등록되었습니다. ✔');
+
+  // ── 연차 관리대장 자동 생성·상태 연동 ──
+  if(!_ctIsEdit && contractStatus !== CONTRACT_STATUS.VOIDED && contractStatus !== CONTRACT_STATUS.CANCELED){
+    _syncLeaveLedgerWithContract(empId, coId, contractStart, contractStatus);
+  } else if(_ctIsEdit){
+    // 수정 모드: 해지·만료 시 관리대장 상태 동기화
+    const _editContract = allContracts.find(x => x.id === editId.contract);
+    if(_editContract && (contractStatus === CONTRACT_STATUS.TERMINATED || contractStatus === CONTRACT_STATUS.EXPIRED || contractStatus === CONTRACT_STATUS.RENEWED)){
+      _syncLeaveLedgerWithContract(_editContract.employee_id, _editContract.company_id, _editContract.contract_start, contractStatus);
+    }
+  }
 }
+
+/**
+ * 연차 관리대장 자동 생성·상태 연동
+ * 계약 등록 시 해당 연도 관리대장이 없으면 생성, 해지/만료 시 상태 동기화
+ */
+async function _syncLeaveLedgerWithContract(empId, coId, contractStart, contractStatus){
+  if(!empId || !contractStart) return;
+  const year = parseInt(contractStart.slice(0,4));
+  if(!year) return;
+
+  try {
+    // 기존 관리대장 조회
+    const _res = await api(`../tables/annual_leave_ledger?employee_id=${empId}&year=${year}&limit=10`);
+    const _exist = (_res?.data || []).find(r => Number(r.year) === year);
+
+    if(_exist){
+      // 이미 있으면 상태만 업데이트 (해지/만료 시)
+      if(contractStatus === CONTRACT_STATUS.TERMINATED || contractStatus === CONTRACT_STATUS.EXPIRED || contractStatus === CONTRACT_STATUS.RENEWED){
+        await api(`../tables/annual_leave_ledger/${_exist.id}`, {
+          method: 'PATCH',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ status: contractStatus })
+        });
+      }
+    } else {
+      // 없으면 새로 생성 (빈 관리대장)
+      const emp = allEmployees.find(e => e.id === empId);
+      const contract = allContracts.find(c => c.employee_id === empId && c.contract_start === contractStart);
+      await api('../tables/annual_leave_ledger', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          employee_id: empId,
+          company_id: coId || emp?.company_id || '',
+          year: year,
+          contract_id: contract?.id || '',
+          status: contractStatus || 'active',
+          ref_date: `${year}-01-01`,
+          period_start: `${year}-01-01`,
+          period_end: `${year}-12-31`,
+          total_days: 0,
+          carryover_days: 0,
+          month_data: '[]',
+          total_used: 0,
+          remain_days: 0,
+          ordinary_wage: 0,
+          leave_pay_estimate: 0,
+        })
+      });
+    }
+  } catch(e){
+    console.warn('[syncLeaveLedger]', e);
+  }
+}
+
 async function deleteContract(id){
   const c = allContracts.find(x => x.id === id);
   if(!c) return toast('계약 정보를 찾을 수 없습니다.', 'error');
@@ -3824,6 +4053,19 @@ async function deleteContract(id){
       const list = res?.data || [];
       return Promise.all(list.map(r => api(`../tables/contract_expiry_notice/${r.id}`, { method: 'DELETE' }).catch(()=>{})));
     }).catch(()=>{});
+
+    // 연차 관리대장도 함께 파기 (contract_id 기준)
+    if(c.employee_id && c.company_id){
+      try {
+        const _ledgers = await api(`../tables/annual_leave_ledger?employee_id=${c.employee_id}&limit=100`);
+        const _list = _ledgers?.data || [];
+        for(const _l of _list){
+          if(_l.contract_id === id){
+            await api(`../tables/annual_leave_ledger/${_l.id}`, { method: 'DELETE' }).catch(()=>{});
+          }
+        }
+      } catch(e){ console.warn('[deleteContract] ledger 정리 실패:', e); }
+    }
 
     await api(`../tables/contracts/${id}`, { method: 'DELETE' });
     await loadContracts();

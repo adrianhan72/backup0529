@@ -1603,14 +1603,14 @@ function findPairContract(c){
   }
   
   // Tier 3: 동일 company_id + employee_id + 상태 기반 (company_id 가드 포함)
+  // ※ 수정/재발행으로 파기된 계약(is_voided_by_amend)은 페어 관리 대상이 아님 (보존의무 없음, 삭제 가능)
   const pair = allContracts.find(x =>
     x.company_id === c.company_id &&
     x.employee_id === c.employee_id &&
     x.id !== c.id &&
     (x.status === CONTRACT_STATUS.RENEWAL_PENDING ||
      x.status === CONTRACT_STATUS.RENEWED ||
-     x.status === CONTRACT_STATUS.TERMINATE_PENDING ||
-     (x.status === CONTRACT_STATUS.VOIDED && x.is_voided_by_amend))
+     x.status === CONTRACT_STATUS.TERMINATE_PENDING)
   );
   if(pair) return pair;
   

@@ -141,7 +141,7 @@ function calcEmployeeAnnualLeave(emp, contract, company, refYear){
     }
   }).reduce((s,p) => s + (parseFloat(p.annual_leave_used)||0), 0);
 
-  const remainDays = Math.max(0, totalDays - usedDays);
+  const remainDays = totalDays - usedDays;  // 음수 허용 (연차 빌려쓰기)
 
   // 통상시급 계산 (계약서 기본급 ÷ 209시간)
   const baseS       = parseFloat(contract.base_salary)             || 0;
@@ -296,7 +296,7 @@ function renderAlTable(){
     const carryover = ledger ? (parseFloat(ledger.carryover_days) || 0) : 0;
 
     // 잔여 = (이월 + 발생) - 사용
-    const effectiveRemain = Math.max(0, carryover + al.totalDays - effectiveUsed);
+    const effectiveRemain = carryover + al.totalDays - effectiveUsed;  // 음수 허용
 
     // 수당 추계 재계산 (잔여 변경 반영)
     const hourlyWage  = al.hourlyWage || 0;
@@ -368,13 +368,13 @@ function renderAlTable(){
 
     // 사용촉진 버튼
     const promoBtn = effectiveRemain > 0
-      ? `<button class="al-promo-btn" onclick="openAlPromoModal('${emp.id}')">
+      ? `<button class="btn btn-sm btn-indigo" onclick="openAlPromoModal('${emp.id}')">
            <i class="fas fa-paper-plane"></i> 촉진
          </button>`
       : `<span style="font-size:11.5px;color:#d1d5db;">-</span>`;
 
-    // 관리 버튼 (붉은색)
-    const ledgerBtn = `<button class="al-ledger-btn"
+    // 관리 버튼
+    const ledgerBtn = `<button class="btn btn-sm btn-danger"
         onclick="openLeaveLedger('${emp.id}','${(emp.name||'').replace(/'/g,"\\'")}',${refYear})">
         <i class="fas fa-clipboard-list"></i> 관리
       </button>`;
@@ -409,6 +409,7 @@ let _ledgerYear     = new Date().getFullYear();
 let _ledgerRecordId = '';   // 기존 레코드 id (PUT 대상), 없으면 POST
 let _ledgerTotalDays = 0;   // 당해 발생 연차 (JS 계산값, _recalcLedgerSum에서 참조)
 let _ledgerDailyWage = 0;   // 통상임금 일급
+let _ledgerEntries  = [];   // [{ date:'YYYY-MM-DD', days:0.25|0.5|1, note:'' }, ...]
 
 /**
  * 날짜 포맷 헬퍼 — Date → 'YYYY-MM-DD'
@@ -582,174 +583,184 @@ async function _loadAndRenderLedger(){
     try{ existMonthData = JSON.parse(rec.month_data||'[]'); }catch(e){ existMonthData = null; }
   }
 
+  // ── 기존 month_data → _ledgerEntries 변환 ──
+  _ledgerEntries = [];
+  if(Array.isArray(existMonthData)){
+    existMonthData.forEach(md => {
+      const month = md.month;
+      const datesStr = (md.dates || '').trim();
+      // "3일, 15~16일" 파싱 → 개별 날짜로 분해
+      if(datesStr){
+        const parts = datesStr.split(/[,，、]/);
+        parts.forEach(p => {
+          p = p.trim().replace(/일/g, '').trim();
+          if(!p) return;
+          // 범위: "15~16"
+          if(p.includes('~')){
+            const [from, to] = p.split('~').map(s => parseInt(s));
+            if(from && to){
+              for(let d = from; d <= to; d++){
+                _ledgerEntries.push({
+                  date: `${_ledgerYear}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`,
+                  days: 1, note: md.note || ''
+                });
+              }
+            }
+          } else {
+            const d = parseInt(p);
+            if(d){
+              _ledgerEntries.push({
+                date: `${_ledgerYear}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`,
+                days: 1, note: md.note || ''
+              });
+            }
+          }
+        });
+      }
+      // 날짜 파싱이 안 된 경우 월별 days 합계를 단일 항목으로
+      if(!datesStr && md.days > 0){
+        _ledgerEntries.push({
+          date: `${_ledgerYear}-${String(month).padStart(2,'0')}-01`,
+          days: md.days, note: md.note || '(월 합계)'
+        });
+      }
+    });
+  }
+
   // ── 이월연차 인풋 초기화 ──
   const carryoverInp = document.getElementById('ledger-carryover-input');
   if(carryoverInp) carryoverInp.value = existCarryover;
 
   // ── 월별 테이블 렌더링 ──
-  _renderLedgerMonthTable(existMonthData);
+  _renderLedgerMonthTable();
 
   // ── 집계 재계산 ──
   _recalcLedgerSum();
 }
 
 /**
- * 월별 tbody 렌더링 — 가로 레이아웃 (1행: 사용일수, 2행: 사용일자, 3행: 비고)
- * @param {Array|null} existData  [{month, dates, days, note}, ...]
+ * 월별 tbody 렌더링 — 등록된 항목을 월별로 그룹화하여 표시
  */
-function _renderLedgerMonthTable(existData){
+function _renderLedgerMonthTable(){
   const tbody = document.getElementById('ledger-month-tbody');
   if(!tbody) return;
-  tbody.innerHTML = ''; // 연도 변경 시 재렌더를 위해 초기화
+  tbody.innerHTML = '';
 
-  const dataMap = {};
-  if(Array.isArray(existData)){
-    existData.forEach(r => { dataMap[r.month] = r; });
-  }
+  // 월별 그룹화 { 1: [{date,days,note},...], 2: [...], ... }
+  const byMonth = {};
+  _ledgerEntries.forEach(e => {
+    const m = parseInt(e.date.slice(5,7));
+    if(!byMonth[m]) byMonth[m] = [];
+    byMonth[m].push(e);
+  });
 
-  // ── [연동] 해당 직원·연도의 급여 입력 월별 annual_leave_used 조회 (힌트용) ──
-  // 관리대장에 저장 데이터가 없는 월에 급여 입력값을 참고용으로 표시
-  const payrollByMonth = {};
-  (allPayrolls || [])
-    .filter(p =>
-      p.employee_id === _ledgerEmpId &&
-      Number(p.pay_year) === Number(_ledgerYear) &&
-      !p.is_draft
-    )
-    .forEach(p => {
-      const mo = Number(p.pay_month);
-      if(!payrollByMonth[mo] || !payrollByMonth[mo]._confirmed){
-        payrollByMonth[mo] = { val: parseFloat(p.annual_leave_used) || 0, _confirmed: !p.is_draft };
-      }
-    });
-
-  // ── 월별 최대 입력값: 법정 공휴일+주말 제외 소정근로일수 (constants.js calcMonthWorkDays) ──
-
-  // ── 미래 월 비활성화 기준 계산 ──
   const _now = new Date();
-  const _todayYear  = _now.getFullYear();
-  const _todayMonth = _now.getMonth() + 1; // 1~12
+  const _todayYear = _now.getFullYear();
+  const _todayMonth = _now.getMonth() + 1;
 
-  // ── 행1: 사용일수 (select 드롭다운, 0.25 단위) ──
+  // ── 사용일수 행 (월별 합계) ──
   const daysRow = document.createElement('tr');
   daysRow.innerHTML = `<td class="month-label" style="background:#0a3055;color:#fff;font-size:11px;">사용<br>일수</td>` +
     Array.from({length:12}, (_,i) => {
-      const m   = i + 1;
-      const d   = dataMap[m] || {};
-      const val = d.days != null ? parseFloat(d.days) : 0;
-      const hasCls = val > 0 ? ' has-value' : '';
-
-      // 아직 도래하지 않은 달 → 입력 불가
+      const m = i + 1;
+      const entries = byMonth[m] || [];
+      const totalDays = entries.reduce((s, e) => s + (e.days||0), 0);
+      const hasVal = totalDays > 0 ? ' has-value' : '';
       const isFuture = (Number(_ledgerYear) > _todayYear) ||
                        (Number(_ledgerYear) === _todayYear && m > _todayMonth);
-      const disabledAttr   = isFuture ? ' disabled' : '';
-      const futureCellStyle = isFuture
-        ? 'background:#f1f5f9;opacity:0.5;cursor:not-allowed;'
-        : '';
-
-      // 급여 입력 참고 힌트 (관리대장 값과 다를 때만 표시)
-      const piVal  = payrollByMonth[m]?.val;
-      const hasPi  = piVal != null && piVal > 0;
-      const synced = hasPi && val === piVal;  // 관리대장 = 급여입력 → 동기화 완료
-      let hintHtml = '';
-      if(hasPi && !isFuture){
-        if(synced){
-          hintHtml = `<div style="font-size:9.5px;color:#0d9488;margin-top:2px;text-align:center;" title="급여 입력과 동기화됨">
-            <i class="fas fa-sync-alt" style="font-size:8px;"></i> ${piVal}일
-          </div>`;
-        } else if(val === 0){
-          // 관리대장 미입력, 급여에만 있음 → 파란 힌트
-          hintHtml = `<div style="font-size:9.5px;color:#6366f1;margin-top:2px;text-align:center;" title="급여 입력값: ${piVal}일">
-            <i class="fas fa-coins" style="font-size:8px;"></i> ${piVal}일
-          </div>`;
-        } else {
-          // 불일치 → 주황 경고
-          hintHtml = `<div style="font-size:9.5px;color:#f59e0b;margin-top:2px;text-align:center;" title="급여 입력값(${piVal}일)과 다름">
-            <i class="fas fa-exclamation-triangle" style="font-size:8px;"></i> 급여:${piVal}일
-          </div>`;
-        }
-      }
-
-      // 해당 월 법정 공휴일+주말 제외 소정근로일수를 select 최대값으로 사용
-      const _maxWorkDays = calcMonthWorkDays(Number(_ledgerYear), m);
-
-      return `<td class="days-cell" style="${futureCellStyle}">
-        <select class="ledger-days-sel${hasCls}" data-month="${m}" onchange="_onLedgerDaysChange(this)"${disabledAttr}>
-          ${_buildDaysOptions(val, _maxWorkDays)}
-        </select>
-        ${hintHtml}
-      </td>`;
+      const futureStyle = isFuture ? 'background:#f1f5f9;opacity:0.5;' : '';
+      return `<td class="days-cell" style="${futureStyle}text-align:center;font-weight:700;font-size:13px;color:${totalDays>0?'#0d9488':'#d1d5db'};">${totalDays>0?_fmtLeaveDay(totalDays):'-'}</td>`;
     }).join('') +
-    `<td class="sum-val" id="ledger-sum-days-cell" rowspan="3"
+    `<td class="sum-val" id="ledger-sum-days-cell" rowspan="2"
         style="vertical-align:middle;font-size:15px;font-weight:800;color:#0d9488;min-width:70px;text-align:center;">0일</td>`;
   tbody.appendChild(daysRow);
 
-  // ── 행2: 사용일자 (텍스트 자유입력) ──
-  const datesRow = document.createElement('tr');
-  datesRow.innerHTML = `<td class="month-label" style="background:#0a3055;color:#fff;font-size:11px;">사용<br>일자</td>` +
+  // ── 사용내역 행 (날짜별 항목 + 삭제 버튼) ──
+  const detailRow = document.createElement('tr');
+  detailRow.innerHTML = `<td class="month-label" style="background:#0a3055;color:#fff;font-size:11px;">사용<br>내역</td>` +
     Array.from({length:12}, (_,i) => {
       const m = i + 1;
-      const d = dataMap[m] || {};
+      const entries = byMonth[m] || [];
       const isFuture = (Number(_ledgerYear) > _todayYear) ||
                        (Number(_ledgerYear) === _todayYear && m > _todayMonth);
-      const disabledAttr    = isFuture ? ' disabled' : '';
-      const futureBg        = isFuture ? 'background:#f1f5f9;opacity:0.5;cursor:not-allowed;' : 'background:transparent;';
-      return `<td style="padding:0;border:1px solid #e2e8f0;">
-        <input type="text" class="ledger-dates-input" data-month="${m}"
-          value="${d.dates||''}"
-          placeholder="${isFuture ? '' : '예) 3일, 15~16일'}"
-          ${disabledAttr}
-          style="width:100%;height:100%;min-height:32px;padding:4px 6px;border:none;
-                 outline:none;font-size:11px;font-family:inherit;color:#374151;
-                 ${futureBg}box-sizing:border-box;">
-      </td>`;
-    }).join('');
-  tbody.appendChild(datesRow);
+      const futureStyle = isFuture ? 'background:#f1f5f9;opacity:0.5;' : '';
 
-  // ── 행3: 비고 ──
-  const noteRow = document.createElement('tr');
-  noteRow.innerHTML = `<td class="month-label" style="background:#0a3055;color:#fff;font-size:11px;">비고</td>` +
-    Array.from({length:12}, (_,i) => {
-      const m = i + 1;
-      const d = dataMap[m] || {};
-      const isFuture = (Number(_ledgerYear) > _todayYear) ||
-                       (Number(_ledgerYear) === _todayYear && m > _todayMonth);
-      const disabledAttr = isFuture ? ' disabled' : '';
-      const futureBg     = isFuture ? 'background:#f1f5f9;opacity:0.5;cursor:not-allowed;' : 'background:transparent;';
-      return `<td class="note-cell" style="padding:0;">
-        <input type="text" class="ledger-note-input" data-month="${m}"
-          value="${d.note||''}"
-          placeholder=""
-          ${disabledAttr}
-          style="width:100%;height:100%;min-height:32px;padding:4px 6px;border:none;
-                 outline:none;font-size:11px;font-family:inherit;color:#6b7280;
-                 ${futureBg}box-sizing:border-box;">
-      </td>`;
+      if(entries.length === 0){
+        return `<td style="${futureStyle}text-align:center;font-size:11px;color:#d1d5db;">-</td>`;
+      }
+
+      const itemsHtml = entries.map((e, idx) => {
+        const dayOnly = parseInt(e.date.slice(8,10));
+        const daysLabel = e.days === 1 ? '' : ` (${e.days}일)`;
+        return `<div style="display:flex;align-items:center;justify-content:space-between;
+          padding:2px 6px;margin:1px 0;background:#f0fdf4;border-radius:4px;font-size:11px;gap:4px;">
+          <span style="color:#374151;white-space:nowrap;">${dayOnly}일${daysLabel}</span>
+          ${!isFuture ? `<button onclick="event.stopPropagation();_removeLedgerEntry('${e.date}')"
+            style="background:none;border:none;color:#dc2626;cursor:pointer;padding:0 2px;font-size:11px;"
+            title="삭제"><i class="fas fa-times-circle"></i></button>` : ''}
+        </div>`;
+      }).join('');
+
+      return `<td style="${futureStyle}padding:4px;vertical-align:top;">${itemsHtml}</td>`;
     }).join('');
-  tbody.appendChild(noteRow);
+  tbody.appendChild(detailRow);
 }
 
-/** 일수 select 변경 시 — 강조 클래스 토글 + 재계산 */
-function _onLedgerDaysChange(sel){
-  const val = parseFloat(sel.value) || 0;
-  sel.classList.toggle('has-value', val > 0);
+/**
+ * 새 연차 사용 항목 등록
+ */
+function _addLedgerEntry(){
+  const dateEl = document.getElementById('ledger-entry-date');
+  const daysEl = document.getElementById('ledger-entry-days');
+  if(!dateEl || !daysEl) return;
+
+  const dateVal = dateEl.value;
+  const daysVal = parseFloat(daysEl.value) || 1;
+
+  if(!dateVal) { toast('사용일 날짜를 선택하세요.', 'error'); return; }
+
+  // 해당 연도 확인
+  const entryYear = parseInt(dateVal.slice(0,4));
+  if(entryYear !== _ledgerYear) {
+    toast(`${_ledgerYear}년 날짜만 등록할 수 있습니다.`, 'error');
+    return;
+  }
+
+  // 중복 체크
+  if(_ledgerEntries.some(e => e.date === dateVal)){
+    toast('이미 등록된 날짜입니다.', 'error');
+    return;
+  }
+
+  _ledgerEntries.push({ date: dateVal, days: daysVal, note: '' });
+  _ledgerEntries.sort((a,b) => a.date.localeCompare(b.date));
+
+  _renderLedgerMonthTable();
+  _recalcLedgerSum();
+  dateEl.value = '';
+  daysEl.value = '1';
+}
+
+/**
+ * 연차 사용 항목 삭제
+ */
+function _removeLedgerEntry(dateStr){
+  _ledgerEntries = _ledgerEntries.filter(e => e.date !== dateStr);
+  _renderLedgerMonthTable();
   _recalcLedgerSum();
 }
 
-/** 합계 / 잔여 / 수당 재계산 (항상 현재 DOM 값으로) */
+/** 합계 / 잔여 / 수당 재계산 (_ledgerEntries 기준) */
 function _recalcLedgerSum(){
   // 월별 사용일수 합산
-  let usedSum = 0;
-  document.querySelectorAll('#ledger-month-tbody .ledger-days-sel').forEach(sel => {
-    usedSum += parseFloat(sel.value) || 0;
-  });
+  const usedSum = _ledgerEntries.reduce((s, e) => s + (e.days || 0), 0);
   // 이월연차
   const carryover = parseFloat(document.getElementById('ledger-carryover-input')?.value) || 0;
   // 총 합계 = 이월 + 당해 발생
   const grandTotal = carryover + _ledgerTotalDays;
   // 잔여 = 총 합계 - 사용
-  const remain = Math.max(0, grandTotal - usedSum);
-  // 잔여 수당 추계
+  const remain = grandTotal - usedSum;  // 음수 허용 (연차 빌려쓰기)
+  // 잔여 수당 추계 (음수일 경우 0으로 표시하지 않고 마이너스 금액 유지)
   const leavePay = Math.round(_ledgerDailyWage * remain);
 
   const setText = (id, v) => { const el = document.getElementById(id); if(el) el.textContent = v; };
@@ -758,15 +769,15 @@ function _recalcLedgerSum(){
   setText('agg-grand-total',      _fmtLeaveDay(grandTotal));
   setText('agg-used-days',        _fmtLeaveDay(usedSum));
   setText('agg-remain-days',      _fmtLeaveDay(remain));
-  setText('ledger-leave-pay',     leavePay > 0 ? won(leavePay) : (_ledgerDailyWage > 0 ? '0원' : '-'));
+  setText('ledger-leave-pay',     leavePay !== 0 ? won(leavePay) : (_ledgerDailyWage > 0 ? '0원' : '-'));
 
-  // 잔여일수 색상
+  // 잔여일수 색상 (음수=적자, 0=소진, 양수=잔여)
   const remainEl = document.getElementById('agg-remain-days');
-  if(remainEl) remainEl.style.color = remain <= 0 ? '#dc2626' : '#7c3aed';
+  if(remainEl) remainEl.style.color = remain < 0 ? '#dc2626' : remain === 0 ? '#f59e0b' : '#7c3aed';
 
   // 수당 색상
   const payEl = document.getElementById('ledger-leave-pay');
-  if(payEl) payEl.style.color = remain <= 0 ? '#9ca3af' : '#7c3aed';
+  if(payEl) payEl.style.color = remain < 0 ? '#dc2626' : remain === 0 ? '#9ca3af' : '#7c3aed';
 }
 
 /** 관리대장 저장 */
@@ -775,26 +786,52 @@ async function saveLeaveLedger(){
   if(saveBtn){ saveBtn.disabled = true; saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 저장 중...'; }
 
   try{
-    // ── 월별 데이터 수집 ──
+    // ── _ledgerEntries → month_data 변환 ──
+    const monthMap = {}; // { 1: { days, dates:[], notes:[] }, ... }
+    _ledgerEntries.forEach(e => {
+      const m = parseInt(e.date.slice(5,7));
+      const d = parseInt(e.date.slice(8,10));
+      if(!monthMap[m]) monthMap[m] = { days: 0, dates: [], notes: [] };
+      monthMap[m].days += e.days || 0;
+      monthMap[m].dates.push(d);
+      if(e.note) monthMap[m].notes.push(e.note);
+    });
+
     const monthData = [];
     let totalUsed = 0;
-    const selList  = document.querySelectorAll('#ledger-month-tbody .ledger-days-sel');
-    const dateList = document.querySelectorAll('#ledger-month-tbody .ledger-dates-input');
-    const noteList = document.querySelectorAll('#ledger-month-tbody .ledger-note-input');
+    for(let m = 1; m <= 12; m++){
+      const md = monthMap[m];
+      if(md){
+        // 날짜 정렬 후 범위 압축: [3,4,5,15,16,17] → "3~5일, 15~17일"
+        const sorted = [...new Set(md.dates)].sort((a,b)=>a-b);
+        const ranges = [];
+        let rangeStart = sorted[0], rangeEnd = sorted[0];
+        for(let i = 1; i < sorted.length; i++){
+          if(sorted[i] === rangeEnd + 1){ rangeEnd = sorted[i]; }
+          else {
+            ranges.push(rangeStart === rangeEnd ? `${rangeStart}일` : `${rangeStart}~${rangeEnd}일`);
+            rangeStart = sorted[i]; rangeEnd = sorted[i];
+          }
+        }
+        ranges.push(rangeStart === rangeEnd ? `${rangeStart}일` : `${rangeStart}~${rangeEnd}일`);
+        const datesStr = ranges.join(', ');
 
-    selList.forEach((sel, idx) => {
-      const m    = parseInt(sel.dataset.month);
-      const days = parseFloat(sel.value) || 0;
-      const dates = (dateList[idx]?.value || '').trim();
-      const note  = (noteList[idx]?.value || '').trim();
-      monthData.push({ month: m, dates, days, note });
-      totalUsed += days;
-    });
+        monthData.push({
+          month: m,
+          dates: datesStr,
+          days: Math.round(md.days * 100) / 100, // 부동소수점 정리
+          note: [...new Set(md.notes)].join('; ')
+        });
+        totalUsed += md.days;
+      } else {
+        monthData.push({ month: m, dates: '', days: 0, note: '' });
+      }
+    }
 
     // ── 집계값 ──
     const carryover  = parseFloat(document.getElementById('ledger-carryover-input')?.value) || 0;
     const grandTotal = carryover + _ledgerTotalDays;
-    const remain     = Math.max(0, grandTotal - totalUsed);
+    const remain     = grandTotal - totalUsed;  // 음수 허용
     const leavePay   = Math.round(_ledgerDailyWage * remain);
 
     // ── 기준일 / 산정기간 ──
@@ -809,6 +846,8 @@ async function saveLeaveLedger(){
       employee_id        : _ledgerEmpId,
       company_id         : co?.id || _alCompanyId || '',
       year               : _ledgerYear,
+      contract_id        : contract?.id || '',
+      status             : contract?.status || 'active',
       ref_date           : refDate,
       period_start       : periodStart,
       period_end         : periodEnd,
@@ -866,6 +905,9 @@ async function saveLeaveLedger(){
 
     // ── 연차 목록 테이블 즉시 재렌더링 ──
     renderAlTable();
+
+    // ── 급여입력 페이지 연동 갱신 ──
+    if(typeof _onLedgerSavedFromPayroll === 'function') _onLedgerSavedFromPayroll();
 
     toast(`${_ledgerEmpName}의 ${_ledgerYear}년 연차 관리대장이 저장되었습니다.`, 'success');
 

@@ -88,6 +88,8 @@ function _buildPIBody(){
       return _s && _e ? `${_s}~${_e}` : '';
     })() : (piContract?.pay_period || ''),
     absent_dates:       document.getElementById('pi-absent-dates')?.value || '',
+    earlyleave_data:    document.getElementById('pi-earlyleave-data')?.value || '[]',
+    late_data:          document.getElementById('pi-late-data')?.value || '[]',
   };
 }
 
@@ -292,6 +294,12 @@ function loadPIDraft(){
   // 결근일 복원
   { const _absEl = document.getElementById('pi-absent-dates');
     if(_absEl){ _absEl.value = draft.absent_dates || ''; if(typeof _renderPIAbsentChips === 'function') _renderPIAbsentChips(); } }
+  // 무단 조퇴 복원
+  { const _el = document.getElementById('pi-earlyleave-data');
+    if(_el){ _el.value = draft.earlyleave_data || '[]'; if(typeof _renderPIEarlyLeaveChips === 'function') _renderPIEarlyLeaveChips(); } }
+  // 무단 지각 복원
+  { const _el = document.getElementById('pi-late-data');
+    if(_el){ _el.value = draft.late_data || '[]'; if(typeof _renderPILateChips === 'function') _renderPILateChips(); } }
   // 총 근로시간은 자동계산 (pi-total-hours 직접 세팅 제거)
   if(typeof calcPITotalHours === 'function') calcPITotalHours();
   { const autoLbl = document.getElementById('pi-workdays-auto-label'); if(autoLbl) autoLbl.style.display='none'; }
