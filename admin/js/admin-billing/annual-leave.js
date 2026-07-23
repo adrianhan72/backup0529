@@ -841,6 +841,10 @@ async function saveLeaveLedger(){
 
     const emp = allEmployees.find(e => e.id === _ledgerEmpId);
     const co  = allCompanies.find(c => c.id === (emp?.company_id || _alCompanyId));
+    const contract = allContracts.find(c =>
+      c.employee_id === _ledgerEmpId && (c.status===CONTRACT_STATUS.ACTIVE || c.status===EMP_STATUS.ACTIVE)
+    ) || allContracts.filter(c => c.employee_id === _ledgerEmpId)
+                     .sort((a,b) => (b.contract_start||'').localeCompare(a.contract_start||''))[0];
 
     const payload = {
       employee_id        : _ledgerEmpId,
