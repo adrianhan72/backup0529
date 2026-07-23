@@ -55,14 +55,33 @@ app.post('/api/upload/:id', upload.fields([
   res.json({ ok: true, files });
 });
 
+// ── PDF 생성 + 링크 발급 API ──
+app.post('/api/generate-pdf', (req, res) => {
+  const { type, id, html } = req.body;  // type: 'payslip'|'contract'|'consent', id: 식별자, html: HTML 내용
+  if (!type || !id) return res.status(400).json({ error: 'type and id required' });
+  
+  const fs = require('fs');
+  const dir = path.join(ROOT, 'data', 'generated', type === 'payslip' ? 'payslips' : 'contracts');
+  fs.mkdirSync(dir, { recursive: true });
+  const filePath = path.join(dir, `${id}.pdf`);
+  const url = `/generated/${type === 'payslip' ? 'payslips' : 'contracts'}/${id}.pdf`;
+  
+  // TODO: 실제 PDF 생성 (puppeteer 연동 시 HTML → PDF 변환)
+  // 현재는 HTML을 텍스트로 저장 (스텁 — puppeteer 연동 시 교체)
+  if (html) {
+    fs.writeFileSync(filePath, html, 'utf8');
+  }
+  
+  res.json({ ok: true, url, filePath });
+});
+
 // ── 정적 파일 ──
 const staticOpts = { maxAge: 0, etag: false };
 app.use('/admin',   express.static(path.join(ROOT, 'admin'), staticOpts));
 app.use('/client',  express.static(path.join(ROOT, 'client'), staticOpts));
 app.use('/scripts', express.static(path.join(ROOT, 'scripts'), staticOpts));
 app.use('/docs',    express.static(path.join(ROOT, 'docs'), staticOpts));
-app.use('/uploads', express.static(path.join(ROOT, 'data', 'uploads'), staticOpts));
-
+app.use('/uploads', express.static(path.join(ROOT, 'data', 'uploads'), staticOpts));app.use('/generated', express.static(path.join(ROOT, 'data', 'generated'), staticOpts));
 // ── 보안 ──
 require('./middleware/security')(app);
 
