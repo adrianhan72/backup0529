@@ -79,10 +79,11 @@ function atlRenderTable() {
   const tbody = document.getElementById('atl-tbody');
   if (!tbody || !_atlCompanyId) return;
 
+  const _ATL_EXCLUDED_TYPES = new Set(['daily', CONTRACT_TYPE.EXECUTIVE, CONTRACT_TYPE.REPRESENTATIVE, CONTRACT_TYPE.RELATED_PARTY]);
   const emps = (allEmployees || []).filter(e =>
     e.company_id === _atlCompanyId &&
     e.status === 'active' &&
-    e.employment_category !== 'daily'
+    !_ATL_EXCLUDED_TYPES.has(e.employment_category)
   ).sort((a,b) => (a.name||'').localeCompare(b.name||'', 'ko'));
 
   const filtered = searchQ ? emps.filter(e => (e.name||'').toLowerCase().includes(searchQ)) : emps;

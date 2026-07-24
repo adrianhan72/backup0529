@@ -34,6 +34,9 @@
             <button class="std-tab" id="sev-tab-history-btn" onclick="switchSevTab('history')">
               <i class="fas fa-history" style="margin-right:5px;"></i>지급 발생 이력
             </button>
+            <button class="std-tab" id="sev-tab-interim-btn" onclick="switchSevTab('interim')">
+              <i class="fas fa-hand-holding-usd" style="margin-right:5px;"></i>중간정산
+            </button>
           </div>
 
           <!-- 탭1: 근로자별 퇴직급여 추계 -->
@@ -136,5 +139,93 @@
           </div><!-- /std-tab-panel -->
           </div><!-- /sev-tab-history -->
 
+          <!-- 탭3: 중간정산 -->
+          <div id="sev-tab-interim" style="display:none;">
+          <div class="std-tab-panel">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+              <div style="font-size:12px;color:#6b7280;display:flex;align-items:center;gap:6px;">
+                <i class="fas fa-info-circle" style="color:#6366f1;"></i>
+                퇴직금 중간정산 내역을 기록하고 관리합니다. 중간정산 금액은 최종 퇴직금에서 차감됩니다.
+              </div>
+              <button onclick="openSevInterimModal()" class="btn btn-indigo btn-sm" style="padding:7px 14px;">
+                <i class="fas fa-plus" style="margin-right:4px;"></i>중간정산 기록
+              </button>
+            </div>
+            <div id="sev-interim-table-wrap" style="overflow-x:auto;">
+              <table class="tbl-std">
+                <thead>
+                  <tr>
+                    <th>정산일</th>
+                    <th>직원명</th>
+                    <th>근속일수</th>
+                    <th>1일 평균임금</th>
+                    <th>정산 금액</th>
+                    <th>사유</th>
+                    <th>비고</th>
+                    <th style="width:60px;">관리</th>
+                  </tr>
+                </thead>
+                <tbody id="sev-interim-tbody">
+                  <tr><td colspan="8" style="text-align:center;padding:30px;color:#9ca3af;">고객사를 선택하면 중간정산 내역이 표시됩니다.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          </div><!-- /sev-tab-interim -->
+
       </div><!-- /sev-main-section -->
+
+      <!-- 중간정산 모달 -->
+      <div id="sev-interim-modal" class="modal" style="display:none;">
+        <div class="modal-card" style="max-width:480px;">
+          <div class="modal-head">
+            <span id="sev-interim-modal-title">퇴직금 중간정산 기록</span>
+            <button onclick="closeSevInterimModal()" class="btn-close"><i class="fas fa-times"></i></button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label>직원 선택 <span class="lbl-req">*</span></label>
+              <select id="sev-interim-emp" class="input-std" style="width:100%;" onchange="onSevInterimEmpChange()">
+                <option value="">직원을 선택하세요</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>중간정산 지급일 <span class="lbl-req">*</span></label>
+              <input type="date" id="sev-interim-date" class="input-std" style="width:100%;" />
+            </div>
+            <div class="form-group">
+              <label>중간정산 사유 <span class="lbl-req">*</span></label>
+              <select id="sev-interim-reason" class="input-std" style="width:100%;">
+                <option value="">선택하세요</option>
+                <option value="주택구입">주택구입 (무주택자 주택 구입)</option>
+                <option value="의료비">본인·부양가족 6개월 이상 요양</option>
+                <option value="파산">파산선고·개인회생</option>
+                <option value="기타">기타 (근로자퇴직급여보장법 시행령 제3조)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>중간정산 시점 근속일수</label>
+              <input type="number" id="sev-interim-tenure-days" class="input-std" style="width:100%;" readonly />
+              <span class="fld-hint">직원 선택 시 자동 계산됩니다.</span>
+            </div>
+            <div class="form-group">
+              <label>1일 평균임금 (중간정산 시점)</label>
+              <input type="text" inputmode="numeric" id="sev-interim-daily-wage" class="input-std" style="width:100%;" placeholder="자동 계산 또는 직접 입력" />
+            </div>
+            <div class="form-group">
+              <label>중간정산 금액 <span class="lbl-req">*</span></label>
+              <input type="text" inputmode="numeric" id="sev-interim-amount" class="input-std" style="width:100%;" placeholder="정산 금액 입력" />
+            </div>
+            <div class="form-group">
+              <label>비고</label>
+              <input type="text" id="sev-interim-note" class="input-std" style="width:100%;" placeholder="추가 메모" />
+            </div>
+          </div>
+          <div class="modal-foot">
+            <button onclick="saveSevInterim()" class="btn btn-indigo"><i class="fas fa-save" style="margin-right:5px;"></i>저장</button>
+            <button onclick="closeSevInterimModal()" class="btn btn-secondary">취소</button>
+          </div>
+        </div>
+      </div>
+
     </div><!-- /page-severance -->

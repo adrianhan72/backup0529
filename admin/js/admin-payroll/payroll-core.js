@@ -33,17 +33,17 @@ function renderPayrolls(){
     const payEmp = allEmployees.find(x=>x.id===p.employee_id)||{};
     const payCat = payEmp.employment_category||'-';
     return `<tr class="pay-tbody-row" onclick="openPayslipModal('${p.id}')" title="클릭하면 급여명세서를 볼 수 있습니다">
-    <td style="font-weight:600">${getEmpName(p.employee_id)}</td>
-    <td style="text-align:center;font-size:12px;">${(()=>{const e=(allEmployees||[]).find(x=>x.id===p.employee_id);return genderLabel(e);})()}</td>
+    <td class="pay-emp-name">${getEmpName(p.employee_id)}</td>
+    <td class="pay-gender">${(()=>{const e=(allEmployees||[]).find(x=>x.id===p.employee_id);return genderLabel(e);})()}</td>
     <td><span class="badge ${empCatBadge(payCat)}">${contractTypeLabel(payCat)}</span></td>
     <td>${p.work_days||'-'}일</td>
     <td>${p.overtime_hours||0}h</td>
     <td class="amount-blue">${won2(p.gross_pay)}</td>
-    <td style="font-size:11.5px;color:#3b82f6;">${won2(monthlyTotal)}</td>
-    <td style="font-size:11.5px;color:#6366f1;">${won2(extraTotal)}</td>
-    <td style="font-size:11.5px;color:#8b5cf6;">${won2(irregularTotal)}</td>
+    <td class="pay-sub-monthly">${won2(monthlyTotal)}</td>
+    <td class="pay-sub-extra">${won2(extraTotal)}</td>
+    <td class="pay-sub-irregular">${won2(irregularTotal)}</td>
     <td class="amount-red">${won2(p.total_deduction)}</td>
-    <td class="amount-green" style="font-size:13px;font-weight:700;">${won2(p.net_pay)}</td>
+    <td class="amount-green pay-net">${won2(p.net_pay)}</td>
     <td onclick="event.stopPropagation()" style="text-align:center;"><button onclick="editPayroll('${p.id}')" class="btn btn-warning btn-sm" style="padding:5px 10px;font-size:11.5px;"><i class="fas fa-pen" style="margin-right:3px;"></i>수정</button></td>
   </tr>`;
   }).join('');
@@ -112,13 +112,9 @@ function openPayslipModal(payrollId){
     if(e.email && e.email.trim()){
       btn.disabled = false;
       btn.title = e.email;
-      btn.style.opacity = '1';
-      btn.style.cursor = 'pointer';
     } else {
       btn.disabled = true;
       btn.title = '이메일 정보 없음';
-      btn.style.opacity = '0.45';
-      btn.style.cursor = 'not-allowed';
     }
   });
 
@@ -140,8 +136,8 @@ function openPayslipModal(payrollId){
 
   // 지급유형 태그 생성 헬퍼
   const payTypeTag = (type) => type === 'daily'
-    ? '<span style="font-size:9px;background:#fef3c7;color:#92400e;border-radius:3px;padding:1px 4px;margin-left:4px;border:1px solid #fde68a;">출근일수</span>'
-    : '<span style="font-size:9px;background:#dbeafe;color:#1d4ed8;border-radius:3px;padding:1px 4px;margin-left:4px;border:1px solid #bfdbfe;">정기지급</span>';
+    ? '<span class="pay-type-tag pay-type-tag-daily">출근일수</span>'
+    : '<span class="pay-type-tag pay-type-tag-monthly">정기지급</span>';
   const makePayRowType = (label, val, type) => {
     const isZero = !val || val === 0;
     return `<tr class="ps-item-row${isZero?' ps-zero':''}">
@@ -300,6 +296,7 @@ function openPayslipModal(payrollId){
     makePayRow('통신비',            p.communication_pay) +
     makePayRow('기술수당',          p.skill_allowance) +
     makePayRow('면허수당',          p.license_allowance) +
+    makePayRow('퇴직금 중간정산',   p.severance_interim_pay) +
     makePayRow('기타수당',          (p.etc_allowance||0)+(p.other_pay||0));
 
   // ── 계약상 임금 정보 행 (인적사항 그리드) ──
@@ -360,8 +357,8 @@ function openPayslipModal(payrollId){
     for(let i = 1; i <= 6; i++){
       const _l = document.getElementById(`ps-ct-wage-lbl${i}`);
       const _v = document.getElementById(`ps-ct-wage-val${i}`);
-      if(_l){ _l.textContent=''; _l.style.display='none'; }
-      if(_v){ _v.textContent=''; _v.style.display='none'; }
+      if(_l){ _l.textContent=''; _l.classList.add('d-none'); }
+      if(_v){ _v.textContent=''; _v.classList.add('d-none'); }
     }
 
     // 슬롯 채우기 (최대 6개, lbl1~6 / val1~6)
@@ -372,14 +369,14 @@ function openPayslipModal(payrollId){
       const item = wageItems[i - 1];
       if(item){
         lbl.textContent   = item.lbl;
-        val.textContent   = item.val;   // 빈 문자열이면 공란으로 표시됨
-        lbl.style.display = '';
-        val.style.display = '';
+        val.textContent   = item.val;
+        lbl.classList.remove('d-none');
+        val.classList.remove('d-none');
       } else {
         lbl.textContent   = '';
         val.textContent   = '';
-        lbl.style.display = 'none';
-        val.style.display = 'none';
+        lbl.classList.add('d-none');
+        val.classList.add('d-none');
       }
     }
   })();
@@ -392,14 +389,12 @@ function openPayslipModal(payrollId){
     // 수습 계약 유형 여부 (contract_type 또는 employment_category 기준)
     const catStr = (ct ? ct.contract_type : '') || e.employment_category || '';
     const isProbType = catStr ===CONTRACT_TYPE.REGULAR_PROBATION || catStr ===CONTRACT_TYPE.FIXED_PROBATION;
-    if(!isProbType || !ct){ banner.style.display='none'; return; }
+    if(!isProbType || !ct){ banner.classList.add('d-none'); return; }
 
     const probStart = ct.contract_start || '';
-    if(!probStart){ banner.style.display='none'; return; }
+    if(!probStart){ banner.classList.add('d-none'); return; }
 
-    // probation_months: 외부 스코프 _probMonths 재사용 (이미 계산됨)
-    // _inProbation, _probEndStr, _probMonths 는 외부 스코프에서 참조 가능
-    if(!_inProbation){ banner.style.display='none'; return; }
+    if(!_inProbation){ banner.classList.add('d-none'); return; }
 
     const fmtDate = s => s ? s.replace(/-/g, '.') : '';
     const pct   = ct.probation_pct ? Number(ct.probation_pct) : null;
@@ -425,7 +420,7 @@ function openPayslipModal(payrollId){
       ? `기본급 ${_probBaseSal.toLocaleString('ko-KR')}원 / 통상시급 ${_probHourly.toLocaleString('ko-KR')}원`
       : '(기본급 정보 없음)';
 
-    banner.style.display = '';
+    banner.classList.remove('d-none');
   })();
 
   // ── 수습 만료일 초과 경고 배너 ──
@@ -437,10 +432,10 @@ function openPayslipModal(payrollId){
     // 수습 계약이 아닌 경우 숨김
     const catStr2 = (ct ? ct.contract_type : '') || e.employment_category || '';
     const isProbType2 = catStr2 ===CONTRACT_TYPE.REGULAR_PROBATION || catStr2 ===CONTRACT_TYPE.FIXED_PROBATION;
-    if(!isProbType2 || !ct){ ob.style.display='none'; return; }
+    if(!isProbType2 || !ct){ ob.classList.add('d-none'); return; }
 
     // 수습 종료일: 외부 스코프 _probEndStr 재사용 (이미 계산됨)
-    if(!_probEndStr){ ob.style.display='none'; return; }
+    if(!_probEndStr){ ob.classList.add('d-none'); return; }
 
     // 급여 연월의 시작일·말일
     const payYr  = Number(p.pay_year);
@@ -458,28 +453,28 @@ function openPayslipModal(payrollId){
     // ① 해당 월 전체가 수습 종료일 이후
     if(mStart > _probEndStr){
       obd.innerHTML =
-        `<div>· 수습 종료일: <strong style="color:#dc2626;">${fmtD(_probEndStr)}</strong></div>` +
+        `<div>· 수습 종료일: <strong class="text-danger-red">${fmtD(_probEndStr)}</strong></div>` +
         `<div>· 이 명세서 기간 <strong>${payYr}년 ${payMo}월</strong>은 수습이 이미 만료된 달입니다.</div>` +
-        `<div style="margin-top:4px;color:#b91c1c;font-weight:600;">채용확정 근로계약서 기준으로 급여명세서를 별도 발행하세요.</div>`;
-      ob.style.display='';
+        `<div class="prob-overrun-warn">채용확정 근로계약서 기준으로 급여명세서를 별도 발행하세요.</div>`;
+      ob.classList.remove('d-none');
       return;
     }
 
     // ② 해당 월 중간에 수습 만료일이 껴있음
     if(_probEndStr >= mStart && _probEndStr < mEnd){
       obd.innerHTML =
-        `<div>· 수습 종료일: <strong style="color:#dc2626;">${fmtD(_probEndStr)}</strong></div>` +
+        `<div>· 수습 종료일: <strong class="text-danger-red">${fmtD(_probEndStr)}</strong></div>` +
         `<div>· 이 명세서 기간 <strong>${payYr}년 ${payMo}월</strong> 안에 수습이 만료됩니다.</div>` +
-        `<div style="margin-top:4px;color:#b91c1c;font-weight:600;">
+        `<div class="prob-overrun-warn">
           ① <u>${fmtD(mStart)} ~ ${fmtD(_probEndStr)}</u>: 수습 기준 급여명세서 (현재 명세서)<br>
           ② <u>${fmtD(nextDay(_probEndStr))} ~ ${fmtD(mEnd)}</u>: 채용확정 기준 급여명세서 <strong>별도 발행 필요</strong>
          </div>`;
-      ob.style.display='';
+      ob.classList.remove('d-none');
       return;
     }
 
     // ③ 수습 기간 내 → 숨김
-    ob.style.display='none';
+    ob.classList.add('d-none');
   })();
 
   // 산출식 계산 (엑셀 양식의 계산 방법 표와 동일 구조)
@@ -555,10 +550,10 @@ function openPayslipModal(payrollId){
   // 값이 0인 항목도 포함 (계산 근거를 보여주기 위해)
   const calcTb = document.getElementById('ps-calc-tbody');
   if(calcTb) calcTb.innerHTML = calcRows.map((r,i)=>`
-    <tr style="background:${i%2===0?'#f8fafc':'#fff'};">
-      <td style="padding:8px 14px;font-weight:600;color:${r.color};background:${r.bg};border-bottom:1px solid #e2e8f0;">${r.label}</td>
-      <td style="padding:8px 14px;color:#4b5563;border-bottom:1px solid #e2e8f0;font-size:11.5px;">${r.formula}</td>
-      <td style="padding:8px 14px;text-align:right;font-weight:700;color:${r.color};border-bottom:1px solid #e2e8f0;">${r.value?fmt(r.value):'—'}</td>
+    <tr class="ps-calc-row" style="background:${i%2===0?'#f8fafc':'#fff'};">
+      <td class="ps-calc-label" style="color:${r.color};background:${r.bg};">${r.label}</td>
+      <td class="ps-calc-formula">${r.formula}</td>
+      <td class="ps-calc-value" style="color:${r.color};">${r.value?fmt(r.value):'—'}</td>
     </tr>
   `).join('');
 
@@ -845,8 +840,6 @@ async function sendPayslipEmail(){
   } finally{
     emailBtns.forEach(b=>{
       b.disabled = !(window._currentPayslipEmail);
-      b.style.opacity = window._currentPayslipEmail ? '1' : '0.45';
-      b.style.cursor  = window._currentPayslipEmail ? 'pointer' : 'not-allowed';
       b.innerHTML = '<i class="fas fa-envelope"></i> 이메일 발송';
     });
   }

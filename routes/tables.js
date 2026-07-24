@@ -18,6 +18,7 @@ const VALID_TABLES = new Set([
   'registered_executives','related_party_workers','tax_brackets','tax_bracket_rows',
   'representative_contact','payroll_items',
   'attendance_ledger','kakao_send_logs',
+  'severance_interim_settlements',
 ]);
 
 function resolveTable(name, db) {

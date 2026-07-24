@@ -260,6 +260,60 @@
     .amount-red{font-weight:600;color:#e94560}
     .amount-green{font-weight:600;color:#10b981}
     .amount-blue{font-weight:600;color:#3b82f6}
+.d-none{display:none!important}
+/* payroll list table */
+.pay-emp-name{font-weight:600}
+.pay-gender{text-align:center;font-size:12px}
+.pay-sub-monthly{font-size:11.5px;color:#3b82f6}
+.pay-sub-extra{font-size:11.5px;color:#6366f1}
+.pay-sub-irregular{font-size:11.5px;color:#8b5cf6}
+.pay-net{font-size:13px;font-weight:700}
+/* pay type tag */
+.pay-type-tag{display:inline-block;font-size:9px;border-radius:3px;padding:1px 4px;margin-left:4px;border:1px solid}
+.pay-type-tag-daily{background:#fef3c7;color:#92400e;border-color:#fde68a}
+.pay-type-tag-monthly{background:#dbeafe;color:#1d4ed8;border-color:#bfdbfe}
+/* probation banner */
+.prob-banner-start{display:none;align-items:flex-start;gap:14px}
+.prob-overrun-warn{margin-top:4px;color:#b91c1c;font-weight:600}
+.text-danger-red{color:#dc2626}
+/* payslip calc table */
+.ps-calc-row td{padding:8px 14px;border-bottom:1px solid #e2e8f0}
+.ps-calc-label{font-weight:600}
+.ps-calc-formula{color:#4b5563;font-size:11.5px}
+.ps-calc-value{text-align:right;font-weight:700}
+/* payroll input: target list table */
+.pi-target-row td{padding:12px 14px}
+.pi-target-row:hover{background:#f8fafc}
+.pi-target-name{font-weight:700;color:#111827}
+.pi-target-dept{font-size:11px;color:#9ca3af;font-weight:400;margin-left:5px}
+.pi-target-gender{text-align:center;font-size:12px}
+.pi-target-contract{font-size:12px;color:#6b7280}
+.pi-target-action-btn{width:150px;padding:7px 0}
+/* payroll input: annual leave badge */
+.pi-al-badge-excluded{background:#f3f4f6;color:#9ca3af}
+.pi-al-badge-negative{background:#fef2f2;color:#dc2626}
+.pi-al-badge-zero{background:#fffbeb;color:#f59e0b}
+.pi-al-badge-positive{background:#dcfce7;color:#15803d}
+/* payroll input: AL details text */
+.pi-al-text-dim{color:#9ca3af;font-size:12px}
+.pi-al-text-active{color:#0d9488;font-size:12px}
+/* payroll input: auto-calc readonly input */
+.pi-input-readonly{background:#f3f4f6;color:#4f46e5;font-weight:600;cursor:default}
+/* payroll input: contract locked field */
+.pi-input-locked{background:#f4f6fb;color:#6b7280;cursor:default;border-color:#e5e7eb}
+/* payroll input: paydate badge */
+.pi-paydate-badge-warn{background:#fef3c7;color:#b45309}
+.pi-paydate-badge-contract{background:#eef2ff;color:#4f46e5}
+.pi-paydate-badge-company{background:#f3f4f6;color:#6b7280}
+/* payroll input: deduction mode badge */
+.pi-ded-badge-fixed{background:#f59e0b;color:#fff}
+.pi-ded-badge-rate{background:#e94560;color:#fff}
+/* annual leave dispatch table */
+.al-dispatch-row:hover{background:#f0f9ff!important}
+.al-dispatch-row:nth-child(even){background:#fafafa}
+/* payroll input: target table row */
+.pi-target-row{border-bottom:1px solid #f1f5f9;transition:background .12s}
+
     .company-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:18px;padding:22px}
     .company-card{border:1px solid #e8eaed;border-radius:12px;padding:18px;cursor:pointer;transition:all .2s;position:relative}
     .company-card:hover{border-color:#6366f1;box-shadow:0 0 0 2px rgba(99,102,241,.25);}

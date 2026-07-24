@@ -1,4 +1,4 @@
-ï»¿/** ì¸ì‡„ ì „ìš© CSS */
+/** ÀÎ¼â Àü¿ë CSS */
 function _getContractPrintCSS(){
   return [
     '*{box-sizing:border-box;margin:0;padding:0;}',
@@ -37,7 +37,7 @@ function _getContractPrintCSS(){
     '.daily-highlight{font-weight:700;color:#d97706;}',
     '.doc-probation-box{background:#fefce8;border:1.5px solid #fde047;border-radius:7px;padding:10px 13px;margin-top:6px;font-size:11.5px;line-height:1.8;color:#854d0e;}',
     '.doc-daily-note{background:#fff7ed;border:1.5px solid #fed7aa;border-radius:7px;padding:10px 13px;margin-top:8px;font-size:11.5px;line-height:1.8;color:#9a3412;}',
-    // â”€â”€ ê·¼ë¬´ì‹œê°„í‘œ â”€â”€
+    // ¦¡¦¡ ±Ù¹«½Ã°£Ç¥ ¦¡¦¡
     '.work-schedule-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:4px;}',
     '.work-schedule-table{width:100%;min-width:580px;border-collapse:collapse;font-size:12px;}',
     '.work-schedule-table th{background:#1e293b;color:#fff;padding:7px 6px;text-align:center;font-weight:600;font-size:11.5px;white-space:nowrap;}',
@@ -68,11 +68,11 @@ function _getContractPrintCSS(){
 }
 
 /**
- * ì œ3ì¡° â‘¡ ìš”ì¼ë³„ ê·¼ë¬´ì‹œê°„í‘œ HTML ìƒì„± (work-schedule-table ë™ì¼ êµ¬ì¡°)
+ * Á¦3Á¶ ¨è ¿äÀÏº° ±Ù¹«½Ã°£Ç¥ HTML »ı¼º (work-schedule-table µ¿ÀÏ ±¸Á¶)
  */
 function buildScheduleTableHTML(activeDays){
   const dayOrder  = ['mon','tue','wed','thu','fri','sat','sun'];
-  const daysKr    = {mon:'ì›”',tue:'í™”',wed:'ìˆ˜',thu:'ëª©',fri:'ê¸ˆ',sat:'í† ',sun:'ì¼'};
+  const daysKr    = {mon:'¿ù',tue:'È­',wed:'¼ö',thu:'¸ñ',fri:'±İ',sat:'Åä',sun:'ÀÏ'};
   const dayColors = {sat:'#2563eb', sun:'#dc2626'};
   const toM = function(t){ if(!t) return null; var p=t.split(':'); return parseInt(p[0])*60+parseInt(p[1]); };
   const sortedDays = activeDays.slice().sort(function(a,b){ return dayOrder.indexOf(a.day)-dayOrder.indexOf(b.day); });
@@ -96,7 +96,7 @@ function buildScheduleTableHTML(activeDays){
     },0);
   };
   var nightMins = function(sm, em, brk){
-    // ê·¼ë¬´ì‹œê°„ê³¼ 22:00~06:00 êµì°¨ë¶„ (íœ´ê²Œì‹œê°„ ì œì™¸ ì „ ê·¼ë¬´ì‹œê°„ ê¸°ì¤€)
+    // ±Ù¹«½Ã°£°ú 22:00~06:00 ±³Â÷ºĞ (ÈŞ°Ô½Ã°£ Á¦¿Ü Àü ±Ù¹«½Ã°£ ±âÁØ)
     var rawMins = em - sm;
     var overlap = Math.max(0, Math.min(em, NIGHT_END) - Math.max(sm, NIGHT_START))
                 + Math.max(0, Math.min(em, NIGHT_END + 24*60) - Math.max(sm, NIGHT_START + 24*60));
@@ -115,17 +115,17 @@ function buildScheduleTableHTML(activeDays){
     var brk = totalBrkMins(s);
     var mins = (sm!==null&&em!==null&&em>sm) ? Math.max(0,em-sm-brk) : 0;
 
-    // ì†Œì • vs ì—°ì¥ ë¶„ë¦¬
+    // ¼ÒÁ¤ vs ¿¬Àå ºĞ¸®
     var dayStat = Math.min(mins, STATUTORY_DAILY);
     var dayOt   = Math.max(0, mins - STATUTORY_DAILY);
     totalStatMins += dayStat;
     totalOtMins   += dayOt;
 
-    // ì•¼ê°„
+    // ¾ß°£
     var dayNight = (sm!==null&&em!==null) ? nightMins(sm, em, brk) : 0;
     totalNightMins += dayNight;
 
-    // íœ´ì¼
+    // ÈŞÀÏ
     if(isWeekend) totalHolMins += mins;
 
     var h = mins/60;
@@ -133,11 +133,11 @@ function buildScheduleTableHTML(activeDays){
     var otH   = dayOt/60;
     var hrs = mins===0 ? '-' :
       (isWeekend
-        ? '<span style="color:#dc2626;font-size:10px;">+' + (Number.isInteger(statH)?statH:statH.toFixed(1)) + 'h (íœ´ì¼)</span>'
+        ? '<span style="color:#dc2626;font-size:10px;">+' + (Number.isInteger(statH)?statH:statH.toFixed(1)) + 'h (ÈŞÀÏ)</span>'
         : (Number.isInteger(statH)?statH:statH.toFixed(1)) + 'h')
-      + (otH>0 ? '<span style="color:#f59e0b;font-size:10px;"> +'+(Number.isInteger(otH)?otH:otH.toFixed(1))+'h(ì—°ì¥)</span>' : '');
+      + (otH>0 ? '<span style="color:#f59e0b;font-size:10px;"> +'+(Number.isInteger(otH)?otH:otH.toFixed(1))+'h(¿¬Àå)</span>' : '');
 
-    var chk = isWork ? 'âœ”' : '';
+    var chk = isWork ? '?' : '';
     var brkSlots = normBreaks(s);
     var brkCell = brkSlots.length
       ? brkSlots.map(function(b){ return (b.s||'') + (b.s&&b.e?' ~ ':'') + (b.e||''); }).join('<br/>')
@@ -145,67 +145,67 @@ function buildScheduleTableHTML(activeDays){
     return '<tr class="'+cls+'">'+'<td style="text-align:center;">'+chk+'</td>'+'<td style="text-align:center;"><span class="day-label" style="color:'+color+';">'+( daysKr[s.day]||s.day)+'</span></td>'+'<td style="text-align:center;">'+(s.start||'')+'</td>'+'<td style="text-align:center;">'+(s.end||'')+'</td>'+'<td class="td-brk" style="text-align:center;line-height:1.6;">'+brkCell+'</td>'+'<td style="text-align:center;"><span class="computed-h">'+hrs+'</span></td>'+'<td></td>'+'</tr>';
   }).join('');
 
-  // ì£¼ 40h ì´ˆê³¼ â†’ ì—°ì¥ ì´ê´€
+  // ÁÖ 40h ÃÊ°ú ¡æ ¿¬Àå ÀÌ°ü
   if(totalStatMins > STATUTORY_WEEKLY){
     totalOtMins += (totalStatMins - STATUTORY_WEEKLY);
     totalStatMins = STATUTORY_WEEKLY;
   }
 
   var wDays  = sortedDays.filter(function(s){ return !!(s.start && s.end); }).length;
-  // ì£¼ ì†Œì •ê·¼ë¬´ì¼ìˆ˜: ìµœëŒ€ 5ì¼
+  // ÁÖ ¼ÒÁ¤±Ù¹«ÀÏ¼ö: ÃÖ´ë 5ÀÏ
   var statDays = Math.min(wDays, 5);
   var weekStatH = totalStatMins/60;
-  // ì¼ í‰ê·  ì†Œì •ê·¼ë¡œì‹œê°„: ì´ ì£¼ê°„ê·¼ë¡œì‹œê°„ Ã· 5, ìµœëŒ€ 8h
+  // ÀÏ Æò±Õ ¼ÒÁ¤±Ù·Î½Ã°£: ÃÑ ÁÖ°£±Ù·Î½Ã°£ ¡À 5, ÃÖ´ë 8h
   var totalWeekMins = totalStatMins + totalOtMins + totalNightMins + totalHolMins;
   var avgDay = totalWeekMins > 0 ? totalWeekMins / 5 / 60 : 0;
   var fmtH   = function(h){ return Number.isInteger(h)?h:h.toFixed(1); };
 
   var extraLines = [];
-  if(totalOtMins > 0) extraLines.push('<span class="wsh-item">&bull; ê³ ì •ì—°ì¥ê·¼ë¡œì‹œê°„: <span class="wsh-val">'+fmtH(totalOtMins/60)+'</span>h/ì£¼</span>');
-  if(totalNightMins > 0) extraLines.push('<span class="wsh-item">&bull; ê³ ì •ì•¼ê°„ê·¼ë¡œì‹œê°„: <span class="wsh-val">'+fmtH(totalNightMins/60)+'</span>h/ì£¼</span>');
-  if(totalHolMins > 0) extraLines.push('<span class="wsh-item">&bull; ê³ ì •íœ´ì¼ê·¼ë¡œì‹œê°„: <span class="wsh-val">'+fmtH(totalHolMins/60)+'</span>h/ì£¼</span>');
+  if(totalOtMins > 0) extraLines.push('<span class="wsh-item">&bull; °íÁ¤¿¬Àå±Ù·Î½Ã°£: <span class="wsh-val">'+fmtH(totalOtMins/60)+'</span>h/ÁÖ</span>');
+  if(totalNightMins > 0) extraLines.push('<span class="wsh-item">&bull; °íÁ¤¾ß°£±Ù·Î½Ã°£: <span class="wsh-val">'+fmtH(totalNightMins/60)+'</span>h/ÁÖ</span>');
+  if(totalHolMins > 0) extraLines.push('<span class="wsh-item">&bull; °íÁ¤ÈŞÀÏ±Ù·Î½Ã°£: <span class="wsh-val">'+fmtH(totalHolMins/60)+'</span>h/ÁÖ</span>');
 
   return '<div class="work-schedule-wrap">'
     +'<table class="work-schedule-table">'
     +'<thead><tr>'
-    +'<th style="width:34px;">ê·¼ë¬´</th>'
-    +'<th style="width:30px;">ìš”ì¼</th>'
-    +'<th style="width:88px;">ì¶œê·¼</th>'
-    +'<th style="width:88px;">í‡´ê·¼</th>'
-    +'<th class="th-brk">íœ´ê²Œì‹œê°„</th>'
-    +'<th style="width:72px;">ê·¼ë¡œì‹œê°„</th>'
-    +'<th>ë¹„ê³ </th>'
+    +'<th style="width:34px;">±Ù¹«</th>'
+    +'<th style="width:30px;">¿äÀÏ</th>'
+    +'<th style="width:88px;">Ãâ±Ù</th>'
+    +'<th style="width:88px;">Åğ±Ù</th>'
+    +'<th class="th-brk">ÈŞ°Ô½Ã°£</th>'
+    +'<th style="width:72px;">±Ù·Î½Ã°£</th>'
+    +'<th>ºñ°í</th>'
     +'</tr></thead>'
     +'<tbody>'+rows+'</tbody>'
     +'</table>'
     +'<div class="wsh-total">'
-    +'<div class="wsh-row"><span class="wsh-item">&bull; ì£¼ ì†Œì •ê·¼ë¬´ì¼ìˆ˜: <span class="wsh-val">'+statDays+'</span>ì¼</span>'
-    +'<span class="wsh-item">&bull; ì£¼ ì†Œì •ê·¼ë¡œì‹œê°„: <span class="wsh-val">'+fmtH(weekStatH)+'</span>ì‹œê°„</span>'
-    +'<span class="wsh-item">&bull; ì¼ í‰ê·  ì†Œì •ê·¼ë¡œì‹œê°„: <span class="wsh-val">'+fmtH(Math.min(avgDay,8))+'</span>ì‹œê°„</span></div>'
+    +'<div class="wsh-row"><span class="wsh-item">&bull; ÁÖ ¼ÒÁ¤±Ù¹«ÀÏ¼ö: <span class="wsh-val">'+statDays+'</span>ÀÏ</span>'
+    +'<span class="wsh-item">&bull; ÁÖ ¼ÒÁ¤±Ù·Î½Ã°£: <span class="wsh-val">'+fmtH(weekStatH)+'</span>½Ã°£</span>'
+    +'<span class="wsh-item">&bull; ÀÏ Æò±Õ ¼ÒÁ¤±Ù·Î½Ã°£: <span class="wsh-val">'+fmtH(Math.min(avgDay,8))+'</span>½Ã°£</span></div>'
     +(extraLines.length > 0 ? '<div class="wsh-row wsh-extra">' + extraLines.join(' ') + '</div>' : '')
     +'</div>'
     +'</div>';
 }
 
 /**
- * DB ë°ì´í„°(c=ê³„ì•½, emp=ì§ì›, co=íšŒì‚¬)ë¥¼ ë°›ì•„ ê³„ì•½ì„œ HTML ìƒì„±
- * ìœ í˜•ë³„ ë¶„ê¸°: ì •ê·œì§ / ì •ê·œì§ ìˆ˜ìŠµ / ê³„ì•½ì§ / ê³„ì•½ì§ ìˆ˜ìŠµ / ì¼ìš©ì§
+ * DB µ¥ÀÌÅÍ(c=°è¾à, emp=Á÷¿ø, co=È¸»ç)¸¦ ¹Ş¾Æ °è¾à¼­ HTML »ı¼º
+ * À¯Çüº° ºĞ±â: Á¤±ÔÁ÷ / Á¤±ÔÁ÷ ¼ö½À / °è¾àÁ÷ / °è¾àÁ÷ ¼ö½À / ÀÏ¿ëÁ÷
  */
 function generateContractHTMLFromData(c, emp, co){
-  // contract_type ìš°ì„  â€” emp.employment_categoryëŠ” ì§ì› í˜„ì¬ ìƒíƒœì´ë¯€ë¡œ
-  // ì±„ìš© í™•ì • í›„ ìƒì„±ëœ ê³„ì•½(contract_type='ì •ê·œì§') ê³„ì•½ì„œê°€ ìˆ˜ìŠµ ì–‘ì‹ìœ¼ë¡œ
-  // ì¶œë ¥ë˜ëŠ” ë¬¸ì œë¥¼ ë°©ì§€. emp.employment_categoryëŠ” í´ë°±ìœ¼ë¡œë§Œ ì‚¬ìš©.
-  // ê³„ì•½ì˜ˆì • ìƒíƒœì¸ ê²½ìš° ìˆ˜ìŠµ ì¹´í…Œê³ ë¦¬ ì •ê·œí™” (ì±„ìš©í™•ì • â†’ ë³¸ê³„ì•½ ì „í™˜ì´ë¯€ë¡œ ìˆ˜ìŠµ ì•„ë‹˜)
+  // contract_type ¿ì¼± ? emp.employment_category´Â Á÷¿ø ÇöÀç »óÅÂÀÌ¹Ç·Î
+  // Ã¤¿ë È®Á¤ ÈÄ »ı¼ºµÈ °è¾à(contract_type='Á¤±ÔÁ÷') °è¾à¼­°¡ ¼ö½À ¾ç½ÄÀ¸·Î
+  // Ãâ·ÂµÇ´Â ¹®Á¦¸¦ ¹æÁö. emp.employment_category´Â Æú¹éÀ¸·Î¸¸ »ç¿ë.
+  // °è¾à¿¹Á¤ »óÅÂÀÎ °æ¿ì ¼ö½À Ä«Å×°í¸® Á¤±ÔÈ­ (Ã¤¿ëÈ®Á¤ ¡æ º»°è¾à ÀüÈ¯ÀÌ¹Ç·Î ¼ö½À ¾Æ´Ô)
   const _ctTypeRaw = c.contract_type || emp.employment_category || CONTRACT_TYPE.REGULAR;
-  // ì˜ë¬¸ ì •ê·œí™” â†’ ë‚´ë¶€ ë¹„êµìš©
+  // ¿µ¹® Á¤±ÔÈ­ ¡æ ³»ºÎ ºñ±³¿ë
   const _ctTypeNorm = typeof normalizeContractType === 'function'
     ? normalizeContractType(_ctTypeRaw) : _ctTypeRaw;
   const _isPendingContract = (c.status===CONTRACT_STATUS.PENDING);
-  // ê³„ì•½ì˜ˆì • ì‹œ ìˆ˜ìŠµâ†’ë³¸ê³„ì•½ ì „í™˜: ì •ê·œì§ ìˆ˜ìŠµâ†’ì •ê·œì§, ê³„ì•½ì§ ìˆ˜ìŠµâ†’ê³„ì•½ì§
+  // °è¾à¿¹Á¤ ½Ã ¼ö½À¡æº»°è¾à ÀüÈ¯: Á¤±ÔÁ÷ ¼ö½À¡æÁ¤±ÔÁ÷, °è¾àÁ÷ ¼ö½À¡æ°è¾àÁ÷
   const _ctTypeFinal = _isPendingContract
     ? (_ctTypeNorm ===CONTRACT_TYPE.REGULAR_PROBATION ? CONTRACT_TYPE.REGULAR : _ctTypeNorm ===CONTRACT_TYPE.FIXED_PROBATION ? CONTRACT_TYPE.FIXED : _ctTypeNorm)
     : _ctTypeNorm;
-  // í‘œì‹œìš© í•œê¸€ ë¼ë²¨
+  // Ç¥½Ã¿ë ÇÑ±Û ¶óº§
   const ctType = typeof contractTypeLabel === 'function'
     ? contractTypeLabel(_ctTypeFinal) : _ctTypeFinal;
   const isDaily  = _ctTypeFinal ===CONTRACT_TYPE.DAILY;
@@ -213,10 +213,10 @@ function generateContractHTMLFromData(c, emp, co){
   const isRegular= _ctTypeFinal ===CONTRACT_TYPE.REGULAR || _ctTypeFinal ===CONTRACT_TYPE.REGULAR_PROBATION;
 
   const fmt  = v => Number(v||0).toLocaleString('ko-KR');
-  const row  = (label, val, cls='') => `<tr${cls?' class="'+cls+'"':''}><th>${label}</th><td>${val||'â€”'}</td></tr>`;
-  const wons = v => fmt(v) + 'ì›';
+  const row  = (label, val, cls='') => `<tr${cls?' class="'+cls+'"':''}><th>${label}</th><td>${val||'?'}</td></tr>`;
+  const wons = v => fmt(v) + '¿ø';
 
-  // â”€â”€ ë‚ ì§œ í¬ë§· â”€â”€
+  // ¦¡¦¡ ³¯Â¥ Æ÷¸Ë ¦¡¦¡
   const fmtDateKr = str => {
     if(!str) return '';
     try{ return new Date(str).toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'}); }
@@ -224,17 +224,17 @@ function generateContractHTMLFromData(c, emp, co){
   };
   const contractDateKr = fmtDateKr(c.contract_start) || new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'});
 
-  // â”€â”€ ê³„ì•½ê¸°ê°„ â”€â”€
+  // ¦¡¦¡ °è¾à±â°£ ¦¡¦¡
   let contractPeriod = '';
   if(isDaily){
-    contractPeriod = `${c.contract_start||'â€”'} ~ ${c.contract_end||'ë³„ë„ ì§€ì •'}`;
+    contractPeriod = `${c.contract_start||'?'} ~ ${c.contract_end||'º°µµ ÁöÁ¤'}`;
   } else if(isRegular){
-    contractPeriod = `${c.contract_start||'â€”'}ë¶€í„° <strong>ê¸°ê°„ì˜ ì •í•¨ ì—†ìŒ</strong>`;
+    contractPeriod = `${c.contract_start||'?'}ºÎÅÍ <strong>±â°£ÀÇ Á¤ÇÔ ¾øÀ½</strong>`;
   } else {
-    contractPeriod = `${c.contract_start||'â€”'} ~ ${c.contract_end||'ë¯¸ì •'}`;
+    contractPeriod = `${c.contract_start||'?'} ~ ${c.contract_end||'¹ÌÁ¤'}`;
   }
 
-  // â”€â”€ ìˆ˜ìŠµê¸°ê°„ ê³„ì‚° â”€â”€
+  // ¦¡¦¡ ¼ö½À±â°£ °è»ê ¦¡¦¡
   let probEndDate = '';
   const probMonths = isProb ? (parseInt(c.probation_months)||3) : 0;
   const probPct    = isProb ? (parseFloat(c.probation_pct)||80) : 0;
@@ -247,33 +247,33 @@ function generateContractHTMLFromData(c, emp, co){
   }
   const probStartKr = fmtDateKr(c.contract_start);
 
-  // â”€â”€ ê·¼ë¬´ ìŠ¤ì¼€ì¤„ íŒŒì‹± â”€â”€
+  // ¦¡¦¡ ±Ù¹« ½ºÄÉÁÙ ÆÄ½Ì ¦¡¦¡
   let schedule = [];
   if(c.schedule_json){
     try{
       const _parsed = JSON.parse(c.schedule_json);
-      schedule = Array.isArray(_parsed) ? _parsed : [];  // ë°°ì—´ ì•„ë‹Œ ê²½ìš°(ê°ì²´Â·null ë“±) ë¹ˆ ë°°ì—´ë¡œ í´ë°±
+      schedule = Array.isArray(_parsed) ? _parsed : [];  // ¹è¿­ ¾Æ´Ñ °æ¿ì(°´Ã¼¡¤null µî) ºó ¹è¿­·Î Æú¹é
     } catch(e){
-      console.warn('[schedule_json íŒŒì‹± ì‹¤íŒ¨]', e, c.schedule_json);
+      console.warn('[schedule_json ÆÄ½Ì ½ÇÆĞ]', e, c.schedule_json);
     }
   }
   let activeDays = Array.isArray(schedule)
     ? schedule.filter(s=>s.active===true||s.active===1||s.active==='true')
-    : [];  // scheduleì´ ë°°ì—´ì´ ì•„ë‹Œ ê²½ìš° ìµœì¢… ë°©ì–´
+    : [];  // scheduleÀÌ ¹è¿­ÀÌ ¾Æ´Ñ °æ¿ì ÃÖÁ¾ ¹æ¾î
 
-  // schedule_json ì—†ì„ ê²½ìš° ë ˆê±°ì‹œ í•„ë“œë¡œ í´ë°± ìŠ¤ì¼€ì¤„ ìƒì„±
+  // schedule_json ¾øÀ» °æ¿ì ·¹°Å½Ã ÇÊµå·Î Æú¹é ½ºÄÉÁÙ »ı¼º
   if(activeDays.length === 0){
     const _DAY_KEYS = ['mon','tue','wed','thu','fri','sat','sun'];
     const _start    = c.start_time || '09:00';
     const _end      = c.end_time   || '18:00';
     const _wDays    = parseInt(c.work_days_per_week || c.days_per_week || 5);
-    // íœ´ê²Œì‹œê°„ ì¶”ì •: break_mins í•„ë“œ ê¸°ë°˜, ì—†ìœ¼ë©´ 60ë¶„
+    // ÈŞ°Ô½Ã°£ ÃßÁ¤: break_mins ÇÊµå ±â¹İ, ¾øÀ¸¸é 60ºĞ
     const _brkMins  = parseInt(c.break_mins || 60);
     const _toM      = t=>{ const p=t.split(':'); return parseInt(p[0])*60+parseInt(p[1]); };
     const _fmtT     = m=>`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
     const _sMins    = _toM(_start);
     let   _eMins    = _toM(_end);
-    if(_eMins <= _sMins) _eMins += 24*60; // ìµì¼ ì¢…ë£Œ
+    if(_eMins <= _sMins) _eMins += 24*60; // ÀÍÀÏ Á¾·á
     const _halfWork = Math.round((_eMins - _sMins - _brkMins) / 2);
     const _brkStart = _brkMins > 0 ? _fmtT(_sMins + _halfWork) : '';
     const _brkEnd   = _brkMins > 0 ? _fmtT(_sMins + _halfWork + _brkMins) : '';
@@ -289,7 +289,7 @@ function generateContractHTMLFromData(c, emp, co){
       };
     });
   }
-  // â”€â”€ schedule_json ì¤‘ì²© êµ¬ì¡°(shifts[0].start) â†’ í‰ë©´ êµ¬ì¡°(start/end) ë³€í™˜ â”€â”€
+  // ¦¡¦¡ schedule_json ÁßÃ¸ ±¸Á¶(shifts[0].start) ¡æ Æò¸é ±¸Á¶(start/end) º¯È¯ ¦¡¦¡
   activeDays = activeDays.map(s => {
     const shift = (Array.isArray(s.shifts) && s.shifts.length > 0) ? s.shifts[0] : {};
     return {
@@ -301,36 +301,36 @@ function generateContractHTMLFromData(c, emp, co){
       brk_end: shift.brk_end || s.brk_end || ''
     };
   });
-  const dayNamesK  = {mon:'ì›”',tue:'í™”',wed:'ìˆ˜',thu:'ëª©',fri:'ê¸ˆ',sat:'í† ',sun:'ì¼'};
-  const dayNamesFull = {mon:'ì›”ìš”ì¼',tue:'í™”ìš”ì¼',wed:'ìˆ˜ìš”ì¼',thu:'ëª©ìš”ì¼',fri:'ê¸ˆìš”ì¼',sat:'í† ìš”ì¼',sun:'ì¼ìš”ì¼'};
+  const dayNamesK  = {mon:'¿ù',tue:'È­',wed:'¼ö',thu:'¸ñ',fri:'±İ',sat:'Åä',sun:'ÀÏ'};
+  const dayNamesFull = {mon:'¿ù¿äÀÏ',tue:'È­¿äÀÏ',wed:'¼ö¿äÀÏ',thu:'¸ñ¿äÀÏ',fri:'±İ¿äÀÏ',sat:'Åä¿äÀÏ',sun:'ÀÏ¿äÀÏ'};
 
-  // ê·¼ë¬´ ìš”ì¼ ë¬¸ìì—´
+  // ±Ù¹« ¿äÀÏ ¹®ÀÚ¿­
   let workDaysStr = '';
   if(activeDays.length){
     workDaysStr = activeDays.map(s=>dayNamesFull[s.day]||s.day).join(', ');
   } else if(c.work_days){
     workDaysStr = c.work_days;
   } else {
-    workDaysStr = 'ì›”ìš”ì¼ ~ ê¸ˆìš”ì¼';
+    workDaysStr = '¿ù¿äÀÏ ~ ±İ¿äÀÏ';
   }
 
-  // ëŒ€í‘œ ì¶œí‡´ê·¼ ì‹œê°„
+  // ´ëÇ¥ ÃâÅğ±Ù ½Ã°£
   const startTime = activeDays[0]?.start || c.start_time || '09:00';
   const endTime   = activeDays[activeDays.length-1]?.end || c.end_time || '18:00';
 
-  // ì†Œì •ê·¼ë¡œì‹œê°„
+  // ¼ÒÁ¤±Ù·Î½Ã°£
   const hoursPerDay = parseFloat(c.hours_per_day||c.daily_hours||8);
   const daysPerWeek = parseInt(c.days_per_week||c.work_days_count||(activeDays.length||5));
   const weekHours   = Math.round(hoursPerDay * daysPerWeek * 10) / 10;
 
-  // íœ´ê²Œì‹œê°„ â€” breaks ë°°ì—´ ìš°ì„ , ì—†ìœ¼ë©´ ë ˆê±°ì‹œ brk_start/brk_end í´ë°±
+  // ÈŞ°Ô½Ã°£ ? breaks ¹è¿­ ¿ì¼±, ¾øÀ¸¸é ·¹°Å½Ã brk_start/brk_end Æú¹é
   const _normBreaks = s => {
     if(Array.isArray(s.breaks) && s.breaks.length) return s.breaks;
     if(s.brk_start||s.brk_end) return [{s:s.brk_start||'', e:s.brk_end||''}];
     return [];
   };
   let breakHTML = '';
-  // ìš”ì¼ë³„ ëª¨ë“  ìŠ¬ë¡¯ì„ ìˆ˜ì§‘ â†’ ë™ì¼ ì‹œê°„ëŒ€ë¼ë¦¬ ë¬¶ì–´ í‘œì‹œ
+  // ¿äÀÏº° ¸ğµç ½½·ÔÀ» ¼öÁı ¡æ µ¿ÀÏ ½Ã°£´ë³¢¸® ¹­¾î Ç¥½Ã
   const uniqBrk = {};
   activeDays.forEach(day=>{
     _normBreaks(day).forEach(b=>{
@@ -345,22 +345,22 @@ function generateContractHTMLFromData(c, emp, co){
       const [hs,ms] = time.split('~')[0].split(':').map(Number);
       const [he,me] = time.split('~')[1].split(':').map(Number);
       let mins = (he*60+me)-(hs*60+ms);
-      if(mins <= 0) mins += 24*60; // ìµì¼ ì¢…ë£Œ íœ´ê²Œ
-      return `[${[...daysSet].join('Â·')}] ${time} (${mins}ë¶„)`;
+      if(mins <= 0) mins += 24*60; // ÀÍÀÏ Á¾·á ÈŞ°Ô
+      return `[${[...daysSet].join('¡¤')}] ${time} (${mins}ºĞ)`;
     }).join(', ');
   } else {
-    breakHTML = '1ì¼ ê·¼ë¡œì‹œê°„ 4ì‹œê°„ì¸ ê²½ìš° 30ë¶„, 8ì‹œê°„ì¸ ê²½ìš° 1ì‹œê°„ ì´ìƒ';
+    breakHTML = '1ÀÏ ±Ù·Î½Ã°£ 4½Ã°£ÀÎ °æ¿ì 30ºĞ, 8½Ã°£ÀÎ °æ¿ì 1½Ã°£ ÀÌ»ó';
   }
 
-  // â”€â”€ ì„ê¸ˆ â”€â”€
+  // ¦¡¦¡ ÀÓ±İ ¦¡¦¡
   const baseSalary        = parseFloat(c.base_salary||0);
   const weeklyHol         = parseFloat(c.weekly_holiday_pay||0);
   const posAllow          = parseFloat(c.position_allowance||0);
-  // ì°¨ëŸ‰ì§€ì›ë¹„ = êµ¬ êµí†µë¹„ + êµ¬ ìê°€ìš´ì „ë³´ì¡°ê¸ˆ í•©ì‚° (ë ˆê±°ì‹œ í•˜ìœ„í˜¸í™˜)
+  // Â÷·®Áö¿øºñ = ±¸ ±³Åëºñ + ±¸ ÀÚ°¡¿îÀüº¸Á¶±İ ÇÕ»ê (·¹°Å½Ã ÇÏÀ§È£È¯)
   const carAllow          = parseFloat(c.transportation_allowance||c.car_maintenance||0) + parseFloat(c.self_driving_allowance||0);
   const carPayType        = c.transportation_pay_type||c.self_driving_pay_type||'fixed';
   const remoteAreaAllow   = parseFloat(c.remote_area_allowance||0);
-  // remoteAreaPayType: í•­ìƒ 'fixed' â€” ì„ ì–¸ ìƒëµ
+  // remoteAreaPayType: Ç×»ó 'fixed' ? ¼±¾ğ »ı·«
   const mealAllow         = parseFloat(c.meal_allowance||0);
   const mealPayType       = c.meal_pay_type||'fixed';
   const researchAllow     = parseFloat(c.research_allowance||0);
@@ -369,7 +369,7 @@ function generateContractHTMLFromData(c, emp, co){
   const skillAllow        = parseFloat(c.skill_allowance||0);
   const licenseAllow      = parseFloat(c.license_allowance||0);
   const hazardAllow       = parseFloat(c.hazard_allowance||0);
-  // ì‚¬ìš©ì ì •ì˜ í†µìƒì„ê¸ˆ í•­ëª©
+  // »ç¿ëÀÚ Á¤ÀÇ Åë»óÀÓ±İ Ç×¸ñ
   let customOrdinaryItems = [];
   try { customOrdinaryItems = JSON.parse(c.custom_ordinary_values||'[]'); } catch(e){}
   if(!Array.isArray(customOrdinaryItems)) customOrdinaryItems = [];
@@ -383,9 +383,9 @@ function generateContractHTMLFromData(c, emp, co){
   const bookPayType       = c.book_pay_type||'fixed';
   const overseasAllow     = parseFloat(c.overseas_allowance||0);
   const overseasPayType   = c.overseas_pay_type||'fixed';
-  // acfg: allowance_configê°€ ìˆìœ¼ë©´ ê·¸ í‚¤ ê°’ìœ¼ë¡œ ì œì–´, ì—†ìœ¼ë©´ null (ê°’>0ì´ë©´ ë¬´ì¡°ê±´ í‘œì‹œ)
+  // acfg: allowance_config°¡ ÀÖÀ¸¸é ±× Å° °ªÀ¸·Î Á¦¾î, ¾øÀ¸¸é null (°ª>0ÀÌ¸é ¹«Á¶°Ç Ç¥½Ã)
   const _rawAcfg = (co && co.allowance_config) ? co.allowance_config : null;
-  // acfgShow(key, amount): allowance_config ì—†ìœ¼ë©´ amount>0ìœ¼ë¡œë§Œ íŒë‹¨, ìˆìœ¼ë©´ cfg[key] && amount>0
+  // acfgShow(key, amount): allowance_config ¾øÀ¸¸é amount>0À¸·Î¸¸ ÆÇ´Ü, ÀÖÀ¸¸é cfg[key] && amount>0
   const acfgShow = (key, amount) => amount > 0 && (_rawAcfg === null || !!_rawAcfg[key]);
   const fixedOtPay        = parseFloat(c.fixed_ot_pay||0);
   const fixedNightPay     = parseFloat(c.fixed_night_pay||0);
@@ -394,53 +394,53 @@ function generateContractHTMLFromData(c, emp, co){
   const annualSal         = parseFloat(c.annual_salary||0);
   const hourlyWage        = parseFloat(c.hourly_wage||0);
   const dailyWage         = parseFloat(c.daily_wage||c.base_salary||0);
-  // í†µìƒì„ê¸ˆ ì§€ê¸‰ìœ í˜• ë±ƒì§€ ìƒì„± í—¬í¼
+  // Åë»óÀÓ±İ Áö±ŞÀ¯Çü ¹îÁö »ı¼º ÇïÆÛ
   const payTypeBadge = (type) => type==='fixed'
-    ? '<span style="font-size:10px;color:#1d4ed8;background:#dbeafe;border-radius:4px;padding:1px 6px;margin-left:6px;">ë§¤ì›” ì •ê¸°ì§€ê¸‰ (í†µìƒì„ê¸ˆ í¬í•¨)</span>'
-    : '<span style="font-size:10px;color:#92400e;background:#fef3c7;border-radius:4px;padding:1px 6px;margin-left:6px;">ì¶œê·¼ì¼ìˆ˜ì— ë”°ë¦„ (í†µìƒì„ê¸ˆ ì œì™¸)</span>';
-  // í†µìƒì„ê¸ˆ í¬í•¨ ì—¬ë¶€: fixed = í¬í•¨, ê·¸ ì™¸(daily/receipt) = ì œì™¸
+    ? '<span style="font-size:10px;color:#1d4ed8;background:#dbeafe;border-radius:4px;padding:1px 6px;margin-left:6px;">¸Å¿ù Á¤±âÁö±Ş (Åë»óÀÓ±İ Æ÷ÇÔ)</span>'
+    : '<span style="font-size:10px;color:#92400e;background:#fef3c7;border-radius:4px;padding:1px 6px;margin-left:6px;">Ãâ±ÙÀÏ¼ö¿¡ µû¸§ (Åë»óÀÓ±İ Á¦¿Ü)</span>';
+  // Åë»óÀÓ±İ Æ÷ÇÔ ¿©ºÎ: fixed = Æ÷ÇÔ, ±× ¿Ü(daily/receipt) = Á¦¿Ü
   const isFixedType = (type) => (type||'fixed') === 'fixed';
 
-  // ì„ê¸ˆì§€ê¸‰ì¼
-  const payDayStr = co.pay_day ? `ë§¤ì›” ${co.pay_day}ì¼` : 'ë§¤ì›” ë§ì¼';
+  // ÀÓ±İÁö±ŞÀÏ
+  const payDayStr = co.pay_day ? `¸Å¿ù ${co.pay_day}ÀÏ` : '¸Å¿ù ¸»ÀÏ';
 
-  // â”€â”€ ì£¼ë¯¼ë“±ë¡ë²ˆí˜¸(ì™¸êµ­ì¸ë²ˆí˜¸) ë§ˆìŠ¤í‚¹: ì• 7ìë¦¬ ì´í›„ * ì²˜ë¦¬ â”€â”€
+  // ¦¡¦¡ ÁÖ¹Îµî·Ï¹øÈ£(¿Ü±¹ÀÎ¹øÈ£) ¸¶½ºÅ·: ¾Õ 7ÀÚ¸® ÀÌÈÄ * Ã³¸® ¦¡¦¡
   const idNum = emp.id_number || '';
   const maskedId = (()=>{
     if(!idNum) return '';
-    // í•˜ì´í”ˆ ì œê±° í›„ ì²˜ë¦¬
+    // ÇÏÀÌÇÂ Á¦°Å ÈÄ Ã³¸®
     const s = String(idNum).replace(/-/g,'');
     if(s.length === 0) return '';
-    // ì• 6ìë¦¬ + í•˜ì´í”ˆ + ë’·ì²«ìë¦¬(7ë²ˆì§¸) + ******
-    const front = s.slice(0, 6);          // ìƒë…„ì›”ì¼ 6ìë¦¬
-    const mid   = s.slice(6, 7);          // ë’· ì²« ë²ˆì§¸ ìë¦¬
-    const stars = '******';               // ë‚˜ë¨¸ì§€ ë§ˆìŠ¤í‚¹
-    if(s.length <= 6) return front;       // ì• 6ìë¦¬ë§Œ ìˆëŠ” ê²½ìš°
+    // ¾Õ 6ÀÚ¸® + ÇÏÀÌÇÂ + µŞÃ¹ÀÚ¸®(7¹øÂ°) + ******
+    const front = s.slice(0, 6);          // »ı³â¿ùÀÏ 6ÀÚ¸®
+    const mid   = s.slice(6, 7);          // µŞ Ã¹ ¹øÂ° ÀÚ¸®
+    const stars = '******';               // ³ª¸ÓÁö ¸¶½ºÅ·
+    if(s.length <= 6) return front;       // ¾Õ 6ÀÚ¸®¸¸ ÀÖ´Â °æ¿ì
     return front + '-' + mid + stars;
   })();
 
-  // â”€â”€ ì…ì‚¬ì¼ í¬ë§· â”€â”€
+  // ¦¡¦¡ ÀÔ»çÀÏ Æ÷¸Ë ¦¡¦¡
   const hireDateStr = emp.hire_date || '';
 
 
 
-  // â”€â”€ ìœ í˜•ë³„ ì œëª© â”€â”€
+  // ¦¡¦¡ À¯Çüº° Á¦¸ñ ¦¡¦¡
   const titleByType = {
-    'ì •ê·œì§':      'ê·¼ ë¡œ ê³„ ì•½ ì„œ',
-    'ì •ê·œì§ ìˆ˜ìŠµ': 'ê·¼ ë¡œ ê³„ ì•½ ì„œ',
-    'ê³„ì•½ì§':      'ê·¼ ë¡œ ê³„ ì•½ ì„œ',
-    'ê³„ì•½ì§ ìˆ˜ìŠµ': 'ê·¼ ë¡œ ê³„ ì•½ ì„œ',
-    'ì¼ìš©ì§':      'ì¼ ìš© ê·¼ ë¡œ ê³„ ì•½ ì„œ',
+    'Á¤±ÔÁ÷':      '±Ù ·Î °è ¾à ¼­',
+    'Á¤±ÔÁ÷ ¼ö½À': '±Ù ·Î °è ¾à ¼­',
+    '°è¾àÁ÷':      '±Ù ·Î °è ¾à ¼­',
+    '°è¾àÁ÷ ¼ö½À': '±Ù ·Î °è ¾à ¼­',
+    'ÀÏ¿ëÁ÷':      'ÀÏ ¿ë ±Ù ·Î °è ¾à ¼­',
   };
   const subtitleByType = {
-    'ì •ê·œì§':      '(í‘œì¤€ê·¼ë¡œê³„ì•½ì„œ â€” ì •ê·œì§)',
-    'ì •ê·œì§ ìˆ˜ìŠµ': '(í‘œì¤€ê·¼ë¡œê³„ì•½ì„œ â€” ìˆ˜ìŠµì§)',
-    'ê³„ì•½ì§':      '(í‘œì¤€ê·¼ë¡œê³„ì•½ì„œ â€” ê¸°ê°„ì œ ê·¼ë¡œì)',
-    'ê³„ì•½ì§ ìˆ˜ìŠµ': '(í‘œì¤€ê·¼ë¡œê³„ì•½ì„œ â€” ê¸°ê°„ì œ ìˆ˜ìŠµì§)',
-    'ì¼ìš©ì§':      '(í‘œì¤€ê·¼ë¡œê³„ì•½ì„œ â€” ì¼ìš©ì§)',
+    'Á¤±ÔÁ÷':      '(Ç¥ÁØ±Ù·Î°è¾à¼­ ? Á¤±ÔÁ÷)',
+    'Á¤±ÔÁ÷ ¼ö½À': '(Ç¥ÁØ±Ù·Î°è¾à¼­ ? ¼ö½ÀÁ÷)',
+    '°è¾àÁ÷':      '(Ç¥ÁØ±Ù·Î°è¾à¼­ ? ±â°£Á¦ ±Ù·ÎÀÚ)',
+    '°è¾àÁ÷ ¼ö½À': '(Ç¥ÁØ±Ù·Î°è¾à¼­ ? ±â°£Á¦ ¼ö½ÀÁ÷)',
+    'ÀÏ¿ëÁ÷':      '(Ç¥ÁØ±Ù·Î°è¾à¼­ ? ÀÏ¿ëÁ÷)',
   };
 
-  // â”€â”€ ì„ê¸ˆ ì„¹ì…˜ â”€â”€
+  // ¦¡¦¡ ÀÓ±İ ¼½¼Ç ¦¡¦¡
   let salarySection = '';
   if(isDaily){
     salarySection = `
@@ -448,288 +448,289 @@ function generateContractHTMLFromData(c, emp, co){
         <div class="doc-section-title">__ART_SALARY__</div>
         <table class="info-table">
           <colgroup><col style="width:32%"><col style="width:68%"></colgroup>
-          ${row('ì¼ê¸‰ì—¬', `<strong class="daily-highlight">${fmt(dailyWage)}ì›</strong>`)}
-          ${row('ì„ê¸ˆ ì§€ê¸‰ì¼', payDayStr + ' (í˜„ê¸ˆ ë˜ëŠ” ê³„ì¢Œì´ì²´)')}
-          ${row('ì§€ê¸‰ ë°©ë²•', 'í˜„ê¸ˆ ì§€ê¸‰ ë˜ëŠ” ê·¼ë¡œì ëª…ì˜ ê³„ì¢Œ ì§ì ‘ ì…ê¸ˆ')}
+          ${row('ÀÏ±Ş¿©', `<strong class="daily-highlight">${fmt(dailyWage)}¿ø</strong>`)}
+          ${row('ÀÓ±İ Áö±ŞÀÏ', payDayStr + ' (Çö±İ ¶Ç´Â °èÁÂÀÌÃ¼)')}
+          ${row('Áö±Ş ¹æ¹ı', 'Çö±İ Áö±Ş ¶Ç´Â ±Ù·ÎÀÚ ¸íÀÇ °èÁÂ Á÷Á¢ ÀÔ±İ')}
         </table>
-        <div class="doc-note">â€» ì œì„¸ê³µê³¼ê¸ˆ(ì†Œë“ì„¸, 4ëŒ€ ë³´í—˜ë£Œ ë“±)ì€ ê´€ê³„ë²•ë ¹ì— ë”°ë¼ ê³µì œ í›„ ì§€ê¸‰í•œë‹¤.</div>
+        <div class="doc-note">¡Ø Á¦¼¼°ø°ú±İ(¼Òµæ¼¼, 4´ë º¸Çè·á µî)Àº °ü°è¹ı·É¿¡ µû¶ó °øÁ¦ ÈÄ Áö±ŞÇÑ´Ù.</div>
         <div class="doc-daily-note">
-          <strong>ğŸ“Œ ì¼ìš©ì§ ì„ê¸ˆ ì•ˆë‚´</strong><br>
-          â€¢ ì¼ê¸‰ì—¬ëŠ” ì‹¤ì œ ê·¼ë¡œì¼ìˆ˜ì— ë”°ë¼ ì§€ê¸‰í•©ë‹ˆë‹¤.<br>
-          â€¢ ì´ˆê³¼ ê·¼ë¬´ ì‹œ ê·¼ë¡œê¸°ì¤€ë²• ì œ56ì¡°ì— ë”°ë¼ í†µìƒì‹œê¸‰ì˜ 150%ë¥¼ ê°€ì‚°í•˜ì—¬ ì§€ê¸‰í•©ë‹ˆë‹¤.<br>
-          â€¢ ì•¼ê°„(22:00~06:00) ë° íœ´ì¼ ê·¼ë¡œ ì‹œ ë²•ì • ê°€ì‚°ìœ¨ì„ ì ìš©í•©ë‹ˆë‹¤.
+          <strong>?? ÀÏ¿ëÁ÷ ÀÓ±İ ¾È³»</strong><br>
+          ? ÀÏ±Ş¿©´Â ½ÇÁ¦ ±Ù·ÎÀÏ¼ö¿¡ µû¶ó Áö±ŞÇÕ´Ï´Ù.<br>
+          ? ÃÊ°ú ±Ù¹« ½Ã ±Ù·Î±âÁØ¹ı Á¦56Á¶¿¡ µû¶ó Åë»ó½Ã±ŞÀÇ 150%¸¦ °¡»êÇÏ¿© Áö±ŞÇÕ´Ï´Ù.<br>
+          ? ¾ß°£(22:00~06:00) ¹× ÈŞÀÏ ±Ù·Î ½Ã ¹ıÁ¤ °¡»êÀ²À» Àû¿ëÇÕ´Ï´Ù.
         </div>
       </div>`;
   } else {
-    // salary_start_date = contract_start í†µí•© â€” contract_start ì§ì ‘ ì°¸ì¡°
+    // salary_start_date = contract_start ÅëÇÕ ? contract_start Á÷Á¢ ÂüÁ¶
     const salaryStartDate = c.contract_start || '';
     const salaryPeriodRow = (isRegular && salaryStartDate)
-      ? row('ì—°ë´‰ì ìš© ì‹œì‘ì¼', salaryStartDate)
+      ? row('¿¬ºÀÀû¿ë ½ÃÀÛÀÏ', salaryStartDate)
       : '';
     salarySection = `
       <div class="doc-section">
         <div class="doc-section-title">__ART_SALARY__</div>
         ${isRegular && annualSal > 0 ? `
-        <p class="doc-text">â‘  "ì‚¬ìš©ì"ëŠ” "ê·¼ë¡œì"ì˜ ì„ê¸ˆì— ê´€í•˜ì—¬ ì—°ë´‰ì œë¥¼ ì›ì¹™ìœ¼ë¡œ í•˜ë©°, ì—°ë´‰ì— ê´€í•œ ì‚¬í•­ì˜ ê¸°ê°„ì€ ë‹¤ìŒê³¼ ê°™ë‹¤.</p>
+        <p class="doc-text">¨ç "»ç¿ëÀÚ"´Â "±Ù·ÎÀÚ"ÀÇ ÀÓ±İ¿¡ °üÇÏ¿© ¿¬ºÀÁ¦¸¦ ¿øÄ¢À¸·Î ÇÏ¸ç, ¿¬ºÀ¿¡ °üÇÑ »çÇ×ÀÇ ±â°£Àº ´ÙÀ½°ú °°´Ù.</p>
         <table class="info-table">
           <colgroup><col style="width:32%"><col style="width:68%"></colgroup>
-          ${row('ì—°ë´‰', '<strong>' + fmt(annualSal) + 'ì›</strong>')}
+          ${row('¿¬ºÀ', '<strong>' + fmt(annualSal) + '¿ø</strong>')}
           ${salaryPeriodRow}
         </table>
-        <p class="doc-text">â‘¡ ì›”ì§€ê¸‰ì•¡ì€ ì—…ë¬´ì˜ íŠ¹ì„±ê³¼ ê³„ì‚°ì˜ ìš©ì´ì„±ì„ ê°ì•ˆí•˜ì—¬ ë²•ì • ì œìˆ˜ë‹¹ì„ í¬í•¨í•œ í¬ê´„ì„ê¸ˆì œë„ì— ì˜í•´ ë§¤ì›” ì§€ê¸‰ë¨ì„ ì›ì¹™ìœ¼ë¡œ í•œë‹¤. ë‹¨, ìˆ˜ìŠµê¸°ê°„ì˜ ê¸‰ì—¬ëŠ” ê´€ê³„ë²•ë ¹ì— ìœ„ë°˜ë˜ì§€ ì•ŠëŠ” í•œë„(ì •ê·œì§ì€ ìµœì €ì„ê¸ˆì˜ 90%, ê³„ì•½ì§ì€ ìµœì €ì„ê¸ˆì•¡)ì—ì„œ ë³„ë„ë¡œ ì •í•  ìˆ˜ ìˆë‹¤.</p>
+        <p class="doc-text">¨è ¿ùÁö±Ş¾×Àº ¾÷¹«ÀÇ Æ¯¼º°ú °è»êÀÇ ¿ëÀÌ¼ºÀ» °¨¾ÈÇÏ¿© ¹ıÁ¤ Á¦¼ö´çÀ» Æ÷ÇÔÇÑ Æ÷°ıÀÓ±İÁ¦µµ¿¡ ÀÇÇØ ¸Å¿ù Áö±ŞµÊÀ» ¿øÄ¢À¸·Î ÇÑ´Ù. ´Ü, ¼ö½À±â°£ÀÇ ±Ş¿©´Â °ü°è¹ı·É¿¡ À§¹İµÇÁö ¾Ê´Â ÇÑµµ(Á¤±ÔÁ÷Àº ÃÖÀúÀÓ±İÀÇ 90%, °è¾àÁ÷Àº ÃÖÀúÀÓ±İ¾×)¿¡¼­ º°µµ·Î Á¤ÇÒ ¼ö ÀÖ´Ù.</p>
         ` : ''}
-        <p class="doc-text">â‘¢ ì œâ‘¤í•­ì˜ ì„ê¸ˆì§€ê¸‰ê¸°ì— ë”°ë¥¸ ê¸‰ì—¬ êµ¬ì„±ì€ ë‹¤ìŒê³¼ ê°™ë‹¤.</p>
+        <p class="doc-text">¨é Á¦¨ëÇ×ÀÇ ÀÓ±İÁö±Ş±â¿¡ µû¸¥ ±Ş¿© ±¸¼ºÀº ´ÙÀ½°ú °°´Ù.</p>
         <table class="info-table">
           <colgroup><col style="width:32%"><col style="width:68%"></colgroup>
-          ${row('ê¸°ë³¸ê¸‰', `<strong class="highlight">${fmt(baseSalary)}ì›</strong>`)}
-          ${weeklyHol > 0      ? row('ì£¼íœ´ìˆ˜ë‹¹',           `${fmt(weeklyHol)}ì›`)   : ''}
-          ${fixedOtPay > 0    ? row('ê³ ì • ì—°ì¥ê·¼ë¡œìˆ˜ë‹¹', `${fmt(fixedOtPay)}ì›`)   : ''}
-          ${fixedNightPay > 0 ? row('ê³ ì • ì•¼ê°„ê·¼ë¡œìˆ˜ë‹¹', `${fmt(fixedNightPay)}ì›`) : ''}
-          ${fixedHolPay > 0   ? row('ê³ ì • íœ´ì¼ê·¼ë¡œìˆ˜ë‹¹', `${fmt(fixedHolPay)}ì›`)   : ''}
-          ${posAllow > 0       ? row('ì§ì±…ìˆ˜ë‹¹',         `${fmt(posAllow)}ì›`)     : ''}
-          ${carAllow > 0        && isFixedType(carPayType)                              ? row('ì°¨ëŸ‰ì§€ì›ë¹„',    `${fmt(carAllow)}ì›`)        : ''}
-          ${remoteAreaAllow > 0                                                          ? row('ë²½ì§€ìˆ˜ë‹¹',     `${fmt(remoteAreaAllow)}ì›`) : ''}
-          ${mealAllow > 0       && isFixedType(mealPayType)                             ? row('ì‹ëŒ€',         `${fmt(mealAllow)}ì›`)       : ''}
-          ${researchAllow > 0   && isFixedType(researchPayType)                         ? row('ì—°êµ¬í™œë™ë¹„',   `${fmt(researchAllow)}ì›`)   : ''}
-          ${acfgShow('site',          siteAllow)                                         ? row('í˜„ì¥ìˆ˜ë‹¹',     `${fmt(siteAllow)}ì›`)       : ''}
-          ${acfgShow('skill',         skillAllow)                                        ? row('ê¸°ìˆ ìˆ˜ë‹¹',     `${fmt(skillAllow)}ì›`)      : ''}
-          ${acfgShow('license',       licenseAllow)                                      ? row('ë©´í—ˆìˆ˜ë‹¹',     `${fmt(licenseAllow)}ì›`)    : ''}
-          ${acfgShow('hazard',        hazardAllow)                                       ? row('ìœ„í—˜ìˆ˜ë‹¹',     `${fmt(hazardAllow)}ì›`)     : ''}
-          ${customOrdinaryItems.filter(it=>it&&it.amount>0).map(it=>row((it.name||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'), `${fmt(it.amount)}ì›`)).join('')}
-          ${acfgShow('communication', commAllow)    && isFixedType(commPayType)          ? row('í†µì‹ ë¹„',       `${fmt(commAllow)}ì›`)       : ''}
-          ${acfgShow('fitness',       fitnessAllow) && isFixedType(fitnessPayType)       ? row('ì²´ë ¥ì¦ì§„ë¹„',   `${fmt(fitnessAllow)}ì›`)    : ''}
-          ${acfgShow('self_dev',      selfDevAllow) && isFixedType(selfDevPayType)       ? row('ìê¸°ê³„ë°œë¹„',   `${fmt(selfDevAllow)}ì›`)    : ''}
-          ${acfgShow('book',          bookAllow)    && isFixedType(bookPayType)          ? row('ë„ì„œì§€ì›ë¹„',   `${fmt(bookAllow)}ì›`)       : ''}
-          ${acfgShow('overseas',      overseasAllow)&& isFixedType(overseasPayType)      ? row('í•´ì™¸ê·¼ë¬´ìˆ˜ë‹¹', `${fmt(overseasAllow)}ì›`)   : ''}
-          <tr class="total-row"><th>ì›” ì•½ì •ì„ê¸ˆ í•©ê³„</th><td><strong class="highlight">${fmt(monthlySal)}ì›</strong></td></tr>
-          ${hourlyWage > 0 ? row('í†µìƒì‹œê¸‰', `${fmt(hourlyWage)}ì›/ì‹œê°„`) : ''}
-          ${row('ì„ê¸ˆ ì§€ê¸‰ì¼', payDayStr)}
-          ${row('ì§€ê¸‰ ë°©ë²•', 'ê·¼ë¡œì ëª…ì˜ ê³„ì¢Œ ì§ì ‘ ì…ê¸ˆ')}
+          ${row('±âº»±Ş', `<strong class="highlight">${fmt(baseSalary)}¿ø</strong>`)}
+          ${weeklyHol > 0      ? row('ÁÖÈŞ¼ö´ç',           `${fmt(weeklyHol)}¿ø`)   : ''}
+          ${fixedOtPay > 0    ? row('°íÁ¤ ¿¬Àå±Ù·Î¼ö´ç', `${fmt(fixedOtPay)}¿ø`)   : ''}
+          ${fixedNightPay > 0 ? row('°íÁ¤ ¾ß°£±Ù·Î¼ö´ç', `${fmt(fixedNightPay)}¿ø`) : ''}
+          ${fixedHolPay > 0   ? row('°íÁ¤ ÈŞÀÏ±Ù·Î¼ö´ç', `${fmt(fixedHolPay)}¿ø`)   : ''}
+          ${posAllow > 0       ? row('Á÷Ã¥¼ö´ç',         `${fmt(posAllow)}¿ø`)     : ''}
+          ${carAllow > 0        && isFixedType(carPayType)                              ? row('Â÷·®Áö¿øºñ',    `${fmt(carAllow)}¿ø`)        : ''}
+          ${remoteAreaAllow > 0                                                          ? row('º®Áö¼ö´ç',     `${fmt(remoteAreaAllow)}¿ø`) : ''}
+          ${mealAllow > 0       && isFixedType(mealPayType)                             ? row('½Ä´ë',         `${fmt(mealAllow)}¿ø`)       : ''}
+          ${researchAllow > 0   && isFixedType(researchPayType)                         ? row('¿¬±¸È°µ¿ºñ',   `${fmt(researchAllow)}¿ø`)   : ''}
+          ${acfgShow('site',          siteAllow)                                         ? row('ÇöÀå¼ö´ç',     `${fmt(siteAllow)}¿ø`)       : ''}
+          ${acfgShow('skill',         skillAllow)                                        ? row('±â¼ú¼ö´ç',     `${fmt(skillAllow)}¿ø`)      : ''}
+          ${acfgShow('license',       licenseAllow)                                      ? row('¸éÇã¼ö´ç',     `${fmt(licenseAllow)}¿ø`)    : ''}
+          ${acfgShow('hazard',        hazardAllow)                                       ? row('À§Çè¼ö´ç',     `${fmt(hazardAllow)}¿ø`)     : ''}
+          ${customOrdinaryItems.filter(it=>it&&it.amount>0).map(it=>row((it.name||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'), `${fmt(it.amount)}¿ø`)).join('')}
+          ${acfgShow('communication', commAllow)    && isFixedType(commPayType)          ? row('Åë½Åºñ',       `${fmt(commAllow)}¿ø`)       : ''}
+          ${acfgShow('fitness',       fitnessAllow) && isFixedType(fitnessPayType)       ? row('Ã¼·ÂÁõÁøºñ',   `${fmt(fitnessAllow)}¿ø`)    : ''}
+          ${acfgShow('self_dev',      selfDevAllow) && isFixedType(selfDevPayType)       ? row('ÀÚ±â°è¹ßºñ',   `${fmt(selfDevAllow)}¿ø`)    : ''}
+          ${acfgShow('book',          bookAllow)    && isFixedType(bookPayType)          ? row('µµ¼­Áö¿øºñ',   `${fmt(bookAllow)}¿ø`)       : ''}
+          ${acfgShow('overseas',      overseasAllow)&& isFixedType(overseasPayType)      ? row('ÇØ¿Ü±Ù¹«¼ö´ç', `${fmt(overseasAllow)}¿ø`)   : ''}
+          <tr class="total-row"><th>¿ù ¾àÁ¤ÀÓ±İ ÇÕ°è</th><td><strong class="highlight">${fmt(monthlySal)}¿ø</strong></td></tr>
+          ${hourlyWage > 0 ? row('Åë»ó½Ã±Ş', `${fmt(hourlyWage)}¿ø/½Ã°£`) : ''}
+          ${row('ÀÓ±İ Áö±ŞÀÏ', payDayStr)}
+          ${row('Áö±Ş ¹æ¹ı', '±Ù·ÎÀÚ ¸íÀÇ °èÁÂ Á÷Á¢ ÀÔ±İ')}
         </table>
-        <div class="doc-note">â€» ì œì„¸ê³µê³¼ê¸ˆ(4ëŒ€ ë³´í—˜ë£Œ, ì†Œë“ì„¸ ë“±)ì€ ê´€ê³„ë²•ë ¹ì— ë”°ë¼ ê³µì œ í›„ ì§€ê¸‰í•œë‹¤.</div>
-        <p class="doc-text">â‘£ ìœ„ ê¸‰ì—¬ëŠ” ì„¸ì „ê¸ˆì•¡ìœ¼ë¡œ ë²•ì •ì„¸ê¸ˆ ë° ë³´í—˜ë£Œ(ë³¸ì¸ë¶€ë‹´ê¸ˆ)ëŠ” "ê·¼ë¡œì"ê°€ ë¶€ë‹´í•œë‹¤.</p>
-        <p class="doc-text">â‘¤ ìœ„ ê¸‰ì—¬ëŠ” ë§¤ì›” ì´ˆì¼ë¶€í„° ë§ì¼ê¹Œì§€ ê¸°ì‚°í•˜ì—¬ ë§¤ì›” 25ì¼ì— ë³¸ì¸ì˜ ê³„ì¢Œë¡œ ì…ê¸ˆí•˜ë©° ì§€ê¸‰ì¼ì´ íœ´ì¼ì¸ ê²½ìš°ëŠ” ìˆœì°¨ì ìœ¼ë¡œ ê·¸ ì „ì¼ì— ì§€ê¸‰í•¨ì„ ì›ì¹™ìœ¼ë¡œ í•œë‹¤. ë‹¤ë§Œ, ë³¸ì¸ì´ ì›í•˜ëŠ” ê²½ìš° ì§ì ‘ ì§€ê¸‰í•  ìˆ˜ ìˆë‹¤.</p>
-        <p class="doc-text">â‘¥ "ì‚¬ìš©ì"ëŠ” "ê·¼ë¡œì"ì˜ ê²°ê·¼, ì§€ê°, íœ´ì§, ê³„ì•½ë§Œë£Œì „ ê·¼ë¡œê´€ê³„ì¢…ë£Œ ê¸°íƒ€ ì‚¬ìœ ì— ì˜í•˜ì—¬ ê·¼ë¬´í•˜ì§€ ì•„ë‹ˆí•œ ê¸°ê°„ì— ëŒ€í•œ ì„ê¸ˆì„ ê°ì•¡í•˜ì—¬ ì§€ê¸‰í•  ìˆ˜ ìˆë‹¤.</p>
+        <div class="doc-note">¡Ø Á¦¼¼°ø°ú±İ(4´ë º¸Çè·á, ¼Òµæ¼¼ µî)Àº °ü°è¹ı·É¿¡ µû¶ó °øÁ¦ ÈÄ Áö±ŞÇÑ´Ù.</div>
+        <p class="doc-text">¨ê À§ ±Ş¿©´Â ¼¼Àü±İ¾×À¸·Î ¹ıÁ¤¼¼±İ ¹× º¸Çè·á(º»ÀÎºÎ´ã±İ)´Â "±Ù·ÎÀÚ"°¡ ºÎ´ãÇÑ´Ù.</p>
+        <p class="doc-text">¨ë À§ ±Ş¿©´Â ¸Å¿ù ÃÊÀÏºÎÅÍ ¸»ÀÏ±îÁö ±â»êÇÏ¿© ¸Å¿ù 25ÀÏ¿¡ º»ÀÎÀÇ °èÁÂ·Î ÀÔ±İÇÏ¸ç Áö±ŞÀÏÀÌ ÈŞÀÏÀÎ °æ¿ì´Â ¼øÂ÷ÀûÀ¸·Î ±× ÀüÀÏ¿¡ Áö±ŞÇÔÀ» ¿øÄ¢À¸·Î ÇÑ´Ù. ´Ù¸¸, º»ÀÎÀÌ ¿øÇÏ´Â °æ¿ì Á÷Á¢ Áö±ŞÇÒ ¼ö ÀÖ´Ù.</p>
+        <p class="doc-text">¨ì "»ç¿ëÀÚ"´Â "±Ù·ÎÀÚ"ÀÇ °á±Ù, Áö°¢, ÈŞÁ÷, °è¾à¸¸·áÀü ±Ù·Î°ü°èÁ¾·á ±âÅ¸ »çÀ¯¿¡ ÀÇÇÏ¿© ±Ù¹«ÇÏÁö ¾Æ´ÏÇÑ ±â°£¿¡ ´ëÇÑ ÀÓ±İÀ» °¨¾×ÇÏ¿© Áö±ŞÇÒ ¼ö ÀÖ´Ù.</p>
       </div>`;
   }
 
-  // â”€â”€ í‡´ì§ê¸‰ì—¬ ì„¹ì…˜ (ë²ˆí˜¸ëŠ” return ë¸”ë¡ì—ì„œ art() ë¡œ ë¶€ì—¬) â”€â”€
+  // ¦¡¦¡ ÅğÁ÷±Ş¿© ¼½¼Ç (¹øÈ£´Â return ºí·Ï¿¡¼­ art() ·Î ºÎ¿©) ¦¡¦¡
   const retirementSection = `
     <div class="doc-section">
       <div class="doc-section-title">__ART_RETIREMENT__</div>
-      <p class="doc-text">â‘  "ì‚¬ìš©ì"ëŠ” "ê·¼ë¡œì"ì˜ í‡´ì§ ì‹œì— ê³„ì†ê·¼ë¡œë…„ìˆ˜ 1ë…„ì— ëŒ€í•˜ì—¬ 30ì¼ë¶„ì˜ í‰ê· ì„ê¸ˆì„ í‡´ì§ê¸‰ì—¬ë¡œì„œ ì§€ê¸‰í•œë‹¤.</p>
-      <p class="doc-text">â‘¡ "ì‚¬ìš©ì"ëŠ” ê³„ì†ê·¼ë¡œë…„ìˆ˜ 1ë…„ ì´ìƒì´ ëœ "ê·¼ë¡œì"ì˜ ì‹ ì²­ì´ ìˆê³  ì£¼íƒêµ¬ì… ë“± ëŒ€í†µë ¹ë ¹ì´ ì •í•˜ëŠ” ì‚¬ìœ ì™€ ìš”ê±´ì„ ê°–ì¶˜ ê²½ìš°ì— í‡´ì§ê¸ˆì„ ì¤‘ê°„ì •ì‚° í•  ìˆ˜ ìˆë‹¤.</p>
-      <p class="doc-text">â‘¢ "ê·¼ë¡œì"ëŠ” í‡´ì§ê¸ˆ ì¤‘ê°„ì •ì‚°ì„ ì›í•˜ëŠ” ê²½ìš° ê·¸ ì‚¬ìœ ë¥¼ ëª…ì‹œí•œ í‡´ì§ê¸ˆì¤‘ê°„ì •ì‚° ì‹ ì²­ì„œì™€ ì£¼íƒêµ¬ì… ë“± ëŒ€í†µë ¹ë ¹ì´ ì •í•˜ëŠ” ì‚¬ìœ ì™€ ìš”ê±´ì„ ê°–ì¶”ì—ˆë‹¤ëŠ” ê²ƒì„ ì¦ë¹™í•  ìˆ˜ ìˆëŠ” ì„œë¥˜ë¥¼ ì œì¶œí•˜ì—¬ì•¼ í•œë‹¤.</p>
-      <p class="doc-text">â‘£ í‡´ì§ê¸‰ì—¬ëŠ” í‡´ì§í•œ ë‚  ì´í›„ ìµœì´ˆ ì„ê¸ˆì§€ê¸‰ê¸°ì¼ì— ì§€ê¸‰í•˜ê¸°ë¡œ í•˜ë©°, ì¤‘ê°„ì •ì‚°ì‹œëŠ” ì¤‘ê°„ì •ì‚° ì‹ ì²­ í›„ ë„ë˜í•˜ëŠ” ì„ê¸ˆì§€ê¸‰ ê¸°ì¼ì— ì§€ê¸‰í•˜ê¸°ë¡œ í•œë‹¤.</p>
-      <p class="doc-text">â‘¤ í‡´ì§ì—°ê¸ˆì œë„ë¥¼ ë„ì…í•  ê²½ìš° ì œâ‘ í•­~ì œâ‘¢í•­ì—ë„ ë¶ˆêµ¬í•˜ê³  í‡´ì§ê¸‰ì—¬ì™€ ê´€ë ¨ëœ ì‚¬í•­ì€ í‡´ì§ì—°ê¸ˆê·œì•½ì— ë”°ë¥¸ë‹¤.</p>
+      <p class="doc-text">¨ç "»ç¿ëÀÚ"´Â "±Ù·ÎÀÚ"ÀÇ ÅğÁ÷ ½Ã¿¡ °è¼Ó±Ù·Î³â¼ö 1³â¿¡ ´ëÇÏ¿© 30ÀÏºĞÀÇ Æò±ÕÀÓ±İÀ» ÅğÁ÷±Ş¿©·Î¼­ Áö±ŞÇÑ´Ù.</p>
+      <p class="doc-text">¨è "»ç¿ëÀÚ"´Â °è¼Ó±Ù·Î³â¼ö 1³â ÀÌ»óÀÌ µÈ "±Ù·ÎÀÚ"ÀÇ ½ÅÃ»ÀÌ ÀÖ°í ÁÖÅÃ±¸ÀÔ µî ´ëÅë·É·ÉÀÌ Á¤ÇÏ´Â »çÀ¯¿Í ¿ä°ÇÀ» °®Ãá °æ¿ì¿¡ ÅğÁ÷±İÀ» Áß°£Á¤»ê ÇÒ ¼ö ÀÖ´Ù.</p>
+      <p class="doc-text">¨é "±Ù·ÎÀÚ"´Â ÅğÁ÷±İ Áß°£Á¤»êÀ» ¿øÇÏ´Â °æ¿ì ±× »çÀ¯¸¦ ¸í½ÃÇÑ ÅğÁ÷±İÁß°£Á¤»ê ½ÅÃ»¼­¿Í ÁÖÅÃ±¸ÀÔ µî ´ëÅë·É·ÉÀÌ Á¤ÇÏ´Â »çÀ¯¿Í ¿ä°ÇÀ» °®Ãß¾ú´Ù´Â °ÍÀ» ÁõºùÇÒ ¼ö ÀÖ´Â ¼­·ù¸¦ Á¦ÃâÇÏ¿©¾ß ÇÑ´Ù.</p>
+      <p class="doc-text">¨ê ÅğÁ÷±Ş¿©´Â ÅğÁ÷ÇÑ ³¯ ÀÌÈÄ ÃÖÃÊ ÀÓ±İÁö±Ş±âÀÏ¿¡ Áö±ŞÇÏ±â·Î ÇÏ¸ç, Áß°£Á¤»ê½Ã´Â Áß°£Á¤»ê ½ÅÃ» ÈÄ µµ·¡ÇÏ´Â ÀÓ±İÁö±Ş ±âÀÏ¿¡ Áö±ŞÇÏ±â·Î ÇÑ´Ù.</p>
+      <p class="doc-text">¨ë ÅğÁ÷¿¬±İÁ¦µµ¸¦ µµÀÔÇÒ °æ¿ì Á¦¨çÇ×~Á¦¨éÇ×¿¡µµ ºÒ±¸ÇÏ°í ÅğÁ÷±Ş¿©¿Í °ü·ÃµÈ »çÇ×Àº ÅğÁ÷¿¬±İ±Ô¾à¿¡ µû¸¥´Ù.</p>
     </div>`;
 
-  // â”€â”€ í•´ê³  ë“± ì„¹ì…˜ (ë²ˆí˜¸ëŠ” return ë¸”ë¡ì—ì„œ art() ë¡œ ë¶€ì—¬) â”€â”€
+  // ¦¡¦¡ ÇØ°í µî ¼½¼Ç (¹øÈ£´Â return ºí·Ï¿¡¼­ art() ·Î ºÎ¿©) ¦¡¦¡
   const dismissalSection = `
     <div class="doc-section">
       <div class="doc-section-title">__ART_DISMISSAL__</div>
-      <p class="doc-text">â‘  í•´ê³  ë“± ì§•ê³„ëŠ” ì·¨ì—…ê·œì¹™ì— ì˜í•œë‹¤.</p>
-      <p class="doc-text">â‘¡ "ì‚¬ìš©ì"ëŠ” ìœ„â‘ ì˜ ì§•ê³„ ì‚¬ìœ ê°€ ë°œìƒí•œ ê²½ìš° ë° ì •ë‹¹í•œ ì—…ë¬´ì§€ì‹œì˜ ë²”ìœ„ë‚´ì—ì„œ "ê·¼ë¡œì"ì—ê²Œ í•´ë‹¹ì‚¬í•­ì— ëŒ€í•œ ê²½ìœ„ì„œ ì œì¶œì„ ìš”êµ¬í•  ìˆ˜ ìˆê³ , "ê·¼ë¡œì"ëŠ” íŠ¹ë³„í•œ ì‚¬ì •ì´ ì—†ëŠ” í•œ ê²½ìœ„ì„œë¥¼ ì œì¶œí•˜ì—¬ì•¼ í•œë‹¤.</p>
-      <p class="doc-text">â‘¢ ê¸°íƒ€ "ê·¼ë¡œì"ëŠ” ë³„ë„ì˜ ê·¼ë¬´ìˆ˜ì¹™ì„ ì¤€ìˆ˜í•˜ì—¬ì•¼ í•œë‹¤.</p>
+      <p class="doc-text">¨ç ÇØ°í µî Â¡°è´Â Ãë¾÷±ÔÄ¢¿¡ ÀÇÇÑ´Ù.</p>
+      <p class="doc-text">¨è "»ç¿ëÀÚ"´Â À§¨çÀÇ Â¡°è »çÀ¯°¡ ¹ß»ıÇÑ °æ¿ì ¹× Á¤´çÇÑ ¾÷¹«Áö½ÃÀÇ ¹üÀ§³»¿¡¼­ "±Ù·ÎÀÚ"¿¡°Ô ÇØ´ç»çÇ×¿¡ ´ëÇÑ °æÀ§¼­ Á¦ÃâÀ» ¿ä±¸ÇÒ ¼ö ÀÖ°í, "±Ù·ÎÀÚ"´Â Æ¯º°ÇÑ »çÁ¤ÀÌ ¾ø´Â ÇÑ °æÀ§¼­¸¦ Á¦ÃâÇÏ¿©¾ß ÇÑ´Ù.</p>
+      <p class="doc-text">¨é ±âÅ¸ "±Ù·ÎÀÚ"´Â º°µµÀÇ ±Ù¹«¼öÄ¢À» ÁØ¼öÇÏ¿©¾ß ÇÑ´Ù.</p>
     </div>`;
 
-  // â”€â”€ ìˆ˜ìŠµ ì¡°ê±´ ì„¹ì…˜ (ë²ˆí˜¸ëŠ” return ë¸”ë¡ì—ì„œ art() ë¡œ ë¶€ì—¬) â”€â”€
+  // ¦¡¦¡ ¼ö½À Á¶°Ç ¼½¼Ç (¹øÈ£´Â return ºí·Ï¿¡¼­ art() ·Î ºÎ¿©) ¦¡¦¡
   const probSection = isProb ? `
     <div class="doc-section">
       <div class="doc-section-title">__ART_PROB__</div>
       <table class="info-table">
         <colgroup><col style="width:32%"><col style="width:68%"></colgroup>
-        ${row('ìˆ˜ìŠµ ì„ê¸ˆ (ì›”)', `<strong>${fmt(probAmt)}ì›</strong> (ì•½ì •ì„ê¸ˆì˜ ${probPct}%)`)}
+        ${row('¼ö½À ÀÓ±İ (¿ù)', `<strong>${fmt(probAmt)}¿ø</strong> (¾àÁ¤ÀÓ±İÀÇ ${probPct}%)`)}
       </table>
       <div class="doc-probation-box">
-        <strong>ğŸ“‹ ìˆ˜ìŠµê¸°ê°„ ì•ˆë‚´</strong><br>
-        â€¢ ìˆ˜ìŠµê¸°ê°„ ì¤‘ ì„ê¸ˆì€ ìœ„ ê¸ˆì•¡ì„ ì ìš©í•˜ë©°, ìˆ˜ìŠµ ì¢…ë£Œ í›„ ì•½ì •ì„ê¸ˆ ì „ì•¡ì„ ì§€ê¸‰í•©ë‹ˆë‹¤.<br>
-        â€¢ ìˆ˜ìŠµê¸°ê°„ ì¤‘ ì—…ë¬´ ë¶€ì ê²© íŒì • ì‹œ ì‚¬ì—…ì£¼ëŠ” ê³„ì•½ì„ í•´ì§€í•  ìˆ˜ ìˆìŠµë‹ˆë‹¤.<br>
-        â€¢ ìˆ˜ìŠµê¸°ê°„ì€ ê·¼ì†ê¸°ê°„ì— í¬í•¨í•˜ì—¬ ì‚°ì •í•©ë‹ˆë‹¤.
+        <strong>?? ¼ö½À±â°£ ¾È³»</strong><br>
+        ? ¼ö½À±â°£ Áß ÀÓ±İÀº À§ ±İ¾×À» Àû¿ëÇÏ¸ç, ¼ö½À Á¾·á ÈÄ ¾àÁ¤ÀÓ±İ Àü¾×À» Áö±ŞÇÕ´Ï´Ù.<br>
+        ? ¼ö½À±â°£ Áß ¾÷¹« ºÎÀû°İ ÆÇÁ¤ ½Ã »ç¾÷ÁÖ´Â °è¾àÀ» ÇØÁöÇÒ ¼ö ÀÖ½À´Ï´Ù.<br>
+        ? ¼ö½À±â°£Àº ±Ù¼Ó±â°£¿¡ Æ÷ÇÔÇÏ¿© »êÁ¤ÇÕ´Ï´Ù.<br>
+        <span style="color:#b91c1c;">¡Ø ¼ö½À±â°£ 3°³¿ù ÃÊ°ú ÈÄ ÇØ°í ½Ã ±Ù·Î±âÁØ¹ı Á¦26Á¶¿¡ µû¶ó 30ÀÏ Àü ÇØ°í¿¹°í ¶Ç´Â 30ÀÏºĞ Åë»óÀÓ±İ(ÇØ°í¿¹°í¼ö´ç)À» Áö±ŞÇØ¾ß ÇÕ´Ï´Ù.</span>
       </div>
     </div>` : '';
 
-    // â”€â”€ ë™ì  ì¡°í•­ ë²ˆí˜¸ ì¹´ìš´í„° â”€â”€
-    // art(title) ì„ í˜¸ì¶œ ìˆœì„œëŒ€ë¡œ ë¶€ë¥´ë©´ ì œ1ì¡°Â·ì œ2ì¡°Â·â€¦ ê°€ ìë™ ìƒì„±ë¨
-    // ì¡°ê±´ë¶€ ì„¹ì…˜ì´ ë¹ ì ¸ë„ ë²ˆí˜¸ê°€ ìë™ìœ¼ë¡œ ë‹¹ê²¨ì§€ë¯€ë¡œ ì—°ë²ˆ ë³´ì¥
+    // ¦¡¦¡ µ¿Àû Á¶Ç× ¹øÈ£ Ä«¿îÅÍ ¦¡¦¡
+    // art(title) À» È£Ãâ ¼ø¼­´ë·Î ºÎ¸£¸é Á¦1Á¶¡¤Á¦2Á¶¡¤¡¦ °¡ ÀÚµ¿ »ı¼ºµÊ
+    // Á¶°ÇºÎ ¼½¼ÇÀÌ ºüÁ®µµ ¹øÈ£°¡ ÀÚµ¿À¸·Î ´ç°ÜÁö¹Ç·Î ¿¬¹ø º¸Àå
     let _artNo = 0;
-    const art = (title) => `ì œ${++_artNo}ì¡° ${title}`;
+    const art = (title) => `Á¦${++_artNo}Á¶ ${title}`;
 
-    // â”€â”€ ê¸°ê°„ì œ íŠ¹ë³„ ê³ ì§€ (contentë§Œ ì¿ ìš°ê³ , return ë¸”ë¡ì—ì„œ art()ë¡œ ë²ˆí˜¸ ë¶€ì—¬) â”€â”€
+    // ¦¡¦¡ ±â°£Á¦ Æ¯º° °íÁö (content¸¸ Äí¿ì°í, return ºí·Ï¿¡¼­ art()·Î ¹øÈ£ ºÎ¿©) ¦¡¦¡
     const fixedTermContent = (!isRegular && !isDaily) ? `
 
     <div class="doc-probation-box" style="background:#f5f3ff;border-color:#c4b5fd;color:#4c1d95;">
-      <strong>ğŸ“‹ ê¸°ê°„ì œë²• ì ìš© ì•ˆë‚´</strong><br>
-      â€¢ ë³¸ ê³„ì•½ì€ <strong>ê¸°ê°„ì œ ë° ë‹¨ì‹œê°„ê·¼ë¡œì ë³´í˜¸ ë“±ì— ê´€í•œ ë²•ë¥ </strong>ì˜ ì ìš©ì„ ë°›ìŠµë‹ˆë‹¤.<br>
-      â€¢ ë™ì¼ ì‚¬ì—…ì¥ì—ì„œ 2ë…„ì„ ì´ˆê³¼í•˜ì—¬ ê³„ì† ê·¼ë¬´ ì‹œ ê¸°ê°„ì˜ ì •í•¨ì´ ì—†ëŠ” ê·¼ë¡œìë¡œ ê°„ì£¼ë  ìˆ˜ ìˆìŠµë‹ˆë‹¤.<br>
-      â€¢ ê³„ì•½ê¸°ê°„ ë§Œë£Œ ì‹œ ê·¼ë¡œê´€ê³„ëŠ” ìë™ìœ¼ë¡œ ì¢…ë£Œë˜ë©°, ë³„ë„ì˜ í•´ê³  ì ˆì°¨ ì—†ì´ ì¢…ë£Œë©ë‹ˆë‹¤.
+      <strong>?? ±â°£Á¦¹ı Àû¿ë ¾È³»</strong><br>
+      ? º» °è¾àÀº <strong>±â°£Á¦ ¹× ´Ü½Ã°£±Ù·ÎÀÚ º¸È£ µî¿¡ °üÇÑ ¹ı·ü</strong>ÀÇ Àû¿ëÀ» ¹Ş½À´Ï´Ù.<br>
+      ? µ¿ÀÏ »ç¾÷Àå¿¡¼­ 2³âÀ» ÃÊ°úÇÏ¿© °è¼Ó ±Ù¹« ½Ã ±â°£ÀÇ Á¤ÇÔÀÌ ¾ø´Â ±Ù·ÎÀÚ·Î °£ÁÖµÉ ¼ö ÀÖ½À´Ï´Ù.<br>
+      ? °è¾à±â°£ ¸¸·á ½Ã ±Ù·Î°ü°è´Â ÀÚµ¿À¸·Î Á¾·áµÇ¸ç, º°µµÀÇ ÇØ°í ÀıÂ÷ ¾øÀÌ Á¾·áµË´Ï´Ù.
     </div>` : '';
 
-  // â”€â”€ ë™ì  íƒœê·¸ëª… ì‚¬ì „ ê³„ì‚° (template literal ë‚´ ë™ì  íƒœê·¸ëª… íŒ¨í„´ì€ HTML íŒŒì„œë¥¼ ì˜¤ì‘ë™ì‹œí‚´) â”€â”€
+  // ¦¡¦¡ µ¿Àû ÅÂ±×¸í »çÀü °è»ê (template literal ³» µ¿Àû ÅÂ±×¸í ÆĞÅÏÀº HTML ÆÄ¼­¸¦ ¿ÀÀÛµ¿½ÃÅ´) ¦¡¦¡
   const _hTag   = isDaily ? 'h2' : 'h1';
   const _hOpen  = '<' + _hTag + '>';
   const _hClose = '</' + _hTag + '>';
-  const titleHTML = _hOpen + (titleByType[ctType]||'ê·¼ ë¡œ ê³„ ì•½ ì„œ') + _hClose;
+  const titleHTML = _hOpen + (titleByType[ctType]||'±Ù ·Î °è ¾à ¼­') + _hClose;
 
   return `
   ${(c.status===CONTRACT_STATUS.VOIDED || c.is_voided_by_amend) ? `
   <div style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;display:flex;align-items:center;justify-content:center;opacity:0.12;">
-    <div style="font-size:80px;font-weight:900;color:#dc2626;transform:rotate(-30deg);white-space:nowrap;border:8px solid #dc2626;padding:20px 60px;border-radius:16px;">íŒŒê¸°</div>
+    <div style="font-size:80px;font-weight:900;color:#dc2626;transform:rotate(-30deg);white-space:nowrap;border:8px solid #dc2626;padding:20px 60px;border-radius:16px;">ÆÄ±â</div>
   </div>` : ''}
   ${titleHTML}
 
 
   <div class="doc-parties">
-    <p><strong>${co.company_name||'(íšŒì‚¬ëª…)'}</strong>(ì´í•˜ "ì‚¬ì—…ì£¼"ë¼ í•¨)ê³¼ <strong>${emp.name||'(ê·¼ë¡œìëª…)'}</strong>(ì´í•˜ "ê·¼ë¡œì"ë¼ í•¨)ì€ ë‹¤ìŒê³¼ ê°™ì´ ê·¼ë¡œê³„ì•½ì„ ì²´ê²°í•œë‹¤.</p>
+    <p><strong>${co.company_name||'(È¸»ç¸í)'}</strong>(ÀÌÇÏ "»ç¾÷ÁÖ"¶ó ÇÔ)°ú <strong>${emp.name||'(±Ù·ÎÀÚ¸í)'}</strong>(ÀÌÇÏ "±Ù·ÎÀÚ"¶ó ÇÔ)Àº ´ÙÀ½°ú °°ÀÌ ±Ù·Î°è¾àÀ» Ã¼°áÇÑ´Ù.</p>
   </div>
 
   <div class="doc-section">
-    <div class="doc-section-title">â—¼ ì‚¬ì—…ì£¼ ì •ë³´</div>
+    <div class="doc-section-title">? »ç¾÷ÁÖ Á¤º¸</div>
     <table class="info-table">
       <colgroup><col style="width:32%"><col style="width:68%"></colgroup>
-      ${row('ìƒí˜¸(ì‚¬ì—…ì¥ëª…)', co.company_name)}
-      ${row('ì‚¬ì—…ìë“±ë¡ë²ˆí˜¸', co.business_number)}
-      ${row('ì†Œì¬ì§€(ì£¼ì†Œ)',   co.address)}
-      ${row('ëŒ€í‘œì(ì‚¬ìš©ì)', getCompanyRepName(co))}
-      ${row('ëŒ€í‘œ ì—°ë½ì²˜',   co.phone)}
+      ${row('»óÈ£(»ç¾÷Àå¸í)', co.company_name)}
+      ${row('»ç¾÷ÀÚµî·Ï¹øÈ£', co.business_number)}
+      ${row('¼ÒÀçÁö(ÁÖ¼Ò)',   co.address)}
+      ${row('´ëÇ¥ÀÚ(»ç¿ëÀÚ)', getCompanyRepName(co))}
+      ${row('´ëÇ¥ ¿¬¶ôÃ³',   co.phone)}
     </table>
   </div>
 
   <div class="doc-section">
-    <div class="doc-section-title">â—¼ ê·¼ë¡œì ì •ë³´</div>
+    <div class="doc-section-title">? ±Ù·ÎÀÚ Á¤º¸</div>
     <table class="info-table">
       <colgroup><col style="width:32%"><col style="width:68%"></colgroup>
-      ${row('ì„±ëª…', emp.name)}
-      ${row('ì£¼ë¯¼ë“±ë¡ë²ˆí˜¸(ì™¸êµ­ì¸ë²ˆí˜¸)', maskedId)}
-      ${row('ì…ì‚¬ì¼', hireDateStr)}
-      ${row('ì£¼ì†Œ', emp.address)}
-      ${row('ì—°ë½ì²˜', emp.phone)}
+      ${row('¼º¸í', emp.name)}
+      ${row('ÁÖ¹Îµî·Ï¹øÈ£(¿Ü±¹ÀÎ¹øÈ£)', maskedId)}
+      ${row('ÀÔ»çÀÏ', hireDateStr)}
+      ${row('ÁÖ¼Ò', emp.address)}
+      ${row('¿¬¶ôÃ³', emp.phone)}
     </table>
   </div>
 
   <div class="doc-section">
-    <div class="doc-section-title">${art('(ì˜ë¬´)')}</div>
+    <div class="doc-section-title">${art('(ÀÇ¹«)')}</div>
     <p class="doc-text" style="padding:6px 0;">
-      "ê·¼ë¡œì"ëŠ” ë‹¹ì‚¬ì— ì±„ìš©ë¨ì— ë”°ë¼ ìƒí˜¸ ì‹ ë¢°ë¥¼ ë°”íƒ•ìœ¼ë¡œ ê·¼ë¡œê³„ì•½ì„ ì²´ê²°í•˜ë©° ë‹¹ì‚¬ì˜ ìš´ì˜ê·œì •ì„ ì¤€ìˆ˜í•˜ê³  ì„±ì‹¤íˆ ì—…ë¬´ë¥¼ ìˆ˜í–‰í•  ì˜ë¬´ë¥¼ ì§„ë‹¤.
+      "±Ù·ÎÀÚ"´Â ´ç»ç¿¡ Ã¤¿ëµÊ¿¡ µû¶ó »óÈ£ ½Å·Ú¸¦ ¹ÙÅÁÀ¸·Î ±Ù·Î°è¾àÀ» Ã¼°áÇÏ¸ç ´ç»çÀÇ ¿î¿µ±ÔÁ¤À» ÁØ¼öÇÏ°í ¼º½ÇÈ÷ ¾÷¹«¸¦ ¼öÇàÇÒ ÀÇ¹«¸¦ Áø´Ù.
     </p>
   </div>
 
   <div class="doc-section">
-    <div class="doc-section-title">${art('(ê·¼ë¬´ì¥ì†Œ ë° ì—…ë¬´ë‚´ìš©)')}</div>
+    <div class="doc-section-title">${art('(±Ù¹«Àå¼Ò ¹× ¾÷¹«³»¿ë)')}</div>
     <p class="doc-text" style="padding:4px 0 4px;">
-      â‘  "ê·¼ë¡œì"ëŠ” ì•„ë˜ì˜ ê·¼ë¬´ì¥ì†Œì—ì„œ ê·¼ë¬´í•¨ì„ ì›ì¹™ìœ¼ë¡œ í•œë‹¤. ë‹¤ë§Œ, "ì‚¬ìš©ì"ëŠ” ì—…ë¬´ìƒ í•„ìš”í•œ ê²½ìš° "ê·¼ë¡œì"ì˜ ê·¼ë¬´ì¥ì†Œë¥¼ ë³€ê²½í•  ìˆ˜ ìˆë‹¤.
+      ¨ç "±Ù·ÎÀÚ"´Â ¾Æ·¡ÀÇ ±Ù¹«Àå¼Ò¿¡¼­ ±Ù¹«ÇÔÀ» ¿øÄ¢À¸·Î ÇÑ´Ù. ´Ù¸¸, "»ç¿ëÀÚ"´Â ¾÷¹«»ó ÇÊ¿äÇÑ °æ¿ì "±Ù·ÎÀÚ"ÀÇ ±Ù¹«Àå¼Ò¸¦ º¯°æÇÒ ¼ö ÀÖ´Ù.
     </p>
     <p class="doc-text" style="padding:4px 0 8px;">
-      â‘¡ "ê·¼ë¡œì"ì˜ ë‹´ë‹¹ì—…ë¬´ëŠ” ì•„ë˜ì™€ ê°™ìœ¼ë©°, ê·¸ ì™¸ "ì‚¬ìš©ì"ê°€ ì§€ì‹œí•˜ëŠ” ì—…ë¬´ ë° "ì‚¬ìš©ì"ê°€ ë³„ë„ë¡œ ë¶€ì—¬í•œ ì—…ë¬´ë¥¼ ìˆ˜í–‰í•œë‹¤. ë‹¤ë§Œ, "ì‚¬ìš©ì"ëŠ” ì—…ë¬´ìƒ í•„ìš”í•œ ê²½ìš° "ê·¼ë¡œì"ì˜ ë‹´ë‹¹ì—…ë¬´ë¥¼ ë³€ê²½í•  ìˆ˜ ìˆë‹¤.
+      ¨è "±Ù·ÎÀÚ"ÀÇ ´ã´ç¾÷¹«´Â ¾Æ·¡¿Í °°À¸¸ç, ±× ¿Ü "»ç¿ëÀÚ"°¡ Áö½ÃÇÏ´Â ¾÷¹« ¹× "»ç¿ëÀÚ"°¡ º°µµ·Î ºÎ¿©ÇÑ ¾÷¹«¸¦ ¼öÇàÇÑ´Ù. ´Ù¸¸, "»ç¿ëÀÚ"´Â ¾÷¹«»ó ÇÊ¿äÇÑ °æ¿ì "±Ù·ÎÀÚ"ÀÇ ´ã´ç¾÷¹«¸¦ º¯°æÇÒ ¼ö ÀÖ´Ù.
     </p>
     <table class="info-table">
       <colgroup><col style="width:32%"><col style="width:68%"></colgroup>
-      ${row('ê·¼ë¬´ ì¥ì†Œ', co.address || co.company_name)}
-      ${row('ë‹´ë‹¹ ì—…ë¬´', emp.job_description || 'íšŒì‚¬ê°€ ì§€ì •í•˜ëŠ” ì—…ë¬´')}
-      ${emp.department ? row('ë¶€ì„œ', emp.department) : ''}
-      ${emp.position   ? row('ì§ì±…/ì§ìœ„', emp.position) : ''}
+      ${row('±Ù¹« Àå¼Ò', co.address || co.company_name)}
+      ${row('´ã´ç ¾÷¹«', emp.job_description || 'È¸»ç°¡ ÁöÁ¤ÇÏ´Â ¾÷¹«')}
+      ${emp.department ? row('ºÎ¼­', emp.department) : ''}
+      ${emp.position   ? row('Á÷Ã¥/Á÷À§', emp.position) : ''}
     </table>
   </div>
 
   <div class="doc-section">
-    <div class="doc-section-title">${art('(ê³„ì•½ê¸°ê°„ ë° ê·¼ë¬´ì‹œê°„)')}</div>
+    <div class="doc-section-title">${art('(°è¾à±â°£ ¹× ±Ù¹«½Ã°£)')}</div>
     <table class="info-table">
       <colgroup><col style="width:32%"><col style="width:68%"></colgroup>
-      ${row('ê³„ì•½ê¸°ê°„', contractPeriod)}
-      ${row('ê³ ìš©í˜•íƒœ', `<span class="badge ${empCatBadge(_ctTypeRaw)}">${ctType}</span>`)}
-      ${isProb ? row('ìˆ˜ìŠµê¸°ê°„', `${probStartKr} ~ ${probEndDate} (${probMonths}ê°œì›”)`) : ''}
+      ${row('°è¾à±â°£', contractPeriod)}
+      ${row('°í¿ëÇüÅÂ', `<span class="badge ${empCatBadge(_ctTypeRaw)}">${ctType}</span>`)}
+      ${isProb ? row('¼ö½À±â°£', `${probStartKr} ~ ${probEndDate} (${probMonths}°³¿ù)`) : ''}
     </table>
     <p class="doc-text" style="padding:8px 0 4px;">
-      â‘  ê³„ì•½ì˜ ê°±ì‹ ì€ ê³„ì•½ê¸°ê°„ ë§Œë£Œ 1ê°œì›” ì „ í˜‘ì˜í•˜ëŠ” ê²ƒìœ¼ë¡œ í•˜ë©°, ë§Œë£Œ ì „ê¹Œì§€ ë‹¹ì‚¬ìê°„ ë³„ë„ì˜ ì˜ì‚¬í‘œì‹œ ë˜ëŠ” í˜‘ì˜ê°€ ì—†ëŠ” ê²½ìš° ê³ ìš©ê¸°ê°„ì´ ì¢…ë£Œë˜ëŠ” ê²ƒìœ¼ë¡œ í•œë‹¤.
+      ¨ç °è¾àÀÇ °»½ÅÀº °è¾à±â°£ ¸¸·á 1°³¿ù Àü ÇùÀÇÇÏ´Â °ÍÀ¸·Î ÇÏ¸ç, ¸¸·á Àü±îÁö ´ç»çÀÚ°£ º°µµÀÇ ÀÇ»çÇ¥½Ã ¶Ç´Â ÇùÀÇ°¡ ¾ø´Â °æ¿ì °í¿ë±â°£ÀÌ Á¾·áµÇ´Â °ÍÀ¸·Î ÇÑ´Ù.
     </p>
     <p class="doc-text" style="padding:4px 0 4px;">
-      â‘¡ ì •ê·œ ê·¼ë¡œì‹œê°„ì€ ì£¼ 40ì‹œê°„ì œë¥¼ ì›ì¹™ìœ¼ë¡œ í•˜ë©°, ê·¼ë¬´ì‹œê°„ì€ ë‹¤ìŒê³¼ ê°™ë‹¤.
+      ¨è Á¤±Ô ±Ù·Î½Ã°£Àº ÁÖ 40½Ã°£Á¦¸¦ ¿øÄ¢À¸·Î ÇÏ¸ç, ±Ù¹«½Ã°£Àº ´ÙÀ½°ú °°´Ù.
     </p>
     ${buildScheduleTableHTML(activeDays)}
     <p class="doc-text" style="padding:8px 0 4px;">
-      â‘¢ ì œâ‘¡í•­ì— ëª…ì‹œëœ ì‹œê°„ ì™¸ì— "ì‚¬ìš©ì"ëŠ” "ê·¼ë¡œì"ì—ê²Œ ì—…ë¬´ìƒì˜ í•„ìš”ì— ì˜í•˜ì—¬ ì—°ì¥ê·¼ë¬´, ì•¼ê°„ê·¼ë¬´ ë° íœ´ì¼ê·¼ë¬´ë¥¼ ëª…í•  ìˆ˜ ìˆìœ¼ë©° "ê·¼ë¡œì"ëŠ” ì´ì— í¬ê´„ì ìœ¼ë¡œ í•©ì˜í•œ ê²ƒìœ¼ë¡œ ë³¸ë‹¤.
+      ¨é Á¦¨èÇ×¿¡ ¸í½ÃµÈ ½Ã°£ ¿Ü¿¡ "»ç¿ëÀÚ"´Â "±Ù·ÎÀÚ"¿¡°Ô ¾÷¹«»óÀÇ ÇÊ¿ä¿¡ ÀÇÇÏ¿© ¿¬Àå±Ù¹«, ¾ß°£±Ù¹« ¹× ÈŞÀÏ±Ù¹«¸¦ ¸íÇÒ ¼ö ÀÖÀ¸¸ç "±Ù·ÎÀÚ"´Â ÀÌ¿¡ Æ÷°ıÀûÀ¸·Î ÇÕÀÇÇÑ °ÍÀ¸·Î º»´Ù.
     </p>
     <p class="doc-text" style="padding:4px 0 4px;">
-      â‘£ "ê·¼ë¡œì"ëŠ” ì—…ë¬´ìƒ ì—°ì¥, ì•¼ê°„ ë° íœ´ì¼ ê·¼ë¡œê°€ í•„ìš”í•œ ê²½ìš° "ì‚¬ìš©ì"ì—ê²Œ ì—°ì¥ê·¼ë¡œì‹ ì²­ì„œ ë“±ì„ ì œì¶œí•˜ì—¬ ì‚¬ì „ ìŠ¹ì¸ì„ ë°›ì•„ì•¼ í•œë‹¤. ì‚¬ì „ ìŠ¹ì¸ ì—†ëŠ” ì„ì˜ì˜ ì—°ì¥ ë“±ì€ ì¸ì •í•˜ì§€ ì•„ë‹ˆí•  ìˆ˜ ìˆë‹¤.
+      ¨ê "±Ù·ÎÀÚ"´Â ¾÷¹«»ó ¿¬Àå, ¾ß°£ ¹× ÈŞÀÏ ±Ù·Î°¡ ÇÊ¿äÇÑ °æ¿ì "»ç¿ëÀÚ"¿¡°Ô ¿¬Àå±Ù·Î½ÅÃ»¼­ µîÀ» Á¦ÃâÇÏ¿© »çÀü ½ÂÀÎÀ» ¹Ş¾Æ¾ß ÇÑ´Ù. »çÀü ½ÂÀÎ ¾ø´Â ÀÓÀÇÀÇ ¿¬Àå µîÀº ÀÎÁ¤ÇÏÁö ¾Æ´ÏÇÒ ¼ö ÀÖ´Ù.
     </p>
   </div>
 
   ${!isDaily ? `
   <div class="doc-section">
-    <div class="doc-section-title">${art('(ì—°ì°¨íœ´ê°€)')}</div>
-    <p class="doc-text">ì—°ì°¨ìœ ê¸‰íœ´ê°€ëŠ” ë‹¨ì²´í˜‘ì•½, ì·¨ì—…ê·œì¹™ ë° ê·¼ë¡œê¸°ì¤€ë²•ì´ ì •í•˜ëŠ” ë°”ì— ë”°ë¼ ë¶€ì—¬í•œë‹¤.</p>
+    <div class="doc-section-title">${art('(¿¬Â÷ÈŞ°¡)')}</div>
+    <p class="doc-text">¿¬Â÷À¯±ŞÈŞ°¡´Â ´ÜÃ¼Çù¾à, Ãë¾÷±ÔÄ¢ ¹× ±Ù·Î±âÁØ¹ıÀÌ Á¤ÇÏ´Â ¹Ù¿¡ µû¶ó ºÎ¿©ÇÑ´Ù.</p>
   </div>
   <div class="doc-section">
-    <div class="doc-section-title">${art('(íœ´ì¼)')}</div>
-    <p class="doc-text" style="padding:4px 0 4px;">â‘  "ì‚¬ìš©ì"ëŠ” 1ì£¼ì¼ì— ì†Œì •ê·¼ë¡œì¼ìˆ˜ë¥¼ ê°œê·¼í•œ ê²½ìš° ì£¼íœ´ì¼ì„ ë¶€ì—¬í•œë‹¤.</p>
-    <p class="doc-text" style="padding:4px 0 4px;">â‘¡ ì£¼íœ´ì¼ê³¼ ê·¼ë¡œìì˜ ë‚ (5ì›” 1ì¼)ì€ ìœ ê¸‰íœ´ì¼ë¡œ, í† ìš”ì¼ì€ ë¬´ê¸‰íœ´ì¼ë¡œ í•œë‹¤. ë‹¨, íœ´ì¼ì´ ì¤‘ë³µë˜ëŠ” ê²½ìš° 1ì¼ì˜ íœ´ì¼ë¡œ ì²˜ë¦¬í•œë‹¤.</p>
-    <p class="doc-text" style="padding:4px 0 4px;">â‘¢ ê¸°íƒ€ íœ´ì¼ì— ê´€í•œ ì‚¬í•­ì€ "ê³µíœ´ì¼ì— ê´€í•œ ë²•ë¥ "ì— ë”°ë¥¸ë‹¤.</p>
+    <div class="doc-section-title">${art('(ÈŞÀÏ)')}</div>
+    <p class="doc-text" style="padding:4px 0 4px;">¨ç "»ç¿ëÀÚ"´Â 1ÁÖÀÏ¿¡ ¼ÒÁ¤±Ù·ÎÀÏ¼ö¸¦ °³±ÙÇÑ °æ¿ì ÁÖÈŞÀÏÀ» ºÎ¿©ÇÑ´Ù.</p>
+    <p class="doc-text" style="padding:4px 0 4px;">¨è ÁÖÈŞÀÏ°ú ±Ù·ÎÀÚÀÇ ³¯(5¿ù 1ÀÏ)Àº À¯±ŞÈŞÀÏ·Î, Åä¿äÀÏÀº ¹«±ŞÈŞÀÏ·Î ÇÑ´Ù. ´Ü, ÈŞÀÏÀÌ Áßº¹µÇ´Â °æ¿ì 1ÀÏÀÇ ÈŞÀÏ·Î Ã³¸®ÇÑ´Ù.</p>
+    <p class="doc-text" style="padding:4px 0 4px;">¨é ±âÅ¸ ÈŞÀÏ¿¡ °üÇÑ »çÇ×Àº "°øÈŞÀÏ¿¡ °üÇÑ ¹ı·ü"¿¡ µû¸¥´Ù.</p>
   </div>` : ''}
-  ${salarySection.replace('__ART_SALARY__', art('(ì„ê¸ˆ)'))}
-  ${retirementSection.replace('__ART_RETIREMENT__', art('(í‡´ì§ê¸‰ì—¬)'))}
-  ${dismissalSection.replace('__ART_DISMISSAL__', art('(í•´ê³  ë“±)'))}
+  ${salarySection.replace('__ART_SALARY__', art('(ÀÓ±İ)'))}
+  ${retirementSection.replace('__ART_RETIREMENT__', art('(ÅğÁ÷±Ş¿©)'))}
+  ${dismissalSection.replace('__ART_DISMISSAL__', art('(ÇØ°í µî)'))}
   ${fixedTermContent ? `
   <div class="doc-section" style="border-left-color:#7c3aed;">
-    <div class="doc-section-title" style="color:#6d28d9;">${art('(ê¸°ê°„ì œ ê·¼ë¡œì ê³ ì§€ì‚¬í•­)')}</div>
+    <div class="doc-section-title" style="color:#6d28d9;">${art('(±â°£Á¦ ±Ù·ÎÀÚ °íÁö»çÇ×)')}</div>
     ${fixedTermContent}
   </div>` : ''}
 
   <div class="doc-section">
-    <div class="doc-section-title">${art('(ê·¼ë¡œê³„ì•½ì„œ êµë¶€)')}</div>
-    <p class="doc-text">"ì‚¬ìš©ì"ëŠ” ê·¼ë¡œê³„ì•½ì„ ì²´ê²°í•¨ê³¼ ë™ì‹œì— ë³¸ ê³„ì•½ì„œë¥¼ ì‚¬ë³¸í•˜ì—¬ "ê·¼ë¡œì"ì˜ êµë¶€ìš”êµ¬ì™€ ê´€ê³„ì—†ì´ "ê·¼ë¡œì"ì—ê²Œ êµë¶€í•œë‹¤.</p>
+    <div class="doc-section-title">${art('(±Ù·Î°è¾à¼­ ±³ºÎ)')}</div>
+    <p class="doc-text">"»ç¿ëÀÚ"´Â ±Ù·Î°è¾àÀ» Ã¼°áÇÔ°ú µ¿½Ã¿¡ º» °è¾à¼­¸¦ »çº»ÇÏ¿© "±Ù·ÎÀÚ"ÀÇ ±³ºÎ¿ä±¸¿Í °ü°è¾øÀÌ "±Ù·ÎÀÚ"¿¡°Ô ±³ºÎÇÑ´Ù.</p>
   </div>
 
   <div class="doc-section">
-    <div class="doc-section-title">${art('(ë¹„ë°€ìœ ì§€ ë° ì—…ë¬´ì˜ ì¸ìˆ˜Â·ì¸ê³„)')}</div>
-    <p class="doc-text">â‘  "ê·¼ë¡œì"ëŠ” ë™ì˜í•œ ì—°ë´‰ì— ê´€í•œ ë¹„ë°€ì„ ëˆ„ì„¤í•˜ì§€ ì•„ë‹ˆí•œë‹¤.</p>
-    <p class="doc-text">â‘¡ "ê·¼ë¡œì"ëŠ” ê·¼ë¡œê¸°ê°„ ì¤‘ ì§€ë“í•œ "ì‚¬ìš©ì"ì˜ ì—…ë¬´ì— ê´€í•œ ì‚¬í•­ ë° ì—…ë¬´ì™¸ ì£¼ìš”ì‚¬í•­ì— ëŒ€í•˜ì—¬ ê·¸ ê²½ì¤‘ì„ ë§‰ë¡ í•˜ê³  ëˆ„ì„¤í•˜ì§€ ì•„ë‹ˆí•œë‹¤. ê·¼ë¡œê¸°ê°„ì´ ì¢…ë£Œëœ ì´í›„ì—ë„ ë˜í•œ ê°™ë‹¤.</p>
-    <p class="doc-text">â‘¢ "ê·¼ë¡œì"ëŠ” í‡´ì§ì‹œ í‡´ì§ì¼ë¡œë¶€í„° 30ì¼ ì´ì „ì— "ì‚¬ìš©ì"ì—ê²Œ ê·¸ ì‚¬ì‹¤ì„ ê³ ì§€í•˜ê³  ì—…ë¬´ ì¸ìˆ˜Â·ì¸ê³„ì— í˜‘ì¡°í•œë‹¤.</p>
-    <p class="doc-text">â‘£ "ì‚¬ìš©ì"ëŠ” "ê·¼ë¡œì"ê°€ ìœ„ ì œâ‘ í•­ ë˜ëŠ” ì œâ‘¡í•­ì„ ìœ„ë°˜í•˜ì˜€ì„ ê²½ìš° ì§•ê³„ ë° ë¯¼âˆ™í˜•ì‚¬ìƒì˜ ì¡°ì¹˜ë¥¼ ì·¨í•  ìˆ˜ ìˆë‹¤. ì´ì— ëŒ€í•´ "ê·¼ë¡œì"ëŠ” ë™ì˜í•œ ê²ƒìœ¼ë¡œ ë³¸ë‹¤.</p>
+    <div class="doc-section-title">${art('(ºñ¹ĞÀ¯Áö ¹× ¾÷¹«ÀÇ ÀÎ¼ö¡¤ÀÎ°è)')}</div>
+    <p class="doc-text">¨ç "±Ù·ÎÀÚ"´Â µ¿ÀÇÇÑ ¿¬ºÀ¿¡ °üÇÑ ºñ¹ĞÀ» ´©¼³ÇÏÁö ¾Æ´ÏÇÑ´Ù.</p>
+    <p class="doc-text">¨è "±Ù·ÎÀÚ"´Â ±Ù·Î±â°£ Áß ÁöµæÇÑ "»ç¿ëÀÚ"ÀÇ ¾÷¹«¿¡ °üÇÑ »çÇ× ¹× ¾÷¹«¿Ü ÁÖ¿ä»çÇ×¿¡ ´ëÇÏ¿© ±× °æÁßÀ» ¸··ĞÇÏ°í ´©¼³ÇÏÁö ¾Æ´ÏÇÑ´Ù. ±Ù·Î±â°£ÀÌ Á¾·áµÈ ÀÌÈÄ¿¡µµ ¶ÇÇÑ °°´Ù.</p>
+    <p class="doc-text">¨é "±Ù·ÎÀÚ"´Â ÅğÁ÷½Ã ÅğÁ÷ÀÏ·ÎºÎÅÍ 30ÀÏ ÀÌÀü¿¡ "»ç¿ëÀÚ"¿¡°Ô ±× »ç½ÇÀ» °íÁöÇÏ°í ¾÷¹« ÀÎ¼ö¡¤ÀÎ°è¿¡ ÇùÁ¶ÇÑ´Ù.</p>
+    <p class="doc-text">¨ê "»ç¿ëÀÚ"´Â "±Ù·ÎÀÚ"°¡ À§ Á¦¨çÇ× ¶Ç´Â Á¦¨èÇ×À» À§¹İÇÏ¿´À» °æ¿ì Â¡°è ¹× ¹Î?Çü»ç»óÀÇ Á¶Ä¡¸¦ ÃëÇÒ ¼ö ÀÖ´Ù. ÀÌ¿¡ ´ëÇØ "±Ù·ÎÀÚ"´Â µ¿ÀÇÇÑ °ÍÀ¸·Î º»´Ù.</p>
   </div>
 
   <div class="doc-section">
-    <div class="doc-section-title">${art('(ê¸°íƒ€)')}</div>
-    <p class="doc-text">ê¸°íƒ€ ë³¸ ê³„ì•½ì„œìƒ ëª…ì‹œë˜ì§€ ì•Šì€ ì‚¬í•­ì€ ë‹¹ì‚¬ì˜ ë‹¨ì²´í˜‘ì•½, ì·¨ì—…ê·œì¹™, ê·¼ë¡œê¸°ì¤€ë²• ë° ê´€ê³„ë²•ë ¹ì—ì„œ ì •í•˜ëŠ” ë°”ì— ë”°ë¥¸ë‹¤.</p>
-    ${c.note ? `<p class="doc-text" style="margin-top:8px;"><strong>ã€íŠ¹ì´ì‚¬í•­ã€‘</strong> ${c.note}</p>` : ''}
+    <div class="doc-section-title">${art('(±âÅ¸)')}</div>
+    <p class="doc-text">±âÅ¸ º» °è¾à¼­»ó ¸í½ÃµÇÁö ¾ÊÀº »çÇ×Àº ´ç»çÀÇ ´ÜÃ¼Çù¾à, Ãë¾÷±ÔÄ¢, ±Ù·Î±âÁØ¹ı ¹× °ü°è¹ı·É¿¡¼­ Á¤ÇÏ´Â ¹Ù¿¡ µû¸¥´Ù.</p>
+    ${c.note ? `<p class="doc-text" style="margin-top:8px;"><strong>¡¼Æ¯ÀÌ»çÇ×¡½</strong> ${c.note}</p>` : ''}
   </div>
 
-  ${isProb ? probSection.replace('__ART_PROB__', art('(ìˆ˜ìŠµê¸°ê°„ ë° ìˆ˜ìŠµì„ê¸ˆì— ê´€í•œ íŠ¹ì•½)')) : ''}
+  ${isProb ? probSection.replace('__ART_PROB__', art('(¼ö½À±â°£ ¹× ¼ö½ÀÀÓ±İ¿¡ °üÇÑ Æ¯¾à)')) : ''}
 
   <div class="doc-sign-date">
-    ìœ„ì™€ ê°™ì´ ê·¼ë¡œê³„ì•½ì„ ì²´ê²°í•˜ê³  ì„œëª…ë‚ ì¸í•œë‹¤.<br>
+    À§¿Í °°ÀÌ ±Ù·Î°è¾àÀ» Ã¼°áÇÏ°í ¼­¸í³¯ÀÎÇÑ´Ù.<br>
     <strong>${contractDateKr}</strong>
   </div>
 
   <div class="doc-sign">
     <div class="doc-sign-box">
-      <div class="sign-title">ì‚¬ì—…ì£¼ (ì‚¬ìš©ì)</div>
+      <div class="sign-title">»ç¾÷ÁÖ (»ç¿ëÀÚ)</div>
       <table class="sign-info-table">
-        <tr><th>ìƒí˜¸</th><td>${co.company_name||''}</td></tr>
-        <tr><th>ì£¼ì†Œ</th><td>${co.address||''}</td></tr>
-        <tr><th>ëŒ€í‘œì</th><td>${getCompanyRepName(co)}</td></tr>
+        <tr><th>»óÈ£</th><td>${co.company_name||''}</td></tr>
+        <tr><th>ÁÖ¼Ò</th><td>${co.address||''}</td></tr>
+        <tr><th>´ëÇ¥ÀÚ</th><td>${getCompanyRepName(co)}</td></tr>
       </table>
       <div class="sign-stamp-area">
         <div class="sign-stamp"></div>
-        <div class="sign-label">(ì„œëª… ë˜ëŠ” ë‚ ì¸)</div>
+        <div class="sign-label">(¼­¸í ¶Ç´Â ³¯ÀÎ)</div>
       </div>
     </div>
     <div class="doc-sign-box">
-      <div class="sign-title">ê·¼ë¡œì</div>
+      <div class="sign-title">±Ù·ÎÀÚ</div>
       <table class="sign-info-table">
-        <tr><th>ì„±ëª…</th><td>${emp.name||''}</td></tr>
-        <tr><th>ì£¼ì†Œ</th><td>${emp.address||''}</td></tr>
-        <tr><th>ì—°ë½ì²˜</th><td>${emp.phone||''}</td></tr>
+        <tr><th>¼º¸í</th><td>${emp.name||''}</td></tr>
+        <tr><th>ÁÖ¼Ò</th><td>${emp.address||''}</td></tr>
+        <tr><th>¿¬¶ôÃ³</th><td>${emp.phone||''}</td></tr>
       </table>
       <div class="sign-stamp-area">
         <div class="sign-stamp"></div>
-        <div class="sign-label">(ì„œëª… ë˜ëŠ” ë‚ ì¸)</div>
+        <div class="sign-label">(¼­¸í ¶Ç´Â ³¯ÀÎ)</div>
       </div>
     </div>
   </div>
   `;
 }
 
-// â”€â”€â”€ í†µí•© ë°°ë„ˆ ì´ˆê¸°í™” í—¬í¼ â”€â”€â”€
+// ¦¡¦¡¦¡ ÅëÇÕ ¹è³Ê ÃÊ±âÈ­ ÇïÆÛ ¦¡¦¡¦¡
 function _resetStatusBanner(){
   const sbEl = document.getElementById('ct-status-banner');
   if(sbEl) sbEl.style.display = 'none';
@@ -743,36 +744,34 @@ function _resetStatusBanner(){
   if(btnDestroy) btnDestroy.style.display = 'inline-flex';
 }
 
-// â”€â”€â”€ ì˜ˆì • ê³„ì•½ ìˆ˜ì • ëª¨ë“œ ì§„ì… (í•´ì§€ì˜ˆì • / ê³„ì•½ì˜ˆì • / ê°±ì‹ ì˜ˆì • ê³µìš©) â”€â”€â”€
+// ¦¡¦¡¦¡ ¿¹Á¤ °è¾à ¼öÁ¤ ¸ğµå ÁøÀÔ (ÇØÁö¿¹Á¤ / °è¾à¿¹Á¤ / °»½Å¿¹Á¤ °ø¿ë) ¦¡¦¡¦¡
 function editPendingContract(){
   const modalEl = document.querySelector('#contract-modal .modal');
   const bodyEl  = modalEl?.querySelector('.modal-body');
   if(!bodyEl) return;
 
-  // readonly í•´ì œ ë° ì…ë ¥ í™œì„±í™”
+  // readonly ÇØÁ¦ ¹× ÀÔ·Â È°¼ºÈ­
   modalEl.classList.remove('ct-readonly');
   bodyEl.querySelectorAll('input,select,textarea').forEach(el=>{
     el.disabled = false;
-    el.style.background = '';
-    el.style.color = '';
-    el.style.cursor = '';
+    el.classList.remove('ct-input-locked','ct-input-locked-dark');
   });
 
-  // ë°°ë„ˆ ë²„íŠ¼ ì „í™˜: [ìˆ˜ì • ë° ì¬ë°œí–‰] [íŒŒê¸°] â†’ [ìˆ˜ì • ë° ì¬ë°œí–‰ ì™„ë£Œ] [ì·¨ì†Œ]
+  // ¹è³Ê ¹öÆ° ÀüÈ¯: [¼öÁ¤ ¹× Àç¹ßÇà] [ÆÄ±â] ¡æ [¼öÁ¤ ¹× Àç¹ßÇà ¿Ï·á] [Ãë¼Ò]
   document.getElementById('ct-sb-btn-edit').style.display    = 'none';
   document.getElementById('ct-sb-btn-save').style.display    = 'inline-flex';
   document.getElementById('ct-sb-btn-cancel').style.display  = 'inline-flex';
   document.getElementById('ct-sb-btn-destroy').style.display = 'none';
 
-  // ìƒë‹¨/í•˜ë‹¨ ì•¡ì…˜ ë°” ë²„íŠ¼ ìˆ¨ê¹€ (ìˆ˜ì • ì¤‘ í˜¼ë™ ë°©ì§€)
+  // »ó´Ü/ÇÏ´Ü ¾×¼Ç ¹Ù ¹öÆ° ¼û±è (¼öÁ¤ Áß È¥µ¿ ¹æÁö)
   ['ct-btn-renew','ct-btn-renew2','ct-btn-void','ct-btn-void2',
    'ct-btn-recontract','ct-btn-recontract2','ct-btn-terminate','ct-btn-terminate2'].forEach(bid=>{
     const el = document.getElementById(bid); if(el) el.style.display='none';
   });
 
-  // í•´ì§€ì˜ˆì • ê³„ì•½ì´ë©´: í‡´ì‚¬ì˜ˆì •ì¼ ì…ë ¥ íŒ¨ë„ì„ ìˆ˜ì • ê°€ëŠ¥í•˜ê²Œ ì—´ì–´ì¤Œ
+  // ÇØÁö¿¹Á¤ °è¾àÀÌ¸é: Åğ»ç¿¹Á¤ÀÏ ÀÔ·Â ÆĞ³ÎÀ» ¼öÁ¤ °¡´ÉÇÏ°Ô ¿­¾îÁÜ
   const c = allContracts.find(x=>x.id===editId.contract);
-  // ê·¼ë¬´ì‹œê°„í‘œ ì¬ë Œë”ë§: readonly í•´ì œ í›„ ë¹„í™œì„± ìš”ì¼ì˜ disabled ìƒíƒœ ë³µì›
+  // ±Ù¹«½Ã°£Ç¥ Àç·»´õ¸µ: readonly ÇØÁ¦ ÈÄ ºñÈ°¼º ¿äÀÏÀÇ disabled »óÅÂ º¹¿ø
   if(c && c.schedule_json){
     try { if(typeof setScheduleFromJSON === 'function') setScheduleFromJSON(JSON.parse(c.schedule_json)); }
     catch(e){ if(typeof setScheduleFromLegacy === 'function') setScheduleFromLegacy(c); }
@@ -792,33 +791,33 @@ function editPendingContract(){
     }
   }
 
-  // ëª¨ë‹¬ ì œëª© ë³€ê²½
+  // ¸ğ´Ş Á¦¸ñ º¯°æ
   const titleMap = {
-    [CONTRACT_STATUS.TERMINATE_PENDING]: 'ê·¼ë¡œê³„ì•½ì„œ ìˆ˜ì • ë° ì¬ë°œí–‰ (í•´ì§€ì˜ˆì •)',
-    [CONTRACT_STATUS.PENDING]:           'ê·¼ë¡œê³„ì•½ì„œ ìˆ˜ì • ë° ì¬ë°œí–‰ (ê³„ì•½ì˜ˆì •)',
-    [CONTRACT_STATUS.RENEWAL_PENDING]:   'ê·¼ë¡œê³„ì•½ì„œ ìˆ˜ì • ë° ì¬ë°œí–‰ (ê°±ì‹ ì˜ˆì •)'
+    [CONTRACT_STATUS.TERMINATE_PENDING]: '±Ù·Î°è¾à¼­ ¼öÁ¤ ¹× Àç¹ßÇà (ÇØÁö¿¹Á¤)',
+    [CONTRACT_STATUS.PENDING]:           '±Ù·Î°è¾à¼­ ¼öÁ¤ ¹× Àç¹ßÇà (°è¾à¿¹Á¤)',
+    [CONTRACT_STATUS.RENEWAL_PENDING]:   '±Ù·Î°è¾à¼­ ¼öÁ¤ ¹× Àç¹ßÇà (°»½Å¿¹Á¤)'
   };
-  document.getElementById('ct-title').textContent = titleMap[c?.status] || 'ê·¼ë¡œê³„ì•½ì„œ ìˆ˜ì • ë° ì¬ë°œí–‰ (ì˜ˆì • ê³„ì•½)';
+  document.getElementById('ct-title').textContent = titleMap[c?.status] || '±Ù·Î°è¾à¼­ ¼öÁ¤ ¹× Àç¹ßÇà (¿¹Á¤ °è¾à)';
 
-  // ì¼ê´„ ì„¤ì • ë°” ë‹¤ì‹œ í‘œì‹œ
+  // ÀÏ°ı ¼³Á¤ ¹Ù ´Ù½Ã Ç¥½Ã
   const bulkBar = document.getElementById('ct-bulk-bar-wrap');
   if(bulkBar) bulkBar.style.display = '';
 
-  toast('ì˜ˆì • ê³„ì•½ì„ ìˆ˜ì • ë° ì¬ë°œí–‰í•©ë‹ˆë‹¤. ë³€ê²½ í›„ ìˆ˜ì • ë° ì¬ë°œí–‰ ì™„ë£Œë¥¼ ëˆŒëŸ¬ ì €ì¥í•˜ì„¸ìš”.');
+  toast('¿¹Á¤ °è¾àÀ» ¼öÁ¤ ¹× Àç¹ßÇàÇÕ´Ï´Ù. º¯°æ ÈÄ ¼öÁ¤ ¹× Àç¹ßÇà ¿Ï·á¸¦ ´­·¯ ÀúÀåÇÏ¼¼¿ä.');
 }
 
-// â”€â”€â”€ ì˜ˆì • ê³„ì•½ ìˆ˜ì • ì·¨ì†Œ â”€â”€â”€
+// ¦¡¦¡¦¡ ¿¹Á¤ °è¾à ¼öÁ¤ Ãë¼Ò ¦¡¦¡¦¡
 function cancelPendingEdit(){
   const c = allContracts.find(x=>x.id===editId.contract);
   if(c) viewContract(c.id);
 }
 
-// â”€â”€â”€ ì˜ˆì • ê³„ì•½ ìˆ˜ì •ì™„ë£Œ ì €ì¥ â”€â”€â”€
+// ¦¡¦¡¦¡ ¿¹Á¤ °è¾à ¼öÁ¤¿Ï·á ÀúÀå ¦¡¦¡¦¡
 async function savePendingContractEdit(){
   if(_ctValidate()) return;
   const c = allContracts.find(x=>x.id===editId.contract);
-  if(!c) return toast('ê³„ì•½ ì •ë³´ë¥¼ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤.','error');
-  // ìµœì €ì„ê¸ˆ ìœ„ë°˜ ì°¨ë‹¨
+  if(!c) return toast('°è¾à Á¤º¸¸¦ Ã£À» ¼ö ¾ø½À´Ï´Ù.','error');
+  // ÃÖÀúÀÓ±İ À§¹İ Â÷´Ü
   const _mwWarnRowPend  = document.getElementById('ct-prob-minwage-warning-row');
   const _mwWarnRowPend2 = document.getElementById('ct-general-minwage-warning-row');
   if((_mwWarnRowPend  && _mwWarnRowPend.style.display  !== 'none') ||
@@ -826,12 +825,12 @@ async function savePendingContractEdit(){
     openModal('ct-minwage-warn-modal');
     return;
   }
-  // í˜„ì¬ í¼ì—ì„œ ìˆ˜ì •ëœ ê°’ì„ ìˆ˜ì§‘
+  // ÇöÀç Æû¿¡¼­ ¼öÁ¤µÈ °ªÀ» ¼öÁı
   const newStart = document.getElementById('ct-start')?.value || c.contract_start;
   const newEnd   = document.getElementById('ct-end')?.value   || '';
   const today3   = new Date().toISOString().slice(0,10);
-  if(!newStart) return toast('ê³„ì•½ ì‹œì‘ì¼ì„ ì…ë ¥í•´ ì£¼ì„¸ìš”.','error');
-  // ìƒíƒœ ì¬ê²°ì •
+  if(!newStart) return toast('°è¾à ½ÃÀÛÀÏÀ» ÀÔ·ÂÇØ ÁÖ¼¼¿ä.','error');
+  // »óÅÂ Àç°áÁ¤
   let newStatus = c.status;
   const isPreTermEdit = (c.status===CONTRACT_STATUS.TERMINATE_PENDING);
   if(isPreTermEdit){
@@ -843,7 +842,7 @@ async function savePendingContractEdit(){
     if(newStart <= today3) newStatus = CONTRACT_STATUS.ACTIVE;
     if(newEnd && newEnd < today3) newStatus = CONTRACT_STATUS.EXPIRED;
   }
-  // ì €ì¥
+  // ÀúÀå
   try {
     await api('../tables/contracts/' + c.id, {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
@@ -851,27 +850,27 @@ async function savePendingContractEdit(){
     });
     await loadContracts(); renderContracts(); renderDashboard();
     closeModal('contract-modal');
-    toast('ê³„ì•½ì´ ìˆ˜ì •ëìŠµë‹ˆë‹¤.');
+    toast('°è¾àÀÌ ¼öÁ¤µÆ½À´Ï´Ù.');
   } catch(e) {
-    toast('ìˆ˜ì • ì €ì¥ ì¤‘ ì˜¤ë¥˜ê°€ ë°œìƒí–ˆìŠµë‹ˆë‹¤.', 'error');
+    toast('¼öÁ¤ ÀúÀå Áß ¿À·ù°¡ ¹ß»ıÇß½À´Ï´Ù.', 'error');
     console.error(e);
   }
 }
 
-// â”€â”€â”€ ë°°ë„ˆ íŒŒê¸°/í•´ì§€ì·¨ì†Œ ë²„íŠ¼ ë¼ìš°í„° â”€â”€â”€
+// ¦¡¦¡¦¡ ¹è³Ê ÆÄ±â/ÇØÁöÃë¼Ò ¹öÆ° ¶ó¿ìÅÍ ¦¡¦¡¦¡
 async function doContractVoidOrCancel(){
   const c = allContracts.find(x=>x.id===editId.contract);
   if(!c) return;
   if(c.status===CONTRACT_STATUS.TERMINATE_PENDING){
-    // í•´ì§€ì˜ˆì • â†’ í•´ì§€ ì·¨ì†Œ (í™œì„±ìœ¼ë¡œ ë³µê·€)
+    // ÇØÁö¿¹Á¤ ¡æ ÇØÁö Ãë¼Ò (È°¼ºÀ¸·Î º¹±Í)
     await cancelPreTerminate();
   } else {
-    // ê³„ì•½ì˜ˆì • / ê°±ì‹ ì˜ˆì • â†’ ë ˆì½”ë“œ ì‚­ì œ (íŒŒê¸° ê¸°ë¡ ì—†ì´ ì œê±°)
+    // °è¾à¿¹Á¤ / °»½Å¿¹Á¤ ¡æ ·¹ÄÚµå »èÁ¦ (ÆÄ±â ±â·Ï ¾øÀÌ Á¦°Å)
     await cancelPendingContract();
   }
 }
 
-// â”€â”€â”€ í•´ì§€ì˜ˆì • ì·¨ì†Œ (í™œì„±ìœ¼ë¡œ ë³µê·€) â”€â”€â”€
+// ¦¡¦¡¦¡ ÇØÁö¿¹Á¤ Ãë¼Ò (È°¼ºÀ¸·Î º¹±Í) ¦¡¦¡¦¡
 async function cancelPreTerminate(){
   const c = allContracts.find(x=>x.id===editId.contract);
   if(!c) return;
@@ -882,109 +881,109 @@ async function cancelPreTerminate(){
   const empName  = emp.name || '';
   const termDate = c.terminate_date || '';
 
-  // ê³„ì•½ì§/ì •ê·œì§ ê³µí†µ ë©”ì‹œì§€
-  const dateLabel  = termDate ? `\nê³„ì•½ í•´ì§€ì¼: ${termDate}` : '';
+  // °è¾àÁ÷/Á¤±ÔÁ÷ °øÅë ¸Ş½ÃÁö
+  const dateLabel  = termDate ? `\n°è¾à ÇØÁöÀÏ: ${termDate}` : '';
 
   const confirmed = await _showConfirm({
-    message: `[í•´ì§€ì˜ˆì • ì² íšŒ]${empName ? `\n\n${empName}` : ''}${dateLabel}\n\n` +
-      `ê·¼ë¡œê³„ì•½ í•´ì§€ë¥¼ ì² íšŒí•˜ì‹œë©´ ê³„ì•½ í•´ì§€ì¼ ì„¤ì •ì„ í•´ì œí•˜ê³  ê³„ì•½ì„ ì›ë˜ ìƒíƒœë¡œ ë˜ëŒë¦½ë‹ˆë‹¤.\n` +
-      `ì •ë§ ì² íšŒí•˜ì‹œê² ìŠµë‹ˆê¹Œ?`,
-    okText: 'ì² íšŒ',
+    message: `[ÇØÁö¿¹Á¤ Ã¶È¸]${empName ? `\n\n${empName}` : ''}${dateLabel}\n\n` +
+      `±Ù·Î°è¾à ÇØÁö¸¦ Ã¶È¸ÇÏ½Ã¸é °è¾à ÇØÁöÀÏ ¼³Á¤À» ÇØÁ¦ÇÏ°í °è¾àÀ» ¿ø·¡ »óÅÂ·Î µÇµ¹¸³´Ï´Ù.\n` +
+      `Á¤¸» Ã¶È¸ÇÏ½Ã°Ú½À´Ï±î?`,
+    okText: 'Ã¶È¸',
     okClass: 'btn-primary'
   });
   if(!confirmed) return;
 
   try {
-    // 1) ê³„ì•½ ìƒíƒœ ë³µê·€ + í˜ì–´ ê´€ê³„ ì •ë¦¬
+    // 1) °è¾à »óÅÂ º¹±Í + Æä¾î °ü°è Á¤¸®
     await api(`../tables/contracts/${c.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({status: CONTRACT_STATUS.ACTIVE, terminate_date:''})});
-    // ê°±ì‹  í˜ì–´ê°€ ìˆëŠ” ê²½ìš° í•´ì œ (P4)
+    // °»½Å Æä¾î°¡ ÀÖ´Â °æ¿ì ÇØÁ¦ (P4)
     if(typeof breakPair === 'function') await breakPair(c);
 
-    // 2) ì§ì› ìƒíƒœ ë³µì› (resign_date ì»¬ëŸ¼ ì—†ìŒ â€” expire_date ì‚¬ìš©)
+    // 2) Á÷¿ø »óÅÂ º¹¿ø (resign_date ÄÃ·³ ¾øÀ½ ? expire_date »ç¿ë)
     if(emp.id && emp.status===EMP_STATUS.RESIGNED){
       await api(`../tables/employees/${emp.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({status: EMP_STATUS.ACTIVE, expire_date:''})});
     }
 
-    // 3) ëª¨ë‹¬ ë‹«ê¸° + í˜ì´ì§€ ìƒˆë¡œê³ ì¹¨
+    // 3) ¸ğ´Ş ´İ±â + ÆäÀÌÁö »õ·Î°íÄ§
     closeModal('contract-modal');
     await Promise.all([loadContracts(), loadEmployees()]);
     renderContracts(); renderDashboard();
-    toast('ê·¼ë¡œê³„ì•½ í•´ì§€ê°€ ì² íšŒë˜ì—ˆìŠµë‹ˆë‹¤.', 'success');
+    toast('±Ù·Î°è¾à ÇØÁö°¡ Ã¶È¸µÇ¾ú½À´Ï´Ù.', 'success');
   } catch(e) {
     console.error('cancelPreTerminate:', c?.id, e);
-    toast('í•´ì§€ ì² íšŒ ì¤‘ ì˜¤ë¥˜: ' + (e.message || e), 'error');
+    toast('ÇØÁö Ã¶È¸ Áß ¿À·ù: ' + (e.message || e), 'error');
     return;
   }
 
-  // 4) ê³ ê°ì‚¬ ì¸ì•± ì•Œë¦¼ ë°œì†¡ (ë¹„ë™ê¸°, ì‹¤íŒ¨í•´ë„ ë¬´ì‹œ)
+  // 4) °í°´»ç ÀÎ¾Û ¾Ë¸² ¹ß¼Û (ºñµ¿±â, ½ÇÆĞÇØµµ ¹«½Ã)
   try {
     const _cptCo  = allCompanies.find(x => x.id === c.company_id) || {};
     const _coRep  = getCompanyRepGreeting(_cptCo);
-    const _fmtD   = d => { if(!d) return '-'; const [y,m,dd]=d.split('-'); return `${parseInt(y)}ë…„ ${parseInt(m)}ì›” ${parseInt(dd)}ì¼`; };
+    const _fmtD   = d => { if(!d) return '-'; const [y,m,dd]=d.split('-'); return `${parseInt(y)}³â ${parseInt(m)}¿ù ${parseInt(dd)}ÀÏ`; };
     await _sendCompanyNotice({
       companyId  : c.company_id, companyName: _cptCo.company_name || '',
       noticeType : 'contract_termination_cancelled',
-      title      : `[í•´ì§€ ì˜ˆì • ì·¨ì†Œ] ${empName} â€” ê³„ì•½ í•´ì§€ ì˜ˆì •ì´ ì·¨ì†Œë˜ì—ˆìŠµë‹ˆë‹¤`,
+      title      : `[ÇØÁö ¿¹Á¤ Ãë¼Ò] ${empName} ? °è¾à ÇØÁö ¿¹Á¤ÀÌ Ãë¼ÒµÇ¾ú½À´Ï´Ù`,
       body       :
-`ì•ˆë…•í•˜ì„¸ìš”${_coRep}.
+`¾È³çÇÏ¼¼¿ä${_coRep}.
 
-ì†Œì† ê·¼ë¡œìì˜ ê³„ì•½ í•´ì§€ ì˜ˆì •ì´ ì·¨ì†Œë˜ì–´ ê¸°ì¡´ ê³„ì•½ì´ ì •ìƒ ìœ íš¨ ìƒíƒœë¡œ ë³µê·€ë˜ì—ˆìŠµë‹ˆë‹¤.
+¼Ò¼Ó ±Ù·ÎÀÚÀÇ °è¾à ÇØÁö ¿¹Á¤ÀÌ Ãë¼ÒµÇ¾î ±âÁ¸ °è¾àÀÌ Á¤»ó À¯È¿ »óÅÂ·Î º¹±ÍµÇ¾ú½À´Ï´Ù.
 
-â–  ê·¼ë¡œì: ${empName}
-â–  ê³ ìš©í˜•íƒœ: ${contractTypeLabel(c.contract_type)||''}
-â–  ê³„ì•½ ê¸°ê°„: ${_fmtD(c.contract_start)}${c.contract_end ? ' ~ ' + _fmtD(c.contract_end) : ' (ê¸°ê°„ ë¯¸ì •)'}
-â–  ì·¨ì†Œëœ í•´ì§€ì¼: ${termDate ? _fmtD(termDate) : '-'}
-â–  í˜„ì¬ ê³„ì•½ ìƒíƒœ: ê³„ì•½ìœ íš¨ (í™œì„±) ë³µê·€
-â–  ì²˜ë¦¬ ì¼ì‹œ: ${new Date().toLocaleString('ko-KR')}
+¡á ±Ù·ÎÀÚ: ${empName}
+¡á °í¿ëÇüÅÂ: ${contractTypeLabel(c.contract_type)||''}
+¡á °è¾à ±â°£: ${_fmtD(c.contract_start)}${c.contract_end ? ' ~ ' + _fmtD(c.contract_end) : ' (±â°£ ¹ÌÁ¤)'}
+¡á Ãë¼ÒµÈ ÇØÁöÀÏ: ${termDate ? _fmtD(termDate) : '-'}
+¡á ÇöÀç °è¾à »óÅÂ: °è¾àÀ¯È¿ (È°¼º) º¹±Í
+¡á Ã³¸® ÀÏ½Ã: ${new Date().toLocaleString('ko-KR')}
 
 `,
       contractId  : c.id,
       employeeId  : c.employee_id, employeeName: empName,
       contractEnd : c.contract_end || '',
     });
-  } catch(e) { /* ì•Œë¦¼ ë°œì†¡ ì‹¤íŒ¨ëŠ” ë¬´ì‹œ */ }
+  } catch(e) { /* ¾Ë¸² ¹ß¼Û ½ÇÆĞ´Â ¹«½Ã */ }
 }
 
-// â”€â”€â”€ ê³„ì•½ì˜ˆì •Â·ê°±ì‹ ì˜ˆì • ì·¨ì†Œ í”Œë¡œìš° (ë ˆì½”ë“œ ì‚­ì œ) â”€â”€â”€
+// ¦¡¦¡¦¡ °è¾à¿¹Á¤¡¤°»½Å¿¹Á¤ Ãë¼Ò ÇÃ·Î¿ì (·¹ÄÚµå »èÁ¦) ¦¡¦¡¦¡
 async function cancelPendingContract(){
   const c = allContracts.find(x=>x.id===editId.contract);
   if(!c) return;
 
-  // ì‹œì‘ì¼ ë‹¹ì¼ë¶€í„° ì·¨ì†Œ ë¶ˆê°€
+  // ½ÃÀÛÀÏ ´çÀÏºÎÅÍ Ãë¼Ò ºÒ°¡
   const _todayCancel = new Date().toISOString().slice(0,10);
   if(c.contract_start && _todayCancel >= c.contract_start){
-    toast(`ê³„ì•½ ì‹œì‘ì¼(${c.contract_start}) ì´í›„ì—ëŠ” ì˜ˆì • ê³„ì•½ì„ ì·¨ì†Œí•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤.`, 'error');
+    toast(`°è¾à ½ÃÀÛÀÏ(${c.contract_start}) ÀÌÈÄ¿¡´Â ¿¹Á¤ °è¾àÀ» Ãë¼ÒÇÒ ¼ö ¾ø½À´Ï´Ù.`, 'error');
     return;
   }
 
   const isRenew     = (c.status===CONTRACT_STATUS.RENEWAL_PENDING)
-                   || ((c.status===CONTRACT_STATUS.ACTIVE||c.status==='ìœ íš¨'||c.status===EMP_STATUS.ACTIVE) && (c.contract_start||'') > new Date().toISOString().slice(0,10));
-  const statusLabel = isRenew ? 'ê°±ì‹ ì˜ˆì •' : 'ê³„ì•½ì˜ˆì •';
+                   || ((c.status===CONTRACT_STATUS.ACTIVE||c.status==='À¯È¿'||c.status===EMP_STATUS.ACTIVE) && (c.contract_start||'') > new Date().toISOString().slice(0,10));
+  const statusLabel = isRenew ? '°»½Å¿¹Á¤' : '°è¾à¿¹Á¤';
   const emp         = allEmployees.find(e=>e.id===c.employee_id)||{};
   const empName     = emp.name || '';
 
   if(!confirm(
-    `[${statusLabel} ì·¨ì†Œ]${empName ? `\n\nì§ì›: ${empName}` : ''}\n` +
-    `ê³„ì•½ ì‹œì‘ì¼: ${c.contract_start||'â€”'}\n\n` +
-    `ì´ ê³„ì•½ì„ ì •ë§ ì·¨ì†Œí•˜ê³  íŒŒê¸°ì²˜ë¦¬í•˜ì‹œê² ìŠµë‹ˆê¹Œ?`
+    `[${statusLabel} Ãë¼Ò]${empName ? `\n\nÁ÷¿ø: ${empName}` : ''}\n` +
+    `°è¾à ½ÃÀÛÀÏ: ${c.contract_start||'?'}\n\n` +
+    `ÀÌ °è¾àÀ» Á¤¸» Ãë¼ÒÇÏ°í ÆÄ±âÃ³¸®ÇÏ½Ã°Ú½À´Ï±î?`
   )) return;
 
-  // ê°±ì‹  ì·¨ì†Œ ì‹œ: ì´ì „ ê³„ì•½(ë§Œë£Œ ì²˜ë¦¬ëë˜ ê²ƒ)ì„ í™œì„±ìœ¼ë¡œ ë³µê·€ì‹œì¼œì•¼ í•˜ëŠ”ì§€ í™•ì¸
-  // note í•„ë“œì— 'ì „ê³„ì•½:' íŒ¨í„´ì´ ìˆìœ¼ë©´ í•´ë‹¹ ê³„ì•½ IDë¥¼ ë³µì›
-  const prevContractMatch = (c.note||'').match(/ì „ê³„ì•½:([^\s)]+)/);
+  // °»½Å Ãë¼Ò ½Ã: ÀÌÀü °è¾à(¸¸·á Ã³¸®µÆ´ø °Í)À» È°¼ºÀ¸·Î º¹±Í½ÃÄÑ¾ß ÇÏ´ÂÁö È®ÀÎ
+  // note ÇÊµå¿¡ 'Àü°è¾à:' ÆĞÅÏÀÌ ÀÖÀ¸¸é ÇØ´ç °è¾à ID¸¦ º¹¿ø
+  const prevContractMatch = (c.note||'').match(/Àü°è¾à:([^\s)]+)/);
   if(isRenew && prevContractMatch){
     const prevId = prevContractMatch[1];
     const prevC  = allContracts.find(x=>x.id===prevId);
     if(prevC && (prevC.status===CONTRACT_STATUS.EXPIRED || prevC.status===CONTRACT_STATUS.TERMINATED)){
-      // ì´ì „ ê³„ì•½ì„ í™œì„± ìƒíƒœë¡œ ë³µê·€
+      // ÀÌÀü °è¾àÀ» È°¼º »óÅÂ·Î º¹±Í
       await api(`../tables/contracts/${prevId}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({status: CONTRACT_STATUS.ACTIVE, contract_end: prevC.contract_end||''})});
     }
   }
 
-  // í•´ë‹¹ ê³„ì•½ ë ˆì½”ë“œ ì‚­ì œ + ì—°ê²° ì§ì›ë„ ë‹¤ë¥¸ ê³„ì•½ ì—†ìœ¼ë©´ ì‚­ì œ ì‹œë„
+  // ÇØ´ç °è¾à ·¹ÄÚµå »èÁ¦ + ¿¬°á Á÷¿øµµ ´Ù¸¥ °è¾à ¾øÀ¸¸é »èÁ¦ ½Ãµµ
   let _empIdToCleanup = null;
   if(c.employee_id){
     const otherContracts = allContracts.filter(x => x.id !== c.id && x.employee_id === c.employee_id);
@@ -998,47 +997,47 @@ async function cancelPendingContract(){
   closeModal('contract-modal');
   await Promise.all([loadContracts(), loadEmployees()]);
   renderContracts(); renderDashboard();
-  toast(`${statusLabel} ì·¨ì†Œ ì™„ë£Œ â€” ê³„ì•½ì´ ì‚­ì œëìŠµë‹ˆë‹¤.`, 'success');
+  toast(`${statusLabel} Ãë¼Ò ¿Ï·á ? °è¾àÀÌ »èÁ¦µÆ½À´Ï´Ù.`, 'success');
 }
 
-// â”€â”€â”€ íŒŒê¸° í”Œë¡œìš° (ìˆ˜ì •ì¬ë°œí–‰ ë“± ëª…ì‹œì  íŒŒê¸° ì „ìš© â€” ë°°ë„ˆ ê²½ë¡œì—ì„œëŠ” ë” ì´ìƒ ì‚¬ìš© ì•ˆ í•¨) â”€â”€â”€
+// ¦¡¦¡¦¡ ÆÄ±â ÇÃ·Î¿ì (¼öÁ¤Àç¹ßÇà µî ¸í½ÃÀû ÆÄ±â Àü¿ë ? ¹è³Ê °æ·Î¿¡¼­´Â ´õ ÀÌ»ó »ç¿ë ¾È ÇÔ) ¦¡¦¡¦¡
 async function doContractVoid(){
   const c = allContracts.find(x=>x.id===editId.contract);
   if(!c) return;
 
-  // ìƒíƒœ ê°€ë“œ: PENDING ë˜ëŠ” RENEWAL_PENDING ìƒíƒœë§Œ íŒŒê¸° ê°€ëŠ¥
+  // »óÅÂ °¡µå: PENDING ¶Ç´Â RENEWAL_PENDING »óÅÂ¸¸ ÆÄ±â °¡´É
   if(c.status !== CONTRACT_STATUS.PENDING && c.status !== CONTRACT_STATUS.RENEWAL_PENDING){
-    toast('ê³„ì•½ì˜ˆì • ë˜ëŠ” ê°±ì‹ ì˜ˆì • ìƒíƒœì˜ ê³„ì•½ë§Œ íŒŒê¸°í•  ìˆ˜ ìˆìŠµë‹ˆë‹¤.', 'error');
+    toast('°è¾à¿¹Á¤ ¶Ç´Â °»½Å¿¹Á¤ »óÅÂÀÇ °è¾à¸¸ ÆÄ±âÇÒ ¼ö ÀÖ½À´Ï´Ù.', 'error');
     return;
   }
 
-  const statusLabel = c.status===CONTRACT_STATUS.RENEWAL_PENDING ? 'ê°±ì‹ ì˜ˆì •' : 'ê³„ì•½ì˜ˆì •';
+  const statusLabel = c.status===CONTRACT_STATUS.RENEWAL_PENDING ? '°»½Å¿¹Á¤' : '°è¾à¿¹Á¤';
 
-  if(!confirm(`ì •ë§ ì´ ê³„ì•½ì„ íŒŒê¸°í•˜ì‹œê² ìŠµë‹ˆê¹Œ?\n\n[${statusLabel}] ìƒíƒœì˜ ê³„ì•½ì„ íŒŒê¸°í•©ë‹ˆë‹¤.\níŒŒê¸°ëœ ê³„ì•½ì€ ë³µêµ¬í•  ìˆ˜ ì—†ìœ¼ë©°, ê³„ì•½ì´ ì„±ë¦½ë˜ì§€ ì•Šì€ ê²ƒìœ¼ë¡œ ì²˜ë¦¬ë©ë‹ˆë‹¤.`)) return;
+  if(!confirm(`Á¤¸» ÀÌ °è¾àÀ» ÆÄ±âÇÏ½Ã°Ú½À´Ï±î?\n\n[${statusLabel}] »óÅÂÀÇ °è¾àÀ» ÆÄ±âÇÕ´Ï´Ù.\nÆÄ±âµÈ °è¾àÀº º¹±¸ÇÒ ¼ö ¾øÀ¸¸ç, °è¾àÀÌ ¼º¸³µÇÁö ¾ÊÀº °ÍÀ¸·Î Ã³¸®µË´Ï´Ù.`)) return;
 
   await api(`../tables/contracts/${c.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({status: CONTRACT_STATUS.VOIDED})});
 
-  // â”€â”€ ê³ ê°ì‚¬ ì¸ì•± ì•Œë¦¼ ë°œì†¡ (ê³„ì•½ íŒŒê¸°) â”€â”€
+  // ¦¡¦¡ °í°´»ç ÀÎ¾Û ¾Ë¸² ¹ß¼Û (°è¾à ÆÄ±â) ¦¡¦¡
   {
     const _voidEmp = allEmployees.find(x => x.id === c.employee_id) || {};
     const _voidCo  = allCompanies.find(x => x.id === c.company_id)  || {};
     const _coRep   = getCompanyRepGreeting(_voidCo);
-    const _fmtD    = d => { if(!d) return '-'; const [y,m,dd]=d.split('-'); return `${parseInt(y)}ë…„ ${parseInt(m)}ì›” ${parseInt(dd)}ì¼`; };
+    const _fmtD    = d => { if(!d) return '-'; const [y,m,dd]=d.split('-'); return `${parseInt(y)}³â ${parseInt(m)}¿ù ${parseInt(dd)}ÀÏ`; };
     await _sendCompanyNotice({
       companyId  : c.company_id, companyName: _voidCo.company_name || '',
       noticeType : 'contract_voided',
-      title      : `[ê³„ì•½ íŒŒê¸°] ${_voidEmp.name||''} â€” ê·¼ë¡œê³„ì•½ì´ íŒŒê¸°ë˜ì—ˆìŠµë‹ˆë‹¤`,
+      title      : `[°è¾à ÆÄ±â] ${_voidEmp.name||''} ? ±Ù·Î°è¾àÀÌ ÆÄ±âµÇ¾ú½À´Ï´Ù`,
       body       :
-`ì•ˆë…•í•˜ì„¸ìš”${_coRep}.
+`¾È³çÇÏ¼¼¿ä${_coRep}.
 
-ì†Œì† ê·¼ë¡œìì˜ ê·¼ë¡œê³„ì•½ì´ íŒŒê¸° ì²˜ë¦¬ë˜ì—ˆìŠµë‹ˆë‹¤.
+¼Ò¼Ó ±Ù·ÎÀÚÀÇ ±Ù·Î°è¾àÀÌ ÆÄ±â Ã³¸®µÇ¾ú½À´Ï´Ù.
 
-â–  ê·¼ë¡œì: ${_voidEmp.name||''}
-â–  ê³ ìš©í˜•íƒœ: ${contractTypeLabel(c.contract_type)||''}
-â–  ê³„ì•½ ê¸°ê°„: ${_fmtD(c.contract_start)}${c.contract_end ? ' ~ ' + _fmtD(c.contract_end) : ' (ê¸°ê°„ ë¯¸ì •)'}
-â–  íŒŒê¸° ì‚¬ìœ : ${statusLabel} ìƒíƒœì˜ ê³„ì•½ íŒŒê¸°
-â–  ì²˜ë¦¬ ì¼ì‹œ: ${new Date().toLocaleString('ko-KR')}
+¡á ±Ù·ÎÀÚ: ${_voidEmp.name||''}
+¡á °í¿ëÇüÅÂ: ${contractTypeLabel(c.contract_type)||''}
+¡á °è¾à ±â°£: ${_fmtD(c.contract_start)}${c.contract_end ? ' ~ ' + _fmtD(c.contract_end) : ' (±â°£ ¹ÌÁ¤)'}
+¡á ÆÄ±â »çÀ¯: ${statusLabel} »óÅÂÀÇ °è¾à ÆÄ±â
+¡á Ã³¸® ÀÏ½Ã: ${new Date().toLocaleString('ko-KR')}
 
 `,
       contractId  : c.id,
@@ -1049,22 +1048,22 @@ async function doContractVoid(){
 
   closeModal('contract-modal');
   await loadContracts(); renderContracts(); renderDashboard();
-  toast('ê³„ì•½ì´ íŒŒê¸° ì²˜ë¦¬ëìŠµë‹ˆë‹¤.');
+  toast('°è¾àÀÌ ÆÄ±â Ã³¸®µÆ½À´Ï´Ù.');
 }
 
-// â”€â”€â”€ ê°±ì‹  í”Œë¡œìš° â”€â”€â”€
+// ¦¡¦¡¦¡ °»½Å ÇÃ·Î¿ì ¦¡¦¡¦¡
 /**
- * ê°±ì‹  ì‹œ í˜„ì¬ í¼ì— ì…ë ¥ëœ ê°’ì„ ìˆ˜ì§‘í•˜ì—¬ ì‹ ê·œ ê³„ì•½ì— ë°˜ì˜
- * ê¸°ì¡´ ê³„ì•½ì„ ë² ì´ìŠ¤ë¡œ, ì‚¬ìš©ìê°€ ìˆ˜ì •í•œ í•„ë“œë§Œ ë®ì–´ì“´ë‹¤.
+ * °»½Å ½Ã ÇöÀç Æû¿¡ ÀÔ·ÂµÈ °ªÀ» ¼öÁıÇÏ¿© ½Å±Ô °è¾à¿¡ ¹İ¿µ
+ * ±âÁ¸ °è¾àÀ» º£ÀÌ½º·Î, »ç¿ëÀÚ°¡ ¼öÁ¤ÇÑ ÇÊµå¸¸ µ¤¾î¾´´Ù.
  */
 function _collectRenewFormFields(){
   const fields = {};
 
-  // ê³„ì•½ ìœ í˜•
+  // °è¾à À¯Çü
   const typeEl = document.getElementById('ct-type');
   if(typeEl) fields.contract_type = CONTRACT_TYPE_LEGACY_MAP[typeEl.value] || typeEl.value;
 
-  // ê³„ì•½ ì‹œì‘ì¼Â·ì¢…ë£Œì¼ (í¼ì— ì…ë ¥ëœ ê°’, ì •ê·œì§(ìˆ˜ìŠµ ì œì™¸)ë§Œ ì¢…ë£Œì¼ ê°•ì œ ê³µë°±)
+  // °è¾à ½ÃÀÛÀÏ¡¤Á¾·áÀÏ (Æû¿¡ ÀÔ·ÂµÈ °ª, Á¤±ÔÁ÷(¼ö½À Á¦¿Ü)¸¸ Á¾·áÀÏ °­Á¦ °ø¹é)
   const ctNorm = fields.contract_type;
   const isRegularNoProb = (ctNorm === CONTRACT_TYPE.REGULAR);
   const startEl = document.getElementById('ct-start');
@@ -1072,24 +1071,24 @@ function _collectRenewFormFields(){
   const endEl = document.getElementById('ct-end');
   if(endEl) fields.contract_end = isRegularNoProb ? '' : endEl.value;
 
-  // ê·¼ë¬´ì‹œê°„
+  // ±Ù¹«½Ã°£
   const hoursEl = document.getElementById('ct-hours');
   if(hoursEl) fields.work_hours_per_day = parseFloat(hoursEl.value) || 0;
   const daysEl = document.getElementById('ct-days');
   if(daysEl) fields.work_days_per_week = parseFloat(daysEl.value) || 5;
 
-  // ê¸°ë³¸ê¸‰Â·ì¼ê¸‰Â·ì—°ë´‰
+  // ±âº»±Ş¡¤ÀÏ±Ş¡¤¿¬ºÀ
   fields.base_salary   = getAmountVal('ct-base');
   fields.annual_salary = getAmountVal('ct-annual-sal');
   fields.daily_wage    = getAmountVal('ct-daily-wage');
 
-  // ì›”ì•½ì •ê¸‰ì—¬: ì •ê·œì§ì´ë©´ ì—°ë´‰/12, ê·¸ ì™¸ëŠ” í¼ ê³„ì‚°ê°’ì—ì„œ ì½ê¸°
+  // ¿ù¾àÁ¤±Ş¿©: Á¤±ÔÁ÷ÀÌ¸é ¿¬ºÀ/12, ±× ¿Ü´Â Æû °è»ê°ª¿¡¼­ ÀĞ±â
   const ctNorm2 = fields.contract_type;
   const isRegGroup2 = (ctNorm2 === CONTRACT_TYPE.REGULAR || ctNorm2 === CONTRACT_TYPE.REGULAR_PROBATION);
   if (isRegGroup2 && fields.annual_salary > 0) {
     fields.monthly_salary_agreed = Math.round(fields.annual_salary / 12);
   } else {
-    // ê³„ì•½ì§Â·ì¼ìš©ì§ì€ ct-monthly-computedì˜ í…ìŠ¤íŠ¸ ê°’ì—ì„œ ìˆ«ì ì¶”ì¶œ
+    // °è¾àÁ÷¡¤ÀÏ¿ëÁ÷Àº ct-monthly-computedÀÇ ÅØ½ºÆ® °ª¿¡¼­ ¼ıÀÚ ÃßÃâ
     const monthlyEl = document.getElementById('ct-monthly-computed');
     if (monthlyEl) {
       const txt = monthlyEl.textContent || '';
@@ -1098,7 +1097,7 @@ function _collectRenewFormFields(){
     }
   }
 
-  // ìˆ˜ë‹¹
+  // ¼ö´ç
   fields.position_allowance    = getAmountVal('ct-position') || 0;
   fields.transportation_allowance = getAmountVal('ct-car') || 0;
   fields.remote_area_allowance = getAmountVal('ct-remote-area') || 0;
@@ -1117,7 +1116,7 @@ function _collectRenewFormFields(){
   fields.regular_bonus         = getAmountVal('ct-regular-bonus') || 0;
   fields.childcare_allowance   = getAmountVal('ct-childcare') || 0;
 
-  // ìˆ˜ë‹¹ ì§€ê¸‰ìœ í˜•
+  // ¼ö´ç Áö±ŞÀ¯Çü
   const payTypeMap = {
     car:'transportation_pay_type', meal:'meal_pay_type', research:'research_pay_type',
     communication:'communication_pay_type', fitness:'fitness_pay_type',
@@ -1127,11 +1126,11 @@ function _collectRenewFormFields(){
     fields[payTypeMap[k]] = _getCTPayTypeVal(k);
   });
 
-  // ì—°ì°¨
+  // ¿¬Â÷
   const annualEl = document.getElementById('ct-annual');
   if(annualEl) fields.annual_leave_days = parseFloat(annualEl.value) || 15;
 
-  // ê¸‰ì—¬ ì‚°ì •ê¸°ê°„Â·ì§€ê¸‰ì¼
+  // ±Ş¿© »êÁ¤±â°£¡¤Áö±ŞÀÏ
   const ppEl = document.getElementById('ct-pay-period');
   if(ppEl) fields.pay_period = ppEl.value.trim();
   const ppMonEl = document.getElementById('ct-pay-period-month-hidden');
@@ -1141,13 +1140,13 @@ function _collectRenewFormFields(){
   const payDayEl = document.getElementById('ct-pay-day');
   if(payDayEl) fields.pay_day = parseInt(payDayEl.value) || null;
 
-  // ê·¼ë¬´ì‹œê°„í‘œ
+  // ±Ù¹«½Ã°£Ç¥
   try {
     const sch = getScheduleJSON();
     if(Array.isArray(sch) && sch.some(d=>d.active)) fields.schedule_json = JSON.stringify(sch);
   } catch(e){}
 
-  // ìˆ˜ìŠµ
+  // ¼ö½À
   const probMonEl = document.getElementById('ct-probation-months');
   if(probMonEl) fields.probation_months = parseInt(probMonEl.value) || 0;
   const probPctEl = document.getElementById('ct-probation-pct');
@@ -1161,19 +1160,19 @@ function _collectRenewFormFields(){
 }
 
 /**
- * ê°±ì‹  ì‹ ê·œ ê³„ì•½ ì‹œì‘ì¼ ìœ íš¨ì„± ê²€ì‚¬
- * @param {string} oldEnd - ê¸°ì¡´ ê³„ì•½ í•´ì§€ì¼ (YYYY-MM-DD)
+ * °»½Å ½Å±Ô °è¾à ½ÃÀÛÀÏ À¯È¿¼º °Ë»ç
+ * @param {string} oldEnd - ±âÁ¸ °è¾à ÇØÁöÀÏ (YYYY-MM-DD)
  */
 function _validateRenewNewStart(oldEnd){
   const newStartEl = document.getElementById('ct-renew-new-start');
   const newStartErr = document.getElementById('ct-renew-new-start-err');
   const ns = newStartEl?.value;
   if(!ns) {
-    if(newStartErr){ newStartErr.textContent = 'ì‹ ê·œ ê³„ì•½ ì‹œì‘ì¼ì„ ì…ë ¥í•˜ì„¸ìš”.'; newStartErr.style.display = 'block'; }
+    if(newStartErr){ newStartErr.textContent = '½Å±Ô °è¾à ½ÃÀÛÀÏÀ» ÀÔ·ÂÇÏ¼¼¿ä.'; newStartErr.style.display = 'block'; }
     return false;
   }
   if(ns <= oldEnd){
-    if(newStartErr){ newStartErr.textContent = 'ì‹ ê·œ ê³„ì•½ ì‹œì‘ì¼ì€ ê¸°ì¡´ ê³„ì•½ í•´ì§€ì¼ë³´ë‹¤ ì´í›„ì—¬ì•¼ í•©ë‹ˆë‹¤.'; newStartErr.style.display = 'block'; }
+    if(newStartErr){ newStartErr.textContent = '½Å±Ô °è¾à ½ÃÀÛÀÏÀº ±âÁ¸ °è¾à ÇØÁöÀÏº¸´Ù ÀÌÈÄ¿©¾ß ÇÕ´Ï´Ù.'; newStartErr.style.display = 'block'; }
     newStartEl.style.borderColor = '#dc2626';
     return false;
   }
@@ -1185,7 +1184,7 @@ function _validateRenewNewStart(oldEnd){
 const _yearHolidayCache = {};
 
 /**
- * í•´ë‹¹ ë‚ ì§œê°€ ê³µíœ´ì¼ ë˜ëŠ” ê·¼ë¡œìì˜ ë‚ (5/1)ì¸ì§€ í™•ì¸
+ * ÇØ´ç ³¯Â¥°¡ °øÈŞÀÏ ¶Ç´Â ±Ù·ÎÀÚÀÇ ³¯(5/1)ÀÎÁö È®ÀÎ
  * @param {Date} d
  * @returns {boolean}
  */
@@ -1199,27 +1198,27 @@ function _isHoliday(d){
 }
 
 /**
- * í•´ë‹¹ ì—°ë„ì˜ ëª¨ë“  ê³µíœ´ì¼ Set(MM-DD)ì„ ë°˜í™˜ (ëŒ€ì²´ê³µíœ´ì¼ í¬í•¨, ì—°ë„ë³„ ìºì‹±)
+ * ÇØ´ç ¿¬µµÀÇ ¸ğµç °øÈŞÀÏ Set(MM-DD)À» ¹İÈ¯ (´ëÃ¼°øÈŞÀÏ Æ÷ÇÔ, ¿¬µµº° Ä³½Ì)
  * @param {number} y
  * @returns {Set<string>}
  */
 function _getYearHolidays(y){
   if(_yearHolidayCache[y]) return _yearHolidayCache[y];
 
-  // â”€â”€ ë§¤ë…„ ê³ ì • ê³µíœ´ì¼ â”€â”€
+  // ¦¡¦¡ ¸Å³â °íÁ¤ °øÈŞÀÏ ¦¡¦¡
   const fixed = [
-    '01-01', // ì‹ ì •
-    '03-01', // ì‚¼ì¼ì ˆ
-    '05-01', // ê·¼ë¡œìì˜ ë‚ 
-    '05-05', // ì–´ë¦°ì´ë‚ 
-    '06-06', // í˜„ì¶©ì¼
-    '08-15', // ê´‘ë³µì ˆ
-    '10-03', // ê°œì²œì ˆ
-    '10-09', // í•œê¸€ë‚ 
-    '12-25', // ì„±íƒ„ì ˆ
+    '01-01', // ½ÅÁ¤
+    '03-01', // »ïÀÏÀı
+    '05-01', // ±Ù·ÎÀÚÀÇ ³¯
+    '05-05', // ¾î¸°ÀÌ³¯
+    '06-06', // ÇöÃæÀÏ
+    '08-15', // ±¤º¹Àı
+    '10-03', // °³ÃµÀı
+    '10-09', // ÇÑ±Û³¯
+    '12-25', // ¼ºÅºÀı
   ];
 
-  // â”€â”€ ì—°ë„ë³„ ìŒë ¥ ê³µíœ´ì¼ (ì„¤ë‚  3ì¼, ì„ê°€íƒ„ì‹ ì¼, ì¶”ì„ 3ì¼) â”€â”€
+  // ¦¡¦¡ ¿¬µµº° À½·Â °øÈŞÀÏ (¼³³¯ 3ÀÏ, ¼®°¡Åº½ÅÀÏ, Ãß¼® 3ÀÏ) ¦¡¦¡
   const LUNAR_HOLIDAYS = {
     2024: ['02-09','02-10','02-11', '05-15', '09-16','09-17','09-18'],
     2025: ['01-28','01-29','01-30', '05-05', '10-05','10-06','10-07'],
@@ -1230,22 +1229,22 @@ function _getYearHolidays(y){
 
   const allDates = new Set([...fixed, ...(LUNAR_HOLIDAYS[y] || [])]);
 
-  // â”€â”€ ëŒ€ì²´ê³µíœ´ì¼ ë™ì  ê³„ì‚° â”€â”€
-  // ê³µíœ´ì¼ì´ í† (6)/ì¼(0)ì´ë©´ ë‹¤ìŒ í‰ì¼(ê¸°ì¡´ ê³µíœ´ì¼ ì œì™¸)ì„ ëŒ€ì²´ê³µíœ´ì¼ë¡œ ì¶”ê°€
+  // ¦¡¦¡ ´ëÃ¼°øÈŞÀÏ µ¿Àû °è»ê ¦¡¦¡
+  // °øÈŞÀÏÀÌ Åä(6)/ÀÏ(0)ÀÌ¸é ´ÙÀ½ ÆòÀÏ(±âÁ¸ °øÈŞÀÏ Á¦¿Ü)À» ´ëÃ¼°øÈŞÀÏ·Î Ãß°¡
   for (const mmdd of [...allDates]){
     const [mStr, dStr] = mmdd.split('-');
     const hDate = new Date(y, parseInt(mStr)-1, parseInt(dStr));
-    const dow = hDate.getDay(); // 0=ì¼, 6=í† 
+    const dow = hDate.getDay(); // 0=ÀÏ, 6=Åä
     if(dow === 0 || dow === 6){
-      // ë‹¤ìŒ í‰ì¼ ì°¾ê¸° (ìµœëŒ€ 7ì¼ íƒìƒ‰)
+      // ´ÙÀ½ ÆòÀÏ Ã£±â (ÃÖ´ë 7ÀÏ Å½»ö)
       let next = new Date(hDate);
       for(let i=0; i<7; i++){
         next.setDate(next.getDate() + 1);
         const nextDow = next.getDay();
-        if(nextDow === 0 || nextDow === 6) continue; // ì£¼ë§ ê±´ë„ˆëœ€
+        if(nextDow === 0 || nextDow === 6) continue; // ÁÖ¸» °Ç³Ê¶Ü
         const nextMMDD = `${String(next.getMonth()+1).padStart(2,'0')}-${String(next.getDate()).padStart(2,'0')}`;
-        if(next.getFullYear() !== y) break; // ì—°ë„ ë„˜ì–´ê°€ë©´ ì¤‘ë‹¨
-        if(!allDates.has(nextMMDD)){ // ê¸°ì¡´ ê³µíœ´ì¼ì´ ì•„ë‹ˆë©´ ëŒ€ì²´ê³µíœ´ì¼ë¡œ ì¶”ê°€
+        if(next.getFullYear() !== y) break; // ¿¬µµ ³Ñ¾î°¡¸é Áß´Ü
+        if(!allDates.has(nextMMDD)){ // ±âÁ¸ °øÈŞÀÏÀÌ ¾Æ´Ï¸é ´ëÃ¼°øÈŞÀÏ·Î Ãß°¡
           allDates.add(nextMMDD);
           break;
         }
@@ -1258,40 +1257,40 @@ function _getYearHolidays(y){
 }
 
 /**
- * ë‘ ë‚ ì§œ ì‚¬ì´ì— í‰ì¼(ì›”~ê¸ˆ, ê³µíœ´ì¼ ì œì™¸)ì´ ì¡´ì¬í•˜ëŠ”ì§€ í™•ì¸
+ * µÎ ³¯Â¥ »çÀÌ¿¡ ÆòÀÏ(¿ù~±İ, °øÈŞÀÏ Á¦¿Ü)ÀÌ Á¸ÀçÇÏ´ÂÁö È®ÀÎ
  * @param {string} oldEnd - YYYY-MM-DD
  * @param {string} newStart - YYYY-MM-DD
- * @returns {boolean} true = í‰ì¼ ê°­ ìˆìŒ (ì—°ì†ê³„ì•½ ì•„ë‹˜), false = ì—°ì†ê³„ì•½ ë˜ëŠ” ì£¼ë§Â·ê³µíœ´ì¼ë§Œ ê°­
+ * @returns {boolean} true = ÆòÀÏ °¸ ÀÖÀ½ (¿¬¼Ó°è¾à ¾Æ´Ô), false = ¿¬¼Ó°è¾à ¶Ç´Â ÁÖ¸»¡¤°øÈŞÀÏ¸¸ °¸
  */
 function _hasWeekdayGap(oldEnd, newStart){
   const oldD = new Date(oldEnd);
   const newD = new Date(newStart);
-  // oldEnd ë‹¤ìŒë‚ ë¶€í„° newStart ì „ë‚ ê¹Œì§€ ê²€ì‚¬
+  // oldEnd ´ÙÀ½³¯ºÎÅÍ newStart Àü³¯±îÁö °Ë»ç
   for (let d = new Date(oldD.getTime() + 86400000); d < newD; d.setDate(d.getDate() + 1)) {
-    const day = d.getDay(); // 0=ì¼, 6=í† 
-    if (day !== 0 && day !== 6 && !_isHoliday(d)) return true; // í‰ì¼(ê³µíœ´ì¼ ì œì™¸) ë°œê²¬ â†’ ë‹¨ì ˆëœ ê³„ì•½
+    const day = d.getDay(); // 0=ÀÏ, 6=Åä
+    if (day !== 0 && day !== 6 && !_isHoliday(d)) return true; // ÆòÀÏ(°øÈŞÀÏ Á¦¿Ü) ¹ß°ß ¡æ ´ÜÀıµÈ °è¾à
   }
-  return false; // ì£¼ë§Â·ê³µíœ´ì¼ë§Œ ìˆê±°ë‚˜ ì—°ì†ëœ ê²½ìš°
+  return false; // ÁÖ¸»¡¤°øÈŞÀÏ¸¸ ÀÖ°Å³ª ¿¬¼ÓµÈ °æ¿ì
 }
 
 function doContractRenew(){
-  // P9: ì´ì¤‘ ê°±ì‹  ë°©ì§€ ê°€ë“œ
+  // P9: ÀÌÁß °»½Å ¹æÁö °¡µå
   const _renewC = allContracts.find(x => x.id === editId.contract);
   if(_renewC && _renewC.renewed_to_id){
     const _existingNew = allContracts.find(x => x.id === _renewC.renewed_to_id);
     if(_existingNew && _existingNew.status !== CONTRACT_STATUS.VOIDED){
-      toast('ì´ ê³„ì•½ì€ ì´ë¯¸ ê°±ì‹ ëœ ê³„ì•½ì…ë‹ˆë‹¤. ê¸°ì¡´ ê°±ì‹  ê³„ì•½ì„ í™•ì¸í•˜ì„¸ìš”.', 'error');
+      toast('ÀÌ °è¾àÀº ÀÌ¹Ì °»½ÅµÈ °è¾àÀÔ´Ï´Ù. ±âÁ¸ °»½Å °è¾àÀ» È®ÀÎÇÏ¼¼¿ä.', 'error');
       return;
     }
   }
   
-  // ì¢…ë£Œ íŒ¨ë„ ìˆ¨ê¹€
+  // Á¾·á ÆĞ³Î ¼û±è
   document.getElementById('ct-terminate-panel').style.display = 'none';
   const rp = document.getElementById('ct-renew-panel');
   if(!rp) return;
   rp.style.display = 'block';
 
-  // â”€â”€ ê°±ì‹  ëª¨ë“œ: ê³„ì•½ì •ë³´ ì„¹ì…˜ ìˆ¨ê¹€ (í•´ì§€ì¼Â·ì‹œì‘ì¼ì€ ê°±ì‹  ì¹´ë“œ ë‚´ì—ì„œ ì„¤ì •) â”€â”€
+  // ¦¡¦¡ °»½Å ¸ğµå: °è¾àÁ¤º¸ ¼½¼Ç ¼û±è (ÇØÁöÀÏ¡¤½ÃÀÛÀÏÀº °»½Å Ä«µå ³»¿¡¼­ ¼³Á¤) ¦¡¦¡
   ['ct-start','ct-row-end','ct-row-terminate','ct-row-voided','ct-row-renewed-pair-end','ct-row-probation-period','ct-probation-row','ct-probation-end-col'].forEach(id => {
     const el = document.getElementById(id);
     if(el){
@@ -1300,31 +1299,31 @@ function doContractRenew(){
       else el.style.display = 'none';
     }
   });
-  // ct-start-hint, ct-end-hint ìˆ¨ê¹€
+  // ct-start-hint, ct-end-hint ¼û±è
   ['ct-start-hint','ct-end-hint','ct-renewed-pair-hint'].forEach(id => {
     const el = document.getElementById(id);
     if(el) el.style.display = 'none';
   });
-  // ê³„ì•½ì •ë³´ ì„¹ì…˜ íƒ€ì´í‹€ë„ ìˆ¨ê¹€
+  // °è¾àÁ¤º¸ ¼½¼Ç Å¸ÀÌÆ²µµ ¼û±è
   const _sectionTitles = document.querySelectorAll('.form-section-title');
   _sectionTitles.forEach(el => {
-    if(el.textContent.includes('ê³„ì•½ ì •ë³´')) el.style.display = 'none';
+    if(el.textContent.includes('°è¾à Á¤º¸')) el.style.display = 'none';
   });
 
   const oldEndEl = document.getElementById('ct-renew-old-end');
   const newStartEl = document.getElementById('ct-renew-new-start');
   const newStartErr = document.getElementById('ct-renew-new-start-err');
 
-  // ê¸°ì¡´ ê³„ì•½ í•´ì§€ì¼: ì‚¬ìš©ìê°€ ì§ì ‘ ì…ë ¥ (ê¸°ë³¸ê°’ ì—†ìŒ)
+  // ±âÁ¸ °è¾à ÇØÁöÀÏ: »ç¿ëÀÚ°¡ Á÷Á¢ ÀÔ·Â (±âº»°ª ¾øÀ½)
   oldEndEl.value = '';
   oldEndEl.disabled = false;
-  // ì‹ ê·œ ê³„ì•½ ì‹œì‘ì¼: ë¹„í™œì„± ìƒíƒœë¡œ ì‹œì‘ (í•´ì§€ì¼ ì…ë ¥ í›„ í™œì„±í™”)
+  // ½Å±Ô °è¾à ½ÃÀÛÀÏ: ºñÈ°¼º »óÅÂ·Î ½ÃÀÛ (ÇØÁöÀÏ ÀÔ·Â ÈÄ È°¼ºÈ­)
   newStartEl.value = '';
   newStartEl.disabled = true;
   newStartEl.removeAttribute('min');
   if(newStartErr) newStartErr.style.display = 'none';
 
-  // â”€â”€ ê¸°ì¡´ ê³„ì•½ í•´ì§€ì¼ ë³€ê²½ ì‹œ ì‹ ê·œ ì‹œì‘ì¼ í™œì„±í™” + ìœ íš¨ì„± ê²€ì‚¬ â”€â”€
+  // ¦¡¦¡ ±âÁ¸ °è¾à ÇØÁöÀÏ º¯°æ ½Ã ½Å±Ô ½ÃÀÛÀÏ È°¼ºÈ­ + À¯È¿¼º °Ë»ç ¦¡¦¡
   oldEndEl.onchange = function(){
     const oe = oldEndEl.value;
     if(oe){
@@ -1346,13 +1345,13 @@ function doContractRenew(){
     }
   };
 
-  // â”€â”€ ì‹ ê·œ ê³„ì•½ ì‹œì‘ì¼ ë³€ê²½ ì‹œ ìœ íš¨ì„± ê²€ì‚¬ â”€â”€
+  // ¦¡¦¡ ½Å±Ô °è¾à ½ÃÀÛÀÏ º¯°æ ½Ã À¯È¿¼º °Ë»ç ¦¡¦¡
   newStartEl.onchange = function(){
     const oe = oldEndEl.value;
     if(oe) _validateRenewNewStart(oe);
   };
 
-  // â”€â”€ ê°±ì‹  ì‹œ ì „ì²´ í¼ í•„ë“œ í¸ì§‘ ê°€ëŠ¥í•˜ê²Œ í•´ì œ â”€â”€
+  // ¦¡¦¡ °»½Å ½Ã ÀüÃ¼ Æû ÇÊµå ÆíÁı °¡´ÉÇÏ°Ô ÇØÁ¦ ¦¡¦¡
   const modalEl = document.querySelector('#contract-modal .modal');
   if(modalEl){
     modalEl.classList.remove('ct-readonly');
@@ -1362,19 +1361,16 @@ function doContractRenew(){
       el.disabled = false;
       el.tabIndex = 0;
       el.style.pointerEvents = '';
-      el.style.background = '';
-      el.style.color = '';
-      el.style.cursor = '';
-    });
+      el.classList.remove('ct-input-locked','ct-input-locked-dark'); });
     if(bodyEl){
       bodyEl.querySelectorAll('.pi-pay-type-btn').forEach(btn=>{
-        btn.disabled = false; btn.style.cursor = ''; btn.style.pointerEvents = '';
+        btn.disabled = false; btn.classList.remove('ct-input-locked'); btn.style.pointerEvents = '';
       });
       bodyEl.querySelectorAll('.btn-brk-add').forEach(btn=>{
-        btn.disabled = false; btn.style.cursor = ''; btn.style.pointerEvents = '';
+        btn.disabled = false; btn.classList.remove('ct-input-locked'); btn.style.pointerEvents = '';
       });
     }
-    // ê·¼ë¬´ì‹œê°„í‘œ ì¬ë Œë”ë§: readonly í•´ì œ í›„ ë¹„í™œì„± ìš”ì¼ì˜ disabled ìƒíƒœ ë³µì›
+    // ±Ù¹«½Ã°£Ç¥ Àç·»´õ¸µ: readonly ÇØÁ¦ ÈÄ ºñÈ°¼º ¿äÀÏÀÇ disabled »óÅÂ º¹¿ø
     const _renewC = allContracts.find(x => x.id === editId.contract);
     if(_renewC && _renewC.schedule_json){
       try { if(typeof setScheduleFromJSON === 'function') setScheduleFromJSON(JSON.parse(_renewC.schedule_json)); }
@@ -1384,40 +1380,40 @@ function doContractRenew(){
     }
   }
 
-  // ì•¡ì…˜ ë²„íŠ¼ ìˆ¨ê¹€ (ê°±ì‹  ì¤‘ì—ëŠ” ë‹¤ë¥¸ ì•¡ì…˜ ë¶ˆê°€)
+  // ¾×¼Ç ¹öÆ° ¼û±è (°»½Å Áß¿¡´Â ´Ù¸¥ ¾×¼Ç ºÒ°¡)
   ['ct-btn-amend','ct-btn-amend2','ct-btn-renew','ct-btn-renew2',
    'ct-btn-terminate','ct-btn-terminate2','ct-btn-recontract','ct-btn-recontract2',
    'ct-btn-fixed-terminate','ct-btn-fixed-terminate2'].forEach(bid=>{
     const el = document.getElementById(bid); if(el) el.style.display='none';
   });
 
-  // í•˜ë‹¨ ê°±ì‹ ì™„ë£ŒÂ·ì·¨ì†Œ ë²„íŠ¼ í‘œì‹œ
+  // ÇÏ´Ü °»½Å¿Ï·á¡¤Ãë¼Ò ¹öÆ° Ç¥½Ã
   const btnComplete2 = document.getElementById('ct-btn-renew-complete2');
   if(btnComplete2) btnComplete2.style.display = 'inline-flex';
   const btnCancel2 = document.getElementById('ct-btn-renew-cancel2');
   if(btnCancel2) btnCancel2.style.display = 'inline-flex';
 
-  // amend íŒ¨ë„ ìˆ¨ê¹€
+  // amend ÆĞ³Î ¼û±è
   const amendPanel = document.getElementById('ct-amend-panel');
   if(amendPanel) amendPanel.style.display = 'none';
 
-  // ì¼ê´„ì„¤ì • ë°” í‘œì‹œ
+  // ÀÏ°ı¼³Á¤ ¹Ù Ç¥½Ã
   const bulkBar = document.getElementById('ct-bulk-bar-wrap');
   if(bulkBar) bulkBar.style.display = '';
 
-  // ë‹¨ê³„ë°” í‘œì‹œ
+  // ´Ü°è¹Ù Ç¥½Ã
   const stepBar = document.getElementById('ct-step-bar');
   if(stepBar) stepBar.style.display = '';
   if(typeof setContractStep === 'function') setContractStep(1);
 
-  // ì²¨ë¶€ì„œë¥˜ ì„¹ì…˜ ìˆ¨ê¹€ (ê°±ì‹  ëª¨ë“œì—ì„œëŠ” ë¶ˆí•„ìš”)
+  // Ã·ºÎ¼­·ù ¼½¼Ç ¼û±è (°»½Å ¸ğµå¿¡¼­´Â ºÒÇÊ¿ä)
   const filesSection = document.getElementById('ct-files-section');
   if(filesSection) filesSection.style.display = 'none';
 
   setTimeout(()=>rp.scrollIntoView({behavior:'smooth',block:'center'}),100);
 }
 
-/** ê°±ì‹  ëª¨ë“œ ì·¨ì†Œ: ê³„ì•½ ì¡°íšŒ ëª¨ë“œë¡œ ë³µê·€ */
+/** °»½Å ¸ğµå Ãë¼Ò: °è¾à Á¶È¸ ¸ğµå·Î º¹±Í */
 async function cancelContractRenew(){
   const cid = editId.contract;
   if(!cid) return;
@@ -1425,12 +1421,12 @@ async function cancelContractRenew(){
   const c = allContracts.find(x => x.id === cid);
   if(!c) return;
 
-  // ê°±ì‹ ì˜ˆì •/ê³„ì•½ì˜ˆì • ìƒíƒœì´ê³  renewed_from_idê°€ ìˆëŠ” ê²½ìš°ë§Œ ê°±ì‹  ì·¨ì†Œ ì²˜ë¦¬
+  // °»½Å¿¹Á¤/°è¾à¿¹Á¤ »óÅÂÀÌ°í renewed_from_id°¡ ÀÖ´Â °æ¿ì¸¸ °»½Å Ãë¼Ò Ã³¸®
   const isPendingRenew = (c.status === CONTRACT_STATUS.PENDING || c.status === CONTRACT_STATUS.RENEWAL_PENDING)
                       && c.renewed_from_id;
 
   if(!isPendingRenew){
-    // ë‹¨ìˆœ ê°±ì‹  íŒ¨ë„ ë‹«ê¸° (ê°±ì‹  í™•ì • ì „ ì·¨ì†Œ)
+    // ´Ü¼ø °»½Å ÆĞ³Î ´İ±â (°»½Å È®Á¤ Àü Ãë¼Ò)
     viewContract(cid);
     return;
   }
@@ -1439,18 +1435,18 @@ async function cancelContractRenew(){
   const orig = allContracts.find(x => x.id === origId);
 
   const confirmed = await _showConfirm({
-    message: `[ê°±ì‹  ì·¨ì†Œ] ë‹¤ìŒ ì‘ì—…ì´ ì§„í–‰ë©ë‹ˆë‹¤:\n\n`
-      + `â‘  ê°±ì‹  ì˜ˆì • ê³„ì•½ â†’ íŒŒê¸° ì²˜ë¦¬\n`
-      + `â‘¡ ì›ë³¸ ê³„ì•½ â†’ ìœ íš¨ ìƒíƒœë¡œ ë³µì›\n`
-      + `â‘¢ ì›ë³¸ ê³„ì•½ì˜ í•´ì§€ì¼ ë°ì´í„° ì‚­ì œ (ê³„ì•½ ì¢…ë£Œì¼ì€ ë³´ì¡´)\n\n`
-      + `ê³„ì†í•˜ì‹œê² ìŠµë‹ˆê¹Œ?`,
-    okText: 'ê°±ì‹  ì·¨ì†Œ',
+    message: `[°»½Å Ãë¼Ò] ´ÙÀ½ ÀÛ¾÷ÀÌ ÁøÇàµË´Ï´Ù:\n\n`
+      + `¨ç °»½Å ¿¹Á¤ °è¾à ¡æ ÆÄ±â Ã³¸®\n`
+      + `¨è ¿øº» °è¾à ¡æ À¯È¿ »óÅÂ·Î º¹¿ø\n`
+      + `¨é ¿øº» °è¾àÀÇ ÇØÁöÀÏ µ¥ÀÌÅÍ »èÁ¦ (°è¾à Á¾·áÀÏÀº º¸Á¸)\n\n`
+      + `°è¼ÓÇÏ½Ã°Ú½À´Ï±î?`,
+    okText: '°»½Å Ãë¼Ò',
     okClass: 'btn-primary'
   });
   if(!confirmed) return;
 
   try {
-    // 1. ì›ë³¸ ê³„ì•½ ë³µì›: ACTIVE, í•´ì§€ì¼ ì œê±°, renewed_to_id ì œê±° (contract_endëŠ” ë³´ì¡´)
+    // 1. ¿øº» °è¾à º¹¿ø: ACTIVE, ÇØÁöÀÏ Á¦°Å, renewed_to_id Á¦°Å (contract_end´Â º¸Á¸)
     if(orig){
       await api(`../tables/contracts/${origId}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
@@ -1460,17 +1456,17 @@ async function cancelContractRenew(){
         })});
     }
 
-    // 2. ê°±ì‹ ì˜ˆì • ê³„ì•½ ì‚­ì œ (ë˜ëŠ” void ì²˜ë¦¬)
+    // 2. °»½Å¿¹Á¤ °è¾à »èÁ¦ (¶Ç´Â void Ã³¸®)
     await api(`../tables/contracts/${cid}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({status: CONTRACT_STATUS.VOIDED})});
 
     closeModal('contract-modal');
     await loadContracts(); await loadEmployees();
     renderContracts(); renderDashboard();
-    toast('ê°±ì‹ ì´ ì·¨ì†Œë˜ê³  ì›ë³¸ ê³„ì•½ì´ ìœ íš¨ ìƒíƒœë¡œ ë³µì›ë˜ì—ˆìŠµë‹ˆë‹¤.', 'success');
+    toast('°»½ÅÀÌ Ãë¼ÒµÇ°í ¿øº» °è¾àÀÌ À¯È¿ »óÅÂ·Î º¹¿øµÇ¾ú½À´Ï´Ù.', 'success');
   } catch(e){
     console.error('[cancelContractRenew]', e);
-    toast('ê°±ì‹  ì·¨ì†Œ ì¤‘ ì˜¤ë¥˜ê°€ ë°œìƒí–ˆìŠµë‹ˆë‹¤.', 'error');
+    toast('°»½Å Ãë¼Ò Áß ¿À·ù°¡ ¹ß»ıÇß½À´Ï´Ù.', 'error');
   }
 }
 async function confirmContractRenew(){
@@ -1481,29 +1477,29 @@ async function confirmContractRenew(){
   if(!oldEnd){
     oldEndEl?.focus();
     oldEndEl?.scrollIntoView({behavior:'smooth',block:'center'});
-    return toast('ê¸°ì¡´ ê³„ì•½ í•´ì§€ì¼ì„ ì…ë ¥í•˜ì„¸ìš”.','error');
+    return toast('±âÁ¸ °è¾à ÇØÁöÀÏÀ» ÀÔ·ÂÇÏ¼¼¿ä.','error');
   }
   if(!newStart){
     newStartEl?.focus();
     newStartEl?.scrollIntoView({behavior:'smooth',block:'center'});
-    return toast('ì‹ ê·œ ê³„ì•½ ì‹œì‘ì¼ì„ ì…ë ¥í•˜ì„¸ìš”.','error');
+    return toast('½Å±Ô °è¾à ½ÃÀÛÀÏÀ» ÀÔ·ÂÇÏ¼¼¿ä.','error');
   }
   if(newStart <= oldEnd){
     newStartEl?.focus();
     newStartEl?.scrollIntoView({behavior:'smooth',block:'center'});
-    return toast('ì‹ ê·œ ê³„ì•½ ì‹œì‘ì¼ì€ ê¸°ì¡´ ê³„ì•½ í•´ì§€ì¼ë³´ë‹¤ ì´í›„ì—¬ì•¼ í•©ë‹ˆë‹¤.','error');
+    return toast('½Å±Ô °è¾à ½ÃÀÛÀÏÀº ±âÁ¸ °è¾à ÇØÁöÀÏº¸´Ù ÀÌÈÄ¿©¾ß ÇÕ´Ï´Ù.','error');
   }
 
   const c = allContracts.find(x=>x.id===editId.contract);
-  if(!c) return toast('ê³„ì•½ ì •ë³´ë¥¼ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤.','error');
+  if(!c) return toast('°è¾à Á¤º¸¸¦ Ã£À» ¼ö ¾ø½À´Ï´Ù.','error');
 
-  // â”€â”€ ì „ì²´ í¼ ìœ íš¨ì„± ê²€ì‚¬ (_ctValidate) â”€â”€
+  // ¦¡¦¡ ÀüÃ¼ Æû À¯È¿¼º °Ë»ç (_ctValidate) ¦¡¦¡
   if(_ctValidate()) return;
 
   const today = new Date().toISOString().slice(0,10);
   const origEnd = c.contract_end || '';
 
-  // â”€â”€ ê³„ì•½ ì—°ì†ì„± ê²€ì‚¬: í•´ì§€ì¼~ì‹œì‘ì¼ ì‚¬ì´ì— í‰ì¼ ê°­ì´ ìˆìœ¼ë©´ ì…ì‚¬ì¼ ë³€ê²½ â”€â”€
+  // ¦¡¦¡ °è¾à ¿¬¼Ó¼º °Ë»ç: ÇØÁöÀÏ~½ÃÀÛÀÏ »çÀÌ¿¡ ÆòÀÏ °¸ÀÌ ÀÖÀ¸¸é ÀÔ»çÀÏ º¯°æ ¦¡¦¡
   const _emp = allEmployees.find(e => e.id === c.employee_id);
   const _oldHireDate = _emp?.hire_date || '';
   const _hasGap = _hasWeekdayGap(oldEnd, newStart);
@@ -1511,47 +1507,47 @@ async function confirmContractRenew(){
     const _fmtOld = oldEnd.replace(/-/g, '.');
     const _fmtNew = newStart.replace(/-/g, '.');
     if(!confirm(
-      `âš ï¸ ê³„ì•½ ì—°ì†ì„± ë‹¨ì ˆ ì•ˆë‚´\n\n` +
-      `ê¸°ì¡´ ê³„ì•½ í•´ì§€ì¼(${_fmtOld})ê³¼ ì‹ ê·œ ê³„ì•½ ì‹œì‘ì¼(${_fmtNew}) ì‚¬ì´ì— í‰ì¼ ê³µë°±ì´ ìˆìŠµë‹ˆë‹¤.\n` +
-      `ì´ ê²½ìš° ê·¼ë¡œê³„ì•½ì˜ ì—°ì†ì„±ì´ ë‹¨ì ˆëœ ê²ƒìœ¼ë¡œ ë³´ì•„ ì…ì‚¬ì¼ì´ ì‹ ê·œ ê³„ì•½ ì‹œì‘ì¼(${_fmtNew})ë¡œ ë³€ê²½ë©ë‹ˆë‹¤.\n\n` +
-      `í˜„ì¬ ì…ì‚¬ì¼: ${_oldHireDate.replace(/-/g, '.')}\n` +
-      `ë³€ê²½ë  ì…ì‚¬ì¼: ${_fmtNew}\n\n` +
-      `ê³„ì† ì§„í–‰í•˜ì‹œê² ìŠµë‹ˆê¹Œ?`
+      `?? °è¾à ¿¬¼Ó¼º ´ÜÀı ¾È³»\n\n` +
+      `±âÁ¸ °è¾à ÇØÁöÀÏ(${_fmtOld})°ú ½Å±Ô °è¾à ½ÃÀÛÀÏ(${_fmtNew}) »çÀÌ¿¡ ÆòÀÏ °ø¹éÀÌ ÀÖ½À´Ï´Ù.\n` +
+      `ÀÌ °æ¿ì ±Ù·Î°è¾àÀÇ ¿¬¼Ó¼ºÀÌ ´ÜÀıµÈ °ÍÀ¸·Î º¸¾Æ ÀÔ»çÀÏÀÌ ½Å±Ô °è¾à ½ÃÀÛÀÏ(${_fmtNew})·Î º¯°æµË´Ï´Ù.\n\n` +
+      `ÇöÀç ÀÔ»çÀÏ: ${_oldHireDate.replace(/-/g, '.')}\n` +
+      `º¯°æµÉ ÀÔ»çÀÏ: ${_fmtNew}\n\n` +
+      `°è¼Ó ÁøÇàÇÏ½Ã°Ú½À´Ï±î?`
     )) return;
   }
 
-  // í•´ì§€ì¼ì´ ì›ë˜ ê³„ì•½ ì¢…ë£Œì¼ë³´ë‹¤ ì•ë‹¹ê²¨ì¡ŒëŠ”ì§€ í™•ì¸
+  // ÇØÁöÀÏÀÌ ¿ø·¡ °è¾à Á¾·áÀÏº¸´Ù ¾Õ´ç°ÜÁ³´ÂÁö È®ÀÎ
   if(origEnd && oldEnd < origEnd){
-    if(!confirm(`ì›ë˜ ê³„ì•½ ì¢…ë£Œì¼(${origEnd})ë³´ë‹¤ ì•ë‹¹ê²¨ì§„ í•´ì§€ì¼(${oldEnd})ì…ë‹ˆë‹¤.\nê³„ì•½ ì¢…ë£Œì¼ ì´ì „ í•´ì§€ëŠ” [í•´ì§€]ë¡œ ì²˜ë¦¬ë©ë‹ˆë‹¤.\nê·¸ë˜ë„ ê³„ì† ì§„í–‰í•˜ì‹œê² ìŠµë‹ˆê¹Œ?`)) return;
+    if(!confirm(`¿ø·¡ °è¾à Á¾·áÀÏ(${origEnd})º¸´Ù ¾Õ´ç°ÜÁø ÇØÁöÀÏ(${oldEnd})ÀÔ´Ï´Ù.\n°è¾à Á¾·áÀÏ ÀÌÀü ÇØÁö´Â [ÇØÁö]·Î Ã³¸®µË´Ï´Ù.\n±×·¡µµ °è¼Ó ÁøÇàÇÏ½Ã°Ú½À´Ï±î?`)) return;
   }
 
-  // 1. ì‹ ê·œ ê³„ì•½ ìƒì„± (í˜„ì¬ í¼ ì…ë ¥ê°’ + ê¸°ì¡´ ê³„ì•½ ë³‘í•©)
-  //    - ì‹œì‘ì¼ì´ ì˜¤ëŠ˜ ì´í›„ë©´ 'ê³„ì•½ì˜ˆì •', ì˜¤ëŠ˜ì´ê±°ë‚˜ ì´ì „ì´ë©´ 'í™œì„±'
+  // 1. ½Å±Ô °è¾à »ı¼º (ÇöÀç Æû ÀÔ·Â°ª + ±âÁ¸ °è¾à º´ÇÕ)
+  //    - ½ÃÀÛÀÏÀÌ ¿À´Ã ÀÌÈÄ¸é '°è¾à¿¹Á¤', ¿À´ÃÀÌ°Å³ª ÀÌÀüÀÌ¸é 'È°¼º'
   const newStatus = newStart > today ? CONTRACT_STATUS.PENDING : CONTRACT_STATUS.ACTIVE;
   const _renewFields = _collectRenewFormFields();
   const newContract = Object.assign({}, c, _renewFields, {
-    contract_start: newStart,                              // ê°±ì‹  íŒ¨ë„ì—ì„œ ì§€ì •í•œ ì‹œì‘ì¼ ìš°ì„ 
-    contract_end:   _renewFields.contract_end !== undefined ? _renewFields.contract_end : '',  // ê³„ì•½ì§ì€ í¼ ì¢…ë£Œì¼, ì •ê·œì§ì€ ë¹ˆê°’
+    contract_start: newStart,                              // °»½Å ÆĞ³Î¿¡¼­ ÁöÁ¤ÇÑ ½ÃÀÛÀÏ ¿ì¼±
+    contract_end:   _renewFields.contract_end !== undefined ? _renewFields.contract_end : '',  // °è¾àÁ÷Àº Æû Á¾·áÀÏ, Á¤±ÔÁ÷Àº ºó°ª
     status:         newStatus,
     is_draft:       false,
     terminate_date: '',
-    renewed_from_id: c.id,                                 // ì›ë³¸ ê³„ì•½ ID ì°¸ì¡°
+    renewed_from_id: c.id,                                 // ¿øº» °è¾à ID ÂüÁ¶
     note: document.getElementById('ct-note')?.value || c.note || '',
   });
-  // API ì‹œìŠ¤í…œ í•„ë“œ ë° DB ë¯¸ì¡´ì¬ ì»¬ëŸ¼ ì œê±° (idëŠ” ì„œë²„ì—ì„œ UUID ìƒì„±)
+  // API ½Ã½ºÅÛ ÇÊµå ¹× DB ¹ÌÁ¸Àç ÄÃ·³ Á¦°Å (id´Â ¼­¹ö¿¡¼­ UUID »ı¼º)
   ['id','gs_project_id','gs_table_name','created_at','updated_at','deleted','terminate_date'].forEach(k=>delete newContract[k]);
   const savedNew = await api('../tables/contracts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(newContract)});
   const newId = savedNew.id;
 
-  // 2. ê¸°ì¡´ ê³„ì•½: í•´ì§€ì¼ ê¸°ë¡ + ìƒíƒœ 'ê°±ì‹ ë¨' + renewed_to_id (contract_endëŠ” ë³´ì¡´)
+  // 2. ±âÁ¸ °è¾à: ÇØÁöÀÏ ±â·Ï + »óÅÂ '°»½ÅµÊ' + renewed_to_id (contract_end´Â º¸Á¸)
   await api(`../tables/contracts/${c.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({terminate_date: oldEnd, status: CONTRACT_STATUS.RENEWED, renewed_to_id: newId})});
-  // ë¡œì»¬ ê°±ì‹ 
+  // ·ÎÄÃ °»½Å
   c.terminate_date = oldEnd;
   c.status = CONTRACT_STATUS.RENEWED;
   c.renewed_to_id = newId;
 
-  // â”€â”€ ê³„ì•½ ì—°ì†ì„± ë‹¨ì ˆ ì‹œ ê·¼ë¡œì ì…ì‚¬ì¼ ë³€ê²½ â”€â”€
+  // ¦¡¦¡ °è¾à ¿¬¼Ó¼º ´ÜÀı ½Ã ±Ù·ÎÀÚ ÀÔ»çÀÏ º¯°æ ¦¡¦¡
   if(_hasGap && _emp){
     try {
       await api(`../tables/employees/${_emp.id}`, {
@@ -1559,34 +1555,34 @@ async function confirmContractRenew(){
         body: JSON.stringify({ hire_date: newStart })
       });
       _emp.hire_date = newStart;
-      toast(`ê³„ì•½ ì—°ì†ì„± ë‹¨ì ˆë¡œ ì…ì‚¬ì¼ì´ ${newStart.replace(/-/g, '.')}(ìœ¼)ë¡œ ë³€ê²½ë˜ì—ˆìŠµë‹ˆë‹¤.`, 'warning');
+      toast(`°è¾à ¿¬¼Ó¼º ´ÜÀı·Î ÀÔ»çÀÏÀÌ ${newStart.replace(/-/g, '.')}(À¸)·Î º¯°æµÇ¾ú½À´Ï´Ù.`, 'warning');
     } catch(e){
-      console.error('[ì…ì‚¬ì¼ ë³€ê²½ ì‹¤íŒ¨]', e);
+      console.error('[ÀÔ»çÀÏ º¯°æ ½ÇÆĞ]', e);
     }
   }
 
-  // â”€â”€ ê³ ê°ì‚¬ ì¸ì•± ì•Œë¦¼ ë°œì†¡ (ê°±ì‹ /ê°±ì‹ ì˜ˆì•½) â”€â”€
+  // ¦¡¦¡ °í°´»ç ÀÎ¾Û ¾Ë¸² ¹ß¼Û (°»½Å/°»½Å¿¹¾à) ¦¡¦¡
   {
     const _renewEmp = allEmployees.find(x => x.id === c.employee_id) || {};
     const _renewCo  = allCompanies.find(x => x.id === c.company_id)  || {};
     const _coRep    = getCompanyRepGreeting(_renewCo);
-    const _fmtD     = d => { if(!d) return '-'; const [y,m,dd]=d.split('-'); return `${parseInt(y)}ë…„ ${parseInt(m)}ì›” ${parseInt(dd)}ì¼`; };
+    const _fmtD     = d => { if(!d) return '-'; const [y,m,dd]=d.split('-'); return `${parseInt(y)}³â ${parseInt(m)}¿ù ${parseInt(dd)}ÀÏ`; };
     if(newStatus === CONTRACT_STATUS.PENDING){
-      // ê°±ì‹  ì˜ˆì•½
+      // °»½Å ¿¹¾à
       await _sendCompanyNotice({
         companyId  : c.company_id, companyName: _renewCo.company_name || '',
         noticeType : 'contract_renewal_scheduled',
-        title      : `[ê°±ì‹  ì˜ˆì•½] ${_renewEmp.name||''} â€” ê³„ì•½ ê°±ì‹ ì´ ì˜ˆì•½ë˜ì—ˆìŠµë‹ˆë‹¤`,
+        title      : `[°»½Å ¿¹¾à] ${_renewEmp.name||''} ? °è¾à °»½ÅÀÌ ¿¹¾àµÇ¾ú½À´Ï´Ù`,
         body       :
-`ì•ˆë…•í•˜ì„¸ìš”${_coRep}.
+`¾È³çÇÏ¼¼¿ä${_coRep}.
 
-ì†Œì† ê·¼ë¡œìì˜ ê³„ì•½ ê°±ì‹ ì´ ì˜ˆì•½ë˜ì—ˆìŠµë‹ˆë‹¤.
+¼Ò¼Ó ±Ù·ÎÀÚÀÇ °è¾à °»½ÅÀÌ ¿¹¾àµÇ¾ú½À´Ï´Ù.
 
-â–  ê·¼ë¡œì: ${_renewEmp.name||''}
-â–  ê³ ìš©í˜•íƒœ: ${contractTypeLabel(c.contract_type)||''}
-â–  ê¸°ì¡´ ê³„ì•½ í•´ì§€ì¼: ${_fmtD(oldEnd)}
-â–  ìƒˆ ê³„ì•½ ì‹œì‘ì¼: ${_fmtD(newStart)} (ì‹œì‘ì¼ ë¯¸ë„ë˜ â€” ê³„ì•½ì˜ˆì •)
-â–  ì²˜ë¦¬ ì¼ì‹œ: ${new Date().toLocaleString('ko-KR')}
+¡á ±Ù·ÎÀÚ: ${_renewEmp.name||''}
+¡á °í¿ëÇüÅÂ: ${contractTypeLabel(c.contract_type)||''}
+¡á ±âÁ¸ °è¾à ÇØÁöÀÏ: ${_fmtD(oldEnd)}
+¡á »õ °è¾à ½ÃÀÛÀÏ: ${_fmtD(newStart)} (½ÃÀÛÀÏ ¹Ìµµ·¡ ? °è¾à¿¹Á¤)
+¡á Ã³¸® ÀÏ½Ã: ${new Date().toLocaleString('ko-KR')}
 
 `,
         contractId  : newId,
@@ -1594,22 +1590,22 @@ async function confirmContractRenew(){
         contractEnd : '',
       });
     } else {
-      // ê°±ì‹  (ì¦‰ì‹œ í™œì„±)
+      // °»½Å (Áï½Ã È°¼º)
       await _sendCompanyNotice({
         companyId  : c.company_id, companyName: _renewCo.company_name || '',
         noticeType : 'contract_renewed',
-        title      : `[ê³„ì•½ ê°±ì‹ ] ${_renewEmp.name||''} â€” ê³„ì•½ì´ ê°±ì‹ ë˜ì—ˆìŠµë‹ˆë‹¤`,
+        title      : `[°è¾à °»½Å] ${_renewEmp.name||''} ? °è¾àÀÌ °»½ÅµÇ¾ú½À´Ï´Ù`,
         body       :
-`ì•ˆë…•í•˜ì„¸ìš”${_coRep}.
+`¾È³çÇÏ¼¼¿ä${_coRep}.
 
-ì†Œì† ê·¼ë¡œìì˜ ê³„ì•½ ê°±ì‹ ì´ ì™„ë£Œë˜ì—ˆìŠµë‹ˆë‹¤.
+¼Ò¼Ó ±Ù·ÎÀÚÀÇ °è¾à °»½ÅÀÌ ¿Ï·áµÇ¾ú½À´Ï´Ù.
 
-â–  ê·¼ë¡œì: ${_renewEmp.name||''}
-â–  ê³ ìš©í˜•íƒœ: ${contractTypeLabel(c.contract_type)||''}
-â–  ê¸°ì¡´ ê³„ì•½ í•´ì§€ì¼: ${_fmtD(oldEnd)}
-â–  ìƒˆ ê³„ì•½ ì‹œì‘ì¼: ${_fmtD(newStart)}
-â–  ê³„ì•½ ìƒíƒœ: ê³„ì•½ìœ íš¨ (í™œì„±)
-â–  ì²˜ë¦¬ ì¼ì‹œ: ${new Date().toLocaleString('ko-KR')}
+¡á ±Ù·ÎÀÚ: ${_renewEmp.name||''}
+¡á °í¿ëÇüÅÂ: ${contractTypeLabel(c.contract_type)||''}
+¡á ±âÁ¸ °è¾à ÇØÁöÀÏ: ${_fmtD(oldEnd)}
+¡á »õ °è¾à ½ÃÀÛÀÏ: ${_fmtD(newStart)}
+¡á °è¾à »óÅÂ: °è¾àÀ¯È¿ (È°¼º)
+¡á Ã³¸® ÀÏ½Ã: ${new Date().toLocaleString('ko-KR')}
 
 `,
         contractId  : newId,
@@ -1621,62 +1617,62 @@ async function confirmContractRenew(){
 
   closeModal('contract-modal');
   await loadContracts(); await loadEmployees(); renderContracts(); renderDashboard();
-  const label = newStatus === CONTRACT_STATUS.PENDING ? 'ê³„ì•½ì˜ˆì • (ì‹œì‘ì¼ ë¯¸ë„ë˜)' : 'ê³„ì•½ìœ íš¨ (í™œì„±)';
-  toast(`ì—°ì¥ ì²˜ë¦¬ ì™„ë£Œ. ì „ ê³„ì•½: í•´ì§€ / ìƒˆ ê³„ì•½: ${label}`);
+  const label = newStatus === CONTRACT_STATUS.PENDING ? '°è¾à¿¹Á¤ (½ÃÀÛÀÏ ¹Ìµµ·¡)' : '°è¾àÀ¯È¿ (È°¼º)';
+  toast(`¿¬Àå Ã³¸® ¿Ï·á. Àü °è¾à: ÇØÁö / »õ °è¾à: ${label}`);
 }
 
-// â”€â”€â”€ ì¬ê³„ì•½ í”Œë¡œìš° â”€â”€â”€
+// ¦¡¦¡¦¡ Àç°è¾à ÇÃ·Î¿ì ¦¡¦¡¦¡
 function doContractRecontract(){
   const c = allContracts.find(x=>x.id===editId.contract);
   if(!c) return;
-  // ê¸°ì¡´ ê³„ì•½ ë°ì´í„°ë¥¼ ë³µì‚¬í•´ì„œ í¸ì§‘ ê°€ëŠ¥í•œ ìƒˆ ê³„ì•½ ëª¨ë‹¬ ì—´ê¸°
-  // ì„ì‹œ í”Œë˜ê·¸ë¡œ "ì¬ê³„ì•½ ëª¨ë“œ" í‘œì‹œ
+  // ±âÁ¸ °è¾à µ¥ÀÌÅÍ¸¦ º¹»çÇØ¼­ ÆíÁı °¡´ÉÇÑ »õ °è¾à ¸ğ´Ş ¿­±â
+  // ÀÓ½Ã ÇÃ·¡±×·Î "Àç°è¾à ¸ğµå" Ç¥½Ã
   _recontractSourceId = c.id;
   closeModal('contract-modal');
-  // ì ì‹œ í›„ ìƒˆ ê³„ì•½ ëª¨ë‹¬ ì˜¤í”ˆ (ì‹ ê·œ ëª¨ë“œ + í”„ë¦¬ì…‹)
+  // Àá½Ã ÈÄ »õ °è¾à ¸ğ´Ş ¿ÀÇÂ (½Å±Ô ¸ğµå + ÇÁ¸®¼Â)
   setTimeout(()=>openRecontractModal(c), 50);
 }
 let _recontractSourceId = null;
 function openRecontractModal(srcContract){
-  // ë™ì¼ íšŒì‚¬ ê¸°ì¤€ ì‹ ê·œ ê³„ì•½ ëª¨ë‹¬ ì˜¤í”ˆ (ì‹ ê·œ ëª¨ë“œ)
+  // µ¿ÀÏ È¸»ç ±âÁØ ½Å±Ô °è¾à ¸ğ´Ş ¿ÀÇÂ (½Å±Ô ¸ğµå)
   openContractModal(null, srcContract.company_id);
 
-  // ì²¨ë¶€ì„œë¥˜ ì„¹ì…˜ ìˆ¨ê¹€ (ì¬ê³„ì•½ ì…ë ¥ ëª¨ë“œì—ì„œëŠ” ë¶ˆí•„ìš”)
+  // Ã·ºÎ¼­·ù ¼½¼Ç ¼û±è (Àç°è¾à ÀÔ·Â ¸ğµå¿¡¼­´Â ºÒÇÊ¿ä)
   const filesSection = document.getElementById('ct-files-section');
   if(filesSection) filesSection.style.display = 'none';
 
-  // ì‹ ê·œ ëª¨ë“œì—ì„œ ê¸°ì¡´ ê³„ì•½ ë°ì´í„°ë¡œ í•„ë“œ ì±„ìš°ê¸°
+  // ½Å±Ô ¸ğµå¿¡¼­ ±âÁ¸ °è¾à µ¥ÀÌÅÍ·Î ÇÊµå Ã¤¿ì±â
   const emp = allEmployees.find(e=>e.id===srcContract.employee_id)||{};
 
-  // ì§ì› ì„¹ì…˜ â†’ ìˆ˜ì • ì§ì› ì„¹ì…˜ìœ¼ë¡œ ì „í™˜
+  // Á÷¿ø ¼½¼Ç ¡æ ¼öÁ¤ Á÷¿ø ¼½¼ÇÀ¸·Î ÀüÈ¯
   document.getElementById('ct-new-emp-section').style.display = 'none';
   document.getElementById('ct-edit-emp-info').style.display = 'block';
-  // ê³„ì•½ ì‹œì‘ì¼Â·ì¢…ë£Œì¼Â·ê³ ìš©í˜•íƒœÂ·ê³„ì•½ìƒíƒœëŠ” ìˆ˜ì • ëª¨ë“œ ì„¹ì…˜ ë‚´ë¶€ì— ìˆìœ¼ë¯€ë¡œ ë³„ë„ ì œì–´ ë¶ˆí•„ìš”
+  // °è¾à ½ÃÀÛÀÏ¡¤Á¾·áÀÏ¡¤°í¿ëÇüÅÂ¡¤°è¾à»óÅÂ´Â ¼öÁ¤ ¸ğµå ¼½¼Ç ³»ºÎ¿¡ ÀÖÀ¸¹Ç·Î º°µµ Á¦¾î ºÒÇÊ¿ä
 
-  // ì§ì› ì •ë³´ ì±„ìš°ê¸°
+  // Á÷¿ø Á¤º¸ Ã¤¿ì±â
   document.getElementById('ct-edit-emp-name').value = emp.name||'';
-  // ì¬ê³„ì•½: ê³ ìš©í˜•íƒœëŠ” ì§ì› ì¸ì‚¬ì •ë³´(employment_category) ê¸°ì¤€
+  // Àç°è¾à: °í¿ëÇüÅÂ´Â Á÷¿ø ÀÎ»çÁ¤º¸(employment_category) ±âÁØ
   const rcCtType = (emp && emp.employment_category) || srcContract.contract_type || CONTRACT_TYPE.REGULAR;
   const rcIsFixed = (rcCtType===CONTRACT_TYPE.FIXED||rcCtType===CONTRACT_TYPE.FIXED_PROBATION||rcCtType===CONTRACT_TYPE.DAILY);
   if(emp){
-    document.getElementById('ct-edit-em-gender').value     = emp.gender||'ë‚¨';
-    (function(){ const _h=document.getElementById('ct-edit-em-gender-hint'); if(_h){ _h.textContent='ì£¼ë¯¼ë²ˆí˜¸ ì…ë ¥ ì‹œ ìë™ ì„¤ì •ë©ë‹ˆë‹¤'; _h.style.color='#6b7280'; } })();
+    document.getElementById('ct-edit-em-gender').value     = emp.gender||'³²';
+    (function(){ const _h=document.getElementById('ct-edit-em-gender-hint'); if(_h){ _h.textContent='ÁÖ¹Î¹øÈ£ ÀÔ·Â ½Ã ÀÚµ¿ ¼³Á¤µË´Ï´Ù'; _h.className='ct-hint-normal'; } })();
     document.getElementById('ct-edit-em-category').value = emp.employment_category||'';
     document.getElementById('ct-edit-em-job').value        = emp.job_description||'';
     document.getElementById('ct-edit-em-dept').value       = emp.department||'';
     document.getElementById('ct-edit-em-position').value   = emp.position||'';
-    // ê³„ì•½ì§/ì¼ìš©ì§: ì…ì‚¬ì¼Â·í‡´ì‚¬ì˜ˆì •ì¼ í–‰ ìˆ¨ê¹€ (ê³„ì•½ ì‹œì‘ì¼Â·ì¢…ë£Œì¼ê³¼ ë™ì¼)
-    // ì •ê·œì§/ì •ê·œì§ ìˆ˜ìŠµ: ë¬´ê¸°í•œ ê³„ì•½ì´ë¯€ë¡œ í‡´ì‚¬ì˜ˆì •ì¼ í–‰ ìˆ¨ê¹€
+    // °è¾àÁ÷/ÀÏ¿ëÁ÷: ÀÔ»çÀÏ¡¤Åğ»ç¿¹Á¤ÀÏ Çà ¼û±è (°è¾à ½ÃÀÛÀÏ¡¤Á¾·áÀÏ°ú µ¿ÀÏ)
+    // Á¤±ÔÁ÷/Á¤±ÔÁ÷ ¼ö½À: ¹«±âÇÑ °è¾àÀÌ¹Ç·Î Åğ»ç¿¹Á¤ÀÏ Çà ¼û±è
     const rcIsRegular = (rcCtType===CONTRACT_TYPE.REGULAR||rcCtType===CONTRACT_TYPE.REGULAR_PROBATION);
     const rcHireRow   = document.getElementById('ct-edit-row-hire');
     const rcExpRow    = document.getElementById('ct-edit-row-expire');
     const rcEndRow    = document.getElementById('ct-row-end');
     if(rcHireRow)   rcHireRow.style.display   = rcIsFixed ? 'none' : '';
-    // ì •ê·œì§ì´ë©´ í‡´ì‚¬ì˜ˆì •ì¼ ìˆ¨ê¹€, ê³„ì•½ì§ì´ë©´ ì…ì‚¬ì¼ê³¼ í•¨ê»˜ ìˆ¨ê¹€
+    // Á¤±ÔÁ÷ÀÌ¸é Åğ»ç¿¹Á¤ÀÏ ¼û±è, °è¾àÁ÷ÀÌ¸é ÀÔ»çÀÏ°ú ÇÔ²² ¼û±è
     if(rcExpRow)    rcExpRow.style.display    = (rcIsFixed || rcIsRegular) ? 'none' : '';
-    // ì •ê·œì§ì´ë©´ ê³„ì•½ ì¢…ë£Œì¼ë„ ìˆ¨ê¹€
+    // Á¤±ÔÁ÷ÀÌ¸é °è¾à Á¾·áÀÏµµ ¼û±è
     if(rcEndRow)    rcEndRow.style.display    = rcIsRegular ? 'none' : '';
-    // ì…ì‚¬ì¼: ê³ ìš©í˜•íƒœì— ë¬´ê´€í•˜ê²Œ í•­ìƒ ì±„ì›€ (ìœ íš¨ì„± ê²€ì‚¬ í†µê³¼ + hire_date ê°±ì‹  ëª©ì )
+    // ÀÔ»çÀÏ: °í¿ëÇüÅÂ¿¡ ¹«°üÇÏ°Ô Ç×»ó Ã¤¿ò (À¯È¿¼º °Ë»ç Åë°ú + hire_date °»½Å ¸ñÀû)
     const _rcEarliestStart = getEarliestContractStart(emp.id);
     document.getElementById('ct-edit-em-hire').value = _rcEarliestStart || emp.hire_date || '';
     if(!rcIsFixed && !rcIsRegular){
@@ -1689,13 +1685,13 @@ function openRecontractModal(srcContract){
     document.getElementById('ct-edit-em-account').value    = emp.bank_account||'';
   }
 
-  // ê³„ì•½ ì¡°ê±´ ë³µì‚¬
+  // °è¾à Á¶°Ç º¹»ç
   document.getElementById('ct-start').value   = '';
   document.getElementById('ct-type').value    = rcCtType; toggleCtEndDate(true); toggleProbation();
   document.getElementById('ct-end').value     = srcContract.contract_end||'';
   document.getElementById('ct-status').value  = CONTRACT_STATUS.ACTIVE;
   document.getElementById('ct-annual').value  = srcContract.annual_leave_days||15;
-  // ìš”ì¼ë³„ ìŠ¤ì¼€ì¤„ ë³µì› (ì¬ê³„ì•½: ì´ì „ ê³„ì•½ ìŠ¤ì¼€ì¤„ ê·¸ëŒ€ë¡œ ë³µì‚¬)
+  // ¿äÀÏº° ½ºÄÉÁÙ º¹¿ø (Àç°è¾à: ÀÌÀü °è¾à ½ºÄÉÁÙ ±×´ë·Î º¹»ç)
   if(srcContract.schedule_json){
     try{ setScheduleFromJSON(JSON.parse(srcContract.schedule_json)); }
     catch(e){ setScheduleFromLegacy(srcContract); }
@@ -1708,7 +1704,7 @@ function openRecontractModal(srcContract){
   const isRegSrc      = ct===CONTRACT_TYPE.REGULAR||ct===CONTRACT_TYPE.REGULAR_PROBATION;
   const isFixedSrc    = ct===CONTRACT_TYPE.FIXED||ct===CONTRACT_TYPE.FIXED_PROBATION;
   const isProbSrc     = ct===CONTRACT_TYPE.REGULAR_PROBATION||ct===CONTRACT_TYPE.FIXED_PROBATION;
-  const showSalSrc    = isRegSrc || isFixedSrc; // ì—°ë´‰/ì›”ì•½ì •ê¸‰ì—¬ í–‰ í‘œì‹œ ì—¬ë¶€
+  const showSalSrc    = isRegSrc || isFixedSrc; // ¿¬ºÀ/¿ù¾àÁ¤±Ş¿© Çà Ç¥½Ã ¿©ºÎ
 
   const rowA=document.getElementById('ct-row-annual-sal'); const rowM=document.getElementById('ct-row-monthly');
   if(rowA) rowA.style.display=showSalSrc?'':'none';
@@ -1728,7 +1724,7 @@ function openRecontractModal(srcContract){
     document.getElementById('ct-probation-months').value=srcContract.probation_months||3;
     document.getElementById('ct-probation-pct').value=srcContract.probation_pct||'';
     document.getElementById('ct-probation-amt').value=srcContract.probation_amt||'';
-    // ì‚°ì •ê¸°ì¤€ ë¼ë””ì˜¤ ë³µì›
+    // »êÁ¤±âÁØ ¶óµğ¿À º¹¿ø
     const _basisSrc = srcContract.probation_basis || 'salary';
     const _rbSrc = document.querySelector(`input[name="ct-probation-basis"][value="${_basisSrc}"]`);
     if(_rbSrc){ _rbSrc.checked = true; }
@@ -1739,15 +1735,15 @@ function openRecontractModal(srcContract){
     setAmountVal('ct-daily-wage', srcContract.daily_wage||srcContract.base_salary||0);
     setAmountVal('ct-base', 0);
   } else if(isFixedSrc){
-    // ê³„ì•½ì§: ct-annual-salì— ì›”ì•½ì •ê¸‰ì—¬(monthly_salary_agreed) ë³µì›
+    // °è¾àÁ÷: ct-annual-sal¿¡ ¿ù¾àÁ¤±Ş¿©(monthly_salary_agreed) º¹¿ø
     setAmountVal('ct-annual-sal', srcContract.monthly_salary_agreed||0);
     setAmountVal('ct-base',       srcContract.base_salary);
   } else {
-    // ì •ê·œì§: ct-annual-salì— ì—°ë´‰(annual_salary) ë³µì›
+    // Á¤±ÔÁ÷: ct-annual-sal¿¡ ¿¬ºÀ(annual_salary) º¹¿ø
     setAmountVal('ct-annual-sal', srcContract.annual_salary||0);
     setAmountVal('ct-base',       srcContract.base_salary);
   }
-  // â”€â”€ í†µìƒì„ê¸ˆÂ·ê³ ì •ìˆ˜ë‹¹: ì¼ìš©ì§ì€ ëª¨ë‘ 0 ì²˜ë¦¬ â”€â”€
+  // ¦¡¦¡ Åë»óÀÓ±İ¡¤°íÁ¤¼ö´ç: ÀÏ¿ëÁ÷Àº ¸ğµÎ 0 Ã³¸® ¦¡¦¡
   if(isDailySrc){
     setAmountVal('ct-position',    0);
     setAmountVal('ct-car',         0); setCTPayType('car', '');
@@ -1766,11 +1762,11 @@ function openRecontractModal(srcContract){
     { const _ccDep=document.getElementById('ct-childcare-dependents'); if(_ccDep) _ccDep.value=0; }
   } else {
   setAmountVal('ct-position',    srcContract.position_allowance||0);
-  // ì°¨ëŸ‰ì§€ì›ë¹„ = êµ¬ êµí†µë¹„ + êµ¬ ìê°€ìš´ì „ë³´ì¡°ê¸ˆ í•©ì‚° (ë ˆê±°ì‹œ í•˜ìœ„í˜¸í™˜)
+  // Â÷·®Áö¿øºñ = ±¸ ±³Åëºñ + ±¸ ÀÚ°¡¿îÀüº¸Á¶±İ ÇÕ»ê (·¹°Å½Ã ÇÏÀ§È£È¯)
   setAmountVal('ct-car', (parseFloat(srcContract.transportation_allowance||srcContract.car_maintenance||0)) + (parseFloat(srcContract.self_driving_allowance||0)));
   setCTPayType('car', srcContract.transportation_pay_type||srcContract.self_driving_pay_type||'fixed');
   setAmountVal('ct-remote-area', srcContract.remote_area_allowance||0);
-  // remote-areaëŠ” í†µìƒì„ê¸ˆ í•­ìƒ í¬í•¨ â€” pay_type ì„¸íŒ… ë¶ˆí•„ìš”
+  // remote-area´Â Åë»óÀÓ±İ Ç×»ó Æ÷ÇÔ ? pay_type ¼¼ÆÃ ºÒÇÊ¿ä
   setAmountVal('ct-meal',        srcContract.meal_allowance||200000);
   setCTPayType('meal',           srcContract.meal_pay_type||'fixed');
   setAmountVal('ct-research',    srcContract.research_allowance||0);
@@ -1788,24 +1784,24 @@ function openRecontractModal(srcContract){
   setCTPayType('book',           srcContract.book_pay_type||'fixed');
   setAmountVal('ct-overseas',    srcContract.overseas_allowance||0);
   setCTPayType('overseas',       srcContract.overseas_pay_type||'fixed');
-  // ë³´ìœ¡ìˆ˜ë‹¹ ë³µì›
+  // º¸À°¼ö´ç º¹¿ø
   setAmountVal('ct-childcare',   srcContract.childcare_allowance||0);
   { const _ccDep=document.getElementById('ct-childcare-dependents'); if(_ccDep) _ccDep.value=srcContract.childcare_dependents||0; }
   }
   document.getElementById('ct-note').value = '';
   calcContractSalary();
 
-  document.getElementById('ct-title').textContent = 'ì¬ê³„ì•½ (ì‹ ê·œ ê³„ì•½ì„œ)';
-  // ì¬ê³„ì•½ ëª¨ë“œ: ì´ë¦„Â·ì£¼ë¯¼ë²ˆí˜¸Â·ì„±ë³„ì€ ì ê¸ˆ, ê³ ìš©í˜•íƒœëŠ” ë³€ê²½ ê°€ëŠ¥
+  document.getElementById('ct-title').textContent = 'Àç°è¾à (½Å±Ô °è¾à¼­)';
+  // Àç°è¾à ¸ğµå: ÀÌ¸§¡¤ÁÖ¹Î¹øÈ£¡¤¼ºº°Àº Àá±İ, °í¿ëÇüÅÂ´Â º¯°æ °¡´É
   _setEditNameCategoryLock(true, false);
-  // _prevEditCategoryë¥¼ í˜„ì¬ ê°’ìœ¼ë¡œ ì´ˆê¸°í™” (ëª¨ë‹¬ ì—´ë¦´ ë•Œ Alert ë°©ì§€)
+  // _prevEditCategory¸¦ ÇöÀç °ªÀ¸·Î ÃÊ±âÈ­ (¸ğ´Ş ¿­¸± ¶§ Alert ¹æÁö)
   _prevEditCategory = document.getElementById('ct-edit-em-category')?.value || '';
-  // saveContract ì¬ê³„ì•½ í”Œë˜ê·¸ ì €ì¥
+  // saveContract Àç°è¾à ÇÃ·¡±× ÀúÀå
   _recontractEmpId = srcContract.employee_id;
 }
 let _recontractEmpId = null;
 
-// â”€â”€â”€ ì¢…ë£Œ í”Œë¡œìš° â”€â”€â”€
+// ¦¡¦¡¦¡ Á¾·á ÇÃ·Î¿ì ¦¡¦¡¦¡
 function doContractTerminate(){
   document.getElementById('ct-renew-panel').style.display = 'none';
   document.getElementById('ct-amend-panel').style.display = 'none';
@@ -1814,12 +1810,12 @@ function doContractTerminate(){
   if(tp.style.display==='block'){
     const c = allContracts.find(x=>x.id===editId.contract)||{};
     const dateEl = document.getElementById('ct-terminate-date');
-    // ì´ë¯¸ í•´ì§€ì˜ˆì •ì¼(terminate_date)ì´ ì„¤ì •ëœ ê²½ìš° ê·¸ ê°’ìœ¼ë¡œ, ì—†ìœ¼ë©´ ì˜¤ëŠ˜
-    // contract_end(ê³„ì•½ë§Œë£Œì¼)ëŠ” ê±´ë“œë¦¬ì§€ ì•ŠìŒ
+    // ÀÌ¹Ì ÇØÁö¿¹Á¤ÀÏ(terminate_date)ÀÌ ¼³Á¤µÈ °æ¿ì ±× °ªÀ¸·Î, ¾øÀ¸¸é ¿À´Ã
+    // contract_end(°è¾à¸¸·áÀÏ)´Â °Çµå¸®Áö ¾ÊÀ½
     dateEl.value = c.terminate_date || new Date().toISOString().slice(0,10);
     dateEl.disabled = false;
 
-    // ì•¡ì…˜ ë²„íŠ¼ ìˆ¨ê¹€ (í‡´ì‚¬ ì„¤ì • ì¤‘ì—ëŠ” ë‹¤ë¥¸ ì•¡ì…˜ ë¶ˆê°€)
+    // ¾×¼Ç ¹öÆ° ¼û±è (Åğ»ç ¼³Á¤ Áß¿¡´Â ´Ù¸¥ ¾×¼Ç ºÒ°¡)
     ['ct-btn-amend','ct-btn-amend2','ct-btn-renew','ct-btn-renew2',
      'ct-btn-terminate','ct-btn-terminate2','ct-btn-recontract','ct-btn-recontract2',
      'ct-btn-fixed-terminate','ct-btn-fixed-terminate2',
@@ -1831,7 +1827,7 @@ function doContractTerminate(){
     setTimeout(()=>tp.scrollIntoView({behavior:'smooth',block:'center'}),100);
   }
 }
-/** í‡´ì‚¬ ì„¤ì • ëª¨ë“œ ì·¨ì†Œ: ê³„ì•½ ì¡°íšŒ ëª¨ë“œë¡œ ë³µê·€ */
+/** Åğ»ç ¼³Á¤ ¸ğµå Ãë¼Ò: °è¾à Á¶È¸ ¸ğµå·Î º¹±Í */
 function cancelContractTerminate(){
   const cid = editId.contract;
   if(!cid) return;
@@ -1839,45 +1835,45 @@ function cancelContractTerminate(){
 }
 
 async function confirmContractTerminate(){
-  // í‡´ì‚¬ì˜ˆì •ì¼ ì…ë ¥ â†’ í•´ì§€ì˜ˆì • ë˜ëŠ” í•´ì§€ ì²˜ë¦¬ (ì „ ê³ ìš©í˜•íƒœ ê³µí†µ)
+  // Åğ»ç¿¹Á¤ÀÏ ÀÔ·Â ¡æ ÇØÁö¿¹Á¤ ¶Ç´Â ÇØÁö Ã³¸® (Àü °í¿ëÇüÅÂ °øÅë)
   const termDate = document.getElementById('ct-terminate-date').value;
-  if(!termDate) return toast('í‡´ì‚¬ì˜ˆì •ì¼ì„ ì„ íƒí•˜ì„¸ìš”.','error');
+  if(!termDate) return toast('Åğ»ç¿¹Á¤ÀÏÀ» ¼±ÅÃÇÏ¼¼¿ä.','error');
 
   const c = allContracts.find(x=>x.id===editId.contract);
-  if(!c) return toast('ê³„ì•½ ì •ë³´ë¥¼ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤.','error');
+  if(!c) return toast('°è¾à Á¤º¸¸¦ Ã£À» ¼ö ¾ø½À´Ï´Ù.','error');
   const today = new Date().toISOString().slice(0,10);
 
-  // ê³„ì•½ ë§Œë£Œì¼(contract_end)ë³´ë‹¤ ì´í›„ ë‚ ì§œëŠ” ì…ë ¥ ë¶ˆê°€
+  // °è¾à ¸¸·áÀÏ(contract_end)º¸´Ù ÀÌÈÄ ³¯Â¥´Â ÀÔ·Â ºÒ°¡
   if(c.contract_end && termDate >= c.contract_end){
-    return toast(`í‡´ì‚¬ì˜ˆì •ì¼ì€ ê³„ì•½ ë§Œë£Œì¼(${c.contract_end}) ì´ì „ì´ì–´ì•¼ í•©ë‹ˆë‹¤.`, 'error');
+    return toast(`Åğ»ç¿¹Á¤ÀÏÀº °è¾à ¸¸·áÀÏ(${c.contract_end}) ÀÌÀüÀÌ¾î¾ß ÇÕ´Ï´Ù.`, 'error');
   }
 
-  // P5: ê°±ì‹  í˜ì–´ ì¡´ì¬ ì‹œ ê²½ê³  ë° í˜ì–´ í•´ì œ
+  // P5: °»½Å Æä¾î Á¸Àç ½Ã °æ°í ¹× Æä¾î ÇØÁ¦
   if(typeof findPairContract === 'function'){
     const _existPair = findPairContract(c);
     if(_existPair){
       const _confirmed = confirm(
-        `ì´ ê³„ì•½ì€ ê°±ì‹  í˜ì–´(${_existPair.employee_name || 'ì•Œ ìˆ˜ ì—†ìŒ'})ì™€ ì—°ê²°ë˜ì–´ ìˆìŠµë‹ˆë‹¤.\n` +
-        `í‡´ì‚¬/í•´ì§€ ì²˜ë¦¬ ì‹œ í˜ì–´ ê´€ê³„ê°€ í•´ì œë©ë‹ˆë‹¤.\nê³„ì† ì§„í–‰í•˜ì‹œê² ìŠµë‹ˆê¹Œ?`
+        `ÀÌ °è¾àÀº °»½Å Æä¾î(${_existPair.employee_name || '¾Ë ¼ö ¾øÀ½'})¿Í ¿¬°áµÇ¾î ÀÖ½À´Ï´Ù.\n` +
+        `Åğ»ç/ÇØÁö Ã³¸® ½Ã Æä¾î °ü°è°¡ ÇØÁ¦µË´Ï´Ù.\n°è¼Ó ÁøÇàÇÏ½Ã°Ú½À´Ï±î?`
       );
       if(!_confirmed) return;
       if(typeof breakPair === 'function') await breakPair(c);
     }
   }
 
-  // ì˜¤ëŠ˜ ì´ì „ â†’ ì¦‰ì‹œ í•´ì§€, ì˜¤ëŠ˜ ë˜ëŠ” ì´í›„ â†’ í•´ì§€ì˜ˆì •
+  // ¿À´Ã ÀÌÀü ¡æ Áï½Ã ÇØÁö, ¿À´Ã ¶Ç´Â ÀÌÈÄ ¡æ ÇØÁö¿¹Á¤
   const newStatus = termDate < today ? CONTRACT_STATUS.TERMINATED : CONTRACT_STATUS.TERMINATE_PENDING;
 
-  // contract_end ëŠ” ìœ ì§€, terminate_date ì—ë§Œ í•´ì§€ì˜ˆì •ì¼ ê¸°ë¡
+  // contract_end ´Â À¯Áö, terminate_date ¿¡¸¸ ÇØÁö¿¹Á¤ÀÏ ±â·Ï
   await api(`../tables/contracts/${c.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({terminate_date: termDate, status: newStatus})});
 
-  // í‡´ì‚¬ì¼ â†’ ì§ì› ê¸°ë¡ ì—…ë°ì´íŠ¸
+  // Åğ»çÀÏ ¡æ Á÷¿ø ±â·Ï ¾÷µ¥ÀÌÆ®
   const emp = allEmployees.find(e=>e.id===c.employee_id);
   if(emp){
     const empPatch = newStatus === CONTRACT_STATUS.TERMINATED
       ? {status: EMP_STATUS.RESIGNED, resign_date: termDate}
-      : {resign_date: termDate};  // ì˜ˆì •ë§Œ ê¸°ë¡, ì¬ì§ ìƒíƒœ ìœ ì§€
+      : {resign_date: termDate};  // ¿¹Á¤¸¸ ±â·Ï, ÀçÁ÷ »óÅÂ À¯Áö
     await api(`../tables/employees/${emp.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
       body:JSON.stringify(empPatch)});
   }
@@ -1885,17 +1881,17 @@ async function confirmContractTerminate(){
   closeModal('contract-modal');
   await loadContracts(); await loadEmployees(); renderContracts(); renderDashboard();
   const statusLabel = newStatus === CONTRACT_STATUS.TERMINATED ? CONTRACT_STATUS_LABEL[CONTRACT_STATUS.TERMINATED] : CONTRACT_STATUS_LABEL[CONTRACT_STATUS.TERMINATE_PENDING];
-  toast(`í‡´ì‚¬ì¼(${termDate})ì´ ì„¤ì •ëìŠµë‹ˆë‹¤. ê³„ì•½ ìƒíƒœ: ${statusLabel}`);
+  toast(`Åğ»çÀÏ(${termDate})ÀÌ ¼³Á¤µÆ½À´Ï´Ù. °è¾à »óÅÂ: ${statusLabel}`);
 }
 
 function editContract(id){
-  // ì¡°íšŒ ëª¨ë“œ(ct-readonly)ì—ì„œ ìˆ˜ì • ëª¨ë“œë¡œ ì „í™˜ ì‹œ readonly í´ë˜ìŠ¤ ì œê±°
+  // Á¶È¸ ¸ğµå(ct-readonly)¿¡¼­ ¼öÁ¤ ¸ğµå·Î ÀüÈ¯ ½Ã readonly Å¬·¡½º Á¦°Å
   const modalEl = document.querySelector('#contract-modal .modal');
   if(modalEl) modalEl.classList.remove('ct-readonly');
   openContractModal(id);
 }
 
-/** ì„ì‹œì €ì¥ ê·¼ë¡œê³„ì•½ì„œ ì´ì–´ ì‘ì„±: edit ëª¨ë“œ + ì‚­ì œë²„íŠ¼ í‘œì‹œ */
+/** ÀÓ½ÃÀúÀå ±Ù·Î°è¾à¼­ ÀÌ¾î ÀÛ¼º: edit ¸ğµå + »èÁ¦¹öÆ° Ç¥½Ã */
 function continueDraftContract(id){
   const c = allContracts.find(x => x.id === id);
   if(!c || !c.is_draft) { editContract(id); return; }
@@ -1904,7 +1900,7 @@ function continueDraftContract(id){
   window._resumeDraftId = id;
   
   setTimeout(() => {
-    document.getElementById('ct-title').textContent = 'ê·¼ë¡œê³„ì•½ì„œ ì¶”ê°€ (ì´ì–´ ì‘ì„±)';
+    document.getElementById('ct-title').textContent = '±Ù·Î°è¾à¼­ Ãß°¡ (ÀÌ¾î ÀÛ¼º)';
     const draftBtn = document.getElementById('ct-btn-draft');
     if(draftBtn) draftBtn.style.display = '';
     const delBtn = document.getElementById('ct-btn-delete-draft');
@@ -1912,17 +1908,17 @@ function continueDraftContract(id){
   }, 200);
 }
 
-/** ì„ì‹œì €ì¥ ê³„ì•½ì„œ ëª¨ë‹¬ì—ì„œ ì‚­ì œ */
+/** ÀÓ½ÃÀúÀå °è¾à¼­ ¸ğ´Ş¿¡¼­ »èÁ¦ */
 async function deleteDraftContract(){
   const id = window._resumeDraftId || editId.contract;
   if(!id) return;
   const c = allContracts.find(x => x.id === id);
   if(!c?.is_draft) return;
   const emp = allEmployees.find(e => e.id === c.employee_id);
-  const label = emp?.name || '(ì§ì› ë¯¸ì§€ì •)';
-  if(!confirm(`'${label}' ì„ì‹œì €ì¥ ê³„ì•½ì„œë¥¼ ì‚­ì œí•˜ì‹œê² ìŠµë‹ˆê¹Œ?\nì‚­ì œ í›„ ë³µêµ¬í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤.`)) return;
+  const label = emp?.name || '(Á÷¿ø ¹ÌÁöÁ¤)';
+  if(!confirm(`'${label}' ÀÓ½ÃÀúÀå °è¾à¼­¸¦ »èÁ¦ÇÏ½Ã°Ú½À´Ï±î?\n»èÁ¦ ÈÄ º¹±¸ÇÒ ¼ö ¾ø½À´Ï´Ù.`)) return;
   try {
-    // ê³„ì•½ ì‚­ì œ + ì—°ê²° ì§ì› ì •ë¦¬
+    // °è¾à »èÁ¦ + ¿¬°á Á÷¿ø Á¤¸®
     let _empIdToCleanup = null;
     if(c.employee_id){
       const otherContracts = allContracts.filter(x => x.id !== id && x.employee_id === c.employee_id);
@@ -1932,7 +1928,7 @@ async function deleteDraftContract(){
     if(_empIdToCleanup){
       fetch(`../tables/employees/${_empIdToCleanup}`, { method: 'DELETE' }).finally(() => loadEmployees());
     }
-    toast('ì„ì‹œì €ì¥ ê³„ì•½ì„œê°€ ì‚­ì œë˜ì—ˆìŠµë‹ˆë‹¤.', 'success');
+    toast('ÀÓ½ÃÀúÀå °è¾à¼­°¡ »èÁ¦µÇ¾ú½À´Ï´Ù.', 'success');
     closeModal('contract-modal');
     await loadContracts();
     renderContracts();
@@ -1941,88 +1937,88 @@ async function deleteDraftContract(){
     if(typeof renderDashboard === 'function') renderDashboard();
     window._resumeDraftId = null;
   } catch(e){
-    toast('ì‚­ì œ ì¤‘ ì˜¤ë¥˜ê°€ ë°œìƒí–ˆìŠµë‹ˆë‹¤.', 'error');
+    toast('»èÁ¦ Áß ¿À·ù°¡ ¹ß»ıÇß½À´Ï´Ù.', 'error');
   }
 }
 
 /**
- * ì„œë¥˜ë¯¸ë¹„ ê³„ì•½ì—ì„œ í˜¸ì¶œ: ê³„ì•½ì¡°ê±´ ì…ë ¥ ëª¨ë‹¬ì„ ì—´ê³ 
- * contract-preview-modalì˜ 'ë‚ ì¸ë³¸ ì—…ë¡œë“œ' íƒ­ìœ¼ë¡œ ë°”ë¡œ ì´ë™í•œë‹¤.
- * - ëŒ€ì‹œë³´ë“œÂ·ê·¼ë¡œê³„ì•½ ê´€ë¦¬Â·ê¸‰ì—¬ ì…ë ¥ ì„œë¥˜ë¯¸ë¹„ ë°°ë„ˆì—ì„œ ê³µí†µ ì‚¬ìš©
+ * ¼­·ù¹Ìºñ °è¾à¿¡¼­ È£Ãâ: °è¾àÁ¶°Ç ÀÔ·Â ¸ğ´ŞÀ» ¿­°í
+ * contract-preview-modalÀÇ '³¯ÀÎº» ¾÷·Îµå' ÅÇÀ¸·Î ¹Ù·Î ÀÌµ¿ÇÑ´Ù.
+ * - ´ë½Ãº¸µå¡¤±Ù·Î°è¾à °ü¸®¡¤±Ş¿© ÀÔ·Â ¼­·ù¹Ìºñ ¹è³Ê¿¡¼­ °øÅë »ç¿ë
  */
 function openContractForUpload(contractId){
   if(!contractId) return;
   const c = allContracts.find(x => x.id === contractId);
   if(!c) return;
   window._cpUploadOnly = true;
-  openContractModal(contractId);            // ë°ì´í„° ì±„ìš°ê¸°
+  openContractModal(contractId);            // µ¥ÀÌÅÍ Ã¤¿ì±â
   requestAnimationFrame(() => {
-    closeModal('contract-modal');           // ìˆ˜ì • ëª¨ë‹¬ ìˆ¨ê¹€
-    _renderCpExistingFiles(c);             // ê¸°ì¡´ ê³„ì•½ íŒŒì¼ ì„¹ì…˜ ë Œë”ë§
+    closeModal('contract-modal');           // ¼öÁ¤ ¸ğ´Ş ¼û±è
+    _renderCpExistingFiles(c);             // ±âÁ¸ °è¾à ÆÄÀÏ ¼½¼Ç ·»´õ¸µ
     document.getElementById('contract-preview-modal').classList.add('open');
   });
 }
 function loadCtEmployees(preselect=null){
-  // ì§ì› ë“œë¡­ë‹¤ìš´ ì œê±°ë¨ - íšŒì‚¬ ë³€ê²½ ì‹œ ë¶ˆí•„ìš”í•œ ë™ì‘ ì—†ìŒ
-  // ê³ ê°ì‚¬ ë³€ê²½ â†’ ì˜µì…”ë„ ìˆ˜ë‹¹ show/hide ì ìš©
-  // â€» onchange í•¸ë“¤ëŸ¬ì—ì„œ loadCtEmployees() ì§í›„ onCtCompanyChange()ê°€ í˜¸ì¶œë˜ë¯€ë¡œ
-  //   ì—¬ê¸°ì„œëŠ” ìµœì†Œí•œì˜ show/hideë§Œ ì ìš© (onCtCompanyChangeê°€ ìŠ¤ëƒ…ìƒ· ê¸°ì¤€ìœ¼ë¡œ ë®ì–´ì”€)
+  // Á÷¿ø µå·Ó´Ù¿î Á¦°ÅµÊ - È¸»ç º¯°æ ½Ã ºÒÇÊ¿äÇÑ µ¿ÀÛ ¾øÀ½
+  // °í°´»ç º¯°æ ¡æ ¿É¼Å³Î ¼ö´ç show/hide Àû¿ë
+  // ¡Ø onchange ÇÚµé·¯¿¡¼­ loadCtEmployees() Á÷ÈÄ onCtCompanyChange()°¡ È£ÃâµÇ¹Ç·Î
+  //   ¿©±â¼­´Â ÃÖ¼ÒÇÑÀÇ show/hide¸¸ Àû¿ë (onCtCompanyChange°¡ ½º³À¼¦ ±âÁØÀ¸·Î µ¤¾î¾¸)
   const coId = document.getElementById('ct-company')?.value;
   const co   = coId ? (allCompanies||[]).find(x=>x.id===coId) : null;
   const isEditMode = !!editId?.contract;
-  // ìˆ˜ì •/amend ëª¨ë“œ: ê°’ ì´ˆê¸°í™” ì—†ì´ show/hideë§Œ ê°±ì‹  (onCtCompanyChangeê°€ ë®ì–´ì“°ì§€ ì•ŠìŒ)
-  // ì‹ ê·œ/ì¬ê³„ì•½ ëª¨ë“œ: onCtCompanyChangeê°€ ë°”ë¡œ ë’¤ì—ì„œ ìŠ¤ëƒ…ìƒ·+clearValuesë¡œ ë®ì–´ì”€
+  // ¼öÁ¤/amend ¸ğµå: °ª ÃÊ±âÈ­ ¾øÀÌ show/hide¸¸ °»½Å (onCtCompanyChange°¡ µ¤¾î¾²Áö ¾ÊÀ½)
+  // ½Å±Ô/Àç°è¾à ¸ğµå: onCtCompanyChange°¡ ¹Ù·Î µÚ¿¡¼­ ½º³À¼¦+clearValues·Î µ¤¾î¾¸
   if(!isEditMode){
-    // ì‹ ê·œ/ì¬ê³„ì•½: onCtCompanyChangeê°€ ë’¤ì—ì„œ ì²˜ë¦¬í•˜ë¯€ë¡œ ì—¬ê¸°ì„œëŠ” ìƒëµ
+    // ½Å±Ô/Àç°è¾à: onCtCompanyChange°¡ µÚ¿¡¼­ Ã³¸®ÇÏ¹Ç·Î ¿©±â¼­´Â »ı·«
     return;
   }
   applyCTAllowanceConfig(co?.allowance_config ?? null, false);
 }
 
 // ==================================================================
-//  ê³„ì•½ì§ ì¡°ê¸° í•´ì§€ ì„¤ì • í•¨ìˆ˜ ê·¸ë£¹
-//  ëŒ€ìƒ: ê³„ì•½ì§ / ê³„ì•½ì§ìˆ˜ìŠµ / ì¼ìš©ì§ (isFixed í”Œë˜ê·¸)
+//  °è¾àÁ÷ Á¶±â ÇØÁö ¼³Á¤ ÇÔ¼ö ±×·ì
+//  ´ë»ó: °è¾àÁ÷ / °è¾àÁ÷¼ö½À / ÀÏ¿ëÁ÷ (isFixed ÇÃ·¡±×)
 // ==================================================================
 
 /**
- * í•´ì§€ ì„¤ì • íŒ¨ë„ í† ê¸€
- * - ë‹¤ë¥¸ íŒ¨ë„(ct-terminate-panel, ct-renew-panel) ë‹«ê¸°
- * - ì—´ë¦´ ë•Œ: ê³„ì•½ ì •ë³´ í‘œì‹œ + ì…ë ¥ ì´ˆê¸°í™”
- * - ì´ë¯¸ ì—´ë ¤ìˆìœ¼ë©´ ë‹«ê¸°
+ * ÇØÁö ¼³Á¤ ÆĞ³Î Åä±Û
+ * - ´Ù¸¥ ÆĞ³Î(ct-terminate-panel, ct-renew-panel) ´İ±â
+ * - ¿­¸± ¶§: °è¾à Á¤º¸ Ç¥½Ã + ÀÔ·Â ÃÊ±âÈ­
+ * - ÀÌ¹Ì ¿­·ÁÀÖÀ¸¸é ´İ±â
  */
 function doFixedTerminate(){
   const panel = document.getElementById('ct-fixed-terminate-panel');
   const isOpen = panel.style.display !== 'none';
 
-  // ë‹¤ë¥¸ íŒ¨ë„ ëª¨ë‘ ë‹«ê¸°
+  // ´Ù¸¥ ÆĞ³Î ¸ğµÎ ´İ±â
   const terminatePanel = document.getElementById('ct-terminate-panel');
   const renewPanel     = document.getElementById('ct-renew-panel');
   if(terminatePanel) terminatePanel.style.display = 'none';
   if(renewPanel)     renewPanel.style.display     = 'none';
 
-  // ì´ë¯¸ ì—´ë ¤ìˆìœ¼ë©´ í† ê¸€ë¡œ ë‹«ê¸°
+  // ÀÌ¹Ì ¿­·ÁÀÖÀ¸¸é Åä±Û·Î ´İ±â
   if(isOpen){ panel.style.display = 'none'; return; }
 
-  // ê³„ì•½ ì •ë³´ ì¡°íšŒ
+  // °è¾à Á¤º¸ Á¶È¸
   const c   = allContracts.find(x => x.id === editId.contract) || {};
   const emp = allEmployees.find(e => e.id === c.employee_id)   || {};
   const cat = emp.employment_category || c.contract_type || '';
 
-  // ê³„ì•½ ì •ë³´ ì¸í¬ í…ìŠ¤íŠ¸
+  // °è¾à Á¤º¸ ÀÎÆ÷ ÅØ½ºÆ®
   const infoEl = document.getElementById('cft-contract-info');
   if(infoEl){
-    const parts = [emp.name||'', cat, c.contract_end ? `ë§Œë£Œì¼: ${c.contract_end}` : 'ë§Œë£Œì¼: ë¯¸ì •']
+    const parts = [emp.name||'', cat, c.contract_end ? `¸¸·áÀÏ: ${c.contract_end}` : '¸¸·áÀÏ: ¹ÌÁ¤']
                     .filter(Boolean);
-    infoEl.textContent = `(${parts.join(' Â· ')})`;
+    infoEl.textContent = `(${parts.join(' ¡¤ ')})`;
   }
 
-  // ë‚ ì§œ ì…ë ¥ë€ ì´ˆê¸°í™” â€” ê¸°ì¡´ terminate_dateê°€ ìˆìœ¼ë©´ ë¯¸ë¦¬ ì±„ì›Œë‘ê¸°
+  // ³¯Â¥ ÀÔ·Â¶õ ÃÊ±âÈ­ ? ±âÁ¸ terminate_date°¡ ÀÖÀ¸¸é ¹Ì¸® Ã¤¿öµÎ±â
   const dateEl = document.getElementById('ct-fixed-terminate-date');
   if(dateEl){
     dateEl.value = c.terminate_date || '';
   }
 
-  // ë‚˜ë¨¸ì§€ ì…ë ¥ ì´ˆê¸°í™”
+  // ³ª¸ÓÁö ÀÔ·Â ÃÊ±âÈ­
   const noteEl        = document.getElementById('ct-fixed-terminate-note');
   const hintEl        = document.getElementById('ct-cft-date-hint');
   const statusHintEl  = document.getElementById('ct-cft-status-hint');
@@ -2032,22 +2028,22 @@ function doFixedTerminate(){
   if(statusHintEl) statusHintEl.innerHTML = '';
   if(confirmBtn)   confirmBtn.disabled = true;
 
-  // ì‚¬ìœ  ì¹© ì„ íƒ ì´ˆê¸°í™”
+  // »çÀ¯ Ä¨ ¼±ÅÃ ÃÊ±âÈ­
   document.querySelectorAll('.cft-reason-chip').forEach(ch => ch.classList.remove('selected'));
 
-  // íŒ¨ë„ ì—´ê¸° + ìŠ¤í¬ë¡¤
+  // ÆĞ³Î ¿­±â + ½ºÅ©·Ñ
   panel.style.display = 'block';
   setTimeout(() => panel.scrollIntoView({ behavior:'smooth', block:'center' }), 100);
 
-  // ê¸°ì¡´ terminate_dateê°€ ìˆìœ¼ë©´ validate ì‹¤í–‰í•˜ì—¬ ë²„íŠ¼ í™œì„±í™” ì²˜ë¦¬
+  // ±âÁ¸ terminate_date°¡ ÀÖÀ¸¸é validate ½ÇÇàÇÏ¿© ¹öÆ° È°¼ºÈ­ Ã³¸®
   if(dateEl && dateEl.value) _cftValidate();
 }
 
 /**
- * í•´ì§€ì¼ ì…ë ¥ ìœ íš¨ì„± ê²€ì‚¬
- * - ë§Œë£Œì¼(contract_end) ì´ìƒ ë‚ ì§œ ë¶ˆê°€ (ì •ìƒ ë§Œë£Œì™€ êµ¬ë¶„)
- * - ì˜¤ëŠ˜ ì´ì „ â†’ 'í•´ì§€', ì˜¤ëŠ˜ ì´í›„ â†’ 'í•´ì§€ì˜ˆì •'
- * - ìœ íš¨ ì‹œ í™•ì • ë²„íŠ¼ í™œì„±í™” + ìƒíƒœ íŒíŠ¸ í‘œì‹œ
+ * ÇØÁöÀÏ ÀÔ·Â À¯È¿¼º °Ë»ç
+ * - ¸¸·áÀÏ(contract_end) ÀÌ»ó ³¯Â¥ ºÒ°¡ (Á¤»ó ¸¸·á¿Í ±¸ºĞ)
+ * - ¿À´Ã ÀÌÀü ¡æ 'ÇØÁö', ¿À´Ã ÀÌÈÄ ¡æ 'ÇØÁö¿¹Á¤'
+ * - À¯È¿ ½Ã È®Á¤ ¹öÆ° È°¼ºÈ­ + »óÅÂ ÈùÆ® Ç¥½Ã
  */
 function _cftValidate(){
   const c          = allContracts.find(x => x.id === editId.contract) || {};
@@ -2057,7 +2053,7 @@ function _cftValidate(){
   const statusHint = document.getElementById('ct-cft-status-hint');
   const confirmBtn = document.getElementById('ct-cft-confirm-btn');
 
-  // ì…ë ¥ ì—†ìœ¼ë©´ ì´ˆê¸°í™”
+  // ÀÔ·Â ¾øÀ¸¸é ÃÊ±âÈ­
   if(!termDate){
     if(confirmBtn)   confirmBtn.disabled = true;
     if(hintEl)       hintEl.innerHTML = '';
@@ -2065,72 +2061,72 @@ function _cftValidate(){
     return;
   }
 
-  // ê³„ì•½ ë§Œë£Œì¼(contract_end) ì´ìƒì´ë©´ ì˜¤ë¥˜
+  // °è¾à ¸¸·áÀÏ(contract_end) ÀÌ»óÀÌ¸é ¿À·ù
   if(c.contract_end && termDate >= c.contract_end){
     if(hintEl) hintEl.innerHTML =
-      `<span style="color:#dc2626;">âš  ê³„ì•½ ë§Œë£Œì¼(${c.contract_end}) ì´ì „ ë‚ ì§œë§Œ ì…ë ¥ ê°€ëŠ¥í•©ë‹ˆë‹¤.</span>`;
+      `<span style="color:#dc2626;">? °è¾à ¸¸·áÀÏ(${c.contract_end}) ÀÌÀü ³¯Â¥¸¸ ÀÔ·Â °¡´ÉÇÕ´Ï´Ù.</span>`;
     if(statusHint) statusHint.innerHTML = '';
     if(confirmBtn) confirmBtn.disabled = true;
     return;
   }
 
-  // ê³„ì•½ ì‹œì‘ì¼ë³´ë‹¤ ì´ì „ì´ë©´ ì˜¤ë¥˜
+  // °è¾à ½ÃÀÛÀÏº¸´Ù ÀÌÀüÀÌ¸é ¿À·ù
   if(c.contract_start && termDate < c.contract_start){
     if(hintEl) hintEl.innerHTML =
-      `<span style="color:#dc2626;">âš  ê³„ì•½ ì‹œì‘ì¼(${c.contract_start}) ì´í›„ ë‚ ì§œë§Œ ì…ë ¥ ê°€ëŠ¥í•©ë‹ˆë‹¤.</span>`;
+      `<span style="color:#dc2626;">? °è¾à ½ÃÀÛÀÏ(${c.contract_start}) ÀÌÈÄ ³¯Â¥¸¸ ÀÔ·Â °¡´ÉÇÕ´Ï´Ù.</span>`;
     if(statusHint) statusHint.innerHTML = '';
     if(confirmBtn) confirmBtn.disabled = true;
     return;
   }
 
-  // ìœ íš¨ â€” ìƒíƒœ ê³„ì‚°
+  // À¯È¿ ? »óÅÂ °è»ê
   const isFuture   = termDate > today;
   const newStatus  = isFuture ? CONTRACT_STATUS.TERMINATE_PENDING : CONTRACT_STATUS.TERMINATED;
   const statusCls  = isFuture ? 'badge-orange' : 'badge-red';
 
-  // ë‚ ì§œ íŒíŠ¸
+  // ³¯Â¥ ÈùÆ®
   if(hintEl){
-    const startLabel = c.contract_start ? `ê³„ì•½ ì‹œì‘: ${c.contract_start}` : '';
-    const endLabel   = c.contract_end   ? `ë§Œë£Œì¼: ${c.contract_end}`      : '';
-    const labels     = [startLabel, endLabel].filter(Boolean).join(' Â· ');
+    const startLabel = c.contract_start ? `°è¾à ½ÃÀÛ: ${c.contract_start}` : '';
+    const endLabel   = c.contract_end   ? `¸¸·áÀÏ: ${c.contract_end}`      : '';
+    const labels     = [startLabel, endLabel].filter(Boolean).join(' ¡¤ ');
     hintEl.innerHTML = labels
       ? `<span style="color:#6b7280;">${labels}</span>`
       : '';
   }
 
-  // ìƒíƒœ íŒíŠ¸ (í™•ì • ë²„íŠ¼ ì˜†)
+  // »óÅÂ ÈùÆ® (È®Á¤ ¹öÆ° ¿·)
   if(statusHint){
     statusHint.innerHTML =
-      `â†’ ê³„ì•½ ìƒíƒœ: <span class="badge ${statusCls}">${contractStatusLabel(newStatus)}</span>` +
+      `¡æ °è¾à »óÅÂ: <span class="badge ${statusCls}">${contractStatusLabel(newStatus)}</span>` +
       (newStatus === CONTRACT_STATUS.TERMINATED
-        ? ' <span style="font-size:11px;color:#9ca3af;">(ì§ì› ìƒíƒœ â†’ í‡´ì§)</span>'
+        ? ' <span style="font-size:11px;color:#9ca3af;">(Á÷¿ø »óÅÂ ¡æ ÅğÁ÷)</span>'
         : '');
   }
 
-  // í™•ì • ë²„íŠ¼ í™œì„±í™”
+  // È®Á¤ ¹öÆ° È°¼ºÈ­
   if(confirmBtn) confirmBtn.disabled = false;
 }
 
 /**
- * í•´ì§€ ì‚¬ìœ  ì¹© ì„ íƒ / í† ê¸€
- * - ë™ì¼ ì¹© ì¬í´ë¦­ ì‹œ ì„ íƒ í•´ì œ
+ * ÇØÁö »çÀ¯ Ä¨ ¼±ÅÃ / Åä±Û
+ * - µ¿ÀÏ Ä¨ ÀçÅ¬¸¯ ½Ã ¼±ÅÃ ÇØÁ¦
  */
 function _cftSelectReason(el, reason){
   const isAlreadySelected = el.classList.contains('selected');
-  // ëª¨ë“  ì¹© ì„ íƒ í•´ì œ
+  // ¸ğµç Ä¨ ¼±ÅÃ ÇØÁ¦
   document.querySelectorAll('.cft-reason-chip').forEach(ch => ch.classList.remove('selected'));
-  // ê°™ì€ ì¹©ì´ë©´ í•´ì œ(í† ê¸€), ë‹¤ë¥¸ ì¹©ì´ë©´ ì„ íƒ
+  // °°Àº Ä¨ÀÌ¸é ÇØÁ¦(Åä±Û), ´Ù¸¥ Ä¨ÀÌ¸é ¼±ÅÃ
   if(!isAlreadySelected) el.classList.add('selected');
 }
 
 /**
- * í•´ì§€ ì„¤ì • íŒ¨ë„ ë‹«ê¸° + ì…ë ¥ ì´ˆê¸°í™”
+ * ÇØÁö ¼³Á¤ ÆĞ³Î ´İ±â + ÀÔ·Â ÃÊ±âÈ­
  */
 function _cftClose(){
   const panel = document.getElementById('ct-fixed-terminate-panel');
   if(panel) panel.style.display = 'none';
 
-  // í¼ ì´ˆê¸°í™” (ë‹¤ìŒ ì—´ê¸°ì—ì„œ ì´ì „ ê°’ì´ ë‚¨ì§€ ì•Šë„ë¡)
+  // Æû ÃÊ±âÈ­ (´ÙÀ½ ¿­±â¿¡¼­ ÀÌÀü °ªÀÌ ³²Áö ¾Êµµ·Ï)
   const dateEl     = document.getElementById('ct-fixed-terminate-date');
   const noteEl     = document.getElementById('ct-fixed-terminate-note');
   const hintEl     = document.getElementById('ct-cft-date-hint');
@@ -2145,29 +2141,29 @@ function _cftClose(){
 }
 
 /**
- * í•´ì§€ í™•ì • ì²˜ë¦¬
- * 1. ì…ë ¥ê°’ ê²€ì¦
- * 2. ì‚¬ìš©ì confirm ëŒ€í™”ìƒì
- * 3. contracts PATCH  â†’ terminate_date, status, note
- * 4. employees PATCH  â†’ resign_date, (ì¦‰ì‹œ í•´ì§€ ì‹œ) status='í‡´ì§'
- * 5. ëª¨ë‹¬ ë‹«ê¸° + ë°ì´í„° ê°±ì‹  + í† ìŠ¤íŠ¸
+ * ÇØÁö È®Á¤ Ã³¸®
+ * 1. ÀÔ·Â°ª °ËÁõ
+ * 2. »ç¿ëÀÚ confirm ´ëÈ­»óÀÚ
+ * 3. contracts PATCH  ¡æ terminate_date, status, note
+ * 4. employees PATCH  ¡æ resign_date, (Áï½Ã ÇØÁö ½Ã) status='ÅğÁ÷'
+ * 5. ¸ğ´Ş ´İ±â + µ¥ÀÌÅÍ °»½Å + Åä½ºÆ®
  */
 async function confirmFixedTerminate(){
   const c = allContracts.find(x => x.id === editId.contract);
-  if(!c) return toast('ê³„ì•½ ì •ë³´ë¥¼ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤.', 'error');
+  if(!c) return toast('°è¾à Á¤º¸¸¦ Ã£À» ¼ö ¾ø½À´Ï´Ù.', 'error');
 
   const termDate = (document.getElementById('ct-fixed-terminate-date') || {}).value || '';
-  if(!termDate) return toast('í•´ì§€ì¼ì„ ì„ íƒí•˜ì„¸ìš”.', 'error');
+  if(!termDate) return toast('ÇØÁöÀÏÀ» ¼±ÅÃÇÏ¼¼¿ä.', 'error');
 
   const today = new Date().toISOString().slice(0, 10);
 
-  // ë§Œë£Œì¼ ì´ìƒ ë¶ˆê°€
+  // ¸¸·áÀÏ ÀÌ»ó ºÒ°¡
   if(c.contract_end && termDate >= c.contract_end){
-    return toast(`í•´ì§€ì¼ì€ ê³„ì•½ ë§Œë£Œì¼(${c.contract_end}) ì´ì „ì´ì–´ì•¼ í•©ë‹ˆë‹¤.`, 'error');
+    return toast(`ÇØÁöÀÏÀº °è¾à ¸¸·áÀÏ(${c.contract_end}) ÀÌÀüÀÌ¾î¾ß ÇÕ´Ï´Ù.`, 'error');
   }
-  // ì‹œì‘ì¼ ì´ì „ ë¶ˆê°€
+  // ½ÃÀÛÀÏ ÀÌÀü ºÒ°¡
   if(c.contract_start && termDate < c.contract_start){
-    return toast(`í•´ì§€ì¼ì€ ê³„ì•½ ì‹œì‘ì¼(${c.contract_start}) ì´í›„ì´ì–´ì•¼ í•©ë‹ˆë‹¤.`, 'error');
+    return toast(`ÇØÁöÀÏÀº °è¾à ½ÃÀÛÀÏ(${c.contract_start}) ÀÌÈÄÀÌ¾î¾ß ÇÕ´Ï´Ù.`, 'error');
   }
 
   const selectedChip = document.querySelector('.cft-reason-chip.selected');
@@ -2176,39 +2172,39 @@ async function confirmFixedTerminate(){
   const note         = noteInput.trim();
   const newStatus    = termDate > today ? CONTRACT_STATUS.TERMINATE_PENDING : CONTRACT_STATUS.TERMINATED;
 
-  // ê¸°ì¡´ noteì— ì‚¬ìœ /ë©”ëª¨ ì¶”ê°€ (ë®ì–´ì“°ê¸° ë°©ì§€)
-  const addendum = [reason, note].filter(Boolean).join(' â€” ');
+  // ±âÁ¸ note¿¡ »çÀ¯/¸Ş¸ğ Ãß°¡ (µ¤¾î¾²±â ¹æÁö)
+  const addendum = [reason, note].filter(Boolean).join(' ? ');
   const finalNote = c.note || '';
 
   const emp    = allEmployees.find(e => e.id === c.employee_id) || {};
-  const empName= emp.name || '(ì´ë¦„ ì—†ìŒ)';
+  const empName= emp.name || '(ÀÌ¸§ ¾øÀ½)';
   const cat    = emp.employment_category || c.contract_type || '';
 
-  // ì‚¬ìš©ì í™•ì¸ ë‹¤ì´ì–¼ë¡œê·¸
+  // »ç¿ëÀÚ È®ÀÎ ´ÙÀÌ¾ó·Î±×
   const confirmMsg = [
-    `[ê³„ì•½ ì¡°ê¸° í•´ì§€ í™•ì •]`,
+    `[°è¾à Á¶±â ÇØÁö È®Á¤]`,
     ``,
-    `ì§ì›: ${empName}${cat ? ` (${cat})` : ''}`,
-    `í•´ì§€ì¼: ${termDate}`,
-    `ì²˜ë¦¬ ìƒíƒœ: ${newStatus}`,
-    reason ? `í•´ì§€ ì‚¬ìœ : ${reason}` : null,
-    note    ? `ë©”ëª¨: ${note}`       : null,
+    `Á÷¿ø: ${empName}${cat ? ` (${cat})` : ''}`,
+    `ÇØÁöÀÏ: ${termDate}`,
+    `Ã³¸® »óÅÂ: ${newStatus}`,
+    reason ? `ÇØÁö »çÀ¯: ${reason}` : null,
+    note    ? `¸Ş¸ğ: ${note}`       : null,
     ``,
     newStatus === CONTRACT_STATUS.TERMINATED
-      ? `âš  ì§ì› ìƒíƒœê°€ "í‡´ì§"ìœ¼ë¡œ ë³€ê²½ë©ë‹ˆë‹¤.`
-      : `â„¹ í•´ì§€ ì˜ˆì •ì¼ ì´í›„ ì‹¤ì œ í•´ì§€ ì²˜ë¦¬ê°€ í•„ìš”í•©ë‹ˆë‹¤.`,
+      ? `? Á÷¿ø »óÅÂ°¡ "ÅğÁ÷"À¸·Î º¯°æµË´Ï´Ù.`
+      : `? ÇØÁö ¿¹Á¤ÀÏ ÀÌÈÄ ½ÇÁ¦ ÇØÁö Ã³¸®°¡ ÇÊ¿äÇÕ´Ï´Ù.`,
     ``,
-    `ì´ ì‘ì—…ì€ ë˜ëŒë¦´ ìˆ˜ ì—†ìŠµë‹ˆë‹¤. ì§„í–‰í•˜ì‹œê² ìŠµë‹ˆê¹Œ?`
+    `ÀÌ ÀÛ¾÷Àº µÇµ¹¸± ¼ö ¾ø½À´Ï´Ù. ÁøÇàÇÏ½Ã°Ú½À´Ï±î?`
   ].filter(v => v !== null).join('\n');
 
   if(!confirm(confirmMsg)) return;
 
-  // ë²„íŠ¼ ë¡œë”© ìƒíƒœ
+  // ¹öÆ° ·Îµù »óÅÂ
   const confirmBtn = document.getElementById('ct-cft-confirm-btn');
-  if(confirmBtn){ confirmBtn.disabled = true; confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ì²˜ë¦¬ ì¤‘...'; }
+  if(confirmBtn){ confirmBtn.disabled = true; confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Ã³¸® Áß...'; }
 
   try{
-    // 1) ê³„ì•½ ì—…ë°ì´íŠ¸
+    // 1) °è¾à ¾÷µ¥ÀÌÆ®
     await api(`../tables/contracts/${c.id}`, {
       method  : 'PATCH',
       headers : { 'Content-Type': 'application/json' },
@@ -2219,11 +2215,11 @@ async function confirmFixedTerminate(){
       })
     });
 
-    // 2) ì§ì› ì—…ë°ì´íŠ¸
+    // 2) Á÷¿ø ¾÷µ¥ÀÌÆ®
     if(emp.id){
       const empPatch = newStatus === CONTRACT_STATUS.TERMINATED
         ? { status: EMP_STATUS.RESIGNED, resign_date: termDate }
-        : { resign_date: termDate };   // í•´ì§€ì˜ˆì •: ì¬ì§ ìƒíƒœ ìœ ì§€, ë‚ ì§œë§Œ ê¸°ë¡
+        : { resign_date: termDate };   // ÇØÁö¿¹Á¤: ÀçÁ÷ »óÅÂ À¯Áö, ³¯Â¥¸¸ ±â·Ï
       await api(`../tables/employees/${emp.id}`, {
         method  : 'PATCH',
         headers : { 'Content-Type': 'application/json' },
@@ -2231,73 +2227,73 @@ async function confirmFixedTerminate(){
       });
     }
 
-    // 3) ëª¨ë‹¬ ë‹«ê¸° ë° ë°ì´í„° ê°±ì‹ 
+    // 3) ¸ğ´Ş ´İ±â ¹× µ¥ÀÌÅÍ °»½Å
     closeModal('contract-modal');
     await Promise.all([loadContracts(), loadEmployees()]);
     renderContracts();
     renderDashboard();
 
     const statusLabel = newStatus === CONTRACT_STATUS.TERMINATE_PENDING
-      ? `í•´ì§€ì˜ˆì • (í•´ì§€ì¼: ${termDate})`
-      : `í•´ì§€ ì™„ë£Œ (í•´ì§€ì¼: ${termDate})`;
-    toast(`${empName} â€” ${statusLabel}`, 'success');
+      ? `ÇØÁö¿¹Á¤ (ÇØÁöÀÏ: ${termDate})`
+      : `ÇØÁö ¿Ï·á (ÇØÁöÀÏ: ${termDate})`;
+    toast(`${empName} ? ${statusLabel}`, 'success');
 
   } catch(e){
     console.error('[confirmFixedTerminate] error:', e);
-    toast('ì²˜ë¦¬ ì¤‘ ì˜¤ë¥˜ê°€ ë°œìƒí–ˆìŠµë‹ˆë‹¤. ë‹¤ì‹œ ì‹œë„í•´ ì£¼ì„¸ìš”.', 'error');
+    toast('Ã³¸® Áß ¿À·ù°¡ ¹ß»ıÇß½À´Ï´Ù. ´Ù½Ã ½ÃµµÇØ ÁÖ¼¼¿ä.', 'error');
     if(confirmBtn){
       confirmBtn.disabled = false;
-      confirmBtn.innerHTML = '<i class="fas fa-check"></i> í•´ì§€ í™•ì •';
+      confirmBtn.innerHTML = '<i class="fas fa-check"></i> ÇØÁö È®Á¤';
     }
   }
 }
-// â”€â”€ ì„ì‹œì €ì¥ â”€â”€
+// ¦¡¦¡ ÀÓ½ÃÀúÀå ¦¡¦¡
 async function saveDraftContract(reason){
-  const activeEl = document.activeElement; // í¬ì»¤ìŠ¤ ë³´ì¡´
+  const activeEl = document.activeElement; // Æ÷Ä¿½º º¸Á¸
 
-  // ì§ì› ID: ìˆ˜ì •ëª¨ë“œâ†’ê¸°ì¡´ ê³„ì•½ì—ì„œ, ì¬ê³„ì•½â†’_recontractEmpId, ì‹ ê·œâ†’ì•„ì§ ì—†ìŒ
+  // Á÷¿ø ID: ¼öÁ¤¸ğµå¡æ±âÁ¸ °è¾à¿¡¼­, Àç°è¾à¡æ_recontractEmpId, ½Å±Ô¡æ¾ÆÁ÷ ¾øÀ½
   let empId = editId.contract
     ? (allContracts.find(x=>x.id===editId.contract)||{}).employee_id||''
     : (_recontractEmpId||'');
 
-  // ì‹ ê·œì´ë©´ì„œ ì§ì› ì´ë¦„ë§Œ ì…ë ¥ëœ ê²½ìš°: ì´ë¦„ì´ë¼ë„ ìˆìœ¼ë©´ ì„ì‹œ ì €ì¥ í—ˆìš© (ì§ì› ìƒì„± ì—†ì´)
-  // â†’ ì„ì‹œì €ì¥ì€ ì§ì› ìƒì„± ì—†ì´ ê³„ì•½ ë°ì´í„°ë§Œ ì €ì¥í•œë‹¤
-  //   (ë“±ë¡ ì‹œ ì‹ ê·œ ì§ì›ë„ í•¨ê»˜ ì €ì¥ë¨)
+  // ½Å±ÔÀÌ¸é¼­ Á÷¿ø ÀÌ¸§¸¸ ÀÔ·ÂµÈ °æ¿ì: ÀÌ¸§ÀÌ¶óµµ ÀÖÀ¸¸é ÀÓ½Ã ÀúÀå Çã¿ë (Á÷¿ø »ı¼º ¾øÀÌ)
+  // ¡æ ÀÓ½ÃÀúÀåÀº Á÷¿ø »ı¼º ¾øÀÌ °è¾à µ¥ÀÌÅÍ¸¸ ÀúÀåÇÑ´Ù
+  //   (µî·Ï ½Ã ½Å±Ô Á÷¿øµµ ÇÔ²² ÀúÀåµÊ)
   const isNew     = !editId.contract && !_recontractEmpId;
   const isEditMode = !!editId.contract;
 
-  // â”€â”€ íŒŒê¸°ëœ ê³„ì•½(ìˆ˜ì •ì¬ë°œí–‰)ì€ í¸ì§‘ ë¶ˆê°€ â”€â”€
+  // ¦¡¦¡ ÆÄ±âµÈ °è¾à(¼öÁ¤Àç¹ßÇà)Àº ÆíÁı ºÒ°¡ ¦¡¦¡
   if(isEditMode){
     const _origDraft = allContracts.find(x => x.id === editId.contract);
     if(_origDraft && _origDraft.is_voided_by_amend){
-      toast('ì´ ê³„ì•½ì€ ìˆ˜ì •ì¬ë°œí–‰ìœ¼ë¡œ íŒŒê¸°ë˜ì–´ í¸ì§‘í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤.', 'error');
+      toast('ÀÌ °è¾àÀº ¼öÁ¤Àç¹ßÇàÀ¸·Î ÆÄ±âµÇ¾î ÆíÁıÇÒ ¼ö ¾ø½À´Ï´Ù.', 'error');
       return;
     }
   }
 
-  // â”€â”€ ì‹ ê·œ ì§ì›ì¸ ê²½ìš° ë¨¼ì € ì§ì› ìƒì„± (ì„ì‹œì €ì¥ë„ ì§ì› DBì— ì €ì¥) â”€â”€
+  // ¦¡¦¡ ½Å±Ô Á÷¿øÀÎ °æ¿ì ¸ÕÀú Á÷¿ø »ı¼º (ÀÓ½ÃÀúÀåµµ Á÷¿ø DB¿¡ ÀúÀå) ¦¡¦¡
   const coId = document.getElementById('ct-company')?.value || '';
   if(isNew && !empId){
     const newEmpNo = document.getElementById('ct-em-empno')?.value.trim() || '';
     const newEmpName = document.getElementById('ct-em-name')?.value.trim() || '';
 
-    // ì‚¬ì›ë²ˆí˜¸Â·ì´ë¦„ ëˆ„ë½ ê²€ì‚¬ (ì„ì‹œì €ì¥ ìµœì†Œ í•„ìˆ˜ ì…ë ¥)
+    // »ç¿ø¹øÈ£¡¤ÀÌ¸§ ´©¶ô °Ë»ç (ÀÓ½ÃÀúÀå ÃÖ¼Ò ÇÊ¼ö ÀÔ·Â)
     if(!newEmpNo && !newEmpName){
-      toast('ì‚¬ì›ë²ˆí˜¸ì™€ ì´ë¦„ì„ ì…ë ¥í•´ ì£¼ì„¸ìš”.', 'error');
+      toast('»ç¿ø¹øÈ£¿Í ÀÌ¸§À» ÀÔ·ÂÇØ ÁÖ¼¼¿ä.', 'error');
       return;
     }
     if(!newEmpNo){
-      toast('ì‚¬ì›ë²ˆí˜¸ë¥¼ ì…ë ¥í•´ ì£¼ì„¸ìš”.', 'error');
+      toast('»ç¿ø¹øÈ£¸¦ ÀÔ·ÂÇØ ÁÖ¼¼¿ä.', 'error');
       document.getElementById('ct-em-empno')?.focus();
       return;
     }
     if(!newEmpName){
-      toast('ì´ë¦„ì„ ì…ë ¥í•´ ì£¼ì„¸ìš”.', 'error');
+      toast('ÀÌ¸§À» ÀÔ·ÂÇØ ÁÖ¼¼¿ä.', 'error');
       document.getElementById('ct-em-name')?.focus();
       return;
     }
 
-    // ë™ì¼ ì‚¬ë²ˆ ì§ì›ì´ ì´ë¯¸ ìˆìœ¼ë©´ ì¬ì‚¬ìš© (ì´ì „ ì €ì¥ ì‹œë„ ì‹¤íŒ¨ í›„ ì¬ì‹œë„ ëŒ€ì‘)
+    // µ¿ÀÏ »ç¹ø Á÷¿øÀÌ ÀÌ¹Ì ÀÖÀ¸¸é Àç»ç¿ë (ÀÌÀü ÀúÀå ½Ãµµ ½ÇÆĞ ÈÄ Àç½Ãµµ ´ëÀÀ)
     const existingEmp = newEmpNo
       ? (allEmployees||[]).find(e => e.company_id === coId && e.employee_number === newEmpNo)
       : null;
@@ -2330,15 +2326,15 @@ async function saveDraftContract(reason){
     empId = saved.id;
     await loadEmployees();
   }
-  } // if(isNew && !empId) â€” ì§ì› ìƒì„± ì™„ë£Œ, ì´í›„ëŠ” ê³µí†µ ì„ì‹œì €ì¥ ë¡œì§
+  } // if(isNew && !empId) ? Á÷¿ø »ı¼º ¿Ï·á, ÀÌÈÄ´Â °øÅë ÀÓ½ÃÀúÀå ·ÎÁ÷
 
-  // â”€â”€ ì„ì‹œì €ì¥ ìµœì†Œ ê²€ì¦ â”€â”€
+  // ¦¡¦¡ ÀÓ½ÃÀúÀå ÃÖ¼Ò °ËÁõ ¦¡¦¡
   if(!empId){
-    toast('ì§ì› ì •ë³´ë¥¼ í™•ì¸í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤. ì‚¬ì›ë²ˆí˜¸ì™€ ì´ë¦„ì„ ì…ë ¥í•´ ì£¼ì„¸ìš”.', 'error');
+    toast('Á÷¿ø Á¤º¸¸¦ È®ÀÎÇÒ ¼ö ¾ø½À´Ï´Ù. »ç¿ø¹øÈ£¿Í ÀÌ¸§À» ÀÔ·ÂÇØ ÁÖ¼¼¿ä.', 'error');
     return;
   }
 
-  // í˜„ì¬ ì…ë ¥ê°’ ìˆ˜ì§‘ + ì˜ë¬¸ ì •ê·œí™”
+  // ÇöÀç ÀÔ·Â°ª ¼öÁı + ¿µ¹® Á¤±ÔÈ­
   const _rawCatDraft = isEditMode
     ? (allContracts.find(x=>x.id===editId.contract)||{}).contract_type||CONTRACT_TYPE.REGULAR
     : (isNew ? document.getElementById('ct-em-category').value : document.getElementById('ct-type').value);
@@ -2350,7 +2346,7 @@ async function saveDraftContract(reason){
   const workDays = parseInt(document.getElementById('ct-days').value)||0;
   const avgHours = parseFloat(document.getElementById('ct-hours').value)||0;
 
-  // ì‹ ê·œ ëª¨ë“œ: ct-em-start(ê³„ì•½ì‹œì‘ì¼) ì „ìš© í•„ë“œ ì‚¬ìš©. ì—†ìœ¼ë©´ ct-em-hire í´ë°±(í•˜ìœ„í˜¸í™˜)
+  // ½Å±Ô ¸ğµå: ct-em-start(°è¾à½ÃÀÛÀÏ) Àü¿ë ÇÊµå »ç¿ë. ¾øÀ¸¸é ct-em-hire Æú¹é(ÇÏÀ§È£È¯)
   const contractStart = isNew
     ? (document.getElementById('ct-start')?.value || document.getElementById('ct-edit-em-hire')?.value||'')
     : (document.getElementById('ct-start').value||'');
@@ -2358,11 +2354,11 @@ async function saveDraftContract(reason){
     ? (document.getElementById('ct-end')?.value||'')
     : (document.getElementById('ct-end').value||'');
 
-  // ì •ê·œì§(ìˆ˜ìŠµ ì œì™¸)ì€ ê³„ì•½ ì¢…ë£Œì¼ì„ í•­ìƒ ë¹ˆ ê°’ìœ¼ë¡œ ê°•ì œ
+  // Á¤±ÔÁ÷(¼ö½À Á¦¿Ü)Àº °è¾à Á¾·áÀÏÀ» Ç×»ó ºó °ªÀ¸·Î °­Á¦
   const isRegNoProbDraft = catForDraft === CONTRACT_TYPE.REGULAR;
   const finalContractEnd = isRegNoProbDraft ? '' : contractEnd;
 
-  // â”€â”€ ì •ê·œì§ ì „í™˜ ì˜ë¬´ ê²€ì‚¬ (ì„ì‹œì €ì¥ ì‹œì—ë„ ì ìš©) â”€â”€
+  // ¦¡¦¡ Á¤±ÔÁ÷ ÀüÈ¯ ÀÇ¹« °Ë»ç (ÀÓ½ÃÀúÀå ½Ã¿¡µµ Àû¿ë) ¦¡¦¡
   const TARGET_TYPES_DRAFT = ['fixed_term', 'fixed_probation', 'regular_probation', 'daily'];
   if(TARGET_TYPES_DRAFT.includes(catForDraft) && finalContractEnd){
     const _hireDraft = document.getElementById('ct-edit-em-hire')?.value || '';
@@ -2375,7 +2371,7 @@ async function saveDraftContract(reason){
           const _maxEnd = new Date(_hireDt);
           _maxEnd.setDate(_maxEnd.getDate() + 730);
           const _maxEndStr = _maxEnd.toISOString().slice(0, 10);
-          toast(`ì…ì‚¬ì¼ë¡œë¶€í„° 730ì¼ì„ ì´ˆê³¼í•˜ë©´ ì •ê·œì§ ì „í™˜ ì˜ë¬´ ëŒ€ìƒì´ ë©ë‹ˆë‹¤. ê³„ì•½ ì¢…ë£Œì¼ì„ ${_maxEndStr} ì´ë‚´ë¡œ ì„¤ì •í•˜ì„¸ìš”.`, 'error');
+          toast(`ÀÔ»çÀÏ·ÎºÎÅÍ 730ÀÏÀ» ÃÊ°úÇÏ¸é Á¤±ÔÁ÷ ÀüÈ¯ ÀÇ¹« ´ë»óÀÌ µË´Ï´Ù. °è¾à Á¾·áÀÏÀ» ${_maxEndStr} ÀÌ³»·Î ¼³Á¤ÇÏ¼¼¿ä.`, 'error');
           return;
         }
       }
@@ -2389,7 +2385,7 @@ async function saveDraftContract(reason){
   const fixedNgtDr      = getAmountVal('ct-fixed-night-pay')||0;
   const fixedHolDr      = getAmountVal('ct-fixed-hol-pay')||0;
   const fixedExtraDr    = fixedOtDr + fixedNgtDr + fixedHolDr;
-  // í†µìƒì„ê¸ˆ ì„¤ì • ê·¸ë£¹ (ì£¼íœ´ìˆ˜ë‹¹ ê³„ì‚°ìš©)
+  // Åë»óÀÓ±İ ¼³Á¤ ±×·ì (ÁÖÈŞ¼ö´ç °è»ê¿ë)
   const _ordinaryDraft  = (_isFixedAllow('site')? getAmountVal('ct-site') : 0)
     + (_isFixedAllow('position')? getAmountVal('ct-position') : 0)
     + (_isFixedAllow('skill')? getAmountVal('ct-skill') : 0)
@@ -2420,7 +2416,7 @@ async function saveDraftContract(reason){
   const selfDevDraft    = getAmountVal('ct-self-dev')||0;
   const bookDraft       = getAmountVal('ct-book')||0;
   const overseasDraft   = getAmountVal('ct-overseas')||0;
-  // ì„ì‹œì €ì¥: í†µìƒì„ê¸ˆ ì—¬ë¶€ëŠ” pay_typeìœ¼ë¡œ íŒë‹¨
+  // ÀÓ½ÃÀúÀå: Åë»óÀÓ±İ ¿©ºÎ´Â pay_typeÀ¸·Î ÆÇ´Ü
   const fixedGroupDr = (_isFixedAllow('car')           ? carDraft        : 0)
     + (_isFixedAllow('meal')          ? mealDraft       : 0)
     + (_isFixedAllow('research')      ? researchDraft   : 0)
@@ -2430,7 +2426,7 @@ async function saveDraftContract(reason){
     + (_isFixedAllow('book')          ? bookDraft       : 0)
     + (_isFixedAllow('overseas')      ? overseasDraft   : 0);
   const allAllowDraft   = _ordinaryDraft + fixedGroupDr;
-  // ì •ê·œì§: ì—°ë´‰Ã·12, ê·¸ ì™¸: ê¸°ë³¸ê¸‰+ì£¼íœ´+ìˆ˜ë‹¹, ì¼ìš©ì§: 0
+  // Á¤±ÔÁ÷: ¿¬ºÀ¡À12, ±× ¿Ü: ±âº»±Ş+ÁÖÈŞ+¼ö´ç, ÀÏ¿ëÁ÷: 0
   const monthlyDraft    = isDailyDraft ? 0
     : (isRegDraft && annualDraft > 0 ? Math.round(annualDraft / 12)
       : baseDraft + wkHolDraft + allAllowDraft);
@@ -2458,7 +2454,7 @@ async function saveDraftContract(reason){
     self_driving_allowance:  0,
     self_driving_pay_type:   'fixed',
     remote_area_allowance:   remoteAreaDraft,
-    remote_area_pay_type:    'fixed', // ë²½ì§€ìˆ˜ë‹¹ í•­ìƒ í†µìƒì„ê¸ˆ í¬í•¨
+    remote_area_pay_type:    'fixed', // º®Áö¼ö´ç Ç×»ó Åë»óÀÓ±İ Æ÷ÇÔ
     meal_allowance:          mealDraft,
     meal_pay_type:           _getCTPayTypeVal('meal'),
     research_allowance:      researchDraft,
@@ -2500,92 +2496,92 @@ async function saveDraftContract(reason){
     draft_saved_at:       Date.now(),
   };
 
-  // (ì§ì›ì´ ì´ë¯¸ ìƒì„±ë˜ì—ˆìœ¼ë¯€ë¡œ noteì— ì§ì›ëª… ë³„ë„ ë³´ê´€ ë¶ˆí•„ìš”)
+  // (Á÷¿øÀÌ ÀÌ¹Ì »ı¼ºµÇ¾úÀ¸¹Ç·Î note¿¡ Á÷¿ø¸í º°µµ º¸°ü ºÒÇÊ¿ä)
   let savedId;
   const bodyJSON = JSON.stringify(draftBody);
   try {
   if(isEditMode){
-    // ê¸°ì¡´ ê³„ì•½ ìˆ˜ì • ì¤‘ ì„ì‹œì €ì¥ â†’ PATCH
+    // ±âÁ¸ °è¾à ¼öÁ¤ Áß ÀÓ½ÃÀúÀå ¡æ PATCH
     draftBody.id = editId.contract;
     const res = await api(`../tables/contracts/${editId.contract}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:bodyJSON});
-    if(res && res.error){ toast('ì„ì‹œì €ì¥ ì‹¤íŒ¨: ' + res.error, 'error'); return; }
+    if(res && res.error){ toast('ÀÓ½ÃÀúÀå ½ÇÆĞ: ' + res.error, 'error'); return; }
     savedId = editId.contract;
   } else if(editId.contract === null && (_currentDraftId || window._resumeDraftId)){
-    // ì´ì „ ì„ì‹œì €ì¥ IDê°€ ìˆìœ¼ë©´ ë®ì–´ì“°ê¸°
+    // ÀÌÀü ÀÓ½ÃÀúÀå ID°¡ ÀÖÀ¸¸é µ¤¾î¾²±â
     const draftId = window._resumeDraftId || _currentDraftId;
     draftBody.id = draftId;
     const res = await api(`../tables/contracts/${draftId}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:bodyJSON});
-    if(res && res.error){ toast('ì„ì‹œì €ì¥ ì‹¤íŒ¨: ' + res.error, 'error'); return; }
+    if(res && res.error){ toast('ÀÓ½ÃÀúÀå ½ÇÆĞ: ' + res.error, 'error'); return; }
     savedId = draftId;
     _currentDraftId = draftId;
     window._resumeDraftId = null;
   } else {
-    // ìµœì´ˆ ì„ì‹œì €ì¥ â†’ POST (IDëŠ” ì„œë²„ì—ì„œ UUID ìƒì„±)
+    // ÃÖÃÊ ÀÓ½ÃÀúÀå ¡æ POST (ID´Â ¼­¹ö¿¡¼­ UUID »ı¼º)
     delete draftBody.id;
     const res = await api('../tables/contracts',{method:'POST',headers:{'Content-Type':'application/json'},body:bodyJSON});
-    if(res && res.error){ console.error('[saveDraftContract] Server error:', res.error); toast('ì„ì‹œì €ì¥ ì‹¤íŒ¨: ' + res.error, 'error'); return; }
+    if(res && res.error){ console.error('[saveDraftContract] Server error:', res.error); toast('ÀÓ½ÃÀúÀå ½ÇÆĞ: ' + res.error, 'error'); return; }
     savedId = res.id;
     _currentDraftId = savedId;
   }
   } catch(e){
     console.error('[saveDraftContract] Exception:', e);
-    toast('ì„ì‹œì €ì¥ ì¤‘ ì˜¤ë¥˜ê°€ ë°œìƒí–ˆìŠµë‹ˆë‹¤.', 'error');
+    toast('ÀÓ½ÃÀúÀå Áß ¿À·ù°¡ ¹ß»ıÇß½À´Ï´Ù.', 'error');
     return;
   }
 
   await loadContracts();
-  // ê²½ëŸ‰ ë°°ë„ˆë§Œ ê°±ì‹  (ì „ì²´ í…Œì´ë¸” ì¬ë Œë”ë§ X â€” í¼ ê¹œë¹¡ì„ ë°©ì§€)
+  // °æ·® ¹è³Ê¸¸ °»½Å (ÀüÃ¼ Å×ÀÌºí Àç·»´õ¸µ X ? Æû ±ôºıÀÓ ¹æÁö)
   if(typeof _renderContractsBanners === 'function') _renderContractsBanners();
   if(typeof renderDraftAlerts === 'function') renderDraftAlerts();
   if(typeof updateMenuBadges === 'function') updateMenuBadges();
 
-  // ì„ì‹œì €ì¥ ì‹œê° í‘œì‹œ
+  // ÀÓ½ÃÀúÀå ½Ã°¢ Ç¥½Ã
   const now = new Date();
   const timeStr = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
   const infoEl = document.getElementById('ct-draft-saved-info');
-  if(infoEl){ infoEl.style.display='inline'; infoEl.innerHTML=`<i class="fas fa-check" style="color:#10b981;margin-right:3px;"></i>ì„ì‹œì €ì¥ ì™„ë£Œ (${timeStr})`; }
+  if(infoEl){ infoEl.style.display='inline'; infoEl.innerHTML=`<i class="fas fa-check" style="color:#10b981;margin-right:3px;"></i>ÀÓ½ÃÀúÀå ¿Ï·á (${timeStr})`; }
 
   if(reason){
-    toast(`âš  í•„ìˆ˜ í•­ëª© ëˆ„ë½ìœ¼ë¡œ ì„ì‹œì €ì¥ ë˜ì—ˆìŠµë‹ˆë‹¤.\n[${reason}]`, 'warning');
+    toast(`? ÇÊ¼ö Ç×¸ñ ´©¶ôÀ¸·Î ÀÓ½ÃÀúÀå µÇ¾ú½À´Ï´Ù.\n[${reason}]`, 'warning');
   } else {
-    toast(`ì„ì‹œì €ì¥ ë˜ì—ˆìŠµë‹ˆë‹¤. (${timeStr})`, 'success');
+    toast(`ÀÓ½ÃÀúÀå µÇ¾ú½À´Ï´Ù. (${timeStr})`, 'success');
   }
-  // í¬ì»¤ìŠ¤ ë³µì›
+  // Æ÷Ä¿½º º¹¿ø
   if(activeEl && typeof activeEl.focus === 'function'){
     setTimeout(() => { try { activeEl.focus(); } catch(e) {} }, 100);
   }
 } // saveDraftContract
 
-// ì„ì‹œì €ì¥ ì§„í–‰ ì¤‘ì¸ draft ID (ì‹ ê·œ ì‘ì„± ì‹œ ì¶”ì ìš©)
+// ÀÓ½ÃÀúÀå ÁøÇà ÁßÀÎ draft ID (½Å±Ô ÀÛ¼º ½Ã ÃßÀû¿ë)
 let _currentDraftId = null;
 
-// â”€â”€ ì£¼ë¯¼ë“±ë¡ë²ˆí˜¸ í¬ë§·Â·ìœ íš¨ì„± í—¬í¼ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ¦¡¦¡ ÁÖ¹Îµî·Ï¹øÈ£ Æ÷¸Ë¡¤À¯È¿¼º ÇïÆÛ ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
 /**
  * _formatIdInput(el)
- *  - ì…ë ¥ ì¤‘ ìˆ«ìë§Œ ì¶”ì¶œ â†’ YYMMDD 6ìë¦¬ ì…ë ¥ í›„ ìë™ í•˜ì´í”ˆ ì‚½ì…
- *  - í•˜ì´í”ˆ ë’¤ 1ìë¦¬(ì„±ë³„ì½”ë“œ)ê¹Œì§€ë§Œ í—ˆìš© â†’ ìµœëŒ€ 8ë¬¸ì "YYMMDD-N"
- *  - ì»¤ì„œ ìœ„ì¹˜ ë³´ì • (í•˜ì´í”ˆ ìë™ ì‚½ì… ì‹œ +1)
+ *  - ÀÔ·Â Áß ¼ıÀÚ¸¸ ÃßÃâ ¡æ YYMMDD 6ÀÚ¸® ÀÔ·Â ÈÄ ÀÚµ¿ ÇÏÀÌÇÂ »ğÀÔ
+ *  - ÇÏÀÌÇÂ µÚ 1ÀÚ¸®(¼ºº°ÄÚµå)±îÁö¸¸ Çã¿ë ¡æ ÃÖ´ë 8¹®ÀÚ "YYMMDD-N"
+ *  - Ä¿¼­ À§Ä¡ º¸Á¤ (ÇÏÀÌÇÂ ÀÚµ¿ »ğÀÔ ½Ã +1)
  */
 function _formatIdInput(el){
-  const sel  = el.selectionStart;       // í˜„ì¬ ì»¤ì„œ ìœ„ì¹˜
+  const sel  = el.selectionStart;       // ÇöÀç Ä¿¼­ À§Ä¡
   const prev = el.value;
-  // ìˆ«ìë§Œ ì¶”ì¶œ (ìµœëŒ€ 7ìë¦¬: 6 ìƒë…„ì›”ì¼ + 1 ì„±ë³„)
+  // ¼ıÀÚ¸¸ ÃßÃâ (ÃÖ´ë 7ÀÚ¸®: 6 »ı³â¿ùÀÏ + 1 ¼ºº°)
   const digits = prev.replace(/[^0-9]/g, '').slice(0, 7);
   let next = '';
-  let cursorAdj = 0;                    // í•˜ì´í”ˆ ìë™ ì‚½ì…ìœ¼ë¡œ ì¸í•œ ì»¤ì„œ ë³´ì •
+  let cursorAdj = 0;                    // ÇÏÀÌÇÂ ÀÚµ¿ »ğÀÔÀ¸·Î ÀÎÇÑ Ä¿¼­ º¸Á¤
 
   if(digits.length <= 6){
     next = digits;
   } else {
-    // 7ë²ˆì§¸ ìë¦¬ê°€ ì…ë ¥ëìœ¼ë©´ í•˜ì´í”ˆ ì‚½ì…
+    // 7¹øÂ° ÀÚ¸®°¡ ÀÔ·ÂµÆÀ¸¸é ÇÏÀÌÇÂ »ğÀÔ
     next = digits.slice(0,6) + '-' + digits.slice(6);
-    // ì´ì „ ê°’ì— í•˜ì´í”ˆì´ ì—†ì—ˆìœ¼ë©´ ì»¤ì„œ 1ì¹¸ ì•ìœ¼ë¡œ ë³´ì •
+    // ÀÌÀü °ª¿¡ ÇÏÀÌÇÂÀÌ ¾ø¾úÀ¸¸é Ä¿¼­ 1Ä­ ¾ÕÀ¸·Î º¸Á¤
     if(!prev.includes('-')) cursorAdj = 1;
   }
 
   if(next !== prev){
     el.value = next;
-    // ì»¤ì„œ ë³µì›
+    // Ä¿¼­ º¹¿ø
     const newPos = Math.min(sel + cursorAdj, next.length);
     el.setSelectionRange(newPos, newPos);
   }
@@ -2593,28 +2589,28 @@ function _formatIdInput(el){
 
 /**
  * _inferGender(genderCode)
- *  ì£¼ë¯¼ë²ˆí˜¸ 7ë²ˆì§¸ ìë¦¬(ì„±ë³„ì½”ë“œ)ë¡œ ë‚¨/ì—¬ íŒë‹¨
- *  1Â·3Â·5Â·7 â†’ ë‚¨,  2Â·4Â·6Â·8 â†’ ì—¬,  ê·¸ ì™¸ â†’ null
+ *  ÁÖ¹Î¹øÈ£ 7¹øÂ° ÀÚ¸®(¼ºº°ÄÚµå)·Î ³²/¿© ÆÇ´Ü
+ *  1¡¤3¡¤5¡¤7 ¡æ ³²,  2¡¤4¡¤6¡¤8 ¡æ ¿©,  ±× ¿Ü ¡æ null
  */
 function _inferGender(genderCode){
   const n = parseInt(genderCode, 10);
-  if([1,3,5,7].includes(n)) return 'ë‚¨';
-  if([2,4,6,8].includes(n)) return 'ì—¬';
+  if([1,3,5,7].includes(n)) return '³²';
+  if([2,4,6,8].includes(n)) return '¿©';
   return null;
 }
 
 /**
  * _validateIdNumber(val)
- *  ì…ë ¥ê°’ì´ "YYMMDD-N" 7ìë¦¬ ê·œê²©ì— ë§ëŠ”ì§€ ê²€ì‚¬
- *  ë°˜í™˜: { ok: boolean, msg: string }
- *    ok=true  â†’ í˜•ì‹ ì •ìƒ
- *    ok=false â†’ msgì— ì˜¤ë¥˜ ì„¤ëª…
+ *  ÀÔ·Â°ªÀÌ "YYMMDD-N" 7ÀÚ¸® ±Ô°İ¿¡ ¸Â´ÂÁö °Ë»ç
+ *  ¹İÈ¯: { ok: boolean, msg: string }
+ *    ok=true  ¡æ Çü½Ä Á¤»ó
+ *    ok=false ¡æ msg¿¡ ¿À·ù ¼³¸í
  */
 function _validateIdNumber(val){
-  if(!val || !val.trim()) return { ok: false, msg: 'ì£¼ë¯¼ë“±ë¡ë²ˆí˜¸ë¥¼ ì…ë ¥í•´ ì£¼ì„¸ìš”.' };
-  // ë°˜ë“œì‹œ "YYMMDD-N" í˜•ì‹ (í•˜ì´í”ˆ í•„ìˆ˜)
+  if(!val || !val.trim()) return { ok: false, msg: 'ÁÖ¹Îµî·Ï¹øÈ£¸¦ ÀÔ·ÂÇØ ÁÖ¼¼¿ä.' };
+  // ¹İµå½Ã "YYMMDD-N" Çü½Ä (ÇÏÀÌÇÂ ÇÊ¼ö)
   if(!/^\d{6}-\d{1}$/.test(val.trim()))
-    return { ok: false, msg: 'ì£¼ë¯¼ë“±ë¡ë²ˆí˜¸ëŠ” ìƒë…„ì›”ì¼ 6ìë¦¬ + í•˜ì´í”ˆ(-) + ì„±ë³„ì½”ë“œ 1ìë¦¬(YYMMDD-N) í˜•ì‹ìœ¼ë¡œ ì…ë ¥í•´ ì£¼ì„¸ìš”.' };
+    return { ok: false, msg: 'ÁÖ¹Îµî·Ï¹øÈ£´Â »ı³â¿ùÀÏ 6ÀÚ¸® + ÇÏÀÌÇÂ(-) + ¼ºº°ÄÚµå 1ÀÚ¸®(YYMMDD-N) Çü½ÄÀ¸·Î ÀÔ·ÂÇØ ÁÖ¼¼¿ä.' };
   const s = val.replace(/-/g,'');
 
   const yy = parseInt(s.slice(0,2), 10);
@@ -2622,29 +2618,29 @@ function _validateIdNumber(val){
   const dd = parseInt(s.slice(4,6), 10);
   const gd = parseInt(s.slice(6,7), 10);
 
-  // ì›” ê²€ì‚¬
-  if(mm < 1 || mm > 12) return { ok: false, msg: `ì£¼ë¯¼ë“±ë¡ë²ˆí˜¸ ì›”(${String(mm).padStart(2,'0')})ì´ ì˜¬ë°”ë¥´ì§€ ì•ŠìŠµë‹ˆë‹¤.` };
-  // ì¼ ê²€ì‚¬ (ê°„ë‹¨ ë²”ìœ„ â€” ì„±ë³„ì½”ë“œë¡œ ì—°ë„ ìœ ì¶” í›„ ì •ë°€ ê²€ì‚¬)
+  // ¿ù °Ë»ç
+  if(mm < 1 || mm > 12) return { ok: false, msg: `ÁÖ¹Îµî·Ï¹øÈ£ ¿ù(${String(mm).padStart(2,'0')})ÀÌ ¿Ã¹Ù¸£Áö ¾Ê½À´Ï´Ù.` };
+  // ÀÏ °Ë»ç (°£´Ü ¹üÀ§ ? ¼ºº°ÄÚµå·Î ¿¬µµ À¯Ãß ÈÄ Á¤¹Ğ °Ë»ç)
   const maxDay = [0,31,29,31,30,31,30,31,31,30,31,30,31];
-  if(dd < 1 || dd > maxDay[mm]) return { ok: false, msg: `ì£¼ë¯¼ë“±ë¡ë²ˆí˜¸ ì¼(${String(dd).padStart(2,'0')})ì´ ì˜¬ë°”ë¥´ì§€ ì•ŠìŠµë‹ˆë‹¤.` };
-  // ì„±ë³„ì½”ë“œ ê²€ì‚¬: 1(ë‚¨Â·1900ë…„ëŒ€), 2(ì—¬Â·1900ë…„ëŒ€), 3(ë‚¨Â·2000ë…„ëŒ€), 4(ì—¬Â·2000ë…„ëŒ€)
-  //               5(ë‚¨Â·ì™¸êµ­ì¸Â·1900ë…„ëŒ€), 6(ì—¬Â·ì™¸êµ­ì¸Â·1900ë…„ëŒ€), 7(ë‚¨Â·ì™¸êµ­ì¸Â·2000ë…„ëŒ€), 8(ì—¬Â·ì™¸êµ­ì¸Â·2000ë…„ëŒ€)
-  if(gd < 1 || gd > 8) return { ok: false, msg: 'ì„±ë³„ì½”ë“œëŠ” 1~8 ì‚¬ì´ì˜ ìˆ«ìì—¬ì•¼ í•©ë‹ˆë‹¤.' };
+  if(dd < 1 || dd > maxDay[mm]) return { ok: false, msg: `ÁÖ¹Îµî·Ï¹øÈ£ ÀÏ(${String(dd).padStart(2,'0')})ÀÌ ¿Ã¹Ù¸£Áö ¾Ê½À´Ï´Ù.` };
+  // ¼ºº°ÄÚµå °Ë»ç: 1(³²¡¤1900³â´ë), 2(¿©¡¤1900³â´ë), 3(³²¡¤2000³â´ë), 4(¿©¡¤2000³â´ë)
+  //               5(³²¡¤¿Ü±¹ÀÎ¡¤1900³â´ë), 6(¿©¡¤¿Ü±¹ÀÎ¡¤1900³â´ë), 7(³²¡¤¿Ü±¹ÀÎ¡¤2000³â´ë), 8(¿©¡¤¿Ü±¹ÀÎ¡¤2000³â´ë)
+  if(gd < 1 || gd > 8) return { ok: false, msg: '¼ºº°ÄÚµå´Â 1~8 »çÀÌÀÇ ¼ıÀÚ¿©¾ß ÇÕ´Ï´Ù.' };
 
   return { ok: true, msg: '' };
 }
 
 /**
  * _onIdInput(el, checkBtnFn)
- *  ì£¼ë¯¼ë²ˆí˜¸ ì…ë ¥ í•„ë“œ oninput í•¸ë“¤ëŸ¬
- *  1) ìë™ í¬ë§· ì ìš©
- *  2) ì¸ë¼ì¸ ì˜¤ë¥˜ íŒíŠ¸ í‘œì‹œ/ì œê±°
- *  3) ë²„íŠ¼ ìƒíƒœ ê°±ì‹  ì½œë°± í˜¸ì¶œ
+ *  ÁÖ¹Î¹øÈ£ ÀÔ·Â ÇÊµå oninput ÇÚµé·¯
+ *  1) ÀÚµ¿ Æ÷¸Ë Àû¿ë
+ *  2) ÀÎ¶óÀÎ ¿À·ù ÈùÆ® Ç¥½Ã/Á¦°Å
+ *  3) ¹öÆ° »óÅÂ °»½Å Äİ¹é È£Ãâ
  */
 function _onIdInput(el, checkBtnFn){
   _formatIdInput(el);
   const val = el.value;
-  // íŒíŠ¸ span (ì—†ìœ¼ë©´ ìƒì„±)
+  // ÈùÆ® span (¾øÀ¸¸é »ı¼º)
   let hint = el.parentElement.querySelector('.id-format-hint');
   if(!hint){
     hint = document.createElement('span');
@@ -2654,58 +2650,58 @@ function _onIdInput(el, checkBtnFn){
   }
   if(!val){
     hint.textContent = '';
-    hint.style.color = '';
-    // ì£¼ë¯¼ë²ˆí˜¸ ì§€ì›Œì§€ë©´ ì„±ë³„ íŒíŠ¸ë„ ì´ˆê¸°í™”
+    hint.className = '';
+    // ÁÖ¹Î¹øÈ£ Áö¿öÁö¸é ¼ºº° ÈùÆ®µµ ÃÊ±âÈ­
     const _nhint = document.getElementById('ct-em-gender-hint');
     const _ehint = document.getElementById('ct-edit-em-gender-hint');
     if(_nhint && document.getElementById('ct-em-id') === el)
-      { _nhint.textContent = 'ì£¼ë¯¼ë²ˆí˜¸ ì…ë ¥ ì‹œ ìë™ ì„¤ì •ë©ë‹ˆë‹¤'; _nhint.style.color='#6b7280'; }
+      { _nhint.textContent = 'ÁÖ¹Î¹øÈ£ ÀÔ·Â ½Ã ÀÚµ¿ ¼³Á¤µË´Ï´Ù'; _nhint.className='ct-hint-normal'; }
     if(_ehint && document.getElementById('ct-edit-em-id') === el)
-      { _ehint.textContent = 'ì£¼ë¯¼ë²ˆí˜¸ ì…ë ¥ ì‹œ ìë™ ì„¤ì •ë©ë‹ˆë‹¤'; _ehint.style.color='#6b7280'; }
+      { _ehint.textContent = 'ÁÖ¹Î¹øÈ£ ÀÔ·Â ½Ã ÀÚµ¿ ¼³Á¤µË´Ï´Ù'; _ehint.className='ct-hint-normal'; }
   } else {
     const { ok, msg } = _validateIdNumber(val);
     if(ok){
-      hint.textContent = 'âœ“ í˜•ì‹ í™•ì¸';
-      hint.style.color = '#16a34a';  // green
-      // â”€â”€ ì„±ë³„ ìë™ ì„¤ì • â”€â”€
+      hint.textContent = '? Çü½Ä È®ÀÎ';
+      hint.className = 'ct-hint-success';  // green
+      // ¦¡¦¡ ¼ºº° ÀÚµ¿ ¼³Á¤ ¦¡¦¡
       const _gCode = val.replace(/-/g,'').slice(6,7);
       const _gender = _inferGender(_gCode);
       if(_gender){
-        // ì‹ ê·œ í¼
+        // ½Å±Ô Æû
         const _newGenderEl = document.getElementById('ct-em-gender');
         if(_newGenderEl && document.getElementById('ct-em-id') === el){
           _newGenderEl.value = _gender;
           const _newHint = document.getElementById('ct-em-gender-hint');
-          if(_newHint){ _newHint.textContent = `ì„±ë³„ ìë™ ì„¤ì •: ${_gender}`; _newHint.style.color='#16a34a'; }
+          if(_newHint){ _newHint.textContent = `¼ºº° ÀÚµ¿ ¼³Á¤: ${_gender}`; _newHint.className='ct-hint-success'; }
         }
-        // ìˆ˜ì •/ì¬ê³„ì•½ í¼
+        // ¼öÁ¤/Àç°è¾à Æû
         const _editGenderEl = document.getElementById('ct-edit-em-gender');
         if(_editGenderEl && document.getElementById('ct-edit-em-id') === el){
           _editGenderEl.value = _gender;
           const _editHint = document.getElementById('ct-edit-em-gender-hint');
-          if(_editHint){ _editHint.textContent = `ì„±ë³„ ìë™ ì„¤ì •: ${_gender}`; _editHint.style.color='#16a34a'; }
+          if(_editHint){ _editHint.textContent = `¼ºº° ÀÚµ¿ ¼³Á¤: ${_gender}`; _editHint.className='ct-hint-success'; }
         }
       }
     } else if(val.replace(/-/g,'').length < 7){
-      // ì•„ì§ ì…ë ¥ ì¤‘ â€” ë¶€ë“œëŸ¬ìš´ ì•ˆë‚´
+      // ¾ÆÁ÷ ÀÔ·Â Áß ? ºÎµå·¯¿î ¾È³»
       const digits = val.replace(/[^0-9]/g,'');
       hint.textContent = digits.length < 6
-        ? `ìƒë…„ì›”ì¼ ${6-digits.length}ìë¦¬ ë” ì…ë ¥`
-        : 'í•˜ì´í”ˆ(-) ë’¤ ì„±ë³„ì½”ë“œ(1~8) ì…ë ¥';
-      hint.style.color = '#6b7280';  // gray
+        ? `»ı³â¿ùÀÏ ${6-digits.length}ÀÚ¸® ´õ ÀÔ·Â`
+        : 'ÇÏÀÌÇÂ(-) µÚ ¼ºº°ÄÚµå(1~8) ÀÔ·Â';
+      hint.className = 'ct-hint-normal';  // gray
     } else {
-      hint.textContent = 'âœ— ' + msg;
-      hint.style.color = '#dc2626';  // red
+      hint.textContent = '? ' + msg;
+      hint.className = 'ct-hint-error';  // red
     }
   }
   if(typeof checkBtnFn === 'function') checkBtnFn();
 }
 
-// â”€â”€ íœ´ëŒ€ì „í™”ë²ˆí˜¸ í¬ë§·Â·ìœ íš¨ì„± í—¬í¼ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ¦¡¦¡ ÈŞ´ëÀüÈ­¹øÈ£ Æ÷¸Ë¡¤À¯È¿¼º ÇïÆÛ ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
 /**
  * _formatPhoneInput(el)
- *  - ìˆ«ìë§Œ ì¶”ì¶œ â†’ ìµœëŒ€ 11ìë¦¬
- *  - 010-XXXX-XXXX í˜•ì‹ìœ¼ë¡œ ìë™ í•˜ì´í”ˆ ì‚½ì…
+ *  - ¼ıÀÚ¸¸ ÃßÃâ ¡æ ÃÖ´ë 11ÀÚ¸®
+ *  - 010-XXXX-XXXX Çü½ÄÀ¸·Î ÀÚµ¿ ÇÏÀÌÇÂ »ğÀÔ
  */
 function _formatPhoneInput(el){
   const sel  = el.selectionStart;
@@ -2721,7 +2717,7 @@ function _formatPhoneInput(el){
     if(!prev.includes('-')) cursorAdj = 1;
   } else {
     next = digits.slice(0,3) + '-' + digits.slice(3,7) + '-' + digits.slice(7);
-    // í•˜ì´í”ˆ ê°œìˆ˜ ì°¨ì´ë§Œí¼ ì»¤ì„œ ë³´ì •
+    // ÇÏÀÌÇÂ °³¼ö Â÷ÀÌ¸¸Å­ Ä¿¼­ º¸Á¤
     const prevHyphens = (prev.match(/-/g)||[]).length;
     const nextHyphens = (next.match(/-/g)||[]).length;
     cursorAdj = nextHyphens - prevHyphens;
@@ -2736,29 +2732,29 @@ function _formatPhoneInput(el){
 
 /**
  * _validatePhoneNumber(val)
- *  - 010ìœ¼ë¡œ ì‹œì‘í•˜ëŠ” 11ìë¦¬(í•˜ì´í”ˆ ì œì™¸) ë²ˆí˜¸ì¸ì§€ ê²€ì‚¬
- *  ë°˜í™˜: { ok: boolean, msg: string }
+ *  - 010À¸·Î ½ÃÀÛÇÏ´Â 11ÀÚ¸®(ÇÏÀÌÇÂ Á¦¿Ü) ¹øÈ£ÀÎÁö °Ë»ç
+ *  ¹İÈ¯: { ok: boolean, msg: string }
  */
 function _validatePhoneNumber(val){
-  if(!val || !val.trim()) return { ok: false, msg: 'íœ´ëŒ€ì „í™”ë²ˆí˜¸ë¥¼ ì…ë ¥í•´ ì£¼ì„¸ìš”.' };
+  if(!val || !val.trim()) return { ok: false, msg: 'ÈŞ´ëÀüÈ­¹øÈ£¸¦ ÀÔ·ÂÇØ ÁÖ¼¼¿ä.' };
   const digits = val.replace(/[^0-9]/g, '');
   if(digits.length !== 11)
-    return { ok: false, msg: 'íœ´ëŒ€ì „í™”ë²ˆí˜¸ëŠ” 11ìë¦¬ì—¬ì•¼ í•©ë‹ˆë‹¤ (í˜„ì¬ '+digits.length+'ìë¦¬).' };
+    return { ok: false, msg: 'ÈŞ´ëÀüÈ­¹øÈ£´Â 11ÀÚ¸®¿©¾ß ÇÕ´Ï´Ù (ÇöÀç '+digits.length+'ÀÚ¸®).' };
   if(!digits.startsWith('010'))
-    return { ok: false, msg: 'íœ´ëŒ€ì „í™”ë²ˆí˜¸ëŠ” 010ìœ¼ë¡œ ì‹œì‘í•´ì•¼ í•©ë‹ˆë‹¤.' };
-  // 010 ë‹¤ìŒ 8ìë¦¬: ë‘ ë²ˆì§¸ ìë¦¬ëŠ” 1~9 (í†µì‹ ì‚¬ ì‹ë³„ë²ˆí˜¸)
+    return { ok: false, msg: 'ÈŞ´ëÀüÈ­¹øÈ£´Â 010À¸·Î ½ÃÀÛÇØ¾ß ÇÕ´Ï´Ù.' };
+  // 010 ´ÙÀ½ 8ÀÚ¸®: µÎ ¹øÂ° ÀÚ¸®´Â 1~9 (Åë½Å»ç ½Äº°¹øÈ£)
   const secondPart = digits.slice(3);
   if(!/^\d{8}$/.test(secondPart))
-    return { ok: false, msg: 'íœ´ëŒ€ì „í™”ë²ˆí˜¸ ë’· 8ìë¦¬ê°€ ì˜¬ë°”ë¥´ì§€ ì•ŠìŠµë‹ˆë‹¤.' };
+    return { ok: false, msg: 'ÈŞ´ëÀüÈ­¹øÈ£ µŞ 8ÀÚ¸®°¡ ¿Ã¹Ù¸£Áö ¾Ê½À´Ï´Ù.' };
   return { ok: true, msg: '' };
 }
 
 /**
  * _onPhoneInput(el, checkBtnFn)
- *  íœ´ëŒ€ì „í™”ë²ˆí˜¸ ì…ë ¥ í•„ë“œ oninput í•¸ë“¤ëŸ¬
- *  1) ìë™ í¬ë§· ì ìš©
- *  2) ì¸ë¼ì¸ ì˜¤ë¥˜ íŒíŠ¸ í‘œì‹œ/ì œê±°
- *  3) ë²„íŠ¼ ìƒíƒœ ê°±ì‹  ì½œë°± í˜¸ì¶œ
+ *  ÈŞ´ëÀüÈ­¹øÈ£ ÀÔ·Â ÇÊµå oninput ÇÚµé·¯
+ *  1) ÀÚµ¿ Æ÷¸Ë Àû¿ë
+ *  2) ÀÎ¶óÀÎ ¿À·ù ÈùÆ® Ç¥½Ã/Á¦°Å
+ *  3) ¹öÆ° »óÅÂ °»½Å Äİ¹é È£Ãâ
  */
 function _onPhoneInput(el, checkBtnFn){
   _formatPhoneInput(el);
@@ -2772,42 +2768,42 @@ function _onPhoneInput(el, checkBtnFn){
   }
   if(!val){
     hint.textContent = '';
-    hint.style.color = '';
+    hint.className = '';
   } else {
     const digits = val.replace(/[^0-9]/g, '');
     const { ok, msg } = _validatePhoneNumber(val);
     if(ok){
-      hint.textContent = 'âœ“ í˜•ì‹ í™•ì¸';
-      hint.style.color = '#16a34a';
+      hint.textContent = '? Çü½Ä È®ÀÎ';
+      hint.className = 'ct-hint-success';
     } else if(digits.length < 11){
-      hint.textContent = `${11-digits.length}ìë¦¬ ë” ì…ë ¥í•˜ì„¸ìš”`;
-      hint.style.color = '#6b7280';
+      hint.textContent = `${11-digits.length}ÀÚ¸® ´õ ÀÔ·ÂÇÏ¼¼¿ä`;
+      hint.className = 'ct-hint-normal';
     } else {
-      hint.textContent = 'âœ— ' + msg;
-      hint.style.color = '#dc2626';
+      hint.textContent = '? ' + msg;
+      hint.className = 'ct-hint-error';
     }
   }
   if(typeof checkBtnFn === 'function') checkBtnFn();
 }
 
-// â”€â”€ ì´ë©”ì¼ ì£¼ì†Œ í¬ë§·Â·ìœ íš¨ì„± í—¬í¼ (ì„ íƒ ì…ë ¥) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ¦¡¦¡ ÀÌ¸ŞÀÏ ÁÖ¼Ò Æ÷¸Ë¡¤À¯È¿¼º ÇïÆÛ (¼±ÅÃ ÀÔ·Â) ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
 /**
  * _validateEmail(val)
- *  - ì´ë©”ì¼ í˜•ì‹ ê²€ì‚¬ (ê°„ë‹¨í•œ RFC5322 ê¸°ë°˜)
- *  - ì„ íƒì‚¬í•­: ë¹ˆ ê°’ì€ ok:true ë°˜í™˜
+ *  - ÀÌ¸ŞÀÏ Çü½Ä °Ë»ç (°£´ÜÇÑ RFC5322 ±â¹İ)
+ *  - ¼±ÅÃ»çÇ×: ºó °ªÀº ok:true ¹İÈ¯
  */
 function _validateEmail(val){
-  if(!val || !val.trim()) return { ok: true, msg: '' };  // ì„ íƒ ì…ë ¥
-  // ê¸°ë³¸ ì´ë©”ì¼ íŒ¨í„´: x@y.z
+  if(!val || !val.trim()) return { ok: true, msg: '' };  // ¼±ÅÃ ÀÔ·Â
+  // ±âº» ÀÌ¸ŞÀÏ ÆĞÅÏ: x@y.z
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val.trim()))
-    return { ok: false, msg: 'ì˜¬ë°”ë¥¸ ì´ë©”ì¼ ì£¼ì†Œ í˜•ì‹ì´ ì•„ë‹™ë‹ˆë‹¤ (ì˜ˆ: example@email.com).' };
+    return { ok: false, msg: '¿Ã¹Ù¸¥ ÀÌ¸ŞÀÏ ÁÖ¼Ò Çü½ÄÀÌ ¾Æ´Õ´Ï´Ù (¿¹: example@email.com).' };
   return { ok: true, msg: '' };
 }
 
 /**
  * _onEmailInput(el)
- *  ì´ë©”ì¼ ì…ë ¥ í•„ë“œ oninput í•¸ë“¤ëŸ¬
- *  - ì¸ë¼ì¸ ì˜¤ë¥˜ íŒíŠ¸ë§Œ í‘œì‹œ (ì„ íƒì‚¬í•­ì´ë¯€ë¡œ í˜•ì‹ ê²€ì¦ë§Œ)
+ *  ÀÌ¸ŞÀÏ ÀÔ·Â ÇÊµå oninput ÇÚµé·¯
+ *  - ÀÎ¶óÀÎ ¿À·ù ÈùÆ®¸¸ Ç¥½Ã (¼±ÅÃ»çÇ×ÀÌ¹Ç·Î Çü½Ä °ËÁõ¸¸)
  */
 function _onEmailInput(el){
   const val = el.value;
@@ -2820,22 +2816,22 @@ function _onEmailInput(el){
   }
   if(!val){
     hint.textContent = '';
-    hint.style.color = '';
+    hint.className = '';
   } else {
     const { ok, msg } = _validateEmail(val);
     if(ok){
-      hint.textContent = 'âœ“ í˜•ì‹ í™•ì¸';
-      hint.style.color = '#16a34a';
+      hint.textContent = '? Çü½Ä È®ÀÎ';
+      hint.className = 'ct-hint-success';
     } else {
-      hint.textContent = 'âœ— ' + msg;
-      hint.style.color = '#dc2626';
+      hint.textContent = '? ' + msg;
+      hint.className = 'ct-hint-error';
     }
   }
 }
 
-// â”€â”€ í•„ìˆ˜ ì…ë ¥ ìœ íš¨ì„± ê²€ì‚¬ + í•˜ì´ë¼ì´íŠ¸ í—¬í¼ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ¦¡¦¡ ÇÊ¼ö ÀÔ·Â À¯È¿¼º °Ë»ç + ÇÏÀÌ¶óÀÌÆ® ÇïÆÛ ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
 function _ctMarkError(fieldId, label, errors){
-  // form-group ë¶€ëª¨ì— ì—ëŸ¬ í´ë˜ìŠ¤ ë¶€ì—¬
+  // form-group ºÎ¸ğ¿¡ ¿¡·¯ Å¬·¡½º ºÎ¿©
   const el = document.getElementById(fieldId);
   if(!el) return;
   const fg = el.closest('.form-group') || el.parentElement;
@@ -2845,7 +2841,7 @@ function _ctMarkError(fieldId, label, errors){
 
 function _ctShowErrors(errors){
   if(!errors.length) return;
-  // ì²« ë²ˆì§¸ ì˜¤ë¥˜ í•„ë“œë¡œ í¬ì»¤ìŠ¤ ì´ë™ + ìŠ¤í¬ë¡¤
+  // Ã¹ ¹øÂ° ¿À·ù ÇÊµå·Î Æ÷Ä¿½º ÀÌµ¿ + ½ºÅ©·Ñ
   const firstError = document.querySelector('#contract-modal .ct-field-error');
   if(firstError){
     const input = firstError.querySelector('input, select, textarea');
@@ -2864,85 +2860,85 @@ function _ctValidate(){
   const isNew     = !editId.contract && !_recontractEmpId;
   const isEditOrRecontract = !isNew;
 
-  // â”€â”€ ê³µí†µ: ê·¼ë¬´ì‹œê°„í‘œ (ì¼ê´„ì ìš© ë˜ëŠ” ê°œë³„ ì…ë ¥ í•„ìˆ˜) â”€â”€
+  // ¦¡¦¡ °øÅë: ±Ù¹«½Ã°£Ç¥ (ÀÏ°ıÀû¿ë ¶Ç´Â °³º° ÀÔ·Â ÇÊ¼ö) ¦¡¦¡
   const _schDays  = parseInt(document.getElementById('ct-days')?.value) || 0;
   const _schHours = parseFloat(document.getElementById('ct-hours')?.value) || 0;
   if(_schDays <= 0 || _schHours <= 0){
-    _ctMarkError('ct-schedule-table', 'ê·¼ë¬´ì‹œê°„í‘œ (ì¼ê´„ì ìš© ë˜ëŠ” ìš”ì¼ë³„ ì…ë ¥)', errors);
+    _ctMarkError('ct-schedule-table', '±Ù¹«½Ã°£Ç¥ (ÀÏ°ıÀû¿ë ¶Ç´Â ¿äÀÏº° ÀÔ·Â)', errors);
   }
 
-  // â”€â”€ ê³µí†µ: ë³´ìœ¡ìˆ˜ë‹¹ (í†µìƒì„ê¸ˆ í¬í•¨Â·ë§¤ì›” ì •ê¸°ì§€ê¸‰ ì‹œ, ë¶€ì–‘ê°€ì¡± 1ì¸ ì´ìƒì´ë©´ ì›” ì§€ê¸‰ì•¡ í•„ìˆ˜) â”€â”€
+  // ¦¡¦¡ °øÅë: º¸À°¼ö´ç (Åë»óÀÓ±İ Æ÷ÇÔ¡¤¸Å¿ù Á¤±âÁö±Ş ½Ã, ºÎ¾ç°¡Á· 1ÀÎ ÀÌ»óÀÌ¸é ¿ù Áö±Ş¾× ÇÊ¼ö) ¦¡¦¡
   const _ccRow = document.getElementById('ct-row-childcare');
   if(_ccRow && _ccRow.style.display !== 'none' && _isFixedAllow('childcare')){
     const _ccDep = parseInt(document.getElementById('ct-childcare-dependents')?.value);
     if(isNaN(_ccDep) || _ccDep < 0)
-      _ctMarkError('ct-childcare-dependents', 'ë³´ìœ¡ìˆ˜ë‹¹ ë¶€ì–‘ê°€ì¡± ìˆ˜', errors);
+      _ctMarkError('ct-childcare-dependents', 'º¸À°¼ö´ç ºÎ¾ç°¡Á· ¼ö', errors);
     if(_ccDep >= 1 && !getAmountVal('ct-childcare'))
-      _ctMarkError('ct-childcare', 'ë³´ìœ¡ìˆ˜ë‹¹ ì›” ì§€ê¸‰ì•¡', errors);
+      _ctMarkError('ct-childcare', 'º¸À°¼ö´ç ¿ù Áö±Ş¾×', errors);
   }
 
-  // â”€â”€ ê³µí†µ: íšŒì‚¬ (ëª¨ë‹¬ ì˜¤í”ˆ ì‹œ í•­ìƒ ì„¤ì •ë¨) â”€â”€
+  // ¦¡¦¡ °øÅë: È¸»ç (¸ğ´Ş ¿ÀÇÂ ½Ã Ç×»ó ¼³Á¤µÊ) ¦¡¦¡
   const coId = document.getElementById('ct-company').value;
 
-  // â”€â”€ ìˆ˜ì •/ì¬ê³„ì•½: ê³„ì•½ ì‹œì‘ì¼ â”€â”€
+  // ¦¡¦¡ ¼öÁ¤/Àç°è¾à: °è¾à ½ÃÀÛÀÏ ¦¡¦¡
   if(isEditOrRecontract){
     const start = document.getElementById('ct-start').value;
-    if(!start) _ctMarkError('ct-start', 'ê³„ì•½ ì‹œì‘ì¼', errors);
-    // ê³„ì•½ ì‹œì‘ì¼ì€ ì…ì‚¬ì¼ë³´ë‹¤ ì´ì „ì¼ ìˆ˜ ì—†ìŒ
+    if(!start) _ctMarkError('ct-start', '°è¾à ½ÃÀÛÀÏ', errors);
+    // °è¾à ½ÃÀÛÀÏÀº ÀÔ»çÀÏº¸´Ù ÀÌÀüÀÏ ¼ö ¾øÀ½
     (function(){
       const _hire = document.getElementById('ct-edit-em-hire')?.value;
       if(_hire && start && start < _hire){
-        _ctMarkError('ct-start', 'ê³„ì•½ ì‹œì‘ì¼ì€ ì…ì‚¬ì¼ë³´ë‹¤ ì´ì „ì¼ ìˆ˜ ì—†ìŠµë‹ˆë‹¤', errors);
+        _ctMarkError('ct-start', '°è¾à ½ÃÀÛÀÏÀº ÀÔ»çÀÏº¸´Ù ÀÌÀüÀÏ ¼ö ¾ø½À´Ï´Ù', errors);
       }
     })();
   }
 
   if(isNew){
-    // â”€â”€ ì‹ ê·œ ì§ì› í•„ìˆ˜ í•„ë“œ â”€â”€
+    // ¦¡¦¡ ½Å±Ô Á÷¿ø ÇÊ¼ö ÇÊµå ¦¡¦¡
     const _empNoNewVal = document.getElementById('ct-em-empno')?.value.trim() || '';
     if(!_empNoNewVal){
-      _ctMarkError('ct-em-empno', 'ì‚¬ì›ë²ˆí˜¸', errors);
+      _ctMarkError('ct-em-empno', '»ç¿ø¹øÈ£', errors);
     } else {
       const _coIdForEmpno = document.getElementById('ct-company')?.value || '';
       const _empNoCheck = _validateEmpNoUniqueness(_empNoNewVal, _coIdForEmpno, null, null, null);
-      if(!_empNoCheck.ok) _ctMarkError('ct-em-empno', `ì‚¬ì›ë²ˆí˜¸ ì¤‘ë³µ: ${_empNoCheck.msg}`, errors);
+      if(!_empNoCheck.ok) _ctMarkError('ct-em-empno', `»ç¿ø¹øÈ£ Áßº¹: ${_empNoCheck.msg}`, errors);
     }
     if(!document.getElementById('ct-em-name').value.trim())
-      _ctMarkError('ct-em-name', 'ì´ë¦„', errors);
+      _ctMarkError('ct-em-name', 'ÀÌ¸§', errors);
     if(!document.getElementById('ct-edit-em-hire')?.value)
-      _ctMarkError('ct-edit-em-hire', 'ì…ì‚¬ì¼', errors);
+      _ctMarkError('ct-edit-em-hire', 'ÀÔ»çÀÏ', errors);
     if(!document.getElementById('ct-start')?.value)
-      _ctMarkError('ct-start', 'ê³„ì•½ ì‹œì‘ì¼', errors);
-    // ê³„ì•½ ì‹œì‘ì¼ì€ ì…ì‚¬ì¼ë³´ë‹¤ ì´ì „ì¼ ìˆ˜ ì—†ìŒ
+      _ctMarkError('ct-start', '°è¾à ½ÃÀÛÀÏ', errors);
+    // °è¾à ½ÃÀÛÀÏÀº ÀÔ»çÀÏº¸´Ù ÀÌÀüÀÏ ¼ö ¾øÀ½
     (function(){
       const _hire = document.getElementById('ct-edit-em-hire')?.value;
       const _start = document.getElementById('ct-start')?.value;
       if(_hire && _start && _start < _hire){
-        _ctMarkError('ct-start', 'ê³„ì•½ ì‹œì‘ì¼ì€ ì…ì‚¬ì¼ë³´ë‹¤ ì´ì „ì¼ ìˆ˜ ì—†ìŠµë‹ˆë‹¤', errors);
+        _ctMarkError('ct-start', '°è¾à ½ÃÀÛÀÏÀº ÀÔ»çÀÏº¸´Ù ÀÌÀüÀÏ ¼ö ¾ø½À´Ï´Ù', errors);
       }
     })();
     (function(){
       const _idVal = document.getElementById('ct-em-id').value.trim();
       if(!_idVal){
-        _ctMarkError('ct-em-id', 'ì£¼ë¯¼ë“±ë¡ë²ˆí˜¸', errors);
+        _ctMarkError('ct-em-id', 'ÁÖ¹Îµî·Ï¹øÈ£', errors);
       } else {
         const _idChk = _validateIdNumber(_idVal);
-        if(!_idChk.ok) _ctMarkError('ct-em-id', 'ì£¼ë¯¼ë“±ë¡ë²ˆí˜¸ í˜•ì‹ ì˜¤ë¥˜', errors);
+        if(!_idChk.ok) _ctMarkError('ct-em-id', 'ÁÖ¹Îµî·Ï¹øÈ£ Çü½Ä ¿À·ù', errors);
       }
     })();
     if(!document.getElementById('ct-em-job').value.trim())
-      _ctMarkError('ct-em-job', 'ë‹´ë‹¹ì—…ë¬´', errors);
+      _ctMarkError('ct-em-job', '´ã´ç¾÷¹«', errors);
     if(!document.getElementById('ct-em-address').value.trim())
-      _ctMarkError('ct-em-address', 'ì£¼ì†Œ', errors);
+      _ctMarkError('ct-em-address', 'ÁÖ¼Ò', errors);
     (function(){
       const _phoneVal = document.getElementById('ct-em-phone').value.trim();
       if(!_phoneVal){
-        _ctMarkError('ct-em-phone', 'íœ´ëŒ€ì „í™”', errors);
+        _ctMarkError('ct-em-phone', 'ÈŞ´ëÀüÈ­', errors);
       } else {
         const _phoneChk = _validatePhoneNumber(_phoneVal);
-        if(!_phoneChk.ok) _ctMarkError('ct-em-phone', 'íœ´ëŒ€ì „í™” í˜•ì‹ ì˜¤ë¥˜', errors);
+        if(!_phoneChk.ok) _ctMarkError('ct-em-phone', 'ÈŞ´ëÀüÈ­ Çü½Ä ¿À·ù', errors);
         else {
-          // íœ´ëŒ€í°ë²ˆí˜¸ ì¤‘ë³µ ê²€ì‚¬ (ìœ íš¨Â·ì˜ˆì • ê³„ì•½ ê¸°ì¤€)
+          // ÈŞ´ëÆù¹øÈ£ Áßº¹ °Ë»ç (À¯È¿¡¤¿¹Á¤ °è¾à ±âÁØ)
           const _phoneDigits = _phoneVal.replace(/[^0-9]/g, '');
           const _phoneUniq = _validatePhoneUniqueness(_phoneDigits, coId, null);
           if(!_phoneUniq.ok) _ctMarkError('ct-em-phone', _phoneUniq.msg, errors);
@@ -2953,100 +2949,100 @@ function _ctValidate(){
       const _emailVal = document.getElementById('ct-em-email').value.trim();
       if(_emailVal){
         const _emailChk = _validateEmail(_emailVal);
-        if(!_emailChk.ok) _ctMarkError('ct-em-email', 'ì´ë©”ì¼ í˜•ì‹ ì˜¤ë¥˜', errors);
+        if(!_emailChk.ok) _ctMarkError('ct-em-email', 'ÀÌ¸ŞÀÏ Çü½Ä ¿À·ù', errors);
       }
     })();
     if(!document.getElementById('ct-em-category').value)
-      _ctMarkError('ct-em-category', 'ê³ ìš©í˜•íƒœ', errors);
+      _ctMarkError('ct-em-category', '°í¿ëÇüÅÂ', errors);
 
-    // â”€â”€ í†µìƒì‹œê¸‰: ëª¨ë“  ê³ ìš©í˜•íƒœ ê³µí†µ í•„ìˆ˜ â”€â”€
+    // ¦¡¦¡ Åë»ó½Ã±Ş: ¸ğµç °í¿ëÇüÅÂ °øÅë ÇÊ¼ö ¦¡¦¡
     if(!getAmountVal('ct-hourly-input'))
-      _ctMarkError('ct-hourly-input', 'í†µìƒì‹œê¸‰', errors);
+      _ctMarkError('ct-hourly-input', 'Åë»ó½Ã±Ş', errors);
 
-    // â”€â”€ ì„ê¸ˆ ê´€ë ¨ (ê³ ìš©í˜•íƒœ ê¸°ì¤€) â”€â”€
+    // ¦¡¦¡ ÀÓ±İ °ü·Ã (°í¿ëÇüÅÂ ±âÁØ) ¦¡¦¡
     const cat = CONTRACT_TYPE_LEGACY_MAP[document.getElementById('ct-em-category').value] || document.getElementById('ct-em-category').value;
     if(cat ===CONTRACT_TYPE.DAILY){
       if(!getAmountVal('ct-daily-wage'))
-        _ctMarkError('ct-daily-wage', 'ì¼ê¸‰ì—¬', errors);
+        _ctMarkError('ct-daily-wage', 'ÀÏ±Ş¿©', errors);
     } else if(cat){
-      // ì •ê·œì§Â·ì •ê·œì§ ìˆ˜ìŠµÂ·ê³„ì•½ì§Â·ê³„ì•½ì§ ìˆ˜ìŠµì€ ê¸°ë³¸ê¸‰ì´ ìë™ê³„ì‚°ì´ë¯€ë¡œ í•„ìˆ˜ ì²´í¬ ì œì™¸
+      // Á¤±ÔÁ÷¡¤Á¤±ÔÁ÷ ¼ö½À¡¤°è¾àÁ÷¡¤°è¾àÁ÷ ¼ö½ÀÀº ±âº»±ŞÀÌ ÀÚµ¿°è»êÀÌ¹Ç·Î ÇÊ¼ö Ã¼Å© Á¦¿Ü
       if(cat !==CONTRACT_TYPE.REGULAR && cat !==CONTRACT_TYPE.REGULAR_PROBATION && cat !==CONTRACT_TYPE.FIXED && cat !==CONTRACT_TYPE.FIXED_PROBATION){
         if(!getAmountVal('ct-base'))
-          _ctMarkError('ct-base', 'ê¸°ë³¸ê¸‰', errors);
+          _ctMarkError('ct-base', '±âº»±Ş', errors);
       }
       if(cat === CONTRACT_TYPE.REGULAR){
-        // ì •ê·œì§: ì‹œê¸‰ ì…ë ¥ ì‹œ ì—°ë´‰ ìë™ê³„ì‚°, ì‹œê¸‰ ë¯¸ì…ë ¥ ì‹œ ì—°ë´‰ í•„ìˆ˜
+        // Á¤±ÔÁ÷: ½Ã±Ş ÀÔ·Â ½Ã ¿¬ºÀ ÀÚµ¿°è»ê, ½Ã±Ş ¹ÌÀÔ·Â ½Ã ¿¬ºÀ ÇÊ¼ö
         const _hwReg = getAmountVal('ct-hourly-input') || 0;
         if(_hwReg <= 0 && !getAmountVal('ct-annual-sal'))
-          _ctMarkError('ct-annual-sal', 'ì—°ë´‰ (ë˜ëŠ” í†µìƒì‹œê¸‰ ì…ë ¥)', errors);
+          _ctMarkError('ct-annual-sal', '¿¬ºÀ (¶Ç´Â Åë»ó½Ã±Ş ÀÔ·Â)', errors);
       } else if(cat === CONTRACT_TYPE.REGULAR_PROBATION){
-        // ì •ê·œì§ ìˆ˜ìŠµ: ì‹œê¸‰ ê¸°ë°˜ ìë™ê³„ì‚° (ì—°ë´‰ ë¶ˆí•„ìš”)
+        // Á¤±ÔÁ÷ ¼ö½À: ½Ã±Ş ±â¹İ ÀÚµ¿°è»ê (¿¬ºÀ ºÒÇÊ¿ä)
       } else if(cat === CONTRACT_TYPE.FIXED || cat === CONTRACT_TYPE.FIXED_PROBATION){
-        // ê³„ì•½ì§Â·ê³„ì•½ì§ ìˆ˜ìŠµ: ì‹œê¸‰ ê¸°ë°˜ ìë™ê³„ì‚° ìš°ì„ , ì›”ì•½ì •ê¸‰ì—¬ëŠ” ì„ íƒ
+        // °è¾àÁ÷¡¤°è¾àÁ÷ ¼ö½À: ½Ã±Ş ±â¹İ ÀÚµ¿°è»ê ¿ì¼±, ¿ù¾àÁ¤±Ş¿©´Â ¼±ÅÃ
       }
     }
-    // â”€â”€ ê³„ì•½ì§Â·ê³„ì•½ì§ ìˆ˜ìŠµÂ·ì¼ìš©ì§: ê³„ì•½ ì¢…ë£Œì¼(í‡´ì‚¬ì˜ˆì •ì¼) í•„ìˆ˜ â”€â”€
+    // ¦¡¦¡ °è¾àÁ÷¡¤°è¾àÁ÷ ¼ö½À¡¤ÀÏ¿ëÁ÷: °è¾à Á¾·áÀÏ(Åğ»ç¿¹Á¤ÀÏ) ÇÊ¼ö ¦¡¦¡
     if(cat ===CONTRACT_TYPE.FIXED || cat ===CONTRACT_TYPE.FIXED_PROBATION || cat ===CONTRACT_TYPE.DAILY){
       if(!document.getElementById('ct-end')?.value)
-        _ctMarkError('ct-end', 'ê³„ì•½ ì¢…ë£Œì¼', errors);
+        _ctMarkError('ct-end', '°è¾à Á¾·áÀÏ', errors);
     }
-    // â”€â”€ ìˆ˜ìŠµ ê³„ì•½: ìˆ˜ìŠµ ì¡°ê±´ ì „ì²´ í•„ìˆ˜ â”€â”€
+    // ¦¡¦¡ ¼ö½À °è¾à: ¼ö½À Á¶°Ç ÀüÃ¼ ÇÊ¼ö ¦¡¦¡
     if(cat ===CONTRACT_TYPE.REGULAR_PROBATION || cat ===CONTRACT_TYPE.FIXED_PROBATION){
-      // ìˆ˜ìŠµê¸°ê°„
+      // ¼ö½À±â°£
       if(!document.getElementById('ct-probation-months')?.value)
-        _ctMarkError('ct-probation-months', 'ìˆ˜ìŠµê¸°ê°„', errors);
-      // ìˆ˜ìŠµ ì„ê¸ˆ ë¹„ìœ¨ (direct ëª¨ë“œê°€ ì•„ë‹ ë•Œ)
+        _ctMarkError('ct-probation-months', '¼ö½À±â°£', errors);
+      // ¼ö½À ÀÓ±İ ºñÀ² (direct ¸ğµå°¡ ¾Æ´Ò ¶§)
       const _probBasis = document.querySelector('input[name="ct-probation-basis"]:checked')?.value || '';
       if(_probBasis !== 'direct'){
         const _probPctVal = parseFloat(document.getElementById('ct-probation-pct')?.value);
         if(!_probPctVal || _probPctVal <= 0)
-          _ctMarkError('ct-probation-pct', 'ìˆ˜ìŠµ ì„ê¸ˆ ë¹„ìœ¨(%)', errors);
+          _ctMarkError('ct-probation-pct', '¼ö½À ÀÓ±İ ºñÀ²(%)', errors);
       }
-      // ìˆ˜ìŠµ ì„ê¸ˆ ì›” ê¸ˆì•¡ (í•­ìƒ í•„ìˆ˜)
+      // ¼ö½À ÀÓ±İ ¿ù ±İ¾× (Ç×»ó ÇÊ¼ö)
       const _probAmtVal = parseFloat(document.getElementById('ct-probation-amt')?.value);
       if(!_probAmtVal || _probAmtVal <= 0)
-        _ctMarkError('ct-probation-amt', 'ìˆ˜ìŠµ ì„ê¸ˆ(ì›” ê¸ˆì•¡)', errors);
+        _ctMarkError('ct-probation-amt', '¼ö½À ÀÓ±İ(¿ù ±İ¾×)', errors);
     }
   } else {
-    // â”€â”€ ìˆ˜ì •/ì¬ê³„ì•½: ì§ì› í•„ìˆ˜ í•„ë“œ â”€â”€
+    // ¦¡¦¡ ¼öÁ¤/Àç°è¾à: Á÷¿ø ÇÊ¼ö ÇÊµå ¦¡¦¡
     const _empNoEditVal = document.getElementById('ct-edit-em-empno')?.value.trim() || '';
     if(!_empNoEditVal){
-      _ctMarkError('ct-edit-em-empno', 'ì‚¬ì›ë²ˆí˜¸', errors);
+      _ctMarkError('ct-edit-em-empno', '»ç¿ø¹øÈ£', errors);
     } else {
       const _editC = editId.contract ? allContracts.find(x => x.id === editId.contract) : null;
       const _editSelfEmpId = _editC ? _editC.employee_id : null;
       const _coIdForEditEmpno = currentContCompanyId || document.getElementById('ct-company')?.value || '';
       const _editEmpNoCheck = _validateEmpNoUniqueness(_empNoEditVal, _coIdForEditEmpno, _editSelfEmpId, null, null);
-      if(!_editEmpNoCheck.ok) _ctMarkError('ct-edit-em-empno', `ì‚¬ì›ë²ˆí˜¸ ì¤‘ë³µ: ${_editEmpNoCheck.msg}`, errors);
+      if(!_editEmpNoCheck.ok) _ctMarkError('ct-edit-em-empno', `»ç¿ø¹øÈ£ Áßº¹: ${_editEmpNoCheck.msg}`, errors);
     }
     (function(){
       const _idValE = document.getElementById('ct-edit-em-id')?.value.trim();
       if(!_idValE){
-        _ctMarkError('ct-edit-em-id', 'ì£¼ë¯¼ë“±ë¡ë²ˆí˜¸', errors);
+        _ctMarkError('ct-edit-em-id', 'ÁÖ¹Îµî·Ï¹øÈ£', errors);
       } else {
         const _idChkE = _validateIdNumber(_idValE);
-        if(!_idChkE.ok) _ctMarkError('ct-edit-em-id', 'ì£¼ë¯¼ë“±ë¡ë²ˆí˜¸ í˜•ì‹ ì˜¤ë¥˜', errors);
+        if(!_idChkE.ok) _ctMarkError('ct-edit-em-id', 'ÁÖ¹Îµî·Ï¹øÈ£ Çü½Ä ¿À·ù', errors);
       }
     })();
     if(!document.getElementById('ct-edit-emp-name')?.value.trim())
-      _ctMarkError('ct-edit-emp-name', 'ì´ë¦„', errors);
-    // ì…ì‚¬ì¼: í–‰ì´ í‘œì‹œëœ ê²½ìš°ì—ë§Œ í•„ìˆ˜ ê²€ì‚¬ (ê³„ì•½ì§Â·ì¼ìš©ì§ ì¬ê³„ì•½ ì‹œ í–‰ ìˆ¨ê¹€)
+      _ctMarkError('ct-edit-emp-name', 'ÀÌ¸§', errors);
+    // ÀÔ»çÀÏ: ÇàÀÌ Ç¥½ÃµÈ °æ¿ì¿¡¸¸ ÇÊ¼ö °Ë»ç (°è¾àÁ÷¡¤ÀÏ¿ëÁ÷ Àç°è¾à ½Ã Çà ¼û±è)
     { const _hireRow = document.getElementById('ct-edit-row-hire');
       const _hireRowVisible = !_hireRow || _hireRow.style.display !== 'none';
       if(_hireRowVisible && !document.getElementById('ct-edit-em-hire')?.value)
-        _ctMarkError('ct-edit-em-hire', 'ì…ì‚¬ì¼', errors);
+        _ctMarkError('ct-edit-em-hire', 'ÀÔ»çÀÏ', errors);
     }
     if(!document.getElementById('ct-edit-em-job')?.value.trim())
-      _ctMarkError('ct-edit-em-job', 'ë‹´ë‹¹ì—…ë¬´', errors);
+      _ctMarkError('ct-edit-em-job', '´ã´ç¾÷¹«', errors);
     (function(){
       const _phoneValE = document.getElementById('ct-edit-em-phone')?.value.trim();
       if(!_phoneValE){
-        _ctMarkError('ct-edit-em-phone', 'íœ´ëŒ€ì „í™”', errors);
+        _ctMarkError('ct-edit-em-phone', 'ÈŞ´ëÀüÈ­', errors);
       } else {
         const _phoneChkE = _validatePhoneNumber(_phoneValE);
-        if(!_phoneChkE.ok) _ctMarkError('ct-edit-em-phone', 'íœ´ëŒ€ì „í™” í˜•ì‹ ì˜¤ë¥˜', errors);
+        if(!_phoneChkE.ok) _ctMarkError('ct-edit-em-phone', 'ÈŞ´ëÀüÈ­ Çü½Ä ¿À·ù', errors);
         else {
-          // íœ´ëŒ€í°ë²ˆí˜¸ ì¤‘ë³µ ê²€ì‚¬ (ìê¸° ìì‹  ì œì™¸)
+          // ÈŞ´ëÆù¹øÈ£ Áßº¹ °Ë»ç (ÀÚ±â ÀÚ½Å Á¦¿Ü)
           const _phoneDigitsE = _phoneValE.replace(/[^0-9]/g, '');
           const _editEmpId = editId.contract
             ? (allContracts.find(c => c.id === editId.contract)?.employee_id || '')
@@ -3060,76 +3056,76 @@ function _ctValidate(){
       const _emailValE = document.getElementById('ct-edit-em-email')?.value.trim();
       if(_emailValE){
         const _emailChkE = _validateEmail(_emailValE);
-        if(!_emailChkE.ok) _ctMarkError('ct-edit-em-email', 'ì´ë©”ì¼ í˜•ì‹ ì˜¤ë¥˜', errors);
+        if(!_emailChkE.ok) _ctMarkError('ct-edit-em-email', 'ÀÌ¸ŞÀÏ Çü½Ä ¿À·ù', errors);
       }
     })();
     if(!document.getElementById('ct-edit-em-address')?.value.trim())
-      _ctMarkError('ct-edit-em-address', 'ì£¼ì†Œ', errors);
+      _ctMarkError('ct-edit-em-address', 'ÁÖ¼Ò', errors);
 
-    // â”€â”€ í†µìƒì‹œê¸‰: ëª¨ë“  ê³ ìš©í˜•íƒœ ê³µí†µ í•„ìˆ˜ â”€â”€
+    // ¦¡¦¡ Åë»ó½Ã±Ş: ¸ğµç °í¿ëÇüÅÂ °øÅë ÇÊ¼ö ¦¡¦¡
     if(!getAmountVal('ct-hourly-input'))
-      _ctMarkError('ct-hourly-input', 'í†µìƒì‹œê¸‰', errors);
+      _ctMarkError('ct-hourly-input', 'Åë»ó½Ã±Ş', errors);
 
-    // â”€â”€ ìˆ˜ì •/ì¬ê³„ì•½: ì„ê¸ˆ ê´€ë ¨ â”€â”€
+    // ¦¡¦¡ ¼öÁ¤/Àç°è¾à: ÀÓ±İ °ü·Ã ¦¡¦¡
     const _rawCatForCheck = (document.getElementById('ct-edit-em-category')?.value)
       || (document.getElementById('ct-type')?.value) || CONTRACT_TYPE.REGULAR;
     const catForCheck = CONTRACT_TYPE_LEGACY_MAP[_rawCatForCheck] || _rawCatForCheck;
     if(catForCheck ===CONTRACT_TYPE.DAILY){
       if(!getAmountVal('ct-daily-wage'))
-        _ctMarkError('ct-daily-wage', 'ì¼ê¸‰ì—¬', errors);
+        _ctMarkError('ct-daily-wage', 'ÀÏ±Ş¿©', errors);
     } else {
-      // ì •ê·œì§Â·ì •ê·œì§ ìˆ˜ìŠµÂ·ê³„ì•½ì§Â·ê³„ì•½ì§ ìˆ˜ìŠµì€ ê¸°ë³¸ê¸‰ì´ ìë™ê³„ì‚°ì´ë¯€ë¡œ í•„ìˆ˜ ì²´í¬ ì œì™¸
+      // Á¤±ÔÁ÷¡¤Á¤±ÔÁ÷ ¼ö½À¡¤°è¾àÁ÷¡¤°è¾àÁ÷ ¼ö½ÀÀº ±âº»±ŞÀÌ ÀÚµ¿°è»êÀÌ¹Ç·Î ÇÊ¼ö Ã¼Å© Á¦¿Ü
       if(catForCheck !==CONTRACT_TYPE.REGULAR && catForCheck !==CONTRACT_TYPE.REGULAR_PROBATION && catForCheck !==CONTRACT_TYPE.FIXED && catForCheck !==CONTRACT_TYPE.FIXED_PROBATION){
         if(!getAmountVal('ct-base'))
-          _ctMarkError('ct-base', 'ê¸°ë³¸ê¸‰', errors);
+          _ctMarkError('ct-base', '±âº»±Ş', errors);
       }
       if(catForCheck === CONTRACT_TYPE.REGULAR){
-        // ì •ê·œì§: ì‹œê¸‰ ì…ë ¥ ì‹œ ì—°ë´‰ ìë™ê³„ì‚°, ì‹œê¸‰ ë¯¸ì…ë ¥ ì‹œ ì—°ë´‰ í•„ìˆ˜
+        // Á¤±ÔÁ÷: ½Ã±Ş ÀÔ·Â ½Ã ¿¬ºÀ ÀÚµ¿°è»ê, ½Ã±Ş ¹ÌÀÔ·Â ½Ã ¿¬ºÀ ÇÊ¼ö
         const _hwReg2 = getAmountVal('ct-hourly-input') || 0;
         if(_hwReg2 <= 0 && !getAmountVal('ct-annual-sal'))
-          _ctMarkError('ct-annual-sal', 'ì—°ë´‰ (ë˜ëŠ” í†µìƒì‹œê¸‰ ì…ë ¥)', errors);
+          _ctMarkError('ct-annual-sal', '¿¬ºÀ (¶Ç´Â Åë»ó½Ã±Ş ÀÔ·Â)', errors);
       } else if(catForCheck === CONTRACT_TYPE.REGULAR_PROBATION){
-        // ì •ê·œì§ ìˆ˜ìŠµ: ì‹œê¸‰ ê¸°ë°˜ ìë™ê³„ì‚° (ì—°ë´‰ ë¶ˆí•„ìš”)
+        // Á¤±ÔÁ÷ ¼ö½À: ½Ã±Ş ±â¹İ ÀÚµ¿°è»ê (¿¬ºÀ ºÒÇÊ¿ä)
       } else if(catForCheck === CONTRACT_TYPE.FIXED || catForCheck === CONTRACT_TYPE.FIXED_PROBATION){
-        // ê³„ì•½ì§Â·ê³„ì•½ì§ ìˆ˜ìŠµ: ì‹œê¸‰ ê¸°ë°˜ ìë™ê³„ì‚° ìš°ì„ , ì›”ì•½ì •ê¸‰ì—¬ëŠ” ì„ íƒ
+        // °è¾àÁ÷¡¤°è¾àÁ÷ ¼ö½À: ½Ã±Ş ±â¹İ ÀÚµ¿°è»ê ¿ì¼±, ¿ù¾àÁ¤±Ş¿©´Â ¼±ÅÃ
       }
     }
-    // â”€â”€ ê³„ì•½ì§Â·ê³„ì•½ì§ ìˆ˜ìŠµÂ·ì¼ìš©ì§: ê³„ì•½ ì¢…ë£Œì¼ í•„ìˆ˜ â”€â”€
+    // ¦¡¦¡ °è¾àÁ÷¡¤°è¾àÁ÷ ¼ö½À¡¤ÀÏ¿ëÁ÷: °è¾à Á¾·áÀÏ ÇÊ¼ö ¦¡¦¡
     if(catForCheck ===CONTRACT_TYPE.FIXED || catForCheck ===CONTRACT_TYPE.FIXED_PROBATION || catForCheck ===CONTRACT_TYPE.DAILY){
       if(!document.getElementById('ct-end')?.value)
-        _ctMarkError('ct-end', 'ê³„ì•½ ì¢…ë£Œì¼', errors);
+        _ctMarkError('ct-end', '°è¾à Á¾·áÀÏ', errors);
     }
-    // â”€â”€ ìˆ˜ìŠµ ê³„ì•½: ìˆ˜ìŠµ ì¡°ê±´ ì „ì²´ í•„ìˆ˜ â”€â”€
+    // ¦¡¦¡ ¼ö½À °è¾à: ¼ö½À Á¶°Ç ÀüÃ¼ ÇÊ¼ö ¦¡¦¡
     if(catForCheck ===CONTRACT_TYPE.REGULAR_PROBATION || catForCheck ===CONTRACT_TYPE.FIXED_PROBATION){
       if(!document.getElementById('ct-probation-months')?.value)
-        _ctMarkError('ct-probation-months', 'ìˆ˜ìŠµê¸°ê°„', errors);
+        _ctMarkError('ct-probation-months', '¼ö½À±â°£', errors);
       const _probBasis2 = document.querySelector('input[name="ct-probation-basis"]:checked')?.value || '';
       if(_probBasis2 !== 'direct'){
         const _probPctVal2 = parseFloat(document.getElementById('ct-probation-pct')?.value);
         if(!_probPctVal2 || _probPctVal2 <= 0)
-          _ctMarkError('ct-probation-pct', 'ìˆ˜ìŠµ ì„ê¸ˆ ë¹„ìœ¨(%)', errors);
+          _ctMarkError('ct-probation-pct', '¼ö½À ÀÓ±İ ºñÀ²(%)', errors);
       }
       const _probAmtVal2 = parseFloat(document.getElementById('ct-probation-amt')?.value);
       if(!_probAmtVal2 || _probAmtVal2 <= 0)
-        _ctMarkError('ct-probation-amt', 'ìˆ˜ìŠµ ì„ê¸ˆ(ì›” ê¸ˆì•¡)', errors);
+        _ctMarkError('ct-probation-amt', '¼ö½À ÀÓ±İ(¿ù ±İ¾×)', errors);
     }
   }
 
-  // â”€â”€ ìµœì €ì„ê¸ˆ ìœ„ë°˜ ê²€ì‚¬ â”€â”€
+  // ¦¡¦¡ ÃÖÀúÀÓ±İ À§¹İ °Ë»ç ¦¡¦¡
   const _mwProbRow    = document.getElementById('ct-prob-minwage-warning-row');
   const _mwGeneralRow = document.getElementById('ct-general-minwage-warning-row');
   const _violatesMW   = !!(_mwProbRow    && _mwProbRow.style.display    !== 'none')
                      || !!(_mwGeneralRow && _mwGeneralRow.style.display !== 'none');
   if(_violatesMW)
-    errors.push('ìµœì €ì„ê¸ˆ ìœ„ë°˜ â€” ê¸°ë³¸ê¸‰(ë˜ëŠ” ì¼ê¸‰ì—¬)ì„ ìµœì €ì„ê¸ˆ ì´ìƒìœ¼ë¡œ ì˜¬ë ¤ì£¼ì„¸ìš”.');
+    errors.push('ÃÖÀúÀÓ±İ À§¹İ ? ±âº»±Ş(¶Ç´Â ÀÏ±Ş¿©)À» ÃÖÀúÀÓ±İ ÀÌ»óÀ¸·Î ¿Ã·ÁÁÖ¼¼¿ä.');
 
-  // â”€â”€ ê³„ì•½ê¸°ê°„ 1ê°œì›” ë¯¸ë§Œ ìœ„ë°˜ ê²€ì‚¬ (ê³„ì•½ì§Â·ê³„ì•½ì§ ìˆ˜ìŠµ) â”€â”€
+  // ¦¡¦¡ °è¾à±â°£ 1°³¿ù ¹Ì¸¸ À§¹İ °Ë»ç (°è¾àÁ÷¡¤°è¾àÁ÷ ¼ö½À) ¦¡¦¡
   const _shortTermRow = document.getElementById('ct-short-term-warning-row');
   if(_shortTermRow && _shortTermRow.style.display !== 'none')
-    errors.push('ê³„ì•½ê¸°ê°„ 1ê°œì›” ë¯¸ë§Œ â€” ì¼ìš©ì§ìœ¼ë¡œ ë³€ê²½í•˜ê±°ë‚˜ ì¢…ë£Œì¼ì„ ì¡°ì •í•´ ì£¼ì„¸ìš”.');
+    errors.push('°è¾à±â°£ 1°³¿ù ¹Ì¸¸ ? ÀÏ¿ëÁ÷À¸·Î º¯°æÇÏ°Å³ª Á¾·áÀÏÀ» Á¶Á¤ÇØ ÁÖ¼¼¿ä.');
 
-  // â”€â”€ ì •ê·œì§ ì „í™˜ ì˜ë¬´ ê²€ì‚¬ (ê³„ì•½ì§Â·ê³„ì•½ì§ ìˆ˜ìŠµÂ·ì •ê·œì§ ìˆ˜ìŠµÂ·ì¼ìš©ì§) â”€â”€
-  // ì…ì‚¬ì¼ë¡œë¶€í„° 730ì¼ì„ ì´ˆê³¼í•˜ëŠ” ê³„ì•½ ì¢…ë£Œì¼ ì„¤ì • ë¶ˆê°€
+  // ¦¡¦¡ Á¤±ÔÁ÷ ÀüÈ¯ ÀÇ¹« °Ë»ç (°è¾àÁ÷¡¤°è¾àÁ÷ ¼ö½À¡¤Á¤±ÔÁ÷ ¼ö½À¡¤ÀÏ¿ëÁ÷) ¦¡¦¡
+  // ÀÔ»çÀÏ·ÎºÎÅÍ 730ÀÏÀ» ÃÊ°úÇÏ´Â °è¾à Á¾·áÀÏ ¼³Á¤ ºÒ°¡
   (function(){
     const _ctTypeEl = document.getElementById('ct-type');
     const _ctType = (_ctTypeEl?.value || '').trim();
@@ -3138,11 +3134,11 @@ function _ctValidate(){
 
     const _hireEl = document.getElementById('ct-edit-em-hire');
     const _hire = _hireEl?.value || '';
-    if(!_hire) return; // ì…ì‚¬ì¼ ì—†ìœ¼ë©´ ê²€ì‚¬ ë¶ˆê°€
+    if(!_hire) return; // ÀÔ»çÀÏ ¾øÀ¸¸é °Ë»ç ºÒ°¡
 
     const _endEl = document.getElementById('ct-end');
     const _end = _endEl?.value || '';
-    if(!_end) return; // ì¢…ë£Œì¼ ì—†ìœ¼ë©´ ê²€ì‚¬ ë¶ˆê°€ (ë‹¤ë¥¸ ê²€ì‚¬ì—ì„œ ê±¸ëŸ¬ì§)
+    if(!_end) return; // Á¾·áÀÏ ¾øÀ¸¸é °Ë»ç ºÒ°¡ (´Ù¸¥ °Ë»ç¿¡¼­ °É·¯Áü)
 
     const hireDate = new Date(_hire);
     const endDate  = new Date(_end);
@@ -3154,47 +3150,47 @@ function _ctValidate(){
       maxEndDate.setDate(maxEndDate.getDate() + 730);
       const maxEndStr = maxEndDate.toISOString().slice(0, 10);
       _ctMarkError('ct-end',
-        `ì…ì‚¬ì¼ë¡œë¶€í„° 730ì¼ì„ ì´ˆê³¼í•˜ë©´ ì •ê·œì§ ì „í™˜ ì˜ë¬´ ëŒ€ìƒì´ ë©ë‹ˆë‹¤. ê³„ì•½ ì¢…ë£Œì¼ì„ ${maxEndStr} ì´ë‚´ë¡œ ì„¤ì •í•˜ì„¸ìš”.`,
+        `ÀÔ»çÀÏ·ÎºÎÅÍ 730ÀÏÀ» ÃÊ°úÇÏ¸é Á¤±ÔÁ÷ ÀüÈ¯ ÀÇ¹« ´ë»óÀÌ µË´Ï´Ù. °è¾à Á¾·áÀÏÀ» ${maxEndStr} ÀÌ³»·Î ¼³Á¤ÇÏ¼¼¿ä.`,
         errors);
     }
   })();
 
-  // â”€â”€ ê¸‰ì—¬ ì‚°ì •ê¸°ê°„ í•„ìˆ˜ â”€â”€
+  // ¦¡¦¡ ±Ş¿© »êÁ¤±â°£ ÇÊ¼ö ¦¡¦¡
   if(!document.getElementById('ct-pay-period')?.value.trim()){
-    _ctMarkError('ct-pay-period-month', 'ê¸‰ì—¬ ì‚°ì •ê¸°ê°„', errors);
+    _ctMarkError('ct-pay-period-month', '±Ş¿© »êÁ¤±â°£', errors);
   }
 
   if(errors.length){
     _ctShowErrors(errors);
-    return true; // ì˜¤ë¥˜ ìˆìŒ
+    return true; // ¿À·ù ÀÖÀ½
   }
-  return false;  // í†µê³¼
+  return false;  // Åë°ú
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
 
 async function saveContract(){
-  // â”€â”€ í•„ìˆ˜ ì…ë ¥ ì¼ê´„ ê²€ì‚¬ (í•˜ì´ë¼ì´íŠ¸ + ë°°ë„ˆ) â”€â”€
+  // ¦¡¦¡ ÇÊ¼ö ÀÔ·Â ÀÏ°ı °Ë»ç (ÇÏÀÌ¶óÀÌÆ® + ¹è³Ê) ¦¡¦¡
   const _valResult = _ctValidate();
   if(_valResult) return;
 
-  // ì¬ê³„ì•½ ëª¨ë“œ: _recontractEmpId ì‚¬ìš©
+  // Àç°è¾à ¸ğµå: _recontractEmpId »ç¿ë
   let empId = editId.contract ? (allContracts.find(x=>x.id===editId.contract)||{}).employee_id||'' : (_recontractEmpId||'');
   const coId = document.getElementById('ct-company').value;
   const start = (editId.contract||_recontractEmpId) ? document.getElementById('ct-start').value : '';
   const base  = getAmountVal('ct-base');
   const isEditMode = !!editId.contract;
 
-  // â”€â”€ íŒŒê¸°ëœ ê³„ì•½(ìˆ˜ì •ì¬ë°œí–‰)ì€ í¸ì§‘ ë¶ˆê°€ â”€â”€
+  // ¦¡¦¡ ÆÄ±âµÈ °è¾à(¼öÁ¤Àç¹ßÇà)Àº ÆíÁı ºÒ°¡ ¦¡¦¡
   if(isEditMode){
     const _origEdit = allContracts.find(x => x.id === editId.contract);
     if(_origEdit && _origEdit.is_voided_by_amend){
-      toast('ì´ ê³„ì•½ì€ ìˆ˜ì •ì¬ë°œí–‰ìœ¼ë¡œ íŒŒê¸°ë˜ì–´ í¸ì§‘í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤.', 'error');
+      toast('ÀÌ °è¾àÀº ¼öÁ¤Àç¹ßÇàÀ¸·Î ÆÄ±âµÇ¾î ÆíÁıÇÒ ¼ö ¾ø½À´Ï´Ù.', 'error');
       return;
     }
   }
 
-  // â”€â”€ ì‹ ê·œ ì§ì›ì¸ ê²½ìš° ë¨¼ì € ì§ì› ì €ì¥ â”€â”€
+  // ¦¡¦¡ ½Å±Ô Á÷¿øÀÎ °æ¿ì ¸ÕÀú Á÷¿ø ÀúÀå ¦¡¦¡
   if(!empId && !editId.contract && !_recontractEmpId){
     const newName = document.getElementById('ct-em-name').value.trim();
     const newHire  = document.getElementById('ct-edit-em-hire')?.value?.trim() || '';
@@ -3231,10 +3227,10 @@ async function saveContract(){
     await loadEmployees();
   }
 
-  if(!empId) return saveDraftContract('ì§ì› ì •ë³´ ëˆ„ë½');
+  if(!empId) return saveDraftContract('Á÷¿ø Á¤º¸ ´©¶ô');
 
-  // ì •ê·œì§ ê³„ì—´ ì—¬ë¶€ íŒë‹¨ (ì‹ ê·œ: êµ¬ë¶„ ì„ íƒê°’, ìˆ˜ì •/ì¬ê³„ì•½: ê³„ì•½ìœ í˜• select)
-  // ê³ ìš©í˜•íƒœëŠ” ì¸ì‚¬ì •ë³´(ct-edit-em-category) ê¸°ì¤€ìœ¼ë¡œ ì½ìŒ
+  // Á¤±ÔÁ÷ °è¿­ ¿©ºÎ ÆÇ´Ü (½Å±Ô: ±¸ºĞ ¼±ÅÃ°ª, ¼öÁ¤/Àç°è¾à: °è¾àÀ¯Çü select)
+  // °í¿ëÇüÅÂ´Â ÀÎ»çÁ¤º¸(ct-edit-em-category) ±âÁØÀ¸·Î ÀĞÀ½
   const _rawCatForSave = editId.contract
     ? (document.getElementById('ct-edit-em-category')?.value||(allContracts.find(x=>x.id===editId.contract)||{}).contract_type||CONTRACT_TYPE.REGULAR)
     : (_recontractEmpId ? (document.getElementById('ct-edit-em-category')?.value||CONTRACT_TYPE.REGULAR) : (document.getElementById('ct-em-category').value||CONTRACT_TYPE.REGULAR));
@@ -3244,9 +3240,9 @@ async function saveContract(){
   const isProbationSave = catForSave ===CONTRACT_TYPE.REGULAR_PROBATION || catForSave ===CONTRACT_TYPE.FIXED_PROBATION;
   const isDailySave = catForSave ===CONTRACT_TYPE.DAILY;
 
-  const annualSalInputSave = getAmountVal('ct-annual-sal'); // ì •ê·œì§:ì—°ë´‰ / ê³„ì•½ì§:ì›”ì•½ì •ê¸‰ì—¬
-  const annual = isRegularGroup ? annualSalInputSave : 0;   // annual_salaryì—ëŠ” ì •ê·œì§ë§Œ ì €ì¥
-  // ìˆ˜ìŠµ ë°ì´í„° (_ctValidateì—ì„œ í•„ìˆ˜ ê²€ì¦ í†µê³¼ í›„ì´ë¯€ë¡œ ê°’ì´ í•­ìƒ ì¡´ì¬)
+  const annualSalInputSave = getAmountVal('ct-annual-sal'); // Á¤±ÔÁ÷:¿¬ºÀ / °è¾àÁ÷:¿ù¾àÁ¤±Ş¿©
+  const annual = isRegularGroup ? annualSalInputSave : 0;   // annual_salary¿¡´Â Á¤±ÔÁ÷¸¸ ÀúÀå
+  // ¼ö½À µ¥ÀÌÅÍ (_ctValidate¿¡¼­ ÇÊ¼ö °ËÁõ Åë°ú ÈÄÀÌ¹Ç·Î °ªÀÌ Ç×»ó Á¸Àç)
   const probMonths = isProbationSave ? (parseInt(document.getElementById('ct-probation-months').value) || 0) : 0;
   const probPct    = isProbationSave ? (parseFloat(document.getElementById('ct-probation-pct').value) || 0) : 0;
   const probAmt    = isProbationSave ? (parseFloat(document.getElementById('ct-probation-amt').value) || 0) : 0;
@@ -3254,9 +3250,9 @@ async function saveContract(){
   const hours=parseFloat(document.getElementById('ct-hours').value)||0;
   const days=parseFloat(document.getElementById('ct-days').value)||5;
 
-  // â”€â”€ ì„ê¸ˆ ê³„ì‚° (ì¼ìš©ì§ vs ê³„ì•½ì§ vs ì •ê·œì§) â”€â”€
+  // ¦¡¦¡ ÀÓ±İ °è»ê (ÀÏ¿ëÁ÷ vs °è¾àÁ÷ vs Á¤±ÔÁ÷) ¦¡¦¡
   let weeklyHol, monthly, baseSalaryForSave, dailyWageForSave;
-  // í†µìƒì‹œê¸‰: ì§ì ‘ ì…ë ¥ê°’(ct-hourly-input)ì„ ê·¸ëŒ€ë¡œ ì‚¬ìš©
+  // Åë»ó½Ã±Ş: Á÷Á¢ ÀÔ·Â°ª(ct-hourly-input)À» ±×´ë·Î »ç¿ë
   const hourlyWage = getAmountVal('ct-hourly-input') || 0;
   if(isDailySave){
     dailyWageForSave = getAmountVal('ct-daily-wage');
@@ -3266,12 +3262,12 @@ async function saveContract(){
   } else {
     dailyWageForSave = 0;
     baseSalaryForSave = base;
-    // í†µìƒì„ê¸ˆ = ê¸°ë³¸ê¸‰ + ê³ ì •OTÂ·ì•¼ê°„Â·íœ´ì¼ê·¼ë¡œìˆ˜ë‹¹
+    // Åë»óÀÓ±İ = ±âº»±Ş + °íÁ¤OT¡¤¾ß°£¡¤ÈŞÀÏ±Ù·Î¼ö´ç
     const fixedOt2    = getAmountVal('ct-fixed-ot-pay')    || 0;
     const fixedNgt2   = getAmountVal('ct-fixed-night-pay') || 0;
     const fixedHol2   = getAmountVal('ct-fixed-hol-pay')   || 0;
     const fixedExtra2 = fixedOt2 + fixedNgt2 + fixedHol2;
-    // í†µìƒì„ê¸ˆ ì„¤ì • ê·¸ë£¹ (ì£¼íœ´ìˆ˜ë‹¹ ê³„ì‚°ìš© í†µìƒì„ê¸ˆì— í¬í•¨)
+    // Åë»óÀÓ±İ ¼³Á¤ ±×·ì (ÁÖÈŞ¼ö´ç °è»ê¿ë Åë»óÀÓ±İ¿¡ Æ÷ÇÔ)
     const _ordinarySave = (_isFixedAllow('site')? site2 : 0)
       + (_isFixedAllow('position')? position2 : 0)
       + (_isFixedAllow('skill')? skill2 : 0)
@@ -3280,7 +3276,7 @@ async function saveContract(){
       + (_isFixedAllow('remote_area')? remoteArea2 : 0)
       + (typeof _getCustomOrdinarySum==='function' ? _getCustomOrdinarySum() : 0);
     if(hourlyWage > 0){
-      // ì£¼íœ´ìˆ˜ë‹¹ = í†µìƒì‹œê¸‰ Ã— hpd Ã— 4.345 [ê·¼ë¡œê¸°ì¤€ë²• ì œ55ì¡°]
+      // ÁÖÈŞ¼ö´ç = Åë»ó½Ã±Ş ¡¿ hpd ¡¿ 4.345 [±Ù·Î±âÁØ¹ı Á¦55Á¶]
       weeklyHol = Math.round(hourlyWage * hours * (365 / 12 / 7));
     } else {
       weeklyHol = Math.round((base + _ordinarySave + fixedExtra2) / days);
@@ -3300,7 +3296,7 @@ async function saveContract(){
     const sdev2       = getAmountVal('ct-self-dev')||0;
     const book2       = getAmountVal('ct-book')||0;
     const ovseas2     = getAmountVal('ct-overseas')||0;
-    // ë“±ë¡ ì €ì¥: í†µìƒì„ê¸ˆ ì—¬ë¶€ëŠ” pay_typeìœ¼ë¡œ íŒë‹¨
+    // µî·Ï ÀúÀå: Åë»óÀÓ±İ ¿©ºÎ´Â pay_typeÀ¸·Î ÆÇ´Ü
     const fixedGroup2 = (_isFixedAllow('car')           ? car2        : 0)
       + (_isFixedAllow('meal')          ? meal2       : 0)
       + (_isFixedAllow('research')      ? research2   : 0)
@@ -3311,10 +3307,10 @@ async function saveContract(){
       + (_isFixedAllow('book')          ? book2       : 0)
       + (_isFixedAllow('overseas')      ? ovseas2     : 0);
     const allAllow2 = _ordinarySave + fixedGroup2;
-    // ì›” ì•½ì •ì„ê¸ˆ ê²°ì •:
-    //   ê³„ì•½ì§ â†’ ct-annual-sal ì…ë ¥ê°’(ì›”ì•½ì •ê¸‰ì—¬) ê·¸ëŒ€ë¡œ
-    //   ì •ê·œì§ â†’ ì—°ë´‰Ã·12
-    //   ê·¸ ì™¸  â†’ ê¸°ë³¸ê¸‰+ì£¼íœ´+ìˆ˜ë‹¹ í•©ì‚°
+    // ¿ù ¾àÁ¤ÀÓ±İ °áÁ¤:
+    //   °è¾àÁ÷ ¡æ ct-annual-sal ÀÔ·Â°ª(¿ù¾àÁ¤±Ş¿©) ±×´ë·Î
+    //   Á¤±ÔÁ÷ ¡æ ¿¬ºÀ¡À12
+    //   ±× ¿Ü  ¡æ ±âº»±Ş+ÁÖÈŞ+¼ö´ç ÇÕ»ê
     if(isFixedTermSave && annualSalInputSave > 0){
       monthly = annualSalInputSave;
     } else if(isRegularGroup && annual > 0){
@@ -3324,7 +3320,7 @@ async function saveContract(){
     }
   }
 
-  // â”€â”€ ìµœì €ì„ê¸ˆ ê²€ì¦ â‘  ê³µìš© ê²½ê³  í–‰ í‘œì‹œ ì¤‘ì´ë©´ ì¦‰ì‹œ ì°¨ë‹¨ â”€â”€
+  // ¦¡¦¡ ÃÖÀúÀÓ±İ °ËÁõ ¨ç °ø¿ë °æ°í Çà Ç¥½Ã ÁßÀÌ¸é Áï½Ã Â÷´Ü ¦¡¦¡
   {
     const _gwRow = document.getElementById('ct-general-minwage-warning-row');
     if(_gwRow && _gwRow.style.display !== 'none'){
@@ -3333,43 +3329,43 @@ async function saveContract(){
     }
   }
 
-  // â”€â”€ ìµœì €ì„ê¸ˆ ê²€ì¦ â‘¡ ì‹œê¸‰ ê³„ì‚° ê¸°ë°˜ ê²€ì¦ (ë¹„ê³¼ì„¸ ìˆ˜ë‹¹ í¬í•¨ ì›” í™˜ì‚°ì‹œê¸‰ ê¸°ì¤€) â”€â”€
+  // ¦¡¦¡ ÃÖÀúÀÓ±İ °ËÁõ ¨è ½Ã±Ş °è»ê ±â¹İ °ËÁõ (ºñ°ú¼¼ ¼ö´ç Æ÷ÇÔ ¿ù È¯»ê½Ã±Ş ±âÁØ) ¦¡¦¡
   {
-    // ê³„ì•½ ì‹œì‘ ì—°ë„ ê²°ì •
-    // ì‹ ê·œ ëª¨ë“œ: ct-em-start(ê³„ì•½ì‹œì‘ì¼) ìš°ì„ , ì—†ìœ¼ë©´ ct-em-hire í´ë°±
+    // °è¾à ½ÃÀÛ ¿¬µµ °áÁ¤
+    // ½Å±Ô ¸ğµå: ct-em-start(°è¾à½ÃÀÛÀÏ) ¿ì¼±, ¾øÀ¸¸é ct-em-hire Æú¹é
     const _hireRaw = editId.contract
       ? document.getElementById('ct-start')?.value
       : (_recontractEmpId
           ? document.getElementById('ct-start')?.value
           : (document.getElementById('ct-start')?.value || document.getElementById('ct-edit-em-hire')?.value));
     const _contractYear = _hireRaw ? parseInt(_hireRaw.slice(0,4)) : new Date().getFullYear();
-    // ìµœì €ì„ê¸ˆ: í•´ë‹¹ ì—°ë„ ë°ì´í„°ê°€ ì—†ìœ¼ë©´ ìµœì‹  ì—°ë„ ë°ì´í„°ë¡œ í´ë°±
+    // ÃÖÀúÀÓ±İ: ÇØ´ç ¿¬µµ µ¥ÀÌÅÍ°¡ ¾øÀ¸¸é ÃÖ½Å ¿¬µµ µ¥ÀÌÅÍ·Î Æú¹é
     const _mw = _allMinimumWages.find(w => Number(w.year) === _contractYear)
       || (_allMinimumWages||[]).sort((a,b)=>b.year-a.year)[0];
 
     if(_mw && Number(_mw.hourly_wage) > 0){
       const _legalMinWage = Number(_mw.hourly_wage);
 
-      // â”€â”€ ì •ê·œì§ ìˆ˜ìŠµ ì˜ˆì™¸: ìµœì €ì„ê¸ˆë²• Â§5â‘¡ì— ë”°ë¼ ìˆ˜ìŠµ ì‚¬ìš© 3ê°œì›” ì´ë‚´ â†’ ìµœì €ì‹œê¸‰ì˜ 90%ê¹Œì§€ í—ˆìš©
-      // (1ë…„ ë¯¸ë§Œ ë‹¨ê¸°ê³„ì•½ì§Â·ì¼ìš©ì§ì—ëŠ” ì ìš© ì•ˆ ë¨)
+      // ¦¡¦¡ Á¤±ÔÁ÷ ¼ö½À ¿¹¿Ü: ÃÖÀúÀÓ±İ¹ı ¡×5¨è¿¡ µû¶ó ¼ö½À »ç¿ë 3°³¿ù ÀÌ³» ¡æ ÃÖÀú½Ã±ŞÀÇ 90%±îÁö Çã¿ë
+      // (1³â ¹Ì¸¸ ´Ü±â°è¾àÁ÷¡¤ÀÏ¿ëÁ÷¿¡´Â Àû¿ë ¾È µÊ)
       const _isRegularProbation = (catForSave ===CONTRACT_TYPE.REGULAR_PROBATION);
       const _isProbationContract = (catForSave ===CONTRACT_TYPE.REGULAR_PROBATION || catForSave ===CONTRACT_TYPE.FIXED_PROBATION);
       const _effectiveMinWage   = _isRegularProbation
-        ? Math.ceil(_legalMinWage * 0.9)   // ì •ê·œì§ ìˆ˜ìŠµ: 90% ê¸°ì¤€ (ì˜¬ë¦¼)
-        : _legalMinWage;                    // ê·¸ ì™¸: 100% ê¸°ì¤€
+        ? Math.ceil(_legalMinWage * 0.9)   // Á¤±ÔÁ÷ ¼ö½À: 90% ±âÁØ (¿Ã¸²)
+        : _legalMinWage;                    // ±× ¿Ü: 100% ±âÁØ
 
-      // â”€â”€ ì‚°ì •ê¸°ì¤€ì— ë”°ë¥¸ ë¹„êµ ì‹œê¸‰ ê²°ì • â”€â”€
-      // [minwage/direct]: probAmt(ìˆ˜ìŠµ ë³´ìˆ˜) Ã· 209 â†’ ìˆ˜ìŠµ ë³´ìˆ˜ ê¸°ì¤€ ì‹œê¸‰ ë¹„êµ
-      // [salary / ë¹„ìˆ˜ìŠµ]: hourlyWage(ë¹„ê³¼ì„¸ í¬í•¨ ì›”ì„ê¸ˆ Ã· 209) ë¹„êµ
+      // ¦¡¦¡ »êÁ¤±âÁØ¿¡ µû¸¥ ºñ±³ ½Ã±Ş °áÁ¤ ¦¡¦¡
+      // [minwage/direct]: probAmt(¼ö½À º¸¼ö) ¡À 209 ¡æ ¼ö½À º¸¼ö ±âÁØ ½Ã±Ş ºñ±³
+      // [salary / ºñ¼ö½À]: hourlyWage(ºñ°ú¼¼ Æ÷ÇÔ ¿ùÀÓ±İ ¡À 209) ºñ±³
       const _useProbAmt = _isProbationContract && (probBasis === 'minwage' || probBasis === 'direct');
       let _compareHourly;
       let _compareMonthly;
       if(_useProbAmt){
-        // ìˆ˜ìŠµ ë³´ìˆ˜ ì§ì ‘ ë¹„êµ: probAmt â†’ ì‹œê¸‰ í™˜ì‚°
+        // ¼ö½À º¸¼ö Á÷Á¢ ºñ±³: probAmt ¡æ ½Ã±Ş È¯»ê
         _compareHourly  = probAmt > 0 ? Math.round(probAmt / MAGIC.MONTHLY_STD_HOURS) : 0;
         _compareMonthly = probAmt;
       } else {
-        // ì•½ì • ë³´ìˆ˜ ëŒ€ë¹„ ê¸°ì¤€ ë˜ëŠ” ë¹„ìˆ˜ìŠµ: ë¹„ê³¼ì„¸ í¬í•¨ ì›” í™˜ì‚°ì‹œê¸‰
+        // ¾àÁ¤ º¸¼ö ´ëºñ ±âÁØ ¶Ç´Â ºñ¼ö½À: ºñ°ú¼¼ Æ÷ÇÔ ¿ù È¯»ê½Ã±Ş
         _compareHourly  = hourlyWage;
         _compareMonthly = isDailySave
           ? (dailyWageForSave * (hours > 0 ? Math.round(209 / hours) : 1))
@@ -3382,50 +3378,50 @@ async function saveContract(){
           const _mwMonthly = Math.round(_effectiveMinWage * 209);
           _detail.innerHTML =
             `<div style="display:flex;justify-content:space-between;border-bottom:1px dashed #fca5a5;padding-bottom:6px;margin-bottom:6px;">
-               <span>ğŸ“… ê³„ì•½ ì—°ë„</span><strong>${_contractYear}ë…„</strong>
+               <span>?? °è¾à ¿¬µµ</span><strong>${_contractYear}³â</strong>
              </div>
              <div style="display:flex;justify-content:space-between;border-bottom:1px dashed #fca5a5;padding-bottom:6px;margin-bottom:6px;">
-               <span>âš–ï¸ ${_contractYear}ë…„ ë²•ì • ìµœì €ì‹œê¸‰</span>
-               <strong style="color:#b91c1c;">${_legalMinWage.toLocaleString('ko-KR')}ì›</strong>
+               <span>?? ${_contractYear}³â ¹ıÁ¤ ÃÖÀú½Ã±Ş</span>
+               <strong style="color:#b91c1c;">${_legalMinWage.toLocaleString('ko-KR')}¿ø</strong>
              </div>
              ${_isRegularProbation ? `
              <div style="display:flex;justify-content:space-between;border-bottom:1px dashed #fca5a5;padding-bottom:6px;margin-bottom:6px;">
-               <span>ğŸŒ± ì •ê·œì§ ìˆ˜ìŠµ ì ìš© ìµœì €ì‹œê¸‰ <span style="font-size:10.5px;color:#9ca3af;">(ë²•ì •Ã—90%)</span></span>
-               <strong style="color:#b45309;">${_effectiveMinWage.toLocaleString('ko-KR')}ì› (ì›” ${_mwMonthly.toLocaleString('ko-KR')}ì›)</strong>
+               <span>?? Á¤±ÔÁ÷ ¼ö½À Àû¿ë ÃÖÀú½Ã±Ş <span style="font-size:10.5px;color:#9ca3af;">(¹ıÁ¤¡¿90%)</span></span>
+               <strong style="color:#b45309;">${_effectiveMinWage.toLocaleString('ko-KR')}¿ø (¿ù ${_mwMonthly.toLocaleString('ko-KR')}¿ø)</strong>
              </div>` : ''}
              <div style="display:flex;justify-content:space-between;border-bottom:1px dashed #fca5a5;padding-bottom:6px;margin-bottom:6px;">
-               <span>ğŸ’° ì…ë ¥ ì‹œê¸‰ <span style="font-size:10.5px;color:#9ca3af;">${_useProbAmt ? '(ìˆ˜ìŠµ ë³´ìˆ˜Ã·209)' : '(ë¹„ê³¼ì„¸ í¬í•¨, ì›”Ã·209)'}</span></span>
-               <strong style="color:#ef4444;">${_compareHourly.toLocaleString('ko-KR')}ì›</strong>
+               <span>?? ÀÔ·Â ½Ã±Ş <span style="font-size:10.5px;color:#9ca3af;">${_useProbAmt ? '(¼ö½À º¸¼ö¡À209)' : '(ºñ°ú¼¼ Æ÷ÇÔ, ¿ù¡À209)'}</span></span>
+               <strong style="color:#ef4444;">${_compareHourly.toLocaleString('ko-KR')}¿ø</strong>
              </div>
              <div style="display:flex;justify-content:space-between;border-bottom:1px dashed #fca5a5;padding-bottom:6px;margin-bottom:6px;">
-               <span>ğŸ“‹ ${_useProbAmt ? 'ìˆ˜ìŠµ ì›” ë³´ìˆ˜' : 'ì›” í™˜ì‚°ì„ê¸ˆ'} <span style="font-size:10.5px;color:#9ca3af;">${_useProbAmt ? '' : '(ë¹„ê³¼ì„¸ í¬í•¨)'}</span></span>
-               <strong style="color:#6b7280;">${_compareMonthly.toLocaleString('ko-KR')}ì›</strong>
+               <span>?? ${_useProbAmt ? '¼ö½À ¿ù º¸¼ö' : '¿ù È¯»êÀÓ±İ'} <span style="font-size:10.5px;color:#9ca3af;">${_useProbAmt ? '' : '(ºñ°ú¼¼ Æ÷ÇÔ)'}</span></span>
+               <strong style="color:#6b7280;">${_compareMonthly.toLocaleString('ko-KR')}¿ø</strong>
              </div>
              <div style="display:flex;justify-content:space-between;">
-               <span>ğŸ“‰ ì‹œê¸‰ ë¶€ì¡±ì•¡ <span style="font-size:10.5px;color:#9ca3af;">(ì ìš© ìµœì €ì‹œê¸‰ ê¸°ì¤€)</span></span>
-               <strong style="color:#ef4444;">-${(_effectiveMinWage - _compareHourly).toLocaleString('ko-KR')}ì›/ì‹œê°„</strong>
+               <span>?? ½Ã±Ş ºÎÁ·¾× <span style="font-size:10.5px;color:#9ca3af;">(Àû¿ë ÃÖÀú½Ã±Ş ±âÁØ)</span></span>
+               <strong style="color:#ef4444;">-${(_effectiveMinWage - _compareHourly).toLocaleString('ko-KR')}¿ø/½Ã°£</strong>
              </div>`;
         }
-        // ëª¨ë‹¬ íƒ€ì´í‹€Â·ì„¤ëª… ë¬¸êµ¬ ë™ì  ì—…ë°ì´íŠ¸
+        // ¸ğ´Ş Å¸ÀÌÆ²¡¤¼³¸í ¹®±¸ µ¿Àû ¾÷µ¥ÀÌÆ®
         const _warnMsg = document.getElementById('ct-minwage-warn-msg');
         if(_warnMsg){
           if(_isRegularProbation){
-            _warnMsg.innerHTML = 'ì…ë ¥ëœ ìˆ˜ìŠµ ê¸‰ì—¬ê°€ ìµœì €ì„ê¸ˆì˜ 90%ì— ë¯¸ë‹¬í•©ë‹ˆë‹¤.<br><span style="font-size:12px;font-weight:500;color:#92400e;">ì •ê·œì§ ìˆ˜ìŠµì€ ìµœì €ì‹œê¸‰ì˜ 90%ê¹Œì§€ í—ˆìš©ë©ë‹ˆë‹¤.</span>';
+            _warnMsg.innerHTML = 'ÀÔ·ÂµÈ ¼ö½À ±Ş¿©°¡ ÃÖÀúÀÓ±İÀÇ 90%¿¡ ¹Ì´ŞÇÕ´Ï´Ù.<br><span style="font-size:12px;font-weight:500;color:#92400e;">Á¤±ÔÁ÷ ¼ö½ÀÀº ÃÖÀú½Ã±ŞÀÇ 90%±îÁö Çã¿ëµË´Ï´Ù.</span>';
           } else if(_isProbationContract && probBasis === 'minwage'){
-            _warnMsg.innerHTML = 'ì…ë ¥ëœ ìˆ˜ìŠµ ë³´ìˆ˜ê°€ ìµœì €ì„ê¸ˆì— ë¯¸ë‹¬í•©ë‹ˆë‹¤.<br><span style="font-size:12px;font-weight:500;color:#92400e;">ìµœì €ì„ê¸ˆ ëŒ€ë¹„ ìš”ìœ¨ ê¸°ì¤€ìœ¼ë¡œ ê³„ì‚°ëœ ê¸ˆì•¡ì„ í™•ì¸í•´ì£¼ì„¸ìš”.</span>';
+            _warnMsg.innerHTML = 'ÀÔ·ÂµÈ ¼ö½À º¸¼ö°¡ ÃÖÀúÀÓ±İ¿¡ ¹Ì´ŞÇÕ´Ï´Ù.<br><span style="font-size:12px;font-weight:500;color:#92400e;">ÃÖÀúÀÓ±İ ´ëºñ ¿äÀ² ±âÁØÀ¸·Î °è»êµÈ ±İ¾×À» È®ÀÎÇØÁÖ¼¼¿ä.</span>';
           } else if(_isProbationContract && probBasis === 'direct'){
-            _warnMsg.innerHTML = 'ì§ì ‘ ì…ë ¥í•œ ìˆ˜ìŠµ ë³´ìˆ˜ê°€ ìµœì €ì„ê¸ˆë³´ë‹¤ ë‚®ìŠµë‹ˆë‹¤.<br><span style="font-size:12px;font-weight:500;color:#92400e;">ì ìš© ìµœì €ì‹œê¸‰ ì´ìƒì˜ ê¸ˆì•¡ìœ¼ë¡œ ë‹¤ì‹œ ì…ë ¥í•´ì£¼ì„¸ìš”.</span>';
+            _warnMsg.innerHTML = 'Á÷Á¢ ÀÔ·ÂÇÑ ¼ö½À º¸¼ö°¡ ÃÖÀúÀÓ±İº¸´Ù ³·½À´Ï´Ù.<br><span style="font-size:12px;font-weight:500;color:#92400e;">Àû¿ë ÃÖÀú½Ã±Ş ÀÌ»óÀÇ ±İ¾×À¸·Î ´Ù½Ã ÀÔ·ÂÇØÁÖ¼¼¿ä.</span>';
           } else {
-            _warnMsg.innerHTML = 'ì…ë ¥ëœ ê¸‰ì—¬ê°€ ìµœì €ì„ê¸ˆë³´ë‹¤ ë‚®ìŠµë‹ˆë‹¤.<br>ì˜¬ë°”ë¥´ê²Œ ë‹¤ì‹œ ì…ë ¥í•´ì£¼ì„¸ìš”.';
+            _warnMsg.innerHTML = 'ÀÔ·ÂµÈ ±Ş¿©°¡ ÃÖÀúÀÓ±İº¸´Ù ³·½À´Ï´Ù.<br>¿Ã¹Ù¸£°Ô ´Ù½Ã ÀÔ·ÂÇØÁÖ¼¼¿ä.';
           }
         }
         openModal('ct-minwage-warn-modal');
-        return; // ì €ì¥ ì°¨ë‹¨
+        return; // ÀúÀå Â÷´Ü
       }
     }
   }
 
-  // ì‹ ê·œ/ì¬ê³„ì•½ ëª¨ë“œ: ê³„ì•½ì‹œì‘ì¼, ì¢…ë£Œì¼, ìœ í˜•, ìƒíƒœ ê²°ì •
+  // ½Å±Ô/Àç°è¾à ¸ğµå: °è¾à½ÃÀÛÀÏ, Á¾·áÀÏ, À¯Çü, »óÅÂ °áÁ¤
   const isRecontract = !!_recontractEmpId && !editId.contract;
   const today3 = new Date().toISOString().slice(0,10);
   let contractStart, contractEnd, contractType, contractStatus;
@@ -3433,7 +3429,7 @@ async function saveContract(){
     contractStart = start;
     contractEnd   = document.getElementById('ct-end').value;
     contractType  = document.getElementById('ct-type').value;
-    // í¸ì§‘ ëª¨ë“œ: ê³„ì•½ì§/ì¼ìš©ì§ ì¢…ë£Œì¼ ë³€ê²½ ì‹œ ìƒíƒœ ìë™ ì²˜ë¦¬
+    // ÆíÁı ¸ğµå: °è¾àÁ÷/ÀÏ¿ëÁ÷ Á¾·áÀÏ º¯°æ ½Ã »óÅÂ ÀÚµ¿ Ã³¸®
     const origContract = allContracts.find(x=>x.id===editId.contract)||{};
     const isFixedEdit  = (contractType===CONTRACT_TYPE.FIXED||contractType===CONTRACT_TYPE.FIXED_PROBATION||contractType===CONTRACT_TYPE.DAILY);
     const origEnd2     = origContract.contract_end||'';
@@ -3442,17 +3438,17 @@ async function saveContract(){
     let autoStatus = document.getElementById('ct-status').value;
     if(isFixedEdit && newEnd2 && newEnd2 !== origEnd2){
       if(newEnd2 < origStart2){
-        // ì‹œì‘ì¼ ì´ì „ìœ¼ë¡œ ì¢…ë£Œì¼ ì†Œê¸‰ â†’ í•´ì§€
+        // ½ÃÀÛÀÏ ÀÌÀüÀ¸·Î Á¾·áÀÏ ¼Ò±Ş ¡æ ÇØÁö
         autoStatus = CONTRACT_STATUS.TERMINATED;
       } else if(newEnd2 <= today3){
-        // í˜„ì¬ ì´ì „ ë‚ ì§œë¡œ ë³€ê²½ â†’ ì¦‰ì‹œ í•´ì§€ (ê³„ì•½ ì¢…ë£Œì¼ ì•ë‹¹ê¹€)
+        // ÇöÀç ÀÌÀü ³¯Â¥·Î º¯°æ ¡æ Áï½Ã ÇØÁö (°è¾à Á¾·áÀÏ ¾Õ´ç±è)
         autoStatus = CONTRACT_STATUS.TERMINATED;
       } else if(origEnd2 && newEnd2 > origEnd2){
-        // ì¢…ë£Œì¼ ì—°ì¥: ê¸°ì¡´ ê³„ì•½ ë§Œë£Œ + ìƒˆ ê³„ì•½ ë“±ë¡ ì •ì±… â†’ ë“±ë¡ ì°¨ë‹¨ í›„ ê°±ì‹  í”Œë¡œìš° ìœ ë„
-        toast('ê³„ì•½ ì¢…ë£Œì¼ì„ ì—°ì¥í•˜ë ¤ë©´ [ê°±ì‹ ] ë²„íŠ¼ì„ ì‚¬ìš©í•´ ì£¼ì„¸ìš”.\ní¸ì§‘ ì €ì¥ìœ¼ë¡œëŠ” ì¢…ë£Œì¼ì„ ì—°ì¥í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤.', 'error');
+        // Á¾·áÀÏ ¿¬Àå: ±âÁ¸ °è¾à ¸¸·á + »õ °è¾à µî·Ï Á¤Ã¥ ¡æ µî·Ï Â÷´Ü ÈÄ °»½Å ÇÃ·Î¿ì À¯µµ
+        toast('°è¾à Á¾·áÀÏÀ» ¿¬ÀåÇÏ·Á¸é [°»½Å] ¹öÆ°À» »ç¿ëÇØ ÁÖ¼¼¿ä.\nÆíÁı ÀúÀåÀ¸·Î´Â Á¾·áÀÏÀ» ¿¬ÀåÇÒ ¼ö ¾ø½À´Ï´Ù.', 'error');
         return;
       } else {
-        // ì¢…ë£Œì¼ ì•ë‹¹ê¹€ (ì›ë˜ë³´ë‹¤ ì´ì „, ì˜¤ëŠ˜ ì´í›„) â†’ í•´ì§€ë¡œ ì²˜ë¦¬
+        // Á¾·áÀÏ ¾Õ´ç±è (¿ø·¡º¸´Ù ÀÌÀü, ¿À´Ã ÀÌÈÄ) ¡æ ÇØÁö·Î Ã³¸®
         autoStatus = CONTRACT_STATUS.TERMINATED;
       }
     }
@@ -3464,7 +3460,7 @@ async function saveContract(){
     const today2  = new Date().toISOString().slice(0,10);
     contractStatus= contractStart > today2 ? CONTRACT_STATUS.PENDING : CONTRACT_STATUS.ACTIVE;
 
-    // â”€â”€ ì¬ê³„ì•½ ì—°ì†ì„± ê²€ì‚¬: ê¸°ì¡´ ê³„ì•½ í•´ì§€/ë§Œë£Œì¼ê³¼ ì—°ì†ë˜ë©´ ê³„ì•½ ì—°ì¥ìœ¼ë¡œ ì²˜ë¦¬ â”€â”€
+    // ¦¡¦¡ Àç°è¾à ¿¬¼Ó¼º °Ë»ç: ±âÁ¸ °è¾à ÇØÁö/¸¸·áÀÏ°ú ¿¬¼ÓµÇ¸é °è¾à ¿¬ÀåÀ¸·Î Ã³¸® ¦¡¦¡
     const _srcContract = allContracts.find(x => x.id === _recontractSourceId);
     const _srcEndDate = _srcContract?.terminate_date || _srcContract?.contract_end || '';
     if(_srcContract && _srcEndDate && contractStart && !_hasWeekdayGap(_srcEndDate, contractStart)){
@@ -3473,16 +3469,16 @@ async function saveContract(){
       const _empRecon = allEmployees.find(e => e.id === _srcContract.employee_id);
       const _oldHire = _empRecon?.hire_date || '';
       if(!confirm(
-        `ğŸ”— ê³„ì•½ ì—°ì¥ ì•ˆë‚´\n\n` +
-        `ê¸°ì¡´ ê³„ì•½ ì¢…ë£Œì¼(${_fmtOld})ê³¼ ì‹ ê·œ ê³„ì•½ ì‹œì‘ì¼(${_fmtNew})ì´ ì—°ì†ë˜ì–´\n` +
-        `ê³„ì•½ì˜ ì—°ì¥ìœ¼ë¡œ ì²˜ë¦¬ë©ë‹ˆë‹¤.\n\n` +
-        `â€¢ ì…ì‚¬ì¼(${_oldHire.replace(/-/g, '.')})ì´ ìœ ì§€ë©ë‹ˆë‹¤.\n` +
-        `â€¢ ê¸°ì¡´ ê³„ì•½ê³¼ ìƒˆ ê³„ì•½ì´ í˜ì–´ë¡œ ê´€ë¦¬ë©ë‹ˆë‹¤.\n\n` +
-        `ê³„ì† ì§„í–‰í•˜ì‹œê² ìŠµë‹ˆê¹Œ?`
+        `?? °è¾à ¿¬Àå ¾È³»\n\n` +
+        `±âÁ¸ °è¾à Á¾·áÀÏ(${_fmtOld})°ú ½Å±Ô °è¾à ½ÃÀÛÀÏ(${_fmtNew})ÀÌ ¿¬¼ÓµÇ¾î\n` +
+        `°è¾àÀÇ ¿¬ÀåÀ¸·Î Ã³¸®µË´Ï´Ù.\n\n` +
+        `? ÀÔ»çÀÏ(${_oldHire.replace(/-/g, '.')})ÀÌ À¯ÁöµË´Ï´Ù.\n` +
+        `? ±âÁ¸ °è¾à°ú »õ °è¾àÀÌ Æä¾î·Î °ü¸®µË´Ï´Ù.\n\n` +
+        `°è¼Ó ÁøÇàÇÏ½Ã°Ú½À´Ï±î?`
       )) return;
     }
   } else {
-    // ì‹ ê·œ ëª¨ë“œ: ct-start(ê³„ì•½ì‹œì‘ì¼) ì „ìš© í•„ë“œ ì‚¬ìš©. ì—†ìœ¼ë©´ ct-edit-em-hire í´ë°±(í•˜ìœ„í˜¸í™˜)
+    // ½Å±Ô ¸ğµå: ct-start(°è¾à½ÃÀÛÀÏ) Àü¿ë ÇÊµå »ç¿ë. ¾øÀ¸¸é ct-edit-em-hire Æú¹é(ÇÏÀ§È£È¯)
     contractStart = document.getElementById('ct-start')?.value
                  || document.getElementById('ct-edit-em-hire')?.value || '';
     contractEnd   = document.getElementById('ct-end')?.value || '';
@@ -3491,7 +3487,7 @@ async function saveContract(){
     contractStatus = contractStart > today2new ? CONTRACT_STATUS.PENDING : CONTRACT_STATUS.ACTIVE;
   }
 
-  // â”€â”€ ì¤‘ë³µ í™œì„± ê³„ì•½ ë°©ì§€: ì‹ ê·œ/ì¬ê³„ì•½ ì‹œ ì´ë¯¸ í™œì„± ê³„ì•½ì´ ìˆìœ¼ë©´ ì°¨ë‹¨ â”€â”€
+  // ¦¡¦¡ Áßº¹ È°¼º °è¾à ¹æÁö: ½Å±Ô/Àç°è¾à ½Ã ÀÌ¹Ì È°¼º °è¾àÀÌ ÀÖÀ¸¸é Â÷´Ü ¦¡¦¡
   if(contractStatus === CONTRACT_STATUS.ACTIVE && (!editId.contract || isRecontract)){
     const existingActive = allContracts.find(ac =>
       ac.employee_id === empId &&
@@ -3499,24 +3495,24 @@ async function saveContract(){
       ac.status === CONTRACT_STATUS.ACTIVE
     );
     if(existingActive){
-      return toast(`ì´ ì§ì›ì—ê²Œ ì´ë¯¸ í™œì„± ê³„ì•½(${existingActive.id.substring(0,8)}...)ì´ ì¡´ì¬í•©ë‹ˆë‹¤. ê¸°ì¡´ ê³„ì•½ì„ í•´ì§€Â·ë§Œë£Œ ì²˜ë¦¬í•˜ê±°ë‚˜ ê°±ì‹ í•´ ì£¼ì„¸ìš”.`, 'error');
+      return toast(`ÀÌ Á÷¿ø¿¡°Ô ÀÌ¹Ì È°¼º °è¾à(${existingActive.id.substring(0,8)}...)ÀÌ Á¸ÀçÇÕ´Ï´Ù. ±âÁ¸ °è¾àÀ» ÇØÁö¡¤¸¸·á Ã³¸®ÇÏ°Å³ª °»½ÅÇØ ÁÖ¼¼¿ä.`, 'error');
     }
   }
 
-  // â”€â”€ contract_type / status ì˜ë¬¸ ì •ê·œí™” â”€â”€
+  // ¦¡¦¡ contract_type / status ¿µ¹® Á¤±ÔÈ­ ¦¡¦¡
   contractType   = CONTRACT_TYPE_LEGACY_MAP[contractType]     || contractType;
   contractStatus = CONTRACT_STATUS_LEGACY_MAP[contractStatus] || contractStatus;
 
-  // ì •ê·œì§(ìˆ˜ìŠµ ì œì™¸)ì€ ê³„ì•½ ì¢…ë£Œì¼ì„ í•­ìƒ ë¹ˆ ê°’ìœ¼ë¡œ ê°•ì œ (ê¸°ê°„ì˜ ì •í•¨ ì—†ìŒ)
-  // ì •ê·œì§ ìˆ˜ìŠµì€ ìˆ˜ìŠµê¸°ê°„ ë§Œë£Œì¼ì´ ê³„ì•½ ì¢…ë£Œì¼ì´ë¯€ë¡œ contract_end ìœ ì§€
+  // Á¤±ÔÁ÷(¼ö½À Á¦¿Ü)Àº °è¾à Á¾·áÀÏÀ» Ç×»ó ºó °ªÀ¸·Î °­Á¦ (±â°£ÀÇ Á¤ÇÔ ¾øÀ½)
+  // Á¤±ÔÁ÷ ¼ö½ÀÀº ¼ö½À±â°£ ¸¸·áÀÏÀÌ °è¾à Á¾·áÀÏÀÌ¹Ç·Î contract_end À¯Áö
   if(contractType === CONTRACT_TYPE.REGULAR) contractEnd = '';
 
-  // ìš”ì¼ë³„ ìŠ¤ì¼€ì¤„ ìˆ˜ì§‘
+  // ¿äÀÏº° ½ºÄÉÁÙ ¼öÁı
   const scheduleJSON = getScheduleJSON();
   const workDaysCount = parseInt(document.getElementById('ct-days').value)||0;
   const avgDayHours   = parseFloat(document.getElementById('ct-hours').value)||0;
 
-  // â”€â”€ íŒŒì¼ ì—…ë¡œë“œ ì²˜ë¦¬ (Base64 ë³€í™˜) â”€â”€
+  // ¦¡¦¡ ÆÄÀÏ ¾÷·Îµå Ã³¸® (Base64 º¯È¯) ¦¡¦¡
   const _skipUpload = document.getElementById('cp-skip-upload')?.checked;
   let signedFileName='', signedFileData='', consentFileName='', consentFileData='';
   if(!_skipUpload && !isEditMode){
@@ -3529,13 +3525,13 @@ async function saveContract(){
       consentFileData = await _fileToBase64(window._contractConsentFile);
     }
   } else if(isEditMode){
-    // í¸ì§‘ ëª¨ë“œ: ê¸°ì¡´ íŒŒì¼ ë°ì´í„° ìœ ì§€ (ìƒˆ íŒŒì¼ ì„ íƒ ì‹œì—ë§Œ ë®ì–´ì“°ê¸°)
+    // ÆíÁı ¸ğµå: ±âÁ¸ ÆÄÀÏ µ¥ÀÌÅÍ À¯Áö (»õ ÆÄÀÏ ¼±ÅÃ ½Ã¿¡¸¸ µ¤¾î¾²±â)
     const origC = allContracts.find(x=>x.id===editId.contract)||{};
     signedFileName  = origC.signed_file_name  || '';
     signedFileData  = origC.signed_file_data  || '';
     consentFileName = origC.consent_file_name || '';
     consentFileData = origC.consent_file_data || '';
-    // í¸ì§‘ ëª¨ë“œì—ì„œë„ ìƒˆ íŒŒì¼ì´ ì„ íƒëœ ê²½ìš° ë®ì–´ì“°ê¸°
+    // ÆíÁı ¸ğµå¿¡¼­µµ »õ ÆÄÀÏÀÌ ¼±ÅÃµÈ °æ¿ì µ¤¾î¾²±â
     if(window._contractSignedFile){
       signedFileName = window._contractSignedFile.name;
       signedFileData = await _fileToBase64(window._contractSignedFile);
@@ -3546,19 +3542,19 @@ async function saveContract(){
     }
   }
 
-  // íŒŒì¼ ì™„ë¹„ ì—¬ë¶€ì— ë”°ë¼ ìµœì¢… ê³„ì•½ ìƒíƒœ ê²°ì •
-  // ì„œë¥˜ë¯¸ë¹„ëŠ” ë” ì´ìƒ ìƒíƒœê°’ìœ¼ë¡œ ì €ì¥í•˜ì§€ ì•ŠìŒ (docsIncomplete í”Œë˜ê·¸ë¡œ ê´€ë¦¬)
+  // ÆÄÀÏ ¿Ïºñ ¿©ºÎ¿¡ µû¶ó ÃÖÁ¾ °è¾à »óÅÂ °áÁ¤
+  // ¼­·ù¹Ìºñ´Â ´õ ÀÌ»ó »óÅÂ°ªÀ¸·Î ÀúÀåÇÏÁö ¾ÊÀ½ (docsIncomplete ÇÃ·¡±×·Î °ü¸®)
   const _isTerminalStatus = CONTRACT_TERMINAL_STATUSES.includes(contractStatus);
   if(!_isTerminalStatus && !isEditMode){
     const _hasBothFiles = !!(signedFileData && consentFileData);
   } else if(isEditMode && !_isTerminalStatus){
-    // í¸ì§‘ ëª¨ë“œ: íŒŒì¼ ìƒíƒœì— ë”°ë¼ status ë³€ê²½í•˜ì§€ ì•ŠìŒ (docsIncomplete í”Œë˜ê·¸ë¡œ ê´€ë¦¬)
+    // ÆíÁı ¸ğµå: ÆÄÀÏ »óÅÂ¿¡ µû¶ó status º¯°æÇÏÁö ¾ÊÀ½ (docsIncomplete ÇÃ·¡±×·Î °ü¸®)
     const _hasBothFilesEdit = !!(signedFileData && consentFileData);
   }
 
   const body={employee_id:empId,company_id:coId,contract_start:contractStart,contract_end:contractEnd,contract_type:contractType,status:contractStatus,probation_months:probMonths,probation_pct:probPct,probation_amt:probAmt,probation_basis:probBasis,probation_end_date:document.getElementById('ct-probation-end-date')?.value||null,work_hours_per_day:avgDayHours,work_days_per_week:isDailySave?0:workDaysCount,schedule_json:JSON.stringify(scheduleJSON),annual_leave_days:parseFloat(document.getElementById('ct-annual')?.value)||15,annual_salary:annual,monthly_salary_agreed:monthly,base_salary:baseSalaryForSave,daily_wage:dailyWageForSave,weekly_holiday_pay:weeklyHol,fixed_ot_pay:getAmountVal('ct-fixed-ot-pay'),fixed_ot_hours:parseFloat(document.getElementById('ct-fixed-ot-hours')?.value)||0,fixed_night_pay:getAmountVal('ct-fixed-night-pay'),fixed_night_hours:parseFloat(document.getElementById('ct-fixed-night-hours')?.value)||0,fixed_hol_pay:getAmountVal('ct-fixed-hol-pay'),fixed_hol_hours:parseFloat(document.getElementById('ct-fixed-hol-hours')?.value)||0,hourly_wage:hourlyWage,position_allowance:getAmountVal('ct-position'),transportation_allowance:getAmountVal('ct-car'),transportation_pay_type:_getCTPayTypeVal('car'),self_driving_allowance:0,self_driving_pay_type:'fixed',remote_area_allowance:getAmountVal('ct-remote-area'),remote_area_pay_type:'fixed',meal_allowance:getAmountVal('ct-meal'),meal_pay_type:_getCTPayTypeVal('meal'),research_allowance:getAmountVal('ct-research'),research_pay_type:_getCTPayTypeVal('research'),site_allowance:getAmountVal('ct-site'),skill_allowance:getAmountVal('ct-skill'),license_allowance:getAmountVal('ct-license'),hazard_allowance:getAmountVal('ct-hazard'),custom_ordinary_values:JSON.stringify(typeof _getCustomOrdinaryValues==='function'?_getCustomOrdinaryValues():[]),communication_allowance:getAmountVal('ct-communication'),communication_pay_type:_getCTPayTypeVal('communication'),fitness_allowance:getAmountVal('ct-fitness'),fitness_pay_type:_getCTPayTypeVal('fitness'),self_dev_allowance:getAmountVal('ct-self-dev'),self_dev_pay_type:_getCTPayTypeVal('self_dev'),book_allowance:getAmountVal('ct-book'),book_pay_type:_getCTPayTypeVal('book'),overseas_allowance:getAmountVal('ct-overseas'),overseas_pay_type:_getCTPayTypeVal('overseas'),car_maintenance:getAmountVal('ct-car'),regular_bonus:getAmountVal('ct-regular-bonus')||0,childcare_allowance:getAmountVal('ct-childcare')||0,childcare_dependents:parseInt(document.getElementById('ct-childcare-dependents')?.value||0)||0,childcare_pay_type:_getCTPayTypeVal('childcare'),pay_period:document.getElementById('ct-pay-period')?.value.trim()||'',pay_period_month:document.getElementById('ct-pay-period-month-hidden')?.value||null,pay_period_day:parseInt(document.getElementById('ct-pay-period-day-hidden')?.value)||null,pay_day:parseInt(document.getElementById('ct-pay-day')?.value)||null,insurance_employment:true,insurance_industrial:true,insurance_pension:true,insurance_health:true,note:document.getElementById('ct-note').value,salary_start_date:document.getElementById('ct-salary-start')?.value||'',salary_end_date:document.getElementById('ct-salary-end')?.value||'',is_draft:false,draft_saved_at:null,signed_file_name:signedFileName,signed_file_data:signedFileData,consent_file_name:consentFileName,consent_file_data:consentFileData};
 
-  // ì¬ê³„ì•½ ì—°ì¥ í˜ì–´: renewed_from_id ì¶”ê°€ (ê¸°ì¡´ ê³„ì•½ê³¼ ì—°ì†ë˜ëŠ” ê²½ìš°)
+  // Àç°è¾à ¿¬Àå Æä¾î: renewed_from_id Ãß°¡ (±âÁ¸ °è¾à°ú ¿¬¼ÓµÇ´Â °æ¿ì)
   if(_recontractSourceId){
     const _srcRecon = allContracts.find(x => x.id === _recontractSourceId);
     const _srcReconEnd = _srcRecon?.terminate_date || _srcRecon?.contract_end || '';
@@ -3572,12 +3568,12 @@ async function saveContract(){
   if(isEditMode){
     body.id=editId.contract;
     await api(`../tables/contracts/${editId.contract}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-    // â”€â”€ ì§ì› ì •ë³´ë„ í•¨ê»˜ ì—…ë°ì´íŠ¸ â”€â”€
+    // ¦¡¦¡ Á÷¿ø Á¤º¸µµ ÇÔ²² ¾÷µ¥ÀÌÆ® ¦¡¦¡
     const editEmpId = (allContracts.find(x=>x.id===editId.contract)||{}).employee_id;
     if(editEmpId){
       const empUpdatePhone = document.getElementById('ct-edit-em-phone').value.trim();
-      if(!empUpdatePhone) return toast('íœ´ëŒ€ì „í™” ë²ˆí˜¸ë¥¼ ì…ë ¥í•˜ì„¸ìš”.','error');
-      // ê³„ì•½ì§/ì¼ìš©ì§ì€ ì…ì‚¬ì¼=ê³„ì•½ì‹œì‘ì¼, ë§Œë£Œì¼=ê³„ì•½ì¢…ë£Œì¼ì´ë¯€ë¡œ ct-start/ct-end ê°’ ì‚¬ìš©
+      if(!empUpdatePhone) return toast('ÈŞ´ëÀüÈ­ ¹øÈ£¸¦ ÀÔ·ÂÇÏ¼¼¿ä.','error');
+      // °è¾àÁ÷/ÀÏ¿ëÁ÷Àº ÀÔ»çÀÏ=°è¾à½ÃÀÛÀÏ, ¸¸·áÀÏ=°è¾àÁ¾·áÀÏÀÌ¹Ç·Î ct-start/ct-end °ª »ç¿ë
       const _ctTypeForSave = document.getElementById('ct-type').value||CONTRACT_TYPE.REGULAR;
       const _isFixedForSave = (_ctTypeForSave===CONTRACT_TYPE.FIXED||_ctTypeForSave===CONTRACT_TYPE.FIXED_PROBATION||_ctTypeForSave===CONTRACT_TYPE.DAILY);
       const _nameElSave = document.getElementById('ct-edit-emp-name');
@@ -3599,13 +3595,13 @@ async function saveContract(){
         bank_account:        document.getElementById('ct-edit-em-account').value,
         is_representative:   document.getElementById('ct-edit-em-is-rep')?.checked ? 1 : 0,
       };
-      // ì´ë¦„Â·ê³ ìš©í˜•íƒœ: readOnly/disabledê°€ ì•„ë‹ ë•Œë§Œ ì—…ë°ì´íŠ¸ (ìˆ˜ì • ëª¨ë“œì—ì„œë§Œ ë°˜ì˜)
+      // ÀÌ¸§¡¤°í¿ëÇüÅÂ: readOnly/disabled°¡ ¾Æ´Ò ¶§¸¸ ¾÷µ¥ÀÌÆ® (¼öÁ¤ ¸ğµå¿¡¼­¸¸ ¹İ¿µ)
       if(_nameElSave && !_nameElSave.readOnly && _nameElSave.value.trim()) empPatch.name = _nameElSave.value.trim();
       if(_catElSave  && !_catElSave.disabled  && _catElSave.value)         empPatch.employment_category = _catElSave.value;
       await api(`../tables/employees/${editEmpId}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(empPatch)});
     }
   } else {
-    // ì„ì‹œì €ì¥ì—ì„œ ì´ì–´ì„œ ë“±ë¡í•˜ëŠ” ê²½ìš°: ê¸°ì¡´ draft ID ì¬ì‚¬ìš©
+    // ÀÓ½ÃÀúÀå¿¡¼­ ÀÌ¾î¼­ µî·ÏÇÏ´Â °æ¿ì: ±âÁ¸ draft ID Àç»ç¿ë
     const _resumeId = window._resumeDraftId || _currentDraftId;
     _savedContractId_ = '';
     if(_resumeId){
@@ -3613,25 +3609,25 @@ async function saveContract(){
       _savedContractId_ = _resumeId;
       window._resumeDraftId = null;
     } else {
-      // IDëŠ” ì„œë²„ì—ì„œ UUID ìƒì„± (í”„ë¡ íŠ¸ì—ì„œ ë¯¸ë¦¬ ë§Œë“¤ì§€ ì•ŠìŒ)
+      // ID´Â ¼­¹ö¿¡¼­ UUID »ı¼º (ÇÁ·ĞÆ®¿¡¼­ ¹Ì¸® ¸¸µéÁö ¾ÊÀ½)
       delete body.id;
       const _saved = await api('../tables/contracts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
       _savedContractId_ = _saved.id;
     }
-    // â”€â”€ ì¬ê³„ì•½ ì—°ì¥ í˜ì–´: ê¸°ì¡´ ê³„ì•½ì— renewed_to_id ì„¤ì • â”€â”€
+    // ¦¡¦¡ Àç°è¾à ¿¬Àå Æä¾î: ±âÁ¸ °è¾à¿¡ renewed_to_id ¼³Á¤ ¦¡¦¡
     if(body.renewed_from_id && _savedContractId_){
       try {
         await api(`../tables/contracts/${body.renewed_from_id}`, {
           method: 'PATCH', headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({ renewed_to_id: _savedContractId_ })
         });
-        // ë¡œì»¬ ìºì‹œì—ë„ ë°˜ì˜
+        // ·ÎÄÃ Ä³½Ã¿¡µµ ¹İ¿µ
         const _oldPair = allContracts.find(x => x.id === body.renewed_from_id);
         if(_oldPair) _oldPair.renewed_to_id = _savedContractId_;
-      } catch(e){ console.warn('[ì¬ê³„ì•½ í˜ì–´ë§ ì‹¤íŒ¨]', e); }
+      } catch(e){ console.warn('[Àç°è¾à Æä¾î¸µ ½ÇÆĞ]', e); }
     }
   }
-  // â”€â”€ ê³ ê°ì‚¬ ì¸ì•± ì•Œë¦¼ ë°œì†¡ â”€â”€
+  // ¦¡¦¡ °í°´»ç ÀÎ¾Û ¾Ë¸² ¹ß¼Û ¦¡¦¡
   {
     const _savedContractId = isEditMode ? editId.contract : (_savedContractId_ || '');
     const _co  = allCompanies.find(x => x.id === coId) || {};
@@ -3642,28 +3638,28 @@ async function saveContract(){
     const _fmtDate = d => {
       if(!d) return '-';
       const [y,m,dd] = d.split('-');
-      return `${parseInt(y)}ë…„ ${parseInt(m)}ì›” ${parseInt(dd)}ì¼`;
+      return `${parseInt(y)}³â ${parseInt(m)}¿ù ${parseInt(dd)}ÀÏ`;
     };
 
     if(isEditMode){
-      // â”€ ê³„ì•½ ìˆ˜ì • ì™„ë£Œ OR í•´ì§€ ì²˜ë¦¬
+      // ¦¡ °è¾à ¼öÁ¤ ¿Ï·á OR ÇØÁö Ã³¸®
       const _origC = allContracts.find(x => x.id === editId.contract) || {};
       if(contractStatus === CONTRACT_STATUS.TERMINATED){
-        // â”€â”€ ê³„ì•½ í•´ì§€ â”€â”€
+        // ¦¡¦¡ °è¾à ÇØÁö ¦¡¦¡
         await _sendCompanyNotice({
           companyId  : coId, companyName: _coName,
           noticeType : 'contract_terminated',
-          title      : `[ê³„ì•½ í•´ì§€] ${_empName} â€” ê·¼ë¡œê³„ì•½ì´ í•´ì§€ë˜ì—ˆìŠµë‹ˆë‹¤`,
+          title      : `[°è¾à ÇØÁö] ${_empName} ? ±Ù·Î°è¾àÀÌ ÇØÁöµÇ¾ú½À´Ï´Ù`,
           body       :
-`ì•ˆë…•í•˜ì„¸ìš”${_coRep}.
+`¾È³çÇÏ¼¼¿ä${_coRep}.
 
-ì†Œì† ê·¼ë¡œìì˜ ê·¼ë¡œê³„ì•½ì´ í•´ì§€ ì²˜ë¦¬ë˜ì—ˆìŠµë‹ˆë‹¤.
+¼Ò¼Ó ±Ù·ÎÀÚÀÇ ±Ù·Î°è¾àÀÌ ÇØÁö Ã³¸®µÇ¾ú½À´Ï´Ù.
 
-â–  ê·¼ë¡œì: ${_empName}
-â–  ê³ ìš©í˜•íƒœ: ${contractTypeLabel(contractType)||''}
-â–  ê³„ì•½ ì‹œì‘ì¼: ${_fmtDate(contractStart)}
-â–  ê³„ì•½ ì¢…ë£Œì¼: ${_fmtDate(contractEnd || _origC.contract_end || '')}
-â–  ì²˜ë¦¬ ì¼ì‹œ: ${new Date().toLocaleString('ko-KR')}
+¡á ±Ù·ÎÀÚ: ${_empName}
+¡á °í¿ëÇüÅÂ: ${contractTypeLabel(contractType)||''}
+¡á °è¾à ½ÃÀÛÀÏ: ${_fmtDate(contractStart)}
+¡á °è¾à Á¾·áÀÏ: ${_fmtDate(contractEnd || _origC.contract_end || '')}
+¡á Ã³¸® ÀÏ½Ã: ${new Date().toLocaleString('ko-KR')}
 
 `,
           contractId  : _savedContractId,
@@ -3671,20 +3667,20 @@ async function saveContract(){
           contractEnd : contractEnd || _origC.contract_end || '',
         });
       } else {
-        // â”€â”€ ê³„ì•½ ìˆ˜ì • ì™„ë£Œ â”€â”€
+        // ¦¡¦¡ °è¾à ¼öÁ¤ ¿Ï·á ¦¡¦¡
         await _sendCompanyNotice({
           companyId  : coId, companyName: _coName,
           noticeType : 'contract_updated',
-          title      : `[ê³„ì•½ ìˆ˜ì •] ${_empName} â€” ê·¼ë¡œê³„ì•½ì´ ìˆ˜ì •ë˜ì—ˆìŠµë‹ˆë‹¤`,
+          title      : `[°è¾à ¼öÁ¤] ${_empName} ? ±Ù·Î°è¾àÀÌ ¼öÁ¤µÇ¾ú½À´Ï´Ù`,
           body       :
-`ì•ˆë…•í•˜ì„¸ìš”${_coRep}.
+`¾È³çÇÏ¼¼¿ä${_coRep}.
 
-ì†Œì† ê·¼ë¡œìì˜ ê·¼ë¡œê³„ì•½ ë‚´ìš©ì´ ìˆ˜ì •ë˜ì—ˆìŠµë‹ˆë‹¤.
+¼Ò¼Ó ±Ù·ÎÀÚÀÇ ±Ù·Î°è¾à ³»¿ëÀÌ ¼öÁ¤µÇ¾ú½À´Ï´Ù.
 
-â–  ê·¼ë¡œì: ${_empName}
-â–  ê³ ìš©í˜•íƒœ: ${contractTypeLabel(contractType)||''}
-â–  ê³„ì•½ ê¸°ê°„: ${_fmtDate(contractStart)}${contractEnd ? ' ~ ' + _fmtDate(contractEnd) : ' (ê¸°ê°„ ë¯¸ì •)'}
-â–  ì²˜ë¦¬ ì¼ì‹œ: ${new Date().toLocaleString('ko-KR')}
+¡á ±Ù·ÎÀÚ: ${_empName}
+¡á °í¿ëÇüÅÂ: ${contractTypeLabel(contractType)||''}
+¡á °è¾à ±â°£: ${_fmtDate(contractStart)}${contractEnd ? ' ~ ' + _fmtDate(contractEnd) : ' (±â°£ ¹ÌÁ¤)'}
+¡á Ã³¸® ÀÏ½Ã: ${new Date().toLocaleString('ko-KR')}
 
 `,
           contractId  : _savedContractId,
@@ -3693,21 +3689,21 @@ async function saveContract(){
         });
       }
     } else if(isRecontract){
-      // â”€â”€ ì¬ê³„ì•½ ì™„ë£Œ â”€â”€
+      // ¦¡¦¡ Àç°è¾à ¿Ï·á ¦¡¦¡
       await _sendCompanyNotice({
         companyId  : coId, companyName: _coName,
         noticeType : 'contract_renewed_new',
-        title      : `[ì¬ê³„ì•½ ì™„ë£Œ] ${_empName} â€” ìƒˆ ê·¼ë¡œê³„ì•½ì´ ì‘ì„±ë˜ì—ˆìŠµë‹ˆë‹¤`,
+        title      : `[Àç°è¾à ¿Ï·á] ${_empName} ? »õ ±Ù·Î°è¾àÀÌ ÀÛ¼ºµÇ¾ú½À´Ï´Ù`,
         body       :
-`ì•ˆë…•í•˜ì„¸ìš”${_coRep}.
+`¾È³çÇÏ¼¼¿ä${_coRep}.
 
-ì†Œì† ê·¼ë¡œìì˜ ì¬ê³„ì•½ì´ ì™„ë£Œë˜ì—ˆìŠµë‹ˆë‹¤.
+¼Ò¼Ó ±Ù·ÎÀÚÀÇ Àç°è¾àÀÌ ¿Ï·áµÇ¾ú½À´Ï´Ù.
 
-â–  ê·¼ë¡œì: ${_empName}
-â–  ê³ ìš©í˜•íƒœ: ${contractTypeLabel(contractType)||''}
-â–  ìƒˆ ê³„ì•½ ê¸°ê°„: ${_fmtDate(contractStart)}${contractEnd ? ' ~ ' + _fmtDate(contractEnd) : ' (ê¸°ê°„ ë¯¸ì •)'}
-â–  ê³„ì•½ ìƒíƒœ: ${contractStatus === CONTRACT_STATUS.PENDING ? 'ê³„ì•½ì˜ˆì • (ì‹œì‘ì¼ ë¯¸ë„ë˜)' : 'ê³„ì•½ìœ íš¨ (í™œì„±)'}
-â–  ì²˜ë¦¬ ì¼ì‹œ: ${new Date().toLocaleString('ko-KR')}
+¡á ±Ù·ÎÀÚ: ${_empName}
+¡á °í¿ëÇüÅÂ: ${contractTypeLabel(contractType)||''}
+¡á »õ °è¾à ±â°£: ${_fmtDate(contractStart)}${contractEnd ? ' ~ ' + _fmtDate(contractEnd) : ' (±â°£ ¹ÌÁ¤)'}
+¡á °è¾à »óÅÂ: ${contractStatus === CONTRACT_STATUS.PENDING ? '°è¾à¿¹Á¤ (½ÃÀÛÀÏ ¹Ìµµ·¡)' : '°è¾àÀ¯È¿ (È°¼º)'}
+¡á Ã³¸® ÀÏ½Ã: ${new Date().toLocaleString('ko-KR')}
 
 `,
         contractId  : _savedContractId,
@@ -3715,21 +3711,21 @@ async function saveContract(){
         contractEnd : contractEnd,
       });
     } else {
-      // â”€â”€ ì‹ ê·œ ê³„ì•½ ì‘ì„± ì™„ë£Œ â”€â”€
+      // ¦¡¦¡ ½Å±Ô °è¾à ÀÛ¼º ¿Ï·á ¦¡¦¡
       await _sendCompanyNotice({
         companyId  : coId, companyName: _coName,
         noticeType : 'contract_created',
-        title      : `[ì‹ ê·œ ê³„ì•½] ${_empName} â€” ê·¼ë¡œê³„ì•½ì´ ì‘ì„±ë˜ì—ˆìŠµë‹ˆë‹¤`,
+        title      : `[½Å±Ô °è¾à] ${_empName} ? ±Ù·Î°è¾àÀÌ ÀÛ¼ºµÇ¾ú½À´Ï´Ù`,
         body       :
-`ì•ˆë…•í•˜ì„¸ìš”${_coRep}.
+`¾È³çÇÏ¼¼¿ä${_coRep}.
 
-ì†Œì† ê·¼ë¡œìì˜ ê·¼ë¡œê³„ì•½ì´ ìƒˆë¡œ ì‘ì„±ë˜ì—ˆìŠµë‹ˆë‹¤.
+¼Ò¼Ó ±Ù·ÎÀÚÀÇ ±Ù·Î°è¾àÀÌ »õ·Î ÀÛ¼ºµÇ¾ú½À´Ï´Ù.
 
-â–  ê·¼ë¡œì: ${_empName}
-â–  ê³ ìš©í˜•íƒœ: ${contractTypeLabel(contractType)||''}
-â–  ê³„ì•½ ê¸°ê°„: ${_fmtDate(contractStart)}${contractEnd ? ' ~ ' + _fmtDate(contractEnd) : ' (ê¸°ê°„ ë¯¸ì •)'}
-â–  ê³„ì•½ ìƒíƒœ: ${contractStatus === CONTRACT_STATUS.DOCS_INCOMPLETE ? 'ì„œë¥˜ë¯¸ë¹„ (íŒŒì¼ ì—…ë¡œë“œ í•„ìš”)' : contractStatus === CONTRACT_STATUS.PENDING ? 'ê³„ì•½ì˜ˆì •' : 'ê³„ì•½ìœ íš¨ (í™œì„±)'}
-â–  ì²˜ë¦¬ ì¼ì‹œ: ${new Date().toLocaleString('ko-KR')}
+¡á ±Ù·ÎÀÚ: ${_empName}
+¡á °í¿ëÇüÅÂ: ${contractTypeLabel(contractType)||''}
+¡á °è¾à ±â°£: ${_fmtDate(contractStart)}${contractEnd ? ' ~ ' + _fmtDate(contractEnd) : ' (±â°£ ¹ÌÁ¤)'}
+¡á °è¾à »óÅÂ: ${contractStatus === CONTRACT_STATUS.DOCS_INCOMPLETE ? '¼­·ù¹Ìºñ (ÆÄÀÏ ¾÷·Îµå ÇÊ¿ä)' : contractStatus === CONTRACT_STATUS.PENDING ? '°è¾à¿¹Á¤' : '°è¾àÀ¯È¿ (È°¼º)'}
+¡á Ã³¸® ÀÏ½Ã: ${new Date().toLocaleString('ko-KR')}
 
 `,
         contractId  : _savedContractId,
@@ -3738,18 +3734,18 @@ async function saveContract(){
       });
     }
   }
-  _recontractEmpId = null; // ì¬ê³„ì•½ í”Œë˜ê·¸ ì´ˆê¸°í™”
+  _recontractEmpId = null; // Àç°è¾à ÇÃ·¡±× ÃÊ±âÈ­
   _recontractSourceId = null;
-  _currentDraftId  = null; // ì„ì‹œì €ì¥ ID ì´ˆê¸°í™”
+  _currentDraftId  = null; // ÀÓ½ÃÀúÀå ID ÃÊ±âÈ­
   closeModal('contract-modal');await loadContracts();await loadEmployees();renderContracts();renderDashboard();
   const _ctIsEdit = !!editId.contract;
-  toast(_ctIsEdit ? 'ê·¼ë¡œê³„ì•½ì„œê°€ ìˆ˜ì •ë˜ì—ˆìŠµë‹ˆë‹¤. âœ”' : 'ê·¼ë¡œê³„ì•½ì„œê°€ ë“±ë¡ë˜ì—ˆìŠµë‹ˆë‹¤. âœ”');
+  toast(_ctIsEdit ? '±Ù·Î°è¾à¼­°¡ ¼öÁ¤µÇ¾ú½À´Ï´Ù. ?' : '±Ù·Î°è¾à¼­°¡ µî·ÏµÇ¾ú½À´Ï´Ù. ?');
 
-  // â”€â”€ ì—°ì°¨ ê´€ë¦¬ëŒ€ì¥ ìë™ ìƒì„±Â·ìƒíƒœ ì—°ë™ â”€â”€
+  // ¦¡¦¡ ¿¬Â÷ °ü¸®´ëÀå ÀÚµ¿ »ı¼º¡¤»óÅÂ ¿¬µ¿ ¦¡¦¡
   if(!_ctIsEdit && contractStatus !== CONTRACT_STATUS.VOIDED && contractStatus !== CONTRACT_STATUS.CANCELED){
     _syncLeaveLedgerWithContract(empId, coId, contractStart, contractStatus);
   } else if(_ctIsEdit){
-    // ìˆ˜ì • ëª¨ë“œ: í•´ì§€Â·ë§Œë£Œ ì‹œ ê´€ë¦¬ëŒ€ì¥ ìƒíƒœ ë™ê¸°í™”
+    // ¼öÁ¤ ¸ğµå: ÇØÁö¡¤¸¸·á ½Ã °ü¸®´ëÀå »óÅÂ µ¿±âÈ­
     const _editContract = allContracts.find(x => x.id === editId.contract);
     if(_editContract && (contractStatus === CONTRACT_STATUS.TERMINATED || contractStatus === CONTRACT_STATUS.EXPIRED || contractStatus === CONTRACT_STATUS.RENEWED)){
       _syncLeaveLedgerWithContract(_editContract.employee_id, _editContract.company_id, _editContract.contract_start, contractStatus);
@@ -3758,8 +3754,8 @@ async function saveContract(){
 }
 
 /**
- * ì—°ì°¨ ê´€ë¦¬ëŒ€ì¥ ìë™ ìƒì„±Â·ìƒíƒœ ì—°ë™
- * ê³„ì•½ ë“±ë¡ ì‹œ í•´ë‹¹ ì—°ë„ ê´€ë¦¬ëŒ€ì¥ì´ ì—†ìœ¼ë©´ ìƒì„±, í•´ì§€/ë§Œë£Œ ì‹œ ìƒíƒœ ë™ê¸°í™”
+ * ¿¬Â÷ °ü¸®´ëÀå ÀÚµ¿ »ı¼º¡¤»óÅÂ ¿¬µ¿
+ * °è¾à µî·Ï ½Ã ÇØ´ç ¿¬µµ °ü¸®´ëÀåÀÌ ¾øÀ¸¸é »ı¼º, ÇØÁö/¸¸·á ½Ã »óÅÂ µ¿±âÈ­
  */
 async function _syncLeaveLedgerWithContract(empId, coId, contractStart, contractStatus){
   if(!empId || !contractStart) return;
@@ -3767,12 +3763,12 @@ async function _syncLeaveLedgerWithContract(empId, coId, contractStart, contract
   if(!year) return;
 
   try {
-    // ê¸°ì¡´ ê´€ë¦¬ëŒ€ì¥ ì¡°íšŒ
+    // ±âÁ¸ °ü¸®´ëÀå Á¶È¸
     const _res = await api(`../tables/annual_leave_ledger?employee_id=${empId}&year=${year}&limit=10`);
     const _exist = (_res?.data || []).find(r => Number(r.year) === year);
 
     if(_exist){
-      // ì´ë¯¸ ìˆìœ¼ë©´ ìƒíƒœë§Œ ì—…ë°ì´íŠ¸ (í•´ì§€/ë§Œë£Œ ì‹œ)
+      // ÀÌ¹Ì ÀÖÀ¸¸é »óÅÂ¸¸ ¾÷µ¥ÀÌÆ® (ÇØÁö/¸¸·á ½Ã)
       if(contractStatus === CONTRACT_STATUS.TERMINATED || contractStatus === CONTRACT_STATUS.EXPIRED || contractStatus === CONTRACT_STATUS.RENEWED){
         await api(`../tables/annual_leave_ledger/${_exist.id}`, {
           method: 'PATCH',
@@ -3781,7 +3777,7 @@ async function _syncLeaveLedgerWithContract(empId, coId, contractStart, contract
         });
       }
     } else {
-      // ì—†ìœ¼ë©´ ìƒˆë¡œ ìƒì„± (ë¹ˆ ê´€ë¦¬ëŒ€ì¥)
+      // ¾øÀ¸¸é »õ·Î »ı¼º (ºó °ü¸®´ëÀå)
       const emp = allEmployees.find(e => e.id === empId);
       const contract = allContracts.find(c => c.employee_id === empId && c.contract_start === contractStart);
       await api('../tables/annual_leave_ledger', {
@@ -3813,19 +3809,19 @@ async function _syncLeaveLedgerWithContract(empId, coId, contractStart, contract
 
 async function deleteContract(id){
   const c = allContracts.find(x => x.id === id);
-  if(!c) return toast('ê³„ì•½ ì •ë³´ë¥¼ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤.', 'error');
+  if(!c) return toast('°è¾à Á¤º¸¸¦ Ã£À» ¼ö ¾ø½À´Ï´Ù.', 'error');
 
-  // íŒŒê¸°ëœ ê³„ì•½ë§Œ ì‚­ì œ í—ˆìš©
+  // ÆÄ±âµÈ °è¾à¸¸ »èÁ¦ Çã¿ë
   const isVoided = c.status === CONTRACT_STATUS.VOIDED || c.is_voided_by_amend;
   if(!isVoided){
-    toast('ê·¼ë¡œê³„ì•½ì„œëŠ” ë³´ì¡´ ì •ì±…ì— ë”°ë¼ ì‚­ì œí•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤.', 'error');
+    toast('±Ù·Î°è¾à¼­´Â º¸Á¸ Á¤Ã¥¿¡ µû¶ó »èÁ¦ÇÒ ¼ö ¾ø½À´Ï´Ù.', 'error');
     return;
   }
 
-  if(!confirm('ì‚­ì œ í›„ì—ëŠ” ë‹¤ì‹œ ì¡°íšŒí•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤.\nì •ë§ íŒŒê¸° ê¸°ë¡ì„ ì‚­ì œí•˜ì‹œê² ìŠµë‹ˆê¹Œ?')) return;
+  if(!confirm('»èÁ¦ ÈÄ¿¡´Â ´Ù½Ã Á¶È¸ÇÒ ¼ö ¾ø½À´Ï´Ù.\nÁ¤¸» ÆÄ±â ±â·ÏÀ» »èÁ¦ÇÏ½Ã°Ú½À´Ï±î?')) return;
 
   try {
-    // FK ì œì•½ í•´ì†Œ: ì—°ê´€ ë ˆì½”ë“œ ë¨¼ì € ì‚­ì œ
+    // FK Á¦¾à ÇØ¼Ò: ¿¬°ü ·¹ÄÚµå ¸ÕÀú »èÁ¦
     await api(`../tables/contract_dispatch?contract_id=${id}&limit=100`, { method: 'GET' }).then(res => {
       const list = res?.data || [];
       return Promise.all(list.map(r => api(`../tables/contract_dispatch/${r.id}`, { method: 'DELETE' }).catch(()=>{})));
@@ -3835,7 +3831,7 @@ async function deleteContract(id){
       return Promise.all(list.map(r => api(`../tables/contract_expiry_notice/${r.id}`, { method: 'DELETE' }).catch(()=>{})));
     }).catch(()=>{});
 
-    // ì—°ì°¨ ê´€ë¦¬ëŒ€ì¥ë„ í•¨ê»˜ íŒŒê¸° (contract_id ê¸°ì¤€)
+    // ¿¬Â÷ °ü¸®´ëÀåµµ ÇÔ²² ÆÄ±â (contract_id ±âÁØ)
     if(c.employee_id && c.company_id){
       try {
         const _ledgers = await api(`../tables/annual_leave_ledger?employee_id=${c.employee_id}&limit=100`);
@@ -3845,15 +3841,15 @@ async function deleteContract(id){
             await api(`../tables/annual_leave_ledger/${_l.id}`, { method: 'DELETE' }).catch(()=>{});
           }
         }
-      } catch(e){ console.warn('[deleteContract] ledger ì •ë¦¬ ì‹¤íŒ¨:', e); }
+      } catch(e){ console.warn('[deleteContract] ledger Á¤¸® ½ÇÆĞ:', e); }
     }
 
     await api(`../tables/contracts/${id}`, { method: 'DELETE' });
     await loadContracts();
     renderContracts();
-    toast('íŒŒê¸°ëœ ê³„ì•½ì„œê°€ ì‚­ì œë˜ì—ˆìŠµë‹ˆë‹¤.', 'success');
+    toast('ÆÄ±âµÈ °è¾à¼­°¡ »èÁ¦µÇ¾ú½À´Ï´Ù.', 'success');
   } catch(e){
     console.error('[deleteContract]', e);
-    toast('ì‚­ì œì— ì‹¤íŒ¨í–ˆìŠµë‹ˆë‹¤.', 'error');
+    toast('»èÁ¦¿¡ ½ÇÆĞÇß½À´Ï´Ù.', 'error');
   }
 }

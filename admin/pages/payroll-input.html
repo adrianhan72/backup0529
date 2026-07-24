@@ -596,6 +596,11 @@
               <div class="pi-row"><label>실비변상적급여</label><input type="text" inputmode="numeric" id="pi-actual-expense" data-amount oninput="onAmountInput(this,calcPI)" /></div>
               <!-- ── 비정기 지급: daily/receipt 항목 동적 삽입 영역 ── -->
               <div id="pi-irregular-dynamic-rows"></div>
+              <div class="pi-row" id="pi-row-severance-interim" style="display:none;">
+                <label>퇴직금 중간정산</label>
+                <span class="pi-interim-label" id="pi-severance-interim-label"></span>
+                <input type="text" inputmode="numeric" id="pi-severance-interim" class="pi-interim-amount" data-amount oninput="onAmountInput(this,calcPI)" value="0" readonly />
+              </div>
               <div class="pi-row" style="align-items:center;">
                 <label>기타수당</label>
                 <input type="text" id="pi-etc-allowance-memo" placeholder="메모 (예: 명절수당)" maxlength="100"

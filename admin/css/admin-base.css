@@ -196,5 +196,13 @@
       border: 1px solid #e8eaed;
       cursor: default;
     }
+/* ── company/contract input state classes ── */
+.cm-input-readonly{background:#f1f5f9;border-color:#e2e8f0}
+.cm-input-active{background:#fff;border-color:#6366f1}
+.cm-input-error{background:#fef2f2;border-color:#dc2626}
+.cm-input-success{background:#f0fdf4;border-color:#16a34a}
+.cm-msg-muted{color:#9ca3af}
+.cm-msg-error{color:#dc2626}
+.cm-msg-success{color:#16a34a}
 
     /* ?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═

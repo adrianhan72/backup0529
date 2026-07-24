@@ -1,4 +1,4 @@
-//  연차 관리 — 잔여 연차 조회 (page-annual-leave)
+﻿//  연차 관리 — 잔여 연차 조회 (page-annual-leave)
 //  + 사용촉진 발송 이력 (page-leave-promotion)
 // ==================================================================
 
@@ -1293,14 +1293,14 @@ function _lpDoSearch(){
       if(from < maxFrom){
         fromEl.style.borderColor = '#dc2626';
         toEl.style.borderColor = '#dc2626';
-        if(noticeEl) noticeEl.style.color = '#dc2626';
+        if(noticeEl) noticeEl.className = 'ct-hint-error';
         toast('조회 기간은 최대 3개월까지 가능합니다.', 'error');
         return;
       }
     }
   }
   resetBorder();
-  if(noticeEl) noticeEl.style.color = '#9ca3af';
+  if(noticeEl) noticeEl.className = 'ct-hint-muted';
   _lpPage = 1;
   renderLpTable();
 }
@@ -1421,14 +1421,14 @@ function _cenDoSearch(){
       if(from < maxFrom){
         fromEl.style.borderColor = '#dc2626';
         toEl.style.borderColor = '#dc2626';
-        if(noticeEl) noticeEl.style.color = '#dc2626';
+        if(noticeEl) noticeEl.className = 'ct-hint-error';
         toast('조회 기간은 최대 3개월까지 가능합니다.', 'error');
         return;
       }
     }
   }
   resetBorder();
-  if(noticeEl) noticeEl.style.color = '#9ca3af';
+  if(noticeEl) noticeEl.className = 'ct-hint-muted';
   _cenHistoryPage = 1;
   renderCenHistory();
 }
@@ -1522,7 +1522,7 @@ function renderCenHistory(){
     return `<span class="badge ${badgeCls}">${icon} ${label}</span>`;
   };
   tbody.innerHTML = pageData.map((r,idx)=>`
-    <tr style="${idx%2?'background:#fafafa':''}" onmouseover="this.style.background='#f0f9ff'" onmouseout="this.style.background='${idx%2?'#fafafa':''}'">
+    <tr class="al-dispatch-row">
       <td style="white-space:nowrap;">${fmtDt(r.noticed_at)}</td>
       <td style="font-size:12px;color:#111827;font-weight:700;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.company_name||''}">${r.company_name||'-'}</td>
       <td style="font-weight:700;color:#111827;">${r.employee_name||'-'}</td>

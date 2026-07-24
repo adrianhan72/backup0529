@@ -810,14 +810,46 @@ async function execProbDismiss(){
   const t = targets.find(x => x.contract.id === _probMgmtCurrentId);
   if(!t) return;
 
-  if(!confirm(`${t.empName}님을 조기 해고 처리하시겠습니까?\n(계약 상태 → '해지')`)) return;
+  // 해고예고수당 발생 여부 확인: 수습 3개월 초과 + 만료 30일 미만
+  const probMonths = t.contract.probation_months || 3;
+  const probEnd = t.probEnd || '';
+  const daysLeft = t.daysLeft || 0;
+  const owesNoticePay = probMonths > 3 && daysLeft < 30;
+
+  let confirmMsg = `${t.empName}님을 조기 해고 처리하시겠습니까?\n(계약 상태 → '해지')`;
+  if(owesNoticePay){
+    const hw = parseFloat(t.contract.hourly_wage) || 0;
+    const hpd = parseFloat(t.contract.work_hours_per_day) || 8;
+    const noticePay = hw * hpd * 30;
+    confirmMsg = `⚠️ 해고예고수당 발생 대상입니다.\n\n` +
+      `근로자: ${t.empName}\n` +
+      `수습기간: ${probMonths}개월 (3개월 초과)\n` +
+      `수습 만료일: ${probEnd} (D-${daysLeft})\n` +
+      `예상 해고예고수당: ${noticePay.toLocaleString('ko-KR')}원 (30일분 통상임금)\n\n` +
+      `근로기준법 제26조에 따라 수습 3개월 초과 근로자 해고 시\n` +
+      `30일분 통상임금을 해고예고수당으로 지급해야 합니다.\n` +
+      `이 금액은 고객사가 전액 부담합니다.\n\n` +
+      `그래도 해고 처리하시겠습니까?`;
+  }
+  if(!confirm(confirmMsg)) return;
   try {
+    const patchBody = { status: CONTRACT_STATUS.TERMINATED };
+    if(owesNoticePay){
+      const hw = parseFloat(t.contract.hourly_wage) || 0;
+      const hpd = parseFloat(t.contract.work_hours_per_day) || 8;
+      const noticePay = Math.round(hw * hpd * 30);
+      patchBody.dismissal_notice_pay = noticePay;
+      patchBody.dismissal_notice_pay_reason = `수습 ${probMonths}개월(3개월 초과) 조기해고 — 근로기준법 제26조`;
+    }
     await fetch(`../tables/contracts/${t.contract.id}`, {
       method:'PATCH', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ status: CONTRACT_STATUS.TERMINATED })
+      body: JSON.stringify(patchBody)
     });
     const idx = allContracts.findIndex(c => c.id === t.contract.id);
-    if(idx > -1) allContracts[idx].status = CONTRACT_STATUS.TERMINATED;
+    if(idx > -1){
+      allContracts[idx].status = CONTRACT_STATUS.TERMINATED;
+      if(patchBody.dismissal_notice_pay) allContracts[idx].dismissal_notice_pay = patchBody.dismissal_notice_pay;
+    }
     await _patchProbmgmtAction(t.contract.id, 'dismiss');
 
     closeProbMgmtModal();

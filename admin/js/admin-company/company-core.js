@@ -346,7 +346,7 @@ function _setAccessCode(code){
   const normalized = _normalizeAccessCode(code);
   document.getElementById('cm-code').value = normalized;
   const displayEl = document.getElementById('cm-code-display');
-  if(displayEl){ displayEl.value = normalized || ''; displayEl.readOnly = true; displayEl.style.background = '#f1f5f9'; displayEl.style.borderColor = '#e2e8f0'; }
+  if(displayEl){ displayEl.value = normalized || ''; displayEl.readOnly = true; displayEl.className = (displayEl.className||'') + ' cm-input-readonly'; }
   const btnEl = document.getElementById('cm-code-action-btn');
   if(btnEl){ btnEl.innerHTML = '<i class="fas fa-pen"></i> 변경'; btnEl.onclick = _toggleCmCodeEdit; }
 }
@@ -435,9 +435,9 @@ function _esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
 function _onCmCodeInput(){
   const el = document.getElementById('cm-code-display');
   document.getElementById('cm-code').value = el.value;
-  el.style.borderColor = ''; el.style.background = '';
+  el.classList.remove('cm-input-error','cm-input-success');
   const m = document.getElementById('cm-code-msg');
-  if(m){ m.style.color = '#9ca3af'; m.innerHTML = '<i class="fas fa-info-circle"></i> 숫자와 알파벳을 포함한 6글자 이상'; }
+  if(m){ m.className = 'cm-msg-muted'; m.innerHTML = '<i class="fas fa-info-circle"></i> 숫자와 알파벳을 포함한 6글자 이상'; }
 }
 function _toggleCmCodeEdit(){
   const inputEl = document.getElementById('cm-code-display');
@@ -445,8 +445,7 @@ function _toggleCmCodeEdit(){
   if(!inputEl || !btnEl) return;
   if(inputEl.readOnly){
     inputEl.readOnly = false;
-    inputEl.style.background = '#fff';
-    inputEl.style.borderColor = '#6366f1';
+    inputEl.className = (inputEl.className||'').replace(/cm-input-[a-z-]+/g,'') + ' cm-input-active';
     inputEl.focus();
     btnEl.innerHTML = '<i class="fas fa-check-circle"></i> 중복체크';
     btnEl.onclick = checkAccessCodeDuplicate;
@@ -459,29 +458,29 @@ function checkAccessCodeDuplicate(){
   if(!code){ toast('접근 코드를 입력하세요.', 'error'); return; }
   // 형식 검증: 6글자 이상, 숫자+알파벳 모두 포함
   if(code.length < 6 || !/[a-zA-Z]/.test(code) || !/[0-9]/.test(code)){
-    if(msgEl){ msgEl.style.display = 'block'; msgEl.style.color = '#dc2626'; msgEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 숫자와 알파벳을 포함한 6글자 이상'; }
-    if(inputEl){ inputEl.style.borderColor = '#dc2626'; inputEl.style.background = '#fef2f2'; inputEl.focus(); }
+    if(msgEl){ msgEl.style.display = 'block'; msgEl.className = 'cm-msg-error'; msgEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 숫자와 알파벳을 포함한 6글자 이상'; }
+    if(inputEl){ inputEl.className = (inputEl.className||'').replace(/cm-input-[a-z-]+/g,'') + ' cm-input-error'; inputEl.focus(); }
     toast('숫자와 알파벳을 포함한 6글자 이상 입력하세요.', 'error');
     return;
   }
   // 형식 통과 시 테두리 복원
-  if(inputEl){ inputEl.style.borderColor = ''; inputEl.style.background = ''; }
+  if(inputEl){ inputEl.classList.remove('cm-input-error','cm-input-success'); }
   // 서버에서 중복 검사 (loadCompanies limit=100 이슈 회피)
   const currentId = editId.company || _cmpData?.id;
   fetch(`/api/companies/check-code?code=${encodeURIComponent(code)}&exclude=${currentId||''}`)
     .then(r => r.json())
     .then(data => {
       if(data.duplicate){
-        if(msgEl){ msgEl.style.display = 'block'; msgEl.style.color = '#dc2626'; msgEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 사용할 수 없는 코드입니다. 다른 코드를 입력하세요.'; }
-        if(inputEl){ inputEl.style.borderColor = '#dc2626'; inputEl.style.background = '#fef2f2'; }
+        if(msgEl){ msgEl.style.display = 'block'; msgEl.className = 'cm-msg-error'; msgEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 사용할 수 없는 코드입니다. 다른 코드를 입력하세요.'; }
+        if(inputEl){ inputEl.className = (inputEl.className||'').replace(/cm-input-[a-z-]+/g,'') + ' cm-input-error'; }
         toast('다른 고객사에서 사용 중인 코드입니다.', 'error');
       } else {
-        if(msgEl){ msgEl.style.display = 'block'; msgEl.style.color = '#16a34a'; msgEl.innerHTML = '<i class="fas fa-check-circle"></i> 사용 가능한 코드입니다.'; }
-        if(inputEl){ inputEl.style.borderColor = '#16a34a'; inputEl.style.background = '#f0fdf4'; }
+        if(msgEl){ msgEl.style.display = 'block'; msgEl.className = 'cm-msg-success'; msgEl.innerHTML = '<i class="fas fa-check-circle"></i> 사용 가능한 코드입니다.'; }
+        if(inputEl){ inputEl.className = (inputEl.className||'').replace(/cm-input-[a-z-]+/g,'') + ' cm-input-success'; }
         toast('사용 가능한 코드입니다.', 'success');
       }
     }).catch(() => {
-      if(msgEl){ msgEl.style.display = 'block'; msgEl.style.color = '#dc2626'; msgEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 확인 중 오류가 발생했습니다.'; }
+      if(msgEl){ msgEl.style.display = 'block'; msgEl.className = 'cm-msg-error'; msgEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 확인 중 오류가 발생했습니다.'; }
       toast('확인 중 오류가 발생했습니다.', 'error');
     });
 }

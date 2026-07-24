@@ -80,8 +80,7 @@ function _renderContCoSummaryCards(){
     if(count === 0) return;
     if(!outer) return;
     const div = document.createElement('div');
-    div.className = `cont-co-card ${extraClass||''}`;
-    div.style.cursor = 'pointer';
+    div.className = `cont-co-card ${extraClass||''} ct-nav-card`;
     div.innerHTML = `
       <div class="cont-alert-card-head">
         <div class="cont-alert-card-title">
@@ -515,14 +514,12 @@ function _onCtHireChange(){
   if(!startEl || !hintEl) return;
   if(hireEl && hireEl.value){
     startEl.disabled = false;
-    startEl.style.background = '';
-    startEl.style.color = '';
-    startEl.style.cursor = '';
-    // 입사일 변경 시 이미 입력된 계약 시작일도 재검증
+    startEl.classList.remove('ct-input-locked');
+    if(hintEl) hintEl.classList.remove('ct-hint-muted');
     if(startEl.value){
       _validateCtStartVsHire(startEl.id, hireEl?.id || 'ct-em-hire', hintEl.id);
     } else {
-      hintEl.style.color = '#6b7280';
+      hintEl.classList.add('ct-hint-normal');
       hintEl.textContent = '이 계약의 효력 발생일';
     }
     // 시작일 활성화 시 수습기간도 활성화 체크
@@ -530,11 +527,8 @@ function _onCtHireChange(){
   } else {
     startEl.disabled = true;
     startEl.value = '';
-    startEl.style.background = '#f3f4f6';
-    startEl.style.color = '#9ca3af';
-    startEl.style.cursor = 'not-allowed';
-    hintEl.style.color = '#9ca3af';
-    hintEl.textContent = '입사일을 먼저 입력하세요.';
+    startEl.classList.add('ct-input-locked');
+    if(hintEl){ hintEl.className = 'ct-hint-muted'; hintEl.textContent = '입사일을 먼저 입력하세요.'; }
     // 시작일 비활성화 → 수습기간도 비활성화
     _disableProbationPeriod();
   }
@@ -549,9 +543,7 @@ function _updateProbationPeriodState(){
   if(!probMonEl) return;
   if(startVal){
     probMonEl.disabled = false;
-    probMonEl.style.background = '';
-    probMonEl.style.color = '';
-    probMonEl.style.cursor = '';
+    probMonEl.classList.remove('ct-input-locked');
   } else {
     _disableProbationPeriod();
   }
@@ -562,9 +554,7 @@ function _disableProbationPeriod(){
   if(!probMonEl) return;
   probMonEl.disabled = true;
   probMonEl.value = '';
-  probMonEl.style.background = '#f3f4f6';
-  probMonEl.style.color = '#9ca3af';
-  probMonEl.style.cursor = 'not-allowed';
+  probMonEl.classList.add('ct-input-locked');
   // 수습 종료일 초기화 및 숨김
   const probEndEl = document.getElementById('ct-probation-end-date');
   if(probEndEl) probEndEl.value = '';
@@ -579,17 +569,15 @@ function _validateCtStartVsHire(startId, hireId, hintId){
   if(!startEl || !hireEl || !hintEl) return true;
   const start = startEl.value;
   const hire  = hireEl.value;
-  if(!start || !hire){ startEl.style.borderColor = ''; startEl.style.background = ''; return true; }
+  if(!start || !hire){ startEl.classList.remove('ct-input-error'); return true; }
   if(start < hire){
-    startEl.style.borderColor = '#e94560';
-    startEl.style.background = '#fef2f2';
-    hintEl.style.color = '#dc2626';
+    startEl.classList.add('ct-input-error');
+    hintEl.className = 'ct-hint-error';
     hintEl.innerHTML = '<i class=\"fas fa-exclamation-triangle\"></i> 계약 시작일은 입사일(' + hire + ')보다 이전일 수 없습니다.';
     return false;
   } else {
-    startEl.style.borderColor = '';
-    startEl.style.background = '';
-    hintEl.style.color = '#6b7280';
+    startEl.classList.remove('ct-input-error');
+    hintEl.className = 'ct-hint-normal';
     hintEl.textContent = '이번 계약의 효력 발생일 — 급여항목·계약 기간 기준.';
     return true;
   }
@@ -638,18 +626,16 @@ function openContractModal(id=null, preCompanyId=null){
       el.disabled = false;
       el.tabIndex = 0;
       el.style.pointerEvents = '';
-      el.style.background = '';
-      el.style.color = '';
-      el.style.cursor = '';
+      el.classList.remove('ct-input-locked', 'ct-input-locked-dark');
     });
   }
   // 지급유형 버튼 + 휴게시간 추가 버튼 재활성화 (신규/수정 모드에서만)
   if(!_wasReadonly){
     modalEl.querySelectorAll('.modal-body .pi-pay-type-btn').forEach(btn=>{
-      btn.disabled = false; btn.style.cursor = ''; btn.style.pointerEvents = '';
+      btn.disabled = false; btn.classList.remove('ct-input-locked'); btn.style.pointerEvents = '';
     });
     modalEl.querySelectorAll('.modal-body .btn-brk-add').forEach(btn=>{
-      btn.disabled = false; btn.style.cursor = ''; btn.style.pointerEvents = '';
+      btn.disabled = false; btn.classList.remove('ct-input-locked'); btn.style.pointerEvents = '';
     });
   }
   ['ct-start','ct-end','ct-annual-sal','ct-base','ct-note','ct-pay-period','ct-pay-period-month-hidden','ct-pay-period-day-hidden','ct-pay-day'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});
@@ -1118,12 +1104,12 @@ function _setEditNameCategoryLock(lock, lockCat = lock) {
   const catLock    = document.getElementById('ct-edit-category-lock-hint');
 
   // 이름·주민번호·성별·사원번호: lock 적용
-  if(nameEl)   { nameEl.readOnly   = lock;    nameEl.style.background   = lock    ? '#f3f4f6' : ''; nameEl.style.color    = lock    ? '#6b7280' : ''; }
-  if(idEl)     { idEl.readOnly     = lock;    idEl.style.background     = lock    ? '#f3f4f6' : ''; idEl.style.color      = lock    ? '#6b7280' : ''; }
-  if(genderEl) { genderEl.disabled = lock;    genderEl.style.background = lock    ? '#f3f4f6' : ''; genderEl.style.color  = lock    ? '#6b7280' : ''; }
-  if(empnoEl)  { empnoEl.readOnly  = lock;    empnoEl.style.background  = lock    ? '#f3f4f6' : ''; empnoEl.style.color   = lock    ? '#6b7280' : ''; }
+  if(nameEl)   { nameEl.readOnly   = lock;    nameEl.classList.toggle('ct-input-locked-dark', lock); }
+  if(idEl)     { idEl.readOnly     = lock;    idEl.classList.toggle('ct-input-locked-dark', lock); }
+  if(genderEl) { genderEl.disabled = lock;    genderEl.classList.toggle('ct-input-locked-dark', lock); }
+  if(empnoEl)  { empnoEl.readOnly  = lock;    empnoEl.classList.toggle('ct-input-locked-dark', lock); }
   // 고용형태: lockCat 적용 (재계약은 false → 편집 가능)
-  if(catEl)    { catEl.disabled    = lockCat; catEl.style.background    = lockCat ? '#f3f4f6' : ''; catEl.style.color     = lockCat ? '#6b7280' : ''; }
+  if(catEl)    { catEl.disabled    = lockCat; catEl.classList.toggle('ct-input-locked-dark', lockCat); }
   if(nameLock) nameLock.style.display = lock    ? 'block' : 'none';
   if(catLock)  catLock.style.display  = lockCat ? 'block' : 'none';
   // 사원번호 잠금 시 Alert 숨기고 텍스트 안내 표시
@@ -1565,9 +1551,7 @@ function _showEmpNoAlert(alertEl, msg, type){
   if(!alertEl) return;
   const isOk  = (type === 'ok');
   alertEl.style.display = 'block';
-  alertEl.style.background = isOk ? '#F0FDF4' : '#FFF1F2';
-  alertEl.style.border     = `1.5px solid ${isOk ? '#86EFAC' : '#FCA5A5'}`;
-  alertEl.style.color      = isOk ? '#166534' : '#991B1B';
+  alertEl.className = isOk ? 'ct-alert-ok' : 'ct-alert-error';
   const msgEl = alertEl.querySelector('.empno-alert-msg');
   if(msgEl) msgEl.textContent = msg;
 }
@@ -1890,10 +1874,10 @@ function viewContract(id){
       _pairRow.style.display = '';
       if(_pairEnd){
         _pairHint.textContent = `원본 계약(${_pairEnd.replace(/-/g, '.')})의 해지일 — 갱신된 계약의 시작일은 ${c.contract_start ? c.contract_start.replace(/-/g, '.') : '?'}입니다.`;
-        _pairHint.style.color = '#6b7280';
+        _pairHint.className = 'ct-hint-normal';
       } else {
         _pairHint.textContent = '원본 계약의 해지일이 설정되지 않았습니다.';
-        _pairHint.style.color = '#9ca3af';
+        _pairHint.className = 'ct-hint-muted';
       }
       // 발견한 페어 ID를 renewed_from_id에 보정 (갱신 페어인 경우에만 — 수정/재발행 파기계약은 제외)
       if(!c.renewed_from_id && (c.status === CONTRACT_STATUS.RENEWAL_PENDING || c.status === CONTRACT_STATUS.ACTIVE)) c.renewed_from_id = _pairOrigC.id;
@@ -2200,20 +2184,18 @@ function doContractAmend(){
     el.disabled = false;
     el.tabIndex = 0;
     el.style.pointerEvents = '';
-    el.style.background = '';
-    el.style.color = '';
-    el.style.cursor = '';
+    el.classList.remove('ct-input-locked', 'ct-input-locked-dark');
   });
   // 지급유형 버튼 + 휴게시간 추가 버튼 재활성화
   if(bodyEl){
     bodyEl.querySelectorAll('.pi-pay-type-btn').forEach(btn=>{
       btn.disabled = false;
-      btn.style.cursor = '';
+      btn.classList.remove('ct-input-locked');
       btn.style.pointerEvents = '';
     });
     bodyEl.querySelectorAll('.btn-brk-add').forEach(btn=>{
       btn.disabled = false;
-      btn.style.cursor = '';
+      btn.classList.remove('ct-input-locked');
       btn.style.pointerEvents = '';
     });
   }

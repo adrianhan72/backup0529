@@ -26,14 +26,14 @@ function _pssDoSearch(){
       if(from < maxFrom){
         fromEl.style.borderColor = '#dc2626';
         toEl.style.borderColor = '#dc2626';
-        if(noticeEl) noticeEl.style.color = '#dc2626';
+        if(noticeEl) noticeEl.className = 'ct-hint-error';
         toast('조회 기간은 최대 3개월까지 가능합니다.', 'error');
         return;
       }
     }
   }
   resetBorder();
-  if(noticeEl) noticeEl.style.color = '#9ca3af';
+  if(noticeEl) noticeEl.className = 'ct-hint-muted';
   _pssLogPage = 1;
   renderPssLogs();
 }

@@ -112,6 +112,10 @@
 /* 계약??고정??�� readonly ?��???*/
 .pi-readonly-field{background:#f1f5f9!important;color:#555!important;cursor:default!important;border-color:#e8eaed!important;user-select:none!important;}
 .pi-readonly-field:focus{border-color:#e8eaed!important;outline:none!important;}
+.pi-interim-filled{background:#eef2ff!important;color:#4f46e5!important;font-weight:600!important;}
+.pi-interim-label{font-size:11px;color:#6366f1;flex:1;margin:0 8px;}
+.pi-interim-amount{background:#f1f5f9;color:#6366f1;font-weight:600;}
+.pi-deduction-has-allowance{color:#059669;}
 .pi-pay-type-select.pi-btn-locked{opacity:.45!important;cursor:default!important;pointer-events:none!important;}
     .pi-row .pi-val{font-weight:600;font-size:13px;color:#1a1a2e}
     /* ?�상?�금 지급유???�?�운 select (기존 버튼 UI ?��? */
@@ -246,6 +250,9 @@
 .cm-aw-row            { display:flex; align-items:center; gap:8px; min-height:32px; }
 .cm-aw-hint           { font-size:10.5px; color:#6b7280; align-self:center; white-space:nowrap; }
 .cm-aw-add-btn        { font-size:11.5px; color:#6366f1; background:none; border:1.5px dashed #c7d2fe; border-radius:6px; padding:4px 14px; cursor:pointer; transition:all .15s; }
+
+.cm-radio-group { display:flex; gap:16px; padding:6px 0; }
+.cm-radio-label { display:flex; align-items:center; gap:6px; font-weight:400; cursor:pointer; }
 .cm-aw-add-btn:hover  { background:#eef2ff; border-color:#6366f1; }
 .cm-aw-custom-row     { display:flex; align-items:center; gap:6px; min-height:32px; }
 .cm-aw-custom-input   { flex:1; border:1px solid #d1d5db; border-radius:5px; padding:3px 8px; font-size:13px; min-width:0; }
@@ -259,3 +266,66 @@
                          cursor:pointer; outline:none; transition:border-color .15s, opacity .15s; }
 .cm-aw-pt-select:disabled { background:#f3f4f6; color:#9ca3af; cursor:not-allowed; border-color:#d1d5db !important; }
 .cm-aw-pt-select:not(:disabled):focus { border-color:#6366f1; }
+
+/* ── severance history table ── */
+.tbl-empty { text-align:center; padding:30px; color:#9ca3af; }
+.sev-history-name { font-weight:600; }
+.sev-history-contracts { font-size:11px; }
+.sev-history-tenure { text-align:right; }
+.sev-history-tenure-days { font-size:10px; color:#9ca3af; }
+.sev-history-wage { text-align:right; color:#1d4ed8; }
+.sev-history-amount { text-align:right; font-weight:700; color:#b45309; }
+.sev-history-interim-note { font-size:10px; color:#9ca3af; }
+.sev-nodata { color:#9ca3af; }
+
+/* ── severance status table ── */
+.sev-main-name { font-weight:700; font-size:13px; vertical-align:top; border-right:1px solid #fef3c7; }
+.sev-main-dept { color:#374151; vertical-align:top; border-right:1px solid #fef3c7; }
+.sev-main-type { color:#374151; vertical-align:top; border-right:1px solid #fef3c7; }
+.sev-main-row { border-top:2px solid #fde68a; }
+.sev-contract-cell { font-size:12px; color:#374151; cursor:pointer; padding:6px 10px; }
+.sev-contract-start { font-weight:500; }
+.sev-contract-end { font-weight:500; }
+.sev-contract-sep { color:#9ca3af; margin:0 3px; }
+.sev-contract-search { font-size:10px; color:#93c5fd; margin-left:5px; opacity:.8; }
+.sev-contract-num { display:inline-block; min-width:18px; height:18px; line-height:18px; text-align:center; border-radius:50%; background:#fef3c7; color:#92400e; font-size:10px; font-weight:700; margin-right:5px; }
+.sev-contract-status { font-size:10px; padding:1px 5px; border-radius:4px; margin-left:4px; }
+.sev-contract-status-terminated { color:#dc2626; background:#fee2e2; }
+.sev-contract-status-expired { color:#b45309; background:#fef3c7; }
+.sev-contract-status-active { color:#15803d; background:#dcfce7; }
+.sev-contract-row { cursor:pointer; }
+.sev-contract-row:hover { background:#eff6ff !important; }
+.sev-contract-row-even { background:#fafaf8; }
+.sev-contract-row-last { border-bottom:1px dashed #fcd34d; }
+.sev-contract-row-normal { border-bottom:1px dashed #f3f4f6; }
+.sev-total-row { background:#fffbeb; border-bottom:2px solid #fde68a; }
+.sev-total-label { padding:7px 10px; font-size:12px; font-weight:700; color:#92400e; }
+.sev-total-date-range { font-weight:400; font-size:11px; color:#78716c; margin-left:4px; }
+.sev-total-tenure { padding:7px 10px; text-align:right; }
+.sev-total-tenure-days { display:block; font-size:10.5px; color:#9ca3af; font-weight:400; }
+.sev-wage-cell { padding:10px; text-align:right; vertical-align:top; border-left:1px solid #fef3c7; color:#1d4ed8; font-weight:600; }
+.sev-amount-cell { padding:10px; text-align:right; vertical-align:top; font-weight:700; font-size:13.5px; border-left:1px solid #fef3c7; }
+.sev-status-cell { padding:10px; text-align:center; vertical-align:top; border-left:1px solid #fef3c7; }
+.sev-tenure-cell { font-size:12px; color:#6b7280; text-align:right; padding:6px 10px; cursor:pointer; }
+.sev-no-contract { font-size:12px; color:#9ca3af; border-bottom:1px dashed #f3f4f6; }
+.sev-under-1yr { color:#9ca3af; font-size:11px; font-style:italic; }
+.sev-tenure-label { font-size:11.5px; color:#92400e; font-weight:700; }
+.sev-nodata-sm { color:#9ca3af; font-size:11px; }
+.sev-interim-note { font-size:10px; color:#9ca3af; font-weight:400; }
+.sev-no-data-sm { color:#d1d5db; font-size:11px; }
+/* severance: icon sizing */
+.sev-icon-xs { font-size:10px; margin-right:4px; }
+.sev-icon-sm { font-size:11px; }
+.sev-spinner-icon { margin-right:8px; color:#6366f1; }
+.sev-icon-mr { margin-right:6px; }
+/* severance: empty/loading states */
+.sev-loading { text-align:center; padding:40px; color:#9ca3af; }
+.sev-empty-state { text-align:center; padding:30px; color:#9ca3af; }
+/* severance: interim settlement table */
+.sev-interim-emp-name { font-weight:600; }
+.sev-interim-right { text-align:right; }
+.sev-interim-amount { text-align:right; font-weight:700; color:#dc2626; }
+.sev-interim-note-td { font-size:11px; color:#6b7280; }
+.sev-interim-btn { padding:4px 8px; font-size:11px; }
+/* severance: total row top border */
+.sev-total-divider { background:#fffbeb; border-top:1px solid #fcd34d; }
