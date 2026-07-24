@@ -585,6 +585,7 @@ function renderCdpUnsentList(){
       <td class="ctr"><input type="checkbox" class="cdp-row-chk" data-contract-id="${c.id}" onchange="cdpUpdateBatchBtns()" /></td>
       <td style="font-size:12px;color:#111827;font-weight:700;">${co.company_name || '-'}</td>
       <td style="font-weight:700;color:#111827;">${emp.name || '-'}</td>
+      <td style="text-align:center;font-size:12px;">${typeof genderLabel==='function' ? genderLabel(emp) : '-'}</td>
       <td><span class="badge ${empCatBadge(cat)}">${contractTypeLabel(cat)}</span></td>
       <td style="font-size:12px;color:#6b7280;">${c.contract_start || '-'}</td>
       <td style="font-size:12px;color:#6b7280;">${phone || '<span style="color:#d1d5db;">미등록</span>'}</td>
@@ -600,7 +601,7 @@ function renderCdpUnsentList(){
           ✉ 이메일
         </button>
         <button onclick="cdpUnsentManual('${c.id}')"
-          class="btn btn-success btn-sm">
+          class="btn btn-success btn-sm" style="margin-right:3px;">
           <i class="fas fa-hand-paper"></i> 수동교부
         </button>
       </td>

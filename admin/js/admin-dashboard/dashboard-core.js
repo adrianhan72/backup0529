@@ -334,7 +334,7 @@ function renderProbationMgmtTable(){
   const _actionBadgeMap = { confirm:'badge-green', cancel:'badge-red', dismiss:'badge-orange', extend:'badge-blue' };
 
   tbody.innerHTML = targets.map(t => {
-    const { empName, probEnd, probMonths, daysLeft, contract: c } = t;
+    const { empName, probEnd, probMonths, daysLeft, contract: c, emp } = t;
     // D-day 배지: D-30 이내=긴급, D-45 이내=통지대상, 그 외=일반
     let ddayCls;
     if(daysLeft <= 30)      ddayCls = 'urgent';

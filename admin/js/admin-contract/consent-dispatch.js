@@ -436,7 +436,7 @@ function renderCnsUnsentList() {
           ✉ 이메일
         </button>
         <button onclick="cnsUnsentManual('${c.id}','${empName}','${coName}')"
-          class="btn btn-success btn-sm">
+          class="btn btn-success btn-sm" style="margin-right:3px;">
           <i class="fas fa-hand-paper"></i> 수동교부
         </button>
       </td>

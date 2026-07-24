@@ -873,7 +873,7 @@ function _pssBulkRenderTable(){
         <button onclick="_pssEmailSend(${i})" ${hasEmail ? '' : 'disabled'}
           class="${emailClass}" style="margin-right:4px;">✉ 이메일</button>
         <button onclick="_pssManualDone(${i})"
-          class="btn btn-success btn-sm">✔ 수동교부</button>
+          class="btn btn-success btn-sm" style="margin-right:3px;">✔ 수동교부</button>
       </td>
     </tr>`;
   }).join('');

@@ -712,6 +712,101 @@ function _updatePIAnnualLeaveDetail(){
 }
 
 /**
+ * 급여입력 페이지에서 근태 관리대장 모달 열기 (결근·지각·조퇴)
+ */
+async function _openAttendanceLedgerFromPayroll(){
+  const empId = document.getElementById('pi-employee')?.value || '';
+  if(!empId) { toast('직원을 먼저 선택하세요.', 'error'); return; }
+
+  const emp = allEmployees.find(e => e.id === empId);
+  if(!emp) { toast('직원 정보를 찾을 수 없습니다.', 'error'); return; }
+
+  const coId = document.getElementById('pi-company')?.value || '';
+  if(coId && typeof _atlCompanyId !== 'undefined') {
+    window._atlCompanyId = coId;
+    try {
+      const res = await fetch('../tables/attendance_ledger?company_id=' + coId + '&limit=500');
+      const data = await res.json();
+      if(typeof _atlLedgerCache !== 'undefined') {
+        window._atlLedgerCache = (data.data || []).filter(r => r.company_id === coId);
+      }
+    } catch(e) {}
+  }
+
+  window._attendanceFromPayroll = { empId, empName: emp.name || '' };
+  if(typeof atlOpenLedger === 'function'){
+    atlOpenLedger(empId, emp.name || '');
+    _watchAttendanceLedgerClose();
+  }
+}
+
+function _watchAttendanceLedgerClose(){
+  const check = setInterval(() => {
+    const modal = document.getElementById('atl-ledger-modal');
+    if(modal && !modal.classList.contains('open')){
+      clearInterval(check);
+      _updatePIAttendanceSummary();
+    }
+  }, 300);
+}
+
+function _updatePIAttendanceSummary(){
+  const ctx = window._attendanceFromPayroll;
+  if(!ctx) return;
+  const empId = ctx.empId;
+  const year = parseInt(document.getElementById('pi-year')?.value) || new Date().getFullYear();
+  const month = parseInt(document.getElementById('pi-month')?.value) || (new Date().getMonth() + 1);
+
+  let entries = [];
+  if(typeof _atlLedgerCache !== 'undefined'){
+    const ledgers = _atlLedgerCache.filter(l => l.employee_id === empId);
+    ledgers.forEach(ledger => {
+      try { entries = entries.concat(JSON.parse(ledger.month_data || '[]')); } catch(e) {}
+    });
+  }
+
+  const pad = n => String(n).padStart(2,'0');
+  const ymPrefix = year + '-' + pad(month);
+  const monthEntries = entries.filter(e => (e.date||'').startsWith(ymPrefix));
+
+  let absentDays = 0, lateCount = 0, earlyCount = 0;
+  let absentDates = [], absentData = [], lateData = [], earlyData = [];
+  monthEntries.forEach(e => {
+    if(e.type === 'absent'){
+      const dates = typeof _atlExpandDateRange === 'function' ? _atlExpandDateRange(e.date, e.dateTo||'') : [e.date];
+      absentDays += dates.length;
+      absentDates.push(...dates);
+      absentData.push({ date: e.date, type: e.absentType||'unauthorized', rate: e.rate||0, dateTo: e.dateTo||'' });
+    } else if(e.type === 'late'){
+      lateCount++;
+      lateData.push({ date: e.date, time: e.time||'' });
+    } else if(e.type === 'earlyleave'){
+      earlyCount++;
+      earlyData.push({ date: e.date, time: e.time||'' });
+    }
+  });
+
+  const absDatesEl = document.getElementById('pi-absent-dates');
+  const absDataEl  = document.getElementById('pi-absent-data');
+  const earlyEl    = document.getElementById('pi-earlyleave-data');
+  const lateEl     = document.getElementById('pi-late-data');
+  if(absDatesEl) absDatesEl.value = [...new Set(absentDates)].sort().join(',');
+  if(absDataEl)  absDataEl.value  = JSON.stringify(absentData);
+  if(earlyEl)    earlyEl.value    = JSON.stringify(earlyData);
+  if(lateEl)     lateEl.value     = JSON.stringify(lateData);
+
+  const summaryEl = document.getElementById('pi-attendance-summary');
+  if(summaryEl){
+    const parts = [];
+    if(absentDays > 0) parts.push(`<span style="color:#dc2626;font-weight:600;">결근 ${absentDays}일</span>`);
+    if(lateCount > 0)  parts.push(`<span style="color:#d97706;font-weight:600;">지각 ${lateCount}회</span>`);
+    if(earlyCount > 0) parts.push(`<span style="color:#4f46e5;font-weight:600;">조퇴 ${earlyCount}회</span>`);
+    summaryEl.innerHTML = parts.length > 0 ? parts.join(' · ') : '<span style="color:#9ca3af;">기록 없음</span>';
+  }
+  window._attendanceFromPayroll = null;
+}
+
+/**
  * 급여입력 페이지에서 연차휴가 관리대장 모달 열기
  */
 async function _openLedgerFromPayroll(){

@@ -332,65 +332,20 @@
                   </button>
                 </div>
               </div>
-              <!-- 결근/휴직 -->
-              <div class="pi-row">
-                <label>결근/휴직</label>
-                <div style="display:flex;flex-direction:column;gap:6px;">
-                  <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-                    <input type="date" id="pi-absent-date-from" style="width:140px;" title="시작일" />
-                    <span style="font-size:11px;color:#6b7280;">~</span>
-                    <input type="date" id="pi-absent-date-to" style="width:140px;" title="종료일 (단일일은 비워둠)" />
-                    <select id="pi-absent-type" style="width:170px;padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;">
-                      <option value="unauthorized">무단 (무급)</option>
-                      <option value="sick_unpaid">병가 (무급)</option>
-                      <option value="sick_paid" id="pi-absent-type-sick-paid" style="display:none;">병가 (유급)</option>
-                      <option value="industrial">산재 (근로복지공단 지급)</option>
-                      <option value="menstrual" id="pi-absent-type-menstrual" style="display:none;">생리휴가 (무급)</option>
-                      <option value="maternity_paid" id="pi-absent-type-mat-paid" style="display:none;">본인 출산휴가 (유급)</option>
-                      <option value="maternity_unpaid" id="pi-absent-type-mat-unpaid" style="display:none;">본인 출산휴가 (무급)</option>
-                      <option value="paternity_paid" id="pi-absent-type-pat-paid" style="display:none;">배우자 출산휴가 (유급)</option>
-                      <option value="childcare_leave">육아휴직 (고용보험지급)</option>
-                      <option value="family_care">가족돌봄휴직 (무급)</option>
-                      <option value="layoff_leave">휴업휴직 (평균임금의 70%)</option>
-                    </select>
-                    <button type="button" onclick="_addPIAbsentDate()"
-                      class="btn btn-danger btn-sm" style="padding:4px 12px;font-size:11px;">추가</button>
-                    <span id="pi-absent-count" style="font-size:12px;color:#ef4444;font-weight:700;">0일</span>
-                  </div>
-                  <div id="pi-absent-chips" style="display:flex;flex-wrap:wrap;gap:4px;"></div>
-                  <input type="hidden" id="pi-absent-dates" value="" />
-                  <input type="hidden" id="pi-absent-data" value="[]" />
+              <!-- 근태 관리 (결근·지각·조퇴) — 근태 관리대장 모달에서 입력 -->
+              <div class="pi-row" id="pi-row-attendance">
+                <label>근태 관리</label>
+                <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                  <span id="pi-attendance-summary" style="font-size:12px;color:#6b7280;">-</span>
+                  <button type="button" class="btn btn-sm btn-indigo" onclick="_openAttendanceLedgerFromPayroll()"
+                    style="padding:4px 10px;font-size:11px;">
+                    <i class="fas fa-clipboard-check"></i> 관리
+                  </button>
                 </div>
-              </div>
-              <!-- 무단 조퇴 -->
-              <div class="pi-row">
-                <label>무단 조퇴 <span style="font-size:10px;font-weight:400;color:#f59e0b;">(날짜+조퇴시각)</span></label>
-                <div style="display:flex;flex-direction:column;gap:6px;">
-                  <div style="display:flex;align-items:center;gap:6px;">
-                    <input type="date" id="pi-earlyleave-date" style="width:130px;" />
-                    <input type="time" id="pi-earlyleave-time" style="width:100px;border:1px solid #d1d5db;border-radius:6px;padding:4px 8px;font-size:12px;font-family:inherit;outline:none;" value="15:00" />
-                    <button type="button" onclick="_addPIEarlyLeave()"
-                      class="btn btn-warning btn-sm" style="padding:4px 12px;font-size:11px;">추가</button>
-                    <span id="pi-earlyleave-count" style="font-size:12px;color:#f59e0b;font-weight:700;">0회</span>
-                  </div>
-                  <div id="pi-earlyleave-chips" style="display:flex;flex-wrap:wrap;gap:4px;"></div>
-                  <input type="hidden" id="pi-earlyleave-data" value="[]" />
-                </div>
-              </div>
-              <!-- 무단 지각 -->
-              <div class="pi-row">
-                <label>무단 지각 <span style="font-size:10px;font-weight:400;color:#f59e0b;">(날짜+출근시각)</span></label>
-                <div style="display:flex;flex-direction:column;gap:6px;">
-                  <div style="display:flex;align-items:center;gap:6px;">
-                    <input type="date" id="pi-late-date" style="width:130px;" />
-                    <input type="time" id="pi-late-time" style="width:100px;border:1px solid #d1d5db;border-radius:6px;padding:4px 8px;font-size:12px;font-family:inherit;outline:none;" value="09:30" />
-                    <button type="button" onclick="_addPILate()"
-                      class="btn btn-warning btn-sm" style="padding:4px 12px;font-size:11px;">추가</button>
-                    <span id="pi-late-count" style="font-size:12px;color:#f59e0b;font-weight:700;">0회</span>
-                  </div>
-                  <div id="pi-late-chips" style="display:flex;flex-wrap:wrap;gap:4px;"></div>
-                  <input type="hidden" id="pi-late-data" value="[]" />
-                </div>
+                <input type="hidden" id="pi-absent-dates" value="" />
+                <input type="hidden" id="pi-absent-data" value="[]" />
+                <input type="hidden" id="pi-earlyleave-data" value="[]" />
+                <input type="hidden" id="pi-late-data" value="[]" />
               </div>
               <!-- 통상시급: 계약서 hourly_wage readonly 표시 -->
               <div class="pi-row" id="pi-row-hourly-wage-disp">

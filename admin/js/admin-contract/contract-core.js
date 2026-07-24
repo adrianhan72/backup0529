@@ -189,7 +189,7 @@ function _renderContCoSummaryCards(){
     const rows = draftContracts.map(c => {
       const emp = allEmployees.find(e=>e.id===c.employee_id);
       const savedAt = fmtTime(c.updated_at);
-      return `<tr>${empNameCell(c.employee_id)}${catBadgeCell(c,emp)}<td style="font-size:11px;color:#9ca3af;">${savedAt||'-'}</td><td style="white-space:nowrap;"><button onclick="goDraftContract('${c.id}')" class="btn-draft-edit-sm"><i class="fas fa-pencil-alt"></i> 이어 작성</button> <button onclick="_deleteDraft('${c.id}','contracts','${emp?.name||''}')" class="btn btn-sm btn-secondary"><i class="fas fa-trash-alt"></i> 삭제</button></td></tr>`;
+      return `<tr>${empNameCell(c.employee_id)}${catBadgeCell(c,emp)}<td style="font-size:11px;color:#9ca3af;">${savedAt||'-'}</td><td style="white-space:nowrap;"><button onclick="goDraftContract('${c.id}')" class="btn-draft-edit-sm"><i class="fas fa-pencil-alt"></i> 이어 작성</button> <button onclick="_deleteDraft('${c.id}','contracts','${emp?.name||''}')" class="btn-draft-del-sm"><i class="fas fa-trash-alt"></i> 삭제</button></td></tr>`;
     }).join('');
     renderOuterCard('draft', 'fas fa-file-contract', '#d97706', '임시저장 중인 근로계약서', draftContracts.length,
       '작성 중 저장된 계약서입니다.', ['직원명','고용형태','저장 시각','관리'], rows, 'cont-alert-draft');
