@@ -185,52 +185,52 @@ CREATE TABLE IF NOT EXISTS employees (
 
 CREATE INDEX IF NOT EXISTS idx_employees_company ON employees(company_id);
 
--- registered_executives
+-- registered_executives  -- 등기임원 (대표자 외)
 CREATE TABLE IF NOT EXISTS registered_executives (
-  id TEXT PRIMARY KEY,
-  company_id TEXT,
-  name TEXT NOT NULL,
-  position TEXT NOT NULL,
-  phone TEXT NOT NULL,
-  id_number TEXT NOT NULL,
-  bank_name TEXT,
-  bank_account TEXT,
-  bank_holder TEXT,
-  created_at INTEGER,
-  updated_at INTEGER
+  id TEXT PRIMARY KEY, --  -- UUID
+  company_id TEXT, --  -- 회사 ID
+  name TEXT NOT NULL, --  -- 이름
+  position TEXT NOT NULL, --  -- 직책
+  phone TEXT NOT NULL, --  -- 전화번호
+  id_number TEXT NOT NULL, --  -- 주민등록번호
+  bank_name TEXT, --  -- 은행명
+  bank_account TEXT, --  -- 계좌번호
+  bank_holder TEXT, --  -- 예금주
+  created_at INTEGER, --  -- 생성일시
+  updated_at INTEGER --  -- 수정일시
 );
 
 CREATE INDEX IF NOT EXISTS idx_registered_executives_company ON registered_executives(company_id);
 
--- related_party_workers
+-- related_party_workers  -- 특수관계인 근로자 (배우자, 직계존비속 등)
 CREATE TABLE IF NOT EXISTS related_party_workers (
-  id TEXT PRIMARY KEY,
-  company_id TEXT,
-  name TEXT NOT NULL,
-  relationship TEXT NOT NULL,
-  phone TEXT NOT NULL,
-  id_number TEXT NOT NULL,
-  bank_name TEXT,
-  bank_account TEXT,
-  bank_holder TEXT,
-  created_at INTEGER,
-  updated_at INTEGER
+  id TEXT PRIMARY KEY, --  -- UUID
+  company_id TEXT, --  -- 회사 ID
+  name TEXT NOT NULL, --  -- 이름
+  relationship TEXT NOT NULL, --  -- 관계 (배우자/자녀/부모 등)
+  phone TEXT NOT NULL, --  -- 전화번호
+  id_number TEXT NOT NULL, --  -- 주민등록번호
+  bank_name TEXT, --  -- 은행명
+  bank_account TEXT, --  -- 계좌번호
+  bank_holder TEXT, --  -- 예금주
+  created_at INTEGER, --  -- 생성일시
+  updated_at INTEGER --  -- 수정일시
 );
 
 CREATE INDEX IF NOT EXISTS idx_related_party_workers_company ON related_party_workers(company_id);
 
--- representative_contact
+-- representative_contact  -- 대표 연락처 및 발신 설정
 CREATE TABLE IF NOT EXISTS representative_contact (
-  id TEXT PRIMARY KEY,
-  phone TEXT,
-  email TEXT,
-  fax TEXT,
-  updated_at INTEGER,
-  outbound_email TEXT DEFAULT NULL,
-  outbound_password TEXT DEFAULT NULL,
-  outbound_smtp_host TEXT DEFAULT NULL,
-  outbound_smtp_port TEXT DEFAULT NULL,
-  msg_body_rules TEXT DEFAULT NULL
+  id TEXT PRIMARY KEY, --  -- UUID
+  phone TEXT, --  -- 대표 전화번호
+  email TEXT, --  -- 대표 이메일
+  fax TEXT, --  -- 대표 팩스
+  updated_at INTEGER, --  -- 수정일시
+  outbound_email TEXT DEFAULT NULL, --  -- 발신전용 이메일 주소
+  outbound_password TEXT DEFAULT NULL, --  -- 발신전용 이메일 비밀번호
+  outbound_smtp_host TEXT DEFAULT NULL, --  -- SMTP 서버 주소
+  outbound_smtp_port TEXT DEFAULT NULL, --  -- SMTP 포트
+  msg_body_rules TEXT DEFAULT NULL --  -- 메시지 본문 규칙 (JSON)
 );
 
 -- =============================================================================
@@ -259,25 +259,25 @@ CREATE TABLE IF NOT EXISTS annual_leave_ledger (
   status TEXT --  -- 상태
 );
 
--- annual_leave_promotions
+-- annual_leave_promotions  -- 연차 사용촉진 발송 이력
 CREATE TABLE IF NOT EXISTS annual_leave_promotions (
-  id TEXT PRIMARY KEY,
-  employee_id TEXT,
-  employee_name TEXT,
-  company_id TEXT,
-  company_name TEXT,
-  contract_type TEXT,
-  total_leave_days REAL,
-  used_leave_days REAL,
-  remaining_leave_days REAL,
-  annual_leave_basis TEXT,
-  leave_pay_estimate REAL,
-  worker_send_method TEXT,
-  sent_at TEXT,
-  sent_by TEXT,
-  note TEXT,
-  created_at INTEGER,
-  updated_at INTEGER
+  id TEXT PRIMARY KEY, --  -- UUID
+  employee_id TEXT, --  -- 직원 ID
+  employee_name TEXT, --  -- 직원명
+  company_id TEXT, --  -- 회사 ID
+  company_name TEXT, --  -- 회사명
+  contract_type TEXT, --  -- 계약 유형
+  total_leave_days REAL, --  -- 총 연차일수
+  used_leave_days REAL, --  -- 사용 연차일수
+  remaining_leave_days REAL, --  -- 잔여 연차일수
+  annual_leave_basis TEXT, --  -- 연차 산정 기준
+  leave_pay_estimate REAL, --  -- 연차수당 추정액
+  worker_send_method TEXT, --  -- 근로자 발송 방식
+  sent_at TEXT, --  -- 발송 일시
+  sent_by TEXT, --  -- 발송 처리자
+  note TEXT, --  -- 비고
+  created_at INTEGER, --  -- 생성일시
+  updated_at INTEGER --  -- 수정일시
 );
 
 -- attendance_ledger  -- 근태 관리대장 (결근·지각·조퇴, 보존년한 5년)
@@ -297,17 +297,17 @@ CREATE TABLE IF NOT EXISTS attendance_ledger (
   status TEXT --  -- 상태
 );
 
--- payroll_items
+-- payroll_items  -- 급여 항목 (payrolls와 1:N, 수당·공제 개별 관리)
 CREATE TABLE IF NOT EXISTS payroll_items (
-  id TEXT PRIMARY KEY,
-  payroll_id TEXT NOT NULL,
-  item_type TEXT NOT NULL,
-  amount REAL DEFAULT 0,
-  pay_type TEXT,
-  memo TEXT,
-  sort_order INTEGER DEFAULT 0,
-  created_at INTEGER,
-  updated_at INTEGER
+  id TEXT PRIMARY KEY, --  -- UUID
+  payroll_id TEXT NOT NULL, --  -- 급여대장 ID → payrolls.id
+  item_type TEXT NOT NULL, --  -- 항목 유형 (영문 코드)
+  amount REAL DEFAULT 0, --  -- 금액
+  pay_type TEXT, --  -- 지급 유형 (fixed/actual)
+  memo TEXT, --  -- 메모
+  sort_order INTEGER DEFAULT 0, --  -- 정렬 순서
+  created_at INTEGER, --  -- 생성일시
+  updated_at INTEGER --  -- 수정일시
 );
 
 CREATE INDEX IF NOT EXISTS idx_payroll_items_payroll ON payroll_items(payroll_id);
@@ -321,9 +321,9 @@ CREATE TABLE IF NOT EXISTS payroll_send_logs (
   payroll_id TEXT, --  -- 급여대장 ID
   pay_year INTEGER, --  -- 급여 연도
   pay_month INTEGER, --  -- 급여 월
-  sent_at TEXT, --  -- sent at
-  sent_by TEXT, --  -- sent by
-  send_method TEXT, --  -- send 방식
+  sent_at TEXT, --  -- 발송 일시
+  sent_by TEXT, --  -- 발송 처리자
+  send_method TEXT, --  -- 발송 방식 (kakao/email/manual)
   note TEXT, --  -- 비고
   created_at INTEGER, --  -- 생성일시
   updated_at INTEGER --  -- 수정일시
@@ -425,54 +425,54 @@ CREATE INDEX IF NOT EXISTS idx_payrolls_employee ON payrolls(employee_id);
 CREATE INDEX IF NOT EXISTS idx_payrolls_company  ON payrolls(company_id);
 CREATE INDEX IF NOT EXISTS idx_payrolls_ym       ON payrolls(pay_year, pay_month);
 
--- wage_ledger_notifications
+-- wage_ledger_notifications  -- 임금대장 통지 (고객사 앱 알림)
 CREATE TABLE IF NOT EXISTS wage_ledger_notifications (
-  id TEXT PRIMARY KEY,
-  company_id TEXT,
-  year INTEGER,
-  month INTEGER,
-  is_read INTEGER DEFAULT 0,
-  created_at INTEGER,
-  updated_at INTEGER
+  id TEXT PRIMARY KEY, --  -- UUID
+  company_id TEXT, --  -- 회사 ID
+  year INTEGER, --  -- 연도
+  month INTEGER, --  -- 월
+  is_read INTEGER DEFAULT 0, --  -- 확인 여부 (0:미확인, 1:확인)
+  created_at INTEGER, --  -- 생성일시
+  updated_at INTEGER --  -- 수정일시
 );
 
 -- =============================================================================
 -- SECTION 3: 발송 및 알림
 -- =============================================================================
 
--- company_history
+-- company_history  -- 고객사 정보 변경 이력
 CREATE TABLE IF NOT EXISTS company_history (
-  id TEXT PRIMARY KEY,
-  company_id TEXT,
-  changed_at TEXT,
-  changes TEXT,
-  snapshot TEXT,
-  created_at INTEGER,
-  updated_at INTEGER,
-  effective_date TEXT
+  id TEXT PRIMARY KEY, --  -- UUID
+  company_id TEXT, --  -- 회사 ID
+  changed_at TEXT, --  -- 변경 일시
+  changes TEXT, --  -- 변경 내용 (JSON)
+  snapshot TEXT, --  -- 변경 당시 스냅샷 (JSON)
+  created_at INTEGER, --  -- 생성일시
+  updated_at INTEGER, --  -- 수정일시
+  effective_date TEXT --  -- 적용일
 );
 
--- company_notices
+-- company_notices  -- 고객사 앱 알림 (계약만료, 연차촉진, 공지사항 등)
 CREATE TABLE IF NOT EXISTS company_notices (
-  id TEXT PRIMARY KEY,
-  company_id TEXT,
-  company_name TEXT,
-  notice_type TEXT,
-  title TEXT,
-  body TEXT,
-  contract_id TEXT,
-  employee_id TEXT,
-  employee_name TEXT,
-  contract_end TEXT,
-  days_until_expiry INTEGER,
-  sent_at TEXT,
-  sent_by TEXT,
-  is_read INTEGER DEFAULT 0,
-  read_at TEXT,
-  gn_status TEXT,
-  gn_scheduled_at TEXT,
-  created_at INTEGER,
-  updated_at INTEGER
+  id TEXT PRIMARY KEY, --  -- UUID
+  company_id TEXT, --  -- 회사 ID
+  company_name TEXT, --  -- 회사명
+  notice_type TEXT, --  -- 알림 유형
+  title TEXT, --  -- 알림 제목
+  body TEXT, --  -- 알림 본문
+  contract_id TEXT, --  -- 관련 계약 ID
+  employee_id TEXT, --  -- 관련 직원 ID
+  employee_name TEXT, --  -- 직원명
+  contract_end TEXT, --  -- 계약 종료일
+  days_until_expiry INTEGER, --  -- 만료까지 남은 일수
+  sent_at TEXT, --  -- 발송 일시
+  sent_by TEXT, --  -- 발송 처리자
+  is_read INTEGER DEFAULT 0, --  -- 확인 여부 (0:미확인, 1:확인)
+  read_at TEXT, --  -- 확인 일시
+  gn_status TEXT, --  -- 일반공지 상태
+  gn_scheduled_at TEXT, --  -- 일반공지 예약일시
+  created_at INTEGER, --  -- 생성일시
+  updated_at INTEGER --  -- 수정일시
 );
 
 CREATE INDEX IF NOT EXISTS idx_company_notices_company ON company_notices(company_id);
@@ -486,8 +486,8 @@ CREATE TABLE IF NOT EXISTS consent_dispatch (
   company_id TEXT, --  -- 회사 ID
   company_name TEXT, --  -- 회사명
   contract_type TEXT, --  -- 계약 유형
-  dispatch_method TEXT, --  -- 발송 방식
-  dispatch_status TEXT, --  -- 발송 상태
+  dispatch_method TEXT, --  -- 발송 방식 (kakao/email/manual)
+  dispatch_status TEXT, --  -- 발송 상태 (completed/failed/pending)
   recipient TEXT, --  -- 수신처
   dispatched_at TEXT, --  -- 발송 일시
   dispatched_by TEXT, --  -- 발송 처리자
@@ -507,8 +507,8 @@ CREATE TABLE IF NOT EXISTS contract_dispatch (
   company_id TEXT, --  -- 회사 ID
   company_name TEXT, --  -- 회사명
   contract_type TEXT, --  -- 계약 유형
-  dispatch_method TEXT, --  -- 발송 방식
-  dispatch_status TEXT, --  -- 발송 상태
+  dispatch_method TEXT, --  -- 발송 방식 (kakao/email/manual)
+  dispatch_status TEXT, --  -- 발송 상태 (completed/failed/pending)
   recipient TEXT, --  -- 수신처
   dispatched_at TEXT, --  -- 발송 일시
   dispatched_by TEXT, --  -- 발송 처리자
@@ -519,26 +519,26 @@ CREATE TABLE IF NOT EXISTS contract_dispatch (
   updated_at INTEGER --  -- 수정일시
 );
 
--- contract_expiry_notice
+-- contract_expiry_notice  -- 계약만료 통지 이력
 CREATE TABLE IF NOT EXISTS contract_expiry_notice (
-  id TEXT PRIMARY KEY,
-  contract_id TEXT,
-  employee_id TEXT,
-  employee_name TEXT,
-  company_id TEXT,
-  company_name TEXT,
-  contract_type TEXT,
-  contract_end TEXT,
-  days_until_expiry INTEGER,
-  notice_method TEXT,
-  notice_status TEXT,
-  recipient TEXT,
-  noticed_at TEXT,
-  noticed_by TEXT,
-  note TEXT,
-  created_at INTEGER,
-  updated_at INTEGER,
-  message_id TEXT
+  id TEXT PRIMARY KEY, --  -- UUID
+  contract_id TEXT, --  -- 계약 ID
+  employee_id TEXT, --  -- 직원 ID
+  employee_name TEXT, --  -- 직원명
+  company_id TEXT, --  -- 회사 ID
+  company_name TEXT, --  -- 회사명
+  contract_type TEXT, --  -- 계약 유형
+  contract_end TEXT, --  -- 계약 종료일
+  days_until_expiry INTEGER, --  -- 만료까지 남은 일수
+  notice_method TEXT, --  -- 통지 방식
+  notice_status TEXT, --  -- 통지 상태
+  recipient TEXT, --  -- 수신처
+  noticed_at TEXT, --  -- 통지 일시
+  noticed_by TEXT, --  -- 통지 처리자
+  note TEXT, --  -- 비고
+  created_at INTEGER, --  -- 생성일시
+  updated_at INTEGER, --  -- 수정일시
+  message_id TEXT --  -- Solapi 메시지 ID
 );
 
 -- kakao_send_logs  -- 카카오 알림톡 발송 이력
@@ -569,76 +569,76 @@ CREATE TABLE IF NOT EXISTS billing (
   company_id TEXT, --  -- 회사 ID
   billing_year INTEGER, --  -- 청구 연도
   billing_month INTEGER, --  -- 청구 월
-  employee_count INTEGER, --  -- employee 횟수
-  amount_per_employee REAL, --  -- 금액 per employee
-  total_amount REAL, --  -- 합계 금액
-  payment_status TEXT DEFAULT 'pending', --  -- 납부 상태
-  payment_date TEXT, --  -- 지급 일자
-  partial_paid_amount REAL DEFAULT 0, --  -- partial 지급액 금액
-  remaining_amount REAL, --  -- remaining 금액
-  due_date TEXT, --  -- due 일자
-  created_date TEXT, --  -- created 일자
+  employee_count INTEGER, --  -- 직원 수
+  amount_per_employee REAL, --  -- 1인당 청구액
+  total_amount REAL, --  -- 총 청구액
+  payment_status TEXT DEFAULT 'pending', --  -- 납부 상태 (pending/partial/paid/unpaid)
+  payment_date TEXT, --  -- 납부일
+  partial_paid_amount REAL DEFAULT 0, --  -- 부분 납부액
+  remaining_amount REAL, --  -- 잔여 청구액
+  due_date TEXT, --  -- 납부 기한
+  created_date TEXT, --  -- 청구 생성일
   note TEXT, --  -- 비고
-  loss_amount REAL, --  -- loss 금액
-  loss_date TEXT, --  -- loss 일자
+  loss_amount REAL, --  -- 손실 처리액
+  loss_date TEXT, --  -- 손실 처리일
   created_at INTEGER, --  -- 생성일시
   updated_at INTEGER --  -- 수정일시
 );
 
 CREATE INDEX IF NOT EXISTS idx_billing_company ON billing(company_id);
 
--- insurance_rates
+-- insurance_rates  -- 4대보험 요율 (연도별)
 CREATE TABLE IF NOT EXISTS insurance_rates (
-  id TEXT PRIMARY KEY,
-  insurance_type TEXT,
-  year INTEGER,
-  period_start TEXT,
-  period_end TEXT,
-  rate REAL,
-  rate_base TEXT,
-  cap_amount REAL,
-  note TEXT,
-  created_at INTEGER,
-  updated_at INTEGER
+  id TEXT PRIMARY KEY, --  -- UUID
+  insurance_type TEXT, --  -- 보험 유형 (national_pension/health/long_term_care/employment)
+  year INTEGER, --  -- 적용 연도
+  period_start TEXT, --  -- 적용 시작일
+  period_end TEXT, --  -- 적용 종료일
+  rate REAL, --  -- 요율 (%)
+  rate_base TEXT, --  -- 요율 기준
+  cap_amount REAL, --  -- 상한액
+  note TEXT, --  -- 비고
+  created_at INTEGER, --  -- 생성일시
+  updated_at INTEGER --  -- 수정일시
 );
 
--- minimum_wages
+-- minimum_wages  -- 최저임금 (연도별)
 CREATE TABLE IF NOT EXISTS minimum_wages (
-  id TEXT PRIMARY KEY,
-  year INTEGER,
-  hourly_wage REAL,
-  monthly_wage REAL,
-  note TEXT,
-  created_at INTEGER,
-  updated_at INTEGER
+  id TEXT PRIMARY KEY, --  -- UUID
+  year INTEGER, --  -- 적용 연도
+  hourly_wage REAL, --  -- 시간당 최저임금
+  monthly_wage REAL, --  -- 월 최저임금 (주40시간 기준)
+  note TEXT, --  -- 비고
+  created_at INTEGER, --  -- 생성일시
+  updated_at INTEGER --  -- 수정일시
 );
 
--- tax_bracket_rows
+-- tax_bracket_rows  -- 소득세 구간별 세액 (간이세액표)
 CREATE TABLE IF NOT EXISTS tax_bracket_rows (
-  id TEXT PRIMARY KEY,
-  year INTEGER NOT NULL,
-  from_amount INTEGER NOT NULL,
-  to_amount INTEGER NOT NULL,
-  dep1_tax INTEGER DEFAULT 0,
-  dep2_tax INTEGER DEFAULT 0,
-  dep3_tax INTEGER DEFAULT 0,
-  dep4_tax INTEGER DEFAULT 0,
-  dep5_tax INTEGER DEFAULT 0,
-  dep6_tax INTEGER DEFAULT 0,
-  dep7_tax INTEGER DEFAULT 0,
-  extra_per_dep INTEGER DEFAULT 0,
-  created_at INTEGER,
-  updated_at INTEGER
+  id TEXT PRIMARY KEY, --  -- UUID
+  year INTEGER NOT NULL, --  -- 적용 연도
+  from_amount INTEGER NOT NULL, --  -- 구간 시작 금액
+  to_amount INTEGER NOT NULL, --  -- 구간 종료 금액
+  dep1_tax INTEGER DEFAULT 0, --  -- 부양가족 1인 세액
+  dep2_tax INTEGER DEFAULT 0, --  -- 부양가족 2인 세액
+  dep3_tax INTEGER DEFAULT 0, --  -- 부양가족 3인 세액
+  dep4_tax INTEGER DEFAULT 0, --  -- 부양가족 4인 세액
+  dep5_tax INTEGER DEFAULT 0, --  -- 부양가족 5인 세액
+  dep6_tax INTEGER DEFAULT 0, --  -- 부양가족 6인 세액
+  dep7_tax INTEGER DEFAULT 0, --  -- 부양가족 7인 세액
+  extra_per_dep INTEGER DEFAULT 0, --  -- 8인 이상 가족 1인당 추가 세액
+  created_at INTEGER, --  -- 생성일시
+  updated_at INTEGER --  -- 수정일시
 );
 
 CREATE INDEX IF NOT EXISTS idx_tax_bracket_rows_year ON tax_bracket_rows(year);
 
--- tax_brackets
+-- tax_brackets  -- 소득세 과세표준 구간
 CREATE TABLE IF NOT EXISTS tax_brackets (
-  id TEXT PRIMARY KEY,
-  year INTEGER NOT NULL,
-  data TEXT NOT NULL,
-  created_at INTEGER,
-  updated_at INTEGER
+  id TEXT PRIMARY KEY, --  -- UUID
+  year INTEGER NOT NULL, --  -- 적용 연도
+  data TEXT NOT NULL, --  -- 구간 데이터 (JSON)
+  created_at INTEGER, --  -- 생성일시
+  updated_at INTEGER --  -- 수정일시
 );
 
