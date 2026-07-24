@@ -117,11 +117,11 @@ ${contactText}
 위 직원에게는 「기간제 및 단시간근로자 보호 등에 관한 법률」의 사전 통지 의무에 따라 안내를 발송하였습니다. 계약 만료일 전에 근로계약의 갱신/연장/종료 여부를 확정하셔서 저희 담당자에게 알려주시기 바랍니다.`;
 
   const inappFoot =
-`───────────────────────────
+`─────────────────────
 인사톡 노무톡 · 대화인사노무파트너스 담당자
-전화: ${contactPhone}
-E-mail: ${contactEmail}
-팩스: ${contactFax}`;
+● 전화: ${contactPhone}
+● 이메일: ${contactEmail}
+● 팩스: ${contactFax}`;
 
   // ── 5. DOM 반영: 근로자 알림톡 (플레인 텍스트) ────────────
   const kakaoPlain = `[근로계약 만료 예정일 안내]\n\n${kakaoBody}\n\n${kakaoFooter}`;
@@ -363,6 +363,18 @@ async function cenBulkSend(method){
   }
   toast(`일괄 ${method} 완료 — 성공 ${ok}건 + 고객사 알림 발송${fail?` / 실패 ${fail}건`:''}`, ok>0?'success':'error');
   await cenRefresh();
+}
+
+/**
+ * 통일된 인앱 알림 푸터 (● 불릿 형식)
+ * 모든 고객사 인앱 메시지 하단에 공통 적용
+ */
+async function _getContactFoot() {
+  const c = await getRepresentativeContact();
+  const phone = c?.phone || '02)3487-8841';
+  const email = c?.email || 'eunyangpark@naver.com';
+  const fax   = c?.fax   || '02)3487-8882';
+  return `─────────────────────\n인사톡 노무톡 · 대화인사노무파트너스 담당자\n● 전화: ${phone}\n● 이메일: ${email}\n● 팩스: ${fax}`;
 }
 
 /**

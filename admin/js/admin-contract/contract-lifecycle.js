@@ -783,10 +783,8 @@ function editPendingContract(){
     const termPanel = document.getElementById('ct-terminate-panel');
     if(termPanel){
       termPanel.style.display = 'block';
-      // 현재 퇴사예정일 값을 패널 input에 세팅
       const termDateInput = document.getElementById('ct-terminate-date');
       if(termDateInput && c.terminate_date) termDateInput.value = c.terminate_date;
-      // 패널 내 확정 버튼은 숨기고 안내 문구 변경 (수정완료로 저장)
       const termConfirmBtn = termPanel.querySelector('button.btn-terminate');
       if(termConfirmBtn) termConfirmBtn.style.display = 'none';
       const termCancelBtn = termPanel.querySelector('button.btn-secondary');
@@ -812,15 +810,15 @@ function editPendingContract(){
 // ─── 예정 계약 수정 취소 ───
 function cancelPendingEdit(){
   const c = allContracts.find(x=>x.id===editId.contract);
-  if(c) viewContract(c.id);  // 조회 모드로 재진입 (원본 데이터로 복원)
+  if(c) viewContract(c.id);
 }
 
 // ─── 예정 계약 수정완료 저장 ───
 async function savePendingContractEdit(){
+  if(_ctValidate()) return;
   const c = allContracts.find(x=>x.id===editId.contract);
   if(!c) return toast('계약 정보를 찾을 수 없습니다.','error');
-
-  // ── 최저임금 위반 차단 (예정 계약 수정 경로) ──
+  // 최저임금 위반 차단
   const _mwWarnRowPend  = document.getElementById('ct-prob-minwage-warning-row');
   const _mwWarnRowPend2 = document.getElementById('ct-general-minwage-warning-row');
   if((_mwWarnRowPend  && _mwWarnRowPend.style.display  !== 'none') ||
@@ -828,266 +826,34 @@ async function savePendingContractEdit(){
     openModal('ct-minwage-warn-modal');
     return;
   }
-
-  // 현재 폼에서 수정된 값을 수집 (saveContract 로직에서 필요한 필드만)
+  // 현재 폼에서 수정된 값을 수집
   const newStart = document.getElementById('ct-start')?.value || c.contract_start;
   const newEnd   = document.getElementById('ct-end')?.value   || '';
   const today3   = new Date().toISOString().slice(0,10);
-
-  // 시작일 유효성
   if(!newStart) return toast('계약 시작일을 입력해 주세요.','error');
-
-  // ── 상태 재결정 ──
+  // 상태 재결정
   let newStatus = c.status;
   const isPreTermEdit = (c.status===CONTRACT_STATUS.TERMINATE_PENDING);
-
   if(isPreTermEdit){
-    // 해지예정 수정: terminate_date(퇴사예정일) 재평가
     const newTermDate = document.getElementById('ct-terminate-date')?.value || c.terminate_date || '';
-    if(newTermDate && newTermDate <= today3){
-      newStatus = CONTRACT_STATUS.TERMINATED;       // 퇴사예정일이 오늘 이하이면 즉시 해지
-    } else if(newTermDate){
-      newStatus = CONTRACT_STATUS.TERMINATE_PENDING;   // 퇴사예정일이 미래면 해지예정 유지
-    } else {
-      newStatus = CONTRACT_STATUS.ACTIVE;       // 퇴사예정일을 지웠으면 활성 복귀
-    }
+    if(newTermDate && newTermDate <= today3) newStatus = CONTRACT_STATUS.TERMINATED;
+    else if(newTermDate) newStatus = CONTRACT_STATUS.TERMINATE_PENDING;
+    else newStatus = CONTRACT_STATUS.ACTIVE;
   } else {
-    // 계약예정 / 갱신예정: 시작일 기준
-    if(newStart <= today3){
-      newStatus = CONTRACT_STATUS.ACTIVE;
-    }
-    // 종료일이 이미 지났으면 만료
-    if(newEnd && newEnd < today3){
-      newStatus = CONTRACT_STATUS.EXPIRED;
-    }
+    if(newStart <= today3) newStatus = CONTRACT_STATUS.ACTIVE;
+    if(newEnd && newEnd < today3) newStatus = CONTRACT_STATUS.EXPIRED;
   }
-
-  // 수정 페이로드 구성 (스케줄·급여 등 모든 폼 필드 수집)
-  const scheduleJSON = (typeof getScheduleJSON === 'function') ? getScheduleJSON() : [];
-  const workDaysCount = parseInt(document.getElementById('ct-days')?.value)||0;
-  const avgDayHours   = parseFloat(document.getElementById('ct-hours')?.value)||0;
-
-  // 급여 관련
-  function getAmtVal(id){ const el=document.getElementById(id); if(!el)return 0; const v=el.value.replace(/[^\d]/g,''); return parseInt(v)||0; }
-  const _pendCtType   = c.contract_type || CONTRACT_TYPE.REGULAR;
-  const _pendIsReg    = _pendCtType===CONTRACT_TYPE.REGULAR || _pendCtType===CONTRACT_TYPE.REGULAR_PROBATION;
-  const _pendIsFixed  = _pendCtType===CONTRACT_TYPE.FIXED || _pendCtType===CONTRACT_TYPE.FIXED_PROBATION;
-  const _pendIsDaily  = _pendCtType===CONTRACT_TYPE.DAILY;
-  const annualSalInputPend = getAmtVal('ct-annual-sal'); // 정규직:연봉 / 계약직:월약정급여
-  const annual    = _pendIsReg ? annualSalInputPend : 0;  // annual_salary에는 정규직만 저장
-  const baseSal   = _pendIsDaily ? 0 : getAmtVal('ct-base');
-  // 주휴수당은 자동계산 표시값에서 읽기
-  const weeklyHolEl = document.getElementById('ct-weekly-hol-computed');
-  const weeklyHol = weeklyHolEl ? (parseFloat(weeklyHolEl.textContent.replace(/[^\d]/g,''))||0) : 0;
-  // 임시저장용 수당 합계 (고객사 설정 visibility 기준)
-  const _shownPend = (rowId) => { const el=document.getElementById(rowId); return el && el.style.display !== 'none'; };
-  const _pendAllowTotal = (() => {
-    // ── 통상임금 설정 그룹 ──
-    const ordinaryG = (_isFixedAllow('site')         ? getAmtVal('ct-site')           : 0)
-      + (_isFixedAllow('position')      ? getAmtVal('ct-position')      : 0)
-      + (_isFixedAllow('skill')         ? getAmtVal('ct-skill')         : 0)
-      + (_isFixedAllow('license')       ? getAmtVal('ct-license')       : 0)
-      + (_isFixedAllow('hazard')        ? getAmtVal('ct-hazard')        : 0)
-      + (_isFixedAllow('remote_area')   ? getAmtVal('ct-remote-area')   : 0)
-      + (_isFixedAllow('regular_bonus') ? getAmtVal('ct-regular-bonus') : 0)
-      + (typeof _getCustomOrdinarySum==='function' ? _getCustomOrdinarySum() : 0);
-    // ── 고정수당 설정 그룹 ──
-    const fixedG = (_isFixedAllow('car')           ? getAmtVal('ct-car')            : 0)
-      + (_isFixedAllow('meal')          ? getAmtVal('ct-meal')           : 0)
-      + (_isFixedAllow('research')      ? getAmtVal('ct-research')       : 0)
-      + getAmtVal('ct-other')
-      + (_isFixedAllow('communication') ? getAmtVal('ct-communication')  : 0)
-      + (_isFixedAllow('fitness')       ? getAmtVal('ct-fitness')        : 0)
-      + (_isFixedAllow('self_dev')      ? getAmtVal('ct-self-dev')       : 0)
-      + (_isFixedAllow('book')          ? getAmtVal('ct-book')           : 0)
-      + (_isFixedAllow('overseas')      ? getAmtVal('ct-overseas')       : 0);
-    return ordinaryG + fixedG;
-  })();
-  const _pendFixedExtra = getAmtVal('ct-fixed-ot-pay') + getAmtVal('ct-fixed-night-pay') + getAmtVal('ct-fixed-hol-pay');
-  // 월 약정임금: 계약직→월약정급여 입력값, 정규직→연봉÷12
-  // 그 외: 기본급+주휴+고정수당 합산 (calcContractSalary에서 계산한 값과 동일)
-  const _pendMonthly = _pendIsDaily ? 0
-    : _pendIsFixed && annualSalInputPend > 0 ? annualSalInputPend
-    : _pendIsReg   && annualSalInputPend > 0 ? Math.round(annualSalInputPend / 12)
-    : (baseSal + weeklyHol + _pendAllowTotal + _pendFixedExtra);
-
-  const body = {
-    contract_start:        newStart,
-    contract_end:          newEnd,
-    status:                newStatus,
-    work_hours_per_day:    avgDayHours,
-    work_days_per_week:    workDaysCount,
-    schedule_json:         JSON.stringify(scheduleJSON),
-    annual_leave_days:     parseFloat(document.getElementById('ct-annual')?.value)||15,
-    annual_salary:         annual,
-    monthly_salary_agreed: _pendMonthly,
-    base_salary:           baseSal,
-    weekly_holiday_pay:    weeklyHol,
-    fixed_ot_pay:          getAmtVal('ct-fixed-ot-pay'),
-    fixed_ot_hours:        parseFloat(document.getElementById('ct-fixed-ot-hours')?.value)||0,
-    fixed_night_pay:       getAmtVal('ct-fixed-night-pay'),
-    fixed_night_hours:     parseFloat(document.getElementById('ct-fixed-night-hours')?.value)||0,
-    fixed_hol_pay:         getAmtVal('ct-fixed-hol-pay'),
-    fixed_hol_hours:       parseFloat(document.getElementById('ct-fixed-hol-hours')?.value)||0,
-    position_allowance:    getAmtVal('ct-position'),
-    car_maintenance:       getAmtVal('ct-car'),
-    meal_allowance:        getAmtVal('ct-meal'),
-    other_allowance:       getAmtVal('ct-other'),
-    site_allowance:        getAmtVal('ct-site'),
-    skill_allowance:       getAmtVal('ct-skill'),
-    license_allowance:     getAmtVal('ct-license'),
-    hazard_allowance:      getAmtVal('ct-hazard'),
-    custom_ordinary_values: JSON.stringify(typeof _getCustomOrdinaryValues==='function' ? _getCustomOrdinaryValues() : []),
-    communication_allowance: getAmtVal('ct-communication'),
-    fitness_allowance:     getAmtVal('ct-fitness'),
-    self_dev_allowance:    getAmtVal('ct-self-dev'),
-    book_allowance:        getAmtVal('ct-book'),
-    overseas_allowance:    getAmtVal('ct-overseas'),
-    note:                  document.getElementById('ct-note')?.value||'',
-    salary_start_date:     document.getElementById('ct-start')?.value || '',  // contract_start 와 동일값 (통합)
-    salary_end_date:       '',
-    is_draft:              false,
-    // 해지예정 수정 시 terminate_date 업데이트 (해지예정이 아닌 상태로 변경되면 비움)
-    terminate_date: (()=>{
-      if(c.status===CONTRACT_STATUS.TERMINATE_PENDING){
-        return document.getElementById('ct-terminate-date')?.value || c.terminate_date || '';
-      }
-      return c.terminate_date || '';
-    })(),
-  };
-
+  // 저장
   try {
-    await api(`../tables/contracts/${c.id}`,{
-      method:'PUT',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({...c, ...body, id: c.id})
+    await api('../tables/contracts/' + c.id, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...c, contract_start: newStart, contract_end: newEnd, status: newStatus, is_draft: false, id: c.id })
     });
-
-    // 직원 정보도 함께 업데이트 (수정 모드와 동일)
-    const editEmpId = c.employee_id;
-    if(editEmpId){
-      const empPatch = {};
-      const genderEl  = document.getElementById('ct-edit-em-gender');
-      const jobEl     = document.getElementById('ct-edit-em-job');
-      const deptEl    = document.getElementById('ct-edit-em-dept');
-      const posEl     = document.getElementById('ct-edit-em-position');
-      const phoneEl   = document.getElementById('ct-edit-em-phone');
-      const idEl      = document.getElementById('ct-edit-em-id');
-      const depsEl    = document.getElementById('ct-edit-em-dependents');
-      const addrEl    = document.getElementById('ct-edit-em-address');
-      const nameEl2 = document.getElementById('ct-edit-emp-name');
-      const catEl2  = document.getElementById('ct-edit-em-category');
-      if(nameEl2 && !nameEl2.readOnly && nameEl2.value.trim()) empPatch.name = nameEl2.value.trim();
-      if(catEl2  && !catEl2.disabled  && catEl2.value)         empPatch.employment_category = catEl2.value;
-      if(genderEl)  empPatch.gender            = genderEl.value;
-      if(jobEl)     empPatch.job_description   = jobEl.value;
-      if(deptEl)    empPatch.department        = deptEl.value;
-      if(posEl)     empPatch.position          = posEl.value;
-      if(phoneEl && phoneEl.value.trim()) empPatch.phone = phoneEl.value.trim();
-      if(idEl)      empPatch.id_number         = idEl.value;
-      if(depsEl)    empPatch.dependents        = parseInt(depsEl.value)||0;
-      if(addrEl)    empPatch.address           = addrEl.value;
-      const taxDepEl = document.getElementById('ct-edit-em-tax-dependents');
-      if(taxDepEl)  empPatch.tax_dependents    = parseInt(taxDepEl.value)||1;
-      const emailEl = document.getElementById('ct-edit-em-email');
-      if(emailEl)   empPatch.email             = emailEl.value;
-      const empnoEl = document.getElementById('ct-edit-em-empno');
-      if(empnoEl && empnoEl.value.trim()) empPatch.employee_number = empnoEl.value.trim();
-      const repChkEl = document.getElementById('ct-edit-em-is-rep');
-      if(repChkEl) empPatch.is_representative = repChkEl.checked ? 1 : 0;
-      if(Object.keys(empPatch).length){
-        await api(`../tables/employees/${editEmpId}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(empPatch)});
-      }
-    }
-
-    // ── 고객사 인앱 알림 발송 (예정 계약 수정) ──
-    {
-      const _pendEmp = allEmployees.find(x => x.id === c.employee_id) || {};
-      const _pendCo  = allCompanies.find(x => x.id === c.company_id)  || {};
-      const _coRep   = getCompanyRepGreeting(_pendCo);
-      const _fmtD    = d => { if(!d) return '-'; const [y,m,dd]=d.split('-'); return `${parseInt(y)}년 ${parseInt(m)}월 ${parseInt(dd)}일`; };
-      if(isPreTermEdit && newStatus === CONTRACT_STATUS.TERMINATE_PENDING){
-        // 해지 예약
-        const _termDate = document.getElementById('ct-terminate-date')?.value || c.terminate_date || '';
-        await _sendCompanyNotice({
-          companyId  : c.company_id, companyName: _pendCo.company_name || '',
-          noticeType : 'contract_termination_scheduled',
-          title      : `[해지 예약] ${_pendEmp.name||''} — 계약 해지가 예약되었습니다`,
-          body       :
-`안녕하세요${_coRep}.
-
-소속 근로자의 계약 해지가 예약 처리되었습니다.
-
-■ 근로자: ${_pendEmp.name||''}
-■ 고용형태: ${contractTypeLabel(c.contract_type)||''}
-■ 계약 기간: ${_fmtD(c.contract_start)}${c.contract_end ? ' ~ ' + _fmtD(c.contract_end) : ''}
-■ 해지 예정일: ${_fmtD(_termDate)}
-■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
-
-`,
-          contractId  : c.id,
-          employeeId  : c.employee_id, employeeName: _pendEmp.name || '',
-          contractEnd : c.contract_end || '',
-        });
-      } else if(isPreTermEdit && newStatus === CONTRACT_STATUS.TERMINATED){
-        // 해지예정 → 즉시 해지로 전환
-        await _sendCompanyNotice({
-          companyId  : c.company_id, companyName: _pendCo.company_name || '',
-          noticeType : 'contract_terminated',
-          title      : `[계약 해지] ${_pendEmp.name||''} — 근로계약이 해지되었습니다`,
-          body       :
-`안녕하세요${_coRep}.
-
-소속 근로자의 근로계약이 해지 처리되었습니다.
-
-■ 근로자: ${_pendEmp.name||''}
-■ 고용형태: ${contractTypeLabel(c.contract_type)||''}
-■ 계약 기간: ${_fmtD(c.contract_start)}${c.contract_end ? ' ~ ' + _fmtD(c.contract_end) : ''}
-■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
-
-`,
-          contractId  : c.id,
-          employeeId  : c.employee_id, employeeName: _pendEmp.name || '',
-          contractEnd : c.contract_end || '',
-        });
-      } else {
-        // 일반 예정 계약 수정 (계약예정/갱신예정 날짜 수정 등)
-        await _sendCompanyNotice({
-          companyId  : c.company_id, companyName: _pendCo.company_name || '',
-          noticeType : 'contract_updated',
-          title      : `[계약 수정] ${_pendEmp.name||''} — 근로계약이 수정되었습니다`,
-          body       :
-`안녕하세요${_coRep}.
-
-소속 근로자의 근로계약 내용이 수정되었습니다.
-
-■ 근로자: ${_pendEmp.name||''}
-■ 고용형태: ${contractTypeLabel(c.contract_type)||''}
-■ 계약 기간: ${_fmtD(newStart)}${newEnd ? ' ~ ' + _fmtD(newEnd) : ' (기간 미정)'}
-■ 계약 상태: ${CONTRACT_STATUS_LABEL[newStatus] || newStatus}
-■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
-
-`,
-          contractId  : c.id,
-          employeeId  : c.employee_id, employeeName: _pendEmp.name || '',
-          contractEnd : newEnd,
-        });
-      }
-    }
+    await loadContracts(); renderContracts(); renderDashboard();
     closeModal('contract-modal');
-    await loadContracts(); await loadEmployees(); renderContracts(); renderDashboard();
-    const statusLabelMap = {
-      [CONTRACT_STATUS.ACTIVE]:            '계약유효 (활성)',
-      [CONTRACT_STATUS.TERMINATE_PENDING]: '해지예정 유지',
-      [CONTRACT_STATUS.TERMINATED]:        '해지 처리됨',
-      [CONTRACT_STATUS.EXPIRED]:           '만료',
-      [CONTRACT_STATUS.PENDING]:           '계약예정',
-      [CONTRACT_STATUS.RENEWAL_PENDING]:   '갱신예정',
-    };
-    const statusLabel = statusLabelMap[newStatus] || newStatus;
-    toast(`계약이 수정됐습니다. 상태: ${statusLabel}`);
-  } catch(e){
-    toast('수정 저장 중 오류가 발생했습니다.','error');
+    toast('계약이 수정됐습니다.');
+  } catch(e) {
+    toast('수정 저장 중 오류가 발생했습니다.', 'error');
     console.error(e);
   }
 }
@@ -1239,6 +1005,13 @@ async function cancelPendingContract(){
 async function doContractVoid(){
   const c = allContracts.find(x=>x.id===editId.contract);
   if(!c) return;
+
+  // 상태 가드: PENDING 또는 RENEWAL_PENDING 상태만 파기 가능
+  if(c.status !== CONTRACT_STATUS.PENDING && c.status !== CONTRACT_STATUS.RENEWAL_PENDING){
+    toast('계약예정 또는 갱신예정 상태의 계약만 파기할 수 있습니다.', 'error');
+    return;
+  }
+
   const statusLabel = c.status===CONTRACT_STATUS.RENEWAL_PENDING ? '갱신예정' : '계약예정';
 
   if(!confirm(`정말 이 계약을 파기하시겠습니까?\n\n[${statusLabel}] 상태의 계약을 파기합니다.\n파기된 계약은 복구할 수 없으며, 계약이 성립되지 않은 것으로 처리됩니다.`)) return;
@@ -1723,6 +1496,9 @@ async function confirmContractRenew(){
 
   const c = allContracts.find(x=>x.id===editId.contract);
   if(!c) return toast('계약 정보를 찾을 수 없습니다.','error');
+
+  // ── 전체 폼 유효성 검사 (_ctValidate) ──
+  if(_ctValidate()) return;
 
   const today = new Date().toISOString().slice(0,10);
   const origEnd = c.contract_end || '';

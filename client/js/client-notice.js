@@ -21,11 +21,13 @@ function _notifDday(dateStr){
 /* ── 알림 아이콘 타입별 ── */
 function _notifIcon(type){
   const map = {
-    'contract_expiry':  { icon:'fas fa-file-contract', bg:'linear-gradient(135deg,#f59e0b,#d97706)' },
-    'contract_renewal': { icon:'fas fa-sync-alt',       bg:'linear-gradient(135deg,#10b981,#059669)' },
-    'payment':          { icon:'fas fa-won-sign',        bg:'linear-gradient(135deg,#3b82f6,#2563eb)' },
-    'notice':           { icon:'fas fa-bullhorn',        bg:'linear-gradient(135deg,#8b5cf6,#7c3aed)' },
-    'welcome':          { icon:'fas fa-handshake',       bg:'linear-gradient(135deg,#06b6d4,#0891b2)' },
+    'contract_expiry':     { icon:'fas fa-file-contract', bg:'linear-gradient(135deg,#f59e0b,#d97706)' },
+    'contract_renewal':    { icon:'fas fa-sync-alt',       bg:'linear-gradient(135deg,#10b981,#059669)' },
+    'contract_dispatched': { icon:'fas fa-paper-plane',    bg:'linear-gradient(135deg,#3b82f6,#2563eb)' },
+    'payslip_dispatched':  { icon:'fas fa-file-invoice',   bg:'linear-gradient(135deg,#8b5cf6,#7c3aed)' },
+    'payment':             { icon:'fas fa-won-sign',        bg:'linear-gradient(135deg,#3b82f6,#2563eb)' },
+    'notice':              { icon:'fas fa-bullhorn',        bg:'linear-gradient(135deg,#8b5cf6,#7c3aed)' },
+    'welcome':             { icon:'fas fa-handshake',       bg:'linear-gradient(135deg,#06b6d4,#0891b2)' },
   };
   return map[type] || { icon:'fas fa-bell', bg:'linear-gradient(135deg,#4f46e5,#6366f1)' };
 }

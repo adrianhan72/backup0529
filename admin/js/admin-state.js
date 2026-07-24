@@ -867,6 +867,9 @@ async function showPage(name,el){
   if(name==='admin-accounts'){
     renderAdminAccounts();
   }
+  if(name==='system-settings'){
+    renderSystemSettings();
+  }
   if(name==='standards'){
     renderInsuranceRates();
     renderMinimumWages();

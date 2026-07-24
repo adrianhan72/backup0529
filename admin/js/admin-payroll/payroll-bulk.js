@@ -237,20 +237,30 @@ async function _generatePayslipBlob(payrollId){
   });
 }
 
-/* 카카오 알림톡 발송 (stub → 추후 실제 API 연동) */
+/* 카카오 알림톡 발송 */
 async function _sendKakaoAlimtalk(phone, fileName, file){
-  // ── 실제 카카오 알림톡 API 연동 시 이 함수를 교체하세요 ──
-  // 현재는 파일 등록만 수행하고 성공으로 처리합니다.
-  await new Promise(r=>setTimeout(r, 400)); // 네트워크 지연 시뮬레이션
-  window._bulkPayslipFiles = window._bulkPayslipFiles || [];
-  window._bulkPayslipFiles.push({ phone, fileName, file });
-  // TODO: 실제 발송 API 호출
-  // const form = new FormData();
-  // form.append('phone', phone);
-  // form.append('file', file, fileName);
-  // const res = await fetch('/api/kakao/send', { method:'POST', body:form });
-  // if(!res.ok) throw new Error('발송 실패');
-  return true; // 성공
+  try {
+    const res = await fetch('/api/kakao/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        to: phone,
+        templateId: 'PAYSLIP_001',
+        type: 'alimtalk',
+        variables: {
+          '#{filename}': fileName,
+        },
+      }),
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || `발송 실패 (HTTP ${res.status})`);
+    }
+    return true;
+  } catch (err) {
+    console.error('[카카오 알림톡] 발송 실패:', err.message);
+    throw err;
+  }
 }
 
 /* 일괄 발송 로그 저장 — payroll_send_logs 테이블에 기록 */

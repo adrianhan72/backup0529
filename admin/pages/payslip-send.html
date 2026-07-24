@@ -4,6 +4,7 @@
       <div class="std-tab-bar" style="margin-top:0;">
         <button class="std-tab active" id="pss-tab-unsent" onclick="_pssSwitchTab('unsent')">미발송 명세서</button>
         <button class="std-tab" id="pss-tab-history" onclick="_pssSwitchTab('history')">발송 이력</button>
+        <button class="std-tab" id="pss-tab-preview" onclick="_pssSwitchTab('preview')">메시지 예시</button>
       </div>
 
       <!-- 미발송 명세서 섹션 -->
@@ -135,5 +136,12 @@
 
       </div><!-- /std-tab-panel -->
       </div><!-- /pss-history-section -->
+
+      <!-- 메시지 예시 섹션 -->
+      <div id="pss-preview-section" style="display:none;">
+      <div class="std-tab-panel">
+        <div id="pss-preview-content"></div>
+      </div>
+      </div><!-- /pss-preview-section -->
 
     </div><!-- /page-payslip-send -->

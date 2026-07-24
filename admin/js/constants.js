@@ -554,6 +554,7 @@ const PAGE_LABELS = Object.freeze({
   severance:              '퇴직급여 관리',
   'annual-leave':         '연차 관리',
   'leave-promotion':      '사용촉진 발송 이력',
+  'system-settings':      '시스템 설정',
 });
 
 

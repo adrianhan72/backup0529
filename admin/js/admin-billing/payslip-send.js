@@ -75,8 +75,22 @@ function _pssSwitchTab(tab){
   document.getElementById('pss-tab-'+tab)?.classList.add('active');
   document.getElementById('pss-unsent-section').style.display = tab==='unsent' ? '' : 'none';
   document.getElementById('pss-history-section').style.display = tab==='history' ? '' : 'none';
+  const previewEl = document.getElementById('pss-preview-section');
+  if(previewEl) previewEl.style.display = tab==='preview' ? '' : 'none';
   if(tab === 'history'){ _pssPopulateHistoryCoFilter(); renderPssLogs(); }
   if(tab === 'unsent'){ renderPssUnsentList(); }
+  if(tab === 'preview'){ _pssRenderPreview(); }
+}
+
+// ── 메시지 예시 렌더 ──
+function _pssRenderPreview(){
+  const container = document.getElementById('pss-preview-content');
+  if(!container) return;
+  if(typeof msgRenderAllPreviews === 'function'){
+    container.innerHTML = msgRenderAllPreviews('payslip');
+  } else {
+    container.innerHTML = '<p style="padding:20px;color:#9ca3af;">메시지 템플릿을 불러올 수 없습니다.</p>';
+  }
 }
 
 // ─── 고객사 드롭다운 (미발송 섹션) ───
@@ -324,6 +338,9 @@ async function _pssKakaoSendRow(payrollId, empId){
     _allSendLogs.push(logBody);
     _updateDashUnsentBanner();
 
+    // ── 고객사 인앱 알림 ──
+    _pssNotifyCompany(empId, empName, yr, mo, 'kakao');
+
     toast(`✅ ${empName} — ${yr}년 ${mo}월 알림톡 발송 완료`, 'success');
     renderPssUnsentList(); renderPssLogs(); renderPssMonthTabs(); _pssUpdateStats();
   } catch(err){
@@ -382,6 +399,9 @@ async function _pssEmailSendRow(payrollId, empId){
     _allSendLogs.push(logBody);
     _updateDashUnsentBanner();
 
+    // ── 고객사 인앱 알림 ──
+    _pssNotifyCompany(empId, empName, yr, mo, 'email');
+
     alert(`${empName}의 ${yr}년 ${mo}월 급여명세서를 이메일로 발송하였습니다.`);
     renderPssUnsentList(); renderPssLogs(); renderPssMonthTabs(); _pssUpdateStats();
   } catch(err){
@@ -425,6 +445,9 @@ async function _pssManualDoneRow(payrollId, empId){
     _pssSendLogs.push(logBody);
     _allSendLogs.push(logBody);
     _updateDashUnsentBanner();
+
+    // ── 고객사 인앱 알림 ──
+    _pssNotifyCompany(empId, empName, yr, mo, 'manual');
 
     toast(`✔ ${empName} — 수동 교부 완료 처리됐습니다.`, 'success');
     renderPssUnsentList(); renderPssLogs(); renderPssMonthTabs(); _pssUpdateStats();
@@ -718,6 +741,23 @@ async function confirmPssSend(){
       _pssSendLogs.push(body);
       _allSendLogs.push(body);
       _updateDashUnsentBanner();
+
+      // ── 고객사 인앱 알림 발송 ──
+      const _pco = allCompanies.find(x => x.id === _pssCompanyId) || {};
+      if (typeof _sendCompanyNotice === 'function') {
+        const _methodLabel = method === 'kakao' ? '카카오 알림톡' : method === 'email' ? '이메일' : '수동교부';
+        const _now = new Date();
+        const _nowStr = `${_now.getFullYear()}. ${_now.getMonth()+1}. ${_now.getDate()}. ` +
+          `${String(_now.getHours()).padStart(2,'0')}:${String(_now.getMinutes()).padStart(2,'0')}`;
+        await _sendCompanyNotice({
+          companyId: _pssCompanyId, companyName: _pssCompanyName,
+          noticeType: 'payslip_dispatched',
+          title: `[급여명세서 발송] ${empName} — ${year}년 ${month}월 급여명세서가 발송되었습니다`,
+          body: `근로기준법 제48조(임금대장 및 급여명세서)에 따라 소속 근로자 ${empName}에게 ${year}년 ${month}월분 급여명세서가 ${_methodLabel}(으)로 발송 완료되었음을 알려드립니다.\n\n■ 근로자: ${empName}\n■ 대상 년월: ${year}년 ${month}월\n■ 발송 방법: ${_methodLabel}\n■ 발송 시각: ${_nowStr}\n`,
+          employeeId: empId, employeeName: empName,
+        });
+      }
+
       closePssConfirmModal();
       toast(`✅ ${empName} — ${year}년 ${month}월 발송 처리 완료`, 'success');
       renderPssUnsentList(); renderPssLogs(); renderPssMonthTabs(); _pssUpdateStats();
@@ -1055,6 +1095,24 @@ async function confirmPssBulkSend(){
 
   // ── kakao: PDF 생성 → 발송 → 로그 저장 순차 플로우 ──
   _pssBulkSendRunning = true;
+
+// ── 고객사 인앱 알림 헬퍼 ──
+async function _pssNotifyCompany(empId, empName, yr, mo, method) {
+  if (!_pssCompanyId || typeof _sendCompanyNotice !== 'function') return;
+  const _methodLabel = method === 'kakao' ? '카카오 알림톡' : method === 'email' ? '이메일' : '수동교부';
+  const _now = new Date();
+  const _nowStr = `${_now.getFullYear()}. ${_now.getMonth()+1}. ${_now.getDate()}. ` +
+    `${String(_now.getHours()).padStart(2,'0')}:${String(_now.getMinutes()).padStart(2,'0')}`;
+  try {
+    await _sendCompanyNotice({
+      companyId: _pssCompanyId, companyName: _pssCompanyName,
+      noticeType: 'payslip_dispatched',
+      title: `[급여명세서 발송] ${empName} — ${yr}년 ${mo}월 급여명세서가 발송되었습니다`,
+      body: `근로기준법 제48조(임금대장 및 급여명세서)에 따라 소속 근로자 ${empName}에게 ${yr}년 ${mo}월분 급여명세서가 ${_methodLabel}(으)로 발송 완료되었음을 알려드립니다.\n\n■ 근로자: ${empName}\n■ 대상 년월: ${yr}년 ${mo}월\n■ 발송 방법: ${_methodLabel}\n■ 발송 시각: ${_nowStr}\n`,
+      employeeId: empId, employeeName: empName,
+    });
+  } catch(e) { console.warn('[_pssNotifyCompany 오류]', e); }
+}
 
   sendBtn.disabled   = true;
   sendBtn.innerHTML  = '<i class="fas fa-spinner fa-spin"></i> 발송 중...';

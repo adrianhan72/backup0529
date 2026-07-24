@@ -4,6 +4,7 @@
       <div class="std-tab-bar" style="margin-top:0;">
         <button class="std-tab active" id="cns-tab-unsent" onclick="_cnsSwitchTab('unsent')">미발송 동의서</button>
         <button class="std-tab" id="cns-tab-history" onclick="_cnsSwitchTab('history')">발송 이력</button>
+        <button class="std-tab" id="cns-tab-preview" onclick="_cnsSwitchTab('preview')">메시지 예시</button>
       </div>
 
       <!-- 미발송 동의서 섹션 -->
@@ -145,4 +146,11 @@
 
       </div><!-- /std-tab-panel -->
       </div><!-- /cns-history-section -->
+
+      <!-- 메시지 예시 섹션 -->
+      <div id="cns-preview-section" style="display:none;">
+      <div class="std-tab-panel">
+        <div id="cns-preview-content"></div>
+      </div>
+      </div><!-- /cns-preview-section -->
     </div><!-- /page-consent-dispatch -->

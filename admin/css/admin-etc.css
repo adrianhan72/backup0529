@@ -417,6 +417,111 @@
       display:inline-flex;align-items:center;gap:4px;
     }
     .filt-btn-search:hover{background:#b91c1c;border-color:#b91c1c;}
+
+/* ═══════════════════════════════════════════
+   메시지 예시 미리보기 (발송 페이지 공통)
+   ═══════════════════════════════════════════ */
+.msg-preview-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+@media (max-width: 860px) {
+  .msg-preview-grid { grid-template-columns: 1fr; }
+}
+.msg-preview-col {
+  display: flex;
+  flex-direction: column;
+}
+.msg-preview-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #374151;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.msg-preview-label i {
+  font-size: 14px;
+  color: #6366f1;
+}
+.msg-preview {
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.msg-preview-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+}
+.msg-preview-kakao .msg-preview-header {
+  background: #FAE100;
+  color: #3C1E1E;
+}
+.msg-preview-email .msg-preview-header {
+  background: #2563eb;
+}
+.msg-preview-header i,
+.msg-preview-header svg {
+  font-size: 16px;
+}
+.msg-preview-subject {
+  padding: 10px 16px;
+  font-size: 12.5px;
+  color: #374151;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+.msg-preview-body {
+  padding: 16px;
+  font-size: 13px;
+  line-height: 1.8;
+  color: #1e293b;
+  white-space: pre-wrap;
+  word-break: break-word;
+  flex: 1;
+  font-family: 'Noto Sans KR', sans-serif;
+}
+.msg-preview-kakao .msg-preview-body {
+  background: #fffef2;
+}
+.msg-preview-email .msg-preview-body {
+  background: #fff;
+}
+.msg-info-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 9px;
+  font-size: 12px;
+  color: #1e40af;
+  line-height: 1.6;
+}
+.msg-info-box i {
+  font-size: 14px;
+  color: #3b82f6;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.msg-preview-inapp .msg-preview-body {
+  background: #f5f3ff;
+  font-size: 12.5px;
+  line-height: 1.7;
+}
     .filt-label {
       font-size:11.5px;color:#6b7280;font-weight:600;white-space:nowrap;
     }

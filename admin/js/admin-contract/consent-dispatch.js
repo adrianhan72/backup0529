@@ -11,18 +11,33 @@ let _cnsUnsentCoId = '';
 function _cnsSwitchTab(tab){
   const unsentEl = document.getElementById('cns-unsent-section');
   const historyEl = document.getElementById('cns-history-section');
+  const previewEl = document.getElementById('cns-preview-section');
   const tabUnsent = document.getElementById('cns-tab-unsent');
   const tabHistory = document.getElementById('cns-tab-history');
+  const tabPreview = document.getElementById('cns-tab-preview');
+  [tabUnsent, tabHistory, tabPreview].forEach(b => b?.classList.remove('active'));
+  [unsentEl, historyEl, previewEl].forEach(el => { if(el) el.style.display = 'none'; });
   if(tab === 'unsent'){
     if(unsentEl) unsentEl.style.display = '';
-    if(historyEl) historyEl.style.display = 'none';
     if(tabUnsent) tabUnsent.classList.add('active');
-    if(tabHistory) tabHistory.classList.remove('active');
-  } else {
-    if(unsentEl) unsentEl.style.display = 'none';
+  } else if(tab === 'history'){
     if(historyEl) historyEl.style.display = '';
-    if(tabUnsent) tabUnsent.classList.remove('active');
     if(tabHistory) tabHistory.classList.add('active');
+  } else if(tab === 'preview'){
+    if(previewEl) previewEl.style.display = '';
+    if(tabPreview) tabPreview.classList.add('active');
+    _cnsRenderPreview();
+  }
+}
+
+// ── 메시지 예시 렌더 ──
+function _cnsRenderPreview(){
+  const container = document.getElementById('cns-preview-content');
+  if(!container) return;
+  if(typeof msgRenderAllPreviews === 'function'){
+    container.innerHTML = msgRenderAllPreviews('consent');
+  } else {
+    container.innerHTML = '<p style="padding:20px;color:#9ca3af;">메시지 템플릿을 불러올 수 없습니다.</p>';
   }
 }
 

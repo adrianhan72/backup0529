@@ -249,12 +249,11 @@ async function _2yrSendNotice(empId){
 let _2yrContactCache = null;
 function _2yrGetContactFoot(){
   if(!_2yrContactCache){
-    // 비동기 로드 전 기본값
     getRepresentativeContact().then(c => { _2yrContactCache = c; });
-    return `─────────────────────\n인사톡 노무톡 · 대화인사노무파트너스 담당자\n전화: 02)3487-8841\nE-mail: eunyangpark@naver.com\n팩스: 02)3487-8882`;
+    return `─────────────────────\n인사톡 노무톡 · 대화인사노무파트너스 담당자\n● 전화: 02)3487-8841\n● 이메일: eunyangpark@naver.com\n● 팩스: 02)3487-8882`;
   }
   const c = _2yrContactCache;
-  return `─────────────────────\n인사톡 노무톡 · 대화인사노무파트너스 담당자\n전화: ${c.phone || '02)3487-8841'}\nE-mail: ${c.email || 'eunyangpark@naver.com'}\n팩스: ${c.fax || '02)3487-8882'}`;
+  return `─────────────────────\n인사톡 노무톡 · 대화인사노무파트너스 담당자\n● 전화: ${c.phone || '02)3487-8841'}\n● 이메일: ${c.email || 'eunyangpark@naver.com'}\n● 팩스: ${c.fax || '02)3487-8882'}`;
 }
 
 // ==================================================================

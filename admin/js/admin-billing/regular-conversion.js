@@ -290,7 +290,7 @@ function renderRcTemplate(){
   const contactPhone = _rcContactCache?.phone || '02)3487-8841';
   const contactEmail = _rcContactCache?.email || 'eunyangpark@naver.com';
   const contactFax   = _rcContactCache?.fax   || '02)3487-8882';
-  const contactFoot  = `─────────────────────\n인사톡 노무톡 · 대화인사노무파트너스 담당자\n전화: ${contactPhone}\nE-mail: ${contactEmail}\n팩스: ${contactFax}`;
+  const contactFoot  = `─────────────────────\n인사톡 노무톡 · 대화인사노무파트너스 담당자\n● 전화: ${contactPhone}\n● 이메일: ${contactEmail}\n● 팩스: ${contactFax}`;
 
   // ──────────────────────────────────────────────
   // 섹션 A: 사전 고지 (700~730일)

@@ -144,7 +144,8 @@ CREATE TABLE IF NOT EXISTS representative_contact (
   outbound_email TEXT DEFAULT NULL,              -- 외부 발송용 이메일 주소
   outbound_password TEXT DEFAULT NULL,           -- 외부 발송용 이메일 비밀번호
   outbound_smtp_host TEXT DEFAULT NULL,          -- SMTP 호스트
-  outbound_smtp_port TEXT DEFAULT NULL           -- SMTP 포트
+  outbound_smtp_port TEXT DEFAULT NULL,           -- SMTP 포트
+  msg_body_rules TEXT DEFAULT NULL               -- 메시지 본문 규칙 (JSON)
 );
 
 
@@ -337,6 +338,7 @@ CREATE TABLE IF NOT EXISTS contract_expiry_notice (
   recipient TEXT,                                -- 수신자 (전화번호 or 이메일)
   noticed_at TEXT,                               -- 통지일시 (ISO 8601)
   noticed_by TEXT,                               -- 통지자
+  message_id TEXT,                               -- 솔라피 메시지 ID (알림톡 발송 성공 시)
   note TEXT,                                     -- 비고
   created_at INTEGER,                            -- 생성일시 (unix ms)
   updated_at INTEGER                             -- 수정일시 (unix ms)
@@ -701,5 +703,30 @@ CREATE TABLE IF NOT EXISTS annual_leave_promotions (
   note TEXT,                                     -- 비고
   created_at INTEGER,                            -- 생성일시 (unix ms)
   updated_at INTEGER                             -- 수정일시 (unix ms)
+);
+
+
+-- =============================================================================
+--  SECTION 7: 카카오톡 발송 — 솔라피 연동
+-- =============================================================================
+
+-- -------------------------------------------------
+-- Table: kakao_send_logs (카카오톡 발송 이력)
+-- -------------------------------------------------
+CREATE TABLE IF NOT EXISTS kakao_send_logs (
+  id TEXT PRIMARY KEY,                           -- UUID
+  send_type TEXT NOT NULL DEFAULT 'alimtalk',    -- 발송 유형 (alimtalk:알림톡, friendtalk:친구톡, sms:SMS)
+  template_id TEXT,                              -- 카카오 비즈니스 템플릿 ID
+  recipient TEXT NOT NULL,                       -- 수신자 전화번호
+  variables TEXT,                                -- 템플릿 변수 (JSON)
+  message_id TEXT,                               -- 솔라피 메시지 ID
+  group_id TEXT,                                 -- 솔라피 그룹 ID
+  status TEXT DEFAULT 'pending',                 -- 발송 상태 (pending:대기, sent:성공, failed:실패)
+  error_message TEXT,                            -- 실패 사유
+  related_table TEXT,                            -- 연관 테이블명 (ex: 'contract_expiry_notice', 'payroll_send_logs')
+  related_id TEXT,                               -- 연관 레코드 ID
+  retry_count INTEGER DEFAULT 0,                 -- 재시도 횟수
+  created_at INTEGER,                            -- 생성일시 (unix ms)
+  sent_at TEXT                                   -- 발송 성공 일시 (ISO 8601)
 );
 

@@ -37,6 +37,7 @@ const PAGE_REGISTRY = {
   'probation-mgmt':       { external: true },
   'annual-leave':         { external: true },
   'leave-promotion':      { external: true },
+  'system-settings':      { external: true },
 };
 /* ===================================================================
  * 내부 상태

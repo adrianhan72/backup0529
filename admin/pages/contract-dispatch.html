@@ -4,6 +4,7 @@
       <div class="std-tab-bar" style="margin-top:0;">
         <button class="std-tab active" id="cdp-tab-unsent" onclick="_cdpSwitchTab('unsent')">미발송 계약서</button>
         <button class="std-tab" id="cdp-tab-history" onclick="_cdpSwitchTab('history')">발송 이력</button>
+        <button class="std-tab" id="cdp-tab-preview" onclick="_cdpSwitchTab('preview')">메시지 예시</button>
       </div>
 
       <!-- 미발송 계약서 섹션 -->
@@ -162,4 +163,11 @@
 
       </div><!-- /std-tab-panel -->
       </div><!-- /cdp-history-section -->
+
+      <!-- 메시지 예시 섹션 -->
+      <div id="cdp-preview-section" style="display:none;">
+      <div class="std-tab-panel">
+        <div id="cdp-preview-content"></div>
+      </div>
+      </div><!-- /cdp-preview-section -->
     </div><!-- /page-contract-dispatch -->

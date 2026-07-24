@@ -7,18 +7,33 @@ let _cdpUnsentCoId = ''; // 미발송 섹션 고객사 필터
 function _cdpSwitchTab(tab){
   const unsentEl = document.getElementById('cdp-unsent-section');
   const historyEl = document.getElementById('cdp-history-section');
+  const previewEl = document.getElementById('cdp-preview-section');
   const tabUnsent = document.getElementById('cdp-tab-unsent');
   const tabHistory = document.getElementById('cdp-tab-history');
+  const tabPreview = document.getElementById('cdp-tab-preview');
+  [tabUnsent, tabHistory, tabPreview].forEach(b => b?.classList.remove('active'));
+  [unsentEl, historyEl, previewEl].forEach(el => { if(el) el.style.display = 'none'; });
   if(tab === 'unsent'){
     if(unsentEl) unsentEl.style.display = '';
-    if(historyEl) historyEl.style.display = 'none';
     if(tabUnsent) tabUnsent.classList.add('active');
-    if(tabHistory) tabHistory.classList.remove('active');
-  } else {
-    if(unsentEl) unsentEl.style.display = 'none';
+  } else if(tab === 'history'){
     if(historyEl) historyEl.style.display = '';
-    if(tabUnsent) tabUnsent.classList.remove('active');
     if(tabHistory) tabHistory.classList.add('active');
+  } else if(tab === 'preview'){
+    if(previewEl) previewEl.style.display = '';
+    if(tabPreview) tabPreview.classList.add('active');
+    _cdpRenderPreview();
+  }
+}
+
+// ── 메시지 예시 렌더 ──
+function _cdpRenderPreview(){
+  const container = document.getElementById('cdp-preview-content');
+  if(!container) return;
+  if(typeof msgRenderAllPreviews === 'function'){
+    container.innerHTML = msgRenderAllPreviews('contract');
+  } else {
+    container.innerHTML = '<p style="padding:20px;color:#9ca3af;">메시지 템플릿을 불러올 수 없습니다.</p>';
   }
 }
 
@@ -749,23 +764,38 @@ async function _saveDispatchRecord({ method: dispatchMethod, status: dispatchSta
         : dispatchMethod ===DISPATCH_METHOD.MANUAL ? '수동교부'
         : dispatchMethod;
       const _fmtD = d => { if(!d) return '-'; const [y,m,dd]=d.split('-'); return `${parseInt(y)}년 ${parseInt(m)}월 ${parseInt(dd)}일`; };
+      const _now = new Date();
+      const _nowStr = `${_now.getFullYear()}. ${_now.getMonth()+1}. ${_now.getDate()}. ` +
+        `${String(_now.getHours()).padStart(2,'0')}:${String(_now.getMinutes()).padStart(2,'0')}`;
+
+      // 메시지 규칙 적용 (시스템 설정 > 메시지 본문 규칙 관리)
+      const rule = (typeof getMsgBodyRule === 'function')
+        ? getMsgBodyRule('contract_dispatched')
+        : null;
+      const _ctLabel = contractTypeLabel(ctType) || '';
+
+      const _applyRule = (template) => {
+        if (!template) return '';
+        return template
+          .replace(/\{회사명\}/g, coName)
+          .replace(/\{근로자명\}/g, empName)
+          .replace(/\{고용형태\}/g, _ctLabel)
+          .replace(/\{발송방법\}/g, _methodLabel)
+          .replace(/\{발송시각\}/g, _nowStr);
+      };
+
+      const _title = rule?.title
+        ? _applyRule(rule.title)
+        : `[근로계약서 발송] ${empName} — ${_ctLabel} 근로계약서`;
+      const _body = rule?.body
+        ? _applyRule(rule.body)
+        : `안녕하세요, ${coName} 대표자님.\n\n근로기준법 제17조(근로조건의 명시)에 따라 소속 근로자 ${empName}에게 ${_ctLabel} 근로계약서가 ${_methodLabel}(으)로 발송 완료되었음을 알려드립니다.\n\n■ 발송 시각: ${_nowStr}\n\n* 근로계약서 날인본 사진이 저희 담당자에게 회신되면 5년간 보관됩니다.`;
+
       await _sendCompanyNotice({
         companyId  : coId, companyName: coName,
         noticeType : 'contract_dispatched',
-        title      : `[계약서 발송] ${empName} — 근로계약서가 발송되었습니다`,
-        body       :
-        `안녕하세요${_coRep}.
-
-        소속 근로자에게 근로계약서가 발송되었습니다.
-
-        ■ 근로자: ${empName}
-        ■ 고용형태: ${contractTypeLabel(ctType)||''}
-        ■ 계약 기간: ${_fmtD(ctStart)}${ctEnd ? ' ~ ' + _fmtD(ctEnd) : ''}
-        ■ 발송 방법: ${_methodLabel}
-        ■ 발송 시각: ${new Date().toLocaleString('ko-KR')}
-
-
-        `,
+        title      : _title,
+        body       : _body,
                 contractId  : cId,
                 employeeId  : empId, employeeName: empName,
                 contractEnd : ctEnd,

@@ -274,9 +274,9 @@ async function renderProbMgmtTemplate(){
 
 ─────────────────────
 인사톡 노무톡 · 대화인사노무파트너스 담당자
-전화: ${phone}
-E-mail: ${email}
-팩스: ${fax}`;
+● 전화: ${phone}
+● 이메일: ${email}
+● 팩스: ${fax}`;
 
   setTxt('probmgmt-tmpl-title', title);
   setTxt('probmgmt-tmpl-plain', plain);

@@ -195,14 +195,13 @@ async function _ctfUpload(type, contractId, inputEl){
           body       :
 `안녕하세요${_coRep}.
 
-소속 근로자의 서류가 업로드되었습니다.
+소속 근로자 ${_ufEmp.name||''}의 ${_typeLabel}이(가) 업로드되었습니다.
 
-■ 근로자: ${_ufEmp.name||''}
 ■ 업로드 서류: ${_typeLabel}
 ■ 파일명: ${file.name}
 ■ 업로드 일시: ${new Date().toLocaleString('ko-KR')}
 
-`,
+* 근로계약서 날인본 사진을 5년간 보관합니다.`,
           contractId : contractId,
           employeeId : c.employee_id, employeeName: _ufEmp.name || '',
           contractEnd: c.contract_end || '',
@@ -215,19 +214,18 @@ async function _ctfUpload(type, contractId, inputEl){
           await _sendCompanyNotice({
             companyId  : c.company_id, companyName: _ufCo.company_name || '',
             noticeType : 'contract_fully_documented',
-            title      : `[계약 유효 전환] ${_ufEmp.name||''} — 모든 서류 완비, 계약이 유효합니다`,
+            title      : `[계약 유효 전환] ${_ufEmp.name||''} — 모든 서류 완비`,
             body       :
 `안녕하세요${_coRep}.
 
-소속 근로자의 계약 관련 서류가 모두 완비되어 계약이 유효 상태로 전환되었습니다.
+소속 근로자 ${_ufEmp.name||''}의 ${contractTypeLabel(c.contract_type)||''} 계약 관련 서류가 모두 완비되어 계약이 유효 상태로 전환되었습니다.
 
-■ 근로자: ${_ufEmp.name||''}
 ■ 고용형태: ${contractTypeLabel(c.contract_type)||''}
 ■ 계약 기간: ${c.contract_start||''}${c.contract_end ? ' ~ ' + c.contract_end : ''}
 ■ 완비 서류: 계약서 날인본 + 제3자 정보제공 동의서
 ■ 전환 일시: ${new Date().toLocaleString('ko-KR')}
 
-`,
+* 근로계약서 날인본 사진을 5년간 보관합니다.`,
             contractId : contractId,
             employeeId : c.employee_id, employeeName: _ufEmp.name || '',
             contractEnd: c.contract_end || '',
