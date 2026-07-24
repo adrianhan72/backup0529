@@ -102,12 +102,12 @@
     .pi-section-title.green{color:#10b981;border-color:#a7f3d0}
     .pi-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:12.5px}
     .pi-row label{color:#666}
-    .pi-row input{width:130px;border:1px solid #e0e0e0;border-radius:6px;padding:6px 9px;font-size:12.5px;outline:none;font-family:inherit;text-align:right}
+    .pi-row input{width:130px;border:1px solid #e0e0e0;border-radius:6px;padding:6px 9px;font-size:13px;outline:none;font-family:inherit;text-align:right}
     .pi-row input:focus{border-color:#e94560}
     /* 비고: ?�이�???· textarea ?�래 · 카드?�??�일 ?�체 ??*/
     .pi-note-wrap{display:block;margin-top:6px;margin-bottom:4px;}
     .pi-note-label{display:block;font-size:12.5px;color:#666;margin-bottom:4px;}
-    .pi-note-wrap textarea{display:block;width:100%;min-height:62px;border:1px solid #e0e0e0;border-radius:6px;padding:6px 9px;font-size:12.5px;outline:none;font-family:inherit;resize:vertical;line-height:1.55;color:#1a1a2e;box-sizing:border-box;}
+    .pi-note-wrap textarea{display:block;width:100%;min-height:62px;border:1px solid #e0e0e0;border-radius:6px;padding:6px 9px;font-size:13px;outline:none;font-family:inherit;resize:vertical;line-height:1.55;color:#1a1a2e;box-sizing:border-box;}
     .pi-note-wrap textarea:focus{border-color:#e94560;}
 /* 계약??고정??�� readonly ?��???*/
 .pi-readonly-field{background:#f4f6fb!important;color:#6b7280!important;cursor:default!important;border-color:#e5e7eb!important;user-select:none!important;}
@@ -115,7 +115,7 @@
 .pi-pay-type-select.pi-btn-locked{opacity:.45!important;cursor:default!important;pointer-events:none!important;}
     .pi-row .pi-val{font-weight:600;font-size:13px;color:#1a1a2e}
     /* ?�상?�금 지급유???�?�운 select (기존 버튼 UI ?��? */
-    .pi-pay-type-select{font-size:12px;padding:0 6px;border-radius:4px;border:1px solid #d1d5db;background:#f9fafb;color:#374151;cursor:pointer;outline:none;height:28px;font-family:inherit;flex-shrink:0;}
+    .pi-pay-type-select{font-size:12px;padding:0 6px;border-radius:4px;border:1px solid #d1d5db;background:#fff;color:#374151;cursor:pointer;outline:none;height:28px;font-family:inherit;flex-shrink:0;}
     .pi-pay-type-select:focus{border-color:#3b82f6;outline:none;}
     .pi-pay-type-select:disabled{cursor:default;pointer-events:none;}
     /* 미선???�태(value="") ???�색 ?�레?�스?�???�상 */
@@ -193,7 +193,7 @@
       color:#9ca3af;border-color:#e5e7eb;
     }
     .co-chip.terminated:hover{
-      border-color:#9ca3af;color:#6b7280;background:#f9fafb;
+      border-color:#9ca3af;color:#6b7280;background:#fff;
     }
     /* ?�림(N 배�?) ?�는 �?*/
     .co-chip.has-new{ border-color:#e94560; }
@@ -248,14 +248,14 @@
 .cm-aw-add-btn        { font-size:11.5px; color:#6366f1; background:none; border:1.5px dashed #c7d2fe; border-radius:6px; padding:4px 14px; cursor:pointer; transition:all .15s; }
 .cm-aw-add-btn:hover  { background:#eef2ff; border-color:#6366f1; }
 .cm-aw-custom-row     { display:flex; align-items:center; gap:6px; min-height:32px; }
-.cm-aw-custom-input   { flex:1; border:1px solid #d1d5db; border-radius:5px; padding:3px 8px; font-size:12px; min-width:0; }
+.cm-aw-custom-input   { flex:1; border:1px solid #d1d5db; border-radius:5px; padding:3px 8px; font-size:13px; min-width:0; }
 .cm-aw-custom-del     { cursor:pointer; color:#9ca3af; font-size:13px; padding:2px; transition:color .15s; background:none; border:none; }
 .cm-aw-custom-del:hover{ color:#ef4444; }
 .cm-aw-check-label    { display:flex; align-items:center; gap:6px; cursor:pointer; font-size:13px; color:#374151; white-space:nowrap; flex-shrink:0; min-width:90px; }
 .cm-aw-check-label input[type="checkbox"] { width:15px; height:15px; accent-color:#6366f1; cursor:pointer; flex-shrink:0; }
 
 .cm-aw-pt-select      { flex:0 0 auto; margin-left:auto; width:150px; border:1px solid #d1d5db; border-radius:6px; padding:4px 24px 4px 8px;
-                         font-size:11.5px; font-family:inherit; color:#374151; background:#fff;
+                         font-size:13px; font-family:inherit; color:#374151; background:#fff;
                          cursor:pointer; outline:none; transition:border-color .15s, opacity .15s; }
 .cm-aw-pt-select:disabled { background:#f3f4f6; color:#9ca3af; cursor:not-allowed; border-color:#d1d5db !important; }
 .cm-aw-pt-select:not(:disabled):focus { border-color:#6366f1; }

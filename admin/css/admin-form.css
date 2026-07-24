@@ -14,15 +14,15 @@
     .work-schedule-table tr.day-sun td{background:#fff5f5;}
     .work-schedule-table tr.day-sun td.td-brk{background:#fce7f3;}
     .work-schedule-table tr:last-child td{border-bottom:none;}
-    .work-schedule-table input[type=time]{width:92px;border:1px solid #e2e8f0;border-radius:5px;padding:4px 2px;font-size:11.5px;font-family:inherit;background:#fff;text-align:center;}
+    .work-schedule-table input[type=time]{width:92px;border:1px solid #e2e8f0;border-radius:5px;padding:4px 2px;font-size:13px;font-family:inherit;background:#fff;text-align:center;}
     .work-schedule-table input[type=time]:disabled{background:#f3f4f6;color:#9ca3af;}
-    .work-schedule-table input.brk-time{width:92px;border:1px solid #ddd6fe;border-radius:5px;padding:4px 2px;font-size:11.5px;font-family:inherit;background:#faf5ff;text-align:center;}
+    .work-schedule-table input.brk-time{width:92px;border:1px solid #ddd6fe;border-radius:5px;padding:4px 2px;font-size:13px;font-family:inherit;background:#fff;text-align:center;}
     .work-schedule-table input.brk-time:disabled{background:#f3f4f6;color:#9ca3af;border-color:#e2e8f0;}
     .work-schedule-table .brk-sep{font-size:11px;color:#7c3aed;font-weight:700;padding:0 1px;}
     /* 복수 ?�게?�롯 */
     .brk-slots-wrap{display:flex;flex-direction:column;gap:3px;align-items:flex-start;min-width:210px;}
     .brk-slot-row{display:flex;align-items:center;gap:3px;}
-    .btn-brk-add{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;border:1.5px solid #7c3aed;background:#faf5ff;color:#7c3aed;font-size:13px;font-weight:700;cursor:pointer;line-height:1;flex-shrink:0;transition:background .12s;}
+    .btn-brk-add{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;border:1.5px solid #7c3aed;background:#fff;color:#7c3aed;font-size:13px;font-weight:700;cursor:pointer;line-height:1;flex-shrink:0;transition:background .12s;}
     .btn-brk-add:hover{background:#ede9fe;}
     .btn-brk-add:disabled{border:1px solid #cccccc;color:#f2f2f2;background:#cccccc;cursor:not-allowed;}
     .btn-brk-del{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;border:1.5px solid #fca5a5;background:#fff5f5;color:#e94560;font-size:12px;font-weight:700;cursor:pointer;line-height:1;flex-shrink:0;transition:background .12s;}
@@ -33,10 +33,10 @@
     .bulk-schedule-bar{display:flex;flex-direction:column;gap:0;flex-wrap:wrap;padding:10px 14px;background:linear-gradient(90deg,#f0f9ff 0%,#faf5ff 100%);border:1.5px solid #bae6fd;border-radius:9px;margin-bottom:8px;}
     .bulk-schedule-bar .bulk-label{font-size:12px;font-weight:700;color:#0369a1;white-space:nowrap;display:flex;align-items:center;gap:4px;}
     .bulk-schedule-bar .bulk-sep{color:#cbd5e1;font-size:13px;margin:0 2px;}
-    .bulk-schedule-bar input[type=time]{width:110px;border:1px solid #bae6fd;border-radius:6px;padding:5px 4px;font-size:12.5px;font-family:inherit;background:#fff;color:#1e293b;text-align:center;}
+    .bulk-schedule-bar input[type=time]{width:110px;border:1px solid #bae6fd;border-radius:6px;padding:5px 4px;font-size:13px;font-family:inherit;background:#fff;color:#1e293b;text-align:center;}
     .bulk-schedule-bar input[type=time]::-webkit-calendar-picker-indicator{margin-left:-4px;}
     .bulk-schedule-bar input[type=time]::-webkit-inner-spin-button{display:none;}
-    .bulk-schedule-bar input.bulk-brk{border-color:#ddd6fe;background:#faf5ff;}
+    .bulk-schedule-bar input.bulk-brk{border-color:#ddd6fe;background:#fff;}
     .bulk-schedule-bar .bulk-divider{width:1px;height:26px;background:#e2e8f0;margin:0 4px;}
     .bulk-apply-target{display:flex;align-items:center;gap:6px;font-size:11.5px;color:#374151;white-space:nowrap;flex-wrap:wrap;}
     .bulk-apply-target label{display:flex;align-items:center;gap:3px;cursor:pointer;}
@@ -255,8 +255,8 @@
 .cm-person-fg label { font-size: 11px; font-weight: 600; color: #6b7280; }
 .cm-person-fg input {
   border: 1.5px solid #9080e4; border-radius: 7px; padding: 6px 10px;
-  font-size: 12.5px; font-family: inherit; width: 100%; box-sizing: border-box;
-  background: #f8f9fb; transition: border-color 0.2s;
+  font-size: 13px; font-family: inherit; width: 100%; box-sizing: border-box;
+  background: #fff; transition: border-color 0.2s;
 }
 .cm-person-fg input:focus { border-color: #6366f1; outline: none; box-shadow: 0 0 0 2px rgba(99,102,241,0.12); }
 

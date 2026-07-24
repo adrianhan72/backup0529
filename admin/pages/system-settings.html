@@ -24,7 +24,7 @@
             <label style="font-size:12px;font-weight:600;color:#374151;">포트</label>
             <input type="text" id="ss-oe-smtp-port" class="form-input" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" placeholder="예: 587" />
           </div>
-          <button id="ss-oe-save-btn" class="btn btn-primary" onclick="ssSaveOutboundEmail()" style="padding:8px 20px;height:38px;white-space:nowrap;">
+          <button id="ss-oe-save-btn" class="btn btn-primary input-std" onclick="ssSaveOutboundEmail()" style="padding:8px 20px;white-space:nowrap;">
             <i class="fas fa-save"></i> 저장
           </button>
         </div>
@@ -76,10 +76,10 @@
           <span>사용 가능한 치환자: <code>{회사명}</code> <code>{근로자명}</code> <code>{고용형태}</code> <code>{발송방법}</code> <code>{발송시각}</code> <code>{대표전화}</code> <code>{대표이메일}</code> <code>{대표팩스}</code></span>
         </div>
         <div style="display:flex;gap:8px;align-items:center;">
-          <button id="ss-rule-save-btn" class="btn btn-primary" onclick="ssSaveMessageRule()" style="padding:8px 20px;height:38px;">
+          <button id="ss-rule-save-btn" class="btn btn-primary input-std" onclick="ssSaveMessageRule()">
             <i class="fas fa-save"></i> 규칙 저장
           </button>
-          <button id="ss-rule-reset-btn" class="btn" onclick="ssResetMessageRule()" style="padding:8px 16px;height:38px;background:#f3f4f6;border:1px solid #d1d5db;border-radius:6px;font-size:13px;color:#374151;">
+          <button id="ss-rule-reset-btn" class="btn input-std" onclick="ssResetMessageRule()" style="padding:8px 16px;background:#f3f4f6;border:1px solid #d1d5db;border-radius:6px;font-size:13px;color:#374151;">
             <i class="fas fa-undo"></i> 기본값으로 초기화
           </button>
         </div>
@@ -108,7 +108,7 @@
             <label style="font-size:12px;font-weight:600;color:#374151;">팩스</label>
             <input type="text" id="ss-rc-fax" class="form-input" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" placeholder="예: 02)3487-8882" />
           </div>
-          <button id="ss-rc-save-btn" class="btn btn-primary" onclick="ssSaveRepresentativeContact()" style="padding:8px 20px;height:38px;white-space:nowrap;">
+          <button id="ss-rc-save-btn" class="btn btn-primary input-std" onclick="ssSaveRepresentativeContact()" style="padding:8px 20px;white-space:nowrap;">
             <i class="fas fa-save"></i> 저장
           </button>
         </div>

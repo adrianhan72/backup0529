@@ -16,8 +16,8 @@
     /* ── 필터 바 / 검색 공통 ── */
     .filt-bar{ display:flex;align-items:center;gap:12px;padding:10px 18px;flex-wrap:wrap; }
     .filt-label{ font-size:11.5px;font-weight:600;color:#6b7280;white-space:nowrap; }
-    .filt-select{ height:32px;padding:0 28px 0 10px;border:1.5px solid #d1d5db;border-radius:7px;font-size:12px;color:#374151;background:#fff;cursor:pointer;font-family:inherit;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%239ca3af'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center; }
-    .filt-date{ height:32px;padding:0 10px;border:1.5px solid #d1d5db;border-radius:7px;font-size:12px;color:#374151;font-family:inherit; }
+    .filt-select{ height:32px;padding:0 28px 0 10px;border:1.5px solid #d1d5db;border-radius:7px;font-size:13px;color:#374151;background:#fff;cursor:pointer;font-family:inherit;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%239ca3af'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center; }
+    .filt-date{ height:32px;padding:0 10px;border:1.5px solid #d1d5db;border-radius:7px;font-size:13px;color:#374151;font-family:inherit; }
     .filt-btn-search{ height:32px;padding:0 16px;background:#6366f1;color:#fff;border:1px solid #4338ca;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .18s; }
     .filt-btn-search:hover{ background:#4338ca; }
 
@@ -356,7 +356,7 @@
     select.filt-select {
       border:1px solid #d1d5db;border-radius:7px;
       padding:4px 28px 4px 10px;height:32px;box-sizing:border-box;
-      font-size:12px;color:#374151;background:#fff;
+      font-size:13px;color:#374151;background:#fff;
       cursor:pointer;font-family:inherit;font-weight:400;
       outline:none;transition:border-color .15s,box-shadow .15s;
       appearance:none;-webkit-appearance:none;-moz-appearance:none;
@@ -369,7 +369,7 @@
     .filt-date {
       border:1px solid #d1d5db;border-radius:7px;
       padding:4px 6px;height:32px;box-sizing:border-box;
-      font-size:12px;color:#374151;
+      font-size:13px;color:#374151;
       background:#fff !important;
       cursor:pointer;font-family:inherit;
       outline:none;transition:border-color .15s,box-shadow .15s;
@@ -394,7 +394,7 @@
     .filt-search {
       padding:4px 10px 4px 28px;height:32px;box-sizing:border-box;
       border:1px solid #d1d5db;border-radius:7px;
-      font-size:12px;color:#374151;background:#fff;
+      font-size:13px;color:#374151;background:#fff;
       font-family:inherit;outline:none;
       transition:border-color .15s,box-shadow .15s;
     }
