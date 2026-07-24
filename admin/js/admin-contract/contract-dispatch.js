@@ -786,10 +786,10 @@ async function _saveDispatchRecord({ method: dispatchMethod, status: dispatchSta
 
       const _title = rule?.title
         ? _applyRule(rule.title)
-        : `[근로계약서 발송] ${empName} — ${_ctLabel} 근로계약서`;
+        : `[근로계약서 발송] ${empName} — 근로계약서가 발송되었습니다`;
       const _body = rule?.body
         ? _applyRule(rule.body)
-        : `안녕하세요, ${coName} 대표자님.\n\n근로기준법 제17조(근로조건의 명시)에 따라 소속 근로자 ${empName}에게 ${_ctLabel} 근로계약서가 ${_methodLabel}(으)로 발송 완료되었음을 알려드립니다.\n\n■ 발송 시각: ${_nowStr}\n\n* 근로계약서 날인본 사진이 저희 담당자에게 회신되면 5년간 보관됩니다.`;
+        : `안녕하세요, ${coName} 대표자님.\n\n근로기준법 제17조(근로조건의 명시)에 따라 소속 근로자 ${empName}에게 ${_ctLabel} 근로계약서가 ${_methodLabel}(으)로 발송 완료되었음을 알려드립니다.\n\n■ 발송 시각: ${_nowStr}\n\n* 근로계약서 날인본 사진은 계약 종료일로부터 5년간 보관됩니다.`;
 
       await _sendCompanyNotice({
         companyId  : coId, companyName: coName,

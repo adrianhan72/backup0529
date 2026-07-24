@@ -266,6 +266,7 @@ function renderPssUnsentList(){
     return `<tr id="pss-urow-${idx}">
       <td class="ctr"><input type="checkbox" class="pss-row-chk" data-payroll-id="${p.id}" onchange="pssUpdateBatchBtns()" /></td>
       <td style="font-weight:700;color:#111827;">${emp.name || '-'}</td>
+      <td style="text-align:center;font-size:12px;">${genderLabel(emp)}</td>
       <td><span class="badge ${empCatBadge(cat)}">${contractTypeLabel(cat)}</span></td>
       <td style="color:#6b7280;font-size:12px;">${phone || '<span style="color:#d1d5db;">미등록</span>'}</td>
       <td style="font-size:12px;">${hasEmail ? `<span style="color:#374151;">${email}</span>` : '<span style="color:#d1d5db;">미등록</span>'}</td>
@@ -627,6 +628,7 @@ function renderPssLogs(){
     const meth = l.send_method || 'manual';
     return `<tr>
       <td style="font-weight:700;">${emp.name||l.employee_id||'-'}</td>
+      <td style="text-align:center;font-size:12px;">${genderLabel(emp)}</td>
       <td><span class="badge ${empCatBadge(cat)}">${contractTypeLabel(cat)}</span></td>
       <td style="font-size:12px;color:#374151;">${l.pay_year||'-'}년 ${l.pay_month||'-'}월</td>
       <td style="font-size:12px;color:#374151;">${sentDt}</td>

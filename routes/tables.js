@@ -17,6 +17,7 @@ const VALID_TABLES = new Set([
   'wage_ledger_notifications',
   'registered_executives','related_party_workers','tax_brackets','tax_bracket_rows',
   'representative_contact','payroll_items',
+  'attendance_ledger','kakao_send_logs',
 ]);
 
 function resolveTable(name, db) {

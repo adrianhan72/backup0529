@@ -870,6 +870,9 @@ async function showPage(name,el){
   if(name==='system-settings'){
     renderSystemSettings();
   }
+  if(name==='attendance-ledger'){
+    if(typeof initAttendanceLedgerPage === 'function') initAttendanceLedgerPage();
+  }
   if(name==='standards'){
     renderInsuranceRates();
     renderMinimumWages();
@@ -1318,6 +1321,8 @@ function clearPICompanySelect(){
   if(typeof renderPIAllDraftBanner === 'function') renderPIAllDraftBanner();
   const _coDraft = document.getElementById('pi-co-draft-banner');
   if(_coDraft) _coDraft.style.display = 'none';
+  // 병가 지급율에 따른 결근 유형 옵션 업데이트
+  if(typeof _piUpdateAbsentTypeOptions === 'function') _piUpdateAbsentTypeOptions();
 }
 function renderPagination(containerId,total,page,fn){
   const pages2=Math.ceil(total/ITEMS);

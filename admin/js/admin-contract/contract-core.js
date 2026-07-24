@@ -369,7 +369,7 @@ function renderContracts(){
   }).sort((a,b)=>getEmpName(a.employee_id).localeCompare(getEmpName(b.employee_id),'ko'));
   const paged=f.slice((pages.cont-1)*ITEMS,pages.cont*ITEMS);
   const tb=document.getElementById('cont-tbody');
-  if(!f.length){tb.innerHTML='<tr><td colspan="10" class="empty-state">계약서가 없습니다</td></tr>';document.getElementById('cont-pagination').innerHTML='';return;}
+  if(!f.length){tb.innerHTML='<tr><td colspan="12" class="empty-state">계약서가 없습니다</td></tr>';document.getElementById('cont-pagination').innerHTML='';return;}
   tb.innerHTML=paged.map(c=>{
     // ── 표시 상태 스마트 계산 ──
     const {badge:stBadge, label:stName, docsIncomplete} = calcContractStatusDisplay(c, today);
@@ -432,6 +432,7 @@ function renderContracts(){
       : '';
     return `<tr>
       <td style="font-weight:600">${getEmpName(c.employee_id)}</td>
+      <td style="font-size:12px;text-align:center;">${emp?.gender==='female'||emp?.gender==='여성'||emp?.gender==='여'?'여':emp?.gender==='male'||emp?.gender==='남성'||emp?.gender==='남'?'남':'-'}</td>
       <td><span class="badge ${catBadge}">${contractTypeLabel(empCat)}</span>${specialBadge}</td>
       <td style="font-size:11.5px;${(c.status===CONTRACT_STATUS.VOIDED||c.is_voided_by_amend)?'text-decoration:line-through;color:#9ca3af;':''}">${periodTxt}</td>
       <td class="amount">${won(c.hourly_wage)}/h</td>

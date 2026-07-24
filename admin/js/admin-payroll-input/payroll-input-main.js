@@ -221,7 +221,7 @@ function loadPITargetList(){
   if(!tbody) return;
 
   if(!targets.length){
-    tbody.innerHTML = `<tr><td colspan="6" style="padding:30px;text-align:center;color:#9ca3af;font-size:13px;">
+    tbody.innerHTML = `<tr><td colspan="7" style="padding:30px;text-align:center;color:#9ca3af;font-size:13px;">
       <i class="fas fa-inbox" style="font-size:24px;margin-bottom:8px;display:block;opacity:.4;"></i>
       ${moLabel}에 유효한 근로계약이 있는 직원이 없습니다.
     </td></tr>`;
@@ -338,6 +338,7 @@ function loadPITargetList(){
         <td style="padding:12px 14px;font-weight:700;color:#111827;">
           ${emp.name}${deptPos?`<span style="font-size:11px;color:#9ca3af;font-weight:400;margin-left:5px;">${deptPos}</span>`:''}
         </td>
+        <td style="padding:12px 14px;text-align:center;font-size:12px;">${emp.gender==='female'||emp.gender==='여성'||emp.gender==='여'?'여':emp.gender==='male'||emp.gender==='남성'||emp.gender==='남'?'남':'-'}</td>
         <td style="padding:12px 14px;">
           <span class="badge ${catBadgeCls}">${cat}</span>
         </td>
@@ -851,6 +852,7 @@ function loadPIContract(){
     document.getElementById('pi-tax-dependents-input').value = 1;
     _piContractLoading = false;
     _applyPIDefaultWorkDays(false);
+    if(typeof _piUpdateAbsentTypeOptions === 'function') _piUpdateAbsentTypeOptions();
     return;
   }
 
@@ -871,6 +873,7 @@ function loadPIContract(){
   }
   // 기준 모드 UI 전환 (고객사마다 다를 수 있으므로 직원 선택 시도 재확인)
   _switchInsuranceModeUI();
+  if(typeof _piUpdateAbsentTypeOptions === 'function') _piUpdateAbsentTypeOptions();
   // 계약 시작일 기준 고객사 스냅샷 취득 (계약 당시 allowance_config 사용)
   const _piLcCoId = currentGlobalCompanyId || document.getElementById('pi-company')?.value;
   const _piLcContractTs = piContract?.contract_start ? new Date(piContract.contract_start).getTime() : null;
@@ -1746,43 +1749,147 @@ function _updatePIWorkDaysAutoLabel(result){
 // 결근일 관리
 // ──────────────────────────────────────────────────────────────────────────────
 function _addPIAbsentDate(){
-  const dateEl = document.getElementById('pi-absent-date');
-  if(!dateEl || !dateEl.value) return;
+  const dateFromEl = document.getElementById('pi-absent-date-from');
+  const dateToEl   = document.getElementById('pi-absent-date-to');
+  const typeEl     = document.getElementById('pi-absent-type');
+  if(!dateFromEl || !dateFromEl.value) return;
+  const dateFrom = dateFromEl.value;
+  const dateTo   = dateToEl?.value || ''; // 비었으면 단일일
+
   const hidden = document.getElementById('pi-absent-dates');
+  const dataHidden = document.getElementById('pi-absent-data');
+
+  // absent_dates: 기간 내 모든 날짜 추가 (호환용)
   const dates = hidden && hidden.value ? hidden.value.split(',') : [];
-  if(dates.includes(dateEl.value)){ dateEl.value = ''; return; }
-  dates.push(dateEl.value);
+  const allDates = _piExpandDateRange(dateFrom, dateTo);
+  allDates.forEach(d => { if (!dates.includes(d)) dates.push(d); });
   dates.sort();
   hidden.value = dates.join(',');
-  dateEl.value = '';
+
+  // absent_data JSON 갱신
+  let absentData = [];
+  try { absentData = JSON.parse(dataHidden?.value || '[]'); } catch(e) { absentData = []; }
+  const type = typeEl?.value || 'unauthorized';
+  const rate = type === 'sick_paid' ? (_piGetSickLeaveRate() || 0) : 0;
+  const entry = { date: dateFrom, type, rate };
+  if (dateTo && dateTo !== dateFrom) entry.dateTo = dateTo;
+  absentData.push(entry);
+  absentData.sort((a,b) => (a.date||'').localeCompare(b.date||''));
+  if (dataHidden) dataHidden.value = JSON.stringify(absentData);
+
+  dateFromEl.value = '';
+  if (dateToEl) dateToEl.value = '';
   _renderPIAbsentChips();
+}
+
+function _piExpandDateRange(from, to) {
+  if (!from) return [];
+  if (!to || to === from) return [from];
+  const dates = [];
+  const start = new Date(from);
+  const end = new Date(to);
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) return [from];
+  const cur = new Date(start);
+  while (cur <= end) {
+    dates.push(cur.toISOString().slice(0,10));
+    cur.setDate(cur.getDate() + 1);
+  }
+  return dates;
+}
+
+function _piGetSickLeaveRate() {
+  try {
+    const coId = piContract?.company_id || document.getElementById('pi-company-id-hidden')?.value;
+    const co = (allCompanies || []).find(c => c.id === coId);
+    return parseFloat(co?.sick_leave_pay_rate) || 0;
+  } catch(e) { return 0; }
+}
+
+/** 고객사 병가 지급율 + 성별에 따라 결근 유형 옵션 업데이트 */
+function _piUpdateAbsentTypeOptions() {
+  const rate = _piGetSickLeaveRate();
+  const sickPaidOpt = document.getElementById('pi-absent-type-sick-paid');
+  if (sickPaidOpt) {
+    if (rate > 0) { sickPaidOpt.style.display = ''; sickPaidOpt.textContent = '병가 (유급 ' + rate + '%)'; }
+    else { sickPaidOpt.style.display = 'none'; }
+  }
+
+  // 성별 기반 옵션
+  const empId = piContract?.employee_id;
+  const emp = empId ? (allEmployees || []).find(e => e.id === empId) : null;
+  const isFemale = emp?.gender === 'female' || emp?.gender === '여성' || emp?.gender === '여';
+  const isMale   = emp?.gender === 'male'   || emp?.gender === '남성' || emp?.gender === '남';
+
+  const menstrualOpt    = document.getElementById('pi-absent-type-menstrual');
+  const matPaidOpt      = document.getElementById('pi-absent-type-mat-paid');
+  const matUnpaidOpt    = document.getElementById('pi-absent-type-mat-unpaid');
+  const patPaidOpt      = document.getElementById('pi-absent-type-pat-paid');
+
+  if (menstrualOpt)   menstrualOpt.style.display = isFemale ? '' : 'none';
+  if (matPaidOpt)     matPaidOpt.style.display   = isFemale ? '' : 'none';
+  if (matUnpaidOpt)   matUnpaidOpt.style.display = isFemale ? '' : 'none';
+  if (patPaidOpt)     patPaidOpt.style.display   = isMale   ? '' : 'none';
 }
 
 function _removePIAbsentDate(dateStr){
   const hidden = document.getElementById('pi-absent-dates');
+  const dataHidden = document.getElementById('pi-absent-data');
   if(!hidden) return;
   const dates = hidden.value ? hidden.value.split(',') : [];
-  hidden.value = dates.filter(d => d !== dateStr).join(',');
+  // 해당 날짜가 포함된 모든 기간 찾아서 제거
+  let absentData = [];
+  try { absentData = JSON.parse(dataHidden?.value || '[]'); } catch(e) { absentData = []; }
+  // 제거할 기간 찾기
+  const toRemove = absentData.filter(d => {
+    if (d.dateTo) {
+      const expanded = _piExpandDateRange(d.date, d.dateTo);
+      return expanded.includes(dateStr);
+    }
+    return d.date === dateStr;
+  });
+  absentData = absentData.filter(d => !toRemove.includes(d));
+  if (dataHidden) dataHidden.value = JSON.stringify(absentData);
+
+  // absent_dates 재계산
+  const allDates = [];
+  absentData.forEach(d => {
+    _piExpandDateRange(d.date, d.dateTo || '').forEach(dd => allDates.push(dd));
+  });
+  allDates.sort();
+  hidden.value = allDates.join(',');
   _renderPIAbsentChips();
 }
 
 function _renderPIAbsentChips(){
-  const hidden = document.getElementById('pi-absent-dates');
+  const dataHidden = document.getElementById('pi-absent-data');
   const chips = document.getElementById('pi-absent-chips');
   const count = document.getElementById('pi-absent-count');
-  const dates = hidden && hidden.value ? hidden.value.split(',') : [];
+  let absentData = [];
+  try { absentData = JSON.parse(dataHidden?.value || '[]'); } catch(e) { absentData = []; }
+
+  const typeLabels = { unauthorized: '무단(무급)', sick_unpaid: '병가(무급)', sick_paid: '병가(유급)', industrial: '산재', menstrual: '생리휴가(무급)', maternity_paid: '출산(유급)', maternity_unpaid: '출산(무급)', paternity_paid: '배우자출산(유급)', childcare_leave: '육아휴직', family_care: '가족돌봄휴직', layoff_leave: '휴업휴직' };
+  const typeColors = { unauthorized: '#dc2626', sick_unpaid: '#d97706', sick_paid: '#059669', industrial: '#6366f1', menstrual: '#a855f7', maternity_paid: '#ec4899', maternity_unpaid: '#f43f5e', paternity_paid: '#06b6d4', childcare_leave: '#0891b2', family_care: '#8b5cf6', layoff_leave: '#e11d48' };
+
   if(chips){
-    chips.innerHTML = dates.map(d =>
-      `<span style="display:inline-flex;align-items:center;gap:3px;background:#fef2f2;border-radius:4px;padding:2px 7px;font-size:11px;color:#991b1b;">
-        ${d}
-        <button type="button" onclick="_removePIAbsentDate('${d}')"
-          style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:13px;padding:0;line-height:1;">×</button>
-      </span>`
-    ).join('');
+    chips.innerHTML = absentData.map(d => {
+      const label = typeLabels[d.type] || '결근';
+      const color = typeColors[d.type] || '#991b1b';
+      const rateText = (d.type === 'sick_paid' && d.rate > 0) ? ' ' + d.rate + '%' : '';
+      const dateLabel = d.dateTo && d.dateTo !== d.date ? d.date + ' ~ ' + d.dateTo : d.date;
+      return '<span style="display:inline-flex;align-items:center;gap:4px;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:3px 8px;font-size:11px;color:#991b1b;">' +
+        '<span style="font-weight:600;">' + dateLabel + '</span>' +
+        '<span style="background:' + color + ';color:#fff;padding:1px 6px;border-radius:10px;font-size:10px;font-weight:600;">' + label + rateText + '</span>' +
+        '<button type="button" onclick="_removePIAbsentDate(\x27' + d.date + '\x27)" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:13px;padding:0;line-height:1;">×</button>' +
+      '</span>';
+    }).join('');
   }
-  if(count) count.textContent = dates.length + '일';
-  if(typeof _applyPIDefaultWorkDays === 'function') _applyPIDefaultWorkDays(true);
-  if(typeof calcPIWorkActual === 'function') calcPIWorkActual();
+  // 총 결근일수 계산
+  let totalDays = 0;
+  absentData.forEach(d => {
+    const expanded = _piExpandDateRange(d.date, d.dateTo || '');
+    totalDays += expanded.length;
+  });
+  if(count) count.textContent = totalDays + '일';
 }
 
 function _getPIAbsentDays(){
@@ -3629,7 +3736,7 @@ function clearPIFields(){
   const d1=document.getElementById('pi-ded-detail'); if(d1) d1.innerHTML='';
   const d2=document.getElementById('pi-ded-detail-fixed'); if(d2) d2.innerHTML='';
   // 결근·조퇴·지각 초기화
-  { const _el = document.getElementById('pi-absent-dates'); if(_el){ _el.value = ''; } if(typeof _renderPIAbsentChips === 'function') _renderPIAbsentChips(); }
+  { const _el = document.getElementById('pi-absent-dates'); if(_el){ _el.value = ''; } const _d = document.getElementById('pi-absent-data'); if(_d){ _d.value = '[]'; } if(typeof _renderPIAbsentChips === 'function') _renderPIAbsentChips(); }
   { const _el = document.getElementById('pi-earlyleave-data'); if(_el){ _el.value = '[]'; } if(typeof _renderPIEarlyLeaveChips === 'function') _renderPIEarlyLeaveChips(); }
   { const _el = document.getElementById('pi-late-data'); if(_el){ _el.value = '[]'; } if(typeof _renderPILateChips === 'function') _renderPILateChips(); }
 }

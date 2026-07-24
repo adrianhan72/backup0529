@@ -257,5 +257,5 @@
 .cm-aw-pt-select      { flex:0 0 auto; margin-left:auto; width:150px; border:1px solid #d1d5db; border-radius:6px; padding:4px 24px 4px 8px;
                          font-size:11.5px; font-family:inherit; color:#374151; background:#fff;
                          cursor:pointer; outline:none; transition:border-color .15s, opacity .15s; }
-.cm-aw-pt-select:disabled { background:#f3f4f6; color:#9ca3af; cursor:not-allowed; }
+.cm-aw-pt-select:disabled { background:#f3f4f6; color:#9ca3af; cursor:not-allowed; border-color:#d1d5db !important; }
 .cm-aw-pt-select:not(:disabled):focus { border-color:#6366f1; }

@@ -34,6 +34,7 @@ function renderPayrolls(){
     const payCat = payEmp.employment_category||'-';
     return `<tr class="pay-tbody-row" onclick="openPayslipModal('${p.id}')" title="클릭하면 급여명세서를 볼 수 있습니다">
     <td style="font-weight:600">${getEmpName(p.employee_id)}</td>
+    <td style="text-align:center;font-size:12px;">${(()=>{const e=(allEmployees||[]).find(x=>x.id===p.employee_id);return genderLabel(e);})()}</td>
     <td><span class="badge ${empCatBadge(payCat)}">${contractTypeLabel(payCat)}</span></td>
     <td>${p.work_days||'-'}일</td>
     <td>${p.overtime_hours||0}h</td>

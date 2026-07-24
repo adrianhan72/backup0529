@@ -88,6 +88,7 @@ function _buildPIBody(){
       return _s && _e ? `${_s}~${_e}` : '';
     })() : (piContract?.pay_period || ''),
     absent_dates:       document.getElementById('pi-absent-dates')?.value || '',
+    absent_data:        document.getElementById('pi-absent-data')?.value || '[]',
     earlyleave_data:    document.getElementById('pi-earlyleave-data')?.value || '[]',
     late_data:          document.getElementById('pi-late-data')?.value || '[]',
   };

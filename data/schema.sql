@@ -43,7 +43,8 @@ CREATE TABLE IF NOT EXISTS companies (
   pay_period_month TEXT,                         -- 급여 귀속월 기준
   pay_period_day INTEGER,                        -- 급여 귀속일 기준
   contract_end_date TEXT,                        -- 용역계약 종료일
-  representatives TEXT                           -- 대표자 정보 (JSON, 복수 가능)
+  representatives TEXT,                          -- 대표자 정보 (JSON, 복수 가능)
+  sick_leave_pay_rate REAL DEFAULT 0            -- 병가 급여 지급율 (%, 0=무급만)
 );
 
 
@@ -450,7 +451,11 @@ CREATE TABLE IF NOT EXISTS payrolls (
   updated_at INTEGER,                            -- 수정일시 (unix ms)
   dependents INTEGER DEFAULT 1,                  -- 부양가족 수
   edit_source_id TEXT,                           -- 편집 원본 ID
-  tax_dependents INTEGER DEFAULT 0               -- 소득세 공제 부양가족 수
+  tax_dependents INTEGER DEFAULT 0,              -- 소득세 공제 부양가족 수
+  absent_dates TEXT,                             -- 결근일 (쉼표 구분 날짜 문자열)
+  earlyleave_data TEXT,                          -- 무단 조퇴 데이터 (JSON 배열)
+  late_data TEXT,                                -- 무단 지각 데이터 (JSON 배열)
+  absent_data TEXT                               -- 결근 상세 데이터 (JSON: [{date,type,rate}])
 );
 CREATE INDEX IF NOT EXISTS idx_payrolls_employee ON payrolls(employee_id);
 CREATE INDEX IF NOT EXISTS idx_payrolls_company  ON payrolls(company_id);
@@ -729,4 +734,39 @@ CREATE TABLE IF NOT EXISTS kakao_send_logs (
   created_at INTEGER,                            -- 생성일시 (unix ms)
   sent_at TEXT                                   -- 발송 성공 일시 (ISO 8601)
 );
+
+
+-- =============================================================================
+--  SECTION 8: 근태 — 근태 관리대장
+-- =============================================================================
+
+-- -------------------------------------------------
+-- Table: attendance_ledger (근태 관리대장)
+-- 보존년한: 근로계약 만료/해지일로부터 5년
+-- -------------------------------------------------
+CREATE TABLE IF NOT EXISTS attendance_ledger (
+  id TEXT PRIMARY KEY,                           -- UUID
+  employee_id TEXT,                              -- 직원 ID → employees.id
+  company_id TEXT,                               -- 회사 ID → companies.id
+  year INTEGER,                                  -- 기준연도
+  month_data TEXT,                               -- 월별 근태 데이터 (JSON)
+  total_absent_days REAL DEFAULT 0,              -- 연간 총 결근일수
+  total_late_count INTEGER DEFAULT 0,            -- 연간 총 지각 횟수
+  total_earlyleave_count INTEGER DEFAULT 0,      -- 연간 총 조퇴 횟수
+  note TEXT,                                     -- 비고
+  created_at INTEGER,                            -- 생성일시 (unix ms)
+  updated_at INTEGER,                            -- 수정일시 (unix ms)
+  contract_id TEXT,                              -- 관련 계약 ID
+  status TEXT                                    -- 상태
+);
+
+-- =============================================================================
+--  SECTION 9: 데이터 보존년한 규칙 (참고)
+--
+--   자문계약 정보/날인본:   companies.contract_end_date 로부터 5년
+--   근로계약 정보/PDF/날인본: contracts.contract_end 또는 terminate_date 로부터 5년
+--   급여명세서 정보/PDF:     payrolls.pay_date 로부터 5년
+--   연차 관리대장:           contracts.contract_end 로부터 5년
+--   근태 관리대장:           contracts.contract_end 로부터 5년
+-- =============================================================================
 

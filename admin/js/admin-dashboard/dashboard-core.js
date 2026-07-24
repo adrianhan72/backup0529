@@ -356,6 +356,7 @@ function renderProbationMgmtTable(){
 
     return `<tr>
       <td style="font-weight:700;color:#1e293b;">${empName}</td>
+      <td style="text-align:center;font-size:12px;">${genderLabel(emp)}</td>
       <td>${typeBadge}</td>
       <td style="color:#6b7280;font-size:12.5px;">${c.contract_start || '-'}</td>
       <td style="color:#6b7280;font-size:12.5px;">${probMonths}개월</td>

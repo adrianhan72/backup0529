@@ -381,6 +381,7 @@ function renderAlTable(){
 
     return `<tr>
       <td style="font-weight:700;color:#111827;">${emp.name||'-'}</td>
+      <td style="text-align:center;font-size:12px;">${genderLabel(emp)}</td>
       <td><span class="badge ${badgeCls}">${contractTypeLabel(cat)}</span></td>
       <td style="font-size:12px;color:#6b7280;">${emp.hire_date||contract.contract_start||'-'}</td>
       <td class="right num" style="font-weight:600;">${fmtD(al.totalDays)}${carryoverBadge}</td>

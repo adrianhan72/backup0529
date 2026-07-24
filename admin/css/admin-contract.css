@@ -9,14 +9,14 @@
     #ct-wage-section-title ~ .form-group select,
     #ct-row-salary-period ~ .form-group input[type="text"],
     #ct-row-salary-period ~ .form-group input[type="number"],
-    #ct-row-salary-period ~ .form-group select{height:38px;box-sizing:border-box;padding:6px 12px;font-size:13px;border:1px solid #9080e4;border-radius:7px;background:#f8f9fb;color:#000;font-weight:400}
+    #ct-row-salary-period ~ .form-group select{height:36px;box-sizing:border-box;padding:6px 12px;font-size:13px;border:1px solid #9080e4;border-radius:7px;background:#f8f9fb;color:#000;font-weight:400}
     #ct-wage-section-title ~ .form-group select,
     #ct-row-salary-period ~ .form-group select{padding-right:28px}
     #ct-wage-section-title ~ .form-group .amount-wrap input,
-    #ct-row-salary-period ~ .form-group .amount-wrap input{height:38px;box-sizing:border-box;padding:6px 12px;font-size:13px}
+    #ct-row-salary-period ~ .form-group .amount-wrap input{height:36px;box-sizing:border-box;padding:6px 12px;font-size:13px}
     #ct-wage-section-title ~ .form-group .form-computed,
-    #ct-row-salary-period ~ .form-group .form-computed{height:38px;box-sizing:border-box;padding:6px 12px;font-size:13px;display:flex;align-items:center}
-    #ct-probation-months,#ct-new-probation-months{box-sizing:border-box;height:37px;padding:5px 12px;font-size:13px;border:1px solid #9080e4;border-radius:6px;background:#f8f9fb;color:#000}
+    #ct-row-salary-period ~ .form-group .form-computed{height:36px;box-sizing:border-box;padding:6px 12px;font-size:13px;display:flex;align-items:center}
+    #ct-probation-months,#ct-new-probation-months{box-sizing:border-box;height:36px;padding:5px 12px;font-size:13px;border:1px solid #9080e4;border-radius:6px;background:#f8f9fb;color:#000}
     #contract-modal .form-grid{align-items:stretch}
     #contract-modal .form-grid .form-group{display:flex;flex-direction:column}
     #contract-modal input[type="email"]{height:36px;box-sizing:border-box}
@@ -114,9 +114,9 @@
     /* draft 배�? */
     .badge-draft{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:700;background:rgba(245,158,11,.15);color:#b45309;vertical-align:middle;margin-left:5px;}
     /* 읽기전용 통일 스타일 (조회 모드) */
-    .ct-readonly input,.ct-readonly select,.ct-readonly textarea{background:#f1f5f9!important;color:#555!important;pointer-events:none;border:1px solid #e8eaed!important;border-radius:7px!important;opacity:1!important;-webkit-text-fill-color:#555!important;font-weight:400!important;height:38px!important;box-sizing:border-box!important;padding:6px 12px!important;font-size:13px!important}
+    .ct-readonly input,.ct-readonly select,.ct-readonly textarea{background:#f1f5f9!important;color:#555!important;pointer-events:none;border:1px solid #e8eaed!important;border-radius:7px!important;opacity:1!important;-webkit-text-fill-color:#555!important;font-weight:400!important;height:36px!important;box-sizing:border-box!important;padding:6px 12px!important;font-size:13px!important}
     .ct-readonly select{appearance:none!important;-webkit-appearance:none!important;-moz-appearance:none!important;padding:6px 28px 6px 12px!important;background:#f1f5f9 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='none' stroke='%236b7280' stroke-width='1.5' stroke-linecap='round' d='M3 4.5l3 3 3-3'/%3E%3C/svg%3E") no-repeat right 8px center!important;background-size:14px!important;color:#555!important}
-    .ct-readonly .form-computed{background:#f1f5f9!important;height:38px!important;box-sizing:border-box!important;padding:6px 12px!important;font-size:13px!important;display:flex!important;align-items:center!important}
+    .ct-readonly .form-computed{background:#f1f5f9!important;height:36px!important;box-sizing:border-box!important;padding:6px 12px!important;font-size:13px!important;display:flex!important;align-items:center!important}
     .ct-readonly input::placeholder,.ct-readonly textarea::placeholder{color:transparent!important;opacity:0!important;-webkit-text-fill-color:transparent!important}
     /* ?��? ?�정 ?�널 / ?�사?�정 ?�널?� ct-readonly ?�향 받�? ?�음 */
     .ct-readonly .ct-fixed-terminate-panel input,

@@ -40,6 +40,32 @@ db.run(`CREATE TABLE IF NOT EXISTS kakao_send_logs (
 // contract_expiry_notice.message_id 컬럼 추가 (없으면)
 try { db.run(`ALTER TABLE contract_expiry_notice ADD COLUMN message_id TEXT`); } catch(e) { /* 이미 존재함 */ }
 
+// attendance_ledger 테이블 생성 (없으면)
+db.run(`CREATE TABLE IF NOT EXISTS attendance_ledger (
+  id TEXT PRIMARY KEY,
+  employee_id TEXT,
+  company_id TEXT,
+  year INTEGER,
+  month_data TEXT,
+  total_absent_days REAL DEFAULT 0,
+  total_late_count INTEGER DEFAULT 0,
+  total_earlyleave_count INTEGER DEFAULT 0,
+  note TEXT,
+  created_at INTEGER,
+  updated_at INTEGER,
+  contract_id TEXT,
+  status TEXT
+)`);
+
+// payrolls 근태 컬럼 추가 (없으면)
+try { db.run(`ALTER TABLE payrolls ADD COLUMN absent_dates TEXT`); } catch(e) {}
+try { db.run(`ALTER TABLE payrolls ADD COLUMN earlyleave_data TEXT`); } catch(e) {}
+try { db.run(`ALTER TABLE payrolls ADD COLUMN late_data TEXT`); } catch(e) {}
+try { db.run(`ALTER TABLE payrolls ADD COLUMN absent_data TEXT`); } catch(e) {}
+
+// companies 병가 지급율 컬럼 추가 (없으면)
+try { db.run(`ALTER TABLE companies ADD COLUMN sick_leave_pay_rate REAL DEFAULT 0`); } catch(e) {}
+
 // ── 미들웨어 ──
 app.use(require('./middleware/cors')());
 app.use(express.json({ limit: '10mb' }));

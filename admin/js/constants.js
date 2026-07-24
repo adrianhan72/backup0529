@@ -552,9 +552,19 @@ const PAGE_LABELS = Object.freeze({
   'wage-ledger':          '임금대장',
   standards:              '년도별 산정기준',
   severance:              '퇴직급여 관리',
-  'annual-leave':         '연차 관리',
-  'leave-promotion':      '사용촉진 발송 이력',
+  'annual-leave':         '연차 관리대장',
+  'leave-promotion':      '연차사용촉진 발송',
+  'attendance-ledger':    '근태 관리대장',
   'system-settings':      '시스템 설정',
 });
+
+/** 성별 표시 헬퍼 (emp 객체 또는 gender 문자열) */
+function genderLabel(empOrGender) {
+  if (!empOrGender) return '-';
+  const g = typeof empOrGender === 'string' ? empOrGender : (empOrGender.gender || '');
+  if (g === 'female' || g === '여성' || g === '여') return '여';
+  if (g === 'male'   || g === '남성' || g === '남') return '남';
+  return '-';
+}
 
 

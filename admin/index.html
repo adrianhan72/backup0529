@@ -102,7 +102,8 @@
     <div class="menu-item" data-page="payslip-send" onclick="showPage('payslip-send',this)"><svg class="menu-icon" width="14" height="14" viewBox="0 0 24 24"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg> 급여 명세서 발송<span class="count-badge menu-todo-badge" id="badge-payslip-send" style="display:none;"></span></div>
     <div class="menu-item" data-page="severance" onclick="showPage('severance',this)"><i class="fas fa-hand-holding-usd"></i> 퇴직급여 관리<span class="count-badge menu-todo-badge" id="badge-severance" style="display:none;"></span></div>
     <div class="menu-item" data-page="labor-status" onclick="showPage('labor-status',this)"><i class="fas fa-chart-bar"></i> 급여 통계 조회</div>
-    <div class="menu-section">연차 관리</div>
+    <div class="menu-section">근로실적 관리</div>
+    <div class="menu-item" data-page="attendance-ledger" onclick="showPage('attendance-ledger',this)"><i class="fas fa-clipboard-check"></i> 근태 관리대장</div>
     <div class="menu-item" data-page="annual-leave" onclick="showPage('annual-leave',this)"><i class="fas fa-umbrella-beach"></i> 연차 관리</div>
     <div class="menu-item" data-page="leave-promotion" onclick="showPage('leave-promotion',this)"><i class="fas fa-bullhorn"></i> 사용촉진 발송 이력</div>
     <div class="menu-section">시스템</div>
@@ -737,6 +738,19 @@
   </div>
 </div>
 
+<!-- 근태 관리대장 모달 (atl-ledger-modal) -->
+<div class="modal-overlay" id="atl-ledger-modal">
+  <div class="modal" style="max-width:700px;max-height:85vh;">
+    <div class="modal-header">
+      <span class="modal-title"><i class="fas fa-clipboard-check" style="color:#6366f1;margin-right:7px;"></i><span id="atl-ledger-title">근태 관리대장</span></span>
+      <button class="btn btn-icon-dark" onclick="atlCloseLedgerModal()" title="닫기"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body" id="atl-ledger-body" style="padding:18px 20px;">
+      <!-- JS에서 동적 생성 -->
+    </div>
+  </div>
+</div>
+
 <!-- 사용촉진 발송 확인 모달 -->
 <div class="modal-overlay" id="al-promo-modal">
   <div class="modal" style="max-width:660px;">
@@ -1020,12 +1034,12 @@
         <div class="form-group">
           <label>급여 산정기간 <span class="lbl-req">*</span></label>
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-            <select id="cm-period-month" onchange="_cmPeriodCompose()" style="flex:0 0 auto;">
+            <select id="cm-period-month" onchange="_cmPeriodCompose()" style="flex:0 0 auto;border:1.5px solid #6366f1;border-radius:7px;">
               <option value="">월 선택</option>
               <option value="전월">전월</option>
               <option value="당월">당월</option>
             </select>
-            <select id="cm-period-day" onchange="_cmPeriodCompose()" style="flex:0 0 auto;">
+            <select id="cm-period-day" onchange="_cmPeriodCompose()" style="flex:0 0 auto;border:1.5px solid #6366f1;border-radius:7px;">
               <option value="">일 선택</option>
               <option value="1">1일</option>
               <option value="5">5일</option>
@@ -1046,7 +1060,7 @@
         <div class="form-group"><label>급여 지급일 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span> <span class="form-hint">(예: 25일)</span></label><div style="display:flex;align-items:center;gap:4px;"><input type="number" id="cm-payday" min="1" max="31" placeholder="25" style="width:80px;" /><span style="font-size:13px;color:#374151;font-weight:600;">일</span></div></div>
         <div class="form-group">
           <label>4대보험 적용 기준 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
-          <select id="cm-insurance-basis" style="width:100%;">
+          <select id="cm-insurance-basis" style="width:100%;border:1.5px solid #6366f1;border-radius:7px;">
             <option value="" disabled selected>선택하세요</option>
             <option value="요율 기준">요율 기준 (년도별 산정기준 요율 자동계산)</option>
             <option value="확정액 기준">확정액 기준 (금액 직접 입력)</option>
@@ -1054,11 +1068,16 @@
         </div>
         <div class="form-group">
           <label>연차 휴가 산정 기준 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
-          <select id="cm-annual-leave-basis" style="width:100%;">
+          <select id="cm-annual-leave-basis" style="width:100%;border:1.5px solid #6366f1;border-radius:7px;">
             <option value="" disabled selected>선택하세요</option>
             <option value="회계년도 기준">회계년도 기준</option>
             <option value="입사일 기준">입사일 기준</option>
           </select>
+        </div>
+        <div class="form-group">
+          <label>병가 급여 지급율 (%)</label>
+          <input type="number" id="cm-sick-leave-pay-rate" style="width:100%;" min="0" max="100" step="1" placeholder="0 (무급만 해당)" value="0" />
+          <span style="font-size:11px;color:#6b7280;">취업규칙상 병가 급여 지급율을 입력하세요. 0%는 무급만 허용, 입력한 비율로 유급 병가 옵션이 활성화됩니다.</span>
         </div>
             </div>
           </div>
@@ -2987,6 +3006,7 @@
   <script src="js/admin-billing/annual-leave.js"></script>
   <script src="js/admin-billing/company-notice-log.js"></script>
   <script src="js/admin-billing/general-notice.js"></script>
+  <script src="js/admin-billing/attendance-ledger.js"></script>
   <script src="js/admin-billing.js"></script>
 
   <!-- ─── 범용 확인 모달 ─── -->

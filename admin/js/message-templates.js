@@ -308,7 +308,7 @@ function _msgInAppTitle(docType) {
         .replace(/\{고용형태\}/g, MSG_SAMPLE_DATA.contractType)
         .replace(/\{회사명\}/g, MSG_SAMPLE_DATA.companyName);
     }
-    return `[근로계약서 발송] ${MSG_SAMPLE_DATA.employeeName} — ${MSG_SAMPLE_DATA.contractType} 근로계약서`;
+    return `[근로계약서 발송] ${MSG_SAMPLE_DATA.employeeName} — 근로계약서가 발송되었습니다`;
   }
   if (docType === 'payslip') {
     return `[급여명세서 발송] ${MSG_SAMPLE_DATA.employeeName} — ${MSG_SAMPLE_DATA.payYear}년 ${MSG_SAMPLE_DATA.payMonth}월 급여명세서`;
@@ -324,7 +324,7 @@ function _msgRenderInAppPreview(docType) {
 
 ■ 발송 시각: 2026. 7. 24. 오후 3:30:00
 
-* 근로계약서 날인본 사진이 저희 담당자에게 회신되면 5년간 보관됩니다.
+* 근로계약서 날인본 사진은 계약 종료일로부터 5년간 보관됩니다.
 
 ─────────────────────
 인사톡 노무톡 · 대화인사노무파트너스 담당자

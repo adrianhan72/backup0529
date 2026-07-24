@@ -307,21 +307,6 @@ function openCnlDetailById(recordId){
   const readRow = (isGeneral && gnSt === 'cancelled') ? '' : `<span style="color:#64748b;font-weight:600;">확인 여부</span><span>${readTxt}</span>`;
 
   body.innerHTML = `
-    <div style="background:${isGeneral?'#fffbeb':'#f8fafc'};border:1px solid ${isGeneral?'#fde68a':'#e2e8f0'};border-radius:10px;padding:14px 16px;margin-bottom:16px;font-size:12.5px;line-height:2;">
-      <div style="display:grid;grid-template-columns:90px 1fr;gap:2px 0;">
-        <span style="color:#64748b;font-weight:600;">알림 유형</span>
-        <span><span style="display:inline-block;background:${typeClr.bg};color:${typeClr.color};padding:2px 10px;border-radius:20px;font-size:11.5px;">${typeLbl}</span></span>
-        <span style="color:#64748b;font-weight:600;">발송방식</span>
-        <span>${n.sent_by ? '<span class="badge badge-indigo"><i class="fas fa-user-cog"></i> 관리자 수동발송</span>' : '<span class="badge badge-slate"><i class="fas fa-robot"></i> 시스템 자동발송</span>'}</span>
-        <span style="color:#64748b;font-weight:600;">${timeLabel}</span>
-        <span style="color:#1e293b;font-weight:600;">${fmtDtFull(displayTime)}</span>
-        <span style="color:#64748b;font-weight:600;">고객사</span>
-        <span style="color:#1e293b;">${n.company_name||'-'}</span>
-        ${employeeRow}${gnStatusRow}${readRow}
-        <span style="color:#64748b;font-weight:600;">발송자</span>
-        <span style="color:#374151;">${n.sent_by||'-'}</span>
-      </div>
-    </div>
     <div style="font-size:13.5px;font-weight:800;color:#1e293b;margin-bottom:10px;padding:10px 14px;
                 background:${isGeneral?'linear-gradient(135deg,#fffbeb,#fef9c3)':'linear-gradient(135deg,#eef2ff,#f0f9ff)'};
                 border-radius:8px;border-left:4px solid ${isGeneral?'#f59e0b':'#6366f1'};">
@@ -532,22 +517,6 @@ function openCnlDetail(listIdx){
         <span>${readTxt}</span>`;
 
   body.innerHTML = `
-    <!-- 메타 정보 -->
-    <div style="background:${isGeneral?'#fffbeb':'#f8fafc'};border:1px solid ${isGeneral?'#fde68a':'#e2e8f0'};border-radius:10px;padding:14px 16px;margin-bottom:16px;font-size:12.5px;line-height:2;">
-      <div style="display:grid;grid-template-columns:90px 1fr;gap:2px 0;">
-        <span style="color:#64748b;font-weight:600;">알림 유형</span>
-        <span><span style="display:inline-block;background:${typeClr.bg};color:${typeClr.color};padding:2px 10px;border-radius:20px;font-size:11.5px;">${typeLbl}</span></span>
-        <span style="color:#64748b;font-weight:600;">발송방식</span>
-        <span>${n.sent_by ? '<span class="badge badge-indigo"><i class="fas fa-user-cog"></i> 관리자 수동발송</span>' : '<span class="badge badge-slate"><i class="fas fa-robot"></i> 시스템 자동발송</span>'}</span>
-        <span style="color:#64748b;font-weight:600;">${timeLabel}</span>
-        <span style="color:#1e293b;font-weight:600;">${fmtDtFull(displayTime)}</span>
-        <span style="color:#64748b;font-weight:600;">고객사</span>
-        <span style="color:#1e293b;">${n.company_name||'-'}</span>
-        ${employeeRow}${gnStatusRow}${readRow}
-        <span style="color:#64748b;font-weight:600;">발송자</span>
-        <span style="color:#374151;">${n.sent_by||'-'}</span>
-      </div>
-    </div>
 
     <!-- 제목 -->
     <div style="font-size:13.5px;font-weight:800;color:#1e293b;margin-bottom:10px;padding:10px 14px;

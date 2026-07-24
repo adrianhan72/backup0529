@@ -139,16 +139,68 @@ function ssUpdateFooterPreview() {
 
 const MSG_RULE_DEFAULTS = {
   contract_dispatched: {
-    title: `[근로계약서 발송] {근로자명} — {고용형태} 근로계약서`,
+    title: `[근로계약서 발송] {근로자명} — 근로계약서가 발송되었습니다`,
     body: `안녕하세요, {회사명} 대표자님.
 
 근로기준법 제17조(근로조건의 명시)에 따라 소속 근로자 {근로자명}에게 {고용형태} 근로계약서가 {발송방법}(으)로 발송 완료되었음을 알려드립니다.
 
 ■ 발송 시각: {발송시각}
 
-* 근로계약서 날인본 사진이 저희 담당자에게 회신되면 5년간 보관됩니다.`
+* 근로계약서 날인본 사진은 계약 종료일로부터 5년간 보관됩니다.`
   }
 };
+
+// ── 발송 수단별 메시지 유형 매핑 ──
+const MSG_CHANNEL_TYPES = {
+  inapp: [
+    { value: 'contract_dispatched', label: '근로계약서 발송 완료' },
+  ],
+  kakao: [
+    { value: '', label: '— 추후 지원 예정 —', disabled: true },
+  ],
+  email: [
+    { value: '', label: '— 추후 지원 예정 —', disabled: true },
+  ],
+};
+
+/** 발송 수단 변경 → 메시지 유형 목록 활성화 */
+function ssOnChannelChange() {
+  const channelEl = document.getElementById('ss-rule-channel');
+  const typeEl    = document.getElementById('ss-rule-type');
+  const titleEl   = document.getElementById('ss-rule-title');
+  const bodyEl    = document.getElementById('ss-rule-body');
+  if (!channelEl || !typeEl) return;
+
+  const channel = channelEl.value;
+  const types   = MSG_CHANNEL_TYPES[channel] || [];
+
+  // 메시지 유형 select 재구성
+  typeEl.innerHTML = '';
+  if (types.length === 0) {
+    typeEl.innerHTML = '<option value="">발송 수단을 먼저 선택하세요</option>';
+    typeEl.disabled = true;
+  } else {
+    types.forEach(t => {
+      const opt = document.createElement('option');
+      opt.value = t.value;
+      opt.textContent = t.label;
+      if (t.disabled) opt.disabled = true;
+      typeEl.appendChild(opt);
+    });
+    typeEl.disabled = false;
+  }
+
+  // 제목/본문 초기화
+  if (titleEl) titleEl.value = '';
+  if (bodyEl)  bodyEl.value  = '';
+
+  // 첫 번째 활성 타입 자동 선택
+  const firstActive = types.find(t => !t.disabled);
+  if (firstActive) {
+    typeEl.value = firstActive.value;
+    ssLoadMessageRule();
+  }
+}
 
 function _ssGetRulesData() {
   try {
@@ -165,6 +217,14 @@ async function ssLoadMessageRule() {
   if (!typeEl || !titleEl || !bodyEl) return;
 
   const ruleType = typeEl.value;
+  if (!ruleType) {
+    titleEl.value = '';
+    bodyEl.value  = '';
+    _ssSetRuleInputsDisabled(true);
+    return;
+  }
+  _ssSetRuleInputsDisabled(false);
+
   const rules = _ssGetRulesData();
   const rule = rules[ruleType] || MSG_RULE_DEFAULTS[ruleType] || { title: '', body: '' };
 
@@ -179,12 +239,24 @@ function ssResetMessageRule() {
   if (!typeEl || !titleEl || !bodyEl) return;
 
   const ruleType = typeEl.value;
+  if (!ruleType) return;
   const def = MSG_RULE_DEFAULTS[ruleType];
   if (!def) return;
 
   titleEl.value = def.title || '';
   bodyEl.value  = def.body  || '';
   toast('기본값으로 초기화되었습니다. 저장 버튼을 눌러 적용하세요.', 'info');
+}
+
+function _ssSetRuleInputsDisabled(disabled) {
+  const titleEl = document.getElementById('ss-rule-title');
+  const bodyEl  = document.getElementById('ss-rule-body');
+  const saveBtn = document.getElementById('ss-rule-save-btn');
+  const resetBtn = document.getElementById('ss-rule-reset-btn');
+  if (titleEl) { titleEl.disabled = disabled; titleEl.style.opacity = disabled ? '0.5' : ''; }
+  if (bodyEl)  { bodyEl.disabled  = disabled; bodyEl.style.opacity  = disabled ? '0.5' : ''; }
+  if (saveBtn) { saveBtn.disabled = disabled; saveBtn.style.opacity = disabled ? '0.5' : ''; }
+  if (resetBtn) { resetBtn.disabled = disabled; resetBtn.style.opacity = disabled ? '0.5' : ''; }
 }
 
 async function ssSaveMessageRule() {
@@ -194,6 +266,7 @@ async function ssSaveMessageRule() {
   if (!typeEl || !titleEl || !bodyEl) return;
 
   const ruleType = typeEl.value;
+  if (!ruleType) { toast('메시지 유형을 선택하세요.', 'error'); return; }
   const title = titleEl.value.trim();
   const body  = bodyEl.value.trim();
   if (!title || !body) { toast('제목과 본문을 모두 입력하세요.', 'error'); return; }

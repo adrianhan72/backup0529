@@ -35,6 +35,7 @@ const PAGE_REGISTRY = {
   'company-notice-log':   { external: true },
   'general-notice':       { external: true },
   'probation-mgmt':       { external: true },
+  'attendance-ledger':    { external: true },
   'annual-leave':         { external: true },
   'leave-promotion':      { external: true },
   'system-settings':      { external: true },

@@ -758,6 +758,7 @@ function renderLaborStatus(){
       const stBadge = stBadge2; const stLabel2 = stName2;
       return `<tr>
         <td style="font-weight:600;">${getEmpName(c.employee_id)}</td>
+        <td style="text-align:center;font-size:12px;">${(()=>{const e=(allEmployees||[]).find(x=>x.id===c.employee_id);return genderLabel(e);})()}</td>
         <td><span class="badge ${catBadge}">${contractTypeLabel(empCat)}</span></td>
         <td style="font-size:11px;color:#555;">${periodTxt}</td>
         <td style="font-size:11.5px;color:#666;">${workInfo}</td>
@@ -780,6 +781,7 @@ function renderLaborStatus(){
       const deduct = (p.gross_pay||0) - (p.net_pay||0);
       return `<tr>
         <td style="font-weight:600;">${getEmpName(p.employee_id)}</td>
+        <td style="text-align:center;font-size:12px;">${(()=>{const e=(allEmployees||[]).find(x=>x.id===p.employee_id);return genderLabel(e);})()}</td>
         <td style="font-size:11.5px;color:#666;">${emp?.department||'-'}</td>
         <td class="amount-blue">${won(p.gross_pay)}</td>
         <td style="color:#ef4444;font-size:12px;">${won(deduct)}</td>

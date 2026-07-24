@@ -201,7 +201,7 @@ async function _ctfUpload(type, contractId, inputEl){
 ■ 파일명: ${file.name}
 ■ 업로드 일시: ${new Date().toLocaleString('ko-KR')}
 
-* 근로계약서 날인본 사진을 5년간 보관합니다.`,
+* 근로계약서 날인본 사진을 계약 종료일로부터 5년간 보관합니다.`,
           contractId : contractId,
           employeeId : c.employee_id, employeeName: _ufEmp.name || '',
           contractEnd: c.contract_end || '',
@@ -225,7 +225,7 @@ async function _ctfUpload(type, contractId, inputEl){
 ■ 완비 서류: 계약서 날인본 + 제3자 정보제공 동의서
 ■ 전환 일시: ${new Date().toLocaleString('ko-KR')}
 
-* 근로계약서 날인본 사진을 5년간 보관합니다.`,
+* 근로계약서 날인본 사진을 계약 종료일로부터 5년간 보관합니다.`,
             contractId : contractId,
             employeeId : c.employee_id, employeeName: _ufEmp.name || '',
             contractEnd: c.contract_end || '',
