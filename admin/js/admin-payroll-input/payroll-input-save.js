@@ -295,6 +295,9 @@ function loadPIDraft(){
   // 결근일 복원
   { const _absEl = document.getElementById('pi-absent-dates');
     if(_absEl){ _absEl.value = draft.absent_dates || ''; } }
+  // 결근 유형 데이터 복원 (sick_paid, layoff_leave, maternity_paid 등)
+  { const _el = document.getElementById('pi-absent-data');
+    if(_el){ _el.value = draft.absent_data || '[]'; } }
   // 무단 조퇴 복원
   { const _el = document.getElementById('pi-earlyleave-data');
     if(_el){ _el.value = draft.earlyleave_data || '[]'; } }

@@ -768,6 +768,7 @@ function openCompanyModal(id=null){
       document.getElementById('cm-insurance-basis').value=c.insurance_basis||'';
       document.getElementById('cm-annual-leave-basis').value=c.annual_leave_basis||'';
       document.getElementById('cm-sick-leave-pay-rate').value=c.sick_leave_pay_rate ?? 0;
+      { const _pmRadio = document.querySelector(`input[name="cm-proration-method"][value="${c.proration_method||'30day_fixed'}"]`); if(_pmRadio) _pmRadio.checked = true; }
       document.getElementById('cm-contract-start').value=c.contract_start_date||'';
       // 해지 상태면 계약 해지일 행 표시
       const _endRow = document.getElementById('cm-contract-end-row');
@@ -819,6 +820,7 @@ function openCompanyModal(id=null){
       document.getElementById('cm-insurance-basis').value=c.insurance_basis||'';
       document.getElementById('cm-annual-leave-basis').value=c.annual_leave_basis||'';
       document.getElementById('cm-sick-leave-pay-rate').value=c.sick_leave_pay_rate ?? 0;
+      { const _pmRadio = document.querySelector(`input[name="cm-proration-method"][value="${c.proration_method||'30day_fixed'}"]`); if(_pmRadio) _pmRadio.checked = true; }
       document.getElementById('cm-contract-start').value=c.contract_start_date||'';
       // 임시저장 시 생성된 접근코드 유지
       _setAccessCode(c.access_code || generateAccessCode());
@@ -951,6 +953,7 @@ async function saveDraftCompany(){
     insurance_basis:    document.getElementById('cm-insurance-basis').value,
     annual_leave_basis: document.getElementById('cm-annual-leave-basis').value,
     sick_leave_pay_rate: parseFloat(document.getElementById('cm-sick-leave-pay-rate').value) || 0,
+    proration_method: document.querySelector('input[name="cm-proration-method"]:checked')?.value || '30day_fixed',
     service_contract_file_name: _cmSvcGetSaveData().name,
     service_contract_file_data: _cmSvcGetSaveData().data,
     allowance_config:   _cmGetAllowanceConfig(),
@@ -1112,7 +1115,7 @@ async function saveCompany(){
   const _prevStatus = editId.company
     ? (allCompanies.find(x=>x.id===editId.company)?.status || COMPANY_STATUS.ACTIVE)
     : COMPANY_STATUS.ACTIVE;
-  const body={company_name:name,business_number:document.getElementById('cm-biz').value,representative:_representatives[0]?.name||'',representatives:JSON.stringify(_representatives),industry:document.getElementById('cm-industry').value,address:document.getElementById('cm-addr').value,phone:_representatives[0]?.phone||'',email:_representatives[0]?.email||'',pay_period:document.getElementById('cm-period').value,pay_period_month:document.getElementById('cm-period-month-hidden').value||null,pay_period_day:parseInt(document.getElementById('cm-period-day-hidden').value)||null,pay_day:document.getElementById('cm-payday').value,access_code:code,note:document.getElementById('cm-note').value,insurance_basis:insuranceBasis,annual_leave_basis:annualLeaveBasis,sick_leave_pay_rate:parseFloat(document.getElementById('cm-sick-leave-pay-rate')?.value)||0,service_contract_file_name:_cmSvcGetSaveData().name,service_contract_file_data:_cmSvcGetSaveData().data,allowance_config:newAllowanceCfg,contract_start_date:document.getElementById('cm-contract-start').value||null,is_draft:false,draft_saved_at:null,status:_prevStatus};
+  const body={company_name:name,business_number:document.getElementById('cm-biz').value,representative:_representatives[0]?.name||'',representatives:JSON.stringify(_representatives),industry:document.getElementById('cm-industry').value,address:document.getElementById('cm-addr').value,phone:_representatives[0]?.phone||'',email:_representatives[0]?.email||'',pay_period:document.getElementById('cm-period').value,pay_period_month:document.getElementById('cm-period-month-hidden').value||null,pay_period_day:parseInt(document.getElementById('cm-period-day-hidden').value)||null,pay_day:document.getElementById('cm-payday').value,access_code:code,note:document.getElementById('cm-note').value,insurance_basis:insuranceBasis,annual_leave_basis:annualLeaveBasis,sick_leave_pay_rate:parseFloat(document.getElementById('cm-sick-leave-pay-rate')?.value)||0,proration_method:document.querySelector('input[name="cm-proration-method"]:checked')?.value||'30day_fixed',service_contract_file_name:_cmSvcGetSaveData().name,service_contract_file_data:_cmSvcGetSaveData().data,allowance_config:newAllowanceCfg,contract_start_date:document.getElementById('cm-contract-start').value||null,is_draft:false,draft_saved_at:null,status:_prevStatus};
 
   // ── 수정 모드: diff 계산 → 변경 있을 때만 적용일 검증 + company_history 기록 ──
   let _effDateStr = ''; // 상위 스코프에서 선언 (등기임원 이력에서도 사용)

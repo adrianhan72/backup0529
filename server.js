@@ -65,6 +65,7 @@ try { db.run(`ALTER TABLE payrolls ADD COLUMN absent_data TEXT`); } catch(e) {}
 
 // companies 병가 지급율 컬럼 추가 (없으면)
 try { db.run(`ALTER TABLE companies ADD COLUMN sick_leave_pay_rate REAL DEFAULT 0`); } catch(e) {}
+try { db.run(`ALTER TABLE companies ADD COLUMN proration_method TEXT DEFAULT '30day_fixed'`); } catch(e) {}
 
 // ── 미들웨어 ──
 app.use(require('./middleware/cors')());

@@ -51,7 +51,8 @@ CREATE TABLE IF NOT EXISTS companies (
   pay_period_day INTEGER, --  -- 급여 산정기준일
   contract_end_date TEXT, --  -- 자문계약 종료일
   representatives TEXT, --  -- 대표자 정보 (JSON, 복수 가능)
-  sick_leave_pay_rate REAL DEFAULT 0 --  -- 병가 유급비율 (%, 0=무급)
+  sick_leave_pay_rate REAL DEFAULT 0, --  -- 병가 유급비율 (%, 0=무급)
+  proration_method TEXT DEFAULT '30day_fixed'
 );
 
 -- contracts  -- 근로계약
