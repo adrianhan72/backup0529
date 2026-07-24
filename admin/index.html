@@ -579,7 +579,7 @@
       <button class="ledger-nav-btn" onclick="_ledgerNavYear(-1)" title="이전 연도">&#8249;</button>
       <div class="ledger-nav-year" id="ledger-nav-title">2025년 연차휴가 관리대장</div>
       <button class="ledger-nav-btn" onclick="_ledgerNavYear(+1)" title="다음 연도">&#8250;</button>
-      <button class="btn btn-icon-dark" onclick="closeModal('al-ledger-modal')" title="닫기"><i class="fas fa-times"></i></button>
+      <button class="btn btn-close" onclick="closeModal('al-ledger-modal')" title="닫기"><i class="fas fa-times"></i></button>
     </div>
 
     <!-- 모달 본문 (스크롤 영역) -->
@@ -743,7 +743,7 @@
   <div class="modal" style="max-width:700px;max-height:85vh;">
     <div class="modal-header">
       <span class="modal-title"><i class="fas fa-clipboard-check" style="color:#6366f1;margin-right:7px;"></i><span id="atl-ledger-title">근태 관리대장</span></span>
-      <button class="btn btn-icon-dark" onclick="atlCloseLedgerModal()" title="닫기"><i class="fas fa-times"></i></button>
+      <button class="btn btn-close" onclick="atlCloseLedgerModal()" title="닫기"><i class="fas fa-times"></i></button>
     </div>
     <div class="modal-body" id="atl-ledger-body" style="padding:18px 20px;">
       <!-- JS에서 동적 생성 -->
@@ -2822,7 +2822,7 @@
   <div class="modal-card" style="max-width:380px;width:95%">
     <div class="modal-header" style="background:linear-gradient(135deg,#78350f,#92400e);">
       <span class="modal-title" style="color:#fff;"><i class="fas fa-calendar-alt" style="color:#fcd34d;margin-right:6px;"></i> 해지 예정일 변경</span>
-      <button class="btn btn-icon-dark" onclick="closeModal('change-end-date-modal')"><i class="fas fa-times"></i></button>
+      <button class="btn btn-close" onclick="closeModal('change-end-date-modal')"><i class="fas fa-times"></i></button>
     </div>
     <div class="modal-body" style="padding:28px 24px;background:#fff;">
       <div style="text-align:center;margin-bottom:20px;">
@@ -2919,7 +2919,7 @@
   <div class="modal" style="max-width:380px;">
     <div class="modal-header" style="background:linear-gradient(135deg,#1e3a5f,#0f172a);">
       <span class="modal-title" style="color:#fff;"><i class="fas fa-shield-alt" style="color:#f59e0b;margin-right:8px;"></i>보안 확인</span>
-      <button class="btn btn-icon-dark" onclick="closeSSReauth()"><i class="fas fa-times"></i></button>
+      <button class="btn btn-close" onclick="closeSSReauth()"><i class="fas fa-times"></i></button>
     </div>
     <div class="modal-body" style="padding:24px 20px;">
       <div style="text-align:center;margin-bottom:18px;">
