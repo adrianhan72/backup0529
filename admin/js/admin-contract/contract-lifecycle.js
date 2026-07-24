@@ -3159,6 +3159,11 @@ function _ctValidate(){
     }
   })();
 
+  // ── 급여 산정기간 필수 ──
+  if(!document.getElementById('ct-pay-period')?.value.trim()){
+    _ctMarkError('ct-pay-period-month', '급여 산정기간', errors);
+  }
+
   if(errors.length){
     _ctShowErrors(errors);
     return true; // 오류 있음

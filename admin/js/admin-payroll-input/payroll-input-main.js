@@ -1096,8 +1096,21 @@ function loadPIContract(){
 
         let _ppVal = piContract.pay_period || '';
 
-        // pay_period가 "월급"처럼 날짜 범위가 아닌 경우, 고객사 설정으로 산정기간 생성
+        // pay_period가 날짜범위 형식(YYYY.MM.DD~YYYY.MM.DD)이 아니면
         if(!_ppVal || _ppVal === '월급' || _ppVal === '연봉' || !_ppVal.includes('.')){
+          // ① 먼저 개별 계약의 pay_period_month/day 확인
+          const _ctMo = piContract.pay_period_month;
+          const _ctDay = parseInt(piContract.pay_period_day);
+          if(_ctMo && _ctDay){
+            const _isJeon = _ctMo === '전월';
+            const _sMo2 = _isJeon ? (_ppMo === 1 ? 12 : _ppMo - 1) : _ppMo;
+            const _sYr2 = _isJeon && _ppMo === 1 ? _ppYr - 1 : _ppYr;
+            const _eDate2 = new Date(_sYr2, _sMo2 - 1, _ctDay);
+            _eDate2.setMonth(_eDate2.getMonth() + 1);
+            _eDate2.setDate(_eDate2.getDate() - 1);
+            _ppVal = `${_sYr2}.${String(_sMo2).padStart(2,'0')}.${String(_ctDay).padStart(2,'0')}~${_eDate2.getFullYear()}.${String(_eDate2.getMonth()+1).padStart(2,'0')}.${String(_eDate2.getDate()).padStart(2,'0')}`;
+          } else {
+            // ② 계약에도 없으면 고객사 설정으로 폴백
           const _coId2 = currentGlobalCompanyId || document.getElementById('pi-company')?.value;
           const _co2   = allCompanies.find(c => c.id === _coId2);
           const _coMo2 = _co2?.pay_period_month || '당월';
@@ -1114,6 +1127,7 @@ function loadPIContract(){
             _ppVal = `${_sYr2}.${String(_sMo2).padStart(2,'0')}.${String(_coDay2).padStart(2,'0')}~${_eDate2.getFullYear()}.${String(_eDate2.getMonth()+1).padStart(2,'0')}.${String(_eDate2.getDate()).padStart(2,'0')}`;
           }
         }
+      }
 
         if(_isPartialTarget && _endRaw && _ppYr && _ppMo){
           const _endDate   = new Date(_endRaw);
