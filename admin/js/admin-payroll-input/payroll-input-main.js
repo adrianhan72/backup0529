@@ -1174,6 +1174,16 @@ function loadPIContract(){
         }
 
         _ppEl.value = _ppVal;
+        // ── hidden 필드: 급여 산정기간 시작일/종료일 (연차·근태 계산용) ──
+        if(_ppVal && _ppVal.includes('~')){
+          const _parts2 = _ppVal.split('~');
+          const _start = _parts2[0].replace(/\./g,'-');
+          const _end   = _parts2[1].replace(/\./g,'-');
+          const _ppStartEl = document.getElementById('pi-pay-period-start');
+          const _ppEndEl   = document.getElementById('pi-pay-period-end');
+          if(_ppStartEl) _ppStartEl.value = _start;
+          if(_ppEndEl)   _ppEndEl.value   = _end;
+        }
       }
     }
     // 통상시급: 계약서 hourly_wage → readonly 표시
