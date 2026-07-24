@@ -110,8 +110,8 @@
     .pi-note-wrap textarea{display:block;width:100%;min-height:62px;border:1px solid #e0e0e0;border-radius:6px;padding:6px 9px;font-size:13px;outline:none;font-family:inherit;resize:vertical;line-height:1.55;color:#1a1a2e;box-sizing:border-box;}
     .pi-note-wrap textarea:focus{border-color:#e94560;}
 /* 계약??고정??�� readonly ?��???*/
-.pi-readonly-field{background:#f4f6fb!important;color:#6b7280!important;cursor:default!important;border-color:#e5e7eb!important;user-select:none!important;}
-.pi-readonly-field:focus{border-color:#e5e7eb!important;outline:none!important;}
+.pi-readonly-field{background:#f1f5f9!important;color:#555!important;cursor:default!important;border-color:#e8eaed!important;user-select:none!important;}
+.pi-readonly-field:focus{border-color:#e8eaed!important;outline:none!important;}
 .pi-pay-type-select.pi-btn-locked{opacity:.45!important;cursor:default!important;pointer-events:none!important;}
     .pi-row .pi-val{font-weight:600;font-size:13px;color:#1a1a2e}
     /* ?�상?�금 지급유???�?�운 select (기존 버튼 UI ?��? */

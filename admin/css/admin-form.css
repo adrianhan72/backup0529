@@ -15,9 +15,9 @@
     .work-schedule-table tr.day-sun td.td-brk{background:#fce7f3;}
     .work-schedule-table tr:last-child td{border-bottom:none;}
     .work-schedule-table input[type=time]{width:92px;border:1px solid #e2e8f0;border-radius:5px;padding:4px 2px;font-size:13px;font-family:inherit;background:#fff;text-align:center;}
-    .work-schedule-table input[type=time]:disabled{background:#f3f4f6;color:#9ca3af;}
+    .work-schedule-table input[type=time]:disabled{background:#f1f5f9;color:#555;border-color:#e8eaed;}
     .work-schedule-table input.brk-time{width:92px;border:1px solid #ddd6fe;border-radius:5px;padding:4px 2px;font-size:13px;font-family:inherit;background:#fff;text-align:center;}
-    .work-schedule-table input.brk-time:disabled{background:#f3f4f6;color:#9ca3af;border-color:#e2e8f0;}
+    .work-schedule-table input.brk-time:disabled{background:#f1f5f9;color:#555;border-color:#e8eaed;}
     .work-schedule-table .brk-sep{font-size:11px;color:#7c3aed;font-weight:700;padding:0 1px;}
     /* 복수 ?�게?�롯 */
     .brk-slots-wrap{display:flex;flex-direction:column;gap:3px;align-items:flex-start;min-width:210px;}
@@ -66,8 +66,9 @@
     }
     .time-picker select.tp-h:disabled,
     .time-picker select.tp-m:disabled {
-      background: #f3f4f6 !important;
-      color: #9ca3af !important;
+      background: #f1f5f9 !important;
+      color: #555 !important;
+      border-color: #e8eaed !important;
     }
     .shift-add{width:22px!important;height:22px!important;font-size:12px!important;line-height:1!important;padding:0!important;}
     .shift-del{width:22px!important;height:22px!important;font-size:12px!important;line-height:1!important;padding:0!important;}
