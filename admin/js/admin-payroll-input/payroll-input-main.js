@@ -659,30 +659,36 @@ function _calcAnnualAutoPayAmount(remainDays){
 
 /**
  * 급여입력 페이지의 연차 사용내역 행 업데이트
- * 해당 직원·연도·월의 연차휴가 관리대장 데이터를 읽어 표시
+ * 근로계약의 급여 산정기간(pi-pay-period-start ~ end) 기준으로 연차 사용일 필터링
  */
 function _updatePIAnnualLeaveDetail(){
   const rowEl = document.getElementById('pi-row-annual-detail');
   const textEl = document.getElementById('pi-annual-detail-text');
   if(!rowEl || !textEl) return;
 
-  // 계약서 없거나 일용직이면 숨김
   if(!piContract || piContract.contract_type === CONTRACT_TYPE.DAILY){
     rowEl.style.display = 'none';
     return;
   }
 
   const empId = document.getElementById('pi-employee')?.value || '';
-  const curYear = parseInt(document.getElementById('pi-year')?.value) || 0;
-  const curMonth = parseInt(document.getElementById('pi-month')?.value) || 0;
-
-  if(!empId || !curYear || !curMonth){
+  if(!empId){
     textEl.textContent = '-';
     rowEl.style.display = '';
     return;
   }
 
-  // 관리대장에서 해당 월 데이터 조회
+  // 급여 산정기간 가져오기
+  const ppStart = document.getElementById('pi-pay-period-start')?.value || '';
+  const ppEnd   = document.getElementById('pi-pay-period-end')?.value || '';
+  if(!ppStart || !ppEnd){
+    textEl.textContent = '산정기간 없음';
+    textEl.style.color = '#9ca3af';
+    rowEl.style.display = '';
+    return;
+  }
+
+  const curYear = parseInt(document.getElementById('pi-year')?.value) || 0;
   const ledger = (allLeaveLedgers || []).find(r =>
     r.employee_id === empId && Number(r.year) === curYear
   );
@@ -697,16 +703,24 @@ function _updatePIAnnualLeaveDetail(){
   let monthData = [];
   try { monthData = JSON.parse(ledger.month_data || '[]'); } catch(e) { monthData = []; }
 
-  const thisMonth = monthData.find(md => Number(md.month) === curMonth);
-  if(!thisMonth || !thisMonth.days){
-    textEl.textContent = '이번달 사용 내역 없음';
+  // 급여 산정기간 내 연차 사용일 수집
+  const usedDates = [];
+  monthData.forEach(md => {
+    const dates = (md.dates || '').split(',').map(d => d.trim()).filter(Boolean);
+    dates.forEach(d => {
+      if(d >= ppStart && d <= ppEnd) usedDates.push(d);
+    });
+  });
+
+  if(usedDates.length === 0){
+    textEl.textContent = '해당 기간 사용 내역 없음';
     textEl.style.color = '#9ca3af';
     rowEl.style.display = '';
     return;
   }
 
-  const datesStr = thisMonth.dates || '';
-  textEl.textContent = `${thisMonth.days}일${datesStr ? ' (' + datesStr + ')' : ''}`;
+  usedDates.sort();
+  textEl.textContent = `${usedDates.length}일 (${usedDates.join(', ')})`;
   textEl.style.color = '#0d9488';
   rowEl.style.display = '';
 }
@@ -754,8 +768,10 @@ function _updatePIAttendanceSummary(){
   const ctx = window._attendanceFromPayroll;
   if(!ctx) return;
   const empId = ctx.empId;
-  const year = parseInt(document.getElementById('pi-year')?.value) || new Date().getFullYear();
-  const month = parseInt(document.getElementById('pi-month')?.value) || (new Date().getMonth() + 1);
+
+  // 급여 산정기간 가져오기
+  const ppStart = document.getElementById('pi-pay-period-start')?.value || '';
+  const ppEnd   = document.getElementById('pi-pay-period-end')?.value || '';
 
   let entries = [];
   if(typeof _atlLedgerCache !== 'undefined'){
@@ -765,9 +781,10 @@ function _updatePIAttendanceSummary(){
     });
   }
 
-  const pad = n => String(n).padStart(2,'0');
-  const ymPrefix = year + '-' + pad(month);
-  const monthEntries = entries.filter(e => (e.date||'').startsWith(ymPrefix));
+  // 급여 산정기간 내 날짜만 필터
+  const monthEntries = ppStart && ppEnd
+    ? entries.filter(e => (e.date||'') >= ppStart && (e.date||'') <= ppEnd)
+    : entries;
 
   let absentDays = 0, lateCount = 0, earlyCount = 0;
   let absentDates = [], absentData = [], lateData = [], earlyData = [];
