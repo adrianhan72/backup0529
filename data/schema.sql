@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS companies (
   annual_leave_basis TEXT, --  -- 연차 산정 기준
   is_draft INTEGER DEFAULT 0, --  -- 임시저장 여부 (0:정식등록, 1:임시)
   draft_saved_at TEXT, --  -- 임시저장 일시
-  status TEXT DEFAULT 'active', --  -- 상태 (active:이용중, inactive:해지, draft:임시저장)
+  status TEXT DEFAULT 'active', --  -- 상태 (이용중/해지/임시저장)
   allowance_config TEXT, --  -- 수당 설정 (JSON)
   created_at INTEGER, --  -- 생성일시 (unix ms)
   updated_at INTEGER, --  -- 수정일시 (unix ms)
@@ -71,8 +71,8 @@ CREATE TABLE IF NOT EXISTS contracts (
   base_salary REAL, --  -- 기본급
   hourly_wage REAL, --  -- 통상시급
   weekly_holiday_pay REAL, --  -- 주휴수당
-  contract_type TEXT, --  -- 계약 유형 (regular/fixed_term/regular_probation/fixed_term_probation/daily)
-  status TEXT DEFAULT 'active', --  -- 계약 상태
+  contract_type TEXT, --  -- 계약 유형 (정규직/계약직/정규직수습/계약직수습/일용직)
+  status TEXT DEFAULT 'active', --  -- 계약 상태 (활성/해지/예정/갱신예정/해지예정/만료/파기/취소/서류미비)
   pay_period TEXT, --  -- 급여 산정기간
   meal_allowance REAL, --  -- 식대
   meal_pay_type TEXT, --  -- 식대 지급유형
@@ -159,14 +159,14 @@ CREATE TABLE IF NOT EXISTS employees (
   id TEXT PRIMARY KEY, --  -- 고유식별자
   company_id TEXT, --  -- 소속 회사 ID → companies.id
   name TEXT, --  -- 이름
-  gender TEXT, --  -- 성별 (male/female)
+  gender TEXT, --  -- 성별 (남/여)
   employment_category TEXT, --  -- 고용형태 구분
   employee_number TEXT, --  -- 사원번호
   department TEXT, --  -- 부서
   position TEXT, --  -- 직책
   hire_date TEXT, --  -- 입사일
   contract_period TEXT, --  -- 계약 기간
-  status TEXT DEFAULT 'active', --  -- 상태 (active:재직, resigned:퇴직)
+  status TEXT DEFAULT 'active', --  -- 재직 상태 (재직/퇴직)
   note TEXT, --  -- 비고
   id_number TEXT, --  -- 주민등록번호
   phone TEXT, --  -- 휴대전화번호
@@ -323,7 +323,7 @@ CREATE TABLE IF NOT EXISTS payroll_send_logs (
   pay_month INTEGER, --  -- 급여 월
   sent_at TEXT, --  -- 발송 일시
   sent_by TEXT, --  -- 발송 처리자
-  send_method TEXT, --  -- 발송 방식 (kakao/email/manual)
+  send_method TEXT, --  -- 발송 방식 (알림톡/이메일/수동교부)
   note TEXT, --  -- 비고
   created_at INTEGER, --  -- 생성일시
   updated_at INTEGER --  -- 수정일시
@@ -486,8 +486,8 @@ CREATE TABLE IF NOT EXISTS consent_dispatch (
   company_id TEXT, --  -- 회사 ID
   company_name TEXT, --  -- 회사명
   contract_type TEXT, --  -- 계약 유형
-  dispatch_method TEXT, --  -- 발송 방식 (kakao/email/manual)
-  dispatch_status TEXT, --  -- 발송 상태 (completed/failed/pending)
+  dispatch_method TEXT, --  -- 발송 방식 (알림톡/이메일/수동교부)
+  dispatch_status TEXT, --  -- 발송 상태 (완료/실패/대기)
   recipient TEXT, --  -- 수신처
   dispatched_at TEXT, --  -- 발송 일시
   dispatched_by TEXT, --  -- 발송 처리자
@@ -508,7 +508,7 @@ CREATE TABLE IF NOT EXISTS contract_dispatch (
   company_name TEXT, --  -- 회사명
   contract_type TEXT, --  -- 계약 유형
   dispatch_method TEXT, --  -- 발송 방식 (kakao/email/manual)
-  dispatch_status TEXT, --  -- 발송 상태 (completed/failed/pending)
+  dispatch_status TEXT, --  -- 발송 상태 (완료/실패/대기)
   recipient TEXT, --  -- 수신처
   dispatched_at TEXT, --  -- 발송 일시
   dispatched_by TEXT, --  -- 발송 처리자
@@ -572,7 +572,7 @@ CREATE TABLE IF NOT EXISTS billing (
   employee_count INTEGER, --  -- 직원 수
   amount_per_employee REAL, --  -- 1인당 청구액
   total_amount REAL, --  -- 총 청구액
-  payment_status TEXT DEFAULT 'pending', --  -- 납부 상태 (pending/partial/paid/unpaid)
+  payment_status TEXT DEFAULT 'pending', --  -- 납부 상태 (대기/부분납부/미납/완납)
   payment_date TEXT, --  -- 납부일
   partial_paid_amount REAL DEFAULT 0, --  -- 부분 납부액
   remaining_amount REAL, --  -- 잔여 청구액
@@ -590,7 +590,7 @@ CREATE INDEX IF NOT EXISTS idx_billing_company ON billing(company_id);
 -- insurance_rates  -- 4대보험 요율 (연도별)
 CREATE TABLE IF NOT EXISTS insurance_rates (
   id TEXT PRIMARY KEY, --  -- 고유식별자
-  insurance_type TEXT, --  -- 보험 유형 (national_pension/health/long_term_care/employment)
+  insurance_type TEXT, --  -- 보험 유형 (국민연금/건강보험/장기요양/고용보험)
   year INTEGER, --  -- 적용 연도
   period_start TEXT, --  -- 적용 시작일
   period_end TEXT, --  -- 적용 종료일
