@@ -1,153 +1,153 @@
-ï»¿    <div id="page-consent-dispatch" class="page">
+    <div id="page-consent-dispatch" class="page">
 
-      <!-- íƒ­ ë©”ë‰´ -->
+      <!-- ÅÇ ¸Þ´º -->
       <div class="std-tab-bar" style="margin-top:0;">
-        <button class="std-tab active" id="cns-tab-unsent" onclick="_cnsSwitchTab('unsent')">ë¯¸ë°œì†¡ ë™ì˜ì„œ</button>
-        <button class="std-tab" id="cns-tab-history" onclick="_cnsSwitchTab('history')">ë°œì†¡ ì´ë ¥</button>
-        <button class="std-tab" id="cns-tab-preview" onclick="_cnsSwitchTab('preview')">ë©”ì‹œì§€ ì˜ˆì‹œ</button>
+        <button class="std-tab active" id="cns-tab-unsent" onclick="_cnsSwitchTab('unsent')">¹Ì¹ß¼Û µ¿ÀÇ¼­</button>
+        <button class="std-tab" id="cns-tab-history" onclick="_cnsSwitchTab('history')">¹ß¼Û ÀÌ·Â</button>
+        <button class="std-tab" id="cns-tab-preview" onclick="_cnsSwitchTab('preview')">¸Þ½ÃÁö ¿¹½Ã</button>
       </div>
 
-      <!-- ë¯¸ë°œì†¡ ë™ì˜ì„œ ì„¹ì…˜ -->
+      <!-- ¹Ì¹ß¼Û µ¿ÀÇ¼­ ¼½¼Ç -->
       <div id="cns-unsent-section">
       <div class="std-tab-panel">
-      <!-- ê³ ê°ì‚¬ ì„ íƒ -->
+      <!-- °í°´»ç ¼±ÅÃ -->
       <div style="margin-bottom:12px;">
         <div class="cust-dropdown" id="cns-unsent-co-dropdown" style="position:relative;">
           <div id="cns-unsent-co-btn" class="cust-dropdown-btn" onclick="_cnsToggleCoDropdown()">
-            <span id="cns-unsent-co-label" class="cust-co-label">ì „ì²´ ê³ ê°ì‚¬</span>
+            <span id="cns-unsent-co-label" class="cust-co-label">ÀüÃ¼ °í°´»ç</span>
             <span id="cns-unsent-co-badge" class="count-badge cust-co-count">0</span>
             <i class="fas fa-chevron-down cust-co-arrow"></i>
           </div>
           <div id="cns-unsent-co-list" class="cust-dropdown-list" style="display:none;"></div>
         </div>
       </div>
-      <!-- ìž…ì‚¬ ë…„ì›” ì„ íƒ ì¹´ë“œ -->
+      <!-- ÀÔ»ç ³â¿ù ¼±ÅÃ Ä«µå -->
       <div class="card" id="cns-unsent-month-card" style="margin-bottom:12px;overflow:hidden;">
         <div style="padding:14px 20px;">
           <div class="cdp-month-tabs" id="cns-unsent-month-tabs">
-            <div class="pss-loading"><i class="fas fa-spinner fa-spin"></i> ë¡œë”© ì¤‘...</div>
+            <div class="pss-loading"><i class="fas fa-spinner fa-spin"></i> ·Îµù Áß...</div>
           </div>
         </div>
       </div>
 
-      <!-- ë¯¸ë°œì†¡ ëª©ë¡ ì¹´ë“œ -->
+      <!-- ¹Ì¹ß¼Û ¸ñ·Ï Ä«µå -->
       <div class="card" style="margin-bottom:16px;padding:0;overflow:hidden;">
         <div id="cns-unsent-all-clear" class="pss-all-clear" style="display:none;margin:16px 0;padding:0 20px;">
           <i class="fas fa-check-circle" style="font-size:20px;color:#16a34a;flex-shrink:0;"></i>
-          <span style="font-size:13px;color:#166534;">ë¯¸ë°œì†¡ ë™ì˜ì„œ ì—†ìŒ. (ì‹ ê·œ ë“±ë¡ëœ ëª¨ë“  ê·¼ë¡œê³„ì•½ì˜ ë™ì˜ì„œê°€ ë°œì†¡ ì²˜ë¦¬ë˜ì—ˆìŠµë‹ˆë‹¤.)</span>
+          <span style="font-size:13px;color:#166534;">¹Ì¹ß¼Û µ¿ÀÇ¼­ ¾øÀ½. (½Å±Ô µî·ÏµÈ ¸ðµç ±Ù·Î°è¾àÀÇ µ¿ÀÇ¼­°¡ ¹ß¼Û Ã³¸®µÇ¾ú½À´Ï´Ù.)</span>
         </div>
         <div id="cns-unsent-table-wrap" class="table-wrap" style="padding:0 0 16px;">
           <table id="cns-unsent-table" class="tbl-std">
             <thead>
               <tr>
-                <th class="ctr" style="width:36px;"><input type="checkbox" id="cns-chk-all" onchange="cnsToggleAll(this)" title="ì „ì²´ ì„ íƒ" /></th>
-                <th>ê³ ê°ì‚¬</th><th>ì§ì›ëª…</th><th>ê³ ìš©êµ¬ë¶„</th><th>ìž…ì‚¬ì¼</th>
-                <th>ì—°ë½ì²˜</th><th>ì´ë©”ì¼</th>
-                <th class="ctr">ê³„ì•½ì„œ</th>
-                <th class="ctr">ê°œë³„ ê´€ë¦¬</th>
+                <th class="ctr" style="width:36px;"><input type="checkbox" id="cns-chk-all" onchange="cnsToggleAll(this)" title="ÀüÃ¼ ¼±ÅÃ" /></th>
+                <th>°í°´»ç</th><th>Á÷¿ø¸í</th><th>°í¿ë±¸ºÐ</th><th>ÀÔ»çÀÏ</th>
+                <th>¿¬¶ôÃ³</th><th>ÀÌ¸ÞÀÏ</th>
+                <th class="ctr">°è¾à¼­</th>
+                <th class="ctr">°³º° °ü¸®</th>
               </tr>
             </thead>
             <tbody id="cns-unsent-tbody">
-              <tr><td colspan="9" class="pss-loading"><i class="fas fa-spinner fa-spin"></i> ë¡œë”© ì¤‘...</td></tr>
+              <tr><td colspan="9" class="pss-loading"><i class="fas fa-spinner fa-spin"></i> ·Îµù Áß...</td></tr>
             </tbody>
           </table>
         </div>
       </div>
 
-      <!-- ì¼ê´„ ë°œì†¡ ë²„íŠ¼ -->
+      <!-- ÀÏ°ý ¹ß¼Û ¹öÆ° -->
       <div style="display:flex;justify-content:center;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
         <button class="cdp-send-btn-all" id="cns-batch-kakao-btn" onclick="cnsBatchKakao()" disabled>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg>
-          ì„ íƒ ì¼ê´„ ì•Œë¦¼í†¡ ë°œì†¡
+          ¼±ÅÃ ÀÏ°ý ¾Ë¸²Åå ¹ß¼Û
         </button>
         <button class="cdp-send-btn-all" id="cns-batch-email-btn" onclick="cnsBatchEmail()" disabled style="background:#2563eb;border-color:#1d4ed8;color:#fff;">
-          <i class="fas fa-envelope"></i> ì„ íƒ ì¼ê´„ ì´ë©”ì¼ ë°œì†¡
+          <i class="fas fa-envelope"></i> ¼±ÅÃ ÀÏ°ý ÀÌ¸ÞÀÏ ¹ß¼Û
         </button>
         <button class="cdp-send-btn-all" id="cns-batch-manual-btn" onclick="cnsBatchManual()" disabled style="background:#10b981;border-color:#059669;color:#fff;">
-          <i class="fas fa-hand-paper"></i> ì„ íƒ ì¼ê´„ ìˆ˜ë™êµë¶€ ì²˜ë¦¬
+          <i class="fas fa-hand-paper"></i> ¼±ÅÃ ÀÏ°ý ¼öµ¿±³ºÎ Ã³¸®
         </button>
       </div>
 
       </div><!-- /std-tab-panel -->
       </div><!-- /cns-unsent-section -->
 
-      <!-- ë°œì†¡ ì´ë ¥ ì„¹ì…˜ -->
+      <!-- ¹ß¼Û ÀÌ·Â ¼½¼Ç -->
       <div id="cns-history-section" style="display:none;">
       <div class="std-tab-panel">
 
-      <!-- â”€â”€ í•„í„° ë°” â”€â”€ -->
+      <!-- ¦¡¦¡ ÇÊÅÍ ¹Ù ¦¡¦¡ -->
       <div class="card" style="margin-bottom:12px;overflow:hidden;">
         <div class="filt-bar">
-          <!-- ê³ ê°ì‚¬ -->
+          <!-- °í°´»ç -->
           <div style="display:flex;align-items:center;gap:5px;">
-            <span class="filt-label">ê³ ê°ì‚¬</span>
+            <span class="filt-label">°í°´»ç</span>
             <select id="cns-filter-company" onchange="_cnsPage=1;renderConsentDispatchPage()" class="filt-select" style="max-width:240px;">
-              <option value="">ì „ì²´</option>
+              <option value="">ÀüÃ¼</option>
             </select>
           </div>
-          <!-- ë°œì†¡ ë°©ì‹ -->
+          <!-- ¹ß¼Û ¹æ½Ä -->
           <div style="display:flex;align-items:center;gap:5px;">
-            <span class="filt-label">ë°œì†¡ ë°©ì‹</span>
+            <span class="filt-label">¹ß¼Û ¹æ½Ä</span>
             <select id="cns-filter-method" onchange="_cnsPage=1;renderConsentDispatchPage()" class="filt-select">
-              <option value="">ì „ì²´</option><option value="kakao">ì•Œë¦¼í†¡</option><option value="email">ì´ë©”ì¼</option><option value="manual">ìˆ˜ë™êµë¶€</option>
+              <option value="">ÀüÃ¼</option><option value="kakao">¾Ë¸²Åå</option><option value="email">ÀÌ¸ÞÀÏ</option><option value="manual">¼öµ¿±³ºÎ</option>
             </select>
           </div>
-          <!-- ë°œì†¡ ìƒíƒœ -->
+          <!-- ¹ß¼Û »óÅÂ -->
           <div style="display:flex;align-items:center;gap:5px;">
-            <span class="filt-label">ë°œì†¡ ìƒíƒœ</span>
+            <span class="filt-label">¹ß¼Û »óÅÂ</span>
             <select id="cns-filter-status" onchange="_cnsPage=1;renderConsentDispatchPage()" class="filt-select">
-              <option value="">ì „ì²´</option><option value="completed">ì™„ë£Œ</option><option value="failed">ì‹¤íŒ¨</option><option value="pending">ëŒ€ê¸°</option>
+              <option value="">ÀüÃ¼</option><option value="completed">¿Ï·á</option><option value="failed">½ÇÆÐ</option><option value="pending">´ë±â</option>
             </select>
           </div>
-          <!-- ê¸°ê°„ -->
+          <!-- ±â°£ -->
           <div style="display:flex;align-items:center;gap:5px;">
-            <span class="filt-label">ê¸°ê°„</span>
+            <span class="filt-label">±â°£</span>
             <input type="date" id="cns-filter-date-from" class="filt-date" />
             <span style="font-size:11px;color:#9ca3af;">~</span>
             <input type="date" id="cns-filter-date-to" class="filt-date" />
-            <button onclick="_cnsDoSearch()" class="filt-btn-search">ì¡°íšŒ</button>
-            <span id="cns-date-notice" style="font-size:10.5px;color:#9ca3af;white-space:nowrap;">(ìµœëŒ€ 3ê°œì›”)</span>
+            <button onclick="_cnsDoSearch()" class="filt-btn-search">Á¶È¸</button>
+            <span id="cns-date-notice" style="font-size:10.5px;color:#9ca3af;white-space:nowrap;">(ÃÖ´ë 3°³¿ù)</span>
           </div>
-          <!-- ê²€ìƒ‰ (ìš°ì¸¡) -->
+          <!-- °Ë»ö (¿ìÃø) -->
           <div style="display:flex;align-items:center;gap:6px;margin-left:auto;">
             <div class="filt-search-wrap">
               <i class="fas fa-search"></i>
-              <input type="text" id="cns-search" class="filt-search" style="width:150px;" placeholder="ì§ì›ëª…Â·ìˆ˜ì‹ ì²˜ ê²€ìƒ‰" oninput="renderConsentDispatchPage()" />
+              <input type="text" id="cns-search" class="filt-search" style="width:150px;" placeholder="Á÷¿ø¸í¡¤¼ö½ÅÃ³ °Ë»ö" oninput="renderConsentDispatchPage()" />
             </div>
           </div>
         </div>
       </div>
 
-      <!-- â”€â”€ ë°œì†¡ ì´ë ¥ í…Œì´ë¸” â”€â”€ -->
+      <!-- ¦¡¦¡ ¹ß¼Û ÀÌ·Â Å×ÀÌºí ¦¡¦¡ -->
       <div class="card" style="padding:0;overflow:hidden;">
         <div style="overflow-x:auto;">
           <table class="tbl-std">
             <thead>
               <tr>
-                <th>ë°œì†¡ ì¼ì‹œ</th>
-                <th>ê³ ê°ì‚¬</th>
-                <th>ì§ì›ëª…</th>
-                <th>ê³„ì•½ ìœ í˜•</th>
-                <th class="ctr" style="text-align:center;">ë°œì†¡ ë°©ì‹</th>
-                <th>ìˆ˜ì‹ ì²˜</th>
-                <th class="ctr" style="text-align:center;">ê²°ê³¼</th>
-                <th>ì²˜ë¦¬ìž</th>
-                <th class="ctr">ê³„ì•½ì„œ</th>
+                <th>¹ß¼Û ÀÏ½Ã</th>
+                <th>°í°´»ç</th>
+                <th>Á÷¿ø¸í</th>
+                <th>°è¾à À¯Çü</th>
+                <th class="ctr" style="text-align:center;">¹ß¼Û ¹æ½Ä</th>
+                <th>¼ö½ÅÃ³</th>
+                <th class="ctr" style="text-align:center;">°á°ú</th>
+                <th>Ã³¸®ÀÚ</th>
+                <th class="ctr">°è¾à¼­</th>
               </tr>
             </thead>
             <tbody id="cns-tbody">
-              <tr><td colspan="9" style="text-align:center;padding:40px;color:#9ca3af;"><i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i> ë°ì´í„° ë¡œë”© ì¤‘...</td></tr>
+              <tr><td colspan="9" style="text-align:center;padding:40px;color:#9ca3af;"><i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i> µ¥ÀÌÅÍ ·Îµù Áß...</td></tr>
             </tbody>
           </table>
         </div>
-        <!-- íŽ˜ì´ì§€ë„¤ì´ì…˜ -->
+        <!-- ÆäÀÌÁö³×ÀÌ¼Ç -->
         <div id="cns-pagination" style="padding:8px 16px;"></div>
       </div>
 
       </div><!-- /std-tab-panel -->
       </div><!-- /cns-history-section -->
 
-      <!-- ë©”ì‹œì§€ ì˜ˆì‹œ ì„¹ì…˜ -->
+      <!-- ¸Þ½ÃÁö ¿¹½Ã ¼½¼Ç -->
       <div id="cns-preview-section" style="display:none;">
       <div class="std-tab-panel">
         <div id="cns-preview-content"></div>

@@ -324,6 +324,8 @@
 /* flex utilities */
 .flex-center-gap8{display:flex;align-items:center;gap:8px}
 .flex-center-gap10{display:flex;align-items:center;gap:10px}
+/* spacing */
+.mb-16{margin-bottom:16px}
 /* payroll input: compact number input */
 .pi-num-input{width:72px}
 /* payroll input: auto-calc panel rows */

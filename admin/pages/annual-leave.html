@@ -1,112 +1,112 @@
-ï»¿    <div id="page-annual-leave" class="page">
+    <div id="page-annual-leave" class="page">
 
-      <!-- ê³ ê°ì‚¬ ì„ íƒ -->
+      <!-- °í°´»ç ¼±ÅÃ -->
       <div id="al-company-select-card">
         <div class="section-title">
           <i class="fas fa-building"></i>
-          <span>ê³ ê°ì‚¬ë¥¼ ì„ íƒí•˜ì„¸ìš”</span>
+          <span>°í°´»ç¸¦ ¼±ÅÃÇÏ¼¼¿ä</span>
           <div class="filt-search-wrap" style="margin-left:auto;">
             <i class="fas fa-search"></i>
-            <input type="text" id="al-company-search" class="filt-search" style="width:160px;" placeholder="ê³ ê°ì‚¬ëª… ê²€ìƒ‰" oninput="renderAlCompanyChips()" />
+            <input type="text" id="al-company-search" class="filt-search" class="w-160" placeholder="°í°´»ç¸í °Ë»ö" oninput="renderAlCompanyChips()" />
           </div>
         </div>
         <div class="card" style="margin-bottom:16px;overflow:hidden;">
           <div id="al-company-chips" style="padding:20px;display:flex;flex-wrap:wrap;gap:8px;">
             <div style="color:#9ca3af;font-size:12.5px;padding:8px 0;display:flex;align-items:center;gap:6px;">
-              <i class="fas fa-circle-notch fa-spin"></i> ê³ ê°ì‚¬ ëª©ë¡ ë¶ˆëŸ¬ì˜¤ëŠ” ì¤‘...
+              <i class="fas fa-circle-notch fa-spin"></i> °í°´»ç ¸ñ·Ï ºÒ·¯¿À´Â Áß...
             </div>
           </div>
         </div>
       </div>
 
-      <!-- ì—°ì°¨ ë¶„ì„ ë©”ì¸ ì„¹ì…˜ -->
+      <!-- ¿¬Â÷ ºÐ¼® ¸ÞÀÎ ¼½¼Ç -->
       <div id="al-main-section" style="display:none;">
 
-        <!-- ì„ íƒ ê³ ê°ì‚¬ í—¤ë” + í•„í„° + ëª©ë¡ ì„¸íŠ¸ -->
-        <!-- ì„ íƒ ê³ ê°ì‚¬ í—¤ë” -->
+        <!-- ¼±ÅÃ °í°´»ç Çì´õ + ÇÊÅÍ + ¸ñ·Ï ¼¼Æ® -->
+        <!-- ¼±ÅÃ °í°´»ç Çì´õ -->
         <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:linear-gradient(90deg,#1e1b4b,#312e81);border-radius:10px;margin-bottom:12px;">
           <div style="display:flex;align-items:center;gap:10px;">
             <span id="al-company-name-title" style="font-size:14px;font-weight:700;color:#fff;"></span>
             <span id="al-basis-label" style="font-size:12px;color:rgba(255,255,255,.6);"></span>
           </div>
-          <button onclick="alBackToCompanyList()" class="btn btn-icon-dark" title="ê³ ê°ì‚¬ ì„ íƒ í•´ì œ"><i class="fas fa-times"></i></button>
+          <button onclick="alBackToCompanyList()" class="btn btn-icon-dark" title="°í°´»ç ¼±ÅÃ ÇØÁ¦"><i class="fas fa-times"></i></button>
         </div>
 
         <div class="card" style="margin-bottom:16px;overflow:hidden;">
-          <!-- í•„í„° ë°” -->
+          <!-- ÇÊÅÍ ¹Ù -->
           <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;padding:12px 18px;background:#fff;border-bottom:1px solid #f3f4f6;">
-            <!-- ê¸°ì¤€ ì—°ë„ ì„ íƒ -->
+            <!-- ±âÁØ ¿¬µµ ¼±ÅÃ -->
             <div style="display:flex;align-items:center;gap:6px;">
-              <label style="font-size:12px;color:#6b7280;font-weight:600;">ê¸°ì¤€ë…„ë„</label>
+              <label style="font-size:12px;color:#6b7280;font-weight:600;">±âÁØ³âµµ</label>
               <select id="al-year-sel" onchange="_alPage=1;renderAlTable()" class="filt-select"></select>
             </div>
-            <!-- ì§ì› ê²€ìƒ‰ -->
+            <!-- Á÷¿ø °Ë»ö -->
             <div class="filt-search-wrap" style="margin:0;">
               <i class="fas fa-search"></i>
-              <input type="text" id="al-emp-search" class="filt-search" placeholder="ì§ì›ëª… ê²€ìƒ‰" oninput="renderAlTable()" style="width:140px;" />
+              <input type="text" id="al-emp-search" class="filt-search" placeholder="Á÷¿ø¸í °Ë»ö" oninput="renderAlTable()" style="width:140px;" />
             </div>
           </div>
 
-          <!-- ìš”ì•½ í†µê³„ ì¹´ë“œ 4ê°œ -->
+          <!-- ¿ä¾à Åë°è Ä«µå 4°³ -->
           <div class="al-stat-grid" style="padding:16px 18px;background:#fff;border-bottom:1px solid #f3f4f6;margin:0;">
             <div class="al-stat-card green">
-              <div class="al-stat-label">ìž¬ì§ ì§ì›ìˆ˜</div>
+              <div class="al-stat-label">ÀçÁ÷ Á÷¿ø¼ö</div>
               <div class="al-stat-val" id="al-stat-emp">0</div>
-              <div class="al-stat-sub">ì—°ì°¨ ëŒ€ìƒìž ê¸°ì¤€</div>
+              <div class="al-stat-sub">¿¬Â÷ ´ë»óÀÚ ±âÁØ</div>
             </div>
             <div class="al-stat-card blue">
-              <div class="al-stat-label">ì´ ë°œìƒ ì—°ì°¨</div>
-              <div class="al-stat-val" id="al-stat-total">0ì¼</div>
-              <div class="al-stat-sub">í˜„ìž¬ ê¸°ì¤€ í•©ì‚°</div>
+              <div class="al-stat-label">ÃÑ ¹ß»ý ¿¬Â÷</div>
+              <div class="al-stat-val" id="al-stat-total">0ÀÏ</div>
+              <div class="al-stat-sub">ÇöÀç ±âÁØ ÇÕ»ê</div>
             </div>
             <div class="al-stat-card amber">
-              <div class="al-stat-label">ì‚¬ìš© ì—°ì°¨</div>
-              <div class="al-stat-val" id="al-stat-used">0ì¼</div>
-              <div class="al-stat-sub">ê¸‰ì—¬ ìž…ë ¥ í•©ì‚°</div>
+              <div class="al-stat-label">»ç¿ë ¿¬Â÷</div>
+              <div class="al-stat-val" id="al-stat-used">0ÀÏ</div>
+              <div class="al-stat-sub">±Þ¿© ÀÔ·Â ÇÕ»ê</div>
             </div>
             <div class="al-stat-card red">
-              <div class="al-stat-label">ìž”ì—¬ ì—°ì°¨</div>
-              <div class="al-stat-val" id="al-stat-remain">0ì¼</div>
-              <div class="al-stat-sub" id="al-stat-remain-pay">ìˆ˜ë‹¹ ì¶”ê³„ 0ì›</div>
+              <div class="al-stat-label">ÀÜ¿© ¿¬Â÷</div>
+              <div class="al-stat-val" id="al-stat-remain">0ÀÏ</div>
+              <div class="al-stat-sub" id="al-stat-remain-pay">¼ö´ç Ãß°è 0¿ø</div>
             </div>
           </div>
 
-          <!-- ì—°ì°¨ í…Œì´ë¸” -->
+          <!-- ¿¬Â÷ Å×ÀÌºí -->
           <div style="background:#fff;overflow:hidden;">
             <div style="overflow-x:auto;">
               <table class="al-table">
                 <thead>
                   <tr>
-                    <th>ì§ì›ëª…</th>
-                    <th>ì„±ë³„</th>
-                    <th>ê³ ìš©í˜•íƒœ</th>
-                    <th>ìž…ì‚¬ì¼</th>
-                    <th class="right">ì´ ë°œìƒ ì—°ì°¨</th>
-                    <th class="right">ì‚¬ìš© ì—°ì°¨</th>
-                    <th class="right">ìž”ì—¬ ì—°ì°¨</th>
-                    <th class="right">ìž”ì—¬ ìˆ˜ë‹¹ ì¶”ê³„</th>
-                    <th style="text-align:center;">ê´€ë¦¬</th>
-                    <th style="text-align:center;">ì‚¬ìš©ì´‰ì§„</th>
+                    <th>Á÷¿ø¸í</th>
+                    <th>¼ºº°</th>
+                    <th>°í¿ëÇüÅÂ</th>
+                    <th>ÀÔ»çÀÏ</th>
+                    <th class="right">ÃÑ ¹ß»ý ¿¬Â÷</th>
+                    <th class="right">»ç¿ë ¿¬Â÷</th>
+                    <th class="right">ÀÜ¿© ¿¬Â÷</th>
+                    <th class="right">ÀÜ¿© ¼ö´ç Ãß°è</th>
+                    <th style="text-align:center;">°ü¸®</th>
+                    <th style="text-align:center;">»ç¿ëÃËÁø</th>
                   </tr>
                 </thead>
                 <tbody id="al-tbody">
-                  <tr><td colspan="9" class="al-empty"><i class="fas fa-spinner fa-spin"></i> ë¶ˆëŸ¬ì˜¤ëŠ” ì¤‘...</td></tr>
+                  <tr><td colspan="9" class="al-empty"><i class="fas fa-spinner fa-spin"></i> ºÒ·¯¿À´Â Áß...</td></tr>
                 </tbody>
               </table>
             </div>
             <div class="pagination" id="al-pagination"></div>
           </div>
 
-        </div><!-- /ì¹´ë“œ -->
+        </div><!-- /Ä«µå -->
 
-        <!-- í•˜ë‹¨ ì•ˆë‚´ -->
+        <!-- ÇÏ´Ü ¾È³» -->
         <div style="margin-top:12px;padding:12px 16px;background:#f8faff;border:1px solid #e0e7ff;border-radius:10px;font-size:11.5px;color:#6b7280;line-height:1.8;">
           <i class="fas fa-info-circle" style="color:#6366f1;margin-right:5px;"></i>
-          <strong style="color:#374151;">ì—°ì°¨ ì‚°ì • ì•ˆë‚´</strong><br>
-          â€¢ <strong>ìž…ì‚¬ì¼ ê¸°ì¤€</strong>: ìž…ì‚¬ì¼ë¡œë¶€í„° 1ë…„ ë¯¸ë§Œì€ ê°œê·¼ ì›” 1ì¼ì”©(ìµœëŒ€ 11ì¼), 1ë…„ ì´ìƒì€ 15ì¼ + ë§¤ 2ë…„ë§ˆë‹¤ 1ì¼ ê°€ì‚°(ìµœëŒ€ 25ì¼)<br>
-          â€¢ <strong>íšŒê³„ë…„ë„ ê¸°ì¤€</strong>: íšŒì‚¬ íšŒê³„ì—°ë„(1ì›” 1ì¼) ê¸°ì¤€ìœ¼ë¡œ ë™ì¼ ë°©ì‹ ì ìš©<br>
-          â€¢ <strong>ìž”ì—¬ ìˆ˜ë‹¹ ì¶”ê³„</strong>: í†µìƒì‹œê¸‰ Ã— 8ì‹œê°„ Ã— ìž”ì—¬ ì—°ì°¨ì¼ìˆ˜ (ê³„ì•½ì„œ ê¸°ë³¸ê¸‰ ê¸°ì¤€, ì°¸ê³ ìš© ìˆ˜ì¹˜)<br>
-          â€¢ ì¼ìš©ì§ì€ ì—°ì°¨ ì‚°ì • ëŒ€ìƒì—ì„œ ì œì™¸ë©ë‹ˆë‹¤.
+          <strong style="color:#374151;">¿¬Â÷ »êÁ¤ ¾È³»</strong><br>
+          ? <strong>ÀÔ»çÀÏ ±âÁØ</strong>: ÀÔ»çÀÏ·ÎºÎÅÍ 1³â ¹Ì¸¸Àº °³±Ù ¿ù 1ÀÏ¾¿(ÃÖ´ë 11ÀÏ), 1³â ÀÌ»óÀº 15ÀÏ + ¸Å 2³â¸¶´Ù 1ÀÏ °¡»ê(ÃÖ´ë 25ÀÏ)<br>
+          ? <strong>È¸°è³âµµ ±âÁØ</strong>: È¸»ç È¸°è¿¬µµ(1¿ù 1ÀÏ) ±âÁØÀ¸·Î µ¿ÀÏ ¹æ½Ä Àû¿ë<br>
+          ? <strong>ÀÜ¿© ¼ö´ç Ãß°è</strong>: Åë»ó½Ã±Þ ¡¿ 8½Ã°£ ¡¿ ÀÜ¿© ¿¬Â÷ÀÏ¼ö (°è¾à¼­ ±âº»±Þ ±âÁØ, Âü°í¿ë ¼öÄ¡)<br>
+          ? ÀÏ¿ëÁ÷Àº ¿¬Â÷ »êÁ¤ ´ë»ó¿¡¼­ Á¦¿ÜµË´Ï´Ù.
         </div>
       </div>
     </div><!-- /page-annual-leave -->
