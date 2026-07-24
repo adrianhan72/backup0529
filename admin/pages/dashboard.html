@@ -1,18 +1,18 @@
-ï»¿    <div id="page-dashboard" class="page active">
-      <!-- â•â• ì§„í–‰ ì¤‘ì¸ ì—…ë¬´ â•â• -->
+    <div id="page-dashboard" class="page active">
+      <!-- ?? ÁøÇà ÁßÀÎ ¾÷¹« ?? -->
       <div id="dash-progress-section" style="display:none;">
         <div class="section-title">
           <i class="fas fa-spinner"></i>
-          <span>ì§„í–‰ ì¤‘ì¸ ì—…ë¬´</span>
+          <span>ÁøÇà ÁßÀÎ ¾÷¹«</span>
         </div>
         <div id="dash-draft-section" style="display:none;margin-bottom:18px;"></div>
       </div>
 
-      <!-- â•â• í• ì¼ ëª©ë¡ â•â• -->
+      <!-- ?? ÇÒÀÏ ¸ñ·Ï ?? -->
       <div id="dash-todo-section" style="display:none;">
         <div class="section-title">
           <i class="fas fa-clipboard-list"></i>
-          <span>í• ì¼ ëª©ë¡</span>
+          <span>ÇÒÀÏ ¸ñ·Ï</span>
         </div>
         <div class="dash-todo-grid" style="display:none;">
           <div id="dash-contract-unsent-section" style="display:none;"></div>
@@ -22,20 +22,20 @@
         </div>
       </div>
 
-      <!-- ë…„ë„ë³„ ì‚°ì •ê¸°ì¤€ ì—…ë°ì´íŠ¸ ì•Œë¦¼ ë°°ë„ˆ -->
+      <!-- ³âµµº° »êÁ¤±âÁØ ¾÷µ¥ÀÌÆ® ¾Ë¸² ¹è³Ê -->
       <div id="dash-severance-banner" style="display:none;margin-bottom:18px;"></div>
-      <!-- ê³„ì•½ì„œ ë‚ ì¸ë³¸ ë¯¸ë“±ë¡ ì•Œë¦¼ ì¹´ë“œ -->
+      <!-- °è¾à¼­ ³¯ÀÎº» ¹Ìµî·Ï ¾Ë¸² Ä«µå -->
       <div id="dash-signed-section" style="display:none;margin-bottom:18px;"></div>
 
-      <!-- ê¸‰ì—¬ ìž…ë ¥ ì¹´ë“œ -->
+      <!-- ±Þ¿© ÀÔ·Â Ä«µå -->
       <div class="section-title">
         <i class="fas fa-coins"></i>
-        <span>ì´ë²ˆ ë‹¬ ê¸‰ì—¬ ë¯¸ìž…ë ¥</span>
+        <span>ÀÌ¹ø ´Þ ±Þ¿© ¹ÌÀÔ·Â</span>
         <span id="active-count" style="font-size:12px;color:#64748b;font-weight:600;"></span>
         <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
           <div class="filt-search-wrap">
             <i class="fas fa-search"></i>
-            <input type="text" id="dash-company-search" class="filt-search" style="width:160px;" placeholder="ê³ ê°ì‚¬ëª… ê²€ìƒ‰" oninput="renderDashboardCompanies()" />
+            <input type="text" id="dash-company-search" class="filt-search" class="w-160" placeholder="°í°´»ç¸í °Ë»ö" oninput="renderDashboardCompanies()" />
           </div>
         </div>
       </div>
@@ -43,91 +43,91 @@
         <div id="dash-companies" style="padding:0;"></div>
       </div>
       
-      <!-- [ì‚¬ìš©ë£Œ ìˆ¨ê¹€] ì‚¬ìš©ë£Œ ì§•ìˆ˜í˜„í™© ì¹´ë“œ 4ì¢… + ë§¤ì¶œì¶”ì´ ì°¨íŠ¸ - ì›ë³µ ì‹œ ì•„ëž˜ ì£¼ì„ í•´ì œ
-      ì´ë²ˆë‹¬ ì‚¬ìš©ë£Œ ìš”ì•½ ì¹´ë“œ 4ì¢…
-      ì‚¬ìš©ë£Œ ì§•ìˆ˜í˜„í™© ì„¹ì…˜ íƒ€ì´í‹€
+      <!-- [»ç¿ë·á ¼û±è] »ç¿ë·á Â¡¼öÇöÈ² Ä«µå 4Á¾ + ¸ÅÃâÃßÀÌ Â÷Æ® - ¿øº¹ ½Ã ¾Æ·¡ ÁÖ¼® ÇØÁ¦
+      ÀÌ¹ø´Þ »ç¿ë·á ¿ä¾à Ä«µå 4Á¾
+      »ç¿ë·á Â¡¼öÇöÈ² ¼½¼Ç Å¸ÀÌÆ²
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
         <span style="display:inline-block;width:4px;height:20px;background:linear-gradient(180deg,#3b82f6,#6366f1);border-radius:2px;"></span>
-        <h3 id="dash-billing-section-title" style="margin:0;font-size:15px;font-weight:700;color:#1e293b;">ì‚¬ìš©ë£Œ ì§•ìˆ˜í˜„í™©</h3>
+        <h3 id="dash-billing-section-title" style="margin:0;font-size:15px;font-weight:700;color:#1e293b;">»ç¿ë·á Â¡¼öÇöÈ²</h3>
       </div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:18px;" id="dash-billing-cards">
-        ì²­êµ¬ ì´ì•¡
+        Ã»±¸ ÃÑ¾×
         <div class="stat-card vertical" style="border-left:4px solid #3b82f6;">
           <div style="display:flex;align-items:flex-start;gap:12px;flex:1;">
             <div class="stat-icon blue"><i class="fas fa-file-invoice-dollar"></i></div>
             <div class="stat-info">
-              <div class="stat-label">ì´ë²ˆë‹¬ ì²­êµ¬ ì´ì•¡</div>
+              <div class="stat-label">ÀÌ¹ø´Þ Ã»±¸ ÃÑ¾×</div>
               <div class="stat-value" id="dash-bill-total" style="font-size:17px;">-</div>
-              <div class="stat-sub" id="dash-bill-count">ì²­êµ¬ 0ê±´</div>
+              <div class="stat-sub" id="dash-bill-count">Ã»±¸ 0°Ç</div>
             </div>
           </div>
           <div style="padding:10px 0 2px 0;border-top:1px solid #e8edf3;margin-top:10px;">
-            <button onclick="goBillingWithFilter('virtual')" class="btn btn-primary btn-sm" style="width:100%;">
-              <i class="fas fa-plus-circle" style="margin-right:4px;"></i>ì²­êµ¬ ìƒì„±
+            <button onclick="goBillingWithFilter('virtual')" class="btn btn-primary btn-sm" class="w-full">
+              <i class="fas fa-plus-circle" style="margin-right:4px;"></i>Ã»±¸ »ý¼º
             </button>
           </div>
         </div>
-        ë‚©ë¶€ ì´ì•¡
+        ³³ºÎ ÃÑ¾×
         <div class="stat-card vertical" style="border-left:4px solid #10b981;">
           <div style="display:flex;align-items:flex-start;gap:12px;flex:1;">
             <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
             <div class="stat-info">
-              <div class="stat-label">ì´ë²ˆë‹¬ ë‚©ë¶€ ì´ì•¡</div>
+              <div class="stat-label">ÀÌ¹ø´Þ ³³ºÎ ÃÑ¾×</div>
               <div class="stat-value" id="dash-bill-paid" style="font-size:17px;">-</div>
-              <div class="stat-sub" id="dash-bill-paid-count">ì™„ë‚© 0ê±´</div>
+              <div class="stat-sub" id="dash-bill-paid-count">¿Ï³³ 0°Ç</div>
             </div>
           </div>
           <div style="padding:10px 0 2px 0;border-top:1px solid #e8edf3;margin-top:10px;">
-            <button onclick="goBillingWithFilter('paid')" class="btn btn-success btn-sm" style="width:100%;">
-              <i class="fas fa-search" style="margin-right:4px;"></i>ë‚©ë¶€í˜„í™© ì¡°íšŒ
+            <button onclick="goBillingWithFilter('paid')" class="btn btn-success btn-sm" class="w-full">
+              <i class="fas fa-search" style="margin-right:4px;"></i>³³ºÎÇöÈ² Á¶È¸
             </button>
           </div>
         </div>
-        ë‚©ë¶€ ëŒ€ê¸° ì´ì•¡
+        ³³ºÎ ´ë±â ÃÑ¾×
         <div class="stat-card vertical" style="border-left:4px solid #f59e0b;">
           <div style="display:flex;align-items:flex-start;gap:12px;flex:1;">
             <div class="stat-icon orange"><i class="fas fa-clock"></i></div>
             <div class="stat-info">
-              <div class="stat-label">ì´ë²ˆë‹¬ ë‚©ë¶€ëŒ€ê¸° ì´ì•¡</div>
+              <div class="stat-label">ÀÌ¹ø´Þ ³³ºÎ´ë±â ÃÑ¾×</div>
               <div class="stat-value" id="dash-bill-pending" style="font-size:17px;">-</div>
-              <div class="stat-sub" id="dash-bill-pending-count">ëŒ€ê¸° 0ê±´</div>
+              <div class="stat-sub" id="dash-bill-pending-count">´ë±â 0°Ç</div>
             </div>
           </div>
           <div style="padding:10px 0 2px 0;border-top:1px solid #e8edf3;margin-top:10px;">
-            <button onclick="goBillingWithFilter('pending')" class="btn btn-warning btn-sm" style="width:100%;">
-              <i class="fas fa-hourglass-half" style="margin-right:4px;"></i>ë‚©ë¶€ëŒ€ê¸°í˜„í™© ì¡°íšŒ
+            <button onclick="goBillingWithFilter('pending')" class="btn btn-warning btn-sm" class="w-full">
+              <i class="fas fa-hourglass-half" style="margin-right:4px;"></i>³³ºÎ´ë±âÇöÈ² Á¶È¸
             </button>
           </div>
         </div>
-        ëˆ„ì  ë¯¸ë‚©ê¸ˆ (ë§ˆê°ì¼ ê²½ê³¼)
+        ´©Àû ¹Ì³³±Ý (¸¶°¨ÀÏ °æ°ú)
         <div class="stat-card vertical" style="border-left:4px solid #ef4444;">
           <div style="display:flex;align-items:flex-start;gap:12px;flex:1;">
             <div class="stat-icon red"><i class="fas fa-exclamation-circle"></i></div>
             <div class="stat-info">
-              <div class="stat-label">ëˆ„ì  ë¯¸ë‚©ê¸ˆ (ì „ì²´)</div>
+              <div class="stat-label">´©Àû ¹Ì³³±Ý (ÀüÃ¼)</div>
               <div class="stat-value" id="dash-bill-unpaid" style="font-size:17px;">-</div>
-              <div class="stat-sub" id="dash-bill-unpaid-count">ë¯¸ê²°ì œ 0ê±´</div>
+              <div class="stat-sub" id="dash-bill-unpaid-count">¹Ì°áÁ¦ 0°Ç</div>
             </div>
           </div>
           <div style="padding:10px 0 2px 0;border-top:1px solid #e8edf3;margin-top:10px;">
-            <button onclick="goBillingWithFilter('unpaid')" class="btn btn-danger btn-sm" style="width:100%;">
-              <i class="fas fa-exclamation-triangle" style="margin-right:4px;"></i>ë¯¸ë‚©í˜„í™© ì¡°íšŒ
+            <button onclick="goBillingWithFilter('unpaid')" class="btn btn-danger btn-sm" class="w-full">
+              <i class="fas fa-exclamation-triangle" style="margin-right:4px;"></i>¹Ì³³ÇöÈ² Á¶È¸
             </button>
           </div>
         </div>
       </div>
 
-      ì‚¬ìš©ë£Œ ë§¤ì¶œ ì¶”ì´ ì¹´ë“œ
+      »ç¿ë·á ¸ÅÃâ ÃßÀÌ Ä«µå
       <div class="card" style="margin-bottom:18px;">
         <div class="card-header">
-          <span class="card-title">ðŸ’° ì‚¬ìš©ë£Œ ë§¤ì¶œ ì¶”ì´</span>
+          <span class="card-title">?? »ç¿ë·á ¸ÅÃâ ÃßÀÌ</span>
           <div style="display:flex;align-items:center;gap:8px;">
-            <span style="font-size:11px;color:#aaa;">ì›”ë³„ ì²­êµ¬Â·ë‚©ë¶€Â·ë¯¸ë‚©ê¸ˆ ì¶”ì´</span>
+            <span style="font-size:11px;color:#aaa;">¿ùº° Ã»±¸¡¤³³ºÎ¡¤¹Ì³³±Ý ÃßÀÌ</span>
             <select id="billing-trend-range" onchange="renderBillingTrendChart();"
               style="border:1px solid #e0e0e0;border-radius:8px;padding:4px 10px;font-size:12px;color:#333;background:#fff;outline:none;cursor:pointer;font-family:inherit;box-shadow:0 1px 4px rgba(0,0,0,.05);">
-              <option value="6">ìµœê·¼ 6ê°œì›”</option>
-              <option value="12" selected>ìµœê·¼ 12ê°œì›”</option>
-              <option value="24">ìµœê·¼ 24ê°œì›”</option>
+              <option value="6">ÃÖ±Ù 6°³¿ù</option>
+              <option value="12" selected>ÃÖ±Ù 12°³¿ù</option>
+              <option value="24">ÃÖ±Ù 24°³¿ù</option>
             </select>
           </div>
         </div>
@@ -137,34 +137,34 @@
       </div>
       -->
 
-      <!-- ì›”ë³„ ì¶”ì´ ì°¨íŠ¸ ê³µí†µ ê¸°ê°„ ì„ íƒ -->
+      <!-- ¿ùº° ÃßÀÌ Â÷Æ® °øÅë ±â°£ ¼±ÅÃ -->
       <div class="section-title" style="margin-bottom:0;">
         <i class="fas fa-chart-line"></i>
-        <span>ì„œë¹„ìŠ¤ ìš´ì˜ í˜„í™©</span>
+        <span>¼­ºñ½º ¿î¿µ ÇöÈ²</span>
         <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
-          <span style="font-size:12px;color:#888;font-weight:500;">ì¡°íšŒ ê¸°ê°„</span>
+          <span style="font-size:12px;color:#888;font-weight:500;">Á¶È¸ ±â°£</span>
           <select id="dash-chart-range" onchange="renderCompanyTrendChart();renderEmployeeTrendChart();"
           style="border:1px solid #e0e0e0;border-radius:8px;padding:5px 28px 5px 12px;font-size:12px;color:#333;background:#fff url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='none' stroke='%236b7280' stroke-width='1.5' stroke-linecap='round' d='M3 4.5l3 3 3-3'/%3E%3C/svg%3E&quot;) no-repeat right 8px center;outline:none;cursor:pointer;font-family:inherit;box-shadow:0 1px 4px rgba(0,0,0,.05);appearance:none;-webkit-appearance:none;-moz-appearance:none;">
-          <option value="6">ìµœê·¼ 6ê°œì›”</option>
-          <option value="12" selected>ìµœê·¼ 12ê°œì›”</option>
-          <option value="24">ìµœê·¼ 24ê°œì›”</option>
+          <option value="6">ÃÖ±Ù 6°³¿ù</option>
+          <option value="12" selected>ÃÖ±Ù 12°³¿ù</option>
+          <option value="24">ÃÖ±Ù 24°³¿ù</option>
         </select>
       </div>
       </div>
 
-      <!-- ë‘ ì°¨íŠ¸ ë‚˜ëž€ížˆ -->
+      <!-- µÎ Â÷Æ® ³ª¶õÈ÷ -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px;">
 
-        <!-- ì›”ë³„ ê³ ê°ì‚¬ ìˆ˜ ë³€ë™ ì¶”ì´ -->
+        <!-- ¿ùº° °í°´»ç ¼ö º¯µ¿ ÃßÀÌ -->
         <div class="card">
           <div class="card-header">
-            <span class="card-title">ðŸ“ˆ ê³ ê°ì‚¬ ìˆ˜</span>
+            <span class="card-title">?? °í°´»ç ¼ö</span>
             <div style="display:flex;gap:30px;">
               <label style="display:inline-flex;align-items:center;gap:4px;font-size:11.5px;color:#555;cursor:pointer;">
-                <input type="radio" name="dash-company-filter" value="contract" checked onchange="renderCompanyTrendChart()" /> ê³„ì•½ ê¸°ì¤€
+                <input type="radio" name="dash-company-filter" value="contract" checked onchange="renderCompanyTrendChart()" /> °è¾à ±âÁØ
               </label>
               <label style="display:inline-flex;align-items:center;gap:4px;font-size:11.5px;color:#555;cursor:pointer;">
-                <input type="radio" name="dash-company-filter" value="employee" onchange="renderCompanyTrendChart()" /> ê·¼ë¡œìž ìˆ˜ ê¸°ì¤€
+                <input type="radio" name="dash-company-filter" value="employee" onchange="renderCompanyTrendChart()" /> ±Ù·ÎÀÚ ¼ö ±âÁØ
               </label>
             </div>
           </div>
@@ -173,10 +173,10 @@
           </div>
         </div>
 
-        <!-- ì›”ë³„ ê´€ë¦¬ëŒ€ìƒ ì§ì› ìˆ˜ ë³€ë™ ì¶”ì´ -->
+        <!-- ¿ùº° °ü¸®´ë»ó Á÷¿ø ¼ö º¯µ¿ ÃßÀÌ -->
         <div class="card">
           <div class="card-header">
-            <span class="card-title">ðŸ‘¥ ê´€ë¦¬ ê·¼ë¡œìž ìˆ˜</span>
+            <span class="card-title">?? °ü¸® ±Ù·ÎÀÚ ¼ö</span>
           </div>
           <div style="padding:20px 24px;height:260px;">
             <canvas id="employee-trend-chart"></canvas>

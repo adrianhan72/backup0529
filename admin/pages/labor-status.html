@@ -1,12 +1,12 @@
-ï»¿    <div id="page-labor-status" class="page">
-      <!-- ê³ ê°ì‚¬ ì„ íƒ -->
+    <div id="page-labor-status" class="page">
+      <!-- °í°´»ç ¼±ÅÃ -->
       <div id="ls-company-select-card">
         <div class="section-title">
           <i class="fas fa-building"></i>
-          <span>ê³ ê°ì‚¬ë¥¼ ì„ íƒí•˜ì„¸ìš”</span>
+          <span>°í°´»ç¸¦ ¼±ÅÃÇÏ¼¼¿ä</span>
           <div class="filt-search-wrap" style="margin-left:auto;">
             <i class="fas fa-search"></i>
-            <input type="text" id="ls-company-search" class="filt-search" style="width:160px;" placeholder="ê³ ê°ì‚¬ëª… ê²€ìƒ‰" oninput="renderLsCompanyList()" />
+            <input type="text" id="ls-company-search" class="filt-search" class="w-160" placeholder="°í°´»ç¸í °Ë»ö" oninput="renderLsCompanyList()" />
           </div>
         </div>
         <div class="card" style="margin-bottom:16px;overflow:hidden;">
@@ -14,12 +14,12 @@
         </div>
       </div>
 
-      <!-- ì„ íƒëœ ê³ ê°ì‚¬ í˜„í™© ì„¹ì…˜ -->
+      <!-- ¼±ÅÃµÈ °í°´»ç ÇöÈ² ¼½¼Ç -->
       <div id="ls-list-section" style="display:none;">
-        <!-- ì„ íƒ ê³ ê°ì‚¬ í—¤ë” -->
+        <!-- ¼±ÅÃ °í°´»ç Çì´õ -->
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:12px 18px;background:linear-gradient(90deg,#1e1b4b,#312e81);border-radius:10px;">
           <span id="ls-selected-company-label" style="font-size:14px;font-weight:700;color:#fff;"></span>
-          <div style="display:flex;align-items:center;gap:8px;">
+          <div class="flex-center-gap8">
             <i class="fas fa-calendar-alt" style="color:rgba(255,255,255,.6);font-size:13px;"></i>
             <select id="ls-year" onchange="renderLaborStatus()"
               style="border:1px solid rgba(255,255,255,.25);border-radius:6px;padding:5px 10px;font-size:13px;font-weight:600;color:#1e1b4b;background:#fff;outline:none;cursor:pointer;font-family:inherit;">
@@ -27,179 +27,179 @@
             <select id="ls-month" onchange="renderLaborStatus()"
               style="border:1px solid rgba(255,255,255,.25);border-radius:6px;padding:5px 10px;font-size:13px;font-weight:600;color:#1e1b4b;background:#fff;outline:none;cursor:pointer;font-family:inherit;">
             </select>
-            <button onclick="clearLsCompanySelect()" class="btn btn-icon-dark" title="ê³ ê°ì‚¬ ì„ íƒ í•´ì œ"><i class="fas fa-times"></i></button>
+            <button onclick="clearLsCompanySelect()" class="btn btn-icon-dark" title="°í°´»ç ¼±ÅÃ ÇØÁ¦"><i class="fas fa-times"></i></button>
           </div>
         </div>
 
-      <!-- ì„ íƒ í›„ ë³´ì—¬ì§€ëŠ” ì»¨í…ì¸  ì˜ì—­ -->
+      <!-- ¼±ÅÃ ÈÄ º¸¿©Áö´Â ÄÁÅÙÃ÷ ¿µ¿ª -->
       <div id="ls-content-area">
 
-        <!-- í†µê³„ ì¹´ë“œ 1í–‰: ê³ ìš©í˜•íƒœë³„ ì§ì› í˜„í™© -->
+        <!-- Åë°è Ä«µå 1Çà: °í¿ëÇüÅÂº° Á÷¿ø ÇöÈ² -->
         <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:18px 24px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.04);">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-            <div style="display:flex;align-items:center;gap:8px;">
+            <div class="flex-center-gap8">
               <div style="width:32px;height:32px;background:linear-gradient(135deg,#dbeafe,#bfdbfe);border-radius:8px;display:flex;align-items:center;justify-content:center;">
                 <i class="fas fa-users" style="color:#2563eb;font-size:13px;"></i>
               </div>
-              <span style="font-size:13.5px;font-weight:700;color:#374151;">ì§ì› í˜„í™© (ê³ ìš©í˜•íƒœë³„)</span>
+              <span style="font-size:13.5px;font-weight:700;color:#374151;">Á÷¿ø ÇöÈ² (°í¿ëÇüÅÂº°)</span>
             </div>
-            <div style="display:flex;align-items:center;gap:8px;">
+            <div class="flex-center-gap8">
               <span id="ls-emp-status-badge" style="font-size:11.5px;color:#6b7280;background:#f3f4f6;padding:3px 10px;border-radius:20px;"></span>
               <span style="font-size:11.5px;color:#6b7280;background:#fef3c7;padding:3px 10px;border-radius:20px;">
-                ì „ì²´ <strong id="ls-company-count" style="color:#92400e;">0</strong>ëª… &nbsp;|&nbsp; ìž¬ì§ <strong id="ls-active-emp" style="color:#059669;">0</strong>ëª… &nbsp;|&nbsp; í‡´ì§ <strong id="ls-retired-emp" style="color:#6b7280;">0</strong>ëª…
+                ÀüÃ¼ <strong id="ls-company-count" style="color:#92400e;">0</strong>¸í &nbsp;|&nbsp; ÀçÁ÷ <strong id="ls-active-emp" style="color:#059669;">0</strong>¸í &nbsp;|&nbsp; ÅðÁ÷ <strong id="ls-retired-emp" style="color:#6b7280;">0</strong>¸í
               </span>
             </div>
           </div>
           <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;">
-            <!-- ì •ê·œì§ -->
+            <!-- Á¤±ÔÁ÷ -->
             <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 14px;text-align:center;">
-              <div style="font-size:11px;color:#2563eb;font-weight:600;margin-bottom:6px;white-space:nowrap;">ì •ê·œì§</div>
+              <div style="font-size:11px;color:#2563eb;font-weight:600;margin-bottom:6px;white-space:nowrap;">Á¤±ÔÁ÷</div>
               <div id="ls-cat-regular" style="font-size:22px;font-weight:800;color:#1d4ed8;line-height:1.1;">0</div>
-              <div style="font-size:10.5px;color:#93c5fd;margin-top:3px;">ëª…</div>
+              <div style="font-size:10.5px;color:#93c5fd;margin-top:3px;">¸í</div>
             </div>
-            <!-- ì •ê·œì§(ìˆ˜ìŠµ) -->
+            <!-- Á¤±ÔÁ÷(¼ö½À) -->
             <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 14px;text-align:center;">
-              <div style="font-size:11px;color:#15803d;font-weight:600;margin-bottom:6px;white-space:nowrap;">ì •ê·œì§(ìˆ˜ìŠµ)</div>
+              <div style="font-size:11px;color:#15803d;font-weight:600;margin-bottom:6px;white-space:nowrap;">Á¤±ÔÁ÷(¼ö½À)</div>
               <div id="ls-cat-regular-prob" style="font-size:22px;font-weight:800;color:#16a34a;line-height:1.1;">0</div>
-              <div style="font-size:10.5px;color:#86efac;margin-top:3px;">ëª…</div>
+              <div style="font-size:10.5px;color:#86efac;margin-top:3px;">¸í</div>
             </div>
-            <!-- ê³„ì•½ì§ -->
+            <!-- °è¾àÁ÷ -->
             <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:12px 14px;text-align:center;">
-              <div style="font-size:11px;color:#b45309;font-weight:600;margin-bottom:6px;white-space:nowrap;">ê³„ì•½ì§</div>
+              <div style="font-size:11px;color:#b45309;font-weight:600;margin-bottom:6px;white-space:nowrap;">°è¾àÁ÷</div>
               <div id="ls-cat-contract" style="font-size:22px;font-weight:800;color:#d97706;line-height:1.1;">0</div>
-              <div style="font-size:10.5px;color:#fcd34d;margin-top:3px;">ëª…</div>
+              <div style="font-size:10.5px;color:#fcd34d;margin-top:3px;">¸í</div>
             </div>
-            <!-- ê³„ì•½ì§(ìˆ˜ìŠµ) -->
+            <!-- °è¾àÁ÷(¼ö½À) -->
             <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:12px 14px;text-align:center;">
-              <div style="font-size:11px;color:#c2410c;font-weight:600;margin-bottom:6px;white-space:nowrap;">ê³„ì•½ì§(ìˆ˜ìŠµ)</div>
+              <div style="font-size:11px;color:#c2410c;font-weight:600;margin-bottom:6px;white-space:nowrap;">°è¾àÁ÷(¼ö½À)</div>
               <div id="ls-cat-contract-prob" style="font-size:22px;font-weight:800;color:#ea580c;line-height:1.1;">0</div>
-              <div style="font-size:10.5px;color:#fdba74;margin-top:3px;">ëª…</div>
+              <div style="font-size:10.5px;color:#fdba74;margin-top:3px;">¸í</div>
             </div>
-            <!-- ì¼ìš©ì§ -->
+            <!-- ÀÏ¿ëÁ÷ -->
             <div style="background:#fdf4ff;border:1px solid #e9d5ff;border-radius:10px;padding:12px 14px;text-align:center;">
-              <div style="font-size:11px;color:#7e22ce;font-weight:600;margin-bottom:6px;white-space:nowrap;">ì¼ìš©ì§</div>
+              <div style="font-size:11px;color:#7e22ce;font-weight:600;margin-bottom:6px;white-space:nowrap;">ÀÏ¿ëÁ÷</div>
               <div id="ls-cat-daily" style="font-size:22px;font-weight:800;color:#9333ea;line-height:1.1;">0</div>
-              <div style="font-size:10.5px;color:#d8b4fe;margin-top:3px;">ëª…</div>
+              <div style="font-size:10.5px;color:#d8b4fe;margin-top:3px;">¸í</div>
             </div>
           </div>
         </div>
 
-        <!-- í†µê³„ ì¹´ë“œ 2í–‰: ë‹¹ì›” ê¸‰ì—¬ ì§€ê¸‰ì•¡ (ì§€ê¸‰ì´ì•¡ / ê³µì œì´ì•¡ / ì‹¤ì§€ê¸‰ì•¡) -->
+        <!-- Åë°è Ä«µå 2Çà: ´ç¿ù ±Þ¿© Áö±Þ¾× (Áö±ÞÃÑ¾× / °øÁ¦ÃÑ¾× / ½ÇÁö±Þ¾×) -->
         <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:18px 24px;margin-bottom:20px;box-shadow:0 1px 4px rgba(0,0,0,.04);">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-            <div style="display:flex;align-items:center;gap:8px;">
+            <div class="flex-center-gap8">
               <div style="width:32px;height:32px;background:linear-gradient(135deg,#fee2e2,#fecaca);border-radius:8px;display:flex;align-items:center;justify-content:center;">
                 <i class="fas fa-won-sign" style="color:#ef4444;font-size:13px;"></i>
               </div>
-              <span style="font-size:13.5px;font-weight:700;color:#374151;">ë‹¹ì›” ê¸‰ì—¬ ì§€ê¸‰ì•¡</span>
+              <span style="font-size:13.5px;font-weight:700;color:#374151;">´ç¿ù ±Þ¿© Áö±Þ¾×</span>
             </div>
-            <div style="display:flex;align-items:center;gap:8px;">
+            <div class="flex-center-gap8">
               <span style="font-size:11.5px;color:#7e22ce;background:#fdf4ff;border:1px solid #e9d5ff;padding:3px 10px;border-radius:20px;">
-                <i class="fas fa-file-contract" style="margin-right:4px;"></i>ìœ íš¨ê³„ì•½ <strong id="ls-active-contract">0</strong>ê±´ &nbsp;/&nbsp; ë§Œë£Œ <strong id="ls-contract-sub-val">0</strong>ê±´
+                <i class="fas fa-file-contract" style="margin-right:4px;"></i>À¯È¿°è¾à <strong id="ls-active-contract">0</strong>°Ç &nbsp;/&nbsp; ¸¸·á <strong id="ls-contract-sub-val">0</strong>°Ç
               </span>
               <span id="ls-pay-month-badge" style="font-size:11.5px;color:#6b7280;background:#f3f4f6;padding:3px 10px;border-radius:20px;"></span>
             </div>
           </div>
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid #f0f2f5;border-radius:10px;overflow:hidden;">
-            <!-- ì§€ê¸‰ì´ì•¡ -->
+            <!-- Áö±ÞÃÑ¾× -->
             <div style="padding:14px 20px;border-right:1px solid #f0f2f5;background:#f8faff;">
               <div style="display:flex;align-items:center;gap:5px;margin-bottom:6px;">
                 <span style="width:8px;height:8px;background:#3b82f6;border-radius:50%;display:inline-block;"></span>
-                <span style="font-size:11.5px;color:#6b7280;font-weight:500;">ì§€ê¸‰ì´ì•¡</span>
+                <span style="font-size:11.5px;color:#6b7280;font-weight:500;">Áö±ÞÃÑ¾×</span>
               </div>
-              <div id="ls-gross-pay" style="font-size:20px;font-weight:800;color:#1d4ed8;">0<span style="font-size:12px;font-weight:500;margin-left:2px;">ì›</span></div>
+              <div id="ls-gross-pay" style="font-size:20px;font-weight:800;color:#1d4ed8;">0<span style="font-size:12px;font-weight:500;margin-left:2px;">¿ø</span></div>
             </div>
-            <!-- ê³µì œì´ì•¡ -->
+            <!-- °øÁ¦ÃÑ¾× -->
             <div style="padding:14px 20px;border-right:1px solid #f0f2f5;background:#fff8f8;">
               <div style="display:flex;align-items:center;gap:5px;margin-bottom:6px;">
                 <span style="width:8px;height:8px;background:#ef4444;border-radius:50%;display:inline-block;"></span>
-                <span style="font-size:11.5px;color:#6b7280;font-weight:500;">ê³µì œì´ì•¡</span>
+                <span style="font-size:11.5px;color:#6b7280;font-weight:500;">°øÁ¦ÃÑ¾×</span>
               </div>
-              <div id="ls-deduct-pay" style="font-size:20px;font-weight:800;color:#dc2626;">0<span style="font-size:12px;font-weight:500;margin-left:2px;">ì›</span></div>
+              <div id="ls-deduct-pay" style="font-size:20px;font-weight:800;color:#dc2626;">0<span style="font-size:12px;font-weight:500;margin-left:2px;">¿ø</span></div>
             </div>
-            <!-- ì‹¤ì§€ê¸‰ì•¡ -->
+            <!-- ½ÇÁö±Þ¾× -->
             <div style="padding:14px 20px;background:#f0fdf4;">
               <div style="display:flex;align-items:center;gap:5px;margin-bottom:6px;">
                 <span style="width:8px;height:8px;background:#10b981;border-radius:50%;display:inline-block;"></span>
-                <span style="font-size:11.5px;color:#6b7280;font-weight:500;">ì‹¤ì§€ê¸‰ì•¡</span>
+                <span style="font-size:11.5px;color:#6b7280;font-weight:500;">½ÇÁö±Þ¾×</span>
               </div>
-              <div id="ls-net-pay" style="font-size:20px;font-weight:800;color:#059669;">0<span style="font-size:12px;font-weight:500;margin-left:2px;">ì›</span></div>
+              <div id="ls-net-pay" style="font-size:20px;font-weight:800;color:#059669;">0<span style="font-size:12px;font-weight:500;margin-left:2px;">¿ø</span></div>
             </div>
           </div>
         </div>
 
-        <!-- â”€â”€ ê¸‰ì—¬ í˜„í™© â”€â”€ -->
+        <!-- ¦¡¦¡ ±Þ¿© ÇöÈ² ¦¡¦¡ -->
           <div class="card">
             <div class="card-header">
-              <div style="display:flex;align-items:center;gap:8px;">
-                <span class="card-title">ðŸ“… ê¸‰ì—¬ í˜„í™©</span>
+              <div class="flex-center-gap8">
+                <span class="card-title">?? ±Þ¿© ÇöÈ²</span>
                 <span id="ls-pay-month" style="font-size:11.5px;color:#888;"></span>
               </div>
-              <!-- ì¸ì›ë³„/ë¶€ì„œë³„/ì§ê¸‰ë³„ íƒ­ -->
+              <!-- ÀÎ¿øº°/ºÎ¼­º°/Á÷±Þº° ÅÇ -->
               <div style="display:flex;gap:0;background:#f3f4f6;border-radius:8px;padding:3px;">
                 <button id="ls-dist-tab-emp"  onclick="switchLsDistTab('emp')"
                   style="padding:5px 14px;border:1px solid #2563eb;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;background:#3b82f6;color:#fff;transition:all .15s;">
-                  ì¸ì›ë³„
+                  ÀÎ¿øº°
                 </button>
                 <button id="ls-dist-tab-dept" onclick="switchLsDistTab('dept')"
                   style="padding:5px 14px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;background:transparent;color:#6b7280;transition:all .15s;">
-                  ë¶€ì„œë³„
+                  ºÎ¼­º°
                 </button>
                 <button id="ls-dist-tab-rank" onclick="switchLsDistTab('rank')"
                   style="padding:5px 14px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;background:transparent;color:#6b7280;transition:all .15s;">
-                  ì§ê¸‰ë³„
+                  Á÷±Þº°
                 </button>
               </div>
             </div>
-            <!-- ìš”ì•½ ë±ƒì§€ -->
+            <!-- ¿ä¾à ¹îÁö -->
             <div style="padding:14px 24px 0;">
               <div id="ls-dist-summary" style="display:flex;gap:12px;flex-wrap:wrap;"></div>
             </div>
-            <!-- ë¶„í¬ ì°¨íŠ¸ -->
+            <!-- ºÐÆ÷ Â÷Æ® -->
             <div style="padding:16px 24px 20px;">
-              <!-- ì¸ì›ë³„: ê°€ë¡œ ë§‰ëŒ€ ì°¨íŠ¸ -->
+              <!-- ÀÎ¿øº°: °¡·Î ¸·´ë Â÷Æ® -->
               <div id="ls-dist-bar-wrap" style="position:relative;display:block;">
                 <canvas id="ls-dist-chart"></canvas>
               </div>
-              <!-- ë¶€ì„œë³„/ì§ê¸‰ë³„: SVG ë„ë„› ì°¨íŠ¸ (display:none ë¶€ëª¨ ë¬¸ì œ ì—†ìŒ) -->
+              <!-- ºÎ¼­º°/Á÷±Þº°: SVG µµ³Ó Â÷Æ® (display:none ºÎ¸ð ¹®Á¦ ¾øÀ½) -->
               <div id="ls-dist-pie-wrap" style="display:none;min-height:220px;">
                 <div id="ls-dist-pie-inner" style="display:flex;align-items:center;gap:32px;min-height:220px;flex-wrap:wrap;">
-                  <!-- SVG ë„ë„›: JSì—ì„œ innerHTMLë¡œ êµì²´ -->
+                  <!-- SVG µµ³Ó: JS¿¡¼­ innerHTML·Î ±³Ã¼ -->
                   <div id="ls-dist-pie-svg-wrap" style="flex:0 0 220px;width:220px;height:220px;position:relative;"></div>
                   <div id="ls-dist-pie-legend" style="flex:1;min-width:160px;display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;align-content:start;"></div>
                 </div>
                 <div id="ls-dist-pie-empty-msg" style="display:none;height:80px;align-items:center;justify-content:center;color:#9ca3af;font-size:13px;"></div>
               </div>
             </div>
-            <!-- ì§ì›ë³„ ê¸‰ì—¬ ìƒì„¸ ëª©ë¡ -->
+            <!-- Á÷¿øº° ±Þ¿© »ó¼¼ ¸ñ·Ï -->
             <div style="padding:8px 20px 8px;border-top:1px solid #f0f2f5;display:flex;align-items:center;justify-content:space-between;">
-              <span style="font-size:13px;font-weight:700;color:#374151;">ì§ì›ë³„ ê¸‰ì—¬ ìƒì„¸</span>
+              <span style="font-size:13px;font-weight:700;color:#374151;">Á÷¿øº° ±Þ¿© »ó¼¼</span>
               <span id="ls-pay-count" style="font-size:12px;color:#9ca3af;"></span>
             </div>
             <div class="table-wrap" style="max-height:340px;overflow-y:auto;">
               <table>
                 <thead>
                   <tr>
-                    <th>ì§ì›ëª…</th>
-                    <th>ì„±ë³„</th>
-                    <th>ë¶€ì„œ</th>
-                    <th>ì§€ê¸‰ì´ì•¡</th>
-                    <th>ê³µì œí•©ê³„</th>
-                    <th>ì˜ìˆ˜ì•¡</th>
+                    <th>Á÷¿ø¸í</th>
+                    <th>¼ºº°</th>
+                    <th>ºÎ¼­</th>
+                    <th>Áö±ÞÃÑ¾×</th>
+                    <th>°øÁ¦ÇÕ°è</th>
+                    <th>¿µ¼ö¾×</th>
                   </tr>
                 </thead>
                 <tbody id="ls-pay-tbody">
-                  <tr><td colspan="5" class="empty-state">í•´ë‹¹ ì›” ê¸‰ì—¬ ë‚´ì—­ì´ ì—†ìŠµë‹ˆë‹¤</td></tr>
+                  <tr><td colspan="5" class="empty-state">ÇØ´ç ¿ù ±Þ¿© ³»¿ªÀÌ ¾ø½À´Ï´Ù</td></tr>
                 </tbody>
               </table>
             </div>
           </div>
 
-        <!-- â”€â”€ ì´ë‹¬ ì§€ê¸‰ í•­ëª©ë³„ ë¹„ìœ¨ íŒŒì´ ì°¨íŠ¸ â”€â”€ -->
+        <!-- ¦¡¦¡ ÀÌ´Þ Áö±Þ Ç×¸ñº° ºñÀ² ÆÄÀÌ Â÷Æ® ¦¡¦¡ -->
         <div class="card" style="margin-top:18px;" id="ls-pie-card">
           <div class="card-header">
-            <div style="display:flex;align-items:center;gap:8px;">
-              <span class="card-title">ðŸ”µ ì´ë‹¬ ì§€ê¸‰ í•­ëª©ë³„ ë¹„ìœ¨</span>
+            <div class="flex-center-gap8">
+              <span class="card-title">?? ÀÌ´Þ Áö±Þ Ç×¸ñº° ºñÀ²</span>
               <span id="ls-pie-month-badge" style="font-size:11.5px;color:#6b7280;background:#f3f4f6;padding:3px 10px;border-radius:20px;"></span>
             </div>
             <span id="ls-pie-total-badge" style="font-size:12px;color:#1d4ed8;background:#eff6ff;border:1px solid #bfdbfe;padding:4px 12px;border-radius:20px;"></span>
@@ -209,7 +209,7 @@
               <div style="flex:0 0 220px;height:220px;position:relative;">
                 <canvas id="ls-pie-pay-chart"></canvas>
                 <div id="ls-pie-pay-center" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;">
-                  <div style="font-size:10px;color:#9ca3af;">ì§€ê¸‰ì´ì•¡</div>
+                  <div style="font-size:10px;color:#9ca3af;">Áö±ÞÃÑ¾×</div>
                   <div id="ls-pie-pay-total" style="font-size:13px;font-weight:800;color:#1d4ed8;"></div>
                 </div>
               </div>
@@ -218,11 +218,11 @@
           </div>
         </div>
 
-        <!-- â”€â”€ ì´ë‹¬ ê³µì œ í•­ëª©ë³„ ë¹„ìœ¨ íŒŒì´ ì°¨íŠ¸ â”€â”€ -->
+        <!-- ¦¡¦¡ ÀÌ´Þ °øÁ¦ Ç×¸ñº° ºñÀ² ÆÄÀÌ Â÷Æ® ¦¡¦¡ -->
         <div class="card" style="margin-top:18px;" id="ls-ded-card">
           <div class="card-header">
-            <div style="display:flex;align-items:center;gap:8px;">
-              <span class="card-title">ðŸ”´ ì´ë‹¬ ê³µì œ í•­ëª©ë³„ ë¹„ìœ¨</span>
+            <div class="flex-center-gap8">
+              <span class="card-title">?? ÀÌ´Þ °øÁ¦ Ç×¸ñº° ºñÀ²</span>
               <span id="ls-ded-month-badge" style="font-size:11.5px;color:#6b7280;background:#f3f4f6;padding:3px 10px;border-radius:20px;"></span>
             </div>
             <span id="ls-ded-total-badge" style="font-size:12px;color:#dc2626;background:#fef2f2;border:1px solid #fecaca;padding:4px 12px;border-radius:20px;"></span>
@@ -232,7 +232,7 @@
               <div style="flex:0 0 220px;height:220px;position:relative;">
                 <canvas id="ls-pie-ded-chart"></canvas>
                 <div id="ls-pie-ded-center" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;">
-                  <div style="font-size:10px;color:#9ca3af;">ê³µì œí•©ê³„</div>
+                  <div style="font-size:10px;color:#9ca3af;">°øÁ¦ÇÕ°è</div>
                   <div id="ls-pie-ded-total" style="font-size:13px;font-weight:800;color:#dc2626;"></div>
                 </div>
               </div>
@@ -241,25 +241,25 @@
           </div>
         </div>
 
-        <!-- â”€â”€ ì´ë‹¬ ì§€ê¸‰ëŒ€ìƒ ê·¼ë¡œê³„ì•½ ëª©ë¡ (ë…ë¦½ ì¹´ë“œ) â”€â”€ -->
+        <!-- ¦¡¦¡ ÀÌ´Þ Áö±Þ´ë»ó ±Ù·Î°è¾à ¸ñ·Ï (µ¶¸³ Ä«µå) ¦¡¦¡ -->
         <div id="ls-tab-content-labor" style="margin-top:18px;">
           <div class="card">
             <div class="card-header">
-              <span class="card-title">ðŸ“‹ ì´ë‹¬ ì§€ê¸‰ëŒ€ìƒ ê·¼ë¡œê³„ì•½ ëª©ë¡</span>
+              <span class="card-title">?? ÀÌ´Þ Áö±Þ´ë»ó ±Ù·Î°è¾à ¸ñ·Ï</span>
               <div style="display:flex;align-items:center;gap:12px;">
                 <span id="ls-contract-month" style="font-size:11.5px;color:#888;"></span>
                 <div style="display:flex;gap:6px;">
                   <label style="display:flex;align-items:center;gap:4px;font-size:12.5px;cursor:pointer;padding:4px 10px;border-radius:20px;background:#f3f4f6;">
                     <input type="radio" name="ls-contract-filter" value="all" checked onchange="renderLaborStatus()" style="accent-color:#3b82f6;" />
-                    <span>ì „ì²´</span>
+                    <span>ÀüÃ¼</span>
                   </label>
                   <label style="display:flex;align-items:center;gap:4px;font-size:12.5px;cursor:pointer;padding:4px 10px;border-radius:20px;background:#f3f4f6;">
                     <input type="radio" name="ls-contract-filter" value="paid" onchange="renderLaborStatus()" style="accent-color:#10b981;" />
-                    <span style="color:#10b981;font-weight:600;">ê¸‰ì—¬ìž…ë ¥ë¨</span>
+                    <span style="color:#10b981;font-weight:600;">±Þ¿©ÀÔ·ÂµÊ</span>
                   </label>
                   <label style="display:flex;align-items:center;gap:4px;font-size:12.5px;cursor:pointer;padding:4px 10px;border-radius:20px;background:#f3f4f6;">
                     <input type="radio" name="ls-contract-filter" value="unpaid" onchange="renderLaborStatus()" style="accent-color:#f59e0b;" />
-                    <span style="color:#f59e0b;font-weight:600;">ë¯¸ìž…ë ¥</span>
+                    <span style="color:#f59e0b;font-weight:600;">¹ÌÀÔ·Â</span>
                   </label>
                 </div>
               </div>
@@ -268,56 +268,56 @@
               <table>
                 <thead>
                   <tr>
-                    <th>ì§ì›ëª…</th>
-                    <th>ì„±ë³„</th>
-                    <th>ê³„ì•½ìœ í˜•</th>
-                    <th>ê³„ì•½ê¸°ê°„</th>
-                    <th>ì†Œì •ê·¼ë¡œ</th>
-                    <th>ì•½ì •ìž„ê¸ˆ</th>
-                    <th>ê³„ì•½ìƒíƒœ</th>
-                    <th>ê¸‰ì—¬ìž…ë ¥</th>
+                    <th>Á÷¿ø¸í</th>
+                    <th>¼ºº°</th>
+                    <th>°è¾àÀ¯Çü</th>
+                    <th>°è¾à±â°£</th>
+                    <th>¼ÒÁ¤±Ù·Î</th>
+                    <th>¾àÁ¤ÀÓ±Ý</th>
+                    <th>°è¾à»óÅÂ</th>
+                    <th>±Þ¿©ÀÔ·Â</th>
                   </tr>
                 </thead>
                 <tbody id="ls-contract-tbody">
-                  <tr><td colspan="7" class="empty-state">ê³„ì•½ ë‚´ì—­ì´ ì—†ìŠµë‹ˆë‹¤</td></tr>
+                  <tr><td colspan="7" class="empty-state">°è¾à ³»¿ªÀÌ ¾ø½À´Ï´Ù</td></tr>
                 </tbody>
               </table>
             </div>
           </div>
         </div>
 
-        <!-- â”€â”€ ì—°ê°„ ê¸‰ì—¬ ì¶”ì´ ê·¸ëž˜í”„ â”€â”€ -->
+        <!-- ¦¡¦¡ ¿¬°£ ±Þ¿© ÃßÀÌ ±×·¡ÇÁ ¦¡¦¡ -->
         <div class="card" style="margin-top:18px;" id="ls-trend-card">
           <div class="card-header" style="flex-wrap:wrap;gap:10px;">
-            <div style="display:flex;align-items:center;gap:8px;">
-              <span class="card-title">ðŸ“ˆ 1ë…„ê°„ ê¸‰ì—¬ ì§€ê¸‰ ì¶”ì´</span>
+            <div class="flex-center-gap8">
+              <span class="card-title">?? 1³â°£ ±Þ¿© Áö±Þ ÃßÀÌ</span>
               <span id="ls-trend-year-badge" style="font-size:11.5px;color:#6b7280;background:#f3f4f6;padding:3px 10px;border-radius:20px;"></span>
             </div>
-            <!-- í•­ëª© ì„ íƒ ì²´í¬ë°•ìŠ¤ -->
+            <!-- Ç×¸ñ ¼±ÅÃ Ã¼Å©¹Ú½º -->
             <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;" id="ls-trend-toggles">
               <label id="ltt-gross-wrap"     style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;padding:4px 10px;border-radius:20px;border:1.5px solid #3b82f6;background:#eff6ff;color:#1d4ed8;font-weight:600;">
-                <input type="checkbox" id="ltt-gross"      checked onchange="renderLsYearTrendChart()" style="accent-color:#3b82f6;" />&nbsp;ì´ ì§€ê¸‰ì•¡
+                <input type="checkbox" id="ltt-gross"      checked onchange="renderLsYearTrendChart()" style="accent-color:#3b82f6;" />&nbsp;ÃÑ Áö±Þ¾×
               </label>
               <label id="ltt-deduct-wrap"    style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;padding:4px 10px;border-radius:20px;border:1.5px solid #ef4444;background:#fef2f2;color:#b91c1c;font-weight:600;">
-                <input type="checkbox" id="ltt-deduct"     checked onchange="renderLsYearTrendChart()" style="accent-color:#ef4444;" />&nbsp;ê³µì œ ì´ì•¡
+                <input type="checkbox" id="ltt-deduct"     checked onchange="renderLsYearTrendChart()" style="accent-color:#ef4444;" />&nbsp;°øÁ¦ ÃÑ¾×
               </label>
               <label id="ltt-net-wrap"       style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;padding:4px 10px;border-radius:20px;border:1.5px solid #10b981;background:#f0fdf4;color:#065f46;font-weight:600;">
-                <input type="checkbox" id="ltt-net"        checked onchange="renderLsYearTrendChart()" style="accent-color:#10b981;" />&nbsp;ì‹¤ì§€ê¸‰ì•¡
+                <input type="checkbox" id="ltt-net"        checked onchange="renderLsYearTrendChart()" style="accent-color:#10b981;" />&nbsp;½ÇÁö±Þ¾×
               </label>
               <label id="ltt-extra-wrap"     style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;padding:4px 10px;border-radius:20px;border:1.5px solid #f59e0b;background:#fffbeb;color:#92400e;">
-                <input type="checkbox" id="ltt-extra"               onchange="renderLsYearTrendChart()" style="accent-color:#f59e0b;" />&nbsp;ì¶”ê°€ê·¼ë¡œìˆ˜ë‹¹
+                <input type="checkbox" id="ltt-extra"               onchange="renderLsYearTrendChart()" style="accent-color:#f59e0b;" />&nbsp;Ãß°¡±Ù·Î¼ö´ç
               </label>
               <label id="ltt-irreg-wrap"     style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;padding:4px 10px;border-radius:20px;border:1.5px solid #8b5cf6;background:#f5f3ff;color:#5b21b6;">
-                <input type="checkbox" id="ltt-irreg"               onchange="renderLsYearTrendChart()" style="accent-color:#8b5cf6;" />&nbsp;ë¶€ì •ê¸°ì§€ê¸‰
+                <input type="checkbox" id="ltt-irreg"               onchange="renderLsYearTrendChart()" style="accent-color:#8b5cf6;" />&nbsp;ºÎÁ¤±âÁö±Þ
               </label>
               <label id="ltt-tax-wrap"       style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;padding:4px 10px;border-radius:20px;border:1.5px solid #ec4899;background:#fdf2f8;color:#9d174d;">
-                <input type="checkbox" id="ltt-tax"                 onchange="renderLsYearTrendChart()" style="accent-color:#ec4899;" />&nbsp;ì„¸ê¸ˆ
+                <input type="checkbox" id="ltt-tax"                 onchange="renderLsYearTrendChart()" style="accent-color:#ec4899;" />&nbsp;¼¼±Ý
               </label>
               <label id="ltt-ins-wrap"       style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;padding:4px 10px;border-radius:20px;border:1.5px solid #06b6d4;background:#ecfeff;color:#155e75;">
-                <input type="checkbox" id="ltt-ins"                 onchange="renderLsYearTrendChart()" style="accent-color:#06b6d4;" />&nbsp;4ëŒ€ë³´í—˜
+                <input type="checkbox" id="ltt-ins"                 onchange="renderLsYearTrendChart()" style="accent-color:#06b6d4;" />&nbsp;4´ëº¸Çè
               </label>
               <label id="ltt-adj-wrap"       style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;padding:4px 10px;border-radius:20px;border:1.5px solid #6b7280;background:#f9fafb;color:#374151;">
-                <input type="checkbox" id="ltt-adj"                 onchange="renderLsYearTrendChart()" style="accent-color:#6b7280;" />&nbsp;ì •ì‚°/ì¶”ê°€ê³µì œ
+                <input type="checkbox" id="ltt-adj"                 onchange="renderLsYearTrendChart()" style="accent-color:#6b7280;" />&nbsp;Á¤»ê/Ãß°¡°øÁ¦
               </label>
             </div>
           </div>

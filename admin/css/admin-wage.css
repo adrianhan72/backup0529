@@ -316,6 +316,14 @@
 .pi-target-thead{background:#f1f5f9}
 /* utility */
 .w-full{width:100%}
+.w-200{width:200px}
+.w-160{width:160px}
+.w-130{width:130px}
+.w-120{width:120px}
+.w-80{width:80px}
+/* flex utilities */
+.flex-center-gap8{display:flex;align-items:center;gap:8px}
+.flex-center-gap10{display:flex;align-items:center;gap:10px}
 /* payroll input: compact number input */
 .pi-num-input{width:72px}
 /* payroll input: auto-calc panel rows */
@@ -326,6 +334,16 @@
 .pi-auto-row-red{background:#fff1f2}
 .pi-auto-label{font-size:11.5px}
 .pi-auto-val{font-size:11.5px}
+/* payroll input: form elements */
+.pi-textarea{width:100%;box-sizing:border-box;border:1px solid #e0e0e0;border-radius:6px;padding:6px 9px;font-size:11.5px;color:#374151;font-family:inherit;outline:none;resize:vertical;margin-bottom:4px}
+.pi-textarea-yellow{background:#fffbf0}
+.pi-textarea-green{background:#f0fdf4}
+.pi-action-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
+.pi-section-title-mt{margin-top:14px}
+.pi-summary-box{margin-top:18px;padding:14px;background:#fff3f5;border-radius:10px;border:1px solid #ffd0d8}
+.pi-summary-row{display:flex;justify-content:space-between;font-size:12.5px;padding:4px 0}
+.pi-summary-total{display:flex;justify-content:space-between;font-size:15px;font-weight:800;padding-top:10px;border-top:2px solid #e94560;margin-top:6px}
+.pi-ded-label{font-size:11.5px;color:#888}
 /* annual leave dispatch table */
 .al-dispatch-row:hover{background:#f0f9ff!important}
 .al-dispatch-row:nth-child(even){background:#fafafa}
