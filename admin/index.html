@@ -1604,8 +1604,8 @@
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
         <label style="font-size:12.5px;font-weight:600;color:#374151;white-space:nowrap;">퇴사일(마지막 근무일) <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
         <input type="date" id="ct-terminate-date" class="filt-date" />
-        <button class="btn btn-danger" style="height:36px;box-sizing:border-box;" onclick="confirmContractTerminate()"><i class="fas fa-check"></i> 확정</button>
-        <button class="btn btn-secondary" style="height:36px;box-sizing:border-box;" onclick="cancelContractTerminate()">취소</button>
+        <button class="btn btn-danger" onclick="confirmContractTerminate()"><i class="fas fa-check"></i> 확정</button>
+        <button class="btn btn-secondary" onclick="cancelContractTerminate()">취소</button>
       </div>
     </div>
     <!-- ── 계약 상태 통합 배너 (해지예정 / 계약예정 / 갱신예정 공용, 조회 전용) ── -->

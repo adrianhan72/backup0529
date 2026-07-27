@@ -136,6 +136,7 @@
     .ct-readonly .ct-terminate-panel textarea{background:#fff!important;color:#000!important;pointer-events:auto!important;border:1px solid #d1d5db!important;border-radius:7px!important;cursor:text!important;height:36px!important;box-sizing:border-box!important;padding:6px 12px!important;font-size:13px!important;font-weight:400!important}
     .ct-readonly .ct-terminate-panel input:focus,
     .ct-readonly .ct-terminate-panel textarea:focus{border-color:#6366f1!important;outline:none;box-shadow:0 0 0 2px rgba(99,102,241,.25)}
+    .ct-terminate-panel .btn{height:36px;box-sizing:border-box}
     /* ?�규�??�사?�정???�력 ?�널 */
     .ct-terminate-panel{background:#fff5f5;border:1.5px solid #fca5a5;border-radius:10px;padding:14px 18px;margin:12px 18px 0;}
     /* 계약�??��? ?�정 ?�널 */
