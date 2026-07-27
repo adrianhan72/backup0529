@@ -1388,12 +1388,16 @@ function doContractRenew(){
   });
 
   // ── 갱신 모드: 사원번호·이름·주민번호 잠금 ──
-  ['ct-edit-em-empno','ct-edit-emp-name','ct-edit-em-id'].forEach(fid => {
+  ['ct-edit-em-empno','ct-edit-em-name','ct-edit-em-id'].forEach(fid => {
     const el = document.getElementById(fid);
-    if(el){ el.disabled = true; el.readOnly = true; el.classList.add('ct-input-locked'); }
+    if(el){ el.disabled = true; el.classList.add('ct-input-locked'); }
   });
-  const lockNotice = document.getElementById('ct-edit-renew-lock-notice');
-  if(lockNotice) lockNotice.style.display = '';
+  const nameLockHint = document.getElementById('ct-edit-name-lock-hint');
+  if(nameLockHint){
+    nameLockHint.textContent = '계약 갱신 시에는 기 발급된 사원번호와 이름은 수정할 수 없습니다.';
+    nameLockHint.style.display = 'block';
+    nameLockHint.style.color = '#9ca3af';
+  }
 
   // 하단 갱신완료·취소 버튼 표시
   const btnComplete2 = document.getElementById('ct-btn-renew-complete2');
