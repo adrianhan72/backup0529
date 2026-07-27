@@ -852,21 +852,23 @@ function _updatePIAttendanceSummary(){
   const summaryEl = document.getElementById('pi-attendance-summary');
   if(summaryEl){
     const parts = [];
+    // 결근: 유형별 집계 (유급/무급/무단)
+    const byType = {};
+    absentData.forEach(a => {
+      const t = a.type || 'unauthorized';
+      byType[t] = (byType[t]||0) + (typeof _atlExpandDateRange==='function' ? _atlExpandDateRange(a.date, a.dateTo||'').length : 1);
+    });
+    const typeLabels = { authorized:'유급', unauthorized:'무단', unpaid:'무급' };
     if(absentDays > 0){
-      // 결근: 유형별 집계 (유급/무급/무단)
-      const byType = {};
-      absentData.forEach(a => {
-        const t = a.type || 'unauthorized';
-        byType[t] = (byType[t]||0) + (typeof _atlExpandDateRange==='function' ? _atlExpandDateRange(a.date, a.dateTo||'').length : 1);
-      });
-      const typeLabels = { authorized:'유급', unauthorized:'무단', unpaid:'무급' };
       const absDetails = Object.entries(byType)
         .map(([t,days]) => `${typeLabels[t]||t} ${days}일`)
         .join(', ');
       parts.push(`<span style="color:#dc2626;font-weight:600;">결근 ${absentDays}일</span> <span style="font-size:11px;color:#9ca3af;">(${absDetails})</span>`);
+    } else {
+      parts.push(`<span style="color:#9ca3af;">결근 0일</span>`);
     }
+    // 지각: 총 시간
     if(lateCount > 0){
-      // 지각: 총 시간으로 표시
       const lateTotalMin = lateData.reduce((s,e) => {
         const [h,m] = (e.time||'0:0').split(':').map(Number);
         return s + (h||0)*60 + (m||0);
@@ -875,9 +877,11 @@ function _updatePIAttendanceSummary(){
       const lateM = lateTotalMin%60;
       const lateStr = lateM>0 ? `${lateH}.${Math.round(lateM/60*10)}h` : `${lateH}h`;
       parts.push(`<span style="color:#d97706;font-weight:600;">지각 ${lateStr}</span>`);
+    } else {
+      parts.push(`<span style="color:#9ca3af;">지각 0h</span>`);
     }
+    // 조퇴: 총 시간
     if(earlyCount > 0){
-      // 조퇴: 총 시간으로 표시
       const earlyTotalMin = earlyData.reduce((s,e) => {
         const [h,m] = (e.time||'0:0').split(':').map(Number);
         return s + (h||0)*60 + (m||0);
@@ -886,8 +890,10 @@ function _updatePIAttendanceSummary(){
       const earlyM = earlyTotalMin%60;
       const earlyStr = earlyM>0 ? `${earlyH}.${Math.round(earlyM/60*10)}h` : `${earlyH}h`;
       parts.push(`<span style="color:#4f46e5;font-weight:600;">조퇴 ${earlyStr}</span>`);
+    } else {
+      parts.push(`<span style="color:#9ca3af;">조퇴 0h</span>`);
     }
-    summaryEl.innerHTML = parts.length > 0 ? parts.join(' · ') : '<span style="color:#9ca3af;">기록 없음</span>';
+    summaryEl.innerHTML = parts.join(' · ');
   }
   window._attendanceFromPayroll = null;
 }
