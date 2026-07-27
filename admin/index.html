@@ -640,19 +640,15 @@
         <!-- ④ 행: 연차 사용 등록 (날짜 선택 + 일수 입력) -->
         <div style="display:flex;align-items:center;gap:10px;padding:10px 0;flex-wrap:wrap;">
           <label style="font-size:12px;font-weight:700;color:#374151;">사용일 등록</label>
-          <input type="date" id="ledger-entry-date"
-            style="border:1.5px solid #93c5fd;border-radius:6px;padding:6px 10px;
-                   font-size:13px;font-family:inherit;color:#1d4ed8;outline:none;
-                   width:150px;" />
-          <select id="ledger-entry-days"
-            style="border:1.5px solid #93c5fd;border-radius:6px;padding:6px 8px;
-                   font-size:13px;font-weight:700;font-family:inherit;color:#1d4ed8;
-                   outline:none;cursor:pointer;">
+          <input type="date" id="ledger-entry-date" class="input-slim"
+            style="width:150px;" />
+          <select id="ledger-entry-days" class="input-slim"
+            style="font-weight:700;color:#1d4ed8;cursor:pointer;">
             <option value="0.25">0.25일 (2시간)</option>
             <option value="0.5">0.5일 (반차)</option>
             <option value="1" selected>1일</option>
           </select>
-          <button class="btn btn-sm btn-warning" onclick="_addLedgerEntry()" style="position:relative;overflow:hidden;">
+          <button class="btn btn-sm btn-warning input-slim" onclick="_addLedgerEntry()" style="position:relative;overflow:hidden;">
             <i class="fas fa-plus"></i> 등록
           </button>
           <span style="font-size:11px;color:#9ca3af;">날짜 선택 후 사용일수를 지정하고 등록하세요 (중복 등록 불가)</span>
