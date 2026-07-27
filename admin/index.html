@@ -1986,7 +1986,7 @@
         <div class="form-group full"><span class="form-section-title" id="ct-wage-section-title">임금 조건 (월)</span></div>
         <!-- ── 급여산정기간 + 급여일 — 같은 행 ── -->
         <div class="form-group">
-          <label>급여 산정기간 <span class="lbl-desc" id="ct-pay-period-hint"></span></label>
+          <label>급여 산정기간 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span> <span class="lbl-desc" id="ct-pay-period-hint"></span></label>
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
             <select id="ct-pay-period-month" onchange="_ctPeriodCompose()" style="flex:0 0 auto;">
               <option value="">월 선택</option>
@@ -2012,7 +2012,7 @@
           <input type="hidden" id="ct-pay-period-day-hidden" />
         </div>
         <div class="form-group">
-          <label>급여일 <span style="font-size:11px;font-weight:400;color:#6b7280;">(매월)</span></label>
+          <label>급여일 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span> <span style="font-size:11px;font-weight:400;color:#6b7280;">(매월)</span></label>
           <div style="display:flex;align-items:center;gap:6px;">
             <input type="number" id="ct-pay-day" min="1" max="31" placeholder="미입력 시 고객사 급여일 적용" style="width:80px;" />
             <span style="font-size:12px;color:#6b7280;">일</span>
@@ -2030,7 +2030,7 @@
         <div class="form-group full ct-allowance-section-header">
           <span>📌 통상임금 포함 수당</span>
         </div>
-        <div class="form-group" id="ct-row-base"><label>기본급 <span id="ct-base-auto-mark" class="lbl-desc">(자동계산)</span><span id="ct-base-required-mark" style="display:none;"></span></label><div class="amount-wrap"><input type="text" inputmode="numeric" id="ct-base" data-amount placeholder="0" oninput="onAmountInput(this,calcContractSalary);_checkRegisterBtnState();" /></div></div>
+        <div class="form-group" id="ct-row-base"><label>기본급 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span> <span id="ct-base-auto-mark" class="lbl-desc">(자동계산)</span><span id="ct-base-required-mark" style="display:none;"></span></label><div class="amount-wrap"><input type="text" inputmode="numeric" id="ct-base" data-amount placeholder="0" oninput="onAmountInput(this,calcContractSalary);_checkRegisterBtnState();" /></div></div>
         <div class="form-group" id="ct-row-weekly-hol"><label>주휴수당 <span class="lbl-desc">(자동계산)</span></label><div class="form-computed" id="ct-weekly-hol-computed">0원</div></div>
         <div class="form-group" id="ct-row-regular-bonus" style="display:none;">
           <label>정기 상여금 <span class="lbl-desc">(매월 고정 지급)</span></label>
