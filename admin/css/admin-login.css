@@ -108,7 +108,7 @@
     .pi-note-wrap{display:block;margin-top:6px;margin-bottom:4px;}
     .pi-note-label{display:block;font-size:12.5px;color:#666;margin-bottom:4px;}
     .pi-note-wrap textarea{display:block;width:100%;min-height:62px;border:1px solid #e0e0e0;border-radius:6px;padding:6px 9px;font-size:13px;outline:none;font-family:inherit;resize:vertical;line-height:1.55;color:#1a1a2e;box-sizing:border-box;}
-    .pi-note-wrap textarea:focus{border-color:#e94560;}
+    .pi-note-wrap textarea:focus{border-color:#6366f1;outline:none;box-shadow:0 0 0 2px rgba(99,102,241,.25);}
 /* 계약??고정??�� readonly ?��???*/
 .pi-readonly-field{background:#f1f5f9!important;color:#555!important;cursor:default!important;border-color:#e8eaed!important;user-select:none!important;}
 .pi-readonly-field:focus{border-color:#e8eaed!important;outline:none!important;}
