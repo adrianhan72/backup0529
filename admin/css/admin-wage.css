@@ -972,5 +972,7 @@
 /* payroll input textarea (비고와 동일 스타일) */
 .pi-textarea{width:100%;border:1px solid #e0e0e0;border-radius:6px;padding:6px 9px;font-size:13px;font-family:inherit;resize:vertical;color:#1a1a2e;box-sizing:border-box;line-height:1.55;margin-bottom:4px}
 .pi-textarea:focus{border-color:#e94560}
-.pi-textarea-yellow{background:#fffbf0}
-.pi-textarea-green{background:#f0fdf4}
+/* 총계 요약 박스 */
+.pi-summary-box{margin-top:18px;padding:14px;background:#fff3f5;border-radius:10px;border:1px solid #ffd0d8}
+.pi-summary-row{display:flex;justify-content:space-between;font-size:12.5px;padding:4px 0}
+.pi-summary-total{display:flex;justify-content:space-between;font-size:15px;font-weight:800;padding-top:10px;border-top:2px solid #e94560;margin-top:6px}
