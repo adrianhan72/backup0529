@@ -353,26 +353,25 @@ function _atlExpandDateRange(from, to) {
 
 /**
  * 특정 날짜가 속한 급여 산정기간의 시작일·종료일을 반환한다.
- * 고객사 pay_period_month(당월/전월), pay_period_day 설정 기준.
+ * 고객사 pay_period_day 설정 기준으로 날짜 그룹 경계를 계산.
+ * (당월/전월 구분은 payroll labeling용이며, 날짜 그룹핑에는 영향 없음)
  * @param {string} dateStr - YYYY-MM-DD
- * @param {object} company - { pay_period_month, pay_period_day }
+ * @param {object} company - { pay_period_day }
  * @returns {[string, string]} [periodStart, periodEnd]
  */
 function _atlGetPayPeriod(dateStr, company) {
-  const ppMo  = company?.pay_period_month || '당월';
   const ppDay = parseInt(company?.pay_period_day) || 1;
-  const [y, m] = dateStr.split('-').map(Number);
-  const isJeonwol = ppMo === '전월';
+  const [y, m, d] = dateStr.split('-').map(Number);
 
+  // 날짜가 pay_day 이전이면 전월에 시작된 산정기간에 속함
+  // 예: pay_day=21, 7/15 → 6/21~7/20 기간
   let refY = y, refM = m;
-  if (isJeonwol) {
+  if (d < ppDay) {
     refM = m - 1;
     if (refM <= 0) { refM += 12; refY--; }
   }
 
-  // 산정 시작일: refY-refM-ppDay
   const startStr = `${refY}-${String(refM).padStart(2,'0')}-${String(ppDay).padStart(2,'0')}`;
-  // 산정 종료일: 다음달 ppDay 하루 전
   const endDate = new Date(refY, refM - 1, ppDay);
   endDate.setMonth(endDate.getMonth() + 1);
   endDate.setDate(endDate.getDate() - 1);
