@@ -152,20 +152,7 @@
     }
     .btn-cft-confirm:active:not(:disabled){}
     .btn-cft-confirm:disabled,.btn-cft-confirm[disabled]{background:#cccccc;color:#f2f2f2;border:1px solid #cccccc;cursor:not-allowed;pointer-events:none;opacity:1;}
-    /* ?��? ?�정 버튼 ??Orange */
-    .btn-fixed-terminate{
-      display:inline-flex;align-items:center;gap:6px;
-      background:#ea580c;color:#fff;
-      border:1px solid #c2410c;border-radius:8px;padding:7px 16px;
-      font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;
-      transition:background .18s,border-color .18s;
-      position:relative;overflow:hidden;
-    }
-    .btn-fixed-terminate:hover:not(:disabled){
-      background:#c2410c;
-    }
-    .btn-fixed-terminate:active:not(:disabled){}
-    .btn-fixed-terminate:disabled,.btn-fixed-terminate[disabled]{background:#cccccc;color:#f2f2f2;border:1px solid #cccccc;cursor:not-allowed;pointer-events:none;opacity:1;}
+
     /* ?�?� 계약 ?�태 ?�합 배너 (?��??�정 / 계약?�정 / 갱신?�정 공용) ?�?� */
     .ct-status-banner{display:none;align-items:flex-start;gap:14px;border-radius:12px;padding:14px 20px;margin:12px 18px 0;border:2px solid;}
     /* ?��??�정 ???�드 */
