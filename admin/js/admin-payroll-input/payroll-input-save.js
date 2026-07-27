@@ -364,7 +364,8 @@ function loadPIDraft(){
       document.querySelectorAll('#page-payroll-input .btn-primary').forEach(btn => {
         if(btn.textContent.includes('급여 저장') || btn.textContent.includes('저장')){
           btn.innerHTML = '<i class="fas fa-save"></i> 수정 저장';
-          btn.style.background = 'linear-gradient(135deg,#f59e0b,#d97706)';
+          btn.classList.remove('btn-primary');
+          btn.classList.add('btn-warning');
         }
       });
       // 수정 모드 배너 제거됨 — 드롭존만 숨김

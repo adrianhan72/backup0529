@@ -28,7 +28,7 @@
        계약 ?�션 버튼 alias ?????�스??기반
        (기존 ?�래?�명 ?��?, .btn ?�성 ?�속)
     ?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═ */
-    /* 갱신 ??Indigo */
+    /* 갱신 — Orange */
     .btn-renew{
       background:#d97706;color:#fff;
       border:1px solid #b45309;border-radius:7px;padding:7px 16px;
@@ -58,7 +58,7 @@
     .btn-terminate:active:not(:disabled){}
     .btn-terminate:disabled,.btn-terminate[disabled]{background:#cccccc;color:#f2f2f2;border:1px solid #cccccc;cursor:not-allowed;pointer-events:none;opacity:1;}
 
-    /* ?�계????Teal */
+    /* 재계약 — Orange */
     .btn-recontract{
       background:#d97706;color:#fff;
       border:1px solid #b45309;border-radius:7px;padding:7px 16px;
@@ -197,13 +197,9 @@
     .btn-sb:active:not(:disabled){}
     .btn-sb:disabled,.btn-sb[disabled]{background:#cccccc;color:#f2f2f2;border:1px solid #cccccc;cursor:not-allowed;pointer-events:none;opacity:1;}
 
-    /* ?�집 ??Indigo */
+    /* 수정 — Orange */
     .btn-sb-edit{background:#d97706;color:#fff;}
     .btn-sb-edit:hover:not(:disabled){background:#b45309;}
-    .btn-sb-edit.amber{background:#d97706;color:#fff;}
-    .btn-sb-edit.amber:hover:not(:disabled){background:#b45309;}
-    .btn-sb-edit.rose{background:#d97706;color:#fff;}
-    .btn-sb-edit.rose:hover:not(:disabled){background:#b45309;}
 
     /* ?�????Success */
     .btn-sb-save{background:#16a34a;color:#fff;}

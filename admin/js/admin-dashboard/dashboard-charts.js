@@ -806,7 +806,7 @@ function _buildDashCompanyRow(c){
   } else {
     statusCell = `<span class="dash-co-done"><i class="fas fa-check-circle" style="font-size:11px;margin-right:3px;"></i>총 ${inputtedCnt}건 / ${totalValid}명 입력완료</span>`;
   }
-  const btnClass = pendingCnt > 0 ? 'dash-co-btn-input' : 'dash-co-btn-edit';
+  const btnClass = pendingCnt > 0 ? 'dash-co-btn btn-danger' : 'dash-co-btn btn-warning';
   const btnLabel = pendingCnt > 0
     ? `<i class="fas fa-plus-circle"></i> 급여 입력`
     : `<i class="fas fa-edit"></i> 수정`;
