@@ -2681,9 +2681,47 @@ function _getPIFixedHours(){
 }
 
 /**
+ * schedule_json에서 특정 날짜의 요일에 해당하는 근무 시작/종료 시각을 반환.
+ * @param {string} dateStr - YYYY-MM-DD 형식
+ * @param {object|string|null} scheduleJson - schedule_json (객체 또는 JSON 문자열)
+ * @param {'start'|'end'} field - 조회할 필드
+ * @param {string} fallback - 스케줄 없을 때 기본값 ('09:00' for start, '18:00' for end)
+ * @returns {{ hour: number, minute: number }} 24시 기준 시/분
+ */
+function _getScheduleTimeForDate(dateStr, scheduleJson, field, fallback){
+  const [fbH, fbM] = (fallback||'09:00').split(':').map(Number);
+  const fallbackObj = { hour: fbH||9, minute: fbM||0 };
+  if(!dateStr || !scheduleJson) return fallbackObj;
+
+  let sched;
+  try { sched = typeof scheduleJson === 'string' ? JSON.parse(scheduleJson) : scheduleJson; }
+  catch(e){ return fallbackObj; }
+  if(!Array.isArray(sched) || !sched.length) return fallbackObj;
+
+  // 날짜 → 요일 (0=일, 1=월, ..., 6=토)
+  const dayMap = ['sun','mon','tue','wed','thu','fri','sat'];
+  const d = new Date(dateStr + 'T00:00:00');
+  const dayKey = dayMap[d.getDay()] || 'mon';
+
+  // 해당 요일 찾기
+  const daySched = sched.find(s => s.day === dayKey && (s.active === true || s.active === 1 || s.active === 'true'));
+  if(!daySched) return fallbackObj;
+
+  // shifts 배열 우선, 없으면 평면 필드
+  const raw = (Array.isArray(daySched.shifts) && daySched.shifts.length > 0)
+    ? daySched.shifts[0]
+    : daySched;
+  const timeStr = raw[field] || '';
+  if(!timeStr) return fallbackObj;
+
+  const [h, m] = timeStr.split(':').map(Number);
+  return { hour: h||9, minute: m||0 };
+}
+
+/**
  * 무단 조퇴 시간 합계 (시간 단위)
  * 각 조퇴 기록마다 (정상 퇴근시각 - 조퇴시각)을 누적
- * 기본 정상 퇴근시각: schedule_json에서 파악, 없으면 18:00
+ * 정상 퇴근시각: 해당 날짜의 요일별 schedule_json 참조, 없으면 18:00
  */
 function _getPIEarlyLeaveHours(){
   const hidden = document.getElementById('pi-earlyleave-data');
@@ -2698,35 +2736,24 @@ function _getPIEarlyLeaveHours(){
       const retro = JSON.parse(retroEl.value || '[]');
       if(Array.isArray(retro) && retro.length > 0) data = data.concat(retro);
       else if(retro && retro.count > 0){
-        for(let i=0; i<retro.count; i++) data.push({ time: '17:00' }); // 시간 불명 → 1시간 추정
+        for(let i=0; i<retro.count; i++) data.push({ time: '17:00' });
       }
     } catch(e){}
   }
   if(!data.length) return 0;
 
-  // 정상 퇴근시각 추정: schedule_json 또는 기본 18:00
-  let defaultEndHour = 18;
-  if(piContract?.schedule_json){
-    try {
-      const sched = JSON.parse(piContract.schedule_json);
-      // schedule에서 가장 늦은 종료시각 찾기
-      for(const day of ['mon','tue','wed','thu','fri','sat','sun']){
-        const d = sched[day];
-        if(d && d.end){
-          const [eh, em] = d.end.split(':').map(Number);
-          const endMin = eh * 60 + (em||0);
-          if(endMin > defaultEndHour * 60) defaultEndHour = eh + (em||0)/60;
-        }
-      }
-    } catch(e){ /* keep default */ }
-  }
+  const sched = piContract?.schedule_json || null;
 
   let totalHours = 0;
   for(const d of data){
     if(!d.time) continue;
     const [h, m] = d.time.split(':').map(Number);
     const leaveMin = h * 60 + (m||0);
-    const endMin = defaultEndHour * 60;
+
+    // 해당 날짜의 요일별 정상 퇴근시각 조회
+    const endTime = _getScheduleTimeForDate(d.date, sched, 'end', '18:00');
+    const endMin = endTime.hour * 60 + endTime.minute;
+
     if(leaveMin < endMin){
       totalHours += (endMin - leaveMin) / 60;
     }
@@ -2737,7 +2764,7 @@ function _getPIEarlyLeaveHours(){
 /**
  * 무단 지각 시간 합계 (시간 단위)
  * 각 지각 기록마다 (출근시각 - 정상 출근시각)을 누적
- * 기본 정상 출근시각: schedule_json에서 파악, 없으면 09:00
+ * 정상 출근시각: 해당 날짜의 요일별 schedule_json 참조, 없으면 09:00
  */
 function _getPILateHours(){
   const hidden = document.getElementById('pi-late-data');
@@ -2752,34 +2779,24 @@ function _getPILateHours(){
       const retro = JSON.parse(retroEl.value || '[]');
       if(Array.isArray(retro) && retro.length > 0) data = data.concat(retro);
       else if(retro && retro.count > 0){
-        for(let i=0; i<retro.count; i++) data.push({ time: '10:00' }); // 시간 불명 → 1시간 추정
+        for(let i=0; i<retro.count; i++) data.push({ time: '10:00' });
       }
     } catch(e){}
   }
   if(!data.length) return 0;
 
-  // 정상 출근시각 추정: schedule_json 또는 기본 09:00
-  let defaultStartHour = 9;
-  if(piContract?.schedule_json){
-    try {
-      const sched = JSON.parse(piContract.schedule_json);
-      for(const day of ['mon','tue','wed','thu','fri','sat','sun']){
-        const d = sched[day];
-        if(d && d.start){
-          const [sh, sm] = d.start.split(':').map(Number);
-          const startMin = sh * 60 + (sm||0);
-          if(startMin < defaultStartHour * 60) defaultStartHour = sh + (sm||0)/60;
-        }
-      }
-    } catch(e){ /* keep default */ }
-  }
+  const sched = piContract?.schedule_json || null;
 
   let totalHours = 0;
   for(const d of data){
     if(!d.time) continue;
     const [h, m] = d.time.split(':').map(Number);
     const arriveMin = h * 60 + (m||0);
-    const startMin = defaultStartHour * 60;
+
+    // 해당 날짜의 요일별 정상 출근시각 조회
+    const startTime = _getScheduleTimeForDate(d.date, sched, 'start', '09:00');
+    const startMin = startTime.hour * 60 + startTime.minute;
+
     if(arriveMin > startMin){
       totalHours += (arriveMin - startMin) / 60;
     }
