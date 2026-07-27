@@ -282,6 +282,20 @@ function autoFillAnnualLeave(){
     hintEl.textContent = hintMsg;
     hintEl.style.display = 'inline';
   }
+  // 기사용 연차일수 있으면 잔여일수도 표시
+  _onCTPreUsedAnnualChange();
+}
+
+/** 기사용 연차일수 변경 시 힌트에 잔여일수 표시 */
+function _onCTPreUsedAnnualChange(){
+  const totalDays = parseFloat(document.getElementById('ct-annual')?.value) || 15;
+  const preUsed   = parseFloat(document.getElementById('ct-pre-used-annual')?.value) || 0;
+  if(preUsed <= 0) return;
+  const remaining = Math.max(0, totalDays - preUsed);
+  const hintEl = document.getElementById('ct-annual-hint');
+  if(hintEl){
+    hintEl.textContent = (hintEl.textContent || '') + ` · 기사용 ${preUsed}일 → 잔여 ${remaining}일`;
+  }
 }
 
 function toggleAnnualSal(){

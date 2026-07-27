@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS contracts (
   work_days_per_week REAL, --  -- 주 소정근로일수
   work_days_per_month REAL, --  -- 월 근무일수
   break_time REAL, --  -- 휴게시간
-  annual_leave_days REAL, --  -- 연차 일수
+  annual_leave_days REAL, --  -- 연차일수 (자동계산)
   monthly_salary_agreed REAL, --  -- 월 약정임금
   annual_salary REAL, --  -- 연봉
   base_salary REAL, --  -- 기본급
@@ -151,7 +151,8 @@ CREATE TABLE IF NOT EXISTS contracts (
   custom_ordinary_values TEXT, --  -- 통상임금 포함 사용자정의
   probation_end_date TEXT, --  -- 수습 종료일
   dismissal_notice_pay REAL DEFAULT 0,
-  dismissal_notice_pay_reason TEXT
+  dismissal_notice_pay_reason TEXT,
+  pre_used_annual_leave REAL DEFAULT 0 --  -- 기사용 연차일수 (계약 전 사용분)
 );
 
 CREATE INDEX IF NOT EXISTS idx_contracts_employee ON contracts(employee_id);
