@@ -743,8 +743,18 @@ function _updatePIAnnualLeaveDetail(){
   const beforeUsed = (prevCum - periodUsedDays).toFixed(2);
   const afterUsed  = prevCum.toFixed(2);
   const periodUsedDisp = periodUsedDays.toFixed(2);
+
+  // 전월까지 총 발생연차 (산정기간 시작일 기준)
+  const totalBefore = (typeof calcAnnualLeaveDays === 'function' && hireDate)
+    ? (calcAnnualLeaveDays(hireDate, basis, ppStart) ?? totalDays)
+    : totalDays;
+  // 이번달까지 총 발생연차 (산정기간 종료일 기준)
+  const totalAfter = (typeof calcAnnualLeaveDays === 'function' && hireDate)
+    ? (calcAnnualLeaveDays(hireDate, basis, ppEnd) ?? totalDays)
+    : totalDays;
+
   const summary = totalDays>0
-    ? `전월 누적: ${beforeUsed}일/총 ${totalDays}일, 이번달 소진: ${periodUsedDisp}/${afterUsed}일, 최종 잔여연차: ${remainDisp}일`
+    ? `전월 누적: ${beforeUsed}일/총 ${totalBefore}일, 이번달 소진: ${periodUsedDisp}/${afterUsed}일, 최종 잔여연차: ${remainDisp}일`
     : `발생연차 ${totalDays}일`;
 
   textEl.textContent = summary;
