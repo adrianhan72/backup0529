@@ -2017,13 +2017,11 @@ function applyCTAllowanceConfig(cfg, clearValues = false){
     const pt = (cfg && cfg[`${f}_pay_type`]) ? cfg[`${f}_pay_type`] : 'fixed';
     setCTPayType(f, pt);
   });
-  // ── 신규 작성 시 car/meal 기본값 설정 (일용직 제외) ──
+  // ── 신규 작성 시 car/meal 초기화 (기본값 없음, 수동 입력) ──
   if(clearValues && !isDaily){
     if(cfg){
-      const _carPt  = cfg.car_pay_type  || 'fixed';
-      const _mealPt = cfg.meal_pay_type || 'fixed';
-      if(cfg.car)  setAmountVal('ct-car',  _carPt  === 'fixed' ? 200000 : 0);
-      if(cfg.meal) setAmountVal('ct-meal', _mealPt === 'fixed' ? 200000 : 0);
+      if(cfg.car)  setAmountVal('ct-car',  0);
+      if(cfg.meal) setAmountVal('ct-meal', 0);
     }
   }
   // 보육수당 pay_type 힌트 갱신 (통상임금 항상 제외)
