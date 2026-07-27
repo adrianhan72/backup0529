@@ -966,3 +966,6 @@
 }
 
 .dash-co-btn:focus-visible { outline:2.5px solid currentColor; outline-offset:2px; }
+/* 공제 모드 배지 */
+.pi-ded-badge-rate{font-size:11px;color:#9ca3af;font-weight:400}
+.pi-ded-badge-fixed{font-size:10px;padding:2px 8px;border-radius:10px;margin-left:6px;background:#f59e0b;color:#fff}
