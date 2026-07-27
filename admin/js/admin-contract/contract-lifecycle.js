@@ -1393,13 +1393,7 @@ function doContractRenew(){
     if(el){
       el.disabled = true;
       el.setAttribute('readonly', '');
-      el.style.setProperty('pointer-events', 'none', 'important');
-      el.style.setProperty('background', '#f1f5f9', 'important');
-      el.style.setProperty('color', '#555', 'important');
-      el.style.setProperty('border', '1px solid #e8eaed', 'important');
-      el.style.setProperty('font-weight', '400', 'important');
-      el.style.setProperty('cursor', 'default', 'important');
-      el.style.setProperty('-webkit-text-fill-color', '#555', 'important');
+      el.classList.add('ct-input-locked-dark');
     }
   });
   // 개별 안내 문구

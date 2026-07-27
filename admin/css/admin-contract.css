@@ -4,8 +4,6 @@
     #ct-em-gender,#ct-edit-em-gender{background:#f1f5f9!important;border-color:#e8eaed!important;color:#555!important;cursor:default;opacity:1!important;font-weight:400!important}
     /* 라디오/체크박스: disabled 시에도 시각적 스타일 유지 */
     #contract-modal input[type="radio"]:disabled,#contract-modal input[type="checkbox"]:disabled{opacity:1!important;cursor:default}
-    /* 갱신 모드: 사원번호·이름·주민번호 비활성 */
-    #ct-edit-em-empno:disabled,#ct-edit-em-name:disabled,#ct-edit-em-id:disabled{color:#555!important;background:#f1f5f9!important;border:1px solid #e8eaed!important;cursor:default!important;-webkit-text-fill-color:#555!important;font-weight:400!important}
     /* 임금조건 섹션 내 필드 높이 통일 (급여 산정기간 ~ 벽지수당 영역) */
     #ct-wage-section-title ~ .form-group input[type="text"],
     #ct-wage-section-title ~ .form-group input[type="number"],
@@ -508,7 +506,7 @@
 
 /* ── contract input states ── */
 .ct-input-locked{background:#f3f4f6!important;color:#9ca3af!important;cursor:not-allowed!important}
-.ct-input-locked-dark{background:#f3f4f6!important;color:#6b7280!important;cursor:default!important}
+.ct-input-locked-dark{background:#f1f5f9!important;color:#555!important;cursor:default!important;-webkit-text-fill-color:#555!important}
 .ct-input-error{background:#fef2f2!important;border-color:#e94560!important}
 .ct-hint-normal{color:#6b7280}
 .ct-hint-muted{color:#9ca3af}
