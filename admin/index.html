@@ -572,18 +572,23 @@
 <!-- 연차휴가 관리대장 모달 (al-ledger-modal)                   -->
 <!-- ══════════════════════════════════════════════════════════ -->
 <div class="modal-overlay" id="al-ledger-modal">
-  <div class="modal" style="max-width:960px;width:96vw;max-height:94vh;display:flex;flex-direction:column;overflow:hidden;padding:0;border-radius:12px;">
+  <div class="modal" style="max-width:960px;width:96vw;max-height:94vh;display:flex;flex-direction:column;overflow:hidden;padding:0;border-radius:12px;position:relative;">
+
+    <!-- 닫기 버튼 (우측 상단 고정) -->
+    <button class="btn btn-close" onclick="closeModal('al-ledger-modal')" title="닫기"
+      style="position:absolute;top:12px;right:12px;z-index:10;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.9);border-color:#d1d5db;">
+      <i class="fas fa-times"></i>
+    </button>
 
     <!-- ① 모달 헤더 — 연도 탐색 네비게이션 -->
     <div class="ledger-nav-header">
       <button class="ledger-nav-btn" onclick="_ledgerNavYear(-1)" title="이전 연도">&#8249;</button>
       <div class="ledger-nav-year" id="ledger-nav-title">2025년 연차휴가 관리대장</div>
       <button class="ledger-nav-btn" onclick="_ledgerNavYear(+1)" title="다음 연도">&#8250;</button>
-      <button class="btn btn-close" onclick="closeModal('al-ledger-modal')" title="닫기"><i class="fas fa-times"></i></button>
     </div>
-
+    
     <!-- 모달 본문 (스크롤 영역) -->
-    <div class="modal-body" style="overflow-y:auto;flex:1;">
+    <div class="modal-body" style="overflow-y:auto;flex:1;padding:0;">
       <div class="ledger-body-inner">
 
         <!-- ① 행: 기준일 -->
