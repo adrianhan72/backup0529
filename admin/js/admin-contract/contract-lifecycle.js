@@ -1396,6 +1396,11 @@ function doContractRenew(){
       el.classList.add('ct-input-locked-dark');
     }
   });
+  // 주휴수당·월 약정임금 계산값도 비활성 스타일 적용
+  ['ct-weekly-hol-computed','ct-monthly-computed'].forEach(fid => {
+    const el = document.getElementById(fid);
+    if(el) el.classList.add('ct-input-locked-dark');
+  });
   // 개별 안내 문구
   const empnoHint = document.getElementById('ct-edit-empno-lock-hint');
   if(empnoHint){ empnoHint.textContent = '계약 갱신 시에는 기 발급된 사원번호는 변경할 수 없습니다.'; empnoHint.style.display = 'block'; }
