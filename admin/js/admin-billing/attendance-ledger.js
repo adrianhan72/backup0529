@@ -255,8 +255,8 @@ async function atlAddEntry(empId) {
       const totalAfterAdd = cumulativeDays + newDays;
       if (totalAfterAdd > limit.max) {
         const exceeded = totalAfterAdd - limit.max;
-        const msg = `⚠️ ${limit.label} 법정 한도는 ${limit.max}일입니다.\n현재 누적 ${cumulativeDays}일 + 추가 ${newDays}일 = ${totalAfterAdd}일 (${exceeded}일 초과)\n\n그래도 등록하시겠습니까?`;
-        if (!confirm(msg)) return;
+        if(typeof toast==='function') toast(`${limit.label} 법정 한도 ${limit.max}일을 초과합니다. (누적 ${cumulativeDays}일 + 추가 ${newDays}일 = ${totalAfterAdd}일, ${exceeded}일 초과)`, 'error');
+        return;
       }
     }
   }
