@@ -70,6 +70,8 @@ function openDocsUploadModal(contractId){
     </div>
   `;
   document.body.appendChild(overlay);
+  // 모달 표시 (open 클래스 추가로 opacity/pointer-events 활성화)
+  requestAnimationFrame(() => { overlay.classList.add('open'); });
   overlay.addEventListener('click', function(e){
     if(e.target === overlay) closeDocsUploadModal();
   });
