@@ -502,6 +502,7 @@
 .ct-nav-card{cursor:pointer}
 .ct-tab-active{background:#fffbeb;color:#92400e}
 .ct-amount-active{background:#fff;color:#1a1a2e;font-weight:600}
+#ct-probation-amt[readonly]{background:#f9fafb!important;color:#9ca3af!important;cursor:default!important;font-weight:400!important}
 /* ── 커스텀 버튼 포커스 통일 ── */
 .btn-renew:focus-visible,
 .btn-recontract:focus-visible,

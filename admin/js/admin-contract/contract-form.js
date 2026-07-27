@@ -562,10 +562,18 @@ function onProbationBasisChange(){
   if(amtEl){
     if(isDirect){
       amtEl.removeAttribute('readonly');
+      amtEl.style.background = '';
+      amtEl.style.color = '';
+      amtEl.style.cursor = '';
+      amtEl.style.fontWeight = '';
       amtEl.classList.add('ct-amount-active');
       amtEl.placeholder = '수습 월 보수를 직접 입력';
     } else {
       amtEl.setAttribute('readonly', 'readonly');
+      amtEl.style.background = '#f9fafb';
+      amtEl.style.color = '#9ca3af';
+      amtEl.style.cursor = 'default';
+      amtEl.style.fontWeight = '400';
       amtEl.classList.remove('ct-amount-active');
       amtEl.placeholder = '0';
     }
