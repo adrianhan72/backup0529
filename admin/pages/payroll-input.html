@@ -341,6 +341,15 @@
                 <input type="hidden" id="pi-earlyleave-data" value="[]" />
                 <input type="hidden" id="pi-late-data" value="[]" />
               </div>
+              <!-- 소급 근태 차감 (산정기간 이전 결근 등) -->
+              <div class="pi-row" id="pi-retro-attendance-row" style="display:none;">
+                <label style="color:#b45309;">⚠️ 소급 근태 차감</label>
+                <span id="pi-retro-attendance-text" style="flex:1;min-width:0;font-size:12px;color:#6b7280;text-align:right;word-break:keep-all;">-</span>
+                <input type="hidden" id="pi-retro-absent-data" value="[]" />
+                <input type="hidden" id="pi-retro-absent-dates" value="" />
+                <input type="hidden" id="pi-retro-late-data" value="[]" />
+                <input type="hidden" id="pi-retro-earlyleave-data" value="[]" />
+              </div>
               <!-- 통상시급: 계약서 hourly_wage readonly 표시 -->
               <div class="pi-row" id="pi-row-hourly-wage-disp">
                 <label>통상시급</label>

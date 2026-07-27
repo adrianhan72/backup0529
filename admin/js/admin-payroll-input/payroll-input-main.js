@@ -818,6 +818,24 @@ function _updatePIAttendanceSummary(){
     });
   }
 
+  // 급여 산정기간 이전 항목 (소급)
+  const retroEntries = ppStart
+    ? entries.filter(e => (e.date||'') < ppStart)
+    : [];
+  let retroAbsentDays = 0, retroAbsentData = [];
+  let retroLateCount = 0, retroEarlyCount = 0;
+  retroEntries.forEach(e => {
+    if(e.type === 'absent'){
+      const dates = typeof _atlExpandDateRange==='function' ? _atlExpandDateRange(e.date, e.dateTo||'') : [e.date];
+      retroAbsentDays += dates.length;
+      retroAbsentData.push({ date: e.date, type: e.absentType||'unauthorized', rate: e.rate||0, dateTo: e.dateTo||'' });
+    } else if(e.type === 'late'){
+      retroLateCount++;
+    } else if(e.type === 'earlyleave'){
+      retroEarlyCount++;
+    }
+  });
+
   // 급여 산정기간 내 날짜만 필터
   const monthEntries = ppStart && ppEnd
     ? entries.filter(e => (e.date||'') >= ppStart && (e.date||'') <= ppEnd)
@@ -896,6 +914,45 @@ function _updatePIAttendanceSummary(){
       parts.push(`<span style="color:#9ca3af;">조퇴 0h</span>`);
     }
     summaryEl.innerHTML = parts.join(' · ');
+    // ── 소급 근태 항목 표시 ──
+    const retroAbsDatesEl = document.getElementById('pi-retro-absent-dates');
+    const retroAbsDataEl  = document.getElementById('pi-retro-absent-data');
+    const retroLateEl     = document.getElementById('pi-retro-late-data');
+    const retroEarlyEl    = document.getElementById('pi-retro-earlyleave-data');
+    // 소급 결근 hidden
+    if(retroAbsDatesEl) retroAbsDatesEl.value = retroAbsentData.map(a => a.date).join(',');
+    if(retroAbsDataEl)  retroAbsDataEl.value  = JSON.stringify(retroAbsentData);
+    // 소급 지각/조퇴 hidden (횟수 기반, 세부 데이터 없으므로 count만 저장)
+    if(retroLateEl)     retroLateEl.value     = JSON.stringify({ count: retroLateCount });
+    if(retroEarlyEl)    retroEarlyEl.value    = JSON.stringify({ count: retroEarlyCount });
+
+    const hasRetro = retroAbsentDays > 0 || retroLateCount > 0 || retroEarlyCount > 0;
+    if(hasRetro){
+      const retroParts = [];
+      if(retroAbsentDays > 0){
+        const retroBadge = retroAbsentData.map(a => {
+          const d = (a.date||'').replace(/^\d{4}-/, '');
+          const label = absentLabels[a.type] || a.type || '무단(무급)';
+          return `<span style="font-size:10px;padding:1px 5px;border-radius:4px;margin:1px 2px;background:#fef3c7;color:#92400e;white-space:nowrap;">소급 ${d} ${label}</span>`;
+        }).join('');
+        retroParts.push(`<span style="color:#b45309;font-weight:600;">소급 결근 ${retroAbsentDays}일</span> ${retroBadge}`);
+      }
+      if(retroLateCount > 0){
+        retroParts.push(`<span style="color:#b45309;font-weight:600;">소급 지각 ${retroLateCount}회</span>`);
+      }
+      if(retroEarlyCount > 0){
+        retroParts.push(`<span style="color:#b45309;font-weight:600;">소급 조퇴 ${retroEarlyCount}회</span>`);
+      }
+      const retroLine = document.getElementById('pi-retro-attendance-row');
+      if(retroLine){
+        retroLine.style.display = '';
+        const retroText = document.getElementById('pi-retro-attendance-text');
+        if(retroText) retroText.innerHTML = retroParts.join(' · ');
+      }
+    } else {
+      const retroLine2 = document.getElementById('pi-retro-attendance-row');
+      if(retroLine2) retroLine2.style.display = 'none';
+    }
   }
   window._attendanceFromPayroll = null;
 }
