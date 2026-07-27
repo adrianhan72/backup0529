@@ -2219,7 +2219,8 @@ function doContractAmend(){
 
   // 액션 버튼 숨김 (수정 중에는 다른 액션 불가)
   ['ct-btn-amend','ct-btn-amend2','ct-btn-renew','ct-btn-renew2',
-   'ct-btn-terminate','ct-btn-terminate2','ct-btn-recontract','ct-btn-recontract2'].forEach(bid=>{
+   'ct-btn-terminate','ct-btn-terminate2','ct-btn-recontract','ct-btn-recontract2',
+   'ct-btn-fixed-terminate','ct-btn-fixed-terminate2','ct-btn-print-doc'].forEach(bid=>{
     const el = document.getElementById(bid); if(el) el.style.display='none';
   });
 
@@ -2236,6 +2237,11 @@ function doContractAmend(){
   if(btnComplete2) btnComplete2.style.display = 'inline-flex';
   const btnCancel2 = document.getElementById('ct-btn-amend-cancel2');
   if(btnCancel2) btnCancel2.style.display = 'inline-flex';
+  // 패널 내 수정완료·취소 버튼도 표시
+  const btnCompletePanel = document.getElementById('ct-btn-amend-complete-panel');
+  if(btnCompletePanel) btnCompletePanel.style.display = 'inline-flex';
+  const btnCancelPanel = document.getElementById('ct-btn-amend-cancel-panel');
+  if(btnCancelPanel) btnCancelPanel.style.display = 'inline-flex';
 
   // 수정 안내 패널 표시
   const panel = document.getElementById('ct-amend-panel');

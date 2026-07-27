@@ -1670,6 +1670,14 @@
         <div class="ct-amend-step"><div class="step-num">3</div> 계약서 재발송</div>
         <div class="ct-amend-step"><div class="step-num">4</div> 날인본 업로드 (보관)</div>
       </div>
+      <div style="display:flex;gap:8px;margin-top:12px;">
+        <button class="btn btn-primary" id="ct-btn-amend-complete-panel" onclick="openAmendPreview()" style="display:none;">
+          <i class="fas fa-check-circle"></i> 수정완료 — 재발행 진행
+        </button>
+        <button class="btn btn-secondary" id="ct-btn-amend-cancel-panel" onclick="cancelContractAmend()" style="display:none;">
+          <i class="fas fa-times"></i> 수정 취소
+        </button>
+      </div>
     </div>
     <div class="modal-body">
       <!-- ── 필수 입력 누락 안내 배너 ── -->
