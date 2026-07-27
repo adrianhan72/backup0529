@@ -705,7 +705,7 @@ function _updatePIAnnualLeaveDetail(){
   );
 
   if(!ledger || !ledger.month_data){
-    textEl.textContent = '관리대장 없음';
+    textEl.textContent = '사용 내역 없음';
     textEl.className = 'pi-al-text-dim';
     rowEl.style.display = '';
     return;
