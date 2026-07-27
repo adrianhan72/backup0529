@@ -987,6 +987,29 @@ function loadPIContract(){
       _piCandidates.sort((a,b)=>(b.contract_start||'').localeCompare(a.contract_start||''));
     }
     piContract = _piCandidates[0] || null;
+    // 근로계약서의 급여 산정기간 설정 (필수)
+    if(piContract && !piContract.is_virtual){
+      const _ctPpMo = piContract.pay_period_month;
+      const _ctPpDay = piContract.pay_period_day;
+      if(!_ctPpMo || !_ctPpDay){
+        toast('해당 근로계약의 급여 산정기간이 누락되어 있어 급여입력을 완료할 수 없습니다.', 'error');
+        document.getElementById('pi-form-section').style.display = 'none';
+        document.getElementById('pi-target-list-section').style.display = '';
+        piContract = null;
+        _piContractLoading = false;
+        return;
+      }
+      const yr = parseInt(document.getElementById('pi-year')?.value) || new Date().getFullYear();
+      const mo = parseInt(document.getElementById('pi-month')?.value) || (new Date().getMonth() + 1);
+      const _isJeon = _ctPpMo === '전월';
+      const _sMo = _isJeon ? (mo === 1 ? 12 : mo - 1) : mo;
+      const _sYr = (_isJeon && mo === 1) ? yr - 1 : yr;
+      const _eDate = new Date(_sYr, _sMo - 1, _ctPpDay);
+      _eDate.setMonth(_eDate.getMonth() + 1);
+      _eDate.setDate(_eDate.getDate() - 1);
+      document.getElementById('pi-pay-period-start').value = `${_sYr}-${String(_sMo).padStart(2,'0')}-${String(_ctPpDay).padStart(2,'0')}`;
+      document.getElementById('pi-pay-period-end').value = _eDate.toISOString().slice(0,10);
+    }
   }
   // 기준 모드 UI 전환 (고객사마다 다를 수 있으므로 직원 선택 시도 재확인)
   _switchInsuranceModeUI();
