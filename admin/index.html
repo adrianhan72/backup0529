@@ -1034,12 +1034,12 @@
         <div class="form-group">
           <label>급여 산정기간 <span class="lbl-req">*</span></label>
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-            <select id="cm-period-month" onchange="_cmPeriodCompose()" style="flex:0 0 auto;border:1.5px solid #6366f1;border-radius:7px;">
+            <select id="cm-period-month" onchange="_cmPeriodCompose()" style="flex:0 0 auto;">
               <option value="">월 선택</option>
               <option value="전월">전월</option>
               <option value="당월">당월</option>
             </select>
-            <select id="cm-period-day" onchange="_cmPeriodCompose()" style="flex:0 0 auto;border:1.5px solid #6366f1;border-radius:7px;">
+            <select id="cm-period-day" onchange="_cmPeriodCompose()" style="flex:0 0 auto;">
               <option value="">일 선택</option>
               <option value="1">1일</option>
               <option value="5">5일</option>
@@ -1057,10 +1057,10 @@
           <input type="hidden" id="cm-period-month-hidden" />
           <input type="hidden" id="cm-period-day-hidden" />
         </div>
-        <div class="form-group"><label>급여 지급일 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span> <span class="form-hint">(예: 25일)</span></label><div style="display:flex;align-items:center;gap:4px;"><input type="number" id="cm-payday" min="1" max="31" placeholder="25" style="width:80px;" /><span style="font-size:13px;color:#374151;font-weight:600;">일</span></div></div>
+        <div class="form-group"><label>급여 지급일 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span> <span class="form-hint">(예: 25일)</span></label><div style="display:flex;align-items:center;gap:4px;"><input type="number" id="cm-payday" min="1" max="31" placeholder="25" class="w-80" /><span style="font-size:13px;color:#374151;font-weight:600;">일</span></div></div>
         <div class="form-group">
           <label>4대보험 적용 기준 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
-          <select id="cm-insurance-basis" style="width:100%;border:1.5px solid #6366f1;border-radius:7px;">
+          <select id="cm-insurance-basis" style="width:100%;">
             <option value="" disabled selected>선택하세요</option>
             <option value="요율 기준">요율 기준 (년도별 산정기준 요율 자동계산)</option>
             <option value="확정액 기준">확정액 기준 (금액 직접 입력)</option>
@@ -1068,7 +1068,7 @@
         </div>
         <div class="form-group">
           <label>연차 휴가 산정 기준 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
-          <select id="cm-annual-leave-basis" style="width:100%;border:1.5px solid #6366f1;border-radius:7px;">
+          <select id="cm-annual-leave-basis" style="width:100%;">
             <option value="" disabled selected>선택하세요</option>
             <option value="회계년도 기준">회계년도 기준</option>
             <option value="입사일 기준">입사일 기준</option>
@@ -1076,7 +1076,7 @@
         </div>
         <div class="form-group">
           <label>병가 급여 지급율 (%)</label>
-          <input type="number" id="cm-sick-leave-pay-rate" style="width:100%;" min="0" max="100" step="1" placeholder="0 (무급만 해당)" value="0" />
+          <input type="number" id="cm-sick-leave-pay-rate" class="w-full" min="0" max="100" step="1" placeholder="0 (무급만 해당)" value="0" />
           <span style="font-size:11px;color:#6b7280;">취업규칙상 병가 급여 지급율을 입력하세요. 0%는 무급만 허용, 입력한 비율로 유급 병가 옵션이 활성화됩니다.</span>
         </div>
         <div class="form-group">
