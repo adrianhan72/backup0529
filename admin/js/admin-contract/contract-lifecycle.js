@@ -1393,13 +1393,13 @@ function doContractRenew(){
     if(el){
       el.disabled = true;
       el.setAttribute('readonly', '');
-      el.style.pointerEvents = 'none';
-      el.style.background = '#f1f5f9';
-      el.style.color = '#555';
-      el.style.border = '1px solid #e8eaed';
-      el.style.fontWeight = '400';
-      el.style.cursor = 'default';
-      el.style.webkitTextFillColor = '#555';
+      el.style.setProperty('pointer-events', 'none', 'important');
+      el.style.setProperty('background', '#f1f5f9', 'important');
+      el.style.setProperty('color', '#555', 'important');
+      el.style.setProperty('border', '1px solid #e8eaed', 'important');
+      el.style.setProperty('font-weight', '400', 'important');
+      el.style.setProperty('cursor', 'default', 'important');
+      el.style.setProperty('-webkit-text-fill-color', '#555', 'important');
     }
   });
   // 개별 안내 문구
