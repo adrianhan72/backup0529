@@ -867,7 +867,7 @@ function openContractModal(id=null, preCompanyId=null){
       }
       // 연차일수: 저장된 값 복원 후 자동계산으로 힌트 표시 (입사일 복원 후 호출)
       document.getElementById('ct-annual').value=c.annual_leave_days||15;
-      document.getElementById('ct-pre-used-annual').value=c.pre_used_annual_leave||0;
+      document.getElementById('ct-pre-used-annual').value=c.pre_used_annual_leave||'';
       // 요일별 스케줄 복원: schedule_json 우선, 없으면 레거시 필드로 변환
       if(c.schedule_json){
         try{ setScheduleFromJSON(JSON.parse(c.schedule_json)); }
