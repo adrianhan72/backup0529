@@ -818,6 +818,41 @@ function _updatePIAttendanceSummary(){
     });
   }
 
+  // ── 출산휴가 일차 자동계산: 전체 기록에서 실제 사용일 순번 = n일차 ──
+  // 분할 사용(중간 공백) 시에도 실제 사용된 날짜만 카운트 (달력 일수 아님)
+  // 90일 이상 간격이면 별도 출산휴가로 간주하여 순번 리셋
+  const _maternityDayMap = (() => {
+    const matEntries = entries.filter(e => e.type === 'absent' && e.absentType === 'maternity_paid');
+    if (!matEntries.length) return null;
+    // 모든 maternity_paid 날짜를 개별 날짜로 전개
+    let allDates = [];
+    matEntries.forEach(e => {
+      const expanded = (typeof _atlExpandDateRange === 'function')
+        ? _atlExpandDateRange(e.date, e.dateTo || '')
+        : [e.date];
+      allDates = allDates.concat(expanded);
+    });
+    if (!allDates.length) return null;
+    // 중복 제거 + 정렬
+    allDates = [...new Set(allDates)].sort();
+    // 90일 이상 공백이면 새 출산휴가로 간주하여 순번 리셋
+    const map = new Map();
+    let dayNum = 0;
+    for (let i = 0; i < allDates.length; i++) {
+      if (i > 0) {
+        const gap = Math.floor((new Date(allDates[i]) - new Date(allDates[i-1])) / 86400000);
+        if (gap > 90) dayNum = 0; // 새 출산휴가 기간
+      }
+      dayNum++;
+      map.set(allDates[i], dayNum);
+    }
+    return map;
+  })();
+  const _maternityDayNumber = (dateStr) => {
+    if (!_maternityDayMap || !dateStr) return null;
+    return _maternityDayMap.get(dateStr) || null;
+  };
+
   // 급여 산정기간 이전 항목 (소급)
   const retroEntries = ppStart
     ? entries.filter(e => (e.date||'') < ppStart)
@@ -829,7 +864,9 @@ function _updatePIAttendanceSummary(){
     if(e.type === 'absent'){
       const dates = typeof _atlExpandDateRange==='function' ? _atlExpandDateRange(e.date, e.dateTo||'') : [e.date];
       retroAbsentDays += dates.length;
-      retroAbsentData.push({ date: e.date, type: e.absentType||'unauthorized', rate: e.rate||0, dateTo: e.dateTo||'' });
+      const entry = { date: e.date, type: e.absentType||'unauthorized', rate: e.rate||0, dateTo: e.dateTo||'' };
+      if (e.absentType === 'maternity_paid') entry.dayNumber = _maternityDayNumber(e.date);
+      retroAbsentData.push(entry);
     } else if(e.type === 'late'){
       retroLateCount++;
       retroLateData.push({ date: e.date, time: e.time||'' });
@@ -851,7 +888,9 @@ function _updatePIAttendanceSummary(){
       const dates = typeof _atlExpandDateRange === 'function' ? _atlExpandDateRange(e.date, e.dateTo||'') : [e.date];
       absentDays += dates.length;
       absentDates.push(...dates);
-      absentData.push({ date: e.date, type: e.absentType||'unauthorized', rate: e.rate||0, dateTo: e.dateTo||'' });
+      const entry = { date: e.date, type: e.absentType||'unauthorized', rate: e.rate||0, dateTo: e.dateTo||'' };
+      if (e.absentType === 'maternity_paid') entry.dayNumber = _maternityDayNumber(e.date);
+      absentData.push(entry);
     } else if(e.type === 'late'){
       lateCount++;
       lateData.push({ date: e.date, time: e.time||'' });
@@ -3035,7 +3074,14 @@ function calcPI(){
       
       if (_ZERO_DEDUCT_TYPES.has(typ)) {
         const _zlbl = typ === 'industrial' ? '산재' : typ === 'childcare_leave' ? '육아휴직' : typ === 'maternity_paid' ? '출산휴가' : typ === 'maternity_unpaid' ? '출산(무급)' : typ === 'paternity_paid' ? '배우자출산' : typ;
-        if (days > 0) _absentLabelParts.push(`${_zlbl} ${days}일 (공단·고용보험)`);
+        if (days > 0) {
+          const _src = typ === 'industrial' ? '근로복지공단' : '고용보험';
+          if (typ === 'maternity_paid' && d.dayNumber) {
+            _absentLabelParts.push(`${_zlbl} ${days}일 (${d.dayNumber}~${d.dayNumber + days - 1}일차, ${_src})`);
+          } else {
+            _absentLabelParts.push(`${_zlbl} ${days}일 (${_src})`);
+          }
+        }
         return;
       }
       
@@ -3079,23 +3125,38 @@ function calcPI(){
       }
     }
 
-    // ── 출산전후휴가 급여 계산 (우선지원대상기업 기준, 2026년) ──
+    // ── 출산전후휴가 급여 계산 (우선지원대상기업 기준) ──
+    let _maternityDayLabelStr = '';
     // 고용보험 지급: 통상임금 100% (월 상한 220만원)
-    // 회사 보충지급: Max(0, 통상임금 - 2,200,000원) ÷ 30 × 일수 (전체 90일 동일)
+    // 회사 보충지급: Max(0, 통상임금 - 2,200,000원) ÷ 30 × 일수
+    // ※ dayNumber 기준: 1~60일차만 회사 보충, 61~90일차는 고용보험 전액
     // ※ 본 시스템은 대기업 대상이 아님 → 우선지원대상기업 기준만 적용
-    const MATERNITY_CAP_MONTHLY = 2200000; // 2026년 고용보험 출산휴가 상한액
+    const MATERNITY_CAP_MONTHLY = 2200000;
     const _maternityEntries = _absentDataAll.filter(d => d.type === 'maternity_paid');
     if (_maternityEntries.length > 0 && piContract) {
-      let _maternityDays = 0;
+      let _maternityDays = 0, _maternitySubsidyDays = 0;
+      const _maternityDayLabels = [];
       _maternityEntries.forEach(d => {
         const expanded = (typeof _atlExpandDateRange === 'function')
           ? _atlExpandDateRange(d.date, d.dateTo || '')
           : [d.date];
-        _maternityDays += expanded.length;
+        const startDayNum = d.dayNumber || 1; // dayNumber 없으면 1일차로 가정 (폴백)
+        expanded.forEach((date, i) => {
+          const dayNum = startDayNum + i;
+          _maternityDays++;
+          if (dayNum <= 60) _maternitySubsidyDays++; // 1~60일차: 회사 보충
+          // 61~90일차: 고용보험 100% → 회사 부담 없음
+        });
+        if (expanded.length > 0) {
+          const endDayNum = startDayNum + expanded.length - 1;
+          _maternityDayLabels.push(`${startDayNum}~${endDayNum}일차`);
+        }
       });
       if (_maternityDays > 0) {
         const _dailyCap = Math.round(MATERNITY_CAP_MONTHLY / 30);
-        _maternityPay = Math.max(0, Math.round((_dailyOrdinaryWage - _dailyCap) * _maternityDays));
+        _maternityPay = Math.max(0, Math.round((_dailyOrdinaryWage - _dailyCap) * _maternitySubsidyDays));
+        // 일차 정보를 라벨에 저장 (추후 표시용)
+        _maternityDayLabelStr = _maternityDayLabels.join(', ');
       }
     }
 
@@ -3113,7 +3174,7 @@ function calcPI(){
         if(_elHours > 0) parts.push(`조퇴 ${_elHours.toFixed(1)}h`);
         if(_lateHours > 0) parts.push(`지각 ${_lateHours.toFixed(1)}h`);
         if(_layoffDays > 0) parts.push(`휴업수당 ${_layoffDays}일${_isSmall?' (5인미만 면제)':''}`);
-        if(_maternityPay > 0) parts.push(`출산휴가 급여 ${won(_maternityPay)}`);
+        if(_maternityPay > 0) parts.push(`출산휴가 급여 ${won(_maternityPay)}${_maternityDayLabelStr ? ' (' + _maternityDayLabelStr + ')' : ''}`);
         if(_dedDetail) _dedDetail.textContent = parts.join(' · ');
         if(_dedLabel) _dedLabel.textContent = (_layoffDays > 0 || _maternityPay > 0) ? '결근·조퇴·지각 차감 및 법정수당' : '결근·조퇴·지각 차감';
       } else {
