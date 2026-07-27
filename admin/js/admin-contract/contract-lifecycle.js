@@ -1155,6 +1155,35 @@ function _collectRenewFormFields(){
   if(probAmtEl) fields.probation_amt = parseFloat(probAmtEl.value) || 0;
   const probBasisEl = document.querySelector('input[name="ct-probation-basis"]:checked');
   if(probBasisEl) fields.probation_basis = probBasisEl.value;
+  const probEndEl = document.getElementById('ct-probation-end-date');
+  if(probEndEl) fields.probation_end_date = probEndEl.value || null;
+
+  // 고정OT
+  fields.fixed_ot_pay    = getAmountVal('ct-fixed-ot-pay') || 0;
+  fields.fixed_ot_hours  = parseFloat(document.getElementById('ct-fixed-ot-hours')?.value) || 0;
+  fields.fixed_night_pay = getAmountVal('ct-fixed-night-pay') || 0;
+  fields.fixed_night_hours = parseFloat(document.getElementById('ct-fixed-night-hours')?.value) || 0;
+  fields.fixed_hol_pay   = getAmountVal('ct-fixed-hol-pay') || 0;
+  fields.fixed_hol_hours = parseFloat(document.getElementById('ct-fixed-hol-hours')?.value) || 0;
+
+  // 보육수당
+  fields.childcare_dependents = parseInt(document.getElementById('ct-childcare-dependents')?.value) || 0;
+  fields.childcare_pay_type   = _getCTPayTypeVal('childcare');
+
+  // 차량유지비 (transportation_allowance와 동일값)
+  fields.car_maintenance = getAmountVal('ct-car') || 0;
+
+  // ── 주휴수당·통상시급 재계산 (급여 변경 반영) ──
+  const ht = fields.work_hours_per_day || 8;
+  const dy = fields.work_days_per_week || 5;
+  const monthlyStdH = typeof _calcMonthlyStdHours === 'function'
+    ? _calcMonthlyStdHours(ht, dy) : (ht * dy * 365 / 12 / 7);
+  const base = fields.base_salary || 0;
+  const monthlyForCalc = fields.monthly_salary_agreed || 0;
+  fields.weekly_holiday_pay = (monthlyStdH > 0 && base > 0) ? Math.round(base / monthlyStdH * ht) : 0;
+  fields.hourly_wage = monthlyForCalc > 0
+    ? Math.round(monthlyForCalc / monthlyStdH)
+    : (fields.daily_wage > 0 && ht > 0 ? Math.round(fields.daily_wage / ht) : 0);
 
   return fields;
 }
