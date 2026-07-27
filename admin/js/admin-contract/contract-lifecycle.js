@@ -1390,7 +1390,17 @@ function doContractRenew(){
   // ── 갱신 모드: 사원번호·이름·주민번호 잠금 ──
   ['ct-edit-em-empno','ct-edit-em-name','ct-edit-em-id'].forEach(fid => {
     const el = document.getElementById(fid);
-    if(el){ el.disabled = true; el.setAttribute('readonly', ''); el.style.pointerEvents = 'none'; }
+    if(el){
+      el.disabled = true;
+      el.setAttribute('readonly', '');
+      el.style.pointerEvents = 'none';
+      el.style.background = '#f1f5f9';
+      el.style.color = '#555';
+      el.style.border = '1px solid #e8eaed';
+      el.style.fontWeight = '400';
+      el.style.cursor = 'default';
+      el.style.webkitTextFillColor = '#555';
+    }
   });
   // 개별 안내 문구
   const empnoHint = document.getElementById('ct-edit-empno-lock-hint');
