@@ -23,12 +23,14 @@
     }
     .radio-custom input[type="radio"] {
       appearance:none; -webkit-appearance:none; -moz-appearance:none;
-      width:16px; height:16px;
+      width:16px; height:16px; min-width:16px; min-height:16px;
       border:1.5px solid #d1d5db;
-      border-radius:50%;
+      border-radius:50% !important;
       background:#fff;
       cursor:pointer;
       flex-shrink:0; margin:0;
+      padding:0 !important;
+      box-sizing:border-box;
       transition:border-color .15s, background .15s;
     }
     .radio-custom input[type="radio"]:checked {

@@ -521,7 +521,7 @@
 .ct-prob-basis-label.active{border-color:#6366f1;background:#eef2ff;color:#4338ca}
 .ct-prob-basis-label.active i{color:#6366f1}
 .ct-prob-basis-label:focus-within{border-color:#6366f1;outline:none;box-shadow:0 0 0 2px rgba(99,102,241,.25)}
-.ct-prob-basis-label input[type="radio"]{width:14px;height:14px}
+.ct-prob-basis-label input[type="radio"]{width:14px;height:14px;min-width:14px;min-height:14px;padding:0!important;border-radius:50%!important;box-sizing:border-box}
 .ct-prob-basis-label input[type="radio"]:checked{background:radial-gradient(circle, #fff 2px, #6366f1 2.5px)}
 /* ── 커스텀 버튼 포커스 통일 ── */
 .btn-renew:focus-visible,
