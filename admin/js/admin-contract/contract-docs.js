@@ -22,19 +22,69 @@ function _renderContractFilesSection(c){
       </div>
     </div>` : '';
 
+  const isReadonly = document.querySelector('#contract-modal .modal')?.classList.contains('ct-readonly');
   section.innerHTML = `
     <div class="ctf-section-title">
       <i class="fas fa-paperclip" style="color:#6366f1;"></i>첨부 서류
     </div>
     ${voidedBannerHtml}
-    ${_ctfMakeRow('signed',  c, '계약서 날인본',               'fas fa-file-signature', '#4f46e5', '#eff6ff', isVoided)}
-    ${_ctfMakeRow('consent', c, '제3자 개인정보 제공 동의서 날인본', 'fas fa-shield-alt',    '#7c3aed', '#f5f3ff', false)}
+    ${_ctfMakeRow('signed',  c, '계약서 날인본',               'fas fa-file-signature', '#4f46e5', '#eff6ff', isVoided, isReadonly)}
+    ${_ctfMakeRow('consent', c, '제3자 개인정보 제공 동의서 날인본', 'fas fa-shield-alt',    '#7c3aed', '#f5f3ff', false, isReadonly)}
   `;
   modalBody.appendChild(section);
 }
 
+// ── 서류 업로드 전용 모달 (근로계약 현황 테이블의 "서류 업로드" 버튼) ──
+function openDocsUploadModal(contractId){
+  const c = allContracts.find(x => x.id === contractId);
+  if(!c) return;
+  const isVoided = !!(c.is_voided_by_amend);
+  const emp = allEmployees.find(e => e.id === c.employee_id);
+  const empName = emp?.name || '';
+  const co = (allCompanies||[]).find(x => x.id === c.company_id);
+  const coName = co?.company_name || '';
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.id = 'ctf-upload-modal-overlay';
+  overlay.style.zIndex = '300';
+  overlay.innerHTML = `
+    <div class="modal" style="max-width:560px;width:95%;">
+      <div class="modal-header" style="display:flex;align-items:center;justify-content:space-between;">
+        <span class="modal-title"><i class="fas fa-upload" style="color:#10b981;margin-right:8px;"></i>서류 업로드</span>
+        <button onclick="closeDocsUploadModal()" style="background:none;border:none;font-size:18px;cursor:pointer;color:#9ca3af;padding:0;">&times;</button>
+      </div>
+      <div class="modal-body" style="padding:18px 24px;">
+        <div style="font-size:13px;color:#374151;margin-bottom:14px;line-height:1.6;">
+          <strong>${empName}</strong> (${coName})<br>
+          <span style="font-size:11.5px;color:#6b7280;">계약서 날인본과 개인정보 제공 동의서를 업로드하세요.</span>
+        </div>
+        <div id="ctf-upload-modal-rows">
+          ${_ctfMakeRow('signed',  c, '계약서 날인본',               'fas fa-file-signature', '#4f46e5', '#eff6ff', isVoided, false)}
+          ${_ctfMakeRow('consent', c, '제3자 개인정보 제공 동의서 날인본', 'fas fa-shield-alt',    '#7c3aed', '#f5f3ff', false, false)}
+        </div>
+      </div>
+      <div class="modal-footer" style="text-align:right;">
+        <button class="btn btn-secondary" onclick="closeDocsUploadModal()">닫기</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', function(e){
+    if(e.target === overlay) closeDocsUploadModal();
+  });
+}
+
+function closeDocsUploadModal(){
+  const overlay = document.getElementById('ctf-upload-modal-overlay');
+  if(overlay) overlay.remove();
+  // 업로드 후 계약 목록 갱신
+  if(typeof renderContracts === 'function') renderContracts();
+}
+
 // isVoidedFile=true: 날인본에 파기 워터마크 표시 (수정재발행으로 파기된 계약의 서명본)
-function _ctfMakeRow(type, c, label, icon, color, bgColor, isVoidedFile=false){
+// readonly=true: 업로드/삭제 버튼 숨기고 파일 상태만 표시 (조회 모드)
+function _ctfMakeRow(type, c, label, icon, color, bgColor, isVoidedFile=false, readonly=false){
   const nameField = type === 'signed' ? 'signed_file_name'  : 'consent_file_name';
   const dataField = type === 'signed' ? 'signed_file_data'  : 'consent_file_data';
   const hasFile   = !!(c[dataField]);
@@ -67,10 +117,12 @@ function _ctfMakeRow(type, c, label, icon, color, bgColor, isVoidedFile=false){
     actionBtns = `
       ${!isPdf ? `<button class="ctf-btn ctf-btn-preview" onclick="_ctfTogglePreview('${prevId}',this)"><i class="fas fa-eye"></i> 미리보기</button>` : ''}
       <button class="ctf-btn ctf-btn-download" onclick="_ctfDownload('${type}')"><i class="fas fa-download"></i> 다운로드</button>
-      <button class="ctf-btn ctf-btn-delete"   onclick="_ctfDelete('${type}','${c.id}')"><i class="fas fa-trash-alt"></i> 삭제</button>
+      ${readonly ? '' : `<button class="ctf-btn ctf-btn-delete"   onclick="_ctfDelete('${type}','${c.id}')"><i class="fas fa-trash-alt"></i> 삭제</button>`}
     `;
   } else {
-    actionBtns = `<button class="ctf-btn ctf-btn-upload" onclick="document.getElementById('${inputId}').click()"><i class="fas fa-upload"></i> 업로드</button>`;
+    actionBtns = readonly
+      ? `<span style="font-size:11.5px;color:#9ca3af;font-style:italic;">미등록</span>`
+      : `<button class="ctf-btn ctf-btn-upload" onclick="document.getElementById('${inputId}').click()"><i class="fas fa-upload"></i> 업로드</button>`;
   }
 
   // 미리보기: 파기 파일이면 워터마크 오버레이 추가
@@ -110,7 +162,7 @@ function _ctfMakeRow(type, c, label, icon, color, bgColor, isVoidedFile=false){
         <i class="fas fa-spinner fa-spin"></i> 업로드 중...
       </div>
       ${previewHtml}
-      ${!isVoidedFile ? `<input type="file" id="${inputId}" accept="image/*,.pdf" style="display:none;" onchange="_ctfUpload('${type}','${c.id}',this)">` : ''}
+      ${(!isVoidedFile && !readonly) ? `<input type="file" id="${inputId}" accept="image/*,.pdf" style="display:none;" onchange="_ctfUpload('${type}','${c.id}',this)">` : ''}
     </div>`;
 }
 
@@ -171,8 +223,20 @@ async function _ctfUpload(type, contractId, inputEl){
     }
 
     toast('파일이 업로드되었습니다.', 'success');
-    // 섹션 재렌더링
-    if(c) _renderContractFilesSection(c);
+    // 업로드 모달이 열려있으면 업로드 모달 갱신, 아니면 조회 모달 섹션 갱신
+    const uploadModal = document.getElementById('ctf-upload-modal-overlay');
+    if(uploadModal && c){
+      const rowsEl = document.getElementById('ctf-upload-modal-rows');
+      if(rowsEl){
+        const isVoidedUpload = !!(c.is_voided_by_amend);
+        rowsEl.innerHTML = `
+          ${_ctfMakeRow('signed',  c, '계약서 날인본',               'fas fa-file-signature', '#4f46e5', '#eff6ff', isVoidedUpload, false)}
+          ${_ctfMakeRow('consent', c, '제3자 개인정보 제공 동의서 날인본', 'fas fa-shield-alt',    '#7c3aed', '#f5f3ff', false, false)}
+        `;
+      }
+    } else if(c){
+      _renderContractFilesSection(c);
+    }
     // 업로드 모달도 갱신
     if(document.getElementById('contract-preview-modal')?.classList.contains('open')){
       _renderCpExistingFiles(c);
@@ -265,7 +329,20 @@ async function _ctfDelete(type, contractId){
 
     toast(`'${label}' 파일이 삭제되었습니다.`, 'success');
     const c = allContracts.find(x => x.id === contractId);
-    if(c) _renderContractFilesSection(c);
+    // 업로드 모달이 열려있으면 업로드 모달 갱신, 아니면 조회 모달 섹션 갱신
+    const uploadModalDel = document.getElementById('ctf-upload-modal-overlay');
+    if(uploadModalDel && c){
+      const rowsEl = document.getElementById('ctf-upload-modal-rows');
+      if(rowsEl){
+        const isVoidedDel = !!(c.is_voided_by_amend);
+        rowsEl.innerHTML = `
+          ${_ctfMakeRow('signed',  c, '계약서 날인본',               'fas fa-file-signature', '#4f46e5', '#eff6ff', isVoidedDel, false)}
+          ${_ctfMakeRow('consent', c, '제3자 개인정보 제공 동의서 날인본', 'fas fa-shield-alt',    '#7c3aed', '#f5f3ff', false, false)}
+        `;
+      }
+    } else if(c){
+      _renderContractFilesSection(c);
+    }
     // 업로드 모달도 갱신
     if(document.getElementById('contract-preview-modal')?.classList.contains('open')){
       _renderCpExistingFiles(c);
