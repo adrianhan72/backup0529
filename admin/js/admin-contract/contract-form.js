@@ -473,9 +473,8 @@ function toggleProbation(){
   } else {
     onProbationBasisChange(); // 표시될 때 UI 동기화
     _checkProbMinWageWarning(); // 경고 갱신
-    // 계약 종료일 readonly + 힌트 표시
-    _setProbationEndReadonly(true);
-    // 시작일 미입력 시 수습기간 비활성화
+    // 계약직 수습: 계약 종료일이 입력된 후에만 수습기간 활성화 (종료일 초과 방지)
+    // 시작일·종료일 미입력 시 수습기간 비활성화
     if(typeof _updateProbationPeriodState === 'function') _updateProbationPeriodState();
     _autoCalcProbationEndDate(); // 수습기간 입력값으로 자동 계산
   }
@@ -522,6 +521,43 @@ function _autoCalcProbationEndDate(){
   // 수습 종료일 필드에 자동 계산값 표시 (contract_end와 별도)
   const probEndEl = document.getElementById('ct-probation-end-date');
   if(probEndEl) probEndEl.value = endStr;
+
+  // ── 계약직 수습: 수습 종료일이 계약 종료일을 초과하는지 검증 ──
+  const rawCat = document.getElementById('ct-em-category')?.value
+              || document.getElementById('ct-type')?.value
+              || CONTRACT_TYPE.REGULAR;
+  const cat2 = CONTRACT_TYPE_LEGACY_MAP[rawCat] || rawCat;
+  if(cat2 === CONTRACT_TYPE.FIXED_PROBATION){
+    const contractEndEl = document.getElementById('ct-end');
+    const contractEnd = contractEndEl?.value;
+    if(contractEnd && endStr > contractEnd){
+      // 수습 종료일이 계약 종료일을 초과 → 경고 표시 + 수습기간 select 테두리 강조
+      if(monthsEl){
+        monthsEl.style.borderColor = '#ef4444';
+        monthsEl.style.boxShadow = '0 0 0 2px rgba(239,68,68,.2)';
+      }
+      const infoBox = document.getElementById('ct-prob-info-box');
+      const infoText = document.getElementById('ct-prob-info-text');
+      if(infoBox) infoBox.style.background = '#fef2f2';
+      if(infoBox) infoBox.style.border = '1px solid #fca5a5';
+      if(infoBox) infoBox.style.color = '#991b1b';
+      if(infoText) infoText.innerHTML = '<i class="fas fa-exclamation-triangle" style="margin-right:4px;"></i>수습 종료일(' + endStr + ')이 계약 종료일(' + contractEnd + ')보다 늦습니다. 수습기간을 줄여주세요.';
+      // 계약 종료일은 변경 방지 (읽기전용)
+      _setProbationEndReadonly(true);
+    } else if(contractEnd){
+      // 정상: 수습 종료일 ≤ 계약 종료일 → 계약 종료일 읽기전용 잠금
+      if(monthsEl){
+        monthsEl.style.borderColor = '';
+        monthsEl.style.boxShadow = '';
+      }
+      const infoBox2 = document.getElementById('ct-prob-info-box');
+      const infoText2 = document.getElementById('ct-prob-info-text');
+      if(infoBox2) infoBox2.style.background = '';
+      if(infoBox2) infoBox2.style.border = '';
+      if(infoBox2) infoBox2.style.color = '';
+      _setProbationEndReadonly(true);
+    }
+  }
 }
 
 // ── 산정기준 라디오 변경 핸들러 ──

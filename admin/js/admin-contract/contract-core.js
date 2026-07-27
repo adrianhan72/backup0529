@@ -534,14 +534,23 @@ function _onCtHireChange(){
   }
 }
 
-// 수습기간 필드 활성화/비활성화 (계약 시작일 입력 여부 기준)
+// 수습기간 필드 활성화/비활성화 (계약 시작일 + 계약직 수습은 종료일까지 필요)
 function _updateProbationPeriodState(){
   const startEl = document.getElementById('ct-em-start') || document.getElementById('ct-start');
   const startVal = startEl?.value;
+  // 계약직 수습: 계약 종료일도 필요 (수습 종료일이 계약 종료일을 초과할 수 없음)
+  const rawCat = document.getElementById('ct-em-category')?.value
+              || document.getElementById('ct-type')?.value
+              || CONTRACT_TYPE.REGULAR;
+  const cat = CONTRACT_TYPE_LEGACY_MAP[rawCat] || rawCat;
+  const isFixedProbation = cat === CONTRACT_TYPE.FIXED_PROBATION;
+  const endEl = document.getElementById('ct-end');
+  const endVal = endEl?.value;
   // 활성 섹션 기준으로 수습기간 요소 찾기 (신규 섹션 우선)
   const probMonEl = document.getElementById('ct-new-probation-months') || document.getElementById('ct-probation-months');
   if(!probMonEl) return;
-  if(startVal){
+  const canActivate = startVal && (!isFixedProbation || endVal);
+  if(canActivate){
     probMonEl.disabled = false;
     probMonEl.classList.remove('ct-input-locked');
   } else {
