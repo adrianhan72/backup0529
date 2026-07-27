@@ -1199,9 +1199,9 @@ function loadPIContract(){
 
   if(piContract){
     const isPI_Daily = piContract.contract_type ===CONTRACT_TYPE.DAILY;
-    // 일용직: 기본급 자리에 일급여 채움, 주휴수당 0
+    // 일용직: 기본급 자리에 일급여 채움
     setAmountVal('pi-base',          isPI_Daily ? (piContract.daily_wage||0) : piContract.base_salary);
-    // 주휴수당은 출근일수 기반 자동계산 → 계약서 고정값 사용 안 함, 0으로 초기화 (calcPI에서 재계산)
+    // 주휴수당은 출근일수 기반 자동계산 → 계약서 고정값 사용 안 함, 0으로 초기화 (calcPI에서 재계산, 일용직 포함)
     setAmountVal('pi-weekly-hol',    0);
     // ── 통상임금·고정수당: 일용직은 모두 0 처리 ──
     if(isPI_Daily){
@@ -3681,14 +3681,18 @@ function calcWeeklyHolidayPay(){
     if(desc) desc.textContent = dText;
   };
 
-  if(!piContract || piContract.contract_type ===CONTRACT_TYPE.DAILY){
+  if(!piContract){
     _setAll(0, '');
-    return { pay: 0, desc: '' };
+    return { pay: 0, desc: '', retroBrokenWeeks: 0, retroHolidayOverpay: 0 };
   }
 
+  const isDaily = piContract.contract_type === CONTRACT_TYPE.DAILY;
   const hw        = parseFloat(piContract.hourly_wage)       || 0;
   const hpd       = parseFloat(piContract.work_hours_per_day)|| 8;   // 일 소정근로시간
-  const dpw       = parseFloat(piContract.work_days_per_week)|| 5;   // 주 소정근로일수
+  // 일용직: work_days_per_week 없으면 실제 근로일 기준으로 추정 (기본 5일)
+  const dpw       = isDaily
+    ? (parseFloat(piContract.work_days_per_week) || 5)
+    : (parseFloat(piContract.work_days_per_week) || 5);
   const weeklyH   = hpd * dpw;                                         // 1주 소정근로시간
   const workDays  = parseFloat(document.getElementById('pi-work-days')?.value || 0) || 0;
 
