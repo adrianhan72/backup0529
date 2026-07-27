@@ -9,14 +9,14 @@
     #ct-wage-section-title ~ .form-group select,
     #ct-row-salary-period ~ .form-group input[type="text"],
     #ct-row-salary-period ~ .form-group input[type="number"],
-    #ct-row-salary-period ~ .form-group select{height:36px;box-sizing:border-box;padding:6px 12px;font-size:13px;border:1px solid #9080e4;border-radius:7px;background:#fff;color:#000;font-weight:400}
+    #ct-row-salary-period ~ .form-group select{height:36px;box-sizing:border-box;padding:6px 12px;font-size:13px;border:1px solid #d1d5db;border-radius:7px;background:#fff;color:#000;font-weight:400}
     #ct-wage-section-title ~ .form-group select,
     #ct-row-salary-period ~ .form-group select{padding-right:28px}
     #ct-wage-section-title ~ .form-group .amount-wrap input,
     #ct-row-salary-period ~ .form-group .amount-wrap input{height:36px;box-sizing:border-box;padding:6px 12px;font-size:13px}
     #ct-wage-section-title ~ .form-group .form-computed,
     #ct-row-salary-period ~ .form-group .form-computed{height:36px;box-sizing:border-box;padding:6px 12px;font-size:13px;display:flex;align-items:center}
-    #ct-probation-months,#ct-new-probation-months{box-sizing:border-box;height:36px;padding:5px 12px;font-size:13px;border:1px solid #9080e4;border-radius:6px;background:#fff;color:#000}
+    #ct-probation-months,#ct-new-probation-months{box-sizing:border-box;height:36px;padding:5px 12px;font-size:13px;border:1px solid #d1d5db;border-radius:6px;background:#fff;color:#000}
     #contract-modal .form-grid{align-items:stretch}
     #contract-modal .form-grid .form-group{display:flex;flex-direction:column}
     #contract-modal input[type="email"]{height:36px;box-sizing:border-box}
