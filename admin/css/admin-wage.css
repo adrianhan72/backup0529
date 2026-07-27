@@ -968,3 +968,9 @@
   font-weight: 600;
   word-break: break-all;
 }
+/* ledger date input height unification */
+#ledger-entry-date.input-slim,
+#ledger-entry-days.input-slim {
+  height: 32px;
+  box-sizing: border-box;
+}
