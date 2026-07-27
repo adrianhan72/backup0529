@@ -422,7 +422,11 @@ CREATE TABLE IF NOT EXISTS payrolls (
   earlyleave_data TEXT, --  -- 조퇴 상세 (JSON)
   late_data TEXT, --  -- 지각 상세 (JSON)
   absent_data TEXT, --  -- 결근 상세 (JSON)
-  severance_interim_pay REAL DEFAULT 0
+  severance_interim_pay REAL DEFAULT 0,
+  retro_absent_dates TEXT DEFAULT '', --  -- 소급 결근일자 (CSV)
+  retro_absent_data TEXT DEFAULT '[]', --  -- 소급 결근 상세 (JSON)
+  retro_late_data TEXT DEFAULT '[]', --  -- 소급 지각 상세 (JSON)
+  retro_earlyleave_data TEXT DEFAULT '[]' --  -- 소급 조퇴 상세 (JSON)
 );
 
 CREATE INDEX IF NOT EXISTS idx_payrolls_employee ON payrolls(employee_id);
