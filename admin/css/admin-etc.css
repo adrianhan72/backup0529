@@ -1,13 +1,15 @@
 ﻿    /* ── 전역 폼 요소 포커스 글로우 ── */
     input[type="text"],
     input[type="date"],
+    input[type="number"],
     input[type="datetime-local"],
     textarea,
     select {
       font-family:inherit;
     }
-    input[type="text"]:focus:not(.filt-search),
-    input[type="date"]:focus:not(.filt-date),
+    input[type="text"]:focus:not(.filt-search):not([readonly]),
+    input[type="number"]:focus:not([readonly]),
+    input[type="date"]:focus:not(.filt-date):not([readonly]),
     input[type="datetime-local"]:focus,
     input[type="datetime-local"]:focus,
     textarea:focus,
