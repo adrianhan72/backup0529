@@ -693,12 +693,14 @@ function _renderLedgerMonthTable(){
       const itemsHtml = entries.map((e, idx) => {
         const dayOnly = parseInt(e.date.slice(8,10));
         const daysLabel = e.days === 1 ? '' : ` (${e.days}일)`;
+        const noteHtml = e.note ? `<div style="font-size:10px;color:#92400e;background:#fffbeb;padding:1px 4px;border-radius:3px;margin-top:1px;">${e.note}</div>` : '';
         return `<div style="display:flex;align-items:center;justify-content:space-between;
-          padding:2px 6px;margin:1px 0;background:#f0fdf4;border-radius:4px;font-size:11px;gap:4px;">
+          padding:2px 6px;margin:1px 0;background:#f0fdf4;border-radius:4px;font-size:11px;gap:4px;flex-wrap:wrap;">
           <span style="color:#374151;white-space:nowrap;">${dayOnly}일${daysLabel}</span>
           ${!isFuture ? `<button onclick="event.stopPropagation();_removeLedgerEntry('${e.date}')"
             style="background:none;border:none;color:#dc2626;cursor:pointer;padding:0 2px;font-size:11px;"
             title="삭제"><i class="fas fa-times-circle"></i></button>` : ''}
+          ${noteHtml}
         </div>`;
       }).join('');
 

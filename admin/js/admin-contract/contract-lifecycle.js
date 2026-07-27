@@ -3785,6 +3785,17 @@ async function _syncLeaveLedgerWithContract(empId, coId, contractStart, contract
       const contract = allContracts.find(c => c.employee_id === empId && c.contract_start === contractStart);
       const _preUsed = parseFloat(contract?.pre_used_annual_leave) || 0;
       const _totalDays = parseFloat(contract?.annual_leave_days) || 0;
+      // 기사용 연차 month_data 항목 생성
+      const _preMonthData = [];
+      if (_preUsed > 0) {
+        const _startMonth = parseInt(contractStart.slice(5,7)) || 1;
+        _preMonthData.push({
+          month: _startMonth,
+          dates: '',
+          days: _preUsed,
+          note: '기사용 연차(서비스 가입 이전)'
+        });
+      }
       const newLedger = {
         employee_id: empId,
         company_id: coId || emp?.company_id || '',
@@ -3796,7 +3807,7 @@ async function _syncLeaveLedgerWithContract(empId, coId, contractStart, contract
         period_end: `${year}-12-31`,
         total_days: _totalDays,
         carryover_days: 0,
-        month_data: '[]',
+        month_data: JSON.stringify(_preMonthData),
         total_used: _preUsed,
         remain_days: _totalDays - _preUsed,
         ordinary_wage: 0,
