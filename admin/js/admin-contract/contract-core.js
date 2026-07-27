@@ -2635,11 +2635,26 @@ async function openAmendPreview(){
   await loadContracts(); await loadEmployees();
   renderContracts(); renderDashboard();
 
-  // ⑦ 계약서 조회 모달(contract-print-modal)을 그대로 재사용 — 수정 재발행 완료 배너 삽입 후 오픈
+  // ⑦ 완료 후 사용자 확인: 계약서 확인·발송 여부
   window._isAmendMode = false;
-  window._amendNewContractId = null;
-  window._amendFromContractModal = true; // closeContractPrintModal 시 contract-modal도 함께 닫기
-  _openAmendResultModal(newContractId);
+  window._amendNewContractId = newContractId;
+
+  const _empName = _emp?.name || '';
+  const confirmed = await _showConfirm({
+    message: `기존 계약을 파기하고 새로운 계약을 등록했습니다.\n\n계약서를 확인하고 ${_empName ? _empName+'님에게 ' : ''}인쇄용 파일 주소를 즉시 발송하시겠습니까?`,
+    okText: '예',
+    cancelText: '아니오 (나중에 발송)',
+    okClass: 'btn-primary'
+  });
+
+  closeModal('contract-modal');
+
+  if(confirmed){
+    // 계약서 모달 열기
+    openContractPrintModal(newContractId);
+  }
+  // 목록 갱신 (이미 위에서 renderContracts 호출됨)
+  renderContracts(); renderDashboard();
 }
 
 /**
