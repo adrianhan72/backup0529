@@ -226,6 +226,41 @@ async function atlAddEntry(empId) {
   const dupDates = allDates.filter(d => entries.some(e => e.date === d));
   if (dupDates.length > 0) { if(typeof toast==='function') toast('이미 등록된 날짜가 포함되어 있습니다: ' + dupDates.join(', '), 'error'); return; }
 
+  // ── 법정 한도 초과 검사 (기간 제한이 있는 결근 사유) ──
+  if (type === 'absent') {
+    const LIMITS = {
+      maternity_paid:   { max: 90,  label: '출산휴가(유급)', combineWith: ['maternity_unpaid'] },
+      maternity_unpaid: { max: 90,  label: '출산휴가(무급)', combineWith: ['maternity_paid'] },
+      paternity_paid:   { max: 10,  label: '배우자출산휴가' },
+      childcare_leave:  { max: 365, label: '육아휴직' },
+      family_care:      { max: 90,  label: '가족돌봄휴직', perYear: true },
+    };
+    const limit = LIMITS[absentType];
+    if (limit) {
+      // 전체 ledger에서 해당 유형(+결합유형)의 누적 사용일수 집계
+      const checkTypes = [absentType, ...(limit.combineWith || [])];
+      let cumulativeDays = 0;
+      _atlLedgerCache.filter(l => l.employee_id === empId).forEach(ledger => {
+        let ledgerEntries = [];
+        try { ledgerEntries = JSON.parse(ledger.month_data || '[]'); } catch(e) {}
+        ledgerEntries.forEach(e => {
+          if (e.type === 'absent' && checkTypes.includes(e.absentType)) {
+            // perYear 한도: 해당 년도만 집계
+            if (limit.perYear && ledger.year !== year) return;
+            cumulativeDays += _atlExpandDateRange(e.date, e.dateTo || '').length;
+          }
+        });
+      });
+      const newDays = allDates.length;
+      const totalAfterAdd = cumulativeDays + newDays;
+      if (totalAfterAdd > limit.max) {
+        const exceeded = totalAfterAdd - limit.max;
+        const msg = `⚠️ ${limit.label} 법정 한도는 ${limit.max}일입니다.\n현재 누적 ${cumulativeDays}일 + 추가 ${newDays}일 = ${totalAfterAdd}일 (${exceeded}일 초과)\n\n그래도 등록하시겠습니까?`;
+        if (!confirm(msg)) return;
+      }
+    }
+  }
+
   // 새 항목 추가
   const newEntry = { date: dateFrom, type: type };
   if (type === 'absent') {
