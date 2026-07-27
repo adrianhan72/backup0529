@@ -121,7 +121,7 @@ function _ctfMakeRow(type, c, label, icon, color, bgColor, isVoidedFile=false, r
     `;
   } else {
     actionBtns = readonly
-      ? `<span style="font-size:11.5px;color:#9ca3af;font-style:italic;">미등록</span>`
+      ? ''
       : `<button class="ctf-btn ctf-btn-upload" onclick="document.getElementById('${inputId}').click()"><i class="fas fa-upload"></i> 업로드</button>`;
   }
 
