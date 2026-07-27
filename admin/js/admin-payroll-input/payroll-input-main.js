@@ -754,7 +754,7 @@ function _updatePIAnnualLeaveDetail(){
     : totalDays;
 
   const summary = totalDays>0
-    ? `전월 누적: ${beforeUsed}일/총 ${totalBefore}일, 이번달 소진: ${periodUsedDisp}/${afterUsed}일, 최종 잔여연차: ${remainDisp}일`
+    ? `전월 누적: ${beforeUsed}일/총 ${totalBefore}일, 이번달 소진: ${periodUsedDisp}/${totalAfter}일, 최종 잔여연차: ${remainDisp}일`
     : `발생연차 ${totalDays}일`;
 
   textEl.textContent = summary;
