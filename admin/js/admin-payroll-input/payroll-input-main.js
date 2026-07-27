@@ -864,7 +864,7 @@ function _updatePIAttendanceSummary(){
     if(e.type === 'absent'){
       const dates = typeof _atlExpandDateRange==='function' ? _atlExpandDateRange(e.date, e.dateTo||'') : [e.date];
       retroAbsentDays += dates.length;
-      const entry = { date: e.date, type: e.absentType||'unauthorized', rate: e.rate||0, dateTo: e.dateTo||'' };
+      const entry = { date: e.date, type: e.absentType||'unauthorized', rate: e.rate||0, dateTo: e.dateTo||'', retro: true };
       if (e.absentType === 'maternity_paid') entry.dayNumber = _maternityDayNumber(e.date);
       retroAbsentData.push(entry);
     } else if(e.type === 'late'){
@@ -3160,23 +3160,81 @@ function calcPI(){
       }
     }
 
+    // ── 소급 근태 항목별 금액 산출 (과지급 환수액 포함) ──
+    const _retroItemLines = [];
+    let _retroOverpaymentTotal = 0;
+    const _retroTypeLabels = {
+      industrial:'산재', maternity_paid:'출산(유급)', maternity_unpaid:'출산(무급)',
+      paternity_paid:'배우자출산', childcare_leave:'육아휴직',
+      unauthorized:'무단결근', sick_unpaid:'무급병가', menstrual:'생리휴가',
+      family_care:'가족돌봄', layoff_leave:'휴업휴직'
+    };
+    _retroAbsData.forEach(d => {
+      const expanded = (typeof _atlExpandDateRange === 'function')
+        ? _atlExpandDateRange(d.date, d.dateTo || '')
+        : [d.date];
+      const days = expanded.length;
+      const typ = d.type || 'unauthorized';
+      const dateLabel = (d.date||'').replace(/^\d{4}-/, '');
+
+      if (_ZERO_DEDUCT_TYPES.has(typ)) {
+        // 산재·출산·육아휴직 등: 공단/고용보험 지급분 → 전기 회사 과지급 환수
+        const recovery = Math.round(days * _hpd2 * _hw2);
+        _retroOverpaymentTotal += recovery;
+        _retroItemLines.push({ date: dateLabel, label: _retroTypeLabels[typ]||typ, days, amount: recovery, isRecovery: true });
+      } else if (typ === 'sick_paid') {
+        const rate = parseFloat(d.rate) || 0;
+        const deductRate = Math.max(0, 100 - rate) / 100;
+        const amt = Math.round(days * _hpd2 * _hw2 * deductRate);
+        _retroItemLines.push({ date: dateLabel, label: `유급병가(${rate}%)`, days, amount: amt, isRecovery: false });
+      } else if (_FULL_DEDUCT_TYPES.has(typ)) {
+        const amt = Math.round(days * _hpd2 * _hw2);
+        const lbl = typ === 'sick_unpaid' ? '무급병가' : typ === 'menstrual' ? '생리휴가' : typ === 'family_care' ? '가족돌봄' : '결근';
+        _retroItemLines.push({ date: dateLabel, label: lbl, days, amount: amt, isRecovery: false });
+      } else {
+        _retroItemLines.push({ date: dateLabel, label: '결근', days, amount: Math.round(days * _hpd2 * _hw2), isRecovery: false });
+      }
+    });
+
+    // 소급 행 갱신
+    const _retroRow = document.getElementById('pi-retro-attendance-row');
+    const _retroText = document.getElementById('pi-retro-attendance-text');
+    if (_retroRow && _retroText && _retroItemLines.length > 0) {
+      _retroRow.style.display = '';
+      const _retroHtml = _retroItemLines.map(item => {
+        const _icon = item.isRecovery ? '↩' : '−';
+        const _suffix = item.isRecovery ? ' 환수' : ' 차감';
+        return `<span style="font-size:11px;display:inline-block;background:${item.isRecovery?'#fef3c7':'#fef2f2'};color:${item.isRecovery?'#92400e':'#dc2626'};padding:2px 6px;border-radius:4px;margin:1px 2px;white-space:nowrap;">${item.date} ${item.label} ${item.days}일 ${_icon} ${won(item.amount)}${_suffix}</span>`;
+      }).join('');
+      _retroText.innerHTML = _retroHtml;
+    } else if (_retroRow) {
+      _retroRow.style.display = 'none';
+    }
+
+    // ── 과지급 환수액을 차감 총액에 포함 ──
+    const _totalDeductionWithRetro = _totalDeduction + _retroOverpaymentTotal;
+
     if(_dedRow && _dedDisp){
-      if(_totalDeduction > 0 || _layoffDays > 0 || _maternityPay > 0){
+      if(_totalDeductionWithRetro > 0 || _layoffDays > 0 || _maternityPay > 0){
         _dedRow.style.display = '';
         const _plusParts = [];
         if(_layoffDays > 0) _plusParts.push('+' + won(_layoffPay));
         if(_maternityPay > 0) _plusParts.push('+' + won(_maternityPay));
-        _dedDisp.textContent = (_totalDeduction > 0 ? '-' + won(_totalDeduction) : '') +
-          (_totalDeduction > 0 && _plusParts.length > 0 ? ' · ' : '') +
+        _dedDisp.textContent = (_totalDeductionWithRetro > 0 ? '-' + won(_totalDeductionWithRetro) : '') +
+          (_totalDeductionWithRetro > 0 && _plusParts.length > 0 ? ' · ' : '') +
           _plusParts.join(' · ');
         _dedDisp.classList.toggle('pi-deduction-has-allowance', _layoffDays > 0 || _maternityPay > 0);
         const parts = [..._absentLabelParts];
+        // 소급 과지급 환수 항목 추가
+        _retroItemLines.filter(item => item.isRecovery).forEach(item => {
+          parts.push(`소급 ${item.label} ${item.days}일 환수 ${won(item.amount)}`);
+        });
         if(_elHours > 0) parts.push(`조퇴 ${_elHours.toFixed(1)}h`);
         if(_lateHours > 0) parts.push(`지각 ${_lateHours.toFixed(1)}h`);
         if(_layoffDays > 0) parts.push(`휴업수당 ${_layoffDays}일${_isSmall?' (5인미만 면제)':''}`);
         if(_maternityPay > 0) parts.push(`출산휴가 급여 ${won(_maternityPay)}${_maternityDayLabelStr ? ' (' + _maternityDayLabelStr + ')' : ''}`);
         if(_dedDetail) _dedDetail.textContent = parts.join(' · ');
-        if(_dedLabel) _dedLabel.textContent = (_layoffDays > 0 || _maternityPay > 0) ? '결근·조퇴·지각 차감 및 법정수당' : '결근·조퇴·지각 차감';
+        if(_dedLabel) _dedLabel.textContent = (_layoffDays > 0 || _maternityPay > 0 || _retroOverpaymentTotal > 0) ? '결근·조퇴·지각 차감 및 법정수당' : '결근·조퇴·지각 차감';
       } else {
         _dedRow.style.display = 'none';
       }
