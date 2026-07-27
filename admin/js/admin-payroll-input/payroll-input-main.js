@@ -824,6 +824,7 @@ function _updatePIAttendanceSummary(){
     : [];
   let retroAbsentDays = 0, retroAbsentData = [];
   let retroLateCount = 0, retroEarlyCount = 0;
+  let retroLateData = [], retroEarlyData = [];
   retroEntries.forEach(e => {
     if(e.type === 'absent'){
       const dates = typeof _atlExpandDateRange==='function' ? _atlExpandDateRange(e.date, e.dateTo||'') : [e.date];
@@ -831,8 +832,10 @@ function _updatePIAttendanceSummary(){
       retroAbsentData.push({ date: e.date, type: e.absentType||'unauthorized', rate: e.rate||0, dateTo: e.dateTo||'' });
     } else if(e.type === 'late'){
       retroLateCount++;
+      retroLateData.push({ date: e.date, time: e.time||'' });
     } else if(e.type === 'earlyleave'){
       retroEarlyCount++;
+      retroEarlyData.push({ date: e.date, time: e.time||'' });
     }
   });
 
@@ -922,9 +925,9 @@ function _updatePIAttendanceSummary(){
     // 소급 결근 hidden
     if(retroAbsDatesEl) retroAbsDatesEl.value = retroAbsentData.map(a => a.date).join(',');
     if(retroAbsDataEl)  retroAbsDataEl.value  = JSON.stringify(retroAbsentData);
-    // 소급 지각/조퇴 hidden (횟수 기반, 세부 데이터 없으므로 count만 저장)
-    if(retroLateEl)     retroLateEl.value     = JSON.stringify({ count: retroLateCount });
-    if(retroEarlyEl)    retroEarlyEl.value    = JSON.stringify({ count: retroEarlyCount });
+    // 소급 지각/조퇴 hidden (시간 정보 포함 배열)
+    if(retroLateEl)     retroLateEl.value     = JSON.stringify(retroLateData);
+    if(retroEarlyEl)    retroEarlyEl.value    = JSON.stringify(retroEarlyData);
 
     const hasRetro = retroAbsentDays > 0 || retroLateCount > 0 || retroEarlyCount > 0;
     if(hasRetro){
@@ -2687,6 +2690,18 @@ function _getPIEarlyLeaveHours(){
   if(!hidden) return 0;
   let data = [];
   try { data = JSON.parse(hidden.value || '[]'); } catch(e){ data = []; }
+
+  // 소급 조퇴 데이터도 포함
+  const retroEl = document.getElementById('pi-retro-earlyleave-data');
+  if(retroEl){
+    try {
+      const retro = JSON.parse(retroEl.value || '[]');
+      if(Array.isArray(retro) && retro.length > 0) data = data.concat(retro);
+      else if(retro && retro.count > 0){
+        for(let i=0; i<retro.count; i++) data.push({ time: '17:00' }); // 시간 불명 → 1시간 추정
+      }
+    } catch(e){}
+  }
   if(!data.length) return 0;
 
   // 정상 퇴근시각 추정: schedule_json 또는 기본 18:00
@@ -2729,6 +2744,18 @@ function _getPILateHours(){
   if(!hidden) return 0;
   let data = [];
   try { data = JSON.parse(hidden.value || '[]'); } catch(e){ data = []; }
+
+  // 소급 지각 데이터도 포함
+  const retroEl = document.getElementById('pi-retro-late-data');
+  if(retroEl){
+    try {
+      const retro = JSON.parse(retroEl.value || '[]');
+      if(Array.isArray(retro) && retro.length > 0) data = data.concat(retro);
+      else if(retro && retro.count > 0){
+        for(let i=0; i<retro.count; i++) data.push({ time: '10:00' }); // 시간 불명 → 1시간 추정
+      }
+    } catch(e){}
+  }
   if(!data.length) return 0;
 
   // 정상 출근시각 추정: schedule_json 또는 기본 09:00
@@ -2952,6 +2979,13 @@ function calcPI(){
     let _absentDataAll = [];
     const _absDataEl = document.getElementById('pi-absent-data');
     try { _absentDataAll = JSON.parse(_absDataEl?.value || '[]'); } catch(e) { _absentDataAll = []; }
+
+    // 소급 근태 데이터도 결근 차감에 포함 (산정기간 이전 근태)
+    const _retroAbsDataEl = document.getElementById('pi-retro-absent-data');
+    let _retroAbsData = [];
+    try { _retroAbsData = JSON.parse(_retroAbsDataEl?.value || '[]'); } catch(e) { _retroAbsData = []; }
+    // 소급 데이터는 전액 공제 대상으로 통합 (이미 이전 기간에 지급된 급여에서 누락된 차감)
+    _absentDataAll = _absentDataAll.concat(_retroAbsData);
 
     // 결근(무단+병가+산재 등) vs 휴업휴직 분리
     const _layoffEntries  = _absentDataAll.filter(d => d.type === 'layoff_leave');
