@@ -66,10 +66,6 @@ try { db.run(`ALTER TABLE payrolls ADD COLUMN absent_data TEXT`); } catch(e) {}
 // companies 병가 지급율 컬럼 추가 (없으면)
 try { db.run(`ALTER TABLE companies ADD COLUMN sick_leave_pay_rate REAL DEFAULT 0`); } catch(e) {}
 try { db.run(`ALTER TABLE companies ADD COLUMN proration_method TEXT DEFAULT '30day_fixed'`); } catch(e) {}
-try { db.run(`ALTER TABLE contracts ADD COLUMN dismissal_notice_pay REAL DEFAULT 0`); } catch(e) {}
-try { db.run(`ALTER TABLE contracts ADD COLUMN dismissal_notice_pay_reason TEXT`); } catch(e) {}
-try { db.run(`CREATE TABLE IF NOT EXISTS severance_interim_settlements (id TEXT PRIMARY KEY, employee_id TEXT, company_id TEXT, contract_id TEXT, settlement_date TEXT, tenure_days INTEGER, daily_average_wage REAL, settlement_amount REAL, reason TEXT, note TEXT, created_at TEXT)`); } catch(e) {}
-try { db.run(`ALTER TABLE payrolls ADD COLUMN severance_interim_pay REAL DEFAULT 0`); } catch(e) {}
 
 // ── 미들웨어 ──
 app.use(require('./middleware/cors')());
@@ -792,56 +788,6 @@ ${contactFootP}`;
   } catch(e) {
     console.error('[CRON] 수습만료 통지 실패:', e.message);
   }
-}, { timezone: 'Asia/Seoul' });
-
-// ── 수습만료 D-7 긴급 통지 (매일 오전 9:00 KST) ──
-cron.schedule('0 9 * * *', async () => {
-  console.log('[CRON] 수습만료 D-7 긴급통지 시작...');
-  try {
-    const today = new Date().toISOString().slice(0, 10);
-    const URGENT_DAYS = 7;
-
-    const contactP = db.get(`SELECT * FROM representative_contact WHERE id = 'default'`) || {};
-    const contactFootP = `─────────────────────\n인사톡 노무톡 · 대화인사노무파트너스 담당자\n● 전화: ${contactP.phone || '02)3487-8841'}\n● 이메일: ${contactP.email || 'eunyangpark@naver.com'}\n● 팩스: ${contactP.fax || '02)3487-8882'}`;
-
-    const rows = db.all(`
-      SELECT c.*, e.name AS emp_name, co.company_name, co.phone AS company_phone,
-             COALESCE(c.probation_end_date, date(c.contract_start, '+' || COALESCE(c.probation_months, 3) || ' months', '-1 day')) AS prob_end
-      FROM contracts c JOIN employees e ON e.id = c.employee_id JOIN companies co ON co.id = c.company_id
-      WHERE c.is_draft = 0 AND c.is_voided_by_amend = 0
-        AND c.contract_type IN ('regular_probation', 'fixed_probation')
-        AND c.contract_start IS NOT NULL
-        AND c.status NOT IN ('voided', 'terminated', 'canceled', 'expired')
-        AND COALESCE(c.probation_months, 3) > 3
-        AND COALESCE(c.probation_end_date, date(c.contract_start, '+' || COALESCE(c.probation_months, 3) || ' months', '-1 day')) >= ?
-        AND COALESCE(c.probation_end_date, date(c.contract_start, '+' || COALESCE(c.probation_months, 3) || ' months', '-1 day')) <= date(?, '+' || ? || ' days')
-    `, [today, today, URGENT_DAYS]);
-
-    const now = new Date().toISOString();
-    let sent = 0;
-    for (const c of rows) {
-      const already = db.get(`SELECT id FROM company_notices WHERE contract_id = ? AND notice_type = 'probation_expiry_urgent' AND date(sent_at) = ?`, [c.id, today]);
-      if (already) continue;
-      const probMonths = c.probation_months || 3;
-      const daysLeft = Math.ceil((new Date(c.prob_end) - new Date(today)) / 86400000);
-      const ddayStr = daysLeft <= 0 ? 'D-day' : `D-${daysLeft}`;
-      const probEndKr = c.prob_end ? c.prob_end.replace(/-/g, '.') : '-';
-      const hw = parseFloat(c.hourly_wage) || 0;
-      const hpd = parseFloat(c.work_hours_per_day) || 8;
-      const noticePayEst = Math.round(hw * hpd * 30);
-      const title = `[긴급] ${c.emp_name} — 수습만료 ${ddayStr}, 해고예고수당 발생 임박`;
-      const body = `안녕하세요, ${c.company_name} 사장님.\n\n⚠️ 수습기간 만료가 ${ddayStr}로 임박했습니다. 지금 해고 시 해고예고수당이 발생합니다.\n\n■ 직원명: ${c.emp_name}\n■ 수습기간: ${probMonths}개월\n■ 수습 만료일: ${probEndKr} (${ddayStr})\n■ 예상 해고예고수당: ${noticePayEst.toLocaleString('ko-KR')}원 (30일분 통상임금)\n\n◆ 긴급 안내\n수습 만료일까지 본채용 여부를 결정하지 않고 해고할 경우, 근로기준법 제26조에 따라 30일분 통상임금을 해고예고수당으로 지급해야 합니다. 지금 바로 담당 노무사에게 연락하여 본채용 또는 해고 절차를 진행하세요.\n\n※ 본 안내는 대화인사노무파트너스에서 발송한 법적 의무 긴급 안내입니다.\n\n${contactFootP}`;
-      const noticeIdP = generateId();
-      db.run(`INSERT INTO company_notices (id, company_id, company_name, notice_type, title, body, contract_id, employee_id, employee_name, contract_end, days_until_expiry, sent_at, sent_by, is_read, read_at, gn_status, gn_scheduled_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, [noticeIdP, c.company_id, c.company_name, 'probation_expiry_urgent', title, body, c.id, c.employee_id, c.emp_name, c.prob_end, daysLeft, now, null, 0, '', 'sent', '']);
-      if (c.company_phone && c.company_phone.trim()) {
-        try {
-          await solapi.sendAlimtalk({ to: c.company_phone, templateId: 'PROBATION_URGENT_001', variables: { '#{name}': c.emp_name, '#{company}': c.company_name, '#{date}': c.prob_end, '#{days}': String(daysLeft), '#{amount}': noticePayEst.toLocaleString('ko-KR') } });
-        } catch (err) { console.error(`[CRON] 수습만료 긴급 알림톡 실패 (${c.emp_name}):`, err.message); }
-      }
-      sent++;
-    }
-    console.log(`[CRON] 수습만료 D-7 긴급통지 완료: ${rows.length}건 대상, ${sent}건 발송`);
-  } catch(e) { console.error('[CRON] 수습만료 긴급통지 실패:', e.message); }
 }, { timezone: 'Asia/Seoul' });
 
 // ── 카카오 발송 실패 건 자동 재시도 (10분마다) ──

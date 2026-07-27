@@ -1,119 +1,119 @@
-    <div id="page-system-settings" class="page">
+﻿    <div id="page-system-settings" class="page">
 
-      <!-- 발신?�용 ?�메??계정 -->
+      <!-- 발신전용 이메일 계정 -->
       <div class="section-title" style="margin-top:0;">
         <i class="fas fa-envelope"></i>
-        <span>발신?�용 ?�메??계정</span>
-        <span style="font-size:12px;color:#9ca3af;font-weight:400;">?�스???�림 메일 발송???�용?�는 SMTP 계정 ?�보</span>
+        <span>발신전용 이메일 계정</span>
+        <span style="font-size:12px;color:#9ca3af;font-weight:400;">시스템 알림 메일 발송에 사용되는 SMTP 계정 정보</span>
       </div>
       <div class="card" style="overflow:hidden;padding:20px;">
         <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end;">
           <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:180px;">
-            <label style="font-size:12px;font-weight:600;color:#374151;">발신 ?�메??주소</label>
-            <input type="email" id="ss-oe-email" class="form-input" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" placeholder="?? noreply@example.com" />
+            <label style="font-size:12px;font-weight:600;color:#374151;">발신 이메일 주소</label>
+            <input type="email" id="ss-oe-email" class="form-input" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" placeholder="예: noreply@example.com" />
           </div>
           <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:180px;">
-            <label style="font-size:12px;font-weight:600;color:#374151;">비�?번호</label>
-            <input type="password" id="ss-oe-password" class="form-input" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" placeholder="?�메??계정 비�?번호" />
+            <label style="font-size:12px;font-weight:600;color:#374151;">비밀번호</label>
+            <input type="password" id="ss-oe-password" class="form-input" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" placeholder="이메일 계정 비밀번호" />
           </div>
           <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:160px;">
-            <label style="font-size:12px;font-weight:600;color:#374151;">SMTP ?�버</label>
-            <input type="text" id="ss-oe-smtp-host" class="form-input" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" placeholder="?? smtp.gmail.com" />
+            <label style="font-size:12px;font-weight:600;color:#374151;">SMTP 서버</label>
+            <input type="text" id="ss-oe-smtp-host" class="form-input" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" placeholder="예: smtp.gmail.com" />
           </div>
           <div style="display:flex;flex-direction:column;gap:4px;flex:0 0 100px;">
-            <label style="font-size:12px;font-weight:600;color:#374151;">?�트</label>
-            <input type="text" id="ss-oe-smtp-port" class="form-input" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" placeholder="?? 587" />
+            <label style="font-size:12px;font-weight:600;color:#374151;">포트</label>
+            <input type="text" id="ss-oe-smtp-port" class="form-input" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" placeholder="예: 587" />
           </div>
           <button id="ss-oe-save-btn" class="btn btn-primary input-std" onclick="ssSaveOutboundEmail()" style="padding:8px 20px;white-space:nowrap;">
-            <i class="fas fa-save"></i> ?�??
+            <i class="fas fa-save"></i> 저장
           </button>
         </div>
         <div id="ss-oe-saved-msg" style="margin-top:8px;font-size:12px;color:#059669;display:none;">
-          <i class="fas fa-check-circle"></i> ?�?�되?�습?�다.
+          <i class="fas fa-check-circle"></i> 저장되었습니다.
         </div>
       </div>
 
-      <!-- ?�앱 ?�림 ?�터 미리보기 -->
+      <!-- 인앱 알림 푸터 미리보기 -->
       <div style="margin-top:12px;">
         <div style="font-size:11px;font-weight:600;color:#6b7280;margin-bottom:6px;">
-          <i class="fas fa-eye"></i> ?�앱 ?�림 공통 ?�터 미리보기
+          <i class="fas fa-eye"></i> 인앱 알림 공통 푸터 미리보기
         </div>
         <div id="ss-footer-preview" style="background:#f5f3ff;border:1.5px solid #d1d5db;border-radius:9px;padding:14px 16px;font-size:12px;line-height:1.7;color:#1e293b;white-space:pre-wrap;font-family:'Noto Sans KR',sans-serif;">
-          로딩 �?..
+          로딩 중...
         </div>
       </div>
 
-      <!-- 메시지 본문 규칙 관�?-->
+      <!-- 메시지 본문 규칙 관리 -->
       <div class="section-title" style="margin-top:24px;">
         <i class="fas fa-file-alt"></i>
-        <span>메시지 본문 규칙 관�?/span>
-        <span style="font-size:12px;color:#9ca3af;font-weight:400;">발송 ?�형�?메시지 ?�목·본문 ?�플릿을 ?�정?�면 ?�후 발송부???�용?�니??/span>
+        <span>메시지 본문 규칙 관리</span>
+        <span style="font-size:12px;color:#9ca3af;font-weight:400;">발송 유형별 메시지 제목·본문 템플릿을 수정하면 이후 발송부터 적용됩니다</span>
       </div>
       <div class="card" style="overflow:hidden;padding:20px;">
         <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
-          <label style="font-size:12px;font-weight:600;color:#374151;white-space:nowrap;">발송 ?�단:</label>
+          <label style="font-size:12px;font-weight:600;color:#374151;white-space:nowrap;">발송 수단:</label>
           <select id="ss-rule-channel" class="form-input" style="padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;flex:1;max-width:200px;" onchange="ssOnChannelChange()">
-            <option value="">발송 ?�단 ?�택</option>
-            <option value="inapp">고객???�앱 ?�림</option>
-            <option value="kakao">근로??카카???�림??/option>
-            <option value="email">근로???�메??/option>
+            <option value="">발송 수단 선택</option>
+            <option value="inapp">고객사 인앱 알림</option>
+            <option value="kakao">근로자 카카오 알림톡</option>
+            <option value="email">근로자 이메일</option>
           </select>
-          <label style="font-size:12px;font-weight:600;color:#374151;white-space:nowrap;">메시지 ?�형:</label>
+          <label style="font-size:12px;font-weight:600;color:#374151;white-space:nowrap;">메시지 유형:</label>
           <select id="ss-rule-type" class="form-input" style="padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;flex:1;max-width:320px;" onchange="ssLoadMessageRule()" disabled>
-            <option value="">발송 ?�단??먼�? ?�택?�세??/option>
+            <option value="">발송 수단을 먼저 선택하세요</option>
           </select>
         </div>
         <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:12px;">
-          <label style="font-size:12px;font-weight:600;color:#374151;">?�림 ?�목</label>
-          <input type="text" id="ss-rule-title" class="form-input" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" placeholder="?? [근로계약??발송] {근로?�명} ??{고용?�태} 근로계약?? />
+          <label style="font-size:12px;font-weight:600;color:#374151;">알림 제목</label>
+          <input type="text" id="ss-rule-title" class="form-input" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" placeholder="예: [근로계약서 발송] {근로자명} — {고용형태} 근로계약서" />
         </div>
         <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:12px;">
-          <label style="font-size:12px;font-weight:600;color:#374151;">?�림 본문</label>
-          <textarea id="ss-rule-body" class="form-input" style="padding:10px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:12.5px;line-height:1.6;min-height:200px;resize:vertical;font-family:'Noto Sans KR',sans-serif;" placeholder="메시지 본문 ?�플�?.."></textarea>
+          <label style="font-size:12px;font-weight:600;color:#374151;">알림 본문</label>
+          <textarea id="ss-rule-body" class="form-input" style="padding:10px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:12.5px;line-height:1.6;min-height:200px;resize:vertical;font-family:'Noto Sans KR',sans-serif;" placeholder="메시지 본문 템플릿..."></textarea>
         </div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:11px;color:#6b7280;background:#f9fafb;padding:8px 12px;border-radius:6px;">
           <i class="fas fa-info-circle"></i>
-          <span>?�용 가?�한 치환?? <code>{?�사�?</code> <code>{근로?�명}</code> <code>{고용?�태}</code> <code>{발송방법}</code> <code>{발송?�각}</code> <code>{?�?�전??</code> <code>{?�?�이메일}</code> <code>{?�?�팩??</code></span>
+          <span>사용 가능한 치환자: <code>{회사명}</code> <code>{근로자명}</code> <code>{고용형태}</code> <code>{발송방법}</code> <code>{발송시각}</code> <code>{대표전화}</code> <code>{대표이메일}</code> <code>{대표팩스}</code></span>
         </div>
         <div style="display:flex;gap:8px;align-items:center;">
           <button id="ss-rule-save-btn" class="btn btn-primary input-std" onclick="ssSaveMessageRule()">
-            <i class="fas fa-save"></i> 규칙 ?�??
+            <i class="fas fa-save"></i> 규칙 저장
           </button>
           <button id="ss-rule-reset-btn" class="btn input-std" onclick="ssResetMessageRule()" style="padding:8px 16px;background:#f3f4f6;border:1px solid #d1d5db;border-radius:6px;font-size:13px;color:#374151;">
-            <i class="fas fa-undo"></i> 기본값으�?초기??
+            <i class="fas fa-undo"></i> 기본값으로 초기화
           </button>
         </div>
         <div id="ss-rule-saved-msg" style="margin-top:8px;font-size:12px;color:#059669;display:none;">
-          <i class="fas fa-check-circle"></i> 규칙???�?�되?�습?�다.
+          <i class="fas fa-check-circle"></i> 규칙이 저장되었습니다.
         </div>
       </div>
 
-      <!-- 메시지 ?�터 (?�당?? 관�?-->
+      <!-- 메시지 푸터 (담당자) 관리 -->
       <div class="section-title" style="margin-top:24px;">
         <i class="fas fa-address-book"></i>
-        <span>메시지 ?�터 (?�당???�보) 관�?/span>
-        <span style="font-size:12px;color:#9ca3af;font-weight:400;">?�림 메시지 �??�내문에 ?�시?�는 ?�당???�락�?/span>
+        <span>메시지 푸터 (담당자 정보) 관리</span>
+        <span style="font-size:12px;color:#9ca3af;font-weight:400;">알림 메시지 및 안내문에 표시되는 담당자 연락처</span>
       </div>
       <div class="card" style="overflow:hidden;padding:20px;">
         <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end;">
           <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:180px;">
-            <label style="font-size:12px;font-weight:600;color:#374151;">?�화번호</label>
-            <input type="text" id="ss-rc-phone" class="form-input" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" placeholder="?? 02)3487-8841" />
+            <label style="font-size:12px;font-weight:600;color:#374151;">전화번호</label>
+            <input type="text" id="ss-rc-phone" class="form-input" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" placeholder="예: 02)3487-8841" />
           </div>
           <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:180px;">
-            <label style="font-size:12px;font-weight:600;color:#374151;">?�메??/label>
-            <input type="email" id="ss-rc-email" class="form-input" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" placeholder="?? labor@example.com" />
+            <label style="font-size:12px;font-weight:600;color:#374151;">이메일</label>
+            <input type="email" id="ss-rc-email" class="form-input" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" placeholder="예: labor@example.com" />
           </div>
           <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:180px;">
-            <label style="font-size:12px;font-weight:600;color:#374151;">?�스</label>
-            <input type="text" id="ss-rc-fax" class="form-input" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" placeholder="?? 02)3487-8882" />
+            <label style="font-size:12px;font-weight:600;color:#374151;">팩스</label>
+            <input type="text" id="ss-rc-fax" class="form-input" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" placeholder="예: 02)3487-8882" />
           </div>
           <button id="ss-rc-save-btn" class="btn btn-primary input-std" onclick="ssSaveRepresentativeContact()" style="padding:8px 20px;white-space:nowrap;">
-            <i class="fas fa-save"></i> ?�??
+            <i class="fas fa-save"></i> 저장
           </button>
         </div>
         <div id="ss-rc-saved-msg" style="margin-top:8px;font-size:12px;color:#059669;display:none;">
-          <i class="fas fa-check-circle"></i> ?�?�되?�습?�다.
+          <i class="fas fa-check-circle"></i> 저장되었습니다.
         </div>
       </div>
     </div><!-- /page-system-settings -->

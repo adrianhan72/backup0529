@@ -1,134 +1,134 @@
-    <div id="page-standards" class="page">
+ï»¿    <div id="page-standards" class="page">
 
-      <!-- ÅÇ ¹Ù -->
+      <!-- íƒ­ ë°” -->
       <div class="std-tab-bar">
           <button class="std-tab active" id="std-tab-insurance" onclick="switchStdTab('insurance')">
-            <i class="fas fa-shield-alt" style="margin-right:6px;"></i>4´ëº¸Çè·á ¿äÀ²Ç¥
+            <i class="fas fa-shield-alt" style="margin-right:6px;"></i>4ëŒ€ë³´í—˜ë£Œ ìš”ìœ¨í‘œ
           </button>
           <button class="std-tab" id="std-tab-minwage" onclick="switchStdTab('minwage')">
-            <i class="fas fa-won-sign" style="margin-right:6px;"></i>¿¬µµº° ÃÖÀúÀÓ±ÝÇ¥
+            <i class="fas fa-won-sign" style="margin-right:6px;"></i>ì—°ë„ë³„ ìµœì €ìž„ê¸ˆí‘œ
           </button>
           <button class="std-tab" id="std-tab-taxbracket" onclick="switchStdTab('taxbracket')">
-            <i class="fas fa-file-invoice-dollar" style="margin-right:6px;"></i>°ú¼¼ ±âÁØ
+            <i class="fas fa-file-invoice-dollar" style="margin-right:6px;"></i>ê³¼ì„¸ ê¸°ì¤€
           </button>
         </div>
 
-        <!-- ÅÇ1: 4´ëº¸Çè·á ¿äÀ²Ç¥ -->
+        <!-- íƒ­1: 4ëŒ€ë³´í—˜ë£Œ ìš”ìœ¨í‘œ -->
         <div id="std-panel-insurance" class="std-tab-panel">
           <div style="font-size:12px;color:#6b7280;margin-bottom:14px;padding:10px 14px;background:#fffbeb;border-radius:8px;border-left:3px solid #f59e0b;">
-            <strong>?? ¿ù º¸¼ö¾×</strong>ÀÌ¶õ ºñ°ú¼¼ ¼ö´ç(Â÷·®Áö¿øºñ¡¤½Ä´ë¡¤º¸À°¼ö´ç µî)À» Á¦¿ÜÇÑ ¼¼Àü ¿ù ±Þ¿© ÃÑ¾×À» ÀÇ¹ÌÇÕ´Ï´Ù. Àå±â¿ä¾çº¸Çè·á´Â °Ç°­º¸Çè·á¸¦ ±âÁØÀ¸·Î »êÁ¤ÇÕ´Ï´Ù.
+            <strong>ðŸ’¡ ì›” ë³´ìˆ˜ì•¡</strong>ì´ëž€ ë¹„ê³¼ì„¸ ìˆ˜ë‹¹(ì°¨ëŸ‰ì§€ì›ë¹„Â·ì‹ëŒ€Â·ë³´ìœ¡ìˆ˜ë‹¹ ë“±)ì„ ì œì™¸í•œ ì„¸ì „ ì›” ê¸‰ì—¬ ì´ì•¡ì„ ì˜ë¯¸í•©ë‹ˆë‹¤. ìž¥ê¸°ìš”ì–‘ë³´í—˜ë£ŒëŠ” ê±´ê°•ë³´í—˜ë£Œë¥¼ ê¸°ì¤€ìœ¼ë¡œ ì‚°ì •í•©ë‹ˆë‹¤.
           </div>
-          <!-- ±¹¹Î¿¬±Ý -->
+          <!-- êµ­ë¯¼ì—°ê¸ˆ -->
           <div style="margin-bottom:24px;">
             <div style="font-size:13px;font-weight:700;color:#1a1a2e;margin-bottom:10px;display:flex;align-items:center;gap:8px;">
-              <span style="display:inline-block;width:10px;height:10px;background:#3b82f6;border-radius:50%;"></span>±¹¹Î¿¬±Ý
-              <span style="font-size:11px;font-weight:500;color:#6b7280;">±âÁØ: ¿ù º¸¼ö¾× / º»ÀÎ ºÎ´ã·ü</span>
+              <span style="display:inline-block;width:10px;height:10px;background:#3b82f6;border-radius:50%;"></span>êµ­ë¯¼ì—°ê¸ˆ
+              <span style="font-size:11px;font-weight:500;color:#6b7280;">ê¸°ì¤€: ì›” ë³´ìˆ˜ì•¡ / ë³¸ì¸ ë¶€ë‹´ë¥ </span>
             </div>
-            <div class="table-wrap"><table class="std-table" id="std-pension-table"><thead><tr><th>Àû¿ë±â°£</th><th>¿äÀ²(%)</th><th>»óÇÑ±Ý¾×(¿ø)</th><th>ºñ°í</th></tr></thead><tbody></tbody></table></div>
+            <div class="table-wrap"><table class="std-table" id="std-pension-table"><thead><tr><th>ì ìš©ê¸°ê°„</th><th>ìš”ìœ¨(%)</th><th>ìƒí•œê¸ˆì•¡(ì›)</th><th>ë¹„ê³ </th></tr></thead><tbody></tbody></table></div>
           </div>
-          <!-- °Ç°­º¸Çè -->
+          <!-- ê±´ê°•ë³´í—˜ -->
           <div style="margin-bottom:24px;">
             <div style="font-size:13px;font-weight:700;color:#1a1a2e;margin-bottom:10px;display:flex;align-items:center;gap:8px;">
-              <span style="display:inline-block;width:10px;height:10px;background:#e94560;border-radius:50%;"></span>°Ç°­º¸Çè
-              <span style="font-size:11px;font-weight:500;color:#6b7280;">±âÁØ: ¿ù º¸¼ö¾× / º»ÀÎ ºÎ´ã·ü</span>
+              <span style="display:inline-block;width:10px;height:10px;background:#e94560;border-radius:50%;"></span>ê±´ê°•ë³´í—˜
+              <span style="font-size:11px;font-weight:500;color:#6b7280;">ê¸°ì¤€: ì›” ë³´ìˆ˜ì•¡ / ë³¸ì¸ ë¶€ë‹´ë¥ </span>
             </div>
-            <div class="table-wrap"><table class="std-table" id="std-health-table"><thead><tr><th>Àû¿ë±â°£</th><th>¿äÀ²(%)</th><th>ºñ°í</th></tr></thead><tbody></tbody></table></div>
+            <div class="table-wrap"><table class="std-table" id="std-health-table"><thead><tr><th>ì ìš©ê¸°ê°„</th><th>ìš”ìœ¨(%)</th><th>ë¹„ê³ </th></tr></thead><tbody></tbody></table></div>
           </div>
-          <!-- Àå±â¿ä¾ç -->
+          <!-- ìž¥ê¸°ìš”ì–‘ -->
           <div style="margin-bottom:24px;">
             <div style="font-size:13px;font-weight:700;color:#1a1a2e;margin-bottom:10px;display:flex;align-items:center;gap:8px;">
-              <span style="display:inline-block;width:10px;height:10px;background:#8b5cf6;border-radius:50%;"></span>Àå±â¿ä¾çº¸Çè
-              <span style="font-size:11px;font-weight:500;color:#6b7280;">±âÁØ: °Ç°­º¸Çè·á / º»ÀÎ ºÎ´ã·ü</span>
+              <span style="display:inline-block;width:10px;height:10px;background:#8b5cf6;border-radius:50%;"></span>ìž¥ê¸°ìš”ì–‘ë³´í—˜
+              <span style="font-size:11px;font-weight:500;color:#6b7280;">ê¸°ì¤€: ê±´ê°•ë³´í—˜ë£Œ / ë³¸ì¸ ë¶€ë‹´ë¥ </span>
             </div>
-            <div class="table-wrap"><table class="std-table" id="std-ltcare-table"><thead><tr><th>Àû¿ë±â°£</th><th>¿äÀ²(%)</th><th>ºñ°í</th></tr></thead><tbody></tbody></table></div>
+            <div class="table-wrap"><table class="std-table" id="std-ltcare-table"><thead><tr><th>ì ìš©ê¸°ê°„</th><th>ìš”ìœ¨(%)</th><th>ë¹„ê³ </th></tr></thead><tbody></tbody></table></div>
           </div>
-          <!-- °í¿ëº¸Çè -->
+          <!-- ê³ ìš©ë³´í—˜ -->
           <div style="margin-bottom:8px;">
             <div style="font-size:13px;font-weight:700;color:#1a1a2e;margin-bottom:10px;display:flex;align-items:center;gap:8px;">
-              <span style="display:inline-block;width:10px;height:10px;background:#10b981;border-radius:50%;"></span>°í¿ëº¸Çè
-              <span style="font-size:11px;font-weight:500;color:#6b7280;">±âÁØ: ¿ù º¸¼ö¾× / º»ÀÎ ºÎ´ã·ü (½Ç¾÷±Þ¿©)</span>
+              <span style="display:inline-block;width:10px;height:10px;background:#10b981;border-radius:50%;"></span>ê³ ìš©ë³´í—˜
+              <span style="font-size:11px;font-weight:500;color:#6b7280;">ê¸°ì¤€: ì›” ë³´ìˆ˜ì•¡ / ë³¸ì¸ ë¶€ë‹´ë¥  (ì‹¤ì—…ê¸‰ì—¬)</span>
             </div>
-            <div class="table-wrap"><table class="std-table" id="std-employ-table"><thead><tr><th>Àû¿ë±â°£</th><th>¿äÀ²(%)</th><th>ºñ°í</th></tr></thead><tbody></tbody></table></div>
+            <div class="table-wrap"><table class="std-table" id="std-employ-table"><thead><tr><th>ì ìš©ê¸°ê°„</th><th>ìš”ìœ¨(%)</th><th>ë¹„ê³ </th></tr></thead><tbody></tbody></table></div>
           </div>
-          <!-- ½Å±Ô Ãß°¡ Æû -->
+          <!-- ì‹ ê·œ ì¶”ê°€ í¼ -->
           <div class="std-add-card">
-            <h4><i class="fas fa-plus-circle" style="color:#6366f1;"></i> »õ ¿äÀ² Ãß°¡</h4>
+            <h4><i class="fas fa-plus-circle" style="color:#6366f1;"></i> ìƒˆ ìš”ìœ¨ ì¶”ê°€</h4>
             <div class="std-add-grid">
               <div class="form-group">
-                <label>º¸Çè Á¾·ù</label>
+                <label>ë³´í—˜ ì¢…ë¥˜</label>
                 <select id="std-new-type" onchange="toggleStdCapField()">
-                  <option value="national_pension">±¹¹Î¿¬±Ý</option>
-                  <option value="health">°Ç°­º¸Çè</option>
-                  <option value="long_term_care">Àå±â¿ä¾çº¸Çè</option>
-                  <option value="employment">°í¿ëº¸Çè</option>
+                  <option value="national_pension">êµ­ë¯¼ì—°ê¸ˆ</option>
+                  <option value="health">ê±´ê°•ë³´í—˜</option>
+                  <option value="long_term_care">ìž¥ê¸°ìš”ì–‘ë³´í—˜</option>
+                  <option value="employment">ê³ ìš©ë³´í—˜</option>
                 </select>
               </div>
-              <div class="form-group"><label>Àû¿ë ¿¬µµ</label><input type="number" id="std-new-year" placeholder="¿¹: 2027" /></div>
-              <div class="form-group"><label>Àû¿ë ½ÃÀÛÀÏ</label><input type="date" id="std-new-start" /></div>
-              <div class="form-group"><label>Àû¿ë Á¾·áÀÏ</label><input type="date" id="std-new-end" /></div>
-              <div class="form-group"><label>¿äÀ² (%)</label><input type="number" id="std-new-rate" step="0.001" placeholder="¿¹: 4.75" /></div>
-              <div class="form-group" id="std-new-cap-row"><label>»óÇÑ±Ý¾× (¿ø, ±¹¹Î¿¬±Ý¸¸)</label><input type="number" id="std-new-cap" placeholder="¿¹: 6590000" /></div>
-              <div class="form-group"><label>ºñ°í</label><input type="text" id="std-new-note" placeholder="¼±ÅÃÀÔ·Â" /></div>
+              <div class="form-group"><label>ì ìš© ì—°ë„</label><input type="number" id="std-new-year" placeholder="ì˜ˆ: 2027" /></div>
+              <div class="form-group"><label>ì ìš© ì‹œìž‘ì¼</label><input type="date" id="std-new-start" /></div>
+              <div class="form-group"><label>ì ìš© ì¢…ë£Œì¼</label><input type="date" id="std-new-end" /></div>
+              <div class="form-group"><label>ìš”ìœ¨ (%)</label><input type="number" id="std-new-rate" step="0.001" placeholder="ì˜ˆ: 4.75" /></div>
+              <div class="form-group" id="std-new-cap-row"><label>ìƒí•œê¸ˆì•¡ (ì›, êµ­ë¯¼ì—°ê¸ˆë§Œ)</label><input type="number" id="std-new-cap" placeholder="ì˜ˆ: 6590000" /></div>
+              <div class="form-group"><label>ë¹„ê³ </label><input type="text" id="std-new-note" placeholder="ì„ íƒìž…ë ¥" /></div>
             </div>
-            <button class="std-update-btn" onclick="saveInsuranceRate()"><i class="fas fa-check-circle"></i> ¾÷µ¥ÀÌÆ®</button>
+            <button class="std-update-btn" onclick="saveInsuranceRate()"><i class="fas fa-check-circle"></i> ì—…ë°ì´íŠ¸</button>
           </div>
         </div>
 
-        <!-- ÅÇ2: ¿¬µµº° ÃÖÀúÀÓ±ÝÇ¥ -->
+        <!-- íƒ­2: ì—°ë„ë³„ ìµœì €ìž„ê¸ˆí‘œ -->
         <div id="std-panel-minwage" class="std-tab-panel" style="display:none;">
           <div class="table-wrap">
             <table class="mw-table" id="std-minwage-table">
-              <thead><tr><th>¿¬µµ</th><th>½Ã±Þ (¿ø)</th><th>¿ù±Þ¿© (¿ø)</th><th>ºñ°í</th></tr></thead>
+              <thead><tr><th>ì—°ë„</th><th>ì‹œê¸‰ (ì›)</th><th>ì›”ê¸‰ì—¬ (ì›)</th><th>ë¹„ê³ </th></tr></thead>
               <tbody></tbody>
             </table>
           </div>
-          <!-- ½Å±Ô Ãß°¡ Æû -->
+          <!-- ì‹ ê·œ ì¶”ê°€ í¼ -->
           <div class="std-add-card" style="margin-top:20px;">
-            <h4><i class="fas fa-plus-circle" style="color:#10b981;"></i> »õ ÃÖÀúÀÓ±Ý Ãß°¡</h4>
+            <h4><i class="fas fa-plus-circle" style="color:#10b981;"></i> ìƒˆ ìµœì €ìž„ê¸ˆ ì¶”ê°€</h4>
             <div class="std-add-grid">
-              <div class="form-group"><label>¿¬µµ</label><input type="number" id="mw-new-year" placeholder="¿¹: 2027" /></div>
-              <div class="form-group"><label>½Ã±Þ (¿ø)</label><input type="number" id="mw-new-hourly" placeholder="¿¹: 10320" /></div>
-              <div class="form-group"><label>¿ù±Þ¿© (¿ø)</label><input type="number" id="mw-new-monthly" placeholder="¿¹: 2156880" /></div>
-              <div class="form-group"><label>ºñ°í</label><input type="text" id="mw-new-note" placeholder="¼±ÅÃÀÔ·Â" /></div>
+              <div class="form-group"><label>ì—°ë„</label><input type="number" id="mw-new-year" placeholder="ì˜ˆ: 2027" /></div>
+              <div class="form-group"><label>ì‹œê¸‰ (ì›)</label><input type="number" id="mw-new-hourly" placeholder="ì˜ˆ: 10320" /></div>
+              <div class="form-group"><label>ì›”ê¸‰ì—¬ (ì›)</label><input type="number" id="mw-new-monthly" placeholder="ì˜ˆ: 2156880" /></div>
+              <div class="form-group"><label>ë¹„ê³ </label><input type="text" id="mw-new-note" placeholder="ì„ íƒìž…ë ¥" /></div>
             </div>
-            <button class="std-update-btn" onclick="saveMinimumWage()"><i class="fas fa-check-circle"></i> ¾÷µ¥ÀÌÆ®</button>
+            <button class="std-update-btn" onclick="saveMinimumWage()"><i class="fas fa-check-circle"></i> ì—…ë°ì´íŠ¸</button>
           </div>
         </div>
 
-        <!-- ÅÇ3: °ú¼¼ ±âÁØ -->
+        <!-- íƒ­3: ê³¼ì„¸ ê¸°ì¤€ -->
         <div id="std-panel-taxbracket" class="std-tab-panel" style="display:none;">
-          <!-- ¾È³» ¹è³Ê -->
+          <!-- ì•ˆë‚´ ë°°ë„ˆ -->
           <div style="font-size:12px;color:#1e40af;margin-bottom:16px;padding:11px 15px;background:#eff6ff;border-radius:8px;border-left:3px solid #3b82f6;line-height:1.7;">
-            <strong>?? ±Ù·Î¼Òµæ °£ÀÌ¼¼¾×Ç¥ (¼Òµæ¼¼¹ý ½ÃÇà·É º°Ç¥ 2)</strong><br>
-            ¿ù °ú¼¼ ±Þ¿© ±¸°£º° º»ÀÎ ºÎ´ã ¼Òµæ¼¼ ¹× Áö¹æ¼Òµæ¼¼(¼Òµæ¼¼¡¿10%)¸¦ ³ªÅ¸³À´Ï´Ù.<br>
+            <strong>ðŸ’¡ ê·¼ë¡œì†Œë“ ê°„ì´ì„¸ì•¡í‘œ (ì†Œë“ì„¸ë²• ì‹œí–‰ë ¹ ë³„í‘œ 2)</strong><br>
+            ì›” ê³¼ì„¸ ê¸‰ì—¬ êµ¬ê°„ë³„ ë³¸ì¸ ë¶€ë‹´ ì†Œë“ì„¸ ë° ì§€ë°©ì†Œë“ì„¸(ì†Œë“ì„¸Ã—10%)ë¥¼ ë‚˜íƒ€ëƒ…ë‹ˆë‹¤.<br>
             <span style="color:#6b7280;">
-              ? <strong>2025³â ÀÌÈÄ</strong>: ºÎ¾ç°¡Á· ¼ö(1~11ÀÎ) ¼±ÅÃ ¹öÆ°À¸·Î ÇØ´ç ±¸°£ ¼¼¾×À» Áï½Ã È®ÀÎÇÒ ¼ö ÀÖ½À´Ï´Ù.<br>
-              ? <strong>2024³â ÀÌÇÏ</strong>: ºÎ¾ç°¡Á· 1ÀÎ(º»ÀÎ¸¸) ±âÁØ¸¸ Á¦°øµË´Ï´Ù.<br>
-              ? ¿ù °ú¼¼±Þ¿©¸¦ ÀÔ·ÂÇÏ¸é ÇØ´ç ±¸°£ÀÌ ÀÚµ¿À¸·Î ÇÏÀÌ¶óÀÌÆ®µË´Ï´Ù.
+              â–¸ <strong>2025ë…„ ì´í›„</strong>: ë¶€ì–‘ê°€ì¡± ìˆ˜(1~11ì¸) ì„ íƒ ë²„íŠ¼ìœ¼ë¡œ í•´ë‹¹ êµ¬ê°„ ì„¸ì•¡ì„ ì¦‰ì‹œ í™•ì¸í•  ìˆ˜ ìžˆìŠµë‹ˆë‹¤.<br>
+              â–¸ <strong>2024ë…„ ì´í•˜</strong>: ë¶€ì–‘ê°€ì¡± 1ì¸(ë³¸ì¸ë§Œ) ê¸°ì¤€ë§Œ ì œê³µë©ë‹ˆë‹¤.<br>
+              â–¸ ì›” ê³¼ì„¸ê¸‰ì—¬ë¥¼ ìž…ë ¥í•˜ë©´ í•´ë‹¹ êµ¬ê°„ì´ ìžë™ìœ¼ë¡œ í•˜ì´ë¼ì´íŠ¸ë©ë‹ˆë‹¤.
             </span>
           </div>
-          <!-- ¿¬µµ ¼±ÅÃ ÅÇ -->
+          <!-- ì—°ë„ ì„ íƒ íƒ­ -->
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
-            <span style="font-size:12px;font-weight:700;color:#374151;white-space:nowrap;">¿¬µµ ¼±ÅÃ</span>
+            <span style="font-size:12px;font-weight:700;color:#374151;white-space:nowrap;">ì—°ë„ ì„ íƒ</span>
             <div id="tax-year-tabs" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
             <button onclick="downloadTaxBracketExcel()" style="margin-left:auto;padding:6px 14px;border-radius:6px;border:1.5px solid #22c55e;background:#f0fdf4;color:#16a34a;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .15s;"
               onmouseover="this.style.background='#22c55e';this.style.color='#fff'"
               onmouseout="this.style.background='#f0fdf4';this.style.color='#16a34a'">
-              <i class="fas fa-download"></i> ¿¢¼¿ ´Ù¿î·Îµå
+              <i class="fas fa-download"></i> ì—‘ì…€ ë‹¤ìš´ë¡œë“œ
             </button>
           </div>
-          <!-- Ç¥ ¿µ¿ª -->
+          <!-- í‘œ ì˜ì—­ -->
           <div id="tax-bracket-content"></div>
-          <!-- »õ °ú¼¼±âÁØÇ¥ ¾÷·Îµå Ä«µå -->
+          <!-- ìƒˆ ê³¼ì„¸ê¸°ì¤€í‘œ ì—…ë¡œë“œ ì¹´ë“œ -->
           <div class="std-add-card" style="margin-top:20px;">
-            <h4><i class="fas fa-upload" style="color:#6366f1;"></i> »õ °ú¼¼±âÁØÇ¥ Ãß°¡ (¿¢¼¿ ¾÷·Îµå)</h4>
+            <h4><i class="fas fa-upload" style="color:#6366f1;"></i> ìƒˆ ê³¼ì„¸ê¸°ì¤€í‘œ ì¶”ê°€ (ì—‘ì…€ ì—…ë¡œë“œ)</h4>
             <p style="font-size:11.5px;color:#6b7280;margin:0 0 12px 0;">
-              ´Ù¿î·Îµå ¹ÞÀº ¿¢¼¿ ÆÄÀÏ°ú µ¿ÀÏÇÑ Çü½ÄÀÇ ÆÄÀÏ¸¸ ¾÷·ÎµåÇÒ ¼ö ÀÖ½À´Ï´Ù.<br>
-              ÆÄÀÏ¸í¿¡¼­ ³âµµ¸¦ ÃßÃâÇÏ¿© ÇØ´ç ³âµµÀÇ °ú¼¼±âÁØÇ¥¸¦ »ý¼ºÇÕ´Ï´Ù. (¿¹: °£ÀÌ¼¼¾×Ç¥_2026³â.xlsx)
+              ë‹¤ìš´ë¡œë“œ ë°›ì€ ì—‘ì…€ íŒŒì¼ê³¼ ë™ì¼í•œ í˜•ì‹ì˜ íŒŒì¼ë§Œ ì—…ë¡œë“œí•  ìˆ˜ ìžˆìŠµë‹ˆë‹¤.<br>
+              íŒŒì¼ëª…ì—ì„œ ë…„ë„ë¥¼ ì¶”ì¶œí•˜ì—¬ í•´ë‹¹ ë…„ë„ì˜ ê³¼ì„¸ê¸°ì¤€í‘œë¥¼ ìƒì„±í•©ë‹ˆë‹¤. (ì˜ˆ: ê°„ì´ì„¸ì•¡í‘œ_2026ë…„.xlsx)
             </p>
             <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
               <label class="std-update-btn" style="cursor:pointer;">
-                <i class="fas fa-file-excel"></i> ¿¢¼¿ ÆÄÀÏ ¼±ÅÃ
+                <i class="fas fa-file-excel"></i> ì—‘ì…€ íŒŒì¼ ì„ íƒ
                 <input type="file" id="tax-upload-input" accept=".xlsx,.xls" style="display:none;" onchange="handleTaxBracketUpload(event)" />
               </label>
               <span id="tax-upload-status" style="font-size:12px;color:#6b7280;"></span>
@@ -138,5 +138,5 @@
 
     </div><!-- /page-standards -->
 
-    <!-- ?? WAGE LEDGER (ÀÓ±Ý´ëÀå) ?? -->
+    <!-- â•â• WAGE LEDGER (ìž„ê¸ˆëŒ€ìž¥) â•â• -->
     <div id="page-wage-ledger" class="page">

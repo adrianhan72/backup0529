@@ -1,23 +1,23 @@
-    <div id="page-companies" class="page">
-      <!-- ÀÓ½ÃÀúÀå ¹è³Ê (°í°´»ç ÀÓ½ÃÀúÀå °ÇÀÌ ÀÖÀ» ¶§¸¸ Ç¥½Ã) -->
+ï»¿    <div id="page-companies" class="page">
+      <!-- ìž„ì‹œì €ìž¥ ë°°ë„ˆ (ê³ ê°ì‚¬ ìž„ì‹œì €ìž¥ ê±´ì´ ìžˆì„ ë•Œë§Œ í‘œì‹œ) -->
       <div id="companies-draft-banner" style="display:none;margin-bottom:14px;"></div>
       <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
-        <button class="btn btn-primary" onclick="openCompanyModal()"><i class="fas fa-plus"></i> °í°´»ç Ãß°¡</button>
+        <button class="btn btn-primary" onclick="openCompanyModal()"><i class="fas fa-plus"></i> ê³ ê°ì‚¬ ì¶”ê°€</button>
       </div>
       <div class="card">
         <div class="filt-bar" style="border-bottom:1px solid #e5e7eb;">
           <div style="display:flex;align-items:center;gap:5px;">
-            <span class="filt-label">»óÅÂ</span>
+            <span class="filt-label">ìƒíƒœ</span>
             <select id="company-status-filter" onchange="renderCompanies()" class="filt-select">
-              <option value="">ÀüÃ¼ »óÅÂ</option>
-              <option value="active" selected>ÀÌ¿ëÁß</option>
-              <option value="inactive">ÇØÁö</option>
+              <option value="">ì „ì²´ ìƒíƒœ</option>
+              <option value="active" selected>ì´ìš©ì¤‘</option>
+              <option value="inactive">í•´ì§€</option>
             </select>
           </div>
           <div style="display:flex;align-items:center;gap:6px;margin-left:auto;">
             <div class="filt-search-wrap">
               <i class="fas fa-search"></i>
-              <input type="text" id="company-search" class="filt-search" style="width:150px;" placeholder="È¸»ç¸í °Ë»ö" oninput="renderCompanies()" />
+              <input type="text" id="company-search" class="filt-search" style="width:150px;" placeholder="íšŒì‚¬ëª… ê²€ìƒ‰" oninput="renderCompanies()" />
             </div>
           </div>
         </div>
@@ -25,5 +25,5 @@
       </div>
     </div>
 
-    <!-- ?? COMPANY NOTICE LOG ?? -->
+    <!-- â•â• COMPANY NOTICE LOG â•â• -->
     <div id="page-company-notice-log" class="page">

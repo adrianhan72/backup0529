@@ -505,6 +505,7 @@
       padding-left:1px;
       margin-top:4px;
     }
+
 /* ── contract input states ── */
 .ct-input-locked{background:#f3f4f6!important;color:#9ca3af!important;cursor:not-allowed!important}
 .ct-input-locked-dark{background:#f3f4f6!important;color:#6b7280!important;cursor:default!important}
@@ -516,3 +517,5 @@
 .ct-alert-ok{background:#F0FDF4;color:#166534;border:1.5px solid #86EFAC}
 .ct-alert-error{background:#FFF1F2;color:#991B1B;border:1.5px solid #FCA5A5}
 .ct-nav-card{cursor:pointer}
+.ct-tab-active{background:#fffbeb;color:#92400e}
+.ct-amount-active{background:#fff;color:#1a1a2e;font-weight:600}

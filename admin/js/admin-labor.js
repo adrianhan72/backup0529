@@ -1,8 +1,8 @@
-// ¦¡¦¡¦¡ LABOR STATUS ¦¡¦¡¦¡
-// currentLsCompanyId ¡æ ÃÖ»ó´Ü STATE ºí·Ï¿¡¼­ ¼±¾ğµÊ
+ï»¿// â”€â”€â”€ LABOR STATUS â”€â”€â”€
+// currentLsCompanyId â†’ ìµœìƒë‹¨ STATE ë¸”ë¡ì—ì„œ ì„ ì–¸ë¨
 const LS_ITEMS = 15;
 
-// °í°´»ç Ä¨ ¸ñ·Ï ·»´õ (±Ù·Î°è¾à¼­ ÆäÀÌÁö¿Í µ¿ÀÏ ¹æ½Ä)
+// ê³ ê°ì‚¬ ì¹© ëª©ë¡ ë Œë” (ê·¼ë¡œê³„ì•½ì„œ í˜ì´ì§€ì™€ ë™ì¼ ë°©ì‹)
 function renderLsCompanyList(){
   const q = (document.getElementById('ls-company-search')?.value || '').toLowerCase().trim();
   const container = document.getElementById('ls-company-chips');
@@ -13,13 +13,13 @@ function renderLsCompanyList(){
   ).sort((a,b) => (a.company_name||'').localeCompare(b.company_name||'', 'ko'));
 
   if(!companies.length){
-    container.innerHTML = `<div style="color:#9ca3af;font-size:13px;padding:8px 0;">${q ? `"${q}" °Ë»ö °á°ú ¾øÀ½` : 'ÀÌ¿ë ÁßÀÎ °í°´»ç°¡ ¾ø½À´Ï´Ù'}</div>`;
+    container.innerHTML = `<div style="color:#9ca3af;font-size:13px;padding:8px 0;">${q ? `"${q}" ê²€ìƒ‰ ê²°ê³¼ ì—†ìŒ` : 'ì´ìš© ì¤‘ì¸ ê³ ê°ì‚¬ê°€ ì—†ìŠµë‹ˆë‹¤'}</div>`;
     return;
   }
 
   container.innerHTML = companies.map(c => {
     const isSelected = c.id === currentGlobalCompanyId;
-    // À¯È¿ °è¾à(active, docs_incomplete) º¸À¯ Á÷¿ø ¼ö
+    // ìœ íš¨ ê³„ì•½(active, docs_incomplete) ë³´ìœ  ì§ì› ìˆ˜
     const activeCtEmpIds = new Set(
       allContracts.filter(ct => ct.company_id === c.id && (ct.status === CONTRACT_STATUS.ACTIVE || ct.status === CONTRACT_STATUS.DOCS_INCOMPLETE)).map(ct => ct.employee_id)
     );
@@ -34,7 +34,7 @@ function renderLsCompanyList(){
   }).join('');
 }
 
-// ¿¬¿ù ¼¿·ºÆ® ÃÊ±âÈ­
+// ì—°ì›” ì…€ë ‰íŠ¸ ì´ˆê¸°í™”
 function initLsYearMonth(){
   const now = new Date();
   const curYr = now.getFullYear();
@@ -44,43 +44,43 @@ function initLsYearMonth(){
   const moSel = document.getElementById('ls-month');
   if(!yrSel || !moSel) return;
 
-  // ÀÌ¹Ì ÃÊ±âÈ­µÈ °æ¿ì ÇöÀç °ª À¯Áö
+  // ì´ë¯¸ ì´ˆê¸°í™”ëœ ê²½ìš° í˜„ì¬ ê°’ ìœ ì§€
   if(yrSel.options.length > 0) return;
 
-  // ¿¬µµ: ÇöÀç ±âÁØ -2 ~ +1³â
+  // ì—°ë„: í˜„ì¬ ê¸°ì¤€ -2 ~ +1ë…„
   for(let y = curYr - 2; y <= curYr + 1; y++){
     const opt = document.createElement('option');
     opt.value = y;
-    opt.textContent = y + '³â';
+    opt.textContent = y + 'ë…„';
     if(y === curYr) opt.selected = true;
     yrSel.appendChild(opt);
   }
-  // ¿ù: 1~12
+  // ì›”: 1~12
   for(let m = 1; m <= 12; m++){
     const opt = document.createElement('option');
     opt.value = m;
-    opt.textContent = m + '¿ù';
+    opt.textContent = m + 'ì›”';
     if(m === curMo) opt.selected = true;
     moSel.appendChild(opt);
   }
 }
 
-// °í°´»ç ¼±ÅÃ
+// ê³ ê°ì‚¬ ì„ íƒ
 function selectLsCompany(companyId, companyName){
   currentLsCompanyId = companyId;
-  // ±Û·Î¹ú °øÀ¯ º¯¼ö¸¸ ¾÷µ¥ÀÌÆ® (´Ù¸¥ ÆäÀÌÁö º¯¼ö´Â showPage()¿¡¼­ Ã³¸®)
+  // ê¸€ë¡œë²Œ ê³µìœ  ë³€ìˆ˜ë§Œ ì—…ë°ì´íŠ¸ (ë‹¤ë¥¸ í˜ì´ì§€ ë³€ìˆ˜ëŠ” showPage()ì—ì„œ ì²˜ë¦¬)
   currentGlobalCompanyId = companyId;
   currentGlobalCompanyName = companyName;
   document.getElementById('ls-selected-company-label').innerHTML =
-    `<i class="fas fa-chart-bar" style="margin-right:6px;"></i>${companyName} ±Ù·Î°è¾à ¹× ±Ş¿© ÇöÈ²`;
+    `<i class="fas fa-chart-bar" style="margin-right:6px;"></i>${companyName} ê·¼ë¡œê³„ì•½ ë° ê¸‰ì—¬ í˜„í™©`;
   document.getElementById('ls-company-select-card').style.display = 'none';
   document.getElementById('ls-list-section').style.display = 'block';
-  // ¿¬¿ù ¼¿·ºÆ® ÃÊ±âÈ­ (Ã³À½ 1È¸)
+  // ì—°ì›” ì…€ë ‰íŠ¸ ì´ˆê¸°í™” (ì²˜ìŒ 1íšŒ)
   initLsYearMonth();
   renderLaborStatus();
 }
 
-// °í°´»ç ¼±ÅÃ ÇØÁ¦
+// ê³ ê°ì‚¬ ì„ íƒ í•´ì œ
 function clearLsCompanySelect(){
   currentLsCompanyId = null;
   currentGlobalCompanyId = null;
@@ -88,7 +88,7 @@ function clearLsCompanySelect(){
   document.getElementById('ls-company-select-card').style.display = '';
   document.getElementById('ls-list-section').style.display = 'none';
   document.getElementById('ls-company-search').value = '';
-  // Â÷Æ® Á¤¸®
+  // ì°¨íŠ¸ ì •ë¦¬
   if(lsPiePayChart){ lsPiePayChart.destroy(); lsPiePayChart = null; }
   if(lsPieDedChart){ lsPieDedChart.destroy(); lsPieDedChart = null; }
   if(lsDistChartInstance){ lsDistChartInstance.destroy(); lsDistChartInstance = null; }
@@ -96,7 +96,7 @@ function clearLsCompanySelect(){
   renderLsCompanyList();
 }
 
-// ¦¡¦¡ ÀÌ´Ş Ç×¸ñº° ºñÀ² ÆÄÀÌ Â÷Æ® ¦¡¦¡
+// â”€â”€ ì´ë‹¬ í•­ëª©ë³„ ë¹„ìœ¨ íŒŒì´ ì°¨íŠ¸ â”€â”€
 let lsPiePayChart = null, lsPieDedChart = null;
 
 function renderLsPieChart(){
@@ -106,72 +106,72 @@ function renderLsPieChart(){
   const mo = parseInt(document.getElementById('ls-month')?.value) || new Date().getMonth()+1;
   const pays = allPayrolls.filter(p => !p.is_draft && p.company_id===selCo && p.pay_year==yr && p.pay_month==mo);
 
-  // ¹îÁö
-  const monthLabel = `${yr}³â ${mo}¿ù ±âÁØ`;
+  // ë±ƒì§€
+  const monthLabel = `${yr}ë…„ ${mo}ì›” ê¸°ì¤€`;
   const badge = document.getElementById('ls-pie-month-badge');
   if(badge) badge.textContent = monthLabel;
   const dedBadge = document.getElementById('ls-ded-month-badge');
   if(dedBadge) dedBadge.textContent = monthLabel;
 
-  // Ç×¸ñº° ÇÕ»ê ÇïÆÛ
+  // í•­ëª©ë³„ í•©ì‚° í—¬í¼
   const s = f => pays.reduce((a,p)=>a+(p[f]||0),0);
 
-  // ¦¡¦¡ Áö±Ş Ç×¸ñ ¦¡¦¡
+  // â”€â”€ ì§€ê¸‰ í•­ëª© â”€â”€
   const payItems = [
-    { label:'±âº»±Ş',         val: s('base_salary'),              color:'#3b82f6' },
-    { label:'ÁÖÈŞ¼ö´ç',       val: s('weekly_holiday_pay'),       color:'#60a5fa' },
-    { label:'Á÷Ã¥¼ö´ç',       val: s('position_allowance'),       color:'#93c5fd' },
-    { label:'±³Åëºñ',         val: s('transportation_allowance')||s('car_maintenance'), color:'#6366f1' },
-    { label:'ÀÚ°¡¿îÀüº¸Á¶±İ', val: s('self_driving_allowance'),   color:'#7c3aed' },
-    { label:'º®Áö¼ö´ç',       val: s('remote_area_allowance'),    color:'#8b5cf6' },
-    { label:'½Ä´ë',           val: s('meal_allowance'),           color:'#6ee7b7' },
-    { label:'º¸À°¼ö´ç',  val: s('childcare_allowance'),      color:'#34d399' },
-    { label:'¿¬±¸È°µ¿ºñ',     val: s('research_allowance'),       color:'#10b981' },
-    { label:'¿¬Àå±Ù·Î¼ö´ç',   val: s('overtime_pay'),             color:'#fbbf24' },
-    { label:'¾ß°£±Ù·Î¼ö´ç',   val: s('night_pay'),                color:'#f97316' },
-    { label:'ÈŞÀÏ±Ù·Î¼ö´ç',   val: s('holiday_pay'),              color:'#fb923c' },
-    { label:'¿¬Â÷¼ö´ç',       val: s('annual_leave_pay'),         color:'#c084fc' },
-    { label:'Á¤±â »ó¿©±İ',    val: s('bonus_pay'),                color:'#e879f9' },
-    { label:'ºñÁ¤±â ¼º°ú±Ş',  val: s('performance_pay'),          color:'#d946ef' },
-    { label:'½Çºñº¯»óÀû±Ş¿©', val: s('actual_expense_pay'),       color:'#f472b6' },
-    { label:'Åë½Åºñ',         val: s('communication_pay'),        color:'#fb7185' },
-    { label:'±â¼ú¼ö´ç',       val: s('skill_allowance'),          color:'#a5b4fc' },
-    { label:'¸éÇã¼ö´ç',       val: s('license_allowance'),        color:'#818cf8' },
-    { label:'±âÅ¸¼ö´ç',       val: (s('etc_allowance')||0)+(s('other_pay')||0), color:'#f43f5e' },
+    { label:'ê¸°ë³¸ê¸‰',         val: s('base_salary'),              color:'#3b82f6' },
+    { label:'ì£¼íœ´ìˆ˜ë‹¹',       val: s('weekly_holiday_pay'),       color:'#60a5fa' },
+    { label:'ì§ì±…ìˆ˜ë‹¹',       val: s('position_allowance'),       color:'#93c5fd' },
+    { label:'êµí†µë¹„',         val: s('transportation_allowance')||s('car_maintenance'), color:'#6366f1' },
+    { label:'ìê°€ìš´ì „ë³´ì¡°ê¸ˆ', val: s('self_driving_allowance'),   color:'#7c3aed' },
+    { label:'ë²½ì§€ìˆ˜ë‹¹',       val: s('remote_area_allowance'),    color:'#8b5cf6' },
+    { label:'ì‹ëŒ€',           val: s('meal_allowance'),           color:'#6ee7b7' },
+    { label:'ë³´ìœ¡ìˆ˜ë‹¹',  val: s('childcare_allowance'),      color:'#34d399' },
+    { label:'ì—°êµ¬í™œë™ë¹„',     val: s('research_allowance'),       color:'#10b981' },
+    { label:'ì—°ì¥ê·¼ë¡œìˆ˜ë‹¹',   val: s('overtime_pay'),             color:'#fbbf24' },
+    { label:'ì•¼ê°„ê·¼ë¡œìˆ˜ë‹¹',   val: s('night_pay'),                color:'#f97316' },
+    { label:'íœ´ì¼ê·¼ë¡œìˆ˜ë‹¹',   val: s('holiday_pay'),              color:'#fb923c' },
+    { label:'ì—°ì°¨ìˆ˜ë‹¹',       val: s('annual_leave_pay'),         color:'#c084fc' },
+    { label:'ì •ê¸° ìƒì—¬ê¸ˆ',    val: s('bonus_pay'),                color:'#e879f9' },
+    { label:'ë¹„ì •ê¸° ì„±ê³¼ê¸‰',  val: s('performance_pay'),          color:'#d946ef' },
+    { label:'ì‹¤ë¹„ë³€ìƒì ê¸‰ì—¬', val: s('actual_expense_pay'),       color:'#f472b6' },
+    { label:'í†µì‹ ë¹„',         val: s('communication_pay'),        color:'#fb7185' },
+    { label:'ê¸°ìˆ ìˆ˜ë‹¹',       val: s('skill_allowance'),          color:'#a5b4fc' },
+    { label:'ë©´í—ˆìˆ˜ë‹¹',       val: s('license_allowance'),        color:'#818cf8' },
+    { label:'ê¸°íƒ€ìˆ˜ë‹¹',       val: (s('etc_allowance')||0)+(s('other_pay')||0), color:'#f43f5e' },
   ].filter(i => i.val > 0);
 
-  // ¦¡¦¡ °øÁ¦ Ç×¸ñ ¦¡¦¡
+  // â”€â”€ ê³µì œ í•­ëª© â”€â”€
   const dedItems = [
-    { label:'¼Òµæ¼¼',       val: s('income_tax'),              color:'#ef4444' },
-    { label:'Áö¹æ¼Òµæ¼¼',   val: s('local_income_tax'),        color:'#f87171' },
-    { label:'°Ç°­º¸Çè',     val: s('health_insurance'),        color:'#06b6d4' },
-    { label:'Àå±â¿ä¾ç',     val: s('long_term_care'),          color:'#22d3ee' },
-    { label:'±¹¹Î¿¬±İ',     val: s('national_pension'),        color:'#3b82f6' },
-    { label:'°í¿ëº¸Çè',     val: s('employment_insurance'),    color:'#60a5fa' },
-    { label:'¿¬¸»Á¤»ê',     val: s('year_end_tax_adjust'),     color:'#f59e0b' },
-    { label:'°Çº¸Á¤»ê',     val: s('health_insurance_adjust'), color:'#fbbf24' },
-    { label:'¼±Áö±Ş°øÁ¦',   val: s('advance_deduction'),       color:'#a78bfa' },
+    { label:'ì†Œë“ì„¸',       val: s('income_tax'),              color:'#ef4444' },
+    { label:'ì§€ë°©ì†Œë“ì„¸',   val: s('local_income_tax'),        color:'#f87171' },
+    { label:'ê±´ê°•ë³´í—˜',     val: s('health_insurance'),        color:'#06b6d4' },
+    { label:'ì¥ê¸°ìš”ì–‘',     val: s('long_term_care'),          color:'#22d3ee' },
+    { label:'êµ­ë¯¼ì—°ê¸ˆ',     val: s('national_pension'),        color:'#3b82f6' },
+    { label:'ê³ ìš©ë³´í—˜',     val: s('employment_insurance'),    color:'#60a5fa' },
+    { label:'ì—°ë§ì •ì‚°',     val: s('year_end_tax_adjust'),     color:'#f59e0b' },
+    { label:'ê±´ë³´ì •ì‚°',     val: s('health_insurance_adjust'), color:'#fbbf24' },
+    { label:'ì„ ì§€ê¸‰ê³µì œ',   val: s('advance_deduction'),       color:'#a78bfa' },
   ].filter(i => i.val > 0);
 
   const grossTotal = pays.reduce((a,p)=>a+(p.gross_pay||0),0);
   const dedTotal   = pays.reduce((a,p)=>a+(p.gross_pay||0)-(p.net_pay||0),0);
 
-  // ÃÑ¾× ¹îÁö
+  // ì´ì•¡ ë±ƒì§€
   const totalBadge = document.getElementById('ls-pie-total-badge');
-  if(totalBadge) totalBadge.textContent = `ÃÑ Áö±Ş¾× ${Math.round(grossTotal).toLocaleString('ko-KR')}¿ø`;
+  if(totalBadge) totalBadge.textContent = `ì´ ì§€ê¸‰ì•¡ ${Math.round(grossTotal).toLocaleString('ko-KR')}ì›`;
   const dedTotalBadge = document.getElementById('ls-ded-total-badge');
-  if(dedTotalBadge) dedTotalBadge.textContent = `°øÁ¦ ÇÕ°è ${Math.round(dedTotal).toLocaleString('ko-KR')}¿ø`;
+  if(dedTotalBadge) dedTotalBadge.textContent = `ê³µì œ í•©ê³„ ${Math.round(dedTotal).toLocaleString('ko-KR')}ì›`;
 
   const payTotal = document.getElementById('ls-pie-pay-total');
-  if(payTotal) payTotal.textContent = (Math.round(grossTotal)/10000).toFixed(0)+'¸¸¿ø';
+  if(payTotal) payTotal.textContent = (Math.round(grossTotal)/10000).toFixed(0)+'ë§Œì›';
   const dedTotalEl = document.getElementById('ls-pie-ded-total');
-  if(dedTotalEl) dedTotalEl.textContent = (Math.round(dedTotal)/10000).toFixed(0)+'¸¸¿ø';
+  if(dedTotalEl) dedTotalEl.textContent = (Math.round(dedTotal)/10000).toFixed(0)+'ë§Œì›';
 
-  // ¹ü·Ê »ı¼º ÇïÆÛ (2¿­ ±×¸®µå ¼¿ ´ÜÀ§)
+  // ë²”ë¡€ ìƒì„± í—¬í¼ (2ì—´ ê·¸ë¦¬ë“œ ì…€ ë‹¨ìœ„)
   function makeLegend(containerId, items, total){
     const el = document.getElementById(containerId);
     if(!el) return;
-    if(items.length===0){ el.innerHTML='<span style="font-size:11px;color:#9ca3af;grid-column:span 2;">µ¥ÀÌÅÍ ¾øÀ½</span>'; return; }
+    if(items.length===0){ el.innerHTML='<span style="font-size:11px;color:#9ca3af;grid-column:span 2;">ë°ì´í„° ì—†ìŒ</span>'; return; }
     el.innerHTML = items.map(i=>{
       const pct = total>0 ? (i.val/total*100).toFixed(1) : '0.0';
       const amt = Math.round(i.val).toLocaleString('ko-KR');
@@ -181,12 +181,12 @@ function renderLsPieChart(){
           <span style="font-size:11px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;">${i.label}</span>
           <span style="font-size:12px;font-weight:800;color:#111827;white-space:nowrap;">${pct}%</span>
         </div>
-        <div style="font-size:10.5px;color:#9ca3af;padding-left:15px;">${amt}¿ø</div>
+        <div style="font-size:10.5px;color:#9ca3af;padding-left:15px;">${amt}ì›</div>
       </div>`;
     }).join('');
   }
 
-  // ÆÄÀÌ Â÷Æ® »ı¼º ÇïÆÛ
+  // íŒŒì´ ì°¨íŠ¸ ìƒì„± í—¬í¼
   function makePie(canvasId, items, total, existingChart){
     const ctx = document.getElementById(canvasId);
     if(!ctx) return null;
@@ -215,7 +215,7 @@ function renderLsPieChart(){
             callbacks:{
               label: ctx => {
                 const pct = total>0?(ctx.parsed/total*100).toFixed(1):'0.0';
-                return ` ${ctx.label}: ${Math.round(ctx.parsed).toLocaleString('ko-KR')}¿ø (${pct}%)`;
+                return ` ${ctx.label}: ${Math.round(ctx.parsed).toLocaleString('ko-KR')}ì› (${pct}%)`;
               }
             }
           }
@@ -230,7 +230,7 @@ function renderLsPieChart(){
   lsPieDedChart = makePie('ls-pie-ded-chart', dedItems, dedTotal,   lsPieDedChart);
 }
 
-// ¦¡¦¡ Áö±Ş¾× ºĞÆ÷ Â÷Æ® (ÀÎ¿øº° / ºÎ¼­º° / Á÷±Şº°) ¦¡¦¡
+// â”€â”€ ì§€ê¸‰ì•¡ ë¶„í¬ ì°¨íŠ¸ (ì¸ì›ë³„ / ë¶€ì„œë³„ / ì§ê¸‰ë³„) â”€â”€
 let lsDistChartInstance = null;
 let currentLsDistTab = 'emp';
 
@@ -249,7 +249,7 @@ function switchLsDistTab(tab){
   renderLsDistChart();
 }
 
-// ÆÄÀÌ Â÷Æ® ÀÎ½ºÅÏ½º (ºÎ¼­º°/Á÷±Şº° Àü¿ë)
+// íŒŒì´ ì°¨íŠ¸ ì¸ìŠ¤í„´ìŠ¤ (ë¶€ì„œë³„/ì§ê¸‰ë³„ ì „ìš©)
 let lsDistPieChartInstance = null;
 
 function renderLsDistChart(){
@@ -259,23 +259,23 @@ function renderLsDistChart(){
   const mo = parseInt(document.getElementById('ls-month')?.value) || new Date().getMonth()+1;
   const pays = allPayrolls.filter(p => !p.is_draft && p.company_id===selCo && p.pay_year==yr && p.pay_month==mo);
 
-  // ¹îÁö
+  // ë±ƒì§€
   const badge = document.getElementById('ls-dist-month-badge');
-  if(badge) badge.textContent = `${yr}³â ${mo}¿ù ±âÁØ`;
+  if(badge) badge.textContent = `${yr}ë…„ ${mo}ì›” ê¸°ì¤€`;
 
   const grossTotal = pays.reduce((a,p)=>a+(p.gross_pay||0),0);
   const netTotal   = pays.reduce((a,p)=>a+(p.net_pay||0),0);
   const dedTotal   = grossTotal - netTotal;
 
-  // ¿ä¾à ¹îÁö
+  // ìš”ì•½ ë±ƒì§€
   const summaryEl = document.getElementById('ls-dist-summary');
   if(summaryEl){
     const fmt = v => Math.round(v).toLocaleString('ko-KR');
     summaryEl.innerHTML = [
-      { label:'Áö±ŞÃÑ¾×', val: fmt(grossTotal)+'¿ø', bg:'#eff6ff', color:'#1d4ed8', border:'#bfdbfe' },
-      { label:'°øÁ¦ÇÕ°è', val: fmt(dedTotal)+'¿ø',   bg:'#fef2f2', color:'#dc2626', border:'#fecaca' },
-      { label:'½ÇÁö±Ş¾×', val: fmt(netTotal)+'¿ø',   bg:'#f0fdf4', color:'#065f46', border:'#bbf7d0' },
-      { label:'Áö±ŞÀÎ¿ø', val: pays.length+'¸í',      bg:'#fdf4ff', color:'#7e22ce', border:'#e9d5ff' },
+      { label:'ì§€ê¸‰ì´ì•¡', val: fmt(grossTotal)+'ì›', bg:'#eff6ff', color:'#1d4ed8', border:'#bfdbfe' },
+      { label:'ê³µì œí•©ê³„', val: fmt(dedTotal)+'ì›',   bg:'#fef2f2', color:'#dc2626', border:'#fecaca' },
+      { label:'ì‹¤ì§€ê¸‰ì•¡', val: fmt(netTotal)+'ì›',   bg:'#f0fdf4', color:'#065f46', border:'#bbf7d0' },
+      { label:'ì§€ê¸‰ì¸ì›', val: pays.length+'ëª…',      bg:'#fdf4ff', color:'#7e22ce', border:'#e9d5ff' },
     ].map(b=>`
       <div style="display:flex;flex-direction:column;gap:2px;padding:8px 14px;background:${b.bg};border:1px solid ${b.border};border-radius:8px;">
         <span style="font-size:10.5px;color:#9ca3af;">${b.label}</span>
@@ -283,14 +283,14 @@ function renderLsDistChart(){
       </div>`).join('');
   }
 
-  // ¦¡¦¡ °øÅë »ö»ó ÆÈ·¹Æ® ¦¡¦¡
+  // â”€â”€ ê³µí†µ ìƒ‰ìƒ íŒ”ë ˆíŠ¸ â”€â”€
   const PALETTE = [
     '#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6',
     '#06b6d4','#ec4899','#f97316','#14b8a6','#a78bfa',
     '#84cc16','#fb923c','#e879f9','#22d3ee','#fbbf24',
   ];
 
-  // ¦¡¦¡ ±×·ìº° Áı°è ¦¡¦¡
+  // â”€â”€ ê·¸ë£¹ë³„ ì§‘ê³„ â”€â”€
   let groups = [];
 
   if(currentLsDistTab === 'emp'){
@@ -306,7 +306,7 @@ function renderLsDistChart(){
     const map = {};
     pays.forEach(p => {
       const emp = allEmployees.find(e=>e.id===p.employee_id);
-      const key = emp?.department || '¹ÌÁöÁ¤';
+      const key = emp?.department || 'ë¯¸ì§€ì •';
       if(!map[key]) map[key] = {label:key, gross:0, net:0};
       map[key].gross += p.gross_pay||0;
       map[key].net   += p.net_pay||0;
@@ -317,7 +317,7 @@ function renderLsDistChart(){
     const map = {};
     pays.forEach(p => {
       const emp = allEmployees.find(e=>e.id===p.employee_id);
-      const key = emp?.position || emp?.rank || '¹ÌÁöÁ¤';
+      const key = emp?.position || emp?.rank || 'ë¯¸ì§€ì •';
       if(!map[key]) map[key] = {label:key, gross:0, net:0};
       map[key].gross += p.gross_pay||0;
       map[key].net   += p.net_pay||0;
@@ -329,7 +329,7 @@ function renderLsDistChart(){
   const pieWrap = document.getElementById('ls-dist-pie-wrap');
   const isPie   = (currentLsDistTab === 'dept' || currentLsDistTab === 'rank');
 
-  // ¦¡¦¡ µ¥ÀÌÅÍ ¾øÀ½ °øÅë Ã³¸® ¦¡¦¡
+  // â”€â”€ ë°ì´í„° ì—†ìŒ ê³µí†µ ì²˜ë¦¬ â”€â”€
   if(groups.length === 0){
     if(lsDistChartInstance){ lsDistChartInstance.destroy(); lsDistChartInstance = null; }
     if(lsDistPieChartInstance){ lsDistPieChartInstance.destroy(); lsDistPieChartInstance = null; }
@@ -339,7 +339,7 @@ function renderLsDistChart(){
       const inner    = document.getElementById('ls-dist-pie-inner');
       const emptyMsg = document.getElementById('ls-dist-pie-empty-msg');
       if(inner)    inner.style.display    = 'none';
-      if(emptyMsg){ emptyMsg.style.display = 'flex'; emptyMsg.textContent = 'ÇØ´ç ¿ù ±Ş¿© µ¥ÀÌÅÍ°¡ ¾ø½À´Ï´Ù'; }
+      if(emptyMsg){ emptyMsg.style.display = 'flex'; emptyMsg.textContent = 'í•´ë‹¹ ì›” ê¸‰ì—¬ ë°ì´í„°ê°€ ì—†ìŠµë‹ˆë‹¤'; }
     } else {
       if(pieWrap) pieWrap.style.display = 'none';
     }
@@ -348,20 +348,20 @@ function renderLsDistChart(){
 
   const colors = groups.map((_,i) => PALETTE[i % PALETTE.length]);
 
-  // ????????????????????????????????????????
-  // ÀÎ¿øº° ¡æ °¡·Î ¸·´ë Â÷Æ®
-  // ????????????????????????????????????????
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  // ì¸ì›ë³„ â†’ ê°€ë¡œ ë§‰ëŒ€ ì°¨íŠ¸
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   if(!isPie){
-    // ÆÄÀÌ Â÷Æ® ¼û±â±â / Á¤¸®
+    // íŒŒì´ ì°¨íŠ¸ ìˆ¨ê¸°ê¸° / ì •ë¦¬
     if(lsDistPieChartInstance){ lsDistPieChartInstance.destroy(); lsDistPieChartInstance = null; }
     if(pieWrap) pieWrap.style.display = 'none';
 
-    // ¹Ù Â÷Æ® Ç¥½Ã
+    // ë°” ì°¨íŠ¸ í‘œì‹œ
     if(barWrap){
       barWrap.style.display = 'block';
       const chartH = Math.max(200, groups.length * 44);
       barWrap.style.height = chartH + 'px';
-      // canvas º¹¿ø
+      // canvas ë³µì›
       if(!document.getElementById('ls-dist-chart')){
         barWrap.innerHTML = '<canvas id="ls-dist-chart"></canvas>';
       }
@@ -377,7 +377,7 @@ function renderLsDistChart(){
         labels: groups.map(g=>g.label),
         datasets: [
           {
-            label: 'Áö±ŞÃÑ¾×',
+            label: 'ì§€ê¸‰ì´ì•¡',
             data: groups.map(g=>g.gross),
             backgroundColor: colors.map(c=>c+'cc'),
             borderColor: colors,
@@ -386,7 +386,7 @@ function renderLsDistChart(){
             borderSkipped: false,
           },
           {
-            label: '½ÇÁö±Ş¾×',
+            label: 'ì‹¤ì§€ê¸‰ì•¡',
             data: groups.map(g=>g.net),
             backgroundColor: colors.map(c=>c+'44'),
             borderColor: colors.map(c=>c+'88'),
@@ -414,7 +414,7 @@ function renderLsDistChart(){
               label: ctx => {
                 const val = Math.round(ctx.parsed.x);
                 const pct = grossTotal>0 ? (val/grossTotal*100).toFixed(1) : '0.0';
-                return ` ${ctx.dataset.label}: ${val.toLocaleString('ko-KR')}¿ø (${pct}%)`;
+                return ` ${ctx.dataset.label}: ${val.toLocaleString('ko-KR')}ì› (${pct}%)`;
               }
             }
           }
@@ -426,7 +426,7 @@ function renderLsDistChart(){
             ticks: {
               font:{ size:10 }, color:'#9ca3af',
               callback: v => {
-                if(v >= 1000000) return (v/10000).toFixed(0)+'¸¸';
+                if(v >= 1000000) return (v/10000).toFixed(0)+'ë§Œ';
                 return v.toLocaleString('ko-KR');
               }
             }
@@ -439,39 +439,39 @@ function renderLsDistChart(){
       }
     });
 
-  // ????????????????????????????????????????
-  // ºÎ¼­º° / Á÷±Şº° ¡æ SVG µµ³Ó Â÷Æ®
-  // ????????????????????????????????????????
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  // ë¶€ì„œë³„ / ì§ê¸‰ë³„ â†’ SVG ë„ë„› ì°¨íŠ¸
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   } else {
     if(lsDistChartInstance){ lsDistChartInstance.destroy(); lsDistChartInstance = null; }
     if(lsDistPieChartInstance){ lsDistPieChartInstance.destroy(); lsDistPieChartInstance = null; }
     if(barWrap) barWrap.style.display = 'none';
 
-    // ¿µ¿ª Ç¥½Ã
+    // ì˜ì—­ í‘œì‹œ
     if(pieWrap) pieWrap.style.display = 'block';
     const _pieInner    = document.getElementById('ls-dist-pie-inner');
     const _pieEmptyMsg = document.getElementById('ls-dist-pie-empty-msg');
     if(_pieInner)    _pieInner.style.display    = 'flex';
     if(_pieEmptyMsg) _pieEmptyMsg.style.display = 'none';
 
-    // ¦¡¦¡ SVG µµ³Ó Â÷Æ® Á÷Á¢ »ı¼º (display:none ºÎ¸ğ ¹«°üÇÏ°Ô µ¿ÀÛ) ¦¡¦¡
+    // â”€â”€ SVG ë„ë„› ì°¨íŠ¸ ì§ì ‘ ìƒì„± (display:none ë¶€ëª¨ ë¬´ê´€í•˜ê²Œ ë™ì‘) â”€â”€
     const svgWrap = document.getElementById('ls-dist-pie-svg-wrap');
     if(svgWrap){
       const SIZE   = 220;
       const CX     = SIZE / 2;           // 110
       const CY     = SIZE / 2;           // 110
-      const R      = 88;                 // ¿ÜºÎ ¹İÁö¸§
-      const r      = 54;                 // ³»ºÎ ¹İÁö¸§(µµ³Ó ±¸¸Û)
+      const R      = 88;                 // ì™¸ë¶€ ë°˜ì§€ë¦„
+      const r      = 54;                 // ë‚´ë¶€ ë°˜ì§€ë¦„(ë„ë„› êµ¬ë©)
       const total  = groups.reduce((s, g) => s + g.gross, 0);
       const fmtAmt = v => Math.round(v).toLocaleString('ko-KR');
 
-      // È£(arc) °è»ê ÇïÆÛ
+      // í˜¸(arc) ê³„ì‚° í—¬í¼
       function polarToXY(cx, cy, radius, angleDeg){
         const rad = (angleDeg - 90) * Math.PI / 180;
         return { x: cx + radius * Math.cos(rad), y: cy + radius * Math.sin(rad) };
       }
       function makeArcPath(cx, cy, R, r, startDeg, endDeg){
-        // 360µµ ÀüÃ¼(´ÜÀÏ µ¥ÀÌÅÍ)¸é circle·Î ´ëÃ¼ ºÒ°¡ ¡æ »ìÂ¦ ÁÙÀÓ
+        // 360ë„ ì „ì²´(ë‹¨ì¼ ë°ì´í„°)ë©´ circleë¡œ ëŒ€ì²´ ë¶ˆê°€ â†’ ì‚´ì§ ì¤„ì„
         if(endDeg - startDeg >= 360) endDeg = startDeg + 359.99;
         const s1 = polarToXY(cx, cy, R, startDeg);
         const e1 = polarToXY(cx, cy, R, endDeg);
@@ -487,7 +487,7 @@ function renderLsDistChart(){
         ].join(' ');
       }
 
-      // Á¶°¢ °æ·Î »ı¼º
+      // ì¡°ê° ê²½ë¡œ ìƒì„±
       let cursor = 0;
       const paths = groups.map((g, i) => {
         const slice = total > 0 ? (g.gross / total) * 360 : 0;
@@ -497,20 +497,20 @@ function renderLsDistChart(){
           style="cursor:pointer;transition:opacity .15s;"
           onmouseenter="this.style.opacity='.75'"
           onmouseleave="this.style.opacity='1'"
-        ><title>${g.label}: ${fmtAmt(g.gross)}¿ø (${total>0?(g.gross/total*100).toFixed(1):0}%)</title></path>`;
+        ><title>${g.label}: ${fmtAmt(g.gross)}ì› (${total>0?(g.gross/total*100).toFixed(1):0}%)</title></path>`;
       }).join('');
 
-      // Áß¾Ó ÅØ½ºÆ®
+      // ì¤‘ì•™ í…ìŠ¤íŠ¸
       const centerTxt = [
-        `<text x="${CX}" y="${CY - 8}" text-anchor="middle" font-size="10" fill="#9ca3af" font-family="'Noto Sans KR',sans-serif">Áö±ŞÃÑ¾×</text>`,
+        `<text x="${CX}" y="${CY - 8}" text-anchor="middle" font-size="10" fill="#9ca3af" font-family="'Noto Sans KR',sans-serif">ì§€ê¸‰ì´ì•¡</text>`,
         `<text x="${CX}" y="${CY + 10}" text-anchor="middle" font-size="12" font-weight="800" fill="#1d4ed8" font-family="'Noto Sans KR',sans-serif">${fmtAmt(total)}</text>`,
-        `<text x="${CX}" y="${CY + 24}" text-anchor="middle" font-size="10" fill="#6b7280" font-family="'Noto Sans KR',sans-serif">¿ø</text>`,
+        `<text x="${CX}" y="${CY + 24}" text-anchor="middle" font-size="10" fill="#6b7280" font-family="'Noto Sans KR',sans-serif">ì›</text>`,
       ].join('');
 
       svgWrap.innerHTML = `<svg width="${SIZE}" height="${SIZE}" viewBox="0 0 ${SIZE} ${SIZE}">${paths}${centerTxt}</svg>`;
     }
 
-    // ¹ü·Ê
+    // ë²”ë¡€
     const legendEl = document.getElementById('ls-dist-pie-legend');
     if(legendEl){
       legendEl.innerHTML = groups.map((g, i) => {
@@ -522,14 +522,14 @@ function renderLsDistChart(){
             <span style="font-size:11px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;">${g.label}</span>
             <span style="font-size:12px;font-weight:800;color:#111827;white-space:nowrap;">${pct}%</span>
           </div>
-          <div style="font-size:10.5px;color:#9ca3af;padding-left:15px;">${amt}¿ø</div>
+          <div style="font-size:10.5px;color:#9ca3af;padding-left:15px;">${amt}ì›</div>
         </div>`;
       }).join('');
     }
   }
 }
 
-// ¦¡¦¡ ¿¬°£ ±Ş¿© ÃßÀÌ ¶óÀÎ Â÷Æ® ¦¡¦¡
+// â”€â”€ ì—°ê°„ ê¸‰ì—¬ ì¶”ì´ ë¼ì¸ ì°¨íŠ¸ â”€â”€
 let lsTrendChartInstance = null;
 function renderLsYearTrendChart(){
   const selCo = currentLsCompanyId || currentGlobalCompanyId;
@@ -538,7 +538,7 @@ function renderLsYearTrendChart(){
   const baseYr = parseInt(document.getElementById('ls-year')?.value) || new Date().getFullYear();
   const baseMo = parseInt(document.getElementById('ls-month')?.value) || new Date().getMonth() + 1;
 
-  // ¼±ÅÃµÈ ´Ş ±âÁØ 12°³¿ù(°ú°Å 11°³¿ù + ÇöÀç¿ù)
+  // ì„ íƒëœ ë‹¬ ê¸°ì¤€ 12ê°œì›”(ê³¼ê±° 11ê°œì›” + í˜„ì¬ì›”)
   const months = [];
   for(let i = 11; i >= 0; i--){
     let y = baseYr, m = baseMo - i;
@@ -547,7 +547,7 @@ function renderLsYearTrendChart(){
   }
   const labels = months.map(({y,m}) => `${y}.${String(m).padStart(2,'0')}`);
 
-  // ¿ùº° ÇÕ»ê
+  // ì›”ë³„ í•©ì‚°
   const sum = (arr, field) => arr.reduce((s,p) => s + (p[field]||0), 0);
   const monthData = months.map(({y,m}) => {
     const pays = allPayrolls.filter(p => !p.is_draft && p.company_id === selCo && p.pay_year == y && p.pay_month == m);
@@ -562,19 +562,19 @@ function renderLsYearTrendChart(){
     return { gross, deduct, net, extra, irreg, tax, ins, adj };
   });
 
-  // Ã¼Å©¹Ú½º »óÅÂ
+  // ì²´í¬ë°•ìŠ¤ ìƒíƒœ
   const chk = id => document.getElementById(id)?.checked;
 
-  // µ¥ÀÌÅÍ¼Â Á¤ÀÇ
+  // ë°ì´í„°ì…‹ ì •ì˜
   const DATASETS = [
-    { id:'ltt-gross',  label:'ÃÑ Áö±Ş¾×',    field:'gross',  color:'#3b82f6', dash:[] },
-    { id:'ltt-deduct', label:'°øÁ¦ ÃÑ¾×',    field:'deduct', color:'#ef4444', dash:[] },
-    { id:'ltt-net',    label:'½ÇÁö±Ş¾×',     field:'net',    color:'#10b981', dash:[] },
-    { id:'ltt-extra',  label:'Ãß°¡±Ù·Î¼ö´ç', field:'extra',  color:'#f59e0b', dash:[5,3] },
-    { id:'ltt-irreg',  label:'ºÎÁ¤±âÁö±Ş',   field:'irreg',  color:'#8b5cf6', dash:[5,3] },
-    { id:'ltt-tax',    label:'¼¼±İ',         field:'tax',    color:'#ec4899', dash:[4,2] },
-    { id:'ltt-ins',    label:'4´ëº¸Çè',      field:'ins',    color:'#06b6d4', dash:[4,2] },
-    { id:'ltt-adj',    label:'Á¤»ê/Ãß°¡°øÁ¦',field:'adj',    color:'#6b7280', dash:[3,3] },
+    { id:'ltt-gross',  label:'ì´ ì§€ê¸‰ì•¡',    field:'gross',  color:'#3b82f6', dash:[] },
+    { id:'ltt-deduct', label:'ê³µì œ ì´ì•¡',    field:'deduct', color:'#ef4444', dash:[] },
+    { id:'ltt-net',    label:'ì‹¤ì§€ê¸‰ì•¡',     field:'net',    color:'#10b981', dash:[] },
+    { id:'ltt-extra',  label:'ì¶”ê°€ê·¼ë¡œìˆ˜ë‹¹', field:'extra',  color:'#f59e0b', dash:[5,3] },
+    { id:'ltt-irreg',  label:'ë¶€ì •ê¸°ì§€ê¸‰',   field:'irreg',  color:'#8b5cf6', dash:[5,3] },
+    { id:'ltt-tax',    label:'ì„¸ê¸ˆ',         field:'tax',    color:'#ec4899', dash:[4,2] },
+    { id:'ltt-ins',    label:'4ëŒ€ë³´í—˜',      field:'ins',    color:'#06b6d4', dash:[4,2] },
+    { id:'ltt-adj',    label:'ì •ì‚°/ì¶”ê°€ê³µì œ',field:'adj',    color:'#6b7280', dash:[3,3] },
   ];
 
   const activeDatasets = DATASETS.filter(d => chk(d.id)).map(d => ({
@@ -595,21 +595,21 @@ function renderLsYearTrendChart(){
   if(!ctx) return;
   if(lsTrendChartInstance){ lsTrendChartInstance.destroy(); lsTrendChartInstance = null; }
 
-  // ¹îÁö ÅØ½ºÆ® ¾÷µ¥ÀÌÆ®
+  // ë±ƒì§€ í…ìŠ¤íŠ¸ ì—…ë°ì´íŠ¸
   const badge = document.getElementById('ls-trend-year-badge');
   if(badge) badge.textContent = `${months[0].y}.${String(months[0].m).padStart(2,'0')} ~ ${months[11].y}.${String(months[11].m).padStart(2,'0')}`;
 
   if(activeDatasets.length === 0){
-    // ¾Æ¹«°Íµµ ¼±ÅÃ ¾È µÈ °æ¿ì ºó Äµ¹ö½º¸¸ Ç¥½Ã
+    // ì•„ë¬´ê²ƒë„ ì„ íƒ ì•ˆ ëœ ê²½ìš° ë¹ˆ ìº”ë²„ìŠ¤ë§Œ í‘œì‹œ
     lsTrendChartInstance = new Chart(ctx, { type:'line', data:{ labels, datasets:[] }, options:{ responsive:true, maintainAspectRatio:false } });
     return;
   }
 
-  // YÃà ´ÜÀ§ ÀÚµ¿ °áÁ¤
+  // Yì¶• ë‹¨ìœ„ ìë™ ê²°ì •
   const allVals = activeDatasets.flatMap(d => d.data);
   const maxVal = Math.max(...allVals, 0);
   let yFmt;
-  if(maxVal >= 1000000) yFmt = v => (v/10000).toFixed(0)+'¸¸';
+  if(maxVal >= 1000000) yFmt = v => (v/10000).toFixed(0)+'ë§Œ';
   else yFmt = v => v.toLocaleString('ko-KR');
 
   lsTrendChartInstance = new Chart(ctx, {
@@ -628,8 +628,8 @@ function renderLsYearTrendChart(){
           backgroundColor:'rgba(17,24,39,0.93)', titleColor:'#e5e7eb', bodyColor:'#d1d5db',
           padding:12, cornerRadius:8, borderColor:'rgba(255,255,255,0.08)', borderWidth:1,
           callbacks:{
-            title: items => `?? ${items[0].label}`,
-            label: ctx => ` ${ctx.dataset.label}: ${Math.round(ctx.parsed.y).toLocaleString('ko-KR')}¿ø`
+            title: items => `ğŸ“… ${items[0].label}`,
+            label: ctx => ` ${ctx.dataset.label}: ${Math.round(ctx.parsed.y).toLocaleString('ko-KR')}ì›`
           }
         }
       },
@@ -651,25 +651,25 @@ function renderLsYearTrendChart(){
 function renderLaborStatus(){
   const yr = parseInt(document.getElementById('ls-year')?.value) || new Date().getFullYear();
   const mo = parseInt(document.getElementById('ls-month')?.value) || (new Date().getMonth() + 1);
-  const monthLabel = `${yr}³â ${mo}¿ù`;
+  const monthLabel = `${yr}ë…„ ${mo}ì›”`;
 
   const selCo = currentLsCompanyId || currentGlobalCompanyId;
-  if(!selCo) return; // ¹Ì¼±ÅÃ ½Ã ·»´õ ¾È ÇÔ
+  if(!selCo) return; // ë¯¸ì„ íƒ ì‹œ ë Œë” ì•ˆ í•¨
 
   const contractFilter = document.querySelector('input[name="ls-contract-filter"]:checked')?.value || 'all';
 
-  // ¦¡¦¡ Åë°è °è»ê ¦¡¦¡
+  // â”€â”€ í†µê³„ ê³„ì‚° â”€â”€
   const targetContracts = allContracts.filter(c => c.company_id === selCo);
   const activeContracts = targetContracts.filter(c => c.status === CONTRACT_STATUS.ACTIVE || c.status === CONTRACT_STATUS.DOCS_INCOMPLETE);
   
-  // À¯È¿ °è¾àÀÌ ÀÖ´Â Á÷¿ø¸¸ ´ë»ó
+  // ìœ íš¨ ê³„ì•½ì´ ìˆëŠ” ì§ì›ë§Œ ëŒ€ìƒ
   const activeEmpIds = new Set(activeContracts.map(c => c.employee_id));
   const targetEmps = allEmployees.filter(e => e.company_id === selCo && activeEmpIds.has(e.id));
   const activeEmps = targetEmps.filter(e => e.status === EMP_STATUS.ACTIVE);
   const retiredEmps = targetEmps.filter(e => e.status !== EMP_STATUS.ACTIVE);
   const totalEmps = targetEmps.length;
 
-  // °í¿ëÇüÅÂº° Ä«¿îÆ® (ÀüÃ¼ Á÷¿ø ±âÁØ) ? ¿µ¹® DB °ªÀ¸·Î ºñ±³
+  // ê³ ìš©í˜•íƒœë³„ ì¹´ìš´íŠ¸ (ì „ì²´ ì§ì› ê¸°ì¤€) â€” ì˜ë¬¸ DB ê°’ìœ¼ë¡œ ë¹„êµ
   const catCount = cat => targetEmps.filter(e => normalizeContractType(e.employment_category) === cat).length;
   const cntRegular     = catCount(CONTRACT_TYPE.REGULAR);
   const cntRegularProb = catCount(CONTRACT_TYPE.REGULAR_PROBATION);
@@ -683,13 +683,13 @@ function renderLaborStatus(){
   const totalNet = thisPays.reduce((s,p) => s + (p.net_pay||0), 0);
   const totalGross = thisPays.reduce((s,p) => s + (p.gross_pay||0), 0);
 
-  // ¦¡¦¡ Åë°è Ä«µå ¾÷µ¥ÀÌÆ® ¦¡¦¡
-  // ÀüÃ¼ / ÀçÁ÷ / ÅğÁ÷ ¿ä¾à
+  // â”€â”€ í†µê³„ ì¹´ë“œ ì—…ë°ì´íŠ¸ â”€â”€
+  // ì „ì²´ / ì¬ì§ / í‡´ì§ ìš”ì•½
   document.getElementById('ls-company-count').textContent = totalEmps;
   document.getElementById('ls-active-emp').textContent = activeEmps.length;
   document.getElementById('ls-retired-emp').textContent = retiredEmps.length;
-  document.getElementById('ls-emp-status-badge').textContent = `${yr}³â ${mo}¿ù ±âÁØ`;
-  // °í¿ëÇüÅÂº° Ä«µå
+  document.getElementById('ls-emp-status-badge').textContent = `${yr}ë…„ ${mo}ì›” ê¸°ì¤€`;
+  // ê³ ìš©í˜•íƒœë³„ ì¹´ë“œ
   document.getElementById('ls-cat-regular').textContent      = cntRegular;
   document.getElementById('ls-cat-regular-prob').textContent = cntRegularProb;
   document.getElementById('ls-cat-contract').textContent     = cntContract;
@@ -698,20 +698,20 @@ function renderLaborStatus(){
   document.getElementById('ls-active-contract').textContent = activeContracts.length;
   document.getElementById('ls-contract-sub-val').textContent = expiredContracts.length;
   const totalDeduct = totalGross - totalNet;
-  document.getElementById('ls-gross-pay').textContent = Math.round(totalGross).toLocaleString('ko-KR') + '¿ø';
-  document.getElementById('ls-deduct-pay').textContent = Math.round(totalDeduct).toLocaleString('ko-KR') + '¿ø';
-  document.getElementById('ls-net-pay').textContent = Math.round(totalNet).toLocaleString('ko-KR') + '¿ø';
-  document.getElementById('ls-pay-month-badge').textContent = monthLabel + ' ±âÁØ';
-  document.getElementById('ls-pay-month').textContent = monthLabel + ' ±âÁØ';
-  document.getElementById('ls-contract-month').textContent = monthLabel + ' ±âÁØ';
+  document.getElementById('ls-gross-pay').textContent = Math.round(totalGross).toLocaleString('ko-KR') + 'ì›';
+  document.getElementById('ls-deduct-pay').textContent = Math.round(totalDeduct).toLocaleString('ko-KR') + 'ì›';
+  document.getElementById('ls-net-pay').textContent = Math.round(totalNet).toLocaleString('ko-KR') + 'ì›';
+  document.getElementById('ls-pay-month-badge').textContent = monthLabel + ' ê¸°ì¤€';
+  document.getElementById('ls-pay-month').textContent = monthLabel + ' ê¸°ì¤€';
+  document.getElementById('ls-contract-month').textContent = monthLabel + ' ê¸°ì¤€';
 
-  // ¦¡¦¡ ÀÌ´Ş Áö±Ş´ë»ó ±Ù·Î°è¾à ¸ñ·Ï ¦¡¦¡
-  // ±âÁØ: ÀÌ´Ş ±Ş¿© µ¥ÀÌÅÍ°¡ ÀÖ´Â Á÷¿øÀÇ °è¾à OR À¯È¿ÇÑ °è¾à (°è¾à »óÅÂ ¹«°ü)
+  // â”€â”€ ì´ë‹¬ ì§€ê¸‰ëŒ€ìƒ ê·¼ë¡œê³„ì•½ ëª©ë¡ â”€â”€
+  // ê¸°ì¤€: ì´ë‹¬ ê¸‰ì—¬ ë°ì´í„°ê°€ ìˆëŠ” ì§ì›ì˜ ê³„ì•½ OR ìœ íš¨í•œ ê³„ì•½ (ê³„ì•½ ìƒíƒœ ë¬´ê´€)
   const thisPayEmpIds = new Set(thisPays.map(p => p.employee_id));
-  // ÀÌ´Ş ±Ş¿©°¡ ÀÔ·ÂµÈ Á÷¿øÀÇ °è¾à + À¯È¿ °è¾àÀ» ÇÕ»ê (Áßº¹ Á¦°Å)
+  // ì´ë‹¬ ê¸‰ì—¬ê°€ ì…ë ¥ëœ ì§ì›ì˜ ê³„ì•½ + ìœ íš¨ ê³„ì•½ì„ í•©ì‚° (ì¤‘ë³µ ì œê±°)
   const billingContracts = activeContracts.filter(c => {
     const hasPayThisMonth = thisPayEmpIds.has(c.employee_id);
-    return hasPayThisMonth || true;  // À¯È¿ °è¾àÀº Ç×»ó Æ÷ÇÔ
+    return hasPayThisMonth || true;  // ìœ íš¨ ê³„ì•½ì€ í•­ìƒ í¬í•¨
   });
 
   let filteredContracts;
@@ -719,7 +719,7 @@ function renderLaborStatus(){
   else if(contractFilter === 'unpaid') filteredContracts = billingContracts.filter(c => !thisPayEmpIds.has(c.employee_id));
   else                                 filteredContracts = billingContracts;
 
-  // Á¤·Ä: ±Ş¿©ÀÔ·ÂµÊ ¸ÕÀú, ±× ´ÙÀ½ ÀÌ¸§¼ø
+  // ì •ë ¬: ê¸‰ì—¬ì…ë ¥ë¨ ë¨¼ì €, ê·¸ ë‹¤ìŒ ì´ë¦„ìˆœ
   filteredContracts = [...filteredContracts].sort((a, b) => {
     const aPaid = thisPayEmpIds.has(a.employee_id) ? 0 : 1;
     const bPaid = thisPayEmpIds.has(b.employee_id) ? 0 : 1;
@@ -729,7 +729,7 @@ function renderLaborStatus(){
 
   const ctTbody = document.getElementById('ls-contract-tbody');
   if(filteredContracts.length === 0){
-    ctTbody.innerHTML = '<tr><td colspan="7" class="empty-state">ÇØ´çÇÏ´Â °è¾à ³»¿ªÀÌ ¾ø½À´Ï´Ù</td></tr>';
+    ctTbody.innerHTML = '<tr><td colspan="7" class="empty-state">í•´ë‹¹í•˜ëŠ” ê³„ì•½ ë‚´ì—­ì´ ì—†ìŠµë‹ˆë‹¤</td></tr>';
   } else {
     ctTbody.innerHTML = filteredContracts.map(c => {
       const emp = allEmployees.find(e => e.id === c.employee_id);
@@ -737,19 +737,19 @@ function renderLaborStatus(){
       const catBadge = empCatBadge(empCat);
       const isResigned = emp?.status===EMP_STATUS.RESIGNED && emp?.resign_date;
       const periodTxt = empCat ===CONTRACT_TYPE.REGULAR
-        ? (isResigned ? `${c.contract_start||'-'} ~ ${emp.resign_date}` : `${c.contract_start||'-'} ~ ÇöÀç`)
-        : `${c.contract_start||'-'} ~ ${c.contract_end||'¹ÌÁ¤'}`;
+        ? (isResigned ? `${c.contract_start||'-'} ~ ${emp.resign_date}` : `${c.contract_start||'-'} ~ í˜„ì¬`)
+        : `${c.contract_start||'-'} ~ ${c.contract_end||'ë¯¸ì •'}`;
       const workInfo = (c.work_hours_per_day && c.work_days_per_week)
-        ? `ÀÏ ${c.work_hours_per_day}h / ÁÖ ${c.work_days_per_week}ÀÏ` : '-';
-      // ÀÌ´Ş ±Ş¿© ÀÔ·Â ¿©ºÎ
+        ? `ì¼ ${c.work_hours_per_day}h / ì£¼ ${c.work_days_per_week}ì¼` : '-';
+      // ì´ë‹¬ ê¸‰ì—¬ ì…ë ¥ ì—¬ë¶€
       const hasPay = thisPayEmpIds.has(c.employee_id);
       const payBadge = hasPay
-        ? `<span class="badge badge-green">±Ş¿©ÀÔ·ÂµÊ</span>`
+        ? `<span class="badge badge-green">ê¸‰ì—¬ì…ë ¥ë¨</span>`
         : `<button onclick="goPayrollInputNew('${c.company_id}','${c.employee_id}',${yr},${mo})"
             class="btn btn-blue btn-sm" style="padding:3px 10px;font-size:11px;">
-            <i class="fas fa-plus"></i> ÀÔ·Â
+            <i class="fas fa-plus"></i> ì…ë ¥
           </button>`;
-      // °è¾à »óÅÂ ¹îÁö
+      // ê³„ì•½ ìƒíƒœ ë±ƒì§€
       const {badge:stBadge2, label:stName2} = calcContractStatusDisplay(c, new Date().toISOString().slice(0,10));
       const stBadge = stBadge2; const stLabel2 = stName2;
       return `<tr>
@@ -765,11 +765,11 @@ function renderLaborStatus(){
     }).join('');
   }
 
-  // ¦¡¦¡ ±Ş¿© ÇöÈ²: Á÷¿øº° ¸ñ·Ï ¦¡¦¡
+  // â”€â”€ ê¸‰ì—¬ í˜„í™©: ì§ì›ë³„ ëª©ë¡ â”€â”€
   const payTbody = document.getElementById('ls-pay-tbody');
-  document.getElementById('ls-pay-count').textContent = `${thisPays.length}¸í`;
+  document.getElementById('ls-pay-count').textContent = `${thisPays.length}ëª…`;
   if(thisPays.length === 0){
-    payTbody.innerHTML = '<tr><td colspan="5" class="empty-state">ÇØ´ç ¿ù ±Ş¿© ³»¿ªÀÌ ¾ø½À´Ï´Ù</td></tr>';
+    payTbody.innerHTML = '<tr><td colspan="5" class="empty-state">í•´ë‹¹ ì›” ê¸‰ì—¬ ë‚´ì—­ì´ ì—†ìŠµë‹ˆë‹¤</td></tr>';
   } else {
     const sortedPays = [...thisPays].sort((a,b) => getEmpName(a.employee_id).localeCompare(getEmpName(b.employee_id),'ko'));
     payTbody.innerHTML = sortedPays.map(p => {
@@ -786,7 +786,7 @@ function renderLaborStatus(){
     }).join('');
   }
 
-  // Â÷Æ® °»½Å
+  // ì°¨íŠ¸ ê°±ì‹ 
   renderLsPieChart();
   renderLsDistChart();
   renderLsYearTrendChart();

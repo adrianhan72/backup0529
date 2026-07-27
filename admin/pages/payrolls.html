@@ -1,83 +1,83 @@
-    <div id="page-payrolls" class="page">
-      <!-- °í°´»ç ¼±ÅÃ -->
+ï»¿    <div id="page-payrolls" class="page">
+      <!-- ê³ ê°ì‚¬ ì„ íƒ -->
       <div id="pay-company-select-card">
         <div class="section-title">
           <i class="fas fa-building"></i>
-          <span>°í°´»ç¸¦ ¼±ÅÃÇÏ¼¼¿ä</span>
+          <span>ê³ ê°ì‚¬ë¥¼ ì„ íƒí•˜ì„¸ìš”</span>
           <div class="filt-search-wrap" style="margin-left:auto;">
             <i class="fas fa-search"></i>
-            <input type="text" id="pay-company-search" class="filt-search" class="w-160" placeholder="°í°´»ç¸í °Ë»ö" oninput="renderPayCompanyList()" />
+            <input type="text" id="pay-company-search" class="filt-search" class="w-160" placeholder="ê³ ê°ì‚¬ëª… ê²€ìƒ‰" oninput="renderPayCompanyList()" />
           </div>
-          <button class="btn btn-success" id="pay-excel-btn" style="display:none;" onclick="openExcelModal()"><i class="fas fa-file-excel"></i> ¿¢¼¿ ¾ç½Ä ´Ù¿î·Îµå</button>
+          <button class="btn btn-success" id="pay-excel-btn" style="display:none;" onclick="openExcelModal()"><i class="fas fa-file-excel"></i> ì—‘ì…€ ì–‘ì‹ ë‹¤ìš´ë¡œë“œ</button>
         </div>
         <div class="card" style="margin-bottom:16px;overflow:hidden;">
           <div id="pay-company-chips" style="padding:20px;display:flex;flex-wrap:wrap;gap:8px;"></div>
         </div>
       </div>
 
-      <!-- ¼±ÅÃµÈ °í°´»ç ÀÓ±Ý´ëÀå ¼½¼Ç -->
+      <!-- ì„ íƒëœ ê³ ê°ì‚¬ ìž„ê¸ˆëŒ€ìž¥ ì„¹ì…˜ -->
       <div id="pay-list-section" style="display:none;">
-        <!-- ¼û±è È£È¯¿ë select -->
+        <!-- ìˆ¨ê¹€ í˜¸í™˜ìš© select -->
         <select id="pay-company-filter" style="display:none;"></select>
-        <!-- ¼±ÅÃ °í°´»ç Çì´õ -->
+        <!-- ì„ íƒ ê³ ê°ì‚¬ í—¤ë” -->
         <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:linear-gradient(90deg,#1e1b4b,#312e81);border-radius:10px;margin-bottom:12px;">
           <span id="pay-selected-company-label" style="font-size:14px;font-weight:700;color:#fff;"></span>
-          <button onclick="clearPayCompanySelect()" class="btn btn-icon-dark" title="°í°´»ç ¼±ÅÃ ÇØÁ¦"><i class="fas fa-times"></i></button>
+          <button onclick="clearPayCompanySelect()" class="btn btn-icon-dark" title="ê³ ê°ì‚¬ ì„ íƒ í•´ì œ"><i class="fas fa-times"></i></button>
         </div>
 
-        <!-- ¦¡¦¡ ÇÊÅÍ ¹Ù ¦¡¦¡ -->
+        <!-- â”€â”€ í•„í„° ë°” â”€â”€ -->
         <div class="filt-bar" style="justify-content:flex-start;background:#fff;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.06);margin-bottom:12px;">
           <select id="pay-year-filter" onchange="pages.pay=1;renderPayrolls()" class="filt-select"></select>
           <select id="pay-month-filter" onchange="pages.pay=1;renderPayrolls()" class="filt-select"></select>
           <div class="filt-search-wrap" style="margin-left:auto;">
             <i class="fas fa-search"></i>
-            <input type="text" id="pay-search" class="filt-search" style="width:140px;" placeholder="Á÷¿ø¸í °Ë»ö" oninput="renderPayrolls()" />
+            <input type="text" id="pay-search" class="filt-search" style="width:140px;" placeholder="ì§ì›ëª… ê²€ìƒ‰" oninput="renderPayrolls()" />
           </div>
         </div>
 
-        <!-- ¦¡¦¡ ±Þ¿©¸í¼¼¼­ ¸ñ·Ï Ä«µå ¦¡¦¡ -->
+        <!-- â”€â”€ ê¸‰ì—¬ëª…ì„¸ì„œ ëª©ë¡ ì¹´ë“œ â”€â”€ -->
         <div class="card" style="overflow:hidden;padding:0;">
           <div class="table-wrap">
             <table class="tbl-std">
               <thead>
                 <tr>
-                  <th>Á÷¿ø¸í</th><th>¼ºº°</th><th>°í¿ë±¸ºÐ</th><th>±Ù·ÎÀÏ¼ö</th><th>¿¬ÀåH</th>
-                  <th>Áö±ÞÃÑ¾×</th>
-                  <th>¸Å¿ùÁö±Þ</th>
-                  <th>Ãß°¡±Ù·Î¼ö´ç</th>
-                  <th>ºÎÁ¤±âÁö±Þ</th>
-                  <th>°øÁ¦ÇÕ°è</th><th>¿µ¼ö¾×</th><th style="width:60px;"></th>
+                  <th>ì§ì›ëª…</th><th>ì„±ë³„</th><th>ê³ ìš©êµ¬ë¶„</th><th>ê·¼ë¡œì¼ìˆ˜</th><th>ì—°ìž¥H</th>
+                  <th>ì§€ê¸‰ì´ì•¡</th>
+                  <th>ë§¤ì›”ì§€ê¸‰</th>
+                  <th>ì¶”ê°€ê·¼ë¡œìˆ˜ë‹¹</th>
+                  <th>ë¶€ì •ê¸°ì§€ê¸‰</th>
+                  <th>ê³µì œí•©ê³„</th><th>ì˜ìˆ˜ì•¡</th><th style="width:60px;"></th>
                 </tr>
               </thead>
               <tbody id="pay-tbody"></tbody>
             </table>
           </div>
           <div class="pagination" id="pay-pagination"></div>
-          <!-- ÀÏ°ý ¹ß¼Û ¹öÆ° (ÇÏ´Ü Áß¾Ó) -->
+          <!-- ì¼ê´„ ë°œì†¡ ë²„íŠ¼ (í•˜ë‹¨ ì¤‘ì•™) -->
           <div style="display:flex;justify-content:center;padding:12px 0 16px;">
             <button id="bulk-send-btn" onclick="openBulkSendModal()" disabled
               class="btn btn-kakao" style="padding:8px 18px;font-size:13px;box-shadow:0 2px 8px rgba(234,179,8,.25);">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0;"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg> ¸í¼¼¼­ PDF ÀÏ°ý ¹ß¼Û
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0;"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg> ëª…ì„¸ì„œ PDF ì¼ê´„ ë°œì†¡
             </button>
           </div>
         </div>
       </div>
     </div><!-- /page-payrolls -->
 
-    <!-- ?? ÀÏ°ý ¹ß¼Û ¸ð´Þ ?? -->
+    <!-- â•â• ì¼ê´„ ë°œì†¡ ëª¨ë‹¬ â•â• -->
     <div class="modal-overlay" id="bulk-send-modal" onclick="if(event.target===this)closeBulkSendModal()">
       <div style="background:#fff;border-radius:18px;width:96%;max-width:760px;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 80px rgba(0,0,0,.35);">
 
-        <!-- ¸ð´Þ Çì´õ -->
+        <!-- ëª¨ë‹¬ í—¤ë” -->
         <div style="background:linear-gradient(135deg,#4c1d95,#6d28d9);padding:22px 28px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
           <div>
-            <div style="color:#fff;font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="#c4b5fd"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg>±Þ¿©¸í¼¼¼­ PDF ÀÏ°ý ¹ß¼Û <span style="font-size:13px;font-weight:500;color:#c4b5fd;">(Ä«Ä«¿À ¾Ë¸²Åå)</span></div>
+            <div style="color:#fff;font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="#c4b5fd"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg>ê¸‰ì—¬ëª…ì„¸ì„œ PDF ì¼ê´„ ë°œì†¡ <span style="font-size:13px;font-weight:500;color:#c4b5fd;">(ì¹´ì¹´ì˜¤ ì•Œë¦¼í†¡)</span></div>
             <div id="bulk-send-subtitle" style="color:#c4b5fd;font-size:12px;margin-top:4px;"></div>
           </div>
           <button onclick="closeBulkSendModal()" class="btn btn-icon-dark"><i class="fas fa-times"></i></button>
         </div>
 
-        <!-- ÁøÇà »óÅÂ ¿ä¾à ¹Ù -->
+        <!-- ì§„í–‰ ìƒíƒœ ìš”ì•½ ë°” -->
         <div id="bulk-progress-bar-wrap" style="background:#f5f3ff;padding:14px 28px;border-bottom:1px solid #ede9fe;flex-shrink:0;display:none;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
             <span id="bulk-progress-label" style="font-size:12.5px;font-weight:600;color:#5b21b6;"></span>
@@ -88,29 +88,29 @@
           </div>
         </div>
 
-        <!-- Á÷¿ø ¸ñ·Ï Å×ÀÌºí -->
+        <!-- ì§ì› ëª©ë¡ í…Œì´ë¸” -->
         <div style="overflow-y:auto;flex:1;padding:20px 28px;">
           <table id="bulk-send-table" style="width:100%;border-collapse:collapse;font-size:13px;">
             <thead>
               <tr style="background:#f8f5ff;">
-                <th style="padding:10px 12px;text-align:left;font-weight:700;color:#4c1d95;border-bottom:2px solid #ede9fe;width:100px;">Á÷¿ø¸í</th>
-                <th style="padding:10px 12px;text-align:left;font-weight:700;color:#4c1d95;border-bottom:2px solid #ede9fe;width:130px;">ÈÞ´ëÀüÈ­¹øÈ£</th>
-                <th style="padding:10px 12px;text-align:left;font-weight:700;color:#4c1d95;border-bottom:2px solid #ede9fe;width:170px;">ÀÌ¸ÞÀÏ</th>
-                <th style="padding:10px 12px;text-align:left;font-weight:700;color:#4c1d95;border-bottom:2px solid #ede9fe;width:110px;">¹ß¼Û »óÅÂ</th>
-                <th style="padding:10px 12px;text-align:center;font-weight:700;color:#4c1d95;border-bottom:2px solid #ede9fe;">°³º° °ü¸®</th>
+                <th style="padding:10px 12px;text-align:left;font-weight:700;color:#4c1d95;border-bottom:2px solid #ede9fe;width:100px;">ì§ì›ëª…</th>
+                <th style="padding:10px 12px;text-align:left;font-weight:700;color:#4c1d95;border-bottom:2px solid #ede9fe;width:130px;">íœ´ëŒ€ì „í™”ë²ˆí˜¸</th>
+                <th style="padding:10px 12px;text-align:left;font-weight:700;color:#4c1d95;border-bottom:2px solid #ede9fe;width:170px;">ì´ë©”ì¼</th>
+                <th style="padding:10px 12px;text-align:left;font-weight:700;color:#4c1d95;border-bottom:2px solid #ede9fe;width:110px;">ë°œì†¡ ìƒíƒœ</th>
+                <th style="padding:10px 12px;text-align:center;font-weight:700;color:#4c1d95;border-bottom:2px solid #ede9fe;">ê°œë³„ ê´€ë¦¬</th>
               </tr>
             </thead>
             <tbody id="bulk-send-tbody"></tbody>
           </table>
         </div>
 
-        <!-- ¸ð´Þ ÇÏ´Ü ¹öÆ° -->
+        <!-- ëª¨ë‹¬ í•˜ë‹¨ ë²„íŠ¼ -->
         <div style="padding:16px 28px;border-top:1px solid #ede9fe;display:flex;justify-content:flex-end;gap:10px;flex-shrink:0;background:#faf9ff;">
-          <button id="bulk-send-start-btn" onclick="startBulkSend()" class="btn btn-kakao"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg> ¾Ë¸²Åå ÀÏ°ý ¹ß¼Û ½ÃÀÛ</button>
-          <button onclick="closeBulkSendModal()" class="btn btn-secondary">´Ý±â</button>
+          <button id="bulk-send-start-btn" onclick="startBulkSend()" class="btn btn-kakao"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg> ì•Œë¦¼í†¡ ì¼ê´„ ë°œì†¡ ì‹œìž‘</button>
+          <button onclick="closeBulkSendModal()" class="btn btn-secondary">ë‹«ê¸°</button>
         </div>
       </div>
     </div>
 
-    <!-- ?? PAYROLL INPUT ?? -->
+    <!-- â•â• PAYROLL INPUT â•â• -->
     <div id="page-payroll-input" class="page">

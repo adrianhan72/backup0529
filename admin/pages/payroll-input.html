@@ -1,13 +1,13 @@
-    <div id="page-payroll-input" class="page">
-      <!-- ¦¡¦¡ ÀüÃ¼ ±Þ¿© ÀÓ½ÃÀúÀå ¸ñ·Ï ¹è³Ê (°í°´»ç ¼±ÅÃ ¿©ºÎ ¹«°üÇÏ°Ô Ç×»ó Ç¥½Ã) ¦¡¦¡ -->
+ï»¿    <div id="page-payroll-input" class="page">
+      <!-- â”€â”€ ì „ì²´ ê¸‰ì—¬ ìž„ì‹œì €ìž¥ ëª©ë¡ ë°°ë„ˆ (ê³ ê°ì‚¬ ì„ íƒ ì—¬ë¶€ ë¬´ê´€í•˜ê²Œ í•­ìƒ í‘œì‹œ) â”€â”€ -->
       <div id="pi-all-draft-banner">
         <div class="pi-adb-header" onclick="togglePIAllDraftBanner(this)">
           <div class="pi-adb-left">
             <div class="pi-adb-icon"><i class="fas fa-clock-rotate-left"></i></div>
-            <span class="pi-adb-title">ÀÓ½ÃÀúÀåµÈ ±Þ¿© ÀÔ·Â</span>
+            <span class="pi-adb-title">ìž„ì‹œì €ìž¥ëœ ê¸‰ì—¬ ìž…ë ¥</span>
             <span class="pi-adb-badge" id="pi-all-draft-count">0</span>
           </div>
-          <button class="pi-adb-chevron" onclick="togglePIAllDraftBanner(this.closest('.pi-adb-header'));event.stopPropagation();" title="ÆîÄ¡±â/Á¢±â">
+          <button class="pi-adb-chevron" onclick="togglePIAllDraftBanner(this.closest('.pi-adb-header'));event.stopPropagation();" title="íŽ¼ì¹˜ê¸°/ì ‘ê¸°">
             <i class="fas fa-chevron-down"></i>
           </button>
         </div>
@@ -17,33 +17,33 @@
         </div>
       </div>
 
-      <!-- ¦¡¦¡ ÀÓ½ÃÀúÀå º¹¿ø ¹è³Ê (Á÷¿ø ¼±ÅÃ ÈÄ ÇØ´ç Á÷¿øÀÇ ¹Ì¿Ï·á ÀÓ½ÃÀúÀå ¹ß°ß ½Ã Ç¥½Ã) ¦¡¦¡ -->
+      <!-- â”€â”€ ìž„ì‹œì €ìž¥ ë³µì› ë°°ë„ˆ (ì§ì› ì„ íƒ í›„ í•´ë‹¹ ì§ì›ì˜ ë¯¸ì™„ë£Œ ìž„ì‹œì €ìž¥ ë°œê²¬ ì‹œ í‘œì‹œ) â”€â”€ -->
       <div id="pi-draft-banner" style="display:none;background:linear-gradient(90deg,#f0fdf4,#dcfce7);border:1.5px solid #4ade80;border-radius:10px;padding:11px 18px;margin-bottom:14px;align-items:center;justify-content:space-between;">
-        <div style="display:flex;align-items:center;gap:10px">
+        <div style="display:flex;align-items:center;gap:10px;">
           <i class="fas fa-clock-rotate-left" style="color:#16a34a;font-size:16px;"></i>
           <div>
-            <span style="font-size:13.5px;font-weight:700;color:#15803d;">ÀÓ½ÃÀúÀåµÈ ±Þ¿© ÀÔ·ÂÀÌ ÀÖ½À´Ï´Ù</span>
+            <span style="font-size:13.5px;font-weight:700;color:#15803d;">ìž„ì‹œì €ìž¥ëœ ê¸‰ì—¬ ìž…ë ¥ì´ ìžˆìŠµë‹ˆë‹¤</span>
             <span style="font-size:11.5px;color:#166534;margin-left:8px;" id="pi-draft-banner-sub"></span>
           </div>
         </div>
         <div style="display:flex;gap:8px;">
           <button onclick="loadPIDraft()" class="btn btn-success btn-sm">
-            <i class="fas fa-upload" style="margin-right:4px;"></i>ºÒ·¯¿À±â
+            <i class="fas fa-upload" style="margin-right:4px;"></i>ë¶ˆëŸ¬ì˜¤ê¸°
           </button>
-          <button onclick="discardPIDraft()" class="btn btn-sm btn-secondary"><i class="fas fa-trash-alt"></i> »èÁ¦</button>
+          <button onclick="discardPIDraft()" class="btn btn-sm btn-secondary"><i class="fas fa-trash-alt"></i> ì‚­ì œ</button>
         </div>
       </div>
 
       <input type="file" id="excel-upload-input" accept=".xlsx,.xls" style="display:none;" onchange="handleExcelUpload(event)" />
 
-      <!-- ¨ç °í°´»ç ¼±ÅÃ -->
+      <!-- â‘  ê³ ê°ì‚¬ ì„ íƒ -->
       <div id="pi-company-select-card">
         <div class="section-title">
           <i class="fas fa-building"></i>
-          <span>°í°´»ç¸¦ ¼±ÅÃÇÏ¼¼¿ä</span>
+          <span>ê³ ê°ì‚¬ë¥¼ ì„ íƒí•˜ì„¸ìš”</span>
           <div class="filt-search-wrap" style="margin-left:auto;">
             <i class="fas fa-search"></i>
-            <input type="text" id="pi-company-search" class="filt-search w-160" placeholder="°í°´»ç¸í °Ë»ö" oninput="renderPICompanyList()" />
+            <input type="text" id="pi-company-search" class="filt-search" class="w-160" placeholder="ê³ ê°ì‚¬ëª… ê²€ìƒ‰" oninput="renderPICompanyList()" />
           </div>
         </div>
         <div class="card" style="margin-bottom:16px;overflow:hidden;">
@@ -51,75 +51,75 @@
         </div>
       </div>
 
-      <!-- ¨è °í°´»ç ¼±ÅÃ ÈÄ ÀÔ·Â ¼½¼Ç -->
+      <!-- â‘¡ ê³ ê°ì‚¬ ì„ íƒ í›„ ìž…ë ¥ ì„¹ì…˜ -->
       <div id="pi-input-section" style="display:none;margin-top:16px;">
-        <!-- ¼±ÅÃµÈ °í°´»ç Çì´õ -->
+        <!-- ì„ íƒëœ ê³ ê°ì‚¬ í—¤ë” -->
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:12px 18px;background:linear-gradient(90deg,#1e1b4b,#312e81);border-radius:10px;">
           <span id="pi-selected-company-label" style="font-size:14px;font-weight:700;color:#fff;"></span>
-          <button onclick="clearPICompanySelect()" class="btn btn-icon-dark" title="°í°´»ç ¼±ÅÃ ÇØÁ¦"><i class="fas fa-times"></i></button>
+          <button onclick="clearPICompanySelect()" class="btn btn-icon-dark" title="ê³ ê°ì‚¬ ì„ íƒ í•´ì œ"><i class="fas fa-times"></i></button>
         </div>
 
-        <!-- ¦¡¦¡ ÇØ´ç °í°´»ç ÀÓ½ÃÀúÀå ¸ñ·Ï ¦¡¦¡ -->
+        <!-- â”€â”€ í•´ë‹¹ ê³ ê°ì‚¬ ìž„ì‹œì €ìž¥ ëª©ë¡ â”€â”€ -->
         <div id="pi-co-draft-banner" style="display:none;margin-bottom:16px;"></div>
 
-        <!-- ¼û±è È£È¯¿ë select (±âÁ¸ JS ÂüÁ¶ À¯Áö) -->
+        <!-- ìˆ¨ê¹€ í˜¸í™˜ìš© select (ê¸°ì¡´ JS ì°¸ì¡° ìœ ì§€) -->
         <select id="pi-company" style="display:none;"></select>
 
-        <!-- ¨é ±Þ¿©Áö±Þ ³â¿ù ¼±ÅÃ + ´ë»óÀÚ ¸ñ·Ï ¼½¼Ç -->
+        <!-- â‘¢ ê¸‰ì—¬ì§€ê¸‰ ë…„ì›” ì„ íƒ + ëŒ€ìƒìž ëª©ë¡ ì„¹ì…˜ -->
         <div id="pi-period-section" class="card" style="margin-bottom:16px;padding:20px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
-            <!-- ¿ÞÂÊ: ³â¿ù ¼±ÅÃ + ¸ñ·Ïº¸±â -->
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+            <!-- ì™¼ìª½: ë…„ì›” ì„ íƒ + ëª©ë¡ë³´ê¸° -->
             <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
               <div style="font-size:13px;font-weight:700;color:#374151;white-space:nowrap;">
-                <i class="fas fa-calendar-alt" style="color:#6366f1;margin-right:6px;"></i>±Þ¿©Áö±Þ ´ë»ó ³â¿ù
+                <i class="fas fa-calendar-alt" style="color:#6366f1;margin-right:6px;"></i>ê¸‰ì—¬ì§€ê¸‰ ëŒ€ìƒ ë…„ì›”
               </div>
               <div style="display:flex;align-items:center;gap:8px;">
                 <select id="pi-year" onchange="onPIYearMonthChange()"></select>
-                <span style="font-size:13px;color:#374151;font-weight:600;">³â</span>
+                <span style="font-size:13px;color:#374151;font-weight:600;">ë…„</span>
                 <select id="pi-month" onchange="onPIYearMonthChange()"></select>
-                <span style="font-size:13px;color:#374151;font-weight:600;">¿ù</span>
+                <span style="font-size:13px;color:#374151;font-weight:600;">ì›”</span>
               </div>
               <button onclick="loadPITargetList()" id="pi-load-target-btn" class="btn btn-indigo">
-                <i class="fas fa-users"></i> Áö±Þ´ë»óÀÚ ¸ñ·Ïº¸±â
+                <i class="fas fa-users"></i> ì§€ê¸‰ëŒ€ìƒìž ëª©ë¡ë³´ê¸°
               </button>
             </div>
-            <!-- ¿À¸¥ÂÊ: ´Ù¿î·Îµå + ¾÷·Îµå -->
+            <!-- ì˜¤ë¥¸ìª½: ë‹¤ìš´ë¡œë“œ + ì—…ë¡œë“œ -->
             <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
               <button onclick="downloadPrevMonthExcel()" id="pi-prev-download-btn" class="btn btn-success">
-                <i class="fas fa-file-excel"></i> Àü¿ù ÀÓ±Ý´ëÀå ´Ù¿î·Îµå
+                <i class="fas fa-file-excel"></i> ì „ì›” ìž„ê¸ˆëŒ€ìž¥ ë‹¤ìš´ë¡œë“œ
               </button>
               <button onclick="openPIUploadModal()" id="pi-bulk-upload-btn" class="btn btn-danger">
-                <i class="fas fa-upload"></i> ÀüÁ÷¿ø ÀÓ±Ý´ëÀå ¾÷·Îµå
+                <i class="fas fa-upload"></i> ì „ì§ì› ìž„ê¸ˆëŒ€ìž¥ ì—…ë¡œë“œ
               </button>
             </div>
           </div>
         </div>
 
-        <!-- ¦¡¦¡ ÀüÁ÷¿ø ÀÓ±Ý´ëÀå ÀÏ°ý ¾÷·Îµå ¸ð´Þ ¦¡¦¡ -->
+        <!-- â”€â”€ ì „ì§ì› ìž„ê¸ˆëŒ€ìž¥ ì¼ê´„ ì—…ë¡œë“œ ëª¨ë‹¬ â”€â”€ -->
         <div id="pi-upload-modal" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.45);backdrop-filter:blur(3px);align-items:center;justify-content:center;">
           <div style="background:#fff;border-radius:16px;width:560px;max-width:calc(100vw - 32px);max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25);display:flex;flex-direction:column;">
-            <!-- ¸ð´Þ Çì´õ -->
+            <!-- ëª¨ë‹¬ í—¤ë” -->
             <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px 16px;border-bottom:1px solid #f0f0f5;">
               <div style="display:flex;align-items:center;gap:12px;">
                 <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#f59e0b,#d97706);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
                   <i class="fas fa-upload" style="color:#fff;font-size:17px;"></i>
                 </div>
                 <div>
-                  <div style="font-size:15px;font-weight:800;color:#1e1b4b;">ÀüÁ÷¿ø ÀÓ±Ý´ëÀå ÀÏ°ý ¾÷·Îµå</div>
+                  <div style="font-size:15px;font-weight:800;color:#1e1b4b;">ì „ì§ì› ìž„ê¸ˆëŒ€ìž¥ ì¼ê´„ ì—…ë¡œë“œ</div>
                   <div id="pi-upload-modal-sub" style="font-size:12px;color:#6b7280;margin-top:2px;"></div>
                 </div>
               </div>
               <button onclick="closePIUploadModal()" class="btn btn-close"><i class="fas fa-times"></i></button>
             </div>
-            <!-- ¸ð´Þ º»¹® -->
+            <!-- ëª¨ë‹¬ ë³¸ë¬¸ -->
             <div style="padding:24px;">
-              <!-- ¾È³» ¹®±¸ -->
+              <!-- ì•ˆë‚´ ë¬¸êµ¬ -->
               <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:12px;color:#92400e;line-height:1.8;">
                 <i class="fas fa-info-circle" style="color:#f59e0b;margin-right:6px;"></i>
-                <strong>Àü¿ù ÀÓ±Ý´ëÀå ´Ù¿î·Îµå</strong>·Î ¹ÞÀº ¿¢¼¿ ¾ç½ÄÀ» ÀÛ¼ºÇÑ ÈÄ ¾÷·ÎµåÇÏ¼¼¿ä.<br>
-                ÆÄÀÏ¸í Çü½Ä: <code style="background:#fef3c7;padding:1px 6px;border-radius:4px;">[°í°´»ç¸í]_ÀÓ±Ý´ëÀå_YYYY³âMM¿ù.xlsx</code>
+                <strong>ì „ì›” ìž„ê¸ˆëŒ€ìž¥ ë‹¤ìš´ë¡œë“œ</strong>ë¡œ ë°›ì€ ì—‘ì…€ ì–‘ì‹ì„ ìž‘ì„±í•œ í›„ ì—…ë¡œë“œí•˜ì„¸ìš”.<br>
+                íŒŒì¼ëª… í˜•ì‹: <code style="background:#fef3c7;padding:1px 6px;border-radius:4px;">[ê³ ê°ì‚¬ëª…]_ìž„ê¸ˆëŒ€ìž¥_YYYYë…„MMì›”.xlsx</code>
               </div>
-              <!-- µå·¡±×¾Øµå·Ó ¿µ¿ª -->
+              <!-- ë“œëž˜ê·¸ì•¤ë“œë¡­ ì˜ì—­ -->
               <div id="pi-upload-drop-zone"
                 onclick="document.getElementById('pi-upload-file-input').click()"
                 ondragover="event.preventDefault();this.classList.add('pi-upload-dz-over');"
@@ -127,42 +127,42 @@
                 ondrop="event.preventDefault();this.classList.remove('pi-upload-dz-over');handlePIBulkUpload({target:{files:event.dataTransfer.files}})"
                 class="pi-upload-dz">
                 <div class="pi-upload-dz-icon"><i class="fas fa-cloud-upload-alt"></i></div>
-                <div class="pi-upload-dz-text">Å¬¸¯ÇÏ°Å³ª ÆÄÀÏÀ» ¿©±â¿¡ µå·¡±×ÇÏ¼¼¿ä</div>
-                <div class="pi-upload-dz-hint">.xlsx ¡¤ .xls Çü½Ä¸¸ °¡´É</div>
+                <div class="pi-upload-dz-text">í´ë¦­í•˜ê±°ë‚˜ íŒŒì¼ì„ ì—¬ê¸°ì— ë“œëž˜ê·¸í•˜ì„¸ìš”</div>
+                <div class="pi-upload-dz-hint">.xlsx Â· .xls í˜•ì‹ë§Œ ê°€ëŠ¥</div>
                 <div id="pi-upload-file-label" class="pi-upload-dz-label"></div>
               </div>
               <input type="file" id="pi-upload-file-input" accept=".xlsx,.xls" style="display:none;" onchange="handlePIBulkUpload(event)" />
-              <!-- ¾÷·Îµå ÁøÇà Ç¥½Ã -->
+              <!-- ì—…ë¡œë“œ ì§„í–‰ í‘œì‹œ -->
               <div id="pi-upload-progress" style="display:none;margin-top:16px;text-align:center;color:#6b7280;font-size:13px;">
                 <div style="width:36px;height:36px;border:3px solid #e5e7eb;border-top-color:#f59e0b;border-radius:50%;animation:tblSpin .7s linear infinite;margin:0 auto 10px;"></div>
-                ÆÄÀÏ ºÐ¼® Áß¡¦
+                íŒŒì¼ ë¶„ì„ ì¤‘â€¦
               </div>
             </div>
           </div>
         </div>
 
-        <!-- ¨ê Áö±Þ´ë»óÀÚ ¸ñ·Ï Å×ÀÌºí -->
+        <!-- â‘£ ì§€ê¸‰ëŒ€ìƒìž ëª©ë¡ í…Œì´ë¸” -->
         <div id="pi-target-list-section" style="display:none;margin-bottom:16px;">
           <div class="card" style="overflow:hidden;">
             <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #f0f0f5;background:#f8fafc;">
               <div style="display:flex;align-items:center;gap:8px;">
                 <i class="fas fa-users" style="color:#6366f1;font-size:14px;"></i>
-                <span style="font-size:13.5px;font-weight:700;color:#1e1b4b;" id="pi-target-list-title">Áö±Þ´ë»óÀÚ ¸ñ·Ï</span>
+                <span style="font-size:13.5px;font-weight:700;color:#1e1b4b;" id="pi-target-list-title">ì§€ê¸‰ëŒ€ìƒìž ëª©ë¡</span>
                 <span id="pi-target-list-badge" style="background:#eef2ff;color:#4338ca;border:1px solid #c7d2fe;border-radius:12px;padding:2px 10px;font-size:11.5px;"></span>
               </div>
-              <button onclick="hidePITargetList()" class="btn btn-close" title="¸ñ·Ï ´Ý±â"><i class="fas fa-times"></i></button>
+              <button onclick="hidePITargetList()" class="btn btn-close" title="ëª©ë¡ ë‹«ê¸°"><i class="fas fa-times"></i></button>
             </div>
             <div style="overflow-x:auto;">
               <table class="pi-target-table">
                 <thead>
                   <tr class="pi-target-thead">
-                    <th class="pi-target-th pi-target-th-left">Á÷¿ø¸í</th>
-                    <th class="pi-target-th pi-target-th-center">¼ºº°</th>
-                    <th class="pi-target-th pi-target-th-left">°í¿ëÇüÅÂ</th>
-                    <th class="pi-target-th pi-target-th-left">°è¾à±â°£</th>
-                    <th class="pi-target-th pi-target-th-center">°è¾à»óÅÂ</th>
-                    <th class="pi-target-th pi-target-th-center">±Þ¿©ÀÔ·Â ¿©ºÎ</th>
-                    <th class="pi-target-th pi-target-th-center">°ü¸®</th>
+                    <th class="pi-target-th pi-target-th-left">ì§ì›ëª…</th>
+                    <th class="pi-target-th pi-target-th-center">ì„±ë³„</th>
+                    <th class="pi-target-th pi-target-th-left">ê³ ìš©í˜•íƒœ</th>
+                    <th class="pi-target-th pi-target-th-left">ê³„ì•½ê¸°ê°„</th>
+                    <th class="pi-target-th pi-target-th-center">ê³„ì•½ìƒíƒœ</th>
+                    <th class="pi-target-th pi-target-th-center">ê¸‰ì—¬ìž…ë ¥ ì—¬ë¶€</th>
+                    <th class="pi-target-th pi-target-th-center">ê´€ë¦¬</th>
                   </tr>
                 </thead>
                 <tbody id="pi-target-list-body"></tbody>
@@ -171,117 +171,117 @@
           </div>
         </div>
 
-        <!-- ¨ë ±Þ¿© ÀÔ·Â Æû ¼½¼Ç (´ë»óÀÚ ¼±ÅÃ ÈÄ Ç¥½Ã) -->
+        <!-- â‘¤ ê¸‰ì—¬ ìž…ë ¥ í¼ ì„¹ì…˜ (ëŒ€ìƒìž ì„ íƒ í›„ í‘œì‹œ) -->
         <div id="pi-form-section" style="display:none;">
-          <!-- ¼±ÅÃµÈ Á÷¿ø Çì´õ -->
+          <!-- ì„ íƒëœ ì§ì› í—¤ë” -->
           <div id="pi-form-emp-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:10px 16px;background:linear-gradient(90deg,#f0fdf4,#dcfce7);border:1.5px solid #86efac;border-radius:10px;">
-            <div style="display:flex;align-items:center;gap:10px">
+            <div style="display:flex;align-items:center;gap:10px;">
               <i class="fas fa-user-circle" style="color:#16a34a;font-size:18px;"></i>
               <span id="pi-form-emp-name" style="font-size:14px;font-weight:700;color:#15803d;"></span>
               <span id="pi-form-emp-badge" class="badge badge-green"></span>
             </div>
-            <button onclick="backToPITargetList()" class="btn btn-sm btn-success"><i class="fas fa-arrow-left"></i> ¸ñ·ÏÀ¸·Î</button>
+            <button onclick="backToPITargetList()" class="btn btn-sm btn-success"><i class="fas fa-arrow-left"></i> ëª©ë¡ìœ¼ë¡œ</button>
           </div>
 
         <div style="display:grid;grid-template-columns:300px 1fr;gap:20px;">
-          <!-- ÁÂÃø: °è¾àÁ¤º¸ + Áö±ÞÇÕ°è -->
+          <!-- ì¢Œì¸¡: ê³„ì•½ì •ë³´ + ì§€ê¸‰í•©ê³„ -->
           <div style="display:flex;flex-direction:column;gap:16px;">
-            <!-- ¼û±è È£È¯¿ë Á÷¿ø select (±âÁ¸ JS ÂüÁ¶ À¯Áö) -->
-            <select id="pi-employee" onchange="loadPIContract()" style="display:none;"><option value="">Á÷¿ø ¼±ÅÃ</option></select>
+            <!-- ìˆ¨ê¹€ í˜¸í™˜ìš© ì§ì› select (ê¸°ì¡´ JS ì°¸ì¡° ìœ ì§€) -->
+            <select id="pi-employee" onchange="loadPIContract()" style="display:none;"><option value="">ì§ì› ì„ íƒ</option></select>
             <div class="card" id="pi-contract-card" style="display:none;">
-              <div class="card-header"><span class="card-title">?? °è¾à Á¤º¸</span></div>
+              <div class="card-header"><span class="card-title">ðŸ“„ ê³„ì•½ ì •ë³´</span></div>
               <div id="pi-contract-info" style="padding:14px 16px;font-size:12px;color:#555;line-height:2.2;"></div>
             </div>
             <div class="card">
-              <div class="card-header"><span class="card-title">?? Áö±Þ ÇÕ°è</span></div>
+              <div class="card-header"><span class="card-title">ðŸ“Š ì§€ê¸‰ í•©ê³„</span></div>
               <div class="summary-box" style="margin:0;border:none;border-radius:0;">
-                <div class="summary-row-item"><span style="color:#666;">Áö±Þ ÃÑ¾×</span><span class="amount-blue" id="pi-gross-disp">0¿ø</span></div>
-                <div class="summary-row-item"><span style="color:#666;">°øÁ¦ ÇÕ°è</span><span class="amount-red" id="pi-ded-disp">0¿ø</span></div>
-                <div class="summary-row-item total"><span>¿µ¼ö¾× (½Ç¼ö·É)</span><span style="color:#e94560;" id="pi-net-disp">0¿ø</span></div>
+                <div class="summary-row-item"><span style="color:#666;">ì§€ê¸‰ ì´ì•¡</span><span class="amount-blue" id="pi-gross-disp">0ì›</span></div>
+                <div class="summary-row-item"><span style="color:#666;">ê³µì œ í•©ê³„</span><span class="amount-red" id="pi-ded-disp">0ì›</span></div>
+                <div class="summary-row-item total"><span>ì˜ìˆ˜ì•¡ (ì‹¤ìˆ˜ë ¹)</span><span style="color:#e94560;" id="pi-net-disp">0ì›</span></div>
               </div>
             </div>
           </div>
-          <!-- ¿ìÃø: ±Þ¿© Ç×¸ñ ÀÔ·Â Æû -->
+          <!-- ìš°ì¸¡: ê¸‰ì—¬ í•­ëª© ìž…ë ¥ í¼ -->
           <div class="card">
-            <div class="card-header"><span class="card-title">?? ±Þ¿© Ç×¸ñ ÀÔ·Â</span></div>
-            <!-- ¼ö½À ¸¸·áÀÏ ÃÊ°ú °æ°í ¹è³Ê (¼ö½À °è¾à¿¡¼­ ÇØ´ç ¿ùÀÌ ¼ö½À Á¾·áÀÏÀ» ³Ñ±ä °æ¿ì) -->
-            <!-- ?? ¼ö½À ¸¸·á °æ°í ¹è³Ê (ÄÉÀÌ½º¨ç: ÀüÃ¼ ÃÊ°ú / ÄÉÀÌ½º¨è: ¿ù Áß°£ ºÐ¸® ÀÔ·Â) ?? -->
+            <div class="card-header"><span class="card-title">ðŸ’° ê¸‰ì—¬ í•­ëª© ìž…ë ¥</span></div>
+            <!-- ìˆ˜ìŠµ ë§Œë£Œì¼ ì´ˆê³¼ ê²½ê³  ë°°ë„ˆ (ìˆ˜ìŠµ ê³„ì•½ì—ì„œ í•´ë‹¹ ì›”ì´ ìˆ˜ìŠµ ì¢…ë£Œì¼ì„ ë„˜ê¸´ ê²½ìš°) -->
+            <!-- â•â• ìˆ˜ìŠµ ë§Œë£Œ ê²½ê³  ë°°ë„ˆ (ì¼€ì´ìŠ¤â‘ : ì „ì²´ ì´ˆê³¼ / ì¼€ì´ìŠ¤â‘¡: ì›” ì¤‘ê°„ ë¶„ë¦¬ ìž…ë ¥) â•â• -->
             <div id="pi-prob-overrun-banner" style="display:none;margin:0;border-bottom:2px solid #fca5a5;border-radius:0;">
 
-              <!-- ¦¡¦¡ ÄÉÀÌ½º¨ç : ÇØ´ç ¿ù ÀüÃ¼°¡ ¼ö½À ¸¸·á ÀÌÈÄ (ÀúÀå Â÷´Ü) ¦¡¦¡ -->
+              <!-- â”€â”€ ì¼€ì´ìŠ¤â‘  : í•´ë‹¹ ì›” ì „ì²´ê°€ ìˆ˜ìŠµ ë§Œë£Œ ì´í›„ (ì €ìž¥ ì°¨ë‹¨) â”€â”€ -->
               <div id="pi-prob-case1-panel" style="display:none;padding:14px 18px;background:linear-gradient(90deg,#fff1f2,#fef2f2);">
                 <div style="display:flex;align-items:flex-start;gap:10px;">
                   <i class="fas fa-ban" style="color:#dc2626;font-size:18px;margin-top:1px;flex-shrink:0;"></i>
                   <div style="flex:1;">
                     <div style="font-size:13px;font-weight:800;color:#b91c1c;margin-bottom:4px;">
-                      ? ¼ö½À ±â°£ ÀüÃ¼ ÃÊ°ú ? Ã¤¿ëÈ®Á¤ °è¾àÀ¸·Î ±Þ¿©¸¦ ÀúÀåÇØ¾ß ÇÕ´Ï´Ù
+                      â›” ìˆ˜ìŠµ ê¸°ê°„ ì „ì²´ ì´ˆê³¼ â€” ì±„ìš©í™•ì • ê³„ì•½ìœ¼ë¡œ ê¸‰ì—¬ë¥¼ ì €ìž¥í•´ì•¼ í•©ë‹ˆë‹¤
                     </div>
                     <div id="pi-prob-overrun-detail" style="font-size:12px;color:#7f1d1d;line-height:1.8;"></div>
                     <div style="margin-top:8px;padding:8px 10px;background:#fef2f2;border:1px dashed #fca5a5;border-radius:7px;font-size:11.5px;color:#991b1b;line-height:1.6;">
                       <i class="fas fa-info-circle" style="margin-right:4px;color:#dc2626;"></i>
-                      ¼ö½ÀÀÌ ¸¸·áµÈ ÀÌÈÄ ´ÞÀÇ ±Þ¿©´Â <strong>Ã¤¿ëÈ®Á¤ ±Ù·Î°è¾à ±âÁØ</strong>À¸·Î ÀúÀåÇØ¾ß ÇÕ´Ï´Ù.<br>
-                      ¾Æ·¡ <strong style="color:#7c3aed;">[Ã¤¿ëÈ®Á¤ °è¾à ÀÚµ¿ »ý¼º]</strong> ¹öÆ°À» Å¬¸¯ÇÏ¸é ¼ö½À °è¾àÀ» ±â¹ÝÀ¸·Î
-                      Ã¤¿ëÈ®Á¤ °è¾à¼­(Á¤±ÔÁ÷¡¤°è¾àÁ÷)¸¦ ÀÚµ¿À¸·Î »ý¼ºÇÏ°í, ÀÌ ±Þ¿©µµ ÇÔ²² Ã³¸®ÇÕ´Ï´Ù.
+                      ìˆ˜ìŠµì´ ë§Œë£Œëœ ì´í›„ ë‹¬ì˜ ê¸‰ì—¬ëŠ” <strong>ì±„ìš©í™•ì • ê·¼ë¡œê³„ì•½ ê¸°ì¤€</strong>ìœ¼ë¡œ ì €ìž¥í•´ì•¼ í•©ë‹ˆë‹¤.<br>
+                      ì•„ëž˜ <strong style="color:#7c3aed;">[ì±„ìš©í™•ì • ê³„ì•½ ìžë™ ìƒì„±]</strong> ë²„íŠ¼ì„ í´ë¦­í•˜ë©´ ìˆ˜ìŠµ ê³„ì•½ì„ ê¸°ë°˜ìœ¼ë¡œ
+                      ì±„ìš©í™•ì • ê³„ì•½ì„œ(ì •ê·œì§Â·ê³„ì•½ì§)ë¥¼ ìžë™ìœ¼ë¡œ ìƒì„±í•˜ê³ , ì´ ê¸‰ì—¬ë„ í•¨ê»˜ ì²˜ë¦¬í•©ë‹ˆë‹¤.
                     </div>
                     <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
                       <button onclick="_probAutoCreateAndSave()" class="btn btn-indigo btn-sm">
-                        <i class="fas fa-magic"></i> Ã¤¿ëÈ®Á¤ °è¾à ÀÚµ¿ »ý¼º ÈÄ ÀúÀå
+                        <i class="fas fa-magic"></i> ì±„ìš©í™•ì • ê³„ì•½ ìžë™ ìƒì„± í›„ ì €ìž¥
                       </button>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <!-- ¦¡¦¡ ÄÉÀÌ½º¨è : ¿ù Áß°£¿¡ ¼ö½À ¸¸·á (ºÐ¸® ÀÔ·Â UI) ¦¡¦¡ -->
+              <!-- â”€â”€ ì¼€ì´ìŠ¤â‘¡ : ì›” ì¤‘ê°„ì— ìˆ˜ìŠµ ë§Œë£Œ (ë¶„ë¦¬ ìž…ë ¥ UI) â”€â”€ -->
               <div id="pi-prob-case2-panel" style="display:none;padding:14px 18px;background:linear-gradient(90deg,#fffbeb,#fefce8);border-bottom:1px solid #fcd34d;">
                 <div style="display:flex;align-items:flex-start;gap:10px;">
                   <i class="fas fa-cut" style="color:#d97706;font-size:18px;margin-top:1px;flex-shrink:0;"></i>
                   <div style="flex:1;">
                     <div style="font-size:13px;font-weight:800;color:#92400e;margin-bottom:6px;">
-                      ?? ¼ö½À ¸¸·áÀÏÀÌ ÀÌ ´Þ Áß°£ ? ¼ö½À ±â°£ / Ã¤¿ëÈ®Á¤ ±â°£À» ºÐ¸®ÇÏ¿© ÀúÀåÇÕ´Ï´Ù
+                      âœ‚ï¸ ìˆ˜ìŠµ ë§Œë£Œì¼ì´ ì´ ë‹¬ ì¤‘ê°„ â€” ìˆ˜ìŠµ ê¸°ê°„ / ì±„ìš©í™•ì • ê¸°ê°„ì„ ë¶„ë¦¬í•˜ì—¬ ì €ìž¥í•©ë‹ˆë‹¤
                     </div>
                     <div id="pi-prob-split-info" style="font-size:12px;color:#78350f;line-height:1.9;margin-bottom:8px;"></div>
-                    <!-- ºÐ¸® ±Ù·ÎÀÏ¼ö ÀÔ·Â -->
+                    <!-- ë¶„ë¦¬ ê·¼ë¡œì¼ìˆ˜ ìž…ë ¥ -->
                     <div style="background:#fff;border:1.5px solid #fcd34d;border-radius:8px;padding:12px 14px;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
                       <div>
                         <div style="font-size:11px;font-weight:700;color:#d97706;margin-bottom:4px;">
-                          ?? ¼ö½À ±â°£ ±Ù·ÎÀÏ¼ö <span id="pi-prob-split-prob-dates" style="font-weight:400;color:#6b7280;"></span>
+                          ðŸŸ¡ ìˆ˜ìŠµ ê¸°ê°„ ê·¼ë¡œì¼ìˆ˜ <span id="pi-prob-split-prob-dates" style="font-weight:400;color:#6b7280;"></span>
                         </div>
                         <input id="pi-prob-wd-prob" type="number" min="0" step="1" value="0"
                           style="width:100%;padding:7px 10px;border:1.5px solid #fcd34d;border-radius:6px;font-size:13px;font-weight:700;text-align:center;"
-                          oninput="_onProbSplitInputChange()" placeholder="¼ö½À ±Ù·ÎÀÏ¼ö">
+                          oninput="_onProbSplitInputChange()" placeholder="ìˆ˜ìŠµ ê·¼ë¡œì¼ìˆ˜">
                         <div style="font-size:11px;color:#92400e;margin-top:3px;">
-                          ÃÑ±Ù·Î½Ã°£: <input id="pi-prob-wh-prob" type="number" min="0" step="0.5" value="0"
+                          ì´ê·¼ë¡œì‹œê°„: <input id="pi-prob-wh-prob" type="number" min="0" step="0.5" value="0"
                             style="width:80px;padding:4px 6px;border:1px solid #fcd34d;border-radius:4px;font-size:12px;"
                             oninput="_onProbSplitInputChange()"> h
                         </div>
                       </div>
                       <div>
                         <div style="font-size:11px;font-weight:700;color:#2563eb;margin-bottom:4px;">
-                          ?? Ã¤¿ëÈ®Á¤ ±â°£ ±Ù·ÎÀÏ¼ö <span id="pi-prob-split-post-dates" style="font-weight:400;color:#6b7280;"></span>
+                          ðŸ”µ ì±„ìš©í™•ì • ê¸°ê°„ ê·¼ë¡œì¼ìˆ˜ <span id="pi-prob-split-post-dates" style="font-weight:400;color:#6b7280;"></span>
                         </div>
                         <input id="pi-prob-wd-post" type="number" min="0" step="1" value="0"
                           style="width:100%;padding:7px 10px;border:1.5px solid #93c5fd;border-radius:6px;font-size:13px;font-weight:700;text-align:center;"
-                          oninput="_onProbSplitInputChange()" placeholder="È®Á¤ ±Ù·ÎÀÏ¼ö">
+                          oninput="_onProbSplitInputChange()" placeholder="í™•ì • ê·¼ë¡œì¼ìˆ˜">
                         <div style="font-size:11px;color:#1d4ed8;margin-top:3px;">
-                          ÃÑ±Ù·Î½Ã°£: <input id="pi-prob-wh-post" type="number" min="0" step="0.5" value="0"
+                          ì´ê·¼ë¡œì‹œê°„: <input id="pi-prob-wh-post" type="number" min="0" step="0.5" value="0"
                             style="width:80px;padding:4px 6px;border:1px solid #93c5fd;border-radius:4px;font-size:12px;"
                             oninput="_onProbSplitInputChange()"> h
                         </div>
                       </div>
                     </div>
-                    <!-- ÇÕ°è Ç¥½Ã -->
+                    <!-- í•©ê³„ í‘œì‹œ -->
                     <div id="pi-prob-split-total-check" style="margin-top:6px;font-size:12px;color:#374151;"></div>
-                    <!-- ºÐ¸® ÀúÀå ¹öÆ° -->
+                    <!-- ë¶„ë¦¬ ì €ìž¥ ë²„íŠ¼ -->
                     <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
                       <button id="pi-prob-split-save-btn" onclick="savePISplit()" disabled
                         class="btn btn-warning btn-sm"
                         style="display:inline-flex;align-items:center;gap:6px;">
-                        <i class="fas fa-cut"></i> ¼ö½À / Ã¤¿ëÈ®Á¤ ºÐ¸® ÀúÀå (2°Ç)
+                        <i class="fas fa-cut"></i> ìˆ˜ìŠµ / ì±„ìš©í™•ì • ë¶„ë¦¬ ì €ìž¥ (2ê±´)
                       </button>
                       <span style="font-size:11px;color:#6b7280;">
                         <i class="fas fa-info-circle"></i>
-                        ÀúÀå ½Ã Ã¤¿ëÈ®Á¤ °è¾à¼­°¡ ÀÚµ¿ »ý¼ºµÇ°í Á÷¿ø °í¿ëÇüÅÂ°¡ º¯°æµË´Ï´Ù.
+                        ì €ìž¥ ì‹œ ì±„ìš©í™•ì • ê³„ì•½ì„œê°€ ìžë™ ìƒì„±ë˜ê³  ì§ì› ê³ ìš©í˜•íƒœê°€ ë³€ê²½ë©ë‹ˆë‹¤.
                       </span>
                     </div>
                   </div>
@@ -289,57 +289,57 @@
               </div>
             </div>
             <div style="padding:20px;display:grid;grid-template-columns:1fr 1fr;gap:24px;">
-            <!-- Áö±Þ -->
+            <!-- ì§€ê¸‰ -->
             <div>
-              <!-- ?? »êÁ¤±âÁØ (ÃÖ»ó´Ü Ã¹ ¹øÂ° ¼½¼Ç) ?? -->
+              <!-- â•â• ì‚°ì •ê¸°ì¤€ (ìµœìƒë‹¨ ì²« ë²ˆì§¸ ì„¹ì…˜) â•â• -->
               <div class="pi-section-title" style="background:#f8faff;border:1.5px solid #c7d2f0;border-radius:7px;padding:6px 10px;margin-bottom:8px;color:#4338ca;">
-                <i class="fas fa-calendar-alt"></i> »êÁ¤±âÁØ
+                <i class="fas fa-calendar-alt"></i> ì‚°ì •ê¸°ì¤€
               </div>
-              <!-- Áö±ÞÀÏ -->
+              <!-- ì§€ê¸‰ì¼ -->
               <div class="pi-row">
                 <label style="display:flex;align-items:center;gap:5px;">
-                  Áö±ÞÀÏ
+                  ì§€ê¸‰ì¼
                   <span id="pi-paydate-badge" style="display:none;font-size:10px;font-weight:400;color:#6b7280;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:4px;padding:1px 6px;"></span>
                 </label>
                 <input type="date" id="pi-paydate" class="w-200" />
               </div>
-              <!-- ±Þ¿© »êÁ¤±â°£: °è¾à¼­¿¡ ÀÔ·ÂµÈ °ª readonly Ç¥½Ã -->
+              <!-- ê¸‰ì—¬ ì‚°ì •ê¸°ê°„: ê³„ì•½ì„œì— ìž…ë ¥ëœ ê°’ readonly í‘œì‹œ -->
               <div class="pi-row" id="pi-row-pay-period-disp">
-                <label>±Þ¿© »êÁ¤±â°£</label>
+                <label>ê¸‰ì—¬ ì‚°ì •ê¸°ê°„</label>
                 <div style="display:flex;align-items:center;gap:6px;">
                   <input type="text" id="pi-pay-period" readonly
                     style="width:200px;background:#f9fafb;color:#374151;border:1px solid #e5e7eb;border-radius:6px;padding:5px 10px;font-size:12.5px;cursor:default;"
-                    placeholder="°è¾à¼­ ¹ÌÀÔ·Â" />
+                    placeholder="ê³„ì•½ì„œ ë¯¸ìž…ë ¥" />
                 </div>
               </div>
-              <!-- ±Þ¿© »êÁ¤±â°£ ¼öµ¿ ÀÔ·Â (°è¾à ¾ø´Â ´ëÇ¥ÀÚ/µî±âÀÓ¿ø/Æ¯¼ö°ü°èÀÎ Àü¿ë) -->
+              <!-- ê¸‰ì—¬ ì‚°ì •ê¸°ê°„ ìˆ˜ë™ ìž…ë ¥ (ê³„ì•½ ì—†ëŠ” ëŒ€í‘œìž/ë“±ê¸°ìž„ì›/íŠ¹ìˆ˜ê´€ê³„ì¸ ì „ìš©) -->
               <div class="pi-row" id="pi-row-pay-period-input" style="display:none;">
-                <label>±Þ¿© »êÁ¤±â°£ <span style="font-size:10px;font-weight:400;color:#f59e0b;">(Á÷Á¢ ÀÔ·Â)</span></label>
+                <label>ê¸‰ì—¬ ì‚°ì •ê¸°ê°„ <span style="font-size:10px;font-weight:400;color:#f59e0b;">(ì§ì ‘ ìž…ë ¥)</span></label>
                 <div style="display:flex;align-items:center;gap:6px;">
                   <input type="date" id="pi-pay-period-start" class="w-130" />
                   <span style="color:#9ca3af;">~</span>
                   <input type="date" id="pi-pay-period-end" class="w-130" />
                 </div>
               </div>
-              <!-- ¿¬Â÷ »ç¿ë³»¿ª (ÀÌ¹ø´Þ) -->
+              <!-- ì—°ì°¨ ì‚¬ìš©ë‚´ì—­ (ì´ë²ˆë‹¬) -->
               <div class="pi-row" id="pi-row-annual-detail">
-                <label>¿¬Â÷ »ç¿ë³»¿ª</label>
+                <label>ì—°ì°¨ ì‚¬ìš©ë‚´ì—­</label>
                 <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
                   <span id="pi-annual-detail-text" style="font-size:12px;color:#6b7280;">-</span>
                   <button type="button" class="btn btn-sm btn-warning" onclick="_openLedgerFromPayroll()"
                     style="padding:4px 10px;font-size:11px;">
-                    <i class="fas fa-clipboard-list"></i> °ü¸®
+                    <i class="fas fa-clipboard-list"></i> ê´€ë¦¬
                   </button>
                 </div>
               </div>
-              <!-- ±ÙÅÂ °ü¸® (°á±Ù¡¤Áö°¢¡¤Á¶Åð) ? ±ÙÅÂ °ü¸®´ëÀå ¸ð´Þ¿¡¼­ ÀÔ·Â -->
+              <!-- ê·¼íƒœ ê´€ë¦¬ (ê²°ê·¼Â·ì§€ê°Â·ì¡°í‡´) â€” ê·¼íƒœ ê´€ë¦¬ëŒ€ìž¥ ëª¨ë‹¬ì—ì„œ ìž…ë ¥ -->
               <div class="pi-row" id="pi-row-attendance">
-                <label>±ÙÅÂ °ü¸®</label>
+                <label>ê·¼íƒœ ê´€ë¦¬</label>
                 <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
                   <span id="pi-attendance-summary" style="font-size:12px;color:#6b7280;">-</span>
                   <button type="button" class="btn btn-sm btn-warning" onclick="_openAttendanceLedgerFromPayroll()"
                     style="padding:4px 10px;font-size:11px;">
-                    <i class="fas fa-clipboard-check"></i> °ü¸®
+                    <i class="fas fa-clipboard-check"></i> ê´€ë¦¬
                   </button>
                 </div>
                 <input type="hidden" id="pi-absent-dates" value="" />
@@ -347,75 +347,75 @@
                 <input type="hidden" id="pi-earlyleave-data" value="[]" />
                 <input type="hidden" id="pi-late-data" value="[]" />
               </div>
-              <!-- Åë»ó½Ã±Þ: °è¾à¼­ hourly_wage readonly Ç¥½Ã -->
+              <!-- í†µìƒì‹œê¸‰: ê³„ì•½ì„œ hourly_wage readonly í‘œì‹œ -->
               <div class="pi-row" id="pi-row-hourly-wage-disp">
-                <label>Åë»ó½Ã±Þ</label>
+                <label>í†µìƒì‹œê¸‰</label>
                 <div style="display:flex;align-items:center;gap:4px;">
                   <span id="pi-hourly-wage-disp"
                     style="font-size:13px;font-weight:600;color:#1d4ed8;">-</span>
                   <span style="font-size:11px;color:#9ca3af;">/h</span>
                 </div>
               </div>
-              <!-- Åë»ó½Ã±Þ ¼öµ¿ ÀÔ·Â (°è¾à ¾ø´Â ´ëÇ¥ÀÚ/µî±âÀÓ¿ø/Æ¯¼ö°ü°èÀÎ Àü¿ë) -->
+              <!-- í†µìƒì‹œê¸‰ ìˆ˜ë™ ìž…ë ¥ (ê³„ì•½ ì—†ëŠ” ëŒ€í‘œìž/ë“±ê¸°ìž„ì›/íŠ¹ìˆ˜ê´€ê³„ì¸ ì „ìš©) -->
               <div class="pi-row" id="pi-row-hourly-wage-input" style="display:none;">
-                <label>Åë»ó½Ã±Þ <span style="font-size:10px;font-weight:400;color:#f59e0b;">(Á÷Á¢ ÀÔ·Â)</span></label>
+                <label>í†µìƒì‹œê¸‰ <span style="font-size:10px;font-weight:400;color:#f59e0b;">(ì§ì ‘ ìž…ë ¥)</span></label>
                 <div style="display:flex;align-items:center;gap:4px;">
                   <input type="number" id="pi-hourly-wage-input" min="0" step="1" value="0"
                     style="width:120px;padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;font-weight:600;"
-                    oninput="calcPI()" placeholder="½Ã±Þ ÀÔ·Â" />
+                    oninput="calcPI()" placeholder="ì‹œê¸‰ ìž…ë ¥" />
                   <span style="font-size:11px;color:#9ca3af;">/h</span>
                 </div>
               </div>
-              <!-- °íÁ¤ ¿¬Àå/¾ß°£/ÈÞÀÏ±Ù·Î¼ö´ç: °è¾à¼­¿¡¼­ ÀÚµ¿ Ç¥½Ã (readonly) -->
+              <!-- ê³ ì • ì—°ìž¥/ì•¼ê°„/íœ´ì¼ê·¼ë¡œìˆ˜ë‹¹: ê³„ì•½ì„œì—ì„œ ìžë™ í‘œì‹œ (readonly) -->
               <div class="pi-row" id="pi-row-fixed-ot-disp" style="display:none;">
-                <label style="color:#7c3aed;">°íÁ¤ ¿¬Àå±Ù·Î¼ö´ç</label>
-                <span id="pi-fixed-ot-pay-disp" style="font-size:13px;font-weight:600;color:#7c3aed;">0¿ø</span>
+                <label style="color:#7c3aed;">ê³ ì • ì—°ìž¥ê·¼ë¡œìˆ˜ë‹¹</label>
+                <span id="pi-fixed-ot-pay-disp" style="font-size:13px;font-weight:600;color:#7c3aed;">0ì›</span>
               </div>
               <div class="pi-row" id="pi-row-fixed-night-disp" style="display:none;">
-                <label style="color:#7c3aed;">°íÁ¤ ¾ß°£±Ù·Î¼ö´ç</label>
-                <span id="pi-fixed-night-pay-disp" style="font-size:13px;font-weight:600;color:#7c3aed;">0¿ø</span>
+                <label style="color:#7c3aed;">ê³ ì • ì•¼ê°„ê·¼ë¡œìˆ˜ë‹¹</label>
+                <span id="pi-fixed-night-pay-disp" style="font-size:13px;font-weight:600;color:#7c3aed;">0ì›</span>
               </div>
               <div class="pi-row" id="pi-row-fixed-hol-disp" style="display:none;">
-                <label style="color:#7c3aed;">°íÁ¤ ÈÞÀÏ±Ù·Î¼ö´ç</label>
-                <span id="pi-fixed-hol-pay-disp" style="font-size:13px;font-weight:600;color:#7c3aed;">0¿ø</span>
+                <label style="color:#7c3aed;">ê³ ì • íœ´ì¼ê·¼ë¡œìˆ˜ë‹¹</label>
+                <span id="pi-fixed-hol-pay-disp" style="font-size:13px;font-weight:600;color:#7c3aed;">0ì›</span>
               </div>
-              <!-- °ú¼¼ ±âÁØ ºÎ¾ç°¡Á· ¼ö (Á÷¿ø Á¤º¸¿¡¼­ ÀÚµ¿ ¹Ý¿µ) -->
+              <!-- ê³¼ì„¸ ê¸°ì¤€ ë¶€ì–‘ê°€ì¡± ìˆ˜ (ì§ì› ì •ë³´ì—ì„œ ìžë™ ë°˜ì˜) -->
               <div class="pi-row" id="pi-row-tax-dependents-disp">
-                <label>°ú¼¼ ±âÁØ ºÎ¾ç°¡Á· ¼ö <span style="font-size:10px;font-weight:400;color:#9ca3af;">(º»ÀÎ Æ÷ÇÔ)</span></label>
-                <span id="pi-tax-dependents-disp" style="font-size:13px;font-weight:600;color:#374151;">1ÀÎ</span>
+                <label>ê³¼ì„¸ ê¸°ì¤€ ë¶€ì–‘ê°€ì¡± ìˆ˜ <span style="font-size:10px;font-weight:400;color:#9ca3af;">(ë³¸ì¸ í¬í•¨)</span></label>
+                <span id="pi-tax-dependents-disp" style="font-size:13px;font-weight:600;color:#374151;">1ì¸</span>
               </div>
-              <!-- °ú¼¼ ±âÁØ ºÎ¾ç°¡Á· ¼ö ¼öµ¿ ÀÔ·Â (°è¾à ¾ø´Â ´ëÇ¥ÀÚ/µî±âÀÓ¿ø/Æ¯¼ö°ü°èÀÎ Àü¿ë) -->
+              <!-- ê³¼ì„¸ ê¸°ì¤€ ë¶€ì–‘ê°€ì¡± ìˆ˜ ìˆ˜ë™ ìž…ë ¥ (ê³„ì•½ ì—†ëŠ” ëŒ€í‘œìž/ë“±ê¸°ìž„ì›/íŠ¹ìˆ˜ê´€ê³„ì¸ ì „ìš©) -->
               <div class="pi-row" id="pi-row-tax-dependents-input" style="display:none;">
-                <label>°ú¼¼ ±âÁØ ºÎ¾ç°¡Á· ¼ö <span style="font-size:10px;font-weight:400;color:#f59e0b;">(Á÷Á¢ ÀÔ·Â)</span> <span style="font-size:10px;font-weight:400;color:#9ca3af;">(º»ÀÎ Æ÷ÇÔ)</span></label>
+                <label>ê³¼ì„¸ ê¸°ì¤€ ë¶€ì–‘ê°€ì¡± ìˆ˜ <span style="font-size:10px;font-weight:400;color:#f59e0b;">(ì§ì ‘ ìž…ë ¥)</span> <span style="font-size:10px;font-weight:400;color:#9ca3af;">(ë³¸ì¸ í¬í•¨)</span></label>
                 <div style="display:flex;align-items:center;gap:4px;">
                   <input type="number" id="pi-tax-dependents-input" min="1" max="11" step="1" value="1"
                     style="width:80px;padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;font-weight:600;"
                     oninput="_onPITaxDependentsChange()" />
-                  <span style="font-size:11px;color:#9ca3af;">ÀÎ</span>
+                  <span style="font-size:11px;color:#9ca3af;">ì¸</span>
                 </div>
               </div>
-              <!-- ?? ±Ù·Î ½ÇÀû ?? -->
-              <div class="pi-section-title green" class="pi-section-title-mt"><i class="fas fa-clipboard-list"></i> ±Ù·Î ½ÇÀû</div>
+              <!-- â•â• ê·¼ë¡œ ì‹¤ì  â•â• -->
+              <div class="pi-section-title green" style="margin-top:14px;"><i class="fas fa-clipboard-list"></i> ê·¼ë¡œ ì‹¤ì </div>
               <div class="pi-row">
-                <label>±Ù·ÎÀÏ¼ö <span style="font-size:10px;font-weight:400;color:#888;">(½ÇÁ¦)</span></label>
-                <div style="display:flex;align-items:center;gap:3px;"><input type="number" id="pi-work-days" placeholder="0" min="0" step="0.5" oninput="calcPIWorkActual()" class="pi-num-input" /><span style="font-size:11px;color:#888;">ÀÏ</span></div>
+                <label>ê·¼ë¡œì¼ìˆ˜ <span style="font-size:10px;font-weight:400;color:#888;">(ì‹¤ì œ)</span></label>
+                <div style="display:flex;align-items:center;gap:3px;"><input type="number" id="pi-work-days" placeholder="0" min="0" step="0.5" oninput="calcPIWorkActual()" class="pi-num-input" /><span style="font-size:11px;color:#888;">ì¼</span></div>
               </div>
-              <!-- ±Ù·ÎÀÏ¼ö¡¤½Ã°£ ÀÚµ¿ÀÔ·Â ¾È³» ¹èÁö -->
+              <!-- ê·¼ë¡œì¼ìˆ˜Â·ì‹œê°„ ìžë™ìž…ë ¥ ì•ˆë‚´ ë°°ì§€ -->
               <div id="pi-workdays-auto-label" style="display:none;margin:-4px 0 6px 0;padding:4px 9px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:5px;font-size:10.5px;color:#2563eb;line-height:1.5;"></div>
               <div class="pi-row">
-                <label>Ãß°¡ ¿¬Àå±Ù·Î ½Ã°£</label>
+                <label>ì¶”ê°€ ì—°ìž¥ê·¼ë¡œ ì‹œê°„</label>
                 <div style="display:flex;align-items:center;gap:3px;"><input type="number" id="pi-ot-hours" placeholder="0" min="0" step="0.5" oninput="calcPITotalHours();calcPI();" class="pi-num-input" /><span style="font-size:11px;color:#888;">h</span></div>
               </div>
               <div class="pi-row">
-                <label>Ãß°¡ ¾ß°£±Ù·Î ½Ã°£</label>
+                <label>ì¶”ê°€ ì•¼ê°„ê·¼ë¡œ ì‹œê°„</label>
                 <div style="display:flex;align-items:center;gap:3px;"><input type="number" id="pi-night-hours" placeholder="0" min="0" step="0.5" oninput="calcPITotalHours();calcPI();" class="pi-num-input" /><span style="font-size:11px;color:#888;">h</span></div>
               </div>
               <div class="pi-row">
-                <label>Ãß°¡ ÈÞÀÏ±Ù·Î ½Ã°£</label>
+                <label>ì¶”ê°€ íœ´ì¼ê·¼ë¡œ ì‹œê°„</label>
                 <div style="display:flex;align-items:center;gap:3px;"><input type="number" id="pi-hol-hours" placeholder="0" min="0" step="0.5" oninput="calcPITotalHours();calcPI();" class="pi-num-input" /><span style="font-size:11px;color:#888;">h</span></div>
               </div>
               <div class="pi-row">
-                <label>ÃÑ ±Ù·Î½Ã°£ <span class="pi-auto-badge">ÀÚµ¿°è»ê</span></label>
+                <label>ì´ ê·¼ë¡œì‹œê°„ <span class="pi-auto-badge">ìžë™ê³„ì‚°</span></label>
                 <div style="display:flex;align-items:center;gap:3px;">
                   <input type="number" id="pi-total-hours" placeholder="0" min="0" step="0.5"
                          class="pi-total-hours-auto" readonly tabindex="-1"
@@ -423,290 +423,285 @@
                   <span style="font-size:11px;color:#888;">h</span>
                 </div>
               </div>
-              <!-- 5ÀÎ ¹Ì¸¸/ÀÌ»ó »ç¾÷Àå ÆÇÁ¤ ¾È³» ¹èÁö -->
+              <!-- 5ì¸ ë¯¸ë§Œ/ì´ìƒ ì‚¬ì—…ìž¥ íŒì • ì•ˆë‚´ ë°°ì§€ -->
               <div id="pi-small-firm-badge" style="display:none;margin-top:6px;margin-bottom:4px;padding:6px 10px;border-radius:7px;font-size:11px;line-height:1.7;background:#fffbeb;border:1px solid #fde68a;"></div>
-              <!-- ±Ù·Î ½ÇÀû ÀÚµ¿ »êÃâ °á°ú ÆÐ³Î -->
+              <!-- ê·¼ë¡œ ì‹¤ì  ìžë™ ì‚°ì¶œ ê²°ê³¼ íŒ¨ë„ -->
               <div id="pi-work-auto-panel" style="display:none;margin-top:8px;margin-bottom:4px;background:#f8faff;border:1px solid #c7d2f0;border-radius:8px;padding:10px 12px;">
                 <div style="font-size:11.5px;font-weight:700;color:#4f46e5;margin-bottom:7px;display:flex;align-items:center;gap:5px;">
-                  <i class="fas fa-calculator" style="font-size:11px;"></i> ±Ù·Î ½ÇÀû ±â¹Ý ÀÚµ¿ »êÃâ
-                  <span style="font-size:10px;font-weight:400;color:#818cf8;">(°è¾à ÂüÁ¶)</span>
+                  <i class="fas fa-calculator" style="font-size:11px;"></i> ê·¼ë¡œ ì‹¤ì  ê¸°ë°˜ ìžë™ ì‚°ì¶œ
+                  <span style="font-size:10px;font-weight:400;color:#818cf8;">(ê³„ì•½ ì°¸ì¡°)</span>
                 </div>
-                <!-- ±âº»±Þ ÀÏÇÒ °è»ê -->
-                <div class="pi-row pi-auto-row pi-auto-row-purple">
-                  <label style="color:#4338ca;font-size:12px;">±âº»±Þ</label>
+                <!-- ê¸°ë³¸ê¸‰ ì¼í•  ê³„ì‚° -->
+                <div class="pi-row" class="pi-auto-row pi-auto-row-purple">
+                  <label style="color:#4338ca;font-size:12px;">ê¸°ë³¸ê¸‰</label>
                   <span class="pi-val" id="pi-base-daily-disp" style="color:#4338ca;font-size:12px;">-</span>
                 </div>
-                <!-- ÁÖÈÞ¼ö´ç ÀÚµ¿°è»ê -->
-                <div class="pi-row pi-auto-row pi-auto-row-purple">
-                  <label style="color:#4338ca;font-size:12px;">ÁÖÈÞ¼ö´ç</label>
+                <!-- ì£¼íœ´ìˆ˜ë‹¹ ìžë™ê³„ì‚° -->
+                <div class="pi-row" class="pi-auto-row pi-auto-row-purple">
+                  <label style="color:#4338ca;font-size:12px;">ì£¼íœ´ìˆ˜ë‹¹</label>
                   <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;">
-                    <span class="pi-val" id="pi-weekly-hol-disp" style="color:#4338ca;font-size:12px;">0¿ø</span>
+                    <span class="pi-val" id="pi-weekly-hol-disp" style="color:#4338ca;font-size:12px;">0ì›</span>
                     <span id="pi-weekly-hol-desc" class="pi-weekly-hol-desc"></span>
                   </div>
                 </div>
-                <!-- °íÁ¤ ¼ö´ç (±Ù¹«½Ã°£Ç¥ ±âÁØ) -->
-                <div class="pi-row pi-auto-row pi-auto-row-indigo">
-                  <label style="color:#4338ca;font-size:11.5px;">°íÁ¤ ¿¬Àå±Ù·Î¼ö´ç</label>
-                  <span class="pi-val" id="pi-fixed-ot-pay-disp" style="color:#4338ca;font-size:11.5px;">0¿ø</span>
+                <!-- ê³ ì • ìˆ˜ë‹¹ (ê·¼ë¬´ì‹œê°„í‘œ ê¸°ì¤€) -->
+                <div class="pi-row" class="pi-auto-row pi-auto-row-indigo">
+                  <label style="color:#4338ca;font-size:11.5px;">ê³ ì • ì—°ìž¥ê·¼ë¡œìˆ˜ë‹¹</label>
+                  <span class="pi-val" id="pi-fixed-ot-pay-disp" style="color:#4338ca;font-size:11.5px;">0ì›</span>
                 </div>
-                <div class="pi-row pi-auto-row pi-auto-row-indigo">
-                  <label style="color:#4338ca;font-size:11.5px;">°íÁ¤ ¾ß°£±Ù·Î¼ö´ç</label>
-                  <span class="pi-val" id="pi-fixed-night-pay-disp" style="color:#4338ca;font-size:11.5px;">0¿ø</span>
+                <div class="pi-row" class="pi-auto-row pi-auto-row-indigo">
+                  <label style="color:#4338ca;font-size:11.5px;">ê³ ì • ì•¼ê°„ê·¼ë¡œìˆ˜ë‹¹</label>
+                  <span class="pi-val" id="pi-fixed-night-pay-disp" style="color:#4338ca;font-size:11.5px;">0ì›</span>
                 </div>
-                <div class="pi-row pi-auto-row pi-auto-row-indigo">
-                  <label style="color:#4338ca;font-size:11.5px;">°íÁ¤ ÈÞÀÏ±Ù·Î¼ö´ç</label>
-                  <span class="pi-val" id="pi-fixed-hol-pay-disp" style="color:#4338ca;font-size:11.5px;">0¿ø</span>
+                <div class="pi-row" class="pi-auto-row pi-auto-row-indigo">
+                  <label style="color:#4338ca;font-size:11.5px;">ê³ ì • íœ´ì¼ê·¼ë¡œìˆ˜ë‹¹</label>
+                  <span class="pi-val" id="pi-fixed-hol-pay-disp" style="color:#4338ca;font-size:11.5px;">0ì›</span>
                 </div>
-                <!-- Ãß°¡ ¼ö´ç -->
-                <div class="pi-row pi-auto-row pi-auto-row-blue">
-                  <label style="color:#3b82f6;font-size:11.5px;">Ãß°¡ ¿¬Àå±Ù·Î¼ö´ç</label>
-                  <span class="pi-val" id="pi-ot-pay-disp" style="color:#3b82f6;">0¿ø</span>
+                <!-- ì¶”ê°€ ìˆ˜ë‹¹ -->
+                <div class="pi-row" class="pi-auto-row pi-auto-row-blue">
+                  <label style="color:#3b82f6;font-size:11.5px;">ì¶”ê°€ ì—°ìž¥ê·¼ë¡œìˆ˜ë‹¹</label>
+                  <span class="pi-val" id="pi-ot-pay-disp" style="color:#3b82f6;">0ì›</span>
                 </div>
-                <div class="pi-row pi-auto-row pi-auto-row-blue">
-                  <label style="color:#3b82f6;font-size:11.5px;">Ãß°¡ ¾ß°£±Ù·Î¼ö´ç</label>
-                  <span class="pi-val" id="pi-night-pay-disp" style="color:#3b82f6;">0¿ø</span>
+                <div class="pi-row" class="pi-auto-row pi-auto-row-blue">
+                  <label style="color:#3b82f6;font-size:11.5px;">ì¶”ê°€ ì•¼ê°„ê·¼ë¡œìˆ˜ë‹¹</label>
+                  <span class="pi-val" id="pi-night-pay-disp" style="color:#3b82f6;">0ì›</span>
                 </div>
-                <div class="pi-row pi-auto-row pi-auto-row-blue">
-                  <label style="color:#3b82f6;font-size:11.5px;">Ãß°¡ ÈÞÀÏ±Ù·Î¼ö´ç</label>
-                  <span class="pi-val" id="pi-hol-pay-disp" style="color:#3b82f6;">0¿ø</span>
+                <div class="pi-row" class="pi-auto-row pi-auto-row-blue">
+                  <label style="color:#3b82f6;font-size:11.5px;">ì¶”ê°€ íœ´ì¼ê·¼ë¡œìˆ˜ë‹¹</label>
+                  <span class="pi-val" id="pi-hol-pay-disp" style="color:#3b82f6;">0ì›</span>
                 </div>
-                <!-- °á±Ù¡¤Á¶Åð¡¤Áö°¢ Â÷°¨ -->
-                <div class="pi-row" id="pi-deduction-row" class="pi-auto-row pi-auto-row-red d-none">
+                <!-- ê²°ê·¼Â·ì¡°í‡´Â·ì§€ê° ì°¨ê° -->
+                <div class="pi-row" id="pi-deduction-row" style="display:none;background:#fff1f2;border-radius:6px;padding:5px 8px;">
                   <label style="color:#dc2626;font-size:11.5px;">
-                    <span id="pi-deduction-label">°á±Ù¡¤Á¶Åð¡¤Áö°¢ Â÷°¨</span>
+                    <span id="pi-deduction-label">ê²°ê·¼Â·ì¡°í‡´Â·ì§€ê° ì°¨ê°</span>
                     <span id="pi-deduction-detail" style="font-size:10px;font-weight:400;color:#9ca3af;display:block;"></span>
                   </label>
-                  <span class="pi-val" id="pi-deduction-disp" style="color:#dc2626;font-size:12px;">0¿ø</span>
+                  <span class="pi-val" id="pi-deduction-disp" style="color:#dc2626;font-size:12px;">0ì›</span>
                 </div>
               </div>
-              <!-- ºñ°í -->
+              <!-- ë¹„ê³  -->
               <div class="pi-note-wrap">
-                <label class="pi-note-label">ºñ°í</label>
-                <textarea id="pi-note" rows="3" placeholder="¼±ÅÃ ÀÔ·Â"></textarea>
+                <label class="pi-note-label">ë¹„ê³ </label>
+                <textarea id="pi-note" rows="3" placeholder="ì„ íƒ ìž…ë ¥"></textarea>
               </div>
 
-              <!-- °è¾à ¾øÀ» ¶§ ¼ö´ç Ç¥½Ã (º°µµ À§Ä¡) -->
+              <!-- ê³„ì•½ ì—†ì„ ë•Œ ìˆ˜ë‹¹ í‘œì‹œ (ë³„ë„ ìœ„ì¹˜) -->
               <div id="pi-ot-pay-simple-wrap" style="display:none;">
-                <div class="pi-row" style="background:#f0f6ff;border-radius:6px;padding:5px 8px;"><label style="color:#3b82f6;">Ãß°¡ ¿¬Àå±Ù·Î¼ö´ç</label><span class="pi-val" id="pi-ot-pay-disp-simple" style="color:#3b82f6;">0¿ø</span></div>
+                <div class="pi-row" style="background:#f0f6ff;border-radius:6px;padding:5px 8px;"><label style="color:#3b82f6;">ì¶”ê°€ ì—°ìž¥ê·¼ë¡œìˆ˜ë‹¹</label><span class="pi-val" id="pi-ot-pay-disp-simple" style="color:#3b82f6;">0ì›</span></div>
                 <div style="height:6px;"></div>
-                <div class="pi-row" style="background:#f0f6ff;border-radius:6px;padding:5px 8px;"><label style="color:#3b82f6;">Ãß°¡ ¾ß°£±Ù·Î¼ö´ç</label><span class="pi-val" id="pi-night-pay-disp-simple" style="color:#3b82f6;">0¿ø</span></div>
+                <div class="pi-row" style="background:#f0f6ff;border-radius:6px;padding:5px 8px;"><label style="color:#3b82f6;">ì¶”ê°€ ì•¼ê°„ê·¼ë¡œìˆ˜ë‹¹</label><span class="pi-val" id="pi-night-pay-disp-simple" style="color:#3b82f6;">0ì›</span></div>
                 <div style="height:6px;"></div>
-                <div class="pi-row" style="background:#f0f6ff;border-radius:6px;padding:5px 8px;"><label style="color:#3b82f6;">Ãß°¡ ÈÞÀÏ±Ù·Î¼ö´ç</label><span class="pi-val" id="pi-hol-pay-disp-simple" style="color:#3b82f6;">0¿ø</span></div>
+                <div class="pi-row" style="background:#f0f6ff;border-radius:6px;padding:5px 8px;"><label style="color:#3b82f6;">ì¶”ê°€ íœ´ì¼ê·¼ë¡œìˆ˜ë‹¹</label><span class="pi-val" id="pi-hol-pay-disp-simple" style="color:#3b82f6;">0ì›</span></div>
               </div>
 
-              <!-- ±âº»±Þ¡¤ÁÖÈÞ¼ö´ç hidden inputs ? ÀÚµ¿°è»ê °á°ú¸¦ DB ÀúÀå¡¤calcPI¿¡ Àü´Þ -->
+              <!-- ê¸°ë³¸ê¸‰Â·ì£¼íœ´ìˆ˜ë‹¹ hidden inputs â€” ìžë™ê³„ì‚° ê²°ê³¼ë¥¼ DB ì €ìž¥Â·calcPIì— ì „ë‹¬ -->
               <input type="hidden" id="pi-base" data-amount />
               <input type="hidden" id="pi-weekly-hol" data-amount />
-              <!-- ?? Á¤±â Áö±ÞÇ×¸ñ ?? -->
-              <div class="pi-section-title blue" class="pi-section-title-mt" style="margin-top:16px;"><i class="fas fa-file-contract"></i> Á¤±â Áö±ÞÇ×¸ñ</div>
-              <!-- º¸À°¼ö´ç (Ã¹ ¹øÂ° Ç×¸ñ, allowance_config ¿¬µ¿) -->
+              <!-- â•â• ì •ê¸° ì§€ê¸‰í•­ëª© â•â• -->
+              <div class="pi-section-title blue" style="margin-top:16px;"><i class="fas fa-file-contract"></i> ì •ê¸° ì§€ê¸‰í•­ëª©</div>
+              <!-- ë³´ìœ¡ìˆ˜ë‹¹ (ì²« ë²ˆì§¸ í•­ëª©, allowance_config ì—°ë™) -->
               <div class="pi-row" id="pi-row-childcare" style="display:none;">
-                <label>º¸À°¼ö´ç</label>
+                <label>ë³´ìœ¡ìˆ˜ë‹¹</label>
                 <div class="pi-row-right">
-                  <span class="pi-dep-wrap">¸¸ 6¼¼ ÀÌÇÏ ÀÚ³à <input type="number" id="pi-dependents" min="0" value="0" oninput="calcPI()" class="pi-dep-input" /> ÀÎ</span>
+                  <span class="pi-dep-wrap">ë§Œ 6ì„¸ ì´í•˜ ìžë…€ <input type="number" id="pi-dependents" min="0" value="0" oninput="calcPI()" class="pi-dep-input" /> ì¸</span>
                   <input type="text" inputmode="numeric" id="pi-childcare" data-amount oninput="onAmountInput(this,calcPI)" class="pi-row-amount" />
                 </div>
               </div>
               <div class="pi-row" id="pi-row-bonus">
-                <label>Á¤±â »ó¿©±Ý</label>
+                <label>ì •ê¸° ìƒì—¬ê¸ˆ</label>
                 <div class="pi-row-right">
-                  <span id="pi-bonus-contract-badge" style="display:none;font-size:10px;color:#1d4ed8;background:#eff6ff;border:1px solid #93c5fd;border-radius:4px;padding:1px 6px;margin-right:4px;">°è¾à¼­ °íÁ¤</span>
+                  <span id="pi-bonus-contract-badge" style="display:none;font-size:10px;color:#1d4ed8;background:#eff6ff;border:1px solid #93c5fd;border-radius:4px;padding:1px 6px;margin-right:4px;">ê³„ì•½ì„œ ê³ ì •</span>
                   <input type="text" inputmode="numeric" id="pi-bonus" data-amount oninput="onAmountInput(this,calcPI)" class="pi-row-amount" />
                 </div>
               </div>
-              <div class="pi-row" id="pi-row-site" style="display:none;"><label>ÇöÀå¼ö´ç</label><input type="text" inputmode="numeric" id="pi-site" data-amount oninput="onAmountInput(this,calcPI)" /></div>
-              <div class="pi-row" id="pi-row-position" style="display:none;"><label>Á÷Ã¥¼ö´ç</label><input type="text" inputmode="numeric" id="pi-position" data-amount oninput="onAmountInput(this,calcPI)" /></div>
-              <div class="pi-row" id="pi-row-skill" style="display:none;"><label>±â¼ú¼ö´ç</label><input type="text" inputmode="numeric" id="pi-skill" data-amount oninput="onAmountInput(this,calcPI)" /></div>
-              <div class="pi-row" id="pi-row-license" style="display:none;"><label>¸éÇã¼ö´ç</label><input type="text" inputmode="numeric" id="pi-license" data-amount oninput="onAmountInput(this,calcPI)" /></div>
-              <div class="pi-row" id="pi-row-hazard" style="display:none;"><label>À§Çè¼ö´ç</label><input type="text" inputmode="numeric" id="pi-hazard" data-amount oninput="onAmountInput(this,calcPI)" /></div>
-              <!-- º®Áö¼ö´ç (Åë»óÀÓ±Ý Ç×»ó Æ÷ÇÔ ? µ¶¸³ Çà) -->
-              <div class="pi-row" id="pi-row-remote-area" style="display:none;"><label>º®Áö¼ö´ç</label><input type="text" inputmode="numeric" id="pi-remote-area" data-amount oninput="onAmountInput(this,calcPI)" /></div>
-              <!-- Â÷·®À¯Áöºñ -->
+              <div class="pi-row" id="pi-row-site" style="display:none;"><label>í˜„ìž¥ìˆ˜ë‹¹</label><input type="text" inputmode="numeric" id="pi-site" data-amount oninput="onAmountInput(this,calcPI)" /></div>
+              <div class="pi-row" id="pi-row-position" style="display:none;"><label>ì§ì±…ìˆ˜ë‹¹</label><input type="text" inputmode="numeric" id="pi-position" data-amount oninput="onAmountInput(this,calcPI)" /></div>
+              <div class="pi-row" id="pi-row-skill" style="display:none;"><label>ê¸°ìˆ ìˆ˜ë‹¹</label><input type="text" inputmode="numeric" id="pi-skill" data-amount oninput="onAmountInput(this,calcPI)" /></div>
+              <div class="pi-row" id="pi-row-license" style="display:none;"><label>ë©´í—ˆìˆ˜ë‹¹</label><input type="text" inputmode="numeric" id="pi-license" data-amount oninput="onAmountInput(this,calcPI)" /></div>
+              <div class="pi-row" id="pi-row-hazard" style="display:none;"><label>ìœ„í—˜ìˆ˜ë‹¹</label><input type="text" inputmode="numeric" id="pi-hazard" data-amount oninput="onAmountInput(this,calcPI)" /></div>
+              <!-- ë²½ì§€ìˆ˜ë‹¹ (í†µìƒìž„ê¸ˆ í•­ìƒ í¬í•¨ â€” ë…ë¦½ í–‰) -->
+              <div class="pi-row" id="pi-row-remote-area" style="display:none;"><label>ë²½ì§€ìˆ˜ë‹¹</label><input type="text" inputmode="numeric" id="pi-remote-area" data-amount oninput="onAmountInput(this,calcPI)" /></div>
+              <!-- ì°¨ëŸ‰ìœ ì§€ë¹„ -->
               <div class="pi-row" id="pi-transport-row">
-                <label>Â÷·®À¯Áöºñ</label>
+                <label>ì°¨ëŸ‰ìœ ì§€ë¹„</label>
                 <div class="pi-row-right">
                   <input type="text" inputmode="numeric" id="pi-transport" data-amount oninput="onAmountInput(this,calcPI)" class="pi-row-amount" />
                 </div>
               </div>
-              <!-- ½Ä´ë -->
+              <!-- ì‹ëŒ€ -->
               <div class="pi-row">
-                <label>½Ä´ë</label>
+                <label>ì‹ëŒ€</label>
                 <div class="pi-row-right">
                   <input type="text" inputmode="numeric" id="pi-meal" data-amount oninput="onAmountInput(this,calcPI)" class="pi-row-amount" />
                 </div>
               </div>
 
-              <!-- ¿¬±¸È°µ¿ºñ -->
+              <!-- ì—°êµ¬í™œë™ë¹„ -->
               <div class="pi-row" id="pi-row-research" style="display:none;">
-                <label>¿¬±¸È°µ¿ºñ</label>
+                <label>ì—°êµ¬í™œë™ë¹„</label>
                 <div class="pi-row-right">
                   <input type="text" inputmode="numeric" id="pi-research" data-amount oninput="onAmountInput(this,calcPI)" class="pi-row-amount" />
                 </div>
               </div>
-              <!-- Åë½Åºñ -->
+              <!-- í†µì‹ ë¹„ -->
               <div class="pi-row" id="pi-row-communication" style="display:none;">
-                <label>Åë½Åºñ</label>
+                <label>í†µì‹ ë¹„</label>
                 <div class="pi-row-right">
                   <input type="text" inputmode="numeric" id="pi-communication" data-amount oninput="onAmountInput(this,calcPI)" class="pi-row-amount" />
                 </div>
               </div>
-              <!-- Ã¼·ÂÁõÁøºñ -->
+              <!-- ì²´ë ¥ì¦ì§„ë¹„ -->
               <div class="pi-row" id="pi-row-fitness" style="display:none;">
-                <label>Ã¼·ÂÁõÁøºñ</label>
+                <label>ì²´ë ¥ì¦ì§„ë¹„</label>
                 <div class="pi-row-right">
                   <input type="text" inputmode="numeric" id="pi-fitness" data-amount oninput="onAmountInput(this,calcPI)" class="pi-row-amount" />
                 </div>
               </div>
-              <!-- ÀÚ±â°è¹ßºñ -->
+              <!-- ìžê¸°ê³„ë°œë¹„ -->
               <div class="pi-row" id="pi-row-self-dev" style="display:none;">
-                <label>ÀÚ±â°è¹ßºñ</label>
+                <label>ìžê¸°ê³„ë°œë¹„</label>
                 <div class="pi-row-right">
                   <input type="text" inputmode="numeric" id="pi-self-dev" data-amount oninput="onAmountInput(this,calcPI)" class="pi-row-amount" />
                 </div>
               </div>
-              <!-- µµ¼­Áö¿øºñ -->
+              <!-- ë„ì„œì§€ì›ë¹„ -->
               <div class="pi-row" id="pi-row-book" style="display:none;">
-                <label>µµ¼­Áö¿øºñ</label>
+                <label>ë„ì„œì§€ì›ë¹„</label>
                 <div class="pi-row-right">
                   <input type="text" inputmode="numeric" id="pi-book" data-amount oninput="onAmountInput(this,calcPI)" class="pi-row-amount" />
                 </div>
               </div>
-              <!-- ÇØ¿Ü±Ù¹«¼ö´ç -->
+              <!-- í•´ì™¸ê·¼ë¬´ìˆ˜ë‹¹ -->
               <div class="pi-row" id="pi-row-overseas" style="display:none;">
-                <label>ÇØ¿Ü±Ù¹«¼ö´ç</label>
+                <label>í•´ì™¸ê·¼ë¬´ìˆ˜ë‹¹</label>
                 <div class="pi-row-right">
                   <input type="text" inputmode="numeric" id="pi-overseas" data-amount oninput="onAmountInput(this,calcPI)" class="pi-row-amount" />
                 </div>
               </div>
-              <div class="pi-section-title blue" class="pi-section-title-mt"><i class="fas fa-calendar-minus"></i> ºñÁ¤±â Áö±ÞÇ×¸ñ</div>
+              <div class="pi-section-title blue" style="margin-top:14px;"><i class="fas fa-calendar-minus"></i> ë¹„ì •ê¸° ì§€ê¸‰í•­ëª©</div>
 
               <div class="pi-row" style="align-items:center;">
-                <label>¿¬Â÷¼ö´ç <span id="pi-al-remain-badge" style="display:inline-block;padding:1px 8px;border-radius:10px;font-size:10.5px;font-weight:600;background:#e0e7ff;color:#4338ca;">ÀÜ¿©¿¬Â÷: -</span></label>
+                <label>ì—°ì°¨ìˆ˜ë‹¹ <span id="pi-al-remain-badge" style="display:inline-block;padding:1px 8px;border-radius:10px;font-size:10.5px;font-weight:600;background:#e0e7ff;color:#4338ca;">ìž”ì—¬ì—°ì°¨: -</span></label>
                 <div style="display:flex;align-items:center;gap:6px;">
                   <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:11.5px;color:#6b7280;font-weight:400;white-space:nowrap;">
                     <input type="checkbox" id="pi-annual-auto-chk"
                       style="width:13px;height:13px;accent-color:#4f46e5;cursor:pointer;flex-shrink:0;"
                       onchange="onAnnualAutoChkChange()" />
-                    ÀÜ¿© ¿¬Â÷·Î ÀÚµ¿°è»ê
+                    ìž”ì—¬ ì—°ì°¨ë¡œ ìžë™ê³„ì‚°
                   </label>
                   <input type="text" inputmode="numeric" id="pi-annual-pay" data-amount oninput="onAmountInput(this,calcPI)" />
                 </div>
               </div>
-              <div class="pi-row"><label>ºñÁ¤±â ¼º°ú±Þ</label><input type="text" inputmode="numeric" id="pi-performance" data-amount oninput="onAmountInput(this,calcPI)" /></div>
-              <div class="pi-row"><label>½Çºñº¯»óÀû±Þ¿©</label><input type="text" inputmode="numeric" id="pi-actual-expense" data-amount oninput="onAmountInput(this,calcPI)" /></div>
-              <!-- ¦¡¦¡ ºñÁ¤±â Áö±Þ: daily/receipt Ç×¸ñ µ¿Àû »ðÀÔ ¿µ¿ª ¦¡¦¡ -->
+              <div class="pi-row"><label>ë¹„ì •ê¸° ì„±ê³¼ê¸‰</label><input type="text" inputmode="numeric" id="pi-performance" data-amount oninput="onAmountInput(this,calcPI)" /></div>
+              <div class="pi-row"><label>ì‹¤ë¹„ë³€ìƒì ê¸‰ì—¬</label><input type="text" inputmode="numeric" id="pi-actual-expense" data-amount oninput="onAmountInput(this,calcPI)" /></div>
+              <!-- â”€â”€ ë¹„ì •ê¸° ì§€ê¸‰: daily/receipt í•­ëª© ë™ì  ì‚½ìž… ì˜ì—­ â”€â”€ -->
               <div id="pi-irregular-dynamic-rows"></div>
-              <div class="pi-row" id="pi-row-severance-interim" style="display:none;">
-                <label>ÅðÁ÷±Ý Áß°£Á¤»ê</label>
-                <span class="pi-interim-label" id="pi-severance-interim-label"></span>
-                <input type="text" inputmode="numeric" id="pi-severance-interim" class="pi-interim-amount" data-amount oninput="onAmountInput(this,calcPI)" value="0" readonly />
-              </div>
               <div class="pi-row" style="align-items:center;">
-                <label>±âÅ¸¼ö´ç</label>
-                <input type="text" id="pi-etc-allowance-memo" placeholder="¸Þ¸ð (¿¹: ¸íÀý¼ö´ç)" maxlength="100"
+                <label>ê¸°íƒ€ìˆ˜ë‹¹</label>
+                <input type="text" id="pi-etc-allowance-memo" placeholder="ë©”ëª¨ (ì˜ˆ: ëª…ì ˆìˆ˜ë‹¹)" maxlength="100"
                   style="flex:1;min-width:0;margin:0 8px;border:1px solid #e0e0e0;border-radius:6px;padding:6px 9px;font-size:12px;color:#374151;outline:none;font-family:inherit;" />
                 <input type="text" inputmode="numeric" id="pi-etc-allowance" data-amount oninput="onAmountInput(this,calcPI)" />
               </div>
             </div>
-            <!-- °øÁ¦ -->
+            <!-- ê³µì œ -->
             <div>
-              <div class="pi-section-title red" id="pi-ded-title"><i class="fas fa-minus-circle"></i> °øÁ¦ ³»¿ª <span id="pi-ded-mode-badge" style="font-size:10px;padding:2px 8px;border-radius:10px;margin-left:6px;background:#e94560;color:#fff;">¿äÀ² ÀÚµ¿°è»ê</span></div>
+              <div class="pi-section-title red" id="pi-ded-title"><i class="fas fa-minus-circle"></i> ê³µì œ ë‚´ì—­ <span id="pi-ded-mode-badge" style="font-size:10px;padding:2px 8px;border-radius:10px;margin-left:6px;background:#e94560;color:#fff;">ìš”ìœ¨ ìžë™ê³„ì‚°</span></div>
 
-              <!-- ¿äÀ² ±âÁØ: º¸¼ö¿ù¾× + ÀÚµ¿°è»ê °á°ú -->
+              <!-- ìš”ìœ¨ ê¸°ì¤€: ë³´ìˆ˜ì›”ì•¡ + ìžë™ê³„ì‚° ê²°ê³¼ -->
               <div id="pi-ded-auto-block">
                 <div style="margin-bottom:10px;">
-                  <div style="font-size:11px;color:#888;margin-bottom:6px;">º¸¼ö¿ù¾× (°øÁ¦ ±âÁØ)</div>
-                  <input type="text" inputmode="numeric" id="pi-std-pay" data-amount oninput="onAmountInput(this,calcPIManual)" style="width:100%;border:1px solid #e0e0e0;border-radius:7px;padding:8px 10px;font-size:12.5px;outline:none;font-family:inherit;" placeholder="ÀÚµ¿ °è»ê" />
-                  <div style="font-size:10.5px;color:#aaa;margin-top:3px;">¡Ø ±âº»±Þ+ÁÖÈÞ¼ö´ç+Á÷Ã¥¼ö´ç ±âÁØ ÀÚµ¿°è»ê, Á÷Á¢ ¼öÁ¤ °¡´É</div>
+                  <div style="font-size:11px;color:#888;margin-bottom:6px;">ë³´ìˆ˜ì›”ì•¡ (ê³µì œ ê¸°ì¤€)</div>
+                  <input type="text" inputmode="numeric" id="pi-std-pay" data-amount oninput="onAmountInput(this,calcPIManual)" style="width:100%;border:1px solid #e0e0e0;border-radius:7px;padding:8px 10px;font-size:12.5px;outline:none;font-family:inherit;" placeholder="ìžë™ ê³„ì‚°" />
+                  <div style="font-size:10.5px;color:#aaa;margin-top:3px;">â€» ê¸°ë³¸ê¸‰+ì£¼íœ´ìˆ˜ë‹¹+ì§ì±…ìˆ˜ë‹¹ ê¸°ì¤€ ìžë™ê³„ì‚°, ì§ì ‘ ìˆ˜ì • ê°€ëŠ¥</div>
                 </div>
                 <div id="pi-ded-detail" style="background:#fff9fa;border:1px dashed #ffd0d8;border-radius:8px;padding:14px;font-size:12.5px;line-height:2.4;"></div>
               </div>
 
-              <!-- È®Á¤¾× ±âÁØ: Á÷Á¢ ÀÔ·Â -->
+              <!-- í™•ì •ì•¡ ê¸°ì¤€: ì§ì ‘ ìž…ë ¥ -->
               <div id="pi-ded-fixed-block" style="display:none;">
                 <div style="padding:10px 12px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;margin-bottom:10px;font-size:11.5px;color:#92400e;">
-                  <i class="fas fa-info-circle" style="margin-right:4px;"></i>È®Á¤¾× ±âÁØ: °¢ º¸Çè·á¸¦ Á÷Á¢ ÀÔ·ÂÇÏ¼¼¿ä. ¼Òµæ¼¼¡¤ÁÖ¹Î¼¼´Â ÀÚµ¿ °è»êµË´Ï´Ù.
+                  <i class="fas fa-info-circle" style="margin-right:4px;"></i>í™•ì •ì•¡ ê¸°ì¤€: ê° ë³´í—˜ë£Œë¥¼ ì§ì ‘ ìž…ë ¥í•˜ì„¸ìš”. ì†Œë“ì„¸Â·ì£¼ë¯¼ì„¸ëŠ” ìžë™ ê³„ì‚°ë©ë‹ˆë‹¤.
                 </div>
                 <div style="background:#fff9fa;border:1px dashed #ffd0d8;border-radius:8px;padding:12px;">
-                  <div class="pi-row"><label class="pi-ded-label">±¹¹Î¿¬±Ý</label><input type="text" inputmode="numeric" id="pi-pension-fixed" data-amount placeholder="0" oninput="onAmountInput(this,calcPIFixed)" /></div>
-                  <div class="pi-row"><label class="pi-ded-label">°Ç°­º¸Çè</label><input type="text" inputmode="numeric" id="pi-health-fixed" data-amount placeholder="0" oninput="onAmountInput(this,calcPIFixed)" /></div>
-                  <div class="pi-row"><label class="pi-ded-label">Àå±â¿ä¾çº¸Çè</label><input type="text" inputmode="numeric" id="pi-ltcare-fixed" data-amount placeholder="0" oninput="onAmountInput(this,calcPIFixed)" /></div>
-                  <div class="pi-row"><label class="pi-ded-label">°í¿ëº¸Çè</label><input type="text" inputmode="numeric" id="pi-employ-fixed" data-amount placeholder="0" oninput="onAmountInput(this,calcPIFixed)" /></div>
+                  <div class="pi-row"><label class="pi-ded-label">êµ­ë¯¼ì—°ê¸ˆ</label><input type="text" inputmode="numeric" id="pi-pension-fixed" data-amount placeholder="0" oninput="onAmountInput(this,calcPIFixed)" /></div>
+                  <div class="pi-row"><label class="pi-ded-label">ê±´ê°•ë³´í—˜</label><input type="text" inputmode="numeric" id="pi-health-fixed" data-amount placeholder="0" oninput="onAmountInput(this,calcPIFixed)" /></div>
+                  <div class="pi-row"><label class="pi-ded-label">ìž¥ê¸°ìš”ì–‘ë³´í—˜</label><input type="text" inputmode="numeric" id="pi-ltcare-fixed" data-amount placeholder="0" oninput="onAmountInput(this,calcPIFixed)" /></div>
+                  <div class="pi-row"><label class="pi-ded-label">ê³ ìš©ë³´í—˜</label><input type="text" inputmode="numeric" id="pi-employ-fixed" data-amount placeholder="0" oninput="onAmountInput(this,calcPIFixed)" /></div>
                   <div id="pi-ded-detail-fixed" style="margin-top:8px;font-size:12px;line-height:2.2;color:#666;"></div>
                 </div>
               </div>
 
-              <div class="pi-section-title red" class="pi-section-title-mt"><i class="fas fa-file-invoice-dollar"></i> Á¤»ê / Ãß°¡ °øÁ¦</div>
+              <div class="pi-section-title red" style="margin-top:14px;"><i class="fas fa-file-invoice-dollar"></i> ì •ì‚° / ì¶”ê°€ ê³µì œ</div>
 
-              <!-- ±¹¹Î¿¬±Ý¼Ò±ÞºÐ -->
+              <!-- êµ­ë¯¼ì—°ê¸ˆì†Œê¸‰ë¶„ -->
               <div class="pi-row">
-                <label>±¹¹Î¿¬±Ý¼Ò±ÞºÐ</label>
+                <label>êµ­ë¯¼ì—°ê¸ˆì†Œê¸‰ë¶„</label>
                 <input type="text" inputmode="numeric" id="pi-national-pension-retro" data-amount placeholder="0" oninput="onAmountInput(this,calcPI)" />
               </div>
 
-              <!-- °Ç°­º¸ÇèÁ¤»ê -->
+              <!-- ê±´ê°•ë³´í—˜ì •ì‚° -->
               <div class="pi-row">
-                <label>°Ç°­º¸ÇèÁ¤»ê</label>
+                <label>ê±´ê°•ë³´í—˜ì •ì‚°</label>
                 <input type="text" inputmode="numeric" id="pi-health-adj-retro" data-amount placeholder="0" oninput="onAmountInput(this,calcPI)" />
               </div>
 
-              <!-- Àå±â¿ä¾çº¸ÇèÁ¤»ê -->
+              <!-- ìž¥ê¸°ìš”ì–‘ë³´í—˜ì •ì‚° -->
               <div class="pi-row">
-                <label>Àå±â¿ä¾çº¸ÇèÁ¤»ê</label>
+                <label>ìž¥ê¸°ìš”ì–‘ë³´í—˜ì •ì‚°</label>
                 <input type="text" inputmode="numeric" id="pi-ltcare-adj" data-amount placeholder="0" oninput="onAmountInput(this,calcPI)" />
               </div>
 
-              <!-- °í¿ëº¸ÇèÁ¤»ê -->
+              <!-- ê³ ìš©ë³´í—˜ì •ì‚° -->
               <div class="pi-row">
-                <label>°í¿ëº¸ÇèÁ¤»ê</label>
+                <label>ê³ ìš©ë³´í—˜ì •ì‚°</label>
                 <input type="text" inputmode="numeric" id="pi-empins-adj" data-amount placeholder="0" oninput="onAmountInput(this,calcPI)" />
               </div>
 
-              <!-- Á÷Àü¿ù ¸Þ¸ð ÀÎ°è ¹è³Ê -->
+              <!-- ì§ì „ì›” ë©”ëª¨ ì¸ê³„ ë°°ë„ˆ -->
               <div id="pi-prev-memo-banner" style="display:none;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:8px 12px;margin-bottom:8px;font-size:11.5px;color:#1e40af;">
                 <div style="display:flex;align-items:center;gap:6px;font-weight:700;margin-bottom:4px;">
-                  <span>??</span><span id="pi-prev-memo-banner-title">Á÷Àü¿ù ¸Þ¸ð ÀÎ°è</span>
-                  <button onclick="_dismissPrevMemoBanner()" class="btn btn-close" style="margin-left:auto;" title="¹è³Ê ´Ý±â">?</button>
+                  <span>ðŸ“‹</span><span id="pi-prev-memo-banner-title">ì§ì „ì›” ë©”ëª¨ ì¸ê³„</span>
+                  <button onclick="_dismissPrevMemoBanner()" class="btn btn-close" style="margin-left:auto;" title="ë°°ë„ˆ ë‹«ê¸°">âœ•</button>
                 </div>
-                <div style="color:#3b82f6;font-size:11px;">Á÷Àü¿ù¿¡ ÀÛ¼ºµÈ ¸Þ¸ð°¡ ¾Æ·¡ ¶õ¿¡ ÀÎ°èµÇ¾ú½À´Ï´Ù. ³»¿ëÀ» È®ÀÎÇÏ°í ÇÊ¿äÇÏ¸é ¼öÁ¤ÇÏ¼¼¿ä.</div>
+                <div style="color:#3b82f6;font-size:11px;">ì§ì „ì›”ì— ìž‘ì„±ëœ ë©”ëª¨ê°€ ì•„ëž˜ ëž€ì— ì¸ê³„ë˜ì—ˆìŠµë‹ˆë‹¤. ë‚´ìš©ì„ í™•ì¸í•˜ê³  í•„ìš”í•˜ë©´ ìˆ˜ì •í•˜ì„¸ìš”.</div>
               </div>
 
-              <!-- °Ç°­º¸Çè¿¬¸»Á¤»ê -->
+              <!-- ê±´ê°•ë³´í—˜ì—°ë§ì •ì‚° -->
               <div class="pi-row">
-                <label>°Ç°­º¸Çè¿¬¸»Á¤»ê</label>
+                <label>ê±´ê°•ë³´í—˜ì—°ë§ì •ì‚°</label>
                 <input type="text" inputmode="numeric" id="pi-health-adj-yearend" data-amount placeholder="0" oninput="onAmountInput(this,calcPI)" />
               </div>
-              <textarea id="pi-health-adj-yearend-memo" rows="2" placeholder="¸Þ¸ð (°Ç°­º¸Çè¿¬¸»Á¤»ê »çÀ¯ µî)"
+              <textarea id="pi-health-adj-yearend-memo" rows="2" placeholder="ë©”ëª¨ (ê±´ê°•ë³´í—˜ì—°ë§ì •ì‚° ì‚¬ìœ  ë“±)"
                 class="pi-textarea pi-textarea-yellow"></textarea>
 
-              <!-- Àå±â¿ä¾çº¸Çè¿¬¸»Á¤»ê -->
+              <!-- ìž¥ê¸°ìš”ì–‘ë³´í—˜ì—°ë§ì •ì‚° -->
               <div class="pi-row">
-                <label>Àå±â¿ä¾çº¸Çè¿¬¸»Á¤»ê</label>
+                <label>ìž¥ê¸°ìš”ì–‘ë³´í—˜ì—°ë§ì •ì‚°</label>
                 <input type="text" inputmode="numeric" id="pi-ltcare-adj-yearend" data-amount placeholder="0" oninput="onAmountInput(this,calcPI)" />
               </div>
-              <textarea id="pi-ltcare-adj-yearend-memo" rows="2" placeholder="¸Þ¸ð (Àå±â¿ä¾çº¸Çè¿¬¸»Á¤»ê »çÀ¯ µî)"
+              <textarea id="pi-ltcare-adj-yearend-memo" rows="2" placeholder="ë©”ëª¨ (ìž¥ê¸°ìš”ì–‘ë³´í—˜ì—°ë§ì •ì‚° ì‚¬ìœ  ë“±)"
                 class="pi-textarea pi-textarea-yellow"></textarea>
 
-              <!-- ¼Òµæ¼¼¿¬¸»Á¤»ê + ¸Þ¸ð -->
+              <!-- ì†Œë“ì„¸ì—°ë§ì •ì‚° + ë©”ëª¨ -->
               <div class="pi-row">
-                <label>¼Òµæ¼¼¿¬¸»Á¤»ê<span style="font-size:10px;color:#aaa;margin-left:4px;">(+Ãß°¡³³ºÎ/-È¯±Þ)</span></label>
+                <label>ì†Œë“ì„¸ì—°ë§ì •ì‚°<span style="font-size:10px;color:#aaa;margin-left:4px;">(+ì¶”ê°€ë‚©ë¶€/-í™˜ê¸‰)</span></label>
                 <input type="text" inputmode="numeric" id="pi-yearend" data-amount placeholder="0" oninput="onAmountInput(this,calcPI)" />
               </div>
-              <textarea id="pi-yearend-memo" rows="2" placeholder="¸Þ¸ð (¼Òµæ¼¼¿¬¸»Á¤»ê »çÀ¯ µî)"
+              <textarea id="pi-yearend-memo" rows="2" placeholder="ë©”ëª¨ (ì†Œë“ì„¸ì—°ë§ì •ì‚° ì‚¬ìœ  ë“±)"
                 class="pi-textarea pi-textarea-yellow"></textarea>
 
-              <!-- ±âÅ¸ + ¸Þ¸ð -->
+              <!-- ê¸°íƒ€ + ë©”ëª¨ -->
               <div class="pi-row">
-                <label>±âÅ¸<span style="font-size:10px;color:#aaa;margin-left:4px;">(+Ãß°¡/-°øÁ¦)</span></label>
+                <label>ê¸°íƒ€<span style="font-size:10px;color:#aaa;margin-left:4px;">(+ì¶”ê°€/-ê³µì œ)</span></label>
                 <input type="text" inputmode="numeric" id="pi-advance" data-amount placeholder="0" oninput="onAmountInput(this,calcPI)" />
               </div>
-              <textarea id="pi-advance-memo" rows="2" placeholder="¸Þ¸ð (±âÅ¸ °øÁ¦¡¤Ãß°¡ »çÀ¯ µî)"
+              <textarea id="pi-advance-memo" rows="2" placeholder="ë©”ëª¨ (ê¸°íƒ€ ê³µì œÂ·ì¶”ê°€ ì‚¬ìœ  ë“±)"
                 class="pi-textarea pi-textarea-green"></textarea>
               <div class="pi-summary-box">
-                <div class="pi-summary-row"><span style="color:#666;">Áö±Þ ÃÑ¾×</span><span class="amount-blue" id="pi-gross-disp2">0¿ø</span></div>
-                <div class="pi-summary-row"><span style="color:#666;">°øÁ¦ ÇÕ°è</span><span class="amount-red" id="pi-ded-disp2">0¿ø</span></div>
+                <div class="pi-summary-row"><span style="color:#666;">ì§€ê¸‰ ì´ì•¡</span><span class="amount-blue" id="pi-gross-disp2">0ì›</span></div>
+                <div class="pi-summary-row"><span style="color:#666;">ê³µì œ í•©ê³„</span><span class="amount-red" id="pi-ded-disp2">0ì›</span></div>
                 <div class="pi-summary-total">
-                  <span>¿µ¼ö¾×</span><span style="color:#e94560;" id="pi-net-disp2">0¿ø</span>
+                  <span>ì˜ìˆ˜ì•¡</span><span style="color:#e94560;" id="pi-net-disp2">0ì›</span>
                 </div>
               </div>
               <div style="margin-top:16px;display:flex;gap:8px;">
@@ -714,20 +709,20 @@
                   onclick="piEditPayrollId ? restoreEditPayroll() : clearPI()"
                   class="pi-action-btn">
                   <i id="pi-clear-btn-icon" class="fas fa-redo"></i>
-                  <span id="pi-clear-btn-label">ÃÊ±âÈ­</span>
+                  <span id="pi-clear-btn-label">ì´ˆê¸°í™”</span>
                 </button>
                 <button class="btn btn-draft" onclick="savePIDraft()" id="pi-draft-btn"
                   class="pi-action-btn">
-                  <i class="fas fa-floppy-disk"></i> ÀÓ½ÃÀúÀå
+                  <i class="fas fa-floppy-disk"></i> ìž„ì‹œì €ìž¥
                 </button>
                 <button class="btn btn-primary" onclick="savePI()"
                   class="pi-action-btn">
-                  <i class="fas fa-save"></i> ±Þ¿© ÀúÀå
+                  <i class="fas fa-save"></i> ê¸‰ì—¬ ì €ìž¥
                 </button>
                 <button class="btn btn-secondary" id="pi-cancel-btn"
                   onclick="piEditPayrollId ? cancelEditPayroll() : backToPITargetList()"
                   class="pi-action-btn">
-                  <i class="fas fa-times"></i> <span id="pi-cancel-btn-label">Ãë¼Ò</span>
+                  <i class="fas fa-times"></i> <span id="pi-cancel-btn-label">ì·¨ì†Œ</span>
                 </button>
               </div>
             </div>

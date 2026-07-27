@@ -1,12 +1,12 @@
-    <div id="page-severance" class="page">
-      <!-- °í°´»ç ¼±ÅÃ -->
+ï»¿    <div id="page-severance" class="page">
+      <!-- ê³ ê°ì‚¬ ì„ íƒ -->
       <div id="sev-company-select-card">
         <div class="section-title">
           <i class="fas fa-building"></i>
-          <span>°í°´»ç¸¦ ¼±ÅÃÇÏ¼¼¿ä</span>
+          <span>ê³ ê°ì‚¬ë¥¼ ì„ íƒí•˜ì„¸ìš”</span>
           <div class="filt-search-wrap" style="margin-left:auto;">
             <i class="fas fa-search"></i>
-            <input type="text" id="sev-company-search" class="filt-search" class="w-160" placeholder="°í°´»ç¸í °Ë»ö" oninput="renderSevCompanyList()" />
+            <input type="text" id="sev-company-search" class="filt-search" class="w-160" placeholder="ê³ ê°ì‚¬ëª… ê²€ìƒ‰" oninput="renderSevCompanyList()" />
           </div>
         </div>
         <div class="card" style="margin-bottom:16px;overflow:hidden;">
@@ -14,54 +14,51 @@
         </div>
       </div>
 
-      <!-- ¸ÞÀÎ ¼½¼Ç -->
+      <!-- ë©”ì¸ ì„¹ì…˜ -->
       <div id="sev-main-section" style="display:none;">
 
-        <!-- ¼±ÅÃ °í°´»ç Çì´õ -->
+        <!-- ì„ íƒ ê³ ê°ì‚¬ í—¤ë” -->
           <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:linear-gradient(90deg,#1e1b4b,#312e81);border-radius:10px;margin-bottom:12px;">
             <span id="sev-selected-company-label" style="font-size:14px;font-weight:700;color:#fff;"></span>
             <div style="display:flex;align-items:center;gap:10px;">
               <span id="sev-as-of-date" style="font-size:12px;color:rgba(255,255,255,.75);background:rgba(255,255,255,.12);padding:3px 10px;border-radius:6px;border:1px solid rgba(255,255,255,.2);"></span>
-              <button onclick="clearSevCompanySelect()" class="btn btn-icon-dark" title="°í°´»ç ¼±ÅÃ ÇØÁ¦"><i class="fas fa-times"></i></button>
+              <button onclick="clearSevCompanySelect()" class="btn btn-icon-dark" title="ê³ ê°ì‚¬ ì„ íƒ í•´ì œ"><i class="fas fa-times"></i></button>
             </div>
           </div>
 
-          <!-- ÅÇ ¸Þ´º -->
+          <!-- íƒ­ ë©”ë‰´ -->
           <div class="std-tab-bar" style="margin-top:0;">
             <button class="std-tab active" id="sev-tab-status-btn" onclick="switchSevTab('status')">
-              <i class="fas fa-users" style="margin-right:5px;"></i>±Ù·ÎÀÚº° ÅðÁ÷±Þ¿© Ãß°è
+              <i class="fas fa-users" style="margin-right:5px;"></i>ê·¼ë¡œìžë³„ í‡´ì§ê¸‰ì—¬ ì¶”ê³„
             </button>
             <button class="std-tab" id="sev-tab-history-btn" onclick="switchSevTab('history')">
-              <i class="fas fa-history" style="margin-right:5px;"></i>Áö±Þ ¹ß»ý ÀÌ·Â
-            </button>
-            <button class="std-tab" id="sev-tab-interim-btn" onclick="switchSevTab('interim')">
-              <i class="fas fa-hand-holding-usd" style="margin-right:5px;"></i>Áß°£Á¤»ê
+              <i class="fas fa-history" style="margin-right:5px;"></i>ì§€ê¸‰ ë°œìƒ ì´ë ¥
             </button>
           </div>
 
-          <!-- ÅÇ1: ±Ù·ÎÀÚº° ÅðÁ÷±Þ¿© Ãß°è -->
+          <!-- íƒ­1: ê·¼ë¡œìžë³„ í‡´ì§ê¸‰ì—¬ ì¶”ê³„ -->
           <div id="sev-tab-status">
           <div class="std-tab-panel">
             <div style="font-size:12px;color:#6b7280;margin-bottom:12px;display:flex;align-items:center;gap:6px;">
               <i class="fas fa-info-circle" style="color:#f59e0b;"></i>
-              1³â ¹Ì¸¸ ÀçÁ÷ÀÚ¿Í ÀÏ¿ëÁ÷À» Á¦¿ÜÇÑ ¸ðµç ±Ù·ÎÀÚÀÇ ÅðÁ÷±Þ¿© Ãß°è¾×°ú ÇöÈ²À» È®ÀÎÇÒ ¼ö ÀÖ½À´Ï´Ù.
+              1ë…„ ë¯¸ë§Œ ìž¬ì§ìžì™€ ì¼ìš©ì§ì„ ì œì™¸í•œ ëª¨ë“  ê·¼ë¡œìžì˜ í‡´ì§ê¸‰ì—¬ ì¶”ê³„ì•¡ê³¼ í˜„í™©ì„ í™•ì¸í•  ìˆ˜ ìžˆìŠµë‹ˆë‹¤.
             </div>
               <div id="sev-status-table-wrap" style="overflow-x:auto;">
                 <table class="tbl-std">
                   <thead>
                     <tr>
-                      <th>¼º¸í</th>
-                      <th>ºÎ¼­/Á÷Ã¥</th>
-                      <th>°í¿ëÇüÅÂ</th>
-                      <th>°è¾à ÀÌ·Â<br><span style="font-weight:400;font-size:11px;">(½ÃÀÛÀÏ ~ Á¾·áÀÏ)</span></th>
-                      <th class="ctr">°è¾àº°<br>ÀçÁ÷±â°£</th>
-                      <th class="ctr">Æò±Õ ¿ù<br>Åë»óÀÓ±Ý</th>
-                      <th class="ctr">ÅðÁ÷±Ý Ãß°è¾×</th>
-                      <th class="ctr">ÃÖÁ¾ °è¾à »óÅÂ</th>
+                      <th>ì„±ëª…</th>
+                      <th>ë¶€ì„œ/ì§ì±…</th>
+                      <th>ê³ ìš©í˜•íƒœ</th>
+                      <th>ê³„ì•½ ì´ë ¥<br><span style="font-weight:400;font-size:11px;">(ì‹œìž‘ì¼ ~ ì¢…ë£Œì¼)</span></th>
+                      <th class="ctr">ê³„ì•½ë³„<br>ìž¬ì§ê¸°ê°„</th>
+                      <th class="ctr">í‰ê·  ì›”<br>í†µìƒìž„ê¸ˆ</th>
+                      <th class="ctr">í‡´ì§ê¸ˆ ì¶”ê³„ì•¡</th>
+                      <th class="ctr">ìµœì¢… ê³„ì•½ ìƒíƒœ</th>
                     </tr>
                   </thead>
                   <tbody id="sev-status-tbody">
-                    <tr><td colspan="8" style="text-align:center;padding:30px;color:#9ca3af;">°í°´»ç¸¦ ¼±ÅÃÇÏ¸é ÇöÈ²ÀÌ Ç¥½ÃµË´Ï´Ù.</td></tr>
+                    <tr><td colspan="8" style="text-align:center;padding:30px;color:#9ca3af;">ê³ ê°ì‚¬ë¥¼ ì„ íƒí•˜ë©´ í˜„í™©ì´ í‘œì‹œë©ë‹ˆë‹¤.</td></tr>
                   </tbody>
                   <tfoot id="sev-status-tfoot" style="display:none;">
                     <tr>
@@ -70,36 +67,36 @@
                   </tfoot>
                 </table>
               </div>
-              <!-- ÇÕ°è ¿ä¾à Ä«µå -->
+              <!-- í•©ê³„ ìš”ì•½ ì¹´ë“œ -->
               <div id="sev-summary-card" style="display:none;margin-top:14px;background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1.5px solid #fcd34d;border-radius:12px;padding:16px 20px;">
                 <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
                   <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap;">
                     <div style="display:flex;align-items:center;gap:7px;">
                       <i class="fas fa-users" style="color:#d97706;font-size:14px;"></i>
-                      <span style="font-size:12.5px;color:#78350f;font-weight:600;">Ãß°è ´ë»ó</span>
+                      <span style="font-size:12.5px;color:#78350f;font-weight:600;">ì¶”ê³„ ëŒ€ìƒ</span>
                       <span id="sev-summary-count" style="font-size:14px;font-weight:800;color:#92400e;">-</span>
-                      <span style="font-size:12px;color:#92400e;">¸í</span>
+                      <span style="font-size:12px;color:#92400e;">ëª…</span>
                     </div>
                     <div style="width:1px;height:20px;background:#fcd34d;"></div>
                     <div style="display:flex;align-items:center;gap:7px;">
                       <i class="fas fa-user-minus" style="color:#9ca3af;font-size:13px;"></i>
-                      <span style="font-size:12px;color:#78716c;">±Þ¿© ¹ÌÀÔ·Â</span>
+                      <span style="font-size:12px;color:#78716c;">ê¸‰ì—¬ ë¯¸ìž…ë ¥</span>
                       <span id="sev-summary-nodata" style="font-size:13px;font-weight:700;color:#9ca3af;">-</span>
-                      <span style="font-size:12px;color:#9ca3af;">¸í</span>
+                      <span style="font-size:12px;color:#9ca3af;">ëª…</span>
                     </div>
                     <div style="width:1px;height:20px;background:#fcd34d;"></div>
                     <div style="display:flex;align-items:center;gap:7px;">
                       <i class="fas fa-user-clock" style="color:#a78bfa;font-size:13px;"></i>
-                      <span style="font-size:12px;color:#78716c;">1³â ¹Ì¸¸ Á¦¿Ü</span>
+                      <span style="font-size:12px;color:#78716c;">1ë…„ ë¯¸ë§Œ ì œì™¸</span>
                       <span id="sev-summary-under1yr" style="font-size:13px;font-weight:700;color:#a78bfa;">-</span>
-                      <span style="font-size:12px;color:#9ca3af;">¸í</span>
+                      <span style="font-size:12px;color:#9ca3af;">ëª…</span>
                     </div>
                   </div>
                   <div style="text-align:right;">
-                    <div style="font-size:11.5px;color:#92400e;font-weight:600;margin-bottom:3px;">ÅðÁ÷±Ý Ãß°è ÇÕ°è¾×</div>
+                    <div style="font-size:11.5px;color:#92400e;font-weight:600;margin-bottom:3px;">í‡´ì§ê¸ˆ ì¶”ê³„ í•©ê³„ì•¡</div>
                     <div style="display:flex;align-items:baseline;gap:5px;justify-content:flex-end;">
                       <span id="sev-total-amount" style="font-size:22px;font-weight:800;color:#b45309;letter-spacing:-0.5px;"></span>
-                      <span style="font-size:13px;color:#92400e;font-weight:600;">¿ø</span>
+                      <span style="font-size:13px;color:#92400e;font-weight:600;">ì›</span>
                     </div>
                     <div id="sev-summary-note" style="font-size:10.5px;color:#a16207;margin-top:2px;"></div>
                   </div>
@@ -109,29 +106,29 @@
           </div><!-- /std-tab-panel -->
           </div><!-- /sev-tab-status -->
 
-          <!-- ÅÇ2: Áö±Þ ¹ß»ý ÀÌ·Â -->
+          <!-- íƒ­2: ì§€ê¸‰ ë°œìƒ ì´ë ¥ -->
           <div id="sev-tab-history" style="display:none;">
           <div class="std-tab-panel">
             <div style="font-size:12px;color:#6b7280;margin-bottom:12px;display:flex;align-items:center;gap:6px;">
               <i class="fas fa-info-circle" style="color:#6366f1;"></i>
-              Åð»ç(°è¾à ¸¸·á¡¤ÇØÁö) Ã³¸®µÈ ±Ù·ÎÀÚÀÇ ÅðÁ÷±Ý ¹ß»ý ÀÌ·ÂÀÔ´Ï´Ù. ÇàÀ» Å¬¸¯ÇÏ¸é Á¤»ê³»¿ªÇ¥¸¦ È®ÀÎÇÒ ¼ö ÀÖ½À´Ï´Ù.
+              í‡´ì‚¬(ê³„ì•½ ë§Œë£ŒÂ·í•´ì§€) ì²˜ë¦¬ëœ ê·¼ë¡œìžì˜ í‡´ì§ê¸ˆ ë°œìƒ ì´ë ¥ìž…ë‹ˆë‹¤. í–‰ì„ í´ë¦­í•˜ë©´ ì •ì‚°ë‚´ì—­í‘œë¥¼ í™•ì¸í•  ìˆ˜ ìžˆìŠµë‹ˆë‹¤.
               </div>
               <div id="sev-history-table-wrap" style="overflow-x:auto;">
                 <table class="tbl-std">
                   <thead>
                     <tr>
-                      <th>¹ß»ýÀÏ (Åð»çÀÏ)</th>
-                      <th>¼º¸í</th>
-                      <th>ºÎ¼­/Á÷Ã¥</th>
-                      <th>°è¾à ÀÌ·Â<br><span style="font-weight:400;font-size:11px;">(½ÃÀÛÀÏ ~ Á¾·áÀÏ)</span></th>
-                      <th class="ctr">°è¾àº°/<br>ÃÑ ÀçÁ÷±â°£</th>
-                      <th class="ctr">Æò±Õ ¿ù<br>Åë»óÀÓ±Ý</th>
-                      <th class="ctr">ÅðÁ÷±Ý Áö±Þ¾×</th>
-                      <th>Åð»ç »çÀ¯</th>
+                      <th>ë°œìƒì¼ (í‡´ì‚¬ì¼)</th>
+                      <th>ì„±ëª…</th>
+                      <th>ë¶€ì„œ/ì§ì±…</th>
+                      <th>ê³„ì•½ ì´ë ¥<br><span style="font-weight:400;font-size:11px;">(ì‹œìž‘ì¼ ~ ì¢…ë£Œì¼)</span></th>
+                      <th class="ctr">ê³„ì•½ë³„/<br>ì´ ìž¬ì§ê¸°ê°„</th>
+                      <th class="ctr">í‰ê·  ì›”<br>í†µìƒìž„ê¸ˆ</th>
+                      <th class="ctr">í‡´ì§ê¸ˆ ì§€ê¸‰ì•¡</th>
+                      <th>í‡´ì‚¬ ì‚¬ìœ </th>
                     </tr>
                   </thead>
                   <tbody id="sev-history-tbody">
-                    <tr><td colspan="8" style="text-align:center;padding:30px;color:#9ca3af;">ÅðÁ÷±Ý ¹ß»ý ÀÌ·ÂÀÌ ¾ø½À´Ï´Ù.</td></tr>
+                    <tr><td colspan="8" style="text-align:center;padding:30px;color:#9ca3af;">í‡´ì§ê¸ˆ ë°œìƒ ì´ë ¥ì´ ì—†ìŠµë‹ˆë‹¤.</td></tr>
                   </tbody>
                 </table>
               </div>
@@ -139,93 +136,5 @@
           </div><!-- /std-tab-panel -->
           </div><!-- /sev-tab-history -->
 
-          <!-- ÅÇ3: Áß°£Á¤»ê -->
-          <div id="sev-tab-interim" style="display:none;">
-          <div class="std-tab-panel">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-              <div style="font-size:12px;color:#6b7280;display:flex;align-items:center;gap:6px;">
-                <i class="fas fa-info-circle" style="color:#6366f1;"></i>
-                ÅðÁ÷±Ý Áß°£Á¤»ê ³»¿ªÀ» ±â·ÏÇÏ°í °ü¸®ÇÕ´Ï´Ù. Áß°£Á¤»ê ±Ý¾×Àº ÃÖÁ¾ ÅðÁ÷±Ý¿¡¼­ Â÷°¨µË´Ï´Ù.
-              </div>
-              <button onclick="openSevInterimModal()" class="btn btn-indigo btn-sm" style="padding:7px 14px;">
-                <i class="fas fa-plus" style="margin-right:4px;"></i>Áß°£Á¤»ê ±â·Ï
-              </button>
-            </div>
-            <div id="sev-interim-table-wrap" style="overflow-x:auto;">
-              <table class="tbl-std">
-                <thead>
-                  <tr>
-                    <th>Á¤»êÀÏ</th>
-                    <th>Á÷¿ø¸í</th>
-                    <th>±Ù¼ÓÀÏ¼ö</th>
-                    <th>1ÀÏ Æò±ÕÀÓ±Ý</th>
-                    <th>Á¤»ê ±Ý¾×</th>
-                    <th>»çÀ¯</th>
-                    <th>ºñ°í</th>
-                    <th style="width:60px;">°ü¸®</th>
-                  </tr>
-                </thead>
-                <tbody id="sev-interim-tbody">
-                  <tr><td colspan="8" style="text-align:center;padding:30px;color:#9ca3af;">°í°´»ç¸¦ ¼±ÅÃÇÏ¸é Áß°£Á¤»ê ³»¿ªÀÌ Ç¥½ÃµË´Ï´Ù.</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-          </div><!-- /sev-tab-interim -->
-
       </div><!-- /sev-main-section -->
-
-      <!-- Áß°£Á¤»ê ¸ð´Þ -->
-      <div id="sev-interim-modal" class="modal" style="display:none;">
-        <div class="modal-card" style="max-width:480px;">
-          <div class="modal-head">
-            <span id="sev-interim-modal-title">ÅðÁ÷±Ý Áß°£Á¤»ê ±â·Ï</span>
-            <button onclick="closeSevInterimModal()" class="btn-close"><i class="fas fa-times"></i></button>
-          </div>
-          <div class="modal-body">
-            <div class="form-group">
-              <label>Á÷¿ø ¼±ÅÃ <span class="lbl-req">*</span></label>
-              <select id="sev-interim-emp" class="input-std" class="w-full" onchange="onSevInterimEmpChange()">
-                <option value="">Á÷¿øÀ» ¼±ÅÃÇÏ¼¼¿ä</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Áß°£Á¤»ê Áö±ÞÀÏ <span class="lbl-req">*</span></label>
-              <input type="date" id="sev-interim-date" class="input-std" class="w-full" />
-            </div>
-            <div class="form-group">
-              <label>Áß°£Á¤»ê »çÀ¯ <span class="lbl-req">*</span></label>
-              <select id="sev-interim-reason" class="input-std" class="w-full">
-                <option value="">¼±ÅÃÇÏ¼¼¿ä</option>
-                <option value="ÁÖÅÃ±¸ÀÔ">ÁÖÅÃ±¸ÀÔ (¹«ÁÖÅÃÀÚ ÁÖÅÃ ±¸ÀÔ)</option>
-                <option value="ÀÇ·áºñ">º»ÀÎ¡¤ºÎ¾ç°¡Á· 6°³¿ù ÀÌ»ó ¿ä¾ç</option>
-                <option value="ÆÄ»ê">ÆÄ»ê¼±°í¡¤°³ÀÎÈ¸»ý</option>
-                <option value="±âÅ¸">±âÅ¸ (±Ù·ÎÀÚÅðÁ÷±Þ¿©º¸Àå¹ý ½ÃÇà·É Á¦3Á¶)</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Áß°£Á¤»ê ½ÃÁ¡ ±Ù¼ÓÀÏ¼ö</label>
-              <input type="number" id="sev-interim-tenure-days" class="input-std" class="w-full" readonly />
-              <span class="fld-hint">Á÷¿ø ¼±ÅÃ ½Ã ÀÚµ¿ °è»êµË´Ï´Ù.</span>
-            </div>
-            <div class="form-group">
-              <label>1ÀÏ Æò±ÕÀÓ±Ý (Áß°£Á¤»ê ½ÃÁ¡)</label>
-              <input type="text" inputmode="numeric" id="sev-interim-daily-wage" class="input-std" class="w-full" placeholder="ÀÚµ¿ °è»ê ¶Ç´Â Á÷Á¢ ÀÔ·Â" />
-            </div>
-            <div class="form-group">
-              <label>Áß°£Á¤»ê ±Ý¾× <span class="lbl-req">*</span></label>
-              <input type="text" inputmode="numeric" id="sev-interim-amount" class="input-std" class="w-full" placeholder="Á¤»ê ±Ý¾× ÀÔ·Â" />
-            </div>
-            <div class="form-group">
-              <label>ºñ°í</label>
-              <input type="text" id="sev-interim-note" class="input-std" class="w-full" placeholder="Ãß°¡ ¸Þ¸ð" />
-            </div>
-          </div>
-          <div class="modal-foot">
-            <button onclick="saveSevInterim()" class="btn btn-indigo"><i class="fas fa-save" style="margin-right:5px;"></i>ÀúÀå</button>
-            <button onclick="closeSevInterimModal()" class="btn btn-secondary">Ãë¼Ò</button>
-          </div>
-        </div>
-      </div>
-
     </div><!-- /page-severance -->

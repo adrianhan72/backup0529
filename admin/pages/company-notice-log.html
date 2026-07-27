@@ -1,10 +1,10 @@
-    <div id="page-company-notice-log" class="page">
+ï»¿    <div id="page-company-notice-log" class="page">
 
-      <!-- ¨ç ¿¹¾à ÇöÈ² Ä«µå (scheduled °Ç¸¸) -->
+      <!-- â‘  ì˜ˆì•½ í˜„í™© ì¹´ë“œ (scheduled ê±´ë§Œ) -->
       <div id="cnl-reserve-card" style="display:none;margin-bottom:14px;">
         <div class="section-title">
           <i class="fas fa-clock" style="color:#f59e0b;"></i>
-          <span>¿¹¾à ÇöÈ²</span>
+          <span>ì˜ˆì•½ í˜„í™©</span>
           <span id="cnl-reserve-badge" style="background:#fef3c7;color:#b45309;font-size:12px;padding:2px 10px;border-radius:20px;"></span>
         </div>
         <div class="card" style="padding:0;overflow:hidden;">
@@ -12,13 +12,13 @@
             <table class="tbl-std" style="table-layout:fixed;">
               <thead>
                 <tr>
-                  <th style="width:155px;">¿¹¾à ÀÏ½Ã</th>
-                  <th style="width:140px;" id="cnl-reserve-th-company">°í°´»ç</th>
-                  <th style="width:145px;">¾Ë¸² À¯Çü</th>
-                  <th style="width:100px;">¹ß¼Û¹æ½Ä</th>
-                  <th style="width:25%;min-width:180px;">Á¦¸ñ</th>
-                  <th style="width:80px;">¹ß¼ÛÀÚ</th>
-                  <th class="ctr" style="width:175px;">ÀÛ¾÷</th>
+                  <th style="width:155px;">ì˜ˆì•½ ì¼ì‹œ</th>
+                  <th style="width:140px;" id="cnl-reserve-th-company">ê³ ê°ì‚¬</th>
+                  <th style="width:145px;">ì•Œë¦¼ ìœ í˜•</th>
+                  <th style="width:100px;">ë°œì†¡ë°©ì‹</th>
+                  <th style="width:25%;min-width:180px;">ì œëª©</th>
+                  <th style="width:80px;">ë°œì†¡ìž</th>
+                  <th class="ctr" style="width:175px;">ìž‘ì—…</th>
                 </tr>
               </thead>
               <tbody id="cnl-reserve-tbody"></tbody>
@@ -27,100 +27,100 @@
         </div>
       </div>
 
-      <!-- ¨è ¹ß¼Û ÀÌ·Â Å×ÀÌºí ¿µ¿ª (sent / cancelled¸¸) -->
+      <!-- â‘¡ ë°œì†¡ ì´ë ¥ í…Œì´ë¸” ì˜ì—­ (sent / cancelledë§Œ) -->
       <div id="cnl-main-section">
 
         <div class="section-title">
           <i class="fas fa-paper-plane"></i>
-          <span>¹ß¼Û ÀÌ·Â</span>
+          <span>ë°œì†¡ ì´ë ¥</span>
           <span id="cnl-total-badge" style="font-size:12px;color:#64748b;"></span>
         </div>
 
-        <!-- ÇÊÅÍ ¹Ù -->
+        <!-- í•„í„° ë°” -->
         <div class="card" style="margin-bottom:12px;overflow:hidden;">
           <div class="filt-bar" style="border-bottom:1px solid #f3f4f6;">
-            <!-- °í°´»ç -->
+            <!-- ê³ ê°ì‚¬ -->
             <div style="display:flex;align-items:center;gap:5px;">
-              <span class="filt-label">°í°´»ç</span>
+              <span class="filt-label">ê³ ê°ì‚¬</span>
               <select id="cnl-filter-company" onchange="cnlOnCompanyChange()" class="filt-select" style="max-width:240px;">
-                <option value="">ÀüÃ¼</option>
+                <option value="">ì „ì²´</option>
               </select>
             </div>
-            <!-- ¾Ë¸² À¯Çü -->
+            <!-- ì•Œë¦¼ ìœ í˜• -->
             <div style="display:flex;align-items:center;gap:5px;">
-              <span class="filt-label">À¯Çü</span>
+              <span class="filt-label">ìœ í˜•</span>
               <select id="cnl-filter-type" onchange="_cnlPage=1;renderCnlReserveCard();renderCnlTable();" class="filt-select" style="max-width:130px;">
-                <option value="">ÀüÃ¼</option>
-                <option value="welcome">°¡ÀÔÈ¯¿µ</option>
-                <option value="contract_created">½Å±Ô ±Ù·Î°è¾à</option>
-                <option value="contract_dispatched">°è¾à¼­ ¹ß¼Û</option>
-                <option value="payslip_individual_sent">±Þ¿©¸í¼¼¼­ °³º°</option>
-                <option value="payslip_bulk_sent">±Þ¿©¸í¼¼¼­ ÀÏ°ý</option>
-                <option value="contract_expiry">°è¾à¸¸·á ÅëÁö</option>
-                <option value="regular_conversion">Á¤±ÔÁ÷ ÀüÈ¯</option>
-                <option value="probation_expiry">¼ö½À¸¸·á ÅëÁö</option>
-                <option value="leave_promotion">¿¬Â÷ »ç¿ëÃËÁø</option>
-                <option value="severance_paid">ÅðÁ÷±Þ¿© Áö±Þ</option>
-                <option value="notice">ÀÌ¿ë¾È³»</option>
-                <option value="general">Áß¿ä°øÁö</option>
+                <option value="">ì „ì²´</option>
+                <option value="welcome">ê°€ìž…í™˜ì˜</option>
+                <option value="contract_created">ì‹ ê·œ ê·¼ë¡œê³„ì•½</option>
+                <option value="contract_dispatched">ê³„ì•½ì„œ ë°œì†¡</option>
+                <option value="payslip_individual_sent">ê¸‰ì—¬ëª…ì„¸ì„œ ê°œë³„</option>
+                <option value="payslip_bulk_sent">ê¸‰ì—¬ëª…ì„¸ì„œ ì¼ê´„</option>
+                <option value="contract_expiry">ê³„ì•½ë§Œë£Œ í†µì§€</option>
+                <option value="regular_conversion">ì •ê·œì§ ì „í™˜</option>
+                <option value="probation_expiry">ìˆ˜ìŠµë§Œë£Œ í†µì§€</option>
+                <option value="leave_promotion">ì—°ì°¨ ì‚¬ìš©ì´‰ì§„</option>
+                <option value="severance_paid">í‡´ì§ê¸‰ì—¬ ì§€ê¸‰</option>
+                <option value="notice">ì´ìš©ì•ˆë‚´</option>
+                <option value="general">ì¤‘ìš”ê³µì§€</option>
               </select>
             </div>
-            <!-- ±â°£ -->
+            <!-- ê¸°ê°„ -->
             <div style="display:flex;align-items:center;gap:5px;">
-              <span class="filt-label">±â°£</span>
+              <span class="filt-label">ê¸°ê°„</span>
               <input type="date" id="cnl-filter-date-from" class="filt-date" />
               <span style="font-size:11px;color:#9ca3af;">~</span>
               <input type="date" id="cnl-filter-date-to" class="filt-date" />
-              <button onclick="_cnlDoSearch()" class="filt-btn-search">Á¶È¸</button>
-              <span id="cnl-date-notice" style="font-size:10.5px;color:#9ca3af;white-space:nowrap;">(ÃÖ´ë 3°³¿ù)</span>
+              <button onclick="_cnlDoSearch()" class="filt-btn-search">ì¡°íšŒ</button>
+              <span id="cnl-date-notice" style="font-size:10.5px;color:#9ca3af;white-space:nowrap;">(ìµœëŒ€ 3ê°œì›”)</span>
             </div>
-            <!-- °Ë»ö (¿ìÃø) -->
+            <!-- ê²€ìƒ‰ (ìš°ì¸¡) -->
             <div style="display:flex;align-items:center;gap:6px;margin-left:auto;">
               <div class="filt-search-wrap">
                 <i class="fas fa-search"></i>
-                <input type="text" id="cnl-search" class="filt-search" style="width:150px;" placeholder="Á¦¸ñ °Ë»ö" oninput="renderCnlReserveCard();renderCnlTable();" />
+                <input type="text" id="cnl-search" class="filt-search" style="width:150px;" placeholder="ì œëª© ê²€ìƒ‰" oninput="renderCnlReserveCard();renderCnlTable();" />
               </div>
             </div>
           </div>
         </div>
 
-        <!-- ÀÌ·Â Å×ÀÌºí -->
+        <!-- ì´ë ¥ í…Œì´ë¸” -->
         <div class="card tbl-loading-wrap" id="cnl-table-card" style="padding:0;overflow:hidden;">
           <div style="overflow-x:auto;">
             <table class="tbl-std" style="table-layout:fixed;">
               <thead>
                 <tr>
-                  <th style="width:140px;">¹ß¼Û ÀÏ½Ã</th>
-                  <th style="width:140px;" id="cnl-th-company">°í°´»ç</th>
-                  <th style="width:155px;">¾Ë¸² À¯Çü</th>
-                  <th style="width:100px;">¹ß¼Û¹æ½Ä</th>
-                  <th style="width:25%;min-width:180px;">Á¦¸ñ</th>
-                  <th class="ctr" style="width:90px;">È®ÀÎ</th>
-                  <th style="width:75px;">¹ß¼ÛÀÚ</th>
-                  <th class="ctr" style="width:75px;">»ó¼¼</th>
+                  <th style="width:140px;">ë°œì†¡ ì¼ì‹œ</th>
+                  <th style="width:140px;" id="cnl-th-company">ê³ ê°ì‚¬</th>
+                  <th style="width:155px;">ì•Œë¦¼ ìœ í˜•</th>
+                  <th style="width:100px;">ë°œì†¡ë°©ì‹</th>
+                  <th style="width:25%;min-width:180px;">ì œëª©</th>
+                  <th class="ctr" style="width:90px;">í™•ì¸</th>
+                  <th style="width:75px;">ë°œì†¡ìž</th>
+                  <th class="ctr" style="width:75px;">ìƒì„¸</th>
                 </tr>
               </thead>
               <tbody id="cnl-tbody"></tbody>
             </table>
           </div>
-          <!-- ÆäÀÌÁö³×ÀÌ¼Ç -->
+          <!-- íŽ˜ì´ì§€ë„¤ì´ì…˜ -->
           <div id="cnl-pagination" style="padding:8px 16px;"></div>
         </div>
 
       </div><!-- /cnl-main-section -->
 
-      <!-- ¸Þ½ÃÁö º»¹® »ó¼¼ ¸ð´Þ -->
+      <!-- ë©”ì‹œì§€ ë³¸ë¬¸ ìƒì„¸ ëª¨ë‹¬ -->
       <div id="cnl-detail-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:3000;align-items:center;justify-content:center;">
         <div style="background:#fff;border-radius:16px;width:min(600px,92vw);max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25);display:flex;flex-direction:column;">
-          <!-- ¸ð´Þ Çì´õ -->
+          <!-- ëª¨ë‹¬ í—¤ë” -->
           <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 22px 14px;border-bottom:1px solid #f1f5f9;position:sticky;top:0;background:#fff;z-index:1;">
             <div class="section-title">
               <i class="fas fa-bell"></i>
-              <span>¾Ë¸² »ó¼¼ º¸±â</span>
+              <span>ì•Œë¦¼ ìƒì„¸ ë³´ê¸°</span>
             </div>
-            <button onclick="closeCnlDetailModal()" class="btn btn-close">?</button>
+            <button onclick="closeCnlDetailModal()" class="btn btn-close">âœ•</button>
           </div>
-          <!-- ¸ð´Þ º»¹® -->
+          <!-- ëª¨ë‹¬ ë³¸ë¬¸ -->
           <div id="cnl-detail-body" style="padding:20px 22px;"></div>
         </div>
       </div>

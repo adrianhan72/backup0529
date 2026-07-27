@@ -1,4 +1,4 @@
-    *{box-sizing:border-box;margin:0;padding:0}
+﻿    *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:'Noto Sans KR',sans-serif;background:#f0f2f5;color:#1a1a2e}
     .sidebar{position:fixed;left:0;top:0;width:240px;height:100vh;background:linear-gradient(180deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);display:flex;flex-direction:column;z-index:100;box-shadow:4px 0 20px rgba(0,0,0,.3)}
     .sidebar-logo{padding:24px 20px 18px;border-bottom:1px solid rgba(255,255,255,.1)}
@@ -196,6 +196,8 @@
       border: 1px solid #e8eaed;
       cursor: default;
     }
+
+    /* ?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═
 /* ── company/contract input state classes ── */
 .cm-input-readonly{background:#f1f5f9;border-color:#e2e8f0}
 .cm-input-active{background:#fff;border-color:#6366f1}
@@ -204,5 +206,3 @@
 .cm-msg-muted{color:#9ca3af}
 .cm-msg-error{color:#dc2626}
 .cm-msg-success{color:#16a34a}
-
-    /* ?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═

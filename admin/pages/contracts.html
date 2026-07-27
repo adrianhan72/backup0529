@@ -1,18 +1,18 @@
-    <div id="page-contracts" class="page">
-      <!-- ?? ÁøÇà ÁßÀÎ ¾÷¹« ¼½¼Ç ?? -->
+ï»¿    <div id="page-contracts" class="page">
+      <!-- â•â• ì§„í–‰ ì¤‘ì¸ ì—…ë¬´ ì„¹ì…˜ â•â• -->
       <div id="cont-progress-section" style="display:none;">
         <div class="section-title">
           <i class="fas fa-spinner"></i>
-          <span>ÁøÇà ÁßÀÎ ¾÷¹«</span>
+          <span>ì§„í–‰ ì¤‘ì¸ ì—…ë¬´</span>
         </div>
         <div id="contracts-draft-banner" style="display:none;margin-bottom:10px;"></div>
       </div>
 
-      <!-- ?? ÇÒÀÏ ¸ñ·Ï ¼½¼Ç (°í°´»ç ¼±ÅÃ Àü ±Û·Î¹ú ¹è³Ê) ?? -->
+      <!-- â•â• í• ì¼ ëª©ë¡ ì„¹ì…˜ (ê³ ê°ì‚¬ ì„ íƒ ì „ ê¸€ë¡œë²Œ ë°°ë„ˆ) â•â• -->
       <div id="cont-todo-section" style="display:none;">
         <div class="section-title">
           <i class="fas fa-clipboard-list"></i>
-          <span>ÇÒÀÏ ¸ñ·Ï</span>
+          <span>í• ì¼ ëª©ë¡</span>
         </div>
         <div class="cont-todo-grid" style="display:none;">
           <div id="contracts-signed-banner"   style="display:none;"></div>
@@ -23,14 +23,14 @@
         <div id="contracts-draft-banner" style="display:none;margin-bottom:10px;"></div>
       </div>
 
-      <!-- °í°´»ç ¼±ÅÃ -->
+      <!-- ê³ ê°ì‚¬ ì„ íƒ -->
       <div id="cont-company-select-card">
         <div class="section-title">
           <i class="fas fa-building" style="font-size:13px;"></i>
-          <span style="font-size:14px;">°í°´»çº° ±Ù·Î°è¾à ÇöÈ² Á¶È¸</span>
+          <span style="font-size:14px;">ê³ ê°ì‚¬ë³„ ê·¼ë¡œê³„ì•½ í˜„í™© ì¡°íšŒ</span>
           <div class="filt-search-wrap" style="margin-left:auto;">
             <i class="fas fa-search"></i>
-            <input type="text" id="cont-company-search" class="filt-search" class="w-160" placeholder="°í°´»ç¸í °Ë»ö" oninput="renderContCompanyList()" />
+            <input type="text" id="cont-company-search" class="filt-search" class="w-160" placeholder="ê³ ê°ì‚¬ëª… ê²€ìƒ‰" oninput="renderContCompanyList()" />
           </div>
         </div>
         <div class="card" style="margin-bottom:16px;overflow:hidden;">
@@ -38,77 +38,77 @@
         </div>
       </div>
 
-      <!-- ¼±ÅÃµÈ °í°´»ç ¸ñ·Ï ¼½¼Ç -->
+      <!-- ì„ íƒëœ ê³ ê°ì‚¬ ëª©ë¡ ì„¹ì…˜ -->
       <div id="cont-list-section" style="display:none;">
 
-        <!-- ¼±ÅÃ °í°´»ç Çì´õ (ÃÖ»ó´Ü) -->
+        <!-- ì„ íƒ ê³ ê°ì‚¬ í—¤ë” (ìµœìƒë‹¨) -->
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:12px 18px;background:linear-gradient(90deg,#1e1b4b,#312e81);border-radius:10px;">
           <span id="cont-selected-company-label" style="font-size:14px;font-weight:700;color:#fff;"></span>
           <div style="display:flex;align-items:center;gap:10px;">
-            <button class="btn btn-primary" id="cont-add-btn" onclick="openContractModal(null, currentContCompanyId)"><i class="fas fa-plus"></i> ½Å±Ô°è¾à ÀÛ¼º</button>
-            <button onclick="clearContCompanySelect()" class="btn btn-icon-dark" title="°í°´»ç ¼±ÅÃ ÇØÁ¦"><i class="fas fa-times"></i></button>
+            <button class="btn btn-primary" id="cont-add-btn" onclick="openContractModal(null, currentContCompanyId)"><i class="fas fa-plus"></i> ì‹ ê·œê³„ì•½ ìž‘ì„±</button>
+            <button onclick="clearContCompanySelect()" class="btn btn-icon-dark" title="ê³ ê°ì‚¬ ì„ íƒ í•´ì œ"><i class="fas fa-times"></i></button>
           </div>
         </div>
 
-        <!-- ¦¡¦¡ °è¾à¿¹Á¤ / ÀÓ½ÃÀúÀå / °è¾à¼­¹Ì¹ß¼Û / µ¿ÀÇ¼­¹Ì¹ß¼Û (wrapper ¹Ù±ù ºÐ¸®) ¦¡¦¡ -->
+        <!-- â”€â”€ ê³„ì•½ì˜ˆì • / ìž„ì‹œì €ìž¥ / ê³„ì•½ì„œë¯¸ë°œì†¡ / ë™ì˜ì„œë¯¸ë°œì†¡ (wrapper ë°”ê¹¥ ë¶„ë¦¬) â”€â”€ -->
         <div id="cont-co-cards-outer" style="margin-bottom:8px;"></div>
 
-        <!-- ¦¡¦¡ °»½Å¡¤ÇØÁö ¿ä¾à ¹è³Ê ¦¡¦¡ -->
+        <!-- â”€â”€ ê°±ì‹ Â·í•´ì§€ ìš”ì•½ ë°°ë„ˆ â”€â”€ -->
         <div id="cont-summary-banner" style="display:none;margin:10px 18px;padding:10px 16px;background:linear-gradient(90deg,#f8fafc,#f1f5f9);border:1px solid #e2e8f0;border-radius:8px;font-size:12px;color:#475569;gap:16px;align-items:center;flex-wrap:wrap;"></div>
-        <!-- ¦¡¦¡ ¸¸·áÅëÁö / Á¤±ÔÁ÷ÀüÈ¯ / ¼ö½À ¦¡¦¡ -->
+        <!-- â”€â”€ ë§Œë£Œí†µì§€ / ì •ê·œì§ì „í™˜ / ìˆ˜ìŠµ â”€â”€ -->
         <div id="cont-co-cards-wrap" style="margin-bottom:0;"></div>
 
-        <!-- ¼û°ÜÁø ÇÊÅÍ (goContractsByCompany È£È¯¿ë) -->
+        <!-- ìˆ¨ê²¨ì§„ í•„í„° (goContractsByCompany í˜¸í™˜ìš©) -->
         <select id="cont-company-filter" style="display:none;"></select>
 
-        <!-- ¦¡¦¡ ±Ù·Î°è¾à ¸ñ·Ï ¦¡¦¡ -->
+        <!-- â”€â”€ ê·¼ë¡œê³„ì•½ ëª©ë¡ â”€â”€ -->
         <div class="section-title">
           <i class="fas fa-list"></i>
-          <span>±Ù·Î°è¾à ¸ñ·Ï</span>
+          <span>ê·¼ë¡œê³„ì•½ ëª©ë¡</span>
         </div>
 
-        <!-- ÇÊÅÍ ¹Ù -->
+        <!-- í•„í„° ë°” -->
         <div class="card" style="margin-bottom:12px;overflow:hidden;">
           <div class="filt-bar">
             <select id="cont-filter-empcat" onchange="filterContracts()" class="filt-select">
-              <option value="">°í¿ëÇüÅÂ ÀüÃ¼</option>
-              <option value="regular">Á¤±ÔÁ÷</option>
-              <option value="regular_probation">Á¤±ÔÁ÷ ¼ö½À</option>
-              <option value="fixed_term">°è¾àÁ÷</option>
-              <option value="fixed_term_probation">°è¾àÁ÷ ¼ö½À</option>
-              <option value="daily">ÀÏ¿ëÁ÷</option>
-              <option value="executive">µî±âÀÓ¿ø</option>
-              <option value="related_party">Æ¯¼ö°ü°èÀÎ</option>
-              <option value="representative">´ëÇ¥ÀÚ</option>
+              <option value="">ê³ ìš©í˜•íƒœ ì „ì²´</option>
+              <option value="regular">ì •ê·œì§</option>
+              <option value="regular_probation">ì •ê·œì§ ìˆ˜ìŠµ</option>
+              <option value="fixed_term">ê³„ì•½ì§</option>
+              <option value="fixed_term_probation">ê³„ì•½ì§ ìˆ˜ìŠµ</option>
+              <option value="daily">ì¼ìš©ì§</option>
+              <option value="executive">ë“±ê¸°ìž„ì›</option>
+              <option value="related_party">íŠ¹ìˆ˜ê´€ê³„ì¸</option>
+              <option value="representative">ëŒ€í‘œìž</option>
             </select>
             <div class="filt-search-wrap">
               <i class="fas fa-search"></i>
-              <input type="text" id="cont-search" class="filt-search" style="width:140px;" placeholder="Á÷¿ø¸í °Ë»ö" oninput="renderContracts()" />
+              <input type="text" id="cont-search" class="filt-search" style="width:140px;" placeholder="ì§ì›ëª… ê²€ìƒ‰" oninput="renderContracts()" />
             </div>
             <div id="cont-filter-status-group" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-              <span class="filt-label">»óÅÂ:</span>
-              <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;color:#374151;user-select:none;"><input type="checkbox" class="cont-filter-status-cb" value="ÀüÃ¼" onchange="_toggleAllStatus(this)" style="accent-color:#6366f1;" />ÀüÃ¼</label>
-              <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;color:#374151;user-select:none;"><input type="checkbox" class="cont-filter-status-cb" value="À¯È¿" checked onchange="_onStatusFilterChange()" style="accent-color:#6366f1;" />À¯È¿</label>
-              <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;color:#374151;user-select:none;"><input type="checkbox" class="cont-filter-status-cb" value="¸¸·á" onchange="_onStatusFilterChange()" style="accent-color:#6366f1;" />¸¸·á</label>
-              <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;color:#374151;user-select:none;"><input type="checkbox" class="cont-filter-status-cb" value="ÇØÁö" onchange="_onStatusFilterChange()" style="accent-color:#6366f1;" />ÇØÁö</label>
-              <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;color:#374151;user-select:none;"><input type="checkbox" class="cont-filter-status-cb" value="ÆÄ±â" onchange="_onStatusFilterChange()" style="accent-color:#6366f1;" />ÆÄ±â</label>
+              <span class="filt-label">ìƒíƒœ:</span>
+              <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;color:#374151;user-select:none;"><input type="checkbox" class="cont-filter-status-cb" value="ì „ì²´" onchange="_toggleAllStatus(this)" style="accent-color:#6366f1;" />ì „ì²´</label>
+              <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;color:#374151;user-select:none;"><input type="checkbox" class="cont-filter-status-cb" value="ìœ íš¨" checked onchange="_onStatusFilterChange()" style="accent-color:#6366f1;" />ìœ íš¨</label>
+              <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;color:#374151;user-select:none;"><input type="checkbox" class="cont-filter-status-cb" value="ë§Œë£Œ" onchange="_onStatusFilterChange()" style="accent-color:#6366f1;" />ë§Œë£Œ</label>
+              <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;color:#374151;user-select:none;"><input type="checkbox" class="cont-filter-status-cb" value="í•´ì§€" onchange="_onStatusFilterChange()" style="accent-color:#6366f1;" />í•´ì§€</label>
+              <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;color:#374151;user-select:none;"><input type="checkbox" class="cont-filter-status-cb" value="íŒŒê¸°" onchange="_onStatusFilterChange()" style="accent-color:#6366f1;" />íŒŒê¸°</label>
             </div>
             <label id="cont-filter-docs-incomplete-label" style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-weight:600;color:#ea580c;background:rgba(234,88,12,.1);border:1.5px solid #fdba74;border-radius:20px;padding:6px 14px;user-select:none;">
               <input type="checkbox" id="cont-filter-docs-incomplete" onchange="filterContracts()" style="accent-color:#ea580c;width:15px;height:15px;" />
-              ¼­·ù¹Ìºñ »óÅÂ¸¸ º¸±â
+              ì„œë¥˜ë¯¸ë¹„ ìƒíƒœë§Œ ë³´ê¸°
             </label>
             <div class="filt-search-wrap" style="margin-left:auto;">
               <i class="fas fa-hashtag"></i>
-              <input type="text" id="cont-filter-id" class="filt-search" style="width:180px;" placeholder="°è¾à¼­ °íÀ¯ ID" oninput="filterContracts()" />
+              <input type="text" id="cont-filter-id" class="filt-search" style="width:180px;" placeholder="ê³„ì•½ì„œ ê³ ìœ  ID" oninput="filterContracts()" />
             </div>
           </div>
         </div>
 
-        <!-- ±Ù·Î°è¾à ¸ñ·Ï Å×ÀÌºí Ä«µå -->
+        <!-- ê·¼ë¡œê³„ì•½ ëª©ë¡ í…Œì´ë¸” ì¹´ë“œ -->
         <div class="card" style="padding:0;overflow:hidden;">
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Á÷¿ø¸í</th><th>¼ºº°</th><th>°í¿ëÇüÅÂ</th><th>°è¾à±â°£</th><th>Åë»ó½Ã±Þ</th><th>¿¬ºÀ</th><th>±âº»±Þ</th><th>ÁÖÈÞ¼ö´ç</th><th>¾àÁ¤ÀÓ±Ý(¿ù)</th><th>¼­·ù³¯ÀÎº»</th><th>»óÅÂ</th><th>°ü¸®</th></tr></thead>
+              <thead><tr><th>ì§ì›ëª…</th><th>ì„±ë³„</th><th>ê³ ìš©í˜•íƒœ</th><th>ê³„ì•½ê¸°ê°„</th><th>í†µìƒì‹œê¸‰</th><th>ì—°ë´‰</th><th>ê¸°ë³¸ê¸‰</th><th>ì£¼íœ´ìˆ˜ë‹¹</th><th>ì•½ì •ìž„ê¸ˆ(ì›”)</th><th>ì„œë¥˜ë‚ ì¸ë³¸</th><th>ìƒíƒœ</th><th>ê´€ë¦¬</th></tr></thead>
               <tbody id="cont-tbody"></tbody>
             </table>
           </div>
@@ -117,5 +117,5 @@
       </div>
     </div>
 
-    <!-- ?? STANDARDS (³âµµº° »êÁ¤±âÁØ) ?? -->
+    <!-- â•â• STANDARDS (ë…„ë„ë³„ ì‚°ì •ê¸°ì¤€) â•â• -->
     <div id="page-standards" class="page">

@@ -1,39 +1,39 @@
-    <div id="page-wage-ledger" class="page">
+ï»¿    <div id="page-wage-ledger" class="page">
 
-      <!-- ÀÓ½ÃÀúÀå ±Þ¿© ÀÌ¾î¼­ ÀÛ¼º È®ÀÎ ¸ð´Þ -->
+      <!-- ìž„ì‹œì €ìž¥ ê¸‰ì—¬ ì´ì–´ì„œ ìž‘ì„± í™•ì¸ ëª¨ë‹¬ -->
       <div id="wl-resume-modal" class="wl-resume-modal-overlay" style="display:none;"
            onclick="if(event.target===this)closeWLResumeModal()">
         <div class="wl-resume-modal">
           <div class="wl-resume-modal-header">
             <div class="wl-resume-modal-icon"><i class="fas fa-save"></i></div>
-            <div class="wl-resume-modal-title">ÀÓ½ÃÀúÀå ±Þ¿© µ¥ÀÌÅÍ ÀÖÀ½</div>
+            <div class="wl-resume-modal-title">ìž„ì‹œì €ìž¥ ê¸‰ì—¬ ë°ì´í„° ìžˆìŒ</div>
             <button class="wl-resume-modal-close" onclick="closeWLResumeModal()"><i class="fas fa-times"></i></button>
           </div>
           <div class="wl-resume-modal-body">
-            <p>¼±ÅÃÇÑ Á÷¿øÀÇ ÀÓ½ÃÀúÀå ÁßÀÎ ±Þ¿© µ¥ÀÌÅÍ°¡ ÀÖ½À´Ï´Ù.<br>ÀÌ¾î¼­ ÀÛ¼ºÇÏ½Ã°Ú½À´Ï±î?</p>
+            <p>ì„ íƒí•œ ì§ì›ì˜ ìž„ì‹œì €ìž¥ ì¤‘ì¸ ê¸‰ì—¬ ë°ì´í„°ê°€ ìžˆìŠµë‹ˆë‹¤.<br>ì´ì–´ì„œ ìž‘ì„±í•˜ì‹œê² ìŠµë‹ˆê¹Œ?</p>
             <div class="wl-resume-modal-info" id="wl-resume-modal-info">
-              <!-- Á÷¿ø¸í¡¤¿ù Á¤º¸ µ¿Àû »ðÀÔ -->
+              <!-- ì§ì›ëª…Â·ì›” ì •ë³´ ë™ì  ì‚½ìž… -->
             </div>
           </div>
           <div class="wl-resume-modal-footer">
             <button class="wl-resume-btn-fresh" onclick="_wlFreshInput()">
-              <i class="fas fa-redo" style="font-size:11px;margin-right:4px;"></i>ÃÊ±âÈ­ ÈÄ »õ·Î ÀÛ¼º
+              <i class="fas fa-redo" style="font-size:11px;margin-right:4px;"></i>ì´ˆê¸°í™” í›„ ìƒˆë¡œ ìž‘ì„±
             </button>
             <button class="wl-resume-btn-resume" onclick="_wlResumeDraft()">
-              <i class="fas fa-play" style="font-size:11px;margin-right:4px;"></i>ÀÌ¾î¼­ ÀÛ¼º
+              <i class="fas fa-play" style="font-size:11px;margin-right:4px;"></i>ì´ì–´ì„œ ìž‘ì„±
             </button>
           </div>
         </div>
       </div>
 
-      <!-- °í°´»ç ¼±ÅÃ -->
+      <!-- ê³ ê°ì‚¬ ì„ íƒ -->
       <div id="wl-company-select-card">
         <div class="section-title">
           <i class="fas fa-building"></i>
-          <span>°í°´»ç¸¦ ¼±ÅÃÇÏ¼¼¿ä</span>
+          <span>ê³ ê°ì‚¬ë¥¼ ì„ íƒí•˜ì„¸ìš”</span>
           <div class="filt-search-wrap" style="margin-left:auto;">
             <i class="fas fa-search"></i>
-            <input type="text" id="wl-company-search" class="filt-search" class="w-160" placeholder="°í°´»ç¸í °Ë»ö" oninput="renderWLCompanyList()" />
+            <input type="text" id="wl-company-search" class="filt-search" class="w-160" placeholder="ê³ ê°ì‚¬ëª… ê²€ìƒ‰" oninput="renderWLCompanyList()" />
           </div>
         </div>
         <div class="card" style="margin-bottom:16px;overflow:hidden;">
@@ -41,32 +41,32 @@
         </div>
       </div>
 
-      <!-- ÀÓ±Ý´ëÀå ¸ÞÀÎ ¼½¼Ç -->
+      <!-- ìž„ê¸ˆëŒ€ìž¥ ë©”ì¸ ì„¹ì…˜ -->
       <div id="wl-main-section" style="display:none;">
-        <!-- ¼±ÅÃ °í°´»ç Çì´õ + ¸ñ·Ï Ä«µå ¼¼Æ® -->
-        <!-- ¼±ÅÃ °í°´»ç Çì´õ -->
+        <!-- ì„ íƒ ê³ ê°ì‚¬ í—¤ë” + ëª©ë¡ ì¹´ë“œ ì„¸íŠ¸ -->
+        <!-- ì„ íƒ ê³ ê°ì‚¬ í—¤ë” -->
         <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:linear-gradient(90deg,#1e1b4b,#312e81);border-radius:10px;margin-bottom:12px;">
           <span id="wl-selected-company-label" style="font-size:14px;font-weight:700;color:#fff;"></span>
-          <button onclick="clearWLCompanySelect()" class="btn btn-icon-dark" title="°í°´»ç ¼±ÅÃ ÇØÁ¦"><i class="fas fa-times"></i></button>
+          <button onclick="clearWLCompanySelect()" class="btn btn-icon-dark" title="ê³ ê°ì‚¬ ì„ íƒ í•´ì œ"><i class="fas fa-times"></i></button>
         </div>
 
-        <!-- ¦¡¦¡ ÇÊÅÍ ¹Ù ¦¡¦¡ -->
+        <!-- â”€â”€ í•„í„° ë°” â”€â”€ -->
         <div class="filt-bar wl-filter-bar" style="justify-content:space-between;background:#fff;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.06);margin-bottom:12px;">
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
             <select id="wl-year-filter" onchange="renderWageLedger()" class="filt-select"></select>
             <select id="wl-month-filter" onchange="renderWageLedger()" class="filt-select"></select>
           </div>
           <div style="display:flex;gap:8px;">
-            <button class="wl-excel-btn" onclick="downloadWageLedgerExcel()" disabled><i class="fas fa-file-excel"></i> ¿¢¼¿ ´Ù¿î·Îµå</button>
-            <button class="wl-pdf-btn" onclick="downloadWageLedgerPdf()" disabled><i class="fas fa-file-pdf"></i> PDF ´Ù¿î·Îµå</button>
-            <button class="wl-print-btn" onclick="printWageLedger()" disabled><i class="fas fa-print"></i> ÀÎ¼â</button>
+            <button class="wl-excel-btn" onclick="downloadWageLedgerExcel()" disabled><i class="fas fa-file-excel"></i> ì—‘ì…€ ë‹¤ìš´ë¡œë“œ</button>
+            <button class="wl-pdf-btn" onclick="downloadWageLedgerPdf()" disabled><i class="fas fa-file-pdf"></i> PDF ë‹¤ìš´ë¡œë“œ</button>
+            <button class="wl-print-btn" onclick="printWageLedger()" disabled><i class="fas fa-print"></i> ì¸ì‡„</button>
           </div>
         </div>
 
-        <!-- ¦¡¦¡ ÀÓ±Ý´ëÀå Å×ÀÌºí ¿µ¿ª ¦¡¦¡ -->
+        <!-- â”€â”€ ìž„ê¸ˆëŒ€ìž¥ í…Œì´ë¸” ì˜ì—­ â”€â”€ -->
         <div id="wl-table-area" style="min-height:200px;"></div>
       </div>
     </div>
 
-    <!-- ?? PAYROLLS ?? -->
+    <!-- â•â• PAYROLLS â•â• -->
     <div id="page-payrolls" class="page">

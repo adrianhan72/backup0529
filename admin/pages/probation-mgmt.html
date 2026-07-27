@@ -1,13 +1,13 @@
-    <div id="page-probation-mgmt" class="page">
+ï»¿    <div id="page-probation-mgmt" class="page">
 
-      <!-- ¨ç °í°´»ç ¼±ÅÃ -->
+      <!-- â‘  ê³ ê°ì‚¬ ì„ íƒ -->
       <div id="probmgmt-company-select-card">
         <div class="section-title">
           <i class="fas fa-building"></i>
-          <span>°í°´»ç¸¦ ¼±ÅÃÇÏ¼¼¿ä</span>
+          <span>ê³ ê°ì‚¬ë¥¼ ì„ íƒí•˜ì„¸ìš”</span>
           <div class="filt-search-wrap" style="margin-left:auto;">
             <i class="fas fa-search"></i>
-            <input type="text" id="probmgmt-company-search" class="filt-search" class="w-160" placeholder="°í°´»ç¸í °Ë»ö" oninput="renderProbMgmtCompanyList()" />
+            <input type="text" id="probmgmt-company-search" class="filt-search" class="w-160" placeholder="ê³ ê°ì‚¬ëª… ê²€ìƒ‰" oninput="renderProbMgmtCompanyList()" />
           </div>
         </div>
         <div class="card" style="margin-bottom:16px;overflow:hidden;">
@@ -15,70 +15,70 @@
         </div>
       </div>
 
-      <!-- ¨è °í°´»ç ¼±ÅÃ ÈÄ ÄÜÅÙÃ÷ ¼½¼Ç -->
+      <!-- â‘¡ ê³ ê°ì‚¬ ì„ íƒ í›„ ì½˜í…ì¸  ì„¹ì…˜ -->
       <div id="probmgmt-content-section" style="display:none;">
 
-        <!-- ¼±ÅÃµÈ °í°´»ç Çì´õ -->
+        <!-- ì„ íƒëœ ê³ ê°ì‚¬ í—¤ë” -->
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:12px 18px;background:linear-gradient(90deg,#1e1b4b,#312e81);border-radius:10px;">
           <span id="probmgmt-selected-label" style="font-size:14px;font-weight:700;color:#fff;"></span>
-          <button onclick="clearProbMgmtCompany()" class="btn btn-icon-dark" title="°í°´»ç ¼±ÅÃ ÇØÁ¦">
+          <button onclick="clearProbMgmtCompany()" class="btn btn-icon-dark" title="ê³ ê°ì‚¬ ì„ íƒ í•´ì œ">
             <i class="fas fa-times"></i>
           </button>
         </div>
 
-        <!-- ¿ä¾à Åë°è -->
+        <!-- ìš”ì•½ í†µê³„ -->
         <div class="probmgmt-stat-grid" id="probmgmt-stat-grid">
           <div class="probmgmt-stat-card" style="border-left:4px solid #0d9488;">
-            <div class="probmgmt-stat-label">ÀüÃ¼ ¼ö½À ±Ù·ÎÀÚ</div>
+            <div class="probmgmt-stat-label">ì „ì²´ ìˆ˜ìŠµ ê·¼ë¡œìž</div>
             <div class="probmgmt-stat-val" id="probmgmt-stat-total" style="color:#0d9488;">0</div>
-            <div class="probmgmt-stat-sub">ÇöÀç ¼ö½À ±â°£ ÁßÀÎ ÀüÃ¼ ÀÎ¿ø</div>
+            <div class="probmgmt-stat-sub">í˜„ìž¬ ìˆ˜ìŠµ ê¸°ê°„ ì¤‘ì¸ ì „ì²´ ì¸ì›</div>
           </div>
           <div class="probmgmt-stat-card" style="border-left:4px solid #dc2626;">
-            <div class="probmgmt-stat-label">ÇØ°í ½Ã ¼­¸éÅëÁö ´ë»óÀÚ</div>
+            <div class="probmgmt-stat-label">í•´ê³  ì‹œ ì„œë©´í†µì§€ ëŒ€ìƒìž</div>
             <div class="probmgmt-stat-val" id="probmgmt-stat-urgent" style="color:#dc2626;">0</div>
-            <div class="probmgmt-stat-sub">¼ö½À±â°£ÀÌ 3°³¿ùÀ» ÃÊ°úÇÏ´Â ±Ù·ÎÀÚ´Â ¸¸·áÀÏ 30ÀÏÀü±îÁö ¼­¸é ÅëÁö ÀÇ¹«</div>
+            <div class="probmgmt-stat-sub">ìˆ˜ìŠµê¸°ê°„ì´ 3ê°œì›”ì„ ì´ˆê³¼í•˜ëŠ” ê·¼ë¡œìžëŠ” ë§Œë£Œì¼ 30ì¼ì „ê¹Œì§€ ì„œë©´ í†µì§€ ì˜ë¬´</div>
           </div>
           <div class="probmgmt-stat-card" style="border-left:4px solid #f59e0b;">
-            <div class="probmgmt-stat-label">ÇØ°í½Ã ÇØ°í¿¹°í¼ö´ç(30ÀÏÄ¡ ±Þ¿©) Áö±Þ ´ë»ó</div>
+            <div class="probmgmt-stat-label">í•´ê³ ì‹œ í•´ê³ ì˜ˆê³ ìˆ˜ë‹¹(30ì¼ì¹˜ ê¸‰ì—¬) ì§€ê¸‰ ëŒ€ìƒ</div>
             <div class="probmgmt-stat-val" id="probmgmt-stat-thismonth" style="color:#f59e0b;">0</div>
-            <div class="probmgmt-stat-sub">¼ö½À±â°£ÀÌ 3°³¿ùÀ» ÃÊ°úÇÏ´Â ±Ù·ÎÀÚ Áß ¸¸·á±îÁö 30ÀÏ ¹Ì¸¸ÀÎ ±Ù·ÎÀÚ</div>
+            <div class="probmgmt-stat-sub">ìˆ˜ìŠµê¸°ê°„ì´ 3ê°œì›”ì„ ì´ˆê³¼í•˜ëŠ” ê·¼ë¡œìž ì¤‘ ë§Œë£Œê¹Œì§€ 30ì¼ ë¯¸ë§Œì¸ ê·¼ë¡œìž</div>
           </div>
         </div>
 
-        <!-- ¼½¼Ç Å¸ÀÌÆ² + °Ë»ö -->
+        <!-- ì„¹ì…˜ íƒ€ì´í‹€ + ê²€ìƒ‰ -->
         <div class="section-title">
           <i class="fas fa-user-clock" style="color:#0d9488;"></i>
-          <span>¼ö½À ±Ù·ÎÀÚ ÀüÃ¼ ¸ñ·Ï</span>
+          <span>ìˆ˜ìŠµ ê·¼ë¡œìž ì „ì²´ ëª©ë¡</span>
           <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
             <div class="filt-search-wrap" style="margin:0;">
               <i class="fas fa-search"></i>
-              <input type="text" id="probmgmt-search" class="filt-search" placeholder="±Ù·ÎÀÚ¸í °Ë»ö"
+              <input type="text" id="probmgmt-search" class="filt-search" placeholder="ê·¼ë¡œìžëª… ê²€ìƒ‰"
                      oninput="renderProbationMgmtTable()" class="w-160" />
             </div>
           </div>
         </div>
 
-        <!-- °Ë»ö + Å×ÀÌºí -->
+        <!-- ê²€ìƒ‰ + í…Œì´ë¸” -->
         <div class="card" style="padding:0;overflow:hidden;">
           <div class="probmgmt-table-wrap">
             <table class="probmgmt-table">
               <thead>
                 <tr>
-                  <th>±Ù·ÎÀÚ¸í</th>
-                  <th>¼ºº°</th>
-                  <th>°è¾à À¯Çü</th>
-                  <th>°è¾à ½ÃÀÛÀÏ</th>
-                  <th>¼ö½À±â°£</th>
-                  <th>¼ö½À ¸¸·áÀÏ</th>
+                  <th>ê·¼ë¡œìžëª…</th>
+                  <th>ì„±ë³„</th>
+                  <th>ê³„ì•½ ìœ í˜•</th>
+                  <th>ê³„ì•½ ì‹œìž‘ì¼</th>
+                  <th>ìˆ˜ìŠµê¸°ê°„</th>
+                  <th>ìˆ˜ìŠµ ë§Œë£Œì¼</th>
                   <th>D-day</th>
-                  <th style="text-align:center;">Ã³¸®°á°ú</th>
-                  <th style="text-align:center;">Ã³¸®ÀÏ½Ã</th>
-                  <th style="text-align:center;">¼ö½À°è¾à¼­</th>
-                  <th style="text-align:center;">°ü¸®</th>
+                  <th style="text-align:center;">ì²˜ë¦¬ê²°ê³¼</th>
+                  <th style="text-align:center;">ì²˜ë¦¬ì¼ì‹œ</th>
+                  <th style="text-align:center;">ìˆ˜ìŠµê³„ì•½ì„œ</th>
+                  <th style="text-align:center;">ê´€ë¦¬</th>
                 </tr>
               </thead>
               <tbody id="probmgmt-table-body">
-                <tr><td colspan="10" class="probmgmt-empty"><i class="fas fa-spinner fa-spin" style="margin-right:6px;color:#9ca3af;"></i>µ¥ÀÌÅÍ ºÒ·¯¿À´Â Áß...</td></tr>
+                <tr><td colspan="10" class="probmgmt-empty"><i class="fas fa-spinner fa-spin" style="margin-right:6px;color:#9ca3af;"></i>ë°ì´í„° ë¶ˆëŸ¬ì˜¤ëŠ” ì¤‘...</td></tr>
               </tbody>
             </table>
           </div>
@@ -86,32 +86,32 @@
 
       </div><!-- /probmgmt-content-section -->
 
-      <!-- ¼ö½À¸¸·á ÅëÁö ¸Þ½ÃÁö ¿¹½Ã -->
+      <!-- ìˆ˜ìŠµë§Œë£Œ í†µì§€ ë©”ì‹œì§€ ì˜ˆì‹œ -->
       <div id="probmgmt-template-section" style="display:none;">
         <div class="section-title" style="margin-top:24px;">
           <i class="fas fa-comment-alt"></i>
-          <span>¼ö½À¸¸·á ÅëÁö ¸Þ½ÃÁö ¿¹½Ã</span>
-          <span style="font-size:12px;color:#9ca3af;font-weight:400;">°í°´»ç ¾Û ¾Ë¸²ÇÔÀ¸·Î ¹ß¼Û ? ¼ö½À±â°£ 3°³¿ù ÃÊ°ú + ¸¸·á 30ÀÏ Àü ´ë»ó</span>
+          <span>ìˆ˜ìŠµë§Œë£Œ í†µì§€ ë©”ì‹œì§€ ì˜ˆì‹œ</span>
+          <span style="font-size:12px;color:#9ca3af;font-weight:400;">ê³ ê°ì‚¬ ì•± ì•Œë¦¼í•¨ìœ¼ë¡œ ë°œì†¡ â€” ìˆ˜ìŠµê¸°ê°„ 3ê°œì›” ì´ˆê³¼ + ë§Œë£Œ 30ì¼ ì „ ëŒ€ìƒ</span>
         </div>
         <div class="cen-tmpl-wrap" style="grid-template-columns:1fr;">
           <div>
             <div class="cen-tmpl-section-head">
               <span class="cen-tmpl-section-badge inapp">
-                <i class="fas fa-bell"></i> ÀÎ¾Û ¾Ë¸²
+                <i class="fas fa-bell"></i> ì¸ì•± ì•Œë¦¼
               </span>
             </div>
             <div class="cen-inapp-phone-wrap">
               <div class="cen-inapp-phone-bar">
-                <span style="font-size:10px;color:#fff;opacity:.8;">¾Ë¸²ÇÔ</span>
+                <span style="font-size:10px;color:#fff;opacity:.8;">ì•Œë¦¼í•¨</span>
                 <i class="fas fa-bell" style="color:#fff;font-size:12px;"></i>
               </div>
               <div class="cen-inapp-notif-card unread" style="flex-direction:column;">
                 <div style="display:flex;align-items:center;gap:10px;">
                   <div class="cen-inapp-notif-icon"><i class="fas fa-user-clock"></i></div>
-                  <div id="probmgmt-tmpl-title" style="font-size:14px;font-weight:700;color:#111827;flex:1;">·Îµù Áß...</div>
+                  <div id="probmgmt-tmpl-title" style="font-size:14px;font-weight:700;color:#111827;flex:1;">ë¡œë”© ì¤‘...</div>
                   <div class="cen-inapp-unread-dot"></div>
                 </div>
-                <div id="probmgmt-tmpl-plain" style="font-size:11.5px;color:#4b5563;line-height:1.6;white-space:pre-wrap;font-family:inherit;margin-top:8px;padding-left:44px;">·Îµù Áß...</div>
+                <div id="probmgmt-tmpl-plain" style="font-size:11.5px;color:#4b5563;line-height:1.6;white-space:pre-wrap;font-family:inherit;margin-top:8px;padding-left:44px;">ë¡œë”© ì¤‘...</div>
               </div>
             </div>
           </div>
