@@ -19,7 +19,7 @@
     #ct-probation-months,#ct-new-probation-months{box-sizing:border-box;height:36px;padding:5px 12px;font-size:13px;border:1px solid #d1d5db;border-radius:7px;background:#fff;color:#000}
     /* 계약 모달 내 .filt-date 폼 높이 통일 (필터바 32px → 폼 표준 36px) */
     #contract-modal .filt-date{height:36px;padding:6px 12px;font-size:13px;color:#000;font-weight:400;border:1px solid #d1d5db;border-radius:7px;background:#fff}
-    #contract-modal .filt-date[readonly]{background:#f1f5f9;border:1px solid #e8eaed;color:#555}
+    #contract-modal .filt-date[readonly]{background:#f1f5f9!important;border:1px solid #e8eaed;color:#555}
     #contract-modal .filt-date[readonly]::-webkit-datetime-edit,
     #contract-modal .filt-date[readonly]::-webkit-datetime-edit-fields-wrapper,
     #contract-modal .filt-date[readonly]::-webkit-datetime-edit-text,
