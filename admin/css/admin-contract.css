@@ -506,7 +506,7 @@
 
 /* ── contract input states ── */
 .ct-input-locked{background:#f3f4f6!important;color:#9ca3af!important;cursor:not-allowed!important}
-.ct-input-locked-dark{background:#f1f5f9!important;color:#555!important;cursor:default!important;-webkit-text-fill-color:#555!important}
+.ct-input-locked-dark{background:#f1f5f9!important;color:#555!important;border:1px solid #e8eaed!important;cursor:default!important;-webkit-text-fill-color:#555!important}
 .ct-input-error{background:#fef2f2!important;border-color:#e94560!important}
 .ct-hint-normal{color:#6b7280}
 .ct-hint-muted{color:#9ca3af}
