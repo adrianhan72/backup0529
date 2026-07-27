@@ -577,7 +577,7 @@ function calcAnnualLeaveTable(){
   if(!badge) return;
 
   // 일용직·등기임원·대표자·특수관계인: 연차 제외
-  const _AL_EXCLUDED = new Set([CONTRACT_TYPE.DAILY, CONTRACT_TYPE.EXECUTIVE, CONTRACT_TYPE.REPRESENTATIVE, CONTRACT_TYPE.RELATED_PARTY]);
+  const _AL_EXCLUDED = new Set([CONTRACT_TYPE.EXECUTIVE, CONTRACT_TYPE.REPRESENTATIVE, CONTRACT_TYPE.RELATED_PARTY]);
   if(!piContract || _AL_EXCLUDED.has(piContract.contract_type)){
     badge.textContent = '잔여연차: -';
     badge.className = 'pi-al-badge-excluded';
@@ -675,7 +675,9 @@ function _updatePIAnnualLeaveDetail(){
   const textEl = document.getElementById('pi-annual-detail-text');
   if(!rowEl || !textEl) return;
 
-  if(!piContract || piContract.contract_type === CONTRACT_TYPE.DAILY){
+  if(!piContract || piContract.contract_type === CONTRACT_TYPE.EXECUTIVE
+      || piContract.contract_type === CONTRACT_TYPE.REPRESENTATIVE
+      || piContract.contract_type === CONTRACT_TYPE.RELATED_PARTY){
     rowEl.style.display = 'none';
     return;
   }
@@ -946,10 +948,11 @@ function loadPIContract(){
     card.style.display = 'none';
     // 수동 입력 필드 표시
     _setupManualFields(true);
-    // 회사 설정에서 기본값 가져오기
+    // 근로계약서의 급여일 우선, 없으면 회사 설정
     const _co = allCompanies.find(c => c.id === _coId);
-    const _ppMo = _co?.pay_period_month || '당월';
-    const _ppDay = parseInt(_co?.pay_period_day) || 1;
+    const _ctPayDay = piContract?.pay_day ? parseInt(String(piContract.pay_day).replace(/[^0-9]/g, '')) : 0;
+    const _ppMo = piContract?.pay_period_month || _co?.pay_period_month || '당월';
+    const _ppDay = _ctPayDay || parseInt(_co?.pay_period_day) || 1;
     const yr = parseInt(document.getElementById('pi-year')?.value) || new Date().getFullYear();
     const mo = parseInt(document.getElementById('pi-month')?.value) || (new Date().getMonth() + 1);
     const _isJeon = _ppMo === '전월';
