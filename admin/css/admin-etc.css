@@ -391,6 +391,14 @@
     .filt-date::-webkit-datetime-edit-year-field:focus,
     .filt-date::-webkit-datetime-edit-month-field:focus,
     .filt-date::-webkit-datetime-edit-day-field:focus { outline:none; box-shadow:none; background:transparent; }
+    /* 비활성 상태: 크롬 shadow-DOM 흰색 배경 제거 */
+    .filt-date:disabled { background:#f3f4f6 !important; color:#9ca3af; cursor:default; }
+    .filt-date:disabled::-webkit-datetime-edit,
+    .filt-date:disabled::-webkit-datetime-edit-fields-wrapper,
+    .filt-date:disabled::-webkit-datetime-edit-text,
+    .filt-date:disabled::-webkit-datetime-edit-month-field,
+    .filt-date:disabled::-webkit-datetime-edit-day-field,
+    .filt-date:disabled::-webkit-datetime-edit-year-field { background:transparent !important; color:#9ca3af; }
     .filt-search {
       padding:4px 10px 4px 28px;height:32px;box-sizing:border-box;
       border:1px solid #d1d5db;border-radius:7px;
