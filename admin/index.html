@@ -1603,7 +1603,7 @@
       <div style="font-size:12px;color:#6b7280;margin-bottom:10px;">퇴사일을 미래로 입력하면 계약 상태가 <strong>해지예정</strong>으로 변경됩니다. 퇴사일이 오늘 이전이면 즉시 <strong>해지</strong> 처리됩니다.</div>
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
         <label style="font-size:12.5px;font-weight:600;color:#374151;white-space:nowrap;">퇴사일(마지막 근무일) <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
-        <input type="date" id="ct-terminate-date" style="border:1.5px solid #fca5a5;border-radius:7px;padding:6px 10px;font-size:13px;font-family:inherit;" />
+        <input type="date" id="ct-terminate-date" class="filt-date" />
         <button class="btn-terminate" style="padding:6px 14px;" onclick="confirmContractTerminate()"><i class="fas fa-check"></i> 확정</button>
         <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px;" onclick="cancelContractTerminate()">취소</button>
       </div>
@@ -1645,10 +1645,10 @@
       </div>
       <div style="display:flex;flex-direction:column;gap:10px;">
         <div><label style="font-size:11.5px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">기존 계약 해지일 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
-          <input type="date" id="ct-renew-old-end" style="width:100%;border:1.5px solid #fda4af;border-radius:7px;padding:6px 10px;font-size:13px;font-family:inherit;" /></div>
+          <input type="date" id="ct-renew-old-end" class="filt-date" style="width:100%;" /></div>
         <div style="display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:18px;">⬇️</div>
         <div><label style="font-size:11.5px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">신규 계약 시작일 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
-          <input type="date" id="ct-renew-new-start" disabled style="width:100%;border:1.5px solid #93c5fd;border-radius:7px;padding:6px 10px;font-size:13px;font-family:inherit;" />
+          <input type="date" id="ct-renew-new-start" disabled class="filt-date" style="width:100%;" />
           <div id="ct-renew-new-start-err" style="font-size:11px;color:#dc2626;margin-top:3px;display:none;"></div></div>
       </div>
     </div>

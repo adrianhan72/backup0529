@@ -7,7 +7,7 @@
       font-family:inherit;
     }
     input[type="text"]:focus:not(.filt-search),
-    input[type="date"]:focus:not(.filt-date):not([id*="terminate"]):not([id*="renew"]),
+    input[type="date"]:focus:not(.filt-date),
     input[type="datetime-local"]:focus,
     input[type="datetime-local"]:focus,
     textarea:focus,
