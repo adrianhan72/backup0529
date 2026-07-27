@@ -640,7 +640,7 @@
         <!-- ④ 행: 연차 사용 등록 (날짜 선택 + 일수 입력) -->
         <div style="display:flex;align-items:center;gap:10px;padding:10px 0;flex-wrap:wrap;">
           <label style="font-size:12px;font-weight:700;color:#374151;">사용일 등록</label>
-          <input type="date" id="ledger-entry-date" class="input-slim"
+          <input type="date" id="ledger-entry-date" class="filt-date"
             style="width:150px;" />
           <select id="ledger-entry-days" class="input-slim"
             style="font-weight:700;color:#1d4ed8;cursor:pointer;">
@@ -968,8 +968,8 @@
         <div class="form-group"><label>회사명 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><input type="text" id="cm-name" /></div>
         <div class="form-group"><label>사업자등록번호 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><input type="text" id="cm-biz" placeholder="000-00-00000" /></div>
         <div class="form-group"><label>업종</label><input type="text" id="cm-industry" /></div>
-        <div class="form-group"><label>자문계약 시작일 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><input type="date" id="cm-contract-start" /></div>
-        <div class="form-group" id="cm-contract-end-row" style="display:none;"><label style="color:#dc2626;">계약 해지일</label><input type="date" id="cm-contract-end" readonly /></div>
+        <div class="form-group"><label>자문계약 시작일 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><input type="date" id="cm-contract-start" class="filt-date" /></div>
+        <div class="form-group" id="cm-contract-end-row" style="display:none;"><label style="color:#dc2626;">계약 해지일</label><input type="date" id="cm-contract-end" class="filt-date" readonly /></div>
         <div class="form-group">
           <label>앱 접근 코드</label>
           <div style="position:relative;display:flex;align-items:center;">
@@ -1354,8 +1354,8 @@
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
         <i class="fas fa-calendar-check" style="color:#d97706;font-size:14px;"></i>
         <span style="font-size:13px;font-weight:700;color:#92400e;">수정 내용 적용일</span>
-        <input type="date" id="cm-effective-date"
-          style="border:1.5px solid #fcd34d;border-radius:7px;padding:5px 10px;font-size:13px;font-family:inherit;outline:none;background:#fff;color:#1a1a2e;cursor:pointer;"
+        <input type="date" id="cm-effective-date" class="filt-date"
+          style="border-color:#fcd34d;"
           oninput="cmOnEffectiveDateChange()" />
         <span id="cm-effective-date-hint" style="font-size:11.5px;color:#6b7280;"></span>
       </div>
@@ -1565,7 +1565,7 @@
         <!-- 해지일 -->
         <div class="cft-field">
           <label>해지일 <span style="color:#c00;font-weight:900;font-size:13px;">*</span></label>
-          <input type="date" id="ct-fixed-terminate-date" oninput="_cftValidate()" />
+          <input type="date" id="ct-fixed-terminate-date" class="filt-date" oninput="_cftValidate()" />
           <div id="ct-cft-date-hint" style="font-size:11px;color:#9ca3af;margin-top:4px;"></div>
         </div>
         <!-- 해지 사유 -->
@@ -1735,7 +1735,7 @@
               <div class="form-group"><label>부서</label><input type="text" id="ct-edit-em-dept" /></div>
               <div class="form-group"><label>직책</label><input type="text" id="ct-edit-em-position" /></div>
               <!-- 입사일 → 계약 정보 섹션으로 이동됨 -->
-              <div class="form-group" id="ct-edit-row-expire"><label>퇴사예정일</label><input type="date" id="ct-edit-em-expire" /></div>
+              <div class="form-group" id="ct-edit-row-expire"><label>퇴사예정일</label><input type="date" id="ct-edit-em-expire" class="filt-date" /></div>
 
               <div class="form-group full"><span class="form-section-title" style="font-size:11px;">개인 정보</span></div>
               <div class="form-group"><label>주민등록번호 <span class="lbl-desc">(앞7자리)</span> <span class="lbl-req">*</span></label><input type="text" id="ct-edit-em-id" placeholder="YYMMDD-N" maxlength="8" autocomplete="off" oninput="_onIdInput(this, _checkAmendBtnState)" /></div>
@@ -1833,16 +1833,16 @@
         <div id="ct-dates-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;grid-column:1/-1;">
           <div class="form-group" id="ct-contract-hire-row">
             <label>입사일 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
-            <input type="date" id="ct-edit-em-hire" oninput="autoFillAnnualLeave();_onCtHireChange();_validateCtStartVsHire('ct-start','ct-edit-em-hire','ct-start-hint')" />
+            <input type="date" id="ct-edit-em-hire" class="filt-date" oninput="autoFillAnnualLeave();_onCtHireChange();_validateCtStartVsHire('ct-start','ct-edit-em-hire','ct-start-hint')" />
           </div>
           <div class="form-group" id="ct-start-col">
             <label>계약 시작일 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
-            <input type="date" id="ct-start" oninput="onCtStartChange();_validateCtStartVsHire('ct-start','ct-edit-em-hire','ct-start-hint');_updateProbationPeriodState();_validateRenewedPairDates();_checkProbMinWageWarning();_checkMinWageWarning();_checkAmendBtnState();_checkFixedTermDuration();" onchange="_validateCtStartVsHire('ct-start','ct-edit-em-hire','ct-start-hint');" />
+            <input type="date" id="ct-start" class="filt-date" oninput="onCtStartChange();_validateCtStartVsHire('ct-start','ct-edit-em-hire','ct-start-hint');_updateProbationPeriodState();_validateRenewedPairDates();_checkProbMinWageWarning();_checkMinWageWarning();_checkAmendBtnState();_checkFixedTermDuration();" onchange="_validateCtStartVsHire('ct-start','ct-edit-em-hire','ct-start-hint');" />
             <span id="ct-start-hint" style="display:block;margin-top:2px;font-size:11px;color:#6b7280;">이 계약의 효력 발생일</span>
           </div>
           <div class="form-group" id="ct-row-end">
             <label>계약 종료일 <span id="ct-end-required" class="lbl-req" style="display:none;">*</span></label>
-            <input type="date" id="ct-end" oninput="_checkFixedTermDuration();_checkAmendBtnState();" />
+            <input type="date" id="ct-end" class="filt-date" oninput="_checkFixedTermDuration();_checkAmendBtnState();" />
           </div>
         </div>
         <!-- 수습기간 + 수습 종료일 — 2열 배치 (정규직 수습·계약직 수습) -->
@@ -1861,15 +1861,15 @@
           </div>
           <div class="form-group" id="ct-probation-end-col">
             <label style="color:#92400e;">수습 종료일 <span class="lbl-desc">(자동 계산)</span></label>
-            <input type="date" id="ct-probation-end-date" readonly />
+            <input type="date" id="ct-probation-end-date" class="filt-date" readonly />
           </div>
         </div>
         <div class="form-group" id="ct-row-renewed-pair-end" style="display:none;">
           <label>연결된 원본 계약 해지일 <span id="ct-renewed-pair-required" class="lbl-req" style="display:none;">*</span></label>
-          <input type="date" id="ct-renewed-pair-end" oninput="_onRenewedPairEndChange()" />
+          <input type="date" id="ct-renewed-pair-end" class="filt-date" oninput="_onRenewedPairEndChange()" />
           <span id="ct-renewed-pair-hint" class="fld-hint" style="display:block;margin-top:2px;"></span>
         </div>
-        <div class="form-group" id="ct-row-terminate" style="display:none;"><label style="color:#7c3aed;">계약 해지일</label><input type="date" id="ct-terminate-display" readonly /></div>
+        <div class="form-group" id="ct-row-terminate" style="display:none;"><label style="color:#7c3aed;">계약 해지일</label><input type="date" id="ct-terminate-display" class="filt-date" readonly /></div>
         <div class="form-group" id="ct-row-voided" style="display:none;"><label style="color:#7c3aed;">계약 파기일</label><input type="text" id="ct-voided-display" readonly /></div>
         <div class="form-group full" id="ct-edit-short-term-warning-row" style="display:none;">
           <div style="display:flex;align-items:flex-start;gap:9px;background:#fff7ed;border:1.5px solid #fb923c;border-radius:8px;padding:10px 13px;font-size:12px;line-height:1.65;color:#7c2d12;">
@@ -2816,7 +2816,7 @@
       </div>
       <div style="margin-top:20px;">
         <label style="display:block;font-size:12.5px;font-weight:600;color:#374151;margin-bottom:6px;">계약 해지일 <span style="color:#c00;font-weight:900;">*</span></label>
-        <input type="date" id="tm-end-date" style="width:100%;border:1.5px solid #e0e0e0;border-radius:8px;padding:8px 12px;font-size:13.5px;font-family:inherit;color:#333;outline:none;box-sizing:border-box;" />
+        <input type="date" id="tm-end-date" class="filt-date" style="width:100%" />
         <div style="margin-top:8px;font-size:11.5px;color:#64748b;"><i class="fas fa-info-circle" style="margin-right:3px;color:#94a3b8;"></i>오늘 이전 날짜 선택 시 즉시 해지되며, 미래 날짜 선택 시 해지예정으로 등록됩니다.</div>
       </div>
     </div>
@@ -2844,7 +2844,7 @@
       </div>
       <div>
         <label style="display:block;font-size:12.5px;font-weight:600;color:#374151;margin-bottom:6px;">새 해지 예정일 <span style="color:#c00;font-weight:900;">*</span></label>
-        <input type="date" id="ced-end-date" style="width:100%;border:1.5px solid #fcd34d;border-radius:8px;padding:8px 12px;font-size:13.5px;font-family:inherit;color:#333;outline:none;box-sizing:border-box;" />
+        <input type="date" id="ced-end-date" class="filt-date" style="width:100%;border-color:#fcd34d" />
         <div style="margin-top:6px;font-size:11.5px;color:#92400e;"><i class="fas fa-info-circle" style="margin-right:3px;"></i>오늘 이전 날짜 선택 시 즉시 해지 처리됩니다.</div>
       </div>
     </div>
