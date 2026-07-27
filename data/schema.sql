@@ -152,7 +152,7 @@ CREATE TABLE IF NOT EXISTS contracts (
   probation_end_date TEXT, --  -- 수습 종료일
   dismissal_notice_pay REAL DEFAULT 0,
   dismissal_notice_pay_reason TEXT,
-  pre_used_annual_leave REAL DEFAULT 0 --  -- 기사용 연차일수 (계약 전 사용분)
+  pre_used_annual_leave REAL DEFAULT 0 --  -- 기사용 연차일수 (서비스 가입 이전)
 );
 
 CREATE INDEX IF NOT EXISTS idx_contracts_employee ON contracts(employee_id);
