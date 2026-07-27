@@ -1387,6 +1387,14 @@ function doContractRenew(){
     const el = document.getElementById(bid); if(el) el.style.display='none';
   });
 
+  // ── 갱신 모드: 사원번호·이름·주민번호 잠금 ──
+  ['ct-edit-em-empno','ct-edit-emp-name','ct-edit-em-id'].forEach(fid => {
+    const el = document.getElementById(fid);
+    if(el){ el.disabled = true; el.readOnly = true; el.classList.add('ct-input-locked'); }
+  });
+  const lockNotice = document.getElementById('ct-edit-renew-lock-notice');
+  if(lockNotice) lockNotice.style.display = '';
+
   // 하단 갱신완료·취소 버튼 표시
   const btnComplete2 = document.getElementById('ct-btn-renew-complete2');
   if(btnComplete2) btnComplete2.style.display = 'inline-flex';
