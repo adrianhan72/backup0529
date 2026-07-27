@@ -3742,6 +3742,7 @@ async function saveContract(){
   // ── 연차 관리대장 자동 생성·상태 연동 ──
   if(!_ctIsEdit && contractStatus !== CONTRACT_STATUS.VOIDED && contractStatus !== CONTRACT_STATUS.CANCELED){
     _syncLeaveLedgerWithContract(empId, coId, contractStart, contractStatus);
+    _syncAttendanceLedgerWithContract(empId, coId, contractStart);
   } else if(_ctIsEdit){
     // 수정 모드: 해지·만료 시 관리대장 상태 동기화
     const _editContract = allContracts.find(x => x.id === editId.contract);
@@ -3778,30 +3779,74 @@ async function _syncLeaveLedgerWithContract(empId, coId, contractStart, contract
       // 없으면 새로 생성 (빈 관리대장)
       const emp = allEmployees.find(e => e.id === empId);
       const contract = allContracts.find(c => c.employee_id === empId && c.contract_start === contractStart);
-      await api('../tables/annual_leave_ledger', {
+      const newLedger = {
+        employee_id: empId,
+        company_id: coId || emp?.company_id || '',
+        year: year,
+        contract_id: contract?.id || '',
+        status: contractStatus || 'active',
+        ref_date: `${year}-01-01`,
+        period_start: `${year}-01-01`,
+        period_end: `${year}-12-31`,
+        total_days: 0,
+        carryover_days: 0,
+        month_data: '[]',
+        total_used: 0,
+        remain_days: 0,
+        ordinary_wage: 0,
+        leave_pay_estimate: 0,
+      };
+      const res = await api('../tables/annual_leave_ledger', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-          employee_id: empId,
-          company_id: coId || emp?.company_id || '',
-          year: year,
-          contract_id: contract?.id || '',
-          status: contractStatus || 'active',
-          ref_date: `${year}-01-01`,
-          period_start: `${year}-01-01`,
-          period_end: `${year}-12-31`,
-          total_days: 0,
-          carryover_days: 0,
-          month_data: '[]',
-          total_used: 0,
-          remain_days: 0,
-          ordinary_wage: 0,
-          leave_pay_estimate: 0,
-        })
+        body: JSON.stringify(newLedger)
       });
+      // allLeaveLedgers 캐시 즉시 갱신 (응답에서 id를 받아 추가)
+      const created = await res.json();
+      if(created?.id && typeof allLeaveLedgers !== 'undefined'){
+        newLedger.id = created.id;
+        allLeaveLedgers.push(newLedger);
+      }
     }
   } catch(e){
     console.warn('[syncLeaveLedger]', e);
+  }
+}
+
+/**
+ * 근태 관리대장 자동 생성
+ * 계약 등록 시 해당 연도 근태 관리대장이 없으면 빈 대장 생성
+ */
+async function _syncAttendanceLedgerWithContract(empId, coId, contractStart){
+  if(!empId || !contractStart) return;
+  const year = parseInt(contractStart.slice(0,4));
+  if(!year) return;
+
+  try {
+    // 이미 존재하는지 확인
+    const _res = await api(`../tables/attendance_ledger?employee_id=${empId}&year=${year}&limit=10`);
+    const _exist = (_res?.data || []).find(r => Number(r.year) === year);
+    if(_exist) return; // 이미 있으면 스킵
+
+    const emp = allEmployees.find(e => e.id === empId);
+    const contract = allContracts.find(c => c.employee_id === empId && c.contract_start === contractStart);
+    await api('../tables/attendance_ledger', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        employee_id: empId,
+        company_id: coId || emp?.company_id || '',
+        year: year,
+        contract_id: contract?.id || '',
+        status: 'active',
+        month_data: '[]',
+        total_absent_days: 0,
+        total_late_count: 0,
+        total_earlyleave_count: 0,
+      })
+    });
+  } catch(e){
+    console.warn('[syncAttendanceLedger]', e);
   }
 }
 
