@@ -6,6 +6,7 @@
 let _layoffPay = 0;
 let _maternityPay = 0;
 let _retroOverpaymentTotal = 0;
+let _retroHolidayOverpay = 0; // 소급 결근으로 과지급된 주휴수당
 
 function openPIUploadModal(){
   const coId = currentGlobalCompanyId;
@@ -2945,7 +2946,10 @@ function calcPI(){
   // 주휴수당 자동계산 — 매번 recalc (출근일수·계약 변경 시 반영)
   // ※ calcWeeklyHolidayPay 내부에서 setAmountVal만 호출, calcPI 재진입 없음
   if(piContract && piContract.contract_type !==CONTRACT_TYPE.DAILY){
-    calcWeeklyHolidayPay();
+    const _holResult = calcWeeklyHolidayPay();
+    _retroHolidayOverpay = _holResult ? (_holResult.retroHolidayOverpay || 0) : 0;
+  } else {
+    _retroHolidayOverpay = 0;
   }
 
   const hw=piContract?piContract.hourly_wage:0;
@@ -3213,13 +3217,18 @@ function calcPI(){
         const _suffix = item.isRecovery ? ' 환수' : ' 차감';
         return `<span style="font-size:11px;display:inline-block;background:${item.isRecovery?'#fef3c7':'#fef2f2'};color:${item.isRecovery?'#92400e':'#dc2626'};padding:2px 6px;border-radius:4px;margin:1px 2px;white-space:nowrap;">${item.date} ${item.label} ${item.days}일 ${_icon} ${won(item.amount)}${_suffix}</span>`;
       }).join('');
+      // 소급 주휴수당 과지급 환수 추가
+      if (_retroHolidayOverpay > 0) {
+        _retroHtml += `<span style="font-size:11px;display:inline-block;background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;margin:1px 2px;white-space:nowrap;">주휴수당 ↩ ${won(_retroHolidayOverpay)} 환수</span>`;
+      }
       _retroText.innerHTML = _retroHtml;
     } else if (_retroRow) {
       _retroRow.style.display = 'none';
     }
 
     // ── 과지급 환수액을 차감 총액에 포함 ──
-    const _totalDeductionWithRetro = _totalDeduction + _retroOverpaymentTotal;
+    const _totalRetroRecovery = _retroOverpaymentTotal + _retroHolidayOverpay;
+    const _totalDeductionWithRetro = _totalDeduction + _totalRetroRecovery;
 
     if(_dedRow && _dedDisp){
       if(_totalDeductionWithRetro > 0 || _layoffDays > 0 || _maternityPay > 0){
@@ -3236,6 +3245,7 @@ function calcPI(){
         _retroItemLines.filter(item => item.isRecovery).forEach(item => {
           parts.push(`소급 ${item.label} ${item.days}일 환수 ${won(item.amount)}`);
         });
+        if (_retroHolidayOverpay > 0) parts.push(`소급 주휴수당 환수 ${won(_retroHolidayOverpay)}`);
         if(_elHours > 0) parts.push(`조퇴 ${_elHours.toFixed(1)}h`);
         if(_lateHours > 0) parts.push(`지각 ${_lateHours.toFixed(1)}h`);
         if(_layoffDays > 0) parts.push(`휴업수당 ${_layoffDays}일${_isSmall?' (5인미만 면제)':''}`);
@@ -3274,7 +3284,7 @@ function calcPI(){
   const _fixedOtPay    = _fixedCalc.otPay;
   const _fixedNightPay = _fixedCalc.nightPay;
   const _fixedHolPay   = _fixedCalc.holPay;
-  const gross=gv('pi-base')+gv('pi-weekly-hol')+gv('pi-site')+gv('pi-remote-area')+gv('pi-position')+gv('pi-skill')+gv('pi-license')+gv('pi-transport')+gv('pi-meal')+gv('pi-childcare')+gv('pi-research')+otPay+nightPay+holPay+_fixedOtPay+_fixedNightPay+_fixedHolPay+gv('pi-annual-pay')+gv('pi-bonus')+gv('pi-performance')+gv('pi-actual-expense')+gv('pi-communication')+gv('pi-fitness')+gv('pi-self-dev')+gv('pi-book')+gv('pi-overseas')+gv('pi-etc-allowance')+gv('pi-severance-interim')+_layoffPay+_maternityPay - _retroOverpaymentTotal;
+  const gross=gv('pi-base')+gv('pi-weekly-hol')+gv('pi-site')+gv('pi-remote-area')+gv('pi-position')+gv('pi-skill')+gv('pi-license')+gv('pi-transport')+gv('pi-meal')+gv('pi-childcare')+gv('pi-research')+otPay+nightPay+holPay+_fixedOtPay+_fixedNightPay+_fixedHolPay+gv('pi-annual-pay')+gv('pi-bonus')+gv('pi-performance')+gv('pi-actual-expense')+gv('pi-communication')+gv('pi-fitness')+gv('pi-self-dev')+gv('pi-book')+gv('pi-overseas')+gv('pi-etc-allowance')+gv('pi-severance-interim')+_layoffPay+_maternityPay - _retroOverpaymentTotal - _retroHolidayOverpay;
   // 통상임금 기준: 매월 정기지급 항목만 포함 (출근일수에 따름은 제외)
   // 단, 비과세 항목(childcare/car/meal/research)은 fixed 여부와 관계없이 월 20만원 한도로 포함
   const _TAX_EXEMPT_CAP = 200000;
@@ -3320,7 +3330,7 @@ function calcPIManual(){
   const gross=gv('pi-base')+gv('pi-weekly-hol')+gv('pi-site')+gv('pi-remote-area')+gv('pi-position')+gv('pi-skill')+gv('pi-license')
              +gv('pi-transport')+gv('pi-meal')+gv('pi-childcare')+gv('pi-research')+gv('pi-fitness')+gv('pi-self-dev')+gv('pi-book')+gv('pi-overseas')
              +otPay+nightPay+holPay
-             +gv('pi-annual-pay')+gv('pi-bonus')+gv('pi-performance')+gv('pi-actual-expense')+gv('pi-communication')+gv('pi-severance-interim')+gv('pi-etc-allowance')+_layoffPay+_maternityPay - _retroOverpaymentTotal;
+             +gv('pi-annual-pay')+gv('pi-bonus')+gv('pi-performance')+gv('pi-actual-expense')+gv('pi-communication')+gv('pi-severance-interim')+gv('pi-etc-allowance')+_layoffPay+_maternityPay - _retroOverpaymentTotal - _retroHolidayOverpay;
   const isFixed = _getPIInsuranceBasis() === '확정액 기준';
   if(isFixed) calcPIFixed(gross);
   else calcPIDeductions(gross);
@@ -3445,7 +3455,7 @@ function calcPIFixed(gross){
     const otPay=   _pf('pi-ot-pay-disp')    || _pf('pi-ot-pay-disp-simple');
     const nightPay=_pf('pi-night-pay-disp') || _pf('pi-night-pay-disp-simple');
     const holPay=  _pf('pi-hol-pay-disp')   || _pf('pi-hol-pay-disp-simple');
-    gross=gv('pi-base')+gv('pi-weekly-hol')+gv('pi-site')+gv('pi-remote-area')+gv('pi-position')+gv('pi-skill')+gv('pi-license')+gv('pi-transport')+gv('pi-meal')+gv('pi-childcare')+gv('pi-research')+otPay+nightPay+holPay+gv('pi-annual-pay')+gv('pi-bonus')+gv('pi-performance')+gv('pi-actual-expense')+gv('pi-communication')+gv('pi-fitness')+gv('pi-self-dev')+gv('pi-book')+gv('pi-overseas')+gv('pi-severance-interim')+gv('pi-etc-allowance')+_layoffPay+_maternityPay - _retroOverpaymentTotal;
+    gross=gv('pi-base')+gv('pi-weekly-hol')+gv('pi-site')+gv('pi-remote-area')+gv('pi-position')+gv('pi-skill')+gv('pi-license')+gv('pi-transport')+gv('pi-meal')+gv('pi-childcare')+gv('pi-research')+otPay+nightPay+holPay+gv('pi-annual-pay')+gv('pi-bonus')+gv('pi-performance')+gv('pi-actual-expense')+gv('pi-communication')+gv('pi-fitness')+gv('pi-self-dev')+gv('pi-book')+gv('pi-overseas')+gv('pi-severance-interim')+gv('pi-etc-allowance')+_layoffPay+_maternityPay - _retroOverpaymentTotal - _retroHolidayOverpay;
   }
   const std=gv('pi-std-pay')||gross;
 
@@ -3699,17 +3709,24 @@ function calcWeeklyHolidayPay(){
   // ※ sick_paid(유급병가)도 근로제공 의무가 면제되므로 주휴 미발생 대상
   const _holidayDeductTypes = new Set(['unauthorized', 'sick_unpaid', 'menstrual', 'family_care', 'sick_paid']);
   let _absentDatesForHoliday = new Set();
-  try {
-    const _absDataForHoliday = JSON.parse(document.getElementById('pi-absent-data')?.value || '[]');
-    _absDataForHoliday.forEach(d => {
-      if (_holidayDeductTypes.has(d.type || 'unauthorized')) {
-        const expanded = (typeof _atlExpandDateRange === 'function')
-          ? _atlExpandDateRange(d.date, d.dateTo || '')
-          : [d.date];
-        expanded.forEach(dd => _absentDatesForHoliday.add(dd));
-      }
-    });
-  } catch(e) {}
+  let _retroAbsentDatesForHoliday = new Set(); // 소급 결근만 별도 추적 (주휴 과지급 환수용)
+  const _parseAbsentDataForHoliday = (dataEl, targetSet) => {
+    try {
+      const data = JSON.parse(dataEl?.value || '[]');
+      data.forEach(d => {
+        if (_holidayDeductTypes.has(d.type || 'unauthorized')) {
+          const expanded = (typeof _atlExpandDateRange === 'function')
+            ? _atlExpandDateRange(d.date, d.dateTo || '')
+            : [d.date];
+          expanded.forEach(dd => targetSet.add(dd));
+        }
+      });
+    } catch(e) {}
+  };
+  _parseAbsentDataForHoliday(document.getElementById('pi-absent-data'), _absentDatesForHoliday);
+  _parseAbsentDataForHoliday(document.getElementById('pi-retro-absent-data'), _retroAbsentDatesForHoliday);
+  // 전체 집합 (현행+소급) → 주휴 산정용
+  const _allAbsentDatesForHoliday = new Set([..._absentDatesForHoliday, ..._retroAbsentDatesForHoliday]);
 
   let fullWeeks = 0;
   if (_ppStart && _ppEnd && dpw > 0) {
@@ -3722,7 +3739,7 @@ function calcWeeklyHolidayPay(){
     if (_startDow > 1) _weekStart.setDate(_weekStart.getDate() - (_startDow - 1)); // 지난 월요일로
 
     while (_weekStart <= _periodEnd) {
-      let _weekWorkDays = 0, _weekAbsentDays = 0;
+      let _weekWorkDays = 0, _weekAbsentDays = 0, _weekRetroAbsentDays = 0;
       for (let d = 0; d < 7; d++) {
         const _day = new Date(_weekStart);
         _day.setDate(_day.getDate() + d);
@@ -3734,12 +3751,17 @@ function calcWeeklyHolidayPay(){
 
         _weekWorkDays++;
         const _dateStr = _day.toISOString().slice(0, 10);
-        if (_absentDatesForHoliday.has(_dateStr)) _weekAbsentDays++;
+        if (_allAbsentDatesForHoliday.has(_dateStr)) _weekAbsentDays++;
+        if (_retroAbsentDatesForHoliday.has(_dateStr)) _weekRetroAbsentDays++;
       }
 
-      // 주의 소정근로일이 dpw(보통 5일) 이상이고, 그 중 무급 휴가가 하나도 없으면 완전근무 주
+      // 주의 소정근로일이 dpw(보통 5일) 이상이고, 무급 휴가가 하나도 없으면 완전근무 주
       if (_weekWorkDays >= dpw && _weekAbsentDays === 0) {
         fullWeeks++;
+      } else if (_weekWorkDays >= dpw && _weekAbsentDays > 0 && _weekRetroAbsentDays > 0) {
+        // 현행 결근만으로는 안 깨졌는데 소급 결근 때문에 깨진 주 → 과지급 환수 대상
+        const _absNonRetro = _weekAbsentDays - _weekRetroAbsentDays;
+        if (_absNonRetro === 0) retroBrokenWeeks++;
       }
 
       // 다음 주로 이동
@@ -3765,12 +3787,16 @@ function calcWeeklyHolidayPay(){
   }
 
   const totalPay = payPerWeek * fullWeeks;
+  const retroHolidayOverpay = payPerWeek * retroBrokenWeeks; // 소급 결근으로 과지급된 주휴수당
   const d = fullWeeks > 0
     ? `${formula} × ${fullWeeks}주 = ${totalPay.toLocaleString()}원`
     : `출근 ${workDays}일 → 완전한 주 없음 (미발생)`;
+  const retroNote = retroBrokenWeeks > 0
+    ? ` (소급 결근 ${retroBrokenWeeks}주분 과지급 ${won(retroHolidayOverpay)} 환수 필요)`
+    : '';
 
-  _setAll(totalPay, d);
-  return { pay: totalPay, desc: d };
+  _setAll(totalPay, d + retroNote);
+  return { pay: totalPay, desc: d, retroBrokenWeeks, retroHolidayOverpay };
 }
 
 // ─── 통상임금 지급유형 관리 ───
