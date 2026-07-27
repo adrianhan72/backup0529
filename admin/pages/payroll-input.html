@@ -704,26 +704,28 @@
                   <span>영수액</span><span style="color:#e94560;" id="pi-net-disp2">0원</span>
                 </div>
               </div>
-              <div style="margin-top:16px;display:flex;gap:8px;">
-                <button class="btn btn-secondary" id="pi-clear-btn"
-                  onclick="piEditPayrollId ? restoreEditPayroll() : clearPI()"
-                  class="pi-action-btn">
-                  <i id="pi-clear-btn-icon" class="fas fa-redo"></i>
-                  <span id="pi-clear-btn-label">초기화</span>
-                </button>
-                <button class="btn btn-draft" onclick="savePIDraft()" id="pi-draft-btn"
-                  class="pi-action-btn">
-                  <i class="fas fa-floppy-disk"></i> 임시저장
-                </button>
-                <button class="btn btn-primary" onclick="savePI()"
-                  class="pi-action-btn">
-                  <i class="fas fa-save"></i> 급여 저장
-                </button>
-                <button class="btn btn-secondary" id="pi-cancel-btn"
-                  onclick="piEditPayrollId ? cancelEditPayroll() : backToPITargetList()"
-                  class="pi-action-btn">
-                  <i class="fas fa-times"></i> <span id="pi-cancel-btn-label">취소</span>
-                </button>
+              <div style="margin-top:16px;display:flex;align-items:center;gap:8px;">
+                <div style="flex:1;">
+                  <button class="btn btn-secondary pi-action-btn" id="pi-clear-btn"
+                    onclick="piEditPayrollId ? restoreEditPayroll() : clearPI()">
+                    <i id="pi-clear-btn-icon" class="fas fa-redo"></i>
+                    <span id="pi-clear-btn-label">초기화</span>
+                  </button>
+                </div>
+                <div style="display:flex;gap:8px;">
+                  <button class="btn btn-draft pi-action-btn" onclick="savePIDraft()" id="pi-draft-btn">
+                    <i class="fas fa-floppy-disk"></i> 임시저장
+                  </button>
+                  <button class="btn btn-primary pi-action-btn" onclick="savePI()">
+                    <i class="fas fa-save"></i> 급여 저장
+                  </button>
+                </div>
+                <div style="flex:1;display:flex;justify-content:flex-end;">
+                  <button class="btn btn-secondary pi-action-btn" id="pi-cancel-btn"
+                    onclick="piEditPayrollId ? cancelEditPayroll() : backToPITargetList()">
+                    <i class="fas fa-times"></i> <span id="pi-cancel-btn-label">취소</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
