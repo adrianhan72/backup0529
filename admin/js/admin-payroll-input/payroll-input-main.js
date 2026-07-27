@@ -1,6 +1,12 @@
 ﻿// ============================================================================
 // 급여 입력 페이지 — 전직원 임금대장 일괄 업로드 모달
 // ============================================================================
+
+// ── 모듈 스코프: calcPI / calcPIManual / calcPIFixed 공유 ──
+let _layoffPay = 0;
+let _maternityPay = 0;
+let _retroOverpaymentTotal = 0;
+
 function openPIUploadModal(){
   const coId = currentGlobalCompanyId;
   if(!coId){ toast('고객사를 먼저 선택하세요.','warning'); return; }
@@ -2959,8 +2965,9 @@ function calcPI(){
   const _holH8   = Math.min(holH, 8);
   const _holHOvr = Math.max(holH - 8, 0);
   const holPay   = _isSmall ? 0 : Math.round(hw * _holH8 * 1.5 + hw * _holHOvr * 2.0);
-  let _layoffPay = 0;    // 휴업수당 — if(piContract) 블록에서 계산, else 분기에서는 0 유지
-  let _maternityPay = 0; // 출산휴가 급여 — if(piContract) 블록에서 계산
+  _layoffPay = 0;    // 휴업수당 — if(piContract) 블록에서 계산, else 분기에서는 0 유지
+  _maternityPay = 0; // 출산휴가 급여 — if(piContract) 블록에서 계산
+  _retroOverpaymentTotal = 0; // 과지급 환수액
 
   // 5인 미만 안내 배지 업데이트 (calcPIWorkActual 미경유 시에도 반영)
   _updatePISmallFirmBadge(_sfInfo, _yr, _mo);
@@ -3162,7 +3169,7 @@ function calcPI(){
 
     // ── 소급 근태 항목별 금액 산출 (과지급 환수액 포함) ──
     const _retroItemLines = [];
-    let _retroOverpaymentTotal = 0;
+    _retroOverpaymentTotal = 0;
     const _retroTypeLabels = {
       industrial:'산재', maternity_paid:'출산(유급)', maternity_unpaid:'출산(무급)',
       paternity_paid:'배우자출산', childcare_leave:'육아휴직',
@@ -3313,7 +3320,7 @@ function calcPIManual(){
   const gross=gv('pi-base')+gv('pi-weekly-hol')+gv('pi-site')+gv('pi-remote-area')+gv('pi-position')+gv('pi-skill')+gv('pi-license')
              +gv('pi-transport')+gv('pi-meal')+gv('pi-childcare')+gv('pi-research')+gv('pi-fitness')+gv('pi-self-dev')+gv('pi-book')+gv('pi-overseas')
              +otPay+nightPay+holPay
-             +gv('pi-annual-pay')+gv('pi-bonus')+gv('pi-performance')+gv('pi-actual-expense')+gv('pi-communication')+gv('pi-severance-interim')+gv('pi-etc-allowance')+_layoffPay+_maternityPay;
+             +gv('pi-annual-pay')+gv('pi-bonus')+gv('pi-performance')+gv('pi-actual-expense')+gv('pi-communication')+gv('pi-severance-interim')+gv('pi-etc-allowance')+_layoffPay+_maternityPay - _retroOverpaymentTotal;
   const isFixed = _getPIInsuranceBasis() === '확정액 기준';
   if(isFixed) calcPIFixed(gross);
   else calcPIDeductions(gross);
@@ -3438,7 +3445,7 @@ function calcPIFixed(gross){
     const otPay=   _pf('pi-ot-pay-disp')    || _pf('pi-ot-pay-disp-simple');
     const nightPay=_pf('pi-night-pay-disp') || _pf('pi-night-pay-disp-simple');
     const holPay=  _pf('pi-hol-pay-disp')   || _pf('pi-hol-pay-disp-simple');
-    gross=gv('pi-base')+gv('pi-weekly-hol')+gv('pi-site')+gv('pi-remote-area')+gv('pi-position')+gv('pi-skill')+gv('pi-license')+gv('pi-transport')+gv('pi-meal')+gv('pi-childcare')+gv('pi-research')+otPay+nightPay+holPay+gv('pi-annual-pay')+gv('pi-bonus')+gv('pi-performance')+gv('pi-actual-expense')+gv('pi-communication')+gv('pi-fitness')+gv('pi-self-dev')+gv('pi-book')+gv('pi-overseas')+gv('pi-severance-interim')+gv('pi-etc-allowance');
+    gross=gv('pi-base')+gv('pi-weekly-hol')+gv('pi-site')+gv('pi-remote-area')+gv('pi-position')+gv('pi-skill')+gv('pi-license')+gv('pi-transport')+gv('pi-meal')+gv('pi-childcare')+gv('pi-research')+otPay+nightPay+holPay+gv('pi-annual-pay')+gv('pi-bonus')+gv('pi-performance')+gv('pi-actual-expense')+gv('pi-communication')+gv('pi-fitness')+gv('pi-self-dev')+gv('pi-book')+gv('pi-overseas')+gv('pi-severance-interim')+gv('pi-etc-allowance')+_layoffPay+_maternityPay - _retroOverpaymentTotal;
   }
   const std=gv('pi-std-pay')||gross;
 
