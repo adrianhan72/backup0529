@@ -1390,14 +1390,15 @@ function doContractRenew(){
   // ── 갱신 모드: 사원번호·이름·주민번호 잠금 ──
   ['ct-edit-em-empno','ct-edit-em-name','ct-edit-em-id'].forEach(fid => {
     const el = document.getElementById(fid);
-    if(el){ el.disabled = true; el.classList.add('ct-input-locked'); }
+    if(el){ el.disabled = true; }
   });
-  const nameLockHint = document.getElementById('ct-edit-name-lock-hint');
-  if(nameLockHint){
-    nameLockHint.textContent = '계약 갱신 시에는 기 발급된 사원번호와 이름은 수정할 수 없습니다.';
-    nameLockHint.style.display = 'block';
-    nameLockHint.style.color = '#9ca3af';
-  }
+  // 개별 안내 문구
+  const empnoHint = document.getElementById('ct-edit-empno-lock-hint');
+  if(empnoHint){ empnoHint.textContent = '계약 갱신 시에는 기 발급된 사원번호는 변경할 수 없습니다.'; empnoHint.style.display = 'block'; }
+  const nameHint = document.getElementById('ct-edit-name-lock-hint');
+  if(nameHint){ nameHint.textContent = '계약 갱신 시에는 기 등록된 이름은 수정할 수 없습니다.'; nameHint.style.display = 'block'; }
+  const idHint = document.getElementById('ct-edit-id-lock-hint');
+  if(idHint){ idHint.textContent = '계약 갱신 시에는 기 등록된 주민번호는 수정할 수 없습니다.'; idHint.style.display = 'block'; }
 
   // 하단 갱신완료·취소 버튼 표시
   const btnComplete2 = document.getElementById('ct-btn-renew-complete2');
