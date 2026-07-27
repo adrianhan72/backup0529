@@ -2437,6 +2437,56 @@ async function openAmendPreview(){
   const dWage_  = isDailyA ? getAmountVal('ct-daily-wage') : 0;
   const annualSalInput_ = getAmountVal('ct-annual-sal');
   const annual_ = isRegGrp ? annualSalInput_ : 0;
+
+  // ── 변경사항 없음 체크 (핵심 필드 비교) ──
+  const _changed = [];
+  const _cmp = (label, a, b) => { if(String(a??'') !== String(b??'')) _changed.push(label); };
+  _cmp('계약 시작일', start, origC.contract_start);
+  _cmp('계약 종료일', end, origC.contract_end);
+  _cmp('고용형태', cType, origC.contract_type);
+  _cmp('1일 근로시간', hours_, origC.work_hours_per_day);
+  _cmp('주 근로일수', days_, origC.work_days_per_week);
+  _cmp('기본급', base_, origC.base_salary);
+  _cmp('일급', dWage_, origC.daily_wage);
+  _cmp('연봉', annual_, origC.annual_salary);
+  _cmp('연차일수', (parseFloat(document.getElementById('ct-annual')?.value)||15), origC.annual_leave_days);
+  _cmp('근무스케줄', JSON.stringify(getScheduleJSON()), origC.schedule_json||'');
+  _cmp('직책수당', getAmountVal('ct-position'), origC.position_allowance);
+  _cmp('자가운전보조금', getAmountVal('ct-car'), origC.transportation_allowance);
+  _cmp('식대', getAmountVal('ct-meal'), origC.meal_allowance);
+  _cmp('연구수당', getAmountVal('ct-research'), origC.research_allowance);
+  _cmp('현장수당', getAmountVal('ct-site')||0, origC.site_allowance);
+  _cmp('기술수당', getAmountVal('ct-skill')||0, origC.skill_allowance);
+  _cmp('면허수당', getAmountVal('ct-license')||0, origC.license_allowance);
+  _cmp('통신비', getAmountVal('ct-communication')||0, origC.communication_allowance);
+  _cmp('건강지원비', getAmountVal('ct-fitness')||0, origC.fitness_allowance);
+  _cmp('자기개발비', getAmountVal('ct-self-dev')||0, origC.self_dev_allowance);
+  _cmp('도서구입비', getAmountVal('ct-book')||0, origC.book_allowance);
+  _cmp('해외근무수당', getAmountVal('ct-overseas')||0, origC.overseas_allowance);
+  _cmp('위험수당', getAmountVal('ct-hazard')||0, origC.hazard_allowance);
+  _cmp('보육수당', getAmountVal('ct-childcare')||0, origC.childcare_allowance);
+  _cmp('벽지수당', getAmountVal('ct-remote-area'), origC.remote_area_allowance);
+  _cmp('정기상여금', getAmountVal('ct-regular-bonus')||0, origC.regular_bonus);
+  if(isProbA){
+    _cmp('수습개월', parseInt(document.getElementById('ct-probation-months').value)||3, origC.probation_months);
+    _cmp('수습비율', parseFloat(document.getElementById('ct-probation-pct').value)||0, origC.probation_pct);
+    _cmp('수습금액', parseFloat(document.getElementById('ct-probation-amt').value)||0, origC.probation_amt);
+    _cmp('수습산정기준', document.querySelector('input[name="ct-probation-basis"]:checked')?.value||'salary', origC.probation_basis);
+  }
+  _cmp('고정OT금액', getAmountVal('ct-fixed-ot-pay'), origC.fixed_ot_pay);
+  _cmp('고정OT시간', parseFloat(document.getElementById('ct-fixed-ot-hours')?.value)||0, origC.fixed_ot_hours);
+  _cmp('고정야간금액', getAmountVal('ct-fixed-night-pay'), origC.fixed_night_pay);
+  _cmp('고정야간시간', parseFloat(document.getElementById('ct-fixed-night-hours')?.value)||0, origC.fixed_night_hours);
+  _cmp('고정휴일금액', getAmountVal('ct-fixed-hol-pay'), origC.fixed_hol_pay);
+  _cmp('고정휴일시간', parseFloat(document.getElementById('ct-fixed-hol-hours')?.value)||0, origC.fixed_hol_hours);
+  _cmp('급여산정기간', document.getElementById('ct-pay-period')?.value.trim()||'', origC.pay_period||'');
+  _cmp('급여지급일', parseInt(document.getElementById('ct-pay-day')?.value)||0, origC.pay_day);
+
+  if(_changed.length === 0){
+    toast('변경된 사항이 없습니다.', 'info');
+    return;
+  }
+
   const _monthlyStdH = typeof _calcMonthlyStdHours==='function' ? _calcMonthlyStdHours(hours_,days_) : (hours_*days_*365/12/7);
   const wkHol_  = isDailyA ? 0 : (_monthlyStdH > 0 ? Math.round(base_ / _monthlyStdH * hours_) : 0);
   const pos_    = getAmountVal('ct-position');
