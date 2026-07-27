@@ -852,15 +852,18 @@ function _updatePIAttendanceSummary(){
   const summaryEl = document.getElementById('pi-attendance-summary');
   if(summaryEl){
     const parts = [];
-    // 결근: 개별 항목 뱃지 스타일
-    const typeLabels = { authorized:'유급', unauthorized:'무단', unpaid:'무급' };
-    const typeColors = { authorized:'bg:#dcfce7;color:#166534', unauthorized:'bg:#fef2f2;color:#dc2626', unpaid:'bg:#fef3c7;color:#92400e' };
+    // 결근: 근태 관리대장의 실제 사유로 표시
+    const absentLabels = { unauthorized:'무단(무급)', sick_unpaid:'병가(무급)', sick_paid:'병가(유급)', industrial:'산재', menstrual:'생리휴가(무급)', maternity_paid:'출산(유급)', maternity_unpaid:'출산(무급)', paternity_paid:'배우자출산(유급)', childcare_leave:'육아휴직', family_care:'가족돌봄휴직', layoff_leave:'휴업휴직' };
+    const absentBg = { unauthorized:'#f3f4f6', sick_unpaid:'#fff7ed', sick_paid:'#dcfce7', industrial:'#dbeafe', menstrual:'#f5f3ff', maternity_paid:'#fdf2f8', maternity_unpaid:'#fef2f2', paternity_paid:'#ecfeff', childcare_leave:'#f0fdfa', family_care:'#f5f3ff', layoff_leave:'#fef2f2' };
+    const absentColor = { unauthorized:'#374151', sick_unpaid:'#92400e', sick_paid:'#166534', industrial:'#1e40af', menstrual:'#6d28d9', maternity_paid:'#be185d', maternity_unpaid:'#dc2626', paternity_paid:'#0e7490', childcare_leave:'#065f46', family_care:'#6d28d9', layoff_leave:'#dc2626' };
     if(absentDays > 0){
       const absDetails = absentData.map(a => {
         const t = a.type || 'unauthorized';
-        const d = (a.date||'').replace(/^\d{4}-/, ''); // MM-DD
-        const c = typeColors[t] || typeColors['unauthorized'];
-        return `<span style="font-size:10px;padding:1px 5px;border-radius:4px;margin:1px 2px;${c};white-space:nowrap;">${d} ${typeLabels[t]||t}</span>`;
+        const d = (a.date||'').replace(/^\d{4}-/, '');
+        const label = absentLabels[t] || t;
+        const bg = absentBg[t] || '#f3f4f6';
+        const color = absentColor[t] || '#374151';
+        return `<span style="font-size:10px;padding:1px 5px;border-radius:4px;margin:1px 2px;background:${bg};color:${color};white-space:nowrap;">${d} ${label}</span>`;
       }).join('');
       parts.push(`<span style="color:#dc2626;font-weight:600;">결근 ${absentDays}일</span> ${absDetails}`);
     } else {
