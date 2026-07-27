@@ -1651,6 +1651,14 @@
           <input type="date" id="ct-renew-new-start" disabled class="filt-date" style="width:100%;" />
           <div id="ct-renew-new-start-err" style="font-size:11px;color:#dc2626;margin-top:3px;display:none;"></div></div>
       </div>
+      <div style="display:flex;gap:8px;margin-top:14px;">
+        <button class="btn btn-primary" id="ct-btn-renew-complete-panel" onclick="confirmContractRenew()" style="display:none;">
+          <i class="fas fa-check-circle"></i> 갱신완료 — 재등록 진행
+        </button>
+        <button class="btn btn-secondary" id="ct-btn-renew-cancel-panel" onclick="cancelContractRenew()" style="display:none;">
+          <i class="fas fa-times"></i> 갱신 취소
+        </button>
+      </div>
     </div>
     <!-- ── 수정 및 재발행 안내 패널 ── -->
     <div id="ct-amend-panel" class="ct-amend-panel" style="display:none;">
