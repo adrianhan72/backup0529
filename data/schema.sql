@@ -1,8 +1,8 @@
 -- =============================================================================
 -- 인사톡 노무톡 — SQLite Schema (한글 주석 포함)
 -- node dump_schema.js 로 자동 생성 (ALTER TABLE 반영)
--- 최종 갱신: 2026-07-24
--- 테이블 수: 25개
+-- 최종 갱신: 2026-07-27
+-- 테이블 수: 26개
 -- =============================================================================
 
 PRAGMA journal_mode = WAL;
@@ -149,7 +149,9 @@ CREATE TABLE IF NOT EXISTS contracts (
   renewed_to_id TEXT, --  -- 갱신 대상 ID
   hazard_allowance REAL, --  -- 위험수당
   custom_ordinary_values TEXT, --  -- 통상임금 포함 사용자정의
-  probation_end_date TEXT --  -- 수습 종료일
+  probation_end_date TEXT, --  -- 수습 종료일
+  dismissal_notice_pay REAL DEFAULT 0,
+  dismissal_notice_pay_reason TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_contracts_employee ON contracts(employee_id);
@@ -419,7 +421,8 @@ CREATE TABLE IF NOT EXISTS payrolls (
   absent_dates TEXT, --  -- 결근일자 (CSV)
   earlyleave_data TEXT, --  -- 조퇴 상세 (JSON)
   late_data TEXT, --  -- 지각 상세 (JSON)
-  absent_data TEXT --  -- 결근 상세 (JSON)
+  absent_data TEXT, --  -- 결근 상세 (JSON)
+  severance_interim_pay REAL DEFAULT 0
 );
 
 CREATE INDEX IF NOT EXISTS idx_payrolls_employee ON payrolls(employee_id);
@@ -641,5 +644,24 @@ CREATE TABLE IF NOT EXISTS tax_brackets (
   data TEXT NOT NULL, --  -- 구간 데이터 (JSON)
   created_at INTEGER, --  -- 생성일시
   updated_at INTEGER --  -- 수정일시
+);
+
+-- =============================================================================
+-- SECTION X: 기타 테이블
+-- =============================================================================
+
+-- severance_interim_settlements
+CREATE TABLE IF NOT EXISTS severance_interim_settlements (
+  id TEXT PRIMARY KEY,
+  employee_id TEXT,
+  company_id TEXT,
+  contract_id TEXT,
+  settlement_date TEXT,
+  tenure_days INTEGER,
+  daily_average_wage REAL,
+  settlement_amount REAL,
+  reason TEXT,
+  note TEXT,
+  created_at TEXT
 );
 

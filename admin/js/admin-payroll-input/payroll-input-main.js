@@ -950,9 +950,8 @@ function loadPIContract(){
     _setupManualFields(true);
     // 근로계약서의 급여일 우선, 없으면 회사 설정
     const _co = allCompanies.find(c => c.id === _coId);
-    const _ctPayDay = piContract?.pay_day ? parseInt(String(piContract.pay_day).replace(/[^0-9]/g, '')) : 0;
     const _ppMo = piContract?.pay_period_month || _co?.pay_period_month || '당월';
-    const _ppDay = _ctPayDay || parseInt(_co?.pay_period_day) || 1;
+    const _ppDay = parseInt(piContract?.pay_period_day) || parseInt(_co?.pay_period_day) || 1;
     const yr = parseInt(document.getElementById('pi-year')?.value) || new Date().getFullYear();
     const mo = parseInt(document.getElementById('pi-month')?.value) || (new Date().getMonth() + 1);
     const _isJeon = _ppMo === '전월';
