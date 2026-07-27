@@ -105,7 +105,7 @@
       border:1px solid #d97706;background:#f59e0b;color:#fff;
       min-height:28px;box-sizing:border-box;
       transition:background .18s;
-    }
+     user-select:none;}
     .btn-draft-edit-sm:hover:not(:disabled){background:#d97706;}
     .btn-draft-del-sm{
       display:inline-flex;align-items:center;gap:3px;
@@ -115,7 +115,7 @@
       border:1px solid #6b7280;background:#9ca3af;color:#fff;
       min-height:28px;box-sizing:border-box;
       transition:background .18s;
-    }
+     user-select:none;}
     .btn-draft-del-sm:hover:not(:disabled){background:#6b7280;}
     /* ?�?� 계약??조회 첨�? ?�류 ?�로???�션 ?�?� */
     .ctf-section{background:#FFFEF7;border:1.5px solid #fde047;border-radius:10px;padding:16px 18px;margin:16px 0 20px;}
@@ -292,3 +292,6 @@
     #cen-panel-2yr .tbl-2yr tr:hover td{background:#fafafa;}
     .badge-2yr-over{display:inline-flex;align-items:center;gap:4px;background:#fee2e2;color:#991b1b;border-radius:20px;padding:2px 9px;font-size:11px;font-weight:700;}
     .badge-2yr-warn{display:inline-flex;align-items:center;gap:4px;background:#fff7ed;color:#9a3412;border-radius:20px;padding:2px 9px;font-size:11px;font-weight:700;}
+
+.btn-draft-edit-sm:focus-visible,
+.btn-draft-del-sm:focus-visible { outline:2.5px solid currentColor; outline-offset:2px; }
