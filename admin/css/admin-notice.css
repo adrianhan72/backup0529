@@ -102,11 +102,11 @@
       padding:5px 10px;border-radius:6px;
       font-size:11px;font-weight:600;font-family:inherit;
       cursor:pointer;white-space:nowrap;flex-shrink:0;
-      border:1px solid #b91c1c;background:#dc2626;color:#fff;
+      border:1px solid #d97706;background:#f59e0b;color:#fff;
       min-height:28px;box-sizing:border-box;
       transition:background .18s;
     }
-    .btn-draft-edit-sm:hover:not(:disabled){background:#b91c1c;}
+    .btn-draft-edit-sm:hover:not(:disabled){background:#d97706;}
     .btn-draft-del-sm{
       display:inline-flex;align-items:center;gap:3px;
       padding:5px 10px;border-radius:6px;
