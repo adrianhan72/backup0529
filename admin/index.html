@@ -299,24 +299,24 @@
         <div style="padding:14px 22px;border-bottom:1px solid #f0f2f5;background:#f8f9fb;">
           <div style="display:flex;gap:20px;align-items:center;justify-content:space-between;">
             <div style="display:flex;gap:20px;align-items:center;">
-              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600;">
-                <input type="radio" name="billing-filter" value="all" checked onchange="renderBillings()" style="cursor:pointer;" />
+              <label class="radio-custom" style="font-weight:600;">
+                <input type="radio" name="billing-filter" value="all" checked onchange="renderBillings()" />
                 <span>전체 이용고객</span>
               </label>
-              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600;">
-                <input type="radio" name="billing-filter" value="unpaid" onchange="renderBillings()" style="cursor:pointer;" />
+              <label class="radio-custom" style="font-weight:600;">
+                <input type="radio" name="billing-filter" value="unpaid" onchange="renderBillings()" />
                 <span style="color:#ef4444;">미납고객</span>
               </label>
-              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600;">
-                <input type="radio" name="billing-filter" value="virtual" onchange="renderBillings()" style="cursor:pointer;" />
+              <label class="radio-custom" style="font-weight:600;">
+                <input type="radio" name="billing-filter" value="virtual" onchange="renderBillings()" />
                 <span style="color:#f59e0b;">청구대상고객</span>
               </label>
-              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600;">
-                <input type="radio" name="billing-filter" value="paid" onchange="renderBillings()" style="cursor:pointer;" />
+              <label class="radio-custom" style="font-weight:600;">
+                <input type="radio" name="billing-filter" value="paid" onchange="renderBillings()" />
                 <span style="color:#10b981;">납부고객</span>
               </label>
-              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600;">
-                <input type="radio" name="billing-filter" value="pending" onchange="renderBillings()" style="cursor:pointer;" />
+              <label class="radio-custom" style="font-weight:600;">
+                <input type="radio" name="billing-filter" value="pending" onchange="renderBillings()" />
                 <span style="color:#f59e0b;">납부대기고객</span>
               </label>
             </div>
@@ -1082,10 +1082,10 @@
         <div class="form-group">
           <label>일할 계산 방식</label>
           <div style="display:flex;gap:16px;padding:6px 0;">
-            <label style="display:flex;align-items:center;gap:6px;font-weight:400;cursor:pointer;">
+            <label class="radio-custom" style="font-weight:400;">
               <input type="radio" name="cm-proration-method" value="30day_fixed" checked /> 30일 고정 기준
             </label>
-            <label style="display:flex;align-items:center;gap:6px;font-weight:400;cursor:pointer;">
+            <label class="radio-custom" style="font-weight:400;">
               <input type="radio" name="cm-proration-method" value="working_days" /> 월 소정근로일수 기준
             </label>
           </div>
@@ -2123,15 +2123,15 @@
             <div style="margin-bottom:14px;">
               <label class="ct-prob-basis-title">수습 보수 산정 기준 <span class="lbl-req">*</span></label>
               <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                <label id="ct-prob-basis-label-salary" class="ct-prob-basis-label active">
+                <label id="ct-prob-basis-label-salary" class="ct-prob-basis-label radio-custom active">
                   <input type="radio" name="ct-probation-basis" id="ct-prob-basis-salary" value="salary" checked onchange="onProbationBasisChange()" />
                   <i class="fas fa-calculator" style="font-size:11px;"></i> 약정 보수 대비 요율
                 </label>
-                <label id="ct-prob-basis-label-minwage" class="ct-prob-basis-label">
+                <label id="ct-prob-basis-label-minwage" class="ct-prob-basis-label radio-custom">
                   <input type="radio" name="ct-probation-basis" id="ct-prob-basis-minwage" value="minwage" onchange="onProbationBasisChange()" />
                   <i class="fas fa-balance-scale" style="font-size:11px;"></i> 최저임금 대비 요율
                 </label>
-                <label id="ct-prob-basis-label-direct" class="ct-prob-basis-label">
+                <label id="ct-prob-basis-label-direct" class="ct-prob-basis-label radio-custom">
                   <input type="radio" name="ct-probation-basis" id="ct-prob-basis-direct" value="direct" onchange="onProbationBasisChange()" />
                   <i class="fas fa-pen" style="font-size:11px;"></i> 직접 입력
                 </label>

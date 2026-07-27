@@ -16,6 +16,39 @@
     select:focus:not(.filt-select):not(.cm-aw-pt-select):not(.pi-pay-type-select) {
       border-color:#6366f1; outline:none; box-shadow:0 0 0 2px rgba(99,102,241,.25);
     }
+    /* ── 커스텀 라디오 버튼 (전역) ── */
+    .radio-custom {
+      display:inline-flex; align-items:center; gap:6px;
+      cursor:pointer; user-select:none;
+    }
+    .radio-custom input[type="radio"] {
+      appearance:none; -webkit-appearance:none; -moz-appearance:none;
+      width:16px; height:16px;
+      border:1.5px solid #d1d5db;
+      border-radius:50%;
+      background:#fff;
+      cursor:pointer;
+      flex-shrink:0; margin:0;
+      transition:border-color .15s, background .15s;
+    }
+    .radio-custom input[type="radio"]:checked {
+      border-color:#6366f1;
+      background:#6366f1;
+    }
+    .radio-custom input[type="radio"]:checked::after {
+      content:''; display:block;
+      width:6px; height:6px;
+      margin:3.5px 0 0 3.5px;
+      border-radius:50%;
+      background:#fff;
+    }
+    .radio-custom input[type="radio"]:focus-visible {
+      outline:none;
+      box-shadow:0 0 0 2px rgba(99,102,241,.25);
+    }
+    .radio-custom:hover input[type="radio"]:not(:checked) {
+      border-color:#a5b4fc;
+    }
     /* ── 필터 바 / 검색 공통 ── */
     .filt-bar{ display:flex;align-items:center;gap:12px;padding:10px 18px;flex-wrap:wrap; }
     .filt-label{ font-size:11.5px;font-weight:600;color:#6b7280;white-space:nowrap; }
