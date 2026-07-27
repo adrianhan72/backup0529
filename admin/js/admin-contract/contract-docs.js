@@ -48,6 +48,7 @@ function openDocsUploadModal(contractId){
   overlay.className = 'modal-overlay';
   overlay.id = 'ctf-upload-modal-overlay';
   overlay.style.zIndex = '300';
+  overlay.dataset.contractId = contractId;
   overlay.innerHTML = `
     <div class="modal" style="max-width:560px;width:95%;">
       <div class="modal-header" style="display:flex;align-items:center;justify-content:space-between;">
@@ -112,12 +113,12 @@ function _ctfMakeRow(type, c, label, icon, color, bgColor, isVoidedFile=false, r
   let actionBtns;
   if(isVoidedFile){
     actionBtns = hasFile ? `
-      ${!isPdf ? `<button class="ctf-btn ctf-btn-preview-voided" onclick="_ctfTogglePreview('${prevId}',this)"><i class="fas fa-eye"></i> 원본 보기</button>` : ''}
+      <button class="ctf-btn ctf-btn-preview-voided" onclick="${isPdf ? `_ctfPreviewPdf('${type}')` : `_ctfTogglePreview('${prevId}',this)`}"><i class="fas fa-eye"></i> 원본 보기</button>
       <button class="ctf-btn ctf-btn-download" onclick="_ctfDownload('${type}')"><i class="fas fa-download"></i> 다운로드</button>
     ` : `<span style="font-size:11.5px;color:#9ca3af;font-style:italic;">날인본 없음</span>`;
   } else if(hasFile) {
     actionBtns = `
-      ${!isPdf ? `<button class="ctf-btn ctf-btn-preview" onclick="_ctfTogglePreview('${prevId}',this)"><i class="fas fa-eye"></i> 미리보기</button>` : ''}
+      <button class="ctf-btn ctf-btn-preview" onclick="${isPdf ? `_ctfPreviewPdf('${type}')` : `_ctfTogglePreview('${prevId}',this)`}"><i class="fas fa-eye"></i> 미리보기</button>
       <button class="ctf-btn ctf-btn-download" onclick="_ctfDownload('${type}')"><i class="fas fa-download"></i> 다운로드</button>
       ${readonly ? '' : `<button class="ctf-btn ctf-btn-delete"   onclick="_ctfDelete('${type}','${c.id}')"><i class="fas fa-trash-alt"></i> 삭제</button>`}
     `;
@@ -181,6 +182,22 @@ function _ctfTogglePreview(prevId, btn){
       : '<i class="fas fa-eye"></i> 미리보기';
   } else {
     btn.innerHTML = '<i class="fas fa-eye-slash"></i> 닫기';
+  }
+}
+
+// ── PDF 미리보기: 새 창에서 열기 ──
+function _ctfPreviewPdf(type){
+  const overlay = document.getElementById('ctf-upload-modal-overlay');
+  const contractId = editId?.contract || (overlay?.dataset?.contractId);
+  const c = contractId ? allContracts.find(x => x.id === contractId) : null;
+  if(!c) return;
+  const dataField = type === 'signed' ? 'signed_file_data' : 'consent_file_data';
+  const base64 = c[dataField];
+  if(!base64) return;
+  const pdfWindow = window.open('', '_blank');
+  if(pdfWindow){
+    pdfWindow.document.write(`<html><head><title>PDF 미리보기</title></head><body style="margin:0;"><iframe src="${base64}" width="100%" height="100%" style="border:none;position:fixed;inset:0;"></iframe></body></html>`);
+    pdfWindow.document.close();
   }
 }
 
@@ -357,8 +374,9 @@ async function _ctfDelete(type, contractId){
 
 // ── 파일 다운로드 ──
 function _ctfDownload(type){
-  const contractId = editId.contract;
-  const c = allContracts.find(x => x.id === contractId);
+  const overlay = document.getElementById('ctf-upload-modal-overlay');
+  const contractId = editId?.contract || (overlay?.dataset?.contractId);
+  const c = contractId ? allContracts.find(x => x.id === contractId) : null;
   if(!c) return;
   const nameField = type === 'signed' ? 'signed_file_name'  : 'consent_file_name';
   const dataField = type === 'signed' ? 'signed_file_data'  : 'consent_file_data';
