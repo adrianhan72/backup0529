@@ -285,7 +285,7 @@
     .dash-co-payday{font-size:12px;color:#6b7280;white-space:nowrap;}
     .dash-co-pending{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500;background:#fff7ed;color:#e94560;white-space:nowrap;}
     .dash-co-done{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500;background:#dcfce7;color:#10b981;white-space:nowrap;}
-    .dash-co-btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:5px 13px;border-radius:7px;border:1px solid transparent;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s;white-space:nowrap;width:100%;box-sizing:border-box;}
+    .dash-co-btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:5px 13px;border-radius:7px;border-style:solid;border-width:1px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s;white-space:nowrap;width:100%;box-sizing:border-box;}
 /* ?�도�??�정기�? */
     .std-tab-bar{display:flex;gap:4px;margin-bottom:0;}
     .std-tab-panel{background:#f5f3ff;padding:20px;border-radius:0 0 12px 12px;box-shadow:none;border:1px solid #6366f1;}
