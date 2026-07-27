@@ -737,13 +737,14 @@ function _updatePIAnnualLeaveDetail(){
   const remain = ledger?.remain_days!=null
     ? parseFloat(ledger.remain_days)
     : totalDays + carryover - prevCum;
-  const remainDisp = remain%1===0 ? remain.toFixed(0) : remain.toFixed(1);
+  const remainDisp = remain.toFixed(2);
 
   // ── 표시 문자열 구성 ──
-  const beforeUsed = prevCum - periodUsedDays; // 전월까지 누적 사용
-  const afterUsed  = prevCum;                  // 이번달까지 누적 사용
+  const beforeUsed = (prevCum - periodUsedDays).toFixed(2);
+  const afterUsed  = prevCum.toFixed(2);
+  const periodUsedDisp = periodUsedDays.toFixed(2);
   const summary = totalDays>0
-    ? `전월 누적: ${beforeUsed}일/총 ${totalDays}일, 이번달 소진: ${periodUsedDays}/${afterUsed}일, 최종 잔여연차: ${remainDisp}일`
+    ? `전월 누적: ${beforeUsed}일/총 ${totalDays}일, 이번달 소진: ${periodUsedDisp}/${afterUsed}일, 최종 잔여연차: ${remainDisp}일`
     : `발생연차 ${totalDays}일`;
 
   textEl.textContent = summary;
