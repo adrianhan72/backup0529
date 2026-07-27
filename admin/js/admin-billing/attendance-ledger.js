@@ -234,11 +234,18 @@ async function atlAddEntry(empId) {
       paternity_paid:   { max: 10,  label: '배우자출산휴가' },
       childcare_leave:  { max: 365, label: '육아휴직' },
       family_care:      { max: 90,  label: '가족돌봄휴직', perYear: true },
+      menstrual:        { max: 1,   label: '생리휴가', perPayPeriod: true },
     };
     const limit = LIMITS[absentType];
     if (limit) {
       // 전체 ledger에서 해당 유형(+결합유형)의 누적 사용일수 집계
       const checkTypes = [absentType, ...(limit.combineWith || [])];
+      // perPayPeriod: 추가하려는 날짜가 속한 급여 산정기간 경계 계산
+      let _ppStart = '', _ppEnd = '';
+      if (limit.perPayPeriod) {
+        const _co = (allCompanies || []).find(c => c.id === _atlCompanyId);
+        [_ppStart, _ppEnd] = _atlGetPayPeriod(dateFrom, _co);
+      }
       let cumulativeDays = 0;
       _atlLedgerCache.filter(l => l.employee_id === empId).forEach(ledger => {
         let ledgerEntries = [];
@@ -247,6 +254,11 @@ async function atlAddEntry(empId) {
           if (e.type === 'absent' && checkTypes.includes(e.absentType)) {
             // perYear 한도: 해당 년도만 집계
             if (limit.perYear && ledger.year !== year) return;
+            // perPayPeriod 한도: 급여 산정기간 내 날짜만 집계 (생리휴가)
+            if (limit.perPayPeriod) {
+              const entryDates = _atlExpandDateRange(e.date, e.dateTo || '');
+              if (!entryDates.some(d => d >= _ppStart && d <= _ppEnd)) return;
+            }
             cumulativeDays += _atlExpandDateRange(e.date, e.dateTo || '').length;
           }
         });
@@ -337,6 +349,36 @@ function _atlExpandDateRange(from, to) {
   const cur = new Date(start);
   while (cur <= end) { dates.push(cur.toISOString().slice(0,10)); cur.setDate(cur.getDate() + 1); }
   return dates;
+}
+
+/**
+ * 특정 날짜가 속한 급여 산정기간의 시작일·종료일을 반환한다.
+ * 고객사 pay_period_month(당월/전월), pay_period_day 설정 기준.
+ * @param {string} dateStr - YYYY-MM-DD
+ * @param {object} company - { pay_period_month, pay_period_day }
+ * @returns {[string, string]} [periodStart, periodEnd]
+ */
+function _atlGetPayPeriod(dateStr, company) {
+  const ppMo  = company?.pay_period_month || '당월';
+  const ppDay = parseInt(company?.pay_period_day) || 1;
+  const [y, m] = dateStr.split('-').map(Number);
+  const isJeonwol = ppMo === '전월';
+
+  let refY = y, refM = m;
+  if (isJeonwol) {
+    refM = m - 1;
+    if (refM <= 0) { refM += 12; refY--; }
+  }
+
+  // 산정 시작일: refY-refM-ppDay
+  const startStr = `${refY}-${String(refM).padStart(2,'0')}-${String(ppDay).padStart(2,'0')}`;
+  // 산정 종료일: 다음달 ppDay 하루 전
+  const endDate = new Date(refY, refM - 1, ppDay);
+  endDate.setMonth(endDate.getMonth() + 1);
+  endDate.setDate(endDate.getDate() - 1);
+  const endStr = endDate.toISOString().slice(0,10);
+
+  return [startStr, endStr];
 }
 
 async function atlDeleteEntry(empId, idx, date, type) {
