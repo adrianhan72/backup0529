@@ -226,6 +226,21 @@ async function atlAddEntry(empId) {
   const dupDates = allDates.filter(d => entries.some(e => e.date === d));
   if (dupDates.length > 0) { if(typeof toast==='function') toast('이미 등록된 날짜가 포함되어 있습니다: ' + dupDates.join(', '), 'error'); return; }
 
+  // ── 근로계약 시작일 이전 차단 ──
+  const _contracts = (allContracts || []).filter(c =>
+    c.employee_id === empId && c.company_id === _atlCompanyId && !c.is_draft && !c.is_voided_by_amend
+  );
+  if (_contracts.length > 0) {
+    const _earliestStart = _contracts
+      .map(c => c.contract_start)
+      .filter(Boolean)
+      .sort()[0];
+    if (_earliestStart && dateFrom < _earliestStart) {
+      if(typeof toast==='function') toast(`근로계약 시작일(${_earliestStart}) 이전 날짜는 등록할 수 없습니다.`, 'error');
+      return;
+    }
+  }
+
   // ── 법정 한도 초과 검사 (기간 제한이 있는 결근 사유) ──
   if (type === 'absent') {
     const LIMITS = {
