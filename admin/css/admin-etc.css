@@ -399,6 +399,13 @@
     .filt-date:disabled::-webkit-datetime-edit-month-field,
     .filt-date:disabled::-webkit-datetime-edit-day-field,
     .filt-date:disabled::-webkit-datetime-edit-year-field { background:transparent !important; color:#9ca3af; }
+    .filt-date[readonly] { background:#f9fafb !important; cursor:default; }
+    .filt-date[readonly]::-webkit-datetime-edit,
+    .filt-date[readonly]::-webkit-datetime-edit-fields-wrapper,
+    .filt-date[readonly]::-webkit-datetime-edit-text,
+    .filt-date[readonly]::-webkit-datetime-edit-month-field,
+    .filt-date[readonly]::-webkit-datetime-edit-day-field,
+    .filt-date[readonly]::-webkit-datetime-edit-year-field { background:transparent !important; }
     .filt-search {
       padding:4px 10px 4px 28px;height:32px;box-sizing:border-box;
       border:1px solid #d1d5db;border-radius:7px;
