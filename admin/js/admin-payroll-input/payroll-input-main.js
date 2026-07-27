@@ -700,39 +700,64 @@ function _updatePIAnnualLeaveDetail(){
   }
 
   const curYear = parseInt(document.getElementById('pi-year')?.value) || 0;
-  const ledger = (allLeaveLedgers || []).find(r =>
-    r.employee_id === empId && Number(r.year) === curYear
-  );
 
-  if(!ledger || !ledger.month_data){
-    textEl.textContent = '사용 내역 없음';
-    textEl.className = 'pi-al-text-dim';
-    rowEl.style.display = '';
-    return;
+  // ── 총 발생연차 및 잔여연차 계산 (calcAnnualLeaveTable과 동일 로직) ──
+  const empData = (allEmployees||[]).find(e=>e.id===empId)||{};
+  const hireDate = empData.hire_date || piContract.contract_start || '';
+  const coId = currentGlobalCompanyId || document.getElementById('pi-company')?.value || '';
+  const co = (allCompanies||[]).find(c=>c.id===coId);
+  const basis = co?.annual_leave_basis || '회계년도 기준';
+  const totalDays = (typeof calcAnnualLeaveDays === 'function' && hireDate)
+    ? (calcAnnualLeaveDays(hireDate, basis, piContract.contract_start||'')??0)
+    : (parseFloat(piContract.annual_leave_days)||0);
+
+  // ── 관리대장 확인 ──
+  const ledger = (allLeaveLedgers||[]).find(r=>r.employee_id===empId&&Number(r.year)===curYear);
+
+  // 이번 급여 산정기간 내 사용일 수집
+  let monthData=[];
+  if(ledger?.month_data){ try{monthData=JSON.parse(ledger.month_data||'[]')}catch(e){monthData=[]} }
+  const periodUsedDays = monthData.reduce((sum,md)=>{
+    const dates=(md.dates||'').split(',').map(d=>d.trim()).filter(Boolean);
+    return sum + dates.filter(d=>d>=ppStart&&d<=ppEnd).length;
+  },0);
+
+  // 이월연차: ledger.carryover_days 또는 이전 연도 잔여분
+  const carryover = ledger?.carryover_days ? parseFloat(ledger.carryover_days) : 0;
+
+  // 누적 사용일
+  let prevCum=0;
+  if(ledger){
+    prevCum = monthData.reduce((s,d)=>s+(parseFloat(d.days)||0),0);
+  } else {
+    prevCum = (allPayrolls||[]).filter(p=>p.employee_id===empId&&!p.is_draft)
+      .reduce((sum,p)=>sum+(parseFloat(p.annual_leave_used)||0),0);
   }
 
-  let monthData = [];
-  try { monthData = JSON.parse(ledger.month_data || '[]'); } catch(e) { monthData = []; }
+  const remain = ledger?.remain_days!=null
+    ? parseFloat(ledger.remain_days)
+    : totalDays + carryover - prevCum;
+  const remainDisp = remain%1===0 ? remain.toFixed(0) : remain.toFixed(1);
 
-  // 급여 산정기간 내 연차 사용일 수집
-  const usedDates = [];
-  monthData.forEach(md => {
-    const dates = (md.dates || '').split(',').map(d => d.trim()).filter(Boolean);
-    dates.forEach(d => {
-      if(d >= ppStart && d <= ppEnd) usedDates.push(d);
-    });
-  });
-
-  if(usedDates.length === 0){
-    textEl.textContent = '해당 기간 사용 내역 없음';
-    textEl.className = 'pi-al-text-dim';
-    rowEl.style.display = '';
-    return;
+  // ── 표시 문자열 구성 ──
+  let summary = '';
+  if(totalDays>0){
+    summary = `총 ${totalDays}일`;
+    if(carryover>0) summary += ` (전년 이월 ${carryover}일)`;
+    if(periodUsedDays>0){
+      summary += ` / 기간 내 ${periodUsedDays}일 사용`;
+      if(periodUsedDays>0 && remain>=0){
+        summary += ` → 잔여 ${remainDisp}일`;
+      }
+    } else {
+      summary += ` / 기간 내 사용 없음 → 잔여 ${remainDisp}일`;
+    }
+  } else {
+    summary = `발생연차 ${totalDays}일`;
   }
 
-  usedDates.sort();
-  textEl.textContent = `${usedDates.length}일 (${usedDates.join(', ')})`;
-  textEl.className = 'pi-al-text-active';
+  textEl.textContent = summary;
+  textEl.className = periodUsedDays>0 ? 'pi-al-text-active' : 'pi-al-text-dim';
   rowEl.style.display = '';
 }
 
