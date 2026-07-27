@@ -118,7 +118,7 @@ function _ctfMakeRow(type, c, label, icon, color, bgColor, isVoidedFile=false, r
     actionBtns = `
       <button class="ctf-btn ctf-btn-preview" onclick="_ctfPreviewFile('${type}')"><i class="fas fa-eye"></i> 미리보기</button>
       <button class="ctf-btn ctf-btn-download" onclick="_ctfDownload('${type}')"><i class="fas fa-download"></i> 다운로드</button>
-      ${readonly ? '' : `<button class="ctf-btn ctf-btn-delete"   onclick="_ctfDelete('${type}','${c.id}')"><i class="fas fa-trash-alt"></i> 삭제</button>`}
+      <button class="ctf-btn ctf-btn-delete"   onclick="_ctfDelete('${type}','${c.id}')"><i class="fas fa-trash-alt"></i> 삭제</button>
     `;
   } else {
     actionBtns = readonly
