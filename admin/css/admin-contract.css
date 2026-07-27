@@ -1,7 +1,9 @@
 ﻿    .ct-title-info{display:inline-flex;align-items:center;gap:6px;margin-left:14px;font-size:12px;white-space:nowrap}
     /* 비활성 입력 필드 스타일 (조회 모드: 통일된 외관 유지) */
-    #contract-modal input:disabled:not(#ct-terminate-display):not(#ct-voided-display),#contract-modal select:disabled:not(#ct-em-gender):not(#ct-edit-em-gender){color:#555!important;background:#f1f5f9!important;border:1px solid #e8eaed!important;cursor:default!important;-webkit-text-fill-color:#555!important;font-weight:400!important}
+    #contract-modal input:disabled:not(#ct-terminate-display):not(#ct-voided-display):not([type="radio"]):not([type="checkbox"]),#contract-modal select:disabled:not(#ct-em-gender):not(#ct-edit-em-gender){color:#555!important;background:#f1f5f9!important;border:1px solid #e8eaed!important;cursor:default!important;-webkit-text-fill-color:#555!important;font-weight:400!important}
     #ct-em-gender,#ct-edit-em-gender{background:#f1f5f9!important;border-color:#e8eaed!important;color:#555!important;cursor:default;opacity:1!important;font-weight:400!important}
+    /* 라디오/체크박스: disabled 시에도 시각적 스타일 유지 */
+    #contract-modal input[type="radio"]:disabled,#contract-modal input[type="checkbox"]:disabled{opacity:1!important;cursor:default}
     /* 임금조건 섹션 내 필드 높이 통일 (급여 산정기간 ~ 벽지수당 영역) */
     #ct-wage-section-title ~ .form-group input[type="text"],
     #ct-wage-section-title ~ .form-group input[type="number"],
