@@ -452,7 +452,7 @@ function renderContracts(){
           : `<button class="btn btn-sm btn-indigo" onclick="openContractPrintModal('${c.id}')"><i class="fas fa-file-contract"></i> 계약서</button>`
         }
         ${docsIncomplete && !(c.status===CONTRACT_STATUS.VOIDED||c.is_voided_by_amend)
-          ? `<button class="btn btn-sm btn-danger" onclick="openContractForUpload('${c.id}')"><i class="fas fa-upload"></i> 서류 업로드</button>`
+          ? `<button class="btn btn-sm btn-success'>서류 업로드</button>`
           : ''
         }
         ${(c.status===CONTRACT_STATUS.VOIDED||c.is_voided_by_amend)

@@ -519,8 +519,8 @@
     .wl-excel-btn:active{}
     .wl-print-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;background:#1a1a2e;color:#fff;border:1px solid #cccccc;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s;}
     .wl-print-btn:hover{background:#2d2d4e;}
-    .wl-pdf-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;background:#dc2626;color:#fff;border:1px solid #b91c1c;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s;}
-    .wl-pdf-btn:hover{background:#b91c1c;}
+    .wl-pdf-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;background:#16a34a;color:#fff;border:1px solid #15803d;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s;}
+    .wl-pdf-btn:hover{background:#15803d;}
     .wl-pdf-btn:active{}
     .wl-excel-btn:disabled,.wl-pdf-btn:disabled,.wl-print-btn:disabled{background:#cccccc;color:#f2f2f2;border:1px solid #cccccc;cursor:not-allowed;opacity:1;box-shadow:none;}
 
