@@ -3295,15 +3295,17 @@ function calcPI(){
     return typeof cfg === 'string' ? (() => { try { return JSON.parse(cfg); } catch(e) { return {}; } })() : cfg;
   })();
   const _teVal = (field) => {
-    if (!_piTaxCfg[`${field}_tax_exempt`]) return 0;
-    const amt = gv(`pi-${field === 'car' ? 'transport' : field}`);
-    return Math.min(amt, _TAX_EXEMPT_CAP);
+    const _idMap = { car:'transport', remote_area:'remote-area' };
+    const amt = gv(`pi-${_idMap[field] || field}`);
+    if (_piTaxCfg[`${field}_tax_exempt`]) return Math.min(amt, _TAX_EXEMPT_CAP);
+    return amt; // 비과세 미설정 시 전액 포함 (통상임금이므로)
   };
-  const std=gv('pi-base')+gv('pi-weekly-hol')+gv('pi-site')+gv('pi-remote-area')+gv('pi-position')
+  const std=gv('pi-base')+gv('pi-weekly-hol')+gv('pi-site')+gv('pi-position')
     + _teVal('car')
     + _teVal('meal')
     + _teVal('research')
     + _teVal('childcare')
+    + _teVal('remote_area')
     +(_getPIPayTypeVal('communication')==='fixed'?gv('pi-communication'):0)
     +(_getPIPayTypeVal('fitness')==='fixed'    ?gv('pi-fitness')    :0)
     +(_getPIPayTypeVal('self_dev')==='fixed'   ?gv('pi-self-dev')   :0)
