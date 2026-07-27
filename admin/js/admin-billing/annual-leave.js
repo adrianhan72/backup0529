@@ -733,6 +733,21 @@ function _addLedgerEntry(){
     return;
   }
 
+  // ── 근로계약 시작일 이전 차단 ──
+  const _contracts = (allContracts || []).filter(c =>
+    c.employee_id === _ledgerEmpId && !c.is_draft && !c.is_voided_by_amend
+  );
+  if (_contracts.length > 0) {
+    const _earliestStart = _contracts
+      .map(c => c.contract_start)
+      .filter(Boolean)
+      .sort()[0];
+    if (_earliestStart && dateVal < _earliestStart) {
+      toast(`근로계약 시작일(${_earliestStart}) 이전 날짜는 등록할 수 없습니다.`, 'error');
+      return;
+    }
+  }
+
   _ledgerEntries.push({ date: dateVal, days: daysVal, note: '' });
   _ledgerEntries.sort((a,b) => a.date.localeCompare(b.date));
 
