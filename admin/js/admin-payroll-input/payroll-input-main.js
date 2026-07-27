@@ -852,18 +852,17 @@ function _updatePIAttendanceSummary(){
   const summaryEl = document.getElementById('pi-attendance-summary');
   if(summaryEl){
     const parts = [];
-    // 결근: 유형별 집계 (유급/무급/무단)
-    const byType = {};
-    absentData.forEach(a => {
-      const t = a.type || 'unauthorized';
-      byType[t] = (byType[t]||0) + (typeof _atlExpandDateRange==='function' ? _atlExpandDateRange(a.date, a.dateTo||'').length : 1);
-    });
+    // 결근: 개별 항목 뱃지 스타일
     const typeLabels = { authorized:'유급', unauthorized:'무단', unpaid:'무급' };
+    const typeColors = { authorized:'bg:#dcfce7;color:#166534', unauthorized:'bg:#fef2f2;color:#dc2626', unpaid:'bg:#fef3c7;color:#92400e' };
     if(absentDays > 0){
-      const absDetails = Object.entries(byType)
-        .map(([t,days]) => `${typeLabels[t]||t} ${days}일`)
-        .join(', ');
-      parts.push(`<span style="color:#dc2626;font-weight:600;">결근 ${absentDays}일</span> <span style="font-size:11px;color:#9ca3af;">(${absDetails})</span>`);
+      const absDetails = absentData.map(a => {
+        const t = a.type || 'unauthorized';
+        const d = (a.date||'').replace(/^\d{4}-/, ''); // MM-DD
+        const c = typeColors[t] || typeColors['unauthorized'];
+        return `<span style="font-size:10px;padding:1px 5px;border-radius:4px;margin:1px 2px;${c};white-space:nowrap;">${d} ${typeLabels[t]||t}</span>`;
+      }).join('');
+      parts.push(`<span style="color:#dc2626;font-weight:600;">결근 ${absentDays}일</span> ${absDetails}`);
     } else {
       parts.push(`<span style="color:#9ca3af;">결근 0일</span>`);
     }
