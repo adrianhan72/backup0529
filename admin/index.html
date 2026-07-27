@@ -647,7 +647,7 @@
             <option value="0.5">0.5일 (반차)</option>
             <option value="1" selected>1일</option>
           </select>
-          <button class="btn btn-sm btn-indigo" onclick="_addLedgerEntry()" style="position:relative;overflow:hidden;">
+          <button class="btn btn-sm btn-warning" onclick="_addLedgerEntry()" style="position:relative;overflow:hidden;">
             <i class="fas fa-plus"></i> 등록
           </button>
           <span style="font-size:11px;color:#9ca3af;">날짜 선택 후 사용일수를 지정하고 등록하세요 (중복 등록 불가)</span>
@@ -729,8 +729,8 @@
     <div class="modal-footer" style="flex-shrink:0;display:flex;align-items:center;gap:10px;padding:12px 20px;border-top:1px solid #f3f4f6;">
       <span style="font-size:11.5px;color:#9ca3af;flex:1;"><i class="fas fa-info-circle" style="color:#6366f1;margin-right:4px;"></i>저장 시 해당 연도 관리대장에 기록됩니다.</span>
       <button class="btn btn-secondary" onclick="closeModal('al-ledger-modal')" style="position:relative;overflow:hidden;">닫기</button>
-      <button class="btn btn-primary" id="ledger-save-btn" onclick="saveLeaveLedger()"
-        style="position:relative;overflow:hidden;background:#0d9488;border-color:#0d9488;">
+      <button class="btn btn-danger" id="ledger-save-btn" onclick="saveLeaveLedger()"
+        style="position:relative;overflow:hidden;">
         <i class="fas fa-save"></i> 저장
       </button>
     </div>
