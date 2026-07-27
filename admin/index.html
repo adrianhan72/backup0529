@@ -2121,19 +2121,19 @@
               <span style="font-size:11px;color:#dc2626;font-weight:600;margin-left:4px;">※ 아래 항목은 모두 필수 입력</span>
             </div>
             <div style="margin-bottom:14px;">
-              <div style="font-size:11.5px;font-weight:600;color:#92400e;margin-bottom:8px;">수습 보수 산정 기준 <span style="color:#dc2626;font-weight:900;">*</span></div>
+              <label class="ct-prob-basis-title">수습 보수 산정 기준 <span class="lbl-req">*</span></label>
               <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                <label id="ct-prob-basis-label-salary" style="display:flex;align-items:center;gap:7px;padding:8px 14px;border-radius:8px;border:1.5px solid #fbbf24;background:#fffbeb;cursor:pointer;font-size:12.5px;font-weight:600;color:#92400e;transition:all .15s;">
-                  <input type="radio" name="ct-probation-basis" id="ct-prob-basis-salary" value="salary" checked onchange="onProbationBasisChange()" style="accent-color:#d97706;width:14px;height:14px;" />
-                  <i class="fas fa-calculator" style="font-size:11px;color:#d97706;"></i> 약정 보수 대비 요율
+                <label id="ct-prob-basis-label-salary" class="ct-prob-basis-label active">
+                  <input type="radio" name="ct-probation-basis" id="ct-prob-basis-salary" value="salary" checked onchange="onProbationBasisChange()" />
+                  <i class="fas fa-calculator" style="font-size:11px;"></i> 약정 보수 대비 요율
                 </label>
-                <label id="ct-prob-basis-label-minwage" style="display:flex;align-items:center;gap:7px;padding:8px 14px;border-radius:8px;border:1.5px solid #e2e8f0;background:#f8fafc;cursor:pointer;font-size:12.5px;font-weight:600;color:#64748b;transition:all .15s;">
-                  <input type="radio" name="ct-probation-basis" id="ct-prob-basis-minwage" value="minwage" onchange="onProbationBasisChange()" style="accent-color:#d97706;width:14px;height:14px;" />
-                  <i class="fas fa-balance-scale" style="font-size:11px;color:#64748b;"></i> 최저임금 대비 요율
+                <label id="ct-prob-basis-label-minwage" class="ct-prob-basis-label">
+                  <input type="radio" name="ct-probation-basis" id="ct-prob-basis-minwage" value="minwage" onchange="onProbationBasisChange()" />
+                  <i class="fas fa-balance-scale" style="font-size:11px;"></i> 최저임금 대비 요율
                 </label>
-                <label id="ct-prob-basis-label-direct" style="display:flex;align-items:center;gap:7px;padding:8px 14px;border-radius:8px;border:1.5px solid #e2e8f0;background:#f8fafc;cursor:pointer;font-size:12.5px;font-weight:600;color:#64748b;transition:all .15s;">
-                  <input type="radio" name="ct-probation-basis" id="ct-prob-basis-direct" value="direct" onchange="onProbationBasisChange()" style="accent-color:#d97706;width:14px;height:14px;" />
-                  <i class="fas fa-pen" style="font-size:11px;color:#64748b;"></i> 직접 입력
+                <label id="ct-prob-basis-label-direct" class="ct-prob-basis-label">
+                  <input type="radio" name="ct-probation-basis" id="ct-prob-basis-direct" value="direct" onchange="onProbationBasisChange()" />
+                  <i class="fas fa-pen" style="font-size:11px;"></i> 직접 입력
                 </label>
               </div>
             </div>

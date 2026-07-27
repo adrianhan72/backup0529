@@ -567,7 +567,7 @@ function onProbationBasisChange(){
   const isDirect  = basis === 'direct';
   const isSalary  = basis === 'salary';
 
-  // ── 라디오 라벨 스타일 (활성=노란 테두리/배경, 비활성=회색) ──
+  // ── 라디오 라벨 스타일 (활성=indigo 테두리/배경, 비활성=회색) ──
   const labelMap = {
     salary:  document.getElementById('ct-prob-basis-label-salary'),
     minwage: document.getElementById('ct-prob-basis-label-minwage'),
@@ -575,11 +575,7 @@ function onProbationBasisChange(){
   };
   Object.entries(labelMap).forEach(([key, el]) => {
     if(!el) return;
-    const active = key === basis;
-    el.style.border     = active ? '1.5px solid #fbbf24' : '1.5px solid #e2e8f0';
-    el.classList.toggle('ct-tab-active', active);
-    const icon = el.querySelector('i');
-    if(icon) icon.classList.toggle('ct-tab-active', active);
+    el.classList.toggle('active', key === basis);
   });
 
   // ── % 행: salary / minwage일 때만 표시, direct일 때 숨김 ──
