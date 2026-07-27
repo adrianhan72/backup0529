@@ -2546,7 +2546,7 @@ async function openAmendPreview(){
   }
 
   // ③ 신규 계약서 POST (수정 재발행) — ID는 서버에서 UUID 생성
-  const newStatus = '서류미비'; // 날인본 없이 저장 → 발송 후 날인본 별도 첨부
+  const newStatus = CONTRACT_STATUS.DOCS_INCOMPLETE; // 날인본 없이 저장 → 발송 후 날인본 별도 첨부
   const newBody = {
     ...commonFields,
     status: newStatus,
