@@ -98,7 +98,7 @@ const KO = {
       created_at: '생성일시',
       updated_at: '수정일시',
       annual_leave_days: '연차일수 (자동계산)',
-      pre_used_annual_leave: '기사용 연차일수 (계약 전 사용분)',
+      pre_used_annual_leave: '기사용 연차일수 (서비스 가입 전 사용분)',
     }
   },
   payrolls: {
