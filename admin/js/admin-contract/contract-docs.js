@@ -402,10 +402,8 @@ function _cpCreateFileRow(c, type, label, icon, color, bgColor, isVoidedFile){
   const dataField = type === 'signed' ? 'signed_file_data'  : 'consent_file_data';
   const hasFile   = !!(c[dataField]);
   const fileName  = c[nameField] || '첨부파일';
-  const isPdf     = hasFile && ((fileName.toLowerCase().endsWith('.pdf')) || (c[dataField]||'').startsWith('data:application/pdf'));
 
   const rowId  = `cp-row-${type}`;
-  const prevId = `cp-prev-${type}`;
   const inputId= `cp-input-${type}`;
 
   const row = document.createElement('div');
@@ -429,7 +427,6 @@ function _cpCreateFileRow(c, type, label, icon, color, bgColor, isVoidedFile){
   const titleDiv = document.createElement('div');
   titleDiv.className = 'ctf-label-title';
   titleDiv.textContent = label;
-  // badge
   const badge = document.createElement('span');
   if(hasFile){
     if(isVoidedFile){
@@ -445,7 +442,6 @@ function _cpCreateFileRow(c, type, label, icon, color, bgColor, isVoidedFile){
   }
   titleDiv.appendChild(badge);
   labelDiv.appendChild(titleDiv);
-  // file name
   const fileDiv = document.createElement('div');
   if(hasFile){
     fileDiv.className = 'ctf-label-file';
@@ -457,15 +453,13 @@ function _cpCreateFileRow(c, type, label, icon, color, bgColor, isVoidedFile){
   }
   labelDiv.appendChild(fileDiv);
 
-  // actions
+  // actions — 모든 미리보기는 _ctfPreviewFile로 통일 (새 창)
   const actions = document.createElement('div');
   actions.className = 'ctf-row-actions';
   if(isVoidedFile){
     if(hasFile){
-      if(!isPdf){
-        const previewBtn = _cpCreateBtn('원본 보기', 'ctf-btn ctf-btn-preview-voided', 'fas fa-eye', () => _ctfTogglePreview(prevId, previewBtn));
-        actions.appendChild(previewBtn);
-      }
+      const previewBtn = _cpCreateBtn('원본 보기', 'ctf-btn ctf-btn-preview-voided', 'fas fa-eye', () => _ctfPreviewFile(type));
+      actions.appendChild(previewBtn);
       const downloadBtn = _cpCreateBtn('다운로드', 'ctf-btn ctf-btn-download', 'fas fa-download', () => _ctfDownload(type));
       actions.appendChild(downloadBtn);
     } else {
@@ -475,10 +469,8 @@ function _cpCreateFileRow(c, type, label, icon, color, bgColor, isVoidedFile){
       actions.appendChild(noneSpan);
     }
   } else if(hasFile){
-    if(!isPdf){
-      const previewBtn = _cpCreateBtn('미리보기', 'ctf-btn ctf-btn-preview', 'fas fa-eye', function(){ _ctfTogglePreview(prevId, this); });
-      actions.appendChild(previewBtn);
-    }
+    const previewBtn = _cpCreateBtn('미리보기', 'ctf-btn ctf-btn-preview', 'fas fa-eye', () => _ctfPreviewFile(type));
+    actions.appendChild(previewBtn);
     const downloadBtn = _cpCreateBtn('다운로드', 'ctf-btn ctf-btn-download', 'fas fa-download', () => _ctfDownload(type));
     actions.appendChild(downloadBtn);
     const deleteBtn = _cpCreateBtn('삭제', 'ctf-btn ctf-btn-delete', 'fas fa-trash-alt', () => _ctfDelete(type, c.id));
@@ -499,37 +491,6 @@ function _cpCreateFileRow(c, type, label, icon, color, bgColor, isVoidedFile){
   loading.id = `ctf-loading-${type}`;
   loading.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 업로드 중...';
   row.appendChild(loading);
-
-  // preview
-  if(hasFile && !isPdf){
-    if(isVoidedFile){
-      const voidedWrap = document.createElement('div');
-      voidedWrap.className = 'ctf-voided-wrap';
-      voidedWrap.id = prevId;
-      const img = document.createElement('img');
-      img.src = c[dataField];
-      img.alt = label;
-      voidedWrap.appendChild(img);
-      const overlay = document.createElement('div');
-      overlay.className = 'ctf-voided-overlay';
-      overlay.innerHTML = '<div class="ctf-voided-stamp">파 기</div>';
-      voidedWrap.appendChild(overlay);
-      row.appendChild(voidedWrap);
-      const banner = document.createElement('div');
-      banner.className = 'ctf-voided-banner';
-      banner.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 이 날인본은 수정 재발행으로 인해 <strong>파기</strong>된 계약서의 사본입니다. 법적 효력이 없습니다.';
-      row.appendChild(banner);
-    } else {
-      const previewWrap = document.createElement('div');
-      previewWrap.className = 'ctf-preview-wrap';
-      previewWrap.id = prevId;
-      const img = document.createElement('img');
-      img.src = c[dataField];
-      img.alt = label;
-      previewWrap.appendChild(img);
-      row.appendChild(previewWrap);
-    }
-  }
 
   // hidden file input
   if(!isVoidedFile){
