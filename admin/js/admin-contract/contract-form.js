@@ -610,7 +610,7 @@ function onProbationBasisChange(){
       amtEl.placeholder = '0';
     }
   }
-  if(amtLabel) amtLabel.innerHTML = (isDirect ? '수습 임금 (월 금액, 직접 입력)' : '수습 임금 (월 금액)') + ' <span style="color:#ef4444;font-weight:900;">*</span>';
+  if(amtLabel) amtLabel.innerHTML = (isDirect ? '수습 임금 (월 금액, 직접 입력) <span class="lbl-req">*</span>' : '수습 임금 (월 금액) <span class="lbl-desc">(자동 계산)</span>');
 
   // ── 안내문 업데이트 ──
   const infoText = document.getElementById('ct-prob-info-text');
