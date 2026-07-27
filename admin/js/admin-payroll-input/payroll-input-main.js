@@ -3779,13 +3779,7 @@ const _piPayTypes = { transport:'', meal:'', childcare:'', research:'', communic
 // loadPIContract() 실행 중 setPIPayType()의 calcPI() 중복 호출 방지 플래그
 let _piContractLoading = false;
 
-// ─── 차량교통비 항목 선택 관리 (차량유지비·교통비 중 택1) ───
-// 차량유지비 고정 (self_driving)
-const _piTransportType = 'self_driving';
-
-function setPITransportType(type){
-  // 선택옵션 제거 — 항상 self_driving 고정, no-op
-}
+// ─── 차량교통비: 자가운전보조금(self_driving)만 사용 ───
 
 /** JS field명(언더스코어) → HTML id용 하이픈 변환 헬퍼 */
 function _piFieldToHtmlId(field){ return field.replace(/_/g, '-'); }
@@ -3807,8 +3801,6 @@ function _resetPIPayTypes(){
     _piPayTypes[f] = '';
     setPIPayType(f, '');
   });
-  // 차량교통비 선택 기본값 복원
-  setPITransportType('self_driving');
 }
 
 // ── 회사별 allowance_config 기반 급여 입력 항목 show/hide ──
@@ -4063,16 +4055,16 @@ function _getPITransportAmount(){
   return gv('pi-transport');
 }
 // ── 차량교통비를 각 DB 필드에 매핑해 {field: value} 반환 ──
+// ※ 자가운전보조금(self_driving)만 사용 (대중교통비 transportation 미지원)
 function _getPITransportFields(amount){
-  const amt  = (amount !== undefined) ? amount : _getPITransportAmount();
-  const type = _piTransportType;
-  const pt   = _getPIPayTypeVal('transport');
+  const amt = (amount !== undefined) ? amount : _getPITransportAmount();
+  const pt  = _getPIPayTypeVal('transport');
   return {
-    transportation_allowance: type === 'transportation' ? amt : 0,
-    transportation_pay_type:  type === 'transportation' ? pt  : 'fixed',
-    self_driving_allowance:   type === 'self_driving'   ? amt : 0,
-    self_driving_pay_type:    type === 'self_driving'   ? pt  : 'fixed',
-    transport_type:           type,
+    transportation_allowance: 0,
+    transportation_pay_type:  'fixed',
+    self_driving_allowance:   amt,
+    self_driving_pay_type:    pt || 'fixed',
+    transport_type:           'self_driving',
   };
 }
 
