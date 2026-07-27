@@ -1396,8 +1396,8 @@ function doContractRenew(){
       el.classList.add('ct-input-locked-dark');
     }
   });
-  // 주휴수당·월 약정임금 계산값도 비활성 스타일 적용
-  ['ct-weekly-hol-computed','ct-monthly-computed'].forEach(fid => {
+  // 주휴수당·월 약정임금·연봉 계산값도 비활성 스타일 적용
+  ['ct-weekly-hol-computed','ct-monthly-computed','ct-annual-sal'].forEach(fid => {
     const el = document.getElementById(fid);
     if(el) el.classList.add('ct-input-locked-dark');
   });
