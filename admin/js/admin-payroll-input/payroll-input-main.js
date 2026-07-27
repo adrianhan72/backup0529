@@ -740,21 +740,11 @@ function _updatePIAnnualLeaveDetail(){
   const remainDisp = remain%1===0 ? remain.toFixed(0) : remain.toFixed(1);
 
   // ── 표시 문자열 구성 ──
-  let summary = '';
-  if(totalDays>0){
-    summary = `총 ${totalDays}일`;
-    if(carryover>0) summary += ` (전년 이월 ${carryover}일)`;
-    if(periodUsedDays>0){
-      summary += ` / 기간 내 ${periodUsedDays}일 사용`;
-      if(periodUsedDays>0 && remain>=0){
-        summary += ` → 잔여 ${remainDisp}일`;
-      }
-    } else {
-      summary += ` / 기간 내 사용 없음 → 잔여 ${remainDisp}일`;
-    }
-  } else {
-    summary = `발생연차 ${totalDays}일`;
-  }
+  const beforeUsed = prevCum - periodUsedDays; // 전월까지 누적 사용
+  const afterUsed  = prevCum;                  // 이번달까지 누적 사용
+  const summary = totalDays>0
+    ? `전월 누적: ${beforeUsed}일/총 ${totalDays}일, 이번달 소진: ${periodUsedDays}/${afterUsed}일, 최종 잔여연차: ${remainDisp}일`
+    : `발생연차 ${totalDays}일`;
 
   textEl.textContent = summary;
   textEl.className = periodUsedDays>0 ? 'pi-al-text-active' : 'pi-al-text-dim';
