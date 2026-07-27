@@ -92,9 +92,7 @@ function _ctfMakeRow(type, c, label, icon, color, bgColor, isVoidedFile=false, r
   const dataField = type === 'signed' ? 'signed_file_data'  : 'consent_file_data';
   const hasFile   = !!(c[dataField]);
   const fileName  = c[nameField] || '첨부파일';
-  const isPdf     = hasFile && ((fileName.toLowerCase().endsWith('.pdf')) || (c[dataField]||'').startsWith('data:application/pdf'));
   const rowId     = `ctf-row-${type}`;
-  const prevId    = `ctf-prev-${type}`;
   const inputId   = `ctf-input-${type}`;
 
   // 파기 날인본 배지
@@ -113,12 +111,12 @@ function _ctfMakeRow(type, c, label, icon, color, bgColor, isVoidedFile=false, r
   let actionBtns;
   if(isVoidedFile){
     actionBtns = hasFile ? `
-      <button class="ctf-btn ctf-btn-preview-voided" onclick="${isPdf ? `_ctfPreviewPdf('${type}')` : `_ctfTogglePreview('${prevId}',this)`}"><i class="fas fa-eye"></i> 원본 보기</button>
+      <button class="ctf-btn ctf-btn-preview-voided" onclick="_ctfPreviewFile('${type}')"><i class="fas fa-eye"></i> 원본 보기</button>
       <button class="ctf-btn ctf-btn-download" onclick="_ctfDownload('${type}')"><i class="fas fa-download"></i> 다운로드</button>
     ` : `<span style="font-size:11.5px;color:#9ca3af;font-style:italic;">날인본 없음</span>`;
   } else if(hasFile) {
     actionBtns = `
-      <button class="ctf-btn ctf-btn-preview" onclick="${isPdf ? `_ctfPreviewPdf('${type}')` : `_ctfTogglePreview('${prevId}',this)`}"><i class="fas fa-eye"></i> 미리보기</button>
+      <button class="ctf-btn ctf-btn-preview" onclick="_ctfPreviewFile('${type}')"><i class="fas fa-eye"></i> 미리보기</button>
       <button class="ctf-btn ctf-btn-download" onclick="_ctfDownload('${type}')"><i class="fas fa-download"></i> 다운로드</button>
       ${readonly ? '' : `<button class="ctf-btn ctf-btn-delete"   onclick="_ctfDelete('${type}','${c.id}')"><i class="fas fa-trash-alt"></i> 삭제</button>`}
     `;
@@ -126,27 +124,6 @@ function _ctfMakeRow(type, c, label, icon, color, bgColor, isVoidedFile=false, r
     actionBtns = readonly
       ? ''
       : `<button class="ctf-btn ctf-btn-upload" onclick="document.getElementById('${inputId}').click()"><i class="fas fa-upload"></i> 업로드</button>`;
-  }
-
-  // 미리보기: 파기 파일이면 워터마크 오버레이 추가
-  let previewHtml = '';
-  if(hasFile && !isPdf){
-    if(isVoidedFile){
-      // 파기 워터마크 레이어
-      previewHtml = `
-        <div class="ctf-voided-wrap" id="${prevId}">
-          <img src="${c[dataField]}" alt="${_esc(label)}">
-          <div class="ctf-voided-overlay">
-            <div class="ctf-voided-stamp">파 기</div>
-          </div>
-        </div>
-        <div class="ctf-voided-banner">
-          <i class="fas fa-exclamation-triangle"></i>
-          이 날인본은 수정 재발행으로 인해 <strong>파기</strong>된 계약서의 사본입니다. 법적 효력이 없습니다.
-        </div>`;
-    } else {
-      previewHtml = `<div class="ctf-preview-wrap" id="${prevId}"><img src="${c[dataField]}" alt="${_esc(label)}"></div>`;
-    }
   }
 
   const rowClass = isVoidedFile ? 'ctf-row ctf-row-voided' : 'ctf-row';
@@ -164,41 +141,30 @@ function _ctfMakeRow(type, c, label, icon, color, bgColor, isVoidedFile=false, r
       <div class="ctf-uploading" id="ctf-loading-${type}">
         <i class="fas fa-spinner fa-spin"></i> 업로드 중...
       </div>
-      ${previewHtml}
       ${(!isVoidedFile && !readonly) ? `<input type="file" id="${inputId}" accept="image/*,.pdf" style="display:none;" onchange="_ctfUpload('${type}','${c.id}',this)">` : ''}
     </div>`;
 }
 
-// ── 미리보기 토글 (일반 + 파기 워터마크 래퍼 모두 지원) ──
-function _ctfTogglePreview(prevId, btn){
-  const wrap = document.getElementById(prevId);
-  if(!wrap) return;
-  const shown = wrap.style.display === 'block';
-  wrap.style.display = shown ? 'none' : 'block';
-  const isVoidedBtn = btn.classList.contains('ctf-btn-preview-voided');
-  if(shown){
-    btn.innerHTML = isVoidedBtn
-      ? '<i class="fas fa-eye"></i> 원본 보기'
-      : '<i class="fas fa-eye"></i> 미리보기';
-  } else {
-    btn.innerHTML = '<i class="fas fa-eye-slash"></i> 닫기';
-  }
-}
-
-// ── PDF 미리보기: 새 창에서 열기 ──
-function _ctfPreviewPdf(type){
+// ── 파일 미리보기: 이미지·PDF 모두 새 브라우저 창에서 열기 ──
+function _ctfPreviewFile(type){
   const overlay = document.getElementById('ctf-upload-modal-overlay');
   const contractId = editId?.contract || (overlay?.dataset?.contractId);
   const c = contractId ? allContracts.find(x => x.id === contractId) : null;
   if(!c) return;
-  const dataField = type === 'signed' ? 'signed_file_data' : 'consent_file_data';
+  const nameField = type === 'signed' ? 'signed_file_name'  : 'consent_file_name';
+  const dataField = type === 'signed' ? 'signed_file_data'  : 'consent_file_data';
   const base64 = c[dataField];
+  const fileName = c[nameField] || '';
   if(!base64) return;
-  const pdfWindow = window.open('', '_blank');
-  if(pdfWindow){
-    pdfWindow.document.write(`<html><head><title>PDF 미리보기</title></head><body style="margin:0;"><iframe src="${base64}" width="100%" height="100%" style="border:none;position:fixed;inset:0;"></iframe></body></html>`);
-    pdfWindow.document.close();
+  const isPdf = base64.startsWith('data:application/pdf') || fileName.toLowerCase().endsWith('.pdf');
+  const w = window.open('', '_blank');
+  if(!w) return;
+  if(isPdf){
+    w.document.write(`<html><head><title>${fileName}</title></head><body style="margin:0;"><iframe src="${base64}" width="100%" height="100%" style="border:none;position:fixed;inset:0;"></iframe></body></html>`);
+  } else {
+    w.document.write(`<html><head><title>${fileName}</title><style>body{margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#1a1a2e;}img{max-width:100%;max-height:100vh;object-fit:contain;}</style></head><body><img src="${base64}" alt="${fileName}"></body></html>`);
   }
+  w.document.close();
 }
 
 // ── 파일 업로드 ──
