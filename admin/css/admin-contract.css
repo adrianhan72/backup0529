@@ -554,3 +554,21 @@ input[type="date"][readonly],input[type="date"][disabled]{pointer-events:none;op
 .btn-sb-edit:focus-visible,
 .btn-sb-save:focus-visible,
 .btn-cft-confirm:focus-visible { outline:2.5px solid currentColor; outline-offset:2px; }
+/* ── 근로계약 목록 페이지 (contracts.html) 레이아웃 ── */
+.cont-filter-cb-label{display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;color:#374151;user-select:none}
+.cont-filter-cb-label input[type="checkbox"]{accent-color:#6366f1}
+.cont-selected-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:12px 18px;background:linear-gradient(90deg,#1e1b4b,#312e81);border-radius:10px}
+.cont-selected-label{font-size:14px;font-weight:700;color:#fff}
+.cont-summary-banner{display:none;margin:10px 18px;padding:10px 16px;background:linear-gradient(90deg,#f8fafc,#f1f5f9);border:1px solid #e2e8f0;border-radius:8px;font-size:12px;color:#475569;gap:16px;align-items:center;flex-wrap:wrap}
+.cont-co-chips-container{padding:20px;display:flex;flex-wrap:wrap;gap:8px}
+.cont-filter-docs-label{display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-weight:600;color:#ea580c;background:rgba(234,88,12,.1);border:1.5px solid #fdba74;border-radius:20px;padding:6px 14px;user-select:none}
+.cont-filter-docs-label input[type="checkbox"]{accent-color:#ea580c;width:15px;height:15px}
+.cont-table-card{padding:0;overflow:hidden}
+.cont-filter-bar-card{margin-bottom:12px;overflow:hidden}
+.cont-co-card{margin-bottom:16px;overflow:hidden}
+.cont-co-cards-outer{margin-bottom:8px}
+.cont-co-cards-wrap{margin-bottom:0}
+.cont-header-actions{display:flex;align-items:center;gap:10px}
+.cont-search-input{width:140px}
+.cont-co-icon{font-size:13px}
+.cont-co-title{font-size:14px}
