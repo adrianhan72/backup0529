@@ -657,7 +657,7 @@ CREATE TABLE IF NOT EXISTS tax_brackets (
 
 -- severance_interim_settlements
 CREATE TABLE IF NOT EXISTS severance_interim_settlements (
-  id TEXT PRIMARY KEY, --  -- 고유식별자
+  id TEXT PRIMARY KEY, --  -- ID
   employee_id TEXT, --  -- 직원 ID
   company_id TEXT, --  -- 회사 ID
   contract_id TEXT, --  -- 계약 ID
