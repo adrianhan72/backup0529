@@ -1536,9 +1536,6 @@
       <button id="ct-btn-recontract" class="btn-recontract" onclick="doContractRecontract()" style="display:none;"><i class="fas fa-file-signature"></i> 재계약</button>
       <button id="ct-btn-terminate"      class="btn btn-secondary"       onclick="doContractTerminate()"      style="display:none;"><i class="fas fa-user-clock"></i> 퇴사 설정</button>
       <button id="ct-btn-fixed-terminate" class="btn btn-secondary" onclick="doFixedTerminate()"          style="display:none;"><i class="fas fa-scissors"></i> 해지 설정</button>
-      <button id="ct-btn-print-doc" onclick="openContractPrintModal(editId.contract)" class="btn btn-indigo">
-        <i class="fas fa-file-contract"></i> 현 계약서 확인
-      </button>
     </div>
     <!-- ── 계약직 조기 해지 설정 패널 ── -->
     <div id="ct-fixed-terminate-panel" class="ct-fixed-terminate-panel" style="display:none;">
@@ -1980,7 +1977,7 @@
         </div>
 
         <!-- 연차일수 (요일별 근무시간 다음) -->
-        <div class="form-group" id="ct-row-annual"><label>연차일수 <span style="font-size:10px;font-weight:400;color:#9ca3af;">(자동계산)</span></label><div style="display:flex;align-items:center;gap:8px;"><input type="number" id="ct-annual" value="15" readonly style="width:80px;background:#f9fafb;color:#374151;cursor:default;" /><span id="ct-annual-hint" class="fld-hint" style="display:none;"></span></div></div>
+        <div class="form-group" id="ct-row-annual"><label>연차일수 <span style="font-size:10px;font-weight:400;color:#9ca3af;">(자동계산)</span></label><div style="display:flex;align-items:center;gap:8px;"><input type="number" id="ct-annual" value="15" readonly style="width:80px;" /><span id="ct-annual-hint" class="fld-hint" style="display:none;"></span></div></div>
         <div class="form-group" id="ct-row-pre-used-annual"><label>기사용 연차일수 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span> <span style="font-size:10px;font-weight:400;color:#9ca3af;">(서비스 가입 이전)</span></label><div style="display:flex;align-items:center;gap:8px;"><select id="ct-pre-used-annual" onchange="_onCTPreUsedAnnualChange()" style="width:110px;"><option value="">사용일수</option><option value="0">0일</option><option value="0.5">0.5일</option><option value="1">1일</option><option value="1.5">1.5일</option><option value="2">2일</option><option value="2.5">2.5일</option><option value="3">3일</option><option value="3.5">3.5일</option><option value="4">4일</option><option value="4.5">4.5일</option><option value="5">5일</option><option value="6">6일</option><option value="7">7일</option><option value="8">8일</option><option value="9">9일</option><option value="10">10일</option><option value="11">11일</option><option value="12">12일</option><option value="13">13일</option><option value="14">14일</option><option value="15">15일</option></select></div></div>
         <div class="form-group" id="ct-row-annual-guide">
           <div class="annual-guide-box">
@@ -2123,7 +2120,7 @@
         </div>
         <div class="form-group" id="ct-row-annual-sal" style="display:none;">
           <label id="ct-label-annual-sal">연봉 <span class="lbl-desc">(자동계산)</span></label>
-          <div class="amount-wrap"><input type="text" inputmode="numeric" id="ct-annual-sal" data-amount placeholder="0" readonly style="background:#f9fafb;color:#9ca3af;cursor:default;" /></div>
+          <div class="amount-wrap"><input type="text" inputmode="numeric" id="ct-annual-sal" data-amount placeholder="0" readonly /></div>
         </div>
         <!-- 공용 최저임금 위반 경고 (정규직·계약직·일용직 공통) -->
         <div class="form-group full" id="ct-general-minwage-warning-row" style="display:none;margin-top:2px;margin-bottom:2px;">

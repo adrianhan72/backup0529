@@ -1,7 +1,7 @@
 -- =============================================================================
 -- 인사톡 노무톡 — SQLite Schema (한글 주석 포함)
 -- node dump_schema.js 로 자동 생성 (ALTER TABLE 반영)
--- 최종 갱신: 2026-07-27
+-- 최종 갱신: 2026-07-28
 -- 테이블 수: 26개
 -- =============================================================================
 
@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS companies (
   contract_end_date TEXT, --  -- 자문계약 종료일
   representatives TEXT, --  -- 대표자 정보 (JSON, 복수 가능)
   sick_leave_pay_rate REAL DEFAULT 0, --  -- 병가 유급비율 (%, 0=무급)
-  proration_method TEXT DEFAULT '30day_fixed'
+  proration_method TEXT DEFAULT '30day_fixed', --  -- 일할계산 방식
 );
 
 -- contracts  -- 근로계약
@@ -135,13 +135,10 @@ CREATE TABLE IF NOT EXISTS contracts (
   childcare_dependents INTEGER, --  -- 보육 부양가족 수
   childcare_pay_type TEXT, --  -- 보육수당 지급유형
   contract_etc_allowance REAL, --  -- 계약 기타수당
-  etc_allowance REAL, --  -- 기타수당
-  etc_allowance_memo TEXT, --  -- 기타수당 메모
+  other_allowance REAL DEFAULT 0, --  -- 기타 수당
   draft_saved_at INTEGER, --  -- 임시저장 일시
   edit_source_id TEXT, --  -- 수정 원본 ID
   employment_category TEXT, --  -- 고용형태
-  transport_type TEXT, --  -- 교통 유형
-  transportation_pay_type TEXT, --  -- 교통비 지급유형
   pay_period_month TEXT, --  -- 급여 산정기준월
   pay_period_day INTEGER, --  -- 급여 산정기준일
   terminate_date TEXT, --  -- 해지일
@@ -150,8 +147,8 @@ CREATE TABLE IF NOT EXISTS contracts (
   hazard_allowance REAL, --  -- 위험수당
   custom_ordinary_values TEXT, --  -- 통상임금 포함 사용자정의
   probation_end_date TEXT, --  -- 수습 종료일
-  dismissal_notice_pay REAL DEFAULT 0,
-  dismissal_notice_pay_reason TEXT,
+  dismissal_notice_pay REAL DEFAULT 0, --  -- 해고예고수당
+  dismissal_notice_pay_reason TEXT, --  -- 해고예고수당 사유
   pre_used_annual_leave REAL DEFAULT 0 --  -- 기사용 연차일수 (서비스 가입 이전)
 );
 
@@ -372,7 +369,6 @@ CREATE TABLE IF NOT EXISTS payrolls (
   transport_type TEXT, --  -- 교통 유형
   transport_pay_type TEXT, --  -- 교통비 지급유형
   transportation_allowance REAL, --  -- 교통비
-  transportation_pay_type TEXT, --  -- 교통비 지급유형
   self_driving_allowance REAL, --  -- 자가운전보조금
   self_driving_pay_type TEXT, --  -- 자가운전 지급유형
   meal_allowance REAL, --  -- 식대
@@ -399,8 +395,8 @@ CREATE TABLE IF NOT EXISTS payrolls (
   performance_pay REAL, --  -- 성과급
   actual_expense_pay REAL, --  -- 실비변상
   communication_pay REAL, --  -- 통신비
-  etc_allowance REAL, --  -- 기타수당
-  etc_allowance_memo TEXT, --  -- 기타수당 메모
+  other_allowance REAL DEFAULT 0, --  -- 기타 수당
+  other_allowance_memo TEXT, --  -- 기타 수당 메모
   year_end_tax_adjust REAL, --  -- 연말정산
   year_end_tax_adjust_memo TEXT, --  -- 연말정산 메모
   health_insurance_adjust REAL, --  -- 건강보험 정산
@@ -410,7 +406,7 @@ CREATE TABLE IF NOT EXISTS payrolls (
   ltcare_adjust_yearend REAL, --  -- 장기요양 연말정산
   ltcare_adjust_yearend_memo TEXT, --  -- 장기요양 연말정산 메모
   advance_deduction REAL, --  -- 선급 공제
-  advance_deduction_memo TEXT,
+  advance_deduction_memo TEXT, --  -- 선급 공제 메모
   dependents INTEGER DEFAULT 1, --  -- 부양가족 수
   draft_saved_at TEXT, --  -- 임시저장 일시
   edit_source_id TEXT, --  -- 수정 원본 ID
@@ -423,7 +419,7 @@ CREATE TABLE IF NOT EXISTS payrolls (
   earlyleave_data TEXT, --  -- 조퇴 상세 (JSON)
   late_data TEXT, --  -- 지각 상세 (JSON)
   absent_data TEXT, --  -- 결근 상세 (JSON)
-  severance_interim_pay REAL DEFAULT 0,
+  severance_interim_pay REAL DEFAULT 0, --  -- 퇴직금 중간정산
   retro_absent_dates TEXT DEFAULT '', --  -- 소급 결근일자 (CSV)
   retro_absent_data TEXT DEFAULT '[]', --  -- 소급 결근 상세 (JSON)
   retro_late_data TEXT DEFAULT '[]', --  -- 소급 지각 상세 (JSON)
@@ -657,16 +653,16 @@ CREATE TABLE IF NOT EXISTS tax_brackets (
 
 -- severance_interim_settlements
 CREATE TABLE IF NOT EXISTS severance_interim_settlements (
-  id TEXT PRIMARY KEY,
-  employee_id TEXT,
-  company_id TEXT,
-  contract_id TEXT,
-  settlement_date TEXT,
-  tenure_days INTEGER,
-  daily_average_wage REAL,
-  settlement_amount REAL,
-  reason TEXT,
-  note TEXT,
-  created_at TEXT
+  id TEXT PRIMARY KEY, --  -- 고유식별자
+  employee_id TEXT, --  -- 직원 ID
+  company_id TEXT, --  -- 회사 ID
+  contract_id TEXT, --  -- 계약 ID
+  settlement_date TEXT, --  -- 정산일
+  tenure_days INTEGER, --  -- 재직일수
+  daily_average_wage REAL, --  -- 평균임금
+  settlement_amount REAL, --  -- 정산금액
+  reason TEXT, --  -- 사유
+  note TEXT, --  -- 비고
+  created_at TEXT --  -- 생성일시
 );
 

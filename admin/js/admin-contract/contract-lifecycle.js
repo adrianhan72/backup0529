@@ -751,6 +751,9 @@ function editPendingContract(){
 
   // readonly 해제 및 입력 활성화
   modalEl.classList.remove('ct-readonly');
+  // 편집 모드: 관리자 메모 placeholder 복원
+  const _ctNoteEP = document.getElementById('ct-note');
+  if(_ctNoteEP) _ctNoteEP.placeholder = '계약 관련 내부 메모를 입력하세요...';
   bodyEl.querySelectorAll('input,select,textarea').forEach(el=>{
     el.disabled = false;
     el.classList.remove('ct-input-locked','ct-input-locked-dark'); });
@@ -1384,6 +1387,9 @@ function doContractRenew(){
   const modalEl = document.querySelector('#contract-modal .modal');
   if(modalEl){
     modalEl.classList.remove('ct-readonly');
+    // 편집 모드: 관리자 메모 placeholder 복원
+    const _ctNoteRN = document.getElementById('ct-note');
+    if(_ctNoteRN) _ctNoteRN.placeholder = '계약 관련 내부 메모를 입력하세요...';
     const bodyEl = modalEl.querySelector('.modal-body');
     if(bodyEl) bodyEl.querySelectorAll('input,select,textarea').forEach(el=>{
       if(el.closest('#ct-renew-panel')) return;

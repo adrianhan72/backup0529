@@ -629,6 +629,9 @@ function openContractModal(id=null, preCompanyId=null){
   const _wasReadonly = modalEl.classList.contains('ct-readonly');
   if(!_wasReadonly){
     modalEl.classList.remove('ct-readonly');
+    // 편집 모드: 관리자 메모 placeholder 복원
+    const _ctNoteR = document.getElementById('ct-note');
+    if(_ctNoteR) _ctNoteR.placeholder = '계약 관련 내부 메모를 입력하세요...';
     modalEl.querySelectorAll('input,select,textarea').forEach(el=>{
       // 성별 필드는 항상 readonly (주민번호 자동설정 전용)
       if(el.id === 'ct-em-gender' || el.id === 'ct-edit-em-gender') return;
@@ -1641,6 +1644,9 @@ function viewContract(id){
   // 먼저 ct-readonly 클래스를 추가하여 openContractModal이 readonly 상태로 렌더링되도록 한다
   const _modalEl = document.querySelector('#contract-modal .modal');
   if(_modalEl) _modalEl.classList.add('ct-readonly');
+  // 조회 모드: 관리자 메모 placeholder 제거
+  const _ctNoteV = document.getElementById('ct-note');
+  if(_ctNoteV) _ctNoteV.placeholder = '';
   // openContractModal로 데이터를 채운다
   openContractModal(id);
 
