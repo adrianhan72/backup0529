@@ -29,9 +29,13 @@
         <div class="filt-bar" style="margin-bottom:10px;border:1px solid #e5e7eb;border-radius:8px;padding:10px 18px;background:#fff;">
           <div style="display:flex;align-items:center;gap:5px;">
             <span class="filt-label">고객사</span>
-            <select id="rc-log-filter-company" onchange="renderRcHistory()" class="filt-select" style="max-width:140px;">
-              <option value="">전체</option>
-            </select>
+            <div class="cust-dropdown" id="rc-co-dropdown" style="position:relative;">
+              <div id="rc-co-btn" class="cust-dropdown-btn" style="min-width:140px;" onclick="_rcToggleCoDropdown()">
+                <span id="rc-co-label" class="cust-co-label">전체 고객사</span>
+                <i class="fas fa-chevron-down cust-co-arrow"></i>
+              </div>
+              <div id="rc-co-list" class="cust-dropdown-list" style="display:none;"></div>
+            </div>
           </div>
           <div style="display:flex;align-items:center;gap:5px;">
             <span class="filt-label">고지유형</span>

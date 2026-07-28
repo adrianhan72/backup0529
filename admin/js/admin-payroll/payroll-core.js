@@ -32,7 +32,7 @@ function renderPayrolls(){
     const irregularTotal = (p.annual_leave_pay||0)+(p.other_pay||0);
     const payEmp = allEmployees.find(x=>x.id===p.employee_id)||{};
     const payCat = payEmp.employment_category||'-';
-    return `<tr class="pay-tbody-row" onclick="openPayslipModal('${p.id}')" title="클릭하면 급여명세서를 볼 수 있습니다">
+    return `<tr>
     <td class="pay-emp-name">${getEmpName(p.employee_id)}</td>
     <td class="pay-gender">${(()=>{const e=(allEmployees||[]).find(x=>x.id===p.employee_id);return genderLabel(e);})()}</td>
     <td><span class="badge ${empCatBadge(payCat)}">${contractTypeLabel(payCat)}</span></td>
@@ -44,7 +44,10 @@ function renderPayrolls(){
     <td class="pay-sub-irregular">${won2(irregularTotal)}</td>
     <td class="amount-red">${won2(p.total_deduction)}</td>
     <td class="amount-green pay-net">${won2(p.net_pay)}</td>
-    <td onclick="event.stopPropagation()" style="text-align:center;"><button onclick="editPayroll('${p.id}')" class="btn btn-warning btn-sm" style="padding:5px 10px;font-size:11.5px;"><i class="fas fa-pen" style="margin-right:3px;"></i>수정</button></td>
+    <td onclick="event.stopPropagation()" style="text-align:center;white-space:nowrap;">
+      <button onclick="openPayslipModal('${p.id}')" class="btn btn-indigo btn-sm" style="padding:5px 10px;font-size:11.5px;margin-right:4px;"><i class="fas fa-search" style="margin-right:3px;"></i>조회</button>
+      <button onclick="editPayroll('${p.id}')" class="btn btn-warning btn-sm" style="padding:5px 10px;font-size:11.5px;"><i class="fas fa-pen" style="margin-right:3px;"></i>수정</button>
+    </td>
   </tr>`;
   }).join('');
   renderPagination('pay-pagination',f.length,pages.pay,'setPayPage');

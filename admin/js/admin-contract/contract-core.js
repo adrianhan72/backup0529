@@ -40,13 +40,10 @@ function _renderContCoSummaryCards(){
     c.company_id === coId && c.is_draft);
 
   // ═══════════════════════════════════════════
-  // CARD 3: 근로계약서 미발송 (날인본 미등록)
+  // CARD 3: 근로계약서 미발송 (_cdpGetUnsentContracts와 동일 기준)
   // ═══════════════════════════════════════════
-  const unsignedContracts = allContracts.filter(c =>
-    c.company_id === coId && !c.is_draft && !c.is_voided_by_amend &&
-    ![CONTRACT_STATUS.VOIDED, CONTRACT_STATUS.CANCELED].includes(c.status) &&
-    CONTRACT_ACTIVE_STATUSES.includes(c.status) &&
-    !c.signed_file_name);
+  const _cdpAllUnsent = typeof _cdpGetUnsentContracts === 'function' ? _cdpGetUnsentContracts() : [];
+  const unsignedContracts = _cdpAllUnsent.filter(c => c.company_id === coId);
 
   // ═══════════════════════════════════════════
   // CARD 4: 정보제공동의서 미발송
@@ -205,19 +202,20 @@ function _renderContCoSummaryCards(){
   renderNavCard('fas fa-file-alt', '#16a34a', '정보제공동의서 미발송', unsignedConsent.length,
     '클릭하여 정보제공동의서 관리 페이지로 이동', 'cont-alert-preterminate', 'consent-dispatch');
 
-  // ── ⑦ 수습근로자 관리 대상 ──
-  if(probationTargets.length > 0){
-    const rows = probationTargets.map(t => {
+  // ── ⑦ 수습근로자 관리 대상 (법적 의무: 수습기간 3개월 초과만) ──
+  const legalProbationTargets = probationTargets.filter(t => t.probMonths > 3);
+  if(legalProbationTargets.length > 0){
+    const rows = legalProbationTargets.map(t => {
       const emp = allEmployees.find(e=>e.id===t.contract.employee_id);
       const ddayColor = t.daysLeft <= 37 ? '#dc2626' : '#0d9488';
       return `<tr>${empNameCell(t.contract.employee_id)}${catBadgeCell(t.contract,emp)}<td style="font-size:12px;color:#6b7280;">${t.probEnd||'-'}</td><td><span style="font-weight:700;color:${ddayColor};font-size:12.5px;">D-${t.daysLeft}</span></td><td style="white-space:nowrap;"><button onclick="viewContract('${t.contract.id}')" class="btn btn-sm btn-indigo"><i class="fas fa-search"></i> 조회</button></td></tr>`;
     }).join('');
-    const noticeCount = probationTargets.filter(t=>t.probMonths>3&&t.daysLeft>=30).length;
-    const severanceCount = probationTargets.filter(t=>t.probMonths>3&&t.daysLeft<30).length;
+    const noticeCount = legalProbationTargets.filter(t=>t.daysLeft>=30).length;
+    const severanceCount = legalProbationTargets.filter(t=>t.daysLeft<30).length;
     const extraDesc = [];
     if(noticeCount>0) extraDesc.push(`서면통지 ${noticeCount}명`);
     if(severanceCount>0) extraDesc.push(`해고예고수당 ${severanceCount}명`);
-    renderCard('probation', 'fas fa-user-clock', '#0f766e', '관리가 필요한 수습 근로자', probationTargets.length,
+    renderCard('probation', 'fas fa-user-clock', '#0f766e', '관리가 필요한 수습 근로자', legalProbationTargets.length,
       (extraDesc.length>0?extraDesc.join(' · ')+' — ':'')+'수습기간 3개월 초과 시 해고예고 의무 발생', ['직원명','고용형태','수습 만료일','D-day','관리'], rows, 'cont-alert-probation');
   }
 }
@@ -629,6 +627,7 @@ function openContractModal(id=null, preCompanyId=null){
   _resetStatusBanner();
   // readonly 클래스 제거 + 모든 필드 활성화 (단, viewContract에서 미리 설정된 경우 유지)
   const modalEl = document.querySelector('#contract-modal .modal');
+  if(!modalEl){ console.error('[openContractModal] #contract-modal .modal not found'); return; }
   const _wasReadonly = modalEl.classList.contains('ct-readonly');
   if(!_wasReadonly){
     modalEl.classList.remove('ct-readonly');
@@ -894,7 +893,8 @@ function openContractModal(id=null, preCompanyId=null){
       }
       // 연차일수: 저장된 값 복원 후 자동계산으로 힌트 표시 (입사일 복원 후 호출)
       document.getElementById('ct-annual').value=c.annual_leave_days||15;
-      document.getElementById('ct-pre-used-annual').value=c.pre_used_annual_leave||'';
+      const _preUsedEl = document.getElementById('ct-pre-used-annual');
+      if(_preUsedEl) _preUsedEl.value = c.pre_used_annual_leave||'';
       // 요일별 스케줄 복원: schedule_json 우선, 없으면 레거시 필드로 변환
       if(c.schedule_json){
         try{ setScheduleFromJSON(JSON.parse(c.schedule_json)); }
@@ -2118,26 +2118,8 @@ function viewContract(id){
      'ct-btn-terminate','ct-btn-terminate2'].forEach(bid=>{
       const el=document.getElementById(bid); if(el) el.style.display='none';
     });
-    ['ct-btn-print-doc'].forEach(bid=>{
-      const el=document.getElementById(bid);
-      if(el){
-        el.style.pointerEvents='none';
-        el.style.cursor='not-allowed';
-        el.title='임시저장 상태에서는 출력할 수 없습니다';
-      }
-    });
     return;
   }
-
-  // 정상 상태: 출력 버튼 활성 복원
-  ['ct-btn-print-doc'].forEach(bid=>{
-    const el=document.getElementById(bid);
-    if(el){
-      el.style.pointerEvents='';
-      el.style.cursor='';
-      el.title='';
-    }
-  });
 
   // 버튼 표시/숨김
   // 수정 및 재발행: 유효(active) 계약만 가능 (해지예정은 상태 배너에서 처리)
@@ -2200,15 +2182,6 @@ function viewContract(id){
   // 패널 초기화 (이전 조회에서 열려있을 수 있음)
   const _cftPanel = document.getElementById('ct-fixed-terminate-panel');
   if(_cftPanel) _cftPanel.style.display = 'none';
-
-  // 계약서 확인 버튼명: 만료·해지·파기된 계약 → '이전 계약서 확인', 유효한 계약 → '현 계약서 확인'
-  const _printBtnLabel = isTerminated
-    ? '<i class="fas fa-file-contract"></i> 이전 계약서 확인'
-    : '<i class="fas fa-file-contract"></i> 현 계약서 확인';
-  ['ct-btn-print-doc'].forEach(bid=>{
-    const el=document.getElementById(bid);
-    if(el) el.innerHTML = _printBtnLabel;
-  });
 
   // 조회 모드 전환 시 하단 수정완료·취소 버튼 숨김 초기화
   const _btnAC2 = document.getElementById('ct-btn-amend-complete2');
@@ -2418,7 +2391,7 @@ function doContractAmend(){
   // 액션 버튼 숨김 (수정 중에는 다른 액션 불가)
   ['ct-btn-amend','ct-btn-amend2','ct-btn-renew','ct-btn-renew2',
    'ct-btn-terminate','ct-btn-terminate2','ct-btn-recontract','ct-btn-recontract2',
-   'ct-btn-fixed-terminate','ct-btn-fixed-terminate2','ct-btn-print-doc'].forEach(bid=>{
+   'ct-btn-fixed-terminate','ct-btn-fixed-terminate2'].forEach(bid=>{
     const el = document.getElementById(bid); if(el) el.style.display='none';
   });
 

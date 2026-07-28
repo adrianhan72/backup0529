@@ -1543,7 +1543,7 @@ function doContractRenew(){
   // 액션 버튼 숨김 (갱신 중에는 다른 액션 불가)
   ['ct-btn-amend','ct-btn-amend2','ct-btn-renew','ct-btn-renew2',
    'ct-btn-terminate','ct-btn-terminate2','ct-btn-recontract','ct-btn-recontract2',
-   'ct-btn-fixed-terminate','ct-btn-fixed-terminate2','ct-btn-print-doc'].forEach(bid=>{
+   'ct-btn-fixed-terminate','ct-btn-fixed-terminate2'].forEach(bid=>{
     const el = document.getElementById(bid); if(el) el.style.display='none';
   });
 
@@ -1929,7 +1929,8 @@ function openRecontractModal(srcContract){
   document.getElementById('ct-end').value     = srcContract.contract_end||'';
   document.getElementById('ct-status').value  = CONTRACT_STATUS.ACTIVE;
   document.getElementById('ct-annual').value  = srcContract.annual_leave_days||15;
-  document.getElementById('ct-pre-used-annual').value = srcContract.pre_used_annual_leave||'';
+  const _preUsedEl2 = document.getElementById('ct-pre-used-annual');
+  if(_preUsedEl2) _preUsedEl2.value = srcContract.pre_used_annual_leave||'';
   // 요일별 스케줄 복원 (재계약: 이전 계약 스케줄 그대로 복사)
   if(srcContract.schedule_json){
     try{ setScheduleFromJSON(JSON.parse(srcContract.schedule_json)); }

@@ -1266,12 +1266,8 @@ function _renderContractsBanners(){
   (function(){
     const sec = document.getElementById('contracts-signed-banner');
     if(!sec) return;
-    const unsignedContracts = (allContracts || []).filter(c =>
-      !c.is_draft && !c.is_voided_by_amend &&
-      ![CONTRACT_STATUS.VOIDED, CONTRACT_STATUS.CANCELED].includes(c.status) &&
-      CONTRACT_ACTIVE_STATUSES.includes(c.status) &&
-      !c.signed_file_name
-    );
+    const _cdpDashUnsent = typeof _cdpGetUnsentContracts === 'function' ? _cdpGetUnsentContracts() : [];
+    const unsignedContracts = _cdpDashUnsent;
     const cnt = unsignedContracts.length;
     const inactive = cnt === 0;
     sec.style.display = '';

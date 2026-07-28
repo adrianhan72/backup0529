@@ -77,7 +77,7 @@ function _cnsPopulateUnsentCompanySelect(){
   const btn = document.getElementById('cns-unsent-co-btn');
   const list = document.getElementById('cns-unsent-co-list');
   if(!btn || !list) return;
-  const activeCos = allCompanies.filter(c => isCompanyActive(c));
+  const allCos = (allCompanies || []).filter(c => !c.is_draft).sort((a,b) => (a.company_name||'').localeCompare(b.company_name||'', 'ko'));
   const unsent = _cnsGetUnsentContracts();
   const totalCount = unsent.length;
   const countByCo = {};
@@ -98,7 +98,7 @@ function _cnsPopulateUnsentCompanySelect(){
     `<div class="cust-dropdown-item${!_cnsUnsentCoId?' selected':''}" onclick="_cnsSelectCo('','전체 고객사')">
       <span>전체 고객사</span><span class="count-badge">${totalCount}</span>
     </div>` +
-    activeCos.map(c => {
+    allCos.map(c => {
       const cnt = countByCo[c.id] || 0;
       return `<div class="cust-dropdown-item${_cnsUnsentCoId===c.id?' selected':''}" onclick="_cnsSelectCo('${c.id}','${c.company_name.replace(/'/g,"\\'")}')">
         <span>${c.company_name}</span><span class="count-badge">${cnt}</span>

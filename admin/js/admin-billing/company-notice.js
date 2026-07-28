@@ -9,6 +9,8 @@ let _cenHistoryPage = 1;
 const CEN_PAGE_SIZE = 20;
 const CEN_NOTICE_DAYS = 29;  // 만료 N일 전 통지 대상
 let _cenContact      = null; // 대표 연락처 캐시
+let _cenFilterCoId   = '';   // 발송 이력 필터: 선택된 고객사 ID
+let _cenFilterCoName = '';   // 선택된 고객사명
 
 /** 탭 전환 */
 function cenSwitchTab(tab){
@@ -156,8 +158,8 @@ async function initCenPage(){
   if(!_cenContact) {
     try { _cenContact = await getRepresentativeContact(); } catch(e) { _cenContact = {}; }
   }
-  // 고객사 필터 옵션 채우기
-  _cenFillCompanyFilter('cen-log-filter-company');
+  // 고객사 칩 드롭다운 채우기
+  _cenPopulateFilterCoDropdown();
   // 통지 이력 로드 (캐시 없으면)
   if(!_cenHistoryLoaded) await cenLoadHistory(true);
   // 발송 이력 렌더 (기본 탭)
@@ -185,12 +187,45 @@ async function cenLoadHistory(force=false){
     const res = await fetch('../tables/contract_expiry_notice?page=1&limit=1000');
     if(!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-    _cenNoticeList = (data.data || []).sort((a,b)=>{
+    _cenNoticeList = (data.data || []).map(r => ({ ...r, _source: 'expiry' })).sort((a,b)=>{
       const ta = a.noticed_at || a.created_at || '';
       const tb = b.noticed_at || b.created_at || '';
       return tb.localeCompare(ta);
     });
+
+    // 인앱알림(company_notices)도 함께 로드 (계약만료 유형만)
+    try {
+      const cnRes = await fetch('../tables/company_notices?page=1&limit=1000');
+      if(cnRes.ok){
+        const cnData = await cnRes.json();
+        const cnExpiryNotices = (cnData.data || [])
+          .filter(r => r.notice_type === 'contract_expiry')
+          .map(r => ({
+            id: r.id,
+            contract_id: r.contract_id || '',
+            employee_name: r.employee_name || '',
+            company_id: r.company_id || '',
+            company_name: r.company_name || '',
+            notice_method: 'inapp',
+            recipient: '',
+            message_id: '',
+            status: r.gn_status || 'sent',
+            sent_at: r.sent_at || '',
+            noticed_at: r.sent_at || '',
+            created_at: r.sent_at || '',
+            _source: 'inapp'
+          }));
+        _cenNoticeList = [..._cenNoticeList, ...cnExpiryNotices]
+          .sort((a,b) => {
+            const ta = a.noticed_at || a.created_at || '';
+            const tb = b.noticed_at || b.created_at || '';
+            return tb.localeCompare(ta);
+          });
+      }
+    } catch(e){ /* 인알림 로드 실패 무시 */ }
+
     _cenHistoryLoaded = true;
+    _cenPopulateFilterCoDropdown();  // 이력 로드 후 칩 드롭다운 갱신
   } catch(e){
     console.error('[CEN 이력 로드 오류]', e);
     _cenNoticeList = [];

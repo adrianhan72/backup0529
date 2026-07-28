@@ -197,6 +197,7 @@ const DISPATCH_METHOD = Object.freeze({
   MANUAL:  'manual',
   PHONE:   'phone',
   REISSUE: 'reissue',
+  INAPP:   'inapp',
 });
 
 const DISPATCH_METHOD_LABEL = Object.freeze({
@@ -205,6 +206,7 @@ const DISPATCH_METHOD_LABEL = Object.freeze({
   [DISPATCH_METHOD.MANUAL]:  '수동교부',
   [DISPATCH_METHOD.PHONE]:   '유선직접안내',
   [DISPATCH_METHOD.REISSUE]: '수정재발행',
+  [DISPATCH_METHOD.INAPP]:   '인앱알림',
 });
 
 // ═══════════════════════════════════════════
@@ -616,7 +618,7 @@ const PAGE_LABELS = Object.freeze({
   billing:                '시스템 사용료 관리',
   contracts:              '근로계약 현황',
   'contract-dispatch':    '근로계약서 발송',
-  'consent-dispatch':     '정보제공동의서 관리',
+  'consent-dispatch':     '정보제공동의서 발송',
   'contract-expiry-notice':'계약만료 통지 이력',
   'regular-conversion':   '정규직전환 고지 이력',
   'probation-mgmt':       '수습 근로자 관리',
@@ -662,6 +664,7 @@ const SIDEBAR_MENU = Object.freeze([
   { section: '시스템' },
   { page: 'standards',              icon: 'fa-percent' },
   { page: 'admin-accounts',         icon: 'fa-user-shield' },
+  { page: 'system-settings',        icon: 'fa-cog' },
 ]);
 
 /** 성별 표시 헬퍼 (emp 객체 또는 gender 문자열) */

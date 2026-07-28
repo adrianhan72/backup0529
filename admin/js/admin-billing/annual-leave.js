@@ -1450,25 +1450,73 @@ function _cenDoSearch(){
   renderCenHistory();
 }
 
+// ── CEN 고객사 칩 드롭다운 ──
+function _cenToggleCoDropdown(){
+  const list = document.getElementById('cen-co-list');
+  const btn = document.getElementById('cen-co-btn');
+  if(!list || !btn) return;
+  const isOpen = list.style.display === 'block';
+  if(isOpen){ list.style.display = 'none'; return; }
+  const rect = btn.getBoundingClientRect();
+  list.style.top = (rect.bottom + 4) + 'px';
+  list.style.left = rect.left + 'px';
+  list.style.width = Math.min(window.innerWidth - rect.left - 20, 500) + 'px';
+  list.style.display = 'block';
+  setTimeout(() => {
+    const handler = e => {
+      const dd = document.getElementById('cen-co-dropdown');
+      if(dd && !dd.contains(e.target)){ list.style.display = 'none'; document.removeEventListener('click', handler); }
+    };
+    document.addEventListener('click', handler);
+  }, 0);
+}
+
+function _cenSelectFilterCo(coId, coName){
+  _cenFilterCoId = coId;
+  _cenFilterCoName = coName;
+  document.getElementById('cen-co-label').textContent = coName || '전체 고객사';
+  document.getElementById('cen-co-list').style.display = 'none';
+  _cenHistoryPage = 1;
+  renderCenHistory();
+}
+
+function _cenPopulateFilterCoDropdown(){
+  const list = document.getElementById('cen-co-list');
+  const btn = document.getElementById('cen-co-btn');
+  if(!list || !btn) return;
+  const allCos = (allCompanies || []).filter(c => !c.is_draft).sort((a,b) => (a.company_name||'').localeCompare(b.company_name||'', 'ko'));
+  // 이력에 등장하는 company_id 집합
+  const coIdsInHistory = new Set(_cenNoticeList.map(r => r.company_id).filter(Boolean));
+  const coCounts = {};
+  _cenNoticeList.forEach(r => { if(r.company_id) coCounts[r.company_id] = (coCounts[r.company_id]||0) + 1; });
+  const totalCount = _cenNoticeList.length;
+
+  list.innerHTML =
+    `<div class="cust-dropdown-item${!_cenFilterCoId?' selected':''}" onclick="_cenSelectFilterCo('','전체 고객사')">
+      <span>전체 고객사</span><span class="count-badge">${totalCount}</span>
+    </div>` +
+    allCos.filter(c => coIdsInHistory.has(c.id)).map(c => {
+      const cnt = coCounts[c.id] || 0;
+      return `<div class="cust-dropdown-item${_cenFilterCoId===c.id?' selected':''}" onclick="_cenSelectFilterCo('${c.id}','${c.company_name.replace(/'/g,"\\'")}')">
+        <span>${c.company_name}</span><span class="count-badge">${cnt}</span>
+      </div>`;
+    }).join('');
+}
+
 function renderCenHistory(){
   const tbody = document.getElementById('cen-log-tbody');
   if(!tbody) return;
 
   const filterMethod  = document.getElementById('cen-log-filter-method')?.value  || '';
-  const filterCompany = document.getElementById('cen-log-filter-company')?.value || '';
+  const filterCompany = _cenFilterCoId;
   const searchQ       = (document.getElementById('cen-log-search')?.value || '').trim().toLowerCase();
   const dateFrom      = document.getElementById('cen-log-filter-date-from')?.value || '';
   const dateTo        = document.getElementById('cen-log-filter-date-to')?.value || '';
 
-  // 고객사 필터 옵션 동적 채우기 (최초 1회)
-  const coSel = document.getElementById('cen-log-filter-company');
-  if(coSel && coSel.options.length <= 1){
-    const uniqueCos = [...new Map(_cenNoticeList.map(r=>[r.company_id, r.company_name])).entries()]
-      .sort((a,b)=>(a[1]||'').localeCompare(b[1]||'','ko'));
-    uniqueCos.forEach(([id,name])=>{
-      const opt=document.createElement('option');
-      opt.value=id; opt.textContent=name||id; coSel.appendChild(opt);
-    });
+  // 고객사 칩 드롭다운 채우기 (최초 1회 및 이력 로드 후)
+  const coList = document.getElementById('cen-co-list');
+  if(coList && !coList.children.length){
+    _cenPopulateFilterCoDropdown();
   }
 
   let list = _cenNoticeList.filter(r=>{
@@ -1510,6 +1558,7 @@ function renderCenHistory(){
       [DISPATCH_METHOD.EMAIL]:  'badge-blue',
       [DISPATCH_METHOD.MANUAL]: 'badge-green',
       [DISPATCH_METHOD.REISSUE]: 'badge-pink',
+      [DISPATCH_METHOD.INAPP]:  'badge-indigo',
     };
     const badgeCls = METHOD_CLS[m] || 'badge-gray';
     const iconCfg = {
@@ -1517,6 +1566,7 @@ function renderCenHistory(){
       [DISPATCH_METHOD.EMAIL]: '<i class="fas fa-envelope"></i>',
       [DISPATCH_METHOD.MANUAL]: '<i class="fas fa-hand-holding"></i>',
       '수정재발행': '<i class="fas fa-sync-alt"></i>',
+      [DISPATCH_METHOD.INAPP]: '<i class="fas fa-bell"></i>',
     };
     const icon = iconCfg[m] || '<i class="fas fa-question"></i>';
     const label = DISPATCH_METHOD_LABEL[m] || m || '-';
