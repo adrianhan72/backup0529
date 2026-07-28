@@ -689,13 +689,13 @@ function openContractModal(id=null, preCompanyId=null){
 
   // 신규 직원 섹션 초기화
   ['ct-em-empno','ct-em-name','ct-em-id','ct-em-dept','ct-em-position','ct-em-job','ct-em-hire','ct-em-phone','ct-em-email','ct-em-address'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});
-  document.getElementById('ct-em-gender').value='남';
+  document.getElementById('ct-em-gender').value='male';
   document.getElementById('ct-em-category').value='';toggleEmExpire();toggleAnnualSal();toggleProbation();
   { const _tdEl = document.getElementById('ct-em-tax-dependents'); if(_tdEl) _tdEl.value = 1; }
   // 수정 직원 섹션 초기화
   ['ct-edit-em-empno','ct-edit-em-job','ct-edit-em-dept','ct-edit-em-position','ct-edit-em-hire','ct-edit-em-expire','ct-edit-em-id','ct-edit-em-phone','ct-edit-em-email','ct-edit-em-address','ct-edit-em-bank','ct-edit-em-account'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});
   const editCatEl=document.getElementById('ct-edit-em-category');if(editCatEl)editCatEl.value='';
-  const editGenderEl=document.getElementById('ct-edit-em-gender');if(editGenderEl)editGenderEl.value='남';
+  const editGenderEl=document.getElementById('ct-edit-em-gender');if(editGenderEl)editGenderEl.value='male';
   { const _tdEl = document.getElementById('ct-edit-em-tax-dependents'); if(_tdEl) _tdEl.value = 1; }
   document.getElementById('ct-probation-months').value='3';
   document.getElementById('ct-probation-pct').value='';
@@ -748,7 +748,7 @@ function openContractModal(id=null, preCompanyId=null){
       const emp = allEmployees.find(e=>e.id===c.employee_id);
       document.getElementById('ct-edit-emp-name').value = emp ? emp.name : '';
       if(emp){
-        document.getElementById('ct-edit-em-gender').value    = emp.gender || '남';
+        document.getElementById('ct-edit-em-gender').value    = emp.gender || 'male';
         // 계약예정 상태이면 수습 카테고리 정규화 (예: '계약직 수습' → '계약직')
         const _empCatRaw = emp.employment_category || '';
         const _empCatKorean = contractTypeLabel(_empCatRaw) || '-';

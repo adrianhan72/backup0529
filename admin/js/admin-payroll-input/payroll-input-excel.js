@@ -988,7 +988,7 @@ function validateAndParseExcel(wb, fileName){
       if(!emp) return;
 
       const ct = allContracts.find(c => c.employee_id===emp.id &&
-        (c.status===CONTRACT_STATUS.ACTIVE||c.status===EMP_STATUS.ACTIVE||c.status==='유효')) || null;
+        CONTRACT_ACTIVE_STATUSES.includes(c.status)) || null;
       const hw = ct ? (parseFloat(ct.hourly_wage)||0) : 0;
       // 카드형에서 행 번호는 카드 시작 인덱스 기준으로 표시 (대략적 위치)
       const cardRowLabel = `${xn}(카드형)`;
@@ -1421,7 +1421,7 @@ function validateAndParseExcel(wb, fileName){
     if(!emp) return; // 이미 errors에 기록됨
 
     const ct = allContracts.find(c =>
-      c.employee_id===emp.id && (c.status===CONTRACT_STATUS.ACTIVE||c.status===EMP_STATUS.ACTIVE||c.status==='유효')
+      c.employee_id===emp.id && CONTRACT_ACTIVE_STATUSES.includes(c.status)
     ) || null;
     const hw = ct ? (parseFloat(ct.hourly_wage)||0) : 0;
 

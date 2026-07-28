@@ -339,7 +339,7 @@ function renderSevStatusTab(){
         const numBadge = `<span class="sev-contract-num">${idx+1}</span>`;
         const cStatus = c.status===COMPANY_STATUS.INACTIVE ? '<span class="sev-contract-status sev-contract-status-terminated">해지</span>'
           : (c.status===CONTRACT_STATUS.EXPIRED||c.status===CONTRACT_STATUS.EXPIRED) ? '<span class="sev-contract-status sev-contract-status-expired">만료</span>'
-          : (c.status===EMP_STATUS.ACTIVE||c.status===CONTRACT_STATUS.ACTIVE||c.status === '유효') ? '<span class="sev-contract-status sev-contract-status-active">진행중</span>'
+          : CONTRACT_ACTIVE_STATUSES.includes(c.status) ? '<span class="sev-contract-status sev-contract-status-active">진행중</span>'
           : '';
         contractRows += `<tr class="sev-contract-row ${isLast?'sev-contract-row-last':'sev-contract-row-normal'}"
           onclick="openSevContractModal('${c.id}','${(emp.name||'').replace(/'/g,"&#39;")}',${idx})"
@@ -380,7 +380,7 @@ function renderSevStatusTab(){
             <span class="sev-contract-end">${empContracts[0].contract_end ? fmtDate(empContracts[0].contract_end) : '현재'}</span>
             ${empContracts[0].status===COMPANY_STATUS.INACTIVE?'<span class="sev-contract-status sev-contract-status-terminated">해지</span>'
               :(empContracts[0].status===CONTRACT_STATUS.EXPIRED||empContracts[0].status===CONTRACT_STATUS.EXPIRED)?'<span class="sev-contract-status sev-contract-status-expired">만료</span>'
-              :(empContracts[0].status===EMP_STATUS.ACTIVE||empContracts[0].status===CONTRACT_STATUS.ACTIVE||empContracts[0].status==='유효')?'<span class="sev-contract-status sev-contract-status-active">진행중</span>':''}
+              :CONTRACT_ACTIVE_STATUSES.includes(empContracts[0].status)?'<span class="sev-contract-status sev-contract-status-active">진행중</span>':''}
             <i class="fas fa-search sev-contract-search"></i>
           </td>
           <td class="sev-tenure-cell"
@@ -408,7 +408,7 @@ function renderSevStatusTab(){
         const numBadge = `<span class="sev-contract-num">${idx+2}</span>`;
         const cStatus = c.status===COMPANY_STATUS.INACTIVE?'<span class="sev-contract-status sev-contract-status-terminated">해지</span>'
           :(c.status===CONTRACT_STATUS.EXPIRED||c.status===CONTRACT_STATUS.EXPIRED)?'<span class="sev-contract-status sev-contract-status-expired">만료</span>'
-          :(c.status===EMP_STATUS.ACTIVE||c.status===CONTRACT_STATUS.ACTIVE||c.status==='유효')?'<span class="sev-contract-status sev-contract-status-active">진행중</span>':'';
+          :CONTRACT_ACTIVE_STATUSES.includes(c.status)?'<span class="sev-contract-status sev-contract-status-active">진행중</span>':'';
         const realIdx = idx + 1;
         return `<tr class="${rowCls} ${isLast?'sev-contract-row-last':'sev-contract-row-normal'}"
           onclick="openSevContractModal('${c.id}','${(emp.name||'').replace(/'/g,"&#39;")}',${realIdx})"
