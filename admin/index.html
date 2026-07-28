@@ -79,7 +79,34 @@
     <span>ADMIN CONSOLE</span>
   </div>
   <nav class="sidebar-menu">
-    <!-- SIDEBAR_MENU + PAGE_LABELS 기반 JS 동적 생성 -->
+    <div class="menu-section">대시보드</div>
+    <div class="menu-item active" data-page="dashboard" onclick="showPage('dashboard',this)"><i class="fas fa-th-large"></i> 대시보드</div>
+    <div class="menu-section">고객사 관리</div>
+    <div class="menu-item" data-page="companies" onclick="showPage('companies',this)"><i class="fas fa-building"></i> 고객사 관리<span class="menu-todo-badge" id="badge-companies" style="display:none;"></span></div>
+    <div class="menu-item" data-page="company-notice-log" onclick="showPage('company-notice-log',this)"><i class="fas fa-bell"></i> 고객사앱 알림 이력</div>
+    <div class="menu-item" data-page="general-notice" onclick="showPage('general-notice',this)"><i class="fas fa-bullhorn"></i> 중요공지 관리</div>
+    <!-- [사용료 숨김] 사용료 관리 메뉴 - 원복 시 아래 주석 해제
+    <div class="menu-item" data-page="billing" onclick="showPage('billing',this)"><i class="fas fa-file-invoice-dollar"></i> 사용료 관리</div>
+    -->
+    <div class="menu-section">직원 관리</div>
+    <div class="menu-item" data-page="contracts" onclick="showPage('contracts',this)"><i class="fas fa-file-signature"></i> 근로 계약 관리<span class="menu-todo-badge" id="badge-contracts" style="display:none;"></span></div>
+    <div class="menu-item" data-page="contract-dispatch" onclick="showPage('contract-dispatch',this)"><i class="fas fa-paper-plane"></i> 계약서 발송 관리<span class="menu-todo-badge" id="badge-contract-dispatch" style="display:none;"></span></div>
+    <div class="menu-item" data-page="contract-expiry-notice" onclick="showPage('contract-expiry-notice',this)"><i class="fas fa-bell"></i> 계약만료 통지 관리<span class="menu-todo-badge" id="badge-contract-expiry-notice" style="display:none;"></span></div>
+    <div class="menu-item" data-page="regular-conversion" onclick="showPage('regular-conversion',this)"><i class="fas fa-user-check"></i> 정규직 전환 관리<span class="menu-todo-badge" id="badge-regular-conversion" style="display:none;"></span></div>
+    <div class="menu-item" data-page="probation-mgmt" onclick="showPage('probation-mgmt',this)"><i class="fas fa-user-clock"></i> 수습 근로자 관리<span class="menu-todo-badge" id="badge-probation-mgmt" style="display:none;"></span></div>
+    <div class="menu-section">급여 관리</div>
+    <div class="menu-item" data-page="wage-ledger" onclick="showPage('wage-ledger',this)"><i class="fas fa-table"></i> 임금대장</div>
+    <div class="menu-item" data-page="payroll-input" onclick="showPage('payroll-input',this)"><i class="fas fa-calculator"></i> 급여 입력<span class="menu-todo-badge" id="badge-payroll-input" style="display:none;"></span></div>
+    <div class="menu-item" data-page="payrolls" onclick="showPage('payrolls',this)"><i class="fas fa-list-alt"></i> 급여 명세서 조회</div>
+    <div class="menu-item" data-page="payslip-send" onclick="showPage('payslip-send',this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="#e94560" style="flex-shrink:0;vertical-align:-1px;width:16px;text-align:center;"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg> 급여 명세서 발송 관리<span class="menu-todo-badge" id="badge-payslip-send" style="display:none;"></span></div>
+    <div class="menu-item" data-page="severance" onclick="showPage('severance',this)"><i class="fas fa-hand-holding-usd"></i> 퇴직급여 관리<span class="menu-todo-badge" id="badge-severance" style="display:none;"></span></div>
+    <div class="menu-item" data-page="labor-status" onclick="showPage('labor-status',this)"><i class="fas fa-chart-bar"></i> 급여 통계 조회</div>
+    <div class="menu-section">연차 관리</div>
+    <div class="menu-item" data-page="annual-leave" onclick="showPage('annual-leave',this)"><i class="fas fa-umbrella-beach"></i> 연차 관리</div>
+    <div class="menu-item" data-page="leave-promotion" onclick="showPage('leave-promotion',this)"><i class="fas fa-bullhorn"></i> 사용촉진 발송 이력</div>
+    <div class="menu-section">시스템</div>
+    <div class="menu-item" data-page="standards" onclick="showPage('standards',this)"><i class="fas fa-percent"></i> 년도별 산정기준</div>
+    <div class="menu-item" data-page="admin-accounts" onclick="showPage('admin-accounts',this)"><i class="fas fa-user-shield"></i> 관리자 계정 관리</div>
   </nav>
   <div class="sidebar-footer"><p>v2.0 · 대화인사노무파트너스</p></div>
 </aside>
@@ -1372,7 +1399,7 @@
 <!-- Contract -->
 <div class="modal-overlay" id="contract-modal">
   <div class="modal" style="max-width:720px;">
-    <div class="modal-header"><span class="modal-title" id="ct-title">근로계약서 추가</span><span id="ct-title-info" style="display:none;align-items:center;gap:8px;font-size:12px;margin-left:12px;"></span><button class="btn btn-close" onclick="closeModal('contract-modal')"><i class="fas fa-times"></i></button></div>
+    <div class="modal-header"><span class="modal-title" id="ct-title">근로계약서 추가</span><button class="btn btn-close" onclick="closeModal('contract-modal')"><i class="fas fa-times"></i></button></div>
     <!-- 등록 프로세스 단계 표시바 (작성 모드 전용) -->
     <div id="ct-step-bar" class="ct-step-bar" style="display:none;">
       <div class="ct-step active" id="ct-step-1"><div class="ct-step-num">1</div><span>계약 정보 입력</span></div>
@@ -1390,6 +1417,9 @@
       <button id="ct-btn-recontract" class="btn-recontract" onclick="doContractRecontract()" style="display:none;"><i class="fas fa-file-signature"></i> 재계약</button>
       <button id="ct-btn-terminate"      class="btn-terminate"       onclick="doContractTerminate()"      style="display:none;"><i class="fas fa-user-clock"></i> 퇴사예정 설정</button>
       <button id="ct-btn-fixed-terminate" class="btn-fixed-terminate" onclick="doFixedTerminate()"          style="display:none;"><i class="fas fa-scissors"></i> 해지 설정</button>
+      <button id="ct-btn-print-doc" onclick="openContractPrintModal(editId.contract)" class="btn btn-slate">
+        <i class="fas fa-file-contract"></i> 현 계약서 확인
+      </button>
     </div>
     <!-- ── 계약직 조기 해지 설정 패널 ── -->
     <div id="ct-fixed-terminate-panel" class="ct-fixed-terminate-panel" style="display:none;">
@@ -1704,7 +1734,7 @@
         <!-- 계약 시작일·종료일·고용형태·계약상태는 위 수정 모드 섹션 내부로 이동됨 -->
         <div class="form-group full"><span class="form-section-title">근무 조건 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></span></div>
         <!-- ct-days는 요일별 테이블에서 자동 계산 후 hidden으로 유지 -->
-        <div class="form-group" id="ct-row-annual"><label>연차일수</label><div style="display:flex;align-items:center;gap:8px;"><input type="number" id="ct-annual" value="15" style="width:80px;" /><span style="font-size:11px;color:#6b7280;">/ 기사용</span><input type="number" id="ct-pre-used-annual" value="0" style="width:60px;" /><span id="ct-annual-hint" style="display:none;font-size:11px;color:#6366f1;font-weight:600;"></span></div></div>
+        <div class="form-group" id="ct-row-annual"><label>연차일수</label><div style="display:flex;align-items:center;gap:8px;"><input type="number" id="ct-annual" value="15" style="width:80px;" /><span id="ct-annual-hint" style="display:none;font-size:11px;color:#6366f1;font-weight:600;"></span></div></div>
         <div class="form-group" id="ct-row-daily-wage" style="display:none;"><label>일급여 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><input type="text" inputmode="numeric" id="ct-daily-wage" data-amount placeholder="0" oninput="onAmountInput(this,calcContractSalary);_checkRegisterBtnState();" /></div>
 
         <!-- 요일별 근무시간 -->
@@ -2746,7 +2776,6 @@
   <script src="js/admin-contract/contract-core.js"></script>
   <script src="js/admin-contract/contract-docs.js"></script>
   <script src="js/admin-contract/contract-dispatch.js"></script>
-  <script src="js/admin-contract/consent-dispatch.js"></script>
   <script src="js/admin-contract/contract-lifecycle.js"></script>
   <script src="js/admin-contract.js"></script>
   <!-- admin-payroll 모듈 -->
