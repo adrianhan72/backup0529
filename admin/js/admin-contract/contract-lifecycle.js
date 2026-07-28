@@ -1213,6 +1213,36 @@ function _validateRenewNewStart(oldEnd){
   return true;
 }
 
+/**
+ * 갱신 모드 전용 유효성 검사 (직원 신상정보 제외, 계약 조건만)
+ * - 사원번호·주민번호·이름·전화번호 등은 갱신 시 locked 상태이므로 검증 제외
+ */
+function _validateRenewFields(){
+  const errors = [];
+
+  // 계약 시작일
+  const _startEl = document.getElementById('ct-start');
+  if(_startEl && _startEl.offsetParent !== null && !_startEl.value.trim()){
+    _ctMarkError('ct-start', '계약 시작일', errors);
+  }
+  // 통상시급
+  const _hwEl = document.getElementById('ct-hourly-input');
+  if(_hwEl && (!_hwEl.value || parseFloat(_hwEl.value) <= 0)){
+    _ctMarkError('ct-hourly-input', '통상시급', errors);
+  }
+  // 급여 산정기간
+  const _ppEl = document.getElementById('ct-pay-period-month');
+  if(_ppEl && !_ppEl.value.trim()){
+    _ctMarkError('ct-pay-period-month', '급여 산정기간', errors);
+  }
+
+  if(errors.length){
+    _ctShowErrors(errors);
+    return true;
+  }
+  return false;
+}
+
 const _yearHolidayCache = {};
 
 /**
@@ -1438,11 +1468,11 @@ function doContractRenew(){
   });
   // 개별 안내 문구
   const empnoHint = document.getElementById('ct-edit-empno-lock-hint');
-  if(empnoHint){ empnoHint.textContent = '계약 갱신 시에는 기 발급된 사원번호는 변경할 수 없습니다.'; empnoHint.style.display = 'block'; }
+  if(empnoHint){ empnoHint.textContent = '계약 갱신 시에는 기 발급된 사원번호는 변경할 수 없습니다.'; empnoHint.classList.add('va-ok'); }
   const nameHint = document.getElementById('ct-edit-name-lock-hint');
-  if(nameHint){ nameHint.textContent = '계약 갱신 시에는 기 등록된 이름은 수정할 수 없습니다.'; nameHint.style.display = 'block'; }
+  if(nameHint){ nameHint.textContent = '계약 갱신 시에는 기 등록된 이름은 수정할 수 없습니다.'; nameHint.classList.add('va-ok'); }
   const idHint = document.getElementById('ct-edit-id-lock-hint');
-  if(idHint){ idHint.textContent = '계약 갱신 시에는 기 등록된 주민번호는 수정할 수 없습니다.'; idHint.style.display = 'block'; }
+  if(idHint){ idHint.textContent = '계약 갱신 시에는 기 등록된 주민번호는 수정할 수 없습니다.'; idHint.classList.add('va-ok'); }
 
   // 하단 갱신완료·취소 버튼 표시
   const btnComplete2 = document.getElementById('ct-btn-renew-complete2');
@@ -1555,8 +1585,8 @@ async function confirmContractRenew(){
   const c = allContracts.find(x=>x.id===editId.contract);
   if(!c) return toast('계약 정보를 찾을 수 없습니다.','error');
 
-  // ── 전체 폼 유효성 검사 (_ctValidate) ──
-  if(_ctValidate()) return;
+  // ── 갱신 전용 유효성 검사 (직원 신상정보 제외, 계약조건만) ──
+  if(_validateRenewFields()) return;
 
   const today = new Date().toISOString().slice(0,10);
   const origEnd = c.contract_end || '';
@@ -1603,10 +1633,10 @@ async function confirmContractRenew(){
 
   // 2. 기존 계약: 해지일 기록 + 상태 '갱신됨' + renewed_to_id (contract_end는 보존)
   await api(`../tables/contracts/${c.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({terminate_date: oldEnd, status: CONTRACT_STATUS.RENEWED, renewed_to_id: newId})});
+    body:JSON.stringify({terminate_date: oldEnd, status: CONTRACT_STATUS.TERMINATED, renewed_to_id: newId})});
   // 로컬 갱신
   c.terminate_date = oldEnd;
-  c.status = CONTRACT_STATUS.RENEWED;
+  c.status = CONTRACT_STATUS.TERMINATED;
   c.renewed_to_id = newId;
 
   // ── 계약 연속성 단절 시 근로자 입사일 변경 ──
@@ -2704,41 +2734,35 @@ function _validateIdNumber(val){
 function _onIdInput(el, checkBtnFn){
   _formatIdInput(el);
   const val = el.value;
-  // 힌트 span (없으면 생성)
   let hint = el.parentElement.querySelector('.id-format-hint');
   if(!hint){
     hint = document.createElement('span');
-    hint.className = 'id-format-hint';
-    hint.style.cssText = 'font-size:11px;margin-top:3px;display:block;';
+    hint.className = 'id-format-hint ct-hint-normal';
     el.parentElement.appendChild(hint);
   }
   if(!val){
     hint.textContent = '';
-    hint.className = '';
-    // 주민번호 지워지면 성별 힌트도 초기화
+    hint.className = 'id-format-hint ct-hint-normal';
     const _nhint = document.getElementById('ct-em-gender-hint');
     const _ehint = document.getElementById('ct-edit-em-gender-hint');
     if(_nhint && document.getElementById('ct-em-id') === el)
-      { _nhint.textContent = '주민번호 입력 시 자동 설정됩니다'; _nhint.className='ct-hint-normal'; }
+      { _nhint.textContent = ''; _nhint.className=''; }
     if(_ehint && document.getElementById('ct-edit-em-id') === el)
-      { _ehint.textContent = '주민번호 입력 시 자동 설정됩니다'; _ehint.className='ct-hint-normal'; }
+      { _ehint.textContent = ''; _ehint.className=''; }
   } else {
     const { ok, msg } = _validateIdNumber(val);
     if(ok){
       hint.textContent = '✓ 형식 확인';
-      hint.className = 'ct-hint-success';  // green
-      // ── 성별 자동 설정 ──
+      hint.className = 'id-format-hint ct-hint-success';
       const _gCode = val.replace(/-/g,'').slice(6,7);
       const _gender = _inferGender(_gCode);
       if(_gender){
-        // 신규 폼
         const _newGenderEl = document.getElementById('ct-em-gender');
         if(_newGenderEl && document.getElementById('ct-em-id') === el){
           _newGenderEl.value = _gender;
           const _newHint = document.getElementById('ct-em-gender-hint');
           if(_newHint){ _newHint.textContent = `성별 자동 설정: ${_gender}`; _newHint.className='ct-hint-success'; }
         }
-        // 수정/재계약 폼
         const _editGenderEl = document.getElementById('ct-edit-em-gender');
         if(_editGenderEl && document.getElementById('ct-edit-em-id') === el){
           _editGenderEl.value = _gender;
@@ -2746,16 +2770,15 @@ function _onIdInput(el, checkBtnFn){
           if(_editHint){ _editHint.textContent = `성별 자동 설정: ${_gender}`; _editHint.className='ct-hint-success'; }
         }
       }
-    } else if(val.replace(/-/g,'').length < 7){
-      // 아직 입력 중 — 부드러운 안내
+    } else if(val.replace(/[^0-9]/g,'').length < 7){
       const digits = val.replace(/[^0-9]/g,'');
       hint.textContent = digits.length < 6
         ? `생년월일 ${6-digits.length}자리 더 입력`
         : '하이픈(-) 뒤 성별코드(1~8) 입력';
-      hint.className = 'ct-hint-normal';  // gray
+      hint.className = 'id-format-hint ct-hint-normal';
     } else {
       hint.textContent = '✗ ' + msg;
-      hint.className = 'ct-hint-error';  // red
+      hint.className = 'id-format-hint ct-hint-error';
     }
   }
   if(typeof checkBtnFn === 'function') checkBtnFn();
@@ -2826,25 +2849,24 @@ function _onPhoneInput(el, checkBtnFn){
   let hint = el.parentElement.querySelector('.phone-format-hint');
   if(!hint){
     hint = document.createElement('span');
-    hint.className = 'phone-format-hint';
-    hint.style.cssText = 'font-size:11px;margin-top:3px;display:block;';
+    hint.className = 'phone-format-hint ct-hint-normal';
     el.parentElement.appendChild(hint);
   }
   if(!val){
     hint.textContent = '';
-    hint.className = '';
+    hint.className = 'phone-format-hint ct-hint-normal';
   } else {
     const digits = val.replace(/[^0-9]/g, '');
     const { ok, msg } = _validatePhoneNumber(val);
     if(ok){
       hint.textContent = '✓ 형식 확인';
-      hint.className = 'ct-hint-success';
+      hint.className = 'phone-format-hint ct-hint-success';
     } else if(digits.length < 11){
       hint.textContent = `${11-digits.length}자리 더 입력하세요`;
-      hint.className = 'ct-hint-normal';
+      hint.className = 'phone-format-hint ct-hint-normal';
     } else {
       hint.textContent = '✗ ' + msg;
-      hint.className = 'ct-hint-error';
+      hint.className = 'phone-format-hint ct-hint-error';
     }
   }
   if(typeof checkBtnFn === 'function') checkBtnFn();
@@ -2874,21 +2896,20 @@ function _onEmailInput(el){
   let hint = el.parentElement.querySelector('.email-format-hint');
   if(!hint){
     hint = document.createElement('span');
-    hint.className = 'email-format-hint';
-    hint.style.cssText = 'font-size:11px;margin-top:3px;display:block;';
+    hint.className = 'email-format-hint ct-hint-normal';
     el.parentElement.appendChild(hint);
   }
   if(!val){
     hint.textContent = '';
-    hint.className = '';
+    hint.className = 'email-format-hint ct-hint-normal';
   } else {
     const { ok, msg } = _validateEmail(val);
     if(ok){
       hint.textContent = '✓ 형식 확인';
-      hint.className = 'ct-hint-success';
+      hint.className = 'email-format-hint ct-hint-success';
     } else {
       hint.textContent = '✗ ' + msg;
-      hint.className = 'ct-hint-error';
+      hint.className = 'email-format-hint ct-hint-error';
     }
   }
 }
@@ -2965,7 +2986,10 @@ function _ctValidate(){
     } else {
       const _coIdForEmpno = document.getElementById('ct-company')?.value || '';
       const _empNoCheck = _validateEmpNoUniqueness(_empNoNewVal, _coIdForEmpno, null, null, null);
-      if(!_empNoCheck.ok) _ctMarkError('ct-em-empno', `사원번호 중복: ${_empNoCheck.msg}`, errors);
+      if(!_empNoCheck.ok) {
+        _ctMarkError('ct-em-empno', `사원번호 중복: ${_empNoCheck.msg}`, errors);
+        _showEmpNoAlert(document.getElementById('ct-em-empno-alert'), _empNoCheck.msg, 'error');
+      }
     }
     if(!document.getElementById('ct-em-name').value.trim())
       _ctMarkError('ct-em-name', '이름', errors);
@@ -3080,7 +3104,10 @@ function _ctValidate(){
       const _editSelfEmpId = _editC ? _editC.employee_id : null;
       const _coIdForEditEmpno = currentContCompanyId || document.getElementById('ct-company')?.value || '';
       const _editEmpNoCheck = _validateEmpNoUniqueness(_empNoEditVal, _coIdForEditEmpno, _editSelfEmpId, null, null);
-      if(!_editEmpNoCheck.ok) _ctMarkError('ct-edit-em-empno', `사원번호 중복: ${_editEmpNoCheck.msg}`, errors);
+      if(!_editEmpNoCheck.ok) {
+        _ctMarkError('ct-edit-em-empno', `사원번호 중복: ${_editEmpNoCheck.msg}`, errors);
+        _showEmpNoAlert(document.getElementById('ct-edit-em-empno-alert'), _editEmpNoCheck.msg, 'error');
+      }
     }
     (function(){
       const _idValE = document.getElementById('ct-edit-em-id')?.value.trim();
@@ -3804,12 +3831,28 @@ async function saveContract(){
       });
     }
   }
+  const _wasRecontract = !!_recontractEmpId;
   _recontractEmpId = null; // 재계약 플래그 초기화
   _recontractSourceId = null;
   _currentDraftId  = null; // 임시저장 ID 초기화
   closeModal('contract-modal');await loadContracts();await loadEmployees();renderContracts();renderDashboard();
   const _ctIsEdit = !!editId.contract;
   toast(_ctIsEdit ? '근로계약서가 수정되었습니다. ✔' : '근로계약서가 등록되었습니다. ✔');
+
+  // ── 신규 계약: 계약서 확인 및 발송 여부 확인 ──
+  if(!_ctIsEdit && !_wasRecontract && _savedContractId){
+    const _newEmp = allEmployees.find(e => e.id === empId);
+    const _newEmpName = _newEmp?.name || '';
+    const confirmed = await _showConfirm({
+      message: `근로계약서가 등록되었습니다.\n\n계약서를 확인하고 ${_newEmpName ? _newEmpName+'님에게 ' : ''}인쇄용 파일 주소를 즉시 발송하시겠습니까?`,
+      okText: '예',
+      cancelText: '아니오 (나중에 발송)',
+      okClass: 'btn-primary'
+    });
+    if(confirmed){
+      openContractPrintModal(_savedContractId);
+    }
+  }
 
   // ── 연차 관리대장 자동 생성·상태 연동 ──
   if(!_ctIsEdit && contractStatus !== CONTRACT_STATUS.VOIDED && contractStatus !== CONTRACT_STATUS.CANCELED){

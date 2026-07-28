@@ -458,7 +458,7 @@ function checkAccessCodeDuplicate(){
   if(!code){ toast('접근 코드를 입력하세요.', 'error'); return; }
   // 형식 검증: 6글자 이상, 숫자+알파벳 모두 포함
   if(code.length < 6 || !/[a-zA-Z]/.test(code) || !/[0-9]/.test(code)){
-    if(msgEl){ msgEl.style.display = 'block'; msgEl.className = 'cm-msg-error'; msgEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 숫자와 알파벳을 포함한 6글자 이상'; }
+    if(msgEl){ msgEl.classList.add('va-err'); msgEl.className = 'cm-msg-error'; msgEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 숫자와 알파벳을 포함한 6글자 이상'; }
     if(inputEl){ inputEl.className = (inputEl.className||'').replace(/cm-input-[a-z-]+/g,'') + ' cm-input-error'; inputEl.focus(); }
     toast('숫자와 알파벳을 포함한 6글자 이상 입력하세요.', 'error');
     return;
@@ -475,12 +475,12 @@ function checkAccessCodeDuplicate(){
         if(inputEl){ inputEl.className = (inputEl.className||'').replace(/cm-input-[a-z-]+/g,'') + ' cm-input-error'; }
         toast('다른 고객사에서 사용 중인 코드입니다.', 'error');
       } else {
-        if(msgEl){ msgEl.style.display = 'block'; msgEl.className = 'cm-msg-success'; msgEl.innerHTML = '<i class="fas fa-check-circle"></i> 사용 가능한 코드입니다.'; }
+        if(msgEl){ msgEl.className = 'va-hint va-ok cm-msg-success'; msgEl.innerHTML = '<i class="fas fa-check-circle"></i> 사용 가능한 코드입니다.'; }
         if(inputEl){ inputEl.className = (inputEl.className||'').replace(/cm-input-[a-z-]+/g,'') + ' cm-input-success'; }
         toast('사용 가능한 코드입니다.', 'success');
       }
     }).catch(() => {
-      if(msgEl){ msgEl.style.display = 'block'; msgEl.className = 'cm-msg-error'; msgEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 확인 중 오류가 발생했습니다.'; }
+      if(msgEl){ msgEl.className = 'va-hint va-err cm-msg-error'; msgEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 확인 중 오류가 발생했습니다.'; }
       toast('확인 중 오류가 발생했습니다.', 'error');
     });
 }
@@ -1049,11 +1049,10 @@ async function saveCompany(){
     if(val) return true;
     // 포커스 대상: focusId 우선, 없으면 el 자체
     const focusEl = focusId ? (document.getElementById(focusId) || el) : el;
-    focusEl.style.borderColor = '#e94560';
-    focusEl.style.boxShadow   = '0 0 0 2px rgba(233,69,96,0.15)';
+    focusEl.classList.add('va-input-err');
     focusEl.scrollIntoView({ behavior:'smooth', block:'center' });
     focusEl.focus();
-    setTimeout(() => { focusEl.style.borderColor = ''; focusEl.style.boxShadow = ''; }, 2500);
+    setTimeout(() => { focusEl.classList.remove('va-input-err'); }, 2500);
     toast(msg, 'error');
     return false;
   }
@@ -1102,9 +1101,9 @@ async function saveCompany(){
     const sel = document.getElementById(`cm-aw-${hid}-pt`);
     if(cb?.checked && sel && !sel.value){
       // 해당 select에 빨간 테두리 표시 후 포커스
-      sel.style.borderColor = '#e94560';
+      sel.classList.add('va-input-err');
       sel.focus();
-      setTimeout(() => { sel.style.borderColor = ''; }, 2000);
+      setTimeout(() => { sel.classList.remove('va-input-err'); }, 2000);
       return toast(`[${_CM_AW_PT_LABEL[f]}] 통상임금 포함여부(지급 방식)를 선택하세요.`, 'error');
     }
   }
@@ -1199,8 +1198,8 @@ async function saveCompany(){
           return toast('수정 내용 적용일을 선택하세요.', 'error');
         }
         if(_effDateMin && _effDateStr < _effDateMin){
-          _effDateEl.style.borderColor = '#e94560';
-          setTimeout(() => { _effDateEl.style.borderColor = ''; }, 2000);
+          _effDateEl.classList.add('va-input-err');
+          setTimeout(() => { _effDateEl.classList.remove('va-input-err'); }, 2000);
           return toast(`적용일은 최종 급여 지급일(${_effDateMin}) 이후여야 합니다.`, 'error');
         }
       }

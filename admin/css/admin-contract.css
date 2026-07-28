@@ -514,6 +514,20 @@
 .ct-hint-success{color:#16a34a}
 .ct-alert-ok{background:#F0FDF4;color:#166534;border:1.5px solid #86EFAC}
 .ct-alert-error{background:#FFF1F2;color:#991B1B;border:1.5px solid #FCA5A5}
+.ct-alert-hint{color:#6b7280;font-size:11.5px;font-weight:500;margin-top:4px}
+.ct-alert-hint-error{color:#dc2626;font-size:11.5px;font-weight:500;margin-top:4px}
+/* ── 글로벌 유효성 검증 유틸리티 ── */
+.va-hint{display:none;font-size:11.5px;font-weight:500;margin-top:4px}
+.va-hint.va-ok{display:block;color:#6b7280}
+.va-hint.va-err{display:block;color:#dc2626}
+.va-input-err{border-color:#ef4444!important}
+.va-input-err{border-color:#ef4444!important;box-shadow:0 0 0 2px rgba(239,68,68,.15)!important}
+.va-banner-hide{display:none!important}
+/* ── 인라인 포맷 힌트 (id/phone/email) ── */
+.id-format-hint,.phone-format-hint,.email-format-hint{font-size:11px;margin-top:3px;display:block}
+/* ── 날짜 선택기: 전체 클릭 가능 + 비활성 차단 ── */
+input[type="date"]:not([readonly]):not([disabled]){cursor:text}
+input[type="date"][readonly],input[type="date"][disabled]{pointer-events:none;opacity:0.6}
 .ct-nav-card{cursor:pointer}
 .ct-tab-active{background:#fffbeb;color:#92400e}
 .ct-amount-active{background:#fff;color:#1a1a2e;font-weight:600}

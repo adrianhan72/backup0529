@@ -33,13 +33,14 @@ function alnToggleEye(){
 function _alnSetError(msg, shakeEl){
   const err = document.getElementById('aln-error-msg');
   document.getElementById('aln-error-text').textContent = msg;
-  err.style.display = 'block';
+  err.classList.add('va-err');
   const target = shakeEl || document.getElementById('aln-pw');
   target.classList.add('error');
   setTimeout(()=>target.classList.remove('error'), 400);
 }
 function _alnClearError(){
-  document.getElementById('aln-error-msg').style.display = 'none';
+  const err = document.getElementById('aln-error-msg');
+  if(err) err.classList.remove('va-err');
   ['aln-id','aln-pw'].forEach(id=>document.getElementById(id)?.classList.remove('error'));
 }
 document.addEventListener('DOMContentLoaded', function(){

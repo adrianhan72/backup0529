@@ -528,9 +528,9 @@ const KO = {
 function koComment(tableName, colName) {
   const t = KO[tableName];
   if (!t) {
-    // KO 맵에 없는 테이블: 기본 설명 자동 생성
-    if (colName) return '';
-    return '';
+    // KO 맵에 없는 테이블: autoComment/autoTableComment로 자동 추론
+    if (colName) return autoComment(colName);
+    return autoTableComment(tableName);
   }
   if (colName) {
     const c = t.columns[colName];

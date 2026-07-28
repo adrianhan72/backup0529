@@ -325,7 +325,7 @@ function renderContracts(){
   const today=new Date().toISOString().slice(0,10);
 
   // 알림 카드에서 관리되는 상태는 메인 테이블 기본 제외 (서류미비는 유효 계약이므로 메인 테이블에 포함)
-  const ALERT_ONLY_LABELS = new Set(['임시저장',CONTRACT_STATUS_LABEL[CONTRACT_STATUS.RENEWAL_PENDING],CONTRACT_STATUS_LABEL[CONTRACT_STATUS.PENDING]]);
+  const ALERT_ONLY_LABELS = new Set(['임시저장',CONTRACT_STATUS_LABEL[CONTRACT_STATUS.RENEWAL_PENDING]]);
 
   let f=allContracts.filter(c=>{
     if(c.company_id!==currentContCompanyId) return false;
@@ -503,7 +503,7 @@ function _ctClearErrors(){
     el.classList.remove('ct-field-error');
   });
   const banner = document.getElementById('ct-validation-banner');
-  if(banner) banner.style.display = 'none';
+  if(banner) banner.className = 'va-banner-hide';
 }
 
 // ── 계약 시작일 ↔ 입사일 연동 ──
@@ -1378,22 +1378,50 @@ function _hideAllNameDupAlerts(){
 function _validateEmpNoUniqueness(empNo, companyId, selfEmpId, newContractStart, newContractType) {
   if(!empNo || !companyId) return { ok: true, type: 'ok', msg: '' };
 
-  // ── 같은 회사 내 동일 사원번호를 가진 직원 탐색 (해지·만료·파기·취소·임시저장 포함 모든 계약) ──
+  // ── 해지·만료·파기·취소된 계약의 퇴사자 사원번호 차단 (allContracts 기반) ──
+  const TERMINAL_STATUSES = [
+    CONTRACT_STATUS.TERMINATED,
+    CONTRACT_STATUS.EXPIRED,
+    CONTRACT_STATUS.VOIDED,
+    CONTRACT_STATUS.CANCELED,
+  ];
+  const terminalContracts = allContracts.filter(c =>
+    c.company_id === companyId &&
+    TERMINAL_STATUSES.includes(c.status)
+  );
+  const terminalEmpIds = new Set(terminalContracts.map(c => c.employee_id).filter(Boolean));
+
+  // 퇴사자 중 동일 사원번호 보유 직원 확인
+  const terminatedMatch = allEmployees.find(e =>
+    terminalEmpIds.has(e.id) &&
+    e.employee_number === empNo &&
+    e.id !== selfEmpId
+  );
+  if(terminatedMatch) {
+    return {
+      ok: false,
+      type: 'duplicate',
+      msg: `사원번호 "${empNo}"은(는) 퇴사 처리된 ${terminatedMatch.name} 직원이 사용하던 번호입니다. 다른 번호를 입력하세요.`
+    };
+  }
+
+  // ── 재직·계약예정 등 그 외 모든 직원 대상 중복 검사 ──
   const sameNoEmps = allEmployees.filter(e =>
     e.company_id === companyId &&
     e.employee_number === empNo &&
-    e.id !== selfEmpId   // 수정 모드: 자기 자신 제외
+    e.id !== selfEmpId
   );
 
-  if(!sameNoEmps.length) return { ok: true, type: 'ok', msg: '' };
+  if(sameNoEmps.length) {
+    const existEmp = sameNoEmps[0];
+    return {
+      ok: false,
+      type: 'duplicate',
+      msg: `사원번호 "${empNo}"은(는) 이미 ${existEmp.name} 직원이 사용 중입니다. 다른 번호를 입력하세요.`
+    };
+  }
 
-  // 같은 사원번호를 가진 직원이 있으면 무조건 중복 처리 (계약 상태 불문)
-  const existEmp = sameNoEmps[0];
-  return {
-    ok: false,
-    type: 'duplicate',
-    msg: `사원번호 "${empNo}"은(는) 이미 ${existEmp.name} 직원이 사용 중입니다. 다른 번호를 입력하세요.`
-  };
+  return { ok: true, type: 'ok', msg: '' };
 }
 
 /**
@@ -1592,10 +1620,10 @@ function checkCtEmpNoUniqueness(){
   const empNo    = (document.getElementById('ct-em-empno')?.value || '').trim();
   const alertEl  = document.getElementById('ct-em-empno-alert');
   if(!alertEl) return;
-  if(!empNo){ alertEl.style.display='none'; return; }
+  if(!empNo){ alertEl.className = 'va-hint'; return; }
 
   const companyId = document.getElementById('ct-company')?.value || '';
-  if(!companyId){ alertEl.style.display='none'; return; }
+  if(!companyId){ alertEl.className = 'va-hint'; return; }
 
   const result = _validateEmpNoUniqueness(empNo, companyId, null, null, null);
   if(!result.ok){
@@ -1610,10 +1638,10 @@ function checkCtEditEmpNoUniqueness(){
   const empNo    = (document.getElementById('ct-edit-em-empno')?.value || '').trim();
   const alertEl  = document.getElementById('ct-edit-em-empno-alert');
   if(!alertEl) return;
-  if(!empNo){ alertEl.style.display='none'; return; }
+  if(!empNo){ alertEl.className = 'va-hint'; return; }
 
   const companyId = currentContCompanyId || document.getElementById('ct-company')?.value || '';
-  if(!companyId){ alertEl.style.display='none'; return; }
+  if(!companyId){ alertEl.className = 'va-hint'; return; }
 
   // 수정 모드: 현재 계약의 employee_id를 selfEmpId로 넘겨 자기 자신 제외
   const c = editId.contract ? allContracts.find(x => x.id === editId.contract) : null;
@@ -1629,9 +1657,9 @@ function checkCtEditEmpNoUniqueness(){
 
 function _showEmpNoAlert(alertEl, msg, type){
   if(!alertEl) return;
-  const isOk  = (type === 'ok');
-  alertEl.style.display = 'block';
-  alertEl.className = isOk ? 'ct-alert-ok' : 'ct-alert-error';
+  const isOk = (type === 'ok');
+  alertEl.style.display = '';  // inline display 초기화 → CSS class가 제어
+  alertEl.className = 'va-hint ' + (isOk ? 'va-ok' : 'va-err');
   const msgEl = alertEl.querySelector('.empno-alert-msg');
   if(msgEl) msgEl.textContent = msg;
 }

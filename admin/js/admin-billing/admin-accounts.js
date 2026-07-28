@@ -135,15 +135,15 @@ function aaTogglePw(inputId, iconId){
 function _aaFieldErr(inputId, errId, msg){
   const inp = document.getElementById(inputId);
   const err = document.getElementById(errId);
-  if(inp) inp.style.borderColor = '#ef4444';
-  if(err){ err.textContent = msg; err.style.display = 'block'; }
+  if(inp) inp.classList.add('va-input-err');
+  if(err){ err.textContent = msg; err.classList.add('va-err'); }
   if(inp) inp.focus();
 }
 function _aaFieldOk(inputId, errId){
   const inp = document.getElementById(inputId);
   const err = document.getElementById(errId);
-  if(inp) inp.style.borderColor = '';
-  if(err) err.style.display = 'none';
+  if(inp) inp.classList.remove('va-input-err');
+  if(err){ err.textContent = ''; err.classList.remove('va-err'); }
 }
 
 /* ── 신규 계정 저장 ── */

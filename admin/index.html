@@ -848,7 +848,7 @@
         <div class="form-group full">
           <label>새 표시 이름 <span style="color:#c00;font-weight:900;font-size:13px;">*</span></label>
           <input type="text" id="aa-name-input" placeholder="예: 마스터관리자, 홍길동" autocomplete="off" maxlength="20" />
-          <div id="aa-name-err" style="color:#ef4444;font-size:11.5px;margin-top:4px;display:none;"></div>
+          <div id="aa-name-err" class="va-hint"></div>
         </div>
       </div>
     </div>
@@ -880,7 +880,7 @@
               <i class="fas fa-eye" id="aa-cpw-eye1"></i>
             </button>
           </div>
-          <div id="aa-cpw-err-new" style="color:#ef4444;font-size:11.5px;margin-top:4px;display:none;"></div>
+          <div id="aa-cpw-err-new" class="va-hint"></div>
         </div>
         <div class="form-group full">
           <label>새 비밀번호 확인 <span style="color:#c00;font-weight:900;font-size:13px;">*</span></label>
@@ -891,7 +891,7 @@
               <i class="fas fa-eye" id="aa-cpw-eye2"></i>
             </button>
           </div>
-          <div id="aa-cpw-err-new2" style="color:#ef4444;font-size:11.5px;margin-top:4px;display:none;"></div>
+          <div id="aa-cpw-err-new2" class="va-hint"></div>
         </div>
       </div>
     </div>
@@ -917,12 +917,12 @@
         <div class="form-group full">
           <label>아이디 <span style="color:#c00;font-weight:900;font-size:13px;">*</span></label>
           <input type="text" id="aa-input-id" placeholder="영문·숫자 조합 4자 이상" autocomplete="username" />
-          <div id="aa-err-id" style="color:#ef4444;font-size:11.5px;margin-top:4px;display:none;"></div>
+          <div id="aa-err-id" class="va-hint"></div>
         </div>
         <div class="form-group full">
           <label>표시 이름 <span style="color:#c00;font-weight:900;font-size:13px;">*</span></label>
           <input type="text" id="aa-input-name" placeholder="예: 홍길동, 부관리자" autocomplete="off" />
-          <div id="aa-err-name" style="color:#ef4444;font-size:11.5px;margin-top:4px;display:none;"></div>
+          <div id="aa-err-name" class="va-hint"></div>
         </div>
         <div class="form-group full">
           <label>비밀번호 <span style="color:#c00;font-weight:900;font-size:13px;">*</span></label>
@@ -933,7 +933,7 @@
               <i class="fas fa-eye" id="aa-eye1"></i>
             </button>
           </div>
-          <div id="aa-err-pw" style="color:#ef4444;font-size:11.5px;margin-top:4px;display:none;"></div>
+          <div id="aa-err-pw" class="va-hint"></div>
         </div>
         <div class="form-group full">
           <label>비밀번호 확인 <span style="color:#c00;font-weight:900;font-size:13px;">*</span></label>
@@ -944,7 +944,7 @@
               <i class="fas fa-eye" id="aa-eye2"></i>
             </button>
           </div>
-          <div id="aa-err-pw2" style="color:#ef4444;font-size:11.5px;margin-top:4px;display:none;"></div>
+          <div id="aa-err-pw2" class="va-hint"></div>
         </div>
       </div>
     </div>
@@ -1703,17 +1703,15 @@
               <div class="form-group">
                 <label>사원번호 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
                 <input type="text" id="ct-edit-em-empno" placeholder="예: 0001" onblur="checkCtEditEmpNoUniqueness();_checkAmendBtnState();" autocomplete="off" />
-                <span id="ct-edit-empno-lock-hint" style="display:none;font-size:11px;color:#9ca3af;margin-top:3px;"></span>
-                <div id="ct-edit-em-empno-alert" style="display:none;margin-top:6px;padding:7px 10px;border-radius:8px;font-size:11px;font-weight:600;">
-                  <span class="empno-alert-msg"></span>
-                </div>
+                <span id="ct-edit-empno-lock-hint" class="va-hint" style="color:#9ca3af;"></span>
+                <div id="ct-edit-em-empno-alert" class="va-hint"><span class="empno-alert-msg"></span></div>
               </div>
               <div class="form-group">
                 <label>이름 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
                 <!-- 수정모드: input / 갱신·재계약모드: readonly div 전환 (JS가 제어) -->
                 <input type="text" id="ct-edit-emp-name" placeholder="이름" onblur="checkCtEditDuplicateName();_checkAmendBtnState();" autocomplete="off" />
                 <!-- 갱신·재계약 시 이름 잠금 안내 -->
-                <span id="ct-edit-name-lock-hint" style="display:none;font-size:11px;color:#9ca3af;margin-top:3px;"></span>
+                <span id="ct-edit-name-lock-hint" class="va-hint" style="color:#9ca3af;"></span>
                 <div id="ct-edit-em-rep-self-row" style="display:none;margin-top:8px;background:#f5f3ff;border:1.5px solid #c4b5fd;border-radius:8px;padding:10px 12px;">
                   <div style="font-size:12px;color:#7c3aed;font-weight:700;margin-bottom:8px;">
                     <i class="fas fa-info-circle"></i> 입력한 이름이 <strong>대표자명</strong>과 동일합니다.
@@ -1751,7 +1749,7 @@
               <div class="form-group" id="ct-edit-row-expire"><label>퇴사예정일</label><input type="date" id="ct-edit-em-expire" class="filt-date" /></div>
 
               <div class="form-group full"><span class="form-section-title" style="font-size:11px;">개인 정보</span></div>
-              <div class="form-group"><label>주민등록번호 <span class="lbl-desc">(앞7자리)</span> <span class="lbl-req">*</span></label><input type="text" id="ct-edit-em-id" placeholder="YYMMDD-N" maxlength="8" autocomplete="off" oninput="_onIdInput(this, _checkAmendBtnState)" /><span id="ct-edit-id-lock-hint" style="display:none;font-size:11px;color:#9ca3af;margin-top:3px;"></span></div>
+              <div class="form-group"><label>주민등록번호 <span class="lbl-desc">(앞7자리)</span> <span class="lbl-req">*</span></label><input type="text" id="ct-edit-em-id" placeholder="YYMMDD-N" maxlength="8" autocomplete="off" oninput="_onIdInput(this, _checkAmendBtnState)" /><span id="ct-edit-id-lock-hint" class="va-hint" style="color:#9ca3af;"></span></div>
               <div class="form-group"><label>성별 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><select id="ct-edit-em-gender" disabled><option value="남">남</option><option value="여">여</option></select></div>
               <div class="form-group"><label>휴대전화 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><input type="text" id="ct-edit-em-phone" placeholder="010-0000-0000" maxlength="13" autocomplete="off" oninput="_onPhoneInput(this, _checkAmendBtnState)" /></div>
               <div class="form-group"><label>이메일 주소</label><input type="email" id="ct-edit-em-email" placeholder="example@email.com" oninput="_onEmailInput(this)" /></div>
@@ -1779,9 +1777,7 @@
               <div class="form-group">
                 <label>사원번호 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
                 <input type="text" id="ct-em-empno" placeholder="예: 0001" onblur="checkCtEmpNoUniqueness();_checkRegisterBtnState();" autocomplete="off" />
-                <div id="ct-em-empno-alert" style="display:none;margin-top:6px;padding:7px 10px;border-radius:8px;font-size:11px;font-weight:600;">
-                  <span class="empno-alert-msg"></span>
-                </div>
+                <div id="ct-em-empno-alert" class="va-hint"><span class="empno-alert-msg"></span></div>
               </div>
               <div class="form-group"><label>이름 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
                 <input type="text" id="ct-em-name" onblur="checkCtDuplicateName();_checkRegisterBtnState();" autocomplete="off" />

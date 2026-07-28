@@ -367,7 +367,7 @@ function ssGuardSystemSettings(menuEl) {
   const errEl = document.getElementById('ss-reauth-error');
   const eyeIcon = document.getElementById('ss-reauth-eye-icon');
   if (pwEl) { pwEl.value = ''; pwEl.type = 'password'; }
-  if (errEl) errEl.style.display = 'none';
+  if (errEl) errEl.classList.remove('va-err');
   if (eyeIcon) eyeIcon.className = 'fas fa-eye';
   const modal = document.getElementById('ss-reauth-modal');
   if (modal) { modal.classList.add('open'); setTimeout(() => pwEl?.focus(), 150); }
@@ -395,7 +395,7 @@ async function ssConfirmReauth() {
   const errText = document.getElementById('ss-reauth-error-text');
 
   if (!password) {
-    if (errEl) { errEl.style.display = 'block'; if (errText) errText.textContent = '비밀번호를 입력하세요.'; }
+    if (errEl) { errEl.classList.add('va-err'); if (errText) errText.textContent = '비밀번호를 입력하세요.'; }
     return;
   }
   if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 확인 중...'; }
@@ -407,7 +407,7 @@ async function ssConfirmReauth() {
       body: JSON.stringify({ username, password })
     });
     if (!res.ok) {
-      if (errEl) { errEl.style.display = 'block'; if (errText) errText.textContent = '비밀번호가 올바르지 않습니다.'; }
+      if (errEl) { errEl.classList.add('va-err'); if (errText) errText.textContent = '비밀번호가 올바르지 않습니다.'; }
       const pwEl = document.getElementById('ss-reauth-password');
       if (pwEl) { pwEl.value = ''; pwEl.focus(); }
       if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-check"></i> 확인'; }
@@ -419,7 +419,7 @@ async function ssConfirmReauth() {
     if (menuEl) showPage('system-settings', menuEl);
   } catch (e) {
     console.error('[재인증 오류]', e);
-    if (errEl) { errEl.style.display = 'block'; if (errText) errText.textContent = '서버 연결에 실패했습니다.'; }
+    if (errEl) { errEl.classList.add('va-err'); if (errText) errText.textContent = '서버 연결에 실패했습니다.'; }
     if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-check"></i> 확인'; }
   }
 }
