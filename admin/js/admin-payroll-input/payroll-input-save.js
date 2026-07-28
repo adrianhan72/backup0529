@@ -340,7 +340,7 @@ function loadPIDraft(){
   setAmountVal('pi-std-pay',       draft.standard_monthly_pay);
   // 확정액 기준 고객사 보험료
   const _draftInsCo = allCompanies.find(x => x.id === draft.company_id);
-  if(_draftInsCo?.insurance_basis === '확정액 기준'){
+  if(_draftInsCo?.insurance_basis === INSURANCE_BASIS.FIXED_AMOUNT || _draftInsCo?.insurance_basis === INSURANCE_BASIS.FIXED_AMOUNT){
     setAmountVal('pi-pension-fixed', draft.national_pension);
     setAmountVal('pi-health-fixed',  draft.health_insurance);
     setAmountVal('pi-ltcare-fixed',  draft.long_term_care);
@@ -465,7 +465,7 @@ async function savePI(){
     return toast('근로계약서가 임시저장 상태입니다. 계약서 등록을 완료한 후 급여를 입력해 주세요.','error');
   }
   // ── 보험요율 캐시 로드 여부 확인 (백그라운드 로드가 아직 완료되지 않은 경우 방어) ──
-  if(_allInsuranceRates.length === 0 && _getPIInsuranceBasis() === '요율 기준'){
+  if(_allInsuranceRates.length === 0 && _getPIInsuranceBasis() === INSURANCE_BASIS.RATE_BASED){
     try {
       await loadStandards();
     } catch(e){ console.warn('[savePI] loadStandards 재시도 실패', e); }
@@ -496,7 +496,7 @@ async function savePI(){
     }
   }
   // ── _piCalc 결과 검증: 요율 기준인데 공제가 모두 0이면 경고 ──
-  const _isRateBasis = _getPIInsuranceBasis() === '요율 기준';
+  const _isRateBasis = _getPIInsuranceBasis() === INSURANCE_BASIS.RATE_BASED;
   if(_isRateBasis && c.gross > 0 && !(c.pension > 0 || c.health > 0 || c.incomeTax > 0)){
     const _cont = confirm('⚠️ 공제항목이 계산되지 않았습니다.\n보험요율 산정기준을 다시 확인해 주세요.\n\n그래도 저장하시겠습니까?');
     if(!_cont) return;

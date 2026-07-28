@@ -222,6 +222,66 @@ const DISPATCH_STATUS_LABEL = Object.freeze({
   [DISPATCH_STATUS.PENDING]:   '대기',
 });
 
+const DISPATCH_STATUS_LEGACY_MAP = {
+  '완료': DISPATCH_STATUS.COMPLETED,
+  '실패': DISPATCH_STATUS.FAILED,
+  '대기': DISPATCH_STATUS.PENDING,
+};
+
+// ═══════════════════════════════════════════
+// 급여 산정기준월 (pay_period_month)
+// ═══════════════════════════════════════════
+const PAY_PERIOD_MONTH = Object.freeze({
+  PREV_MONTH:    'prev_month',
+  CURRENT_MONTH: 'current_month',
+});
+
+const PAY_PERIOD_MONTH_LABEL = Object.freeze({
+  [PAY_PERIOD_MONTH.PREV_MONTH]:    '전월',
+  [PAY_PERIOD_MONTH.CURRENT_MONTH]: '당월',
+});
+
+const PAY_PERIOD_MONTH_LEGACY_MAP = {
+  '전월': PAY_PERIOD_MONTH.PREV_MONTH,
+  '당월': PAY_PERIOD_MONTH.CURRENT_MONTH,
+};
+
+// ═══════════════════════════════════════════
+// 4대보험 적용 기준 (insurance_basis)
+// ═══════════════════════════════════════════
+const INSURANCE_BASIS = Object.freeze({
+  RATE_BASED:   'rate_based',
+  FIXED_AMOUNT: 'fixed_amount',
+});
+
+const INSURANCE_BASIS_LABEL = Object.freeze({
+  [INSURANCE_BASIS.RATE_BASED]:   '요율 기준',
+  [INSURANCE_BASIS.FIXED_AMOUNT]: '확정액 기준',
+});
+
+const INSURANCE_BASIS_LEGACY_MAP = {
+  '요율 기준':   INSURANCE_BASIS.RATE_BASED,
+  '확정액 기준': INSURANCE_BASIS.FIXED_AMOUNT,
+};
+
+// ═══════════════════════════════════════════
+// 연차 산정 기준 (annual_leave_basis)
+// ═══════════════════════════════════════════
+const ANNUAL_LEAVE_BASIS = Object.freeze({
+  FISCAL_YEAR: 'fiscal_year',
+  HIRE_DATE:   'hire_date',
+});
+
+const ANNUAL_LEAVE_BASIS_LABEL = Object.freeze({
+  [ANNUAL_LEAVE_BASIS.FISCAL_YEAR]: '회계년도 기준',
+  [ANNUAL_LEAVE_BASIS.HIRE_DATE]:   '입사일 기준',
+});
+
+const ANNUAL_LEAVE_BASIS_LEGACY_MAP = {
+  '회계년도 기준': ANNUAL_LEAVE_BASIS.FISCAL_YEAR,
+  '입사일 기준':   ANNUAL_LEAVE_BASIS.HIRE_DATE,
+};
+
 // ═══════════════════════════════════════════
 // 알림 유형 (company_notices.notice_type)
 // ═══════════════════════════════════════════
@@ -354,6 +414,20 @@ function normalizeContractType(val) {
 function normalizeCompanyStatus(val) {
   if (!val) return val;
   return COMPANY_STATUS_LEGACY_MAP[val] || val;
+}
+function normalizePayPeriodMonth(val) {
+  if (!val) return val;
+  return PAY_PERIOD_MONTH_LEGACY_MAP[val] || val;
+}
+function normalizeInsuranceBasis(val) {
+  if (!val) return val;
+  // edge case: '입사일 기준' wrongly stored in insurance_basis
+  if (val === '입사일 기준') return INSURANCE_BASIS.RATE_BASED;
+  return INSURANCE_BASIS_LEGACY_MAP[val] || val;
+}
+function normalizeAnnualLeaveBasis(val) {
+  if (!val) return val;
+  return ANNUAL_LEAVE_BASIS_LEGACY_MAP[val] || val;
 }
 
 /** 상태 체크 */

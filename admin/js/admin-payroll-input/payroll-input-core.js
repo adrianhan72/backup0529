@@ -15,9 +15,9 @@ function _isPIMonthFullyPaid(coId, yr, mo){
 
   // 고객사 산정기준으로 급여 산정기간 계산
   const _co = (allCompanies||[]).find(c => c.id === coId);
-  const _ppMo  = _co?.pay_period_month || '당월';
+  const _ppMo  = _co?.pay_period_month || PAY_PERIOD_MONTH.CURRENT_MONTH;
   const _ppDay = parseInt(_co?.pay_period_day) || 1;
-  const _isJeonwol = _ppMo === '전월';
+  const _isJeonwol = _ppMo === PAY_PERIOD_MONTH.PREV_MONTH || _ppMo === PAY_PERIOD_MONTH.PREV_MONTH;
 
   let periodStart, periodEnd;
   if(_isJeonwol){

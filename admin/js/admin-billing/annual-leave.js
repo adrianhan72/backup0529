@@ -34,7 +34,7 @@ function calcEmployeeAnnualLeave(emp, contract, company, refYear){
   if((emp.employment_category||contract.contract_type) ===CONTRACT_TYPE.DAILY) return null;
 
   const hireDateStr   = emp.hire_date || contract.contract_start || '';
-  const basis         = company?.annual_leave_basis || '회계년도 기준';
+  const basis         = normalizeAnnualLeaveBasis(company?.annual_leave_basis) || ANNUAL_LEAVE_BASIS.FISCAL_YEAR;
   const contractStart = contract.contract_start || '';
 
   const hire = new Date(hireDateStr);
@@ -67,7 +67,7 @@ function calcEmployeeAnnualLeave(emp, contract, company, refYear){
   // ── 기준년도 산정 baseDate 결정 ──
   // 회계년도: refYear-01-01 / 입사일: 직전 주년일(오늘 기준)
   let baseDate;
-  if(basis === '입사일 기준'){
+  if(basis === ANNUAL_LEAVE_BASIS.HIRE_DATE){
     // refYear 주년일이 오늘 이전이면 그것, 아니면 refYear-1 주년일
     const annivThis = new Date(refYear, hire.getMonth(), hire.getDate());
     baseDate = annivThis <= today
@@ -103,7 +103,7 @@ function calcEmployeeAnnualLeave(emp, contract, company, refYear){
     totalDays     = Math.min(15 + bonus, 25);
 
     // 사용 연차 집계 구간
-    if(basis === '입사일 기준'){
+    if(basis === ANNUAL_LEAVE_BASIS.HIRE_DATE){
       // 직전 주년일 ~ 당해 주년일 (refYear 기준)
       periodStart = null; // 날짜 객체로 별도 처리
       periodEnd   = null;
@@ -128,7 +128,7 @@ function calcEmployeeAnnualLeave(emp, contract, company, refYear){
       const eYM = periodEnd.y   * 100 + periodEnd.m;
       return pYM >= sYM && pYM <= eYM;
 
-    } else if(basis === '입사일 기준'){
+    } else if(basis === ANNUAL_LEAVE_BASIS.HIRE_DATE){
       // 직전 주년일 ~ 당해 주년일 월 범위
       const annivPrev = new Date(refYear - 1, hire.getMonth(), hire.getDate());
       const annivCurr = new Date(refYear,     hire.getMonth(), hire.getDate());
@@ -231,9 +231,9 @@ function selectAlCompany(companyId, companyName){
 
   // 연차 산정 기준 표시
   const co    = allCompanies.find(c => c.id === companyId);
-  const basis = co?.annual_leave_basis || '회계년도 기준';
+  const basis = normalizeAnnualLeaveBasis(co?.annual_leave_basis) || ANNUAL_LEAVE_BASIS.FISCAL_YEAR;
   const basisEl = document.getElementById('al-basis-label');
-  if(basisEl) basisEl.textContent = `연차 산정 기준 : ${basis}`;
+  if(basisEl) basisEl.textContent = `연차 산정 기준 : ${ANNUAL_LEAVE_BASIS_LABEL[basis] || basis}`;
 
   renderAlTable();
 }
@@ -491,14 +491,14 @@ async function _loadAndRenderLedger(){
                    .sort((a,b) => (b.contract_start||'').localeCompare(a.contract_start||''))[0];
 
   const co    = allCompanies.find(c => c.id === (emp.company_id || _alCompanyId));
-  const basis = co?.annual_leave_basis || '회계년도 기준';
+  const basis = normalizeAnnualLeaveBasis(co?.annual_leave_basis) || ANNUAL_LEAVE_BASIS.FISCAL_YEAR;
   const hireDateStr = emp.hire_date || contract?.contract_start || '';
   const hire  = hireDateStr ? new Date(hireDateStr) : null;
   const today = new Date(); today.setHours(0,0,0,0);
 
   // ── 기준일 계산 ──
   let refDateStr = '';
-  if(basis === '입사일 기준' && hire && !isNaN(hire)){
+  if(basis === ANNUAL_LEAVE_BASIS.HIRE_DATE && hire && !isNaN(hire)){
     const annivThis = new Date(_ledgerYear, hire.getMonth(), hire.getDate());
     refDateStr = annivThis <= today
       ? _fmtDate(annivThis)
@@ -510,7 +510,7 @@ async function _loadAndRenderLedger(){
   // ── 연차 산정기간 계산 ──
   // 입사일 기준: 기준일 ~ 기준일+1년-1일 / 회계년도: YYYY-01-01 ~ YYYY-12-31
   let periodStart = '', periodEnd = '';
-  if(basis === '입사일 기준' && hire && !isNaN(hire)){
+  if(basis === ANNUAL_LEAVE_BASIS.HIRE_DATE && hire && !isNaN(hire)){
     const pStart = new Date(refDateStr);
     const pEnd   = new Date(pStart);
     pEnd.setFullYear(pEnd.getFullYear() + 1);
@@ -1130,7 +1130,7 @@ function _buildLeavePromoCompanyBody(emp, co, al, refYear, adminName, workerMeth
 
 /** 연차 사용 기한 계산 헬퍼 */
 function _calcLeaveEndDate(emp, al, refYear){
-  if(al.basis === '입사일 기준'){
+  if(al.basis === ANNUAL_LEAVE_BASIS.HIRE_DATE || al.basis === ANNUAL_LEAVE_BASIS.HIRE_DATE){
     const hire = new Date(emp.hire_date||'');
     if(!isNaN(hire)){
       return `${refYear}-${String(hire.getMonth()+1).padStart(2,'0')}-${String(hire.getDate()).padStart(2,'0')}`;
