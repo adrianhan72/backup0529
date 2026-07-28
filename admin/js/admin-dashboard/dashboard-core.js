@@ -1293,11 +1293,13 @@ function _renderContractsBanners(){
   (function(){
     const sec = document.getElementById('contracts-consent-banner');
     if(!sec) return;
+    const _consentSentEmpIdsDash = new Set(
+      (window._consentDispatchList || []).filter(r => r.dispatch_status === 'sent' || r.dispatch_status === 'completed').map(r => r.employee_id)
+    );
     const unsignedConsent = (allContracts || []).filter(c =>
       !c.is_draft && !c.is_voided_by_amend &&
-      ![CONTRACT_STATUS.VOIDED, CONTRACT_STATUS.CANCELED].includes(c.status) &&
-      CONTRACT_ACTIVE_STATUSES.includes(c.status) &&
-      !c.consent_file_name
+      ![CONTRACT_STATUS.VOIDED, CONTRACT_STATUS.CANCELED, CONTRACT_STATUS.TERMINATED].includes(c.status) &&
+      !_consentSentEmpIdsDash.has(c.employee_id)
     );
     const cnt2 = unsignedConsent.length;
     const inactive2 = cnt2 === 0;

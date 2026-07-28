@@ -19,6 +19,8 @@ function _alnShowApp(){
   if(screen)  screen.style.display = 'none';
   if(sidebar) sidebar.style.display = '';
   if(main)    main.style.display    = '';
+  // 메뉴명 즉시 동기화 (깜빡임 방지)
+  if(typeof _syncMenuLabels === 'function') _syncMenuLabels();
 }
 
 /* ── 비밀번호 눈 토글 (로그인 화면) ── */

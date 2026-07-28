@@ -51,11 +51,14 @@ function _renderContCoSummaryCards(){
   // ═══════════════════════════════════════════
   // CARD 4: 정보제공동의서 미발송
   // ═══════════════════════════════════════════
+  // 동의서 발송 이력이 있는 employee_id 집합 (_cnsGetUnsentContracts와 동일 기준)
+  const _consentSentEmpIds = new Set(
+    (window._consentDispatchList || []).filter(r => r.dispatch_status === 'sent' || r.dispatch_status === 'completed').map(r => r.employee_id)
+  );
   const unsignedConsent = allContracts.filter(c =>
     c.company_id === coId && !c.is_draft && !c.is_voided_by_amend &&
-    ![CONTRACT_STATUS.VOIDED, CONTRACT_STATUS.CANCELED].includes(c.status) &&
-    CONTRACT_ACTIVE_STATUSES.includes(c.status) &&
-    !c.consent_file_name);
+    ![CONTRACT_STATUS.VOIDED, CONTRACT_STATUS.CANCELED, CONTRACT_STATUS.TERMINATED].includes(c.status) &&
+    !_consentSentEmpIds.has(c.employee_id));
 
   // ═══════════════════════════════════════════
   // CARD 7: 수습근로자 관리 대상

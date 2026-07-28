@@ -387,10 +387,8 @@
     .wl-menu-badge{animation:wl-badge-pulse 1.8s ease-in-out infinite;}
     @keyframes wl-badge-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.75;transform:scale(1.12)}}
 
-    /* 좌측 메뉴 ?�일 배�? (.count-badge + menu-todo-badge) */
-    .menu-todo-badge{ margin-left:auto; }
-    .menu-item{display:flex;align-items:center;gap:10px;}
-    .menu-item .menu-todo-badge{margin-left:auto;}
+    /* 좌측 메뉴 할일 배지 (.count-badge + menu-todo-badge) */
+    .menu-todo-badge{ margin-left:auto; display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;background:#e94560;color:#fff;font-size:10px;font-weight:500;border-radius:9px;padding:0 5px;line-height:1;flex-shrink:0; }
 
     /* ?�═ ?�금?�??카드 ?�이?�웃 ?�═ */
     .wl-wrap{border-radius:0 0 12px 12px;}
