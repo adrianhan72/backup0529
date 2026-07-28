@@ -4,11 +4,57 @@
 const CNL_PAGE_SIZE = 20;  // 페이지당 20건
 
 // ── 상태 변수 ──
-let _cnlCompanyId   = '';   // '' = 전체 고객사
+let _cnlCompanyId   = '';   // '' = 선택 안 됨
 let _cnlCompanyName = '';
 let _cnlList        = [];   // 전체 로드된 원본 목록
 let _cnlPage        = 1;
 let _cnlLoaded      = false;
+
+// ── 고객사 칩 목록 렌더링 ──
+function renderCnlCompanyList(){
+  const q = (document.getElementById('cnl-company-search')?.value || '').toLowerCase().trim();
+  const container = document.getElementById('cnl-company-chips');
+  if(!container) return;
+
+  const companies = allCompanies.filter(c =>
+    isCompanyActive(c) && (!q || c.company_name.toLowerCase().includes(q))
+  ).sort((a,b) => (a.company_name||'').localeCompare(b.company_name||'', 'ko'));
+
+  if(!companies.length){
+    container.innerHTML = `<div style="color:#9ca3af;font-size:13px;padding:8px 0;">${q ? `"${q}" 검색 결과 없음` : '이용 중인 고객사가 없습니다'}</div>`;
+    return;
+  }
+
+  container.innerHTML = companies.map(c => {
+    const isSelected = c.id === _cnlCompanyId;
+    return `<button onclick="selectCnlCompany('${c.id}','${c.company_name.replace(/'/g,"\\'")}')"
+      class="co-chip${isSelected?' selected':''}">
+      <i class="fas fa-building" style="font-size:11px;"></i>
+      ${c.company_name}
+    </button>`;
+  }).join('');
+}
+
+function selectCnlCompany(companyId, companyName){
+  _cnlCompanyId = companyId;
+  _cnlCompanyName = companyName;
+  currentGlobalCompanyId = companyId;
+  currentGlobalCompanyName = companyName;
+  document.getElementById('cnl-selected-company-label').innerHTML =
+    `<i class="fas fa-bell" style="margin-right:6px;"></i>${companyName} 알림 이력`;
+  document.getElementById('cnl-company-select-card').style.display = 'none';
+  document.getElementById('cnl-list-section').style.display = 'block';
+  _cnlPage = 1;
+  _cnlLoaded = false;
+  cnlLoadData();
+}
+
+function clearCnlCompanySelect(){
+  _cnlCompanyId = '';
+  _cnlCompanyName = '';
+  document.getElementById('cnl-company-select-card').style.display = '';
+  document.getElementById('cnl-list-section').style.display = 'none';
+}
 
 // ── 기간 검증: 최대 3개월 제한 (조회 버튼 클릭 시) ──
 function _cnlDoSearch(){
@@ -154,17 +200,19 @@ function _cnlShowLoading(show){
   }
 }
 
-/** DB에서 알림 이력 전체 로드 (최대 1000건, 최근순) */
+/** DB에서 알림 이력 로드 (선택된 고객사 기준) */
 async function cnlLoadData(){
+  if(!_cnlCompanyId) return;
   _cnlShowLoading(true);
   try {
     const res = await api(`../tables/company_notices?limit=1000&sort=sent_at`);
-    _cnlList   = (res.data || []).sort((a,b) => {
-      // 기준일: scheduled 상태면 gn_scheduled_at, 아니면 sent_at
-      const tA = (a.gn_status==='scheduled' ? a.gn_scheduled_at : null) || a.sent_at || 0;
-      const tB = (b.gn_status==='scheduled' ? b.gn_scheduled_at : null) || b.sent_at || 0;
-      return new Date(tB) - new Date(tA);
-    });
+    _cnlList   = (res.data || [])
+      .filter(r => r.company_id === _cnlCompanyId)
+      .sort((a,b) => {
+        const tA = (a.gn_status==='scheduled' ? a.gn_scheduled_at : null) || a.sent_at || 0;
+        const tB = (b.gn_status==='scheduled' ? b.gn_scheduled_at : null) || b.sent_at || 0;
+        return new Date(tB) - new Date(tA);
+      });
     _cnlLoaded = true;
   } catch(e) {
     console.error('[cnlLoadData 오류]', e);
@@ -178,7 +226,9 @@ async function cnlLoadData(){
 /** 새로고침 (topbar 버튼에서 호출) */
 async function cnlReload(){
   _cnlLoaded = false;
-  await cnlLoadData();
+  if(_cnlCompanyId){
+    await cnlLoadData();
+  }
 }
 
 /** 예약 현황 카드 렌더 (gn_status === 'scheduled' 건만) */

@@ -233,6 +233,7 @@ const DISPATCH_STATUS_LEGACY_MAP = {
 // ═══════════════════════════════════════════
 const PAY_PERIOD_MONTH = Object.freeze({
   PREV_MONTH:    'prev_month',
+  
   CURRENT_MONTH: 'current_month',
 });
 
@@ -632,6 +633,36 @@ const PAGE_LABELS = Object.freeze({
   'attendance-ledger':    '근태 관리대장',
   'system-settings':      '시스템 설정',
 });
+
+/** 사이드바 메뉴 정의 (PAGE_LABELS의 단일 진실 공급원 사용) */
+const SIDEBAR_MENU = Object.freeze([
+  { section: '대시보드' },
+  { page: 'dashboard',              icon: 'fa-th-large' },
+  { section: '고객사 관리' },
+  { page: 'companies',              icon: 'fa-building',      badge: 'badge-companies' },
+  { page: 'company-notice-log',     icon: 'fa-bell' },
+  { page: 'general-notice',         icon: 'fa-bullhorn' },
+  { section: '직원 관리' },
+  { page: 'contracts',              icon: 'fa-file-signature', badge: 'badge-contracts' },
+  { page: 'contract-dispatch',      icon: 'fa-paper-plane',    badge: 'badge-contract-dispatch' },
+  { page: 'consent-dispatch',       icon: 'fa-file-signature',  badge: 'badge-consent-dispatch' },
+  { page: 'contract-expiry-notice', icon: 'fa-bell',           badge: 'badge-contract-expiry-notice' },
+  { page: 'regular-conversion',     icon: 'fa-user-check',     badge: 'badge-regular-conversion' },
+  { page: 'probation-mgmt',         icon: 'fa-user-clock',     badge: 'badge-probation-mgmt' },
+  { section: '급여 관리' },
+  { page: 'wage-ledger',            icon: 'fa-table' },
+  { page: 'payroll-input',          icon: 'fa-calculator',     badge: 'badge-payroll-input' },
+  { page: 'payrolls',               icon: 'fa-list-alt' },
+  { page: 'payslip-send',           icon: 'fa-comment-dots',   badge: 'badge-payslip-send', isKakao: true },
+  { page: 'severance',              icon: 'fa-hand-holding-usd', badge: 'badge-severance' },
+  { page: 'labor-status',           icon: 'fa-chart-bar' },
+  { section: '연차 관리' },
+  { page: 'annual-leave',           icon: 'fa-umbrella-beach' },
+  { page: 'leave-promotion',        icon: 'fa-bullhorn' },
+  { section: '시스템' },
+  { page: 'standards',              icon: 'fa-percent' },
+  { page: 'admin-accounts',         icon: 'fa-user-shield' },
+]);
 
 /** 성별 표시 헬퍼 (emp 객체 또는 gender 문자열) */
 function genderLabel(empOrGender) {
