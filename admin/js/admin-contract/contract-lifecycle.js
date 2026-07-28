@@ -1817,6 +1817,21 @@ async function confirmContractRenew(){
 
   closeModal('contract-modal');
   await loadContracts(); await loadEmployees(); renderContracts(); renderDashboard();
+
+  // ── 갱신 계약서 PDF 직원 발송 확인 ──
+  if(newId){
+    const _renewedEmpName = _renewEmp?.name || '';
+    const confirmed = await _showConfirm({
+      message: `갱신 계약이 등록되었습니다.\n\n${_renewedEmpName ? _renewedEmpName+'님에게 ' : ''}갱신 계약서 PDF 다운로드 주소를 발송하시겠습니까?`,
+      okText: '예',
+      cancelText: '아니오 (나중에 발송)',
+      okClass: 'btn-primary'
+    });
+    if(confirmed){
+      openContractPrintModal(newId);
+    }
+  }
+
   const label = newStatus === CONTRACT_STATUS.PENDING ? '계약예정 (시작일 미도래)' : '계약유효 (활성)';
   toast(`연장 처리 완료. 전 계약: 해지 / 새 계약: ${label}`);
 }
@@ -4065,8 +4080,8 @@ async function saveContract(){
     }
   }
 
-  // ── 신규·재계약: 제3자 정보제공 동의서 발송 여부 확인 ──
-  if(!_ctIsEdit && _savedContractId && _savedContractId !== editId.contract){
+  // ── 신규·재계약: 제3자 정보제공 동의서 발송 여부 확인 (갱신 연장 제외) ──
+  if(!_ctIsEdit && _savedContractId && _savedContractId !== editId.contract && !body.renewed_from_id){
     const _consentEmp = allEmployees.find(e => e.id === empId);
     const _consentEmpName = _consentEmp?.name || '';
     const _consentLabel = _wasRecontract ? '재계약' : '신규 계약';
