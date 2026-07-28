@@ -319,13 +319,13 @@ function renderContracts(){
 
   const q=(document.getElementById('cont-search')?.value||'').toLowerCase();
   const filterEmpCat=(document.getElementById('cont-filter-empcat')?.value||'');
-  const filterStatus=Array.from(document.querySelectorAll('.cont-filter-status-cb:checked')).map(cb=>cb.value).filter(v=>v!=='전체');
+  const filterStatus=Array.from(document.querySelectorAll('.cont-filter-status-cb:checked')).map(cb=>cb.value).filter(v=>v!=='all');
   const filterDocsOnly=document.getElementById('cont-filter-docs-incomplete')?.checked||false;
   const filterById=(document.getElementById('cont-filter-id')?.value||'').trim();
   const today=new Date().toISOString().slice(0,10);
 
   // 알림 카드에서 관리되는 상태는 메인 테이블 기본 제외 (서류미비는 유효 계약이므로 메인 테이블에 포함)
-  const ALERT_ONLY_LABELS = new Set(['임시저장',CONTRACT_STATUS_LABEL[CONTRACT_STATUS.RENEWAL_PENDING]]);
+  const ALERT_ONLY_KEYS = new Set(['draft', CONTRACT_STATUS.RENEWAL_PENDING]);
 
   let f=allContracts.filter(c=>{
     if(c.company_id!==currentContCompanyId) return false;
@@ -354,13 +354,13 @@ function renderContracts(){
         if(ctCat !== filterEmpCat && ctCat !== CONTRACT_TYPE_LABEL[filterEmpCat] && CONTRACT_TYPE_LABEL[ctCat] !== filterEmpCat) return false;
       }
     }
-    // 계약상태 필터 (다중 선택 — 하나라도 일치하면 통과)
-    const {label, docsIncomplete} = calcContractStatusDisplay(c,today);
+    // 계약상태 필터 (다중 선택 — 하나라도 일치하면 통과, filterKey 기준)
+    const {label, filterKey, docsIncomplete} = calcContractStatusDisplay(c,today);
     if(filterStatus.length > 0){
-      if(!filterStatus.includes(label)) return false;
+      if(!filterStatus.includes(filterKey)) return false;
     } else {
       // 필터 없음(전체): 알림 카드 전용 상태는 메인 테이블에서 제외
-      if(ALERT_ONLY_LABELS.has(label)) return false;
+      if(ALERT_ONLY_KEYS.has(filterKey)) return false;
     }
     // 서류미비만 보기 필터 (status가 서류미비이거나 실제 파일이 누락된 경우)
     if(filterDocsOnly && c.status !== CONTRACT_STATUS.DOCS_INCOMPLETE && !docsIncomplete) return false;
@@ -471,19 +471,19 @@ function filterContracts(){pages.cont=1;renderContracts()}
 // 개별 상태 체크박스 변경 시 전체 연동
 function _onStatusFilterChange(){
   const allCbs = document.querySelectorAll('.cont-filter-status-cb');
-  const allChecked = Array.from(allCbs).filter(c=>c.value!=='전체').every(c=>c.checked);
-  const allCb = Array.from(allCbs).find(c=>c.value==='전체');
+  const allChecked = Array.from(allCbs).filter(c=>c.value!=='all').every(c=>c.checked);
+  const allCb = Array.from(allCbs).find(c=>c.value==='all');
   if(allCb) allCb.checked = allChecked;
   filterContracts();
 }
 
-// 상태 필터 '전체' 토글 — 전체 선택 시 모든 항목 체크, 해제 시 유효만 선택
+// 상태 필터 '전체' 토글 — 전체 선택 시 모든 항목 체크, 해제 시 활성(active)만 선택
 function _toggleAllStatus(cb){
   const allCbs = document.querySelectorAll('.cont-filter-status-cb');
   if(cb.checked){
     allCbs.forEach(c=>{c.checked=true;});
   } else {
-    allCbs.forEach(c=>{c.checked=c.value==='유효';});
+    allCbs.forEach(c=>{c.checked=c.value===CONTRACT_STATUS.ACTIVE;});
   }
   filterContracts();
 }
@@ -1683,55 +1683,58 @@ function calcContractStatusDisplay(c, today){
   // ── 서류미비 여부 (계약 상태와 무관하게 판별) ──
   const docsIncomplete = !!(c && (!c.signed_file_data || !c.consent_file_data));
   // 임시저장 상태 최우선 처리 (임시저장은 서류미비와 무관)
-  if(c.is_draft) return {badge:'badge-yellow', label:'임시저장', docsIncomplete: false};
+  if(c.is_draft) return {badge:'badge-yellow', label:'임시저장', filterKey: 'draft', docsIncomplete: false};
   // 수정재발행으로 파기된 계약 (is_voided_by_amend 플래그 우선)
-  if(c.is_voided_by_amend) return {badge:'badge-slate', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.VOIDED], docsIncomplete};
+  if(c.is_voided_by_amend) return {badge:'badge-slate', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.VOIDED], filterKey: CONTRACT_STATUS.VOIDED, docsIncomplete};
   const start = c.contract_start || '';
-  // 명시적 상태 우선 — c.status(영문 코드)를 CONTRACT_STATUS 상수와 직접 비교
-  if(c.status === CONTRACT_STATUS.RENEWAL_PENDING)
-    return {badge:'badge-amber', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.RENEWAL_PENDING], docsIncomplete};
-  if(c.status === CONTRACT_STATUS.PENDING)
-    return {badge:'badge-indigo', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.PENDING], docsIncomplete};
-  if(c.status === CONTRACT_STATUS.TERMINATE_PENDING){
+  // 레거시 한글 상태값 정규화 (C2: 만료예정·종료예정 → ACTIVE 처리)
+  const _normStatus = (function(){
+    const _s = c.status || '';
+    if(_s === '만료예정' || _s === '종료예정') return CONTRACT_STATUS.ACTIVE;
+    return _s;
+  })();
+  // 명시적 상태 우선 — 정규화된 _normStatus 기준으로 비교
+  if(_normStatus === CONTRACT_STATUS.RENEWAL_PENDING)
+    return {badge:'badge-amber', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.RENEWAL_PENDING], filterKey: CONTRACT_STATUS.RENEWAL_PENDING, docsIncomplete};
+  if(_normStatus === CONTRACT_STATUS.PENDING)
+    return {badge:'badge-indigo', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.PENDING], filterKey: CONTRACT_STATUS.PENDING, docsIncomplete};
+  if(_normStatus === CONTRACT_STATUS.TERMINATE_PENDING){
     // terminate_date가 오늘 이하이면 이미 해지된 것으로 표시
     if(c.terminate_date && c.terminate_date <= today){
-      return {badge:'badge-red', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.TERMINATED], docsIncomplete};
+      return {badge:'badge-red', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.TERMINATED], filterKey: CONTRACT_STATUS.TERMINATED, docsIncomplete};
     }
     // 해지예정은 여전히 유효한 계약 — 메인 목록에서는 '유효'로 표시 (알림 카드에서 별도 관리)
-    return {badge:'badge-green', label:'유효', docsIncomplete, isTerminatePending: true};
+    return {badge:'badge-green', label:'유효', filterKey: CONTRACT_STATUS.ACTIVE, docsIncomplete, isTerminatePending: true};
   }
-  if(c.status === CONTRACT_STATUS.VOIDED)
-    return {badge:'badge-slate', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.VOIDED], docsIncomplete};
-  if(c.status === CONTRACT_STATUS.RENEWED)
-    return {badge:'badge-gray', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.EXPIRED], docsIncomplete}; // 갱신으로 인한 계약 종료
-  if(c.status === CONTRACT_STATUS.EXPIRED)
-    return {badge:'badge-gray', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.EXPIRED], docsIncomplete};
-  if(c.status === CONTRACT_STATUS.TERMINATED)
-    return {badge:'badge-red', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.TERMINATED], docsIncomplete};
-  // 만료예정·종료예정은 레거시 한글 상태값 → 계약유효로 표시 (CONTRACT_STATUS에 없는 과거 데이터)
-  if(c.status === '만료예정' || c.status === '종료예정')
-    return {badge:'badge-green', label:'유효', docsIncomplete};
+  if(_normStatus === CONTRACT_STATUS.VOIDED)
+    return {badge:'badge-slate', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.VOIDED], filterKey: CONTRACT_STATUS.VOIDED, docsIncomplete};
+  if(_normStatus === CONTRACT_STATUS.RENEWED)
+    return {badge:'badge-gray', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.EXPIRED], filterKey: CONTRACT_STATUS.EXPIRED, docsIncomplete}; // 갱신으로 인한 계약 종료
+  if(_normStatus === CONTRACT_STATUS.EXPIRED)
+    return {badge:'badge-gray', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.EXPIRED], filterKey: CONTRACT_STATUS.EXPIRED, docsIncomplete};
+  if(_normStatus === CONTRACT_STATUS.TERMINATED)
+    return {badge:'badge-red', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.TERMINATED], filterKey: CONTRACT_STATUS.TERMINATED, docsIncomplete};
   // 서류미비는 독립된 상태가 아님 — 유효/만료/해지 등 실제 상태를 유지하고 docsIncomplete 플래그로만 관리
-  if(c.status === CONTRACT_STATUS.DOCS_INCOMPLETE){
+  if(_normStatus === CONTRACT_STATUS.DOCS_INCOMPLETE){
     // DB에 남아있는 레거시 값 → 유효로 폴백 (실제 상태는 DB 정리 완료)
-    if(start && start > today) return {badge:'badge-indigo', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.PENDING], docsIncomplete:true};
-    return {badge:'badge-green', label:'유효', docsIncomplete:true};
+    if(start && start > today) return {badge:'badge-indigo', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.PENDING], filterKey: CONTRACT_STATUS.PENDING, docsIncomplete:true};
+    return {badge:'badge-green', label:'유효', filterKey: CONTRACT_STATUS.ACTIVE, docsIncomplete:true};
   }
   // 활성/유효 상태 — 서류와 무관하게 유효 계약으로 처리
-  if(CONTRACT_ACTIVE_STATUSES.includes(c.status)){
-    if(start && start > today) return {badge:'badge-amber', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.RENEWAL_PENDING], docsIncomplete};
+  if(CONTRACT_ACTIVE_STATUSES.includes(_normStatus)){
+    if(start && start > today) return {badge:'badge-amber', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.RENEWAL_PENDING], filterKey: CONTRACT_STATUS.RENEWAL_PENDING, docsIncomplete};
     // 계약직/일용직: 유효 종료일(terminate_date 우선, 없으면 contract_end)이 지났으면 만료 처리
     const ct = (c.contract_type || '').toLowerCase();
     const isFixedTerm = ct === CONTRACT_TYPE.FIXED || ct === CONTRACT_TYPE.FIXED_PROBATION || ct === CONTRACT_TYPE.DAILY;
     const effectiveEnd = c.terminate_date || c.contract_end || '';
     if(isFixedTerm && effectiveEnd && effectiveEnd < today){
-      return {badge:'badge-gray', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.EXPIRED], docsIncomplete};
+      return {badge:'badge-gray', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.EXPIRED], filterKey: CONTRACT_STATUS.EXPIRED, docsIncomplete};
     }
-    return {badge:'badge-green', label:'유효', docsIncomplete};
+    return {badge:'badge-green', label:'유효', filterKey: CONTRACT_STATUS.ACTIVE, docsIncomplete};
   }
   // 알 수 없는 상태 → LABEL 맵으로 폴백, 없으면 원본 값, 최종 폴백은 '활성'
-  const fallbackLabel = CONTRACT_STATUS_LABEL[c.status] || c.status || CONTRACT_STATUS_LABEL[CONTRACT_STATUS.ACTIVE];
-  return {badge:'badge-gray', label: fallbackLabel, docsIncomplete};
+  const fallbackLabel = CONTRACT_STATUS_LABEL[_normStatus] || _normStatus || CONTRACT_STATUS_LABEL[CONTRACT_STATUS.ACTIVE];
+  return {badge:'badge-gray', label: fallbackLabel, filterKey: _normStatus || CONTRACT_STATUS.ACTIVE, docsIncomplete};
 }
 
 // ─── 조회 모드로 모달 열기 ───
