@@ -3004,7 +3004,10 @@ function _ctValidate(){
         else {
           // 휴대폰번호 중복 검사 (유효·예정 계약 기준)
           const _phoneDigits = _phoneVal.replace(/[^0-9]/g, '');
-          const _phoneUniq = _validatePhoneUniqueness(_phoneDigits, coId, null);
+          const _newStart = document.getElementById('ct-start')?.value || '';
+          const _newName = document.getElementById('ct-em-name')?.value?.trim() || '';
+          const _newIdFront = document.getElementById('ct-em-id')?.value?.trim() || '';
+          const _phoneUniq = _validatePhoneUniqueness(_phoneDigits, coId, null, _newStart, _newName, _newIdFront);
           if(!_phoneUniq.ok) _ctMarkError('ct-em-phone', _phoneUniq.msg, errors);
         }
       }
@@ -3111,7 +3114,10 @@ function _ctValidate(){
           const _editEmpId = editId.contract
             ? (allContracts.find(c => c.id === editId.contract)?.employee_id || '')
             : '';
-          const _phoneUniqE = _validatePhoneUniqueness(_phoneDigitsE, coId, _editEmpId);
+          const _newStartE = document.getElementById('ct-start')?.value || '';
+          const _newNameE = document.getElementById('ct-edit-em-name')?.value?.trim() || '';
+          const _newIdFrontE = document.getElementById('ct-edit-em-id')?.value?.trim() || '';
+          const _phoneUniqE = _validatePhoneUniqueness(_phoneDigitsE, coId, _editEmpId, _newStartE, _newNameE, _newIdFrontE);
           if(!_phoneUniqE.ok) _ctMarkError('ct-edit-em-phone', _phoneUniqE.msg, errors);
         }
       }

@@ -1397,20 +1397,30 @@ function _validateEmpNoUniqueness(empNo, companyId, selfEmpId, newContractStart,
 }
 
 /**
- * 휴대폰번호 중복 검사
- * 현재 유효상태(active, docs_incomplete)이거나 예정(pending, renewal_pending,
- * terminate_pending) 상태인 근로계약의 휴대폰번호 중 중복이 있는지 확인
+ * 휴대폰번호 중복 검사 (동일 고객사 내 유효 계약 + 대표자·임원·특수관계인 기준)
+ * - 새 계약 시작일이 기존 계약 종료일/해지일/해지예정일 이후면 허용 (퇴사자 번호 재사용)
+ * - 갱신 시 동일 직원의 전화번호 유지 허용 (selfEmpId로 본인 제외)
+ * - 대표자·임원·특수관계인 본인의 근로계약은 성명+주민번호 앞자리 일치 시 허용
  *
- * @param {string} phoneDigits - 검사할 휴대폰번호 (숫자만, 11자리)
- * @param {string} companyId   - 현재 고객사 ID
- * @param {string|null} selfEmpId - 수정 모드 시 현재 직원 ID (자기 자신 제외)
+ * @param {string} phoneDigits  - 검사할 휴대폰번호 (숫자만, 11자리)
+ * @param {string} companyId    - 현재 고객사 ID
+ * @param {string|null} selfEmpId  - 수정 모드 시 현재 직원 ID (자기 자신 제외)
+ * @param {string|null} newStart   - 새 계약 시작일 (YYYY-MM-DD)
+ * @param {string|null} newName    - 새 직원 성명 (본인 확인용)
+ * @param {string|null} newIdFront - 새 직원 주민번호 앞7자리 (본인 확인용)
  * @returns {{ ok: boolean, msg: string }}
  */
-function _validatePhoneUniqueness(phoneDigits, companyId, selfEmpId) {
+function _validatePhoneUniqueness(phoneDigits, companyId, selfEmpId, newStart, newName, newIdFront) {
   if(!phoneDigits || !companyId) return { ok: true, msg: '' };
-  if(phoneDigits.length < 10) return { ok: true, msg: '' }; // 불완전한 번호는 통과
+  if(phoneDigits.length < 10) return { ok: true, msg: '' };
 
-  // 유효·예정 상태 정의
+  // 본인 확인 헬퍼: 성명 + 주민번호 앞자리 모두 일치하면 동일인
+  const isSamePerson = (name, idNumber) => {
+    if(!newName || !newIdFront) return false;
+    const targetIdFront = (idNumber || '').replace(/[^0-9]/g, '').slice(0, 7);
+    return name === newName && targetIdFront === newIdFront.replace(/[^0-9]/g, '');
+  };
+
   const CHECK_STATUSES = [
     CONTRACT_STATUS.ACTIVE,
     CONTRACT_STATUS.DOCS_INCOMPLETE,
@@ -1419,26 +1429,83 @@ function _validatePhoneUniqueness(phoneDigits, companyId, selfEmpId) {
     CONTRACT_STATUS.TERMINATE_PENDING,
   ];
 
-  // 1. 같은 전화번호를 가진 직원 찾기 (자기 자신 제외)
+  // 헬퍼: 전화번호 숫자만 추출하여 비교
+  const phoneMatch = (target) => target && target.replace(/[^0-9]/g, '') === phoneDigits;
+
+  // ── 1. 고객사 대표전화 확인 ──
+  const co = allCompanies.find(c => c.id === companyId);
+  if(co && phoneMatch(co.phone)) {
+    // 대표자 정보와 본인 확인
+    let blocked = true;
+    if(co.representatives) {
+      let reps = [];
+      try { reps = typeof co.representatives === 'string' ? JSON.parse(co.representatives) : (co.representatives || []); } catch(e) {}
+      for(const rep of reps) {
+        if(rep.phone && phoneMatch(rep.phone) && isSamePerson(rep.name, rep.id_number)) {
+          blocked = false; break; // 본인 → 허용
+        }
+      }
+    }
+    if(blocked) return { ok: false, msg: `이미 이 휴대폰번호로 등록된 고객사 대표전화입니다.` };
+  }
+  // 대표자 정보(복수) 내 전화번호 확인
+  if(co && co.representatives) {
+    let reps = [];
+    try { reps = typeof co.representatives === 'string' ? JSON.parse(co.representatives) : (co.representatives || []); } catch(e) {}
+    for(const rep of reps) {
+      if(rep.phone && phoneMatch(rep.phone)) {
+        if(isSamePerson(rep.name, rep.id_number)) continue; // 본인 → 허용
+        return { ok: false, msg: `이미 이 휴대폰번호로 등록된 대표자(${rep.name||''})의 전화번호입니다.` };
+      }
+    }
+  }
+
+  // ── 2. 등기임원 전화번호 확인 (본인 제외) ──
+  if(typeof allExecutives !== 'undefined' && allExecutives) {
+    const execMatch = allExecutives.some(e =>
+      e.company_id === companyId &&
+      phoneMatch(e.phone) &&
+      !isSamePerson(e.name, e.id_number)
+    );
+    if(execMatch) {
+      return { ok: false, msg: `이미 이 휴대폰번호로 등록된 등기임원의 전화번호입니다.` };
+    }
+  }
+
+  // ── 3. 특수관계인 전화번호 확인 (본인 제외) ──
+  if(typeof allRelatedParties !== 'undefined' && allRelatedParties) {
+    const relMatch = allRelatedParties.some(r =>
+      r.company_id === companyId &&
+      phoneMatch(r.phone) &&
+      !isSamePerson(r.name, r.id_number)
+    );
+    if(relMatch) {
+      return { ok: false, msg: `이미 이 휴대폰번호로 등록된 특수관계인의 전화번호입니다.` };
+    }
+  }
+
+  // ── 4. 동일 고객사 직원 중 유효·예정 계약 보유자 확인 ──
   const samePhoneEmps = allEmployees.filter(e =>
+    e.company_id === companyId &&
     e.id !== selfEmpId &&
-    e.phone &&
-    e.phone.replace(/[^0-9]/g, '') === phoneDigits
+    phoneMatch(e.phone)
   );
 
   if(!samePhoneEmps.length) return { ok: true, msg: '' };
 
-  // 2. 그 직원들 중 유효·예정 상태의 계약이 있는지 확인
   for(const emp of samePhoneEmps) {
-    const hasActiveContract = allContracts.some(c =>
+    const conflictingContracts = allContracts.filter(c =>
       c.employee_id === emp.id &&
+      c.company_id === companyId &&
       CHECK_STATUSES.includes(c.status)
     );
-    if(hasActiveContract) {
-      return {
-        ok: false,
-        msg: `이미 이 휴대폰번호로 등록된 계약이 있습니다.`
-      };
+
+    for(const ct of conflictingContracts) {
+      if(newStart) {
+        const oldEnd = ct.contract_end || ct.terminate_date || '';
+        if(oldEnd && newStart > oldEnd) continue;
+      }
+      return { ok: false, msg: `이미 이 휴대폰번호로 등록된 계약이 있습니다.` };
     }
   }
 
