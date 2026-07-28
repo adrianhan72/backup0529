@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS companies (
   contract_end_date TEXT, --  -- 자문계약 종료일
   representatives TEXT, --  -- 대표자 정보 (JSON, 복수 가능)
   sick_leave_pay_rate REAL DEFAULT 0, --  -- 병가 유급비율 (%, 0=무급)
-  proration_method TEXT DEFAULT '30day_fixed', --  -- 일할계산 방식
+  proration_method TEXT DEFAULT '30day_fixed' --  -- 일할계산 방식
 );
 
 -- contracts  -- 근로계약
@@ -135,10 +135,13 @@ CREATE TABLE IF NOT EXISTS contracts (
   childcare_dependents INTEGER, --  -- 보육 부양가족 수
   childcare_pay_type TEXT, --  -- 보육수당 지급유형
   contract_etc_allowance REAL, --  -- 계약 기타수당
-  other_allowance REAL DEFAULT 0, --  -- 기타 수당
+  etc_allowance REAL, --  -- 기타 수당
+  etc_allowance_memo TEXT, --  -- 기타 수당 메모
   draft_saved_at INTEGER, --  -- 임시저장 일시
   edit_source_id TEXT, --  -- 수정 원본 ID
   employment_category TEXT, --  -- 고용형태
+  transport_type TEXT, --  -- 교통 유형
+  transportation_pay_type TEXT, --  -- 교통비 지급유형
   pay_period_month TEXT, --  -- 급여 산정기준월
   pay_period_day INTEGER, --  -- 급여 산정기준일
   terminate_date TEXT, --  -- 해지일
@@ -245,8 +248,8 @@ CREATE TABLE IF NOT EXISTS annual_leave_ledger (
   company_id TEXT, --  -- 회사 ID
   year INTEGER, --  -- 기준연도
   ref_date TEXT, --  -- 기준일자
-  period_start TEXT, --  -- 기간 시작일
-  period_end TEXT, --  -- 기간 종료일
+  period_start TEXT, --  -- 적용 시작일
+  period_end TEXT, --  -- 적용 종료일
   total_days REAL, --  -- 연간 총 연차일수
   carryover_days REAL DEFAULT 0, --  -- 이월 일수
   month_data TEXT, --  -- 월별 연차 사용 데이터 (JSON)
@@ -369,6 +372,7 @@ CREATE TABLE IF NOT EXISTS payrolls (
   transport_type TEXT, --  -- 교통 유형
   transport_pay_type TEXT, --  -- 교통비 지급유형
   transportation_allowance REAL, --  -- 교통비
+  transportation_pay_type TEXT, --  -- 교통비 지급유형
   self_driving_allowance REAL, --  -- 자가운전보조금
   self_driving_pay_type TEXT, --  -- 자가운전 지급유형
   meal_allowance REAL, --  -- 식대
@@ -395,8 +399,8 @@ CREATE TABLE IF NOT EXISTS payrolls (
   performance_pay REAL, --  -- 성과급
   actual_expense_pay REAL, --  -- 실비변상
   communication_pay REAL, --  -- 통신비
-  other_allowance REAL DEFAULT 0, --  -- 기타 수당
-  other_allowance_memo TEXT, --  -- 기타 수당 메모
+  etc_allowance REAL, --  -- 기타 수당
+  etc_allowance_memo TEXT, --  -- 기타 수당 메모
   year_end_tax_adjust REAL, --  -- 연말정산
   year_end_tax_adjust_memo TEXT, --  -- 연말정산 메모
   health_insurance_adjust REAL, --  -- 건강보험 정산
