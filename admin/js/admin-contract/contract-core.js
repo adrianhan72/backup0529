@@ -715,6 +715,11 @@ function openContractModal(id=null, preCompanyId=null){
   // ct-edit-emp-info 섹션의 show/hide로 자동 제어됨
 
   if(isNew){
+    // 신규: 임시저장 버튼 표시, 등록 버튼 텍스트 변경
+    const _draftBtn = document.getElementById('ct-btn-draft');
+    if(_draftBtn) _draftBtn.style.display = '';
+    const _regBtn = document.getElementById('ct-btn-register');
+    if(_regBtn) _regBtn.innerHTML = '<i class="fas fa-file-contract"></i> 신규 계약 등록';
     // 신규: 첨부서류 파일 전역변수 초기화 (이전 조회 계약의 파일 잔재 방지)
     if(typeof _resetUploadState === 'function') _resetUploadState();
     // 신규: 고객사 프리셋 지원, 신규 직원 입력 섹션 표시
@@ -737,6 +742,13 @@ function openContractModal(id=null, preCompanyId=null){
     toggleCtEndDate();
     document.getElementById('ct-title').textContent = '근로계약서 추가';
   } else {
+    // 수정/갱신/재계약 모드: 임시저장 버튼 숨김 (신규계약 전용)
+    const _draftBtnE = document.getElementById('ct-btn-draft');
+    if(_draftBtnE) _draftBtnE.style.display = 'none';
+    const _delDraftBtnE = document.getElementById('ct-btn-delete-draft');
+    if(_delDraftBtnE) _delDraftBtnE.style.display = 'none';
+    const _regBtnE = document.getElementById('ct-btn-register');
+    if(_regBtnE) _regBtnE.innerHTML = '<i class="fas fa-save"></i> 수정 저장';
     // 수정: 기존 직원 정보 표시, 신규 입력 섹션 숨김 (draft도 employee_id 있으므로 정상 동작)
     document.getElementById('ct-new-emp-section').style.display = 'none';
     document.getElementById('ct-edit-emp-info').style.display = 'block';
@@ -1019,6 +1031,20 @@ function openContractModal(id=null, preCompanyId=null){
     el.addEventListener('change', _ctClearFieldError, { once: false });
   });
 }
+
+// ── 신규·재계약 시 추천 사원번호 (같은 회사 내 최대 번호 + 1) ──
+function _suggestEmpNo(companyId){
+  const _empnoEl = document.getElementById('ct-em-empno');
+  if(!_empnoEl || !companyId) return;
+  const _coEmps = allEmployees.filter(e => e.company_id === companyId && e.employee_number);
+  let _maxNo = 0;
+  _coEmps.forEach(e => {
+    const _num = parseInt(e.employee_number, 10);
+    if(!isNaN(_num) && _num > _maxNo) _maxNo = _num;
+  });
+  _empnoEl.placeholder = `추천: ${String(_maxNo + 1).padStart(4, '0')}`;
+}
+
 function _ctClearFieldError(e){
   const fg = e.target.closest('.form-group');
   if(fg && fg.classList.contains('ct-field-error')){
@@ -1643,6 +1669,20 @@ function checkCtEditEmpNoUniqueness(){
   const companyId = currentContCompanyId || document.getElementById('ct-company')?.value || '';
   if(!companyId){ alertEl.className = 'va-hint'; return; }
 
+  // ── 재계약 모드: 기존 사원번호 재사용 차단 (전용 메시지) ──
+  if(typeof _recontractEmpId !== 'undefined' && _recontractEmpId){
+    const _reconEmp = allEmployees.find(e => e.id === _recontractEmpId);
+    if(_reconEmp && _reconEmp.employee_number === empNo){
+      _showEmpNoAlert(alertEl, `재계약 시에는 새 사원번호를 발급받아야 합니다. 기존 번호 "${empNo}"은(는) 사용할 수 없습니다.`, 'error');
+      return;
+    }
+    // 다른 번호: 자기 자신 제외하고 중복 검사
+    const _result = _validateEmpNoUniqueness(empNo, companyId, _recontractEmpId, null, null);
+    if(!_result.ok){ _showEmpNoAlert(alertEl, _result.msg, 'error'); return; }
+    _showEmpNoAlert(alertEl, `사용 가능한 사원번호입니다.`, 'ok');
+    return;
+  }
+
   // 수정 모드: 현재 계약의 employee_id를 selfEmpId로 넘겨 자기 자신 제외
   const c = editId.contract ? allContracts.find(x => x.id === editId.contract) : null;
   const selfEmpId = c ? c.employee_id : null;
@@ -2211,8 +2251,34 @@ async function confirmTerminateDateChange(){
   const cid = editId?.contract;
   if(!cid) return;
 
+  const c = allContracts.find(x => x.id === cid);
   const today = new Date().toISOString().slice(0,10);
   const newStatus = newDate <= today ? CONTRACT_STATUS.TERMINATED : CONTRACT_STATUS.TERMINATE_PENDING;
+
+  // ── 갱신예정 페어 계약 확인 및 연동 ──
+  const pairContract = findPairContract(c);
+  let pairUpdated = false;
+  if(pairContract && (pairContract.status === CONTRACT_STATUS.RENEWAL_PENDING || pairContract.status === CONTRACT_STATUS.PENDING)) {
+    // 해지일 다음 날을 갱신 계약 시작일로 조정
+    const nextDay = new Date(newDate);
+    nextDay.setDate(nextDay.getDate() + 1);
+    const newPairStart = nextDay.toISOString().slice(0, 10);
+
+    // 페어 계약 있으면 메시지 창으로 안내 후 함께 변경 (취소 불가)
+    await _showConfirm({
+      message: `이 계약은 해지와 동시에 갱신되는 새 계약으로 이어집니다.\n변경하신 해지일의 다음 영업일로 갱신 계약의 시작일도 함께 변경됩니다.\n\n· 변경 해지일: ${newDate}\n· 갱신 시작일: ${newPairStart}`,
+      okText: '확인',
+      okClass: 'btn-indigo',
+      hideCancel: true
+    });
+
+    await api(`../tables/contracts/${pairContract.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contract_start: newPairStart })
+    });
+    pairUpdated = true;
+  }
 
   await api(`../tables/contracts/${cid}`, {
     method: 'PATCH',
@@ -2220,7 +2286,9 @@ async function confirmTerminateDateChange(){
     body: JSON.stringify({ terminate_date: newDate, status: newStatus })
   });
 
-  toast('해지일이 변경되었습니다.');
+  toast(pairUpdated
+    ? '해지일과 갱신예정 계약 시작일이 함께 변경되었습니다.'
+    : '해지일이 변경되었습니다.');
   await Promise.all([loadContracts(), loadEmployees()]);
   renderContracts(); renderDashboard();
   viewContract(cid);
@@ -2244,6 +2312,23 @@ function cancelTerminateDateChange(){
   cancelBtn.style.display   = 'none';
 }
 
+// ── 갱신 페어 계약 조회 (renewed_to_id / renewed_from_id 양방향) ──
+function findPairContract(c){
+  if(!c) return null;
+  // renewed_to_id: 이 계약이 원본 → 갱신된 계약 찾기
+  if(c.renewed_to_id){
+    const pair = allContracts.find(x => x.id === c.renewed_to_id);
+    if(pair) return pair;
+  }
+  // renewed_from_id: 이 계약이 갱신본 → 원본 계약 찾기
+  if(c.renewed_from_id){
+    const pair = allContracts.find(x => x.id === c.renewed_from_id);
+    if(pair) return pair;
+  }
+  // 링크 없으면 null
+  return null;
+}
+
 // ─── 범용 커스텀 확인 모달 (confirm 대체) ───
 /**
  * @param {Object} opts
@@ -2262,9 +2347,15 @@ function _showConfirm(opts){
     okBtn.textContent = opts.okText || '확인';
     okBtn.className = 'btn ' + (opts.okClass || 'btn-primary');
     okBtn.style.background = opts.okClass ? '' : '#d97706';
-    cancelBtn.textContent = opts.cancelText || '취소';
+    
+    if(opts.hideCancel){
+      cancelBtn.style.display = 'none';
+    } else {
+      cancelBtn.style.display = '';
+      cancelBtn.textContent = opts.cancelText || '취소';
+    }
 
-    // 클릭 핸들러 등록 (살짝 지연시켜 모달 close 애니메이션 완료 후 resolve)
+    // 클릭 핸들러 등록
     okBtn.onclick = () => { closeModal('ct-confirm-modal'); setTimeout(() => resolve(true), 100); };
     cancelBtn.onclick = () => { closeModal('ct-confirm-modal'); setTimeout(() => resolve(false), 100); };
 

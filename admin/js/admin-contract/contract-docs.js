@@ -1515,6 +1515,137 @@ function generateContractHTML(){
  * 조회 모드에서 "계약서 출력" 버튼 클릭 시 호출
  * allContracts / allEmployees / allCompanies 전역 배열로 데이터 수집
  */
+function generateConsentHTML(contractId){
+  const c   = allContracts.find(x=>x.id===contractId);
+  const emp = c ? allEmployees.find(e=>e.id===c.employee_id) : null;
+  const co  = c ? allCompanies.find(x=>x.id===c.company_id) : null;
+  if(!c||!emp||!co) return '<p>정보를 불러올 수 없습니다.</p>';
+
+  const empName = emp.name || '';
+  const coName  = co.company_name || '';
+  const today   = new Date();
+  const todayKr = today.toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'});
+
+  return `<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>제3자 정보제공 동의서</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;font-size:12px;color:#1a1a1a;line-height:1.7;padding:50px 55px;max-width:210mm;margin:0 auto}
+  h1{text-align:center;font-size:18px;font-weight:800;margin-bottom:24px;letter-spacing:-0.5px}
+  .section{margin-bottom:18px}
+  .section-title{font-size:13px;font-weight:700;margin-bottom:6px}
+  .section-body{font-size:11.5px;padding-left:8px}
+  .highlight{background:#fffde7;padding:2px 6px;border-radius:3px;font-weight:600}
+  table{width:100%;border-collapse:collapse;margin:10px 0;font-size:11px}
+  th{background:#f0f4ff;border:1px solid #cbd5e1;padding:6px 8px;text-align:center;font-weight:700;font-size:10.5px}
+  td{border:1px solid #cbd5e1;padding:6px 8px;vertical-align:top;font-size:10.5px}
+  .check-row{margin:8px 0;font-size:12px;font-weight:600}
+  .check-row .box{display:inline-block;width:14px;height:14px;border:1.5px solid #6366f1;margin-right:4px;vertical-align:-2px;border-radius:2px}
+  .check-row .box.checked{background:#6366f1}
+  .sign-block{margin-top:30px;display:flex;justify-content:flex-end;align-items:flex-end;gap:30px}
+  .sign-item{text-align:center}
+  .sign-item .date{font-size:13px;margin-bottom:8px}
+  .sign-item .name{font-size:15px;font-weight:700;min-width:100px;border-bottom:1.5px solid #1a1a1a;padding:4px 12px}
+  .sign-item .label{font-size:10.5px;color:#64748b;margin-top:3px}
+  .footer-text{text-align:right;font-size:13px;font-weight:700;margin-top:40px}
+</style></head><body>
+<h1>개인정보의 수집·이용에 관한 동의서</h1>
+
+<div class="section">
+  <div class="section-title">1. 개인정보 수집·이용 동의</div>
+  <div class="section-body">
+    <span class="highlight">${empName}</span> 은(는) <span class="highlight">${coName}</span> 의 재직근로자로서 인사관리상 개인정보의 수집 및 이용이 필요하다는 것을 이해하고 다음과 같이 개인정보·민감정보·고유식별정보를 수집·이용하는 것에 동의합니다.
+  </div>
+</div>
+
+<table>
+  <thead><tr><th style="width:30%">개인정보항목</th><th style="width:40%">수집·이용 목적</th><th style="width:30%">보유기간</th></tr></thead>
+  <tbody>
+    <tr><td>가. 성명</td><td>가. 채용 및 승진 등 인사관리</td><td rowspan="4">재직기간 동안 보유하고, 기타 개별법령에서 보유기간을 정하고 있는 경우 그에 따름</td></tr>
+    <tr><td>나. 주소, 이메일, 연락처</td><td>나. 세법, 노동관계법령 등에서 부과하는 의무이행</td></tr>
+    <tr><td>다. 학력, 근무경력, 자격증</td><td></td></tr>
+    <tr><td>라. 기타 근무와 관련된 개인정보</td><td></td></tr>
+  </tbody>
+</table>
+<div class="check-row">개인정보 수집·이용에 (<span class="box checked"></span>동의함 / <span class="box"></span>동의하지 않음)</div>
+
+<div class="section">
+  <div class="section-title">2. 민감정보 수집·이용 동의</div>
+</div>
+
+<table>
+  <thead><tr><th style="width:30%">민감정보항목</th><th style="width:40%">수집·이용 목적</th><th style="width:30%">보유기간</th></tr></thead>
+  <tbody>
+    <tr><td>가. 신체장애</td><td>가. 채용 및 승진 등 인사관리</td><td rowspan="3">재직기간 동안 보유하고, 기타 개별법령에서 보유기간을 정하고 있는 경우 그에 따름</td></tr>
+    <tr><td>나. 병력</td><td>나. 세법, 노동관계법령 등에서 부과하는 의무이행</td></tr>
+    <tr><td>다. 범죄정보</td><td>다. 정부지원금 신청</td></tr>
+  </tbody>
+</table>
+<div class="check-row">민감정보 수집·이용에 (<span class="box checked"></span>동의함 / <span class="box"></span>동의하지 않음)</div>
+
+<div class="section">
+  <div class="section-title">3. 고유식별정보 수집·이용 동의</div>
+</div>
+
+<table>
+  <thead><tr><th style="width:30%">고유식별정보항목</th><th style="width:40%">수집·이용 목적</th><th style="width:30%">보유기간</th></tr></thead>
+  <tbody>
+    <tr><td>가. 주민등록번호</td><td>가. 채용 및 승진 등 인사관리</td><td rowspan="4">재직기간 동안 보유하고, 기타 개별법령에서 보유기간을 정하고 있는 경우 그에 따름</td></tr>
+    <tr><td>나. 운전면허번호</td><td>나. 세법, 노동관계법령 등에서 부과하는 의무이행</td></tr>
+    <tr><td>다. 여권번호</td><td>다. 정부지원금 신청</td></tr>
+    <tr><td>라. 외국인등록번호</td><td></td></tr>
+  </tbody>
+</table>
+<div class="check-row">고유식별정보 수집·이용에 (<span class="box checked"></span>동의함 / <span class="box"></span>동의하지 않음)</div>
+
+<div class="section">
+  <div class="section-title">4. 개인정보 제3자 제공 동의</div>
+  <div class="section-body">
+    <span class="highlight">${empName}</span> 은(는) <span class="highlight">${coName}</span> 이(가) 취득한 개인정보를 재직기간 동안 내부적으로 채용·승진 등 인사관리에 이용하고, 외부적으로 법령에 따라 관계기관에 제공하는 것에 동의합니다.
+  </div>
+  <div class="check-row">개인정보 제3자 제공에 (<span class="box checked"></span>동의함 / <span class="box"></span>동의하지 않음)</div>
+</div>
+
+<div class="section">
+  <div class="section-title">5. 개인정보 처리방침</div>
+  <div class="section-body">
+    본사는 취득한 개인정보를 수집한 목적에 필요한 범위에서 적합하게 처리하고 그 목적 외의 용도로 사용하지 않으며 개인정보를 제공한 계약당사자는 언제나 자신이 입력한 개인정보를 열람·수정 및 정보제공에 대한 철회를 할 수 있습니다.
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">6. 동의 거부 권리 및 확인</div>
+  <div class="section-body">
+    본인은 1~5항에 따라 수집되는 개인정보의 항목과 개인정보의 수집·이용에 대한 거부를 할 수 있는 권리가 있다는 사실을 충분히 설명 받고 숙지하였으며, 미동의시 적법하게 시행되는 회사내부규정 및 법령에 따라 발생하는 불이익에 대한 책임은 본인에게 있음을 확인합니다. 민감정보·고유식별정보를 수집·이용하는 것에 동의합니다.
+  </div>
+</div>
+
+<div class="sign-block">
+  <div class="sign-item">
+    <div class="date">${today.getFullYear()}년 ${today.getMonth()+1}월 ${today.getDate()}일</div>
+  </div>
+  <div class="sign-item">
+    <div class="name">${empName}</div>
+    <div class="label">동의자 (인)</div>
+  </div>
+</div>
+
+<div class="footer-text">${coName} 귀하</div>
+
+</body></html>`;
+}
+
+/** 동의서 PDF 미리보기 모달 열기 */
+function openConsentPrintModal(contractId){
+  if(!contractId){ toast('계약 정보를 찾을 수 없습니다.'); return; }
+  const html = generateConsentHTML(contractId);
+  const w = window.open('', '_blank', 'width=900,height=700');
+  if(!w){ toast('팝업이 차단되었습니다. 팝업 차단을 해제해 주세요.', 'error'); return; }
+  w.document.write(html);
+  w.document.close();
+  w.focus();
+}
+
+/** 조회 모드에서 "계약서 출력" 버튼 클릭 시 호출 */
 function openContractPrintModal(contractId){
   if(!contractId){ toast('계약 정보를 찾을 수 없습니다.'); return; }
   const c   = allContracts.find(x=>x.id===contractId);
