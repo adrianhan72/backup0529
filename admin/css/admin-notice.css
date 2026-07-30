@@ -19,7 +19,7 @@
     .draft-alert-card-header .dash-ac-title{color:#92400e;}
     .draft-alert-card-body{padding:0;}
     .draft-alert-card .dash-ac-badge{background:#fef3c7;color:#92400e;}
-    .draft-alert-card .dash-ac-toggle{background:#fde68a;color:#92400e;}
+    .draft-alert-card .dash-ac-toggle{background:#fde68a;color:#f59e0b;border-color:#fbbf24;}
     .draft-alert-card .dash-ac-group-row{border-bottom-color:#fde68a;}
     .draft-alert-card .dash-ac-group-badge.co{background:#fef3c7;color:#92400e;}
     .draft-alert-card .dash-ac-group-badge.ct{background:#eef2ff;color:#3730a3;}
