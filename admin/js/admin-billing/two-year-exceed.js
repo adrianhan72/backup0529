@@ -25,7 +25,7 @@ function _calc2YrExceedList(){
   allContracts.forEach(c => {
     if(c.is_draft) return;
     if(c.is_voided_by_amend) return;
-    if([CONTRACT_STATUS.CANCELED, CONTRACT_STATUS.VOIDED].includes(c.status)) return false; // 파기·취소는 제외
+    if([CONTRACT_STATUS.VOIDED].includes(c.status)) return false; // 파기는 제외
     const emp = allEmployees.find(e => e.id === c.employee_id);
     const cat = emp?.employment_category || c.contract_type || '';
     if(![CONTRACT_TYPE.FIXED, CONTRACT_TYPE.FIXED_PROBATION, CONTRACT_TYPE.DAILY, CONTRACT_TYPE.REGULAR_PROBATION].includes(cat)) return; // 계약직·수습·일용직 계열

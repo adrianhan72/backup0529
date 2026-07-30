@@ -44,7 +44,7 @@ function _renderContCoSummaryCards(){
   // ═══════════════════════════════════════════
   const unsignedContracts = allContracts.filter(c =>
     c.company_id === coId && !c.is_draft && !c.is_voided_by_amend &&
-    ![CONTRACT_STATUS.VOIDED, CONTRACT_STATUS.CANCELED].includes(c.status) &&
+    ![CONTRACT_STATUS.VOIDED].includes(c.status) &&
     CONTRACT_ACTIVE_STATUSES.includes(c.status) &&
     !c.signed_file_name);
 
@@ -53,7 +53,7 @@ function _renderContCoSummaryCards(){
   // ═══════════════════════════════════════════
   const unsignedConsent = allContracts.filter(c =>
     c.company_id === coId && !c.is_draft && !c.is_voided_by_amend &&
-    ![CONTRACT_STATUS.VOIDED, CONTRACT_STATUS.CANCELED].includes(c.status) &&
+    ![CONTRACT_STATUS.VOIDED].includes(c.status) &&
     CONTRACT_ACTIVE_STATUSES.includes(c.status) &&
     !c.consent_file_name);
 
@@ -219,17 +219,18 @@ function _renderContCoSummaryCards(){
   }
 }
 
-/** 계약예정 계약취소 (아코디언 카드 전용) */
+/** 계약예정 계약취소 (아코디언 카드 전용) — VOIDED 처리 (삭제 대신 파기) */
 async function _cancelPendingFromList(contractId){
   const c = allContracts.find(x => x.id === contractId);
   if(!c) return;
   const emp = allEmployees.find(e => e.id === c.employee_id);
   const empName = emp?.name || '(직원 미지정)';
-  if(!confirm(`[계약예정 취소]\n\n${empName}\n계약 시작일: ${c.contract_start||'-'}\n\n예정된 근로계약을 취소하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
+  if(!confirm(`[계약예정 취소]\n\n${empName}\n계약 시작일: ${c.contract_start||'-'}\n\n예정된 근로계약을 취소하고 파기 처리하시겠습니까?\n파기된 계약은 계약 목록에서 확인 후 관리자가 직접 삭제할 수 있습니다.`)) return;
   try {
-    await api(`../tables/contracts/${contractId}`, { method: 'DELETE' });
+    await api(`../tables/contracts/${contractId}`, { method: 'PATCH', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({status: CONTRACT_STATUS.VOIDED}) });
     await loadContracts();
-    toast('계약예정이 취소되었습니다.');
+    toast('계약예정이 파기 처리됐습니다.');
     if(typeof renderContracts === 'function') renderContracts();
     if(typeof renderDashboard === 'function') renderDashboard();
   } catch(e) {
@@ -1378,34 +1379,7 @@ function _hideAllNameDupAlerts(){
 function _validateEmpNoUniqueness(empNo, companyId, selfEmpId, newContractStart, newContractType) {
   if(!empNo || !companyId) return { ok: true, type: 'ok', msg: '' };
 
-  // ── 해지·만료·파기·취소된 계약의 퇴사자 사원번호 차단 (allContracts 기반) ──
-  const TERMINAL_STATUSES = [
-    CONTRACT_STATUS.TERMINATED,
-    CONTRACT_STATUS.EXPIRED,
-    CONTRACT_STATUS.VOIDED,
-    CONTRACT_STATUS.CANCELED,
-  ];
-  const terminalContracts = allContracts.filter(c =>
-    c.company_id === companyId &&
-    TERMINAL_STATUSES.includes(c.status)
-  );
-  const terminalEmpIds = new Set(terminalContracts.map(c => c.employee_id).filter(Boolean));
-
-  // 퇴사자 중 동일 사원번호 보유 직원 확인
-  const terminatedMatch = allEmployees.find(e =>
-    terminalEmpIds.has(e.id) &&
-    e.employee_number === empNo &&
-    e.id !== selfEmpId
-  );
-  if(terminatedMatch) {
-    return {
-      ok: false,
-      type: 'duplicate',
-      msg: `사원번호 "${empNo}"은(는) 퇴사 처리된 ${terminatedMatch.name} 직원이 사용하던 번호입니다. 다른 번호를 입력하세요.`
-    };
-  }
-
-  // ── 재직·계약예정 등 그 외 모든 직원 대상 중복 검사 ──
+  // 사원번호 일치하는 직원 찾기 (본인 제외)
   const sameNoEmps = allEmployees.filter(e =>
     e.company_id === companyId &&
     e.employee_number === empNo &&
@@ -1414,10 +1388,30 @@ function _validateEmpNoUniqueness(empNo, companyId, selfEmpId, newContractStart,
 
   if(sameNoEmps.length) {
     const existEmp = sameNoEmps[0];
+    const empContracts = allContracts.filter(c => c.employee_id === existEmp.id && c.company_id === companyId);
+
+    // 1. 유효 계약(ACTIVE, PENDING, RENEWAL_PENDING, DOCS_INCOMPLETE) 보유 → 사용 중
+    const hasActive = empContracts.some(c => CONTRACT_ACTIVE_STATUSES.includes(c.status));
+    if(hasActive) {
+      return {
+        ok: false, type: 'duplicate',
+        msg: `사원번호 "${empNo}"은(는) 이미 ${existEmp.name} 직원이 사용 중입니다. 다른 번호를 입력하세요.`
+      };
+    }
+
+    // 2. 모든 계약이 VOIDED + 갱신 이력 없음 → 파기된 번호, 재사용 가능
+    const allVoided = empContracts.length > 0 && empContracts.every(c => c.status === CONTRACT_STATUS.VOIDED);
+    const anyRenewedFrom = empContracts.some(c => c.renewed_from_id);
+    if(allVoided && !anyRenewedFrom) {
+      // 파기된 계약이며 갱신 승계가 아님 → 사원번호 재사용 허용
+      return { ok: true, type: 'ok', msg: '' };
+    }
+
+    // 3. 그 외 (해지·만료·취소, 또는 갱신 승계된 파기) → 재사용 불가
+    const reason = allVoided ? '갱신 승계되어 파기된' : '퇴사 처리된';
     return {
-      ok: false,
-      type: 'duplicate',
-      msg: `사원번호 "${empNo}"은(는) 이미 ${existEmp.name} 직원이 사용 중입니다. 다른 번호를 입력하세요.`
+      ok: false, type: 'duplicate',
+      msg: `사원번호 "${empNo}"은(는) ${reason} ${existEmp.name} 직원이 사용하던 번호입니다. 다른 번호를 입력하세요.`
     };
   }
 
@@ -2003,7 +1997,7 @@ function viewContract(id){
   const isDraft       = !!c?.is_draft;                         // 임시저장 여부
   const isRegular     = (ct===CONTRACT_TYPE.REGULAR||ct===CONTRACT_TYPE.REGULAR_PROBATION);  // 무기한 계약 (만료일 없음)
   const isFixed       = (ct===CONTRACT_TYPE.FIXED||ct===CONTRACT_TYPE.FIXED_PROBATION||ct===CONTRACT_TYPE.DAILY);  // 기간제 계약
-  const isTerminated  = !isDraft && (c?.status===CONTRACT_STATUS.EXPIRED||c?.status===CONTRACT_STATUS.TERMINATED||c?.status===CONTRACT_STATUS.VOIDED||c?.status===CONTRACT_STATUS.CANCELED||c?.status===CONTRACT_STATUS.RENEWED);
+  const isTerminated  = !isDraft && (c?.status===CONTRACT_STATUS.EXPIRED||c?.status===CONTRACT_STATUS.TERMINATED||c?.status===CONTRACT_STATUS.VOIDED||c?.status===CONTRACT_STATUS.RENEWED);
   const isPending     = !isDraft && (c?.status===CONTRACT_STATUS.RENEWAL_PENDING||c?.status===CONTRACT_STATUS.PENDING);  // 시작일 미도래
   const isPreTerminate= !isDraft && (c?.status===CONTRACT_STATUS.TERMINATE_PENDING);  // 퇴사예정일 설정된 정규직
   const isActive      = !isDraft && !isTerminated && !isPending && !isPreTerminate;

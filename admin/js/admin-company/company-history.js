@@ -664,12 +664,17 @@ let terminateTargetId = null;
 // [사용료 숨김] terminateCompany - 단순화 버전 (미납금 체크 제거)
 function terminateCompany(id, name){
   terminateTargetId = id;
+  const c = allCompanies.find(x => x.id === id);
   document.getElementById('tm-company-name').innerHTML =
     `<i class="fas fa-building" style="color:#64748b;margin-right:6px;"></i>${name}`;
   // 해지일 기본값: 오늘
   const todayStr = new Date().toISOString().slice(0, 10);
   const endDateEl = document.getElementById('tm-end-date');
-  if(endDateEl) endDateEl.value = todayStr;
+  if(endDateEl){
+    // 해지일은 계약 시작일 이후만 선택 가능
+    endDateEl.min = c?.contract_start_date || '';
+    endDateEl.value = todayStr;
+  }
   openModal('terminate-modal');
 }
 
@@ -683,6 +688,10 @@ async function doTerminate(){
   const endDateEl = document.getElementById('tm-end-date');
   const endDateStr = endDateEl?.value || new Date().toISOString().slice(0, 10);
   if(!endDateStr) return toast('계약 해지일을 입력해 주세요.', 'error');
+  // 해지일이 계약 시작일 이전이면 차단
+  if(c.contract_start_date && endDateStr < c.contract_start_date){
+    return toast(`해지일은 계약 시작일(${c.contract_start_date}) 이후여야 합니다.`, 'error');
+  }
   const todayStr = new Date().toISOString().slice(0, 10);
   // 해지일이 오늘 이하면 즉시 해지(INACTIVE), 미래면 해지예정(ACTIVE + contract_end_date 세팅)
   const newStatus = endDateStr <= todayStr ? COMPANY_STATUS.INACTIVE : COMPANY_STATUS.ACTIVE;
@@ -710,11 +719,13 @@ let _changeEndDateTargetId = null;
 
 function changeEndDate(id, name, currentEndDate){
   _changeEndDateTargetId = id;
+  const c = allCompanies.find(x => x.id === id);
   const nameEl = document.getElementById('ced-company-name');
   if(nameEl) nameEl.innerHTML = `<i class="fas fa-building" style="color:#64748b;margin-right:6px;"></i>${name}`;
   const dateEl = document.getElementById('ced-end-date');
   if(dateEl){
-    dateEl.min = '';
+    // 해지일은 계약 시작일 이후만 선택 가능
+    dateEl.min = c?.contract_start_date || '';
     dateEl.value = currentEndDate || new Date().toISOString().slice(0,10);
   }
   openModal('change-end-date-modal');
@@ -729,6 +740,10 @@ async function doChangeEndDate(){
   const dateEl = document.getElementById('ced-end-date');
   const newDateStr = dateEl?.value || '';
   if(!newDateStr) return toast('해지일을 선택해 주세요.', 'error');
+  // 해지일이 계약 시작일 이전이면 차단
+  if(c.contract_start_date && newDateStr < c.contract_start_date){
+    return toast(`해지일은 계약 시작일(${c.contract_start_date}) 이후여야 합니다.`, 'error');
+  }
   const todayStr = new Date().toISOString().slice(0,10);
   // 오늘 이하면 즉시 해지(INACTIVE), 미래면 해지예정(ACTIVE) 유지
   const newStatus = newDateStr <= todayStr ? COMPANY_STATUS.INACTIVE : COMPANY_STATUS.ACTIVE;

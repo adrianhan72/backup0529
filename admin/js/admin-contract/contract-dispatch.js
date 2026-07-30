@@ -349,7 +349,7 @@ function _cdpGetUnsentContracts(year, month){
     // 임시저장 제외
     if(c.is_draft) return false;
     // 취소·해지·파기 상태 제외 (수정재발행으로 파기된 계약 포함)
-    if(c.status===CONTRACT_STATUS.CANCELED || c.status===COMPANY_STATUS.INACTIVE || c.status===CONTRACT_STATUS.VOIDED) return false;
+    if(c.status===COMPANY_STATUS.INACTIVE || c.status===CONTRACT_STATUS.VOIDED) return false;
     if(c.is_voided_by_amend) return false;
     // 필수항목 완비 여부: contract_start, employee_id, company_id, contract_type 존재
     if(!c.contract_start || !c.employee_id || !c.company_id || !c.contract_type) return false;

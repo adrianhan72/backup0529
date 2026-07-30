@@ -303,7 +303,7 @@ function renderCompanyTrendChart(){
     );
     const empCount = allContracts.filter(ct =>
       ct.company_id === c.id && !ct.is_draft &&
-      ct.status !== CONTRACT_STATUS.VOIDED && ct.status !== CONTRACT_STATUS.CANCELED &&
+      ct.status !== CONTRACT_STATUS.VOIDED &&
       !repEmpIds.has(ct.employee_id)
     ).length;
     coMeta[c.id] = { status: active ? COMPANY_STATUS.ACTIVE : COMPANY_STATUS.INACTIVE, empCount };
@@ -462,7 +462,7 @@ function renderEmployeeTrendChart(){
   const empTypeMap = {};
   allContracts
     .filter(ct => !ct.is_draft && activeCompanyIds.has(ct.company_id) &&
-      ct.status !== CONTRACT_STATUS.VOIDED && ct.status !== CONTRACT_STATUS.CANCELED)
+      ct.status !== CONTRACT_STATUS.VOIDED)
     .sort((a, b) => (b.contract_start || '').localeCompare(a.contract_start || ''))
     .forEach(ct => {
       if (!empTypeMap[ct.employee_id]) {

@@ -264,13 +264,13 @@ function renderMyco(){
       <div style="position:relative;display:flex;align-items:center;margin-top:6px;">
         <input type="text" id="myco-code-input" value="${co.access_code||''}" readonly
           style="flex:1;padding:10px 56px 10px 14px;background:#f5f3ff;border:1.5px solid #ddd6fe;border-radius:10px;font-size:14px;font-weight:700;color:#4f46e5;letter-spacing:2px;font-family:inherit;outline:none;"
-          oninput="var m=document.getElementById('myco-code-msg');if(m){m.style.color='#9ca3af';m.innerHTML='<i class=\\'fas fa-info-circle\\'></i> 숫자와 알파벳을 포함한 6글자 이상';}" />
+          oninput="var m=document.getElementById('myco-code-msg');if(m){m.style.color='#9ca3af';m.innerHTML='<i class=\\'fas fa-info-circle\\'></i> 숫자+영문 대문자 혼합 6~8자리';}" />
         <button id="myco-code-action-btn" onclick="_toggleMycoCodeEdit()"
           style="position:absolute;right:4px;top:50%;transform:translateY(-50%);padding:6px 10px;border:none;border-radius:8px;background:#4f46e5;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">
           <i class="fas fa-pen"></i> 변경
         </button>
       </div>
-      <div id="myco-code-msg" style="font-size:10.5px;color:#9ca3af;margin-top:4px;"><i class="fas fa-info-circle"></i> 숫자와 알파벳을 포함한 6글자 이상</div>
+      <div id="myco-code-msg" style="font-size:10.5px;color:#9ca3af;margin-top:4px;"><i class="fas fa-info-circle"></i> 숫자+영문 대문자 혼합 6~8자리</div>
     </div>
 
     <!-- 계약현황 바로가기 -->
@@ -306,8 +306,8 @@ function checkMycoCodeDuplicate(){
   const msgEl = document.getElementById('myco-code-msg');
   if(!code){ return; }
   // 형식 검증
-  if(code.length < 6 || !/[a-zA-Z]/.test(code) || !/[0-9]/.test(code)){
-    if(msgEl){ msgEl.style.color = '#dc2626'; msgEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 숫자와 알파벳을 포함한 6글자 이상'; }
+  if(code.length < 6 || code.length > 8 || !/[A-Z]/.test(code) || !/[0-9]/.test(code) || !/^[A-Z0-9]+$/.test(code)){
+    if(msgEl){ msgEl.style.color = '#dc2626'; msgEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 숫자+영문 대문자 혼합 6~8자리'; }
     if(inputEl){ inputEl.style.borderColor = '#dc2626'; inputEl.style.background = '#fef2f2'; inputEl.focus(); }
     return;
   }

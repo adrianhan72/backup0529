@@ -319,7 +319,7 @@ function _cnsGetUnsentContracts(year, month) {
 
   const allContracts_filtered = (allContracts || []).filter(c =>
     !c.is_draft &&
-    ![CONTRACT_STATUS.VOIDED, CONTRACT_STATUS.CANCELED, CONTRACT_STATUS.TERMINATED].includes(c.status) &&
+    ![CONTRACT_STATUS.VOIDED, CONTRACT_STATUS.TERMINATED].includes(c.status) &&
     !c.is_voided_by_amend &&
     !consentEmpIds.has(c.employee_id) &&
     (!_cnsUnsentCoId || c.company_id === _cnsUnsentCoId)

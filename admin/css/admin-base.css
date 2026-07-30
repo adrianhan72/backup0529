@@ -1,5 +1,10 @@
 ﻿    *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:'Noto Sans KR',sans-serif;background:#f0f2f5;color:#1a1a2e}
+    /* ── placeholder 스타일 전역 통일 ── */
+    input:not([readonly]):not(:disabled)::placeholder,
+    textarea:not([readonly]):not(:disabled)::placeholder{color:#b0b7c3;opacity:1;-webkit-text-fill-color:#b0b7c3}
+    input[readonly]::placeholder,input:disabled::placeholder,
+    textarea[readonly]::placeholder,textarea:disabled::placeholder{color:transparent;opacity:0;-webkit-text-fill-color:transparent}
     .sidebar{position:fixed;left:0;top:0;width:240px;height:100vh;background:linear-gradient(180deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);display:flex;flex-direction:column;z-index:100;box-shadow:4px 0 20px rgba(0,0,0,.3)}
     .sidebar-logo{padding:24px 20px 18px;border-bottom:1px solid rgba(255,255,255,.1)}
     .sidebar-logo h1{color:#fff;font-size:14px;font-weight:700;line-height:1.5}
@@ -195,13 +200,14 @@
       color: #555;
       border: 1px solid #e8eaed;
       cursor: default;
+      -webkit-text-fill-color: #555;
     }
 
     /* ?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═
 /* ── company/contract input state classes ── */
-.cm-input-readonly{background:#f1f5f9;border-color:#e2e8f0}
+.cm-input-readonly{background:#f1f5f9;border:1px solid #e8eaed;color:#555;cursor:default;-webkit-text-fill-color:#555}
 .cm-input-active{background:#fff;border-color:#6366f1}
-.cm-input-error{background:#fef2f2;border-color:#dc2626}
+.cm-input-error{background:#fef2f2;border-color:#dc2626;box-shadow:0 0 0 2px rgba(220,38,38,.15)}
 .cm-input-success{background:#f0fdf4;border-color:#16a34a}
 .cm-msg-muted{color:#9ca3af}
 .cm-msg-error{color:#dc2626}

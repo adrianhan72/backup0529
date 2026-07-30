@@ -152,7 +152,9 @@ CREATE TABLE IF NOT EXISTS contracts (
   probation_end_date TEXT, --  -- 수습 종료일
   dismissal_notice_pay REAL DEFAULT 0, --  -- 해고예고수당
   dismissal_notice_pay_reason TEXT, --  -- 해고예고수당 사유
-  pre_used_annual_leave REAL DEFAULT 0 --  -- 기사용 연차일수 (서비스 가입 이전)
+  pre_used_annual_leave REAL DEFAULT 0, --  -- 기사용 연차일수 (서비스 가입 이전)
+  retention_cleared INTEGER DEFAULT 0,
+  retention_cleared_at TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_contracts_employee ON contracts(employee_id);
@@ -201,7 +203,9 @@ CREATE TABLE IF NOT EXISTS registered_executives (
   bank_account TEXT, --  -- 계좌번호
   bank_holder TEXT, --  -- 예금주
   created_at INTEGER, --  -- 생성일시
-  updated_at INTEGER --  -- 수정일시
+  updated_at INTEGER, --  -- 수정일시
+  email TEXT DEFAULT NULL, --  -- 이메일
+  employee_number TEXT DEFAULT NULL --  -- 사원번호
 );
 
 CREATE INDEX IF NOT EXISTS idx_registered_executives_company ON registered_executives(company_id);
@@ -218,7 +222,9 @@ CREATE TABLE IF NOT EXISTS related_party_workers (
   bank_account TEXT, --  -- 계좌번호
   bank_holder TEXT, --  -- 예금주
   created_at INTEGER, --  -- 생성일시
-  updated_at INTEGER --  -- 수정일시
+  updated_at INTEGER, --  -- 수정일시
+  email TEXT DEFAULT NULL, --  -- 이메일
+  employee_number TEXT DEFAULT NULL --  -- 사원번호
 );
 
 CREATE INDEX IF NOT EXISTS idx_related_party_workers_company ON related_party_workers(company_id);

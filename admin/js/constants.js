@@ -37,7 +37,6 @@ const CONTRACT_STATUS = Object.freeze({
   EXPIRED:           'expired',
   TERMINATED:        'terminated',
   VOIDED:            'voided',
-  CANCELED:          'canceled',
   PENDING:           'pending',
   RENEWAL_PENDING:   'renewal_pending',
   TERMINATE_PENDING: 'terminate_pending',
@@ -50,7 +49,6 @@ const CONTRACT_STATUS_LABEL = Object.freeze({
   [CONTRACT_STATUS.EXPIRED]:           '만료',
   [CONTRACT_STATUS.TERMINATED]:        '해지',
   [CONTRACT_STATUS.VOIDED]:            '파기',
-  [CONTRACT_STATUS.CANCELED]:          '취소',
   [CONTRACT_STATUS.PENDING]:           '계약예정',
   [CONTRACT_STATUS.RENEWAL_PENDING]:   '갱신예정',
   [CONTRACT_STATUS.TERMINATE_PENDING]: '해지예정',
@@ -64,7 +62,6 @@ const CONTRACT_STATUS_LEGACY_MAP = {
   '만료':     CONTRACT_STATUS.EXPIRED,
   '해지':     CONTRACT_STATUS.TERMINATED,
   '파기':     CONTRACT_STATUS.VOIDED,
-  '취소':     CONTRACT_STATUS.CANCELED,
   '계약예정': CONTRACT_STATUS.PENDING,
   '갱신예정': CONTRACT_STATUS.RENEWAL_PENDING,
   '해지예정': CONTRACT_STATUS.TERMINATE_PENDING,
@@ -81,7 +78,6 @@ const CONTRACT_TERMINAL_STATUSES = Object.freeze([
   CONTRACT_STATUS.TERMINATED,
   CONTRACT_STATUS.EXPIRED,
   CONTRACT_STATUS.VOIDED,
-  CONTRACT_STATUS.CANCELED,
 ]);
 
 // ═══════════════════════════════════════════

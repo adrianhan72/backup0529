@@ -497,7 +497,7 @@ function renderWageLedger(){
 
   // ② 해당 월에 유효했던 계약 중 서류미비 포함 모든 유효계약 → 급여 미입력 확인
   const validContracts = activeInMonth.filter(c =>
-    !c.is_draft && c.status !== CONTRACT_STATUS.VOIDED && c.status !== CONTRACT_STATUS.CANCELED
+    !c.is_draft && c.status !== CONTRACT_STATUS.VOIDED
   );
   const validEmpIds = [...new Set(validContracts.map(c => c.employee_id))];
   // 확정 저장된 급여 직원 집합 (is_draft=false 만)

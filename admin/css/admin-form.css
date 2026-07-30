@@ -14,10 +14,10 @@
     .work-schedule-table tr.day-sun td{background:#fff5f5;}
     .work-schedule-table tr.day-sun td.td-brk{background:#fce7f3;}
     .work-schedule-table tr:last-child td{border-bottom:none;}
-    .work-schedule-table input[type=time]{width:92px;border:1px solid #e2e8f0;border-radius:5px;padding:4px 2px;font-size:13px;font-family:inherit;background:#fff;text-align:center;}
-    .work-schedule-table input[type=time]:disabled{background:#f1f5f9;color:#555;border-color:#e8eaed;}
+    .work-schedule-table input[type=time]{width:92px;border:1px solid #d1d5db;border-radius:5px;padding:4px 2px;font-size:13px;font-family:inherit;background:#fff;text-align:center;color:#000}
+    .work-schedule-table input[type=time]:disabled{background:#f1f5f9;color:#555;border-color:#e8eaed;-webkit-text-fill-color:#555;}
     .work-schedule-table input.brk-time{width:92px;border:1px solid #ddd6fe;border-radius:5px;padding:4px 2px;font-size:13px;font-family:inherit;background:#fff;text-align:center;}
-    .work-schedule-table input.brk-time:disabled{background:#f1f5f9;color:#555;border-color:#e8eaed;}
+    .work-schedule-table input.brk-time:disabled{background:#f1f5f9;color:#555;border-color:#e8eaed;-webkit-text-fill-color:#555;}
     .work-schedule-table .brk-sep{font-size:11px;color:#7c3aed;font-weight:700;padding:0 1px;}
     /* 복수 ?�게?�롯 */
     .brk-slots-wrap{display:flex;flex-direction:column;gap:3px;align-items:flex-start;min-width:210px;}
@@ -33,7 +33,7 @@
     .bulk-schedule-bar{display:flex;flex-direction:column;gap:0;flex-wrap:wrap;padding:10px 14px;background:linear-gradient(90deg,#f0f9ff 0%,#faf5ff 100%);border:1.5px solid #bae6fd;border-radius:9px;margin-bottom:8px;}
     .bulk-schedule-bar .bulk-label{font-size:12px;font-weight:700;color:#0369a1;white-space:nowrap;display:flex;align-items:center;gap:4px;}
     .bulk-schedule-bar .bulk-sep{color:#cbd5e1;font-size:13px;margin:0 2px;}
-    .bulk-schedule-bar input[type=time]{width:110px;border:1px solid #bae6fd;border-radius:6px;padding:5px 4px;font-size:13px;font-family:inherit;background:#fff;color:#1e293b;text-align:center;}
+    .bulk-schedule-bar input[type=time]{width:110px;border:1px solid #d1d5db;border-radius:6px;padding:5px 4px;font-size:13px;font-family:inherit;background:#fff;color:#000;text-align:center;}
     .bulk-schedule-bar input[type=time]::-webkit-calendar-picker-indicator{margin-left:-4px;}
     .bulk-schedule-bar input[type=time]::-webkit-inner-spin-button{display:none;}
     .bulk-schedule-bar input.bulk-brk{border-color:#ddd6fe;background:#fff;}
@@ -69,6 +69,7 @@
       background: #f1f5f9 !important;
       color: #555 !important;
       border-color: #e8eaed !important;
+      -webkit-text-fill-color: #555 !important;
     }
     .shift-add{width:22px!important;height:22px!important;font-size:12px!important;line-height:1!important;padding:0!important;}
     .shift-del{width:22px!important;height:22px!important;font-size:12px!important;line-height:1!important;padding:0!important;}
@@ -105,9 +106,9 @@
     .ct-field-error input,
     .ct-field-error select,
     .ct-field-error textarea {
-      border: 2px solid #ef4444 !important;
-      background: #fff5f5 !important;
-      box-shadow: 0 0 0 3px rgba(239,68,68,.15) !important;
+      border: 1px solid #dc2626 !important;
+      background: #fef2f2 !important;
+      box-shadow: 0 0 0 2px rgba(220,38,38,.15) !important;
       animation: ctFieldShake .35s ease;
     }
     .ct-field-error label { color: #dc2626 !important; }
@@ -255,9 +256,9 @@
 .cm-person-fg { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .cm-person-fg label { font-size: 11px; font-weight: 600; color: #6b7280; }
 .cm-person-fg input {
-  border: 1.5px solid #d1d5db; border-radius: 7px; padding: 6px 10px;
+  border: 1px solid #d1d5db; border-radius: 7px; padding: 6px 10px;
   font-size: 13px; font-family: inherit; width: 100%; box-sizing: border-box;
-  background: #fff; transition: border-color 0.2s;
+  background: #fff; color: #000; transition: border-color 0.2s;
 }
 .cm-person-fg input:focus { border-color: #6366f1; outline: none; box-shadow: 0 0 0 2px rgba(99,102,241,0.12); }
 

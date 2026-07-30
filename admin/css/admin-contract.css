@@ -1,7 +1,7 @@
 ﻿    .ct-title-info{display:inline-flex;align-items:center;gap:6px;margin-left:14px;font-size:12px;white-space:nowrap}
     /* 비활성 입력 필드 스타일 (조회 모드: 통일된 외관 유지) */
     #contract-modal input:disabled:not(#ct-terminate-display):not(#ct-voided-display):not([type="radio"]):not([type="checkbox"]),#contract-modal select:disabled:not(#ct-em-gender):not(#ct-edit-em-gender){color:#555!important;background:#f1f5f9!important;border:1px solid #e8eaed!important;cursor:default!important;-webkit-text-fill-color:#555!important;font-weight:400!important}
-    #ct-em-gender,#ct-edit-em-gender{background:#f1f5f9!important;border-color:#e8eaed!important;color:#555!important;cursor:default;opacity:1!important;font-weight:400!important}
+    #ct-em-gender,#ct-edit-em-gender{background:#f1f5f9!important;border-color:#e8eaed!important;color:#555!important;cursor:default;opacity:1!important;font-weight:400!important;-webkit-text-fill-color:#555!important}
     /* 라디오/체크박스: disabled 시에도 시각적 스타일 유지 */
     #contract-modal input[type="radio"]:disabled,#contract-modal input[type="checkbox"]:disabled{opacity:1!important;cursor:default}
     /* 임금조건 섹션 내 필드 높이 통일 (급여 산정기간 ~ 벽지수당 영역) */
@@ -21,7 +21,7 @@
     #ct-probation-months,#ct-new-probation-months{box-sizing:border-box;height:36px;padding:5px 12px;font-size:13px;border:1px solid #d1d5db;border-radius:7px;background:#fff;color:#000}
     /* 계약 모달 내 .filt-date 폼 높이 통일 (필터바 32px → 폼 표준 36px) */
     #contract-modal .filt-date{height:36px;padding:6px 12px;font-size:13px;color:#000;font-weight:400;border:1px solid #d1d5db;border-radius:7px;background:#fff}
-    #contract-modal .filt-date[readonly]{background:#f1f5f9!important;border:1px solid #e8eaed;color:#555}
+    #contract-modal .filt-date[readonly]{background:#f1f5f9!important;border:1px solid #e8eaed;color:#555;-webkit-text-fill-color:#555}
     #contract-modal .filt-date[readonly]::-webkit-datetime-edit,
     #contract-modal .filt-date[readonly]::-webkit-datetime-edit-fields-wrapper,
     #contract-modal .filt-date[readonly]::-webkit-datetime-edit-text,
@@ -125,7 +125,7 @@
     /* draft 배�? */
     .badge-draft{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:700;background:rgba(245,158,11,.15);color:#b45309;vertical-align:middle;margin-left:5px;}
     /* 읽기전용 통일 스타일 (조회 모드) — radio, checkbox, .filt-date 제외 */
-    .ct-readonly input:not([type="radio"]):not([type="checkbox"]):not(.filt-date),.ct-readonly select,.ct-readonly textarea{background:#f1f5f9!important;color:#555!important;pointer-events:none;border:1px solid #e8eaed!important;border-radius:7px!important;opacity:1!important;-webkit-text-fill-color:#555!important;font-weight:400!important;height:36px!important;box-sizing:border-box!important;padding:6px 12px!important;font-size:13px!important}
+    .ct-readonly input:not([type="radio"]):not([type="checkbox"]):not(.filt-date),.ct-readonly select,.ct-readonly textarea{background:#f1f5f9!important;color:#555!important;cursor:default;border:1px solid #e8eaed!important;border-radius:7px!important;opacity:1!important;-webkit-text-fill-color:#555!important;font-weight:400!important;height:36px!important;box-sizing:border-box!important;padding:6px 12px!important;font-size:13px!important}
     .ct-readonly select{appearance:none!important;-webkit-appearance:none!important;-moz-appearance:none!important;padding:6px 28px 6px 12px!important;background:#f1f5f9 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='none' stroke='%236b7280' stroke-width='1.5' stroke-linecap='round' d='M3 4.5l3 3 3-3'/%3E%3C/svg%3E") no-repeat right 8px center!important;background-size:14px!important;color:#555!important}
     .ct-readonly .form-computed{background:#f1f5f9!important;height:36px!important;box-sizing:border-box!important;padding:6px 12px!important;font-size:13px!important;display:flex!important;align-items:center!important}
     .ct-readonly input::placeholder,.ct-readonly textarea::placeholder{color:transparent!important;opacity:0!important;-webkit-text-fill-color:transparent!important}
@@ -147,7 +147,7 @@
     @media(max-width:520px){.ct-fixed-terminate-panel .cft-grid{grid-template-columns:1fr;}}
     .ct-fixed-terminate-panel .cft-field label{font-size:11.5px;font-weight:700;color:#374151;display:block;margin-bottom:5px;}
     .ct-fixed-terminate-panel .cft-field input,.ct-fixed-terminate-panel .cft-field textarea{width:100%;border:1.5px solid #fdba74;border-radius:8px;padding:7px 11px;font-size:13px;font-family:inherit;background:#fff;box-sizing:border-box;}
-    .ct-fixed-terminate-panel .cft-field input:focus{outline:none;border-color:#f97316;box-shadow:0 0 0 3px rgba(249,115,22,.15);}
+    .ct-fixed-terminate-panel .cft-field input:focus{outline:none;border-color:#6366f1;box-shadow:0 0 0 2px rgba(99,102,241,.25)}
     .ct-fixed-terminate-panel .cft-field textarea:focus{outline:none;border-color:#6366f1;box-shadow:0 0 0 2px rgba(99,102,241,.25)}
     .ct-fixed-terminate-panel .cft-reason-btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
     .cft-reason-chip{padding:5px 12px;border-radius:20px;border:1.5px solid #fdba74;background:#fff;font-size:12px;font-weight:600;color:#9a3412;cursor:pointer;transition:all .15s;font-family:inherit;}
@@ -505,9 +505,9 @@
     }
 
 /* ── contract input states ── */
-.ct-input-locked{background:#f3f4f6!important;color:#9ca3af!important;cursor:not-allowed!important}
+.ct-input-locked{background:#f1f5f9!important;color:#555!important;border:1px solid #e8eaed!important;cursor:default!important;-webkit-text-fill-color:#555!important}
 .ct-input-locked-dark{background:#f1f5f9!important;color:#555!important;border:1px solid #e8eaed!important;cursor:default!important;-webkit-text-fill-color:#555!important}
-.ct-input-error{background:#fef2f2!important;border-color:#e94560!important}
+.ct-input-error{background:#fef2f2!important;border-color:#dc2626!important;box-shadow:0 0 0 2px rgba(220,38,38,.15)!important}
 .ct-hint-normal{color:#6b7280}
 .ct-hint-muted{color:#9ca3af}
 .ct-hint-error{color:#dc2626}
@@ -520,18 +520,17 @@
 .va-hint{display:none;font-size:11.5px;font-weight:500;margin-top:4px}
 .va-hint.va-ok{display:block;color:#6b7280}
 .va-hint.va-err{display:block;color:#dc2626}
-.va-input-err{border-color:#ef4444!important}
-.va-input-err{border-color:#ef4444!important;box-shadow:0 0 0 2px rgba(239,68,68,.15)!important}
+.va-input-err{border-color:#dc2626!important;box-shadow:0 0 0 2px rgba(220,38,38,.15)!important}
 .va-banner-hide{display:none!important}
 /* ── 인라인 포맷 힌트 (id/phone/email) ── */
 .id-format-hint,.phone-format-hint,.email-format-hint{font-size:11px;margin-top:3px;display:block}
 /* ── 날짜 선택기: 전체 클릭 가능 + 비활성 차단 ── */
 input[type="date"]:not([readonly]):not([disabled]){cursor:text}
-input[type="date"][readonly],input[type="date"][disabled]{pointer-events:none;opacity:0.6}
+input[type="date"][readonly],input[type="date"][disabled]{cursor:default;opacity:1;background:#f1f5f9;border:1px solid #e8eaed;color:#555;-webkit-text-fill-color:#555}
 .ct-nav-card{cursor:pointer}
 .ct-tab-active{background:#fffbeb;color:#92400e}
 .ct-amount-active{background:#fff;color:#1a1a2e;font-weight:600}
-#ct-probation-amt[readonly]{background:#f9fafb!important;color:#9ca3af!important;cursor:default!important;font-weight:400!important}
+#ct-probation-amt[readonly]{background:#f1f5f9!important;color:#555!important;cursor:default!important;font-weight:400!important;border:1px solid #e8eaed!important;-webkit-text-fill-color:#555!important}
 /* ── 수습 보수 산정 기준 라디오 카드 ── */
 .ct-prob-basis-title{display:block;font-size:11.5px;font-weight:600;color:#555;margin-bottom:8px}
 .ct-prob-basis-title .lbl-req{color:#c00;font-weight:900;font-size:13px;margin-left:1px}

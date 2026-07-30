@@ -191,7 +191,7 @@ function openPayslipModal(payrollId){
   const _empContracts = allContracts.filter(c => {
     if(c.employee_id !== e.id) return false;
     if(c.is_draft || c.is_voided_by_amend) return false;
-    if([CONTRACT_STATUS.CANCELED, CONTRACT_STATUS.VOIDED].includes(c.status)) return false;
+    if([CONTRACT_STATUS.VOIDED].includes(c.status)) return false;
     return true;
   });
 

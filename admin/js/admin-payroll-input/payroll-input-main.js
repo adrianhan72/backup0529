@@ -295,8 +295,6 @@ function loadPITargetList(){
         contractStatusBadge = `<span class="badge badge-gray">${CONTRACT_STATUS_LABEL[CONTRACT_STATUS.EXPIRED]}</span>`;
       } else if(_cs === CONTRACT_STATUS.VOIDED){
         contractStatusBadge = `<span class="badge badge-gray">${CONTRACT_STATUS_LABEL[CONTRACT_STATUS.VOIDED]}</span>`;
-      } else if(_cs === CONTRACT_STATUS.CANCELED){
-        contractStatusBadge = `<span class="badge badge-gray">${CONTRACT_STATUS_LABEL[CONTRACT_STATUS.CANCELED]}</span>`;
       } else if(_cs === CONTRACT_STATUS.RENEWED){
         contractStatusBadge = `<span class="badge badge-blue">${CONTRACT_STATUS_LABEL[CONTRACT_STATUS.RENEWED]}</span>`;
       } else {

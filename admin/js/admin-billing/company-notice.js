@@ -222,7 +222,7 @@ function _cenGetTargetContracts(){
 
   return allContracts.filter(c => {
     if(c.is_draft) return false;
-    if([CONTRACT_STATUS.VOIDED, CONTRACT_STATUS.TERMINATED, CONTRACT_STATUS.EXPIRED, CONTRACT_STATUS.CANCELED].includes(c.status)) return false;
+    if([CONTRACT_STATUS.VOIDED, CONTRACT_STATUS.TERMINATED, CONTRACT_STATUS.EXPIRED].includes(c.status)) return false;
     if(c.is_voided_by_amend) return false;
     // 고용형태 확인 (emp.employment_category 우선)
     const emp = allEmployees.find(e=>e.id===c.employee_id);

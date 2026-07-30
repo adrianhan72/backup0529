@@ -34,7 +34,7 @@ function _getProbationNoticeTargets(){
     if(c.contract_type !==CONTRACT_TYPE.REGULAR_PROBATION && c.contract_type !==CONTRACT_TYPE.FIXED_PROBATION) return;
     // 임시저장·파기·취소된 계약 제외
     if(c.is_draft) return;
-    if([CONTRACT_STATUS.VOIDED, CONTRACT_STATUS.TERMINATED, CONTRACT_STATUS.CANCELED, CONTRACT_STATUS.EXPIRED].includes(c.status)) return;
+    if([CONTRACT_STATUS.VOIDED, CONTRACT_STATUS.TERMINATED, CONTRACT_STATUS.EXPIRED].includes(c.status)) return;
     if(c.is_voided_by_amend) return;
     // 계약 시작일 필수
     if(!c.contract_start) return;
@@ -92,7 +92,7 @@ function _getProbationAllTargets(){
   (allContracts || []).forEach(c => {
     if(c.contract_type !==CONTRACT_TYPE.REGULAR_PROBATION && c.contract_type !==CONTRACT_TYPE.FIXED_PROBATION) return;
     if(c.is_draft) return;
-    if([CONTRACT_STATUS.VOIDED, CONTRACT_STATUS.TERMINATED, CONTRACT_STATUS.CANCELED, CONTRACT_STATUS.EXPIRED].includes(c.status)) return;
+    if([CONTRACT_STATUS.VOIDED, CONTRACT_STATUS.TERMINATED, CONTRACT_STATUS.EXPIRED].includes(c.status)) return;
     if(c.is_voided_by_amend) return;
     if(!c.contract_start) return;
 
@@ -1268,7 +1268,7 @@ function _renderContractsBanners(){
     if(!sec) return;
     const unsignedContracts = (allContracts || []).filter(c =>
       !c.is_draft && !c.is_voided_by_amend &&
-      ![CONTRACT_STATUS.VOIDED, CONTRACT_STATUS.CANCELED].includes(c.status) &&
+      ![CONTRACT_STATUS.VOIDED].includes(c.status) &&
       CONTRACT_ACTIVE_STATUSES.includes(c.status) &&
       !c.signed_file_name
     );
@@ -1295,7 +1295,7 @@ function _renderContractsBanners(){
     if(!sec) return;
     const unsignedConsent = (allContracts || []).filter(c =>
       !c.is_draft && !c.is_voided_by_amend &&
-      ![CONTRACT_STATUS.VOIDED, CONTRACT_STATUS.CANCELED].includes(c.status) &&
+      ![CONTRACT_STATUS.VOIDED].includes(c.status) &&
       CONTRACT_ACTIVE_STATUSES.includes(c.status) &&
       !c.consent_file_name
     );

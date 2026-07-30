@@ -187,7 +187,7 @@ function renderCompanies(){
           : ''}
       </div>
       ${payrollSection}
-      <p style="margin-top:10px;">대표: ${(()=>{const reps=_cmParseReps(c);return reps.length>1?`${reps[0].name} 외 ${reps.length-1}명`:c.representative||'-'})()} · 업종: ${c.industry||'-'}<br>사업자: ${c.business_number||'-'}<br>급여일: ${c.pay_day||'-'} · 산정: ${c.pay_period_month&&c.pay_period_day?`${c.pay_period_month} ${c.pay_period_day}일부터 1개월간`:(c.pay_period&&c.pay_period.includes('~')?c.pay_period:'미설정')}<br><i class="fas fa-shield-alt" style="color:#6366f1;margin-right:3px;font-size:10px;"></i>4대보험: ${c.insurance_basis||'요율 기준'} · <i class="fas fa-umbrella-beach" style="color:#0891b2;margin-right:3px;font-size:10px;"></i>연차: ${c.annual_leave_basis||'회계년도 기준'}<br>${c.phone||''}</p>
+      <p style="margin-top:10px;">대표: ${(()=>{const reps=_cmParseReps(c);return reps.length>1?`${reps[0].name} 외 ${reps.length-1}명`:c.representative||'-'})()} · 업종: ${c.industry||'-'}<br>사업자: ${c.business_number||'-'}<br>급여일: ${c.pay_day||'-'} · 산정: ${(c.pay_period_month||c.pay_period) ? `${_cmPeriodMonthLabel(c.pay_period_month)||''} ${c.pay_period_day||''}일부터 1개월간` : '미설정'}<br><i class="fas fa-shield-alt" style="color:#6366f1;margin-right:3px;font-size:10px;"></i>4대보험: ${_cmInsuranceLabel(c.insurance_basis)||'요율 기준'} · <i class="fas fa-umbrella-beach" style="color:#0891b2;margin-right:3px;font-size:10px;"></i>연차: ${_cmAnnualLabel(c.annual_leave_basis)||'회계년도 기준'}<br>${c.phone||''}</p>
       <div style="display:flex;align-items:center;gap:6px;margin-top:10px;font-size:12px;font-weight:600;color:#3b82f6;"><i class="fas fa-users"></i> 유효 근로계약: ${activeContractCount}건</div>
       ${c.note ? `<div style="margin-top:6px;font-size:11.5px;color:#6b7280;"><i class="fas fa-sticky-note" style="margin-right:4px;color:#9ca3af;"></i>${c.note}</div>` : ''}
       ${isDraftComp
@@ -324,15 +324,35 @@ function _cmSetSelect(id, value){
 // 임시저장 진행 중인 고객사 draft ID (신규 작성 시 추적용)
 let _currentCompanyDraftId = null;
 
+// ── 필드값 → 한글 라벨 변환 (DB 영문코드 대응) ──────────────────────────
+function _cmInsuranceLabel(v){
+  const map = { rate_based:'요율 기준', fixed_amount:'확정액 기준', '요율 기준':'요율 기준', '확정액 기준':'확정액 기준' };
+  return map[v] || v || '';
+}
+function _cmAnnualLabel(v){
+  const map = { fiscal_year:'회계년도 기준', hire_date:'입사일 기준', '회계년도 기준':'회계년도 기준', '입사일 기준':'입사일 기준' };
+  return map[v] || v || '';
+}
+function _cmPeriodMonthLabel(v){
+  const map = { prev_month:'전월', current_month:'당월', '전월':'전월', '당월':'당월' };
+  return map[v] || v || '';
+}
+
 // ── 앱 접근코드 자동 생성 ──────────────────────────────────────────────────
 function generateAccessCode(){
-  // 형식: 숫자 + 대소문자 알파벳 혼합 6자리 (예: A3bK9x)
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'; // O·I·0·1·l 제외 (혼동 방지)
+  // 형식: 숫자 + 대문자 알파벳 혼합 6자리 (예: A3BK9X)
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // O·I·0·1 제외 (혼동 방지)
   let code = '';
   for(let i=0; i<6; i++){ code += chars[Math.floor(Math.random() * chars.length)]; }
   // 기존 고객사 코드와 충돌 검사
   const used = (allCompanies||[]).map(c=>c.access_code).filter(Boolean);
   return used.includes(code) ? generateAccessCode() : code; // 충돌 시 재귀 재생성
+}
+/** 접근코드 유효성 검사: 6~8자리, 숫자+대문자 모두 포함 */
+function _isValidAccessCode(code){
+  if(!code) return false;
+  const s = String(code).trim();
+  return s.length >= 6 && s.length <= 8 && /[A-Z]/.test(s) && /[0-9]/.test(s) && /^[A-Z0-9]+$/.test(s);
 }
 /** SQLite type affinity로 인해 숫자형 코드가 "2345.0" 형태로 저장될 수 있어 정제 */
 function _normalizeAccessCode(code){
@@ -346,30 +366,127 @@ function _setAccessCode(code){
   const normalized = _normalizeAccessCode(code);
   document.getElementById('cm-code').value = normalized;
   const displayEl = document.getElementById('cm-code-display');
-  if(displayEl){ displayEl.value = normalized || ''; displayEl.readOnly = true; displayEl.className = (displayEl.className||'') + ' cm-input-readonly'; }
+  if(displayEl){ displayEl.value = normalized || ''; displayEl.readOnly = true; displayEl.className = (displayEl.className||'').replace(/cm-input-[a-z-]+/g,'') + ' cm-input-readonly'; }
   const btnEl = document.getElementById('cm-code-action-btn');
-  if(btnEl){ btnEl.innerHTML = '<i class="fas fa-pen"></i> 변경'; btnEl.onclick = _toggleCmCodeEdit; }
+  if(btnEl){ btnEl.className = btnEl.className.replace(/btn-blue/g, 'btn-warning'); btnEl.innerHTML = '<i class="fas fa-pen"></i> 변경'; btnEl.onclick = _toggleCmCodeEdit; }
+  // 취소 버튼 숨김, 메시지 초기화
+  const cancelBtn = document.getElementById('cm-code-cancel-btn');
+  if(cancelBtn) cancelBtn.style.display = 'none';
+  _resetCmCodeMsg();
+}
+
+// ── 원래 접근코드 임시 저장 (취소 복원용) ──
+let _cmOriginalCode = '';
+
+function _toggleCmCodeEdit(){
+  const inputEl = document.getElementById('cm-code-display');
+  const btnEl = document.getElementById('cm-code-action-btn');
+  const cancelBtn = document.getElementById('cm-code-cancel-btn');
+  if(!inputEl || !btnEl) return;
+  // 원본 코드 백업
+  _cmOriginalCode = inputEl.value;
+  // 입력 필드 초기화 및 편집 모드로 전환
+  inputEl.value = '';
+  inputEl.readOnly = false;
+  inputEl.className = (inputEl.className||'').replace(/cm-input-[a-z-]+/g,'') + ' cm-input-active';
+  inputEl.focus();
+  // 버튼 전환
+  btnEl.className = btnEl.className.replace(/btn-warning/g, 'btn-blue');
+  btnEl.innerHTML = '<i class="fas fa-check-circle"></i> 중복체크';
+  btnEl.onclick = checkAccessCodeDuplicate;
+  if(cancelBtn) cancelBtn.style.display = '';
+  _resetCmCodeMsg();
+}
+
+function _cancelCmCodeEdit(){
+  const inputEl = document.getElementById('cm-code-display');
+  const btnEl = document.getElementById('cm-code-action-btn');
+  const cancelBtn = document.getElementById('cm-code-cancel-btn');
+  if(!inputEl || !btnEl) return;
+  // 원본 코드 복원
+  inputEl.value = _cmOriginalCode;
+  document.getElementById('cm-code').value = _cmOriginalCode;
+  _cmOriginalCode = '';
+  // 읽기 전용 모드로 복귀
+  inputEl.readOnly = true;
+  inputEl.className = (inputEl.className||'').replace(/cm-input-[a-z-]+/g,'') + ' cm-input-readonly';
+  // 버튼 복원
+  btnEl.className = btnEl.className.replace(/btn-blue/g, 'btn-warning');
+  btnEl.innerHTML = '<i class="fas fa-pen"></i> 변경';
+  btnEl.onclick = _toggleCmCodeEdit;
+  if(cancelBtn) cancelBtn.style.display = 'none';
+  _resetCmCodeMsg();
+}
+
+function _resetCmCodeMsg(){
+  const m = document.getElementById('cm-code-msg');
+  if(m){ m.className = 'cm-msg-muted'; m.innerHTML = '<i class="fas fa-info-circle"></i> 숫자+영문 대문자 혼합 6~8자리'; }
+}
+
+function checkAccessCodeDuplicate(){
+  const inputEl = document.getElementById('cm-code-display');
+  const code = (inputEl?.value || '').trim();
+  const msgEl = document.getElementById('cm-code-msg');
+
+  // 1) 빈 값 검사
+  if(!code){
+    if(msgEl){ msgEl.className = 'cm-msg-error'; msgEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 접근 코드를 입력하세요.'; }
+    if(inputEl){ inputEl.className = (inputEl.className||'').replace(/cm-input-[a-z-]+/g,'') + ' cm-input-error'; inputEl.focus(); }
+    return;
+  }
+
+  // 2) 형식 검증: 6~8자리, 숫자+영문 대문자 모두 포함
+  if(!_isValidAccessCode(code)){
+    if(msgEl){ msgEl.className = 'cm-msg-error'; msgEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 숫자+영문 대문자 혼합 6~8자리로 입력하세요.'; }
+    if(inputEl){ inputEl.className = (inputEl.className||'').replace(/cm-input-[a-z-]+/g,'') + ' cm-input-error'; inputEl.focus(); }
+    return;
+  }
+
+  // 3) 서버 중복 검사
+  const currentId = editId.company || (typeof _cmpData !== 'undefined' ? _cmpData?.id : null);
+  if(msgEl){ msgEl.className = 'cm-msg-muted'; msgEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 확인 중...'; }
+  if(inputEl) inputEl.classList.remove('cm-input-error','cm-input-success');
+
+  fetch(`/api/companies/check-code?code=${encodeURIComponent(code)}&exclude=${currentId||''}`)
+    .then(r => r.json())
+    .then(data => {
+      if(data.duplicate){
+        if(msgEl){ msgEl.className = 'cm-msg-error'; msgEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 이미 사용 중인 코드입니다. 다른 코드를 입력하세요.'; }
+        if(inputEl){ inputEl.className = (inputEl.className||'').replace(/cm-input-[a-z-]+/g,'') + ' cm-input-error'; }
+      } else {
+        if(msgEl){ msgEl.className = 'cm-msg-success'; msgEl.innerHTML = '<i class="fas fa-check-circle"></i> 사용 가능한 코드입니다.'; }
+        if(inputEl){ inputEl.className = (inputEl.className||'').replace(/cm-input-[a-z-]+/g,'') + ' cm-input-success'; }
+      }
+    }).catch(() => {
+      if(msgEl){ msgEl.className = 'cm-msg-error'; msgEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 확인 중 오류가 발생했습니다.'; }
+      if(inputEl){ inputEl.className = (inputEl.className||'').replace(/cm-input-[a-z-]+/g,'') + ' cm-input-error'; }
+    });
 }
 
 // ── 대표자 정보 동적 행 ──
 let _cmRepIdx = 0;
-function _cmRepRowHTML(idx, data = { name: '', phone: '', email: '' }) {
+function _cmRepRowHTML(idx, data = { name: '', phone: '', email: '', employee_number: '' }) {
   const totalRows = document.querySelectorAll('#cm-rep-rows .cm-rep-row').length;
   const isOnlyOne = totalRows <= 1;
-  return `<div class="cm-rep-row" id="cm-rep-row-${idx}" style="display:flex;align-items:flex-end;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
-    <div class="form-group" style="flex:1;min-width:100px;"><label>대표자명</label><input type="text" id="cm-rep-name-${idx}" placeholder="대표자명" value="${_esc(data.name)}" style="width:100%;box-sizing:border-box;" /></div>
-    <div class="form-group" style="flex:1;min-width:110px;"><label>연락처</label><input type="text" id="cm-rep-phone-${idx}" placeholder="연락처" value="${_esc(data.phone)}" style="width:100%;box-sizing:border-box;" /></div>
-    <div class="form-group" style="flex:2;min-width:180px;"><label>이메일</label><input type="text" id="cm-rep-email-${idx}" placeholder="이메일" value="${_esc(data.email)}" style="width:100%;box-sizing:border-box;" /></div>
-    <button type="button" onclick="_cmRemoveRepRow(${idx})" class="btn btn-sm btn-secondary" style="flex-shrink:0;" ${isOnlyOne ? 'disabled' : ''}><i class="fas fa-trash-alt"></i> 삭제</button>
+  return `<div class="cm-rep-row" id="cm-rep-row-${idx}" style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;margin-bottom:14px;align-items:end;">
+    <div class="form-group"><label>대표자명<span style="color:#e94560;">*</span></label><input type="text" id="cm-rep-name-${idx}" placeholder="대표자명" value="${_esc(data.name)}" style="width:100%;box-sizing:border-box;" /></div>
+    <div class="form-group"><label>사원번호<span style="color:#e94560;">*</span></label><input type="text" id="cm-rep-empno-${idx}" placeholder="사원번호" value="${_esc(data.employee_number)}" onblur="_cmCheckRepEmpNo(${idx})" style="width:100%;box-sizing:border-box;" /></div>
+    <div class="form-group"><label>휴대전화번호<span style="color:#e94560;">*</span></label><input type="text" id="cm-rep-phone-${idx}" placeholder="010-0000-0000" value="${_esc(data.phone)}" oninput="_onPhoneInput(this)" onblur="_cmCheckRepPhone(${idx})" maxlength="13" style="width:100%;box-sizing:border-box;" /></div>
+    <div class="form-group"><label>이메일</label><input type="text" id="cm-rep-email-${idx}" placeholder="example@email.com" value="${_esc(data.email)}" oninput="_onEmailInput(this)" style="width:100%;box-sizing:border-box;" /></div>
+    <div style="grid-column:1/-1;text-align:right;">
+      <button type="button" onclick="_cmRemoveRepRow(${idx})" class="btn btn-sm btn-secondary" ${isOnlyOne ? 'disabled' : ''}><i class="fas fa-trash-alt"></i> 삭제</button>
+    </div>
   </div>`;
 }
-function _cmAddRepRow(data = { name: '', phone: '', email: '' }) {
+function _cmAddRepRow(data = { name: '', phone: '', email: '', employee_number: '' }) {
   const container = document.getElementById('cm-rep-rows');
   if (!container) return;
   const idx = _cmRepIdx++;
   const row = document.createElement('div');
   row.innerHTML = _cmRepRowHTML(idx, data);
   container.appendChild(row.firstElementChild);
+  // 사원번호 추천값 설정 (기존값이 없을 때만)
+  if (!data.employee_number) _cmSuggestRepEmpNo(idx);
   // 2행 이상이면 모든 삭제 버튼 활성화
   const allRows = container.querySelectorAll('.cm-rep-row');
   if (allRows.length >= 2) {
@@ -382,6 +499,7 @@ function _cmAddRepRow(data = { name: '', phone: '', email: '' }) {
 function _cmRemoveRepRow(idx) {
   const row = document.getElementById('cm-rep-row-' + idx);
   if (row) row.remove();
+  _cmSuggestAllEmpNos();
   // 남은 행이 1개면 모든 삭제 버튼 비활성화
   const remaining = document.querySelectorAll('#cm-rep-rows .cm-rep-row');
   if (remaining.length <= 1) {
@@ -397,9 +515,10 @@ function _cmCollectReps() {
     const nameEl = document.getElementById('cm-rep-name-' + i);
     const phoneEl = document.getElementById('cm-rep-phone-' + i);
     const emailEl = document.getElementById('cm-rep-email-' + i);
+    const empNoEl = document.getElementById('cm-rep-empno-' + i);
     const name = nameEl?.value?.trim() || '';
     if (name) {
-      reps.push({ name, phone: phoneEl?.value?.trim() || '', email: emailEl?.value?.trim() || '' });
+      reps.push({ name, employee_number: empNoEl?.value?.trim() || '', phone: phoneEl?.value?.trim() || '', email: emailEl?.value?.trim() || '' });
     }
   }
   return reps;
@@ -434,55 +553,13 @@ function _esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
 
 function _onCmCodeInput(){
   const el = document.getElementById('cm-code-display');
+  // 숫자와 대문자만 허용 (소문자 입력 시 자동 대문자 변환, 그 외 문자 제거)
+  const filtered = el.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+  if(filtered !== el.value) el.value = filtered;
   document.getElementById('cm-code').value = el.value;
   el.classList.remove('cm-input-error','cm-input-success');
   const m = document.getElementById('cm-code-msg');
-  if(m){ m.className = 'cm-msg-muted'; m.innerHTML = '<i class="fas fa-info-circle"></i> 숫자와 알파벳을 포함한 6글자 이상'; }
-}
-function _toggleCmCodeEdit(){
-  const inputEl = document.getElementById('cm-code-display');
-  const btnEl = document.getElementById('cm-code-action-btn');
-  if(!inputEl || !btnEl) return;
-  if(inputEl.readOnly){
-    inputEl.readOnly = false;
-    inputEl.className = (inputEl.className||'').replace(/cm-input-[a-z-]+/g,'') + ' cm-input-active';
-    inputEl.focus();
-    btnEl.innerHTML = '<i class="fas fa-check-circle"></i> 중복체크';
-    btnEl.onclick = checkAccessCodeDuplicate;
-  }
-}
-function checkAccessCodeDuplicate(){
-  const inputEl = document.getElementById('cm-code-display');
-  const code = inputEl?.value?.trim();
-  const msgEl = document.getElementById('cm-code-msg');
-  if(!code){ toast('접근 코드를 입력하세요.', 'error'); return; }
-  // 형식 검증: 6글자 이상, 숫자+알파벳 모두 포함
-  if(code.length < 6 || !/[a-zA-Z]/.test(code) || !/[0-9]/.test(code)){
-    if(msgEl){ msgEl.classList.add('va-err'); msgEl.className = 'cm-msg-error'; msgEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 숫자와 알파벳을 포함한 6글자 이상'; }
-    if(inputEl){ inputEl.className = (inputEl.className||'').replace(/cm-input-[a-z-]+/g,'') + ' cm-input-error'; inputEl.focus(); }
-    toast('숫자와 알파벳을 포함한 6글자 이상 입력하세요.', 'error');
-    return;
-  }
-  // 형식 통과 시 테두리 복원
-  if(inputEl){ inputEl.classList.remove('cm-input-error','cm-input-success'); }
-  // 서버에서 중복 검사 (loadCompanies limit=100 이슈 회피)
-  const currentId = editId.company || _cmpData?.id;
-  fetch(`/api/companies/check-code?code=${encodeURIComponent(code)}&exclude=${currentId||''}`)
-    .then(r => r.json())
-    .then(data => {
-      if(data.duplicate){
-        if(msgEl){ msgEl.style.display = 'block'; msgEl.className = 'cm-msg-error'; msgEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 사용할 수 없는 코드입니다. 다른 코드를 입력하세요.'; }
-        if(inputEl){ inputEl.className = (inputEl.className||'').replace(/cm-input-[a-z-]+/g,'') + ' cm-input-error'; }
-        toast('다른 고객사에서 사용 중인 코드입니다.', 'error');
-      } else {
-        if(msgEl){ msgEl.className = 'va-hint va-ok cm-msg-success'; msgEl.innerHTML = '<i class="fas fa-check-circle"></i> 사용 가능한 코드입니다.'; }
-        if(inputEl){ inputEl.className = (inputEl.className||'').replace(/cm-input-[a-z-]+/g,'') + ' cm-input-success'; }
-        toast('사용 가능한 코드입니다.', 'success');
-      }
-    }).catch(() => {
-      if(msgEl){ msgEl.className = 'va-hint va-err cm-msg-error'; msgEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 확인 중 오류가 발생했습니다.'; }
-      toast('확인 중 오류가 발생했습니다.', 'error');
-    });
+  if(m){ m.className = 'cm-msg-muted'; m.innerHTML = '<i class="fas fa-info-circle"></i> 숫자+영문 대문자 혼합 6~8자리'; }
 }
 // ──────────────────────────────────────────────────────────────────────────
 // ── 고객사 모달 - 노무대행 서비스 계약서 파일 처리 (복수 파일) ──
@@ -1069,6 +1146,15 @@ async function saveCompany(){
   if(!_cmRequire('cm-insurance-basis',   '4대보험 적용 기준을 선택하세요.'))  return;
   if(!_cmRequire('cm-annual-leave-basis','연차 휴가 산정 기준을 선택하세요.')) return;
 
+  // ── 저장 전 사원번호 자동 정리 (gap 제거, 0001부터 순차 재할당) ──
+  _cmRenumberAllEmpNos();
+
+  // ── 저장 전 사원번호 최종 유효성 검증 ──
+  if (!_cmValidateAllEmpNos()) return;
+
+  // ── 저장 전 전화번호 중복 최종 검증 ──
+  if (!_cmValidateAllPhones()) return;
+
   // ── 대표자 정보 수집 및 검증 ──
   const _representatives = _cmCollectReps();
   if(_representatives.length === 0){
@@ -1366,8 +1452,7 @@ async function _cmApplyAllowanceToContracts(companyId, effectiveDateStr, newCfg)
   const targets = (allContracts||[]).filter(c =>
     c.company_id === companyId &&
     (c.contract_start || '') >= effectiveDateStr &&
-    c.status !== CONTRACT_STATUS.VOIDED &&
-    c.status !== CONTRACT_STATUS.CANCELED
+    c.status !== CONTRACT_STATUS.VOIDED
   );
   if(!targets.length) return;
 
@@ -1418,7 +1503,7 @@ async function deleteCompany(id){
 let _cmExecutives = [];
 let _cmRelatedParties = [];
 
-function _cmExecutiveHTML(idx, data = { name: '', position: '', phone: '', id_number: '', bank_name: '', bank_account: '', bank_holder: '' }) {
+function _cmExecutiveHTML(idx, data = { name: '', position: '', phone: '', email: '', id_number: '', employee_number: '', bank_name: '', bank_account: '', bank_holder: '' }) {
   const esc = (s) => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   return `
   <div class="cm-person-card" id="cm-exec-card-${idx}" style="background:#f8faff;border:1.5px solid #e0e7ff;border-radius:10px;padding:14px 16px;margin-bottom:10px;">
@@ -1427,10 +1512,12 @@ function _cmExecutiveHTML(idx, data = { name: '', position: '', phone: '', id_nu
       <button type="button" class="btn btn-sm btn-secondary" onclick="_cmRemoveExecutive(${idx})"><i class="fas fa-trash-alt"></i> 삭제</button>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;">
+      <div class="cm-person-fg"><label>사원번호</label><input type="text" id="cm-exec-empno-${idx}" value="${esc(data.employee_number)}" placeholder="사원번호" onblur="_cmCheckExecEmpNo(${idx})" /></div>
       <div class="cm-person-fg"><label>이름 <span style="color:#c00;">*</span></label><input type="text" id="cm-exec-name-${idx}" value="${esc(data.name)}" placeholder="이름" /></div>
       <div class="cm-person-fg"><label>직책 <span style="color:#c00;">*</span></label><input type="text" id="cm-exec-position-${idx}" value="${esc(data.position)}" placeholder="예: 전무이사" /></div>
-      <div class="cm-person-fg"><label>전화번호 <span style="color:#c00;">*</span></label><input type="text" id="cm-exec-phone-${idx}" value="${esc(data.phone)}" placeholder="010-0000-0000" maxlength="13" oninput="_onPhoneInput(this)" /></div>
+      <div class="cm-person-fg"><label>휴대전화번호 <span style="color:#c00;">*</span></label><input type="text" id="cm-exec-phone-${idx}" value="${esc(data.phone)}" placeholder="010-0000-0000" maxlength="13" oninput="_onPhoneInput(this)" onblur="_cmCheckExecPhone(${idx})" /></div>
       <div class="cm-person-fg"><label>주민번호 앞7자리 <span style="color:#c00;">*</span></label><input type="text" id="cm-exec-idnum-${idx}" value="${esc(data.id_number)}" placeholder="YYMMDD-N" maxlength="8" oninput="_onIdInput(this)" /></div>
+      <div class="cm-person-fg"><label>이메일</label><input type="text" id="cm-exec-email-${idx}" value="${esc(data.email)}" placeholder="example@email.com" oninput="_onEmailInput(this)" /></div>
     </div>
     <div style="margin-top:10px;border-top:1px dashed #d1d5db;padding-top:10px;">
       <div class="cm-aw-section-title" style="margin-bottom:6px;">급여지급계좌 <span style="font-size:10.5px;font-weight:400;color:#9ca3af;">(선택)</span></div>
@@ -1443,7 +1530,7 @@ function _cmExecutiveHTML(idx, data = { name: '', position: '', phone: '', id_nu
   </div>`;
 }
 
-function _cmRelatedHTML(idx, data = { name: '', relationship: '', phone: '', id_number: '', bank_name: '', bank_account: '', bank_holder: '' }) {
+function _cmRelatedHTML(idx, data = { name: '', relationship: '', phone: '', email: '', id_number: '', employee_number: '', bank_name: '', bank_account: '', bank_holder: '' }) {
   const esc = (s) => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   return `
   <div class="cm-person-card" id="cm-rel-card-${idx}" style="background:#f8faff;border:1.5px solid #e0e7ff;border-radius:10px;padding:14px 16px;margin-bottom:10px;">
@@ -1452,10 +1539,12 @@ function _cmRelatedHTML(idx, data = { name: '', relationship: '', phone: '', id_
       <button type="button" class="btn btn-sm btn-secondary" onclick="_cmRemoveRelated(${idx})"><i class="fas fa-trash-alt"></i> 삭제</button>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;">
+      <div class="cm-person-fg"><label>사원번호</label><input type="text" id="cm-rel-empno-${idx}" value="${esc(data.employee_number)}" placeholder="사원번호" onblur="_cmCheckRelEmpNo(${idx})" /></div>
       <div class="cm-person-fg"><label>이름 <span style="color:#c00;">*</span></label><input type="text" id="cm-rel-name-${idx}" value="${esc(data.name)}" placeholder="이름" /></div>
       <div class="cm-person-fg"><label>관계 <span style="color:#c00;">*</span></label><input type="text" id="cm-rel-relationship-${idx}" value="${esc(data.relationship)}" placeholder="예: 배우자" /></div>
-      <div class="cm-person-fg"><label>전화번호 <span style="color:#c00;">*</span></label><input type="text" id="cm-rel-phone-${idx}" value="${esc(data.phone)}" placeholder="010-0000-0000" maxlength="13" oninput="_onPhoneInput(this)" /></div>
+      <div class="cm-person-fg"><label>휴대전화번호 <span style="color:#c00;">*</span></label><input type="text" id="cm-rel-phone-${idx}" value="${esc(data.phone)}" placeholder="010-0000-0000" maxlength="13" oninput="_onPhoneInput(this)" onblur="_cmCheckRelPhone(${idx})" /></div>
       <div class="cm-person-fg"><label>주민번호 앞7자리 <span style="color:#c00;">*</span></label><input type="text" id="cm-rel-idnum-${idx}" value="${esc(data.id_number)}" placeholder="YYMMDD-N" maxlength="8" oninput="_onIdInput(this)" /></div>
+      <div class="cm-person-fg"><label>이메일</label><input type="text" id="cm-rel-email-${idx}" value="${esc(data.email)}" placeholder="example@email.com" oninput="_onEmailInput(this)" /></div>
     </div>
     <div style="margin-top:10px;border-top:1px dashed #d1d5db;padding-top:10px;">
       <div class="cm-aw-section-title" style="margin-bottom:6px;">급여지급계좌 <span style="font-size:10.5px;font-weight:400;color:#9ca3af;">(선택)</span></div>
@@ -1491,25 +1580,300 @@ function _cmRenderRelated() {
 }
 
 function _cmAddExecutive() {
-  _cmExecutives.push({ name: '', position: '', phone: '', id_number: '', bank_name: '', bank_account: '', bank_holder: '' });
+  _cmExecutives.push({ name: '', position: '', phone: '', email: '', id_number: '', employee_number: '', bank_name: '', bank_account: '', bank_holder: '' });
   _cmRenderExecutives();
+  _cmSuggestAllEmpNos();
 }
 
 function _cmRemoveExecutive(idx) {
   _cmExecutives.splice(idx, 1);
   _cmRenderExecutives();
+  _cmSuggestAllEmpNos();
   toast('수정 완료 버튼을 눌러야 삭제하신 내용이 최종 반영됩니다.', 'warning');
 }
 
 function _cmAddRelated() {
-  _cmRelatedParties.push({ name: '', relationship: '', phone: '', id_number: '', bank_name: '', bank_account: '', bank_holder: '' });
+  _cmRelatedParties.push({ name: '', relationship: '', phone: '', email: '', id_number: '', employee_number: '', bank_name: '', bank_account: '', bank_holder: '' });
   _cmRenderRelated();
+  _cmSuggestAllEmpNos();
 }
 
 function _cmRemoveRelated(idx) {
   _cmRelatedParties.splice(idx, 1);
   _cmRenderRelated();
+  _cmSuggestAllEmpNos();
   toast('수정 완료 버튼을 눌러야 삭제하신 내용이 최종 반영됩니다.', 'warning');
+}
+
+// ── 사원번호 추천 헬퍼 (대표자/등기임원/특수관계인 공통) ──
+function _cmSuggestEmpNoFor(inputEl) {
+  if (!inputEl) return;
+  const coId = currentGlobalCompanyId || document.getElementById('cm-company')?.value;
+  const used = new Set();
+  // 1) DB에 저장된 해당 고객사 직원들의 사원번호 수집
+  if (coId) {
+    for (const emp of allEmployees) {
+      if (emp.company_id !== coId) continue;
+      const num = parseInt(emp.employee_number);
+      if (!isNaN(num)) used.add(num);
+    }
+  }
+  // 2) 현재 폼에 입력된 대표자/등기임원/특수관계인 사원번호도 수집 (자기 자신 제외)
+  const allEmpNoInputs = document.querySelectorAll('[id^="cm-rep-empno-"],[id^="cm-exec-empno-"],[id^="cm-rel-empno-"]');
+  allEmpNoInputs.forEach(el => {
+    if (el === inputEl) return;
+    const num = parseInt((el.value || '').trim());
+    if (!isNaN(num)) used.add(num);
+  });
+  // 3) 사용되지 않은 가장 작은 번호 찾기 (gap-fill)
+  let next = 1;
+  while (used.has(next)) next++;
+  inputEl.placeholder = `추천: ${String(next).padStart(4, '0')}`;
+}
+
+function _cmSuggestRepEmpNo(idx) {
+  _cmSuggestEmpNoFor(document.getElementById('cm-rep-empno-' + idx));
+}
+function _cmSuggestExecEmpNo(idx) {
+  _cmSuggestEmpNoFor(document.getElementById('cm-exec-empno-' + idx));
+}
+function _cmSuggestRelEmpNo(idx) {
+  _cmSuggestEmpNoFor(document.getElementById('cm-rel-empno-' + idx));
+}
+
+// ── 사원번호 중복 검사 (대표자/등기임원/특수관계인 공통) ──
+function _cmCheckEmpNoDup(el) {
+  if (!el || !el.value.trim()) { if(el) el.style.borderColor = ''; return; }
+  const coId = currentGlobalCompanyId || document.getElementById('cm-company')?.value;
+  if (!coId) return;
+  const empNo = el.value.trim();
+
+  // 1) 같은 폼 내 다른 사원번호 필드와 중복 체크
+  const allEmpNoInputs = document.querySelectorAll('[id^="cm-rep-empno-"],[id^="cm-exec-empno-"],[id^="cm-rel-empno-"]');
+  for (const other of allEmpNoInputs) {
+    if (other === el) continue;
+    if ((other.value || '').trim() === empNo) {
+      el.style.borderColor = '#dc2626';
+      toast(`사원번호 "${empNo}"은(는) 이미 다른 항목에서 입력된 번호입니다.`, 'error');
+      return;
+    }
+  }
+
+  // 2) DB에 저장된 직원과 중복 체크
+  const matched = allEmployees.find(e => e.company_id === coId && e.employee_number === empNo);
+  if (!matched) {
+    el.style.borderColor = '#16a34a';
+    return;
+  }
+
+  const empContracts = allContracts.filter(c => c.employee_id === matched.id && c.company_id === coId);
+
+  // 유효 계약 보유 → 사용 중
+  if (empContracts.some(c => CONTRACT_ACTIVE_STATUSES.includes(c.status))) {
+    el.style.borderColor = '#dc2626';
+    toast(`사원번호 "${empNo}"은(는) 이미 ${matched.name} 직원이 사용 중입니다.`, 'error');
+    return;
+  }
+
+  // 모든 계약이 VOIDED + 갱신 승계 아님 → 재사용 가능
+  const allVoided = empContracts.length > 0 && empContracts.every(c => c.status === CONTRACT_STATUS.VOIDED);
+  const anyRenewedFrom = empContracts.some(c => c.renewed_from_id);
+  if (allVoided && !anyRenewedFrom) {
+    el.style.borderColor = '#16a34a';
+    return;
+  }
+
+  // 그 외 → 재사용 불가
+  el.style.borderColor = '#dc2626';
+  const reason = allVoided ? '갱신 승계되어 파기된' : '퇴사 처리된';
+  toast(`사원번호 "${empNo}"은(는) ${reason} ${matched.name} 직원이 사용하던 번호입니다.`, 'error');
+}
+
+function _cmCheckRepEmpNo(idx) {
+  _cmCheckEmpNoDup(document.getElementById('cm-rep-empno-' + idx));
+  _cmSuggestAllEmpNos();
+}
+function _cmCheckExecEmpNo(idx) {
+  _cmCheckEmpNoDup(document.getElementById('cm-exec-empno-' + idx));
+  _cmSuggestAllEmpNos();
+}
+function _cmCheckRelEmpNo(idx) {
+  _cmCheckEmpNoDup(document.getElementById('cm-rel-empno-' + idx));
+  _cmSuggestAllEmpNos();
+}
+
+// ── 전화번호 중복 검사 (대표자/등기임원/특수관계인 공통) ──
+function _cmCheckPhoneDup(el) {
+  if (!el || !el.value.trim()) { if(el) el.style.borderColor = ''; return; }
+  const phone = el.value.trim().replace(/[^0-9]/g, ''); // 숫자만 추출
+  if (!phone) { el.style.borderColor = ''; return; }
+
+  // 1) 같은 폼 내 다른 전화번호 필드와 중복 체크
+  const allPhoneInputs = document.querySelectorAll('[id^="cm-rep-phone-"],[id^="cm-exec-phone-"],[id^="cm-rel-phone-"]');
+  for (const other of allPhoneInputs) {
+    if (other === el) continue;
+    const otherPhone = (other.value || '').trim().replace(/[^0-9]/g, '');
+    if (otherPhone && otherPhone === phone) {
+      el.style.borderColor = '#dc2626';
+      toast('이미 다른 항목에 입력된 전화번호입니다.', 'error');
+      return;
+    }
+  }
+
+  // 2) 수정 모드: DB 직원 전화번호와 중복 체크
+  const coId = currentGlobalCompanyId || document.getElementById('cm-company')?.value;
+  if (coId) {
+    const dupEmp = allEmployees.find(e => e.company_id === coId && e.phone && e.phone.replace(/[^0-9]/g, '') === phone);
+    if (dupEmp) {
+      el.style.borderColor = '#dc2626';
+      toast(`"${phone}"은(는) 이미 ${dupEmp.name} 직원의 등록된 전화번호입니다.`, 'error');
+      return;
+    }
+  }
+
+  el.style.borderColor = '#16a34a';
+}
+
+function _cmCheckRepPhone(idx) {
+  _cmCheckPhoneDup(document.getElementById('cm-rep-phone-' + idx));
+}
+function _cmCheckExecPhone(idx) {
+  _cmCheckPhoneDup(document.getElementById('cm-exec-phone-' + idx));
+}
+function _cmCheckRelPhone(idx) {
+  _cmCheckPhoneDup(document.getElementById('cm-rel-phone-' + idx));
+}
+
+/** 모든 사원번호 필드의 placeholder 추천값을 재계산 */
+function _cmSuggestAllEmpNos() {
+  document.querySelectorAll('[id^="cm-rep-empno-"],[id^="cm-exec-empno-"],[id^="cm-rel-empno-"]').forEach(el => {
+    if (!el.value.trim()) _cmSuggestEmpNoFor(el);
+  });
+}
+
+/** 저장 전: 모든 사원번호를 0001부터 순차적으로 재정렬 (gap 제거) */
+function _cmRenumberAllEmpNos() {
+  // 모든 사원번호 입력값 수집 → {el, value} 배열
+  const entries = [];
+  document.querySelectorAll('[id^="cm-rep-empno-"],[id^="cm-exec-empno-"],[id^="cm-rel-empno-"]').forEach(el => {
+    const val = (el.value || '').trim();
+    if (val) entries.push({ el, val, num: parseInt(val) || 0 });
+  });
+  if (!entries.length) return;
+  // 값 기준 오름차순 정렬
+  entries.sort((a, b) => a.num - b.num);
+  // 0001부터 순차 재할당
+  entries.forEach((entry, i) => {
+    const newNo = String(i + 1).padStart(4, '0');
+    if (entry.val !== newNo) entry.el.value = newNo;
+  });
+}
+
+/** 저장 전 최종 유효성 검증: 사원번호 중복·DB 충돌 확인 */
+function _cmValidateAllEmpNos() {
+  const coId = currentGlobalCompanyId || document.getElementById('cm-company')?.value;
+  const seen = {}; // { empNo: label } — 폼 내 중복 검사용
+  const allInputs = document.querySelectorAll('[id^="cm-rep-empno-"],[id^="cm-exec-empno-"],[id^="cm-rel-empno-"]');
+  const errors = [];
+
+  // 1) DB 기존 직원 사원번호 Set (본 회사 소속만, 자기 자신 제외)
+  const dbUsed = new Set();
+  if (coId) {
+    for (const emp of allEmployees) {
+      if (emp.company_id !== coId) continue;
+      if (emp.employee_number) dbUsed.add(emp.employee_number);
+    }
+  }
+
+  for (const el of allInputs) {
+    const val = (el.value || '').trim();
+    if (!val) continue;
+
+    // 1) 폼 내 중복 검사
+    if (seen[val]) {
+      errors.push(`사원번호 "${val}" 중복: ${seen[val]} / 현재 필드`);
+    } else {
+      seen[val] = _cmGetEmpNoLabel(el);
+    }
+
+    // 2) DB 중복 검사 (기존 직원과 충돌)
+    if (dbUsed.has(val)) {
+      const dupEmp = allEmployees.find(e => e.company_id === coId && e.employee_number === val);
+      if (dupEmp) {
+        errors.push(`사원번호 "${val}"은(는) 이미 ${dupEmp.name} 직원이 사용 중입니다.`);
+      }
+    }
+  }
+
+  if (errors.length) {
+    toast(errors.join('\n'), 'error');
+    return false;
+  }
+  return true;
+}
+
+/** 사원번호 입력 필드의 소속 라벨 반환 (오류 메시지용) */
+function _cmGetEmpNoLabel(el) {
+  const id = el.id || '';
+  if (id.startsWith('cm-rep-'))  return '대표자';
+  if (id.startsWith('cm-exec-')) return '등기임원';
+  if (id.startsWith('cm-rel-'))  return '특수관계인';
+  return '기타';
+}
+
+/** 저장 전 최종 유효성 검증: 전화번호 중복 확인 */
+function _cmValidateAllPhones() {
+  const coId = currentGlobalCompanyId || document.getElementById('cm-company')?.value;
+  const seen = {}; // { digits: label }
+  const allInputs = document.querySelectorAll('[id^="cm-rep-phone-"],[id^="cm-exec-phone-"],[id^="cm-rel-phone-"]');
+  const errors = [];
+
+  // DB 직원 전화번호 Set (수정 모드일 때만)
+  const dbPhones = new Set();
+  if (coId) {
+    for (const emp of allEmployees) {
+      if (emp.company_id !== coId) continue;
+      const p = (emp.phone || '').replace(/[^0-9]/g, '');
+      if (p) dbPhones.add(p);
+    }
+  }
+
+  for (const el of allInputs) {
+    const raw = (el.value || '').trim();
+    if (!raw) continue;
+    const digits = raw.replace(/[^0-9]/g, '');
+    if (!digits) continue;
+
+    // 1) 폼 내 중복
+    if (seen[digits]) {
+      errors.push(`전화번호 "${raw}" 중복: ${seen[digits]} / ${_cmGetPhoneLabel(el)}`);
+    } else {
+      seen[digits] = _cmGetPhoneLabel(el);
+    }
+
+    // 2) DB 중복
+    if (dbPhones.has(digits)) {
+      const dupEmp = allEmployees.find(e => e.company_id === coId && e.phone && e.phone.replace(/[^0-9]/g, '') === digits);
+      if (dupEmp) {
+        errors.push(`전화번호 "${raw}"은(는) 이미 ${dupEmp.name} 직원의 등록된 번호입니다.`);
+      }
+    }
+  }
+
+  if (errors.length) {
+    toast(errors.join('\n'), 'error');
+    return false;
+  }
+  return true;
+}
+
+/** 전화번호 입력 필드의 소속 라벨 반환 */
+function _cmGetPhoneLabel(el) {
+  const id = el.id || '';
+  if (id.startsWith('cm-rep-'))  return '대표자';
+  if (id.startsWith('cm-exec-')) return '등기임원';
+  if (id.startsWith('cm-rel-'))  return '특수관계인';
+  return '기타';
 }
 
 function _cmCollectExecutives() {
@@ -1518,12 +1882,14 @@ function _cmCollectExecutives() {
     const name = document.getElementById(`cm-exec-name-${i}`)?.value?.trim() || '';
     const position = document.getElementById(`cm-exec-position-${i}`)?.value?.trim() || '';
     const phone = document.getElementById(`cm-exec-phone-${i}`)?.value?.trim() || '';
+    const email = document.getElementById(`cm-exec-email-${i}`)?.value?.trim() || '';
     const id_number = document.getElementById(`cm-exec-idnum-${i}`)?.value?.trim() || '';
+    const employee_number = document.getElementById(`cm-exec-empno-${i}`)?.value?.trim() || '';
     const bank_name = document.getElementById(`cm-exec-bank-${i}`)?.value?.trim() || '';
     const bank_account = document.getElementById(`cm-exec-account-${i}`)?.value?.trim() || '';
     const bank_holder = document.getElementById(`cm-exec-holder-${i}`)?.value?.trim() || '';
     if (name || position || phone || id_number) {
-      result.push({ name, position, phone, id_number, bank_name, bank_account, bank_holder });
+      result.push({ name, position, phone, email, id_number, employee_number, bank_name, bank_account, bank_holder });
     }
   });
   return result;
@@ -1535,12 +1901,14 @@ function _cmCollectRelated() {
     const name = document.getElementById(`cm-rel-name-${i}`)?.value?.trim() || '';
     const relationship = document.getElementById(`cm-rel-relationship-${i}`)?.value?.trim() || '';
     const phone = document.getElementById(`cm-rel-phone-${i}`)?.value?.trim() || '';
+    const email = document.getElementById(`cm-rel-email-${i}`)?.value?.trim() || '';
     const id_number = document.getElementById(`cm-rel-idnum-${i}`)?.value?.trim() || '';
+    const employee_number = document.getElementById(`cm-rel-empno-${i}`)?.value?.trim() || '';
     const bank_name = document.getElementById(`cm-rel-bank-${i}`)?.value?.trim() || '';
     const bank_account = document.getElementById(`cm-rel-account-${i}`)?.value?.trim() || '';
     const bank_holder = document.getElementById(`cm-rel-holder-${i}`)?.value?.trim() || '';
     if (name || relationship || phone || id_number) {
-      result.push({ name, relationship, phone, id_number, bank_name, bank_account, bank_holder });
+      result.push({ name, relationship, phone, email, id_number, employee_number, bank_name, bank_account, bank_holder });
     }
   });
   return result;
@@ -1586,7 +1954,8 @@ async function _cmSaveExecutives(companyId) {
       const body = {
         id: 'exec_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
         company_id: companyId, name: d.name, position: d.position,
-        phone: d.phone, id_number: d.id_number,
+        phone: d.phone, email: d.email, id_number: d.id_number,
+        employee_number: d.employee_number,
         bank_name: d.bank_name, bank_account: d.bank_account, bank_holder: d.bank_holder,
         created_at: Date.now(), updated_at: Date.now()
       };
@@ -1610,7 +1979,8 @@ async function _cmSaveRelated(companyId) {
       const body = {
         id: 'rel_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
         company_id: companyId, name: d.name, relationship: d.relationship,
-        phone: d.phone, id_number: d.id_number,
+        phone: d.phone, email: d.email, id_number: d.id_number,
+        employee_number: d.employee_number,
         bank_name: d.bank_name, bank_account: d.bank_account, bank_holder: d.bank_holder,
         created_at: Date.now(), updated_at: Date.now()
       };

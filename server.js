@@ -499,7 +499,7 @@ cron.schedule('0 9 * * *', async () => {
       WHERE c.is_draft = 0 AND c.is_voided_by_amend = 0
         AND c.contract_type IN ('fixed_term', 'fixed_probation', 'daily', 'regular_probation')
         AND c.contract_start IS NOT NULL
-        AND c.status NOT IN ('canceled', 'voided')
+        AND c.status NOT IN ('voided')
       GROUP BY c.employee_id
       HAVING total_days >= ?
          AND days_to_end >= ?
@@ -608,7 +608,7 @@ cron.schedule('0 9 * * 1', async () => {
       WHERE c.is_draft = 0 AND c.is_voided_by_amend = 0
         AND c.contract_type IN ('fixed_term', 'fixed_probation', 'daily', 'regular_probation')
         AND c.contract_start IS NOT NULL
-        AND c.status NOT IN ('canceled', 'voided')
+        AND c.status NOT IN ('voided')
       GROUP BY c.employee_id
       HAVING total_days > ?
     `, [today, TWO_YEARS_DAYS]);
@@ -623,7 +623,7 @@ cron.schedule('0 9 * * 1', async () => {
         SELECT id FROM contracts
         WHERE employee_id = ? AND contract_type = 'regular'
           AND is_draft = 0 AND is_voided_by_amend = 0
-          AND status NOT IN ('canceled', 'voided')
+          AND status NOT IN ('voided')
         LIMIT 1
       `, [r.employee_id]);
       if (hasRegular) continue; // 정규직 전환 완료 → 건너뜀
@@ -716,7 +716,7 @@ cron.schedule('0 9 * * *', async () => {
       WHERE c.is_draft = 0 AND c.is_voided_by_amend = 0
         AND c.contract_type IN ('regular_probation', 'fixed_probation')
         AND c.contract_start IS NOT NULL
-        AND c.status NOT IN ('voided', 'terminated', 'canceled', 'expired')
+        AND c.status NOT IN ('voided', 'terminated', 'expired')
         AND COALESCE(c.probation_months, 3) > 3
         AND COALESCE(c.probation_end_date, date(c.contract_start, '+' || COALESCE(c.probation_months, 3) || ' months', '-1 day')) >= ?
         AND COALESCE(c.probation_end_date, date(c.contract_start, '+' || COALESCE(c.probation_months, 3) || ' months', '-1 day')) <= date(?, '+' || ? || ' days')
