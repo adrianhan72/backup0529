@@ -1321,6 +1321,35 @@ async function saveCompany(){
         if(changedFields.includes('allowance_config')){
           await _cmApplyAllowanceToContracts(editId.company, _effDateStr, newAllowanceCfg);
         }
+
+        // ⑥ 고객사 정보 변경 인앱 알림
+        const _changeLines = changedFields.map(f => `· ${_CM_FIELD_LABELS[f] || f}`).join('\n');
+        const _coName = allCompanies.find(x => x.id === editId.company)?.company_name || name;
+        let _updTitle = `[고객사 정보 변경 안내] ${_coName}`;
+        let _updBody = `안녕하세요, ${_coName} 대표자님.\n\n${_coName}의 정보가 다음과 같이 변경되었습니다.\n\n■ 변경사항\n${_changeLines}\n\n■ 적용일: ${_effDateStr}\n\n※ 변경 사항은 적용일부터 이루어지는 모든 근로계약에 반영됩니다.\n※ 변경사항은 이미 체결한 근로계약 및 그에 종속된 급여조건에는\n   어떠한 영향도 미치지 않습니다.\n   기존에 체결하셨던 근로계약에도 변경이 필요한 경우에는\n   근로계약을 갱신해야 합니다.\n※ 기타 문의사항이 있으시면 담당자에게 연락해 주시기 바랍니다.`;
+        try {
+          const _updRes = await fetch('../tables/representative_contact/default');
+          if (_updRes.ok) {
+            const _updData = await _updRes.json();
+            if (_updData?.msg_body_rules) {
+              const _updRules = typeof _updData.msg_body_rules === 'string'
+                ? JSON.parse(_updData.msg_body_rules) : _updData.msg_body_rules;
+              const _updRule = _updRules?.company_updated;
+              if (_updRule) {
+                if (_updRule.title) _updTitle = _updRule.title.replace(/\{회사명\}/g, _coName);
+                if (_updRule.body) _updBody = _updRule.body
+                  .replace(/\{회사명\}/g, _coName)
+                  .replace(/\{변경내역\}/g, _changeLines)
+                  .replace(/\{적용일\}/g, _effDateStr);
+              }
+            }
+          }
+        } catch(_) {}
+        _sendCompanyNotice({
+          companyId: editId.company, companyName: _coName,
+          noticeType: 'company_updated',
+          title: _updTitle, body: _updBody,
+        }).catch(() => {});
       }
     }
   } else if(_currentCompanyDraftId){
@@ -1336,6 +1365,38 @@ async function saveCompany(){
     };
     await api('../tables/company_history',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(_histNew)}).catch(()=>{});
     await loadCompanyHistories();
+    // ── 신규 고객사 환영 인앱 알림 ──
+    const _repName = _representatives[0]?.name || rep;
+    const _startDate = body.contract_start_date || '-';
+    let _welcomeTitle = `[환영] ${name} — 인사톡 노무톡 가입을 환영합니다`;
+    let _welcomeBody = `안녕하세요, ${_repName} 사장님.\n\n${name}의 인사톡 노무톡 가입이 완료되었습니다.\n지금부터 근로계약 관리, 급여 명세서 발행, 4대보험 산정, 연차 관리 등\n다양한 인사노무 업무를 인사톡 노무톡이 대행해드립니다.\n\n■ 가입정보\n· 회사명: ${name}\n· 사업자번호: ${biz}\n· 대표자: ${_repName}\n· 앱 접근코드: ${code}\n· 자문계약 시작일: ${_startDate}\n\n※ 근로계약 등록 후 계약서 PDF를 근로자에게 발송하시면\n   앱에서 바로 확인하실 수 있습니다.\n※ 급여가 입력되면 급여명세서가 해당 직원에게 자동 발송되며\n   앱에서도 바로 확인하실 수 있습니다.\n※ 등록된 모든 직원의 급여가 입력 완료되면 임금대장과\n   급여 통계를 고객사 앱을 통해 확인하실 수 있습니다.\n※ 4대보험 요율과 최저임금 기준, 관련 법령의 변경 사항 등을\n   고지해드립니다.\n※ 관련 법령 위반의 위험이 감지되면 예방할 수 있게\n   사전에 미리 알려드립니다.\n※ 문의사항은 아래 담당자 연락처로 연락 주시기 바랍니다.`;
+
+    // 시스템 설정에서 커스텀 규칙 조회 시도
+    try {
+      const _contactRes = await fetch('../tables/representative_contact/default');
+      if (_contactRes.ok) {
+        const _contactData = await _contactRes.json();
+        if (_contactData?.msg_body_rules) {
+          const _rules = typeof _contactData.msg_body_rules === 'string'
+            ? JSON.parse(_contactData.msg_body_rules) : _contactData.msg_body_rules;
+          const _rule = _rules?.company_welcome;
+          if (_rule) {
+            if (_rule.title) _welcomeTitle = _rule.title.replace(/\{회사명\}/g, name).replace(/\{대표자명\}/g, _repName);
+            if (_rule.body) _welcomeBody = _rule.body
+              .replace(/\{회사명\}/g, name).replace(/\{대표자명\}/g, _repName)
+              .replace(/\{사업자번호\}/g, biz).replace(/\{접근코드\}/g, code)
+              .replace(/\{계약시작일\}/g, _startDate);
+          }
+        }
+      }
+    } catch(_) { /* API unavailable — use defaults */ }
+
+    _sendCompanyNotice({
+      companyId: body.id, companyName: name,
+      noticeType: 'company_welcome',
+      title: _welcomeTitle,
+      body: _welcomeBody
+    }).catch(() => {});
   }
   _currentCompanyDraftId = null;
 

@@ -808,16 +808,40 @@ async function cancelTerminate(id, name){
  */
 async function _createTermNotice(company, endDateStr, oldEndDateStr){
   if(!company) return;
-  const title = oldEndDateStr
-    ? '[서비스 해지 예정일 변경 안내]'
-    : '[서비스 해지 예정 안내]';
-  const body  = oldEndDateStr
-    ? `해지예정일이 ${oldEndDateStr}에서 ${endDateStr}로 변경되었습니다.`
-    : `${endDateStr}부로 서비스 이용이 해지될 예정입니다. 감사합니다.`;
+  const coName = company.company_name || '';
+  const ruleType = oldEndDateStr ? 'company_terminate_changed' : 'company_terminate_scheduled';
+
+  // 시스템 설정에서 커스텀 규칙 조회 시도
+  let title = oldEndDateStr
+    ? `[서비스 해지 예정일 변경 안내] ${coName}`
+    : `[서비스 해지 예정 안내] ${coName}`;
+  let body  = oldEndDateStr
+    ? `안녕하세요, ${coName} 대표자님.\n\n${coName}의 자문계약 해지 예정일이 변경되었습니다.\n\n■ 변경 전 해지 예정일: ${oldEndDateStr}\n■ 변경 후 해지 예정일: ${endDateStr}\n\n※ 해지 예정을 취소하시려면 담당자에게 연락해 주시기 바랍니다.`
+    : `안녕하세요, ${coName} 대표자님.\n\n${coName}의 자문계약 해지가 예정되어 안내드립니다.\n\n■ 해지 예정일: ${endDateStr}\n\n해지 예정일까지는 서비스를 정상 이용하실 수 있으며,\n해지 예정일 이후에는 서비스 이용이 제한됩니다.\n\n※ 해지 예정을 취소하시려면 담당자에게 연락해 주시기 바랍니다.`;
+
+  try {
+    const _contactRes = await fetch('../tables/representative_contact/default');
+    if (_contactRes.ok) {
+      const _contactData = await _contactRes.json();
+      if (_contactData?.msg_body_rules) {
+        const _rules = typeof _contactData.msg_body_rules === 'string'
+          ? JSON.parse(_contactData.msg_body_rules) : _contactData.msg_body_rules;
+        const _rule = _rules?.[ruleType];
+        if (_rule) {
+          if (_rule.title) title = _rule.title.replace(/\{회사명\}/g, coName);
+          if (_rule.body) body = _rule.body
+            .replace(/\{회사명\}/g, coName)
+            .replace(/\{해지예정일\}/g, endDateStr)
+            .replace(/\{이전해지일\}/g, oldEndDateStr || '');
+        }
+      }
+    }
+  } catch(_) { /* use defaults */ }
+
   try {
     await _sendCompanyNotice({
-      companyId  : company.id, companyName: company.company_name || '',
-      noticeType : 'notice',
+      companyId  : company.id, companyName: coName,
+      noticeType : ruleType,
       title, body,
     });
   } catch(e){
@@ -830,12 +854,31 @@ async function _createTermNotice(company, endDateStr, oldEndDateStr){
  */
 async function _createCancelNotice(company){
   if(!company) return;
-  const title = '[서비스 해지 취소 안내]';
-  const body  = '예약되었던 서비스 이용 해지가 정상적으로 취소처리되었습니다. 서비스를 계속 이용하실 수 있습니다.';
+  const coName = company.company_name || '';
+
+  let title = `[서비스 해지 취소 안내] ${coName}`;
+  let body  = `안녕하세요, ${coName} 대표자님.\n\n${coName}의 자문계약 해지 예정이 취소되었습니다.\n서비스를 계속 정상 이용하실 수 있습니다.\n\n감사합니다.`;
+
+  try {
+    const _contactRes = await fetch('../tables/representative_contact/default');
+    if (_contactRes.ok) {
+      const _contactData = await _contactRes.json();
+      if (_contactData?.msg_body_rules) {
+        const _rules = typeof _contactData.msg_body_rules === 'string'
+          ? JSON.parse(_contactData.msg_body_rules) : _contactData.msg_body_rules;
+        const _rule = _rules?.company_terminate_cancelled;
+        if (_rule) {
+          if (_rule.title) title = _rule.title.replace(/\{회사명\}/g, coName);
+          if (_rule.body) body = _rule.body.replace(/\{회사명\}/g, coName);
+        }
+      }
+    }
+  } catch(_) { /* use defaults */ }
+
   try {
     await _sendCompanyNotice({
-      companyId  : company.id, companyName: company.company_name || '',
-      noticeType : 'notice',
+      companyId  : company.id, companyName: coName,
+      noticeType : 'company_terminate_cancelled',
       title, body,
     });
   } catch(e){
