@@ -1,4 +1,5 @@
-    /* 고객사 선택 칩 — .co-chip 공통 클래스로 통합됨 (al-company-chip 은 레거시 제거) */
+﻿    /* 고객???�택 �???.co-chip 공통 ?�래?�로 ?�합??(al-company-chip ?� ?�거???�거) */
+    /* ?�차 ?�약 카드 */
     .al-stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px;}
     .al-stat-card{background:#fff;border-radius:12px;padding:16px 20px;box-shadow:0 1px 4px rgba(0,0,0,.06);border:1px solid #f1f5f9;position:relative;overflow:hidden;}
     .al-stat-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:12px 0 0 12px;}
@@ -9,7 +10,7 @@
     .al-stat-label{font-size:11.5px;color:#6b7280;font-weight:600;margin-bottom:6px;}
     .al-stat-val{font-size:24px;font-weight:800;color:#111827;line-height:1;}
     .al-stat-sub{font-size:11px;color:#9ca3af;margin-top:5px;}
-    /* 연차 테이블 */
+    /* ?�차 ?�이�?*/
     .al-table{width:100%;border-collapse:collapse;font-size:12.5px;}
     .al-table thead tr{background:#f8fafc;}
     .al-table th{padding:10px 13px;text-align:left;font-weight:700;color:#374151;border-bottom:2px solid #e5e7eb;white-space:nowrap;font-size:12px;}
@@ -23,16 +24,16 @@
     #pi-target-list-section table tbody tr:nth-child(even) td{background:#f8fafc;}
     #pi-target-list-section table tbody tr:hover td{background:#eef2ff;}
 
-    /* ?占쎌뿬 ?占쎌감 媛뺤“ */
+    /* ?�여 ?�차 강조 */
     .al-remain-ok{color:#059669;font-weight:700;}
     .al-remain-warn{color:#d97706;font-weight:700;}
     .al-remain-danger{color:#dc2626;font-weight:700;}
-    /* 諛곤옙? */
+    /* 배�? */
     .al-badge-basis{display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;font-size:10.5px;font-weight:700;background:#ede9fe;color:#6d28d9;}
-    /* 연차휴가 관리대장 모달 */
+    /* ?�차?��? 관리�???모달 */
     #al-ledger-modal .modal{max-width:960px;width:96vw;max-height:94vh;display:flex;flex-direction:column;overflow:hidden;}
     #al-ledger-modal .modal-body{overflow-y:auto;flex:1;padding:0;}
-    /* 紐⑤떖 ?占쎈뜑 ???占쎈룄 ?占쎌깋 */
+    /* 모달 ?�더 ???�도 ?�색 */
     .ledger-nav-header{
       display:flex;align-items:center;justify-content:center;gap:20px;
       background:linear-gradient(90deg,#0f4c81,#1e3a5f);
@@ -57,9 +58,9 @@
       transition:color .15s;
     }
     .ledger-nav-close:hover{color:#fff;}
-    /* 관리대장 바디 내부 컨테이너 */
+    /* 관리�???바디 ?��? 컨테?�너 */
     .ledger-body-inner{padding:16px 20px;display:flex;flex-direction:column;gap:12px;}
-    /* ?占쎈낫 ??怨듯넻 */
+    /* ?�보 ??공통 */
     .ledger-info-row{
       display:grid;gap:0;
       border:1px solid #cbd5e1;border-radius:6px;overflow:hidden;
@@ -81,7 +82,7 @@
     .ledger-info-val{color:#111827;font-weight:600;font-size:12.5px;}
     .ledger-info-val.accent{color:#0d9488;font-size:13px;font-weight:800;}
     .ledger-info-val.muted{color:#6b7280;font-size:12px;font-weight:500;}
-    /* 월별 테이블 */
+    /* ?�별 ?�이�?*/
     .ledger-table-wrap{overflow-x:auto;border:1px solid #cbd5e1;border-radius:6px;}
     .ledger-tbl{width:100%;border-collapse:collapse;font-size:12px;min-width:700px;}
     .ledger-tbl thead tr{background:#0a3055;}
@@ -112,14 +113,14 @@
       background:#e8f0fe;font-weight:800;color:#0d9488;
       text-align:center;font-size:13px;padding:8px;
     }
-    /* ?占쎌쭨 ?占쎌뒪???占쎈젰 */
+    /* ?�짜 ?�스???�력 */
     .ledger-tbl td input[type="text"]{
       width:100%;height:100%;border:1px solid #d1d5db;outline:none;background:#fff;
       font-size:12px;font-family:inherit;color:#000;
       padding:6px 8px;box-sizing:border-box;
     }
     .ledger-tbl td input[type="text"]:focus{background:#f0fdf4;}
-    /* 일수 드롭다운 셀렉트 */
+    /* ?�수 ?�롭?�운 ?�?�트 */
     .ledger-days-sel{
       width:100%;height:100%;border:1px solid #d1d5db;outline:none;background:#fff;
       font-size:12px;font-family:inherit;color:#000;font-weight:600;
@@ -131,7 +132,7 @@
     }
     .ledger-days-sel:focus{background-color:#f0fdf4;}
     .ledger-days-sel.has-value{color:#0d9488;font-weight:700;}
-    /* 吏묎퀎 ?占쎌뀡 */
+    /* 집계 ?�션 */
     .ledger-agg-grid{
       display:grid;grid-template-columns:repeat(5,1fr);gap:0;
       border:1.5px solid #cbd5e1;border-radius:8px;overflow:hidden;
@@ -147,7 +148,7 @@
     .ledger-agg-val.amber{color:#b45309;}
     .ledger-agg-val.red{color:#dc2626;}
     .ledger-agg-val.purple{color:#7c3aed;}
-    /* ?占쎌긽?占쎄툑 / ?占쎈떦 ??*/
+    /* ?�상?�금 / ?�당 ??*/
     .ledger-wage-row{
       display:grid;grid-template-columns:repeat(2,1fr);gap:10px;
     }
@@ -167,22 +168,22 @@
     .ledger-wage-card .lwc-val{font-size:15px;font-weight:800;color:#111827;margin-top:1px;}
     .ledger-wage-card .lwc-sub{font-size:10.5px;color:#9ca3af;margin-top:1px;}
 
-    /* 필터 바 */
+    /* ?�터 �?*/
     .al-filter-bar{display:flex;align-items:center;gap:10px;padding:12px 0 12px;flex-wrap:wrap;}
-    /* 紐⑤떖 */
+    /* 모달 */
     #al-promo-modal .modal-box{max-width:520px;}
     .al-promo-preview{background:#f8faff;border:1.5px solid #c7d2fe;border-radius:10px;padding:16px;font-size:12.5px;color:#374151;line-height:1.85;white-space:pre-wrap;max-height:260px;overflow-y:auto;}
-    /* 諛쒖넚 ?占쎈젰 ?占쏀깭 諛곤옙? */
+    /* 발송 ?�력 ?�태 배�? */
     .al-badge-sent{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;background:#dcfce7;color:#166534;}
-    /* 빈 상태 */
+    /* �??�태 */
     .al-empty{text-align:center;padding:48px 20px;color:#9ca3af;font-size:13px;}
     .al-empty i{display:block;font-size:28px;margin-bottom:10px;color:#d1d5db;}
-    /* 諛섏쓳??*/
+    /* 반응??*/
     @media(max-width:700px){.co-chip{font-size:11.5px;padding:6px 11px;}}
     .filter-bar{display:flex;align-items:center;gap:10px;padding:14px 22px;border-bottom:1px solid #f0f2f5;flex-wrap:wrap}
     select.filter-select{border:1px solid #d1d5db;border-radius:8px;padding:7px 12px;font-size:13px;color:#000;background:#fff;cursor:pointer;outline:none;font-family:inherit}
     .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .2s}
-    /* 湲됱뿬紐낆꽭??紐⑤떖 ?占쎌슜 */
+    /* 급여명세??모달 ?�용 */
     #payslip-modal{background:rgba(0,0,0,.7);z-index:300;overflow-y:auto;}
     .ps-info-cell{padding:8px 14px;font-size:12px;background:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
     .ps-info-cell.label{background:#eff6ff;font-weight:700;color:#1e40af;font-size:11.5px;white-space:nowrap;}
@@ -236,7 +237,7 @@
     .form-section-title.no-border{margin-bottom:4px;padding-bottom:0;border-bottom:none;}
 
     .form-hint{font-size:10.5px;color:#aaa}
-    /* 怨좉컼??紐⑤떖: 醫뚯슦 ???占쎌씠 ?占쎈젹 ???占쎈꺼 ?占쎈떒 怨좎젙, input/select ?占쎈떒 怨좎젙 */
+    /* 고객??모달: 좌우 ???�이 ?�렬 ???�벨 ?�단 고정, input/select ?�단 고정 */
     #company-modal .form-group{justify-content:space-between}
     .form-computed{background:#f8f9fb;border:1px solid #e8eaed;border-radius:7px;padding:8px 11px;font-size:12.5px;color:#555;font-weight:400}
     .pagination{display:flex;align-items:center;justify-content:space-between;padding:12px 22px}
@@ -265,11 +266,11 @@
     .company-card h3{font-size:14px;font-weight:700;margin-bottom:5px}
     .company-card p{font-size:11.5px;color:#888;line-height:1.9}
     .company-card .code-badge{position:absolute;top:14px;right:14px;background:#f0f2f5;padding:3px 9px;border-radius:20px;font-size:10.5px;color:#555;font-weight:600}
-    /* 怨좉컼???占쏀꽣 踰꾪듉 */
+    /* 고객???�터 버튼 */
     .company-filter-btn{background:#f8f9fb;color:#6b7280;border:1px solid #e5e7eb;padding:6px 12px;font-size:11.5px;transition:all .2s}
     .company-filter-btn:hover{background:#6366f1;color:#fff;border-color:#6366f1;}
     .company-filter-btn span{font-size:10.5px;opacity:.8}
-    /* 대시보드 고객사 테이블 */
+    /* ?�?�보??고객???�이�?*/
     .dash-co-table{width:100%;border-collapse:collapse;}
     .dash-co-table thead tr{background:#f1f5f9;border-bottom:2px solid #e2e8f0;}
     .dash-co-table thead th{font-size:12px;font-weight:700;color:#475569;padding:12px 14px;white-space:nowrap;}
@@ -285,7 +286,7 @@
     .dash-co-pending{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500;background:#fff7ed;color:#e94560;white-space:nowrap;}
     .dash-co-done{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500;background:#dcfce7;color:#10b981;white-space:nowrap;}
     .dash-co-btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:5px 13px;border-radius:7px;border-style:solid;border-width:1px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s;white-space:nowrap;width:100%;box-sizing:border-box; user-select:none;}
-    /* 년도별 산정기준 */
+/* ?�도�??�정기�? */
     .std-tab-bar{display:flex;gap:4px;margin-bottom:0;}
     .std-tab-panel{background:#f5f3ff;padding:20px;border-radius:0 0 12px 12px;box-shadow:none;border:1px solid #6366f1;}
     .std-table{width:100%;border-collapse:collapse;font-size:13px;}
@@ -298,7 +299,7 @@
     .std-table td.std-period{font-size:11px;color:#6b7280;}
     .std-current-row td{background:linear-gradient(90deg,#fef2f4,#fff7f8)!important;border-left:3px solid #e94560;}
     .std-add-card{background:linear-gradient(135deg,#f8f9fb,#fff);border:1.5px dashed #d1d5db;border-radius:12px;padding:20px 24px;margin-top:20px;}
-    /* 怨쇱꽭 湲곤옙? ??*/
+    /* 과세 기�? ??*/
     .tax-bracket-table{width:100%;border-collapse:collapse;font-size:12.5px;}
     .tax-bracket-table th{background:#f1f5f9;font-size:11.5px;font-weight:700;color:#374151;padding:9px 12px;border:1px solid #e2e8f0;white-space:nowrap;text-align:center;}
     .tax-bracket-table td{padding:7px 12px;border:1px solid #e2e8f0;text-align:right;vertical-align:middle;color:#374151;}
@@ -331,11 +332,11 @@
     }
     .std-update-btn:active:not(:disabled){}
     .std-update-btn:disabled,.std-update-btn[disabled]{background:#cccccc;color:#f2f2f2;border:1px solid #cccccc;cursor:not-allowed;pointer-events:none;box-shadow:none;opacity:1;}
-    /* 최저임금용 녹색 변형 */
+    /* 최�??�금???�색 변??*/
     .std-update-btn-green{background:#059669;border-color:#047857;}
     .std-update-btn-green:hover:not(:disabled){background:#047857;}
     .std-update-btn-green:active:not(:disabled){background:#065f46;}
-    /* 최저임금 테이블 */
+    /* 최�??�금 ?�이�?*/
     .mw-table{width:100%;border-collapse:collapse;font-size:13px;}
     .mw-table th{background:#f8f9fb;font-size:11.5px;font-weight:700;color:#374151;padding:10px 14px;border:1px solid #e5e7eb;text-align:center;}
     .mw-table td{padding:10px 14px;border:1px solid #e5e7eb;text-align:center;color:#374151;}
@@ -344,7 +345,7 @@
     .mw-table td.mw-hourly{font-weight:700;color:#e94560;font-size:14px;}
     .mw-table td.mw-monthly{font-weight:700;color:#6366f1;}
     .mw-current-row td{background:linear-gradient(90deg,#f0fdf4,#f8fffc)!important;border-left:3px solid #10b981;}
-    /* 산정기준 대시보드 배너 */
+    /* ?�정기�? ?�?�보??배너 */
     .std-banner{display:flex;align-items:flex-start;gap:12px;padding:13px 16px;border-radius:10px;margin-bottom:12px;border:1.5px solid;box-shadow:0 2px 10px rgba(0,0,0,.07);}
     .std-banner.pension{background:#eff6ff;border-color:#bfdbfe;}
     .std-banner.health{background:#fef2f4;border-color:#fca5a5;}
@@ -382,46 +383,40 @@
     .std-banner.minwage .std-banner-btn:hover:not(:disabled){
       background:#059669;box-shadow:0 3px 10px rgba(16,185,129,.32);
     }
-    /* 임금대장 메뉴 N 뱃지 */
+    /* ?�금?�??메뉴 N 뱃�? */
     .wl-menu-badge{animation:wl-badge-pulse 1.8s ease-in-out infinite;}
     @keyframes wl-badge-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.75;transform:scale(1.12)}}
 
-    /* ── 사이드바 메뉴 건수 뱃지 (menu-todo-badge) ── */
-    .menu-todo-badge{
-      display:inline-flex; align-items:center; justify-content:center;
-      background:#e94560; color:#fff;
-      font-size:10px; font-weight:600; border-radius:10px;
-      padding:1px 6px; margin-left:auto; line-height:1.4;
-      letter-spacing:0; vertical-align:middle;
-    }
+    /* 좌측 메뉴 ?�일 배�? (.count-badge + menu-todo-badge) */
+    .menu-todo-badge{ margin-left:auto; }
     .menu-item{display:flex;align-items:center;gap:10px;}
     .menu-item .menu-todo-badge{margin-left:auto;}
 
-    /* ══ 임금대장 카드 레이아웃 ══ */
+    /* ?�═ ?�금?�??카드 ?�이?�웃 ?�═ */
     .wl-wrap{border-radius:0 0 12px 12px;}
 
-    /* ── 직원 카드 ── */
+    /* ?�?� 직원 카드 ?�?� */
     .wl-card{
       border:1px solid #cbd5e1;border-radius:6px;
       margin-bottom:8px;
-      /* overflow:hidden 제거 → 테이블 마지막 열 잘림 방지 */
+      /* overflow:hidden ?�거 ???�이�?마�?�????�림 방�? */
       page-break-inside:avoid;break-inside:avoid;
     }
-    /* border-radius를 overflow:hidden 없이 유지 */
+    /* border-radius�?overflow:hidden ?�이 ?��? */
     .wl-card-head{
       border-radius:6px 6px 0 0;
     }
-    /* No 셀 왼쪽 상단 모서리 라운드 */
+    /* No ?� ?�쪽 ?�단 모서�??�운??*/
     .wl-head-no{
       border-top-left-radius:6px;
     }
-    /* 테이블 래퍼: overflow:hidden으로 카드 하단 모서리 라운드 클리핑 */
+    /* ?�이�??�퍼: overflow:hidden?�로 카드 ?�단 모서�??�운???�리??*/
     .wl-tbl-wrap{
       overflow:hidden;
       border-radius:0 0 5px 5px;
     }
-    /* 移대뱶 ?占쎈뜑: ?占쎌쟻?占쏀빆 + ?占쎌빟 (flexbox) */
-    /* border-radius를 overflow:hidden 없이 유지 */
+    /* 카드 ?�더: ?�적?�항 + ?�약 (flexbox) */
+    /* flex-wrap:wrap ?�로 변�???계약?�금 ?�???�러 개여??줄바꿈으�?겹침 방�? */
     .wl-card-head{
       display:flex;flex-wrap:wrap;align-items:stretch;
       background:#1e293b;border-bottom:2px solid #334155;
@@ -456,33 +451,35 @@
     .wl-head-cell.c-net{background:#052e16;}
     .wl-head-cell.c-net .val{color:#86efac;}
     .wl-head-cell:last-child{border-right:none;}
-    /* 급여지급일·비고는 늘어나지 않게 고정, 내용 다 보이도록 min-width 지정 */
+    /* 급여지급일·비고???�어?��? ?�게 고정, ?�용 ??보이?�록 min-width 지??*/
     .wl-head-cell.fixed{flex-grow:0;flex-shrink:0;min-width:max-content;}
 
-    /* ── 상세 테이블 ── */
+    /* ?�?� ?�세 ?�이�??�?� */
+    /* 10?? [구분] [??��th·금액td]×4??[?�백] */
+    /* table-layout:auto ????���?길이??맞게 브라?��?가 ?�동 조정 ???�자 ?�림 ?�음 */
     .wl-tbl{
       width:100%;border-collapse:collapse;
       table-layout:auto;font-size:11px;
     }
-    /* 구분 열은 고정폭, 여백열도 고정, 나머지는 브라우저 자동 */
+    /* 구분 ?��? 고정?? ?�백?�도 고정, ?�머지??브라?��? ?�동 */
     .wl-tbl col.c-sec{width:46px;}
     .wl-tbl col.c-lbl{} /* auto */
     .wl-tbl col.c-val{min-width:80px;}
-    /* c-pad 열 제거 — 마지막 금액 td 우측 패딩으로 대체 */
+    /* c-pad ???�거 ??마�?�?금액 td ?�측 ?�딩?�로 ?��?*/
     .wl-tbl col.c-pad{display:none;}
     .wl-tbl th,.wl-tbl td{
       padding:3px 6px;border:1px solid #e5e7eb;
       vertical-align:middle;
-      white-space:nowrap; /* 자동 줄바꿈 방지 (좁은 컬럼 보호) */
+      white-space:nowrap; /* ?�자·??���?줄엔 금�? ???�림 ?�음 */
     }
-    /* 항목명 th */
+    /* ??���?th */
     .wl-tbl th{
       background:#f8fafc;font-size:9.5px;font-weight:600;
       color:#64748b;text-align:center;
     }
-    /* 湲덉븸 td */
+    /* 금액 td */
     .wl-tbl td{text-align:right;color:#1e293b;font-weight:500;}
-    /* 구분 레이블 셀 */
+    /* 구분 ?�이�??� */
     .wl-tbl td.wl-sec{
       text-align:center;font-size:9px;font-weight:700;
       letter-spacing:.3px;white-space:nowrap;padding:3px 4px;
@@ -491,15 +488,15 @@
     .wl-tbl td.wl-sec-ded{background:#fee2e2;color:#b91c1c;border-color:#fecaca;}
     /* 지급행 td 배경 */
     .wl-pay-row td:not(.wl-sec){background:#f8fbff;}
-    /* 怨듭젣??td 諛곌꼍 */
+    /* 공제??td 배경 */
     .wl-ded-row td:not(.wl-sec){background:#fff9f9;}
-    /* 鍮덉뭏 */
+    /* 빈칸 */
     .wl-tbl td.wl-empty,.wl-tbl th.wl-empty{
       background:#f9fafb !important;border-color:#e5e7eb;
     }
 
 
-    /* ── 합계 카드 ── */
+    /* ?�?� ?�계 카드 ?�?� */
     .wl-sum-card{
       border:2px solid #1e293b;border-radius:6px;
       margin-top:10px;
@@ -516,7 +513,7 @@
     .wl-sum-card .wl-ded-row td:not(.wl-sec){background:#fff9f9;}
     .wl-sum-card .wl-tbl td.wl-empty{background:#f8fafc !important;}
 
-    /* ── 버튼 ── */
+    /* ?�?� 버튼 ?�?� */
     .wl-excel-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:#10b981;color:#fff;border:1px solid #059669;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s;}
     .wl-excel-btn:hover{background:#059669;}
     .wl-excel-btn:active{}
@@ -529,7 +526,7 @@
 
     @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 
-    /* ══ 임금대장 선행조건 차단 UI ══ */
+    /* ?�═ ?�금?�???�행조건 차단 UI ?�═ */
     .wl-block-wrap{
       display:flex;flex-direction:column;gap:14px;
     }
@@ -552,7 +549,7 @@
     .wl-block-header-sub{
       font-size:12.5px;color:#b45309;line-height:1.6;
     }
-    /* ?占쎌쑀 移대뱶 */
+    /* ?�유 카드 */
     .wl-block-card{
       border-radius:10px;border:1.5px solid #e5e7eb;
       background:#fff;overflow:hidden;
@@ -617,7 +614,7 @@
       background:#dcfce7;color:#15803d;border:1px solid #86efac;
       margin-left:4px;vertical-align:middle;
     }
-    /* 임시저장 확인 모달 */
+    /* ?�시?�???�인 모달 */
     .wl-resume-modal-overlay{
       position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9100;
       display:flex;align-items:center;justify-content:center;
@@ -666,7 +663,7 @@
     }
     .wl-resume-btn-resume:hover{opacity:.88;}
 
-    /* ══ 임금대장 6행 헤더 테이블 ══ */
+    /* ?�═ ?�금?�??6???�더 ?�이�??�═ */
     .wl-ledger-wrap{
       overflow-x:auto;
       padding:0 4px 16px;
@@ -679,7 +676,7 @@
       table-layout:fixed;
     }
 
-    /* ── 헤더(TH) 공통 ── */
+    /* ?�?� ?�더(TH) 공통 ?�?� */
     .wl-ledger-tbl thead tr th{
       border:1px solid #94a3b8;
       text-align:center;
@@ -690,7 +687,7 @@
       font-size:10.5px;
     }
 
-    /* ?? 洹몃９ ?占쎈뜑 */
+    /* ?? 그룹 ?�더 */
     .wl-th-group th{
       background:#1e293b;
       color:#f1f5f9;
@@ -703,7 +700,7 @@
     .wl-th-ded     { background:#3b0f0f !important; color:#fca5a5 !important; }
     .wl-th-sign    { background:#1e293b !important; color:#cbd5e1 !important; border-color:#334155 !important; }
 
-    /* ??~6 ?占쎈컲 th */
+    /* ??~6 ?�반 th */
     .wl-th-row th.wl-th-cell{
       background:#f1f5f9;
       color:#374151;
@@ -713,33 +710,33 @@
       word-break:keep-all;
       line-height:1.3;
     }
-    /* 병합된 인적사항 th (부서/직급/입사일/퇴사일) */
+    /* 병합???�적?�항 th (부??직급/?�사???�사?? */
     .wl-th-cell.wl-th-merged{
       background:#e8f0fe;
       color:#1e3a8a;
     }
-    /* 항상 공란인 th/td (국민연금소급분·고용보험정산 아래 행) */
+    /* ??�� 공�???th/td (�???�금?�급분·고?�보?�정???�래 ?? */
     .wl-th-na{
       background:#e2e8f0 !important;
     }
     .wl-td-na{
       background:#e2e8f0 !important;
     }
-    /* 지급합계 th (연두색, 사방 2px) */
+    /* 지급합�?th (?�두?? ?�방 2px) */
     .wl-th-gross{
       background:#dcfce7 !important;
       color:#14532d !important;
       font-weight:800 !important;
       border:2px solid #15803d !important;
     }
-    /* 공제합계 th (연빨간, 사방 2px) */
+    /* 공제?�계 th (?�빨�? ?�방 2px) */
     .wl-th-ded-sum{
       background:#fee2e2 !important;
       color:#b91c1c !important;
       font-weight:800 !important;
       border:2px solid #b91c1c !important;
     }
-    /* 차인지급액 th (연파란, 사방 2px) */
+    /* 차인지급액 th (?�파?�, ?�방 2px) */
     .wl-th-net{
       background:#dbeafe !important;
       color:#1e40af !important;
@@ -747,20 +744,20 @@
       border:2px solid #1d4ed8 !important;
     }
 
-    /* ── 데이터 행 (tbody) ── */
+    /* ?�?� ?�이????(tbody) ?�?� */
     .wl-ledger-tbl tbody td{
       border:1px solid #cbd5e1;
       vertical-align:middle;
       padding:3px 5px;
       font-size:11px;
       color:#1e293b;
-      height:26px;        /* 모든 데이터 행 높이 통일 */
+      height:26px;        /* 모든 ?�이???� ?�이 ?�일 */
     }
     .wl-ledger-tbl tbody tr:hover td{ filter:brightness(.94); }
     .wl-ledger-tbl tbody tr.wl-data-row:nth-child(even) td:not([class*="wl-td-"]){ background:#f8fafc; }
       box-sizing:border-box;
     }
-    /* ?占쎌옄 ?占쎌륫 ?占쎈젹 */
+    /* ?�자 ?�측 ?�렬 */
     .wl-td-num{
       text-align:right;
       white-space:nowrap;
@@ -769,7 +766,7 @@
     .wl-td-num strong{
       color:#1d4ed8;
     }
-    /* 지급합계 td (연두색 배경 + 짙은 초록 폰트, 사방 2px) */
+    /* 지급합�?td (?�두??배경 + 짙�? 초록 ?�트, ?�방 2px) */
     .wl-td-gross{
       text-align:right;
       white-space:nowrap;
@@ -779,7 +776,7 @@
       border:2px solid #15803d !important;
     }
     .wl-td-gross strong{ color:#14532d !important; }
-    /* 공제합계 td (연빨간 배경 + 진빨간 폰트, 사방 2px) */
+    /* 공제?�계 td (?�빨�?배경 + 진빨�??�트, ?�방 2px) */
     .wl-td-ded-sum{
       text-align:right;
       white-space:nowrap;
@@ -789,7 +786,7 @@
       border:2px solid #b91c1c !important;
     }
     .wl-td-ded-sum strong{ color:#b91c1c !important; }
-    /* 차인지급액 td (연파란 배경 + 인디고 폰트, 사방 2px) */
+    /* 차인지급액 td (?�파?� 배경 + ?�디�??�트, ?�방 2px) */
     .wl-td-net{
       text-align:right;
       white-space:nowrap;
@@ -799,7 +796,7 @@
       border:2px solid #1d4ed8 !important;
     }
     .wl-td-net strong{ color:#1e40af !important; }
-    /* ?占쎌썝踰덊샇쨌?占쎈챸쨌?占쎌쟻?占쏀빆 以묒븰 */
+    /* ?�원번호·?�명·?�적?�항 중앙 */
     .wl-td-center{
       text-align:center;
       background:#f8fafc;
@@ -820,7 +817,7 @@
       color:#374151;
       background:#f8f9fb;
     }
-    /* 영수인 칸 */
+    /* ?�수??�?*/
     .wl-td-sign{
       background:#fff;
       min-width:50px;
@@ -829,17 +826,18 @@
       border-bottom:2px solid #475569 !important;
     }
 
-    /* ── 데이터 행 교대 배경 (직원 구분) ── */
+    /* ?�?� ?�이????교�? 배경 (직원 구분) ?�?� */
+    /* 직원 ??�?= 5??묶음: 첫번�??�에 ?�단 강조??*/
     .wl-data-row:first-child td,
     .wl-ledger-tbl tbody tr.wl-data-row-top td{
       border-top:2px solid #94a3b8;
     }
-    /* 테이블 마지막 행 하단 테두리 2px */
+    /* ?�이�?마�?�????�단 ?�두�?2px */
     .wl-ledger-tbl tbody tr:last-child td{
       border-bottom:2px solid #475569 !important;
     }
 
-    /* ?占쎄퀎 ???占쏙옙???*/
+    /* ?�계 ???��???*/
     .wl-sum-row td{
       background:#f0f7ff !important;
       border-top:2px solid #1e293b !important;
@@ -852,17 +850,19 @@
       color:#b45309;
     }
 
-    /* ???占쎈퉬 */
+    /* ???�비 */
     .wl-ledger-tbl col.wl-col-empno  { width:80px;  }
     .wl-ledger-tbl col.wl-col-name   { width:72px;  }
     .wl-ledger-tbl col.wl-col-pay    { width:72px;  }
     .wl-ledger-tbl col.wl-col-ded    { width:82px;  }
     .wl-ledger-tbl col.wl-col-sign   { width:52px;  }
 
-    /* ── 구분 테두리: C2|C3(성명|기본급), C8|C9(지급합계|국민연금) ──
-       ※ :first-of-type 은 클래스 무관 tag 기준 → thead 첫 tr(wl-th-group)이 해당
-          wl-th-row 전체가 :not(:first-of-type) 로 분류되는 오류 발생
-          → wl-th-row-ind(행2, 독립) / wl-th-row-mrg(행3~6, 병합) 클래스로 명확 구분 */
+    /* ?�?� 구분 ?�두�? C2|C3(?�명|기본�?, C8|C9(지급합�?�???�금) ?�?�
+       ??:first-of-type ?� ?�래??무�? tag 기�? ??thead �?tr(wl-th-group)???�당
+          wl-th-row ?�체가 :not(:first-of-type) �?분류?�는 ?�류 발생
+          ??wl-th-row-ind(??, ?�립) / wl-th-row-mrg(??~6, 병합) ?�래?�로 명확 구분 */
+
+    /* thead ??(그룹?�더): ?�적?�항·기본급여?�수???�측 */
     .wl-ledger-tbl thead tr.wl-th-group th.wl-th-personal{
       border-right:2px solid #475569 !important;
     }
@@ -870,8 +870,8 @@
       border-right:2px solid #475569 !important;
     }
 
-    /* thead 행2 (wl-th-row-ind, 독립 th 13개):
-       nth-child(2)=성명 우측, nth-child(8)=지급합계 우측 */
+    /* thead ?? (wl-th-row-ind, ?�립 th 13�?:
+       nth-child(2)=?�명 ?�측, nth-child(8)=지급합�??�측 */
     .wl-ledger-tbl thead tr.wl-th-row-ind th:nth-child(2){
       border-right:2px solid #475569 !important;
     }
@@ -879,8 +879,8 @@
       border-right:2px solid #475569 !important;
     }
 
-    /* thead 행3~6 (wl-th-row-mrg, colspan=2 병합 th 12개):
-       nth-child(1)=병합셀 우측, .wl-th-gross/.wl-th-pay-last=지급합계 우측 */
+    /* thead ??~6 (wl-th-row-mrg, colspan=2 병합 th 12�?:
+       nth-child(1)=병합?� ?�측, .wl-th-gross/.wl-th-pay-last=지급합�??�측 */
     .wl-ledger-tbl thead tr.wl-th-row-mrg th:nth-child(1){
       border-right:2px solid #475569 !important;
     }
@@ -889,7 +889,7 @@
       border-right:2px solid #475569 !important;
     }
 
-    /* tbody 행1: 성명 우측(.wl-td-name), 지급합계 우측(.wl-td-gross) */
+    /* tbody ??: ?�명 ?�측(.wl-td-name), 지급합�??�측(.wl-td-gross) */
     .wl-ledger-tbl tbody td.wl-td-name{
       border-right:2px solid #475569 !important;
     }
@@ -897,8 +897,8 @@
       border-right:2px solid #475569 !important;
     }
 
-    /* tbody 행2~5: 병합셀 우측(td[colspan="2"]),
-                    지급합계 열 우측(.wl-td-pay-last) */
+    /* tbody ??~5: 병합?� ?�측(td[colspan="2"]),
+                    지급합�????�측(.wl-td-pay-last) */
     .wl-ledger-tbl tbody td[colspan="2"]{
       border-right:2px solid #475569 !important;
     }
@@ -906,7 +906,7 @@
       border-right:2px solid #475569 !important;
     }
 
-    /* ── 영수인 열 왼쪽 구분 테두리 2px ── */
+    /* ?�?� ?�수?????�쪽 구분 ?�두�?2px ?�?� */
     .wl-ledger-tbl thead th.wl-th-sign{
       border-left:2px solid #334155 !important;
     }
@@ -914,7 +914,7 @@
       border-left:2px solid #475569 !important;
     }
 
-/* ── 급여 입력 : 지급대상자 목록 / 기간 선택 UI ── */
+/* ?�?� 급여 ?�력 : 지급�??�자 목록 / 기간 ?�택 UI ?�?� */
 #pi-load-target-btn:hover{}
 #pi-prev-download-btn:hover{}
 #pi-bulk-upload-btn:hover{}
@@ -925,7 +925,7 @@
   transition: all .2s;
 }
 
-/* ── 전직원 임금대장 업로드 모달 드롭존 ── */
+/* ?�?� ?�직???�금?�???�로??모달 ?�롭�??�?� */
 .pi-upload-dz{
   border: 2px dashed #fcd34d;
   border-radius: 14px;
@@ -966,10 +966,10 @@
 }
 
 .dash-co-btn:focus-visible { outline:2.5px solid currentColor; outline-offset:2px; }
-/* 공제 모드 뱃지 */
+/* 공제 모드 배지 */
 .pi-ded-badge-rate{font-size:11px;color:#9ca3af;font-weight:400}
 .pi-ded-badge-fixed{font-size:10px;padding:2px 8px;border-radius:10px;margin-left:6px;background:#f59e0b;color:#fff}
-/* payroll input textarea (비고 등 통일 스타일) */
+/* payroll input textarea (비고와 동일 스타일) */
 .pi-textarea{width:100%;border:1px solid #e0e0e0;border-radius:6px;padding:6px 9px;font-size:13px;font-family:inherit;resize:vertical;color:#1a1a2e;box-sizing:border-box;line-height:1.55;margin-bottom:4px}
 .pi-textarea:focus{border-color:#6366f1;outline:none;box-shadow:0 0 0 2px rgba(99,102,241,.25)}
 /* 총계 요약 박스 */

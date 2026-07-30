@@ -1,4 +1,4 @@
-// ============================================================================
+﻿// ============================================================================
 // 급여 입력 페이지 — 전직원 임금대장 일괄 업로드 모달
 // ============================================================================
 
@@ -124,9 +124,9 @@ function loadPITargetList(){
 
   // ── 급여 산정기간 계산 (고객사 pay_period_month/day 기준) ──
   const _coPI = (allCompanies||[]).find(c => c.id === coId);
-  const _ppMo  = _coPI?.pay_period_month || PAY_PERIOD_MONTH.CURRENT_MONTH;
+  const _ppMo  = _coPI?.pay_period_month || '당월';
   const _ppDay = parseInt(_coPI?.pay_period_day) || 1;
-  const _isJeonwol = _ppMo === PAY_PERIOD_MONTH.PREV_MONTH || _ppMo === PAY_PERIOD_MONTH.PREV_MONTH;
+  const _isJeonwol = _ppMo === '전월';
   const _salStartMo = _isJeonwol ? (mo === 1 ? 12 : mo - 1) : mo;
   const _salStartYr = (_isJeonwol && mo === 1) ? yr - 1 : yr;
   const _salStart   = `${_salStartYr}-${String(_salStartMo).padStart(2,'0')}-${String(_ppDay).padStart(2,'0')}`;
@@ -533,7 +533,6 @@ function backToPITargetList(){
     return; // cancelEditPayroll 내부에서 loadPITargetList() 호출하므로 중복 방지
   }
   // 신규 모드에서 목록으로 복귀
-  piDraftId = null; // 목록 복귀 시 임시저장 상태 제거 (재진입 시 신규 모드로 시작)
   piContract = null;
   if(typeof clearPIFields === 'function') clearPIFields();
   const card = document.getElementById('pi-contract-card');
@@ -615,7 +614,7 @@ function calcAnnualLeaveTable(){
     const hireDate = empData.hire_date || piContract.contract_start || '';
     const coId = currentGlobalCompanyId || document.getElementById('pi-company')?.value || '';
     const co = (allCompanies || []).find(c => c.id === coId);
-    const basis = normalizeAnnualLeaveBasis(co?.annual_leave_basis) || ANNUAL_LEAVE_BASIS.FISCAL_YEAR;
+    const basis = co?.annual_leave_basis || '회계년도 기준';
     const totalDays = (typeof calcAnnualLeaveDays === 'function' && hireDate)
       ? (calcAnnualLeaveDays(hireDate, basis, piContract.contract_start || '') ?? 0)
       : (parseFloat(piContract.annual_leave_days) || 0);
@@ -714,7 +713,7 @@ function _updatePIAnnualLeaveDetail(){
   const hireDate = empData.hire_date || piContract.contract_start || '';
   const coId = currentGlobalCompanyId || document.getElementById('pi-company')?.value || '';
   const co = (allCompanies||[]).find(c=>c.id===coId);
-  const basis = normalizeAnnualLeaveBasis(co?.annual_leave_basis) || ANNUAL_LEAVE_BASIS.FISCAL_YEAR;
+  const basis = co?.annual_leave_basis || '회계년도 기준';
   const totalDays = (typeof calcAnnualLeaveDays === 'function' && hireDate)
     ? (calcAnnualLeaveDays(hireDate, basis, piContract.contract_start||'')??0)
     : (parseFloat(piContract.annual_leave_days)||0);
@@ -1123,11 +1122,11 @@ function loadPIContract(){
     _setupManualFields(true);
     // 근로계약서의 급여일 우선, 없으면 회사 설정
     const _co = allCompanies.find(c => c.id === _coId);
-    const _ppMo = piContract?.pay_period_month || _co?.pay_period_month || PAY_PERIOD_MONTH.CURRENT_MONTH;
+    const _ppMo = piContract?.pay_period_month || _co?.pay_period_month || '당월';
     const _ppDay = parseInt(piContract?.pay_period_day) || parseInt(_co?.pay_period_day) || 1;
     const yr = parseInt(document.getElementById('pi-year')?.value) || new Date().getFullYear();
     const mo = parseInt(document.getElementById('pi-month')?.value) || (new Date().getMonth() + 1);
-    const _isJeon = _ppMo === PAY_PERIOD_MONTH.PREV_MONTH || _ppMo === PAY_PERIOD_MONTH.PREV_MONTH;
+    const _isJeon = _ppMo === '전월';
     const _sMo = _isJeon ? (mo === 1 ? 12 : mo - 1) : mo;
     const _sYr = (_isJeon && mo === 1) ? yr - 1 : yr;
     const _eDate = new Date(_sYr, _sMo - 1, _ppDay);
@@ -1174,7 +1173,7 @@ function loadPIContract(){
       }
       const yr = parseInt(document.getElementById('pi-year')?.value) || new Date().getFullYear();
       const mo = parseInt(document.getElementById('pi-month')?.value) || (new Date().getMonth() + 1);
-      const _isJeon = _ctPpMo === PAY_PERIOD_MONTH.PREV_MONTH || _ctPpMo === PAY_PERIOD_MONTH.PREV_MONTH;
+      const _isJeon = _ctPpMo === '전월';
       const _sMo = _isJeon ? (mo === 1 ? 12 : mo - 1) : mo;
       const _sYr = (_isJeon && mo === 1) ? yr - 1 : yr;
       const _eDate = new Date(_sYr, _sMo - 1, _ctPpDay);
@@ -1302,7 +1301,7 @@ function loadPIContract(){
           const _ctMo = piContract.pay_period_month;
           const _ctDay = parseInt(piContract.pay_period_day);
           if(_ctMo && _ctDay){
-            const _isJeon = _ctMo === PAY_PERIOD_MONTH.PREV_MONTH || _ctMo === PAY_PERIOD_MONTH.PREV_MONTH;
+            const _isJeon = _ctMo === '전월';
             const _sMo2 = _isJeon ? (_ppMo === 1 ? 12 : _ppMo - 1) : _ppMo;
             const _sYr2 = _isJeon && _ppMo === 1 ? _ppYr - 1 : _ppYr;
             const _eDate2 = new Date(_sYr2, _sMo2 - 1, _ctDay);
@@ -1313,10 +1312,10 @@ function loadPIContract(){
             // ② 계약에도 없으면 고객사 설정으로 폴백
           const _coId2 = currentGlobalCompanyId || document.getElementById('pi-company')?.value;
           const _co2   = allCompanies.find(c => c.id === _coId2);
-          const _coMo2 = _co2?.pay_period_month || PAY_PERIOD_MONTH.CURRENT_MONTH;
+          const _coMo2 = _co2?.pay_period_month || '당월';
           const _coDay2 = parseInt(_co2?.pay_period_day) || 1;
           if(_ppYr && _ppMo){
-            const _isJeon = _coMo2 === PAY_PERIOD_MONTH.PREV_MONTH || _coMo2 === PAY_PERIOD_MONTH.PREV_MONTH;
+            const _isJeon = _coMo2 === '전월';
             // 시작일: 전월이면 (급여월-1)의 지정일, 당월이면 급여월의 지정일
             const _sMo2 = _isJeon ? (_ppMo === 1 ? 12 : _ppMo - 1) : _ppMo;
             const _sYr2 = _isJeon && _ppMo === 1 ? _ppYr - 1 : _ppYr;
@@ -1335,12 +1334,12 @@ function loadPIContract(){
           // 고객사 pay_period_month / pay_period_day 컬럼으로 산정기간 말일 계산
           const _coId  = currentGlobalCompanyId || document.getElementById('pi-company')?.value;
           const _co    = allCompanies.find(c => c.id === _coId);
-          const _coMo  = _co?.pay_period_month || PAY_PERIOD_MONTH.CURRENT_MONTH;
+          const _coMo  = _co?.pay_period_month || '당월';
           const _coDay = parseInt(_co?.pay_period_day) || 1;
 
           const _isJeonwol = _coMo
-            ? (_coMo === PAY_PERIOD_MONTH.PREV_MONTH || _coMo === PAY_PERIOD_MONTH.PREV_MONTH)
-            : (_co?.pay_period || '').replace(/\s/g,'').startsWith(PAY_PERIOD_MONTH.PREV_MONTH) || (_co?.pay_period_month === PAY_PERIOD_MONTH.PREV_MONTH);
+            ? (_coMo === '전월')
+            : (_co?.pay_period || '').replace(/\s/g,'').startsWith('전월');
 
           // 산정기간 시작일 및 말일 계산
           let _periodStartStr, _periodEnd;
@@ -1739,7 +1738,7 @@ function _getPIInsuranceBasis(){
   // currentGlobalCompanyId 우선, 없으면 숨김 select value 폴백
   const coId = currentGlobalCompanyId || document.getElementById('pi-company')?.value;
   const co = allCompanies.find(c=>c.id===coId);
-  return normalizeInsuranceBasis(co?.insurance_basis) || INSURANCE_BASIS.RATE_BASED;
+  return co?.insurance_basis || '요율 기준';
 }
 
 // ── 특정 년월의 4대보험 산정기준 등록 여부 확인 ──
@@ -1749,7 +1748,7 @@ function _checkPIStandardsReady(yr, mo, companyId){
   // 확정액 기준 고객사는 요율 불필요 → 항상 통과
   const _basisCoId = companyId || currentGlobalCompanyId || document.getElementById('pi-company')?.value;
   const _basisCo = allCompanies.find(c=>c.id===_basisCoId);
-  if((_basisCo?.insurance_basis || INSURANCE_BASIS.RATE_BASED) === INSURANCE_BASIS.FIXED_AMOUNT) return { ok: true };
+  if((_basisCo?.insurance_basis || '요율 기준') === '확정액 기준') return { ok: true };
 
   const payDate = `${yr}-${String(mo).padStart(2,'0')}-01`;
   const types = [
@@ -1808,10 +1807,10 @@ function _calcPIDefaultWorkDays(contract, year, month){
   // ── 급여산정기간 시작·종료일 (회사 pay_period_month/day 기준) ──────────
   const _coId = currentGlobalCompanyId || document.getElementById('pi-company')?.value;
   const _co   = allCompanies.find(c => c.id === _coId);
-  const _ppMo = _co?.pay_period_month || PAY_PERIOD_MONTH.CURRENT_MONTH;
+  const _ppMo = _co?.pay_period_month || '당월';
   const _ppDay = parseInt(_co?.pay_period_day) || 1;
   let ppStart, ppEnd; // 회사 급여산정기간
-  if(_ppMo === PAY_PERIOD_MONTH.PREV_MONTH || _ppMo === PAY_PERIOD_MONTH.PREV_MONTH){
+  if(_ppMo === '전월'){
     // 전월 D일 ~ 당월 (D-1)일
     ppStart = new Date(year, month - 2, _ppDay);
     ppEnd   = new Date(year, month - 1, _ppDay);
@@ -2042,10 +2041,10 @@ function _getPIFullMonthWorkDays(){
   // ── 급여산정기간 기준으로 만근일수 계산 ──────────────────────────────
   const _coId = currentGlobalCompanyId || document.getElementById('pi-company')?.value;
   const _co   = allCompanies.find(c => c.id === _coId);
-  const _ppMo = _co?.pay_period_month || PAY_PERIOD_MONTH.CURRENT_MONTH;
+  const _ppMo = _co?.pay_period_month || '당월';
   const _ppDay = parseInt(_co?.pay_period_day) || 1;
   let ppStart, ppEnd;
-  if(_ppMo === PAY_PERIOD_MONTH.PREV_MONTH || _ppMo === PAY_PERIOD_MONTH.PREV_MONTH){
+  if(_ppMo === '전월'){
     ppStart = new Date(yr, mo - 2, _ppDay);
     ppEnd   = new Date(yr, mo - 1, _ppDay);
     ppEnd.setDate(ppEnd.getDate() - 1);
@@ -2600,7 +2599,7 @@ function _getPIRates(){
 
 // ── 4대보험 적용 기준에 따라 공제 영역 UI 전환 ──
 function _switchInsuranceModeUI(){
-  const isFixed = _getPIInsuranceBasis() === INSURANCE_BASIS.FIXED_AMOUNT;
+  const isFixed = _getPIInsuranceBasis() === '확정액 기준';
   const autoBlock  = document.getElementById('pi-ded-auto-block');
   const fixedBlock = document.getElementById('pi-ded-fixed-block');
   const badge      = document.getElementById('pi-ded-mode-badge');
@@ -3317,7 +3316,7 @@ function calcPI(){
     +otPay+nightPay+holPay+gv('pi-annual-pay');
   const curStd=gv('pi-std-pay');
   if(!curStd||curStd===0) setAmountVal('pi-std-pay', std);
-  const isFixed = _getPIInsuranceBasis() === INSURANCE_BASIS.FIXED_AMOUNT;
+  const isFixed = _getPIInsuranceBasis() === '확정액 기준';
   if(isFixed) calcPIFixed(gross);
   else calcPIDeductions(gross);
 }
@@ -3334,7 +3333,7 @@ function calcPIManual(){
              +gv('pi-transport')+gv('pi-meal')+gv('pi-childcare')+gv('pi-research')+gv('pi-fitness')+gv('pi-self-dev')+gv('pi-book')+gv('pi-overseas')
              +otPay+nightPay+holPay
              +gv('pi-annual-pay')+gv('pi-bonus')+gv('pi-performance')+gv('pi-actual-expense')+gv('pi-communication')+gv('pi-severance-interim')+gv('pi-etc-allowance')+_layoffPay+_maternityPay - _retroOverpaymentTotal - _retroHolidayOverpay;
-  const isFixed = _getPIInsuranceBasis() === INSURANCE_BASIS.FIXED_AMOUNT;
+  const isFixed = _getPIInsuranceBasis() === '확정액 기준';
   if(isFixed) calcPIFixed(gross);
   else calcPIDeductions(gross);
 }

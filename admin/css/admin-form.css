@@ -1,3 +1,4 @@
+﻿    /* ?�?�??�일�?근무?�간 ?�이�??�?�?*/
     /* ── 고객사 모달 입력필드 높이 통일 (textarea 제외) ── */
     #company-modal input[type="text"],
     #company-modal input[type="date"],
@@ -18,7 +19,7 @@
     .work-schedule-table input.brk-time{width:92px;border:1px solid #ddd6fe;border-radius:5px;padding:4px 2px;font-size:13px;font-family:inherit;background:#fff;text-align:center;}
     .work-schedule-table input.brk-time:disabled{background:#f1f5f9;color:#555;border-color:#e8eaed;}
     .work-schedule-table .brk-sep{font-size:11px;color:#7c3aed;font-weight:700;padding:0 1px;}
-    /* 蹂듭닔 ?占쎄쾶?占쎈’ */
+    /* 복수 ?�게?�롯 */
     .brk-slots-wrap{display:flex;flex-direction:column;gap:3px;align-items:flex-start;min-width:210px;}
     .brk-slot-row{display:flex;align-items:center;gap:3px;}
     .btn-brk-add{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;border:1.5px solid #7c3aed;background:#fff;color:#7c3aed;font-size:13px;font-weight:700;cursor:pointer;line-height:1;flex-shrink:0;transition:background .12s;}
@@ -28,7 +29,7 @@
     .btn-brk-del:hover{background:#fee2e2;}
     .btn-brk-del:disabled{border:1px solid #cccccc;color:#f2f2f2;background:#cccccc;cursor:not-allowed;}
     .work-schedule-table .day-toggle{width:16px;height:16px;cursor:pointer;accent-color:#3b82f6;}
-    /* 일괄 설정 바 */
+    /* ?�괄 ?�정 �?*/
     .bulk-schedule-bar{display:flex;flex-direction:column;gap:0;flex-wrap:wrap;padding:10px 14px;background:linear-gradient(90deg,#f0f9ff 0%,#faf5ff 100%);border:1.5px solid #bae6fd;border-radius:9px;margin-bottom:8px;}
     .bulk-schedule-bar .bulk-label{font-size:12px;font-weight:700;color:#0369a1;white-space:nowrap;display:flex;align-items:center;gap:4px;}
     .bulk-schedule-bar .bulk-sep{color:#cbd5e1;font-size:13px;margin:0 2px;}
@@ -45,7 +46,7 @@
     .bulk-schedule-footer .bulk-schedule-tip{margin-top:0;}
     .work-schedule-table .day-label{font-weight:700;font-size:12.5px;}
     .work-schedule-table .computed-h{font-size:11.5px;color:#0369a1;font-weight:600;min-width:48px;display:inline-block;}
-    /* ?占쏀봽??洹몃９ */
+    /* ?�프??그룹 */
     .td-shifts{padding:4px 2px!important;}
     .shifts-container{display:flex;flex-direction:column;gap:4px;}
     .shift-group{display:inline-flex;align-items:center;gap:2px;padding:2px 4px;background:#f8fafc;border-radius:6px;border:1px solid #e2e8f0;width:fit-content;font-size:10.5px;color:#6b7280;}
@@ -53,7 +54,7 @@
     .shift-group .shift-add{margin-left:10px;}
     .shift-group .shift-del{margin-left:10px;}
     .shift-group .shift-add+.shift-del{margin-left:0;}
-    /* time picker selects: 시간/분에 맞게 패딩 조정 */
+    /* time picker selects: 좁은 폭에 맞게 패딩 축소 */
     .time-picker select.tp-h,
     .time-picker select.tp-m {
       padding: 2px 0 !important;
@@ -77,14 +78,14 @@
     .wsh-total span{font-weight:400;color:#374151;}
     .wsh-total .wsh-val{color:#0369a1;}
     .wsh-total .wsh-extra{font-size:11.5px;}
-    /* ?占쎌펷?占쏀넠 濡쒕뵫 */
+    /* ?�켈?�톤 로딩 */
     .skel-text{display:inline-block;background:linear-gradient(90deg,#e2e8f0 25%,#f1f5f9 50%,#e2e8f0 75%);background-size:200% 100%;border-radius:4px;height:14px;vertical-align:middle;}
     @keyframes skelPulse{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
     .skel-text{animation:skelPulse 1.4s ease-in-out infinite;}
-    /* 怨좉컼??移대뱶 ?占쎌펷?占쏀넠 */
+    /* 고객??카드 ?�켈?�톤 */
     .company-card-skel{border:1px solid #e8eaed;border-radius:12px;padding:18px;background:#fff;animation:skelPulse 1.4s ease-in-out infinite;}
     .company-card-skel .skel-line{background:linear-gradient(90deg,#e2e8f0 25%,#f1f5f9 50%,#e2e8f0 75%);background-size:200% 100%;border-radius:6px;animation:skelPulse 1.4s ease-in-out infinite;}
-    /* 대시보드 로딩 모달 */
+    /* ?�?�보??로딩 모달 */
     #dash-loading-modal{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9000;display:flex;align-items:center;justify-content:center;opacity:1;transition:opacity .3s;}
     #dash-loading-modal.closing{opacity:0;pointer-events:none;}
     #dash-loading-modal .dlm-box{background:#fff;border-radius:18px;padding:36px 44px;display:flex;flex-direction:column;align-items:center;gap:20px;box-shadow:0 24px 60px rgba(0,0,0,.18);min-width:260px;}
@@ -94,13 +95,13 @@
     #dash-loading-modal .dlm-dots span:nth-child(2){animation-delay:.2s;}
     #dash-loading-modal .dlm-dots span:nth-child(3){animation-delay:.4s;}
     @keyframes dtlDot{0%,80%,100%{opacity:0;}40%{opacity:1;}}
-    /* 테이블 로딩 오버레이 */
+    /* ?�이�?로딩 ?�버?�이 */
     .tbl-loading-wrap{position:relative;min-height:160px;}
     .tbl-loading-overlay{position:absolute;inset:0;background:rgba(255,255,255,.82);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;z-index:10;border-radius:0 0 8px 8px;}
     .tbl-loading-overlay .tbl-spin{width:32px;height:32px;border:3px solid #e2e8f0;border-top-color:#6366f1;border-radius:50%;animation:tblSpin .7s linear infinite;}
     .tbl-loading-overlay .tbl-spin-txt{font-size:13px;color:#64748b;font-weight:500;}
     @keyframes tblSpin{to{transform:rotate(360deg);}}
-    /* ── 필수 입력 필드 하이라이트 ── */
+    /* ?�?�??�수 ?�력 ?�드 ?�이?�이???�?�?*/
     .ct-field-error input,
     .ct-field-error select,
     .ct-field-error textarea {
@@ -117,7 +118,7 @@
       60%{ transform:translateX(-4px); }
       80%{ transform:translateX(4px); }
     }
-    /* ?占쎌닔 ??占쏙옙 ?占쎈궡 諛곕꼫 */
+    /* ?�수 ??�� ?�내 배너 */
     #ct-validation-banner {
       display:none;
       margin: 0 0 14px;
@@ -143,7 +144,7 @@
       padding-left: 18px;
     }
     #ct-validation-banner ul li { margin-bottom: 2px; }
-/* ?占썩븧 怨좉컼???占쎌젙 ?占쎈젰 ?占쎌뀡 ?占썩븧 */
+/* ?�═ 고객???�정 ?�력 ?�션 ?�═ */
 .cm-history-toggle {
   display: flex;
   align-items: center;

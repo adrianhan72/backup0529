@@ -10,8 +10,6 @@ const RC_PAGE_SIZE   = 20;   // 테이블 페이지당 행 수
 let _rcTargetPage    = 1;    // 전환 대상 현재 페이지
 let _rcHistoryPage   = 1;    // 발송 이력 현재 페이지
 let _rcContactCache       = null; // 대표 연락처 캐시
-let _rcFilterCoId   = '';   // 발송 이력 필터: 선택된 고객사 ID
-let _rcFilterCoName = '';   // 선택된 고객사명
 
 // ─── 상태 분류 임계값 (일수) ─────────────────────────────────────
 const RC_EXCEEDED_DAYS = 730; // 2년 초과 → 전환 의무 발생
@@ -57,8 +55,8 @@ async function initRcPage(){
   _rcHistoryLoaded = false;
   await rcLoadHistory(true);
 
-  // 고객사 칩 드롭다운 채우기
-  _rcPopulateFilterCoDropdown();
+  // 고객사 필터 채우기 (발송 이력용)
+  _rcFillCompanyFilter('rc-log-filter-company');
 
   // 발송 이력 렌더 (기본 탭)
   renderRcHistory();
@@ -111,8 +109,8 @@ async function rcLoadHistory(force=false){
     _rcHistoryList = all.sort((a,b) => (b.sent_at||'').localeCompare(a.sent_at||''));
     _rcHistoryLoaded = true;
 
-    // 고객사 칩 드롭다운 채우기
-    _rcPopulateFilterCoDropdown();
+    // 이력 필터 고객사 채우기
+    _rcFillCompanyFilter('rc-log-filter-company');
   } catch(e){
     console.error('[RC] 발송 이력 조회 오류', e);
   }
@@ -149,73 +147,15 @@ function _rcDoSearch(){
   renderRcHistory();
 }
 
-// ── RC 고객사 칩 드롭다운 ──
-function _rcToggleCoDropdown(){
-  const list = document.getElementById('rc-co-list');
-  const btn = document.getElementById('rc-co-btn');
-  if(!list || !btn) return;
-  const isOpen = list.style.display === 'block';
-  if(isOpen){ list.style.display = 'none'; return; }
-  const rect = btn.getBoundingClientRect();
-  list.style.top = (rect.bottom + 4) + 'px';
-  list.style.left = rect.left + 'px';
-  list.style.width = Math.min(window.innerWidth - rect.left - 20, 500) + 'px';
-  list.style.display = 'block';
-  setTimeout(() => {
-    const handler = e => {
-      const dd = document.getElementById('rc-co-dropdown');
-      if(dd && !dd.contains(e.target)){ list.style.display = 'none'; document.removeEventListener('click', handler); }
-    };
-    document.addEventListener('click', handler);
-  }, 0);
-}
-
-function _rcSelectFilterCo(coId, coName){
-  _rcFilterCoId = coId;
-  _rcFilterCoName = coName;
-  document.getElementById('rc-co-label').textContent = coName || '전체 고객사';
-  document.getElementById('rc-co-list').style.display = 'none';
-  _rcHistoryPage = 1;
-  renderRcHistory();
-}
-
-function _rcPopulateFilterCoDropdown(){
-  const list = document.getElementById('rc-co-list');
-  const btn = document.getElementById('rc-co-btn');
-  if(!list || !btn) return;
-  const allCos = (allCompanies || []).filter(c => !c.is_draft).sort((a,b) => (a.company_name||'').localeCompare(b.company_name||'', 'ko'));
-  const coIdsInHistory = new Set(_rcHistoryList.map(r => r.company_id).filter(Boolean));
-  const coCounts = {};
-  _rcHistoryList.forEach(r => { if(r.company_id) coCounts[r.company_id] = (coCounts[r.company_id]||0) + 1; });
-  const totalCount = _rcHistoryList.length;
-
-  list.innerHTML =
-    `<div class="cust-dropdown-item${!_rcFilterCoId?' selected':''}" onclick="_rcSelectFilterCo('','전체 고객사')">
-      <span>전체 고객사</span><span class="count-badge">${totalCount}</span>
-    </div>` +
-    allCos.filter(c => coIdsInHistory.has(c.id)).map(c => {
-      const cnt = coCounts[c.id] || 0;
-      return `<div class="cust-dropdown-item${_rcFilterCoId===c.id?' selected':''}" onclick="_rcSelectFilterCo('${c.id}','${c.company_name.replace(/'/g,"\\'")}')">
-        <span>${c.company_name}</span><span class="count-badge">${cnt}</span>
-      </div>`;
-    }).join('');
-}
-
 function renderRcHistory(){
   const tbody = document.getElementById('rc-log-tbody');
   if(!tbody) return;
 
-  const filterCo   = _rcFilterCoId;
+  const filterCo   = document.getElementById('rc-log-filter-company')?.value || '';
   const filterType = document.getElementById('rc-log-filter-type')?.value || '';
   const searchQ    = (document.getElementById('rc-log-search')?.value || '').trim().toLowerCase();
   const dateFrom   = document.getElementById('rc-log-filter-date-from')?.value || '';
   const dateTo     = document.getElementById('rc-log-filter-date-to')?.value || '';
-
-  // 고객사 칩 드롭다운 채우기 (최초 1회)
-  const coList = document.getElementById('rc-co-list');
-  if(coList && !coList.children.length){
-    _rcPopulateFilterCoDropdown();
-  }
 
   let list = _rcHistoryList.filter(r => {
     if(filterCo && r.company_id !== filterCo) return false;

@@ -1,4 +1,4 @@
-// schema.sql 덤프 유틸리티: node dump_schema.js
+﻿// schema.sql 덤프 유틸리티: node dump_schema.js
 // PRAGMA table_info 기반으로 실제 DB 스키마를 정확히 덤프 (ALTER TABLE 반영)
 // 한글 주석 자동 포함
 const Database = require('better-sqlite3');

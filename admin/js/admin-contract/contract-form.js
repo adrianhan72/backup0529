@@ -1,4 +1,4 @@
-// ─── 브랜드 서명 (모든 발송 메시지 하단 공통) ───
+﻿// ─── 브랜드 서명 (모든 발송 메시지 하단 공통) ───
 const _BRAND_SIG = '─────────────────────\n인사톡 노무톡 · 대화인사노무파트너스';
 
 // ─── EMPLOYEES ───
@@ -117,7 +117,7 @@ function calcAnnualLeaveDays(hireDateStr, basisType, contractStartStr){
   //   계약 시작일을 기준으로 하면 hire_date == contract_start인 경우 만 0개월이 되어
   //   연차가 0으로 잘못 계산되므로, 항상 오늘(new Date())을 기준으로 사용한다.
   let baseDate;
-  if((basisType === ANNUAL_LEAVE_BASIS.HIRE_DATE || basisType === ANNUAL_LEAVE_BASIS.HIRE_DATE)){
+  if(basisType === '입사일 기준'){
     baseDate = new Date();
   } else {
     // 회계년도 기준: 올해 1월 1일
@@ -147,7 +147,7 @@ function calcAnnualLeaveDays(hireDateStr, basisType, contractStartStr){
   //   → 3년완료=+1, 5년완료=+2, 7년완료=+3, ... floor((fullYears-1)/2)
   if(fullYears === 0){
     // 회계년도 기준: 비례연차 공식 → 15일 × (전년도 재직 개월 수 / 12), 소수점 올림(정수)
-    if((basisType !== ANNUAL_LEAVE_BASIS.HIRE_DATE && basisType !== ANNUAL_LEAVE_BASIS.HIRE_DATE)){
+    if(basisType !== '입사일 기준'){
       return Math.ceil(15 * fullMonths / 12);
     }
     // 입사일 기준: 종전 방식 (매월 개근 1일, 최대 11일)
@@ -250,7 +250,7 @@ function autoFillAnnualLeave(){
   // 고객사 ID로 annual_leave_basis 조회
   const companyId = document.getElementById('ct-company')?.value || currentContCompanyId;
   const company   = allCompanies.find(c => c.id === companyId);
-  const basis     = company?.annual_leave_basis || ANNUAL_LEAVE_BASIS.FISCAL_YEAR;
+  const basis     = company?.annual_leave_basis || '회계년도 기준';
 
   const contractStart = document.getElementById('ct-start')?.value || '';
   const days = calcAnnualLeaveDays(hireDateStr, basis, contractStart);
@@ -262,10 +262,10 @@ function autoFillAnnualLeave(){
   // 계산 근거 힌트 표시
   const hintEl = document.getElementById('ct-annual-hint');
   if(hintEl){
-    const basisLabel = basis === ANNUAL_LEAVE_BASIS.HIRE_DATE ? ANNUAL_LEAVE_BASIS.HIRE_DATE : ANNUAL_LEAVE_BASIS.FISCAL_YEAR;
+    const basisLabel = basis === '입사일 기준' ? '입사일 기준' : '회계년도 기준';
     // 1년 미만 + 회계년도 기준이면 비례연차 공식 근거 표시
     let hintMsg = `(${basisLabel} 자동계산: ${days}일)`;
-    if(basis !== ANNUAL_LEAVE_BASIS.HIRE_DATE){
+    if(basis !== '입사일 기준'){
       // 만 근속개월 수 역산하여 비례연차 공식 표기
       const _hire = new Date(hireDateStr);
       const _base = new Date(new Date().getFullYear(), 0, 1);

@@ -1,4 +1,4 @@
-    /* ── 대시보드 / 근로계약 관리 공통 알림 배너 ── */
+﻿    /* ── 대시보드 / 근로계약 관리 공통 알림 배너 ── */
     .dash-alert-banner{border-radius:12px;padding:0;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.07);cursor:pointer;}
     .dash-alert-banner:hover{}
     .dash-alert-banner-head{display:flex;align-items:center;gap:14px;padding:14px 20px;}

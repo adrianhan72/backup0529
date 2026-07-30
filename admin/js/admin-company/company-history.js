@@ -520,8 +520,8 @@ function selectContCompany(companyId, companyName){
   document.getElementById('cont-search').value = '';
   const _ecEl = document.getElementById('cont-filter-empcat'); if(_ecEl) _ecEl.value='';
   // 상태 필터: 유효만 기본 선택, 나머지 해제
-  // 상태 필터: 활성(active)만 기본 선택, 나머지 해제
-  document.querySelectorAll('.cont-filter-status-cb').forEach(cb=>{cb.checked=cb.value===CONTRACT_STATUS.ACTIVE;});
+  // TODO: C2/C7 calcContractStatusDisplay 영문화 후 CONTRACT_STATUS.ACTIVE로 변경
+  document.querySelectorAll('.cont-filter-status-cb').forEach(cb=>{cb.checked=cb.value==='유효';});
   const _docEl = document.getElementById('cont-filter-docs-incomplete'); if(_docEl) _docEl.checked=false;
   pages.cont = 1;
   renderContracts();

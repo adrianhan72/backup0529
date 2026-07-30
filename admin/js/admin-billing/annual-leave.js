@@ -1,4 +1,4 @@
-//  연차 관리 — 잔여 연차 조회 (page-annual-leave)
+﻿//  연차 관리 — 잔여 연차 조회 (page-annual-leave)
 //  + 사용촉진 발송 이력 (page-leave-promotion)
 // ==================================================================
 
@@ -34,7 +34,7 @@ function calcEmployeeAnnualLeave(emp, contract, company, refYear){
   if((emp.employment_category||contract.contract_type) ===CONTRACT_TYPE.DAILY) return null;
 
   const hireDateStr   = emp.hire_date || contract.contract_start || '';
-  const basis         = normalizeAnnualLeaveBasis(company?.annual_leave_basis) || ANNUAL_LEAVE_BASIS.FISCAL_YEAR;
+  const basis         = company?.annual_leave_basis || '회계년도 기준';
   const contractStart = contract.contract_start || '';
 
   const hire = new Date(hireDateStr);
@@ -67,7 +67,7 @@ function calcEmployeeAnnualLeave(emp, contract, company, refYear){
   // ── 기준년도 산정 baseDate 결정 ──
   // 회계년도: refYear-01-01 / 입사일: 직전 주년일(오늘 기준)
   let baseDate;
-  if(basis === ANNUAL_LEAVE_BASIS.HIRE_DATE){
+  if(basis === '입사일 기준'){
     // refYear 주년일이 오늘 이전이면 그것, 아니면 refYear-1 주년일
     const annivThis = new Date(refYear, hire.getMonth(), hire.getDate());
     baseDate = annivThis <= today
@@ -103,7 +103,7 @@ function calcEmployeeAnnualLeave(emp, contract, company, refYear){
     totalDays     = Math.min(15 + bonus, 25);
 
     // 사용 연차 집계 구간
-    if(basis === ANNUAL_LEAVE_BASIS.HIRE_DATE){
+    if(basis === '입사일 기준'){
       // 직전 주년일 ~ 당해 주년일 (refYear 기준)
       periodStart = null; // 날짜 객체로 별도 처리
       periodEnd   = null;
@@ -128,7 +128,7 @@ function calcEmployeeAnnualLeave(emp, contract, company, refYear){
       const eYM = periodEnd.y   * 100 + periodEnd.m;
       return pYM >= sYM && pYM <= eYM;
 
-    } else if(basis === ANNUAL_LEAVE_BASIS.HIRE_DATE){
+    } else if(basis === '입사일 기준'){
       // 직전 주년일 ~ 당해 주년일 월 범위
       const annivPrev = new Date(refYear - 1, hire.getMonth(), hire.getDate());
       const annivCurr = new Date(refYear,     hire.getMonth(), hire.getDate());
@@ -231,9 +231,9 @@ function selectAlCompany(companyId, companyName){
 
   // 연차 산정 기준 표시
   const co    = allCompanies.find(c => c.id === companyId);
-  const basis = normalizeAnnualLeaveBasis(co?.annual_leave_basis) || ANNUAL_LEAVE_BASIS.FISCAL_YEAR;
+  const basis = co?.annual_leave_basis || '회계년도 기준';
   const basisEl = document.getElementById('al-basis-label');
-  if(basisEl) basisEl.textContent = `연차 산정 기준 : ${ANNUAL_LEAVE_BASIS_LABEL[basis] || basis}`;
+  if(basisEl) basisEl.textContent = `연차 산정 기준 : ${basis}`;
 
   renderAlTable();
 }
@@ -491,14 +491,14 @@ async function _loadAndRenderLedger(){
                    .sort((a,b) => (b.contract_start||'').localeCompare(a.contract_start||''))[0];
 
   const co    = allCompanies.find(c => c.id === (emp.company_id || _alCompanyId));
-  const basis = normalizeAnnualLeaveBasis(co?.annual_leave_basis) || ANNUAL_LEAVE_BASIS.FISCAL_YEAR;
+  const basis = co?.annual_leave_basis || '회계년도 기준';
   const hireDateStr = emp.hire_date || contract?.contract_start || '';
   const hire  = hireDateStr ? new Date(hireDateStr) : null;
   const today = new Date(); today.setHours(0,0,0,0);
 
   // ── 기준일 계산 ──
   let refDateStr = '';
-  if(basis === ANNUAL_LEAVE_BASIS.HIRE_DATE && hire && !isNaN(hire)){
+  if(basis === '입사일 기준' && hire && !isNaN(hire)){
     const annivThis = new Date(_ledgerYear, hire.getMonth(), hire.getDate());
     refDateStr = annivThis <= today
       ? _fmtDate(annivThis)
@@ -510,7 +510,7 @@ async function _loadAndRenderLedger(){
   // ── 연차 산정기간 계산 ──
   // 입사일 기준: 기준일 ~ 기준일+1년-1일 / 회계년도: YYYY-01-01 ~ YYYY-12-31
   let periodStart = '', periodEnd = '';
-  if(basis === ANNUAL_LEAVE_BASIS.HIRE_DATE && hire && !isNaN(hire)){
+  if(basis === '입사일 기준' && hire && !isNaN(hire)){
     const pStart = new Date(refDateStr);
     const pEnd   = new Date(pStart);
     pEnd.setFullYear(pEnd.getFullYear() + 1);
@@ -1130,7 +1130,7 @@ function _buildLeavePromoCompanyBody(emp, co, al, refYear, adminName, workerMeth
 
 /** 연차 사용 기한 계산 헬퍼 */
 function _calcLeaveEndDate(emp, al, refYear){
-  if(al.basis === ANNUAL_LEAVE_BASIS.HIRE_DATE || al.basis === ANNUAL_LEAVE_BASIS.HIRE_DATE){
+  if(al.basis === '입사일 기준'){
     const hire = new Date(emp.hire_date||'');
     if(!isNaN(hire)){
       return `${refYear}-${String(hire.getMonth()+1).padStart(2,'0')}-${String(hire.getDate()).padStart(2,'0')}`;
@@ -1450,73 +1450,25 @@ function _cenDoSearch(){
   renderCenHistory();
 }
 
-// ── CEN 고객사 칩 드롭다운 ──
-function _cenToggleCoDropdown(){
-  const list = document.getElementById('cen-co-list');
-  const btn = document.getElementById('cen-co-btn');
-  if(!list || !btn) return;
-  const isOpen = list.style.display === 'block';
-  if(isOpen){ list.style.display = 'none'; return; }
-  const rect = btn.getBoundingClientRect();
-  list.style.top = (rect.bottom + 4) + 'px';
-  list.style.left = rect.left + 'px';
-  list.style.width = Math.min(window.innerWidth - rect.left - 20, 500) + 'px';
-  list.style.display = 'block';
-  setTimeout(() => {
-    const handler = e => {
-      const dd = document.getElementById('cen-co-dropdown');
-      if(dd && !dd.contains(e.target)){ list.style.display = 'none'; document.removeEventListener('click', handler); }
-    };
-    document.addEventListener('click', handler);
-  }, 0);
-}
-
-function _cenSelectFilterCo(coId, coName){
-  _cenFilterCoId = coId;
-  _cenFilterCoName = coName;
-  document.getElementById('cen-co-label').textContent = coName || '전체 고객사';
-  document.getElementById('cen-co-list').style.display = 'none';
-  _cenHistoryPage = 1;
-  renderCenHistory();
-}
-
-function _cenPopulateFilterCoDropdown(){
-  const list = document.getElementById('cen-co-list');
-  const btn = document.getElementById('cen-co-btn');
-  if(!list || !btn) return;
-  const allCos = (allCompanies || []).filter(c => !c.is_draft).sort((a,b) => (a.company_name||'').localeCompare(b.company_name||'', 'ko'));
-  // 이력에 등장하는 company_id 집합
-  const coIdsInHistory = new Set(_cenNoticeList.map(r => r.company_id).filter(Boolean));
-  const coCounts = {};
-  _cenNoticeList.forEach(r => { if(r.company_id) coCounts[r.company_id] = (coCounts[r.company_id]||0) + 1; });
-  const totalCount = _cenNoticeList.length;
-
-  list.innerHTML =
-    `<div class="cust-dropdown-item${!_cenFilterCoId?' selected':''}" onclick="_cenSelectFilterCo('','전체 고객사')">
-      <span>전체 고객사</span><span class="count-badge">${totalCount}</span>
-    </div>` +
-    allCos.filter(c => coIdsInHistory.has(c.id)).map(c => {
-      const cnt = coCounts[c.id] || 0;
-      return `<div class="cust-dropdown-item${_cenFilterCoId===c.id?' selected':''}" onclick="_cenSelectFilterCo('${c.id}','${c.company_name.replace(/'/g,"\\'")}')">
-        <span>${c.company_name}</span><span class="count-badge">${cnt}</span>
-      </div>`;
-    }).join('');
-}
-
 function renderCenHistory(){
   const tbody = document.getElementById('cen-log-tbody');
   if(!tbody) return;
 
   const filterMethod  = document.getElementById('cen-log-filter-method')?.value  || '';
-  const filterCompany = _cenFilterCoId;
+  const filterCompany = document.getElementById('cen-log-filter-company')?.value || '';
   const searchQ       = (document.getElementById('cen-log-search')?.value || '').trim().toLowerCase();
   const dateFrom      = document.getElementById('cen-log-filter-date-from')?.value || '';
   const dateTo        = document.getElementById('cen-log-filter-date-to')?.value || '';
 
-  // 고객사 칩 드롭다운 채우기 (최초 1회 및 이력 로드 후)
-  const coList = document.getElementById('cen-co-list');
-  if(coList && !coList.children.length){
-    _cenPopulateFilterCoDropdown();
+  // 고객사 필터 옵션 동적 채우기 (최초 1회)
+  const coSel = document.getElementById('cen-log-filter-company');
+  if(coSel && coSel.options.length <= 1){
+    const uniqueCos = [...new Map(_cenNoticeList.map(r=>[r.company_id, r.company_name])).entries()]
+      .sort((a,b)=>(a[1]||'').localeCompare(b[1]||'','ko'));
+    uniqueCos.forEach(([id,name])=>{
+      const opt=document.createElement('option');
+      opt.value=id; opt.textContent=name||id; coSel.appendChild(opt);
+    });
   }
 
   let list = _cenNoticeList.filter(r=>{
@@ -1558,7 +1510,6 @@ function renderCenHistory(){
       [DISPATCH_METHOD.EMAIL]:  'badge-blue',
       [DISPATCH_METHOD.MANUAL]: 'badge-green',
       [DISPATCH_METHOD.REISSUE]: 'badge-pink',
-      [DISPATCH_METHOD.INAPP]:  'badge-indigo',
     };
     const badgeCls = METHOD_CLS[m] || 'badge-gray';
     const iconCfg = {
@@ -1566,7 +1517,6 @@ function renderCenHistory(){
       [DISPATCH_METHOD.EMAIL]: '<i class="fas fa-envelope"></i>',
       [DISPATCH_METHOD.MANUAL]: '<i class="fas fa-hand-holding"></i>',
       '수정재발행': '<i class="fas fa-sync-alt"></i>',
-      [DISPATCH_METHOD.INAPP]: '<i class="fas fa-bell"></i>',
     };
     const icon = iconCfg[m] || '<i class="fas fa-question"></i>';
     const label = DISPATCH_METHOD_LABEL[m] || m || '-';

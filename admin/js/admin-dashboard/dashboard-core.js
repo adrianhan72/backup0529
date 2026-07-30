@@ -1,4 +1,4 @@
-// ─── DASHBOARD ───
+﻿// ─── DASHBOARD ───
 
 
 // ── 대시보드 임시저장 알림 카드 ──
@@ -1128,7 +1128,7 @@ function renderDraftAlerts(){
   const coGroup = draftCompanies.length ? `
     <div class="dash-ac-group-row" style="padding:8px 20px;">
       <span class="dash-ac-group-label"><i class="fas fa-building" style="margin-right:5px;font-size:14px;color:#111827;"></i>고객사 <span class="count-badge">${draftCompanies.length}</span></span>
-      <button class="dash-ac-toggle" onclick="toggleDashAccordion('draft-co-body',this,event)" title="펼치기/접기">
+      <button class="dash-ac-toggle" onclick="toggleDashAccordion('draft-co-body',this,event)" title="펼치기/접기" style="background:rgba(245,158,11,.18);color:#92400e;margin-left:2px;">
         <i class="fas fa-chevron-down"></i>
       </button>
     </div>
@@ -1140,7 +1140,7 @@ function renderDraftAlerts(){
   const ctGroup = draftContracts.length ? `
     <div class="dash-ac-group-row" style="padding:8px 20px;${draftCompanies.length ? 'border-top:1px solid #fde68a;' : ''}">
       <span class="dash-ac-group-label"><i class="fas fa-file-contract" style="margin-right:5px;font-size:14px;color:#111827;"></i>근로계약서 <span class="count-badge">${draftContracts.length}</span></span>
-      <button class="dash-ac-toggle" onclick="toggleDashAccordion('draft-ct-body',this,event)" title="펼치기/접기">
+      <button class="dash-ac-toggle" onclick="toggleDashAccordion('draft-ct-body',this,event)" title="펼치기/접기" style="background:rgba(99,102,241,.15);color:#3730a3;margin-left:2px;">
         <i class="fas fa-chevron-down"></i>
       </button>
     </div>
@@ -1153,7 +1153,7 @@ function renderDraftAlerts(){
   const piGroup = draftPayrolls.length ? `
     <div class="dash-ac-group-row" style="padding:8px 20px;${hasPrevForPi ? 'border-top:1px solid #fde68a;' : ''}">
       <span class="dash-ac-group-label"><i class="fas fa-file-invoice-dollar" style="margin-right:5px;font-size:14px;color:#111827;"></i>급여 입력 <span class="count-badge">${draftPayrolls.length}</span></span>
-      <button class="dash-ac-toggle" onclick="toggleDashAccordion('draft-pi-body',this,event)" title="펼치기/접기">
+      <button class="dash-ac-toggle" onclick="toggleDashAccordion('draft-pi-body',this,event)" title="펼치기/접기" style="background:rgba(22,163,74,.18);color:#15803d;margin-left:2px;">
         <i class="fas fa-chevron-down"></i>
       </button>
     </div>
@@ -1251,7 +1251,7 @@ function _renderContractsBanners(){
       <div class="draft-alert-card-body">
         <div class="dash-ac-group-row" style="padding:8px 20px;">
           <span class="dash-ac-group-label"><i class="fas fa-file-contract" style="margin-right:5px;font-size:14px;color:#111827;"></i>근로계약서 <span class="count-badge">${drafts.length}</span></span>
-          <button class="dash-ac-toggle" onclick="toggleDashAccordion('cont-draft-ct-body',this,event)" title="펼치기/접기">
+          <button class="dash-ac-toggle" onclick="toggleDashAccordion('cont-draft-ct-body',this,event)" title="펼치기/접기" style="background:rgba(99,102,241,.15);color:#3730a3;margin-left:2px;">
             <i class="fas fa-chevron-down"></i>
           </button>
         </div>
@@ -1266,8 +1266,12 @@ function _renderContractsBanners(){
   (function(){
     const sec = document.getElementById('contracts-signed-banner');
     if(!sec) return;
-    const _cdpDashUnsent = typeof _cdpGetUnsentContracts === 'function' ? _cdpGetUnsentContracts() : [];
-    const unsignedContracts = _cdpDashUnsent;
+    const unsignedContracts = (allContracts || []).filter(c =>
+      !c.is_draft && !c.is_voided_by_amend &&
+      ![CONTRACT_STATUS.VOIDED, CONTRACT_STATUS.CANCELED].includes(c.status) &&
+      CONTRACT_ACTIVE_STATUSES.includes(c.status) &&
+      !c.signed_file_name
+    );
     const cnt = unsignedContracts.length;
     const inactive = cnt === 0;
     sec.style.display = '';
@@ -1289,13 +1293,11 @@ function _renderContractsBanners(){
   (function(){
     const sec = document.getElementById('contracts-consent-banner');
     if(!sec) return;
-    const _consentSentEmpIdsDash = new Set(
-      (window._consentDispatchList || []).filter(r => r.dispatch_status === 'sent' || r.dispatch_status === 'completed').map(r => r.employee_id)
-    );
     const unsignedConsent = (allContracts || []).filter(c =>
       !c.is_draft && !c.is_voided_by_amend &&
-      ![CONTRACT_STATUS.VOIDED, CONTRACT_STATUS.CANCELED, CONTRACT_STATUS.TERMINATED].includes(c.status) &&
-      !_consentSentEmpIdsDash.has(c.employee_id)
+      ![CONTRACT_STATUS.VOIDED, CONTRACT_STATUS.CANCELED].includes(c.status) &&
+      CONTRACT_ACTIVE_STATUSES.includes(c.status) &&
+      !c.consent_file_name
     );
     const cnt2 = unsignedConsent.length;
     const inactive2 = cnt2 === 0;
@@ -1444,9 +1446,6 @@ function goDraftPayroll(draftId){
   const co = allCompanies.find(x => x.id === p.company_id);
   if(co) currentGlobalCompanyName = co.company_name;
 
-  // ★ 임시저장 ID를 showPage 이전에 설정 → 배너 렌더링 시 현재 편집 중인 건 제외
-  piDraftId = draftId;
-
   const piMenuItem = document.querySelector('[data-page="payroll-input"]');
   showPage('payroll-input', piMenuItem);
 
@@ -1485,6 +1484,8 @@ function goDraftPayroll(draftId){
     const editBanner = document.getElementById('pi-edit-banner');
     if(editBanner) editBanner.style.display = 'none';
 
+    piDraftId = draftId;
+    
     // 계약 로드 및 임시저장 복원
     setTimeout(() => {
       if(typeof loadPIContract === 'function') loadPIContract();

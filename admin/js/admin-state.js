@@ -224,7 +224,7 @@ async function init(){
     initMonthFilter(); initPIMonths(); initPIYears();
     renderDashboard(); renderCompanies(); renderContracts();
     populateFilters(); populatePICompanies(); initBreakSelects();
-    _renderSidebar();  // SIDEBAR_MENU 기반 사이드바 동적 생성
+    _syncMenuLabels();  // PAGE_LABELS 기준으로 사이드바 메뉴명 동기화
     
     // ── 페어 계약 새 창에서 열기: sessionStorage에 저장된 계약 자동 조회 ──
     _restorePairContractWindow();
@@ -716,25 +716,17 @@ function closeModal(id){
     if(cmDraftInfo){ cmDraftInfo.style.display='none'; cmDraftInfo.textContent=''; }
   }
 }
-/** SIDEBAR_MENU + PAGE_LABELS 기준으로 사이드바 메뉴 동적 생성 (단일 진실 공급원) */
-function _renderSidebar(){
-  const nav = document.querySelector('.sidebar-menu');
-  if(!nav) return;
-  let html = '';
-  for(const item of SIDEBAR_MENU){
-    if(item.section){
-      html += `<div class="menu-section">${item.section}</div>`;
-    } else {
-      const label = PAGE_LABELS[item.page] || item.page;
-      const badgeHtml = item.badge ? `<span class="menu-todo-badge" id="${item.badge}" style="display:none;"></span>` : '';
-      const iconHtml = item.isKakao
-        ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="#e94560" style="flex-shrink:0;vertical-align:-1px;width:16px;text-align:center;"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg>`
-        : `<i class="fas ${item.icon}"></i>`;
-      html += `<div class="menu-item" data-page="${item.page}" onclick="showPage('${item.page}',this)">${iconHtml} ${label}${badgeHtml}</div>`;
+/** PAGE_LABELS 기준으로 사이드바 메뉴명을 일괄 동기화 */
+function _syncMenuLabels(){
+  document.querySelectorAll('.menu-item[data-page]').forEach(el => {
+    const page = el.dataset.page;
+    if(PAGE_LABELS[page]){
+      const textNodes = Array.from(el.childNodes).filter(n => n.nodeType === 3);
+      if(textNodes.length > 0){
+        textNodes[0].textContent = ' ' + PAGE_LABELS[page];
+      }
     }
-  }
-  nav.innerHTML = html;
-  _syncMenuLabels = function(){}; // 이후 호출은 무시 (이미 렌더링 완료)
+  });
 }
 
 async function showPage(name,el){
@@ -799,24 +791,6 @@ async function showPage(name,el){
     document.getElementById('cont-list-section').style.display = 'none';
     // 고객사 선택과 무관하게 상단 배너(임시저장 등)는 항상 갱신
     if(typeof _renderContractsBanners === 'function') _renderContractsBanners();
-  }
-  if(name==='company-notice-log'){
-    if(!_dataReady){
-      const chips = document.getElementById('cnl-company-chips');
-      if(chips) chips.innerHTML = `<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#9ca3af;padding:8px 0;"><div style="width:18px;height:18px;border:2px solid #e2e8f0;border-top-color:#6366f1;border-radius:50%;animation:tblSpin .7s linear infinite;flex-shrink:0;"></div>고객사 목록 불러오는 중...</div>`;
-      document.getElementById('cnl-company-select-card').style.display = '';
-      document.getElementById('cnl-list-section').style.display = 'none';
-      if(el) el.classList.add('active');
-      return;
-    }
-    if(currentGlobalCompanyId){
-      const _gco = allCompanies.find(c=>c.id===currentGlobalCompanyId);
-      if(_gco){ if(el) el.classList.add('active'); selectCnlCompany(currentGlobalCompanyId, _gco.company_name); return; }
-    }
-    if(typeof _cnlCompanyId !== 'undefined') _cnlCompanyId = '';
-    renderCnlCompanyList();
-    document.getElementById('cnl-company-select-card').style.display = '';
-    document.getElementById('cnl-list-section').style.display = 'none';
   }
   if(name==='payroll-input'){
     // 페이지 진입 시 년월 option 목록 재생성
@@ -1288,10 +1262,10 @@ function selectPICompany(companyId, companyName){
     // 수정 모드가 아닌 경우 항상 표시 복원
     const periodSec = document.getElementById('pi-period-section');
     if(periodSec) periodSec.style.display='';
-    // ★ 임시저장 배너: 고객사 선택 시 전체 배너는 숨기고 해당 고객사 전용 배너만 표시
-    //   (이어쓰기 모드에서는 piDraftId 필터로 현재 편집 건 제외)
+    // ★ 임시저장 배너: 고객사+년월 선택 단계에서만 표시
+    // 목록·폼이 숨겨진 이 시점(년월 선택 단계)에서만 배너를 갱신·표시
+    // ★ 급여 입력: 고객사 선택 시 전체 임시저장 배너 숨기고 해당 고객사 배너 표시
     const _adb = document.getElementById('pi-all-draft-banner');
-    const _cdb = document.getElementById('pi-co-draft-banner');
     if(_adb) _adb.style.display = 'none';
     if(typeof renderPICoDraftBanner === 'function') renderPICoDraftBanner();
   } else {
@@ -1343,8 +1317,6 @@ function clearPICompanySelect(){
   if(typeof piEditPayrollId !== 'undefined' && piEditPayrollId){
     if(typeof cancelEditPayroll === 'function') cancelEditPayroll();
   }
-  // 임시저장 이어쓰기 모드 해제 (취소한 건이 배너에서 사라지지 않도록)
-  piDraftId = null;
   // pi-all-draft-banner 복원, 고객사 전용 배너 숨김
   if(typeof renderPIAllDraftBanner === 'function') renderPIAllDraftBanner();
   const _coDraft = document.getElementById('pi-co-draft-banner');

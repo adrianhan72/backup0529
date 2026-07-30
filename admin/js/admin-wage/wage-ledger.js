@@ -1,4 +1,4 @@
-// ─── WAGE LEDGER (임금대장) ───
+﻿// ─── WAGE LEDGER (임금대장) ───
 let _wlCompanyId = null;
 let _wlCompanyName = '';
 

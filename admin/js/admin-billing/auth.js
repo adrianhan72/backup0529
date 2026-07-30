@@ -19,8 +19,6 @@ function _alnShowApp(){
   if(screen)  screen.style.display = 'none';
   if(sidebar) sidebar.style.display = '';
   if(main)    main.style.display    = '';
-  // SIDEBAR_MENU 기반 메뉴 동적 생성 (깜빡임 방지)
-  if(typeof _renderSidebar === 'function') _renderSidebar();
 }
 
 /* ── 비밀번호 눈 토글 (로그인 화면) ── */

@@ -1,4 +1,4 @@
-    /* ── 대시보드 알림 카드 공통 아코디언 ── */
+﻿    /* ?�?� ?�?�보???�림 카드 공통 ?�코?�언 ?�?� */
     .dash-ac-card{background:#fff;border-radius:14px;overflow:hidden;}
     .dash-ac-header{display:flex;align-items:center;padding:13px 18px 13px 20px;gap:10px;cursor:pointer;user-select:none;transition:filter .15s;}
     .dash-ac-header:hover{filter:brightness(.97);}
@@ -13,7 +13,7 @@
     .dash-ac-group-row{display:flex;align-items:center;gap:8px;padding:8px 0;flex-wrap:nowrap;}
     .dash-ac-group-label{font-size:14px;font-weight:800;color:#111827;text-transform:uppercase;letter-spacing:.04em;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
     .dash-ac-group-badge{font-size:11.5px;font-weight:500;border-radius:20px;padding:2px 10px;}
-    /* 임시저장 — 노랑 */
+    /* ?�시?�?????�랑 */
     .draft-alert-card{border:1px solid #fbbf24;box-shadow:0 4px 18px rgba(245,158,11,.13);}
     .draft-alert-card-header{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:13px 20px 12px;background:linear-gradient(90deg,#fffbeb 0%,#fef9ec 100%);border-bottom:1px solid #fde68a;}
     .draft-alert-card-header .dash-ac-title{color:#92400e;}
@@ -26,7 +26,7 @@
     .draft-alert-card .dash-ac-group-badge.pi{background:#f0fdf4;color:#15803d;}
     .draft-item-icon.pi{background:rgba(22,163,74,.13);color:#16a34a;}
 
-    /* ── 급여 입력 전체 임시저장 배너 (대시보드 임시저장 카드와 동일 노랑 계열) ── */
+    /* ?�?� 급여 ?�력 ?�체 ?�시?�??배너 (?�?�보???�시?�??카드?� ?�일 ?�랑 계열) ?�?� */
     #pi-all-draft-banner{display:none;background:linear-gradient(90deg,#fffbeb 0%,#fef9ec 100%);border:1px solid #fbbf24;border-radius:14px;margin-bottom:16px;overflow:hidden;box-shadow:0 4px 18px rgba(245,158,11,.13);}
     #pi-all-draft-banner.visible{display:block;}
     .pi-adb-header{display:flex;align-items:center;justify-content:space-between;padding:13px 20px 12px;gap:10px;cursor:pointer;user-select:none;transition:background .15s;border-bottom:1px solid #fde68a;}
@@ -38,9 +38,9 @@
     .pi-adb-chevron{width:26px;height:26px;border-radius:8px;background:#fde68a;color:#92400e;display:flex;align-items:center;justify-content:center;font-size:12px;transition:transform .25s;flex-shrink:0;border:1px solid #cccccc;outline:none;cursor:pointer;}
     .pi-adb-body{overflow:hidden;max-height:0;transition:max-height .4s cubic-bezier(.4,0,.2,1);background:#fff;}
     .pi-adb-body.open{max-height:9999px;}
-    .pi-adb-divider{display:none;}/* ?占쎈뜑 border-bottom?占쎈줈 ?占쏙옙?*/
+    .pi-adb-divider{display:none;}/* ?�더 border-bottom?�로 ?��?*/
     .pi-adb-list{padding:12px 20px 16px;}
-    /* 개별 행 — 대시보드 .draft-item-row + .draft-item-icon.pi 와 동일 */
+    /* 개별 ?????�?�보??.draft-item-row + .draft-item-icon.pi ?� ?�일 */
     .pi-adb-row{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;background:#fffbeb;border:1px solid #fde68a;margin-bottom:6px;transition:background .15s,border-color .15s;}
     .pi-adb-row:hover{background:#fef3c7;border-color:#f59e0b;}
     .pi-adb-row:last-child{margin-bottom:0;}
@@ -58,7 +58,7 @@
     .pi-adb-empty{padding:14px 12px;font-size:13px;color:#9ca3af;text-align:center;}
     .draft-alert-title .pulse-dot{width:9px;height:9px;border-radius:50%;background:#f59e0b;display:inline-block;animation:pulseDot 1.4s ease-in-out infinite;}
     @keyframes pulseDot{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(1.35);}}
-    /* 계약서 날인본 — 인디고 */
+    /* 계약???�인�????�디�?*/
     .signed-alert-card{border:1px solid #818cf8;box-shadow:0 4px 18px rgba(99,102,241,.11);}
     .signed-alert-card .dash-ac-header{background:linear-gradient(90deg,#eef2ff 0%,#f5f3ff 100%);border-bottom:1px solid #c7d2fe;}
     .signed-alert-card .dash-ac-title{color:#3730a3;}
@@ -73,7 +73,7 @@
     .signed-item-name{font-size:13px;font-weight:700;color:#1e293b;flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
     .signed-item-meta{font-size:11.5px;color:#6b7280;white-space:nowrap;}
     .signed-item-phone{font-size:11.5px;color:#6366f1;font-weight:600;white-space:nowrap;}
-    /* ?????占쎌쓽????鍮④컯 */
+    /* ?????�의????빨강 */
     .consent-alert-card{border:1px solid #f87171;box-shadow:0 4px 18px rgba(239,68,68,.11);}
     .consent-alert-card .dash-ac-header{background:linear-gradient(90deg,#fff1f2 0%,#fff5f5 100%);border-bottom:1px solid #fecaca;}
     .consent-alert-card .dash-ac-title{color:#991b1b;}
@@ -88,7 +88,7 @@
     .consent-item-name{font-size:13px;font-weight:700;color:#1e293b;flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
     .consent-item-meta{font-size:11.5px;color:#6b7280;white-space:nowrap;}
     .consent-item-phone{font-size:11.5px;color:#dc2626;font-weight:600;white-space:nowrap;}
-    /* 임시저장 아이템 */
+    /* ?�시?�???�이??*/
     .draft-alert-card .dash-ac-body{background:#fff;}
     .draft-item-row{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;background:#fffbeb;border:1px solid #fde68a;margin-bottom:6px;transition:background .15s,border-color .15s;}
     .draft-item-row:hover{background:#fef3c7;border-color:#f59e0b;}
@@ -96,7 +96,7 @@
     .draft-item-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
     .draft-item-icon.co{background:rgba(245,158,11,.15);color:#d97706;}
     .draft-item-icon.ct{background:rgba(99,102,241,.12);color:#6366f1;}
-    /* ── draft action buttons (outline type) ── */
+    /* ?�?� draft action buttons (outline type) ?�?� */
     .btn-draft-edit-sm{
       display:inline-flex;align-items:center;gap:3px;
       padding:5px 10px;border-radius:6px;
@@ -117,7 +117,7 @@
       transition:background .18s;
      user-select:none;}
     .btn-draft-del-sm:hover:not(:disabled){background:#6b7280;}
-    /* ── 계약서 조회 첨부 서류 업로드 섹션 ── */
+    /* ?�?� 계약??조회 첨�? ?�류 ?�로???�션 ?�?� */
     .ctf-section{background:#FFFEF7;border:1.5px solid #fde047;border-radius:10px;padding:16px 18px;margin:16px 0 20px;}
     .ctf-section-title{font-size:13px;font-weight:700;color:#374151;margin-bottom:10px;padding-bottom:7px;border-bottom:1.5px solid #e5e7eb;display:flex;align-items:center;gap:6px;}
     .ctf-row{display:flex;flex-direction:column;gap:6px;padding:12px 14px;border-radius:10px;border:1.5px solid #e5e7eb;background:#f9fafb;transition:border-color .2s;}
@@ -145,7 +145,7 @@
     .ctf-uploading{display:none;align-items:center;gap:6px;font-size:11.5px;color:#6b7280;margin-top:6px;}
     .ctf-uploading i{color:#6366f1;}
     .ctf-row.ctf-row-voided{border-color:#fca5a5;background:#fff5f5;}
-    /* 노무대행 서비스 계약서 업로드 */
+    /* ?�무?�???�비??계약???�로??*/
     .cm-svc-section{margin-top:8px;}
     .cm-svc-section-title{font-size:12px;font-weight:700;color:#e94560;padding:10px 0 3px;border-bottom:1px dashed #ffd0d8;margin-bottom:6px;display:flex;align-items:center;gap:6px;}
     .cm-svc-upload-area{display:flex;flex-direction:column;gap:8px;}
@@ -179,26 +179,26 @@
     .cm-svc-add-more:hover{background:#b91c1c;}
     .ctf-badge-voided{background:#fef2f2;color:#b91c1c;}
 
-    /* ══ 계약만료 통지 관리 (cen = Contract Expiry Notice) ══ */
+    /* ?�═ 계약만료 ?��? 관�?(cen = Contract Expiry Notice) ?�═ */
     #page-contract-expiry-notice .cen-summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px;}
     #rc-summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
     .cen-stat-card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:4px;}
     .cen-stat-label{font-size:11.5px;color:#6b7280;font-weight:600;}
     .cen-stat-val{font-size:22px;font-weight:800;line-height:1.1;}
     .cen-stat-sub{font-size:11px;color:#9ca3af;margin-top:2px;}
-    /* 통지 대상 테이블 */
+    /* ?��? ?�???�이�?*/
     .cen-table{width:100%;border-collapse:collapse;font-size:12.5px;}
     .cen-table th{padding:9px 13px;font-size:11.5px;font-weight:700;text-align:left;border-bottom:2px solid #e5e7eb;white-space:nowrap;background:#f8f9fb;color:#374151;}
     .cen-table td{padding:10px 13px;vertical-align:middle;border-bottom:1px solid #f3f4f6;}
     .cen-table tr:hover td{background:#f9fafb;}
-    /* D-day 諛곤옙? */
+    /* D-day 배�? */
 .cen-dday{display:inline-flex;align-items:center;gap:3px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500;white-space:nowrap;}
     .cen-dday.urgent{background:rgba(239,68,68,.1);color:#ef4444;}
     .cen-dday.soon{background:rgba(234,88,12,.1);color:#ea580c;}
     .cen-dday.normal{background:rgba(100,116,139,.1);color:#475569;}
-    /* 발송 방식 선택 버튼 높이 통일 */
+    /* 개별통지 버튼 높이 통일 */
     .cen-table .btn-sm{height:30px;padding:4px 10px;vertical-align:middle;display:inline-flex;align-items:center;gap:4px;}
-    /* 諛쒖넚 諛⑹떇 ?占쏀깮 踰꾪듉 ??Outline Indigo with Selected state */
+    /* 발송 방식 ?�택 버튼 ??Outline Indigo with Selected state */
     .cen-method-btn{
       padding:6px 13px;border-radius:7px;
       border:1.5px solid #e5e7eb;background:#fff;
@@ -222,18 +222,18 @@
       box-shadow:0 4px 14px rgba(99,102,241,.38);
     }
     .cen-method-btn:disabled,.cen-method-btn[disabled]{background:#cccccc;color:#f2f2f2;border:1px solid #cccccc;cursor:not-allowed;pointer-events:none;opacity:1;}
-    /* ?占쎈젰 ??*/
+    /* ?�력 ??*/
     .cen-tab-bar{display:flex;gap:4px;margin-bottom:0;}
 .cen-tab-panel,.std-tab-panel{background:#f5f3ff;padding:20px;border-radius:0 0 12px 12px;box-shadow:none;border:1px solid #6366f1;}
 .cen-tab,.std-tab{padding:8px 18px;border-radius:8px 8px 0 0;border:1px solid #cccccc;background:none;font-size:13px;font-weight:600;color:#6b7280;cursor:pointer;font-family:inherit;border-bottom:2px solid transparent;transition:all .15s;}
 .cen-tab.active,.std-tab.active{color:#4f46e5;border-color:#6366f1;border-bottom-color:transparent;background:#f5f3ff;}
 .cen-tab:hover:not(.active),.std-tab:hover:not(.active){color:#374151;background:#f9fafb;}
-    /* 이력 테이블 */
+    /* ?�력 ?�이�?*/
     .cen-log-table{width:100%;border-collapse:collapse;font-size:12.5px;}
     .cen-log-table th{padding:9px 12px;font-size:11.5px;font-weight:700;text-align:left;border-bottom:2px solid #e5e7eb;white-space:nowrap;background:#f8f9fb;}
     .cen-log-table td{padding:9px 12px;vertical-align:middle;border-bottom:1px solid #f3f4f6;}
     .cen-log-table tr:hover td{background:#f9fafb;}
-    /* ?占쎄큵 諛쒖넚 踰꾪듉 */
+    /* ?�괄 발송 버튼 */
     .cen-bulk-btn{
       display:inline-flex;align-items:center;gap:7px;
       padding:8px 18px;border:1px solid #cccccc;border-radius:9px;
@@ -263,19 +263,19 @@
       background:linear-gradient(135deg,#1d4ed8,#1e40af);
       box-shadow:0 4px 14px rgba(37,99,235,.38);
     }
-    /* 필터 바 */
+    /* ?�터 �?*/
     .cen-filter-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 18px;background:#f9fafb;border-bottom:1px solid #e5e7eb;}
-    /* 泥댄겕諛뺤뒪 */
+    /* 체크박스 */
     .cen-chk{width:15px;height:15px;cursor:pointer;accent-color:#6366f1;}
-    /* 통지 없음 메시지 */
+    /* ?��? ?�음 메시지 */
     .cen-empty{text-align:center;padding:48px 20px;color:#9ca3af;}
     .cen-empty i{font-size:30px;display:block;margin-bottom:10px;}
-    /* 諛곕꼫 */
+    /* 배너 */
     .cen-notice-banner{display:flex;align-items:flex-start;gap:12px;padding:14px 20px;border-radius:10px;margin-bottom:20px;}
     .cen-notice-banner.warn{background:linear-gradient(90deg,#fff7ed,#ffedd5);border:1.5px solid #fb923c;}
     .cen-notice-banner.info{background:linear-gradient(90deg,#eff6ff,#dbeafe);border:1.5px solid #60a5fa;}
     .cen-notice-banner.danger{background:linear-gradient(90deg,#fff1f2,#ffe4e6);border:1.5px solid #f87171;}
-    /* ── 2년 초과 정규직 전환 탭 ── */
+    /* ?�?� 2??초과 ?�규�??�환 ???�?� */
     #cen-panel-2yr .tbl-2yr{width:100%;border-collapse:collapse;font-size:12.5px;}
     #cen-panel-2yr .tbl-2yr th{background:#f8fafc;padding:9px 12px;text-align:left;font-weight:600;color:#374151;border-bottom:2px solid #e5e7eb;white-space:nowrap;}
     #cen-panel-2yr .tbl-2yr td{padding:10px 12px;border-bottom:1px solid #f3f4f6;vertical-align:middle;}

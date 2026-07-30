@@ -1,18 +1,18 @@
-       OUTLINE TYPE ? í…Œë‘ë¦¬/íˆ¬ëª… ë°°ê²½ ë²„íŠ¼
+       OUTLINE TYPE ? Å×µÎ¸®/Åõ¸í ¹è°æ ¹öÆ°
     ?????????????????????????????????????????????? */
-    /* ê³µí†µ outline ë² ì´ìŠ¤ */
+    /* °øÅë outline º£ÀÌ½º */
     .btn-outline-base{
       background:transparent;
       border-width:1.5px;border-style:solid;
     }
 
-    /* Secondary (íšŒìƒ‰ ? ì·¨ì†Œ/ë³´ì¡°) */
+    /* Secondary (È¸»ö ? Ãë¼Ò/º¸Á¶) */
     .btn-secondary{background:#9ca3af;border-color:#6b7280;color:#fff;}
     .btn-secondary:hover:not(:disabled){background:#6b7280;}
     .btn-secondary:active:not(:disabled){background:#4b5563;}
     .btn-secondary.selected,.btn-secondary[aria-selected="true"]{background:#4b5563;}
 
-    /* Outline Primary (ë ˆë“œ í…Œë‘ë¦¬) */
+    /* Outline Primary (·¹µå Å×µÎ¸®) */
     .btn-outline-primary{
       background:transparent;color:#dc2626;
       border:1.5px solid #dc2626;
@@ -27,7 +27,7 @@
       background:#dc2626;color:#fff;
     }
 
-    /* Outline Success (ê·¸ë¦° í…Œë‘ë¦¬) */
+    /* Outline Success (±×¸° Å×µÎ¸®) */
     .btn-outline-success{
       background:transparent;color:#10b981;
       border:1.5px solid #10b981;
@@ -43,7 +43,7 @@
       background:#10b981;color:#fff;
     }
 
-    /* Outline Warning (ì•°ë²„ í…Œë‘ë¦¬) */
+    /* Outline Warning (¾Ú¹ö Å×µÎ¸®) */
     .btn-outline-warning{
       background:transparent;color:#d97706;
       border:1.5px solid #f59e0b;
@@ -59,7 +59,7 @@
       background:#f59e0b;color:#fff;
     }
 
-    /* Outline Danger (ë ˆë“œ í…Œë‘ë¦¬) */
+    /* Outline Danger (·¹µå Å×µÎ¸®) */
     .btn-outline-danger{
       background:transparent;color:#dc2626;
       border:1.5px solid #dc2626;
@@ -75,7 +75,7 @@
       background:#dc2626;color:#fff;
     }
 
-    /* Outline Indigo (ì¸ë””ê³  í…Œë‘ë¦¬) */
+    /* Outline Indigo (ÀÎµğ°í Å×µÎ¸®) */
     .btn-outline-indigo{
       background:transparent;color:#4f46e5;
       border:1.5px solid #6366f1;
@@ -91,7 +91,7 @@
       background:#4f46e5;color:#fff;
     }
 
-    /* Ghost (ë°°ê²½ ì—†ìŒ, hover ì‹œ ë°ì€ ë°°ê²½) */
+    /* Ghost (¹è°æ ¾øÀ½, hover ½Ã ¹àÀº ¹è°æ) */
     .btn-ghost{
       background:transparent;color:#6b7280;
       border:1.5px solid transparent;
@@ -140,4 +140,4 @@
 .badge-rose{background:rgba(244,63,94,.12);color:#be123c}
     .badge-slate{background:rgba(100,116,139,.1);color:#475569}
     .badge-amber{background:rgba(245,158,11,.15);color:#b45309}
-    /* â”€â”€ ê³„ì•½ ì¡°íšŒ ëª¨ë‹¬ ì „ìš© â”€â”€ */
+    /* ¦¡¦¡ °è¾à Á¶È¸ ¸ğ´Ş Àü¿ë ¦¡¦¡ */

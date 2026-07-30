@@ -1,4 +1,4 @@
-/**
+﻿/**
  * _renderContCoSummaryCards()
  * 선택된 고객사에 대한 아코디언 카드 렌더링 (총 7종)
  * 순서: ①계약예정 ②임시저장 ③근로계약서 미발송 ④정보제공동의서 미발송
@@ -40,22 +40,22 @@ function _renderContCoSummaryCards(){
     c.company_id === coId && c.is_draft);
 
   // ═══════════════════════════════════════════
-  // CARD 3: 근로계약서 미발송 (_cdpGetUnsentContracts와 동일 기준)
+  // CARD 3: 근로계약서 미발송 (날인본 미등록)
   // ═══════════════════════════════════════════
-  const _cdpAllUnsent = typeof _cdpGetUnsentContracts === 'function' ? _cdpGetUnsentContracts() : [];
-  const unsignedContracts = _cdpAllUnsent.filter(c => c.company_id === coId);
+  const unsignedContracts = allContracts.filter(c =>
+    c.company_id === coId && !c.is_draft && !c.is_voided_by_amend &&
+    ![CONTRACT_STATUS.VOIDED, CONTRACT_STATUS.CANCELED].includes(c.status) &&
+    CONTRACT_ACTIVE_STATUSES.includes(c.status) &&
+    !c.signed_file_name);
 
   // ═══════════════════════════════════════════
   // CARD 4: 정보제공동의서 미발송
   // ═══════════════════════════════════════════
-  // 동의서 발송 이력이 있는 employee_id 집합 (_cnsGetUnsentContracts와 동일 기준)
-  const _consentSentEmpIds = new Set(
-    (window._consentDispatchList || []).filter(r => r.dispatch_status === 'sent' || r.dispatch_status === 'completed').map(r => r.employee_id)
-  );
   const unsignedConsent = allContracts.filter(c =>
     c.company_id === coId && !c.is_draft && !c.is_voided_by_amend &&
-    ![CONTRACT_STATUS.VOIDED, CONTRACT_STATUS.CANCELED, CONTRACT_STATUS.TERMINATED].includes(c.status) &&
-    !_consentSentEmpIds.has(c.employee_id));
+    ![CONTRACT_STATUS.VOIDED, CONTRACT_STATUS.CANCELED].includes(c.status) &&
+    CONTRACT_ACTIVE_STATUSES.includes(c.status) &&
+    !c.consent_file_name);
 
   // ═══════════════════════════════════════════
   // CARD 7: 수습근로자 관리 대상
@@ -118,7 +118,7 @@ function _renderContCoSummaryCards(){
         </div>
         <div style="display:flex;align-items:center;gap:10px;">
           <span style="font-size:11.5px;font-weight:500;opacity:.7;">${desc}</span>
-          <button class="cont-alert-card-chevron${isOpen?' open':''}" onclick="event.stopPropagation();_toggleContCoCard(this.closest('.cont-alert-card-head'))" title="펼치기/접기"><i class="fas fa-chevron-down"></i></button>
+          <i class="fas fa-chevron-down cont-alert-card-chevron${isOpen?' open':''}"></i>
         </div>
       </div>
       <div class="cont-co-card-body" style="display:${isOpen?'':'none'};">
@@ -148,7 +148,7 @@ function _renderContCoSummaryCards(){
         </div>
         <div style="display:flex;align-items:center;gap:10px;">
           <span style="font-size:11.5px;font-weight:500;opacity:.7;">${desc}</span>
-          <button class="cont-alert-card-chevron${isOpen?' open':''}" onclick="event.stopPropagation();_toggleContCoCard(this.closest('.cont-alert-card-head'))" title="펼치기/접기"><i class="fas fa-chevron-down"></i></button>
+          <i class="fas fa-chevron-down cont-alert-card-chevron${isOpen?' open':''}"></i>
         </div>
       </div>
       <div class="cont-co-card-body" style="display:${isOpen?'':'none'};">
@@ -202,20 +202,19 @@ function _renderContCoSummaryCards(){
   renderNavCard('fas fa-file-alt', '#16a34a', '정보제공동의서 미발송', unsignedConsent.length,
     '클릭하여 정보제공동의서 관리 페이지로 이동', 'cont-alert-preterminate', 'consent-dispatch');
 
-  // ── ⑦ 수습근로자 관리 대상 (법적 의무: 수습기간 3개월 초과만) ──
-  const legalProbationTargets = probationTargets.filter(t => t.probMonths > 3);
-  if(legalProbationTargets.length > 0){
-    const rows = legalProbationTargets.map(t => {
+  // ── ⑦ 수습근로자 관리 대상 ──
+  if(probationTargets.length > 0){
+    const rows = probationTargets.map(t => {
       const emp = allEmployees.find(e=>e.id===t.contract.employee_id);
       const ddayColor = t.daysLeft <= 37 ? '#dc2626' : '#0d9488';
       return `<tr>${empNameCell(t.contract.employee_id)}${catBadgeCell(t.contract,emp)}<td style="font-size:12px;color:#6b7280;">${t.probEnd||'-'}</td><td><span style="font-weight:700;color:${ddayColor};font-size:12.5px;">D-${t.daysLeft}</span></td><td style="white-space:nowrap;"><button onclick="viewContract('${t.contract.id}')" class="btn btn-sm btn-indigo"><i class="fas fa-search"></i> 조회</button></td></tr>`;
     }).join('');
-    const noticeCount = legalProbationTargets.filter(t=>t.daysLeft>=30).length;
-    const severanceCount = legalProbationTargets.filter(t=>t.daysLeft<30).length;
+    const noticeCount = probationTargets.filter(t=>t.probMonths>3&&t.daysLeft>=30).length;
+    const severanceCount = probationTargets.filter(t=>t.probMonths>3&&t.daysLeft<30).length;
     const extraDesc = [];
     if(noticeCount>0) extraDesc.push(`서면통지 ${noticeCount}명`);
     if(severanceCount>0) extraDesc.push(`해고예고수당 ${severanceCount}명`);
-    renderCard('probation', 'fas fa-user-clock', '#0f766e', '관리가 필요한 수습 근로자', legalProbationTargets.length,
+    renderCard('probation', 'fas fa-user-clock', '#0f766e', '관리가 필요한 수습 근로자', probationTargets.length,
       (extraDesc.length>0?extraDesc.join(' · ')+' — ':'')+'수습기간 3개월 초과 시 해고예고 의무 발생', ['직원명','고용형태','수습 만료일','D-day','관리'], rows, 'cont-alert-probation');
   }
 }
@@ -320,13 +319,13 @@ function renderContracts(){
 
   const q=(document.getElementById('cont-search')?.value||'').toLowerCase();
   const filterEmpCat=(document.getElementById('cont-filter-empcat')?.value||'');
-  const filterStatus=Array.from(document.querySelectorAll('.cont-filter-status-cb:checked')).map(cb=>cb.value).filter(v=>v!=='all');
+  const filterStatus=Array.from(document.querySelectorAll('.cont-filter-status-cb:checked')).map(cb=>cb.value).filter(v=>v!=='전체');
   const filterDocsOnly=document.getElementById('cont-filter-docs-incomplete')?.checked||false;
   const filterById=(document.getElementById('cont-filter-id')?.value||'').trim();
   const today=new Date().toISOString().slice(0,10);
 
   // 알림 카드에서 관리되는 상태는 메인 테이블 기본 제외 (서류미비는 유효 계약이므로 메인 테이블에 포함)
-  const ALERT_ONLY_KEYS = new Set(['draft', CONTRACT_STATUS.RENEWAL_PENDING]);
+  const ALERT_ONLY_LABELS = new Set(['임시저장',CONTRACT_STATUS_LABEL[CONTRACT_STATUS.RENEWAL_PENDING]]);
 
   let f=allContracts.filter(c=>{
     if(c.company_id!==currentContCompanyId) return false;
@@ -355,13 +354,13 @@ function renderContracts(){
         if(ctCat !== filterEmpCat && ctCat !== CONTRACT_TYPE_LABEL[filterEmpCat] && CONTRACT_TYPE_LABEL[ctCat] !== filterEmpCat) return false;
       }
     }
-    // 계약상태 필터 (다중 선택 — 하나라도 일치하면 통과, filterKey 기준)
-    const {label, filterKey, docsIncomplete} = calcContractStatusDisplay(c,today);
+    // 계약상태 필터 (다중 선택 — 하나라도 일치하면 통과)
+    const {label, docsIncomplete} = calcContractStatusDisplay(c,today);
     if(filterStatus.length > 0){
-      if(!filterStatus.includes(filterKey)) return false;
+      if(!filterStatus.includes(label)) return false;
     } else {
       // 필터 없음(전체): 알림 카드 전용 상태는 메인 테이블에서 제외
-      if(ALERT_ONLY_KEYS.has(filterKey)) return false;
+      if(ALERT_ONLY_LABELS.has(label)) return false;
     }
     // 서류미비만 보기 필터 (status가 서류미비이거나 실제 파일이 누락된 경우)
     if(filterDocsOnly && c.status !== CONTRACT_STATUS.DOCS_INCOMPLETE && !docsIncomplete) return false;
@@ -472,19 +471,19 @@ function filterContracts(){pages.cont=1;renderContracts()}
 // 개별 상태 체크박스 변경 시 전체 연동
 function _onStatusFilterChange(){
   const allCbs = document.querySelectorAll('.cont-filter-status-cb');
-  const allChecked = Array.from(allCbs).filter(c=>c.value!=='all').every(c=>c.checked);
-  const allCb = Array.from(allCbs).find(c=>c.value==='all');
+  const allChecked = Array.from(allCbs).filter(c=>c.value!=='전체').every(c=>c.checked);
+  const allCb = Array.from(allCbs).find(c=>c.value==='전체');
   if(allCb) allCb.checked = allChecked;
   filterContracts();
 }
 
-// 상태 필터 '전체' 토글 — 전체 선택 시 모든 항목 체크, 해제 시 활성(active)만 선택
+// 상태 필터 '전체' 토글 — 전체 선택 시 모든 항목 체크, 해제 시 유효만 선택
 function _toggleAllStatus(cb){
   const allCbs = document.querySelectorAll('.cont-filter-status-cb');
   if(cb.checked){
     allCbs.forEach(c=>{c.checked=true;});
   } else {
-    allCbs.forEach(c=>{c.checked=c.value===CONTRACT_STATUS.ACTIVE;});
+    allCbs.forEach(c=>{c.checked=c.value==='유효';});
   }
   filterContracts();
 }
@@ -627,7 +626,6 @@ function openContractModal(id=null, preCompanyId=null){
   _resetStatusBanner();
   // readonly 클래스 제거 + 모든 필드 활성화 (단, viewContract에서 미리 설정된 경우 유지)
   const modalEl = document.querySelector('#contract-modal .modal');
-  if(!modalEl){ console.error('[openContractModal] #contract-modal .modal not found'); return; }
   const _wasReadonly = modalEl.classList.contains('ct-readonly');
   if(!_wasReadonly){
     modalEl.classList.remove('ct-readonly');
@@ -717,11 +715,6 @@ function openContractModal(id=null, preCompanyId=null){
   // ct-edit-emp-info 섹션의 show/hide로 자동 제어됨
 
   if(isNew){
-    // 신규: 임시저장 버튼 표시, 등록 버튼 텍스트 변경
-    const _draftBtn = document.getElementById('ct-btn-draft');
-    if(_draftBtn) _draftBtn.style.display = '';
-    const _regBtn = document.getElementById('ct-btn-register');
-    if(_regBtn) _regBtn.innerHTML = '<i class="fas fa-file-contract"></i> 신규 계약 등록';
     // 신규: 첨부서류 파일 전역변수 초기화 (이전 조회 계약의 파일 잔재 방지)
     if(typeof _resetUploadState === 'function') _resetUploadState();
     // 신규: 고객사 프리셋 지원, 신규 직원 입력 섹션 표시
@@ -744,13 +737,6 @@ function openContractModal(id=null, preCompanyId=null){
     toggleCtEndDate();
     document.getElementById('ct-title').textContent = '근로계약서 추가';
   } else {
-    // 수정/갱신/재계약 모드: 임시저장 버튼 숨김 (신규계약 전용)
-    const _draftBtnE = document.getElementById('ct-btn-draft');
-    if(_draftBtnE) _draftBtnE.style.display = 'none';
-    const _delDraftBtnE = document.getElementById('ct-btn-delete-draft');
-    if(_delDraftBtnE) _delDraftBtnE.style.display = 'none';
-    const _regBtnE = document.getElementById('ct-btn-register');
-    if(_regBtnE) _regBtnE.innerHTML = '<i class="fas fa-save"></i> 수정 저장';
     // 수정: 기존 직원 정보 표시, 신규 입력 섹션 숨김 (draft도 employee_id 있으므로 정상 동작)
     document.getElementById('ct-new-emp-section').style.display = 'none';
     document.getElementById('ct-edit-emp-info').style.display = 'block';
@@ -893,8 +879,7 @@ function openContractModal(id=null, preCompanyId=null){
       }
       // 연차일수: 저장된 값 복원 후 자동계산으로 힌트 표시 (입사일 복원 후 호출)
       document.getElementById('ct-annual').value=c.annual_leave_days||15;
-      const _preUsedEl = document.getElementById('ct-pre-used-annual');
-      if(_preUsedEl) _preUsedEl.value = c.pre_used_annual_leave||'';
+      document.getElementById('ct-pre-used-annual').value=c.pre_used_annual_leave||'';
       // 요일별 스케줄 복원: schedule_json 우선, 없으면 레거시 필드로 변환
       if(c.schedule_json){
         try{ setScheduleFromJSON(JSON.parse(c.schedule_json)); }
@@ -1034,20 +1019,6 @@ function openContractModal(id=null, preCompanyId=null){
     el.addEventListener('change', _ctClearFieldError, { once: false });
   });
 }
-
-// ── 신규·재계약 시 추천 사원번호 (같은 회사 내 최대 번호 + 1) ──
-function _suggestEmpNo(companyId){
-  const _empnoEl = document.getElementById('ct-em-empno');
-  if(!_empnoEl || !companyId) return;
-  const _coEmps = allEmployees.filter(e => e.company_id === companyId && e.employee_number);
-  let _maxNo = 0;
-  _coEmps.forEach(e => {
-    const _num = parseInt(e.employee_number, 10);
-    if(!isNaN(_num) && _num > _maxNo) _maxNo = _num;
-  });
-  _empnoEl.placeholder = `추천: ${String(_maxNo + 1).padStart(4, '0')}`;
-}
-
 function _ctClearFieldError(e){
   const fg = e.target.closest('.form-group');
   if(fg && fg.classList.contains('ct-field-error')){
@@ -1672,20 +1643,6 @@ function checkCtEditEmpNoUniqueness(){
   const companyId = currentContCompanyId || document.getElementById('ct-company')?.value || '';
   if(!companyId){ alertEl.className = 'va-hint'; return; }
 
-  // ── 재계약 모드: 기존 사원번호 재사용 차단 (전용 메시지) ──
-  if(typeof _recontractEmpId !== 'undefined' && _recontractEmpId){
-    const _reconEmp = allEmployees.find(e => e.id === _recontractEmpId);
-    if(_reconEmp && _reconEmp.employee_number === empNo){
-      _showEmpNoAlert(alertEl, `재계약 시에는 새 사원번호를 발급받아야 합니다. 기존 번호 "${empNo}"은(는) 사용할 수 없습니다.`, 'error');
-      return;
-    }
-    // 다른 번호: 자기 자신 제외하고 중복 검사
-    const _result = _validateEmpNoUniqueness(empNo, companyId, _recontractEmpId, null, null);
-    if(!_result.ok){ _showEmpNoAlert(alertEl, _result.msg, 'error'); return; }
-    _showEmpNoAlert(alertEl, `사용 가능한 사원번호입니다.`, 'ok');
-    return;
-  }
-
   // 수정 모드: 현재 계약의 employee_id를 selfEmpId로 넘겨 자기 자신 제외
   const c = editId.contract ? allContracts.find(x => x.id === editId.contract) : null;
   const selfEmpId = c ? c.employee_id : null;
@@ -1726,58 +1683,55 @@ function calcContractStatusDisplay(c, today){
   // ── 서류미비 여부 (계약 상태와 무관하게 판별) ──
   const docsIncomplete = !!(c && (!c.signed_file_data || !c.consent_file_data));
   // 임시저장 상태 최우선 처리 (임시저장은 서류미비와 무관)
-  if(c.is_draft) return {badge:'badge-yellow', label:'임시저장', filterKey: 'draft', docsIncomplete: false};
+  if(c.is_draft) return {badge:'badge-yellow', label:'임시저장', docsIncomplete: false};
   // 수정재발행으로 파기된 계약 (is_voided_by_amend 플래그 우선)
-  if(c.is_voided_by_amend) return {badge:'badge-slate', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.VOIDED], filterKey: CONTRACT_STATUS.VOIDED, docsIncomplete};
+  if(c.is_voided_by_amend) return {badge:'badge-slate', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.VOIDED], docsIncomplete};
   const start = c.contract_start || '';
-  // 레거시 한글 상태값 정규화 (C2: 만료예정·종료예정 → ACTIVE 처리)
-  const _normStatus = (function(){
-    const _s = c.status || '';
-    if(_s === '만료예정' || _s === '종료예정') return CONTRACT_STATUS.ACTIVE;
-    return _s;
-  })();
-  // 명시적 상태 우선 — 정규화된 _normStatus 기준으로 비교
-  if(_normStatus === CONTRACT_STATUS.RENEWAL_PENDING)
-    return {badge:'badge-amber', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.RENEWAL_PENDING], filterKey: CONTRACT_STATUS.RENEWAL_PENDING, docsIncomplete};
-  if(_normStatus === CONTRACT_STATUS.PENDING)
-    return {badge:'badge-indigo', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.PENDING], filterKey: CONTRACT_STATUS.PENDING, docsIncomplete};
-  if(_normStatus === CONTRACT_STATUS.TERMINATE_PENDING){
+  // 명시적 상태 우선 — c.status(영문 코드)를 CONTRACT_STATUS 상수와 직접 비교
+  if(c.status === CONTRACT_STATUS.RENEWAL_PENDING)
+    return {badge:'badge-amber', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.RENEWAL_PENDING], docsIncomplete};
+  if(c.status === CONTRACT_STATUS.PENDING)
+    return {badge:'badge-indigo', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.PENDING], docsIncomplete};
+  if(c.status === CONTRACT_STATUS.TERMINATE_PENDING){
     // terminate_date가 오늘 이하이면 이미 해지된 것으로 표시
     if(c.terminate_date && c.terminate_date <= today){
-      return {badge:'badge-red', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.TERMINATED], filterKey: CONTRACT_STATUS.TERMINATED, docsIncomplete};
+      return {badge:'badge-red', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.TERMINATED], docsIncomplete};
     }
     // 해지예정은 여전히 유효한 계약 — 메인 목록에서는 '유효'로 표시 (알림 카드에서 별도 관리)
-    return {badge:'badge-green', label:'유효', filterKey: CONTRACT_STATUS.ACTIVE, docsIncomplete, isTerminatePending: true};
+    return {badge:'badge-green', label:'유효', docsIncomplete, isTerminatePending: true};
   }
-  if(_normStatus === CONTRACT_STATUS.VOIDED)
-    return {badge:'badge-slate', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.VOIDED], filterKey: CONTRACT_STATUS.VOIDED, docsIncomplete};
-  if(_normStatus === CONTRACT_STATUS.RENEWED)
-    return {badge:'badge-gray', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.EXPIRED], filterKey: CONTRACT_STATUS.EXPIRED, docsIncomplete}; // 갱신으로 인한 계약 종료
-  if(_normStatus === CONTRACT_STATUS.EXPIRED)
-    return {badge:'badge-gray', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.EXPIRED], filterKey: CONTRACT_STATUS.EXPIRED, docsIncomplete};
-  if(_normStatus === CONTRACT_STATUS.TERMINATED)
-    return {badge:'badge-red', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.TERMINATED], filterKey: CONTRACT_STATUS.TERMINATED, docsIncomplete};
+  if(c.status === CONTRACT_STATUS.VOIDED)
+    return {badge:'badge-slate', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.VOIDED], docsIncomplete};
+  if(c.status === CONTRACT_STATUS.RENEWED)
+    return {badge:'badge-gray', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.EXPIRED], docsIncomplete}; // 갱신으로 인한 계약 종료
+  if(c.status === CONTRACT_STATUS.EXPIRED)
+    return {badge:'badge-gray', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.EXPIRED], docsIncomplete};
+  if(c.status === CONTRACT_STATUS.TERMINATED)
+    return {badge:'badge-red', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.TERMINATED], docsIncomplete};
+  // 만료예정·종료예정은 레거시 한글 상태값 → 계약유효로 표시 (CONTRACT_STATUS에 없는 과거 데이터)
+  if(c.status === '만료예정' || c.status === '종료예정')
+    return {badge:'badge-green', label:'유효', docsIncomplete};
   // 서류미비는 독립된 상태가 아님 — 유효/만료/해지 등 실제 상태를 유지하고 docsIncomplete 플래그로만 관리
-  if(_normStatus === CONTRACT_STATUS.DOCS_INCOMPLETE){
+  if(c.status === CONTRACT_STATUS.DOCS_INCOMPLETE){
     // DB에 남아있는 레거시 값 → 유효로 폴백 (실제 상태는 DB 정리 완료)
-    if(start && start > today) return {badge:'badge-indigo', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.PENDING], filterKey: CONTRACT_STATUS.PENDING, docsIncomplete:true};
-    return {badge:'badge-green', label:'유효', filterKey: CONTRACT_STATUS.ACTIVE, docsIncomplete:true};
+    if(start && start > today) return {badge:'badge-indigo', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.PENDING], docsIncomplete:true};
+    return {badge:'badge-green', label:'유효', docsIncomplete:true};
   }
   // 활성/유효 상태 — 서류와 무관하게 유효 계약으로 처리
-  if(CONTRACT_ACTIVE_STATUSES.includes(_normStatus)){
-    if(start && start > today) return {badge:'badge-amber', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.RENEWAL_PENDING], filterKey: CONTRACT_STATUS.RENEWAL_PENDING, docsIncomplete};
+  if(CONTRACT_ACTIVE_STATUSES.includes(c.status)){
+    if(start && start > today) return {badge:'badge-amber', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.RENEWAL_PENDING], docsIncomplete};
     // 계약직/일용직: 유효 종료일(terminate_date 우선, 없으면 contract_end)이 지났으면 만료 처리
     const ct = (c.contract_type || '').toLowerCase();
     const isFixedTerm = ct === CONTRACT_TYPE.FIXED || ct === CONTRACT_TYPE.FIXED_PROBATION || ct === CONTRACT_TYPE.DAILY;
     const effectiveEnd = c.terminate_date || c.contract_end || '';
     if(isFixedTerm && effectiveEnd && effectiveEnd < today){
-      return {badge:'badge-gray', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.EXPIRED], filterKey: CONTRACT_STATUS.EXPIRED, docsIncomplete};
+      return {badge:'badge-gray', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.EXPIRED], docsIncomplete};
     }
-    return {badge:'badge-green', label:'유효', filterKey: CONTRACT_STATUS.ACTIVE, docsIncomplete};
+    return {badge:'badge-green', label:'유효', docsIncomplete};
   }
   // 알 수 없는 상태 → LABEL 맵으로 폴백, 없으면 원본 값, 최종 폴백은 '활성'
-  const fallbackLabel = CONTRACT_STATUS_LABEL[_normStatus] || _normStatus || CONTRACT_STATUS_LABEL[CONTRACT_STATUS.ACTIVE];
-  return {badge:'badge-gray', label: fallbackLabel, filterKey: _normStatus || CONTRACT_STATUS.ACTIVE, docsIncomplete};
+  const fallbackLabel = CONTRACT_STATUS_LABEL[c.status] || c.status || CONTRACT_STATUS_LABEL[CONTRACT_STATUS.ACTIVE];
+  return {badge:'badge-gray', label: fallbackLabel, docsIncomplete};
 }
 
 // ─── 조회 모드로 모달 열기 ───
@@ -2118,8 +2072,26 @@ function viewContract(id){
      'ct-btn-terminate','ct-btn-terminate2'].forEach(bid=>{
       const el=document.getElementById(bid); if(el) el.style.display='none';
     });
+    ['ct-btn-print-doc'].forEach(bid=>{
+      const el=document.getElementById(bid);
+      if(el){
+        el.style.pointerEvents='none';
+        el.style.cursor='not-allowed';
+        el.title='임시저장 상태에서는 출력할 수 없습니다';
+      }
+    });
     return;
   }
+
+  // 정상 상태: 출력 버튼 활성 복원
+  ['ct-btn-print-doc'].forEach(bid=>{
+    const el=document.getElementById(bid);
+    if(el){
+      el.style.pointerEvents='';
+      el.style.cursor='';
+      el.title='';
+    }
+  });
 
   // 버튼 표시/숨김
   // 수정 및 재발행: 유효(active) 계약만 가능 (해지예정은 상태 배너에서 처리)
@@ -2183,6 +2155,15 @@ function viewContract(id){
   const _cftPanel = document.getElementById('ct-fixed-terminate-panel');
   if(_cftPanel) _cftPanel.style.display = 'none';
 
+  // 계약서 확인 버튼명: 만료·해지·파기된 계약 → '이전 계약서 확인', 유효한 계약 → '현 계약서 확인'
+  const _printBtnLabel = isTerminated
+    ? '<i class="fas fa-file-contract"></i> 이전 계약서 확인'
+    : '<i class="fas fa-file-contract"></i> 현 계약서 확인';
+  ['ct-btn-print-doc'].forEach(bid=>{
+    const el=document.getElementById(bid);
+    if(el) el.innerHTML = _printBtnLabel;
+  });
+
   // 조회 모드 전환 시 하단 수정완료·취소 버튼 숨김 초기화
   const _btnAC2 = document.getElementById('ct-btn-amend-complete2');
   if(_btnAC2) _btnAC2.style.display = 'none';
@@ -2227,34 +2208,8 @@ async function confirmTerminateDateChange(){
   const cid = editId?.contract;
   if(!cid) return;
 
-  const c = allContracts.find(x => x.id === cid);
   const today = new Date().toISOString().slice(0,10);
   const newStatus = newDate <= today ? CONTRACT_STATUS.TERMINATED : CONTRACT_STATUS.TERMINATE_PENDING;
-
-  // ── 갱신예정 페어 계약 확인 및 연동 ──
-  const pairContract = findPairContract(c);
-  let pairUpdated = false;
-  if(pairContract && (pairContract.status === CONTRACT_STATUS.RENEWAL_PENDING || pairContract.status === CONTRACT_STATUS.PENDING)) {
-    // 해지일 다음 날을 갱신 계약 시작일로 조정
-    const nextDay = new Date(newDate);
-    nextDay.setDate(nextDay.getDate() + 1);
-    const newPairStart = nextDay.toISOString().slice(0, 10);
-
-    // 페어 계약 있으면 메시지 창으로 안내 후 함께 변경 (취소 불가)
-    await _showConfirm({
-      message: `이 계약은 해지와 동시에 갱신되는 새 계약으로 이어집니다.\n변경하신 해지일의 다음 영업일로 갱신 계약의 시작일도 함께 변경됩니다.\n\n· 변경 해지일: ${newDate}\n· 갱신 시작일: ${newPairStart}`,
-      okText: '확인',
-      okClass: 'btn-indigo',
-      hideCancel: true
-    });
-
-    await api(`../tables/contracts/${pairContract.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contract_start: newPairStart })
-    });
-    pairUpdated = true;
-  }
 
   await api(`../tables/contracts/${cid}`, {
     method: 'PATCH',
@@ -2262,9 +2217,7 @@ async function confirmTerminateDateChange(){
     body: JSON.stringify({ terminate_date: newDate, status: newStatus })
   });
 
-  toast(pairUpdated
-    ? '해지일과 갱신예정 계약 시작일이 함께 변경되었습니다.'
-    : '해지일이 변경되었습니다.');
+  toast('해지일이 변경되었습니다.');
   await Promise.all([loadContracts(), loadEmployees()]);
   renderContracts(); renderDashboard();
   viewContract(cid);
@@ -2288,23 +2241,6 @@ function cancelTerminateDateChange(){
   cancelBtn.style.display   = 'none';
 }
 
-// ── 갱신 페어 계약 조회 (renewed_to_id / renewed_from_id 양방향) ──
-function findPairContract(c){
-  if(!c) return null;
-  // renewed_to_id: 이 계약이 원본 → 갱신된 계약 찾기
-  if(c.renewed_to_id){
-    const pair = allContracts.find(x => x.id === c.renewed_to_id);
-    if(pair) return pair;
-  }
-  // renewed_from_id: 이 계약이 갱신본 → 원본 계약 찾기
-  if(c.renewed_from_id){
-    const pair = allContracts.find(x => x.id === c.renewed_from_id);
-    if(pair) return pair;
-  }
-  // 링크 없으면 null
-  return null;
-}
-
 // ─── 범용 커스텀 확인 모달 (confirm 대체) ───
 /**
  * @param {Object} opts
@@ -2323,15 +2259,9 @@ function _showConfirm(opts){
     okBtn.textContent = opts.okText || '확인';
     okBtn.className = 'btn ' + (opts.okClass || 'btn-primary');
     okBtn.style.background = opts.okClass ? '' : '#d97706';
-    
-    if(opts.hideCancel){
-      cancelBtn.style.display = 'none';
-    } else {
-      cancelBtn.style.display = '';
-      cancelBtn.textContent = opts.cancelText || '취소';
-    }
+    cancelBtn.textContent = opts.cancelText || '취소';
 
-    // 클릭 핸들러 등록
+    // 클릭 핸들러 등록 (살짝 지연시켜 모달 close 애니메이션 완료 후 resolve)
     okBtn.onclick = () => { closeModal('ct-confirm-modal'); setTimeout(() => resolve(true), 100); };
     cancelBtn.onclick = () => { closeModal('ct-confirm-modal'); setTimeout(() => resolve(false), 100); };
 
@@ -2391,7 +2321,7 @@ function doContractAmend(){
   // 액션 버튼 숨김 (수정 중에는 다른 액션 불가)
   ['ct-btn-amend','ct-btn-amend2','ct-btn-renew','ct-btn-renew2',
    'ct-btn-terminate','ct-btn-terminate2','ct-btn-recontract','ct-btn-recontract2',
-   'ct-btn-fixed-terminate','ct-btn-fixed-terminate2'].forEach(bid=>{
+   'ct-btn-fixed-terminate','ct-btn-fixed-terminate2','ct-btn-print-doc'].forEach(bid=>{
     const el = document.getElementById(bid); if(el) el.style.display='none';
   });
 

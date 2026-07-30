@@ -197,7 +197,6 @@ const DISPATCH_METHOD = Object.freeze({
   MANUAL:  'manual',
   PHONE:   'phone',
   REISSUE: 'reissue',
-  INAPP:   'inapp',
 });
 
 const DISPATCH_METHOD_LABEL = Object.freeze({
@@ -206,7 +205,6 @@ const DISPATCH_METHOD_LABEL = Object.freeze({
   [DISPATCH_METHOD.MANUAL]:  '수동교부',
   [DISPATCH_METHOD.PHONE]:   '유선직접안내',
   [DISPATCH_METHOD.REISSUE]: '수정재발행',
-  [DISPATCH_METHOD.INAPP]:   '인앱알림',
 });
 
 // ═══════════════════════════════════════════
@@ -223,67 +221,6 @@ const DISPATCH_STATUS_LABEL = Object.freeze({
   [DISPATCH_STATUS.FAILED]:    '실패',
   [DISPATCH_STATUS.PENDING]:   '대기',
 });
-
-const DISPATCH_STATUS_LEGACY_MAP = {
-  '완료': DISPATCH_STATUS.COMPLETED,
-  '실패': DISPATCH_STATUS.FAILED,
-  '대기': DISPATCH_STATUS.PENDING,
-};
-
-// ═══════════════════════════════════════════
-// 급여 산정기준월 (pay_period_month)
-// ═══════════════════════════════════════════
-const PAY_PERIOD_MONTH = Object.freeze({
-  PREV_MONTH:    'prev_month',
-  
-  CURRENT_MONTH: 'current_month',
-});
-
-const PAY_PERIOD_MONTH_LABEL = Object.freeze({
-  [PAY_PERIOD_MONTH.PREV_MONTH]:    '전월',
-  [PAY_PERIOD_MONTH.CURRENT_MONTH]: '당월',
-});
-
-const PAY_PERIOD_MONTH_LEGACY_MAP = {
-  '전월': PAY_PERIOD_MONTH.PREV_MONTH,
-  '당월': PAY_PERIOD_MONTH.CURRENT_MONTH,
-};
-
-// ═══════════════════════════════════════════
-// 4대보험 적용 기준 (insurance_basis)
-// ═══════════════════════════════════════════
-const INSURANCE_BASIS = Object.freeze({
-  RATE_BASED:   'rate_based',
-  FIXED_AMOUNT: 'fixed_amount',
-});
-
-const INSURANCE_BASIS_LABEL = Object.freeze({
-  [INSURANCE_BASIS.RATE_BASED]:   '요율 기준',
-  [INSURANCE_BASIS.FIXED_AMOUNT]: '확정액 기준',
-});
-
-const INSURANCE_BASIS_LEGACY_MAP = {
-  '요율 기준':   INSURANCE_BASIS.RATE_BASED,
-  '확정액 기준': INSURANCE_BASIS.FIXED_AMOUNT,
-};
-
-// ═══════════════════════════════════════════
-// 연차 산정 기준 (annual_leave_basis)
-// ═══════════════════════════════════════════
-const ANNUAL_LEAVE_BASIS = Object.freeze({
-  FISCAL_YEAR: 'fiscal_year',
-  HIRE_DATE:   'hire_date',
-});
-
-const ANNUAL_LEAVE_BASIS_LABEL = Object.freeze({
-  [ANNUAL_LEAVE_BASIS.FISCAL_YEAR]: '회계년도 기준',
-  [ANNUAL_LEAVE_BASIS.HIRE_DATE]:   '입사일 기준',
-});
-
-const ANNUAL_LEAVE_BASIS_LEGACY_MAP = {
-  '회계년도 기준': ANNUAL_LEAVE_BASIS.FISCAL_YEAR,
-  '입사일 기준':   ANNUAL_LEAVE_BASIS.HIRE_DATE,
-};
 
 // ═══════════════════════════════════════════
 // 알림 유형 (company_notices.notice_type)
@@ -417,20 +354,6 @@ function normalizeContractType(val) {
 function normalizeCompanyStatus(val) {
   if (!val) return val;
   return COMPANY_STATUS_LEGACY_MAP[val] || val;
-}
-function normalizePayPeriodMonth(val) {
-  if (!val) return val;
-  return PAY_PERIOD_MONTH_LEGACY_MAP[val] || val;
-}
-function normalizeInsuranceBasis(val) {
-  if (!val) return val;
-  // edge case: '입사일 기준' wrongly stored in insurance_basis
-  if (val === '입사일 기준') return INSURANCE_BASIS.RATE_BASED;
-  return INSURANCE_BASIS_LEGACY_MAP[val] || val;
-}
-function normalizeAnnualLeaveBasis(val) {
-  if (!val) return val;
-  return ANNUAL_LEAVE_BASIS_LEGACY_MAP[val] || val;
 }
 
 /** 상태 체크 */
@@ -618,7 +541,7 @@ const PAGE_LABELS = Object.freeze({
   billing:                '시스템 사용료 관리',
   contracts:              '근로계약 현황',
   'contract-dispatch':    '근로계약서 발송',
-  'consent-dispatch':     '정보제공동의서 발송',
+  'consent-dispatch':     '정보제공동의서 관리',
   'contract-expiry-notice':'계약만료 통지 이력',
   'regular-conversion':   '정규직전환 고지 이력',
   'probation-mgmt':       '수습 근로자 관리',
@@ -635,37 +558,6 @@ const PAGE_LABELS = Object.freeze({
   'attendance-ledger':    '근태 관리대장',
   'system-settings':      '시스템 설정',
 });
-
-/** 사이드바 메뉴 정의 (PAGE_LABELS의 단일 진실 공급원 사용) */
-const SIDEBAR_MENU = Object.freeze([
-  { section: '대시보드' },
-  { page: 'dashboard',              icon: 'fa-th-large' },
-  { section: '고객사 관리' },
-  { page: 'companies',              icon: 'fa-building',      badge: 'badge-companies' },
-  { page: 'company-notice-log',     icon: 'fa-bell' },
-  { page: 'general-notice',         icon: 'fa-bullhorn' },
-  { section: '직원 관리' },
-  { page: 'contracts',              icon: 'fa-file-signature', badge: 'badge-contracts' },
-  { page: 'contract-dispatch',      icon: 'fa-paper-plane',    badge: 'badge-contract-dispatch' },
-  { page: 'consent-dispatch',       icon: 'fa-file-signature',  badge: 'badge-consent-dispatch' },
-  { page: 'contract-expiry-notice', icon: 'fa-bell',           badge: 'badge-contract-expiry-notice' },
-  { page: 'regular-conversion',     icon: 'fa-user-check',     badge: 'badge-regular-conversion' },
-  { page: 'probation-mgmt',         icon: 'fa-user-clock',     badge: 'badge-probation-mgmt' },
-  { section: '급여 관리' },
-  { page: 'wage-ledger',            icon: 'fa-table' },
-  { page: 'payroll-input',          icon: 'fa-calculator',     badge: 'badge-payroll-input' },
-  { page: 'payrolls',               icon: 'fa-list-alt' },
-  { page: 'payslip-send',           icon: 'fa-comment-dots',   badge: 'badge-payslip-send', isKakao: true },
-  { page: 'severance',              icon: 'fa-hand-holding-usd', badge: 'badge-severance' },
-  { page: 'labor-status',           icon: 'fa-chart-bar' },
-  { section: '연차 관리' },
-  { page: 'annual-leave',           icon: 'fa-umbrella-beach' },
-  { page: 'leave-promotion',        icon: 'fa-bullhorn' },
-  { section: '시스템' },
-  { page: 'standards',              icon: 'fa-percent' },
-  { page: 'admin-accounts',         icon: 'fa-user-shield' },
-  { page: 'system-settings',        icon: 'fa-cog' },
-]);
 
 /** 성별 표시 헬퍼 (emp 객체 또는 gender 문자열) */
 function genderLabel(empOrGender) {

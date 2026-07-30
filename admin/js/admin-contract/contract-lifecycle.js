@@ -1,4 +1,4 @@
-/** 인쇄 전용 CSS */
+﻿/** 인쇄 전용 CSS */
 function _getContractPrintCSS(){
   return [
     '*{box-sizing:border-box;margin:0;padding:0;}',
@@ -845,42 +845,13 @@ async function savePendingContractEdit(){
   }
   // 저장
   try {
-    // ── 갱신예정 계약 시작일 변경 시 원본 계약 해지일 연동 ──
-    const pairUpdated2 = await (async () => {
-      if(!c.renewed_from_id) return false;
-      if(newStart === c.contract_start) return false;  // 시작일 변경 없음
-      const origC = allContracts.find(x => x.id === c.renewed_from_id);
-      if(!origC || origC.status !== CONTRACT_STATUS.TERMINATE_PENDING) return false;
-
-      // 해지일 = 갱신 시작일 - 1일
-      const prevDay = new Date(newStart);
-      prevDay.setDate(prevDay.getDate() - 1);
-      const newTermDate = prevDay.toISOString().slice(0, 10);
-
-      await _showConfirm({
-        message: `이 계약은 기존 계약의 해지와 동시에 갱신되는 새 계약입니다.\n변경하신 갱신 계약 시작일의 전일로 기존 계약의 해지일도 함께 변경됩니다.\n\n· 갱신 시작일: ${newStart}\n· 기존 해지일 → ${newTermDate}`,
-        okText: '확인',
-        okClass: 'btn-indigo',
-        hideCancel: true
-      });
-
-      await api(`../tables/contracts/${origC.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ terminate_date: newTermDate })
-      });
-      return true;
-    })();
-
     await api('../tables/contracts/' + c.id, {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...c, contract_start: newStart, contract_end: newEnd, status: newStatus, is_draft: false, id: c.id })
     });
     await loadContracts(); renderContracts(); renderDashboard();
     closeModal('contract-modal');
-    toast(pairUpdated2
-      ? '갱신 시작일과 기존 계약 해지일이 함께 변경되었습니다.'
-      : '계약이 수정됐습니다.');
+    toast('계약이 수정됐습니다.');
   } catch(e) {
     toast('수정 저장 중 오류가 발생했습니다.', 'error');
     console.error(e);
@@ -910,13 +881,6 @@ async function cancelPreTerminate(){
   const emp      = allEmployees.find(e=>e.id===c.employee_id)||{};
   const empName  = emp.name || '';
   const termDate = c.terminate_date || '';
-
-  // ── 해지예정일 도과 차단 ──
-  const today = new Date().toISOString().slice(0,10);
-  if(termDate && termDate <= today){
-    toast(`해지예정일(${termDate})이 이미 도과하여 취소할 수 없습니다.`, 'error');
-    return;
-  }
 
   // 계약직/정규직 공통 메시지
   const dateLabel  = termDate ? `\n계약 해지일: ${termDate}` : '';
@@ -1034,18 +998,6 @@ async function cancelPendingContract(){
     fetch(`../tables/employees/${_empIdToCleanup}`, { method: 'DELETE' });
   }
 
-  // ── 고객사 인앱 알림 발송 ──
-  try {
-    const _cpcCo = allCompanies.find(x => x.id === c.company_id) || {};
-    await _sendCompanyNotice({
-      companyId: c.company_id, companyName: _cpcCo.company_name || '',
-      noticeType: 'contract_cancelled',
-      title: `[${statusLabel} 취소] ${empName} — ${statusLabel} 계약이 취소되었습니다`,
-      body: `안녕하세요${getCompanyRepGreeting(_cpcCo)}.\n\n소속 근로자의 ${statusLabel} 계약이 취소되었습니다.\n\n■ 근로자: ${empName}\n■ 계약 시작일: ${c.contract_start||'—'}\n■ 처리 일시: ${new Date().toLocaleString('ko-KR')}\n\n`,
-      contractId: c.id, employeeId: c.employee_id, employeeName: empName
-    });
-  } catch(e){ console.warn('[cancelPendingContract] 알림 실패:', e); }
-
   closeModal('contract-modal');
   await Promise.all([loadContracts(), loadEmployees()]);
   renderContracts(); renderDashboard();
@@ -1069,26 +1021,6 @@ async function doContractVoid(){
 
   await api(`../tables/contracts/${c.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({status: CONTRACT_STATUS.VOIDED})});
-
-  // ── 파기 시 사원번호 해제 (재사용 가능) ──
-  if(c.employee_id){
-    const _voidEmp = allEmployees.find(x => x.id === c.employee_id);
-    if(_voidEmp && _voidEmp.employee_number){
-      // 동일 직원의 다른 유효 계약이 없을 때만 사원번호 해제
-      const _otherActive = allContracts.some(x =>
-        x.employee_id === c.employee_id &&
-        x.id !== c.id &&
-        x.status !== CONTRACT_STATUS.VOIDED &&
-        x.status !== CONTRACT_STATUS.CANCELED
-      );
-      if(!_otherActive){
-        await api(`../tables/employees/${c.employee_id}`, {
-          method: 'PATCH', headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({ employee_number: '' })
-        });
-      }
-    }
-  }
 
   // ── 고객사 인앱 알림 발송 (계약 파기) ──
   {
@@ -1423,12 +1355,6 @@ function doContractRenew(){
     return;
   }
   
-  // 갱신 모드: 임시저장 버튼 숨김 (신규계약 전용)
-  const _rnDraftBtn = document.getElementById('ct-btn-draft');
-  if(_rnDraftBtn) _rnDraftBtn.style.display = 'none';
-  const _rnRegBtn = document.getElementById('ct-btn-register');
-  if(_rnRegBtn) _rnRegBtn.innerHTML = '<i class="fas fa-sync-alt"></i> 갱신 완료';
-  
   // 종료 패널 숨김
   document.getElementById('ct-terminate-panel').style.display = 'none';
   const rp = document.getElementById('ct-renew-panel');
@@ -1468,29 +1394,20 @@ function doContractRenew(){
   newStartEl.removeAttribute('min');
   if(newStartErr) newStartErr.style.display = 'none';
 
-  // ── 영업일 계산 헬퍼 (토·일 건너뛰기) ──
-  const _nextBizDay = (dateStr) => {
-    const d = new Date(dateStr);
-    d.setDate(d.getDate() + 1);
-    while(d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1);
-    return d.toISOString().slice(0, 10);
-  };
-  const _prevBizDay = (dateStr) => {
-    const d = new Date(dateStr);
-    d.setDate(d.getDate() - 1);
-    while(d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() - 1);
-    return d.toISOString().slice(0, 10);
-  };
-
-  // ── 해지일 ↔ 시작일 양방향 자동 연동 ──
+  // ── 기존 계약 해지일 변경 시 신규 시작일 활성화 + 유효성 검사 ──
   oldEndEl.onchange = function(){
     const oe = oldEndEl.value;
     if(oe){
+      const minDate = new Date(oe);
+      minDate.setDate(minDate.getDate() + 1);
+      const minStr = minDate.toISOString().slice(0,10);
+      newStartEl.min = minStr;
       newStartEl.disabled = false;
-      const nextBiz = _nextBizDay(oe);
-      newStartEl.min = nextBiz;
-      newStartEl.value = nextBiz;
-      if(newStartErr) newStartErr.style.display = 'none';
+      if(newStartEl.value) _validateRenewNewStart(oe);
+      else {
+        newStartEl.value = minStr;
+        if(newStartErr) newStartErr.style.display = 'none';
+      }
     } else {
       newStartEl.disabled = true;
       newStartEl.value = '';
@@ -1499,13 +1416,10 @@ function doContractRenew(){
     }
   };
 
+  // ── 신규 계약 시작일 변경 시 유효성 검사 ──
   newStartEl.onchange = function(){
-    const ns = newStartEl.value;
-    if(ns){
-      const prevBiz = _prevBizDay(ns);
-      oldEndEl.value = prevBiz;
-      if(newStartErr) newStartErr.style.display = 'none';
-    }
+    const oe = oldEndEl.value;
+    if(oe) _validateRenewNewStart(oe);
   };
 
   // ── 갱신 시 전체 폼 필드 편집 가능하게 해제 ──
@@ -1543,7 +1457,7 @@ function doContractRenew(){
   // 액션 버튼 숨김 (갱신 중에는 다른 액션 불가)
   ['ct-btn-amend','ct-btn-amend2','ct-btn-renew','ct-btn-renew2',
    'ct-btn-terminate','ct-btn-terminate2','ct-btn-recontract','ct-btn-recontract2',
-   'ct-btn-fixed-terminate','ct-btn-fixed-terminate2'].forEach(bid=>{
+   'ct-btn-fixed-terminate','ct-btn-fixed-terminate2','ct-btn-print-doc'].forEach(bid=>{
     const el = document.getElementById(bid); if(el) el.style.display='none';
   });
 
@@ -1646,19 +1560,6 @@ async function cancelContractRenew(){
     // 2. 갱신예정 계약 삭제 (또는 void 처리)
     await api(`../tables/contracts/${cid}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({status: CONTRACT_STATUS.VOIDED})});
-
-    // ── 고객사 인앱 알림 발송 ──
-    try {
-      const _ccrCo = allCompanies.find(x => x.id === c.company_id) || {};
-      const _ccrEmp = allEmployees.find(x => x.id === c.employee_id) || {};
-      await _sendCompanyNotice({
-        companyId: c.company_id, companyName: _ccrCo.company_name || '',
-        noticeType: 'contract_renewal_cancelled',
-        title: `[갱신 취소] ${_ccrEmp.name||''} — 갱신 예정 계약이 취소되었습니다`,
-        body: `안녕하세요${getCompanyRepGreeting(_ccrCo)}.\n\n소속 근로자의 갱신 예정 계약이 취소되고 원본 계약이 유효 상태로 복원되었습니다.\n\n■ 근로자: ${_ccrEmp.name||''}\n■ 처리 일시: ${new Date().toLocaleString('ko-KR')}\n\n`,
-        contractId: origId, employeeId: c.employee_id, employeeName: _ccrEmp.name||''
-      });
-    } catch(e){ console.warn('[cancelContractRenew] 알림 실패:', e); }
 
     closeModal('contract-modal');
     await loadContracts(); await loadEmployees();
@@ -1817,21 +1718,6 @@ async function confirmContractRenew(){
 
   closeModal('contract-modal');
   await loadContracts(); await loadEmployees(); renderContracts(); renderDashboard();
-
-  // ── 갱신 계약서 PDF 직원 발송 확인 ──
-  if(newId){
-    const _renewedEmpName = _renewEmp?.name || '';
-    const confirmed = await _showConfirm({
-      message: `갱신 계약이 등록되었습니다.\n\n${_renewedEmpName ? _renewedEmpName+'님에게 ' : ''}갱신 계약서 PDF 다운로드 주소를 발송하시겠습니까?`,
-      okText: '예',
-      cancelText: '아니오 (나중에 발송)',
-      okClass: 'btn-primary'
-    });
-    if(confirmed){
-      openContractPrintModal(newId);
-    }
-  }
-
   const label = newStatus === CONTRACT_STATUS.PENDING ? '계약예정 (시작일 미도래)' : '계약유효 (활성)';
   toast(`연장 처리 완료. 전 계약: 해지 / 새 계약: ${label}`);
 }
@@ -1859,33 +1745,10 @@ function openRecontractModal(srcContract){
   // 신규 모드에서 기존 계약 데이터로 필드 채우기
   const emp = allEmployees.find(e=>e.id===srcContract.employee_id)||{};
 
-  // 재계약: 임시저장 버튼 숨김, 등록 버튼 텍스트 변경
-  const _rcDraftBtn = document.getElementById('ct-btn-draft');
-  if(_rcDraftBtn) _rcDraftBtn.style.display = 'none';
-  const _rcDelDraftBtn = document.getElementById('ct-btn-delete-draft');
-  if(_rcDelDraftBtn) _rcDelDraftBtn.style.display = 'none';
-  const _rcRegBtn = document.getElementById('ct-btn-register');
-  if(_rcRegBtn) _rcRegBtn.innerHTML = '<i class="fas fa-file-contract"></i> 재계약 등록';
-
   // 직원 섹션 → 수정 직원 섹션으로 전환
   document.getElementById('ct-new-emp-section').style.display = 'none';
   document.getElementById('ct-edit-emp-info').style.display = 'block';
   // 계약 시작일·종료일·고용형태·계약상태는 수정 모드 섹션 내부에 있으므로 별도 제어 불필요
-
-  // 재계약: 사원번호는 새로 발급 (기존 번호 승계 안 함, 추천 번호 placeholder)
-  const _rcEmpnoEl = document.getElementById('ct-edit-em-empno');
-  if(_rcEmpnoEl){
-    _rcEmpnoEl.value = '';
-    // 같은 회사 내 기존 사원번호 중 가장 큰 번호 + 1 제안
-    const _coEmps = allEmployees.filter(e => e.company_id === srcContract.company_id && e.employee_number);
-    let _maxNo = 0;
-    _coEmps.forEach(e => {
-      const _num = parseInt(e.employee_number, 10);
-      if(!isNaN(_num) && _num > _maxNo) _maxNo = _num;
-    });
-    const _suggested = String(_maxNo + 1).padStart(4, '0');
-    _rcEmpnoEl.placeholder = `추천: ${_suggested}`;
-  }
 
   // 직원 정보 채우기
   document.getElementById('ct-edit-emp-name').value = emp.name||'';
@@ -1929,8 +1792,7 @@ function openRecontractModal(srcContract){
   document.getElementById('ct-end').value     = srcContract.contract_end||'';
   document.getElementById('ct-status').value  = CONTRACT_STATUS.ACTIVE;
   document.getElementById('ct-annual').value  = srcContract.annual_leave_days||15;
-  const _preUsedEl2 = document.getElementById('ct-pre-used-annual');
-  if(_preUsedEl2) _preUsedEl2.value = srcContract.pre_used_annual_leave||'';
+  document.getElementById('ct-pre-used-annual').value = srcContract.pre_used_annual_leave||'';
   // 요일별 스케줄 복원 (재계약: 이전 계약 스케줄 그대로 복사)
   if(srcContract.schedule_json){
     try{ setScheduleFromJSON(JSON.parse(srcContract.schedule_json)); }
@@ -3291,21 +3153,6 @@ function _ctValidate(){
     const _empNoEditVal = document.getElementById('ct-edit-em-empno')?.value.trim() || '';
     if(!_empNoEditVal){
       _ctMarkError('ct-edit-em-empno', '사원번호', errors);
-    } else if(_recontractEmpId){
-      // ── 재계약: 기존 사원번호 재사용 차단 (전용 메시지) ──
-      const _reconEmp = allEmployees.find(e => e.id === _recontractEmpId);
-      if(_reconEmp && _reconEmp.employee_number === _empNoEditVal){
-        const _reconMsg = `재계약 시에는 새 사원번호를 발급받아야 합니다. 기존 번호 "${_empNoEditVal}"은(는) 사용할 수 없습니다.`;
-        _ctMarkError('ct-edit-em-empno', _reconMsg, errors);
-        _showEmpNoAlert(document.getElementById('ct-edit-em-empno-alert'), _reconMsg, 'error');
-      } else {
-        const _coIdForEditEmpno = currentContCompanyId || document.getElementById('ct-company')?.value || '';
-        const _editEmpNoCheck = _validateEmpNoUniqueness(_empNoEditVal, _coIdForEditEmpno, _recontractEmpId, null, null);
-        if(!_editEmpNoCheck.ok) {
-          _ctMarkError('ct-edit-em-empno', `사원번호 중복: ${_editEmpNoCheck.msg}`, errors);
-          _showEmpNoAlert(document.getElementById('ct-edit-em-empno-alert'), _editEmpNoCheck.msg, 'error');
-        }
-      }
     } else {
       const _editC = editId.contract ? allContracts.find(x => x.id === editId.contract) : null;
       const _editSelfEmpId = _editC ? _editC.employee_id : null;
@@ -3927,16 +3774,6 @@ async function saveContract(){
       const _saved = await api('../tables/contracts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
       _savedContractId_ = _saved.id;
     }
-    // ── 재계약 시: 직원 사원번호를 새로 입력한 값으로 갱신 ──
-    if(isRecontract && empId){
-      const _newEmpNo = document.getElementById('ct-edit-em-empno')?.value.trim() || '';
-      if(_newEmpNo){
-        await api(`../tables/employees/${empId}`, {
-          method: 'PATCH', headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({ employee_number: _newEmpNo })
-        });
-      }
-    }
     // ── 재계약 연장 페어: 기존 계약에 renewed_to_id 설정 ──
     if(body.renewed_from_id && _savedContractId_){
       try {
@@ -4065,35 +3902,18 @@ async function saveContract(){
   const _ctIsEdit = !!editId.contract;
   toast(_ctIsEdit ? '근로계약서가 수정되었습니다. ✔' : '근로계약서가 등록되었습니다. ✔');
 
-  // ── 신규·재계약: 계약서 확인 및 발송 여부 확인 ──
-  if(!_ctIsEdit && _savedContractId){
+  // ── 신규 계약: 계약서 확인 및 발송 여부 확인 ──
+  if(!_ctIsEdit && !_wasRecontract && _savedContractId){
     const _newEmp = allEmployees.find(e => e.id === empId);
     const _newEmpName = _newEmp?.name || '';
-    const _actionLabel = _wasRecontract ? '재계약' : '등록';
     const confirmed = await _showConfirm({
-      message: `근로계약서가 ${_actionLabel}되었습니다.\n\n계약서를 확인하고 ${_newEmpName ? _newEmpName+'님에게 ' : ''}인쇄용 파일 주소를 즉시 발송하시겠습니까?`,
+      message: `근로계약서가 등록되었습니다.\n\n계약서를 확인하고 ${_newEmpName ? _newEmpName+'님에게 ' : ''}인쇄용 파일 주소를 즉시 발송하시겠습니까?`,
       okText: '예',
       cancelText: '아니오 (나중에 발송)',
       okClass: 'btn-primary'
     });
     if(confirmed){
       openContractPrintModal(_savedContractId);
-    }
-  }
-
-  // ── 신규·재계약: 제3자 정보제공 동의서 발송 여부 확인 (갱신 연장 제외) ──
-  if(!_ctIsEdit && _savedContractId && _savedContractId !== editId.contract && !body.renewed_from_id){
-    const _consentEmp = allEmployees.find(e => e.id === empId);
-    const _consentEmpName = _consentEmp?.name || '';
-    const _consentLabel = _wasRecontract ? '재계약' : '신규 계약';
-    const confirmedConsent = await _showConfirm({
-      message: `${_consentLabel} 시 제3자 정보제공 동의서를 작성하여 근로자에게 발송해야 합니다.\n\n동의서를 지금 바로 확인하고 발송하시겠습니까?`,
-      okText: '예',
-      cancelText: '아니오 (나중에 발송)',
-      okClass: 'btn-indigo'
-    });
-    if(confirmedConsent){
-      openConsentPrintModal(_savedContractId);
     }
   }
 

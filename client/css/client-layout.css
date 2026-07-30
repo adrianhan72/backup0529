@@ -1,4 +1,4 @@
-    /* ─ App shell ─ */
+﻿    /* ─ App shell ─ */
     .app{display:none;flex-direction:column;min-height:100vh;min-height:100dvh;padding-bottom:calc(72px + env(safe-area-inset-bottom))}
     .app.visible{display:flex}
 

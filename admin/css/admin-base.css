@@ -1,4 +1,4 @@
-    *{box-sizing:border-box;margin:0;padding:0}
+﻿    *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:'Noto Sans KR',sans-serif;background:#f0f2f5;color:#1a1a2e}
     .sidebar{position:fixed;left:0;top:0;width:240px;height:100vh;background:linear-gradient(180deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);display:flex;flex-direction:column;z-index:100;box-shadow:4px 0 20px rgba(0,0,0,.3)}
     .sidebar-logo{padding:24px 20px 18px;border-bottom:1px solid rgba(255,255,255,.1)}
@@ -17,9 +17,9 @@
     .main{margin-left:240px;min-height:100vh;display:flex;flex-direction:column}
     .topbar{background:#fff;padding:0 28px;height:60px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,.06);position:sticky;top:0;z-index:50}
     .topbar-title{font-size:15px;font-weight:700;color:#1a1a2e}
-    /* ?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧
-       踰꾪듉 怨듯넻 湲곕컲
-    ?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧 */
+    /* ?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═
+       버튼 공통 기반
+    ?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═ */
     .btn{
       display:inline-flex;align-items:center;justify-content:center;gap:6px;
       padding:8px 16px;border-radius:8px;
@@ -38,7 +38,7 @@
     .btn:disabled,.btn[disabled]{background:#cccccc;color:#f2f2f2;border:1px solid #cccccc;cursor:not-allowed;pointer-events:none;opacity:1;}
     .btn:disabled.btn-icon-dark,.btn[disabled].btn-icon-dark{background:transparent;color:rgba(255,255,255,.3);border-color:rgba(255,255,255,.15);}
     .btn:disabled.btn-close,.btn[disabled].btn-close{background:transparent;color:#f2f2f2;border-color:#cccccc;}
-    /* Ripple ?占쎌씠????由ы뵆???占쎌슜?占쎈뒗 紐⑤뱺 踰꾪듉 怨듯넻 */
+    /* Ripple ?�이????리플???�용?�는 모든 버튼 공통 */
     .btn .btn-ripple,
     .btn-sb .btn-ripple,
     .btn-renew .btn-ripple,
@@ -64,12 +64,12 @@
     @keyframes btnRipple{
       to{transform:scale(4);opacity:0;}
     }
-    /* 크기 변형 */
+    /* ?�기 변??*/
     .btn-sm{padding:5px 10px;font-size:11.5px;border-radius:7px;min-height:28px;box-sizing:border-box;}
     .btn-lg{padding:10px 22px;font-size:14px;border-radius:9px;}
     .btn-icon{padding:5px 9px;}
     .btn-icon-sm{padding:4px 7px;font-size:11px;}
-    /* 폼 요소 높이 통일: slim(32px) / std(36px) */
+    /* ── 폼 요소 높이 통일: slim(32px) / std(36px) ── */
     .input-slim, input.input-slim, select.input-slim, .btn.input-slim,
     .input-slim input, .input-slim select, .input-slim .btn,
     .input-slim.input[type="text"], .input-slim.input[type="date"],
@@ -84,7 +84,8 @@
     .input-std.input[type="datetime-local"], .input-std.input[type="email"] {
       height:36px; box-sizing:border-box;
     }
-    /* 닫기/해제 아이콘 전용 — 더 작고 평평하게 */
+    /* ── 같은 행 내 모든 폼 요소는 동일한 높이 변형(slim/std)을 사용할 것 ── */
+    /* ?�기/?�제 ?�이�??�용 ?????�고 ?�평?�게 */
     .btn-close{background:transparent;color:#64748b;border-color:#d1d5db;padding:4px 8px;font-size:16px;line-height:1;}
     .btn-close:hover:not(:disabled){background:#d1d5db;color:#334155;border-color:#9ca3af;}
     .btn-close:active:not(:disabled){background:#9ca3af;color:#1e293b;border-color:#6b7280;}
@@ -92,34 +93,34 @@
     .btn-icon-dark:hover:not(:disabled){background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.5);}
     .btn-icon-dark:active:not(:disabled){background:rgba(255,255,255,.25);border-color:rgba(255,255,255,.65);}
 
-    /* ?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧
-       SOLID TYPE ???占쎌긽 梨꾩슫 踰꾪듉
-    ?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧?占썩븧 */
-    /* Primary (?占쎈뱶 ??二쇱슂 ?占쎌뀡) */
+    /* ?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═
+       SOLID TYPE ???�상 채운 버튼
+    ?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═ */
+    /* Primary (?�드 ??주요 ?�션) */
     .btn-primary{background:#dc2626;border-color:#b91c1c;}
     .btn-primary:hover:not(:disabled){background:#b91c1c;}
     .btn-primary:active:not(:disabled){background:#991b1b;}
     .btn-primary.selected,.btn-primary[aria-selected="true"]{background:#991b1b;}
 
-    /* Secondary (회색 — 취소/보조/닫기) */
+    /* Secondary (회색 — 취소/해지/닫기) */
     .btn-secondary{background:#9ca3af;border-color:#6b7280;}
     .btn-secondary:hover:not(:disabled){background:#6b7280;}
     .btn-secondary:active:not(:disabled){background:#4b5563;}
     .btn-secondary.selected,.btn-secondary[aria-selected="true"]{background:#4b5563;}
 
-    /* Success (洹몃┛) */
+    /* Success (그린) */
     .btn-success{background:#10b981;border-color:#059669;}
     .btn-success:hover:not(:disabled){background:#059669;}
     .btn-success:active:not(:disabled){background:#047857;}
     .btn-success.selected,.btn-success[aria-selected="true"]{background:#065f46;}
 
-    /* Warning (?占쎈쾭) */
+    /* Warning (?�버) */
     .btn-warning{background:#f59e0b;border-color:#d97706;}
     .btn-warning:hover:not(:disabled){background:#d97706;}
     .btn-warning:active:not(:disabled){background:#b45309;}
     .btn-warning.selected,.btn-warning[aria-selected="true"]{background:#92400e;}
 
-    /* Danger (?占쎈뱶 ????占쏙옙/?占쏙옙?) */
+    /* Danger (?�드 ????��/?��?) */
     .btn-danger{background:#dc2626;border-color:#b91c1c;}
     .btn-danger:hover:not(:disabled){background:#b91c1c;}
     .btn-danger:active:not(:disabled){background:#991b1b;}
@@ -152,14 +153,16 @@
     .btn-sky:hover:not(:disabled){background:#0369a1;}
     .btn-sky:active:not(:disabled){background:#075985;}
 
-    /* Blue (파랑 — 이메일/안내 발송 등) */
+    /* Blue (밝은 파랑 — 이메일·안내 발송 등) */
     .btn-blue{background:#2563eb;border-color:#1d4ed8;}
     .btn-blue:hover:not(:disabled){background:#1d4ed8;}
     .btn-blue:active:not(:disabled){background:#1e40af;}
 
-    /* ── select / form input 기본: 좌우 패딩 = 상하 패딩 = 8px
-       예외: cm-aw-pt-select, pi-pay-type-select
-    ── */
+    /* ?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═
+       ?�?�운 select ??form input�??�이·간격 ?�일
+       좌측 ?�스???�백 = ?�측 ?�살???�백 = 8px
+       ?�외: cm-aw-pt-select, pi-pay-type-select
+    ?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═ */
     select:not(.cm-aw-pt-select):not(.pi-pay-type-select):not(.filt-select) {
       border: 1px solid #d1d5db;
       border-radius: 7px;
@@ -194,7 +197,8 @@
       cursor: default;
     }
 
-    /* ── 고객사/계약 input 상태 클래스 ── */
+    /* ?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═
+/* ── company/contract input state classes ── */
 .cm-input-readonly{background:#f1f5f9;border-color:#e2e8f0}
 .cm-input-active{background:#fff;border-color:#6366f1}
 .cm-input-error{background:#fef2f2;border-color:#dc2626}
