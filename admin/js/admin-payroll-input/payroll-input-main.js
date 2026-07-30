@@ -1,4 +1,4 @@
-﻿// ============================================================================
+// ============================================================================
 // 급여 입력 페이지 — 전직원 임금대장 일괄 업로드 모달
 // ============================================================================
 
@@ -533,6 +533,7 @@ function backToPITargetList(){
     return; // cancelEditPayroll 내부에서 loadPITargetList() 호출하므로 중복 방지
   }
   // 신규 모드에서 목록으로 복귀
+  piDraftId = null; // 목록 복귀 시 이어쓰기 상태 해제 (임시저장 카드에서 제외되지 않도록)
   piContract = null;
   if(typeof clearPIFields === 'function') clearPIFields();
   const card = document.getElementById('pi-contract-card');
