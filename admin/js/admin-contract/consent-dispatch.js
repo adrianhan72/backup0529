@@ -321,6 +321,7 @@ function _cnsGetUnsentContracts(year, month) {
     !c.is_draft &&
     ![CONTRACT_STATUS.VOIDED, CONTRACT_STATUS.TERMINATED].includes(c.status) &&
     !c.is_voided_by_amend &&
+    !c.renewed_from_id &&  // 갱신계약은 계약 연속성이 유지되므로 동의서 재발송 제외
     !consentEmpIds.has(c.employee_id) &&
     (!_cnsUnsentCoId || c.company_id === _cnsUnsentCoId)
   );

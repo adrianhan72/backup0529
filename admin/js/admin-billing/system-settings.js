@@ -225,6 +225,97 @@ const MSG_RULE_DEFAULTS = {
    기존에 체결하셨던 근로계약에도 변경이 필요한 경우에는
    근로계약을 갱신해야 합니다.
 ※ 기타 문의사항이 있으시면 담당자에게 연락해 주시기 바랍니다.`
+  },
+  contract_created: {
+    title: `[근로계약 등록] {근로자명} — 근로계약이 등록되었습니다`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+소속 근로자의 근로계약이 등록되었습니다.
+
+■ 근로자: {근로자명}
+■ 사원번호: {사원번호}
+■ 고용형태: {고용형태}
+■ 계약 기간: {계약기간}
+■ 계약 상태: {계약상태}
+■ 처리 일시: {처리일시}`
+  },
+  contract_renewed_new: {
+    title: `[근로계약 재계약] {근로자명} — 재계약이 등록되었습니다`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+소속 근로자의 재계약(재입사)이 등록되었습니다.
+
+■ 근로자: {근로자명}
+■ 신규발급 사원번호: {사원번호}
+■ 고용형태: {고용형태}
+■ 계약 기간: {계약기간}
+■ 계약 상태: {계약상태}
+■ 처리 일시: {처리일시}`
+  },
+  contract_terminated: {
+    title: `[근로계약 해지] {근로자명} — 계약이 해지되었습니다`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+소속 근로자의 근로계약이 해지되었습니다.
+
+■ 근로자: {근로자명}
+■ 해지일: {해지일}`
+  },
+  contract_terminate_scheduled: {
+    title: `[근로계약 해지 예정] {근로자명} — 해지가 예정되었습니다`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+소속 근로자의 근로계약 해지가 예정되었습니다.
+
+■ 근로자: {근로자명}
+■ 해지 예정일: {해지일}`
+  },
+  contract_termination_cancelled: {
+    title: `[근로계약 해지 철회] {근로자명} — 해지 예정이 취소되었습니다`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+소속 근로자의 계약 해지 예정이 취소되어 기존 계약이 정상 유효 상태로 복귀되었습니다.
+
+■ 근로자: {근로자명}
+■ 취소된 해지일: {해지일}`
+  },
+  contract_voided: {
+    title: `[계약 파기] {근로자명} — 근로계약이 파기되었습니다`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+소속 근로자의 근로계약이 파기 처리되었습니다.
+
+■ 근로자: {근로자명}
+■ 고용형태: {고용형태}
+■ 계약 기간: {계약기간}
+■ 파기 사유: {파기사유}
+■ 처리 일시: {처리일시}`
+  },
+  contract_renewal_scheduled: {
+    title: `[갱신 예약] {근로자명} — 계약 갱신이 예약되었습니다`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+소속 근로자의 계약 갱신이 예약되었습니다.
+
+■ 근로자: {근로자명}
+■ 사원번호: {사원번호}
+■ 새 계약 시작일: {시작일}
+■ 갱신 전 계약 해지일: {해지일}
+■ 처리 일시: {처리일시}`
+  },
+  contract_renewed: {
+    title: `[계약 갱신] {근로자명} — 계약이 갱신되었습니다`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+소속 근로자의 계약이 갱신되었습니다.
+
+■ 근로자: {근로자명}
+■ 사원번호: {사원번호}
+■ 고용형태: {고용형태}
+■ 갱신 전 계약 해지일: {해지일}
+■ 새 계약 시작일: {시작일}
+■ 계약 상태: {계약상태}
+■ 처리 일시: {처리일시}`
   }
 };
 
@@ -233,9 +324,17 @@ const MSG_CHANNEL_TYPES = {
   inapp: [
     { value: 'company_welcome', label: '가입환영 메시지' },
     { value: 'company_updated', label: '고객사 정보 변경 안내' },
-    { value: 'company_terminate_scheduled', label: '해지 예정 안내' },
-    { value: 'company_terminate_changed', label: '해지 예정일 변경 안내' },
-    { value: 'company_terminate_cancelled', label: '해지 취소 안내' },
+    { value: 'company_terminate_scheduled', label: '서비스 해지 예정 안내' },
+    { value: 'company_terminate_changed', label: '서비스 해지 예정일 변경 안내' },
+    { value: 'company_terminate_cancelled', label: '서비스 해지 취소 안내' },
+    { value: 'contract_created', label: '근로계약 등록' },
+    { value: 'contract_renewed_new', label: '근로계약 재계약' },
+    { value: 'contract_terminated', label: '근로계약 해지' },
+    { value: 'contract_terminate_scheduled', label: '근로계약 해지예정' },
+    { value: 'contract_termination_cancelled', label: '근로계약 해지철회' },
+    { value: 'contract_voided', label: '근로계약 파기' },
+    { value: 'contract_renewal_scheduled', label: '근로계약 갱신예약' },
+    { value: 'contract_renewed', label: '근로계약 갱신완료' },
     { value: 'contract_dispatched', label: '근로계약서 발송 완료' },
   ],
   kakao: [

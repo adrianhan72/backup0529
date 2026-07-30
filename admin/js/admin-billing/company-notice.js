@@ -393,6 +393,24 @@ async function _getContactFoot() {
  *   contractEnd    {string}  계약 종료일
  *   extraData      {object}  추가 메타데이터 (JSON 직렬화 가능)
  */
+let __cachedCompanyMsgRules = null;
+async function _getCompanyMsgRule(noticeType){
+  if(!__cachedCompanyMsgRules){
+    try {
+      const _res = await fetch('../tables/representative_contact/default');
+      if(_res.ok){
+        const _data = await _res.json();
+        if(_data?.msg_body_rules){
+          __cachedCompanyMsgRules = typeof _data.msg_body_rules === 'string'
+            ? JSON.parse(_data.msg_body_rules) : _data.msg_body_rules;
+        }
+      }
+    } catch(_){}
+    if(!__cachedCompanyMsgRules) __cachedCompanyMsgRules = {};
+  }
+  return __cachedCompanyMsgRules[noticeType] || null;
+}
+
 async function _sendCompanyNotice({
   companyId, companyName='',
   noticeType, title, body,
@@ -400,6 +418,25 @@ async function _sendCompanyNotice({
   contractEnd='', extraData={}
 }){
   if(!companyId || !noticeType || !title || !body) return;
+
+  // 시스템 설정 메시지 규칙 적용 (커스텀 규칙 있으면 덮어씀)
+  const _rule = await _getCompanyMsgRule(noticeType);
+  if(_rule){
+    if(_rule.title) title = _rule.title;
+    if(_rule.body) body = _rule.body;
+  }
+
+  // 변수 치환 (extraData에서 ruleVars 키로 전달된 경우)
+  const _vars = extraData?.ruleVars;
+  if(_vars && typeof _vars === 'object'){
+    for(const [k, v] of Object.entries(_vars)){
+      const _val = v != null ? String(v) : '';
+      title = title.replace(new RegExp('\\{'+k+'\\}', 'g'), _val);
+      body  = body.replace(new RegExp('\\{'+k+'\\}', 'g'), _val);
+    }
+    delete extraData.ruleVars; // DB 저장 제외
+  }
+
   const adminName = _getAdminUsername();
   const foot = await _getContactFoot();
   try {

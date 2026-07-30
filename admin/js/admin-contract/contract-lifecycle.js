@@ -871,6 +871,32 @@ async function doContractVoidOrCancel(){
   }
 }
 
+// ── 계약 인앱 알림 헬퍼 (시스템 설정 메시지 규칙 적용) ──
+let __cachedMsgRules = null;
+async function _getContractMsgRule(noticeType){
+  if(!__cachedMsgRules){
+    try {
+      const _res = await fetch('../tables/representative_contact/default');
+      if(_res.ok){
+        const _data = await _res.json();
+        if(_data?.msg_body_rules){
+          __cachedMsgRules = typeof _data.msg_body_rules === 'string'
+            ? JSON.parse(_data.msg_body_rules) : _data.msg_body_rules;
+        }
+      }
+    } catch(_){}
+    if(!__cachedMsgRules) __cachedMsgRules = {};
+  }
+  return __cachedMsgRules[noticeType] || null;
+}
+function _applyMsgVars(text, vars){
+  let result = text;
+  for(const [k, v] of Object.entries(vars)){
+    result = result.replace(new RegExp('\\{'+k+'\\}', 'g'), v != null ? String(v) : '');
+  }
+  return result;
+}
+
 // ─── 해지예정 취소 (활성으로 복귀) ───
 async function cancelPreTerminate(){
   const c = allContracts.find(x=>x.id===editId.contract);
@@ -1246,6 +1272,40 @@ const _yearHolidayCache = {};
  * @param {Date} d
  * @returns {boolean}
  */
+/**
+ * 익영업일 반환: dateStr(YYYY-MM-DD)의 다음 평일(주말·공휴일 제외)
+ */
+function _nextBusinessDay(dateStr){
+  if(!dateStr) return '';
+  const d = new Date(dateStr);
+  d.setDate(d.getDate() + 1);
+  let tries = 0;
+  while(tries < 14){
+    const dow = d.getDay();
+    if(dow !== 0 && dow !== 6 && !_isHoliday(d)) break;
+    d.setDate(d.getDate() + 1);
+    tries++;
+  }
+  return d.toISOString().slice(0,10);
+}
+
+/**
+ * 전영업일 반환: dateStr(YYYY-MM-DD)의 이전 평일(주말·공휴일 제외)
+ */
+function _prevBusinessDay(dateStr){
+  if(!dateStr) return '';
+  const d = new Date(dateStr);
+  d.setDate(d.getDate() - 1);
+  let tries = 0;
+  while(tries < 14){
+    const dow = d.getDay();
+    if(dow !== 0 && dow !== 6 && !_isHoliday(d)) break;
+    d.setDate(d.getDate() - 1);
+    tries++;
+  }
+  return d.toISOString().slice(0,10);
+}
+
 function _isHoliday(d){
   const y = d.getFullYear();
   const m = d.getMonth() + 1;
@@ -1270,6 +1330,7 @@ function _getYearHolidays(y){
     '05-01', // 근로자의 날
     '05-05', // 어린이날
     '06-06', // 현충일
+    '07-17', // 제헌절
     '08-15', // 광복절
     '10-03', // 개천절
     '10-09', // 한글날
@@ -1387,20 +1448,18 @@ function doContractRenew(){
   newStartEl.removeAttribute('min');
   if(newStartErr) newStartErr.style.display = 'none';
 
-  // ── 기존 계약 해지일 변경 시 신규 시작일 활성화 + 유효성 검사 ──
+  // ── 기존 계약 해지일 ↔ 신규 시작일 양방향 자동설정 (gap 규칙) ──
+  let _renewDateSyncing = false; // 무한루프 방지 플래그
   oldEndEl.onchange = function(){
+    if(_renewDateSyncing) return;
     const oe = oldEndEl.value;
     if(oe){
-      const minDate = new Date(oe);
-      minDate.setDate(minDate.getDate() + 1);
-      const minStr = minDate.toISOString().slice(0,10);
-      newStartEl.min = minStr;
       newStartEl.disabled = false;
-      if(newStartEl.value) _validateRenewNewStart(oe);
-      else {
-        newStartEl.value = minStr;
-        if(newStartErr) newStartErr.style.display = 'none';
-      }
+      _renewDateSyncing = true;
+      newStartEl.value = _nextBusinessDay(oe);
+      newStartEl.min = oe;
+      _renewDateSyncing = false;
+      if(newStartErr) newStartErr.style.display = 'none';
     } else {
       newStartEl.disabled = true;
       newStartEl.value = '';
@@ -1409,10 +1468,15 @@ function doContractRenew(){
     }
   };
 
-  // ── 신규 계약 시작일 변경 시 유효성 검사 ──
   newStartEl.onchange = function(){
-    const oe = oldEndEl.value;
-    if(oe) _validateRenewNewStart(oe);
+    if(_renewDateSyncing) return;
+    const ns = newStartEl.value;
+    if(ns){
+      _renewDateSyncing = true;
+      oldEndEl.value = _prevBusinessDay(ns);
+      _renewDateSyncing = false;
+      _validateRenewNewStart(oldEndEl.value);
+    }
   };
 
   // ── 갱신 시 전체 폼 필드 편집 가능하게 해제 ──
@@ -1713,6 +1777,20 @@ async function confirmContractRenew(){
   await loadContracts(); await loadEmployees(); renderContracts(); renderDashboard();
   const label = newStatus === CONTRACT_STATUS.PENDING ? '계약예정 (시작일 미도래)' : '계약유효 (활성)';
   toast(`연장 처리 완료. 전 계약: 해지 / 새 계약: ${label}`);
+
+  // ── 갱신 계약: 계약서 확인 및 발송 여부 확인 ──
+  if(newId){
+    const _newEmpName = _renewEmp?.name || '';
+    const confirmed = await _showConfirm({
+      message: `근로계약 갱신이 완료되었습니다.\n\n계약서를 확인하고 ${_newEmpName ? _newEmpName+'님에게 ' : ''}인쇄용 파일 주소를 즉시 발송하시겠습니까?`,
+      okText: '예',
+      cancelText: '아니오 (나중에 발송)',
+      okClass: 'btn-primary'
+    });
+    if(confirmed){
+      openContractPrintModal(newId);
+    }
+  }
 }
 
 // ─── 재계약 플로우 ───
@@ -1893,6 +1971,24 @@ function openRecontractModal(srcContract){
   _prevEditCategory = document.getElementById('ct-edit-em-category')?.value || '';
   // saveContract 재계약 플래그 저장
   _recontractEmpId = srcContract.employee_id;
+
+  // ── 재계약: 사원번호는 이전 계약의 것을 승계하지 않고 새로 추천 ──
+  const _reconEmpNoEl = document.getElementById('ct-edit-em-empno');
+  if(_reconEmpNoEl){
+    _reconEmpNoEl.value = '';
+    // 해당 고객사 내 사용 중인 사원번호 기준으로 추천 생성
+    const _coId = srcContract.company_id;
+    const _usedNos = new Set();
+    for(const _e of (allEmployees||[])){
+      if(_e.company_id === _coId && _e.employee_number){
+        const _n = parseInt(_e.employee_number);
+        if(!isNaN(_n)) _usedNos.add(_n);
+      }
+    }
+    let _next = 1;
+    while(_usedNos.has(_next)) _next++;
+    _reconEmpNoEl.placeholder = '추천: ' + String(_next).padStart(4, '0');
+  }
 }
 let _recontractEmpId = null;
 
@@ -2286,6 +2382,19 @@ async function confirmFixedTerminate(){
   // 시작일 이전 불가
   if(c.contract_start && termDate < c.contract_start){
     return toast(`해지일은 계약 시작일(${c.contract_start}) 이후이어야 합니다.`, 'error');
+  }
+
+  // ── 갱신 페어 존재 시 경고 및 페어 해제 ──
+  if(typeof findPairContract === 'function'){
+    const _existPair = findPairContract(c);
+    if(_existPair){
+      const _confirmed = confirm(
+        `이 계약은 갱신 페어(${_existPair.employee_name || '알 수 없음'})와 연결되어 있습니다.\n` +
+        `해지 처리 시 페어 관계가 해제됩니다.\n계속 진행하시겠습니까?`
+      );
+      if(!_confirmed) return;
+      if(typeof breakPair === 'function') await breakPair(c);
+    }
   }
 
   const selectedChip = document.querySelector('.cft-reason-chip.selected');

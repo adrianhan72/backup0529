@@ -2202,7 +2202,14 @@ async function confirmTerminateDateChange(){
   const cid = editId?.contract;
   if(!cid) return;
 
+  const c = allContracts.find(x => x.id === cid);
   const today = new Date().toISOString().slice(0,10);
+
+  // 해지일은 계약 만료일 이전이어야 함
+  if(c?.contract_end && newDate >= c.contract_end){
+    return toast(`해지일은 계약 만료일(${c.contract_end}) 이전이어야 합니다.`, 'error');
+  }
+
   const newStatus = newDate <= today ? CONTRACT_STATUS.TERMINATED : CONTRACT_STATUS.TERMINATE_PENDING;
 
   await api(`../tables/contracts/${cid}`, {
@@ -2211,7 +2218,22 @@ async function confirmTerminateDateChange(){
     body: JSON.stringify({ terminate_date: newDate, status: newStatus })
   });
 
-  toast('해지일이 변경되었습니다.');
+  // ── 연계된 갱신 계약이 있으면 시작일도 함께 조정 ──
+  if(c?.renewed_to_id){
+    const _renewedContract = allContracts.find(x => x.id === c.renewed_to_id);
+    if(_renewedContract && ![CONTRACT_STATUS.VOIDED, CONTRACT_STATUS.CANCELED, CONTRACT_STATUS.TERMINATED].includes(_renewedContract.status)){
+      const _nextBiz = (typeof _nextBusinessDay === 'function') ? _nextBusinessDay(newDate) : (()=>{const d=new Date(newDate);d.setDate(d.getDate()+1);return d.toISOString().slice(0,10);})();
+      await api(`../tables/contracts/${_renewedContract.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contract_start: _nextBiz })
+      });
+      toast(`해지일이 ${newDate}(으)로 변경되었습니다.\n연계된 갱신 계약의 시작일도 ${_nextBiz}(으)로 함께 조정됩니다.`, 'info');
+    }
+  } else {
+    toast('해지일이 변경되었습니다.');
+  }
+
   await Promise.all([loadContracts(), loadEmployees()]);
   renderContracts(); renderDashboard();
   viewContract(cid);
