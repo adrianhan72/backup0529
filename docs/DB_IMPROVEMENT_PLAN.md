@@ -1,31 +1,43 @@
 # 🗄️ 데이터베이스 개선안 — 인사톡 노무톡
 
-**작성일**: 2026-06-24  
+**작성일**: 2026-06-24 (최종 현행화: 2026-07-30)  
 **DB 엔진**: SQLite (better-sqlite3)  
-**현황**: 16개 테이블, 총 1,203개 레코드
+**현황**: 26개 테이블, schema.sql ↔ DB 완전 동기화 완료
 
 ---
 
-## 📊 현재 DB 현황
+## 📊 현재 DB 현황 (2026-07-30 기준)
 
-| 테이블 | 레코드 | 컬럼 | 주요 문제 |
-|--------|--------|------|-----------|
-| `payrolls` | 718 | 23 | ⚠️ 스키마 파일과 실제 컬럼 불일치 (실제 55개 필드) |
-| `employees` | 112 | 20 | `status='재직'/'active'` 혼용 |
-| `contracts` | 136 | 61 | 필드 과다, 수당/보험 필드 분리 필요 |
-| `company_notices` | 145 | 19 | 비정규화 과다, FK 누락 |
-| `payroll_send_logs` | 113 | 12 | — |
-| `contract_dispatch` | 22 | 17 | — |
-| `companies` | 9 | 20 | — |
-| `billing` | 13 | 18 | — |
-| `insurance_rates` | 20 | 11 | — |
-| `minimum_wages` | 12 | 7 | — |
-| `company_history` | 8 | 7 | — |
-| `contract_expiry_notice` | 5 | 17 | — |
-| `admin_accounts` | 2 | 7 | 🔴 비밀번호 평문 저장 |
-| `annual_leave_ledger` | 2 | 16 | JSON 문자열 컬럼 (`month_data`) |
-| `annual_leave_promotions` | 1 | 17 | — |
-| `wage_ledger_notifications` | 0 | 7 | 미사용 테이블 |
+| 테이블 | 컬럼 | 주요 문제 | 상태 |
+|--------|------|-----------|------|
+| `payrolls` | 93 | ~~스키마 파일과 실제 컬럼 불일치~~ | ✅ 해결 (2026-07-30 schema.sql 동기화) |
+| `employees` | 25 | ~~`status='재직'/'active'` 혼용~~ | ✅ 해결 (M3-M4 마이그레이션: 영문 코드 통일) |
+| `contracts` | 96 | 수당/보험 필드 분리 필요 | ⬜ 검토 중 |
+| `company_notices` | 19 | 비정규화 과다, FK 누락 | ⬜ 검토 중 |
+| `companies` | 29 | — | ✅ 양호 |
+| `insurance_rates` | 11 | — | ✅ 양호 |
+| `minimum_wages` | 7 | — | ✅ 양호 |
+| `admin_accounts` | 7 | 🔴 비밀번호 평문 저장 | 🔴 미해결 |
+| `billing` | 18 | — | ✅ 양호 |
+| `payroll_send_logs` | 12 | — | ✅ 양호 |
+| `contract_dispatch` | 17 | — | ✅ 양호 |
+| `company_history` | 8 | — | ✅ 양호 |
+| `contract_expiry_notice` | 18 | — | ✅ 양호 |
+| `annual_leave_ledger` | 18 | JSON 문자열 컬럼 (`month_data`) | ⬜ 검토 중 |
+| `annual_leave_promotions` | 17 | — | ✅ 양호 |
+| `wage_ledger_notifications` | 7 | 미사용 테이블 | ⬜ 정리 검토 |
+| `payroll_items` | 9 | — | ✅ 양호 (2026-07 신설) |
+| `tax_brackets` | 5 | — | ✅ 양호 |
+| `tax_bracket_rows` | 14 | — | ✅ 양호 |
+| `kakao_send_logs` | 14 | — | ✅ 양호 |
+| `consent_dispatch` | 17 | — | ✅ 양호 |
+| `registered_executives` | 11 | — | ✅ 양호 |
+| `related_party_workers` | 11 | — | ✅ 양호 |
+| `representative_contact` | 10 | — | ✅ 양호 |
+| `severance_interim_settlements` | 11 | — | ✅ 양호 |
+| `attendance_ledger` | 13 | — | ✅ 양호 |
+
+> **참고**: 2026-06-24 작성 당시 16개 테이블에서 26개로 증가. `schema.sql`은 `dump_schema.js`로 자동 현행화.
 
 ---
 
@@ -68,56 +80,35 @@ POST /api/auth/login      → JWT 발급
 
 ---
 
-### 3. payrolls 스키마 불일치
+### 3. payrolls 스키마 불일치 ✅ 해결됨 (2026-07-30)
 
-**현재 상태**: `schema.sql` 23컬럼 vs 실제 앱 55개 필드 사용. 새 필드는 `POST /tables/payrolls` 시 자동 추가됨 (ALTER TABLE 없이).
+**과거 상태**: `schema.sql` 23컬럼 vs 실제 앱 55개 필드.
 
-**실제 사용 중이지만 schema.sql에 누락된 필드**:
-```
-daily_wage, hourly_wage, overtime_hours, night_hours, holiday_hours,
-total_work_hours, position_allowance, skill_allowance, license_allowance,
-meal_allowance, transportation_allowance, self_driving_allowance,
-remote_area_allowance, childcare_allowance, research_allowance,
-communication_pay, annual_leave_pay, bonus_pay, performance_pay,
-actual_expense_pay, overtime_pay, night_pay, holiday_pay,
-year_end_tax_adjust, health_insurance_adjust, advance_deduction,
-annual_leave_used, dependents, etc_allowance, other_pay,
-draft_saved_at, (and more...)
-```
-
-**개선안**:
-- `schema.sql`을 실제 DB 상태와 동기화
-- 마이그레이션 관리 도구 도입 (또는 최소한 버전별 ALTER 스크립트 관리)
+**조치 완료**:
+- `dump_schema.js` 실행으로 `schema.sql`을 DB와 완전 동기화 (93컬럼)
+- `schema-sync.md` 규칙에 따라 DB 변경 시마다 `dump_schema.js` 자동 실행 체계 확립
 
 ---
 
 ## 🟠 주요 (Major) — 우선 개선
 
-### 4. 상태값 문자열 난립
+### 4. 상태값 문자열 난립 ✅ 대부분 해결 (M3-M4 마이그레이션)
 
-**현재 상태**: 동일한 의미의 상태가 여러 문자열로 저장됨
+**과거 상태**: 동일한 의미의 상태가 한글/영문 여러 문자열로 혼용 저장됨
 
-| 필드 | 사용 중인 값 | 문제 |
-|------|-------------|------|
-| `employees.status` | `'재직'`, `'active'`, `'퇴직'`, `'resigned'` | 한글/영문 혼용 |
-| `companies.status` | `'이용중'`, `'이용중지'` | — |
-| `contracts.status` | `'활성'`, `'유효'`, `'active'`, `'만료'`, `'해지'`, `'파기'`, `'계약예정'`, `'갱신예정'`, `'해지예정'`, `'서류미비'`, `'갱신됨'`, `'취소'` | 12가지 상태 |
-| `billing.payment_status` | `'납부대기'`, `'일부납'`, `'미납'`, `'완납'` | — |
+| 필드 | 현재 상태 |
+|------|-----------|
+| `employees.status` | ✅ 영문 코드 통일 (`'active'`, `'resigned'`) |
+| `companies.status` | ✅ 영문 코드 통일 (`'active'`, `'inactive'`, `'draft'`) |
+| `contracts.status` | ✅ 영문 코드 통일 (10개 상태 상수화) |
+| `contracts.contract_type` | ✅ 영문 코드 통일 (`'regular'`, `'fixed_term'` 등) |
+| `billing.payment_status` | ⬜ 일부 한글 잔존 가능 |
 
-**개선안 ① (최소 변경)**: 코드 내 상수 정의 + 프론트 검증
-
-```javascript
-// admin-state.js 상단
-const EMPLOYEE_STATUS = Object.freeze({
-  ACTIVE: '재직',
-  RESIGNED: '퇴직',
-});
-// 모든 코드에서 EMPLOYEE_STATUS.ACTIVE 사용, 'active' → '재직' 정규화
-```
-
-**개선안 ② (이상적)**: Lookup 테이블 + FK
-
-```sql
+**적용된 매커니즘**:
+- `constants.js`: `CONTRACT_STATUS`, `CONTRACT_TYPE`, `EMP_STATUS` 등 상수 정의
+- `*_LABEL` 맵: 영문 코드 → 한글 표시 변환
+- `*Label()` 헬퍼: UI 표시용 한글 변환 함수
+- 한글 직사용 금지 규칙: [`/memories/repo/coding-conventions.md#2-한글-직사용-금지`](/memories/repo/coding-conventions.md#2-한글-직사용-금지)
 CREATE TABLE status_codes (
   id      TEXT PRIMARY KEY,
   domain  TEXT,    -- 'employee', 'company', 'contract', 'payment'
