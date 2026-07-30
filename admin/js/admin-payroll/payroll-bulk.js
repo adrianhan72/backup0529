@@ -1,4 +1,4 @@
-﻿// ─── 일괄 발송 ───
+// ─── 일괄 발송 ───
 let _bulkSendList = [];      // [{payrollId, empName, phone, status, file}]
 let _bulkSendRunning = false;
 

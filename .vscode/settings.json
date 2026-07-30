@@ -1,4 +1,23 @@
 {
     "chat.planAgent.defaultModel": "DeepSeek V4 Pro (deepseek)",
-    "chat.extensionUnification.enabled": false
+    "chat.extensionUnification.enabled": false,
+    "files.encoding": "utf8",
+    "files.autoGuessEncoding": false,
+    "files.eol": "\n",
+    "[javascript]": {
+        "files.encoding": "utf8",
+        "files.eol": "\n"
+    },
+    "[html]": {
+        "files.encoding": "utf8",
+        "files.eol": "\n"
+    },
+    "[css]": {
+        "files.encoding": "utf8",
+        "files.eol": "\n"
+    },
+    "[json]": {
+        "files.encoding": "utf8",
+        "files.eol": "\n"
+    }
 }

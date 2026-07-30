@@ -1,33 +1,34 @@
-       OUTLINE TYPE ? Å×µÎ¸®/Åõ¸í ¹è°æ ¹öÆ°
-    ?????????????????????????????????????????????? */
-    /* °øÅë outline º£ÀÌ½º */
+       OUTLINE TYPE â€” í…Œë‘ë¦¬/íˆ¬ëª… ë°°ê²½ ë²„íŠ¼
+    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+    /* ê³µí†µ outline ë² ì´ìŠ¤ */
     .btn-outline-base{
       background:transparent;
       border-width:1.5px;border-style:solid;
     }
 
-    /* Secondary (È¸»ö ? Ãë¼Ò/º¸Á¶) */
+    /* Secondary (íšŒìƒ‰ â€” ì·¨ì†Œ/ë³´ì¡°) */
     .btn-secondary{background:#9ca3af;border-color:#6b7280;color:#fff;}
     .btn-secondary:hover:not(:disabled){background:#6b7280;}
     .btn-secondary:active:not(:disabled){background:#4b5563;}
     .btn-secondary.selected,.btn-secondary[aria-selected="true"]{background:#4b5563;}
 
-    /* Outline Primary (·¹µå Å×µÎ¸®) */
+    /* Outline Primary (ë ˆë“œ í…Œë‘ë¦¬) */
     .btn-outline-primary{
-      background:transparent;color:#dc2626;
-      border:1.5px solid #dc2626;
+      background:transparent;color:#e94560;
+      border:1.5px solid #e94560;
     }
     .btn-outline-primary:hover:not(:disabled){
-      background:#fef2f2;border-color:#b91c1c;
+      background:#fff0f3;border-color:#d63651;
+      box-shadow:0 2px 8px rgba(233,69,96,.18);
     }
     .btn-outline-primary:active:not(:disabled){
-      background:#fee2e2;border-color:#b91c1c;
+      background:#ffe4e8;border-color:#c02e45;
     }
     .btn-outline-primary.selected,.btn-outline-primary[aria-selected="true"]{
-      background:#dc2626;color:#fff;
+      background:#e94560;color:#fff;
     }
 
-    /* Outline Success (±×¸° Å×µÎ¸®) */
+    /* Outline Success (ê·¸ë¦° í…Œë‘ë¦¬) */
     .btn-outline-success{
       background:transparent;color:#10b981;
       border:1.5px solid #10b981;
@@ -43,7 +44,7 @@
       background:#10b981;color:#fff;
     }
 
-    /* Outline Warning (¾Ú¹ö Å×µÎ¸®) */
+    /* Outline Warning (ì•°ë²„ í…Œë‘ë¦¬) */
     .btn-outline-warning{
       background:transparent;color:#d97706;
       border:1.5px solid #f59e0b;
@@ -59,23 +60,23 @@
       background:#f59e0b;color:#fff;
     }
 
-    /* Outline Danger (·¹µå Å×µÎ¸®) */
+    /* Outline Danger (ë ˆë“œ í…Œë‘ë¦¬) */
     .btn-outline-danger{
-      background:transparent;color:#dc2626;
-      border:1.5px solid #dc2626;
+      background:transparent;color:#ef4444;
+      border:1.5px solid #ef4444;
     }
     .btn-outline-danger:hover:not(:disabled){
-      background:#fef2f2;border-color:#b91c1c;
-      box-shadow:0 2px 8px rgba(220,38,38,.18);
+      background:#fff5f5;border-color:#dc2626;
+      box-shadow:0 2px 8px rgba(239,68,68,.18);
     }
     .btn-outline-danger:active:not(:disabled){
       background:#fee2e2;border-color:#b91c1c;
     }
     .btn-outline-danger.selected,.btn-outline-danger[aria-selected="true"]{
-      background:#dc2626;color:#fff;
+      background:#ef4444;color:#fff;
     }
 
-    /* Outline Indigo (ÀÎµğ°í Å×µÎ¸®) */
+    /* Outline Indigo (ì¸ë””ê³  í…Œë‘ë¦¬) */
     .btn-outline-indigo{
       background:transparent;color:#4f46e5;
       border:1.5px solid #6366f1;
@@ -91,7 +92,7 @@
       background:#4f46e5;color:#fff;
     }
 
-    /* Ghost (¹è°æ ¾øÀ½, hover ½Ã ¹àÀº ¹è°æ) */
+    /* Ghost (ë°°ê²½ ì—†ìŒ, hover ì‹œ ë°ì€ ë°°ê²½) */
     .btn-ghost{
       background:transparent;color:#6b7280;
       border:1.5px solid transparent;
@@ -117,7 +118,7 @@
     .stat-info .stat-value{font-size:22px;font-weight:700;color:#1a1a2e;margin-top:3px}
     .stat-info .stat-sub{font-size:10.5px;color:#aaa;margin-top:1px}
     .card{background:#fff;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.06);overflow:hidden}
-    .card-header{padding:16px 22px 12px;border-bottom:1px solid #f0f2f5;display:flex;align-items:center;justify-content:space-between;min-height:67px;box-sizing:border-box;}
+    .card-header{padding:16px 22px 12px;border-bottom:1px solid #f0f2f5;display:flex;align-items:center;justify-content:space-between}
     .card-title{font-size:14px;font-weight:700;color:#1a1a2e}
     .table-wrap{overflow-x:auto}
     table{width:100%;border-collapse:collapse;font-size:13px}
@@ -125,19 +126,19 @@
     tbody tr{border-bottom:1px solid #f5f5f5;transition:background .15s}
     tbody tr:hover{background:#fafbff}
     tbody td{padding:11px 14px;color:#333;vertical-align:middle}
-    .badge{display:inline-flex;align-items:center;gap:3px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500}
+    .badge{display:inline-flex;align-items:center;gap:3px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600}
     .badge-green{background:rgba(16,185,129,.1);color:#10b981}
     .badge-red{background:rgba(239,68,68,.1);color:#ef4444}
     .badge-blue{background:rgba(59,130,246,.1);color:#3b82f6}
     .badge-yellow{background:rgba(245,158,11,.1);color:#f59e0b}
-    .badge-gray{background:#f3f4f6;color:#374151}
-    .badge-orange{background:rgba(234,88,12,.1);color:#ea580c}
+    .badge-gray{background:rgba(107,114,128,.1);color:#6b7280}
+    .badge-orange{background:rgba(234,88,12,.1);color:#ea580c;border:1px solid rgba(234,88,12,.25)}
     .badge-purple{background:rgba(139,92,246,.1);color:#8b5cf6}
     .badge-cyan{background:rgba(6,182,212,.1);color:#0891b2}
     .badge-pink{background:rgba(236,72,153,.1);color:#db2777}
-.badge-indigo{background:rgba(99,102,241,.15);color:#4338ca}
-.badge-teal{background:rgba(20,184,166,.1);color:#0f766e}
-.badge-rose{background:rgba(244,63,94,.12);color:#be123c}
-    .badge-slate{background:rgba(100,116,139,.1);color:#475569}
-    .badge-amber{background:rgba(245,158,11,.15);color:#b45309}
-    /* ¦¡¦¡ °è¾à Á¶È¸ ¸ğ´Ş Àü¿ë ¦¡¦¡ */
+    .badge-indigo{background:rgba(99,102,241,.15);color:#4338ca;border:1px solid rgba(99,102,241,.3)}
+    .badge-teal{background:rgba(20,184,166,.1);color:#0f766e;border:1px solid rgba(20,184,166,.3)}
+    .badge-rose{background:rgba(244,63,94,.12);color:#be123c;border:1px solid rgba(244,63,94,.3)}
+    .badge-slate{background:rgba(100,116,139,.1);color:#475569;border:1px solid rgba(100,116,139,.3);text-decoration:line-through}
+    .badge-amber{background:rgba(245,158,11,.15);color:#b45309;border:1px solid rgba(245,158,11,.3)}
+    /* â”€â”€ ê³„ì•½ ì¡°íšŒ ëª¨ë‹¬ ì „ìš© â”€â”€ */

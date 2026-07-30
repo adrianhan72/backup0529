@@ -1,4 +1,4 @@
-﻿/**
+/**
  * consent-dispatch.js — 제3자 정보제공 동의서 발송 관리
  * 계약서 발송 관리(contract-dispatch.js)와 동일 구조
  */

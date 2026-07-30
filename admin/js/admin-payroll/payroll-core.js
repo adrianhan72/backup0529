@@ -1,4 +1,4 @@
-﻿// ─── PAYROLLS ───
+// ─── PAYROLLS ───
 function renderPayrolls(){
   if(!currentPayCompanyId) return;
   const yr=parseInt(document.getElementById('pay-year-filter')?.value)||0;

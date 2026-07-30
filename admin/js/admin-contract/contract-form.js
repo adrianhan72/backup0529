@@ -1,8 +1,8 @@
-// ¦¡¦¡¦¡ ºê·£µå ¼­¸í (¸ğµç ¹ß¼Û ¸Ş½ÃÁö ÇÏ´Ü °øÅë) ¦¡¦¡¦¡
-const _BRAND_SIG = '¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡\nÀÎ»çÅå ³ë¹«Åå ¡¤ ´ëÈ­ÀÎ»ç³ë¹«ÆÄÆ®³Ê½º';
+// â”€â”€â”€ ë¸Œëœë“œ ì„œëª… (ëª¨ë“  ë°œì†¡ ë©”ì‹œì§€ í•˜ë‹¨ ê³µí†µ) â”€â”€â”€
+const _BRAND_SIG = 'â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€\nì¸ì‚¬í†¡ ë…¸ë¬´í†¡ Â· ëŒ€í™”ì¸ì‚¬ë…¸ë¬´íŒŒíŠ¸ë„ˆìŠ¤';
 
-// ¦¡¦¡¦¡ EMPLOYEES ¦¡¦¡¦¡
-// ¦¡¦¡¦¡ CONTRACTS ¦¡¦¡¦¡
+// â”€â”€â”€ EMPLOYEES â”€â”€â”€
+// â”€â”€â”€ CONTRACTS â”€â”€â”€
 function toggleEmExpire(){
   const rawCat = document.getElementById('ct-em-category')?.value;
   if(!rawCat) return;
@@ -10,9 +10,9 @@ function toggleEmExpire(){
   const expInput   = document.getElementById('ct-em-expire');
   const expRow     = document.getElementById('ct-new-row-expire');
   const expReqSpan = document.getElementById('ct-expire-required');
-  // ¿ä¼Ò°¡ ¾øÀ¸¸é Áß´Ü (UI Àç±¸¼ºÀ¸·Î Á¦°ÅµÊ)
+  // ìš”ì†Œê°€ ì—†ìœ¼ë©´ ì¤‘ë‹¨ (UI ì¬êµ¬ì„±ìœ¼ë¡œ ì œê±°ë¨)
   if(!expInput || !expRow) return;
-  // °è¾àÁ÷¡¤°è¾àÁ÷ ¼ö½À¡¤ÀÏ¿ëÁ÷¸¸ Åğ»ç¿¹Á¤ÀÏ Ç¥½Ã (Á¤±ÔÁ÷¡¤Á¤±ÔÁ÷ ¼ö½ÀÀº ¹«±âÇÑ °è¾àÀÌ¹Ç·Î ¼û±è)
+  // ê³„ì•½ì§Â·ê³„ì•½ì§ ìˆ˜ìŠµÂ·ì¼ìš©ì§ë§Œ í‡´ì‚¬ì˜ˆì •ì¼ í‘œì‹œ (ì •ê·œì§Â·ì •ê·œì§ ìˆ˜ìŠµì€ ë¬´ê¸°í•œ ê³„ì•½ì´ë¯€ë¡œ ìˆ¨ê¹€)
   const isFixed    = cat ===CONTRACT_TYPE.FIXED || cat ===CONTRACT_TYPE.FIXED_PROBATION || cat ===CONTRACT_TYPE.DAILY;
   const isRequired = isFixed;
   if(expRow)     expRow.style.display     = isFixed ? '' : 'none';
@@ -20,24 +20,24 @@ function toggleEmExpire(){
   expInput.disabled = !isFixed;
   expInput.classList.toggle('ct-input-locked', !isFixed);
   if(!isFixed) expInput.value = '';
-  // °í¿ëÇüÅÂ º¯°æ ½Ã °è¾à±â°£ À¯È¿¼º Àç°Ë»ç
+  // ê³ ìš©í˜•íƒœ ë³€ê²½ ì‹œ ê³„ì•½ê¸°ê°„ ìœ íš¨ì„± ì¬ê²€ì‚¬
   _checkFixedTermDuration();
 }
 
-// ¦¡¦¡ °è¾àÁ÷¡¤°è¾àÁ÷ ¼ö½À °è¾à±â°£ ÃÖ¼Ò 1°³¿ù °Ë»ç ¦¡¦¡
-// °è¾à±â°£ÀÌ 1°³¿ù ¹Ì¸¸ÀÌ¸é °æ°í ¹è³Ê Ç¥½Ã ÈÄ true ¹İÈ¯ (¹öÆ° ºñÈ°¼º ½ÅÈ£)
+// â”€â”€ ê³„ì•½ì§Â·ê³„ì•½ì§ ìˆ˜ìŠµ ê³„ì•½ê¸°ê°„ ìµœì†Œ 1ê°œì›” ê²€ì‚¬ â”€â”€
+// ê³„ì•½ê¸°ê°„ì´ 1ê°œì›” ë¯¸ë§Œì´ë©´ ê²½ê³  ë°°ë„ˆ í‘œì‹œ í›„ true ë°˜í™˜ (ë²„íŠ¼ ë¹„í™œì„± ì‹ í˜¸)
 function _checkFixedTermDuration(){
-  // ¦¡¦¡ ½Å±Ô ¸ğµå °æ°í ¹Ú½º
+  // â”€â”€ ì‹ ê·œ ëª¨ë“œ ê²½ê³  ë°•ìŠ¤
   const warningRow     = document.getElementById('ct-short-term-warning-row');
-  // ¦¡¦¡ ¼öÁ¤/Àç°è¾à ¸ğµå °æ°í ¹Ú½º
+  // â”€â”€ ìˆ˜ì •/ì¬ê³„ì•½ ëª¨ë“œ ê²½ê³  ë°•ìŠ¤
   const editWarningRow = document.getElementById('ct-edit-short-term-warning-row');
 
-  // ½Å±Ô ¸ğµå: ct-em-category / ct-em-hire / ct-em-expire ÂüÁ¶
+  // ì‹ ê·œ ëª¨ë“œ: ct-em-category / ct-em-hire / ct-em-expire ì°¸ì¡°
   const newSection = document.getElementById('ct-new-emp-section');
   const isNewMode  = newSection && newSection.style.display !== 'none';
 
   if(isNewMode){
-    // ¼öÁ¤ ¸ğµå °æ°í ¼û±è
+    // ìˆ˜ì • ëª¨ë“œ ê²½ê³  ìˆ¨ê¹€
     if(editWarningRow) editWarningRow.style.display = 'none';
     if(!warningRow) return false;
 
@@ -50,7 +50,7 @@ function _checkFixedTermDuration(){
       return false;
     }
 
-    // °è¾à±â°£ ÆÇÁ¤: °è¾à½ÃÀÛÀÏ(ct-em-start) ¿ì¼±, ¾øÀ¸¸é ÀÔ»çÀÏ(ct-em-hire) Æú¹é
+    // ê³„ì•½ê¸°ê°„ íŒì •: ê³„ì•½ì‹œì‘ì¼(ct-em-start) ìš°ì„ , ì—†ìœ¼ë©´ ì…ì‚¬ì¼(ct-em-hire) í´ë°±
     const hire   = document.getElementById('ct-em-start')?.value
                 || document.getElementById('ct-em-hire')?.value;
     const expire = document.getElementById('ct-em-expire')?.value;
@@ -68,8 +68,8 @@ function _checkFixedTermDuration(){
     return isUnder;
 
   } else {
-    // ¼öÁ¤/Àç°è¾à ¸ğµå: ct-type / ct-start / ct-end ÂüÁ¶
-    // ½Å±Ô ¸ğµå °æ°í ¼û±è
+    // ìˆ˜ì •/ì¬ê³„ì•½ ëª¨ë“œ: ct-type / ct-start / ct-end ì°¸ì¡°
+    // ì‹ ê·œ ëª¨ë“œ ê²½ê³  ìˆ¨ê¹€
     if(warningRow) warningRow.style.display = 'none';
     if(!editWarningRow) return false;
 
@@ -91,7 +91,7 @@ function _checkFixedTermDuration(){
     const end   = new Date(endVal);
     if(end <= start){ editWarningRow.style.display = 'none'; return false; }
 
-    // 1°³¿ù ±âÁØ µ¿ÀÏ ·ÎÁ÷
+    // 1ê°œì›” ê¸°ì¤€ ë™ì¼ ë¡œì§
     const oneMonthLater = new Date(start);
     oneMonthLater.setMonth(oneMonthLater.getMonth() + 1);
     const isUnder = end < oneMonthLater;
@@ -100,57 +100,57 @@ function _checkFixedTermDuration(){
   }
 }
 
-// ¦¡¦¡ ¿¬Â÷ ÈŞ°¡ ÀÚµ¿ °è»ê ¦¡¦¡
-// ±Ù·Î±âÁØ¹ı ±âÁØ:
-//   1³â ¹Ì¸¸: ¸Å¿ù °³±Ù ½Ã 1ÀÏ (ÃÖ´ë 11ÀÏ)
-//   1³â ÀÌ»ó: 15ÀÏ ±âº», 3³â ÀÌ»óºÎÅÍ 2³â¸¶´Ù 1ÀÏ Ãß°¡ (ÃÖ´ë 25ÀÏ)
-// È¸°è³âµµ ±âÁØ: ±âÁØÀÏ(1¿ù 1ÀÏ) ½ÃÁ¡ÀÇ ±Ù¼Ó±â°£À¸·Î »êÁ¤
-//   ¦¦ 1³â ¹Ì¸¸ ±¸°£: ºñ·Ê¿¬Â÷ °ø½Ä Àû¿ë ¡æ ?15ÀÏ ¡¿ (Àü³âµµ ÀçÁ÷ °³¿ù ¼ö / 12)? (¼Ò¼öÁ¡ ¿Ã¸²)
-// ÀÔ»çÀÏ ±âÁØ:  °è¾à ½ÃÀÛÀÏ ½ÃÁ¡ÀÇ ±Ù¼Ó±â°£À¸·Î »êÁ¤
+// â”€â”€ ì—°ì°¨ íœ´ê°€ ìë™ ê³„ì‚° â”€â”€
+// ê·¼ë¡œê¸°ì¤€ë²• ê¸°ì¤€:
+//   1ë…„ ë¯¸ë§Œ: ë§¤ì›” ê°œê·¼ ì‹œ 1ì¼ (ìµœëŒ€ 11ì¼)
+//   1ë…„ ì´ìƒ: 15ì¼ ê¸°ë³¸, 3ë…„ ì´ìƒë¶€í„° 2ë…„ë§ˆë‹¤ 1ì¼ ì¶”ê°€ (ìµœëŒ€ 25ì¼)
+// íšŒê³„ë…„ë„ ê¸°ì¤€: ê¸°ì¤€ì¼(1ì›” 1ì¼) ì‹œì ì˜ ê·¼ì†ê¸°ê°„ìœ¼ë¡œ ì‚°ì •
+//   â”” 1ë…„ ë¯¸ë§Œ êµ¬ê°„: ë¹„ë¡€ì—°ì°¨ ê³µì‹ ì ìš© â†’ âŒˆ15ì¼ Ã— (ì „ë…„ë„ ì¬ì§ ê°œì›” ìˆ˜ / 12)âŒ‰ (ì†Œìˆ˜ì  ì˜¬ë¦¼)
+// ì…ì‚¬ì¼ ê¸°ì¤€:  ê³„ì•½ ì‹œì‘ì¼ ì‹œì ì˜ ê·¼ì†ê¸°ê°„ìœ¼ë¡œ ì‚°ì •
 function calcAnnualLeaveDays(hireDateStr, basisType, contractStartStr){
   if(!hireDateStr) return null;
   const hire = new Date(hireDateStr);
   if(isNaN(hire)) return null;
 
-  // »êÁ¤ ±âÁØÀÏ: È¸°è³âµµ=¿ÃÇØ 1¿ù 1ÀÏ, ÀÔ»çÀÏ=¿À´Ã ³¯Â¥
-  // ¡Ø ÀÔ»çÀÏ ±âÁØÀº "¿À´Ã ±âÁØ ¸¸ ±Ù¼Ó±â°£"À¸·Î ¿¬Â÷¸¦ »êÁ¤ÇÑ´Ù.
-  //   °è¾à ½ÃÀÛÀÏÀ» ±âÁØÀ¸·Î ÇÏ¸é hire_date == contract_startÀÎ °æ¿ì ¸¸ 0°³¿ùÀÌ µÇ¾î
-  //   ¿¬Â÷°¡ 0À¸·Î Àß¸ø °è»êµÇ¹Ç·Î, Ç×»ó ¿À´Ã(new Date())À» ±âÁØÀ¸·Î »ç¿ëÇÑ´Ù.
+  // ì‚°ì • ê¸°ì¤€ì¼: íšŒê³„ë…„ë„=ì˜¬í•´ 1ì›” 1ì¼, ì…ì‚¬ì¼=ì˜¤ëŠ˜ ë‚ ì§œ
+  // â€» ì…ì‚¬ì¼ ê¸°ì¤€ì€ "ì˜¤ëŠ˜ ê¸°ì¤€ ë§Œ ê·¼ì†ê¸°ê°„"ìœ¼ë¡œ ì—°ì°¨ë¥¼ ì‚°ì •í•œë‹¤.
+  //   ê³„ì•½ ì‹œì‘ì¼ì„ ê¸°ì¤€ìœ¼ë¡œ í•˜ë©´ hire_date == contract_startì¸ ê²½ìš° ë§Œ 0ê°œì›”ì´ ë˜ì–´
+  //   ì—°ì°¨ê°€ 0ìœ¼ë¡œ ì˜ëª» ê³„ì‚°ë˜ë¯€ë¡œ, í•­ìƒ ì˜¤ëŠ˜(new Date())ì„ ê¸°ì¤€ìœ¼ë¡œ ì‚¬ìš©í•œë‹¤.
   let baseDate;
   if((basisType === ANNUAL_LEAVE_BASIS.HIRE_DATE || basisType === ANNUAL_LEAVE_BASIS.HIRE_DATE)){
     baseDate = new Date();
   } else {
-    // È¸°è³âµµ ±âÁØ: ¿ÃÇØ 1¿ù 1ÀÏ
+    // íšŒê³„ë…„ë„ ê¸°ì¤€: ì˜¬í•´ 1ì›” 1ì¼
     baseDate = new Date(new Date().getFullYear(), 0, 1);
   }
   if(isNaN(baseDate) || baseDate < hire) baseDate = new Date();
 
-  // ¦¡¦¡ ¸¸ ±Ù¼Ó¿¬¼ö¡¤°³¿ù ¼ö¸¦ ´Ş·Â ±âÁØÀ¸·Î Á¤È®È÷ °è»ê ¦¡¦¡
-  // 365.25 ³ª´°¼À ´ë½Å ¿¬¡¤¿ù¡¤ÀÏÀ» °¢°¢ ºñ±³ÇØ À±³â ¿ÀÂ÷¸¦ Á¦°ÅÇÑ´Ù.
+  // â”€â”€ ë§Œ ê·¼ì†ì—°ìˆ˜Â·ê°œì›” ìˆ˜ë¥¼ ë‹¬ë ¥ ê¸°ì¤€ìœ¼ë¡œ ì •í™•íˆ ê³„ì‚° â”€â”€
+  // 365.25 ë‚˜ëˆ—ì…ˆ ëŒ€ì‹  ì—°Â·ì›”Â·ì¼ì„ ê°ê° ë¹„êµí•´ ìœ¤ë…„ ì˜¤ì°¨ë¥¼ ì œê±°í•œë‹¤.
   const bY = baseDate.getFullYear(), bM = baseDate.getMonth(), bD = baseDate.getDate();
   const hY = hire.getFullYear(),     hM = hire.getMonth(),     hD = hire.getDate();
 
-  // ¸¸ ±Ù¼Ó¿¬¼ö: ¿ÃÇØ anniversary °¡ baseDate ÀÌÀüÀÌ¸é +1³â, ¾Æ´Ï¸é ±×´ë·Î
+  // ë§Œ ê·¼ì†ì—°ìˆ˜: ì˜¬í•´ anniversary ê°€ baseDate ì´ì „ì´ë©´ +1ë…„, ì•„ë‹ˆë©´ ê·¸ëŒ€ë¡œ
   let fullYears = bY - hY;
-  if(bM < hM || (bM === hM && bD < hD)) fullYears--;  // ¾ÆÁ÷ anniversary ¹Ìµµ·¡
+  if(bM < hM || (bM === hM && bD < hD)) fullYears--;  // ì•„ì§ anniversary ë¯¸ë„ë˜
   if(fullYears < 0) fullYears = 0;
 
-  // ¸¸ ±Ù¼Ó°³¿ù: ÀÌ¹ø ´Ş ±âÁØÀÏÀÌ ÀÔ»çÀÏ ÀÏÀÚ ÀÌÀüÀÌ¸é -1°³¿ù
+  // ë§Œ ê·¼ì†ê°œì›”: ì´ë²ˆ ë‹¬ ê¸°ì¤€ì¼ì´ ì…ì‚¬ì¼ ì¼ì ì´ì „ì´ë©´ -1ê°œì›”
   let fullMonths = (bY - hY) * 12 + (bM - hM);
   if(bD < hD) fullMonths--;
   if(fullMonths < 0) fullMonths = 0;
 
-  // ¦¡¦¡ ¿¬Â÷ ±ÔÁ¤ (±Ù·Î±âÁØ¹ı Á¦60Á¶) ¦¡¦¡
-  // 1³â ¹Ì¸¸   : ¸Å¿ù °³±Ù 1ÀÏ (ÃÖ´ë 11ÀÏ)  ¡Ø È¸°è³âµµ ±âÁØ ½Ã ºñ·Ê¿¬Â÷ °ø½Ä Àû¿ë
-  // 1³â ¿Ï·á   : 15ÀÏ
-  // 2³â ÀÌ»ó   : 15ÀÏ + ¸Å 2³â ±Ù¼Ó¸¶´Ù 1ÀÏ °¡»ê (ÃÖ´ë 25ÀÏ)
-  //   ¡æ 3³â¿Ï·á=+1, 5³â¿Ï·á=+2, 7³â¿Ï·á=+3, ... floor((fullYears-1)/2)
+  // â”€â”€ ì—°ì°¨ ê·œì • (ê·¼ë¡œê¸°ì¤€ë²• ì œ60ì¡°) â”€â”€
+  // 1ë…„ ë¯¸ë§Œ   : ë§¤ì›” ê°œê·¼ 1ì¼ (ìµœëŒ€ 11ì¼)  â€» íšŒê³„ë…„ë„ ê¸°ì¤€ ì‹œ ë¹„ë¡€ì—°ì°¨ ê³µì‹ ì ìš©
+  // 1ë…„ ì™„ë£Œ   : 15ì¼
+  // 2ë…„ ì´ìƒ   : 15ì¼ + ë§¤ 2ë…„ ê·¼ì†ë§ˆë‹¤ 1ì¼ ê°€ì‚° (ìµœëŒ€ 25ì¼)
+  //   â†’ 3ë…„ì™„ë£Œ=+1, 5ë…„ì™„ë£Œ=+2, 7ë…„ì™„ë£Œ=+3, ... floor((fullYears-1)/2)
   if(fullYears === 0){
-    // È¸°è³âµµ ±âÁØ: ºñ·Ê¿¬Â÷ °ø½Ä ¡æ 15ÀÏ ¡¿ (Àü³âµµ ÀçÁ÷ °³¿ù ¼ö / 12), ¼Ò¼öÁ¡ ¿Ã¸²(Á¤¼ö)
+    // íšŒê³„ë…„ë„ ê¸°ì¤€: ë¹„ë¡€ì—°ì°¨ ê³µì‹ â†’ 15ì¼ Ã— (ì „ë…„ë„ ì¬ì§ ê°œì›” ìˆ˜ / 12), ì†Œìˆ˜ì  ì˜¬ë¦¼(ì •ìˆ˜)
     if((basisType !== ANNUAL_LEAVE_BASIS.HIRE_DATE && basisType !== ANNUAL_LEAVE_BASIS.HIRE_DATE)){
       return Math.ceil(15 * fullMonths / 12);
     }
-    // ÀÔ»çÀÏ ±âÁØ: Á¾Àü ¹æ½Ä (¸Å¿ù °³±Ù 1ÀÏ, ÃÖ´ë 11ÀÏ)
+    // ì…ì‚¬ì¼ ê¸°ì¤€: ì¢…ì „ ë°©ì‹ (ë§¤ì›” ê°œê·¼ 1ì¼, ìµœëŒ€ 11ì¼)
     return Math.min(fullMonths, 11);
   } else if(fullYears === 1){
     return 15;
@@ -160,9 +160,9 @@ function calcAnnualLeaveDays(hireDateStr, basisType, contractStartStr){
   }
 }
 
-// ÇöÀç ÆûÀÇ ÀÔ»çÀÏ¡¤°í°´»ç Á¤º¸¸¦ ÀĞ¾î ¿¬Â÷ÀÏ¼ö ÀÚµ¿ °è»ê ÈÄ ÇÊµå¿¡ ¹İ¿µ
+// í˜„ì¬ í¼ì˜ ì…ì‚¬ì¼Â·ê³ ê°ì‚¬ ì •ë³´ë¥¼ ì½ì–´ ì—°ì°¨ì¼ìˆ˜ ìë™ ê³„ì‚° í›„ í•„ë“œì— ë°˜ì˜
 
-/** »ç¿ø¹øÈ£ ÃßÃµ: ÇØ´ç È¸»ç ÃÖ´ë »ç¿ø¹øÈ£ + 1 (ÇØÁö/¸¸·á Æ÷ÇÔ) */
+/** ì‚¬ì›ë²ˆí˜¸ ì¶”ì²œ: í•´ë‹¹ íšŒì‚¬ ìµœëŒ€ ì‚¬ì›ë²ˆí˜¸ + 1 (í•´ì§€/ë§Œë£Œ í¬í•¨) */
 function _suggestEmpNo(coId){
   const input = document.getElementById('ct-em-empno');
   if(!input || !coId) return;
@@ -172,22 +172,22 @@ function _suggestEmpNo(coId){
     const num = parseInt(emp.employee_number);
     if (!isNaN(num) && num > max) max = num;
   }
-  input.placeholder = `ÃßÃµ: ${String(max + 1).padStart(4, '0')}`;
+  input.placeholder = `ì¶”ì²œ: ${String(max + 1).padStart(4, '0')}`;
 }
 
-/** °í°´»ç ¼±ÅÃ ½Ã ct-pay-period ¼¿·ºÆ®¿¡ ±âº»°ª ÀÚµ¿ ¼¼ÆÃ */
+/** ê³ ê°ì‚¬ ì„ íƒ ì‹œ ct-pay-period ì…€ë ‰íŠ¸ì— ê¸°ë³¸ê°’ ìë™ ì„¸íŒ… */
 function _autoFillCTPeriod(){
   const coId = document.getElementById('ct-company')?.value || currentContCompanyId;
   const co   = allCompanies.find(c => c.id === coId);
   const hint = document.getElementById('ct-pay-period-hint');
   if(hint && co?.pay_period){
     const _ppHint = (co.pay_period_month&&co.pay_period_day)
-      ? `${co.pay_period_month} ${co.pay_period_day}ÀÏºÎÅÍ 1°³¿ù°£`
+      ? `${co.pay_period_month} ${co.pay_period_day}ì¼ë¶€í„° 1ê°œì›”ê°„`
       : (co.pay_period.includes('~') ? co.pay_period : co.pay_period);
-    hint.textContent = `(°í°´»ç ±âº»°ª: ${_ppHint})`;
+    hint.textContent = `(ê³ ê°ì‚¬ ê¸°ë³¸ê°’: ${_ppHint})`;
     hint.style.display = 'inline';
   }
-  // ¼¿·ºÆ®°¡ ¹Ì¼±ÅÃ »óÅÂÀÌ°í °í°´»ç¿¡ pay_period_month/day °ªÀÌ ÀÖÀ¸¸é º¹¿ø
+  // ì…€ë ‰íŠ¸ê°€ ë¯¸ì„ íƒ ìƒíƒœì´ê³  ê³ ê°ì‚¬ì— pay_period_month/day ê°’ì´ ìˆìœ¼ë©´ ë³µì›
   const moEl = document.getElementById('ct-pay-period-month');
   const dayEl = document.getElementById('ct-pay-period-day');
   if(moEl && dayEl && !moEl.value && !dayEl.value && co){
@@ -197,7 +197,7 @@ function _autoFillCTPeriod(){
   }
 }
 
-/** ct-pay-period ¼¿·ºÆ® ¡æ hidden ÇÕ¼º°ª »ı¼º */
+/** ct-pay-period ì…€ë ‰íŠ¸ â†’ hidden í•©ì„±ê°’ ìƒì„± */
 function _ctPeriodCompose(){
   const mo  = document.getElementById('ct-pay-period-month')?.value || '';
   const day = document.getElementById('ct-pay-period-day')?.value   || '';
@@ -205,7 +205,7 @@ function _ctPeriodCompose(){
   const moHidden  = document.getElementById('ct-pay-period-month-hidden');
   const dayHidden = document.getElementById('ct-pay-period-day-hidden');
   if(mo && day){
-    if(hidden)    hidden.value    = `${mo} ${day}ÀÏºÎÅÍ 1°³¿ù°£`;
+    if(hidden)    hidden.value    = `${mo} ${day}ì¼ë¶€í„° 1ê°œì›”ê°„`;
     if(moHidden)  moHidden.value  = mo;
     if(dayHidden) dayHidden.value = day;
   } else {
@@ -215,27 +215,27 @@ function _ctPeriodCompose(){
   }
 }
 
-/** ÀúÀåµÈ pay_period °ª ¡æ ct-pay-period ¼¿·ºÆ®¿¡ º¹¿ø */
+/** ì €ì¥ëœ pay_period ê°’ â†’ ct-pay-period ì…€ë ‰íŠ¸ì— ë³µì› */
 function _ctPeriodRestore(payPeriod, month, day){
   const pmEl = document.getElementById('ct-pay-period-month');
   const pdEl = document.getElementById('ct-pay-period-day');
-  // ¿ù º¹¿ø
+  // ì›” ë³µì›
   let resolvedMonth = '';
   if(month){
     resolvedMonth = month;
   } else if(payPeriod){
     const s = payPeriod.replace(/\s/g,'');
-    const m = s.match(/^(Àü¿ù|´ç¿ù)(\d+)ÀÏ/);
+    const m = s.match(/^(ì „ì›”|ë‹¹ì›”)(\d+)ì¼/);
     if(m) resolvedMonth = m[1];
   }
   if(pmEl) pmEl.value = resolvedMonth;
-  // ÀÏ º¹¿ø
+  // ì¼ ë³µì›
   let resolvedDay = '';
   if(day !== undefined && day !== null && day !== ''){
     resolvedDay = String(day);
   } else if(payPeriod){
     const s = payPeriod.replace(/\s/g,'');
-    const m = s.match(/^(Àü¿ù|´ç¿ù)(\d+)ÀÏ/);
+    const m = s.match(/^(ì „ì›”|ë‹¹ì›”)(\d+)ì¼/);
     if(m) resolvedDay = m[2];
   }
   if(pdEl) pdEl.value = resolvedDay;
@@ -243,11 +243,11 @@ function _ctPeriodRestore(payPeriod, month, day){
 }
 
 function autoFillAnnualLeave(){
-  // ÀÔ»çÀÏÀº °è¾à Á¤º¸ ¼½¼Ç¿¡¼­ ÅëÇÕ °ü¸® (ct-edit-em-hire)
+  // ì…ì‚¬ì¼ì€ ê³„ì•½ ì •ë³´ ì„¹ì…˜ì—ì„œ í†µí•© ê´€ë¦¬ (ct-edit-em-hire)
   const hireDateStr = document.getElementById('ct-edit-em-hire')?.value || '';
-  if(!hireDateStr) return; // ÀÔ»çÀÏ ¾øÀ¸¸é °è»ê ¾È ÇÔ
+  if(!hireDateStr) return; // ì…ì‚¬ì¼ ì—†ìœ¼ë©´ ê³„ì‚° ì•ˆ í•¨
 
-  // °í°´»ç ID·Î annual_leave_basis Á¶È¸
+  // ê³ ê°ì‚¬ IDë¡œ annual_leave_basis ì¡°íšŒ
   const companyId = document.getElementById('ct-company')?.value || currentContCompanyId;
   const company   = allCompanies.find(c => c.id === companyId);
   const basis     = company?.annual_leave_basis || ANNUAL_LEAVE_BASIS.FISCAL_YEAR;
@@ -259,14 +259,14 @@ function autoFillAnnualLeave(){
   const annualEl = document.getElementById('ct-annual');
   if(annualEl) annualEl.value = days;
 
-  // °è»ê ±Ù°Å ÈùÆ® Ç¥½Ã
+  // ê³„ì‚° ê·¼ê±° íŒíŠ¸ í‘œì‹œ
   const hintEl = document.getElementById('ct-annual-hint');
   if(hintEl){
     const basisLabel = basis === ANNUAL_LEAVE_BASIS.HIRE_DATE ? ANNUAL_LEAVE_BASIS.HIRE_DATE : ANNUAL_LEAVE_BASIS.FISCAL_YEAR;
-    // 1³â ¹Ì¸¸ + È¸°è³âµµ ±âÁØÀÌ¸é ºñ·Ê¿¬Â÷ °ø½Ä ±Ù°Å Ç¥½Ã
-    let hintMsg = `(${basisLabel} ÀÚµ¿°è»ê: ${days}ÀÏ)`;
+    // 1ë…„ ë¯¸ë§Œ + íšŒê³„ë…„ë„ ê¸°ì¤€ì´ë©´ ë¹„ë¡€ì—°ì°¨ ê³µì‹ ê·¼ê±° í‘œì‹œ
+    let hintMsg = `(${basisLabel} ìë™ê³„ì‚°: ${days}ì¼)`;
     if(basis !== ANNUAL_LEAVE_BASIS.HIRE_DATE){
-      // ¸¸ ±Ù¼Ó°³¿ù ¼ö ¿ª»êÇÏ¿© ºñ·Ê¿¬Â÷ °ø½Ä Ç¥±â
+      // ë§Œ ê·¼ì†ê°œì›” ìˆ˜ ì—­ì‚°í•˜ì—¬ ë¹„ë¡€ì—°ì°¨ ê³µì‹ í‘œê¸°
       const _hire = new Date(hireDateStr);
       const _base = new Date(new Date().getFullYear(), 0, 1);
       const _safeBase = (_base < _hire) ? new Date() : _base;
@@ -276,17 +276,17 @@ function autoFillAnnualLeave(){
       let _fm = (_bY-_hY)*12 + (_bM-_hM); if(_bD<_hD) _fm--;
       if(_fy < 0) _fy = 0; if(_fm < 0) _fm = 0;
       if(_fy === 0){
-        hintMsg = `(${basisLabel} ÀÚµ¿°è»ê: ${days}ÀÏ ¡¤ ºñ·Ê¿¬Â÷ ?15¡¿${_fm}/12? ¿Ã¸²)`;
+        hintMsg = `(${basisLabel} ìë™ê³„ì‚°: ${days}ì¼ Â· ë¹„ë¡€ì—°ì°¨ âŒˆ15Ã—${_fm}/12âŒ‰ ì˜¬ë¦¼)`;
       }
     }
     hintEl.textContent = hintMsg;
     hintEl.style.display = 'inline';
   }
-  // ±â»ç¿ë ¿¬Â÷ÀÏ¼ö ÀÖÀ¸¸é ÀÜ¿©ÀÏ¼öµµ Ç¥½Ã
+  // ê¸°ì‚¬ìš© ì—°ì°¨ì¼ìˆ˜ ìˆìœ¼ë©´ ì”ì—¬ì¼ìˆ˜ë„ í‘œì‹œ
   _onCTPreUsedAnnualChange();
 }
 
-/** ±â»ç¿ë ¿¬Â÷ÀÏ¼ö º¯°æ ½Ã ÈùÆ®¿¡ ÀÜ¿©ÀÏ¼ö Ç¥½Ã */
+/** ê¸°ì‚¬ìš© ì—°ì°¨ì¼ìˆ˜ ë³€ê²½ ì‹œ íŒíŠ¸ì— ì”ì—¬ì¼ìˆ˜ í‘œì‹œ */
 function _onCTPreUsedAnnualChange(){
   const totalDays = parseFloat(document.getElementById('ct-annual')?.value) || 15;
   const preUsed   = parseFloat(document.getElementById('ct-pre-used-annual')?.value) || 0;
@@ -294,23 +294,23 @@ function _onCTPreUsedAnnualChange(){
   const remaining = Math.max(0, totalDays - preUsed);
   const hintEl = document.getElementById('ct-annual-hint');
   if(hintEl){
-    hintEl.textContent = (hintEl.textContent || '') + ` ¡¤ ±â»ç¿ë ${preUsed}ÀÏ ¡æ ÀÜ¿© ${remaining}ÀÏ`;
+    hintEl.textContent = (hintEl.textContent || '') + ` Â· ê¸°ì‚¬ìš© ${preUsed}ì¼ â†’ ì”ì—¬ ${remaining}ì¼`;
   }
 }
 
 function toggleAnnualSal(){
-  // ¼öÁ¤ ¸ğµå(editId.contract ÀÖÀ½)ÀÌ¸é ct-type ±âÁØ, ½Å±ÔÀÌ¸é ct-em-category ±âÁØ
+  // ìˆ˜ì • ëª¨ë“œ(editId.contract ìˆìŒ)ì´ë©´ ct-type ê¸°ì¤€, ì‹ ê·œì´ë©´ ct-em-category ê¸°ì¤€
   const rawCat = (editId.contract || _recontractEmpId)
     ? (document.getElementById('ct-type')?.value || '')
     : document.getElementById('ct-em-category').value;
   const cat = CONTRACT_TYPE_LEGACY_MAP[rawCat] || rawCat;
   const isRegularGroup = cat ===CONTRACT_TYPE.REGULAR || cat ===CONTRACT_TYPE.REGULAR_PROBATION;
-  const isRegularOnly  = cat ===CONTRACT_TYPE.REGULAR;                        // Á¤±ÔÁ÷(¼ö½À Á¦¿Ü)
-  const isRegularProb   = cat ===CONTRACT_TYPE.REGULAR_PROBATION;              // Á¤±ÔÁ÷ ¼ö½À
+  const isRegularOnly  = cat ===CONTRACT_TYPE.REGULAR;                        // ì •ê·œì§(ìˆ˜ìŠµ ì œì™¸)
+  const isRegularProb   = cat ===CONTRACT_TYPE.REGULAR_PROBATION;              // ì •ê·œì§ ìˆ˜ìŠµ
   const isFixedTerm    = cat ===CONTRACT_TYPE.FIXED || cat ===CONTRACT_TYPE.FIXED_PROBATION;
   const isDaily        = cat ===CONTRACT_TYPE.DAILY;
 
-  // ¦¡¦¡ »ó´Ü ¼½¼Ç Å¸ÀÌÆ²¡¤¶óº§ ¾÷µ¥ÀÌÆ® ¦¡¦¡
+  // â”€â”€ ìƒë‹¨ ì„¹ì…˜ íƒ€ì´í‹€Â·ë¼ë²¨ ì—…ë°ì´íŠ¸ â”€â”€
   const salaryPeriodTitle = document.getElementById('ct-salary-period-title');
   const labelAnnualSal    = document.getElementById('ct-label-annual-sal');
   const wageSectionTitle  = document.getElementById('ct-wage-section-title');
@@ -318,62 +318,62 @@ function toggleAnnualSal(){
   const dailyWageLabel    = document.querySelector('#ct-row-daily-wage label');
 
   if(isRegularOnly || isRegularProb){
-    if(salaryPeriodTitle) salaryPeriodTitle.textContent = '¿¬ºÀ';
-    if(labelAnnualSal)    labelAnnualSal.innerHTML    = '¿¬ºÀ <span style="font-size:11px;font-weight:400;color:#6b7280;">(ÀÚµ¿°è»ê)</span>';
-    if(wageSectionTitle)  wageSectionTitle.textContent = 'ÀÓ±İ Á¶°Ç (¿ù)';
-    if(labelMonthly)      labelMonthly.innerHTML      = '¿ù ¾àÁ¤ÀÓ±İ <span class="lbl-desc">(ÀÚµ¿°è»ê)</span>';
+    if(salaryPeriodTitle) salaryPeriodTitle.textContent = 'ì—°ë´‰';
+    if(labelAnnualSal)    labelAnnualSal.innerHTML    = 'ì—°ë´‰ <span style="font-size:11px;font-weight:400;color:#6b7280;">(ìë™ê³„ì‚°)</span>';
+    if(wageSectionTitle)  wageSectionTitle.textContent = 'ì„ê¸ˆ ì¡°ê±´ (ì›”)';
+    if(labelMonthly)      labelMonthly.innerHTML      = 'ì›” ì•½ì •ì„ê¸ˆ <span class="lbl-desc">(ìë™ê³„ì‚°)</span>';
   } else if(isFixedTerm){
-    if(salaryPeriodTitle) salaryPeriodTitle.innerHTML = '¿ù ¾àÁ¤±Ş¿© <span style="font-size:11px;font-weight:400;color:#6b7280;">(½Ã±Ş ±âÁØ ÀÚµ¿°è»ê)</span>';
-    if(labelAnnualSal)    labelAnnualSal.innerHTML    = '¿ù ¾àÁ¤±Ş¿© (Åë»ó¿ù±Ş) <span style="font-size:11px;font-weight:400;color:#6b7280;">(Á÷Á¢ ÀÔ·Â ½Ã)</span>';
-    if(wageSectionTitle)  wageSectionTitle.textContent = 'ÀÓ±İ Á¶°Ç (¿ù)';
-    if(labelMonthly)      labelMonthly.innerHTML      = '¿ù ¾àÁ¤ÀÓ±İ <span class="lbl-desc">(ÀÚµ¿°è»ê)</span>';
+    if(salaryPeriodTitle) salaryPeriodTitle.innerHTML = 'ì›” ì•½ì •ê¸‰ì—¬ <span style="font-size:11px;font-weight:400;color:#6b7280;">(ì‹œê¸‰ ê¸°ì¤€ ìë™ê³„ì‚°)</span>';
+    if(labelAnnualSal)    labelAnnualSal.innerHTML    = 'ì›” ì•½ì •ê¸‰ì—¬ (í†µìƒì›”ê¸‰) <span style="font-size:11px;font-weight:400;color:#6b7280;">(ì§ì ‘ ì…ë ¥ ì‹œ)</span>';
+    if(wageSectionTitle)  wageSectionTitle.textContent = 'ì„ê¸ˆ ì¡°ê±´ (ì›”)';
+    if(labelMonthly)      labelMonthly.innerHTML      = 'ì›” ì•½ì •ì„ê¸ˆ <span class="lbl-desc">(ìë™ê³„ì‚°)</span>';
   } else if(isDaily){
-    if(salaryPeriodTitle) salaryPeriodTitle.innerHTML = 'ÀÏ ¾àÁ¤ÀÏ±Ş <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span>';
-    if(wageSectionTitle)  wageSectionTitle.textContent = 'ÀÓ±İ Á¶°Ç (ÀÏÀÏ ±âÁØ)';
-    if(labelMonthly)      labelMonthly.innerHTML      = 'ÀÏ ¾àÁ¤ÀÓ±İ <span class="lbl-desc">(ÀÚµ¿°è»ê)</span>';
-    if(dailyWageLabel)    dailyWageLabel.innerHTML    = 'ÀÏ ¾àÁ¤ÀÏ±Ş (Åë»óÀÏ±Ş) <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span>';
+    if(salaryPeriodTitle) salaryPeriodTitle.innerHTML = 'ì¼ ì•½ì •ì¼ê¸‰ <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span>';
+    if(wageSectionTitle)  wageSectionTitle.textContent = 'ì„ê¸ˆ ì¡°ê±´ (ì¼ì¼ ê¸°ì¤€)';
+    if(labelMonthly)      labelMonthly.innerHTML      = 'ì¼ ì•½ì •ì„ê¸ˆ <span class="lbl-desc">(ìë™ê³„ì‚°)</span>';
+    if(dailyWageLabel)    dailyWageLabel.innerHTML    = 'ì¼ ì•½ì •ì¼ê¸‰ (í†µìƒì¼ê¸‰) <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span>';
   }
 
-  // ¦¡¦¡ (ÀÏ±Ş) suffix Åä±Û ¦¡¦¡
+  // â”€â”€ (ì¼ê¸‰) suffix í† ê¸€ â”€â”€
   document.querySelectorAll('#contract-modal .daily-suffix').forEach(el => {
     el.style.display = isDaily ? 'inline' : 'none';
   });
 
-  // ¦¡¦¡ ¿¬ºÀ/¿ù¾àÁ¤±Ş¿© ÀÔ·Â Çà Ç¥½Ã Á¦¾î ¦¡¦¡
+  // â”€â”€ ì—°ë´‰/ì›”ì•½ì •ê¸‰ì—¬ ì…ë ¥ í–‰ í‘œì‹œ ì œì–´ â”€â”€
   const rowSalPeriod = document.getElementById('ct-row-salary-period');
   const rowAnnualSal = document.getElementById('ct-row-annual-sal');
-  // Á¤±ÔÁ÷¡¤Á¤±ÔÁ÷ ¼ö½À¸¸ ¿¬ºÀ ÀÔ·Â Çà Ç¥½Ã (°è¾àÁ÷Àº ÀÓ±İÁ¶°Ç ¼½¼ÇÀÇ ¿ù ¾àÁ¤ÀÓ±İÀ¸·Î ´ëÃ¼)
+  // ì •ê·œì§Â·ì •ê·œì§ ìˆ˜ìŠµë§Œ ì—°ë´‰ ì…ë ¥ í–‰ í‘œì‹œ (ê³„ì•½ì§ì€ ì„ê¸ˆì¡°ê±´ ì„¹ì…˜ì˜ ì›” ì•½ì •ì„ê¸ˆìœ¼ë¡œ ëŒ€ì²´)
   const showAnnualRow = isRegularOnly || isRegularProb;
   if(rowSalPeriod) rowSalPeriod.style.display = showAnnualRow ? '' : 'none';
   if(rowAnnualSal) rowAnnualSal.style.display  = showAnnualRow ? '' : 'none';
 
-  // ¦¡¦¡ ¿ù ¾àÁ¤ÀÓ±İ Ç¥½Ã Çà ¦¡¦¡
+  // â”€â”€ ì›” ì•½ì •ì„ê¸ˆ í‘œì‹œ í–‰ â”€â”€
   const rowMonthly = document.getElementById('ct-row-monthly');
-  // °è¾àÁ÷: ÀÚµ¿°è»ê Ç¥½Ã / Á¤±ÔÁ÷: Ç¥½Ã / ÀÏ¿ëÁ÷: ¼û±è(ÀÏÀÏ ±âÁØÀÌ¹Ç·Î)
+  // ê³„ì•½ì§: ìë™ê³„ì‚° í‘œì‹œ / ì •ê·œì§: í‘œì‹œ / ì¼ìš©ì§: ìˆ¨ê¹€(ì¼ì¼ ê¸°ì¤€ì´ë¯€ë¡œ)
   if(rowMonthly) rowMonthly.style.display = isDaily ? 'none' : '';
 
-  // ÁÖ ±Ù¹«ÀÏ¼ö / ¿¬Â÷ÀÏ¼ö / ÁÖÈŞ¼ö´ç Çà
+  // ì£¼ ê·¼ë¬´ì¼ìˆ˜ / ì—°ì°¨ì¼ìˆ˜ / ì£¼íœ´ìˆ˜ë‹¹ í–‰
   const rowDays       = document.getElementById('ct-row-days');
   const rowAnnualLeave= document.getElementById('ct-row-annual');
   const rowBase       = document.getElementById('ct-row-base');
   const rowWeeklyHol  = document.getElementById('ct-row-weekly-hol');
   const rowDailyWage  = document.getElementById('ct-row-daily-wage');
   if(rowDays)       rowDays.style.display       = isDaily ? 'none' : '';
-  if(rowAnnualLeave) rowAnnualLeave.style.display= '';  // ¸ğµç °í¿ëÇüÅÂ Ç¥½Ã (ÀÏ¿ëÁ÷µµ ¿¬Â÷ ¹ß»ı °¡´É)
+  if(rowAnnualLeave) rowAnnualLeave.style.display= '';  // ëª¨ë“  ê³ ìš©í˜•íƒœ í‘œì‹œ (ì¼ìš©ì§ë„ ì—°ì°¨ ë°œìƒ ê°€ëŠ¥)
   const rowAnnualGuide= document.getElementById('ct-row-annual-guide');
-  if(rowAnnualGuide) rowAnnualGuide.style.display= '';   // ¸ğµç °í¿ëÇüÅÂ Ç¥½Ã
+  if(rowAnnualGuide) rowAnnualGuide.style.display= '';   // ëª¨ë“  ê³ ìš©í˜•íƒœ í‘œì‹œ
   const dailyNote = document.getElementById('ct-annual-daily-note');
-  if(dailyNote) dailyNote.style.display = isDaily ? '' : 'none';  // ÀÏ¿ëÁ÷ ¿¬Â÷ ¾È³»´Â ÀÏ¿ëÁ÷¸¸
-  if(rowWeeklyHol)  rowWeeklyHol.style.display  = '';  // ¸ğµç °í¿ëÇüÅÂ Ç¥½Ã (±Ù·Î±âÁØ¹ı Á¦55Á¶ ÁÖÈŞÀÏ Àû¿ë)
+  if(dailyNote) dailyNote.style.display = isDaily ? '' : 'none';  // ì¼ìš©ì§ ì—°ì°¨ ì•ˆë‚´ëŠ” ì¼ìš©ì§ë§Œ
+  if(rowWeeklyHol)  rowWeeklyHol.style.display  = '';  // ëª¨ë“  ê³ ìš©í˜•íƒœ í‘œì‹œ (ê·¼ë¡œê¸°ì¤€ë²• ì œ55ì¡° ì£¼íœ´ì¼ ì ìš©)
   if(rowDailyWage)  rowDailyWage.style.display  = isDaily ? '' : 'none';
 
-  // ±âº»±Ş Çà: Á¤±ÔÁ÷¡¤°è¾àÁ÷Àº ÀÚµ¿°è»ê(readonly ÆÄ¶õ»ö), ÀÏ¿ëÁ÷Àº ¼û±è
+  // ê¸°ë³¸ê¸‰ í–‰: ì •ê·œì§Â·ê³„ì•½ì§ì€ ìë™ê³„ì‚°(readonly íŒŒë€ìƒ‰), ì¼ìš©ì§ì€ ìˆ¨ê¹€
   if(rowBase) rowBase.style.display = isDaily ? 'none' : '';
   const ctBaseInput = document.getElementById('ct-base');
   const ctBaseAutoMark = document.getElementById('ct-base-auto-mark');
   if(ctBaseInput){
     if(isRegularGroup || isFixedTerm){
-      // Á¤±ÔÁ÷¡¤°è¾àÁ÷ ¸ğµÎ ±âº»±Ş ÀÚµ¿°è»ê
+      // ì •ê·œì§Â·ê³„ì•½ì§ ëª¨ë‘ ê¸°ë³¸ê¸‰ ìë™ê³„ì‚°
       ctBaseInput.readOnly = true;
       if(ctBaseAutoMark) ctBaseAutoMark.style.display = 'inline';
     } else {
@@ -385,23 +385,23 @@ function toggleAnnualSal(){
   if(!isRegularGroup && !isFixedTerm){
     const el = document.getElementById('ct-annual-sal');
     if(el) el.value = 0;
-    if(!isDaily) document.getElementById('ct-monthly-computed').textContent = '0¿ø';
+    if(!isDaily) document.getElementById('ct-monthly-computed').textContent = '0ì›';
   }
   if(isDaily){
     setAmountVal('ct-base', 0);
-    document.getElementById('ct-weekly-hol-computed').textContent = '0¿ø';
-    document.getElementById('ct-monthly-computed').textContent = '0¿ø';
+    document.getElementById('ct-weekly-hol-computed').textContent = '0ì›';
+    document.getElementById('ct-monthly-computed').textContent = '0ì›';
     document.getElementById('ct-days').value = 5;
     document.getElementById('ct-annual').value = 0;
-    // ÀÏ¿ëÁ÷: °íÁ¤ ¿¬Àå/¾ß°£/ÈŞÀÏ±Ù·Î¼ö´ç ¼û±è
+    // ì¼ìš©ì§: ê³ ì • ì—°ì¥/ì•¼ê°„/íœ´ì¼ê·¼ë¡œìˆ˜ë‹¹ ìˆ¨ê¹€
     ['ct-row-fixed-ot','ct-row-fixed-night','ct-row-fixed-hol'].forEach(id => {
       const el = document.getElementById(id); if(el) el.style.display = 'none';
     });
-    // ÀÏ¿ëÁ÷: ¸ğµç Åë»óÀÓ±İ ¹× °íÁ¤¼ö´ç Ç×¸ñ ¼û±è + °ª ÃÊ±âÈ­
+    // ì¼ìš©ì§: ëª¨ë“  í†µìƒì„ê¸ˆ ë° ê³ ì •ìˆ˜ë‹¹ í•­ëª© ìˆ¨ê¹€ + ê°’ ì´ˆê¸°í™”
     if(typeof _CT_OPT_ROWS !== 'undefined'){
       _CT_OPT_ROWS.forEach(({key, rowId}) => {
         const el = document.getElementById(rowId); if(el) el.style.display = 'none';
-        // °ª ÃÊ±âÈ­
+        // ê°’ ì´ˆê¸°í™”
         if(key === 'childcare'){
           setAmountVal('ct-childcare', 0);
           const depEl = document.getElementById('ct-childcare-dependents');
@@ -414,16 +414,16 @@ function toggleAnnualSal(){
     }
     const _customOrd = document.getElementById('ct-custom-ord-container');
     if(_customOrd) _customOrd.style.display = 'none';
-    // ÀÏ¿ëÁ÷: pay_type ÃÊ±âÈ­ (DOM Á¦°Å ¹æÁö: remove ¾øÀÌ °ª¸¸ ÃÊ±âÈ­)
+    // ì¼ìš©ì§: pay_type ì´ˆê¸°í™” (DOM ì œê±° ë°©ì§€: remove ì—†ì´ ê°’ë§Œ ì´ˆê¸°í™”)
     ['car','meal','research','communication','fitness','self_dev','book','overseas','childcare'].forEach(f => {
-      _ctPayTypes[f] = ''; // ³»ºÎ »óÅÂ¸¸ ÃÊ±âÈ­ (setCTPayType È£Ãâ ¾È ÇÔ ¡æ rowEl.remove() ¹æÁö)
+      _ctPayTypes[f] = ''; // ë‚´ë¶€ ìƒíƒœë§Œ ì´ˆê¸°í™” (setCTPayType í˜¸ì¶œ ì•ˆ í•¨ â†’ rowEl.remove() ë°©ì§€)
       const hintEl = document.getElementById('ct-'+f.replace(/_/g,'-')+'-type-hint');
       if(hintEl){ hintEl.textContent = ''; hintEl.className = 'ct-hint-muted'; }
     });
   } else {
     const dw = document.getElementById('ct-daily-wage');
     if(dw) dw.value = '';
-    // ÀÏ¿ëÁ÷ ¡æ Å¸ °í¿ëÇüÅÂ ÀüÈ¯ ½Ã: ¼û°ÜÁø allowance Çà º¹¿ø
+    // ì¼ìš©ì§ â†’ íƒ€ ê³ ìš©í˜•íƒœ ì „í™˜ ì‹œ: ìˆ¨ê²¨ì§„ allowance í–‰ ë³µì›
     if(typeof _CT_OPT_ROWS !== 'undefined' && typeof _ctAllowCfgVisible !== 'undefined'){
       _CT_OPT_ROWS.forEach(({key, rowId}) => {
         const el = document.getElementById(rowId);
@@ -435,7 +435,7 @@ function toggleAnnualSal(){
   }
   calcContractSalary();
 }
-// onSalaryStartChange Á¦°Å ? salary_start_date = contract_start ÅëÇÕÀ¸·Î ºÒÇÊ¿ä
+// onSalaryStartChange ì œê±° â€” salary_start_date = contract_start í†µí•©ìœ¼ë¡œ ë¶ˆí•„ìš”
 
 function toggleProbation(){
   const rawCat = document.getElementById('ct-em-category')?.value 
@@ -444,8 +444,8 @@ function toggleProbation(){
   const cat = CONTRACT_TYPE_LEGACY_MAP[rawCat] || rawCat;
   const isProbation = cat ===CONTRACT_TYPE.REGULAR_PROBATION || cat ===CONTRACT_TYPE.FIXED_PROBATION;
   const sec = document.getElementById('ct-probation-section');
-  const probRow = document.getElementById('ct-probation-row');  // ¼ö½À±â°£+Á¾·áÀÏ 2¿­ Çà
-  const probPeriodRow = document.getElementById('ct-row-probation-period'); // ¼ö½À±â°£ select
+  const probRow = document.getElementById('ct-probation-row');  // ìˆ˜ìŠµê¸°ê°„+ì¢…ë£Œì¼ 2ì—´ í–‰
+  const probPeriodRow = document.getElementById('ct-row-probation-period'); // ìˆ˜ìŠµê¸°ê°„ select
   const newPeriodRow = document.getElementById('ct-new-row-probation-period');
   const newEndRow = document.getElementById('ct-new-row-end');
   if(sec) sec.style.display = isProbation ? '' : 'none';
@@ -453,34 +453,34 @@ function toggleProbation(){
   if(probPeriodRow) probPeriodRow.style.display = isProbation ? '' : 'none';
   if(newPeriodRow) newPeriodRow.style.display = isProbation ? '' : 'none';
   if(newEndRow) newEndRow.style.display = isProbation ? '' : 'none';
-  // ¼ö½À Á¾·áÀÏ ¿­: probation ¿©ºÎ¿¡ µû¶ó Ç¥½Ã
+  // ìˆ˜ìŠµ ì¢…ë£Œì¼ ì—´: probation ì—¬ë¶€ì— ë”°ë¼ í‘œì‹œ
   const probEndCol = document.getElementById('ct-probation-end-col');
   if(probEndCol) probEndCol.style.display = isProbation ? '' : 'none';
   if(!isProbation){
-    // ¼ö½À±â°£ select ÃÊ±âÈ­ (È°¼º ¼½¼Ç ±âÁØ)
+    // ìˆ˜ìŠµê¸°ê°„ select ì´ˆê¸°í™” (í™œì„± ì„¹ì…˜ ê¸°ì¤€)
     const _probMonEl = document.getElementById('ct-probation-months') || document.getElementById('ct-new-probation-months');
     if(_probMonEl) _probMonEl.value = '';
     document.getElementById('ct-probation-pct').value = '';
     document.getElementById('ct-probation-amt').value = '';
-    // »êÁ¤±âÁØ ¶óµğ¿À ÃÊ±âÈ­
+    // ì‚°ì •ê¸°ì¤€ ë¼ë””ì˜¤ ì´ˆê¸°í™”
     const r = document.getElementById('ct-prob-basis-salary');
     if(r){ r.checked = true; onProbationBasisChange(); }
-    // ¼ö½À ¾Æ´Ñ °æ¿ì °æ°í »óÀÚ °­Á¦ ¼û±è
+    // ìˆ˜ìŠµ ì•„ë‹Œ ê²½ìš° ê²½ê³  ìƒì ê°•ì œ ìˆ¨ê¹€
     const wr = document.getElementById('ct-prob-minwage-warning-row');
     if(wr) wr.style.display = 'none';
-    // °è¾à Á¾·áÀÏ ÆíÁı °¡´É º¹¿ø
+    // ê³„ì•½ ì¢…ë£Œì¼ í¸ì§‘ ê°€ëŠ¥ ë³µì›
     _setProbationEndReadonly(false);
   } else {
-    onProbationBasisChange(); // Ç¥½ÃµÉ ¶§ UI µ¿±âÈ­
-    _checkProbMinWageWarning(); // °æ°í °»½Å
-    // °è¾àÁ÷ ¼ö½À: °è¾à Á¾·áÀÏÀÌ ÀÔ·ÂµÈ ÈÄ¿¡¸¸ ¼ö½À±â°£ È°¼ºÈ­ (Á¾·áÀÏ ÃÊ°ú ¹æÁö)
-    // ½ÃÀÛÀÏ¡¤Á¾·áÀÏ ¹ÌÀÔ·Â ½Ã ¼ö½À±â°£ ºñÈ°¼ºÈ­
+    onProbationBasisChange(); // í‘œì‹œë  ë•Œ UI ë™ê¸°í™”
+    _checkProbMinWageWarning(); // ê²½ê³  ê°±ì‹ 
+    // ê³„ì•½ì§ ìˆ˜ìŠµ: ê³„ì•½ ì¢…ë£Œì¼ì´ ì…ë ¥ëœ í›„ì—ë§Œ ìˆ˜ìŠµê¸°ê°„ í™œì„±í™” (ì¢…ë£Œì¼ ì´ˆê³¼ ë°©ì§€)
+    // ì‹œì‘ì¼Â·ì¢…ë£Œì¼ ë¯¸ì…ë ¥ ì‹œ ìˆ˜ìŠµê¸°ê°„ ë¹„í™œì„±í™”
     if(typeof _updateProbationPeriodState === 'function') _updateProbationPeriodState();
-    _autoCalcProbationEndDate(); // ¼ö½À±â°£ ÀÔ·Â°ªÀ¸·Î ÀÚµ¿ °è»ê
+    _autoCalcProbationEndDate(); // ìˆ˜ìŠµê¸°ê°„ ì…ë ¥ê°’ìœ¼ë¡œ ìë™ ê³„ì‚°
   }
 }
 
-// ¼ö½À °è¾à: °è¾à Á¾·áÀÏ ÇÊµå readonly Åä±Û + ÈùÆ®
+// ìˆ˜ìŠµ ê³„ì•½: ê³„ì•½ ì¢…ë£Œì¼ í•„ë“œ readonly í† ê¸€ + íŒíŠ¸
 function _setProbationEndReadonly(readonly){
   const endEl = document.getElementById('ct-end');
   if(endEl){
@@ -491,10 +491,10 @@ function _setProbationEndReadonly(readonly){
       endEl.classList.remove('ct-input-locked');
     }
   }
-  // ct-end-hint Á¦°ÅµÊ (½Å±Ô ·¹ÀÌ¾Æ¿ô)
+  // ct-end-hint ì œê±°ë¨ (ì‹ ê·œ ë ˆì´ì•„ì›ƒ)
 }
 
-// ¼ö½À±â°£ º¯°æ ½Ã °è¾à Á¾·áÀÏ ÀÚµ¿ °è»ê (½ÃÀÛÀÏ + ¼ö½À°³¿ù - 1ÀÏ)
+// ìˆ˜ìŠµê¸°ê°„ ë³€ê²½ ì‹œ ê³„ì•½ ì¢…ë£Œì¼ ìë™ ê³„ì‚° (ì‹œì‘ì¼ + ìˆ˜ìŠµê°œì›” - 1ì¼)
 function _autoCalcProbationEndDate(){
   const monthsEl = document.getElementById('ct-new-probation-months') || document.getElementById('ct-probation-months');
   const months = parseInt(monthsEl?.value) || 0;
@@ -504,10 +504,10 @@ function _autoCalcProbationEndDate(){
     if(probEndWrap) probEndWrap.style.display = 'none';
     return; 
   }
-  // ¼ö½À Á¾·áÀÏ wrap Ç¥½Ã
+  // ìˆ˜ìŠµ ì¢…ë£Œì¼ wrap í‘œì‹œ
   if(probEndWrap) probEndWrap.style.display = '';
 
-  // °è¾à ½ÃÀÛÀÏ: °ªÀÌ ½ÇÁ¦·Î ÀÖ´Â ÇÊµå¸¦ ¿ì¼± »ç¿ë
+  // ê³„ì•½ ì‹œì‘ì¼: ê°’ì´ ì‹¤ì œë¡œ ìˆëŠ” í•„ë“œë¥¼ ìš°ì„  ì‚¬ìš©
   const startElNew = document.getElementById('ct-em-start');
   const startElEdit = document.getElementById('ct-start');
   const startVal = (startElNew?.value) || (startElEdit?.value) || '';
@@ -518,11 +518,11 @@ function _autoCalcProbationEndDate(){
   startDate.setDate(startDate.getDate() - 1);
   const endStr = startDate.toISOString().slice(0,10);
 
-  // ¼ö½À Á¾·áÀÏ ÇÊµå¿¡ ÀÚµ¿ °è»ê°ª Ç¥½Ã (contract_end¿Í º°µµ)
+  // ìˆ˜ìŠµ ì¢…ë£Œì¼ í•„ë“œì— ìë™ ê³„ì‚°ê°’ í‘œì‹œ (contract_endì™€ ë³„ë„)
   const probEndEl = document.getElementById('ct-probation-end-date');
   if(probEndEl) probEndEl.value = endStr;
 
-  // ¦¡¦¡ °è¾àÁ÷ ¼ö½À: ¼ö½À Á¾·áÀÏÀÌ °è¾à Á¾·áÀÏÀ» ÃÊ°úÇÏ´ÂÁö °ËÁõ ¦¡¦¡
+  // â”€â”€ ê³„ì•½ì§ ìˆ˜ìŠµ: ìˆ˜ìŠµ ì¢…ë£Œì¼ì´ ê³„ì•½ ì¢…ë£Œì¼ì„ ì´ˆê³¼í•˜ëŠ”ì§€ ê²€ì¦ â”€â”€
   const rawCat = document.getElementById('ct-em-category')?.value
               || document.getElementById('ct-type')?.value
               || CONTRACT_TYPE.REGULAR;
@@ -531,7 +531,7 @@ function _autoCalcProbationEndDate(){
     const contractEndEl = document.getElementById('ct-end');
     const contractEnd = contractEndEl?.value;
     if(contractEnd && endStr > contractEnd){
-      // ¼ö½À Á¾·áÀÏÀÌ °è¾à Á¾·áÀÏÀ» ÃÊ°ú ¡æ °æ°í Ç¥½Ã + ¼ö½À±â°£ select Å×µÎ¸® °­Á¶
+      // ìˆ˜ìŠµ ì¢…ë£Œì¼ì´ ê³„ì•½ ì¢…ë£Œì¼ì„ ì´ˆê³¼ â†’ ê²½ê³  í‘œì‹œ + ìˆ˜ìŠµê¸°ê°„ select í…Œë‘ë¦¬ ê°•ì¡°
       if(monthsEl){
         monthsEl.style.borderColor = '#ef4444';
         monthsEl.style.boxShadow = '0 0 0 2px rgba(239,68,68,.2)';
@@ -541,11 +541,11 @@ function _autoCalcProbationEndDate(){
       if(infoBox) infoBox.style.background = '#fef2f2';
       if(infoBox) infoBox.style.border = '1px solid #fca5a5';
       if(infoBox) infoBox.style.color = '#991b1b';
-      if(infoText) infoText.innerHTML = '<i class="fas fa-exclamation-triangle" style="margin-right:4px;"></i>¼ö½À Á¾·áÀÏ(' + endStr + ')ÀÌ °è¾à Á¾·áÀÏ(' + contractEnd + ')º¸´Ù ´Ê½À´Ï´Ù. ¼ö½À±â°£À» ÁÙ¿©ÁÖ¼¼¿ä.';
-      // °è¾à Á¾·áÀÏÀº º¯°æ ¹æÁö (ÀĞ±âÀü¿ë)
+      if(infoText) infoText.innerHTML = '<i class="fas fa-exclamation-triangle" style="margin-right:4px;"></i>ìˆ˜ìŠµ ì¢…ë£Œì¼(' + endStr + ')ì´ ê³„ì•½ ì¢…ë£Œì¼(' + contractEnd + ')ë³´ë‹¤ ëŠ¦ìŠµë‹ˆë‹¤. ìˆ˜ìŠµê¸°ê°„ì„ ì¤„ì—¬ì£¼ì„¸ìš”.';
+      // ê³„ì•½ ì¢…ë£Œì¼ì€ ë³€ê²½ ë°©ì§€ (ì½ê¸°ì „ìš©)
       _setProbationEndReadonly(true);
     } else if(contractEnd){
-      // Á¤»ó: ¼ö½À Á¾·áÀÏ ¡Â °è¾à Á¾·áÀÏ ¡æ °è¾à Á¾·áÀÏ ÀĞ±âÀü¿ë Àá±İ
+      // ì •ìƒ: ìˆ˜ìŠµ ì¢…ë£Œì¼ â‰¤ ê³„ì•½ ì¢…ë£Œì¼ â†’ ê³„ì•½ ì¢…ë£Œì¼ ì½ê¸°ì „ìš© ì ê¸ˆ
       if(monthsEl){
         monthsEl.style.borderColor = '';
         monthsEl.style.boxShadow = '';
@@ -560,14 +560,14 @@ function _autoCalcProbationEndDate(){
   }
 }
 
-// ¦¡¦¡ »êÁ¤±âÁØ ¶óµğ¿À º¯°æ ÇÚµé·¯ ¦¡¦¡
+// â”€â”€ ì‚°ì •ê¸°ì¤€ ë¼ë””ì˜¤ ë³€ê²½ í•¸ë“¤ëŸ¬ â”€â”€
 function onProbationBasisChange(){
   const basis = document.querySelector('input[name="ct-probation-basis"]:checked')?.value || 'salary';
   const isMinwage = basis === 'minwage';
   const isDirect  = basis === 'direct';
   const isSalary  = basis === 'salary';
 
-  // ¦¡¦¡ ¶óµğ¿À ¶óº§ ½ºÅ¸ÀÏ (È°¼º=indigo Å×µÎ¸®/¹è°æ, ºñÈ°¼º=È¸»ö) ¦¡¦¡
+  // â”€â”€ ë¼ë””ì˜¤ ë¼ë²¨ ìŠ¤íƒ€ì¼ (í™œì„±=indigo í…Œë‘ë¦¬/ë°°ê²½, ë¹„í™œì„±=íšŒìƒ‰) â”€â”€
   const labelMap = {
     salary:  document.getElementById('ct-prob-basis-label-salary'),
     minwage: document.getElementById('ct-prob-basis-label-minwage'),
@@ -578,17 +578,17 @@ function onProbationBasisChange(){
     el.classList.toggle('active', key === basis);
   });
 
-  // ¦¡¦¡ % Çà: salary / minwageÀÏ ¶§¸¸ Ç¥½Ã, directÀÏ ¶§ ¼û±è ¦¡¦¡
+  // â”€â”€ % í–‰: salary / minwageì¼ ë•Œë§Œ í‘œì‹œ, directì¼ ë•Œ ìˆ¨ê¹€ â”€â”€
   const pctRow = document.getElementById('ct-prob-pct-row');
   if(pctRow) pctRow.style.display = isDirect ? 'none' : '';
 
-  // ¦¡¦¡ % ·¹ÀÌºí ¾÷µ¥ÀÌÆ® ¦¡¦¡
+  // â”€â”€ % ë ˆì´ë¸” ì—…ë°ì´íŠ¸ â”€â”€
   const pctLabel = document.getElementById('ct-prob-pct-label');
-  if(pctLabel) pctLabel.innerHTML = (isMinwage ? '¼ö½À ÀÓ±İ (ÃÖÀúÀÓ±İÀÇ %)' : '¼ö½À ÀÓ±İ (¾àÁ¤ º¸¼öÀÇ %)') + ' <span style="color:#ef4444;font-weight:900;">*</span>';
+  if(pctLabel) pctLabel.innerHTML = (isMinwage ? 'ìˆ˜ìŠµ ì„ê¸ˆ (ìµœì €ì„ê¸ˆì˜ %)' : 'ìˆ˜ìŠµ ì„ê¸ˆ (ì•½ì • ë³´ìˆ˜ì˜ %)') + ' <span style="color:#ef4444;font-weight:900;">*</span>';
 
-  // ¦¡¦¡ ±İ¾× ÀÔ·Â ÇÊµå ÀĞ±âÀü¿ë ¿©ºÎ ¦¡¦¡
-  // salary/minwage: % ¿¬µ¿À¸·Î ÀÚµ¿°è»ê ¡æ readonly
-  // direct: »ç¿ëÀÚ°¡ Á÷Á¢ ÀÔ·Â ¡æ ÆíÁı °¡´É
+  // â”€â”€ ê¸ˆì•¡ ì…ë ¥ í•„ë“œ ì½ê¸°ì „ìš© ì—¬ë¶€ â”€â”€
+  // salary/minwage: % ì—°ë™ìœ¼ë¡œ ìë™ê³„ì‚° â†’ readonly
+  // direct: ì‚¬ìš©ìê°€ ì§ì ‘ ì…ë ¥ â†’ í¸ì§‘ ê°€ëŠ¥
   const amtEl = document.getElementById('ct-probation-amt');
   const amtLabel = document.getElementById('ct-prob-amt-label');
   if(amtEl){
@@ -599,7 +599,7 @@ function onProbationBasisChange(){
       amtEl.style.cursor = '';
       amtEl.style.fontWeight = '';
       amtEl.classList.add('ct-amount-active');
-      amtEl.placeholder = '¼ö½À ¿ù º¸¼ö¸¦ Á÷Á¢ ÀÔ·Â';
+      amtEl.placeholder = 'ìˆ˜ìŠµ ì›” ë³´ìˆ˜ë¥¼ ì§ì ‘ ì…ë ¥';
     } else {
       amtEl.setAttribute('readonly', 'readonly');
       amtEl.style.background = '#f9fafb';
@@ -610,62 +610,62 @@ function onProbationBasisChange(){
       amtEl.placeholder = '0';
     }
   }
-  if(amtLabel) amtLabel.innerHTML = (isDirect ? '¼ö½À ÀÓ±İ (¿ù ±İ¾×, Á÷Á¢ ÀÔ·Â) <span class="lbl-req">*</span>' : '¼ö½À ÀÓ±İ (¿ù ±İ¾×) <span class="lbl-desc">(ÀÚµ¿ °è»ê)</span>');
+  if(amtLabel) amtLabel.innerHTML = (isDirect ? 'ìˆ˜ìŠµ ì„ê¸ˆ (ì›” ê¸ˆì•¡, ì§ì ‘ ì…ë ¥) <span class="lbl-req">*</span>' : 'ìˆ˜ìŠµ ì„ê¸ˆ (ì›” ê¸ˆì•¡) <span class="lbl-desc">(ìë™ ê³„ì‚°)</span>');
 
-  // ¦¡¦¡ ¾È³»¹® ¾÷µ¥ÀÌÆ® ¦¡¦¡
+  // â”€â”€ ì•ˆë‚´ë¬¸ ì—…ë°ì´íŠ¸ â”€â”€
   const infoText = document.getElementById('ct-prob-info-text');
   if(infoText){
     if(isDirect){
-      infoText.innerHTML = '¼ö½À ±â°£ Áß Áö±ŞÇÒ ¿ù º¸¼ö¸¦ Á÷Á¢ ÀÔ·ÂÇÕ´Ï´Ù. ÃÖÀúÀÓ±İ ¹Ì´Ş ¿©ºÎ´Â ÀúÀå ½Ã ÀÚµ¿ °ËÁõµË´Ï´Ù.';
+      infoText.innerHTML = 'ìˆ˜ìŠµ ê¸°ê°„ ì¤‘ ì§€ê¸‰í•  ì›” ë³´ìˆ˜ë¥¼ ì§ì ‘ ì…ë ¥í•©ë‹ˆë‹¤. ìµœì €ì„ê¸ˆ ë¯¸ë‹¬ ì—¬ë¶€ëŠ” ì €ì¥ ì‹œ ìë™ ê²€ì¦ë©ë‹ˆë‹¤.';
     } else if(isMinwage){
       const hireRaw = document.getElementById('ct-em-hire')?.value
         || document.getElementById('ct-start')?.value || '';
       const yr = hireRaw ? parseInt(hireRaw.slice(0,4)) : new Date().getFullYear();
-      // ÃÖÀúÀÓ±İ: ÇØ´ç ¿¬µµ µ¥ÀÌÅÍ°¡ ¾øÀ¸¸é ÃÖ½Å ¿¬µµ µ¥ÀÌÅÍ·Î Æú¹é
+      // ìµœì €ì„ê¸ˆ: í•´ë‹¹ ì—°ë„ ë°ì´í„°ê°€ ì—†ìœ¼ë©´ ìµœì‹  ì—°ë„ ë°ì´í„°ë¡œ í´ë°±
       const mw = (_allMinimumWages||[]).find(w => Number(w.year) === yr)
         || (_allMinimumWages||[]).sort((a,b)=>b.year-a.year)[0];
       const mwAmt = mw ? Number(mw.hourly_wage) : 0;
       const mwMonthly = mwAmt > 0 ? Math.round(mwAmt * 209) : 0;
-      infoText.innerHTML = `${yr}³â ÃÖÀú½Ã±Ş ±âÁØÀ¸·Î °è»êµË´Ï´Ù.`
+      infoText.innerHTML = `${yr}ë…„ ìµœì €ì‹œê¸‰ ê¸°ì¤€ìœ¼ë¡œ ê³„ì‚°ë©ë‹ˆë‹¤.`
         + (mwAmt > 0
-          ? ` <strong>${yr}³â ÃÖÀú½Ã±Ş: ${mwAmt.toLocaleString('ko-KR')}¿ø ¡æ ¿ù È¯»ê: ${mwMonthly.toLocaleString('ko-KR')}¿ø</strong>`
-          : ' <span style="color:#ef4444;">(ÃÖÀúÀÓ±İ µ¥ÀÌÅÍ¸¦ ¸ÕÀú µî·ÏÇØÁÖ¼¼¿ä)</span>');
+          ? ` <strong>${yr}ë…„ ìµœì €ì‹œê¸‰: ${mwAmt.toLocaleString('ko-KR')}ì› â†’ ì›” í™˜ì‚°: ${mwMonthly.toLocaleString('ko-KR')}ì›</strong>`
+          : ' <span style="color:#ef4444;">(ìµœì €ì„ê¸ˆ ë°ì´í„°ë¥¼ ë¨¼ì € ë“±ë¡í•´ì£¼ì„¸ìš”)</span>');
     } else {
-      infoText.textContent = '¿ù ¾àÁ¤ÀÓ±İ ±âÁØÀ¸·Î °è»êµË´Ï´Ù. %¸¦ ÀÔ·ÂÇÏ¸é ±İ¾×ÀÌ, ±İ¾×À» ÀÔ·ÂÇÏ¸é %°¡ ÀÚµ¿ °è»êµË´Ï´Ù.';
+      infoText.textContent = 'ì›” ì•½ì •ì„ê¸ˆ ê¸°ì¤€ìœ¼ë¡œ ê³„ì‚°ë©ë‹ˆë‹¤. %ë¥¼ ì…ë ¥í•˜ë©´ ê¸ˆì•¡ì´, ê¸ˆì•¡ì„ ì…ë ¥í•˜ë©´ %ê°€ ìë™ ê³„ì‚°ë©ë‹ˆë‹¤.';
     }
   }
 
-  // ¦¡¦¡ ±âÁØ º¯°æ ½Ã ±İ¾× Àç°è»ê (direct´Â ½ºÅµ) ¦¡¦¡
+  // â”€â”€ ê¸°ì¤€ ë³€ê²½ ì‹œ ê¸ˆì•¡ ì¬ê³„ì‚° (directëŠ” ìŠ¤í‚µ) â”€â”€
   if(!isDirect){
     const pct = parseFloat(document.getElementById('ct-probation-pct').value);
     if(!isNaN(pct) && pct > 0) calcProbationFromPct();
   }
-  // ¦¡¦¡ ±âÁØ º¯°æ ½Ã ÃÖÀúÀÓ±İ °æ°í °»½Å ¦¡¦¡
+  // â”€â”€ ê¸°ì¤€ ë³€ê²½ ì‹œ ìµœì €ì„ê¸ˆ ê²½ê³  ê°±ì‹  â”€â”€
   _checkProbMinWageWarning();
 }
 
 function getProbationBase(){
   const basis = document.querySelector('input[name="ct-probation-basis"]:checked')?.value || 'salary';
   if(basis === 'minwage'){
-    // ÃÖÀúÀÓ±İ ±âÁØ: °è¾à½ÃÀÛ¿¬µµ ÃÖÀú½Ã±Ş ¡¿ 209½Ã°£ = ¿ù È¯»ê ÃÖÀúÀÓ±İ
-    // ½Å±Ô ¸ğµå: ct-em-start ¿ì¼± / ¼öÁ¤¡¤Àç°è¾à ¸ğµå: ct-start
+    // ìµœì €ì„ê¸ˆ ê¸°ì¤€: ê³„ì•½ì‹œì‘ì—°ë„ ìµœì €ì‹œê¸‰ Ã— 209ì‹œê°„ = ì›” í™˜ì‚° ìµœì €ì„ê¸ˆ
+    // ì‹ ê·œ ëª¨ë“œ: ct-em-start ìš°ì„  / ìˆ˜ì •Â·ì¬ê³„ì•½ ëª¨ë“œ: ct-start
     const hireRaw = document.getElementById('ct-em-start')?.value
       || document.getElementById('ct-em-hire')?.value
       || document.getElementById('ct-start')?.value || '';
     const yr = hireRaw ? parseInt(hireRaw.slice(0,4)) : new Date().getFullYear();
-    // ÃÖÀúÀÓ±İ: ÇØ´ç ¿¬µµ µ¥ÀÌÅÍ°¡ ¾øÀ¸¸é ÃÖ½Å ¿¬µµ µ¥ÀÌÅÍ·Î Æú¹é
+    // ìµœì €ì„ê¸ˆ: í•´ë‹¹ ì—°ë„ ë°ì´í„°ê°€ ì—†ìœ¼ë©´ ìµœì‹  ì—°ë„ ë°ì´í„°ë¡œ í´ë°±
     const mw = (_allMinimumWages||[]).find(w => Number(w.year) === yr)
       || (_allMinimumWages||[]).sort((a,b)=>b.year-a.year)[0];
     return mw ? Math.round(Number(mw.hourly_wage) * 209) : 0;
   }
-  // º¸¼ö ´ëºñ: ¿ù ¾àÁ¤ÀÓ±İ(Á¤±ÔÁ÷) ¶Ç´Â ±âº»±Ş(°è¾àÁ÷)
+  // ë³´ìˆ˜ ëŒ€ë¹„: ì›” ì•½ì •ì„ê¸ˆ(ì •ê·œì§) ë˜ëŠ” ê¸°ë³¸ê¸‰(ê³„ì•½ì§)
   const monthly = parseFloat(document.getElementById('ct-monthly-computed')?.textContent?.replace(/[^\d]/g,'')||0)||0;
   const base = getAmountVal('ct-base');
   return monthly > 0 ? monthly : base;
 }
 function calcProbationFromPct(){
   const basis = document.querySelector('input[name="ct-probation-basis"]:checked')?.value || 'salary';
-  if(basis === 'direct') return; // Á÷Á¢ ÀÔ·Â ¸ğµå: % ¿¬µ¿ ½ºÅµ
+  if(basis === 'direct') return; // ì§ì ‘ ì…ë ¥ ëª¨ë“œ: % ì—°ë™ ìŠ¤í‚µ
   const pct = parseFloat(document.getElementById('ct-probation-pct').value);
   const ref = getProbationBase();
   if(!isNaN(pct) && ref > 0){
@@ -676,24 +676,24 @@ function calcProbationFromPct(){
 function calcProbationFromAmt(){
   const basis = document.querySelector('input[name="ct-probation-basis"]:checked')?.value || 'salary';
   if(basis !== 'direct'){
-    // salary/minwage ¸ğµå: % ¿ª»ê
+    // salary/minwage ëª¨ë“œ: % ì—­ì‚°
     const amt = parseFloat(document.getElementById('ct-probation-amt').value);
     const ref = getProbationBase();
     if(!isNaN(amt) && ref > 0){
       document.getElementById('ct-probation-pct').value = (amt / ref * 100).toFixed(1);
     }
   }
-  // direct ¸ğµå Æ÷ÇÔ Ç×»ó °æ°í Ã¼Å©
+  // direct ëª¨ë“œ í¬í•¨ í•­ìƒ ê²½ê³  ì²´í¬
   _checkProbMinWageWarning();
 }
 
-// ¦¡¦¡ ¼ö½À ÀÓ±İ ÃÖÀúÀÓ±İ ÁØ¼ö ¿©ºÎ °æ°í ¦¡¦¡
-// [Á¤±ÔÁ÷ ¼ö½À]
-//   ¡¤ minwage(ÃÖÀúÀÓ±İ ´ëºñ ¿äÀ²): ÀÔ·Â % < 90  ¡æ ¹ı À§¹İ °æ°í
-//   ¡¤ direct(Á÷Á¢ ÀÔ·Â):           ÀÔ·Â ±İ¾× < ÃÖÀúÀÓ±İ ¿ùÈ¯»ê¡¿90%  ¡æ ¹ı À§¹İ °æ°í
-// [°è¾àÁ÷ ¼ö½À]
-//   ¡¤ direct(Á÷Á¢ ÀÔ·Â):           ÀÔ·Â ±İ¾× < ÃÖÀúÀÓ±İ ¿ùÈ¯»ê¡¿100% ¡æ ¹ı À§¹İ °æ°í
-//   (°è¾àÁ÷ ¼ö½ÀÀº 1³â ¹Ì¸¸ ±â°£Á¦ ¡æ ÃÖÀúÀÓ±İ¹ı Á¦5Á¶Á¦2Ç× °¨¾× ºÒ°¡, 100% ÀÌ»ó ù±)
+// â”€â”€ ìˆ˜ìŠµ ì„ê¸ˆ ìµœì €ì„ê¸ˆ ì¤€ìˆ˜ ì—¬ë¶€ ê²½ê³  â”€â”€
+// [ì •ê·œì§ ìˆ˜ìŠµ]
+//   Â· minwage(ìµœì €ì„ê¸ˆ ëŒ€ë¹„ ìš”ìœ¨): ì…ë ¥ % < 90  â†’ ë²• ìœ„ë°˜ ê²½ê³ 
+//   Â· direct(ì§ì ‘ ì…ë ¥):           ì…ë ¥ ê¸ˆì•¡ < ìµœì €ì„ê¸ˆ ì›”í™˜ì‚°Ã—90%  â†’ ë²• ìœ„ë°˜ ê²½ê³ 
+// [ê³„ì•½ì§ ìˆ˜ìŠµ]
+//   Â· direct(ì§ì ‘ ì…ë ¥):           ì…ë ¥ ê¸ˆì•¡ < ìµœì €ì„ê¸ˆ ì›”í™˜ì‚°Ã—100% â†’ ë²• ìœ„ë°˜ ê²½ê³ 
+//   (ê³„ì•½ì§ ìˆ˜ìŠµì€ 1ë…„ ë¯¸ë§Œ ê¸°ê°„ì œ â†’ ìµœì €ì„ê¸ˆë²• ì œ5ì¡°ì œ2í•­ ê°ì•¡ ë¶ˆê°€, 100% ì´ìƒ å¿…)
 function _checkProbMinWageWarning(){
   const warningRow = document.getElementById('ct-prob-minwage-warning-row');
   const warningBox = document.getElementById('ct-prob-minwage-warning-box');
@@ -705,7 +705,7 @@ function _checkProbMinWageWarning(){
   const isRegular  = emCat ===CONTRACT_TYPE.REGULAR_PROBATION;
   const isContract = emCat ===CONTRACT_TYPE.FIXED_PROBATION;
 
-  // °ËÁõ ´ë»ó Á¶ÇÕ: Á¤±ÔÁ÷¼ö½À+(minwage/direct/salary) / °è¾àÁ÷¼ö½À+(direct/salary)
+  // ê²€ì¦ ëŒ€ìƒ ì¡°í•©: ì •ê·œì§ìˆ˜ìŠµ+(minwage/direct/salary) / ê³„ì•½ì§ìˆ˜ìŠµ+(direct/salary)
   const needCheck = (isRegular  && (basis === 'minwage' || basis === 'direct' || basis === 'salary'))
                  || (isContract && (basis === 'direct'  || basis === 'salary'));
   if(!needCheck){
@@ -713,8 +713,8 @@ function _checkProbMinWageWarning(){
     return;
   }
 
-  // ¦¡¦¡ ÃÖÀúÀÓ±İ ¿ùÈ¯»ê Á¶È¸ (°è¾à ½ÃÀÛ¿¬µµ ±âÁØ) ¦¡¦¡
-  // ½Å±Ô ¸ğµå: ct-em-start(°è¾à½ÃÀÛÀÏ) ¿ì¼± / ¼öÁ¤¡¤Àç°è¾à ¸ğµå: ct-start
+  // â”€â”€ ìµœì €ì„ê¸ˆ ì›”í™˜ì‚° ì¡°íšŒ (ê³„ì•½ ì‹œì‘ì—°ë„ ê¸°ì¤€) â”€â”€
+  // ì‹ ê·œ ëª¨ë“œ: ct-em-start(ê³„ì•½ì‹œì‘ì¼) ìš°ì„  / ìˆ˜ì •Â·ì¬ê³„ì•½ ëª¨ë“œ: ct-start
   const hireRaw = document.getElementById('ct-em-start')?.value
     || document.getElementById('ct-em-hire')?.value
     || document.getElementById('ct-start')?.value || '';
@@ -723,92 +723,92 @@ function _checkProbMinWageWarning(){
   const mwMonthly = mw ? Math.round(Number(mw.hourly_wage) * 209) : 0;
 
   if(mwMonthly <= 0){
-    // ÃÖÀúÀÓ±İ µ¥ÀÌÅÍ ¾øÀ¸¸é °æ°í ºÒ°¡ ¡æ ¼û±è
+    // ìµœì €ì„ê¸ˆ ë°ì´í„° ì—†ìœ¼ë©´ ê²½ê³  ë¶ˆê°€ â†’ ìˆ¨ê¹€
     warningRow.style.display = 'none';
     return;
   }
 
-  // ¦¡¦¡ ÀÔ·Â°ª ¡æ ½ÇÁ¦ ¿ù ±İ¾× È¯»ê ¦¡¦¡
-  let actualAmt = 0; // ¼ö½À ÀÓ±İ ¿ù ±İ¾×
+  // â”€â”€ ì…ë ¥ê°’ â†’ ì‹¤ì œ ì›” ê¸ˆì•¡ í™˜ì‚° â”€â”€
+  let actualAmt = 0; // ìˆ˜ìŠµ ì„ê¸ˆ ì›” ê¸ˆì•¡
   if(basis === 'minwage'){
-    // ÃÖÀúÀÓ±İ ´ëºñ % ¡æ ±İ¾× È¯»ê
+    // ìµœì €ì„ê¸ˆ ëŒ€ë¹„ % â†’ ê¸ˆì•¡ í™˜ì‚°
     const pct = parseFloat(document.getElementById('ct-probation-pct')?.value);
     if(isNaN(pct) || pct <= 0){ warningRow.style.display = 'none'; return; }
     actualAmt = Math.round(mwMonthly * pct / 100);
   } else if(basis === 'salary'){
-    // ¾àÁ¤ º¸¼ö ´ëºñ % ¡æ calcProbationFromPct()°¡ ÀÌ¹Ì ct-probation-amt¿¡ ±İ¾× °è»êÇØ µÒ
+    // ì•½ì • ë³´ìˆ˜ ëŒ€ë¹„ % â†’ calcProbationFromPct()ê°€ ì´ë¯¸ ct-probation-amtì— ê¸ˆì•¡ ê³„ì‚°í•´ ë‘ 
     const amt = parseFloat(document.getElementById('ct-probation-amt')?.value);
     if(isNaN(amt) || amt <= 0){ warningRow.style.display = 'none'; return; }
     actualAmt = amt;
-  } else { // direct ? Á÷Á¢ ÀÔ·Â ±İ¾×
+  } else { // direct â€” ì§ì ‘ ì…ë ¥ ê¸ˆì•¡
     const amt = parseFloat(document.getElementById('ct-probation-amt')?.value);
     if(isNaN(amt) || amt <= 0){ warningRow.style.display = 'none'; return; }
     actualAmt = amt;
   }
 
-  // ¦¡¦¡ ±âÁØ ÇÏÇÑ ¹× °æ°í ¹®±¸ °áÁ¤ ¦¡¦¡
-  const limit90  = Math.floor(mwMonthly * 0.9);   // ÃÖÀúÀÓ±İ 90%
-  const limit100 = mwMonthly;                      // ÃÖÀúÀÓ±İ 100%
-  const pctActual = (actualAmt / mwMonthly * 100).toFixed(1); // ½ÇÁ¦ ºñÀ²
+  // â”€â”€ ê¸°ì¤€ í•˜í•œ ë° ê²½ê³  ë¬¸êµ¬ ê²°ì • â”€â”€
+  const limit90  = Math.floor(mwMonthly * 0.9);   // ìµœì €ì„ê¸ˆ 90%
+  const limit100 = mwMonthly;                      // ìµœì €ì„ê¸ˆ 100%
+  const pctActual = (actualAmt / mwMonthly * 100).toFixed(1); // ì‹¤ì œ ë¹„ìœ¨
   const fmt = v => Math.round(v).toLocaleString('ko-KR');
 
   if(isRegular && actualAmt < limit90){
-    // Á¤±ÔÁ÷ ¼ö½À ? 90% ¹Ì¸¸: ¹ı À§¹İ
+    // ì •ê·œì§ ìˆ˜ìŠµ â€” 90% ë¯¸ë§Œ: ë²• ìœ„ë°˜
     warningBox.style.cssText = 'border-radius:7px;padding:9px 12px;font-size:11.5px;line-height:1.7;background:#fef2f2;border:1.5px solid #fca5a5;color:#991b1b;';
     warningBox.innerHTML =
       '<div style="font-weight:700;margin-bottom:4px;">'
       + '<i class="fas fa-times-circle" style="margin-right:5px;color:#dc2626;"></i>'
-      + '?? ÃÖÀúÀÓ±İ ¹ı À§¹İ ? ¼ö½À ÀÓ±İ(' + fmt(actualAmt) + '¿ø)ÀÌ ÃÖÀúÀÓ±İÀÇ 90% ¹Ì¸¸ÀÔ´Ï´Ù'
+      + 'âš ï¸ ìµœì €ì„ê¸ˆ ë²• ìœ„ë°˜ â€” ìˆ˜ìŠµ ì„ê¸ˆ(' + fmt(actualAmt) + 'ì›)ì´ ìµœì €ì„ê¸ˆì˜ 90% ë¯¸ë§Œì…ë‹ˆë‹¤'
       + '</div>'
       + '<div style="margin-bottom:3px;">'
-      + 'Á¤±ÔÁ÷ ¼ö½À ±Ù·ÎÀÚÀÇ ÀÓ±İÀº <strong>ÃÖÀúÀÓ±İÀÇ 90% ÀÌ»ó</strong>ÀÌ¾î¾ß ÇÕ´Ï´Ù.'
-      + ' (' + yr + '³â ÃÖÀúÀÓ±İ ¿ùÈ¯»ê ' + fmt(mwMonthly) + '¿øÀÇ 90% = <strong>' + fmt(limit90) + '¿ø</strong> ÀÌ»ó)'
+      + 'ì •ê·œì§ ìˆ˜ìŠµ ê·¼ë¡œìì˜ ì„ê¸ˆì€ <strong>ìµœì €ì„ê¸ˆì˜ 90% ì´ìƒ</strong>ì´ì–´ì•¼ í•©ë‹ˆë‹¤.'
+      + ' (' + yr + 'ë…„ ìµœì €ì„ê¸ˆ ì›”í™˜ì‚° ' + fmt(mwMonthly) + 'ì›ì˜ 90% = <strong>' + fmt(limit90) + 'ì›</strong> ì´ìƒ)'
       + '</div>'
       + '<div style="font-size:11px;color:#b91c1c;margin-bottom:3px;">'
-      + '?? <strong>ÃÖÀúÀÓ±İ¹ı Á¦5Á¶ Á¦2Ç×</strong>: ¼ö½ÀÀ» ½ÃÀÛÇÑ ³¯ºÎÅÍ 3°³¿ù ÀÌ³»ÀÎ ÀÚ¿¡ ´ëÇÏ¿©´Â '
-      + 'ÃÖÀúÀÓ±İ¾×ÀÇ 100ºĞÀÇ 10À» °¨ÇÑ ±İ¾×À» ÃÖÀúÀÓ±İ¾×À¸·Î ÇÑ´Ù.'
+      + 'ğŸ“– <strong>ìµœì €ì„ê¸ˆë²• ì œ5ì¡° ì œ2í•­</strong>: ìˆ˜ìŠµì„ ì‹œì‘í•œ ë‚ ë¶€í„° 3ê°œì›” ì´ë‚´ì¸ ìì— ëŒ€í•˜ì—¬ëŠ” '
+      + 'ìµœì €ì„ê¸ˆì•¡ì˜ 100ë¶„ì˜ 10ì„ ê°í•œ ê¸ˆì•¡ì„ ìµœì €ì„ê¸ˆì•¡ìœ¼ë¡œ í•œë‹¤.'
       + '</div>'
       + '<div style="font-size:11px;color:#b91c1c;">'
-      + '¡Ø ´Ü, <strong>1³â ¹Ì¸¸ ±â°£Á¦(°è¾àÁ÷ ¼ö½À)</strong>¿¡´Â °¨¾× ±ÔÁ¤ÀÌ Àû¿ëµÇÁö ¾Ê¾Æ '
-      + '¹İµå½Ã ÃÖÀúÀÓ±İÀÇ <strong>100%</strong> ÀÌ»óÀÌ¾î¾ß ÇÕ´Ï´Ù.'
+      + 'â€» ë‹¨, <strong>1ë…„ ë¯¸ë§Œ ê¸°ê°„ì œ(ê³„ì•½ì§ ìˆ˜ìŠµ)</strong>ì—ëŠ” ê°ì•¡ ê·œì •ì´ ì ìš©ë˜ì§€ ì•Šì•„ '
+      + 'ë°˜ë“œì‹œ ìµœì €ì„ê¸ˆì˜ <strong>100%</strong> ì´ìƒì´ì–´ì•¼ í•©ë‹ˆë‹¤.'
       + '</div>';
     warningRow.style.display = '';
   } else if(isContract && actualAmt < limit100){
-    // °è¾àÁ÷ ¼ö½À ? 100% ¹Ì¸¸: ¹ı À§¹İ (1³â ¹Ì¸¸ ±â°£Á¦ ¡æ °¨¾× ºÒ°¡)
+    // ê³„ì•½ì§ ìˆ˜ìŠµ â€” 100% ë¯¸ë§Œ: ë²• ìœ„ë°˜ (1ë…„ ë¯¸ë§Œ ê¸°ê°„ì œ â†’ ê°ì•¡ ë¶ˆê°€)
     warningBox.style.cssText = 'border-radius:7px;padding:9px 12px;font-size:11.5px;line-height:1.7;background:#fef2f2;border:1.5px solid #fca5a5;color:#991b1b;';
     warningBox.innerHTML =
       '<div style="font-weight:700;margin-bottom:4px;">'
       + '<i class="fas fa-times-circle" style="margin-right:5px;color:#dc2626;"></i>'
-      + '?? ÃÖÀúÀÓ±İ ¹ı À§¹İ ? ¼ö½À ÀÓ±İ(' + fmt(actualAmt) + '¿ø)ÀÌ ÃÖÀúÀÓ±İ(100%) ¹Ì¸¸ÀÔ´Ï´Ù'
+      + 'âš ï¸ ìµœì €ì„ê¸ˆ ë²• ìœ„ë°˜ â€” ìˆ˜ìŠµ ì„ê¸ˆ(' + fmt(actualAmt) + 'ì›)ì´ ìµœì €ì„ê¸ˆ(100%) ë¯¸ë§Œì…ë‹ˆë‹¤'
       + '</div>'
       + '<div style="margin-bottom:3px;">'
-      + '°è¾àÁ÷(1³â ¹Ì¸¸ ±â°£Á¦) ¼ö½À ±Ù·ÎÀÚÀÇ ÀÓ±İÀº <strong>ÃÖÀúÀÓ±İÀÇ 100% ÀÌ»ó</strong>ÀÌ¾î¾ß ÇÕ´Ï´Ù.'
-      + ' (' + yr + '³â ÃÖÀúÀÓ±İ ¿ùÈ¯»ê <strong>' + fmt(limit100) + '¿ø</strong> ÀÌ»ó)'
+      + 'ê³„ì•½ì§(1ë…„ ë¯¸ë§Œ ê¸°ê°„ì œ) ìˆ˜ìŠµ ê·¼ë¡œìì˜ ì„ê¸ˆì€ <strong>ìµœì €ì„ê¸ˆì˜ 100% ì´ìƒ</strong>ì´ì–´ì•¼ í•©ë‹ˆë‹¤.'
+      + ' (' + yr + 'ë…„ ìµœì €ì„ê¸ˆ ì›”í™˜ì‚° <strong>' + fmt(limit100) + 'ì›</strong> ì´ìƒ)'
       + '</div>'
       + '<div style="font-size:11px;color:#b91c1c;">'
-      + '?? <strong>ÃÖÀúÀÓ±İ¹ı Á¦5Á¶ Á¦2Ç× ´Ü¼­</strong>: 1³â ¹Ì¸¸ÀÇ ±â°£À» Á¤ÇÏ¿© ±Ù·Î°è¾àÀ» Ã¼°áÇÑ '
-      + '±Ù·ÎÀÚ¿¡ ´ëÇØ¼­´Â ¼ö½À ±â°£ °¨¾× ±ÔÁ¤À» Àû¿ëÇÏÁö ¾Æ´ÏÇÑ´Ù.'
+      + 'ğŸ“– <strong>ìµœì €ì„ê¸ˆë²• ì œ5ì¡° ì œ2í•­ ë‹¨ì„œ</strong>: 1ë…„ ë¯¸ë§Œì˜ ê¸°ê°„ì„ ì •í•˜ì—¬ ê·¼ë¡œê³„ì•½ì„ ì²´ê²°í•œ '
+      + 'ê·¼ë¡œìì— ëŒ€í•´ì„œëŠ” ìˆ˜ìŠµ ê¸°ê°„ ê°ì•¡ ê·œì •ì„ ì ìš©í•˜ì§€ ì•„ë‹ˆí•œë‹¤.'
       + '</div>';
     warningRow.style.display = '';
   } else {
     warningRow.style.display = 'none';
   }
-  // °æ°í »óÅÂ°¡ ¹Ù²î¾úÀ¸¹Ç·Î µî·Ï ¹öÆ° È°¼ºÈ­ ¿©ºÎµµ °»½Å
+  // ê²½ê³  ìƒíƒœê°€ ë°”ë€Œì—ˆìœ¼ë¯€ë¡œ ë“±ë¡ ë²„íŠ¼ í™œì„±í™” ì—¬ë¶€ë„ ê°±ì‹ 
   _checkRegisterBtnState();
 }
 
-// ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // _checkMinWageWarning()
-//   Á¤±ÔÁ÷¡¤°è¾àÁ÷¡¤ÀÏ¿ëÁ÷(ºñ¼ö½À) °í¿ëÇüÅÂ¿¡¼­ ±Ş¿© ÀÔ·Â ½Ã ÃÖÀúÀÓ±İ ¹Ì´Ş ¿©ºÎ¸¦
-//   ½Ç½Ã°£À¸·Î °Ë»çÇÏ¿© °æ°í ¹Ú½º¸¦ Ç¥½Ã/¼û±èÇÑ´Ù.
-//   ¡Ø ¼ö½À(Á¤±ÔÁ÷ ¼ö½À¡¤°è¾àÁ÷ ¼ö½À)Àº º°µµ _checkProbMinWageWarning()°¡ ´ã´ç.
-// ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+//   ì •ê·œì§Â·ê³„ì•½ì§Â·ì¼ìš©ì§(ë¹„ìˆ˜ìŠµ) ê³ ìš©í˜•íƒœì—ì„œ ê¸‰ì—¬ ì…ë ¥ ì‹œ ìµœì €ì„ê¸ˆ ë¯¸ë‹¬ ì—¬ë¶€ë¥¼
+//   ì‹¤ì‹œê°„ìœ¼ë¡œ ê²€ì‚¬í•˜ì—¬ ê²½ê³  ë°•ìŠ¤ë¥¼ í‘œì‹œ/ìˆ¨ê¹€í•œë‹¤.
+//   â€» ìˆ˜ìŠµ(ì •ê·œì§ ìˆ˜ìŠµÂ·ê³„ì•½ì§ ìˆ˜ìŠµ)ì€ ë³„ë„ _checkProbMinWageWarning()ê°€ ë‹´ë‹¹.
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function _checkMinWageWarning(){
   const wRow = document.getElementById('ct-general-minwage-warning-row');
   const wBox = document.getElementById('ct-general-minwage-warning-box');
   if(!wRow || !wBox){ _checkRegisterBtnState(); return; }
 
-  // °í¿ëÇüÅÂ °áÁ¤ (½Å±Ô: ct-em-category, ¼öÁ¤/Àç°è¾à: ct-edit-em-category ÅØ½ºÆ® ¶Ç´Â ct-type)
+  // ê³ ìš©í˜•íƒœ ê²°ì • (ì‹ ê·œ: ct-em-category, ìˆ˜ì •/ì¬ê³„ì•½: ct-edit-em-category í…ìŠ¤íŠ¸ ë˜ëŠ” ct-type)
   const rawCat = document.getElementById('ct-em-category')?.value
     || document.getElementById('ct-edit-em-category')?.value
     || document.getElementById('ct-type')?.value
@@ -818,10 +818,10 @@ function _checkMinWageWarning(){
   const isDaily       = cat ===CONTRACT_TYPE.DAILY;
   const isRegular     = cat ===CONTRACT_TYPE.REGULAR;
   const isFixedTerm   = cat ===CONTRACT_TYPE.FIXED;
-  const isTarget      = isDaily || isRegular || isFixedTerm; // ¼ö½À Á¦¿Ü
+  const isTarget      = isDaily || isRegular || isFixedTerm; // ìˆ˜ìŠµ ì œì™¸
   if(!isTarget){ wRow.style.display='none'; _checkRegisterBtnState(); return; }
 
-  // ¦¡¦¡ °è¾à ½ÃÀÛ ¿¬µµ °áÁ¤ ? ½Å±Ô ¸ğµå: ct-em-start ¿ì¼± / ¼öÁ¤¡¤Àç°è¾à ¸ğµå: ct-start ¦¡¦¡
+  // â”€â”€ ê³„ì•½ ì‹œì‘ ì—°ë„ ê²°ì • â€” ì‹ ê·œ ëª¨ë“œ: ct-em-start ìš°ì„  / ìˆ˜ì •Â·ì¬ê³„ì•½ ëª¨ë“œ: ct-start â”€â”€
   const hireRaw = document.getElementById('ct-em-start')?.value
     || document.getElementById('ct-em-hire')?.value
     || document.getElementById('ct-start')?.value || '';
@@ -829,11 +829,11 @@ function _checkMinWageWarning(){
   const mw = (_allMinimumWages||[]).find(w => Number(w.year) === yr);
   if(!mw || Number(mw.hourly_wage) <= 0){ wRow.style.display='none'; _checkRegisterBtnState(); return; }
 
-  const legalHourly  = Number(mw.hourly_wage);          // ¹ıÁ¤ ÃÖÀú½Ã±Ş
-  const legalMonthly = Math.round(legalHourly * 209);   // ¹ıÁ¤ ÃÖÀú¿ù±Ş (209h ±âÁØ)
+  const legalHourly  = Number(mw.hourly_wage);          // ë²•ì • ìµœì €ì‹œê¸‰
+  const legalMonthly = Math.round(legalHourly * 209);   // ë²•ì • ìµœì €ì›”ê¸‰ (209h ê¸°ì¤€)
   const fmt = v => Math.round(v).toLocaleString('ko-KR');
 
-  // ¦¡¦¡ ÀÔ·Â ÀÓ±İ ¡æ ½Ã±Ş È¯»ê ¦¡¦¡
+  // â”€â”€ ì…ë ¥ ì„ê¸ˆ â†’ ì‹œê¸‰ í™˜ì‚° â”€â”€
   let compareHourly  = 0;
   let compareMonthly = 0;
   let compareLabel   = '';
@@ -843,18 +843,18 @@ function _checkMinWageWarning(){
     const hrs  = parseFloat(document.getElementById('ct-hours')?.value) || 8;
     if(dw <= 0){ wRow.style.display='none'; _checkRegisterBtnState(); return; }
     compareHourly  = Math.round(dw / hrs);
-    compareMonthly = dw * Math.round(209 / hrs); // ¿ù È¯»ê (209¡ÀÀÏ¼ÒÁ¤½Ã°£)
-    compareLabel   = `ÀÏ±Ş¿© ${fmt(dw)}¿ø (ÀÏ ${hrs}½Ã°£ ±âÁØ ½Ã±Ş ${fmt(compareHourly)}¿ø)`;
+    compareMonthly = dw * Math.round(209 / hrs); // ì›” í™˜ì‚° (209Ã·ì¼ì†Œì •ì‹œê°„)
+    compareLabel   = `ì¼ê¸‰ì—¬ ${fmt(dw)}ì› (ì¼ ${hrs}ì‹œê°„ ê¸°ì¤€ ì‹œê¸‰ ${fmt(compareHourly)}ì›)`;
   } else {
-    // Á¤±ÔÁ÷¡¤°è¾àÁ÷: ºñ°ú¼¼ Æ÷ÇÔ ¿ùÀÓ±İ ¡À 209
+    // ì •ê·œì§Â·ê³„ì•½ì§: ë¹„ê³¼ì„¸ í¬í•¨ ì›”ì„ê¸ˆ Ã· 209
     const base   = getAmountVal('ct-base');
     if(base <= 0){ wRow.style.display='none'; _checkRegisterBtnState(); return; }
     const days   = parseFloat(document.getElementById('ct-days')?.value) || 5;
-    // Åë»óÀÓ±İ = ±âº»±Ş + Åë»óÀÓ±İ ¼³Á¤ Ç×¸ñ (°íÁ¤OT¡¤¾ß°£¡¤ÈŞÀÏ, ½Ä´ë, Â÷·®Áö¿øºñ´Â Åë»óÀÓ±İ Á¦¿Ü)
+    // í†µìƒì„ê¸ˆ = ê¸°ë³¸ê¸‰ + í†µìƒì„ê¸ˆ ì„¤ì • í•­ëª© (ê³ ì •OTÂ·ì•¼ê°„Â·íœ´ì¼, ì‹ëŒ€, ì°¨ëŸ‰ì§€ì›ë¹„ëŠ” í†µìƒì„ê¸ˆ ì œì™¸)
     const fixedOt    = getAmountVal('ct-fixed-ot-pay')    || 0;
     const fixedNight = getAmountVal('ct-fixed-night-pay') || 0;
     const fixedHol   = getAmountVal('ct-fixed-hol-pay')   || 0;
-    // Åë»óÀÓ±İ ¼³Á¤ ±×·ì (ÁÖÈŞ¼ö´ç °è»ê¿ë Åë»óÀÓ±İ¿¡ Æ÷ÇÔ)
+    // í†µìƒì„ê¸ˆ ì„¤ì • ê·¸ë£¹ (ì£¼íœ´ìˆ˜ë‹¹ ê³„ì‚°ìš© í†µìƒì„ê¸ˆì— í¬í•¨)
     const _mwSite    = getAmountVal('ct-site')||0;
     const _mwPos     = getAmountVal('ct-position')||0;
     const _mwSkill   = getAmountVal('ct-skill')||0;
@@ -868,15 +868,15 @@ function _checkMinWageWarning(){
       + (_isFixedAllow('hazard')? _mwHazard : 0)
       + (_isFixedAllow('remote_area')? _mwRemote : 0)
       + (typeof _getCustomOrdinarySum==='function' ? _getCustomOrdinarySum() : 0);
-    // ½Ã±Ş ±â¹İ: ÁÖÈŞ¼ö´ç = Åë»ó½Ã±Ş ¡¿ hpd ¡¿ 4.345 [±Ù·Î±âÁØ¹ı Á¦55Á¶]
+    // ì‹œê¸‰ ê¸°ë°˜: ì£¼íœ´ìˆ˜ë‹¹ = í†µìƒì‹œê¸‰ Ã— hpd Ã— 4.345 [ê·¼ë¡œê¸°ì¤€ë²• ì œ55ì¡°]
     const _mwHourly = getAmountVal('ct-hourly-input') || 0;
     const _mwHpd = parseFloat(document.getElementById('ct-hours')?.value) || 8;
     let wkHol;
     if(_mwHourly > 0){
       wkHol = Math.round(_mwHourly * _mwHpd * (365 / 12 / 7));
     } else {
-      // ÁÖÈŞ¼ö´ç Æú¹é: (±âº»±Ş + Åë»óÀÓ±İ¼º ¼ö´ç) ¡À ¿ù¼ÒÁ¤±Ù·Î½Ã°£ ¡¿ 1ÀÏ¼ÒÁ¤±Ù·Î½Ã°£
-      // °íÁ¤OT¡¤¾ß°£¡¤ÈŞÀÏ±Ù·Î¼ö´çÀº Åë»óÀÓ±İ¿¡¼­ Á¦¿Ü (±Ù·Î±âÁØ¹ı ½ÃÇà·É Á¦6Á¶)
+      // ì£¼íœ´ìˆ˜ë‹¹ í´ë°±: (ê¸°ë³¸ê¸‰ + í†µìƒì„ê¸ˆì„± ìˆ˜ë‹¹) Ã· ì›”ì†Œì •ê·¼ë¡œì‹œê°„ Ã— 1ì¼ì†Œì •ê·¼ë¡œì‹œê°„
+      // ê³ ì •OTÂ·ì•¼ê°„Â·íœ´ì¼ê·¼ë¡œìˆ˜ë‹¹ì€ í†µìƒì„ê¸ˆì—ì„œ ì œì™¸ (ê·¼ë¡œê¸°ì¤€ë²• ì‹œí–‰ë ¹ ì œ6ì¡°)
       const _mwMonthlyStdH = _calcMonthlyStdHours(_mwHpd, days);
       wkHol = _mwMonthlyStdH > 0 ? Math.round((base + _ordinaryMW) / _mwMonthlyStdH * _mwHpd) : 0;
     }
@@ -895,9 +895,9 @@ function _checkMinWageWarning(){
     const sdev_w = getAmountVal('ct-self-dev')||0;
     const book_w = getAmountVal('ct-book')||0;
     const ovs_w  = getAmountVal('ct-overseas')||0;
-    // ÃÖÀúÀÓ±İ ºñ±³´ë»óÀÓ±İ: ¿¬Àå¡¤¾ß°£¡¤ÈŞÀÏ, ½Ä´ë, Â÷·®Áö¿øºñ, ¿¬±¸È°µ¿ºñ, Åë½Åºñ, ÀÚ±â°è¹ßºñ, µµ¼­Áö¿øºñ, ÇØ¿Ü±Ù¹«¼ö´ç Á¦¿Ü
+    // ìµœì €ì„ê¸ˆ ë¹„êµëŒ€ìƒì„ê¸ˆ: ì—°ì¥Â·ì•¼ê°„Â·íœ´ì¼, ì‹ëŒ€, ì°¨ëŸ‰ì§€ì›ë¹„, ì—°êµ¬í™œë™ë¹„, í†µì‹ ë¹„, ìê¸°ê³„ë°œë¹„, ë„ì„œì§€ì›ë¹„, í•´ì™¸ê·¼ë¬´ìˆ˜ë‹¹ ì œì™¸
     compareMonthly = base + wkHol
-                   // ¦¡¦¡ Åë»óÀÓ±İ ¼³Á¤ ±×·ì (pay_type='fixed'¸¸ Æ÷ÇÔ) ¦¡¦¡
+                   // â”€â”€ í†µìƒì„ê¸ˆ ì„¤ì • ê·¸ë£¹ (pay_type='fixed'ë§Œ í¬í•¨) â”€â”€
                    + (_isFixedAllow('site')          ? site_w : 0)
                    + (_isFixedAllow('position')      ? pos    : 0)
                    + (_isFixedAllow('skill')         ? skill_w: 0)
@@ -907,12 +907,12 @@ function _checkMinWageWarning(){
                    + other
                    + 0;
     compareHourly  = compareMonthly > 0 ? Math.round(compareMonthly / MAGIC.MONTHLY_STD_HOURS) : 0;
-    compareLabel   = `±âº»±Ş ${fmt(base)}¿ø + ÁÖÈŞ ${fmt(wkHol)}¿ø + ¼ö´ç ÇÕ°è ¡æ ¿ù ${fmt(compareMonthly)}¿ø (½Ã±Ş ${fmt(compareHourly)}¿ø)`;
+    compareLabel   = `ê¸°ë³¸ê¸‰ ${fmt(base)}ì› + ì£¼íœ´ ${fmt(wkHol)}ì› + ìˆ˜ë‹¹ í•©ê³„ â†’ ì›” ${fmt(compareMonthly)}ì› (ì‹œê¸‰ ${fmt(compareHourly)}ì›)`;
   }
 
   if(compareHourly <= 0){ wRow.style.display='none'; _checkRegisterBtnState(); return; }
 
-  // ¦¡¦¡ À§¹İ ¿©ºÎ ÆÇÁ¤ (ºñ¼ö½ÀÀº 100% ±âÁØ) ¦¡¦¡
+  // â”€â”€ ìœ„ë°˜ ì—¬ë¶€ íŒì • (ë¹„ìˆ˜ìŠµì€ 100% ê¸°ì¤€) â”€â”€
   if(compareHourly < legalHourly){
     const shortfall    = legalHourly - compareHourly;
     const shortMonthly = legalMonthly - compareMonthly;
@@ -921,25 +921,25 @@ function _checkMinWageWarning(){
     wBox.innerHTML =
       `<div style="display:flex;align-items:center;gap:7px;font-weight:800;font-size:12px;margin-bottom:6px;color:#b91c1c;">
          <i class="fas fa-exclamation-triangle" style="color:#dc2626;font-size:14px;"></i>
-         ?? ÃÖÀúÀÓ±İ ¹ı À§¹İ ? ${typeName} ±Ş¿©°¡ ${yr}³â ¹ıÁ¤ ÃÖÀúÀÓ±İ¿¡ ¹Ì´ŞÇÕ´Ï´Ù
+         âš ï¸ ìµœì €ì„ê¸ˆ ë²• ìœ„ë°˜ â€” ${typeName} ê¸‰ì—¬ê°€ ${yr}ë…„ ë²•ì • ìµœì €ì„ê¸ˆì— ë¯¸ë‹¬í•©ë‹ˆë‹¤
        </div>
        <div style="background:#fff;border-radius:6px;padding:8px 10px;margin-bottom:6px;font-size:11.5px;line-height:2;border:1px dashed #fca5a5;">
          <div style="display:flex;justify-content:space-between;border-bottom:1px dashed #fca5a5;padding-bottom:4px;margin-bottom:4px;">
-           <span>?? ${yr}³â ¹ıÁ¤ ÃÖÀú½Ã±Ş</span>
-           <strong style="color:#b91c1c;">${fmt(legalHourly)}¿ø (¿ù ${fmt(legalMonthly)}¿ø)</strong>
+           <span>âš–ï¸ ${yr}ë…„ ë²•ì • ìµœì €ì‹œê¸‰</span>
+           <strong style="color:#b91c1c;">${fmt(legalHourly)}ì› (ì›” ${fmt(legalMonthly)}ì›)</strong>
          </div>
          <div style="display:flex;justify-content:space-between;border-bottom:1px dashed #fca5a5;padding-bottom:4px;margin-bottom:4px;">
-           <span>?? ÀÔ·Â ÀÓ±İ</span>
+           <span>ğŸ’° ì…ë ¥ ì„ê¸ˆ</span>
            <strong style="color:#ef4444;">${compareLabel}</strong>
          </div>
          <div style="display:flex;justify-content:space-between;">
-           <span>?? ºÎÁ·¾×</span>
-           <strong style="color:#ef4444;">½Ã±Ş -${fmt(shortfall)}¿ø&nbsp;/&nbsp;¿ù -${fmt(shortMonthly)}¿ø</strong>
+           <span>ğŸ“‰ ë¶€ì¡±ì•¡</span>
+           <strong style="color:#ef4444;">ì‹œê¸‰ -${fmt(shortfall)}ì›&nbsp;/&nbsp;ì›” -${fmt(shortMonthly)}ì›</strong>
          </div>
        </div>
        <div style="font-size:11px;color:#9f1239;line-height:1.6;">
-         ?? <strong>ÃÖÀúÀÓ±İ¹ı Á¦6Á¶</strong>: »ç¿ëÀÚ´Â ÃÖÀúÀÓ±İ¾× ÀÌ»óÀÇ ÀÓ±İÀ» Áö±ŞÇÏ¿©¾ß ÇÕ´Ï´Ù.
-         À§¹İ ½Ã <strong>3³â ÀÌÇÏ Â¡¿ª ¶Ç´Â 2Ãµ¸¸¿ø ÀÌÇÏ ¹ú±İ</strong>¿¡ Ã³ÇÕ´Ï´Ù. (ÃÖÀúÀÓ±İ¹ı Á¦28Á¶)
+         ğŸ“– <strong>ìµœì €ì„ê¸ˆë²• ì œ6ì¡°</strong>: ì‚¬ìš©ìëŠ” ìµœì €ì„ê¸ˆì•¡ ì´ìƒì˜ ì„ê¸ˆì„ ì§€ê¸‰í•˜ì—¬ì•¼ í•©ë‹ˆë‹¤.
+         ìœ„ë°˜ ì‹œ <strong>3ë…„ ì´í•˜ ì§•ì—­ ë˜ëŠ” 2ì²œë§Œì› ì´í•˜ ë²Œê¸ˆ</strong>ì— ì²˜í•©ë‹ˆë‹¤. (ìµœì €ì„ê¸ˆë²• ì œ28ì¡°)
        </div>`;
     wRow.style.display = '';
   } else {
@@ -949,52 +949,52 @@ function _checkMinWageWarning(){
   _checkRegisterBtnState();
 }
 
-// ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // _checkRegisterBtnState()
-//   '½Å±Ô °è¾à µî·Ï' ¹öÆ°ÀÇ disabled »óÅÂ¸¦ °áÁ¤ÇÑ´Ù.
+//   'ì‹ ê·œ ê³„ì•½ ë“±ë¡' ë²„íŠ¼ì˜ disabled ìƒíƒœë¥¼ ê²°ì •í•œë‹¤.
 //
-//   È°¼ºÈ­ Á¶°Ç:
-//     1) ÇÊ¼ö ÀÔ·Â°ªÀÌ ¸ğµÎ Ã¤¿öÁ® ÀÖÀ» °Í
-//        - È¸»ç, °í¿ëÇüÅÂ, ÀÌ¸§, ÀÔ»çÀÏ, ÈŞ´ëÀüÈ­, ±âº»±Ş(Á¤±ÔÁ÷°è¿­/°è¾àÁ÷°è¿­)
-//          ¶Ç´Â ÀÏ±Ş¿©(ÀÏ¿ëÁ÷), ¿¬ºÀ(Á¤±ÔÁ÷/Á¤±ÔÁ÷¼ö½À °è¿­)
-//     2) ¼ö½À °è¾à(Á¤±ÔÁ÷ ¼ö½À / °è¾àÁ÷ ¼ö½À)ÀÎ °æ¿ì ÃÖÀúÀÓ±İ À§¹İ °æ°í°¡ ¾øÀ» °Í
+//   í™œì„±í™” ì¡°ê±´:
+//     1) í•„ìˆ˜ ì…ë ¥ê°’ì´ ëª¨ë‘ ì±„ì›Œì ¸ ìˆì„ ê²ƒ
+//        - íšŒì‚¬, ê³ ìš©í˜•íƒœ, ì´ë¦„, ì…ì‚¬ì¼, íœ´ëŒ€ì „í™”, ê¸°ë³¸ê¸‰(ì •ê·œì§ê³„ì—´/ê³„ì•½ì§ê³„ì—´)
+//          ë˜ëŠ” ì¼ê¸‰ì—¬(ì¼ìš©ì§), ì—°ë´‰(ì •ê·œì§/ì •ê·œì§ìˆ˜ìŠµ ê³„ì—´)
+//     2) ìˆ˜ìŠµ ê³„ì•½(ì •ê·œì§ ìˆ˜ìŠµ / ê³„ì•½ì§ ìˆ˜ìŠµ)ì¸ ê²½ìš° ìµœì €ì„ê¸ˆ ìœ„ë°˜ ê²½ê³ ê°€ ì—†ì„ ê²ƒ
 //
-//   ¡Ø ¼öÁ¤/Àç°è¾à ¸ğµå¿¡¼­´Â ½Å±Ô ¹öÆ°ÀÌ Ç¥½ÃµÇÁö ¾ÊÀ¸¹Ç·Î ½Å±Ô ¸ğµå¸¸ °Ë»çÇÑ´Ù.
-// ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+//   â€» ìˆ˜ì •/ì¬ê³„ì•½ ëª¨ë“œì—ì„œëŠ” ì‹ ê·œ ë²„íŠ¼ì´ í‘œì‹œë˜ì§€ ì•Šìœ¼ë¯€ë¡œ ì‹ ê·œ ëª¨ë“œë§Œ ê²€ì‚¬í•œë‹¤.
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // _checkRegisterBtnState / _checkAmendBtnState
-// ¹öÆ°Àº Ç×»ó È°¼º »óÅÂ ? Å¬¸¯ ½Ã _ctValidate()·Î À¯È¿¼º °Ë»ç¸¦ ¼öÇàÇÑ´Ù.
-// ÇÏÀ§ È£È¯À» À§ÇØ ÇÔ¼ö´Â À¯ÁöÇÏµÇ disabled Á¶ÀÛÀº ÇÏÁö ¾Ê´Â´Ù.
-function _checkRegisterBtnState(){ /* no-op: ¹öÆ° Ç×»ó È°¼º */ }
-function _checkAmendBtnState(){    /* no-op: ¹öÆ° Ç×»ó È°¼º */ }
+// ë²„íŠ¼ì€ í•­ìƒ í™œì„± ìƒíƒœ â€” í´ë¦­ ì‹œ _ctValidate()ë¡œ ìœ íš¨ì„± ê²€ì‚¬ë¥¼ ìˆ˜í–‰í•œë‹¤.
+// í•˜ìœ„ í˜¸í™˜ì„ ìœ„í•´ í•¨ìˆ˜ëŠ” ìœ ì§€í•˜ë˜ disabled ì¡°ì‘ì€ í•˜ì§€ ì•ŠëŠ”ë‹¤.
+function _checkRegisterBtnState(){ /* no-op: ë²„íŠ¼ í•­ìƒ í™œì„± */ }
+function _checkAmendBtnState(){    /* no-op: ë²„íŠ¼ í•­ìƒ í™œì„± */ }
 
 function syncProbation(){
-  // ¼ö½À ¼½¼ÇÀÌ º¸ÀÌ´Â °æ¿ì¿¡¸¸ °è»ê
+  // ìˆ˜ìŠµ ì„¹ì…˜ì´ ë³´ì´ëŠ” ê²½ìš°ì—ë§Œ ê³„ì‚°
   const sec = document.getElementById('ct-probation-section');
   if(!sec || sec.style.display === 'none') return;
-  // %°ªÀÌ ¾øÀ¸¸é 80 ±âº»°ªÀ¸·Î ¼³Á¤ ÈÄ °è»ê
+  // %ê°’ì´ ì—†ìœ¼ë©´ 80 ê¸°ë³¸ê°’ìœ¼ë¡œ ì„¤ì • í›„ ê³„ì‚°
   const pctEl = document.getElementById('ct-probation-pct');
   if(pctEl.value === '') pctEl.value = '80';
   calcProbationFromPct();
 }
-// ½Ã/ºĞ select ¿É¼Ç Ã¤¿ì±â (0~n½Ã°£, 0/10/20/30/40/50ºĞ)
-// ¦¡¦¡ ¿äÀÏº° ±Ù¹«½Ã°£ ½ºÄÉÁÙ ¦¡¦¡
-const DAYS_KR = ['¿ù','È­','¼ö','¸ñ','±İ','Åä','ÀÏ'];
+// ì‹œ/ë¶„ select ì˜µì…˜ ì±„ìš°ê¸° (0~nì‹œê°„, 0/10/20/30/40/50ë¶„)
+// â”€â”€ ìš”ì¼ë³„ ê·¼ë¬´ì‹œê°„ ìŠ¤ì¼€ì¤„ â”€â”€
+const DAYS_KR = ['ì›”','í™”','ìˆ˜','ëª©','ê¸ˆ','í† ','ì¼'];
 const DAY_KEYS = ['mon','tue','wed','thu','fri','sat','sun'];
 const DAY_CLASSES = ['','','','','','day-sat','day-sun'];
-// ±âº» ±Ù¹« ¿äÀÏ (¿ù~±İ Ã¼Å©)
+// ê¸°ë³¸ ê·¼ë¬´ ìš”ì¼ (ì›”~ê¸ˆ ì²´í¬)
 const DAY_DEFAULTS = { mon:true, tue:true, wed:true, thu:true, fri:true, sat:false, sun:false };
 
-// ¦¡¦¡ ÀÏ°ı¼³Á¤ Ã¼Å©¹Ú½º¸¦ ½ÇÁ¦ ½ºÄÉÁÙ »óÅÂ¿Í µ¿±âÈ­ ¦¡¦¡
+// â”€â”€ ì¼ê´„ì„¤ì • ì²´í¬ë°•ìŠ¤ë¥¼ ì‹¤ì œ ìŠ¤ì¼€ì¤„ ìƒíƒœì™€ ë™ê¸°í™” â”€â”€
 function _syncBulkCheckboxes(){
   DAY_KEYS.forEach(key => {
     const chk = document.getElementById('bulk-chk-'+key);
     if(!chk) return;
-    // Ã¹ ¹øÂ° ½ÃÇÁÆ®ÀÇ start °ªÀÌ ÀÖ°í disabled°¡ ¾Æ´Ï¸é È°¼º »óÅÂ
+    // ì²« ë²ˆì§¸ ì‹œí”„íŠ¸ì˜ start ê°’ì´ ìˆê³  disabledê°€ ì•„ë‹ˆë©´ í™œì„± ìƒíƒœ
     const sEl = document.getElementById(`ct-sch-start-${key}`);
     const isActive = sEl && !sEl.disabled && sEl.value;
     chk.checked = isActive;
   });
-  // weekday Ã¼Å©¹Ú½º µ¿±âÈ­
+  // weekday ì²´í¬ë°•ìŠ¤ ë™ê¸°í™”
   const allWeekdayChecked = ['mon','tue','wed','thu','fri'].every(d =>
     document.getElementById('bulk-chk-'+d)?.checked
   );
@@ -1002,16 +1002,16 @@ function _syncBulkCheckboxes(){
   if(weekdayChk) weekdayChk.checked = allWeekdayChecked;
 }
 
-// ¦¡¦¡ ÀÏ°ı¼³Á¤ ¹Ù ½Ã°£À» Ã¹ ¹øÂ° È°¼º ¿äÀÏÀÇ ½ºÄÉÁÙ·Î ÃÊ±âÈ­ ¦¡¦¡
+// â”€â”€ ì¼ê´„ì„¤ì • ë°” ì‹œê°„ì„ ì²« ë²ˆì§¸ í™œì„± ìš”ì¼ì˜ ìŠ¤ì¼€ì¤„ë¡œ ì´ˆê¸°í™” â”€â”€
 function _initBulkFromFirstActive(){
   for(const key of DAY_KEYS){
     const sEl = document.getElementById(`ct-sch-start-${key}`);
     const eEl = document.getElementById(`ct-sch-end-${key}`);
     if(!sEl || sEl.disabled || !sEl.value) continue;
-    // Ã¹ ¹øÂ° È°¼º ¿äÀÏ Ã£À½ ¡æ ÀÏ°ı¼³Á¤ ¹Ù¿¡ ¹İ¿µ
+    // ì²« ë²ˆì§¸ í™œì„± ìš”ì¼ ì°¾ìŒ â†’ ì¼ê´„ì„¤ì • ë°”ì— ë°˜ì˜
     _setTimePickerValue('bulk-start', sEl.value);
     if(eEl) _setTimePickerValue('bulk-end', eEl.value);
-    // ÈŞ°Ô½Ã°£: Ã¹ ¹øÂ° ÈŞ°Ô ½½·Ô º¹»ç
+    // íœ´ê²Œì‹œê°„: ì²« ë²ˆì§¸ íœ´ê²Œ ìŠ¬ë¡¯ ë³µì‚¬
     const slots = _getBrkSlots2(key, 0);
     if(slots && slots.length > 0){
       _setTimePickerValue('bulk-brks', slots[0].s || '');
@@ -1020,16 +1020,16 @@ function _initBulkFromFirstActive(){
       _setTimePickerValue('bulk-brks', '');
       _setTimePickerValue('bulk-brke', '');
     }
-    return; // Ã¹ ¹øÂ° È°¼º ¿äÀÏ¸¸ »ç¿ë
+    return; // ì²« ë²ˆì§¸ í™œì„± ìš”ì¼ë§Œ ì‚¬ìš©
   }
-  // È°¼º ¿äÀÏÀÌ ¾øÀ¸¸é ±âº»°ª
+  // í™œì„± ìš”ì¼ì´ ì—†ìœ¼ë©´ ê¸°ë³¸ê°’
   _setTimePickerValue('bulk-start', '09:00');
   _setTimePickerValue('bulk-end', '18:00');
   _setTimePickerValue('bulk-brks', '12:00');
   _setTimePickerValue('bulk-brke', '13:00');
 }
 
-// ¦¡¦¡ ÀÏ°ı ¼³Á¤ ¿äÀÏ Ã¼Å©¹Ú½º ¿¬µ¿ ¦¡¦¡
+// â”€â”€ ì¼ê´„ ì„¤ì • ìš”ì¼ ì²´í¬ë°•ìŠ¤ ì—°ë™ â”€â”€
 function _bulkWeekdayToggle(){
   const weekdayChk = document.getElementById('bulk-chk-weekday').checked;
   ['mon','tue','wed','thu','fri'].forEach(d => {
@@ -1045,16 +1045,16 @@ function _bulkDayToggle(){
   if(weekdayEl) weekdayEl.checked = allChecked;
 }
 
-// ¦¡¦¡ ÀÏ°ı ¼³Á¤ Àû¿ë ¦¡¦¡
+// â”€â”€ ì¼ê´„ ì„¤ì • ì ìš© â”€â”€
 function applyBulkSchedule(){
   const start = document.getElementById('bulk-start').value;
   const end   = document.getElementById('bulk-end').value;
   const brks  = document.getElementById('bulk-brks').value;
   const brke  = document.getElementById('bulk-brke').value;
 
-  if(!start || !end){ toast('Ãâ±Ù¡¤Åğ±Ù ½Ã°£À» ÀÔ·ÂÇØ ÁÖ¼¼¿ä.', 'error'); return; }
-  if(!timeToMins(start) || !timeToMins(end)){ toast('½Ã°£Àº HH:MM(24½Ã) Çü½ÄÀ¸·Î ÀÔ·ÂÇØ ÁÖ¼¼¿ä.', 'error'); return; }
-  if(brks && brke){ const _bs=timeToMins(brks),_be=timeToMins(brke); if(_bs!==null&&_be!==null&&_bs>=_be){ toast('ÈŞ°Ô Á¾·á ½Ã°£ÀÌ ½ÃÀÛ ½Ã°£º¸´Ù ´Ê¾î¾ß ÇÕ´Ï´Ù.', 'error'); return; } }
+  if(!start || !end){ toast('ì¶œê·¼Â·í‡´ê·¼ ì‹œê°„ì„ ì…ë ¥í•´ ì£¼ì„¸ìš”.', 'error'); return; }
+  if(!timeToMins(start) || !timeToMins(end)){ toast('ì‹œê°„ì€ HH:MM(24ì‹œ) í˜•ì‹ìœ¼ë¡œ ì…ë ¥í•´ ì£¼ì„¸ìš”.', 'error'); return; }
+  if(brks && brke){ const _bs=timeToMins(brks),_be=timeToMins(brke); if(_bs!==null&&_be!==null&&_bs>=_be){ toast('íœ´ê²Œ ì¢…ë£Œ ì‹œê°„ì´ ì‹œì‘ ì‹œê°„ë³´ë‹¤ ëŠ¦ì–´ì•¼ í•©ë‹ˆë‹¤.', 'error'); return; } }
 
   const applyWeekday = document.getElementById('bulk-chk-weekday').checked;
   const targets = new Set();
@@ -1066,11 +1066,11 @@ function applyBulkSchedule(){
   if(document.getElementById('bulk-chk-fri')?.checked) targets.add('fri');
   if(document.getElementById('bulk-chk-sat')?.checked) targets.add('sat');
   if(document.getElementById('bulk-chk-sun')?.checked) targets.add('sun');
-  if(targets.size === 0){ toast('Àû¿ëÇÒ ¿äÀÏÀ» ÇÏ³ª ÀÌ»ó ¼±ÅÃÇØ ÁÖ¼¼¿ä.', 'error'); return; }
+  if(targets.size === 0){ toast('ì ìš©í•  ìš”ì¼ì„ í•˜ë‚˜ ì´ìƒ ì„ íƒí•´ ì£¼ì„¸ìš”.', 'error'); return; }
 
   const breaks = (brks && brke) ? [{s: brks, e: brke}] : [];
   let applied = 0;
-  // ¼±ÅÃµÈ ¿äÀÏ¿¡´Â °ª Àû¿ë, ¼±ÅÃµÇÁö ¾ÊÀº ¿äÀÏÀº ºñÈ°¼º(ºó°ª)
+  // ì„ íƒëœ ìš”ì¼ì—ëŠ” ê°’ ì ìš©, ì„ íƒë˜ì§€ ì•Šì€ ìš”ì¼ì€ ë¹„í™œì„±(ë¹ˆê°’)
   DAY_KEYS.forEach(key=>{
     const container = document.getElementById(`ct-sch-shifts-${key}`);
     if(!container) return;
@@ -1084,11 +1084,11 @@ function applyBulkSchedule(){
   });
   calcWorkHours();
   if(typeof _syncBulkCheckboxes === 'function') _syncBulkCheckboxes();
-  toast(`${applied}°³ ¿äÀÏ¿¡ ±Ù¹«½Ã°£ÀÌ ÀÏ°ı Àû¿ëµÇ¾ú½À´Ï´Ù. ?`, 'success');
+  toast(`${applied}ê°œ ìš”ì¼ì— ê·¼ë¬´ì‹œê°„ì´ ì¼ê´„ ì ìš©ë˜ì—ˆìŠµë‹ˆë‹¤. âœ”`, 'success');
 }
 
-// ¦¡¦¡ 24½ÃÁ¦ ½Ã/ºĞ ¼±ÅÃ HTML »ı¼º ¦¡¦¡
-// id: ¼û°ÜÁø inputÀÇ id (±âÁ¸ ÄÚµå È£È¯), value: "HH:MM", dis: disabled ¿©ºÎ, ph: placeholder ½Ã
+// â”€â”€ 24ì‹œì œ ì‹œ/ë¶„ ì„ íƒ HTML ìƒì„± â”€â”€
+// id: ìˆ¨ê²¨ì§„ inputì˜ id (ê¸°ì¡´ ì½”ë“œ í˜¸í™˜), value: "HH:MM", dis: disabled ì—¬ë¶€, ph: placeholder ì‹œ
 function _timePickerHTML(id, value, dis, ph){
   const v = value || '';
   const [h, m] = v.split(':');
@@ -1109,7 +1109,7 @@ function _timePickerHTML(id, value, dis, ph){
     <input type="hidden" id="${id}" value="${v}" />
   </span>`;
 }
-// ¦¡¦¡ ½Ã/ºĞ select ¡æ hidden input µ¿±âÈ­ + calcWorkHours È£Ãâ ¦¡¦¡
+// â”€â”€ ì‹œ/ë¶„ select â†’ hidden input ë™ê¸°í™” + calcWorkHours í˜¸ì¶œ â”€â”€
 function _syncTimePicker(id){
   const wrap = document.querySelector(`[data-tp="${id}"]`)?.parentElement;
   if(!wrap) return;
@@ -1119,20 +1119,20 @@ function _syncTimePicker(id){
   if(hSel && mSel && hidden){
     hidden.value = (hSel.value && mSel.value) ? hSel.value + ':' + mSel.value : '';
     hidden.dispatchEvent(new Event('input', {bubbles:true}));
-    // °°Àº ¿äÀÏ ´Ù¸¥ ½ÃÇÁÆ®¿Í ÁßÃ¸ ¹æÁö Á¦¾à °»½Å
+    // ê°™ì€ ìš”ì¼ ë‹¤ë¥¸ ì‹œí”„íŠ¸ì™€ ì¤‘ì²© ë°©ì§€ ì œì•½ ê°±ì‹ 
     const m = id.match(/^ct-sch-(?:start|end)-(\w+)/);
     if(m) _refreshShiftConstraints(m[1]);
     if(typeof calcWorkHours === 'function') calcWorkHours();
-    // Åë»ó½Ã±Ş ¹İ¿µµÈ »óÅÂ¿¡¼­ ±Ù¹«½Ã°£Ç¥ º¯°æ ½Ã °íÁ¤¼ö´ç ±İ¾× Áï½Ã °»½Å
+    // í†µìƒì‹œê¸‰ ë°˜ì˜ëœ ìƒíƒœì—ì„œ ê·¼ë¬´ì‹œê°„í‘œ ë³€ê²½ ì‹œ ê³ ì •ìˆ˜ë‹¹ ê¸ˆì•¡ ì¦‰ì‹œ ê°±ì‹ 
     if(typeof _calcFixedOtFromHours === 'function') _calcFixedOtFromHours();
     if(typeof _calcFixedNightFromHours === 'function') _calcFixedNightFromHours();
     if(typeof _calcFixedHolFromHours === 'function') _calcFixedHolFromHours();
   }
 }
 
-// ¦¡¦¡ °°Àº ¿äÀÏ ³» ½ÃÇÁÆ® °£ ÁßÃ¸ ¹æÁö ¦¡¦¡
+// â”€â”€ ê°™ì€ ìš”ì¼ ë‚´ ì‹œí”„íŠ¸ ê°„ ì¤‘ì²© ë°©ì§€ â”€â”€
 function _refreshShiftConstraints(key){
-  // ¸ğµç ½ÃÇÁÆ®ÀÇ start/end ¼öÁı
+  // ëª¨ë“  ì‹œí”„íŠ¸ì˜ start/end ìˆ˜ì§‘
   let shiftIdx = 0;
   const shifts = [];
   while(true){
@@ -1142,18 +1142,18 @@ function _refreshShiftConstraints(key){
     const eEl = document.getElementById(`ct-sch-end-${key}${sid}`);
     const sVal = sEl.value;
     const eVal = eEl ? eEl.value : '';
-    // ½Ã°£+ºĞ ÆÄ½Ì
+    // ì‹œê°„+ë¶„ íŒŒì‹±
     const toMin = t => { if(!t) return null; const [h,m]=t.split(':').map(Number); return h*60+m; };
     shifts.push({ idx: shiftIdx, sid, start: sVal, end: eVal, sMin: toMin(sVal), eMin: toMin(eVal),
       sId: `ct-sch-start-${key}${sid}`, eId: `ct-sch-end-${key}${sid}` });
     shiftIdx++;
   }
 
-  // ¿äÀÏº° ¿À·ù ÃÊ±âÈ­
+  // ìš”ì¼ë³„ ì˜¤ë¥˜ ì´ˆê¸°í™”
   const errEl = document.getElementById(`ct-sch-err-${key}`);
   const blockedShifts = [];
 
-  // °¢ ½ÃÇÁÆ®ÀÇ start/end select¿¡ Àü´ŞÇÒ Â÷´Ü ½Ã°£ ÁıÇÕ °è»ê
+  // ê° ì‹œí”„íŠ¸ì˜ start/end selectì— ì „ë‹¬í•  ì°¨ë‹¨ ì‹œê°„ ì§‘í•© ê³„ì‚°
   shifts.forEach(sh => {
     if(sh.sMin === null || sh.eMin === null) return;
     let eMin = sh.eMin;
@@ -1171,7 +1171,7 @@ function _refreshShiftConstraints(key){
 
       const oFromH = other.sMin / 60 | 0;
       const oToH   = Math.ceil(oeMin / 60);
-      // Á¾·á½Ã°¢ÀÌ ¼ÓÇÑ ½Ã°£´ë±îÁö¸¸ Â÷´Ü (18:30 ¡æ 18½Ã±îÁö, 19½Ã´Â ÇØ¹æ)
+      // ì¢…ë£Œì‹œê°ì´ ì†í•œ ì‹œê°„ëŒ€ê¹Œì§€ë§Œ ì°¨ë‹¨ (18:30 â†’ 18ì‹œê¹Œì§€, 19ì‹œëŠ” í•´ë°©)
       const oToHExcl = oToH - 1;
       for(let h = oFromH; h <= oToHExcl; h++) blockedStart.add((h + 24) % 24);
 
@@ -1181,7 +1181,7 @@ function _refreshShiftConstraints(key){
         blockedEnd.add(hMod);
       }
 
-      // ÁßÃ¸ ¿©ºÎ È®ÀÎ (ºĞ ´ÜÀ§, °æ°è Çã¿ë)
+      // ì¤‘ì²© ì—¬ë¶€ í™•ì¸ (ë¶„ ë‹¨ìœ„, ê²½ê³„ í—ˆìš©)
       if(sh.sMin < oeMin && eMin > other.sMin){
         hasOverlap = true;
       }
@@ -1193,17 +1193,17 @@ function _refreshShiftConstraints(key){
     if(hasOverlap) blockedShifts.push(sh.idx + 1);
   });
 
-  // ¿À·ù ¸Ş½ÃÁö
+  // ì˜¤ë¥˜ ë©”ì‹œì§€
   if(errEl){
     if(blockedShifts.length > 0){
-      errEl.textContent = `?? ½ÃÇÁÆ® ${blockedShifts.join(', ')}¹ø ½Ã°£ÀÌ ÁßÃ¸µË´Ï´Ù. ´Ù½Ã ¼³Á¤ÇÏ¼¼¿ä.`;
+      errEl.textContent = `âš ï¸ ì‹œí”„íŠ¸ ${blockedShifts.join(', ')}ë²ˆ ì‹œê°„ì´ ì¤‘ì²©ë©ë‹ˆë‹¤. ë‹¤ì‹œ ì„¤ì •í•˜ì„¸ìš”.`;
       errEl.style.display = '';
     } else {
       errEl.style.display = 'none';
     }
   }
 
-  // ½ÃÇÁÆ®º° °­Á¶ Ç¥½Ã
+  // ì‹œí”„íŠ¸ë³„ ê°•ì¡° í‘œì‹œ
   shifts.forEach(sh => {
     const sid = sh.idx === 0 ? '' : '-' + sh.idx;
     const shiftEl = document.getElementById(`ct-sch-shift-${key}${sid}`);
@@ -1211,7 +1211,7 @@ function _refreshShiftConstraints(key){
   });
 }
 
-// ¦¡¦¡ selectÀÇ option¿¡¼­ blockedHours¿¡ ÇØ´çÇÏ´Â ½Ã°£ Á¦°Å ¦¡¦¡
+// â”€â”€ selectì˜ optionì—ì„œ blockedHoursì— í•´ë‹¹í•˜ëŠ” ì‹œê°„ ì œê±° â”€â”€
 function _constrainSelectHours(inputId, blockedHours){
   const hidden = document.getElementById(inputId);
   if(!hidden) return;
@@ -1232,7 +1232,7 @@ function _constrainSelectHours(inputId, blockedHours){
   }
   hSel.innerHTML = emptyOpt + opts.join('');
 }
-// ¿ÜºÎ¿¡¼­ °ª ¼³Á¤ ½Ã select µ¿±âÈ­
+// ì™¸ë¶€ì—ì„œ ê°’ ì„¤ì • ì‹œ select ë™ê¸°í™”
 function _setTimePickerValue(id, value){
   const hidden = document.getElementById(id);
   if(!hidden) return;
@@ -1247,7 +1247,7 @@ function _setTimePickerValue(id, value){
   if(m) mSel.value = m;
 }
 
-// ¦¡¦¡ ÀÏ°ı¼³Á¤ ¹Ù ½Ã/ºĞ ¼±ÅÃ±â ÃÊ±âÈ­ ¦¡¦¡
+// â”€â”€ ì¼ê´„ì„¤ì • ë°” ì‹œ/ë¶„ ì„ íƒê¸° ì´ˆê¸°í™” â”€â”€
 function _initBulkTimePickers(){
   const items = [
     { id: 'bulk-start',  val: '09:00', ph: '09' },
@@ -1265,7 +1265,7 @@ function _initBulkTimePickers(){
   });
 }
 
-// ¦¡¦¡ ½ÃÇÁÆ® ±×·ì ·»´õ ÇïÆÛ ¦¡¦¡
+// â”€â”€ ì‹œí”„íŠ¸ ê·¸ë£¹ ë Œë” í—¬í¼ â”€â”€
 function _shiftGroupHTML(key, idx, enabled, start, end, breaks){
   const isReadonly = document.querySelector('#contract-modal .modal')?.classList.contains('ct-readonly');
   const dis = (enabled && !isReadonly) ? '' : 'disabled';
@@ -1275,19 +1275,19 @@ function _shiftGroupHTML(key, idx, enabled, start, end, breaks){
   const brks = (breaks && breaks.length) ? breaks : defBreaks;
   const sid = idx===0 ? '' : '-'+idx;
   return `<div class="shift-group" id="ct-sch-shift-${key}${sid}">
-    <span style="font-size:10.5px;color:#6b7280;white-space:nowrap;">Ãâ±Ù</span>
+    <span style="font-size:10.5px;color:#6b7280;white-space:nowrap;">ì¶œê·¼</span>
     ${_timePickerHTML(`ct-sch-start-${key}${sid}`, s, !enabled, '09')}
-    <span style="font-size:10.5px;color:#6b7280;white-space:nowrap;">Åğ±Ù</span>
+    <span style="font-size:10.5px;color:#6b7280;white-space:nowrap;">í‡´ê·¼</span>
     ${_timePickerHTML(`ct-sch-end-${key}${sid}`, e, !enabled, '18')}
-    <span style="font-size:10.5px;color:#7c3aed;white-space:nowrap;">ÈŞ°Ô</span>
+    <span style="font-size:10.5px;color:#7c3aed;white-space:nowrap;">íœ´ê²Œ</span>
     <div class="brk-slots-wrap" id="ct-sch-brkwrap-${key}${sid}">${_brkSlotsHTML2(key, idx, enabled, brks)}</div>
     ${idx===0
-      ? `<button type="button" class="btn-brk-add shift-add" onclick="_addShift('${key}')" title="½ÃÇÁÆ® Ãß°¡">+</button><button type="button" class="btn-brk-del shift-del" onclick="_deactivateShift('${key}')" ${dis} title="ºñÈ°¼ºÈ­">?</button>`
-      : `<button type="button" class="btn-brk-del shift-del" onclick="_removeShift('${key}',${idx})" title="½ÃÇÁÆ® »èÁ¦">?</button>`}
+      ? `<button type="button" class="btn-brk-add shift-add" onclick="_addShift('${key}')" title="ì‹œí”„íŠ¸ ì¶”ê°€">+</button><button type="button" class="btn-brk-del shift-del" onclick="_deactivateShift('${key}')" ${dis} title="ë¹„í™œì„±í™”">âˆ’</button>`
+      : `<button type="button" class="btn-brk-del shift-del" onclick="_removeShift('${key}',${idx})" title="ì‹œí”„íŠ¸ ì‚­ì œ">âˆ’</button>`}
   </div>`;
 }
 
-// ¦¡¦¡ Ã¹ ¹øÂ° ½ÃÇÁÆ® ºñÈ°¼ºÈ­ ¦¡¦¡
+// â”€â”€ ì²« ë²ˆì§¸ ì‹œí”„íŠ¸ ë¹„í™œì„±í™” â”€â”€
 function _deactivateShift(key){
   if(document.querySelector('#contract-modal .modal')?.classList.contains('ct-readonly')) return;
   const container = document.getElementById(`ct-sch-shifts-${key}`);
@@ -1297,7 +1297,7 @@ function _deactivateShift(key){
   if(typeof _syncBulkCheckboxes === 'function') _syncBulkCheckboxes();
 }
 
-// ¦¡¦¡ ½ÃÇÁÆ®¿ë ÈŞ°Ô ½½·Ô HTML (idx Æ÷ÇÔ) ¦¡¦¡
+// â”€â”€ ì‹œí”„íŠ¸ìš© íœ´ê²Œ ìŠ¬ë¡¯ HTML (idx í¬í•¨) â”€â”€
 function _brkSlotsHTML2(key, shiftIdx, enabled, breaks){
   const sid = shiftIdx===0 ? '' : '-'+shiftIdx;
   return breaks.map((b, idx) => {
@@ -1308,20 +1308,20 @@ function _brkSlotsHTML2(key, shiftIdx, enabled, breaks){
       <span class="brk-sep">~</span>
       ${_timePickerHTML(bidE, b.e||'', !enabled, '13')}
       ${idx > 0
-        ? `<button type="button" class="btn-brk-del" onclick="_removeBrkSlot2('${key}',${shiftIdx},${idx})" ${!enabled?'disabled':''} title="ÈŞ°Ô »èÁ¦">?</button>`
+        ? `<button type="button" class="btn-brk-del" onclick="_removeBrkSlot2('${key}',${shiftIdx},${idx})" ${!enabled?'disabled':''} title="íœ´ê²Œ ì‚­ì œ">âˆ’</button>`
         : ''}
     </div>`;
   }).join('');
 }
 
-// ¦¡¦¡ ½ÃÇÁÆ® Ãß°¡ ¦¡¦¡
+// â”€â”€ ì‹œí”„íŠ¸ ì¶”ê°€ â”€â”€
 function _addShift(key){
   if(document.querySelector('#contract-modal .modal')?.classList.contains('ct-readonly')) return;
   const row = document.getElementById(`ct-sch-row-${key}`);
   const container = row?.querySelector('.td-shifts .shifts-container');
   if(!container) return;
   const existing = container.querySelectorAll('.shift-group');
-  // Ã¹ ¹øÂ° ½ÃÇÁÆ®°¡ ºñÈ°¼º »óÅÂÀÌ¸é È°¼ºÈ­
+  // ì²« ë²ˆì§¸ ì‹œí”„íŠ¸ê°€ ë¹„í™œì„± ìƒíƒœì´ë©´ í™œì„±í™”
   if(existing.length === 1){
     const firstSel = container.querySelector('.tp-h');
     if(firstSel && firstSel.disabled){
@@ -1332,9 +1332,9 @@ function _addShift(key){
       return;
     }
   }
-  // ÀÌ¹Ì È°¼º »óÅÂ¸é »õ ½ÃÇÁÆ® Ãß°¡ (½ÃÀÛ½Ã°£ = ÀÌÀü ½ÃÇÁÆ® Á¾·á½Ã°£)
+  // ì´ë¯¸ í™œì„± ìƒíƒœë©´ ìƒˆ ì‹œí”„íŠ¸ ì¶”ê°€ (ì‹œì‘ì‹œê°„ = ì´ì „ ì‹œí”„íŠ¸ ì¢…ë£Œì‹œê°„)
   const idx = existing.length;
-  // ÀÌÀü ½ÃÇÁÆ®ÀÇ Á¾·á½Ã°£ °¡Á®¿À±â
+  // ì´ì „ ì‹œí”„íŠ¸ì˜ ì¢…ë£Œì‹œê°„ ê°€ì ¸ì˜¤ê¸°
   let prevEnd = '';
   if(idx > 0){
     const prevSid = idx === 1 ? '' : '-' + (idx - 1);
@@ -1350,7 +1350,7 @@ function _addShift(key){
   if(typeof _syncBulkCheckboxes === 'function') _syncBulkCheckboxes();
 }
 
-// ¦¡¦¡ ½ÃÇÁÆ® »èÁ¦ ¦¡¦¡
+// â”€â”€ ì‹œí”„íŠ¸ ì‚­ì œ â”€â”€
 function _removeShift(key, idx){
   if(document.querySelector('#contract-modal .modal')?.classList.contains('ct-readonly')) return;
   const sid = idx===0 ? '' : '-'+idx;
@@ -1361,7 +1361,7 @@ function _removeShift(key, idx){
   if(typeof _syncBulkCheckboxes === 'function') _syncBulkCheckboxes();
 }
 
-// ¦¡¦¡ ½ÃÇÁÆ®¿ë ÈŞ°Ô ½½·Ô Ãß°¡ ¦¡¦¡
+// â”€â”€ ì‹œí”„íŠ¸ìš© íœ´ê²Œ ìŠ¬ë¡¯ ì¶”ê°€ â”€â”€
 function _addBrkSlot2(key, shiftIdx){
   if(document.querySelector('#contract-modal .modal')?.classList.contains('ct-readonly')) return;
   const sid = shiftIdx===0 ? '' : '-'+shiftIdx;
@@ -1377,7 +1377,7 @@ function _addBrkSlot2(key, shiftIdx){
     _timePickerHTML(bidS, '', false, '12')
     + `<span class="brk-sep">~</span>`
     + _timePickerHTML(bidE, '', false, '13')
-    + `<button type="button" class="btn-brk-del" onclick="_removeBrkSlot2('${key}',${shiftIdx},${idx})" title="ÈŞ°Ô »èÁ¦">?</button>`;
+    + `<button type="button" class="btn-brk-del" onclick="_removeBrkSlot2('${key}',${shiftIdx},${idx})" title="íœ´ê²Œ ì‚­ì œ">âˆ’</button>`;
   wrap.appendChild(row);
   calcWorkHours();
 }
@@ -1437,7 +1437,7 @@ function _addBrkSlot(key){
     _timePickerHTML(bidS, '', false, '12')
     + `<span class="brk-sep">~</span>`
     + _timePickerHTML(bidE, '', false, '13')
-    + `<button type="button" class="btn-brk-del" onclick="_removeBrkSlot('${key}',${idx})" title="ÈŞ°Ô ½½·Ô »èÁ¦">?</button>`;
+    + `<button type="button" class="btn-brk-del" onclick="_removeBrkSlot('${key}',${idx})" title="íœ´ê²Œ ìŠ¬ë¡¯ ì‚­ì œ">âˆ’</button>`;
   wrap.appendChild(newRow);
   calcWorkHours();
 }
@@ -1447,11 +1447,11 @@ function _removeBrkSlot(key, idx){
   if(!wrap) return;
   const row = document.getElementById(`ct-sch-brkrow-${key}-${idx}`);
   if(row) row.remove();
-  // idx Àç¹øÈ£ ºÎ¿©
+  // idx ì¬ë²ˆí˜¸ ë¶€ì—¬
   wrap.querySelectorAll('.brk-slot-row').forEach((r,i)=>{
     r.id = `ct-sch-brkrow-${key}-${i}`;
     r.querySelectorAll('[data-brk-idx]').forEach(el=>el.setAttribute('data-brk-idx', i));
-    // »èÁ¦ ¹öÆ° onclick °»½Å
+    // ì‚­ì œ ë²„íŠ¼ onclick ê°±ì‹ 
     const delBtn = r.querySelector('.btn-brk-del');
     if(delBtn) delBtn.setAttribute('onclick', `_removeBrkSlot('${key}',${i})`);
   });
@@ -1467,7 +1467,7 @@ function initScheduleTable(){
   const tbody = document.getElementById('ct-schedule-tbody');
   if(!tbody) return;
   tbody.innerHTML = DAY_KEYS.map((key,i)=>{
-    const enabled = false; // ¸ğµç ¿äÀÏ ºñÈ°¼º »óÅÂ·Î ½ÃÀÛ (+¹öÆ° ¶Ç´Â ÀÏ°ı¼³Á¤À¸·Î È°¼ºÈ­)
+    const enabled = false; // ëª¨ë“  ìš”ì¼ ë¹„í™œì„± ìƒíƒœë¡œ ì‹œì‘ (+ë²„íŠ¼ ë˜ëŠ” ì¼ê´„ì„¤ì •ìœ¼ë¡œ í™œì„±í™”)
     const color = i>=5 ? (i===5?'#2563eb':'#dc2626') : '#1e293b';
     return `
     <tr class="${DAY_CLASSES[i]}" id="ct-sch-row-${key}">
@@ -1492,10 +1492,10 @@ function timeToMins(t){
 }
 
 function calcWorkHours(){
-  const STATUTORY_DAILY = 8 * 60;   // ¹ıÁ¤ 1ÀÏ ¼ÒÁ¤±Ù·Î½Ã°£ (480ºĞ)
-  const STATUTORY_WEEKLY = 40 * 60; // ¹ıÁ¤ 1ÁÖ ¼ÒÁ¤±Ù·Î½Ã°£ (2400ºĞ)
-  const NIGHT_START = 22 * 60;      // ¾ß°£ ½ÃÀÛ 22:00 (1320ºĞ)
-  const NIGHT_END   = 30 * 60;      // ¾ß°£ Á¾·á ÀÍÀÏ 06:00 (1800ºĞ)
+  const STATUTORY_DAILY = 8 * 60;   // ë²•ì • 1ì¼ ì†Œì •ê·¼ë¡œì‹œê°„ (480ë¶„)
+  const STATUTORY_WEEKLY = 40 * 60; // ë²•ì • 1ì£¼ ì†Œì •ê·¼ë¡œì‹œê°„ (2400ë¶„)
+  const NIGHT_START = 22 * 60;      // ì•¼ê°„ ì‹œì‘ 22:00 (1320ë¶„)
+  const NIGHT_END   = 30 * 60;      // ì•¼ê°„ ì¢…ë£Œ ìµì¼ 06:00 (1800ë¶„)
 
   let totalStatMins = 0, totalOtMins = 0, totalNightMins = 0, totalHolMins = 0;
   let workDays = 0;
@@ -1514,7 +1514,7 @@ function calcWorkHours(){
       const eRaw = (document.getElementById(`ct-sch-end-${key}${sid}`) || {}).value;
       let e = timeToMins(eRaw);
       if (s === null || e === null) { shiftIdx++; continue; }
-      if (e <= s) e += 24 * 60; // ÀÍÀÏ Á¾·á
+      if (e <= s) e += 24 * 60; // ìµì¼ ì¢…ë£Œ
 
       const slots = _getBrkSlots2(key, shiftIdx);
       const totalBrk = slots.reduce((sum, b) => {
@@ -1528,7 +1528,7 @@ function calcWorkHours(){
       const shiftMins = Math.max(0, e - s - totalBrk);
       dayMins += shiftMins;
 
-      // ¦¡¦¡ ¾ß°£±Ù·Î: shift¿Í 22:00~06:00 ±³Â÷ºĞ ¦¡¦¡
+      // â”€â”€ ì•¼ê°„ê·¼ë¡œ: shiftì™€ 22:00~06:00 êµì°¨ë¶„ â”€â”€
       const nightOverlap =
         Math.max(0, Math.min(e, NIGHT_END) - Math.max(s, NIGHT_START)) +
         Math.max(0, Math.min(e, NIGHT_END + 24 * 60) - Math.max(s, NIGHT_START + 24 * 60));
@@ -1539,25 +1539,25 @@ function calcWorkHours(){
 
     if (dayMins > 0) {
       workDays++;
-      // ¦¡¦¡ ¼ÒÁ¤±Ù·Î vs ¿¬Àå ºĞ¸® ¦¡¦¡
+      // â”€â”€ ì†Œì •ê·¼ë¡œ vs ì—°ì¥ ë¶„ë¦¬ â”€â”€
       const dayStatMins = Math.min(dayMins, STATUTORY_DAILY);
       const dayOtMins   = Math.max(0, dayMins - STATUTORY_DAILY);
       totalStatMins += dayStatMins;
       totalOtMins   += dayOtMins;
 
-      // ¦¡¦¡ ¾ß°£±Ù·Î ¦¡¦¡
+      // â”€â”€ ì•¼ê°„ê·¼ë¡œ â”€â”€
       totalNightMins += dayNightMins;
 
-      // ¦¡¦¡ ÈŞÀÏ±Ù·Î ¦¡¦¡
+      // â”€â”€ íœ´ì¼ê·¼ë¡œ â”€â”€
       if (isWeekend) totalHolMins += dayMins;
 
-      // ¦¡¦¡ ¼¿ Ç¥½Ã: ¼ÒÁ¤(ÃÖ´ë8h), ÈŞÀÏ(ºÓÀº»ö +h), ¿¬Àå(ÁÖÈ²»ö +h) ¦¡¦¡
+      // â”€â”€ ì…€ í‘œì‹œ: ì†Œì •(ìµœëŒ€8h), íœ´ì¼(ë¶‰ì€ìƒ‰ +h), ì—°ì¥(ì£¼í™©ìƒ‰ +h) â”€â”€
       const statH = dayStatMins / 60;
       const otH   = dayOtMins / 60;
       if (hrsEl) {
         let label = (Number.isInteger(statH) ? statH : statH.toFixed(1)) + 'h';
-        if (isWeekend) label = '<span style="color:#dc2626;font-size:10px;">+' + label + ' (ÈŞÀÏ)</span>';
-        if (otH > 0) label += '<span style="color:#f59e0b;font-size:10px;"> +' + (Number.isInteger(otH) ? otH : otH.toFixed(1)) + 'h(¿¬Àå)</span>';
+        if (isWeekend) label = '<span style="color:#dc2626;font-size:10px;">+' + label + ' (íœ´ì¼)</span>';
+        if (otH > 0) label += '<span style="color:#f59e0b;font-size:10px;"> +' + (Number.isInteger(otH) ? otH : otH.toFixed(1)) + 'h(ì—°ì¥)</span>';
         hrsEl.innerHTML = label;
       }
     } else {
@@ -1565,7 +1565,7 @@ function calcWorkHours(){
     }
   });
 
-  // ¦¡¦¡ ÁÖ ¼ÒÁ¤±Ù·Î½Ã°£ 40h ÃÊ°úºĞ ¡æ ¿¬ÀåÀ¸·Î ÀÌ°ü ¦¡¦¡
+  // â”€â”€ ì£¼ ì†Œì •ê·¼ë¡œì‹œê°„ 40h ì´ˆê³¼ë¶„ â†’ ì—°ì¥ìœ¼ë¡œ ì´ê´€ â”€â”€
   if (totalStatMins > STATUTORY_WEEKLY) {
     totalOtMins += (totalStatMins - STATUTORY_WEEKLY);
     totalStatMins = STATUTORY_WEEKLY;
@@ -1576,23 +1576,23 @@ function calcWorkHours(){
   const weekNightH = totalNightMins / 60;
   const weekHolH   = totalHolMins / 60;
 
-  // ÁÖ ¼ÒÁ¤±Ù¹«ÀÏ¼ö: ÃÖ´ë 5ÀÏ, ÃÊ°úºĞÀº °íÁ¤ ¿¬Àå/¾ß°£/ÈŞÀÏ·Î È®ÀÎ
+  // ì£¼ ì†Œì •ê·¼ë¬´ì¼ìˆ˜: ìµœëŒ€ 5ì¼, ì´ˆê³¼ë¶„ì€ ê³ ì • ì—°ì¥/ì•¼ê°„/íœ´ì¼ë¡œ í™•ì¸
   const statWorkDays = Math.min(workDays, 5);
-  // ÀÏ Æò±Õ ¼ÒÁ¤±Ù·Î½Ã°£: ÃÑ ÁÖ°£±Ù·Î½Ã°£ ¡À 5, ÃÖ´ë 8h, ÃÊ°úºĞÀº °íÁ¤ ¿¬Àå/¾ß°£/ÈŞÀÏ
+  // ì¼ í‰ê·  ì†Œì •ê·¼ë¡œì‹œê°„: ì´ ì£¼ê°„ê·¼ë¡œì‹œê°„ Ã· 5, ìµœëŒ€ 8h, ì´ˆê³¼ë¶„ì€ ê³ ì • ì—°ì¥/ì•¼ê°„/íœ´ì¼
   const totalWeekMins = totalStatMins + totalOtMins + totalNightMins + totalHolMins;
   const avgDayH = totalWeekMins > 0 ? totalWeekMins / 5 / 60 : 0;
 
   const fmtH = h => Number.isInteger(h) ? h : h.toFixed(1);
 
-  // ¦¡¦¡ ¿ä¾à ¾÷µ¥ÀÌÆ® ¦¡¦¡
+  // â”€â”€ ìš”ì•½ ì—…ë°ì´íŠ¸ â”€â”€
   const el_d = document.getElementById('ct-wsh-days');
   const el_w = document.getElementById('ct-wsh-week-hours');
   const el_a = document.getElementById('ct-wsh-day-hours');
   if (el_d) el_d.textContent = statWorkDays;
   if (el_w) el_w.textContent = fmtH(weekStatH);
-  if (el_a) el_a.textContent = fmtH(Math.min(avgDayH, 8)); // ÀÏ Æò±Õ ÃÖ´ë 8h
+  if (el_a) el_a.textContent = fmtH(Math.min(avgDayH, 8)); // ì¼ í‰ê·  ìµœëŒ€ 8h
 
-  // ¦¡¦¡ ¿¬Àå/¾ß°£/ÈŞÀÏ Ç¥½Ã ¦¡¦¡
+  // â”€â”€ ì—°ì¥/ì•¼ê°„/íœ´ì¼ í‘œì‹œ â”€â”€
   const el_ot = document.getElementById('ct-wsh-ot-hours');
   const el_otW = document.getElementById('ct-wsh-ot-wrap');
   const el_ni = document.getElementById('ct-wsh-night-hours');
@@ -1607,13 +1607,13 @@ function calcWorkHours(){
   if (el_ho) el_ho.textContent = fmtH(weekHolH);
   if (el_hoW) el_hoW.style.display = weekHolH > 0 ? '' : 'none';
 
-  // ¦¡¦¡ hidden ÇÊµå (¼ÒÁ¤±Ù·Î½Ã°£ ±âÁØ) ¦¡¦¡
+  // â”€â”€ hidden í•„ë“œ (ì†Œì •ê·¼ë¡œì‹œê°„ ê¸°ì¤€) â”€â”€
   const hrsHid = document.getElementById('ct-hours');
   if (hrsHid) hrsHid.value = Math.min(avgDayH, 8).toFixed(2);
   const daysHid = document.getElementById('ct-days');
   if (daysHid) daysHid.value = workDays;
 
-  // ¦¡¦¡ ¿ù È¯»ê °íÁ¤¿¬Àå/¾ß°£/ÈŞÀÏ±Ù·Î½Ã°£ (ÁÖ ¡¿ 4.345) ¦¡¦¡
+  // â”€â”€ ì›” í™˜ì‚° ê³ ì •ì—°ì¥/ì•¼ê°„/íœ´ì¼ê·¼ë¡œì‹œê°„ (ì£¼ Ã— 4.345) â”€â”€
   const WEEKS_PER_MONTH = 4.345;
   const elOtH = document.getElementById('ct-fixed-ot-hours');
   const elNiH = document.getElementById('ct-fixed-night-hours');
@@ -1625,30 +1625,30 @@ function calcWorkHours(){
   calcContractSalary();
 }
 
-// ¦¡¦¡¦¡ °»½Å Æä¾î À¯Æ¿¸®Æ¼ (´ÜÀÏ Áø¸® ¿øÃµ) ¦¡¦¡¦¡
+// â”€â”€â”€ ê°±ì‹  í˜ì–´ ìœ í‹¸ë¦¬í‹° (ë‹¨ì¼ ì§„ë¦¬ ì›ì²œ) â”€â”€â”€
 
 /**
- * °è¾àÀÇ °»½Å Æä¾î »ó´ë¹æÀ» Ã£´Â´Ù. ´ÜÀÏ Å½»ö ÇÔ¼ö.
- * @param {object} c - °è¾à °´Ã¼
- * @returns {object|null} Æä¾î °è¾à ¶Ç´Â null
+ * ê³„ì•½ì˜ ê°±ì‹  í˜ì–´ ìƒëŒ€ë°©ì„ ì°¾ëŠ”ë‹¤. ë‹¨ì¼ íƒìƒ‰ í•¨ìˆ˜.
+ * @param {object} c - ê³„ì•½ ê°ì²´
+ * @returns {object|null} í˜ì–´ ê³„ì•½ ë˜ëŠ” null
  */
 function findPairContract(c){
   if(!c) return null;
   
-  // Tier 1: renewed_from_id Á÷Á¢ ÂüÁ¶
+  // Tier 1: renewed_from_id ì§ì ‘ ì°¸ì¡°
   if(c.renewed_from_id){
     const pair = allContracts.find(x => x.id === c.renewed_from_id);
     if(pair) return pair;
   }
   
-  // Tier 2: renewed_to_id Á÷Á¢ ÂüÁ¶
+  // Tier 2: renewed_to_id ì§ì ‘ ì°¸ì¡°
   if(c.renewed_to_id){
     const pair = allContracts.find(x => x.id === c.renewed_to_id);
     if(pair) return pair;
   }
   
-  // Tier 3: µ¿ÀÏ company_id + employee_id + »óÅÂ ±â¹İ (company_id °¡µå Æ÷ÇÔ)
-  // ¡Ø ¼öÁ¤/Àç¹ßÇàÀ¸·Î ÆÄ±âµÈ °è¾à(is_voided_by_amend)Àº Æä¾î °ü¸® ´ë»óÀÌ ¾Æ´Ô (º¸Á¸ÀÇ¹« ¾øÀ½, »èÁ¦ °¡´É)
+  // Tier 3: ë™ì¼ company_id + employee_id + ìƒíƒœ ê¸°ë°˜ (company_id ê°€ë“œ í¬í•¨)
+  // â€» ìˆ˜ì •/ì¬ë°œí–‰ìœ¼ë¡œ íŒŒê¸°ëœ ê³„ì•½(is_voided_by_amend)ì€ í˜ì–´ ê´€ë¦¬ ëŒ€ìƒì´ ì•„ë‹˜ (ë³´ì¡´ì˜ë¬´ ì—†ìŒ, ì‚­ì œ ê°€ëŠ¥)
   const pair = allContracts.find(x =>
     x.company_id === c.company_id &&
     x.employee_id === c.employee_id &&
@@ -1659,7 +1659,7 @@ function findPairContract(c){
   );
   if(pair) return pair;
   
-  // Tier 4: ³¯Â¥ ±â¹İ (µ¿ÀÏ company_id + employee_id)
+  // Tier 4: ë‚ ì§œ ê¸°ë°˜ (ë™ì¼ company_id + employee_id)
   if(c.terminate_date){
     const _nextDay = new Date(c.terminate_date);
     _nextDay.setDate(_nextDay.getDate() + 1);
@@ -1689,7 +1689,7 @@ function findPairContract(c){
 }
 
 /**
- * Æä¾î ¹ß°ß ½Ã in-memory ÇÊµå º¸Á¤ + DB ÀúÀå ½Ãµµ
+ * í˜ì–´ ë°œê²¬ ì‹œ in-memory í•„ë“œ ë³´ì • + DB ì €ì¥ ì‹œë„
  */
 function _persistPairLink(contract, pairContract, direction){
   if(!contract || !pairContract) return;
@@ -1715,13 +1715,13 @@ function _persistPairLink(contract, pairContract, direction){
       method: 'PATCH',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify(patchBody)
-    }).catch(e => console.warn('[Æä¾î ¸µÅ© ÀúÀå ½ÇÆĞ]', e));
+    }).catch(e => console.warn('[í˜ì–´ ë§í¬ ì €ì¥ ì‹¤íŒ¨]', e));
   }
 }
 
 /**
- * Æä¾î ³¯Â¥ µ¿±âÈ­: °»½Å ½ÃÀÛÀÏ º¯°æ ¡æ ¿øº» ÇØÁöÀÏ Á¶Á¤
- * contract_end´Â º¸Á¸ÇÏ°í terminate_date¸¸ º¯°æ
+ * í˜ì–´ ë‚ ì§œ ë™ê¸°í™”: ê°±ì‹  ì‹œì‘ì¼ ë³€ê²½ â†’ ì›ë³¸ í•´ì§€ì¼ ì¡°ì •
+ * contract_endëŠ” ë³´ì¡´í•˜ê³  terminate_dateë§Œ ë³€ê²½
  */
 async function syncPairDates(oldContract, newStartDate){
   if(!oldContract || !newStartDate) return;
@@ -1733,7 +1733,7 @@ async function syncPairDates(oldContract, newStartDate){
   })();
   
   const currentEnd = oldContract.terminate_date || oldContract.contract_end || '';
-  if(newPairEnd === currentEnd) return; // º¯°æ ¾øÀ½
+  if(newPairEnd === currentEnd) return; // ë³€ê²½ ì—†ìŒ
   
   try {
     await fetch(`../tables/contracts/${oldContract.id}`, {
@@ -1743,16 +1743,16 @@ async function syncPairDates(oldContract, newStartDate){
     });
     oldContract.terminate_date = newPairEnd;
   } catch(e){
-    console.warn('[Æä¾î ³¯Â¥ µ¿±âÈ­ ½ÇÆĞ]', e);
+    console.warn('[í˜ì–´ ë‚ ì§œ ë™ê¸°í™” ì‹¤íŒ¨]', e);
   }
 }
 
 /**
- * Æä¾î °è¾àÀ» »õ ºê¶ó¿ìÀú Ã¢¿¡¼­ ¿­±â (side-by-side ºñ±³¿ë)
+ * í˜ì–´ ê³„ì•½ì„ ìƒˆ ë¸Œë¼ìš°ì € ì°½ì—ì„œ ì—´ê¸° (side-by-side ë¹„êµìš©)
  */
 function _openContractPairWindow(contractId){
   if(!contractId) return;
-  // ÇöÀç ¼±ÅÃµÈ °í°´»ç Á¤º¸¸¦ sessionStorage¿¡ ÀúÀåÇÏ¿© »õ Ã¢¿¡¼­ º¹¿ø
+  // í˜„ì¬ ì„ íƒëœ ê³ ê°ì‚¬ ì •ë³´ë¥¼ sessionStorageì— ì €ì¥í•˜ì—¬ ìƒˆ ì°½ì—ì„œ ë³µì›
   try {
     sessionStorage.setItem('_pairContractId', contractId);
     sessionStorage.setItem('_pairCompanyId', currentContCompanyId || '');
@@ -1761,7 +1761,7 @@ function _openContractPairWindow(contractId){
 }
 
 /**
- * Æä¾î °ü°è ÇØÁ¦: ¾çÂÊ renewed_from_id/renewed_to_id Á¤¸®
+ * í˜ì–´ ê´€ê³„ í•´ì œ: ì–‘ìª½ renewed_from_id/renewed_to_id ì •ë¦¬
  */
 async function breakPair(contract){
   if(!contract) return;
@@ -1770,7 +1770,7 @@ async function breakPair(contract){
   const updates = [];
   
   if(pair){
-    // »ó´ë¹æ Á¤¸®
+    // ìƒëŒ€ë°© ì •ë¦¬
     const pairPatch = {};
     if(pair.renewed_from_id === contract.id) { pairPatch.renewed_from_id = null; pair.renewed_from_id = null; }
     if(pair.renewed_to_id === contract.id)   { pairPatch.renewed_to_id = null;   pair.renewed_to_id = null; }
@@ -1782,7 +1782,7 @@ async function breakPair(contract){
     }
   }
   
-  // ÀÚ½Å Á¤¸®
+  // ìì‹  ì •ë¦¬
   if(contract.renewed_from_id || contract.renewed_to_id){
     const selfPatch = {};
     if(contract.renewed_from_id) { selfPatch.renewed_from_id = null; contract.renewed_from_id = null; }
@@ -1796,7 +1796,7 @@ async function breakPair(contract){
   await Promise.allSettled(updates);
 }
 
-// ½ºÄÉÁÙ ¡æ JSON Á÷·ÄÈ­ (ÀúÀå¿ë)
+// ìŠ¤ì¼€ì¤„ â†’ JSON ì§ë ¬í™” (ì €ì¥ìš©)
 function getScheduleJSON(){
   return DAY_KEYS.map((key,i)=>{
     const shifts = [];
@@ -1820,7 +1820,7 @@ function getScheduleJSON(){
   });
 }
 
-// JSON ¡æ ½ºÄÉÁÙ UI º¹¿ø
+// JSON â†’ ìŠ¤ì¼€ì¤„ UI ë³µì›
 function setScheduleFromJSON(schedule){
   if(!schedule || !Array.isArray(schedule)) return;
   schedule.forEach(row=>{
@@ -1839,24 +1839,24 @@ function setScheduleFromJSON(schedule){
     container.innerHTML = shifts.map((sh, idx) =>
       _shiftGroupHTML(key, idx, true, sh.start, sh.end, sh.breaks)
     ).join('');
-    // ½ÃÇÁÆ® °£ ÁßÃ¸ ¹æÁö Á¦¾à °»½Å
+    // ì‹œí”„íŠ¸ ê°„ ì¤‘ì²© ë°©ì§€ ì œì•½ ê°±ì‹ 
     if(typeof _refreshShiftConstraints === 'function') _refreshShiftConstraints(key);
   });
-  // ÀÏ°ı¼³Á¤ ¹Ù ½Ã°£À» Ã¹ ¹øÂ° È°¼º ¿äÀÏÀÇ ½ºÄÉÁÙ·Î ÃÊ±âÈ­
+  // ì¼ê´„ì„¤ì • ë°” ì‹œê°„ì„ ì²« ë²ˆì§¸ í™œì„± ìš”ì¼ì˜ ìŠ¤ì¼€ì¤„ë¡œ ì´ˆê¸°í™”
   _initBulkFromFirstActive();
   calcWorkHours();
-  // ÀÏ°ı¼³Á¤ Ã¼Å©¹Ú½º¸¦ ½ÇÁ¦ ½ºÄÉÁÙ »óÅÂ¿Í µ¿±âÈ­
+  // ì¼ê´„ì„¤ì • ì²´í¬ë°•ìŠ¤ë¥¼ ì‹¤ì œ ìŠ¤ì¼€ì¤„ ìƒíƒœì™€ ë™ê¸°í™”
   if(typeof _syncBulkCheckboxes === 'function') _syncBulkCheckboxes();
 }
 
-// ·¹°Å½Ã ´ÜÀÏ ½Ã°£ ¡æ ¿äÀÏº° ½ºÄÉÁÙ º¯È¯
+// ë ˆê±°ì‹œ ë‹¨ì¼ ì‹œê°„ â†’ ìš”ì¼ë³„ ìŠ¤ì¼€ì¤„ ë³€í™˜
 function setScheduleFromLegacy(c){
   const start = c.day_start||'09:00';
   const end   = c.day_end||'18:00';
   const brkMins = c.break_mins||60;
   const sMins = timeToMins(start)||540;
   let eMins = timeToMins(end)||1080;
-  if(eMins <= sMins) eMins += 24*60; // ÀÍÀÏ Á¾·á
+  if(eMins <= sMins) eMins += 24*60; // ìµì¼ ì¢…ë£Œ
   const halfWork = Math.round((eMins - sMins - brkMins) / 2);
   const brkStart = sMins + halfWork;
   const brkEnd   = brkStart + brkMins;
@@ -1869,22 +1869,22 @@ function setScheduleFromLegacy(c){
     if(!active){ container.innerHTML = _shiftGroupHTML(key, 0, false, '', '', []); return; }
     const breaks = brkMins > 0 ? [{s: toTime(brkStart), e: toTime(brkEnd)}] : [];
     container.innerHTML = _shiftGroupHTML(key, 0, true, start, end, breaks);
-    // ½ÃÇÁÆ® °£ ÁßÃ¸ ¹æÁö Á¦¾à °»½Å
+    // ì‹œí”„íŠ¸ ê°„ ì¤‘ì²© ë°©ì§€ ì œì•½ ê°±ì‹ 
     if(typeof _refreshShiftConstraints === 'function') _refreshShiftConstraints(key);
   });
-  // ÀÏ°ı¼³Á¤ ¹Ù ½Ã°£À» Ã¹ ¹øÂ° È°¼º ¿äÀÏÀÇ ½ºÄÉÁÙ·Î ÃÊ±âÈ­
+  // ì¼ê´„ì„¤ì • ë°” ì‹œê°„ì„ ì²« ë²ˆì§¸ í™œì„± ìš”ì¼ì˜ ìŠ¤ì¼€ì¤„ë¡œ ì´ˆê¸°í™”
   _initBulkFromFirstActive();
   calcWorkHours();
-  // ÀÏ°ı¼³Á¤ Ã¼Å©¹Ú½º¸¦ ½ÇÁ¦ ½ºÄÉÁÙ »óÅÂ¿Í µ¿±âÈ­
+  // ì¼ê´„ì„¤ì • ì²´í¬ë°•ìŠ¤ë¥¼ ì‹¤ì œ ìŠ¤ì¼€ì¤„ ìƒíƒœì™€ ë™ê¸°í™”
   if(typeof _syncBulkCheckboxes === 'function') _syncBulkCheckboxes();
 }
 
-// initBreakSelects ¡æ initScheduleTable·Î ´ëÃ¼ (ÇÏÀ§ È£È¯ stub)
+// initBreakSelects â†’ initScheduleTableë¡œ ëŒ€ì²´ (í•˜ìœ„ í˜¸í™˜ stub)
 function initBreakSelects(){ initScheduleTable(); }
 function getBreakMins(hId,mId){ return 0; }
 function setBreakMins(hId,mId,totalMins){}
 function toggleCtEndDate(preserveValue=false){
-  // ct-em-category ¿ì¼± (½Å±Ô ¸ğµå), ¾øÀ¸¸é ct-type (¼öÁ¤ ¸ğµå)
+  // ct-em-category ìš°ì„  (ì‹ ê·œ ëª¨ë“œ), ì—†ìœ¼ë©´ ct-type (ìˆ˜ì • ëª¨ë“œ)
   const rawCat = document.getElementById('ct-em-category')?.value 
               || document.getElementById('ct-type')?.value 
               || CONTRACT_TYPE.REGULAR;
@@ -1897,9 +1897,9 @@ function toggleCtEndDate(preserveValue=false){
   const isFixed = type ===CONTRACT_TYPE.FIXED || type ===CONTRACT_TYPE.DAILY || type ===CONTRACT_TYPE.FIXED_PROBATION;
   const isRegularOrProbation = type ===CONTRACT_TYPE.REGULAR || type ===CONTRACT_TYPE.REGULAR_PROBATION;
   
-  // ·¹ÀÌ¾Æ¿ô ÀüÈ¯: ÀÔ»çÀÏ span Á¶Á¤
-  // °è¾àÁ÷ À¯Çü: ÀÔ»çÀÏÀÌ ÀüÃ¼ Çà Â÷Áö (span 2), ½ÃÀÛÀÏ+Á¾·áÀÏÀÌ ´ÙÀ½ Çà¿¡ 2¿­·Î ¹èÄ¡
-  // Á¤±ÔÁ÷ À¯Çü: ÀÔ»çÀÏ+½ÃÀÛÀÏÀÌ ÇÑ Çà¿¡ 2¿­ ¹èÄ¡, Á¾·áÀÏ ¼û±è
+  // ë ˆì´ì•„ì›ƒ ì „í™˜: ì…ì‚¬ì¼ span ì¡°ì •
+  // ê³„ì•½ì§ ìœ í˜•: ì…ì‚¬ì¼ì´ ì „ì²´ í–‰ ì°¨ì§€ (span 2), ì‹œì‘ì¼+ì¢…ë£Œì¼ì´ ë‹¤ìŒ í–‰ì— 2ì—´ë¡œ ë°°ì¹˜
+  // ì •ê·œì§ ìœ í˜•: ì…ì‚¬ì¼+ì‹œì‘ì¼ì´ í•œ í–‰ì— 2ì—´ ë°°ì¹˜, ì¢…ë£Œì¼ ìˆ¨ê¹€
   if (hireRow) {
     hireRow.style.gridColumn = isFixed ? '1 / -1' : '';
   }
@@ -1910,7 +1910,7 @@ function toggleCtEndDate(preserveValue=false){
     endReqSpan.style.display = isFixed ? '' : 'none';
   }
   
-  // Á¶È¸ ¸ğµå(ct-readonly)ÀÌ°Å³ª preserveValue=trueÀÌ¸é °ªÀ» Áö¿ìÁö ¾ÊÀ½
+  // ì¡°íšŒ ëª¨ë“œ(ct-readonly)ì´ê±°ë‚˜ preserveValue=trueì´ë©´ ê°’ì„ ì§€ìš°ì§€ ì•ŠìŒ
   const modalEl = document.querySelector('#contract-modal .modal');
   const isReadonly = modalEl && modalEl.classList.contains('ct-readonly');
   if (endInput) {
@@ -1919,16 +1919,16 @@ function toggleCtEndDate(preserveValue=false){
     if(!isFixed && !preserveValue && !isReadonly) endInput.value = '';
   }
 }
-// ¦¡¦¡ °è¾à ¾ç½Ä Åë»óÀÓ±İ Áö±ŞÀ¯Çü °ü¸® ¦¡¦¡
-// pay_type ÀÖ´Â ¼ö´ç ÀüÃ¼: car/remote-area/meal (¹öÆ° UI) + research/communication/fitness/self_dev/book/overseas (°í°´»ç ¼³Á¤)
+// â”€â”€ ê³„ì•½ ì–‘ì‹ í†µìƒì„ê¸ˆ ì§€ê¸‰ìœ í˜• ê´€ë¦¬ â”€â”€
+// pay_type ìˆëŠ” ìˆ˜ë‹¹ ì „ì²´: car/remote-area/meal (ë²„íŠ¼ UI) + research/communication/fitness/self_dev/book/overseas (ê³ ê°ì‚¬ ì„¤ì •)
 const _ctPayTypes = {
   car: 'fixed', 'self-driving': 'fixed', 'remote-area': 'fixed', meal: 'fixed',
   research: 'fixed', communication: 'fixed', fitness: 'fixed',
   self_dev: 'fixed', book: 'fixed', overseas: 'fixed',
 };
 
-// allowance_config ±âÁØÀ¸·Î ÇØ´ç ¼ö´çÀÌ ÀÌ °í°´»ç¿¡¼­ È°¼ºÈ­µÇ¾î ÀÖ´ÂÁö ÃßÀû
-// car/mealÀº Ç×»ó È°¼º(±âº» ¼ö´ç)ÀÌ¹Ç·Î true·Î ÃÊ±âÈ­
+// allowance_config ê¸°ì¤€ìœ¼ë¡œ í•´ë‹¹ ìˆ˜ë‹¹ì´ ì´ ê³ ê°ì‚¬ì—ì„œ í™œì„±í™”ë˜ì–´ ìˆëŠ”ì§€ ì¶”ì 
+// car/mealì€ í•­ìƒ í™œì„±(ê¸°ë³¸ ìˆ˜ë‹¹)ì´ë¯€ë¡œ trueë¡œ ì´ˆê¸°í™”
 const _ctAllowCfgVisible = {
   car: false, meal: false,
   research: false, communication: false, fitness: false,
@@ -1936,7 +1936,7 @@ const _ctAllowCfgVisible = {
   childcare: false,
 };
 
-// pay_type ÀÖ´Â ¼ö´çÀÇ row id ¸ÅÇÎ (ÀÓ±İÁ¶°Ç ¼û±è/Ç¥½Ã Á¦¾î¿ë)
+// pay_type ìˆëŠ” ìˆ˜ë‹¹ì˜ row id ë§¤í•‘ (ì„ê¸ˆì¡°ê±´ ìˆ¨ê¹€/í‘œì‹œ ì œì–´ìš©)
 const _CT_PAY_TYPE_ROWS = {
   car         : 'ct-row-car',
   meal        : 'ct-row-meal',
@@ -1950,10 +1950,10 @@ const _CT_PAY_TYPE_ROWS = {
 
 function setCTPayType(field, type){
   _ctPayTypes[field] = type;
-  // Åë»óÀÓ±İ ¹«Á¶°Ç Á¦¿Ü Ç×¸ñ (pay_type=fixed¶óµµ Åë»óÀÓ±İ ¹ÌÆ÷ÇÔ)
+  // í†µìƒì„ê¸ˆ ë¬´ì¡°ê±´ ì œì™¸ í•­ëª© (pay_type=fixedë¼ë„ í†µìƒì„ê¸ˆ ë¯¸í¬í•¨)
   const ALWAYS_EXCLUDED = ['car','meal','research','communication','fitness','self_dev','book','overseas','childcare',
     'fixed_ot','fixed_night','fixed_hol'];
-  // ÈùÆ® ÅØ½ºÆ®·Î Åë»óÀÓ±İ Æ÷ÇÔ¿©ºÎ¸¦ Ç¥½ÃÇÏ´Â Ç×¸ñ
+  // íŒíŠ¸ í…ìŠ¤íŠ¸ë¡œ í†µìƒì„ê¸ˆ í¬í•¨ì—¬ë¶€ë¥¼ í‘œì‹œí•˜ëŠ” í•­ëª©
   const hintOnlyFields = ['site','position','skill','license','hazard','remote_area','regular_bonus','car','meal','research','communication','fitness','self_dev','book','overseas'];
   if(hintOnlyFields.includes(field)){
     const htmlField = field.replace(/_/g, '-');
@@ -1961,70 +1961,70 @@ function setCTPayType(field, type){
     if(hintEl){
       const isAlwaysExcluded = ALWAYS_EXCLUDED.includes(field);
       const labels = {
-        fixed: isAlwaysExcluded ? 'Åë»óÀÓ±İ Á¦¿Ü' : 'Åë»óÀÓ±İ Æ÷ÇÔ',
-        daily: 'Åë»óÀÓ±İ Á¦¿Ü (Ãâ±ÙÀÏ¼ö ºñ·Ê)',
-        receipt: 'Åë»óÀÓ±İ Á¦¿Ü (¿µ¼öÁõ Ã»±¸)'
+        fixed: isAlwaysExcluded ? 'í†µìƒì„ê¸ˆ ì œì™¸' : 'í†µìƒì„ê¸ˆ í¬í•¨',
+        daily: 'í†µìƒì„ê¸ˆ ì œì™¸ (ì¶œê·¼ì¼ìˆ˜ ë¹„ë¡€)',
+        receipt: 'í†µìƒì„ê¸ˆ ì œì™¸ (ì˜ìˆ˜ì¦ ì²­êµ¬)'
       };
       const colors = { fixed: isAlwaysExcluded ? '#f59e0b' : '#9ca3af', daily: '#f59e0b', receipt: '#f59e0b' };
-      hintEl.textContent = labels[type] || (isAlwaysExcluded ? 'Åë»óÀÓ±İ Á¦¿Ü' : 'Åë»óÀÓ±İ Æ÷ÇÔ');
+      hintEl.textContent = labels[type] || (isAlwaysExcluded ? 'í†µìƒì„ê¸ˆ ì œì™¸' : 'í†µìƒì„ê¸ˆ í¬í•¨');
       hintEl.style.color  = colors[type]  || (isAlwaysExcluded ? '#f59e0b' : '#9ca3af');
     }
 
-    // ¦¡¦¡ Åë»óÀÓ±İ ºÒÆ÷ÇÔ(daily/receipt) Ç×¸ñÀº ±Ù·Î°è¾à ÀÓ±İÁ¶°Ç¿¡¼­ DOM ¿ÏÀü Á¦°Å ¦¡¦¡
-    // allowance_config ±âÁØ È°¼ºÈ­µÈ Ç×¸ñ¿¡¸¸ Àû¿ë
-    // (ºñÈ°¼º Ç×¸ñÀº applyCTAllowanceConfig¿¡¼­ ÀÌ¹Ì display:none Ã³¸®)
+    // â”€â”€ í†µìƒì„ê¸ˆ ë¶ˆí¬í•¨(daily/receipt) í•­ëª©ì€ ê·¼ë¡œê³„ì•½ ì„ê¸ˆì¡°ê±´ì—ì„œ DOM ì™„ì „ ì œê±° â”€â”€
+    // allowance_config ê¸°ì¤€ í™œì„±í™”ëœ í•­ëª©ì—ë§Œ ì ìš©
+    // (ë¹„í™œì„± í•­ëª©ì€ applyCTAllowanceConfigì—ì„œ ì´ë¯¸ display:none ì²˜ë¦¬)
     const rowId = _CT_PAY_TYPE_ROWS[field];
     if(rowId && _ctAllowCfgVisible[field] !== false){
       const rowEl = document.getElementById(rowId);
       if(rowEl){
         const isFixed = (type === 'fixed');
         if(!isFixed){
-          // ÀÔ·Â°ª ÃÊ±âÈ­ ÈÄ DOM¿¡¼­ ¿ÏÀü Á¦°Å
+          // ì…ë ¥ê°’ ì´ˆê¸°í™” í›„ DOMì—ì„œ ì™„ì „ ì œê±°
           const inputEl = document.getElementById(`ct-${field.replace(/_/g,'-')}`);
           if(inputEl) inputEl.value = '';
           rowEl.remove();
         }
-        // isFixedÀÎ °æ¿ì: row°¡ ÀÌ¹Ì DOM¿¡ Á¸ÀçÇÏ¹Ç·Î º°µµ Ã³¸® ºÒÇÊ¿ä
-        // (applyCTAllowanceConfig ³» setCTPayType ¼ø¼­ º¸Àå)
+        // isFixedì¸ ê²½ìš°: rowê°€ ì´ë¯¸ DOMì— ì¡´ì¬í•˜ë¯€ë¡œ ë³„ë„ ì²˜ë¦¬ ë¶ˆí•„ìš”
+        // (applyCTAllowanceConfig ë‚´ setCTPayType ìˆœì„œ ë³´ì¥)
       }
     }
   }
   calcContractSalary();
 }
 function _getCTPayTypeVal(field){ return _ctPayTypes[field] || 'fixed'; }
-// ÇØ´ç ¼ö´çÀÌ ¿ù ¾àÁ¤ÀÓ±İ ÇÕ»ê ´ë»óÀÎÁö ¹İÈ¯ (fixed = ¸Å¿ù Á¤±âÁö±Ş = Æ÷ÇÔ, ±× ¿Ü Á¦¿Ü)
+// í•´ë‹¹ ìˆ˜ë‹¹ì´ ì›” ì•½ì •ì„ê¸ˆ í•©ì‚° ëŒ€ìƒì¸ì§€ ë°˜í™˜ (fixed = ë§¤ì›” ì •ê¸°ì§€ê¸‰ = í¬í•¨, ê·¸ ì™¸ ì œì™¸)
 function _isFixedAllow(field){ return _getCTPayTypeVal(field) === 'fixed'; }
 function _resetCTPayTypes(){
   ['site','position','skill','license','hazard','remote_area','regular_bonus','car','meal','research','communication','fitness','self_dev','book','overseas']
     .forEach(f=>{ _ctPayTypes[f]='fixed'; setCTPayType(f,'fixed'); });
 }
 
-// ¦¡¦¡ ±Ù·Î°è¾à ¸ğ´Ş ? °í°´»çº° ¿É¼Å³Î ¼ö´ç show/hide ¦¡¦¡
-// ¡Ø ¼ø¼­´Â °í°´»ç ¼³Á¤(allowance_config) È­¸é ¼ø¼­¿Í µ¿ÀÏÇÏ°Ô À¯Áö
-// °í°´»ç ¼³Á¤ ¼ø¼­: site ¡æ position ¡æ skill ¡æ license ¡æ hazard ¡æ remote_area ¡æ regular_bonus ¡æ childcare ¡æ car ¡æ meal ¡æ research ¡æ communication ¡æ fitness ¡æ self_dev ¡æ book ¡æ overseas
-// ¸ğµç ¼ö´ç Ç×¸ñÀÌ allowance_config ±âÁØ Á¶°ÇºÎ Ç¥½Ã (car/meal Æ÷ÇÔ)
+// â”€â”€ ê·¼ë¡œê³„ì•½ ëª¨ë‹¬ â€” ê³ ê°ì‚¬ë³„ ì˜µì…”ë„ ìˆ˜ë‹¹ show/hide â”€â”€
+// â€» ìˆœì„œëŠ” ê³ ê°ì‚¬ ì„¤ì •(allowance_config) í™”ë©´ ìˆœì„œì™€ ë™ì¼í•˜ê²Œ ìœ ì§€
+// ê³ ê°ì‚¬ ì„¤ì • ìˆœì„œ: site â†’ position â†’ skill â†’ license â†’ hazard â†’ remote_area â†’ regular_bonus â†’ childcare â†’ car â†’ meal â†’ research â†’ communication â†’ fitness â†’ self_dev â†’ book â†’ overseas
+// ëª¨ë“  ìˆ˜ë‹¹ í•­ëª©ì´ allowance_config ê¸°ì¤€ ì¡°ê±´ë¶€ í‘œì‹œ (car/meal í¬í•¨)
 const _CT_OPT_ROWS = [
-  { key:'site',          rowId:'ct-row-site'          }, // ÇöÀå¼ö´ç
-  { key:'position',      rowId:'ct-row-position'      }, // Á÷Ã¥¼ö´ç
-  { key:'skill',         rowId:'ct-row-skill'         }, // ±â¼ú¼ö´ç
-  { key:'license',       rowId:'ct-row-license'       }, // ¸éÇã¼ö´ç
-  { key:'hazard',        rowId:'ct-row-hazard'        }, // À§Çè¼ö´ç
-  { key:'remote_area',   rowId:'ct-row-remote-area'   }, // º®Áö¼ö´ç
-  { key:'regular_bonus', rowId:'ct-row-regular-bonus' }, // Á¤±â »ó¿©±İ: Åë»óÀÓ±İ Æ÷ÇÔ °íÁ¤
-  { key:'childcare',     rowId:'ct-row-childcare'     }, // º¸À°¼ö´ç
-  { key:'car',           rowId:'ct-row-car'           }, // Â÷·®Áö¿øºñ
-  { key:'meal',          rowId:'ct-row-meal'          }, // ½Ä´ë
-  { key:'research',      rowId:'ct-row-research'      }, // ¿¬±¸È°µ¿ºñ
-  { key:'communication', rowId:'ct-row-communication' }, // Åë½Åºñ
-  { key:'fitness',       rowId:'ct-row-fitness'       }, // Ã¼·ÂÁõÁøºñ
-  { key:'self_dev',      rowId:'ct-row-self-dev'      }, // ÀÚ±â°è¹ßºñ
-  { key:'book',          rowId:'ct-row-book'          }, // µµ¼­Áö¿øºñ
-  { key:'overseas',      rowId:'ct-row-overseas'      }, // ÇØ¿Ü±Ù¹«¼ö´ç
+  { key:'site',          rowId:'ct-row-site'          }, // í˜„ì¥ìˆ˜ë‹¹
+  { key:'position',      rowId:'ct-row-position'      }, // ì§ì±…ìˆ˜ë‹¹
+  { key:'skill',         rowId:'ct-row-skill'         }, // ê¸°ìˆ ìˆ˜ë‹¹
+  { key:'license',       rowId:'ct-row-license'       }, // ë©´í—ˆìˆ˜ë‹¹
+  { key:'hazard',        rowId:'ct-row-hazard'        }, // ìœ„í—˜ìˆ˜ë‹¹
+  { key:'remote_area',   rowId:'ct-row-remote-area'   }, // ë²½ì§€ìˆ˜ë‹¹
+  { key:'regular_bonus', rowId:'ct-row-regular-bonus' }, // ì •ê¸° ìƒì—¬ê¸ˆ: í†µìƒì„ê¸ˆ í¬í•¨ ê³ ì •
+  { key:'childcare',     rowId:'ct-row-childcare'     }, // ë³´ìœ¡ìˆ˜ë‹¹
+  { key:'car',           rowId:'ct-row-car'           }, // ì°¨ëŸ‰ì§€ì›ë¹„
+  { key:'meal',          rowId:'ct-row-meal'          }, // ì‹ëŒ€
+  { key:'research',      rowId:'ct-row-research'      }, // ì—°êµ¬í™œë™ë¹„
+  { key:'communication', rowId:'ct-row-communication' }, // í†µì‹ ë¹„
+  { key:'fitness',       rowId:'ct-row-fitness'       }, // ì²´ë ¥ì¦ì§„ë¹„
+  { key:'self_dev',      rowId:'ct-row-self-dev'      }, // ìê¸°ê³„ë°œë¹„
+  { key:'book',          rowId:'ct-row-book'          }, // ë„ì„œì§€ì›ë¹„
+  { key:'overseas',      rowId:'ct-row-overseas'      }, // í•´ì™¸ê·¼ë¬´ìˆ˜ë‹¹
 ];
-// clearValues=true: ¼û±â´Â Ç×¸ñÀÇ ÀÔ·Â°ªµµ 0À¸·Î ÃÊ±âÈ­ (½Å±Ô/°í°´»çº¯°æ ½Ã)
-// clearValues=false: show/hide¸¸ Àû¿ë (¼öÁ¤ ¸ğµå ? °ªÀº loadCT¿¡¼­ º¹¿ø)
+// clearValues=true: ìˆ¨ê¸°ëŠ” í•­ëª©ì˜ ì…ë ¥ê°’ë„ 0ìœ¼ë¡œ ì´ˆê¸°í™” (ì‹ ê·œ/ê³ ê°ì‚¬ë³€ê²½ ì‹œ)
+// clearValues=false: show/hideë§Œ ì ìš© (ìˆ˜ì • ëª¨ë“œ â€” ê°’ì€ loadCTì—ì„œ ë³µì›)
 function applyCTAllowanceConfig(cfg, clearValues = false){
-  // ÀÏ¿ëÁ÷: Åë»óÀÓ±İ ¹× °íÁ¤¼ö´ç Ç×¸ñ ÀüÃ¼ ¼û±è (cfg ¹«½Ã)
+  // ì¼ìš©ì§: í†µìƒì„ê¸ˆ ë° ê³ ì •ìˆ˜ë‹¹ í•­ëª© ì „ì²´ ìˆ¨ê¹€ (cfg ë¬´ì‹œ)
   const rawCat = (editId.contract || _recontractEmpId)
     ? (document.getElementById('ct-type')?.value || '')
     : (document.getElementById('ct-em-category')?.value || '');
@@ -2037,7 +2037,7 @@ function applyCTAllowanceConfig(cfg, clearValues = false){
     if(rowEl) rowEl.style.display = visible ? '' : 'none';
     if(!visible && clearValues){
       if(key === 'childcare'){
-        // º¸À°¼ö´ç: ±İ¾× + ºÎ¾ç°¡Á· ¼ö ¸ğµÎ ÃÊ±âÈ­
+        // ë³´ìœ¡ìˆ˜ë‹¹: ê¸ˆì•¡ + ë¶€ì–‘ê°€ì¡± ìˆ˜ ëª¨ë‘ ì´ˆê¸°í™”
         setAmountVal('ct-childcare', 0);
         const depEl = document.getElementById('ct-childcare-dependents');
         if(depEl) depEl.value = 0;
@@ -2047,36 +2047,36 @@ function applyCTAllowanceConfig(cfg, clearValues = false){
       }
     }
   });
-  // ¦¡¦¡ _ctAllowCfgVisible »óÅÂ °»½Å (pay_type Á¦°Å ·ÎÁ÷¿ë) ¦¡¦¡
+  // â”€â”€ _ctAllowCfgVisible ìƒíƒœ ê°±ì‹  (pay_type ì œê±° ë¡œì§ìš©) â”€â”€
   ['site','position','skill','license','hazard','remote_area','regular_bonus','car','meal','childcare','research','communication','fitness','self_dev','book','overseas'].forEach(f => {
     _ctAllowCfgVisible[f] = !!(cfg && cfg[f]);
   });
-  // ¸ğµç ¼ö´ç¿¡ pay_type Àû¿ë (Åë»óÀÓ±İ ¿©ºÎ´Â Áö±Ş¹æ½ÄÀ¸·Î °áÁ¤)
+  // ëª¨ë“  ìˆ˜ë‹¹ì— pay_type ì ìš© (í†µìƒì„ê¸ˆ ì—¬ë¶€ëŠ” ì§€ê¸‰ë°©ì‹ìœ¼ë¡œ ê²°ì •)
   const _PT_FIELDS = ['site','position','skill','license','hazard','remote_area','regular_bonus','car','meal','childcare','research','communication','fitness','self_dev','book','overseas'];
   _PT_FIELDS.forEach(f => {
     const pt = (cfg && cfg[`${f}_pay_type`]) ? cfg[`${f}_pay_type`] : 'fixed';
     setCTPayType(f, pt);
   });
-  // ¦¡¦¡ ½Å±Ô ÀÛ¼º ½Ã car/meal ÃÊ±âÈ­ (±âº»°ª ¾øÀ½, ¼öµ¿ ÀÔ·Â) ¦¡¦¡
+  // â”€â”€ ì‹ ê·œ ì‘ì„± ì‹œ car/meal ì´ˆê¸°í™” (ê¸°ë³¸ê°’ ì—†ìŒ, ìˆ˜ë™ ì…ë ¥) â”€â”€
   if(clearValues && !isDaily){
     if(cfg){
       if(cfg.car)  setAmountVal('ct-car',  0);
       if(cfg.meal) setAmountVal('ct-meal', 0);
     }
   }
-  // º¸À°¼ö´ç pay_type ÈùÆ® °»½Å (Åë»óÀÓ±İ Ç×»ó Á¦¿Ü)
+  // ë³´ìœ¡ìˆ˜ë‹¹ pay_type íŒíŠ¸ ê°±ì‹  (í†µìƒì„ê¸ˆ í•­ìƒ ì œì™¸)
   if(cfg && cfg.childcare){
     const _ccPt = cfg.childcare_pay_type || 'fixed';
     const ccHint = document.getElementById('ct-childcare-type-hint');
     if(ccHint){
-      ccHint.textContent = 'Åë»óÀÓ±İ Á¦¿Ü';
+      ccHint.textContent = 'í†µìƒì„ê¸ˆ ì œì™¸';
       ccHint.style.color  = '#f59e0b';
     }
   }
-  // ¦¡¦¡ »ç¿ëÀÚ Á¤ÀÇ Åë»óÀÓ±İ Ç×¸ñ ·»´õ¸µ ¦¡¦¡
+  // â”€â”€ ì‚¬ìš©ì ì •ì˜ í†µìƒì„ê¸ˆ í•­ëª© ë Œë”ë§ â”€â”€
   _renderCustomOrdinaryRows(cfg);
   
-  // ÀÏ¿ëÁ÷: °íÁ¤ ¿¬Àå/¾ß°£/ÈŞÀÏ±Ù·Î¼ö´ç + »ç¿ëÀÚ Á¤ÀÇ Ç×¸ñ ¼û±è
+  // ì¼ìš©ì§: ê³ ì • ì—°ì¥/ì•¼ê°„/íœ´ì¼ê·¼ë¡œìˆ˜ë‹¹ + ì‚¬ìš©ì ì •ì˜ í•­ëª© ìˆ¨ê¹€
   if(isDaily){
     ['ct-row-fixed-ot','ct-row-fixed-night','ct-row-fixed-hol'].forEach(id => {
       const el = document.getElementById(id); if(el) el.style.display = 'none';
@@ -2086,21 +2086,21 @@ function applyCTAllowanceConfig(cfg, clearValues = false){
   }
 }
 
-// ¦¡¦¡ »ç¿ëÀÚ Á¤ÀÇ Åë»óÀÓ±İ Ç×¸ñ (°è¾à¼­ ¸ğ´Ş) ¦¡¦¡
+// â”€â”€ ì‚¬ìš©ì ì •ì˜ í†µìƒì„ê¸ˆ í•­ëª© (ê³„ì•½ì„œ ëª¨ë‹¬) â”€â”€
 const _CUSTOM_ORD_CONTAINER_ID = 'ct-custom-ord-container';
 let _customOrdRowCount = 0;
 
 function _renderCustomOrdinaryRows(cfg){
   let container = document.getElementById(_CUSTOM_ORD_CONTAINER_ID);
   if(!container){
-    // ÄÁÅ×ÀÌ³Ê°¡ ¾øÀ¸¸é ct-row-regular-bonus ´ÙÀ½¿¡ »ı¼º
+    // ì»¨í…Œì´ë„ˆê°€ ì—†ìœ¼ë©´ ct-row-regular-bonus ë‹¤ìŒì— ìƒì„±
     const refRow = document.getElementById('ct-row-regular-bonus');
     if(!refRow) return;
     container = document.createElement('div');
     container.id = _CUSTOM_ORD_CONTAINER_ID;
     refRow.parentNode.insertBefore(container, refRow.nextSibling);
   }
-  // ±âÁ¸ Ä¿½ºÅÒ Çà Á¦°Å
+  // ê¸°ì¡´ ì»¤ìŠ¤í…€ í–‰ ì œê±°
   container.querySelectorAll('.ct-custom-ord-row').forEach(r => r.remove());
   _customOrdRowCount = 0;
 
@@ -2115,14 +2115,14 @@ function _renderCustomOrdinaryRows(cfg){
     div.className = 'form-group ct-custom-ord-row';
     div.id = `ct-row-custom-ord-${idx}`;
     div.innerHTML = `
-      <label>${_hEsc(item.name)}<span class="daily-suffix" style="display:none;font-size:11px;color:#6b7280;margin-left:3px;">(ÀÏ±Ş)</span></label>
+      <label>${_hEsc(item.name)}<span class="daily-suffix" style="display:none;font-size:11px;color:#6b7280;margin-left:3px;">(ì¼ê¸‰)</span></label>
       <div class="amount-wrap"><input type="text" inputmode="numeric" id="ct-custom-ord-${idx}" data-amount placeholder="0" oninput="onAmountInput(this,calcContractSalary)" /></div>
     `;
     container.appendChild(div);
   });
 }
 
-/** °è¾à¼­ ¸ğ´Ş ¡æ Ä¿½ºÅÒ Åë»óÀÓ±İ °ª ¼öÁı [{name, amount}] */
+/** ê³„ì•½ì„œ ëª¨ë‹¬ â†’ ì»¤ìŠ¤í…€ í†µìƒì„ê¸ˆ ê°’ ìˆ˜ì§‘ [{name, amount}] */
 function _getCustomOrdinaryValues(){
   const items = [];
   for(let i = 0; i < _customOrdRowCount; i++){
@@ -2135,7 +2135,7 @@ function _getCustomOrdinaryValues(){
   return items;
 }
 
-/** DB °ª ¡æ °è¾à¼­ ¸ğ´Ş Ä¿½ºÅÒ Åë»óÀÓ±İ ÇÊµå º¹¿ø */
+/** DB ê°’ â†’ ê³„ì•½ì„œ ëª¨ë‹¬ ì»¤ìŠ¤í…€ í†µìƒì„ê¸ˆ í•„ë“œ ë³µì› */
 function _setCustomOrdinaryValues(values){
   if(!Array.isArray(values)) return;
   values.forEach((v, i) => {
@@ -2145,7 +2145,7 @@ function _setCustomOrdinaryValues(values){
 
 function _hEsc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-/** Ä¿½ºÅÒ Åë»óÀÓ±İ Ç×¸ñ ÇÕ°è */
+/** ì»¤ìŠ¤í…€ í†µìƒì„ê¸ˆ í•­ëª© í•©ê³„ */
 function _getCustomOrdinarySum(){
   let sum = 0;
   for(let i = 0; i < _customOrdRowCount; i++){
@@ -2155,30 +2155,30 @@ function _getCustomOrdinarySum(){
 }
 
 /**
- * °è¾à ½ÃÀÛÀÏ(ct-start ¶Ç´Â ct-em-start) º¯°æ ½Ã ÇÚµé·¯
+ * ê³„ì•½ ì‹œì‘ì¼(ct-start ë˜ëŠ” ct-em-start) ë³€ê²½ ì‹œ í•¸ë“¤ëŸ¬
  *
- * ? ½Å±Ô ¸ğµå: °è¾à½ÃÀÛÀÏ°ú ¹«°üÇÏ°Ô ÇöÀç °í°´»ç allowance_config¸¦ Á÷Á¢ Àû¿ë
- *   - ½º³À¼¦À» »ç¿ëÇÏÁö ¾Ê´Â ÀÌÀ¯: getCompanySnapshotAtÀº changed_at > timestamp Á¶°ÇÀÇ
- *     Ã¹ ¹øÂ° ÀÌ·Â snapshotÀ» ¹İÈ¯ÇÏ´Âµ¥, ÀÌ snapshotÀº "º¯°æ Á÷Àü »óÅÂ"¸¦ ´ã°í ÀÖÀ½.
- *     µû¶ó¼­ °è¾à½ÃÀÛÀÏÀÌ ÃÖ±Ù ¼³Á¤ º¯°æ ÀÌÀü ³¯Â¥ÀÌ¸é °ú°Å(position=true µî) ½º³À¼¦ÀÌ
- *     ¹İÈ¯µÇ¾î ÇöÀç ¼³Á¤°ú ´Ù¸¥ ±Ş¿©Ç×¸ñÀÌ Ç¥½ÃµÇ´Â ¹ö±×°¡ ¹ß»ı.
- *     ½Å±Ô °è¾àÀº Ç×»ó "Áö±İ °í°´»ç ¼³Á¤"À» ±âÁØÀ¸·Î ÀÛ¼ºÇØ¾ß ÇÏ¹Ç·Î ÇöÀç°ª Á÷Á¢ »ç¿ë.
+ * â–¸ ì‹ ê·œ ëª¨ë“œ: ê³„ì•½ì‹œì‘ì¼ê³¼ ë¬´ê´€í•˜ê²Œ í˜„ì¬ ê³ ê°ì‚¬ allowance_configë¥¼ ì§ì ‘ ì ìš©
+ *   - ìŠ¤ëƒ…ìƒ·ì„ ì‚¬ìš©í•˜ì§€ ì•ŠëŠ” ì´ìœ : getCompanySnapshotAtì€ changed_at > timestamp ì¡°ê±´ì˜
+ *     ì²« ë²ˆì§¸ ì´ë ¥ snapshotì„ ë°˜í™˜í•˜ëŠ”ë°, ì´ snapshotì€ "ë³€ê²½ ì§ì „ ìƒíƒœ"ë¥¼ ë‹´ê³  ìˆìŒ.
+ *     ë”°ë¼ì„œ ê³„ì•½ì‹œì‘ì¼ì´ ìµœê·¼ ì„¤ì • ë³€ê²½ ì´ì „ ë‚ ì§œì´ë©´ ê³¼ê±°(position=true ë“±) ìŠ¤ëƒ…ìƒ·ì´
+ *     ë°˜í™˜ë˜ì–´ í˜„ì¬ ì„¤ì •ê³¼ ë‹¤ë¥¸ ê¸‰ì—¬í•­ëª©ì´ í‘œì‹œë˜ëŠ” ë²„ê·¸ê°€ ë°œìƒ.
+ *     ì‹ ê·œ ê³„ì•½ì€ í•­ìƒ "ì§€ê¸ˆ ê³ ê°ì‚¬ ì„¤ì •"ì„ ê¸°ì¤€ìœ¼ë¡œ ì‘ì„±í•´ì•¼ í•˜ë¯€ë¡œ í˜„ì¬ê°’ ì§ì ‘ ì‚¬ìš©.
  *
- * ? ¼öÁ¤¡¤Àç°è¾à¡¤amend ¸ğµå: getCompanySnapshotAtÀ¸·Î °è¾à½ÃÀÛÀÏ ´ç½Ã ¼³Á¤ Àû¿ë
- *   - ±âÁ¸ °è¾à¼­´Â Ã¼°á ´ç½Ã ¼³Á¤ ±âÁØÀ¸·Î ÀÛ¼ºµÆÀ¸¹Ç·Î ½º³À¼¦ Àû¿ëÀÌ ¿Ã¹Ù¸§
+ * â–¸ ìˆ˜ì •Â·ì¬ê³„ì•½Â·amend ëª¨ë“œ: getCompanySnapshotAtìœ¼ë¡œ ê³„ì•½ì‹œì‘ì¼ ë‹¹ì‹œ ì„¤ì • ì ìš©
+ *   - ê¸°ì¡´ ê³„ì•½ì„œëŠ” ì²´ê²° ë‹¹ì‹œ ì„¤ì • ê¸°ì¤€ìœ¼ë¡œ ì‘ì„±ëìœ¼ë¯€ë¡œ ìŠ¤ëƒ…ìƒ· ì ìš©ì´ ì˜¬ë°”ë¦„
  *
- * ? Á¶È¸ Àü¿ë(ct-readonly) »óÅÂ¿¡¼­´Â µ¿ÀÛÇÏÁö ¾ÊÀ½
- * ? clearValues=false: ÀÌ¹Ì ÀÔ·ÂÇÑ ±İ¾× °ªÀº À¯Áö, show/hide + pay_type¸¸ °»½Å
+ * â–¸ ì¡°íšŒ ì „ìš©(ct-readonly) ìƒíƒœì—ì„œëŠ” ë™ì‘í•˜ì§€ ì•ŠìŒ
+ * â–¸ clearValues=false: ì´ë¯¸ ì…ë ¥í•œ ê¸ˆì•¡ ê°’ì€ ìœ ì§€, show/hide + pay_typeë§Œ ê°±ì‹ 
  */
 function onCtStartChange(){
-  // ½Å±Ô ¸ğµå(ct-new-emp-section Ç¥½Ã Áß): ct-em-start ÂüÁ¶
-  // ¼öÁ¤¡¤Àç°è¾à¡¤amend ¸ğµå: ct-start ÂüÁ¶
+  // ì‹ ê·œ ëª¨ë“œ(ct-new-emp-section í‘œì‹œ ì¤‘): ct-em-start ì°¸ì¡°
+  // ìˆ˜ì •Â·ì¬ê³„ì•½Â·amend ëª¨ë“œ: ct-start ì°¸ì¡°
   const isNewMode = document.getElementById('ct-new-emp-section')?.style.display !== 'none';
   const startVal  = isNewMode
     ? (document.getElementById('ct-em-start')?.value  || '')
     : (document.getElementById('ct-start')?.value     || '');
   const coId     = document.getElementById('ct-company')?.value;
-  // Á¶È¸ Àü¿ë ¸ğµå(ct-readonly)¿¡¼­´Â µ¿ÀÛÇÏÁö ¾ÊÀ½
+  // ì¡°íšŒ ì „ìš© ëª¨ë“œ(ct-readonly)ì—ì„œëŠ” ë™ì‘í•˜ì§€ ì•ŠìŒ
   const modalEl = document.querySelector('#contract-modal .modal');
   const isReadonly = modalEl && modalEl.classList.contains('ct-readonly');
   if(isReadonly) return;
@@ -2186,12 +2186,12 @@ function onCtStartChange(){
 
   let cfg = null;
   if(isNewMode){
-    // ½Å±Ô ¸ğµå: ½º³À¼¦ ¹Ì»ç¿ë ? ÇöÀç °í°´»ç allowance_config¸¦ Á÷Á¢ ÂüÁ¶
-    // (½º³À¼¦ »ç¿ë ½Ã °ú°Å ÀÌ·ÂÀÇ position=true µîÀÌ Àß¸ø Àû¿ëµÇ´Â ¹ö±× ¹æÁö)
+    // ì‹ ê·œ ëª¨ë“œ: ìŠ¤ëƒ…ìƒ· ë¯¸ì‚¬ìš© â€” í˜„ì¬ ê³ ê°ì‚¬ allowance_configë¥¼ ì§ì ‘ ì°¸ì¡°
+    // (ìŠ¤ëƒ…ìƒ· ì‚¬ìš© ì‹œ ê³¼ê±° ì´ë ¥ì˜ position=true ë“±ì´ ì˜ëª» ì ìš©ë˜ëŠ” ë²„ê·¸ ë°©ì§€)
     const co = (allCompanies || []).find(x => x.id === coId);
     cfg = co?.allowance_config ?? null;
   } else {
-    // ¼öÁ¤¡¤Àç°è¾à¡¤amend ¸ğµå: °è¾à½ÃÀÛÀÏ ´ç½Ã ½º³À¼¦ ±âÁØ
+    // ìˆ˜ì •Â·ì¬ê³„ì•½Â·amend ëª¨ë“œ: ê³„ì•½ì‹œì‘ì¼ ë‹¹ì‹œ ìŠ¤ëƒ…ìƒ· ê¸°ì¤€
     const ts     = new Date(startVal).getTime();
     const snapCo = (typeof getCompanySnapshotAt === 'function')
       ? getCompanySnapshotAt(coId, ts)
@@ -2201,68 +2201,68 @@ function onCtStartChange(){
   if(typeof cfg === 'string'){
     try{ cfg = JSON.parse(cfg); }catch(e){ cfg = {}; }
   }
-  // clearValues=false: ±âÀÔ·Â ±İ¾×Àº À¯ÁöÇÏ¸é¼­ show/hide + pay_type¸¸ °»½Å
+  // clearValues=false: ê¸°ì…ë ¥ ê¸ˆì•¡ì€ ìœ ì§€í•˜ë©´ì„œ show/hide + pay_typeë§Œ ê°±ì‹ 
   applyCTAllowanceConfig(cfg, false);
-  // ¼ö½À °è¾àÀÌ¸é °è¾à Á¾·áÀÏ Àç°è»ê + ¼ö½À±â°£ È°¼ºÈ­
+  // ìˆ˜ìŠµ ê³„ì•½ì´ë©´ ê³„ì•½ ì¢…ë£Œì¼ ì¬ê³„ì‚° + ìˆ˜ìŠµê¸°ê°„ í™œì„±í™”
   if(typeof _updateProbationPeriodState === 'function') _updateProbationPeriodState();
   if(typeof _autoCalcProbationEndDate === 'function') _autoCalcProbationEndDate();
 }
 
 /**
- * °í°´»ç(ct-company) º¯°æ ½Ã ÇÚµé·¯
+ * ê³ ê°ì‚¬(ct-company) ë³€ê²½ ì‹œ í•¸ë“¤ëŸ¬
  *
- * °í°´»ç¸¦ º¯°æÇÏ¸é ÇØ´ç °í°´»çÀÇ allowance_config¸¦ Àû¿ëÇÑ´Ù.
- * - ct-start °ªÀÌ ÀÖÀ¸¸é ÇØ´ç ½ÃÁ¡ ½º³À¼¦ ±âÁØ
- * - ct-start °ªÀÌ ¾øÀ¸¸é ÃÖ½Å allowance_config ±âÁØ (clearValues=true: °ª ÃÊ±âÈ­)
- * ? µ¿ÀÛ ¸ğµå: ½Å±Ô / Àç°è¾à ¸ğµå¿¡¼­ µ¿ÀÛ
- *   - ¼öÁ¤(edit)/amend ¸ğµå¿¡¼­´Â °í°´»ç¸¦ º¯°æÇÒ ¼ö ¾øÀ¸¹Ç·Î ct-readonly Ã¼Å©·Î Â÷´Ü
+ * ê³ ê°ì‚¬ë¥¼ ë³€ê²½í•˜ë©´ í•´ë‹¹ ê³ ê°ì‚¬ì˜ allowance_configë¥¼ ì ìš©í•œë‹¤.
+ * - ct-start ê°’ì´ ìˆìœ¼ë©´ í•´ë‹¹ ì‹œì  ìŠ¤ëƒ…ìƒ· ê¸°ì¤€
+ * - ct-start ê°’ì´ ì—†ìœ¼ë©´ ìµœì‹  allowance_config ê¸°ì¤€ (clearValues=true: ê°’ ì´ˆê¸°í™”)
+ * â–¸ ë™ì‘ ëª¨ë“œ: ì‹ ê·œ / ì¬ê³„ì•½ ëª¨ë“œì—ì„œ ë™ì‘
+ *   - ìˆ˜ì •(edit)/amend ëª¨ë“œì—ì„œëŠ” ê³ ê°ì‚¬ë¥¼ ë³€ê²½í•  ìˆ˜ ì—†ìœ¼ë¯€ë¡œ ct-readonly ì²´í¬ë¡œ ì°¨ë‹¨
  */
 function onCtCompanyChange(){
-  // Á¶È¸ Àü¿ë(ct-readonly) »óÅÂ¿¡¼­´Â µ¿ÀÛÇÏÁö ¾ÊÀ½
+  // ì¡°íšŒ ì „ìš©(ct-readonly) ìƒíƒœì—ì„œëŠ” ë™ì‘í•˜ì§€ ì•ŠìŒ
   const modalEl = document.querySelector('#contract-modal .modal');
   const isReadonly = modalEl && modalEl.classList.contains('ct-readonly');
   if(isReadonly) return;
 
   const coId     = document.getElementById('ct-company')?.value;
-  // ½Å±Ô ¸ğµå: ct-em-start(°è¾à½ÃÀÛÀÏ), ¼öÁ¤¡¤Àç°è¾à ¸ğµå: ct-start
+  // ì‹ ê·œ ëª¨ë“œ: ct-em-start(ê³„ì•½ì‹œì‘ì¼), ìˆ˜ì •Â·ì¬ê³„ì•½ ëª¨ë“œ: ct-start
   const isNewModeForCompany = document.getElementById('ct-new-emp-section')?.style.display !== 'none';
   const startVal = isNewModeForCompany
     ? (document.getElementById('ct-em-start')?.value || '')
     : (document.getElementById('ct-start')?.value    || '');
 
   if(!coId){
-    // °í°´»ç ¹Ì¼±ÅÃ: ±âº»°ª(Â÷·® 0, ½Ä´ë 200,000) Àû¿ë
+    // ê³ ê°ì‚¬ ë¯¸ì„ íƒ: ê¸°ë³¸ê°’(ì°¨ëŸ‰ 0, ì‹ëŒ€ 200,000) ì ìš©
     applyCTAllowanceConfig(null, true);
     return;
   }
 
-  // »ç¿ø¹øÈ£ placeholder ÃßÃµ
+  // ì‚¬ì›ë²ˆí˜¸ placeholder ì¶”ì²œ
   _suggestEmpNo(coId);
 
   let cfg = null;
   if(!isNewModeForCompany && startVal){
-    // ¼öÁ¤¡¤Àç°è¾à ¸ğµå + °è¾à½ÃÀÛÀÏ ÀÖÀ½: ½º³À¼¦ ±âÁØ
-    // (½Å±Ô ¸ğµå¿¡¼­´Â ½º³À¼¦ ¹Ì»ç¿ë ? ÇöÀç ¼³Á¤ Á÷Á¢ ÂüÁ¶)
+    // ìˆ˜ì •Â·ì¬ê³„ì•½ ëª¨ë“œ + ê³„ì•½ì‹œì‘ì¼ ìˆìŒ: ìŠ¤ëƒ…ìƒ· ê¸°ì¤€
+    // (ì‹ ê·œ ëª¨ë“œì—ì„œëŠ” ìŠ¤ëƒ…ìƒ· ë¯¸ì‚¬ìš© â€” í˜„ì¬ ì„¤ì • ì§ì ‘ ì°¸ì¡°)
     const ts     = new Date(startVal).getTime();
     const snapCo = (typeof getCompanySnapshotAt === 'function')
       ? getCompanySnapshotAt(coId, ts)
       : (allCompanies || []).find(x => x.id === coId);
     cfg = snapCo?.allowance_config ?? null;
   } else {
-    // ½Å±Ô ¸ğµåÀÌ°Å³ª °è¾à½ÃÀÛÀÏ ¾øÀ½: ÇöÀç °í°´»ç allowance_config Á÷Á¢ ÂüÁ¶
+    // ì‹ ê·œ ëª¨ë“œì´ê±°ë‚˜ ê³„ì•½ì‹œì‘ì¼ ì—†ìŒ: í˜„ì¬ ê³ ê°ì‚¬ allowance_config ì§ì ‘ ì°¸ì¡°
     const co = (allCompanies || []).find(x => x.id === coId);
     cfg = co?.allowance_config ?? null;
   }
   if(typeof cfg === 'string'){
     try{ cfg = JSON.parse(cfg); }catch(e){ cfg = {}; }
   }
-  // °í°´»ç º¯°æ ½Ã: clearValues=true (±İ¾× ÃÊ±âÈ­ + ±âº»°ª Àç¼³Á¤)
+  // ê³ ê°ì‚¬ ë³€ê²½ ì‹œ: clearValues=true (ê¸ˆì•¡ ì´ˆê¸°í™” + ê¸°ë³¸ê°’ ì¬ì„¤ì •)
   applyCTAllowanceConfig(cfg, true);
-  // ±Ş¿©ÀÏ ±âº»°ª: °í°´»ç pay_day ¡æ °è¾à¼­ ÇÊµå
+  // ê¸‰ì—¬ì¼ ê¸°ë³¸ê°’: ê³ ê°ì‚¬ pay_day â†’ ê³„ì•½ì„œ í•„ë“œ
   _setCtPayDayDefault(coId);
 }
 
-/** °í°´»ç pay_day¸¦ °è¾à¼­ ±Ş¿©ÀÏ ÇÊµå ±âº»°ªÀ¸·Î ¼³Á¤ */
+/** ê³ ê°ì‚¬ pay_dayë¥¼ ê³„ì•½ì„œ ê¸‰ì—¬ì¼ í•„ë“œ ê¸°ë³¸ê°’ìœ¼ë¡œ ì„¤ì • */
 function _setCtPayDayDefault(coId){
   const payDayEl = document.getElementById('ct-pay-day');
   const hintEl   = document.getElementById('ct-pay-day-default');
@@ -2270,27 +2270,27 @@ function _setCtPayDayDefault(coId){
   const co = coId ? (allCompanies||[]).find(x => x.id === coId) : null;
   const coPayDay = co?.pay_day;
   if(hintEl){
-    hintEl.textContent = coPayDay ? `(°í°´»ç ±âº»: ¸Å¿ù ${coPayDay}ÀÏ)` : '(°í°´»ç ¹Ì¼³Á¤)';
+    hintEl.textContent = coPayDay ? `(ê³ ê°ì‚¬ ê¸°ë³¸: ë§¤ì›” ${coPayDay}ì¼)` : '(ê³ ê°ì‚¬ ë¯¸ì„¤ì •)';
   }
-  // °í°´»ç ±Ş¿©ÀÏÀÌ ÀÖ°í °è¾à¼­ ÇÊµå°¡ ºñ¾îÀÖÀ¸¸é °ªÀ» Ã¤¿ò (placeholder ´ë½Å ½ÇÁ¦ °ª)
+  // ê³ ê°ì‚¬ ê¸‰ì—¬ì¼ì´ ìˆê³  ê³„ì•½ì„œ í•„ë“œê°€ ë¹„ì–´ìˆìœ¼ë©´ ê°’ì„ ì±„ì›€ (placeholder ëŒ€ì‹  ì‹¤ì œ ê°’)
   if(coPayDay && !payDayEl.value){
     payDayEl.value = coPayDay;
   }
 }
 
-// ¼öÁ¤ ¸ğµå ÇÏÀ§È£È¯: allowance_config¿Í ¹«°üÇÏ°Ô DB¿¡ ÀúÀåµÈ °ªÀÌ ÀÖ´Â Ç×¸ñ °­Á¦ ³ëÃâ
-// ¡Ø ´Ü, Åë»óÀÓ±İ ºÒÆ÷ÇÔ(daily/receipt) ¼ö´çÀº ±Ù·Î°è¾à ÀÓ±İÁ¶°Ç¿¡ ³ëÃâÇÏÁö ¾ÊÀ¸¹Ç·Î
-//    pay_typeÀÌ fixedÀÎ Ç×¸ñ¸¸ force-show ´ë»óÀ¸·Î ÇÑÁ¤
-// ¡Ø ÀÏ¿ëÁ÷(contract_type='daily')Àº Åë»óÀÓ±İ¡¤°íÁ¤¼ö´ç Ç×¸ñÀ» ÀüÇô ³ëÃâÇÏÁö ¾ÊÀ½
+// ìˆ˜ì • ëª¨ë“œ í•˜ìœ„í˜¸í™˜: allowance_configì™€ ë¬´ê´€í•˜ê²Œ DBì— ì €ì¥ëœ ê°’ì´ ìˆëŠ” í•­ëª© ê°•ì œ ë…¸ì¶œ
+// â€» ë‹¨, í†µìƒì„ê¸ˆ ë¶ˆí¬í•¨(daily/receipt) ìˆ˜ë‹¹ì€ ê·¼ë¡œê³„ì•½ ì„ê¸ˆì¡°ê±´ì— ë…¸ì¶œí•˜ì§€ ì•Šìœ¼ë¯€ë¡œ
+//    pay_typeì´ fixedì¸ í•­ëª©ë§Œ force-show ëŒ€ìƒìœ¼ë¡œ í•œì •
+// â€» ì¼ìš©ì§(contract_type='daily')ì€ í†µìƒì„ê¸ˆÂ·ê³ ì •ìˆ˜ë‹¹ í•­ëª©ì„ ì „í˜€ ë…¸ì¶œí•˜ì§€ ì•ŠìŒ
 function _forceShowNonZeroCTRows(c){
-  // ÀÏ¿ëÁ÷: Åë»óÀÓ±İ¡¤°íÁ¤¼ö´ç Ç×¸ñ °­Á¦³ëÃâ ±İÁö
+  // ì¼ìš©ì§: í†µìƒì„ê¸ˆÂ·ê³ ì •ìˆ˜ë‹¹ í•­ëª© ê°•ì œë…¸ì¶œ ê¸ˆì§€
   const ctType = c.contract_type || '';
   if(ctType === CONTRACT_TYPE.DAILY) return;
   const _fieldMap = {
-    regular_bonus : 'regular_bonus',       // °è¾à¼­ DB ÄÃ·³
-    childcare     : 'childcare_allowance', // º¸À°¼ö´ç
+    regular_bonus : 'regular_bonus',       // ê³„ì•½ì„œ DB ì»¬ëŸ¼
+    childcare     : 'childcare_allowance', // ë³´ìœ¡ìˆ˜ë‹¹
     site          : 'site_allowance',
-    position      : 'position_allowance',  // Á÷Ã¥¼ö´ç
+    position      : 'position_allowance',  // ì§ì±…ìˆ˜ë‹¹
     skill         : 'skill_allowance',
     license       : 'license_allowance',
     remote_area   : 'remote_area_allowance',
@@ -2301,17 +2301,17 @@ function _forceShowNonZeroCTRows(c){
     book          : 'book_allowance',
     overseas      : 'overseas_allowance',
   };
-  // pay_type ¸ÅÇÎ (DB ÇÊµå¸í ¡æ _ctPayTypes key)
+  // pay_type ë§¤í•‘ (DB í•„ë“œëª… â†’ _ctPayTypes key)
   const _ptKeyMap = {
     research: 'research', communication: 'communication', fitness: 'fitness',
     self_dev: 'self_dev', book: 'book', overseas: 'overseas',
-    // site/skill/license/remote_area´Â pay_type ¾øÀ½(Ç×»ó fixed Ãë±Ş)
+    // site/skill/license/remote_areaëŠ” pay_type ì—†ìŒ(í•­ìƒ fixed ì·¨ê¸‰)
   };
   _CT_OPT_ROWS.forEach(({ key, rowId }) => {
     const field = _fieldMap[key];
     if(field && Number(c[field]||0) > 0){
-      // Åë»óÀÓ±İ ºÒÆ÷ÇÔ(daily/receipt) Ç×¸ñÀº force-show ÇÏÁö ¾ÊÀ½
-      // ? ÇØ´ç Ç×¸ñÀº setCTPayType¿¡¼­ ÀÌ¹Ì DOM Á¦°ÅµÊ
+      // í†µìƒì„ê¸ˆ ë¶ˆí¬í•¨(daily/receipt) í•­ëª©ì€ force-show í•˜ì§€ ì•ŠìŒ
+      // â€” í•´ë‹¹ í•­ëª©ì€ setCTPayTypeì—ì„œ ì´ë¯¸ DOM ì œê±°ë¨
       const ptKey = _ptKeyMap[key];
       if(ptKey && _ctPayTypes[ptKey] && _ctPayTypes[ptKey] !== 'fixed') return;
       const rowEl = document.getElementById(rowId);
@@ -2321,29 +2321,29 @@ function _forceShowNonZeroCTRows(c){
 }
 
 /**
- * ¹ı·É ±âÁØ ¿ù Åë»óÀÓ±İ »êÁ¤ ±âÁØ½Ã°£ ¼ö (±Ù·Î±âÁØ¹ı ½ÃÇà·É Á¦6Á¶ Á¦2Ç×)
+ * ë²•ë ¹ ê¸°ì¤€ ì›” í†µìƒì„ê¸ˆ ì‚°ì • ê¸°ì¤€ì‹œê°„ ìˆ˜ (ê·¼ë¡œê¸°ì¤€ë²• ì‹œí–‰ë ¹ ì œ6ì¡° ì œ2í•­)
  *
- * °ø½Ä: (ÁÖ ¼ÒÁ¤±Ù·Î½Ã°£ + ÁÖÈŞ½Ã°£) ¡¿ 52 ¡À 12
- *   - ÁÖÈŞ½Ã°£ = 1ÀÏ ¼ÒÁ¤±Ù·Î½Ã°£ (= hpd)
- *   - ÀüÀÏÁ¦ ÁÖ5ÀÏ 8h: (40+8)¡¿52¡À12 ? 208 ¡æ ½Ç¹«»ó 209h »ç¿ë(¿¬µµ¸» º¸Á¤)
- *     ¡Ø °í¿ë³ëµ¿ºÎ ¹× ´ë¹ı¿ø Åë·Ê: ÁÖ 40h ÀüÀÏÁ¦´Â 209h Àû¿ë
- *   - ´Ü½Ã°£: (ÁÖ¼ÒÁ¤h + hpd) ¡¿ 52 ¡À 12 (ºñ·Ê °è»ê)
+ * ê³µì‹: (ì£¼ ì†Œì •ê·¼ë¡œì‹œê°„ + ì£¼íœ´ì‹œê°„) Ã— 52 Ã· 12
+ *   - ì£¼íœ´ì‹œê°„ = 1ì¼ ì†Œì •ê·¼ë¡œì‹œê°„ (= hpd)
+ *   - ì „ì¼ì œ ì£¼5ì¼ 8h: (40+8)Ã—52Ã·12 â‰ˆ 208 â†’ ì‹¤ë¬´ìƒ 209h ì‚¬ìš©(ì—°ë„ë§ ë³´ì •)
+ *     â€» ê³ ìš©ë…¸ë™ë¶€ ë° ëŒ€ë²•ì› í†µë¡€: ì£¼ 40h ì „ì¼ì œëŠ” 209h ì ìš©
+ *   - ë‹¨ì‹œê°„: (ì£¼ì†Œì •h + hpd) Ã— 52 Ã· 12 (ë¹„ë¡€ ê³„ì‚°)
  *
- * @param {number} hpd  1ÀÏ ¼ÒÁ¤±Ù·Î½Ã°£ (hours per day)
- * @param {number} dpw  ÁÖ ¼ÒÁ¤±Ù·ÎÀÏ¼ö (days per week)
- * @returns {number}    ¿ù Åë»óÀÓ±İ »êÁ¤ ±âÁØ½Ã°£ ¼ö (Á¤¼ö)
+ * @param {number} hpd  1ì¼ ì†Œì •ê·¼ë¡œì‹œê°„ (hours per day)
+ * @param {number} dpw  ì£¼ ì†Œì •ê·¼ë¡œì¼ìˆ˜ (days per week)
+ * @returns {number}    ì›” í†µìƒì„ê¸ˆ ì‚°ì • ê¸°ì¤€ì‹œê°„ ìˆ˜ (ì •ìˆ˜)
  */
 function _calcMonthlyStdHours(hpd, dpw){
   hpd = parseFloat(hpd) || 8;
   dpw = parseFloat(dpw) || 5;
-  const weeklyH    = hpd * dpw;                     // ÁÖ ¼ÒÁ¤±Ù·Î½Ã°£
-  // ¼ÒÁ¤±Ù·Î½Ã°£¸¸ ¹İÈ¯ (ÁÖÈŞ Á¦¿Ü) ? ÁÖÈŞ¼ö´çÀº º°µµ °è»ê
-  // ÀüÀÏÁ¦(ÁÖ 40h): 8h¡¿5d¡¿4.345?174h
+  const weeklyH    = hpd * dpw;                     // ì£¼ ì†Œì •ê·¼ë¡œì‹œê°„
+  // ì†Œì •ê·¼ë¡œì‹œê°„ë§Œ ë°˜í™˜ (ì£¼íœ´ ì œì™¸) â€” ì£¼íœ´ìˆ˜ë‹¹ì€ ë³„ë„ ê³„ì‚°
+  // ì „ì¼ì œ(ì£¼ 40h): 8hÃ—5dÃ—4.345â‰ˆ174h
   return Math.round(weeklyH * 365 / 12 / 7);
 }
 
 function calcContractSalary(){
-  // ¼öÁ¤ ¸ğµåÀÌ¸é ct-edit-em-category, ½Å±ÔÀÌ¸é ct-em-category ±âÁØ
+  // ìˆ˜ì • ëª¨ë“œì´ë©´ ct-edit-em-category, ì‹ ê·œì´ë©´ ct-em-category ê¸°ì¤€
   const rawCat = (editId.contract || _recontractEmpId)
     ? (document.getElementById('ct-edit-em-category')?.value || document.getElementById('ct-em-category').value)
     : document.getElementById('ct-em-category').value;
@@ -2352,7 +2352,7 @@ function calcContractSalary(){
   const isRegularGroup = cat ===CONTRACT_TYPE.REGULAR || cat ===CONTRACT_TYPE.REGULAR_PROBATION;
   const isFixedTerm    = cat ===CONTRACT_TYPE.FIXED || cat ===CONTRACT_TYPE.FIXED_PROBATION;
 
-  // ¼ö´ç °ª ÀĞ±â (ÀÏ¿ëÁ÷Àº ÀÏÀÏ ±âÁØ ÀÔ·Â°ª ±×´ë·Î »ç¿ë)
+  // ìˆ˜ë‹¹ ê°’ ì½ê¸° (ì¼ìš©ì§ì€ ì¼ì¼ ê¸°ì¤€ ì…ë ¥ê°’ ê·¸ëŒ€ë¡œ ì‚¬ìš©)
   const position   = getAmountVal('ct-position');
   const car        = getAmountVal('ct-car');
   const remoteArea = getAmountVal('ct-remote-area');
@@ -2370,33 +2370,33 @@ function calcContractSalary(){
   const regularBonus_ct = getAmountVal('ct-regular-bonus')||0;
 
   if(isDaily){
-    // ¦¡¦¡ ÀÏ¿ëÁ÷: ÀÏ ¾àÁ¤ÀÏ±Ş + ÀÏÀÏ ±âÁØ ¼ö´ç ÇÕ»ê ¦¡¦¡
+    // â”€â”€ ì¼ìš©ì§: ì¼ ì•½ì •ì¼ê¸‰ + ì¼ì¼ ê¸°ì¤€ ìˆ˜ë‹¹ í•©ì‚° â”€â”€
     const dailyWage  = getAmountVal('ct-daily-wage');
     const hours      = parseFloat(document.getElementById('ct-hours').value)||8;
     const hWage      = getAmountVal('ct-hourly-input') || 0;
 
-    // Åë»ó½Ã±ŞÀÌ ÀÔ·ÂµÇ¾î ÀÖ°í ÀÏ±ŞÀÌ 0ÀÌ¸é ÀÚµ¿°è»ê: ÀÏ±Ş = ½Ã±Ş ¡¿ ÀÏ¼ÒÁ¤±Ù·Î½Ã°£
+    // í†µìƒì‹œê¸‰ì´ ì…ë ¥ë˜ì–´ ìˆê³  ì¼ê¸‰ì´ 0ì´ë©´ ìë™ê³„ì‚°: ì¼ê¸‰ = ì‹œê¸‰ Ã— ì¼ì†Œì •ê·¼ë¡œì‹œê°„
     if(hWage > 0 && dailyWage <= 0){
       const autoDaily = Math.round(hWage * hours);
       setAmountVal('ct-daily-wage', autoDaily);
     }
 
-    // ÀÏÀÏ ¼ö´ç ÇÕ°è (Åë»óÀÓ±İ Æ÷ÇÔ Ç×¸ñ¸¸)
+    // ì¼ì¼ ìˆ˜ë‹¹ í•©ê³„ (í†µìƒì„ê¸ˆ í¬í•¨ í•­ëª©ë§Œ)
     const dailyAllowFixed = position + car + remoteArea + meal
       + site_ct + skill_ct + license_ct + hazard_ct + research + comm_ct
       + fitness_ct + selfDev_ct + book_ct + overseas_ct + regularBonus_ct;
 
-    document.getElementById('ct-weekly-hol-computed').textContent = '0¿ø';
-    document.getElementById('ct-monthly-computed').textContent    = '0¿ø';
+    document.getElementById('ct-weekly-hol-computed').textContent = '0ì›';
+    document.getElementById('ct-monthly-computed').textContent    = '0ì›';
     _checkMinWageWarning();
     _checkRegisterBtnState();
     _checkAmendBtnState();
     return;
   }
 
-  // ¦¡¦¡ ¿ù ¾àÁ¤ÀÓ±İ ÇÕ»ê¿ë ¼ö´ç (pay_type='fixed'¸¸ Åë»óÀÓ±İ Æ÷ÇÔ, ½Ä´ë¡¤Â÷·®Áö¿øºñ´Â Á¦¿Ü) ¦¡¦¡
+  // â”€â”€ ì›” ì•½ì •ì„ê¸ˆ í•©ì‚°ìš© ìˆ˜ë‹¹ (pay_type='fixed'ë§Œ í†µìƒì„ê¸ˆ í¬í•¨, ì‹ëŒ€Â·ì°¨ëŸ‰ì§€ì›ë¹„ëŠ” ì œì™¸) â”€â”€
   const allAllow = (() => {
-    // ¦¡¦¡ Åë»óÀÓ±İ ¼³Á¤ ±×·ì (pay_type='fixed' && Åë»óÀÓ±İ Æ÷ÇÔ Ç×¸ñ¸¸) ¦¡¦¡
+    // â”€â”€ í†µìƒì„ê¸ˆ ì„¤ì • ê·¸ë£¹ (pay_type='fixed' && í†µìƒì„ê¸ˆ í¬í•¨ í•­ëª©ë§Œ) â”€â”€
     const ordinaryGroup = (_isFixedAllow('site')          ? site_ct      : 0)
       + (_isFixedAllow('position')       ? position       : 0)
       + (_isFixedAllow('skill')          ? skill_ct       : 0)
@@ -2404,10 +2404,10 @@ function calcContractSalary(){
       + (_isFixedAllow('hazard')         ? hazard_ct      : 0)
       + (_isFixedAllow('remote_area')    ? remoteArea     : 0)
       + (_isFixedAllow('regular_bonus')  ? regularBonus_ct : 0)
-      // »ç¿ëÀÚ Á¤ÀÇ Åë»óÀÓ±İ Ç×¸ñ (°í°´»ç Á¤º¸ ¡æ Åë»óÀÓ±İ ¼³Á¤)
+      // ì‚¬ìš©ì ì •ì˜ í†µìƒì„ê¸ˆ í•­ëª© (ê³ ê°ì‚¬ ì •ë³´ â†’ í†µìƒì„ê¸ˆ ì„¤ì •)
       + _getCustomOrdinarySum();
-    // ¦¡¦¡ Åë»óÀÓ±İ Á¦¿Ü ¼ö´ç ±×·ì (pay_type=fixed¶óµµ Á¦¿Ü, ¿ù ¾àÁ¤ÀÓ±İ¿¡´Â ÇÕ»ê) ¦¡¦¡
-    // ½Ä´ë, Â÷·®Áö¿øºñ, ¿¬±¸È°µ¿ºñ, Åë½Åºñ, ÀÚ±â°è¹ßºñ, µµ¼­Áö¿øºñ, ÇØ¿Ü±Ù¹«¼ö´ç, Ã¼·ÂÁõÁøºñ
+    // â”€â”€ í†µìƒì„ê¸ˆ ì œì™¸ ìˆ˜ë‹¹ ê·¸ë£¹ (pay_type=fixedë¼ë„ ì œì™¸, ì›” ì•½ì •ì„ê¸ˆì—ëŠ” í•©ì‚°) â”€â”€
+    // ì‹ëŒ€, ì°¨ëŸ‰ì§€ì›ë¹„, ì—°êµ¬í™œë™ë¹„, í†µì‹ ë¹„, ìê¸°ê³„ë°œë¹„, ë„ì„œì§€ì›ë¹„, í•´ì™¸ê·¼ë¬´ìˆ˜ë‹¹, ì²´ë ¥ì¦ì§„ë¹„
     const nonOrdinaryGroup = (_isFixedAllow('car')           ? car         : 0)
       + (_isFixedAllow('meal')          ? meal        : 0)
       + (_isFixedAllow('research')      ? research    : 0)
@@ -2421,7 +2421,7 @@ function calcContractSalary(){
   const _ordinaryGroup = allAllow.ordinaryGroup;
   const _allAllowTotal = allAllow.total;
 
-  // °íÁ¤ ¿¬Àå/¾ß°£/ÈŞÀÏ±Ù·Î¼ö´ç (Åë»óÀÓ±İ Á¦¿Ü, ¿ù ¾àÁ¤ÀÓ±İ¿¡ ÇÕ»ê)
+  // ê³ ì • ì—°ì¥/ì•¼ê°„/íœ´ì¼ê·¼ë¡œìˆ˜ë‹¹ (í†µìƒì„ê¸ˆ ì œì™¸, ì›” ì•½ì •ì„ê¸ˆì— í•©ì‚°)
   const fixedOtPay    = getAmountVal('ct-fixed-ot-pay')    || 0;
   const fixedNightPay = getAmountVal('ct-fixed-night-pay') || 0;
   const fixedHolPay   = getAmountVal('ct-fixed-hol-pay')   || 0;
@@ -2430,35 +2430,35 @@ function calcContractSalary(){
   const annualSal = getAmountVal('ct-annual-sal');
   const hourlyWage = getAmountVal('ct-hourly-input') || 0;
 
-  // ÁÖ ¼ÒÁ¤±Ù·Î½Ã°£ ÆÄ¾Ç
+  // ì£¼ ì†Œì •ê·¼ë¡œì‹œê°„ íŒŒì•…
   const _hpd = parseFloat(document.getElementById('ct-hours')?.value) || 8;
   const _dpw = parseFloat(document.getElementById('ct-days')?.value)  || 5;
-  const _monthlyStdH = _calcMonthlyStdHours(_hpd, _dpw); // ¹ı·É ±âÁØ ¿ù »êÁ¤½Ã°£
+  const _monthlyStdH = _calcMonthlyStdHours(_hpd, _dpw); // ë²•ë ¹ ê¸°ì¤€ ì›” ì‚°ì •ì‹œê°„
 
-  // ¦¡¦¡ ½Ã±Ş ±â¹İ ÀÚµ¿°è»ê: Á¤±ÔÁ÷¡¤°è¾àÁ÷¡¤°è¾àÁ÷¼ö½À¡¤Á¤±ÔÁ÷¼ö½À ¦¡¦¡
+  // â”€â”€ ì‹œê¸‰ ê¸°ë°˜ ìë™ê³„ì‚°: ì •ê·œì§Â·ê³„ì•½ì§Â·ê³„ì•½ì§ìˆ˜ìŠµÂ·ì •ê·œì§ìˆ˜ìŠµ â”€â”€
   const isHourlyBased = isRegularGroup || isFixedTerm;
   if(isHourlyBased && hourlyWage > 0){
-    // ¿ù Åë»óÀÓ±İ = ½Ã±Ş ¡¿ ¿ù¼ÒÁ¤±Ù·Î½Ã°£
+    // ì›” í†µìƒì„ê¸ˆ = ì‹œê¸‰ Ã— ì›”ì†Œì •ê·¼ë¡œì‹œê°„
     const totalOrdinary = Math.round(hourlyWage * _monthlyStdH);
-    // ±âº»±Ş = ¿ù Åë»óÀÓ±İ - ordinaryGroup (Åë»óÀÓ±İ = ±âº»±Ş + Åë»óÀÓ±İ¼º ¼ö´ç)
+    // ê¸°ë³¸ê¸‰ = ì›” í†µìƒì„ê¸ˆ - ordinaryGroup (í†µìƒì„ê¸ˆ = ê¸°ë³¸ê¸‰ + í†µìƒì„ê¸ˆì„± ìˆ˜ë‹¹)
     const autoBase = Math.max(0, totalOrdinary - _ordinaryGroup);
     setAmountVal('ct-base', autoBase);
   }
 
   const base      = getAmountVal('ct-base');
-  // ÁÖÈŞ¼ö´ç = Åë»ó½Ã±Ş ¡¿ 1ÀÏ¼ÒÁ¤±Ù·Î½Ã°£ ¡¿ ¿ùÆò±ÕÁÖ¼ö(4.345) [±Ù·Î±âÁØ¹ı Á¦55Á¶]
-  // ½Ã±ŞÀÌ ¾øÀ» ¶§: (¿ù Åë»óÀÓ±İ ¡À ¿ù ¼ÒÁ¤±Ù·Î½Ã°£) ¡¿ 1ÀÏ ¼ÒÁ¤±Ù·Î½Ã°£
-  // °íÁ¤OT¡¤¾ß°£¡¤ÈŞÀÏ±Ù·Î¼ö´çÀº Åë»óÀÓ±İ¿¡¼­ Á¦¿Ü (±Ù·Î±âÁØ¹ı ½ÃÇà·É Á¦6Á¶)
+  // ì£¼íœ´ìˆ˜ë‹¹ = í†µìƒì‹œê¸‰ Ã— 1ì¼ì†Œì •ê·¼ë¡œì‹œê°„ Ã— ì›”í‰ê· ì£¼ìˆ˜(4.345) [ê·¼ë¡œê¸°ì¤€ë²• ì œ55ì¡°]
+  // ì‹œê¸‰ì´ ì—†ì„ ë•Œ: (ì›” í†µìƒì„ê¸ˆ Ã· ì›” ì†Œì •ê·¼ë¡œì‹œê°„) Ã— 1ì¼ ì†Œì •ê·¼ë¡œì‹œê°„
+  // ê³ ì •OTÂ·ì•¼ê°„Â·íœ´ì¼ê·¼ë¡œìˆ˜ë‹¹ì€ í†µìƒì„ê¸ˆì—ì„œ ì œì™¸ (ê·¼ë¡œê¸°ì¤€ë²• ì‹œí–‰ë ¹ ì œ6ì¡°)
   const weeklyHol = (isHourlyBased && hourlyWage > 0)
     ? Math.round(hourlyWage * _hpd * (365 / 12 / 7))
     : (_monthlyStdH > 0 ? Math.round((base + _ordinaryGroup) / _monthlyStdH * _hpd) : 0);
   document.getElementById('ct-weekly-hol-computed').textContent = won(weeklyHol);
 
-  // ¿ù ¾àÁ¤ÀÓ±İ = ±âº»±Ş + ÁÖÈŞ¼ö´ç + °¢Á¾ ¼ö´ç + °íÁ¤ ¿¬Àå/¾ß°£/ÈŞÀÏ
+  // ì›” ì•½ì •ì„ê¸ˆ = ê¸°ë³¸ê¸‰ + ì£¼íœ´ìˆ˜ë‹¹ + ê°ì¢… ìˆ˜ë‹¹ + ê³ ì • ì—°ì¥/ì•¼ê°„/íœ´ì¼
   const monthly = base + weeklyHol + _allAllowTotal + fixedExtraAll;
   document.getElementById('ct-monthly-computed').textContent = won(monthly);
 
-  // Á¤±ÔÁ÷¡¤Á¤±ÔÁ÷ ¼ö½À: ¿¬ºÀ = ¿ù ¾àÁ¤ÀÓ±İ ¡¿ 12 ÀÚµ¿°è»ê (Á÷Á¢ÀÔ·Â ºÒ°¡)
+  // ì •ê·œì§Â·ì •ê·œì§ ìˆ˜ìŠµ: ì—°ë´‰ = ì›” ì•½ì •ì„ê¸ˆ Ã— 12 ìë™ê³„ì‚° (ì§ì ‘ì…ë ¥ ë¶ˆê°€)
   if(isRegularGroup){
     setAmountVal('ct-annual-sal', monthly * 12);
   }
@@ -2468,14 +2468,14 @@ function calcContractSalary(){
   _checkRegisterBtnState();
   _checkAmendBtnState();
 
-  // Åë»ó½Ã±Ş º¯°æ ½Ã °íÁ¤¼ö´ç ±İ¾× Àç°è»ê
+  // í†µìƒì‹œê¸‰ ë³€ê²½ ì‹œ ê³ ì •ìˆ˜ë‹¹ ê¸ˆì•¡ ì¬ê³„ì‚°
   _calcFixedOtFromHours();
   _calcFixedNightFromHours();
   _calcFixedHolFromHours();
 }
 
-// ¦¡¦¡ °íÁ¤ ¿¬Àå/¾ß°£/ÈŞÀÏ±Ù·Î¼ö´ç ¾ç¹æÇâ ÀÚµ¿°è»ê ¦¡¦¡
-// °ø½Ä: ¿¬Àå = Åë»ó½Ã±Ş ¡¿ h ¡¿ 1.5 / ¾ß°£ = Åë»ó½Ã±Ş ¡¿ h ¡¿ 0.5 / ÈŞÀÏ = Åë»ó½Ã±Ş ¡¿ h ¡¿ 1.5
+// â”€â”€ ê³ ì • ì—°ì¥/ì•¼ê°„/íœ´ì¼ê·¼ë¡œìˆ˜ë‹¹ ì–‘ë°©í–¥ ìë™ê³„ì‚° â”€â”€
+// ê³µì‹: ì—°ì¥ = í†µìƒì‹œê¸‰ Ã— h Ã— 1.5 / ì•¼ê°„ = í†µìƒì‹œê¸‰ Ã— h Ã— 0.5 / íœ´ì¼ = í†µìƒì‹œê¸‰ Ã— h Ã— 1.5
 function _getContractHourlyWage(){
   return getAmountVal('ct-hourly-input') || 0;
 }
@@ -2495,4 +2495,4 @@ function _calcFixedHolFromHours(){
   setAmountVal('ct-fixed-hol-pay', (hw > 0 && h > 0) ? Math.round(hw * h * 1.5) : 0);
 }
 
-/** ¦¡¦¡ ±Ù·Î°è¾à °ü¸® ¾Ë¸² Ä«µå ·»´õ¸µ ¦¡¦¡ */
+/** â”€â”€ ê·¼ë¡œê³„ì•½ ê´€ë¦¬ ì•Œë¦¼ ì¹´ë“œ ë Œë”ë§ â”€â”€ */

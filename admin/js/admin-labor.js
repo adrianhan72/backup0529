@@ -1,4 +1,4 @@
-﻿// ─── LABOR STATUS ───
+// ─── LABOR STATUS ───
 // currentLsCompanyId → 최상단 STATE 블록에서 선언됨
 const LS_ITEMS = 15;
 

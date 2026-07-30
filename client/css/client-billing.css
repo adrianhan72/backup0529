@@ -1,4 +1,4 @@
-﻿    /* ─ Billing 전용 스타일 ─ */
+    /* ─ Billing 전용 스타일 ─ */
 
     /* 미납 요약 배너 */
     .bill-alert-banner{background:linear-gradient(135deg,#fef2f2,#fff5f5);border:1.5px solid #fecaca;border-radius:16px;padding:16px 18px;margin-bottom:14px;display:flex;align-items:center;gap:14px}
