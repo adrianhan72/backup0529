@@ -132,8 +132,24 @@
     .cont-alert-card-head{display:flex;align-items:center;justify-content:space-between;padding:11px 18px;cursor:pointer;user-select:none;}
     .cont-alert-card-head:hover{filter:brightness(.97);}
     .cont-alert-card-title{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:800;}
-.cont-alert-card-chevron{font-size:11px;transition:transform .2s;}
+.cont-alert-card-chevron{width:26px;height:26px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;transition:background .15s,transform .25s;border:1px solid #cccccc;outline:none;cursor:pointer;background:transparent;}
     .cont-alert-card-chevron.open{transform:rotate(180deg);}
+    /* 카드 유형별 chevron 색상 (대시보드 dash-ac-toggle 과 동일 패턴) */
+    .cont-alert-draft .cont-alert-card-chevron{background:#fde68a;color:#f59e0b;border-color:#fbbf24;}
+    .cont-alert-pending .cont-alert-card-chevron{background:#e0e7ff;color:#3730a3;border-color:#a5b4fc;}
+    .cont-alert-docs .cont-alert-card-chevron{background:#dbeafe;color:#1e40af;border-color:#3b82f6;}
+    .cont-alert-renew .cont-alert-card-chevron{background:#fce7f3;color:#831843;border-color:#f472b6;}
+    .cont-alert-renew-terminate .cont-alert-card-chevron{background:#f3e8ff;color:#3b0764;border-color:#c084fc;}
+    .cont-alert-preterminate .cont-alert-card-chevron{background:#dcfce7;color:#166534;border-color:#22c55e;}
+    .cont-alert-probation .cont-alert-card-chevron{background:#ccfbf1;color:#134e4a;border-color:#2dd4bf;}
+    /* cont-co-card 내 chevron도 동일하게 적용 */
+    .cont-co-card.cont-alert-draft .cont-alert-card-chevron{background:#fde68a;color:#f59e0b;border-color:#fbbf24;}
+    .cont-co-card.cont-alert-pending .cont-alert-card-chevron{background:#e0e7ff;color:#3730a3;border-color:#a5b4fc;}
+    .cont-co-card.cont-alert-docs .cont-alert-card-chevron{background:#dbeafe;color:#1e40af;border-color:#3b82f6;}
+    .cont-co-card.cont-alert-renew .cont-alert-card-chevron{background:#fce7f3;color:#831843;border-color:#f472b6;}
+    .cont-co-card.cont-alert-renew-terminate .cont-alert-card-chevron{background:#f3e8ff;color:#3b0764;border-color:#c084fc;}
+    .cont-co-card.cont-alert-preterminate .cont-alert-card-chevron{background:#dcfce7;color:#166534;border-color:#22c55e;}
+    .cont-co-card.cont-alert-probation .cont-alert-card-chevron{background:#ccfbf1;color:#134e4a;border-color:#2dd4bf;}
     .cont-alert-card-body{border-top:1px solid rgba(0,0,0,.07);background:#fff;}
     .cont-alert-table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:12.5px;}
     .cont-alert-table thead tr{background:#f1f5f9;border-bottom:2px solid #e2e8f0;}

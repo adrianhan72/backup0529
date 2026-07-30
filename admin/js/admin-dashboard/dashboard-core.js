@@ -1251,7 +1251,7 @@ function _renderContractsBanners(){
       <div class="draft-alert-card-body">
         <div class="dash-ac-group-row" style="padding:8px 20px;">
           <span class="dash-ac-group-label"><i class="fas fa-file-contract" style="margin-right:5px;font-size:14px;color:#111827;"></i>근로계약서 <span class="count-badge">${drafts.length}</span></span>
-          <button class="dash-ac-toggle" onclick="toggleDashAccordion('cont-draft-ct-body',this,event)" title="펼치기/접기" style="background:rgba(99,102,241,.15);color:#3730a3;margin-left:2px;">
+          <button class="dash-ac-toggle" onclick="toggleDashAccordion('cont-draft-ct-body',this,event)" title="펼치기/접기">
             <i class="fas fa-chevron-down"></i>
           </button>
         </div>
@@ -1444,6 +1444,9 @@ function goDraftPayroll(draftId){
   const co = allCompanies.find(x => x.id === p.company_id);
   if(co) currentGlobalCompanyName = co.company_name;
 
+  // ★ 임시저장 ID를 showPage 이전에 설정 → 배너 렌더링 시 현재 편집 중인 건 제외
+  piDraftId = draftId;
+
   const piMenuItem = document.querySelector('[data-page="payroll-input"]');
   showPage('payroll-input', piMenuItem);
 
@@ -1482,8 +1485,6 @@ function goDraftPayroll(draftId){
     const editBanner = document.getElementById('pi-edit-banner');
     if(editBanner) editBanner.style.display = 'none';
 
-    piDraftId = draftId;
-    
     // 계약 로드 및 임시저장 복원
     setTimeout(() => {
       if(typeof loadPIContract === 'function') loadPIContract();

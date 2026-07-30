@@ -26,7 +26,7 @@ function renderPIAllDraftBanner(){
   }
 
   const drafts = (allPayrolls||[])
-    .filter(p => !!p.is_draft)
+    .filter(p => !!p.is_draft && p.id !== (typeof piDraftId !== 'undefined' ? piDraftId : null))
     .sort((a, b) => {                                        // 최신 저장순
       const ta = a.updated_at ? new Date(a.updated_at).getTime() : 0;
       const tb = b.updated_at ? new Date(b.updated_at).getTime() : 0;
@@ -116,7 +116,7 @@ function renderPICoDraftBanner(){
   if(!coId){ banner.style.display='none'; return; }
 
   const drafts = (allPayrolls||[])
-    .filter(p => !!p.is_draft && p.company_id === coId)
+    .filter(p => !!p.is_draft && p.company_id === coId && p.id !== (typeof piDraftId !== 'undefined' ? piDraftId : null))
     .sort((a, b) => ((b.updated_at||0) - (a.updated_at||0)));
   
   if(!drafts.length){ banner.style.display='none'; return; }

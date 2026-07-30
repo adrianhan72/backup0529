@@ -1291,9 +1291,18 @@ function selectPICompany(companyId, companyName){
     // ★ 임시저장 배너: 고객사+년월 선택 단계에서만 표시
     // 목록·폼이 숨겨진 이 시점(년월 선택 단계)에서만 배너를 갱신·표시
     // ★ 급여 입력: 고객사 선택 시 전체 임시저장 배너 숨기고 해당 고객사 배너 표시
+    //   단, 임시저장 이어쓰기 모드(piDraftId 설정)에서는 전체 배너를 유지 (현재 편집 건 제외)
+    const _isDraftContinue = typeof piDraftId !== 'undefined' && !!piDraftId;
     const _adb = document.getElementById('pi-all-draft-banner');
-    if(_adb) _adb.style.display = 'none';
-    if(typeof renderPICoDraftBanner === 'function') renderPICoDraftBanner();
+    const _cdb = document.getElementById('pi-co-draft-banner');
+    if(_isDraftContinue){
+      // 이어쓰기 모드: 전체 배너 유지 + 현재 편집 건 제외, 고객사 전용 배너는 숨김
+      if(_cdb) _cdb.style.display = 'none';
+      if(typeof renderPIAllDraftBanner === 'function') renderPIAllDraftBanner();
+    } else {
+      if(_adb) _adb.style.display = 'none';
+      if(typeof renderPICoDraftBanner === 'function') renderPICoDraftBanner();
+    }
   } else {
     // 수정 모드 진입 시 임시저장 배너 숨김
     const _adb = document.getElementById('pi-all-draft-banner');
@@ -1343,6 +1352,8 @@ function clearPICompanySelect(){
   if(typeof piEditPayrollId !== 'undefined' && piEditPayrollId){
     if(typeof cancelEditPayroll === 'function') cancelEditPayroll();
   }
+  // 임시저장 이어쓰기 모드 해제 (취소한 건이 배너에서 사라지지 않도록)
+  piDraftId = null;
   // pi-all-draft-banner 복원, 고객사 전용 배너 숨김
   if(typeof renderPIAllDraftBanner === 'function') renderPIAllDraftBanner();
   const _coDraft = document.getElementById('pi-co-draft-banner');
