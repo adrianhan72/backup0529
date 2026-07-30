@@ -1288,21 +1288,12 @@ function selectPICompany(companyId, companyName){
     // 수정 모드가 아닌 경우 항상 표시 복원
     const periodSec = document.getElementById('pi-period-section');
     if(periodSec) periodSec.style.display='';
-    // ★ 임시저장 배너: 고객사+년월 선택 단계에서만 표시
-    // 목록·폼이 숨겨진 이 시점(년월 선택 단계)에서만 배너를 갱신·표시
-    // ★ 급여 입력: 고객사 선택 시 전체 임시저장 배너 숨기고 해당 고객사 배너 표시
-    //   단, 임시저장 이어쓰기 모드(piDraftId 설정)에서는 전체 배너를 유지 (현재 편집 건 제외)
-    const _isDraftContinue = typeof piDraftId !== 'undefined' && !!piDraftId;
+    // ★ 임시저장 배너: 고객사 선택 시 전체 배너는 숨기고 해당 고객사 전용 배너만 표시
+    //   (이어쓰기 모드에서는 piDraftId 필터로 현재 편집 건 제외)
     const _adb = document.getElementById('pi-all-draft-banner');
     const _cdb = document.getElementById('pi-co-draft-banner');
-    if(_isDraftContinue){
-      // 이어쓰기 모드: 전체 배너 유지 + 현재 편집 건 제외, 고객사 전용 배너는 숨김
-      if(_cdb) _cdb.style.display = 'none';
-      if(typeof renderPIAllDraftBanner === 'function') renderPIAllDraftBanner();
-    } else {
-      if(_adb) _adb.style.display = 'none';
-      if(typeof renderPICoDraftBanner === 'function') renderPICoDraftBanner();
-    }
+    if(_adb) _adb.style.display = 'none';
+    if(typeof renderPICoDraftBanner === 'function') renderPICoDraftBanner();
   } else {
     // 수정 모드 진입 시 임시저장 배너 숨김
     const _adb = document.getElementById('pi-all-draft-banner');
