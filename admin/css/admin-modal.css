@@ -1,12 +1,12 @@
-       OUTLINE TYPE — 테두리/투명 배경 버튼
-    ══════════════════════════════════════════════ */
+       OUTLINE TYPE ? 테두리/투명 배경 버튼
+    ?????????????????????????????????????????????? */
     /* 공통 outline 베이스 */
     .btn-outline-base{
       background:transparent;
       border-width:1.5px;border-style:solid;
     }
 
-    /* Secondary (회색 — 취소/보조) */
+    /* Secondary (회색 ? 취소/보조) */
     .btn-secondary{background:#9ca3af;border-color:#6b7280;color:#fff;}
     .btn-secondary:hover:not(:disabled){background:#6b7280;}
     .btn-secondary:active:not(:disabled){background:#4b5563;}
@@ -14,18 +14,17 @@
 
     /* Outline Primary (레드 테두리) */
     .btn-outline-primary{
-      background:transparent;color:#e94560;
-      border:1.5px solid #e94560;
+      background:transparent;color:#dc2626;
+      border:1.5px solid #dc2626;
     }
     .btn-outline-primary:hover:not(:disabled){
-      background:#fff0f3;border-color:#d63651;
-      box-shadow:0 2px 8px rgba(233,69,96,.18);
+      background:#fef2f2;border-color:#b91c1c;
     }
     .btn-outline-primary:active:not(:disabled){
-      background:#ffe4e8;border-color:#c02e45;
+      background:#fee2e2;border-color:#b91c1c;
     }
     .btn-outline-primary.selected,.btn-outline-primary[aria-selected="true"]{
-      background:#e94560;color:#fff;
+      background:#dc2626;color:#fff;
     }
 
     /* Outline Success (그린 테두리) */
@@ -62,18 +61,18 @@
 
     /* Outline Danger (레드 테두리) */
     .btn-outline-danger{
-      background:transparent;color:#ef4444;
-      border:1.5px solid #ef4444;
+      background:transparent;color:#dc2626;
+      border:1.5px solid #dc2626;
     }
     .btn-outline-danger:hover:not(:disabled){
-      background:#fff5f5;border-color:#dc2626;
-      box-shadow:0 2px 8px rgba(239,68,68,.18);
+      background:#fef2f2;border-color:#b91c1c;
+      box-shadow:0 2px 8px rgba(220,38,38,.18);
     }
     .btn-outline-danger:active:not(:disabled){
       background:#fee2e2;border-color:#b91c1c;
     }
     .btn-outline-danger.selected,.btn-outline-danger[aria-selected="true"]{
-      background:#ef4444;color:#fff;
+      background:#dc2626;color:#fff;
     }
 
     /* Outline Indigo (인디고 테두리) */
@@ -118,7 +117,7 @@
     .stat-info .stat-value{font-size:22px;font-weight:700;color:#1a1a2e;margin-top:3px}
     .stat-info .stat-sub{font-size:10.5px;color:#aaa;margin-top:1px}
     .card{background:#fff;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.06);overflow:hidden}
-    .card-header{padding:16px 22px 12px;border-bottom:1px solid #f0f2f5;display:flex;align-items:center;justify-content:space-between}
+    .card-header{padding:16px 22px 12px;border-bottom:1px solid #f0f2f5;display:flex;align-items:center;justify-content:space-between;min-height:67px;box-sizing:border-box;}
     .card-title{font-size:14px;font-weight:700;color:#1a1a2e}
     .table-wrap{overflow-x:auto}
     table{width:100%;border-collapse:collapse;font-size:13px}
@@ -126,19 +125,19 @@
     tbody tr{border-bottom:1px solid #f5f5f5;transition:background .15s}
     tbody tr:hover{background:#fafbff}
     tbody td{padding:11px 14px;color:#333;vertical-align:middle}
-    .badge{display:inline-flex;align-items:center;gap:3px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600}
+    .badge{display:inline-flex;align-items:center;gap:3px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500}
     .badge-green{background:rgba(16,185,129,.1);color:#10b981}
     .badge-red{background:rgba(239,68,68,.1);color:#ef4444}
     .badge-blue{background:rgba(59,130,246,.1);color:#3b82f6}
     .badge-yellow{background:rgba(245,158,11,.1);color:#f59e0b}
-    .badge-gray{background:rgba(107,114,128,.1);color:#6b7280}
-    .badge-orange{background:rgba(234,88,12,.1);color:#ea580c;border:1px solid rgba(234,88,12,.25)}
+    .badge-gray{background:#f3f4f6;color:#374151}
+    .badge-orange{background:rgba(234,88,12,.1);color:#ea580c}
     .badge-purple{background:rgba(139,92,246,.1);color:#8b5cf6}
     .badge-cyan{background:rgba(6,182,212,.1);color:#0891b2}
     .badge-pink{background:rgba(236,72,153,.1);color:#db2777}
-    .badge-indigo{background:rgba(99,102,241,.15);color:#4338ca;border:1px solid rgba(99,102,241,.3)}
-    .badge-teal{background:rgba(20,184,166,.1);color:#0f766e;border:1px solid rgba(20,184,166,.3)}
-    .badge-rose{background:rgba(244,63,94,.12);color:#be123c;border:1px solid rgba(244,63,94,.3)}
-    .badge-slate{background:rgba(100,116,139,.1);color:#475569;border:1px solid rgba(100,116,139,.3);text-decoration:line-through}
-    .badge-amber{background:rgba(245,158,11,.15);color:#b45309;border:1px solid rgba(245,158,11,.3)}
+.badge-indigo{background:rgba(99,102,241,.15);color:#4338ca}
+.badge-teal{background:rgba(20,184,166,.1);color:#0f766e}
+.badge-rose{background:rgba(244,63,94,.12);color:#be123c}
+    .badge-slate{background:rgba(100,116,139,.1);color:#475569}
+    .badge-amber{background:rgba(245,158,11,.15);color:#b45309}
     /* ── 계약 조회 모달 전용 ── */
