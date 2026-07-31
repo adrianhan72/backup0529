@@ -2963,7 +2963,8 @@ function _calcDailyAverageWage(empId, baseYr, baseMo){
 function calcPI(){
   // 주휴수당 자동계산 — 매번 recalc (출근일수·계약 변경 시 반영)
   // ※ calcWeeklyHolidayPay 내부에서 setAmountVal만 호출, calcPI 재진입 없음
-  if(piContract && piContract.contract_type !==CONTRACT_TYPE.DAILY){
+  // ※ 근로기준법 제55조: 모든 근로자(일용직 포함) 주 15시간 이상 개근 시 주휴수당 발생
+  if(piContract){
     const _holResult = calcWeeklyHolidayPay();
     _retroHolidayOverpay = _holResult ? (_holResult.retroHolidayOverpay || 0) : 0;
   } else {
