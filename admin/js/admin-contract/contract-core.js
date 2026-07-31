@@ -293,6 +293,7 @@ function _renderContCoSummaryCards(){
       return `<tr>
         ${empNameCell(c.employee_id)}
         <td style="text-align:center;font-size:12px;">${genderLabel(emp)}</td>
+        <td style="font-size:12px;color:#6b7280;">${emp?.employee_number||'-'}</td>
         ${catBadgeCell(c, emp)}
         <td style="font-size:12px;color:#6b7280;">${emp?.hire_date||'-'}</td>
         <td><span class="badge" style="${item.badgeStyle}font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;">${item.typeLabel}</span></td>
@@ -305,7 +306,7 @@ function _renderContCoSummaryCards(){
     const schedUrgent = scheduledItems.filter(item => item.targetDate <= days7LaterStr && item.targetDate > today).length;
     const schedExtra = schedUrgent > 0 ? `7일 이내 도래 ${schedUrgent}건 — ` : '';
     renderOuterCard('scheduled', 'fas fa-calendar-check', '#0284c7', '예정 사항', scheduledItems.length,
-      schedExtra + '계약예정·갱신예정·해지예정·만료예정 통합', ['직원명','성별','고용형태','입사일','구분','예정일','D-day','관리'], schedRows, 'cont-alert-scheduled');
+      schedExtra + '계약예정·갱신예정·해지예정·만료예정 통합', ['직원명','성별','사원번호','고용형태','입사일','구분','예정일','D-day','관리'], schedRows, 'cont-alert-scheduled');
   }
 }
 
