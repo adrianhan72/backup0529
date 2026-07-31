@@ -183,7 +183,6 @@
     .cont-alert-docs .cont-alert-card-chevron-btn{background:#3b82f6;}
     .cont-alert-renew .cont-alert-card-chevron-btn{background:#f472b6;}
     .cont-alert-pending .cont-alert-card-chevron-btn{background:#a78bfa;}
-    .cont-alert-renew-terminate .cont-alert-card-chevron-btn{background:#c084fc;}
     .cont-alert-preterminate .cont-alert-card-chevron-btn{background:#22c55e;}
     .cont-alert-probation .cont-alert-card-chevron-btn{background:#2dd4bf;}
     .cont-alert-card-body{border-top:1px solid rgba(0,0,0,.07);background:#fff;}
@@ -215,10 +214,6 @@
     .cont-alert-pending{border:1px solid #a78bfa;border-radius:12px;overflow:hidden;margin-bottom:0;}
     .cont-alert-pending .cont-alert-card-head{background:linear-gradient(135deg,#f5f3ff,#ede9fe);}
     .cont-alert-pending .cont-alert-card-title{color:#5b21b6;}
-/* 정규직전환 — purple (대시보드 regular와 통일) */
-    .cont-alert-renew-terminate{border:1px solid #c084fc;border-radius:12px;overflow:hidden;margin-bottom:0;}
-    .cont-alert-renew-terminate .cont-alert-card-head{background:linear-gradient(135deg,#fdf4ff,#f3e8ff);}
-    .cont-alert-renew-terminate .cont-alert-card-title{color:#3b0764;}
 /* 동의서미발송 — green (대시보드 consent와 통일) */
     .cont-alert-preterminate{border:1px solid #22c55e;border-radius:12px;overflow:hidden;margin-bottom:0;}
     .cont-alert-preterminate .cont-alert-card-head{background:linear-gradient(135deg,#f0fdf4,#dcfce7);}
@@ -244,9 +239,6 @@
     .cont-co-card.cont-alert-renew { border:1px solid #f472b6; }
     .cont-co-card.cont-alert-renew .cont-alert-card-head { background:linear-gradient(135deg,#fdf2f8,#fce7f3); }
     .cont-co-card.cont-alert-renew .cont-alert-card-title { color:#831843; }
-    .cont-co-card.cont-alert-renew-terminate { border:1px solid #c084fc; }
-    .cont-co-card.cont-alert-renew-terminate .cont-alert-card-head { background:linear-gradient(135deg,#fdf4ff,#f3e8ff); }
-    .cont-co-card.cont-alert-renew-terminate .cont-alert-card-title { color:#3b0764; }
     .cont-co-card.cont-alert-preterminate { border:1px solid #22c55e; }
     .cont-co-card.cont-alert-preterminate .cont-alert-card-head { background:linear-gradient(135deg,#f0fdf4,#dcfce7); }
     .cont-co-card.cont-alert-preterminate .cont-alert-card-title { color:#166534; }

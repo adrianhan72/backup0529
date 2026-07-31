@@ -162,9 +162,6 @@ function renderPICoDraftBanner(){
 function renderDashboard(){
   // 임시저장 알림 카드 (최우선 렌더)
   renderDraftAlerts();
-  // [사용안함] 서류미비 계약도 유효 계약으로 처리 → 날인본/동의서 알림 카드 제거
-  // renderSignedAlerts();
-  // renderConsentAlerts();
   // 수습 만료 통지 대상 배너
   renderDashProbationBanner();
   // 퇴직금 지급 이력 배너 (임시저장 위)
