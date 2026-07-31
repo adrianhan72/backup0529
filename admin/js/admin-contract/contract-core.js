@@ -173,7 +173,7 @@ function _renderContCoSummaryCards(){
       const ddayColor = diff !== null && diff <= 7 ? '#dc2626' : '#4338ca';
       return `<tr>${empNameCell(c.employee_id)}${catBadgeCell(c,emp)}<td style="font-size:12px;color:#6b7280;">${c.contract_start||'-'}</td><td><span style="font-weight:700;color:${ddayColor};font-size:12.5px;">${dday}</span></td><td style="white-space:nowrap;"><button onclick="viewContract('${c.id}')" class="btn btn-sm btn-indigo"><i class="fas fa-search"></i> 조회</button> <button onclick="openContractModal('${c.id}', currentContCompanyId)" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i> 수정 및 재발행</button> <button onclick="_cancelPendingFromList('${c.id}')" class="btn btn-sm btn-secondary"><i class="fas fa-ban"></i> 계약취소</button></td></tr>`;
     }).join('');
-    renderOuterCard('pending', 'fas fa-calendar-alt', '#4338ca', '계약 예정', pendingContracts.length,
+    renderOuterCard('pending', 'fas fa-calendar-alt', '#7c3aed', '계약 예정', pendingContracts.length,
       '시작일이 미도래한 신규 계약입니다.', ['직원명','고용형태','계약 시작일','D-day','관리'], rows, 'cont-alert-pending');
   }
 
