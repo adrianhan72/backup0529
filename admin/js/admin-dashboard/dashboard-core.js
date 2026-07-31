@@ -151,10 +151,6 @@ function renderDashProbationBanner(){
       <div class="dash-alert-banner-body">
         <div class="dash-alert-banner-title${inactive ? ' inactive' : ''}">
           관리가 필요한 수습 근로자
-      </div>
-      <div class="dash-alert-banner-body">
-        <div class="dash-alert-banner-title${inactive ? ' inactive' : ''}">
-          관리가 필요한 수습 근로자
           <span class="dash-alert-banner-count" style="color:${inactive ? '#9ca3af' : ''};">${total}명</span>
         </div>
         <div class="dash-alert-banner-sub" style="color:${inactive ? '#9ca3af' : ''};">${inactive ? '수습기간 3개월 초과 근로자가 없습니다' : '수습기간 3개월 초과 근로자 해고 시 30일 전 서면 통지 의무'}</div>
