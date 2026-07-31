@@ -39,6 +39,7 @@ const PAGE_REGISTRY = {
   'annual-leave':         { external: true },
   'leave-promotion':      { external: true },
   'system-settings':      { external: true },
+  'retirement-mgmt':      { external: true },
 };
 /* ===================================================================
  * 내부 상태
