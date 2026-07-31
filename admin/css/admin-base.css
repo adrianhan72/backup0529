@@ -28,7 +28,7 @@
     .btn{
       display:inline-flex;align-items:center;justify-content:center;gap:6px;
       padding:8px 16px;border-radius:8px;
-      font-size:12.5px;font-weight:600;line-height:1;
+      font-size:12.5px;font-weight:600;
       cursor:pointer;
       border:1px solid #4b5563;
       background:#6b7280;color:#fff;
@@ -37,7 +37,6 @@
       position:relative;overflow:hidden;
       user-select:none;white-space:nowrap;
     }
-    .btn i{display:inline-flex;align-items:center;}
     .btn:hover:not(:disabled){background:#4b5563;}
     .btn:active:not(:disabled){background:#374151;}
     .btn:focus-visible{outline:2.5px solid currentColor;outline-offset:2px;}
