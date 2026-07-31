@@ -3,23 +3,23 @@
    ========================================== -->
 <div class="retirement-mgmt-wrap" style="padding:24px 28px;">
 
-  <div class="retirement-tabs">
-    <button class="retirement-tab active" data-tab="insurance" onclick="switchRetirementTab('insurance')">
+  <div class="std-tab-bar" style="margin-top:0;">
+    <button class="std-tab active" data-tab="insurance" onclick="switchRetirementTab('insurance')">
       <i class="fas fa-shield-alt"></i> 4대보험 상실신고 <span id="retirement-tab-count-insurance"></span>
     </button>
-    <button class="retirement-tab" data-tab="tax" onclick="switchRetirementTab('tax')">
+    <button class="std-tab" data-tab="tax" onclick="switchRetirementTab('tax')">
       <i class="fas fa-file-invoice"></i> 원천징수 신고 <span id="retirement-tab-count-tax"></span>
     </button>
-    <button class="retirement-tab" data-tab="severance" onclick="switchRetirementTab('severance')">
+    <button class="std-tab" data-tab="severance" onclick="switchRetirementTab('severance')">
       <i class="fas fa-calculator"></i> 퇴직정산 <span id="retirement-tab-count-severance"></span>
     </button>
-    <button class="retirement-tab" data-tab="noticepay" onclick="switchRetirementTab('noticepay')">
+    <button class="std-tab" data-tab="noticepay" onclick="switchRetirementTab('noticepay')">
       <i class="fas fa-exclamation-triangle"></i> 해고예고수당 <span id="retirement-tab-count-noticepay"></span>
     </button>
   </div>
 
   <!-- 탭 1: 4대보험 상실신고 -->
-  <div id="retirement-tab-insurance" class="retirement-tab-content">
+  <div id="retirement-tab-insurance" class="std-tab-panel">
     <div style="font-size:12px;color:#6b7280;margin-bottom:12px;padding:8px 12px;background:#f8fafc;border-radius:6px;">
       <i class="fas fa-info-circle" style="margin-right:4px;"></i>4대보험 상실신고는 근로복지공단·국민건강보험공단 EDI에서 직접 처리합니다. 신고 완료 후 아래 버튼을 눌러주세요.
     </div>
@@ -27,7 +27,7 @@
       </table></div>
   </div>
 
-  <div id="retirement-tab-tax" class="retirement-tab-content" style="display:none;">
+  <div id="retirement-tab-tax" class="std-tab-panel" style="display:none;">
     <div style="font-size:12px;color:#6b7280;margin-bottom:12px;padding:10px 14px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;">
       <i class="fas fa-info-circle" style="color:#6366f1;margin-right:4px;"></i>원천징수이행상황신고는 홈택스에서 직접 처리합니다. 신고 완료 후 아래 버튼을 눌러주세요.
     </div>
@@ -38,7 +38,7 @@
       </table></div>
   </div>
 
-  <div id="retirement-tab-severance" class="retirement-tab-content" style="display:none;">
+  <div id="retirement-tab-severance" class="std-tab-panel" style="display:none;">
     <div style="background:#fff;border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:hidden;">
       <table class="retirement-table" id="retirement-table-severance">
         <thead><tr><th>직원명</th><th>고객사</th><th>계약시작일</th><th>해지일</th><th>재직기간</th><th>관리</th></tr></thead>
@@ -46,7 +46,7 @@
       </table></div>
   </div>
 
-  <div id="retirement-tab-noticepay" class="retirement-tab-content" style="display:none;">
+  <div id="retirement-tab-noticepay" class="std-tab-panel" style="display:none;">
     <div style="background:#fff;border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:hidden;">
       <table class="retirement-table" id="retirement-table-noticepay">
         <thead><tr><th>직원명</th><th>고객사</th><th>계약시작일</th><th>해지일</th><th>재직기간</th><th>해고예고수당</th><th>관리</th></tr></thead>
@@ -54,14 +54,6 @@
       </table></div>
   </div>
 </div>
-
-<style>
-.retirement-tab.active { color: #4f46e5 !important; border-bottom-color: #4f46e5 !important; }
-.retirement-table { width:100%; border-collapse:collapse; font-size:13px; }
-.retirement-table th { text-align:left; padding:11px 10px; background:#f8fafc; color:#64748b; font-weight:600; font-size:11.5px; border-bottom:1px solid #e2e8f0; }
-.retirement-table td { padding:11px 10px; border-bottom:1px solid #f1f5f9; color:#374151; background:#fff; }
-.retirement-table tr:nth-child(even) td { background:#f8fafc; }
-.retirement-table tr:hover td { background:#eef2ff; }
 .retirement-table tr:last-child td { border-bottom:none; }
 .btn-retire { padding:5px 12px; font-size:11px; border-radius:6px; border:1px solid; cursor:pointer; font-weight:600; font-family:inherit; display:inline-flex; align-items:center; gap:4px; transition:all .15s; }
 .btn-retire-done { background:#dcfce7; color:#166534; border-color:#bbf7d0; cursor:default; }

@@ -7,8 +7,8 @@ let _retirementCurrentTab = 'insurance';
 /** 탭 전환 */
 function switchRetirementTab(tab){
   _retirementCurrentTab = tab;
-  document.querySelectorAll('.retirement-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
-  document.querySelectorAll('.retirement-tab-content').forEach(c => c.style.display = 'none');
+  document.querySelectorAll('.std-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.std-tab-panel').forEach(c => c.style.display = 'none');
   const content = document.getElementById('retirement-tab-' + tab);
   if(content) content.style.display = '';
 }
