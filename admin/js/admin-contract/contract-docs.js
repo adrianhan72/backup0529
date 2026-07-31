@@ -52,7 +52,7 @@ function openDocsUploadModal(contractId){
   overlay.innerHTML = `
     <div class="modal" style="max-width:560px;width:95%;">
       <div class="modal-header" style="display:flex;align-items:center;justify-content:space-between;">
-        <span class="modal-title"><i class="fas fa-upload" style="color:#10b981;margin-right:8px;"></i>서류 업로드</span>
+        <span class="modal-title"><i class="fas fa-upload" style="color:#10b981;margin-right:8px;"></i>날인본등록</span>
         <button onclick="closeDocsUploadModal()" class="btn-close"><i class="fas fa-times"></i></button>
       </div>
       <div class="modal-body" style="padding:18px 24px;">
@@ -237,7 +237,7 @@ async function _ctfUpload(type, contractId, inputEl){
         await _sendCompanyNotice({
           companyId  : c.company_id, companyName: _ufCo.company_name || '',
           noticeType : type === 'signed' ? 'contract_signed_uploaded' : 'contract_consent_uploaded',
-          title      : `[서류 업로드] ${_ufEmp.name||''} — ${_typeLabel}이 업로드되었습니다`,
+          title      : `[날인본등록] ${_ufEmp.name||''} — ${_typeLabel}이 업로드되었습니다`,
           body       :
 `안녕하세요${_coRep}.
 
