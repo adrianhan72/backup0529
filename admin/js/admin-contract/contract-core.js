@@ -1,8 +1,8 @@
 ﻿/**
  * _renderContCoSummaryCards()
- * 선택된 고객사에 대한 아코디언 카드 렌더링 (총 7종)
+ * 선택된 고객사에 대한 아코디언 카드 렌더링 (총 8종)
  * 순서: ①계약예정 ②임시저장 ③근로계약서 미발송 ④정보제공동의서 미발송
- *        ⑤계약만료 통지대상 ⑥정규직 전환 의무 대상 ⑦수습근로자 관리
+ *        ⑤만료예정 ⑥갱신예정 ⑦해지예정 ⑧수습근로자 관리
  */
 function _renderContCoSummaryCards(){
   const wrap = document.getElementById('cont-co-cards-wrap');
@@ -202,7 +202,94 @@ function _renderContCoSummaryCards(){
   renderNavCard('fas fa-file-alt', '#16a34a', '정보제공동의서 미발송', unsignedConsent.length,
     '클릭하여 정보제공동의서 관리 페이지로 이동', 'cont-alert-preterminate', 'consent-dispatch');
 
-  // ── ⑦ 수습근로자 관리 대상 ──
+  // ── ⑤ 만료예정 (29일 이내 계약만료 — 해고예고수당 위험 감지) ──
+  const EXPIRY_ELIGIBLE_TYPES = [
+    CONTRACT_TYPE.FIXED,
+    CONTRACT_TYPE.REGULAR_PROBATION,
+    CONTRACT_TYPE.FIXED_PROBATION,
+    CONTRACT_TYPE.DAILY,
+  ];
+  const days29Later = new Date(today);
+  days29Later.setDate(days29Later.getDate() + 29);
+  const days29LaterStr = days29Later.toISOString().slice(0,10);
+  const days7Later = new Date(today);
+  days7Later.setDate(days7Later.getDate() + 7);
+  const days7LaterStr = days7Later.toISOString().slice(0,10);
+
+  const expiryContracts = allContracts.filter(c => {
+    if (c.company_id !== coId) return false;
+    if (c.is_draft || c.is_voided_by_amend) return false;
+    if (!CONTRACT_ACTIVE_STATUSES.includes(c.status)) return false;
+    if (!c.contract_end) return false;
+    const ct = c.contract_type || (allEmployees.find(e=>e.id===c.employee_id)||{}).employment_category || '';
+    if (!EXPIRY_ELIGIBLE_TYPES.includes(ct)) return false;
+    if (c.contract_end <= today) return false;
+    if (c.contract_end > days29LaterStr) return false;
+    return true;
+  });
+
+  if (expiryContracts.length > 0) {
+    const rows = expiryContracts.map(c => {
+      const emp = allEmployees.find(e=>e.id===c.employee_id);
+      const diff = Math.ceil((new Date(c.contract_end)-new Date(today))/(1000*60*60*24));
+      const dday = diff > 0 ? `D-${diff}` : diff === 0 ? 'D-day' : `D+${Math.abs(diff)}`;
+      const ddayColor = diff <= 7 ? '#dc2626' : '#be185d';
+      const periodTxt = `${c.contract_start||'-'} ~ ${c.contract_end||'-'}`;
+      return `<tr>${empNameCell(c.employee_id)}${catBadgeCell(c,emp)}<td style="font-size:12px;color:#6b7280;">${periodTxt}</td><td style="font-size:12px;color:#6b7280;">${c.contract_end||'-'}</td><td><span style="font-weight:700;color:${ddayColor};font-size:12.5px;">${dday}</span></td><td style="white-space:nowrap;"><button onclick="viewContract('${c.id}')" class="btn btn-sm btn-indigo"><i class="fas fa-search"></i> 조회</button></td></tr>`;
+    }).join('');
+    const urgentCount = expiryContracts.filter(c => c.contract_end <= days7LaterStr && c.contract_end > today).length;
+    const extraDesc = urgentCount > 0 ? `7일 이내 만료 ${urgentCount}명 — ` : '';
+    renderOuterCard('renew', 'fas fa-hourglass-half', '#f472b6', '만료 예정 계약', expiryContracts.length,
+      extraDesc + '29일 이내 계약만료 도래, 해고예고수당 위험 감지 필요', ['직원명','고용형태','계약기간','만료일','D-day','관리'], rows, 'cont-alert-renew');
+  }
+
+  // ── ⑥ 갱신예정 ──
+  const renewalPendingContracts = allContracts.filter(c =>
+    c.company_id === coId && c.status === CONTRACT_STATUS.RENEWAL_PENDING);
+
+  if (renewalPendingContracts.length > 0) {
+    const rows = renewalPendingContracts.map(c => {
+      const emp = allEmployees.find(e=>e.id===c.employee_id);
+      // 갱신 대상 계약의 갱신 시작일 = paired contract의 contract_start
+      const paired = c.renewal_pair_id ? allContracts.find(x=>x.id===c.renewal_pair_id) : null;
+      const renewalStart = paired?.contract_start || c.renewal_date || '-';
+      const diff = renewalStart !== '-' ? Math.ceil((new Date(renewalStart)-new Date(today))/(1000*60*60*24)) : null;
+      const dday = diff !== null ? (diff>0?`D-${diff}`:diff===0?'D-day':`D+${Math.abs(diff)}`) : '-';
+      const ddayColor = diff !== null && diff <= 7 ? '#dc2626' : '#b45309';
+      const periodTxt = `${c.contract_start||'-'} ~ ${c.contract_end||c.terminate_date||'현재'}`;
+      return `<tr>${empNameCell(c.employee_id)}${catBadgeCell(c,emp)}<td style="font-size:12px;color:#6b7280;">${periodTxt}</td><td style="font-size:12px;color:#6b7280;">${renewalStart}</td><td><span style="font-weight:700;color:${ddayColor};font-size:12.5px;">${dday}</span></td><td style="white-space:nowrap;"><button onclick="viewContract('${c.id}')" class="btn btn-sm btn-indigo"><i class="fas fa-search"></i> 조회</button> <button onclick="openContractModal('${c.id}', currentContCompanyId)" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i> 수정</button></td></tr>`;
+    }).join('');
+    const urgentCount = renewalPendingContracts.filter(c => {
+      const paired = c.renewal_pair_id ? allContracts.find(x=>x.id===c.renewal_pair_id) : null;
+      const rs = paired?.contract_start || c.renewal_date || '';
+      return rs && rs > today && rs <= days7LaterStr;
+    }).length;
+    const extraDesc = urgentCount > 0 ? `7일 이내 갱신 ${urgentCount}명 — ` : '';
+    renderOuterCard('renewal', 'fas fa-sync-alt', '#ca8a04', '갱신 예정 계약', renewalPendingContracts.length,
+      extraDesc + '갱신일이 도래하기 전 확인이 필요한 계약입니다.', ['직원명','고용형태','현재 계약기간','갱신 시작일','D-day','관리'], rows, 'cont-alert-renewal');
+  }
+
+  // ── ⑦ 해지예정 ──
+  const terminatePendingContracts = allContracts.filter(c =>
+    c.company_id === coId && c.status === CONTRACT_STATUS.TERMINATE_PENDING
+    && c.terminate_date && c.terminate_date > today);
+
+  if (terminatePendingContracts.length > 0) {
+    const rows = terminatePendingContracts.map(c => {
+      const emp = allEmployees.find(e=>e.id===c.employee_id);
+      const diff = Math.ceil((new Date(c.terminate_date)-new Date(today))/(1000*60*60*24));
+      const dday = diff > 0 ? `D-${diff}` : diff === 0 ? 'D-day' : `D+${Math.abs(diff)}`;
+      const ddayColor = diff <= 7 ? '#dc2626' : '#be123c';
+      const periodTxt = `${c.contract_start||'-'} ~ ${c.contract_end||c.terminate_date||'현재'}`;
+      return `<tr>${empNameCell(c.employee_id)}${catBadgeCell(c,emp)}<td style="font-size:12px;color:#6b7280;">${periodTxt}</td><td style="font-size:12px;color:#6b7280;">${c.terminate_date||'-'}</td><td><span style="font-weight:700;color:${ddayColor};font-size:12.5px;">${dday}</span></td><td style="white-space:nowrap;"><button onclick="viewContract('${c.id}')" class="btn btn-sm btn-indigo"><i class="fas fa-search"></i> 조회</button> <button onclick="openContractModal('${c.id}', currentContCompanyId)" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i> 수정</button></td></tr>`;
+    }).join('');
+    const urgentCount = terminatePendingContracts.filter(c => c.terminate_date <= days7LaterStr && c.terminate_date > today).length;
+    const extraDesc = urgentCount > 0 ? `7일 이내 해지 ${urgentCount}명 — ` : '';
+    renderOuterCard('terminate', 'fas fa-user-clock', '#e11d48', '해지 예정 계약', terminatePendingContracts.length,
+      extraDesc + '해지예정일 도래 시 퇴직금·해고예고수당 정산이 필요한 계약입니다.', ['직원명','고용형태','현재 계약기간','해지예정일','D-day','관리'], rows, 'cont-alert-terminate');
+  }
+
+  // ── ⑧ 수습근로자 관리 대상 ──
   if(probationTargets.length > 0){
     const rows = probationTargets.map(t => {
       const emp = allEmployees.find(e=>e.id===t.contract.employee_id);
