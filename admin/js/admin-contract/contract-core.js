@@ -99,6 +99,7 @@ function _renderContCoSummaryCards(){
     scheduledItems.push({
       type: 'pending', typeLabel: '계약예정', sortOrder: 1,
       targetDate, contract: c, reason,
+      reasonBadgeStyle: reason==='신규입사'?'background:#d1fae5;color:#065f46;':reason==='재입사'?'background:#dbeafe;color:#1e40af;':'background:#fef9c3;color:#92400e;',
       badgeStyle: 'background:#ede9fe;color:#5b21b6;',
     });
   });
@@ -110,7 +111,7 @@ function _renderContCoSummaryCards(){
       scheduledItems.push({
         type: 'terminate', typeLabel: '해지예정', sortOrder: 2,
         targetDate: c.terminate_date, contract: c,
-        reason: '-',
+        reason: '-', reasonBadgeStyle: '',
         badgeStyle: 'background:#ffe4e6;color:#9f1239;',
       });
     });
@@ -130,7 +131,7 @@ function _renderContCoSummaryCards(){
     scheduledItems.push({
       type: 'expiry', typeLabel: '만료예정', sortOrder: 3,
       targetDate: c.contract_end, contract: c,
-      reason: '-',
+      reason: '-', reasonBadgeStyle: '',
       badgeStyle: 'background:#fce7f3;color:#9d174d;',
     });
   });
@@ -334,7 +335,7 @@ function _renderContCoSummaryCards(){
         ${catBadgeCell(c, emp)}
         <td style="font-size:12px;color:#6b7280;">${emp?.hire_date||'-'}</td>
         <td><span class="badge" style="${item.badgeStyle}font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;">${item.typeLabel}</span></td>
-        <td style="font-size:11px;color:#6b7280;">${item.reason||'-'}</td>
+        <td>${item.reasonBadgeStyle ? `<span class="badge" style="${item.reasonBadgeStyle}font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;">${item.reason}</span>` : `<span style="font-size:11px;color:#9ca3af;">${item.reason||'-'}</span>`}</td>
         <td style="font-size:12px;color:#6b7280;">${item.targetDate}</td>
         <td><span style="font-weight:700;color:${ddayColor};font-size:12.5px;">${dday}</span></td>
         <td style="white-space:nowrap;">${_schedActions(item)}</td>
