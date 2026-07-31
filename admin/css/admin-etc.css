@@ -115,6 +115,10 @@
     .dash-todo-grid .dash-alert-banner{ flex:1; }
     .dash-todo-grid .dash-alert-banner:not(.inactive):not(.retirement){ cursor:pointer; transition:box-shadow .2s; border-radius:10px; }
     .dash-todo-grid .dash-alert-banner:not(.inactive):not(.retirement):hover{ box-shadow:0 0 0 3px var(--glow-color, rgba(99,102,241,.25)); }
+    /* 퇴직관리 배너 inner box hover 글로우 */
+    .retirement-inner-box{ cursor:pointer;transition:box-shadow .2s; }
+    .retirement-inner-box:not(.inactive):hover{ box-shadow:0 0 0 3px var(--glow-color); }
+    .retirement-inner-box.inactive{ cursor:default; }
 
     /* 대시보드 할일 그리드: 960px 이하 → 2열 */
     @media (max-width:960px){

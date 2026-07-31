@@ -212,15 +212,24 @@ function renderDashRetirementBanner(){
       <div class="dash-alert-banner-body" style="flex:1;min-width:0;display:flex;align-items:center;gap:20px;">
         <div class="dash-alert-banner-title" style="flex-shrink:0;color:#7c3aed;">퇴직 관리</div>
         <div style="display:flex;gap:20px;flex:1;justify-content:flex-end;flex-wrap:wrap;">
-          ${items.map(it => `
-            <div class="retirement-inner-box"
-                 style="--glow-color:${it.glowColor};flex:1 1 0;min-width:200px;padding:6px 10px 6px 12px;border:1.5px solid #c4b5fd;border-radius:8px;background:#faf9ff;display:flex;align-items:center;gap:6px;"
-                 onclick="event.stopPropagation();showPage('retirement-mgmt',document.querySelector('.menu-item[data-page=\\'retirement-mgmt\\']'));setTimeout(()=>{if(typeof switchRetirementTab==='function')switchRetirementTab('${it.tab}');},120);">
-              <span class="dash-alert-banner-title" style="font-weight:500;margin:0;font-size:13px;flex:1;">${it.label}</span>
-              <span class="dash-alert-banner-count" style="color:#7c3aed;">${it.count}명</span>
-              <i class="fas fa-chevron-right" style="color:#7c3aed;font-size:13px;flex-shrink:0;opacity:.6;position:relative;top:1px;"></i>
+          ${items.map(it => {
+            const inactive = it.count === 0;
+            const boxStyle = inactive
+              ? 'flex:1 1 0;min-width:200px;padding:6px 10px 6px 12px;border:1.5px solid #e5e7eb;border-radius:8px;background:#f9fafb;display:flex;align-items:center;gap:6px;cursor:default;'
+              : `--glow-color:${it.glowColor};flex:1 1 0;min-width:200px;padding:6px 10px 6px 12px;border:1.5px solid #c4b5fd;border-radius:8px;background:#faf9ff;display:flex;align-items:center;gap:6px;`;
+            const titleColor = inactive ? '#6b7280' : '';
+            const countColor = inactive ? '#9ca3af' : '#7c3aed';
+            const onclickAttr = inactive ? '' : `onclick="event.stopPropagation();showPage('retirement-mgmt',document.querySelector('.menu-item[data-page=\\'retirement-mgmt\\']'));setTimeout(()=>{if(typeof switchRetirementTab==='function')switchRetirementTab('${it.tab}');},120);"`;
+            return `
+            <div class="retirement-inner-box${inactive ? ' inactive' : ''}"
+                 style="${boxStyle}"
+                 ${onclickAttr}>
+              <span class="dash-alert-banner-title" style="font-weight:500;margin:0;font-size:13px;flex:1;${titleColor ? 'color:'+titleColor+';' : ''}">${it.label}</span>
+              <span class="dash-alert-banner-count" style="color:${countColor};">${it.count}명</span>
+              ${inactive ? '' : '<i class="fas fa-chevron-right" style="color:#7c3aed;font-size:13px;flex-shrink:0;opacity:.6;position:relative;top:1px;"></i>'}
             </div>
-          `).join('')}
+          `;
+          }).join('')}
         </div>
       </div>
     </div>
