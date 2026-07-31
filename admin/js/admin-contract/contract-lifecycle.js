@@ -960,12 +960,14 @@ async function cancelPreTerminate(){
 
 ■ 근로자: ${empName}
 ■ 고용형태: ${contractTypeLabel(c.contract_type)||''}
-■ 계약 기간: ${_fmtD(c.contract_start)}${c.contract_end ? ' ~ ' + _fmtD(c.contract_end) : ' (기간 미정)'}
+■ 계약 시작일: ${_fmtD(c.contract_start)}
+${c.contract_end ? `■ 계약 만료일: ${_fmtD(c.contract_end)}` : '■ 계약 기간: 무기한'}
 ■ 취소된 해지일: ${termDate ? _fmtD(termDate) : '-'}
 ■ 현재 계약 상태: 계약유효 (활성) 복귀
 ■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
 
-`,
+※ 계약 조건(임금·근로시간 등)에는 변동이 없습니다.
+※ 퇴직 예정이었던 경우, 해당 직원의 근속기간과 퇴직금 산정에 유의해 주시기 바랍니다.`,
       contractId  : c.id,
       employeeId  : c.employee_id, employeeName: empName,
       contractEnd : c.contract_end || '',
@@ -2108,8 +2110,14 @@ async function confirmContractTerminate(){
     const _fmtD  = d => { if(!d) return '-'; const [y,m,dd]=d.split('-'); return `${parseInt(y)}년 ${parseInt(m)}월 ${parseInt(dd)}일`; };
     const _isTerminated = newStatus === CONTRACT_STATUS.TERMINATED;
     const _noticePayNote = (isDismissal && noticePayAmt > 0)
-      ? `\n\n⚠️ 해고예고수당: ${noticePayAmt.toLocaleString('ko-KR')}원 (근로기준법 제26조)\n※ 해고 시에는 해고사유서면통지서를 근로자에게 직접 교부하셔야 합니다 (근로기준법 제27조).`
-      : '';
+      ? `\n⚠️ 해고예고수당: ${noticePayAmt.toLocaleString('ko-KR')}원 (근로기준법 제26조)` +
+        `\n※ 해고사유서면통지서를 근로자에게 직접 교부하셔야 합니다 (근로기준법 제27조).\n`
+      : (isDismissal
+        ? `\n※ 해고사유서면통지서를 근로자에게 직접 교부하셔야 합니다 (근로기준법 제27조).\n`
+        : '');
+    const _actionGuide = _isTerminated
+      ? `\n※ 퇴직금 정산, 4대보험 상실신고 등 후속 조치를 진행해 주시기 바랍니다.`
+      : `\n※ 해지예정일 전까지 해지를 철회하실 수 있습니다. 해지예정일이 도래하면 계약이 자동 해지됩니다.`;
     await _sendCompanyNotice({
       companyId  : c.company_id, companyName: _tCo.company_name || '',
       noticeType : _isTerminated ? 'contract_terminated' : 'contract_terminate_scheduled',
@@ -2121,11 +2129,14 @@ async function confirmContractTerminate(){
 
 ■ 근로자: ${emp?.name||''}
 ■ 고용형태: ${contractTypeLabel(c.contract_type)||''}
+■ 계약 시작일: ${_fmtD(c.contract_start)}
+${c.contract_end ? `■ 계약 만료일: ${_fmtD(c.contract_end)}` : ''}
 ■ 해지 사유: ${reason}
-■ ${_isTerminated ? '퇴사일' : '해지예정일'}: ${_fmtD(termDate)}
-■ 처리 일시: ${new Date().toLocaleString('ko-KR')}${_noticePayNote}
-
-`,
+■ ${_isTerminated ? '퇴사일' : '해지 예정일'}: ${_fmtD(termDate)}
+■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
+${_noticePayNote}${_actionGuide}`,
+      contractId  : c.id,
+      employeeId  : c.employee_id, employeeName: emp?.name||'',
       contractId  : c.id,
       employeeId  : c.employee_id, employeeName: emp?.name||'',
       contractEnd : c.contract_end || '',
@@ -2638,8 +2649,11 @@ async function confirmFixedTerminate(){
       const _fmtD  = d => { if(!d) return '-'; const [y,m,dd]=d.split('-'); return `${parseInt(y)}년 ${parseInt(m)}월 ${parseInt(dd)}일`; };
       const _isTerminated = newStatus === CONTRACT_STATUS.TERMINATED;
       const _noticePayNote2 = (isDismissal && noticePayAmt > 0)
-        ? `\n\n⚠️ 해고예고수당: ${noticePayAmt.toLocaleString('ko-KR')}원 (근로기준법 제26조)\n※ 해고 시에는 해고사유서면통지서를 근로자에게 직접 교부하셔야 합니다 (근로기준법 제27조).`
-        : '';
+        ? `\n⚠️ 해고예고수당: ${noticePayAmt.toLocaleString('ko-KR')}원 (근로기준법 제26조)` +
+          `\n※ 해고사유서면통지서를 근로자에게 직접 교부하셔야 합니다 (근로기준법 제27조).\n`
+        : (isDismissal
+          ? `\n※ 해고사유서면통지서를 근로자에게 직접 교부하셔야 합니다 (근로기준법 제27조).\n`
+          : '');
       await _sendCompanyNotice({
         companyId  : c.company_id, companyName: _ftCo.company_name || '',
         noticeType : _isTerminated ? 'contract_terminated' : 'contract_terminate_scheduled',
