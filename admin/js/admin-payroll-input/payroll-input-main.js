@@ -4404,25 +4404,16 @@ function _checkPIRestoreBtn(){
   const btn = document.getElementById('pi-clear-btn');
   if(!btn) return;
   if(!piEditPayrollId){
-    // 신규 모드 → 초기화 버튼, 항상 활성
-    btn.disabled      = false;
-    btn.style.opacity = '';
-    btn.style.cursor  = '';
+    btn.disabled = false;
     return;
   }
   if(_piEditSnapshot === null){
-    // 수정 모드이지만 스냅샷 아직 미생성(필드 채우기 진행 중) → 비활성
-    btn.disabled      = true;
-    btn.style.opacity = '0.4';
-    btn.style.cursor  = 'not-allowed';
+    btn.disabled = true;
     return;
   }
-  // 수정 모드 + 스냅샷 있음 → 현재 폼과 비교
   const _curSnap = _readPIFormSnapshot();
   const changed = (_curSnap !== _piEditSnapshot);
-  btn.disabled      = !changed;
-  btn.style.opacity = changed ? '' : '0.4';
-  btn.style.cursor  = changed ? '' : 'not-allowed';
+  btn.disabled = !changed;
 }
 
 /**
