@@ -330,6 +330,9 @@
     .tax-bracket-table tbody tr:hover td{background:#f0f9ff!important;}
     .tax-bracket-table tfoot td{padding:8px 14px;border:1px solid #e2e8f0;}
     .std-add-card h4{font-size:13px;font-weight:700;color:#374151;margin:0 0 14px;display:flex;align-items:center;gap:7px;}
+    /* 빈 테이블 표준 — 모든 td color 규칙보다 뒤에 위치하여 우선 적용 */
+    td.cen-empty{text-align:center;padding:48px 20px;color:#9ca3af;font-size:13px;}
+    td.cen-empty i{font-size:30px;display:block;margin-bottom:10px;color:#9ca3af;}
     .std-add-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:14px;}
     .std-add-grid .form-group{margin:0;}
     .std-add-grid label{font-size:11.5px;font-weight:600;color:#6b7280;margin-bottom:4px;display:block;}
