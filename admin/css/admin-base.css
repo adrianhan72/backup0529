@@ -91,7 +91,7 @@
     }
     /* ── 같은 행 내 모든 폼 요소는 동일한 높이 변형(slim/std)을 사용할 것 ── */
     /* ?�기/?�제 ?�이�??�용 ?????�고 ?�평?�게 */
-    .btn-close{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:transparent;color:#64748b;border-color:#d1d5db;padding:0;font-size:16px;line-height:1;flex-shrink:0;}
+    .btn-close{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:transparent;color:#64748b;border:1px solid #d1d5db;padding:0;font-size:16px;line-height:1;flex-shrink:0;}
     .btn-close:hover:not(:disabled){background:#d1d5db;color:#334155;border-color:#9ca3af;}
     .btn-close:active:not(:disabled){background:#9ca3af;color:#1e293b;border-color:#6b7280;}
     .btn-icon-dark{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:transparent;color:#fff;border-color:rgba(255,255,255,.35);padding:0;font-size:16px;line-height:1;flex-shrink:0;}
