@@ -45,13 +45,21 @@ function renderRetirementMgmt(){
     };
   };
 
-  // ── 1) 4대보험 상실신고 대상 ──
+  // ── 1) 4대보험 상실신고 대상 (미신고만) ──
   const insuranceList = terminatedContracts
-    .filter(c => { const emp = allEmployees.find(e => e.id === c.employee_id); return emp && emp.status === EMP_STATUS.RESIGNED; })
+    .filter(c => {
+      const emp = allEmployees.find(e => e.id === c.employee_id);
+      return emp && emp.status === EMP_STATUS.RESIGNED && !c.insurance_reported_at;
+    })
     .map(enrich);
 
-  // ── 2) 원천징수 대상 (동일) ──
-  const taxList = [...insuranceList];
+  // ── 2) 원천징수 대상 (미신고만) ──
+  const taxList = terminatedContracts
+    .filter(c => {
+      const emp = allEmployees.find(e => e.id === c.employee_id);
+      return emp && emp.status === EMP_STATUS.RESIGNED && !c.tax_reported_at;
+    })
+    .map(enrich);
 
   // ── 3) 퇴직정산 대상 (근속 1년 이상) ──
   const severanceList = terminatedContracts
@@ -85,39 +93,39 @@ function renderRetirementMgmt(){
 function renderInsuranceTable(list, fmtD){
   const tbody = document.querySelector('#retirement-table-insurance tbody');
   if(!tbody) return;
-  if(!list.length){ tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#9ca3af;padding:30px;">대상자가 없습니다.</td></tr>`; return; }
-  tbody.innerHTML = list.map(r => `
-    <tr>
+  if(!list.length){ tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#9ca3af;padding:30px;">미신고 대상자가 없습니다.</td></tr>`; return; }
+  tbody.innerHTML = list.map(r => {
+    const done = r.insurance_reported_at;
+    const btn = done
+      ? `<span class="btn-retire-sm btn-retire-done" style="cursor:default;"><i class="fas fa-check-circle"></i> 완료 (${done.slice(0,10)})</span>`
+      : `<button class="btn-retire-sm btn-retire-pending" onclick="markRetirementDone('${r.id}','insurance')"><i class="fas fa-check"></i> 신고완료</button>`;
+    return `<tr>
       <td><strong>${r.empName}</strong></td>
       <td>${r.coName}</td>
       <td>${fmtD(r.termDate)}</td>
       <td>${fmtD(r.termDate)}</td>
-      <td>
-        <button class="btn-retire-sm btn-retire-pending" onclick="markRetirementDone('${r.id}','insurance')">
-          <i class="fas fa-check"></i> 신고완료
-        </button>
-      </td>
-    </tr>
-  `).join('');
+      <td>${btn}</td>
+    </tr>`;
+  }).join('');
 }
 
 /** 원천징수 신고 테이블 */
 function renderTaxTable(list, fmtD){
   const tbody = document.querySelector('#retirement-table-tax tbody');
   if(!tbody) return;
-  if(!list.length){ tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#9ca3af;padding:30px;">대상자가 없습니다.</td></tr>`; return; }
-  tbody.innerHTML = list.map(r => `
-    <tr>
+  if(!list.length){ tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#9ca3af;padding:30px;">미신고 대상자가 없습니다.</td></tr>`; return; }
+  tbody.innerHTML = list.map(r => {
+    const done = r.tax_reported_at;
+    const btn = done
+      ? `<span class="btn-retire-sm btn-retire-done" style="cursor:default;"><i class="fas fa-check-circle"></i> 완료 (${done.slice(0,10)})</span>`
+      : `<button class="btn-retire-sm btn-retire-pending" onclick="markRetirementDone('${r.id}','tax')"><i class="fas fa-check"></i> 신고완료</button>`;
+    return `<tr>
       <td><strong>${r.empName}</strong></td>
       <td>${r.coName}</td>
       <td>${fmtD(r.termDate)}</td>
-      <td>
-        <button class="btn-retire-sm btn-retire-pending" onclick="markRetirementDone('${r.id}','tax')">
-          <i class="fas fa-check"></i> 신고완료
-        </button>
-      </td>
-    </tr>
-  `).join('');
+      <td>${btn}</td>
+    </tr>`;
+  }).join('');
 }
 
 /** 퇴직정산 테이블 */
@@ -163,16 +171,28 @@ function renderNoticePayTable(list, fmtD){
   `).join('');
 }
 
-/** 신고완료 마킹 (클라이언트 측 임시) */
-function markRetirementDone(contractId, type){
+/** 신고완료 마킹 (DB 저장) */
+async function markRetirementDone(contractId, type){
   if(!confirm('신고 완료 처리하시겠습니까?')) return;
-  const c = allContracts.find(x => x.id === contractId);
-  if(!c) return toast('계약 정보를 찾을 수 없습니다.', 'error');
-  if(type === 'insurance') c._insurance_reported = true;
-  if(type === 'tax') c._tax_reported = true;
-  toast('신고완료 처리되었습니다.', 'success');
-  renderRetirementMgmt();
-  if(typeof renderDashRetirementBanner === 'function') renderDashRetirementBanner();
+  try {
+    const field = type === 'insurance' ? 'insurance_reported_at' : 'tax_reported_at';
+    const now = new Date().toISOString();
+    await api(`../tables/contracts/${contractId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ [field]: now })
+    });
+    // 로컬 캐시 갱신
+    const c = allContracts.find(x => x.id === contractId);
+    if(c) c[field] = now;
+    await loadContracts();
+    toast('신고완료 처리되었습니다.', 'success');
+    renderRetirementMgmt();
+    if(typeof renderDashRetirementBanner === 'function') renderDashRetirementBanner();
+  } catch(e){
+    console.error('[markRetirementDone]', e);
+    toast('처리 중 오류가 발생했습니다.', 'error');
+  }
 }
 
 /** 퇴직정산 모달 (추후 구현) */

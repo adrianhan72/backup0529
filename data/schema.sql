@@ -152,6 +152,8 @@ CREATE TABLE IF NOT EXISTS contracts (
   probation_end_date TEXT, --  -- 수습 종료일
   dismissal_notice_pay REAL DEFAULT 0, --  -- 해고예고수당
   dismissal_notice_pay_reason TEXT, --  -- 해고예고수당 사유
+  insurance_reported_at TEXT, --  -- 4대보험 상실신고 완료일시
+  tax_reported_at TEXT, --  -- 원천징수이행상황신고 완료일시
   pre_used_annual_leave REAL DEFAULT 0, --  -- 기사용 연차일수 (서비스 가입 이전)
   retention_cleared INTEGER DEFAULT 0,
   retention_cleared_at TEXT

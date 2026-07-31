@@ -177,10 +177,13 @@ function renderDashRetirementBanner(){
 
   const insuranceCount = terminatedContracts.filter(c => {
     const emp = allEmployees.find(e => e.id === c.employee_id);
-    return emp && emp.status === EMP_STATUS.RESIGNED;
+    return emp && emp.status === EMP_STATUS.RESIGNED && !c.insurance_reported_at;
   }).length;
 
-  const taxCount = insuranceCount;
+  const taxCount = terminatedContracts.filter(c => {
+    const emp = allEmployees.find(e => e.id === c.employee_id);
+    return emp && emp.status === EMP_STATUS.RESIGNED && !c.tax_reported_at;
+  }).length;
   const severanceCount = terminatedContracts.filter(c => {
     if(!c.contract_start) return false;
     const endDate = c.terminate_date || today;
