@@ -313,7 +313,7 @@ function _renderContCoSummaryCards(){
     const schedUrgent = scheduledItems.filter(item => item.targetDate <= days7LaterStr && item.targetDate > today).length;
     const schedExtra = schedUrgent > 0 ? `7일 이내 도래 ${schedUrgent}건 — ` : '';
     renderOuterCard('scheduled', 'fas fa-calendar-check', '#0284c7', '예정 사항', scheduledItems.length,
-      schedExtra + '계약예정·갱신예정·해지예정·만료예정 통합', ['직원명','고용형태','구분','해당일','D-day','관리'], schedRows, 'cont-alert-scheduled');
+      schedExtra + '계약예정·갱신예정·해지예정·만료예정 통합', ['직원명','고용형태','구분','예정일','D-day','관리'], schedRows, 'cont-alert-scheduled');
   }
 }
 
