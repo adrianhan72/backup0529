@@ -42,39 +42,75 @@ function _renderContCoSummaryCards(){
   days7Later.setDate(days7Later.getDate() + 7);
   const days7LaterStr = days7Later.toISOString().slice(0,10);
 
+  // ── 발생사유 판별 헬퍼 ──
+  function _getPastEmpIds(emp) {
+    if (!emp || !emp.id_number || !emp.phone) return new Set();
+    const idPre = emp.id_number.replace(/[^0-9]/g, '').slice(0, 6);
+    const phone = emp.phone.replace(/[^0-9]/g, '');
+    if (!idPre || !phone) return new Set();
+    const matched = (allEmployees || []).filter(e =>
+      e.id !== emp.id &&
+      (e.id_number || '').replace(/[^0-9]/g, '').slice(0, 6) === idPre &&
+      (e.phone || '').replace(/[^0-9]/g, '') === phone
+    );
+    return new Set(matched.map(e => e.id));
+  }
+  function _hasPastContracts(empId, pastEmpIds, excludeContractId) {
+    const checkIds = new Set(pastEmpIds);
+    checkIds.add(empId);
+    return (allContracts || []).some(c =>
+      c.id !== excludeContractId &&
+      !c.is_draft && !c.is_voided_by_amend &&
+      ![CONTRACT_STATUS.VOIDED].includes(c.status) &&
+      checkIds.has(c.employee_id)
+    );
+  }
+
   const scheduledItems = [];
 
-  // 계약예정 (sortOrder 1)
-  allContracts.filter(c => c.company_id === coId && c.status === CONTRACT_STATUS.PENDING)
-    .forEach(c => {
-      if (!c.contract_start) return;
-      scheduledItems.push({
-        type: 'pending', typeLabel: '계약예정', sortOrder: 1,
-        targetDate: c.contract_start, contract: c,
-        badgeStyle: 'background:#ede9fe;color:#5b21b6;',
-      });
-    });
+  // 계약예정 + 갱신예정 (sortOrder 1~2, 구분 통합)
+  allContracts.filter(c => c.company_id === coId &&
+    (c.status === CONTRACT_STATUS.PENDING || c.status === CONTRACT_STATUS.RENEWAL_PENDING)
+  ).forEach(c => {
+    const emp = allEmployees.find(e => e.id === c.employee_id);
+    const pastEmpIds = _getPastEmpIds(emp);
+    const hasPast = _hasPastContracts(c.employee_id, pastEmpIds, c.id);
 
-  // 갱신예정 (sortOrder 2)
-  allContracts.filter(c => c.company_id === coId && c.status === CONTRACT_STATUS.RENEWAL_PENDING)
-    .forEach(c => {
-      const paired = c.renewal_pair_id ? allContracts.find(x=>x.id===c.renewal_pair_id) : null;
-      const target = paired?.contract_start || c.renewal_date;
-      if (!target) return;
-      scheduledItems.push({
-        type: 'renewal', typeLabel: '갱신예정', sortOrder: 2,
-        targetDate: target, contract: c,
-        badgeStyle: 'background:#fef9c3;color:#92400e;',
-      });
+    let targetDate, reason;
+    if (c.status === CONTRACT_STATUS.RENEWAL_PENDING) {
+      // 갱신예정 → 계약예정으로 통합, 사유=계약갱신
+      const paired = c.renewal_pair_id ? allContracts.find(x => x.id === c.renewal_pair_id) : null;
+      targetDate = paired?.contract_start || c.renewal_date;
+      if (!targetDate) return;
+      reason = '계약갱신';
+    } else {
+      // 계약예정 (PENDING): 사유 판별
+      targetDate = c.contract_start;
+      if (!targetDate) return;
+      if (!hasPast) {
+        reason = '신규입사';
+      } else if (emp?.hire_date && emp.hire_date === c.contract_start) {
+        reason = '재입사';
+      } else {
+        reason = '계약갱신';
+      }
+    }
+
+    scheduledItems.push({
+      type: 'pending', typeLabel: '계약예정', sortOrder: 1,
+      targetDate, contract: c, reason,
+      badgeStyle: 'background:#ede9fe;color:#5b21b6;',
     });
+  });
 
   // 해지예정 (sortOrder 3)
   allContracts.filter(c => c.company_id === coId && c.status === CONTRACT_STATUS.TERMINATE_PENDING
       && c.terminate_date && c.terminate_date > today)
     .forEach(c => {
       scheduledItems.push({
-        type: 'terminate', typeLabel: '해지예정', sortOrder: 3,
+        type: 'terminate', typeLabel: '해지예정', sortOrder: 2,
         targetDate: c.terminate_date, contract: c,
+        reason: '-',
         badgeStyle: 'background:#ffe4e6;color:#9f1239;',
       });
     });
@@ -92,8 +128,9 @@ function _renderContCoSummaryCards(){
     return true;
   }).forEach(c => {
     scheduledItems.push({
-      type: 'expiry', typeLabel: '만료예정', sortOrder: 4,
+      type: 'expiry', typeLabel: '만료예정', sortOrder: 3,
       targetDate: c.contract_end, contract: c,
+      reason: '-',
       badgeStyle: 'background:#fce7f3;color:#9d174d;',
     });
   });
@@ -297,6 +334,7 @@ function _renderContCoSummaryCards(){
         ${catBadgeCell(c, emp)}
         <td style="font-size:12px;color:#6b7280;">${emp?.hire_date||'-'}</td>
         <td><span class="badge" style="${item.badgeStyle}font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;">${item.typeLabel}</span></td>
+        <td style="font-size:11px;color:#6b7280;">${item.reason||'-'}</td>
         <td style="font-size:12px;color:#6b7280;">${item.targetDate}</td>
         <td><span style="font-weight:700;color:${ddayColor};font-size:12.5px;">${dday}</span></td>
         <td style="white-space:nowrap;">${_schedActions(item)}</td>
@@ -306,7 +344,7 @@ function _renderContCoSummaryCards(){
     const schedUrgent = scheduledItems.filter(item => item.targetDate <= days7LaterStr && item.targetDate > today).length;
     const schedExtra = schedUrgent > 0 ? `7일 이내 도래 ${schedUrgent}건 — ` : '';
     renderOuterCard('scheduled', 'fas fa-calendar-check', '#7c3aed', '예정 사항', scheduledItems.length,
-      schedExtra + '계약예정·갱신예정·해지예정·만료예정 통합', ['직원명','성별','사원번호','고용형태','입사일','구분','예정일','D-day','관리'], schedRows, 'cont-alert-scheduled');
+      schedExtra + '계약예정·갱신예정·해지예정·만료예정 통합', ['직원명','성별','사원번호','고용형태','입사일','구분','발생사유','예정일','D-day','관리'], schedRows, 'cont-alert-scheduled');
   }
 }
 
