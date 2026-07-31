@@ -210,23 +210,22 @@ function renderDashRetirementBanner(){
   sec.style.display = '';
   sec.innerHTML = `
   <div class="dash-alert-banner retirement" style="cursor:pointer;border-left:4px solid #7c3aed;border-right:4px solid #7c3aed;background:#fff;" onclick="showPage('retirement-mgmt',document.querySelector('.menu-item[data-page=\\'retirement-mgmt\\']'))">
-    <div class="dash-alert-banner-head" style="align-items:center;flex-wrap:wrap;gap:8px;">
-      <div class="dash-alert-banner-icon" style="background:#f5f3ff;">
+    <div class="dash-alert-banner-head" style="align-items:center;gap:20px;">
+      <div class="dash-alert-banner-icon" style="background:#f5f3ff;flex-shrink:0;">
         <i class="fas fa-user-times" style="color:#7c3aed;"></i>
       </div>
-      <div class="dash-alert-banner-body" style="flex:1;min-width:0;">
-        <div class="dash-alert-banner-title">
-          퇴직 관리
-        </div>
-        <div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:4px;">
+      <div class="dash-alert-banner-body" style="flex:1;min-width:0;display:flex;align-items:center;gap:20px;">
+        <div class="dash-alert-banner-title" style="flex-shrink:0;">퇴직 관리</div>
+        <div style="display:flex;gap:20px;flex:1;justify-content:flex-end;">
           ${items.map(it => `
-            <span style="font-size:12px;white-space:nowrap;color:${it.count>0?'#374151':'#9ca3af'};">
-              <strong style="color:${it.count>0?'#7c3aed':'#9ca3af'};">${it.count}명</strong> ${it.label}
-            </span>
+            <div style="flex:1;max-width:140px;text-align:center;padding:8px 10px;border:1.5px solid #c4b5fd;border-radius:8px;background:#faf9ff;">
+              <div style="font-size:11px;color:#6b7280;margin-bottom:2px;">${it.label}</div>
+              <div style="font-size:13px;font-weight:700;color:${it.count>0?'#7c3aed':'#9ca3af'};">${it.count}명</div>
+            </div>
           `).join('')}
         </div>
       </div>
-      <div class="dash-alert-banner-arrow"><i class="fas fa-chevron-right"></i></div>
+      <div class="dash-alert-banner-arrow" style="flex-shrink:0;"><i class="fas fa-chevron-right"></i></div>
     </div>
   </div>`;
   _updateDashTodoGrid();
