@@ -53,7 +53,7 @@ function openDocsUploadModal(contractId){
     <div class="modal" style="max-width:560px;width:95%;">
       <div class="modal-header" style="display:flex;align-items:center;justify-content:space-between;">
         <span class="modal-title"><i class="fas fa-upload" style="color:#10b981;margin-right:8px;"></i>서류 업로드</span>
-        <button onclick="closeDocsUploadModal()" style="background:none;border:none;font-size:18px;cursor:pointer;color:#9ca3af;padding:0;">&times;</button>
+        <button onclick="closeDocsUploadModal()" class="btn-close"><i class="fas fa-times"></i></button>
       </div>
       <div class="modal-body" style="padding:18px 24px;">
         <div style="font-size:13px;color:#374151;margin-bottom:14px;line-height:1.6;">
