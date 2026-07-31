@@ -1,10 +1,10 @@
 <!-- ==========================================
    퇴직 관리 페이지 (retirement-mgmt)
    ========================================== -->
-<div class="retirement-mgmt-wrap" style="padding:20px 24px;">
+<div class="retirement-mgmt-wrap" style="padding:24px 28px;">
   <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
-    <h2 style="font-size:18px;font-weight:800;color:#1e293b;margin:0;"><i class="fas fa-hand-holding-usd" style="color:#7c3aed;margin-right:6px;"></i>퇴직 관리</h2>
-    <span id="retirement-total-badge" style="font-size:12px;background:#f1f5f9;color:#64748b;padding:3px 10px;border-radius:12px;">0건</span>
+    <h2 style="font-size:18px;font-weight:800;color:#1e293b;margin:0;"><i class="fas fa-hand-holding-usd" style="color:#7c3aed;"></i> 퇴직 관리</h2>
+    <span id="retirement-total-badge" class="badge badge-indigo">0건</span>
   </div>
 
   <!-- 탭 -->
@@ -32,49 +32,50 @@
     <div style="font-size:12px;color:#6b7280;margin-bottom:12px;padding:8px 12px;background:#f8fafc;border-radius:6px;">
       <i class="fas fa-info-circle" style="margin-right:4px;"></i>4대보험 상실신고는 근로복지공단·국민건강보험공단 EDI에서 직접 처리합니다. 신고 완료 후 아래 버튼을 눌러주세요.
     </div>
-    <table class="retirement-table" id="retirement-table-insurance">
-      <thead><tr><th>직원명</th><th>고객사</th><th>퇴사일</th><th>상실일</th><th>관리</th></tr></thead>
-      <tbody></tbody>
-    </table>
+    <div class="card" style="background:#fff;border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:hidden;">
+      </table></div>
   </div>
 
-  <!-- 탭 2: 원천징수 신고 -->
   <div id="retirement-tab-tax" class="retirement-tab-content" style="display:none;">
-    <div style="font-size:12px;color:#6b7280;margin-bottom:12px;padding:8px 12px;background:#f8fafc;border-radius:6px;">
-      <i class="fas fa-info-circle" style="margin-right:4px;"></i>원천징수이행상황신고는 홈택스에서 직접 처리합니다. 신고 완료 후 아래 버튼을 눌러주세요.
+    <div style="font-size:12px;color:#6b7280;margin-bottom:12px;padding:10px 14px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;">
+      <i class="fas fa-info-circle" style="color:#6366f1;margin-right:4px;"></i>원천징수이행상황신고는 홈택스에서 직접 처리합니다. 신고 완료 후 아래 버튼을 눌러주세요.
     </div>
-    <table class="retirement-table" id="retirement-table-tax">
-      <thead><tr><th>직원명</th><th>고객사</th><th>퇴사일</th><th>관리</th></tr></thead>
-      <tbody></tbody>
-    </table>
+    <div style="background:#fff;border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:hidden;">
+      <table class="retirement-table" id="retirement-table-tax">
+        <thead><tr><th>직원명</th><th>고객사</th><th>퇴사일</th><th>관리</th></tr></thead>
+        <tbody></tbody>
+      </table></div>
   </div>
 
-  <!-- 탭 3: 퇴직정산 -->
   <div id="retirement-tab-severance" class="retirement-tab-content" style="display:none;">
-    <table class="retirement-table" id="retirement-table-severance">
-      <thead><tr><th>직원명</th><th>고객사</th><th>계약시작일</th><th>해지일</th><th>재직기간</th><th>관리</th></tr></thead>
-      <tbody></tbody>
-    </table>
+    <div style="background:#fff;border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:hidden;">
+      <table class="retirement-table" id="retirement-table-severance">
+        <thead><tr><th>직원명</th><th>고객사</th><th>계약시작일</th><th>해지일</th><th>재직기간</th><th>관리</th></tr></thead>
+        <tbody></tbody>
+      </table></div>
   </div>
 
-  <!-- 탭 4: 해고예고수당 -->
   <div id="retirement-tab-noticepay" class="retirement-tab-content" style="display:none;">
-    <table class="retirement-table" id="retirement-table-noticepay">
-      <thead><tr><th>직원명</th><th>고객사</th><th>계약시작일</th><th>해지일</th><th>재직기간</th><th>해고예고수당</th><th>관리</th></tr></thead>
-      <tbody></tbody>
-    </table>
+    <div style="background:#fff;border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:hidden;">
+      <table class="retirement-table" id="retirement-table-noticepay">
+        <thead><tr><th>직원명</th><th>고객사</th><th>계약시작일</th><th>해지일</th><th>재직기간</th><th>해고예고수당</th><th>관리</th></tr></thead>
+        <tbody></tbody>
+      </table></div>
   </div>
 </div>
 
 <style>
 .retirement-tab.active { color: #4f46e5 !important; border-bottom-color: #4f46e5 !important; }
 .retirement-table { width:100%; border-collapse:collapse; font-size:13px; }
-.retirement-table th { text-align:left; padding:10px 8px; background:#f8fafc; color:#64748b; font-weight:600; font-size:11px; border-bottom:1px solid #e2e8f0; }
-.retirement-table td { padding:10px 8px; border-bottom:1px solid #f1f5f9; color:#374151; }
-.retirement-table tr:hover td { background:#fafbfd; }
-.btn-retire-sm { padding:5px 12px; font-size:11px; border-radius:5px; border:1px solid; cursor:pointer; font-weight:600; font-family:inherit; }
-.btn-retire-done { background:#dcfce7; color:#166534; border-color:#bbf7d0; }
-.btn-retire-done:hover { background:#bbf7d0; }
+.retirement-table th { text-align:left; padding:11px 10px; background:#f8fafc; color:#64748b; font-weight:600; font-size:11.5px; border-bottom:1px solid #e2e8f0; }
+.retirement-table td { padding:11px 10px; border-bottom:1px solid #f1f5f9; color:#374151; }
+.retirement-table tr:last-child td { border-bottom:none; }
+.retirement-table tr:hover td { background:#f9fafb; }
+.retirement-table td strong { font-weight:600; color:#1e293b; }
+.btn-retire { padding:5px 12px; font-size:11px; border-radius:6px; border:1px solid; cursor:pointer; font-weight:600; font-family:inherit; display:inline-flex; align-items:center; gap:4px; transition:all .15s; }
+.btn-retire-done { background:#dcfce7; color:#166534; border-color:#bbf7d0; cursor:default; }
 .btn-retire-pending { background:#fef3c7; color:#92400e; border-color:#fde68a; }
 .btn-retire-pending:hover { background:#fde68a; }
+.btn-retire-undo { background:#f1f5f9; color:#64748b; border-color:#e2e8f0; padding:5px 7px; margin-left:4px; }
+.btn-retire-undo:hover { background:#e2e8f0; }
 </style>

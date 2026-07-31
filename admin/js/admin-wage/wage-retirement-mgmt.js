@@ -97,9 +97,9 @@ function renderInsuranceTable(list, fmtD){
   tbody.innerHTML = list.map(r => {
     const done = r.insurance_reported_at;
     const btn = done
-      ? `<span class="btn-retire-sm btn-retire-done" style="cursor:default;"><i class="fas fa-check-circle"></i> 완료 (${done.slice(0,10)})</span>
-         <button class="btn-retire-sm" style="background:#f1f5f9;color:#64748b;border-color:#e2e8f0;margin-left:4px;" onclick="undoRetirementDone('${r.id}','insurance')"><i class="fas fa-undo"></i></button>`
-      : `<button class="btn-retire-sm btn-retire-pending" onclick="markRetirementDone('${r.id}','insurance')"><i class="fas fa-check"></i> 신고완료</button>`;
+      ? `<span class="btn-retire btn-retire-done" style="cursor:default;"><i class="fas fa-check-circle"></i> 완료 (${done.slice(0,10)})</span>
+         <button class="btn-retire" style="background:#f1f5f9;color:#64748b;border-color:#e2e8f0;margin-left:4px;" onclick="undoRetirementDone('${r.id}','insurance')"><i class="fas fa-undo"></i></button>`
+      : `<button class="btn-retire btn-retire-pending" onclick="markRetirementDone('${r.id}','insurance')"><i class="fas fa-check"></i> 신고완료</button>`;
     return `<tr>
       <td><strong>${r.empName}</strong></td>
       <td>${r.coName}</td>
@@ -118,9 +118,9 @@ function renderTaxTable(list, fmtD){
   tbody.innerHTML = list.map(r => {
     const done = r.tax_reported_at;
     const btn = done
-      ? `<span class="btn-retire-sm btn-retire-done" style="cursor:default;"><i class="fas fa-check-circle"></i> 완료 (${done.slice(0,10)})</span>
-         <button class="btn-retire-sm" style="background:#f1f5f9;color:#64748b;border-color:#e2e8f0;margin-left:4px;" onclick="undoRetirementDone('${r.id}','tax')"><i class="fas fa-undo"></i></button>`
-      : `<button class="btn-retire-sm btn-retire-pending" onclick="markRetirementDone('${r.id}','tax')"><i class="fas fa-check"></i> 신고완료</button>`;
+      ? `<span class="btn-retire btn-retire-done" style="cursor:default;"><i class="fas fa-check-circle"></i> 완료 (${done.slice(0,10)})</span>
+         <button class="btn-retire" style="background:#f1f5f9;color:#64748b;border-color:#e2e8f0;margin-left:4px;" onclick="undoRetirementDone('${r.id}','tax')"><i class="fas fa-undo"></i></button>`
+      : `<button class="btn-retire btn-retire-pending" onclick="markRetirementDone('${r.id}','tax')"><i class="fas fa-check"></i> 신고완료</button>`;
     return `<tr>
       <td><strong>${r.empName}</strong></td>
       <td>${r.coName}</td>
@@ -143,7 +143,7 @@ function renderSeveranceTable(list, fmtD){
       <td>${fmtD(r.termDate)}${r.isPending ? ' <span class="badge badge-amber" style="font-size:10px;">예정</span>' : ''}</td>
       <td>${r.tenureLabel} (${r.tenureDays}일)</td>
       <td>
-        <button class="btn-retire-sm btn-retire-pending" onclick="openRetirementSettlement('${r.id}')">
+        <button class="btn-retire btn-retire-pending" onclick="openRetirementSettlement('${r.id}')">
           <i class="fas fa-calculator"></i> 퇴직정산
         </button>
       </td>
@@ -165,7 +165,7 @@ function renderNoticePayTable(list, fmtD){
       <td>${r.tenureLabel}</td>
       <td style="color:#dc2626;font-weight:700;">${r.noticePay.toLocaleString('ko-KR')}원</td>
       <td>
-        <button class="btn-retire-sm btn-retire-pending" onclick="openRetirementSettlement('${r.id}')">
+        <button class="btn-retire btn-retire-pending" onclick="openRetirementSettlement('${r.id}')">
           <i class="fas fa-calculator"></i> 퇴직정산
         </button>
       </td>
