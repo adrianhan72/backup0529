@@ -209,7 +209,7 @@ function renderDashRetirementBanner(){
 
   sec.style.display = '';
   sec.innerHTML = `
-  <div class="dash-alert-banner retirement" style="cursor:pointer;border-left:4px solid #7c3aed;" onclick="showPage('retirement-mgmt',document.querySelector('.menu-item[data-page=\\'retirement-mgmt\\']'))">
+  <div class="dash-alert-banner retirement" style="cursor:pointer;border-left:4px solid #7c3aed;border-right:4px solid #7c3aed;background:#fff;" onclick="showPage('retirement-mgmt',document.querySelector('.menu-item[data-page=\\'retirement-mgmt\\']'))">
     <div class="dash-alert-banner-head" style="align-items:center;flex-wrap:wrap;gap:8px;">
       <div class="dash-alert-banner-icon" style="background:#f5f3ff;">
         <i class="fas fa-user-times" style="color:#7c3aed;"></i>
