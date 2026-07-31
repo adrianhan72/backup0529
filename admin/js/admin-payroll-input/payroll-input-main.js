@@ -581,7 +581,8 @@ function calcAnnualLeaveTable(){
   const badge = document.getElementById('pi-al-remain-badge');
   if(!badge) return;
 
-  // 일용직·등기임원·대표자·특수관계인: 연차 제외
+  // 등기임원·대표자·특수관계인: 연차 제외 (근로자 아님)
+  // ※ 일용직도 근로기준법 제60조에 따라 1주 15시간 이상 + 계속근로 1년 이상이면 연차 발생
   const _AL_EXCLUDED = new Set([CONTRACT_TYPE.EXECUTIVE, CONTRACT_TYPE.REPRESENTATIVE, CONTRACT_TYPE.RELATED_PARTY]);
   if(!piContract || _AL_EXCLUDED.has(piContract.contract_type)){
     badge.textContent = '잔여연차: -';
@@ -589,7 +590,11 @@ function calcAnnualLeaveTable(){
     return;
   }
   // 주 15시간 미만 단시간: 연차 제외 (근로기준법 제18조제3항)
-  const _weeklyH = (parseFloat(piContract.work_hours_per_day)||0) * (parseFloat(piContract.work_days_per_week)||0);
+  // 일용직: work_days_per_week=0 저장되므로 5일로 추정 (계약 지속성 인정 시)
+  const _dpw = piContract.contract_type === CONTRACT_TYPE.DAILY
+    ? (parseFloat(piContract.work_days_per_week) || 5)
+    : (parseFloat(piContract.work_days_per_week) || 0);
+  const _weeklyH = (parseFloat(piContract.work_hours_per_day)||0) * _dpw;
   if(_weeklyH > 0 && _weeklyH < 15){
     badge.textContent = '잔여연차: - (주 15h 미만)';
     badge.className = 'pi-al-badge-excluded';
