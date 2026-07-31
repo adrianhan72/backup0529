@@ -203,6 +203,8 @@
     .cont-alert-scheduled .cont-alert-table th:nth-child(5){width:13%;}
     .cont-alert-scheduled .cont-alert-table th:nth-child(6){width:12%;}
     .cont-alert-scheduled .cont-alert-table th:nth-child(7){width:25%;}
+    .cont-alert-scheduled .cont-alert-table th:nth-child(2),
+    .cont-alert-scheduled .cont-alert-table td:nth-child(2){text-align:center;}
     .cont-alert-table td{padding:9px 10px;vertical-align:middle;border-bottom:1px solid #f3f4f6;overflow:hidden;text-overflow:ellipsis;}
     .cont-alert-table td:last-child{white-space:nowrap;}
     .cont-alert-table tbody tr:nth-child(even) td{background:#f8fafc;}
