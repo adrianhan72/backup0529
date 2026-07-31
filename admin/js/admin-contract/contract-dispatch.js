@@ -212,10 +212,7 @@ async function renderContractDispatchPage(){
   if(!tbody) return;
 
   if(filtered.length === 0){
-    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:40px;color:#9ca3af;">
-      <i class="fas fa-inbox" style="font-size:24px;display:block;margin-bottom:8px;"></i>
-      발송 이력이 없습니다.
-    </td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" class="cen-empty"><i class="fas fa-inbox"></i> 발송 이력이 없습니다.</td></tr>`;
     document.getElementById('cdp-pagination').innerHTML = '';
     return;
   }

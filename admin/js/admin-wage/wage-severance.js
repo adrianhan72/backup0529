@@ -263,7 +263,7 @@ function renderSevStatusTab(){
   const summaryNote    = document.getElementById('sev-summary-note');
 
   if(!emps.length){
-    tbody.innerHTML = '<tr><td colspan="8" class="sev-empty-state">해당 고객사에 재직 중인 근로자가 없습니다.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="cen-empty"><i class="fas fa-inbox"></i> 해당 고객사에 재직 중인 근로자가 없습니다.</td></tr>';
     if(tfoot) tfoot.style.display = 'none';
     if(summaryCard) summaryCard.style.display = 'none';
     return;
@@ -435,7 +435,7 @@ function renderSevStatusTab(){
     `);
   });
 
-  tbody.innerHTML = rows.join('') || '<tr><td colspan="8" class="sev-empty-state">해당하는 근로자가 없습니다.</td></tr>';
+  tbody.innerHTML = rows.join('') || '<tr><td colspan="8" class="cen-empty"><i class="fas fa-inbox"></i> 해당하는 근로자가 없습니다.</td></tr>';
   if(tfoot) tfoot.style.display = 'none'; // tfoot은 사용하지 않음
 
   // ── 합계 요약 카드 ──
@@ -488,7 +488,7 @@ function renderSevHistoryTab(){
   });
 
   if(!resignedEmps.length){
-    tbody.innerHTML = '<tr><td colspan="8" class="tbl-empty">퇴직금 발생 이력이 없습니다.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="cen-empty"><i class="fas fa-inbox"></i> 퇴직금 발생 이력이 없습니다.</td></tr>';
     return;
   }
 
@@ -543,12 +543,12 @@ async function loadSevInterimSettlements(){
 function renderSevInterimTab(){
   const tbody = document.getElementById('sev-interim-tbody');
   if(!tbody) return;
-  if(!_sevCompanyId){ tbody.innerHTML = '<tr><td colspan="8" class="sev-empty-state">고객사를 선택하면 중간정산 내역이 표시됩니다.</td></tr>'; return; }
+  if(!_sevCompanyId){ tbody.innerHTML = '<tr><td colspan="8" class="cen-empty"><i class="fas fa-inbox"></i> 고객사를 선택하면 중간정산 내역이 표시됩니다.</td></tr>'; return; }
 
   loadSevInterimSettlements().then(() => {
     const items = (_allInterimSettlements || []).sort((a,b) => (b.settlement_date||'').localeCompare(a.settlement_date||''));
     if(!items.length){
-      tbody.innerHTML = '<tr><td colspan="8" class="sev-empty-state">중간정산 내역이 없습니다.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" class="cen-empty"><i class="fas fa-inbox"></i> 중간정산 내역이 없습니다.</td></tr>';
       return;
     }
     const won = v => Math.round(v||0).toLocaleString('ko-KR') + '원';

@@ -228,10 +228,7 @@ function loadPITargetList(){
   if(!tbody) return;
 
   if(!targets.length){
-    tbody.innerHTML = `<tr><td colspan="7" style="padding:30px;text-align:center;color:#9ca3af;font-size:13px;">
-      <i class="fas fa-inbox" style="font-size:24px;margin-bottom:8px;display:block;opacity:.4;"></i>
-      ${moLabel}에 유효한 근로계약이 있는 직원이 없습니다.
-    </td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" class="cen-empty"><i class="fas fa-inbox"></i> ${moLabel}에 유효한 근로계약이 있는 직원이 없습니다.</td></tr>`;
   } else {
     tbody.innerHTML = targets.map(({emp, contract, _type}) => {
       // 대표자·등기임원·특수관계인: 가상 계약 데이터

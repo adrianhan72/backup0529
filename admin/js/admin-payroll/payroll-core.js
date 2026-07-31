@@ -22,7 +22,7 @@ function renderPayrolls(){
   }).sort((a,b)=>getEmpName(a.employee_id).localeCompare(getEmpName(b.employee_id),'ko'));
   const paged=f.slice((pages.pay-1)*ITEMS,pages.pay*ITEMS);
   const tb=document.getElementById('pay-tbody');
-  if(!f.length){tb.innerHTML='<tr><td colspan="11" class="empty-state">급여 내역이 없습니다</td></tr>';document.getElementById('pay-pagination').innerHTML='';return;}
+  if(!f.length){tb.innerHTML='<tr><td colspan="11" class="cen-empty"><i class="fas fa-inbox"></i> 급여 내역이 없습니다</td></tr>';document.getElementById('pay-pagination').innerHTML='';return;}
   tb.innerHTML=paged.map(p=>{
     // 매월지급 소계: 기본급 + 주휴수당 + 자격수당 + 차량유지비 + 식대
     const monthlyTotal = (p.base_salary||0)+(p.weekly_holiday_pay||0)+(p.position_allowance||0)+(p.car_maintenance||0)+(p.meal_allowance||0);

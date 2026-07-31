@@ -361,10 +361,7 @@ function renderCnlTable(){
   const colSpan = showCoCol ? 8 : 7;
 
   if(!list.length){
-    tbody.innerHTML = `<tr><td colspan="${colSpan}" style="text-align:center;padding:40px 20px;color:#94a3b8;font-size:13px;">
-      <i class="fas fa-inbox" style="font-size:28px;display:block;margin-bottom:10px;opacity:.4;"></i>
-      ${_cnlLoaded ? '발송된 알림 이력이 없습니다.' : '데이터를 불러오는 중입니다...'}
-    </td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="${colSpan}" class="cen-empty"><i class="fas fa-inbox"></i> ${_cnlLoaded ? '발송된 알림 이력이 없습니다.' : '데이터를 불러오는 중입니다...'}</td></tr>`;
     document.getElementById('cnl-pagination').innerHTML = '';
     return;
   }

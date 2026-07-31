@@ -411,7 +411,7 @@ function renderBillings(){
   }
   
   if(filtered.length===0){
-    tbody.innerHTML='<tr><td colspan="12" class="empty-state"><i class="fas fa-inbox"></i><p>청구 내역이 없습니다</p></td></tr>';
+    tbody.innerHTML='<tr><td colspan="12" class="cen-empty"><i class="fas fa-inbox"></i> 청구 내역이 없습니다</td></tr>';
     summary.innerHTML='';
     return;
   }

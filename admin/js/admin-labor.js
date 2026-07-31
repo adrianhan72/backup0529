@@ -729,7 +729,7 @@ function renderLaborStatus(){
 
   const ctTbody = document.getElementById('ls-contract-tbody');
   if(filteredContracts.length === 0){
-    ctTbody.innerHTML = '<tr><td colspan="7" class="empty-state">해당하는 계약 내역이 없습니다</td></tr>';
+    ctTbody.innerHTML = '<tr><td colspan="7" class="cen-empty"><i class="fas fa-inbox"></i> 해당하는 계약 내역이 없습니다</td></tr>';
   } else {
     ctTbody.innerHTML = filteredContracts.map(c => {
       const emp = allEmployees.find(e => e.id === c.employee_id);
@@ -769,7 +769,7 @@ function renderLaborStatus(){
   const payTbody = document.getElementById('ls-pay-tbody');
   document.getElementById('ls-pay-count').textContent = `${thisPays.length}명`;
   if(thisPays.length === 0){
-    payTbody.innerHTML = '<tr><td colspan="5" class="empty-state">해당 월 급여 내역이 없습니다</td></tr>';
+    payTbody.innerHTML = '<tr><td colspan="5" class="cen-empty"><i class="fas fa-inbox"></i> 해당 월 급여 내역이 없습니다</td></tr>';
   } else {
     const sortedPays = [...thisPays].sort((a,b) => getEmpName(a.employee_id).localeCompare(getEmpName(b.employee_id),'ko'));
     payTbody.innerHTML = sortedPays.map(p => {

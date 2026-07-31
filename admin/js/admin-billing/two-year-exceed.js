@@ -130,10 +130,7 @@ function render2YrTargetList(){
   });
 
   if(!list.length){
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:36px;color:#6b7280;">
-      <i class="fas fa-check-circle" style="color:#10b981;font-size:20px;display:block;margin-bottom:8px;"></i>
-      정규직 전환 의무 대상자가 없습니다.
-    </td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" class="cen-empty"><i class="fas fa-inbox"></i> 정규직 전환 의무 대상자가 없습니다.</td></tr>`;
     return;
   }
 

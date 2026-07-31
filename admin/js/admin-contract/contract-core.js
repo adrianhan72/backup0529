@@ -369,7 +369,7 @@ function renderContracts(){
   }).sort((a,b)=>getEmpName(a.employee_id).localeCompare(getEmpName(b.employee_id),'ko'));
   const paged=f.slice((pages.cont-1)*ITEMS,pages.cont*ITEMS);
   const tb=document.getElementById('cont-tbody');
-  if(!f.length){tb.innerHTML='<tr><td colspan="12" class="empty-state">계약서가 없습니다</td></tr>';document.getElementById('cont-pagination').innerHTML='';return;}
+  if(!f.length){tb.innerHTML='<tr><td colspan="12" class="cen-empty"><i class="fas fa-inbox"></i> 계약서가 없습니다</td></tr>';document.getElementById('cont-pagination').innerHTML='';return;}
   tb.innerHTML=paged.map(c=>{
     // ── 표시 상태 스마트 계산 ──
     const {badge:stBadge, label:stName, docsIncomplete} = calcContractStatusDisplay(c, today);

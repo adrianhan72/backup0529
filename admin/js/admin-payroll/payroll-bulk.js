@@ -104,7 +104,7 @@ function closeBulkSendModal(){
 function _renderBulkTable(){
   const tb = document.getElementById('bulk-send-tbody');
   if(!_bulkSendList.length){
-    tb.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:#9ca3af;">해당 월 급여 데이터가 없습니다.</td></tr>';
+    tb.innerHTML = '<tr><td colspan="5" class="cen-empty"><i class="fas fa-inbox"></i> 해당 월 급여 데이터가 없습니다.</td></tr>';
     return;
   }
   tb.innerHTML = _bulkSendList.map((item, idx)=>{

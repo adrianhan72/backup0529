@@ -7,7 +7,7 @@ let _aaAccounts = []; // 캐시
 /* ── 목록 렌더 ── */
 async function renderAdminAccounts(){
   const tbody = document.getElementById('aa-tbody');
-  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:32px;color:#aaa;"><i class="fas fa-spinner fa-spin"></i> 불러오는 중...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="5" class="cen-empty"><i class="fas fa-spinner fa-spin"></i> 불러오는 중...</td></tr>';
 
   // 신규 등록 버튼: 마스터 관리자(admin)만 표시
   const isMasterSession = sessionStorage.getItem('admin_username') === 'admin';
@@ -29,7 +29,7 @@ function _aaRenderTable(){
   const current         = sessionStorage.getItem('admin_username');
   const isMasterSession = current === 'admin';
   if(!_aaAccounts.length){
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:32px;color:#aaa;">등록된 계정이 없습니다.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" class="cen-empty"><i class="fas fa-inbox"></i> 등록된 계정이 없습니다.</td></tr>';
     return;
   }
   tbody.innerHTML = _aaAccounts.map((a, i)=>{

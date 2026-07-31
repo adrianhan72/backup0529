@@ -139,7 +139,7 @@
     .probmgmt-dday.normal{background:rgba(100,116,139,.1);color:#475569;}
     .probmgmt-action-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;border:1px solid #115e59;background:#0f766e;color:#fff;transition:background .18s;}
     .probmgmt-action-btn:hover{background:#115e59;}
-    .probmgmt-empty{padding:36px;text-align:center;color:#9ca3af;font-size:13.5px;}
+
     .probmgmt-stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:18px;}
     .probmgmt-stat-card{background:#fff;border-radius:12px;padding:14px 18px;border:1px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,.05);}
     .probmgmt-stat-label{font-size:11.5px;color:#6b7280;font-weight:600;margin-bottom:4px;}

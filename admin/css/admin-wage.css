@@ -252,9 +252,6 @@
     .page-btn.active{background:#6366f1;color:#fff;border-color:#6366f1}
     .page-btn:disabled{background:#cccccc;color:#f2f2f2;border:1px solid #cccccc;cursor:default;opacity:1;}
     .page-ellipsis{color:#9ca3af;font-size:12px;padding:0 2px;}
-    .empty-state{text-align:center;padding:50px 20px;color:#aaa}
-    .empty-state i{font-size:36px;margin-bottom:10px;display:block}
-    .empty-state p{font-size:13.5px}
     .toast{position:fixed;bottom:22px;right:22px;z-index:9999;background:#1a1a2e;color:#fff;padding:11px 18px;border-radius:10px;font-size:13px;box-shadow:0 4px 20px rgba(0,0,0,.3);transform:translateY(100px);opacity:0;transition:all .3s}
     @keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
     .toast.show{transform:translateY(0);opacity:1}
