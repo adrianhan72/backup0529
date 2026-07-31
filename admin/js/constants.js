@@ -552,6 +552,7 @@ const PAGE_LABELS = Object.freeze({
   severance:              '퇴직급여 관리',
   'annual-leave':         '연차 관리대장',
   'leave-promotion':      '연차사용촉진 발송',
+  'retirement-mgmt':      '퇴직 관리',
   'attendance-ledger':    '근태 관리대장',
   'system-settings':      '시스템 설정',
 });
