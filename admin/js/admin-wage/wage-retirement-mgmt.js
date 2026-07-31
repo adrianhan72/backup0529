@@ -97,14 +97,15 @@ function renderInsuranceTable(list, fmtD){
   tbody.innerHTML = list.map(r => {
     const done = r.insurance_reported_at;
     const btn = done
-      ? `<span class="btn-retire-sm btn-retire-done" style="cursor:default;"><i class="fas fa-check-circle"></i> 완료 (${done.slice(0,10)})</span>`
+      ? `<span class="btn-retire-sm btn-retire-done" style="cursor:default;"><i class="fas fa-check-circle"></i> 완료 (${done.slice(0,10)})</span>
+         <button class="btn-retire-sm" style="background:#f1f5f9;color:#64748b;border-color:#e2e8f0;margin-left:4px;" onclick="undoRetirementDone('${r.id}','insurance')"><i class="fas fa-undo"></i></button>`
       : `<button class="btn-retire-sm btn-retire-pending" onclick="markRetirementDone('${r.id}','insurance')"><i class="fas fa-check"></i> 신고완료</button>`;
     return `<tr>
       <td><strong>${r.empName}</strong></td>
       <td>${r.coName}</td>
       <td>${fmtD(r.termDate)}</td>
       <td>${fmtD(r.termDate)}</td>
-      <td>${btn}</td>
+      <td style="white-space:nowrap;">${btn}</td>
     </tr>`;
   }).join('');
 }
@@ -117,13 +118,14 @@ function renderTaxTable(list, fmtD){
   tbody.innerHTML = list.map(r => {
     const done = r.tax_reported_at;
     const btn = done
-      ? `<span class="btn-retire-sm btn-retire-done" style="cursor:default;"><i class="fas fa-check-circle"></i> 완료 (${done.slice(0,10)})</span>`
+      ? `<span class="btn-retire-sm btn-retire-done" style="cursor:default;"><i class="fas fa-check-circle"></i> 완료 (${done.slice(0,10)})</span>
+         <button class="btn-retire-sm" style="background:#f1f5f9;color:#64748b;border-color:#e2e8f0;margin-left:4px;" onclick="undoRetirementDone('${r.id}','tax')"><i class="fas fa-undo"></i></button>`
       : `<button class="btn-retire-sm btn-retire-pending" onclick="markRetirementDone('${r.id}','tax')"><i class="fas fa-check"></i> 신고완료</button>`;
     return `<tr>
       <td><strong>${r.empName}</strong></td>
       <td>${r.coName}</td>
       <td>${fmtD(r.termDate)}</td>
-      <td>${btn}</td>
+      <td style="white-space:nowrap;">${btn}</td>
     </tr>`;
   }).join('');
 }
@@ -191,6 +193,28 @@ async function markRetirementDone(contractId, type){
     if(typeof renderDashRetirementBanner === 'function') renderDashRetirementBanner();
   } catch(e){
     console.error('[markRetirementDone]', e);
+    toast('처리 중 오류가 발생했습니다.', 'error');
+  }
+}
+
+/** 신고완료 취소 (DB 초기화) */
+async function undoRetirementDone(contractId, type){
+  if(!confirm('신고완료를 취소하시겠습니까?')) return;
+  try {
+    const field = type === 'insurance' ? 'insurance_reported_at' : 'tax_reported_at';
+    await api(`../tables/contracts/${contractId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ [field]: null })
+    });
+    const c = allContracts.find(x => x.id === contractId);
+    if(c) delete c[field];
+    await loadContracts();
+    toast('신고완료가 취소되었습니다.', 'success');
+    renderRetirementMgmt();
+    if(typeof renderDashRetirementBanner === 'function') renderDashRetirementBanner();
+  } catch(e){
+    console.error('[undoRetirementDone]', e);
     toast('처리 중 오류가 발생했습니다.', 'error');
   }
 }
