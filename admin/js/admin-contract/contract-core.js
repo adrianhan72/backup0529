@@ -280,18 +280,8 @@ function _renderContCoSummaryCards(){
   if (scheduledItems.length > 0) {
     function _schedActions(item) {
       const cid = item.contract.id;
-      switch (item.type) {
-        case 'pending':
-          return `<button onclick="viewContract('${cid}')" class="btn btn-sm btn-indigo"><i class="fas fa-search"></i> 조회</button>
-                  <button onclick="openContractModal('${cid}', currentContCompanyId)" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i> 수정 및 재발행</button>
-                  <button onclick="_cancelPendingFromList('${cid}')" class="btn btn-sm btn-secondary"><i class="fas fa-ban"></i> 계약취소</button>`;
-        case 'renewal':
-        case 'terminate':
-          return `<button onclick="viewContract('${cid}')" class="btn btn-sm btn-indigo"><i class="fas fa-search"></i> 조회</button>
-                  <button onclick="openContractModal('${cid}', currentContCompanyId)" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i> 수정</button>`;
-        default:
-          return `<button onclick="viewContract('${cid}')" class="btn btn-sm btn-indigo"><i class="fas fa-search"></i> 조회</button>`;
-      }
+      return `<button onclick="viewContract('${cid}')" class="btn btn-sm btn-indigo"><i class="fas fa-search"></i> 조회</button>
+              <button onclick="openContractPrintModal('${cid}')" class="btn btn-sm btn-indigo"><i class="fas fa-file-contract"></i> 계약서</button>`;
     }
 
     const schedRows = scheduledItems.map(item => {
