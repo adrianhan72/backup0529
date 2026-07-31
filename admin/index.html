@@ -1568,15 +1568,21 @@
         </div>
         <!-- 해지 사유 -->
         <div class="cft-field">
-          <label>해지 사유</label>
+          <label>해지 사유 <span style="color:#c00;font-weight:900;font-size:13px;">*</span></label>
           <div class="cft-reason-btns" id="cft-reason-chips">
-            <button type="button" class="cft-reason-chip" onclick="_cftSelectReason(this,'근로자 자발적 퇴직')">근로자 자발적 퇴직</button>
-            <button type="button" class="cft-reason-chip" onclick="_cftSelectReason(this,'사업주 권고사직')">사업주 권고사직</button>
-            <button type="button" class="cft-reason-chip" onclick="_cftSelectReason(this,'계약 조건 불이행')">계약 조건 불이행</button>
-            <button type="button" class="cft-reason-chip" onclick="_cftSelectReason(this,'합의 해지')">합의 해지</button>
-            <button type="button" class="cft-reason-chip" onclick="_cftSelectReason(this,'기타')">기타</button>
+            <button type="button" class="cft-reason-chip" onclick="_cftSelectReason(this,'자발적 퇴사')" data-type="voluntary">자발적 퇴사</button>
+            <button type="button" class="cft-reason-chip" onclick="_cftSelectReason(this,'해고')" data-type="dismissal">해고</button>
           </div>
         </div>
+      </div>
+      <!-- 해고예고수당 (해고 선택 시만 표시) -->
+      <div id="cft-notice-pay-row" style="display:none;margin-bottom:16px;padding:10px 14px;background:#fef2f2;border:1px dashed #fca5a5;border-radius:8px;">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;color:#991b1b;">
+          <input type="checkbox" id="cft-notice-pay-chk" onchange="_cftRefreshNoticePay()" style="accent-color:#dc2626;width:16px;height:16px;" />
+          <span>해고예고수당 지급 대상 (근로기준법 제26조)</span>
+        </label>
+        <div id="cft-notice-pay-info" style="display:none;margin-top:8px;font-size:12px;color:#7f1d1d;line-height:1.7;"></div>
+        <input type="hidden" id="cft-notice-pay-amount" value="0" />
       </div>
       <!-- 메모 -->
       <div class="cft-field" style="margin-bottom:16px;">
@@ -1595,13 +1601,34 @@
       </div>
     </div>
 
-    <!-- 퇴사 설정 패널 (정규직 전용) -->
+    <!-- 퇴사/해지 설정 패널 (모든 고용형태 공통) -->
     <div id="ct-terminate-panel" class="ct-terminate-panel" style="display:none;">
-      <div style="font-size:12.5px;font-weight:700;color:#b91c1c;margin-bottom:8px;"><i class="fas fa-user-clock" style="margin-right:5px;"></i>퇴사 설정 <span style="font-size:11px;font-weight:400;color:#9ca3af;">(정규직 전용)</span></div>
-      <div style="font-size:12px;color:#6b7280;margin-bottom:10px;">퇴사일을 미래로 입력하면 계약 상태가 <strong>해지예정</strong>으로 변경됩니다. 퇴사일이 오늘 이전이면 즉시 <strong>해지</strong> 처리됩니다.</div>
+      <div style="font-size:12.5px;font-weight:700;color:#b91c1c;margin-bottom:4px;"><i class="fas fa-user-clock" style="margin-right:5px;"></i>퇴사·해지 설정</div>
+      <div style="font-size:12px;color:#6b7280;margin-bottom:12px;">퇴사일(마지막 근무일)을 입력하세요. 미래 날짜는 <strong>해지예정</strong>, 오늘 이전은 즉시 <strong>해지</strong> 처리됩니다.</div>
+      <!-- 해지일 -->
+      <div style="margin-bottom:12px;">
+        <label style="font-size:12.5px;font-weight:600;color:#374151;">퇴사일(마지막 근무일) <span style="color:#c00;font-weight:900;font-size:13px;">*</span></label>
+        <input type="date" id="ct-terminate-date" class="filt-date" style="width:100%;" />
+      </div>
+      <!-- 해지 사유 -->
+      <div style="margin-bottom:12px;">
+        <label style="font-size:12.5px;font-weight:600;color:#374151;">해지 사유 <span style="color:#c00;font-weight:900;font-size:13px;">*</span></label>
+        <div class="cft-reason-btns" id="ct-term-reason-chips">
+          <button type="button" class="cft-reason-chip" onclick="_ctTermSelectReason(this,'자발적 퇴사')" data-type="voluntary">자발적 퇴사</button>
+          <button type="button" class="cft-reason-chip" onclick="_ctTermSelectReason(this,'해고')" data-type="dismissal">해고</button>
+        </div>
+      </div>
+      <!-- 해고예고수당 (해고 선택 시만 표시) -->
+      <div id="ct-term-notice-pay-row" style="display:none;margin-bottom:14px;padding:10px 14px;background:#fef2f2;border:1px dashed #fca5a5;border-radius:8px;">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;color:#991b1b;">
+          <input type="checkbox" id="ct-term-notice-pay-chk" onchange="_ctTermRefreshNoticePay()" style="accent-color:#dc2626;width:16px;height:16px;" />
+          <span>해고예고수당 지급 대상 (근로기준법 제26조)</span>
+        </label>
+        <div id="ct-term-notice-pay-info" style="display:none;margin-top:8px;font-size:12px;color:#7f1d1d;line-height:1.7;"></div>
+        <input type="hidden" id="ct-term-notice-pay-amount" value="0" />
+      </div>
+      <!-- 액션 -->
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-        <label style="font-size:12.5px;font-weight:600;color:#374151;white-space:nowrap;">퇴사일(마지막 근무일) <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
-        <input type="date" id="ct-terminate-date" class="filt-date" />
         <button class="btn btn-danger" onclick="confirmContractTerminate()"><i class="fas fa-check"></i> 확정</button>
         <button class="btn btn-secondary" onclick="cancelContractTerminate()">취소</button>
       </div>

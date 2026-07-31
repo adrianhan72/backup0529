@@ -2001,12 +2001,17 @@ function doContractTerminate(){
   if(tp.style.display==='block'){
     const c = allContracts.find(x=>x.id===editId.contract)||{};
     const dateEl = document.getElementById('ct-terminate-date');
-    // 이미 해지예정일(terminate_date)이 설정된 경우 그 값으로, 없으면 오늘
-    // contract_end(계약만료일)는 건드리지 않음
     dateEl.value = c.terminate_date || new Date().toISOString().slice(0,10);
     dateEl.disabled = false;
 
-    // 액션 버튼 숨김 (퇴사 설정 중에는 다른 액션 불가)
+    // 사유 칩 초기화
+    document.querySelectorAll('#ct-term-reason-chips .cft-reason-chip').forEach(ch => ch.classList.remove('selected'));
+    const _termNoticeRow = document.getElementById('ct-term-notice-pay-row');
+    const _termNoticeChk = document.getElementById('ct-term-notice-pay-chk');
+    if(_termNoticeRow) _termNoticeRow.style.display = 'none';
+    if(_termNoticeChk) _termNoticeChk.checked = false;
+
+    // 액션 버튼 숨김
     ['ct-btn-amend','ct-btn-amend2','ct-btn-renew','ct-btn-renew2',
      'ct-btn-terminate','ct-btn-terminate2','ct-btn-recontract','ct-btn-recontract2',
      'ct-btn-fixed-terminate','ct-btn-fixed-terminate2',
@@ -2026,12 +2031,22 @@ function cancelContractTerminate(){
 }
 
 async function confirmContractTerminate(){
-  // 퇴사예정일 입력 → 해지예정 또는 해지 처리 (전 고용형태 공통)
   const termDate = document.getElementById('ct-terminate-date').value;
-  if(!termDate) return toast('퇴사예정일을 선택하세요.','error');
+  if(!termDate) return toast('퇴사일을 선택하세요.','error');
 
   const c = allContracts.find(x=>x.id===editId.contract);
   if(!c) return toast('계약 정보를 찾을 수 없습니다.','error');
+
+  // 해지 사유 필수
+  const selectedChip = document.querySelector('#ct-term-reason-chips .cft-reason-chip.selected');
+  const reason = selectedChip ? selectedChip.textContent.trim() : '';
+  if(!reason) return toast('해지 사유를 선택하세요.', 'error');
+
+  // 해고예고수당
+  const isDismissal  = selectedChip?.dataset?.type === 'dismissal';
+  const noticePayChk = document.getElementById('ct-term-notice-pay-chk');
+  const noticePayAmt = parseInt(document.getElementById('ct-term-notice-pay-amount')?.value || '0') || 0;
+
   const today = new Date().toISOString().slice(0,10);
 
   // 계약 만료일(contract_end)보다 이후 날짜는 입력 불가
@@ -2052,12 +2067,29 @@ async function confirmContractTerminate(){
     }
   }
 
-  // 오늘 이전 → 즉시 해지, 오늘 또는 이후 → 해지예정
   const newStatus = termDate < today ? CONTRACT_STATUS.TERMINATED : CONTRACT_STATUS.TERMINATE_PENDING;
 
-  // contract_end 는 유지, terminate_date 에만 해지예정일 기록
+  // confirm dialog
+  const _confirmLines = [
+    `[퇴사·해지 확정]`, ``,
+    `직원: ${emp?.name||''} (${contractTypeLabel(c.contract_type)||''})`,
+    `퇴사일: ${termDate}`,
+    `해지 사유: ${reason}`,
+  ];
+  if(isDismissal && noticePayChk?.checked && noticePayAmt > 0){
+    _confirmLines.push(``, `⚠️ 해고예고수당: ${noticePayAmt.toLocaleString('ko-KR')}원 (근로기준법 제26조)`);
+  }
+  _confirmLines.push(``, `이 작업은 되돌릴 수 없습니다. 진행하시겠습니까?`);
+  if(!confirm(_confirmLines.join('\n'))) return;
+
+  // 계약 PATCH
+  const patchBody = { terminate_date: termDate, status: newStatus };
+  if(isDismissal && noticePayChk?.checked && noticePayAmt > 0){
+    patchBody.dismissal_notice_pay = noticePayAmt;
+    patchBody.dismissal_notice_pay_reason = `해고 (${reason}) — 근로기준법 제26조`;
+  }
   await api(`../tables/contracts/${c.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({terminate_date: termDate, status: newStatus})});
+    body:JSON.stringify(patchBody)});
 
   // 퇴사일 → 직원 기록 업데이트
   const emp = allEmployees.find(e=>e.id===c.employee_id);
@@ -2075,6 +2107,9 @@ async function confirmContractTerminate(){
     const _coRep = getCompanyRepGreeting(_tCo);
     const _fmtD  = d => { if(!d) return '-'; const [y,m,dd]=d.split('-'); return `${parseInt(y)}년 ${parseInt(m)}월 ${parseInt(dd)}일`; };
     const _isTerminated = newStatus === CONTRACT_STATUS.TERMINATED;
+    const _noticePayNote = (isDismissal && noticePayAmt > 0)
+      ? `\n\n⚠️ 해고예고수당: ${noticePayAmt.toLocaleString('ko-KR')}원 (근로기준법 제26조)\n※ 해고 시에는 해고사유서면통지서를 근로자에게 직접 교부하셔야 합니다 (근로기준법 제27조).`
+      : '';
     await _sendCompanyNotice({
       companyId  : c.company_id, companyName: _tCo.company_name || '',
       noticeType : _isTerminated ? 'contract_terminated' : 'contract_terminate_scheduled',
@@ -2086,20 +2121,20 @@ async function confirmContractTerminate(){
 
 ■ 근로자: ${emp?.name||''}
 ■ 고용형태: ${contractTypeLabel(c.contract_type)||''}
+■ 해지 사유: ${reason}
 ■ ${_isTerminated ? '퇴사일' : '해지예정일'}: ${_fmtD(termDate)}
-■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
+■ 처리 일시: ${new Date().toLocaleString('ko-KR')}${_noticePayNote}
 
 `,
       contractId  : c.id,
       employeeId  : c.employee_id, employeeName: emp?.name||'',
       contractEnd : c.contract_end || '',
     });
-  } catch(_){ /* ignore notice failure */ }
+  } catch(_){ /* ignore */ }
 
   closeModal('contract-modal');
   await loadContracts(); await loadEmployees(); renderContracts(); renderDashboard();
-  const statusLabel = newStatus === CONTRACT_STATUS.TERMINATED ? CONTRACT_STATUS_LABEL[CONTRACT_STATUS.TERMINATED] : CONTRACT_STATUS_LABEL[CONTRACT_STATUS.TERMINATE_PENDING];
-  toast(`퇴사일(${termDate})이 설정됐습니다. 계약 상태: ${statusLabel}`);
+  toast(`퇴사일(${termDate})이 설정됐습니다.`);
 }
 
 function editContract(id){
@@ -2326,15 +2361,132 @@ function _cftValidate(){
 }
 
 /**
- * 해지 사유 칩 선택 / 토글
- * - 동일 칩 재클릭 시 선택 해제
+ * 해고예고수당 계산 (근로기준법 제26조)
+ * @returns {{ applicable: boolean, amount: number, tenureDays: number, noticeDays: number, reason: string }}
+ */
+function _calcDismissalNoticePay(contract, termDate){
+  if(!contract || !termDate) return { applicable: false, amount: 0, tenureDays: 0, noticeDays: 0, reason: '' };
+  const cStart  = contract.contract_start || '';
+  const today   = new Date().toISOString().slice(0, 10);
+  if(!cStart) return { applicable: false, amount: 0, tenureDays: 0, noticeDays: 0, reason: '입사일 정보 없음' };
+
+  const hireDate = new Date(cStart);
+  const termDateObj = new Date(termDate);
+  const todayObj = new Date(today);
+  if(isNaN(hireDate.getTime()) || isNaN(termDateObj.getTime())) return { applicable: false, amount: 0, tenureDays: 0, noticeDays: 0, reason: '' };
+
+  const tenureDays = Math.ceil((todayObj - hireDate) / (1000 * 60 * 60 * 24));
+  const noticeDays = Math.ceil((termDateObj - todayObj) / (1000 * 60 * 60 * 24));
+
+  // 3개월(90일) 미만 근속 → 해고예고 면제
+  if(tenureDays < 90) return { applicable: false, amount: 0, tenureDays, noticeDays, reason: `근속 ${tenureDays}일 (3개월 미만 → 해고예고 면제)` };
+
+  // 30일 이상 전 예고 → 수당 없음
+  if(noticeDays >= 30) return { applicable: false, amount: 0, tenureDays, noticeDays, reason: `${noticeDays}일 전 예고 (30일 이상 → 해고예고수당 면제)` };
+
+  // 해고예고수당 = 통상시급 × 8h × 30일
+  const hw  = parseFloat(contract.hourly_wage) || 0;
+  const hpd = parseFloat(contract.work_hours_per_day) || 8;
+  const amount = Math.round(hw * hpd * 30);
+
+  return {
+    applicable: true,
+    amount,
+    tenureDays,
+    noticeDays,
+    reason: `근속 ${tenureDays}일, 예고 ${noticeDays}일 (30일 미달 → 해고예고수당 발생)`
+  };
+}
+
+/**
+ * 해지 사유 칩 선택 / 토글 (ct-fixed-terminate-panel)
  */
 function _cftSelectReason(el, reason){
   const isAlreadySelected = el.classList.contains('selected');
-  // 모든 칩 선택 해제
-  document.querySelectorAll('.cft-reason-chip').forEach(ch => ch.classList.remove('selected'));
-  // 같은 칩이면 해제(토글), 다른 칩이면 선택
+  document.querySelectorAll('#cft-reason-chips .cft-reason-chip').forEach(ch => ch.classList.remove('selected'));
   if(!isAlreadySelected) el.classList.add('selected');
+
+  // 해고 선택 시 해고예고수당 행 표시
+  const isDismissal = el.dataset.type === 'dismissal';
+  const noticeRow = document.getElementById('cft-notice-pay-row');
+  if(noticeRow) noticeRow.style.display = isDismissal ? '' : 'none';
+  if(!isDismissal){
+    const chk = document.getElementById('cft-notice-pay-chk');
+    if(chk) chk.checked = false;
+    _cftRefreshNoticePay();
+  }
+}
+
+/** 해고예고수당 체크박스 변경 시 정보 갱신 */
+function _cftRefreshNoticePay(){
+  const chk = document.getElementById('cft-notice-pay-chk');
+  const infoEl = document.getElementById('cft-notice-pay-info');
+  const amountEl = document.getElementById('cft-notice-pay-amount');
+  const checked = chk?.checked || false;
+  if(infoEl) infoEl.style.display = checked ? '' : 'none';
+  if(!checked){ if(amountEl) amountEl.value = '0'; return; }
+
+  const c = allContracts.find(x => x.id === editId.contract) || {};
+  const termDate = document.getElementById('ct-fixed-terminate-date')?.value || '';
+  const result = _calcDismissalNoticePay(c, termDate);
+
+  if(amountEl) amountEl.value = result.amount;
+  if(infoEl){
+    if(result.applicable){
+      const hw = parseFloat(c.hourly_wage) || 0;
+      infoEl.innerHTML =
+        `<div>· 근속기간: ${result.tenureDays}일 (${Math.floor(result.tenureDays/30)}개월)</div>` +
+        `<div>· 해지 예고일: ${result.noticeDays}일 전</div>` +
+        `<div>· 통상시급: ${hw.toLocaleString('ko-KR')}원 × 8h × 30일</div>` +
+        `<div style="margin-top:4px;font-weight:700;">· 해고예고수당: <span style="color:#dc2626;">${result.amount.toLocaleString('ko-KR')}원</span></div>`;
+    } else {
+      infoEl.innerHTML = `<div>· ${result.reason}</div>`;
+    }
+  }
+}
+
+/** ct-terminate-panel 사유 칩 선택 */
+function _ctTermSelectReason(el, reason){
+  const isAlreadySelected = el.classList.contains('selected');
+  document.querySelectorAll('#ct-term-reason-chips .cft-reason-chip').forEach(ch => ch.classList.remove('selected'));
+  if(!isAlreadySelected) el.classList.add('selected');
+
+  const isDismissal = el.dataset.type === 'dismissal';
+  const noticeRow = document.getElementById('ct-term-notice-pay-row');
+  if(noticeRow) noticeRow.style.display = isDismissal ? '' : 'none';
+  if(!isDismissal){
+    const chk = document.getElementById('ct-term-notice-pay-chk');
+    if(chk) chk.checked = false;
+    _ctTermRefreshNoticePay();
+  }
+}
+
+/** ct-terminate-panel 해고예고수당 체크박스 변경 */
+function _ctTermRefreshNoticePay(){
+  const chk = document.getElementById('ct-term-notice-pay-chk');
+  const infoEl = document.getElementById('ct-term-notice-pay-info');
+  const amountEl = document.getElementById('ct-term-notice-pay-amount');
+  const checked = chk?.checked || false;
+  if(infoEl) infoEl.style.display = checked ? '' : 'none';
+  if(!checked){ if(amountEl) amountEl.value = '0'; return; }
+
+  const c = allContracts.find(x => x.id === editId.contract) || {};
+  const termDate = document.getElementById('ct-terminate-date')?.value || '';
+  const result = _calcDismissalNoticePay(c, termDate);
+
+  if(amountEl) amountEl.value = result.amount;
+  if(infoEl){
+    if(result.applicable){
+      const hw = parseFloat(c.hourly_wage) || 0;
+      infoEl.innerHTML =
+        `<div>· 근속기간: ${result.tenureDays}일 (${Math.floor(result.tenureDays/30)}개월)</div>` +
+        `<div>· 해지 예고일: ${result.noticeDays}일 전</div>` +
+        `<div>· 통상시급: ${hw.toLocaleString('ko-KR')}원 × 8h × 30일</div>` +
+        `<div style="margin-top:4px;font-weight:700;">· 해고예고수당: <span style="color:#dc2626;">${result.amount.toLocaleString('ko-KR')}원</span></div>`;
+    } else {
+      infoEl.innerHTML = `<div>· ${result.reason}</div>`;
+    }
+  }
 }
 
 /**
@@ -2344,18 +2496,22 @@ function _cftClose(){
   const panel = document.getElementById('ct-fixed-terminate-panel');
   if(panel) panel.style.display = 'none';
 
-  // 폼 초기화 (다음 열기에서 이전 값이 남지 않도록)
+  // 폼 초기화
   const dateEl     = document.getElementById('ct-fixed-terminate-date');
   const noteEl     = document.getElementById('ct-fixed-terminate-note');
   const hintEl     = document.getElementById('ct-cft-date-hint');
   const statusHint = document.getElementById('ct-cft-status-hint');
   const confirmBtn = document.getElementById('ct-cft-confirm-btn');
+  const noticeRow  = document.getElementById('cft-notice-pay-row');
+  const noticeChk  = document.getElementById('cft-notice-pay-chk');
   if(dateEl)     dateEl.value = '';
   if(noteEl)     noteEl.value = '';
   if(hintEl)     hintEl.innerHTML = '';
   if(statusHint) statusHint.innerHTML = '';
   if(confirmBtn) confirmBtn.disabled = true;
-  document.querySelectorAll('.cft-reason-chip').forEach(ch => ch.classList.remove('selected'));
+  if(noticeRow)  noticeRow.style.display = 'none';
+  if(noticeChk)  noticeChk.checked = false;
+  document.querySelectorAll('#cft-reason-chips .cft-reason-chip').forEach(ch => ch.classList.remove('selected'));
 }
 
 /**
@@ -2397,38 +2553,49 @@ async function confirmFixedTerminate(){
     }
   }
 
-  const selectedChip = document.querySelector('.cft-reason-chip.selected');
+  const selectedChip = document.querySelector('#cft-reason-chips .cft-reason-chip.selected');
   const reason       = selectedChip ? selectedChip.textContent.trim() : '';
+  if(!reason) return toast('해지 사유를 선택하세요.', 'error');
+
+  // 해고예고수당
+  const isDismissal  = selectedChip?.dataset?.type === 'dismissal';
+  const noticePayChk = document.getElementById('cft-notice-pay-chk');
+  const noticePayAmt = parseInt(document.getElementById('cft-notice-pay-amount')?.value || '0') || 0;
+
   const noteInput    = (document.getElementById('ct-fixed-terminate-note') || {}).value || '';
   const note         = noteInput.trim();
   const newStatus    = termDate > today ? CONTRACT_STATUS.TERMINATE_PENDING : CONTRACT_STATUS.TERMINATED;
 
-  // 기존 note에 사유/메모 추가 (덮어쓰기 방지)
+  // 기존 note에 사유/메모 추가
   const addendum = [reason, note].filter(Boolean).join(' — ');
-  const finalNote = c.note || '';
+  const finalNote = (c.note ? c.note + '\n' : '') + addendum;
 
   const emp    = allEmployees.find(e => e.id === c.employee_id) || {};
   const empName= emp.name || '(이름 없음)';
-  const cat    = emp.employment_category || c.contract_type || '';
 
   // 사용자 확인 다이얼로그
   const confirmMsg = [
     `[계약 조기 해지 확정]`,
     ``,
-    `직원: ${empName}${cat ? ` (${cat})` : ''}`,
+    `직원: ${empName} (${contractTypeLabel(c.contract_type)||''})`,
     `해지일: ${termDate}`,
-    `처리 상태: ${newStatus}`,
-    reason ? `해지 사유: ${reason}` : null,
-    note    ? `메모: ${note}`       : null,
-    ``,
+    `해지 사유: ${reason}`,
+    note ? `메모: ${note}` : null,
+  ];
+  if(isDismissal && noticePayChk?.checked && noticePayAmt > 0){
+    confirmMsg.push(``,
+      `⚠️ 해고예고수당: ${noticePayAmt.toLocaleString('ko-KR')}원`,
+      `(통상시급 ${(parseFloat(c.hourly_wage)||0).toLocaleString('ko-KR')}원 × 8h × 30일)`,
+      `근거: 근로기준법 제26조`);
+  }
+  confirmMsg.push(``,
     newStatus === CONTRACT_STATUS.TERMINATED
       ? `⚠ 직원 상태가 "퇴직"으로 변경됩니다.`
       : `ℹ 해지 예정일 이후 실제 해지 처리가 필요합니다.`,
     ``,
-    `이 작업은 되돌릴 수 없습니다. 진행하시겠습니까?`
-  ].filter(v => v !== null).join('\n');
+    `이 작업은 되돌릴 수 없습니다. 진행하시겠습니까?`);
 
-  if(!confirm(confirmMsg)) return;
+  if(!confirm(confirmMsg.filter(v => v !== null).join('\n'))) return;
 
   // 버튼 로딩 상태
   const confirmBtn = document.getElementById('ct-cft-confirm-btn');
@@ -2436,14 +2603,20 @@ async function confirmFixedTerminate(){
 
   try{
     // 1) 계약 업데이트
+    const patchBody = {
+      terminate_date : termDate,
+      status         : newStatus,
+      note           : finalNote
+    };
+    // 해고예고수당 저장
+    if(isDismissal && noticePayChk?.checked && noticePayAmt > 0){
+      patchBody.dismissal_notice_pay = noticePayAmt;
+      patchBody.dismissal_notice_pay_reason = `해고 (${reason}) — 근로기준법 제26조`;
+    }
     await api(`../tables/contracts/${c.id}`, {
       method  : 'PATCH',
       headers : { 'Content-Type': 'application/json' },
-      body    : JSON.stringify({
-        terminate_date : termDate,
-        status         : newStatus,
-        note           : finalNote
-      })
+      body    : JSON.stringify(patchBody)
     });
 
     // 2) 직원 업데이트
@@ -2464,6 +2637,9 @@ async function confirmFixedTerminate(){
       const _coRep = getCompanyRepGreeting(_ftCo);
       const _fmtD  = d => { if(!d) return '-'; const [y,m,dd]=d.split('-'); return `${parseInt(y)}년 ${parseInt(m)}월 ${parseInt(dd)}일`; };
       const _isTerminated = newStatus === CONTRACT_STATUS.TERMINATED;
+      const _noticePayNote2 = (isDismissal && noticePayAmt > 0)
+        ? `\n\n⚠️ 해고예고수당: ${noticePayAmt.toLocaleString('ko-KR')}원 (근로기준법 제26조)\n※ 해고 시에는 해고사유서면통지서를 근로자에게 직접 교부하셔야 합니다 (근로기준법 제27조).`
+        : '';
       await _sendCompanyNotice({
         companyId  : c.company_id, companyName: _ftCo.company_name || '',
         noticeType : _isTerminated ? 'contract_terminated' : 'contract_terminate_scheduled',
@@ -2475,8 +2651,9 @@ async function confirmFixedTerminate(){
 
 ■ 근로자: ${empName}
 ■ 고용형태: ${contractTypeLabel(c.contract_type)||''}
-■ ${_isTerminated ? '해지일' : '해지예정일'}: ${_fmtD(termDate)}${reason ? `\n■ 해지 사유: ${reason}` : ''}
-■ 처리 일시: ${new Date().toLocaleString('ko-KR')}
+■ 해지 사유: ${reason}
+■ ${_isTerminated ? '해지일' : '해지예정일'}: ${_fmtD(termDate)}
+■ 처리 일시: ${new Date().toLocaleString('ko-KR')}${_noticePayNote2}
 
 `,
         contractId  : c.id,
