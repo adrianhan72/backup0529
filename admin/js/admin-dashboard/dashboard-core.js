@@ -214,10 +214,11 @@ function renderDashRetirementBanner(){
         <div style="display:flex;gap:20px;flex:1;justify-content:flex-end;flex-wrap:wrap;">
           ${items.map(it => `
             <div class="retirement-inner-box"
-                 style="--glow-color:${it.glowColor};flex:1 1 0;min-width:200px;text-align:center;padding:6px 10px;border:1.5px solid #c4b5fd;border-radius:8px;background:#faf9ff;display:flex;align-items:center;justify-content:center;gap:6px;"
+                 style="--glow-color:${it.glowColor};flex:1 1 0;min-width:200px;padding:6px 10px 6px 12px;border:1.5px solid #c4b5fd;border-radius:8px;background:#faf9ff;display:flex;align-items:center;gap:6px;"
                  onclick="event.stopPropagation();showPage('retirement-mgmt',document.querySelector('.menu-item[data-page=\\'retirement-mgmt\\']'));setTimeout(()=>{if(typeof switchRetirementTab==='function')switchRetirementTab('${it.tab}');},120);">
-              <span class="dash-alert-banner-title" style="font-weight:500;margin:0;font-size:13px;">${it.label}</span>
+              <span class="dash-alert-banner-title" style="font-weight:500;margin:0;font-size:13px;flex:1;">${it.label}</span>
               <span class="dash-alert-banner-count" style="color:#7c3aed;">${it.count}명</span>
+              <i class="fas fa-chevron-right" style="color:#7c3aed;font-size:12px;flex-shrink:0;opacity:.6;"></i>
             </div>
           `).join('')}
         </div>
