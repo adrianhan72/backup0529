@@ -1043,7 +1043,7 @@ async function showPage(name,el){
   if(name==='leave-promotion'){
     if(!_dataReady){
       const tbody = document.getElementById('lp-tbody');
-      if(tbody) tbody.innerHTML = `<tr><td colspan="11" class="al-empty"><i class="fas fa-circle-notch fa-spin" style="color:#6366f1;"></i><br>데이터 불러오는 중...</td></tr>`;
+      if(tbody) tbody.innerHTML = `<tr><td colspan="11" class="cen-empty"><i class="fas fa-circle-notch fa-spin"></i> 데이터 불러오는 중...</td></tr>`;
       if(el) el.classList.add('active');
       return;
     }
