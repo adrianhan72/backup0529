@@ -106,8 +106,8 @@
     .cont-todo-grid, .dash-todo-grid{ display:flex;flex-wrap:wrap;gap:10px;margin-bottom:4px; }
     .cont-todo-grid > div, .dash-todo-grid > div{ flex:1 1 calc(25% - 8px);min-width:220px; }
     .cont-todo-grid .dash-alert-banner, .dash-todo-grid .dash-alert-banner{ height:100%; }
-    .dash-todo-grid .dash-alert-banner:not(.inactive){ cursor:pointer; transition:box-shadow .2s; border-radius:10px; }
-    .dash-todo-grid .dash-alert-banner:not(.inactive):hover{ box-shadow:0 0 0 3px rgba(99,102,241,.25); }
+    .dash-todo-grid .dash-alert-banner:not(.inactive):not(.retirement){ cursor:pointer; transition:box-shadow .2s; border-radius:10px; }
+    .dash-todo-grid .dash-alert-banner:not(.inactive):not(.retirement):hover{ box-shadow:0 0 0 3px rgba(99,102,241,.25); }
 
     .pss-send-btn:hover{ opacity:.88; }
     .pss-send-btn-all{ background:#f9d000;color:#3b1f00;border:1px solid #eab308;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:7px;transition:background .18s; }
