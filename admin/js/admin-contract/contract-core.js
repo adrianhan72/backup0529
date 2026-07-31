@@ -118,7 +118,7 @@ function _renderContCoSummaryCards(){
         </div>
         <div style="display:flex;align-items:center;gap:10px;">
           <span style="font-size:11.5px;font-weight:500;opacity:.7;">${desc}</span>
-          <i class="fas fa-chevron-down cont-alert-card-chevron${isOpen?' open':''}"></i>
+          <span class="cont-alert-card-chevron-btn"><i class="fas fa-chevron-down cont-alert-card-chevron${isOpen?' open':''}"></i></span>
         </div>
       </div>
       <div class="cont-co-card-body" style="display:${isOpen?'':'none'};">
@@ -148,7 +148,7 @@ function _renderContCoSummaryCards(){
         </div>
         <div style="display:flex;align-items:center;gap:10px;">
           <span style="font-size:11.5px;font-weight:500;opacity:.7;">${desc}</span>
-          <i class="fas fa-chevron-down cont-alert-card-chevron${isOpen?' open':''}"></i>
+          <span class="cont-alert-card-chevron-btn"><i class="fas fa-chevron-down cont-alert-card-chevron${isOpen?' open':''}"></i></span>
         </div>
       </div>
       <div class="cont-co-card-body" style="display:${isOpen?'':'none'};">

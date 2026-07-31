@@ -1209,7 +1209,7 @@ function renderDraftAlerts(){
   const coGroup = draftCompanies.length ? `
     <div class="dash-ac-group-row" style="padding:8px 20px;">
       <span class="dash-ac-group-label"><i class="fas fa-building" style="margin-right:5px;font-size:14px;color:#111827;"></i>고객사 <span class="count-badge">${draftCompanies.length}</span></span>
-      <button class="dash-ac-toggle" onclick="toggleDashAccordion('draft-co-body',this,event)" title="펼치기/접기" style="background:rgba(245,158,11,.18);color:#92400e;margin-left:2px;">
+      <button class="dash-ac-toggle" onclick="toggleDashAccordion('draft-co-body',this,event)" title="펼치기/접기">
         <i class="fas fa-chevron-down"></i>
       </button>
     </div>
@@ -1221,7 +1221,7 @@ function renderDraftAlerts(){
   const ctGroup = draftContracts.length ? `
     <div class="dash-ac-group-row" style="padding:8px 20px;${draftCompanies.length ? 'border-top:1px solid #fde68a;' : ''}">
       <span class="dash-ac-group-label"><i class="fas fa-file-contract" style="margin-right:5px;font-size:14px;color:#111827;"></i>근로계약서 <span class="count-badge">${draftContracts.length}</span></span>
-      <button class="dash-ac-toggle" onclick="toggleDashAccordion('draft-ct-body',this,event)" title="펼치기/접기" style="background:rgba(99,102,241,.15);color:#3730a3;margin-left:2px;">
+      <button class="dash-ac-toggle" onclick="toggleDashAccordion('draft-ct-body',this,event)" title="펼치기/접기">
         <i class="fas fa-chevron-down"></i>
       </button>
     </div>
@@ -1234,7 +1234,7 @@ function renderDraftAlerts(){
   const piGroup = draftPayrolls.length ? `
     <div class="dash-ac-group-row" style="padding:8px 20px;${hasPrevForPi ? 'border-top:1px solid #fde68a;' : ''}">
       <span class="dash-ac-group-label"><i class="fas fa-file-invoice-dollar" style="margin-right:5px;font-size:14px;color:#111827;"></i>급여 입력 <span class="count-badge">${draftPayrolls.length}</span></span>
-      <button class="dash-ac-toggle" onclick="toggleDashAccordion('draft-pi-body',this,event)" title="펼치기/접기" style="background:rgba(22,163,74,.18);color:#15803d;margin-left:2px;">
+      <button class="dash-ac-toggle" onclick="toggleDashAccordion('draft-pi-body',this,event)" title="펼치기/접기">
         <i class="fas fa-chevron-down"></i>
       </button>
     </div>
@@ -1332,7 +1332,7 @@ function _renderContractsBanners(){
       <div class="draft-alert-card-body">
         <div class="dash-ac-group-row" style="padding:8px 20px;">
           <span class="dash-ac-group-label"><i class="fas fa-file-contract" style="margin-right:5px;font-size:14px;color:#111827;"></i>근로계약서 <span class="count-badge">${drafts.length}</span></span>
-          <button class="dash-ac-toggle" onclick="toggleDashAccordion('cont-draft-ct-body',this,event)" title="펼치기/접기" style="background:rgba(99,102,241,.15);color:#3730a3;margin-left:2px;">
+          <button class="dash-ac-toggle" onclick="toggleDashAccordion('cont-draft-ct-body',this,event)" title="펼치기/접기">
             <i class="fas fa-chevron-down"></i>
           </button>
         </div>
