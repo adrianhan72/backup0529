@@ -195,15 +195,15 @@
     .cont-alert-table th:nth-child(3){width:24%;}
     .cont-alert-table th:nth-child(4){width:11%;}
     .cont-alert-table th:nth-child(5){width:30%;}
-    /* 예정 사항 카드: 8열 (직원명,성별,고용형태,입사일,구분,예정일,D-day,관리) */
-    .cont-alert-scheduled .cont-alert-table th:nth-child(1){width:16%;}
-    .cont-alert-scheduled .cont-alert-table th:nth-child(2){width:6%;}
-    .cont-alert-scheduled .cont-alert-table th:nth-child(3){width:12%;}
-    .cont-alert-scheduled .cont-alert-table th:nth-child(4){width:11%;}
-    .cont-alert-scheduled .cont-alert-table th:nth-child(5){width:10%;}
-    .cont-alert-scheduled .cont-alert-table th:nth-child(6){width:12%;}
-    .cont-alert-scheduled .cont-alert-table th:nth-child(7){width:10%;}
-    .cont-alert-scheduled .cont-alert-table th:nth-child(8){width:23%;}
+    /* 예정 사항 카드: 8열 균등 */
+    .cont-alert-scheduled .cont-alert-table th:nth-child(1){width:12.5%;}
+    .cont-alert-scheduled .cont-alert-table th:nth-child(2){width:12.5%;}
+    .cont-alert-scheduled .cont-alert-table th:nth-child(3){width:12.5%;}
+    .cont-alert-scheduled .cont-alert-table th:nth-child(4){width:12.5%;}
+    .cont-alert-scheduled .cont-alert-table th:nth-child(5){width:12.5%;}
+    .cont-alert-scheduled .cont-alert-table th:nth-child(6){width:12.5%;}
+    .cont-alert-scheduled .cont-alert-table th:nth-child(7){width:12.5%;}
+    .cont-alert-scheduled .cont-alert-table th:nth-child(8){width:12.5%;}
     .cont-alert-scheduled .cont-alert-table th:nth-child(2),
     .cont-alert-scheduled .cont-alert-table td:nth-child(2),
     .cont-alert-scheduled .cont-alert-table th:nth-child(5),
