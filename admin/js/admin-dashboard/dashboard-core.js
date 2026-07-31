@@ -217,7 +217,6 @@ function renderDashRetirementBanner(){
       <div class="dash-alert-banner-body" style="flex:1;min-width:0;">
         <div class="dash-alert-banner-title">
           퇴직 관리
-          <span class="dash-alert-banner-count">${total}건</span>
         </div>
         <div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:4px;">
           ${items.map(it => `
