@@ -2923,14 +2923,34 @@ function calcPIWorkActual(){
 
 // ── 직전 3개월 평균임금(일할) 계산 (경영상 휴업수당 산정용) ──
 // 근로기준법 제46조: 평균임금 = (사유 발생일 이전 3개월간 지급된 임금 총액) ÷ (3개월간 총 일수)
+// 근로기준법 시행령 제3조: 근속 3개월 미만이면 실제 근속기간 기준으로 산정
 function _calcDailyAverageWage(empId, baseYr, baseMo){
   if(!empId || !baseYr || !baseMo) return 0;
+
+  // ── 입사일 조회 ──
+  const emp = (allEmployees||[]).find(e => e.id === empId);
+  const hireDate = emp?.hire_date || '';
+
   let totalGross = 0, totalDays = 0;
   for(let i = 1; i <= 3; i++){
     let yr = baseYr, mo = baseMo - i;
     if(mo <= 0){ mo += 12; yr--; }
-    const daysInMonth = new Date(yr, mo, 0).getDate();
-    totalDays += daysInMonth;
+
+    const lastDay = new Date(yr, mo, 0).getDate();
+    const monthStart = `${yr}-${String(mo).padStart(2,'0')}-01`;
+    const monthEnd   = `${yr}-${String(mo).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
+
+    // ── 근속 3개월 미만: 입사일 이전 월은 건너뜀 ──
+    if (hireDate && monthEnd < hireDate) continue;
+
+    // ── 입사월이면 입사일부터 말일까지만 일수 산입 ──
+    let monthDays = lastDay;
+    if (hireDate && hireDate > monthStart && hireDate <= monthEnd) {
+      const hireDay = parseInt(hireDate.slice(8, 10)) || 1;
+      monthDays = lastDay - hireDay + 1;
+    }
+
+    totalDays += monthDays;
     const pays = (allPayrolls||[]).filter(p =>
       p.employee_id === empId && p.pay_year === yr && p.pay_month === mo && !p.is_draft
     );
