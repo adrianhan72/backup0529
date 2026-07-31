@@ -8,7 +8,7 @@ function _updateDashTodoGrid(){
   const todoSec = document.getElementById('dash-todo-section');
   if(!grid || !todoSec) return;
   const ids = ['dash-contract-unsent-section','dash-consent-section','dash-unsent-section',
-               'dash-probation-banner'];
+               'dash-probation-banner','dash-retirement-banner'];
   const anyVisible = ids.some(id => {
     const el = document.getElementById(id);
     return el && el.style.display !== 'none' && el.innerHTML.trim().length > 0;
@@ -156,6 +156,71 @@ function renderDashProbationBanner(){
         <div class="dash-alert-banner-sub" style="color:${inactive ? '#9ca3af' : ''};">${inactive ? '수습기간 3개월 초과 근로자가 없습니다' : '수습기간 3개월 초과 근로자 해고 시 30일 전 서면 통지 의무'}</div>
       </div>
       ${inactive ? '' : '<div class="dash-alert-banner-arrow"><i class="fas fa-chevron-right"></i></div>'}
+    </div>
+  </div>`;
+  _updateDashTodoGrid();
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   renderDashRetirementBanner()
+   대시보드 퇴직관리 배너 — 4대보험·원천징수·퇴직정산·해고예고수당
+   ───────────────────────────────────────────────────────────────── */
+function renderDashRetirementBanner(){
+  const sec = document.getElementById('dash-retirement-banner');
+  if(!sec) return;
+  const today = new Date().toISOString().slice(0,10);
+
+  const terminatedContracts = (allContracts||[]).filter(c => {
+    if(c.is_draft || c.is_voided_by_amend) return false;
+    return c.status === CONTRACT_STATUS.TERMINATED || c.status === CONTRACT_STATUS.TERMINATE_PENDING;
+  });
+
+  const insuranceCount = terminatedContracts.filter(c => {
+    const emp = allEmployees.find(e => e.id === c.employee_id);
+    return emp && emp.status === EMP_STATUS.RESIGNED;
+  }).length;
+
+  const taxCount = insuranceCount;
+  const severanceCount = terminatedContracts.filter(c => {
+    if(!c.contract_start) return false;
+    const endDate = c.terminate_date || today;
+    const tenureDays = Math.ceil((new Date(endDate) - new Date(c.contract_start)) / (1000*60*60*24));
+    return tenureDays >= 365;
+  }).length;
+
+  const noticePayCount = terminatedContracts.filter(c =>
+    (parseFloat(c.dismissal_notice_pay)||0) > 0
+  ).length;
+
+  const items = [
+    { label:'4대보험 상실신고', count: insuranceCount, color:'#dc2626' },
+    { label:'원천징수 신고', count: taxCount, color:'#d97706' },
+    { label:'퇴직정산', count: severanceCount, color:'#7c3aed' },
+    { label:'해고예고수당', count: noticePayCount, color:'#b91c1c' },
+  ];
+  const total = items.reduce((s,i) => s + i.count, 0);
+
+  sec.style.display = '';
+  sec.innerHTML = `
+  <div class="dash-alert-banner retirement" style="cursor:pointer;" onclick="showPage('retirement-mgmt',document.querySelector('.menu-item[data-page=\\'retirement-mgmt\\']'))">
+    <div class="dash-alert-banner-head" style="flex-wrap:wrap;gap:8px;">
+      <div class="dash-alert-banner-icon" style="background:#fef2f2;">
+        <i class="fas fa-user-times"></i>
+      </div>
+      <div class="dash-alert-banner-body" style="flex:1;min-width:0;">
+        <div class="dash-alert-banner-title">
+          퇴직 관리
+          <span class="dash-alert-banner-count">${total}건</span>
+        </div>
+        <div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:4px;">
+          ${items.map(it => `
+            <span style="font-size:12px;white-space:nowrap;color:${it.count>0?'#374151':'#9ca3af'};">
+              <strong style="color:${it.count>0?it.color:'#9ca3af'};">${it.count}명</strong> ${it.label}
+            </span>
+          `).join('')}
+        </div>
+      </div>
+      <div class="dash-alert-banner-arrow"><i class="fas fa-chevron-right"></i></div>
     </div>
   </div>`;
   _updateDashTodoGrid();

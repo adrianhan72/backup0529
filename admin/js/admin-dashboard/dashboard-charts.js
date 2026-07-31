@@ -169,6 +169,8 @@ function renderDashboard(){
   renderDashProbationBanner();
   // 퇴직금 지급 이력 배너 (임시저장 위)
   renderDashSeveranceBanner();
+  // 퇴직관리 배너 (4대보험·원천징수·퇴직정산·해고예고수당)
+  if(typeof renderDashRetirementBanner === 'function') renderDashRetirementBanner();
 
   const activeCompanyCount=allCompanies.filter(c=>isCompanyActive(c)).length;
 
