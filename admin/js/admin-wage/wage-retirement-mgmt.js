@@ -77,9 +77,6 @@ function renderRetirementMgmt(){
     const map = { insurance: insuranceList, tax: taxList, severance: severanceList, noticepay: noticePayList };
     if(el) el.textContent = map[tab].length > 0 ? `(${map[tab].length})` : '';
   });
-  const totalBadge = document.getElementById('retirement-total-badge');
-  if(totalBadge) totalBadge.textContent = (insuranceList.length + severanceList.length + noticePayList.length) + '건';
-
   const fmtD = d => d ? d.replace(/-/g, '.') : '-';
 
   // ── 테이블 렌더링 ──
