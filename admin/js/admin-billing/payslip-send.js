@@ -595,7 +595,7 @@ function renderPssLogs(){
   logs.sort((a,b) => (b.sent_at||'').localeCompare(a.sent_at||''));
 
   if(!logs.length){
-    tbody.innerHTML = `<tr><td colspan="6" class="pss-empty">발송 이력이 없습니다.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" class="cen-empty"><i class="fas fa-inbox"></i> 발송 이력이 없습니다.</td></tr>`;
     pagWrap.innerHTML = '';
     return;
   }

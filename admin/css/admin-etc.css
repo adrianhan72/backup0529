@@ -263,7 +263,7 @@
     .pss-legal-banner{ display:flex;align-items:flex-start;gap:10px;padding:11px 16px;background:#faf5ff;border:1.5px solid #c4b5fd;border-radius:9px;margin-bottom:16px;font-size:12px;color:#5b21b6;line-height:1.6; }
     .pss-legal-banner i{ color:#7c3aed;margin-top:1px;flex-shrink:0; }
     /* �??�태 */
-    .pss-empty{ text-align:center;padding:28px 0;color:#9ca3af;font-size:13px; }
+
     /* 로딩 */
     .pss-loading{ text-align:center;padding:20px;color:#9ca3af;font-size:13px; }
 

@@ -114,7 +114,7 @@ function atlRenderTable() {
   document.getElementById('atl-stat-early').textContent = empStats.reduce((s,x) => s + x.earlyCount, 0);
 
   if (!empStats.length) {
-    tbody.innerHTML = '<tr><td colspan="7" class="al-empty">대상 직원이 없습니다.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="cen-empty"><i class="fas fa-inbox"></i> 대상 직원이 없습니다.</td></tr>';
     return;
   }
 

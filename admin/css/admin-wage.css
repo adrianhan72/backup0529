@@ -176,8 +176,7 @@
     /* 발송 ?�력 ?�태 배�? */
     .al-badge-sent{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;background:#dcfce7;color:#166534;}
     /* �??�태 */
-    .al-empty{text-align:center;padding:48px 20px;color:#9ca3af;font-size:13px;}
-    .al-empty i{display:block;font-size:28px;margin-bottom:10px;color:#d1d5db;}
+
     /* 반응??*/
     @media(max-width:700px){.co-chip{font-size:11.5px;padding:6px 11px;}}
     .filter-bar{display:flex;align-items:center;gap:10px;padding:14px 22px;border-bottom:1px solid #f0f2f5;flex-wrap:wrap}
@@ -309,7 +308,7 @@
     .btn-retire-undo{background:#f1f5f9;color:#64748b;border-color:#e2e8f0;padding:5px 7px;margin-left:4px;}
     .btn-retire-undo:hover{background:#e2e8f0;}
     /* 퇴직관리 셀 스타일 */
-    .retirement-td-empty{text-align:center;color:#9ca3af;padding:30px;}
+
     .retirement-td-action{white-space:nowrap;}
     .retirement-td-amount{color:#dc2626;font-weight:700;}
     .retirement-badge-pending{font-size:10px;background:#fef3c7;color:#92400e;padding:1px 5px;border-radius:8px;}

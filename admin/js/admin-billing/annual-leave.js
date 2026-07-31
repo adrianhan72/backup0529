@@ -324,7 +324,7 @@ function renderAlTable(){
   const pageData = rows.slice((_alPage-1)*AL_PAGE_SIZE, _alPage*AL_PAGE_SIZE);
 
   if(!rows.length){
-    tbody.innerHTML = `<tr><td colspan="9" class="al-empty"><i class="fas fa-user-slash"></i><br>조회된 직원이 없습니다.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" class="cen-empty"><i class="fas fa-inbox"></i> 조회된 직원이 없습니다.</td></tr>`;
     document.getElementById('al-pagination').innerHTML = '';
     return;
   }
@@ -1359,7 +1359,7 @@ function renderLpTable(){
   const pageData = list.slice((_lpPage-1)*LP_PAGE_SIZE, _lpPage*LP_PAGE_SIZE);
 
   if(!list.length){
-    tbody.innerHTML = `<tr><td colspan="11" class="al-empty"><i class="fas fa-inbox"></i><br>발송 이력이 없습니다.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="11" class="cen-empty"><i class="fas fa-inbox"></i> 발송 이력이 없습니다.</td></tr>`;
     document.getElementById('lp-pagination').innerHTML='';
     return;
   }

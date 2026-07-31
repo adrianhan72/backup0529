@@ -98,7 +98,7 @@ function renderRetirementMgmt(){
 function renderInsuranceTable(list, fmtD){
   const tbody = document.querySelector('#retirement-table-insurance tbody');
   if(!tbody) return;
-  if(!list.length){ tbody.innerHTML = `<tr><td colspan="5" class="retirement-td-empty">미신고 대상자가 없습니다.</td></tr>`; return; }
+  if(!list.length){ tbody.innerHTML = `<tr><td colspan="5" class="cen-empty"><i class="fas fa-inbox"></i> 신고 대상자가 없습니다.</td></tr>`; return; }
   tbody.innerHTML = list.map(r => {
     const done = r.insurance_reported_at;
     const btn = done
@@ -119,7 +119,7 @@ function renderInsuranceTable(list, fmtD){
 function renderTaxTable(list, fmtD){
   const tbody = document.querySelector('#retirement-table-tax tbody');
   if(!tbody) return;
-  if(!list.length){ tbody.innerHTML = `<tr><td colspan="4" class="retirement-td-empty">미신고 대상자가 없습니다.</td></tr>`; return; }
+  if(!list.length){ tbody.innerHTML = `<tr><td colspan="4" class="cen-empty"><i class="fas fa-inbox"></i> 신고 대상자가 없습니다.</td></tr>`; return; }
   tbody.innerHTML = list.map(r => {
     const done = r.tax_reported_at;
     const btn = done
@@ -139,7 +139,7 @@ function renderTaxTable(list, fmtD){
 function renderSeveranceTable(list, fmtD){
   const tbody = document.querySelector('#retirement-table-severance tbody');
   if(!tbody) return;
-  if(!list.length){ tbody.innerHTML = `<tr><td colspan="6" class="retirement-td-empty">대상자가 없습니다.</td></tr>`; return; }
+  if(!list.length){ tbody.innerHTML = `<tr><td colspan="6" class="cen-empty"><i class="fas fa-inbox"></i> 퇴직정산 대상자가 없습니다.</td></tr>`; return; }
   tbody.innerHTML = list.map(r => `
     <tr>
       <td><strong>${r.empName}</strong></td>
@@ -160,7 +160,7 @@ function renderSeveranceTable(list, fmtD){
 function renderNoticePayTable(list, fmtD){
   const tbody = document.querySelector('#retirement-table-noticepay tbody');
   if(!tbody) return;
-  if(!list.length){ tbody.innerHTML = `<tr><td colspan="7" class="retirement-td-empty">대상자가 없습니다.</td></tr>`; return; }
+  if(!list.length){ tbody.innerHTML = `<tr><td colspan="7" class="cen-empty"><i class="fas fa-inbox"></i> 해고예고수당 대상자가 없습니다.</td></tr>`; return; }
   tbody.innerHTML = list.map(r => `
     <tr>
       <td><strong>${r.empName}</strong></td>
