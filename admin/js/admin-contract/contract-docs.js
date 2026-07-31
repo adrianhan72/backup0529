@@ -65,9 +65,6 @@ function openDocsUploadModal(contractId){
           ${_ctfMakeRow('consent', c, '제3자 개인정보 제공 동의서 날인본', 'fas fa-shield-alt',    '#7c3aed', '#f5f3ff', false, false)}
         </div>
       </div>
-      <div class="modal-footer" style="text-align:right;">
-        <button class="btn btn-secondary" onclick="closeDocsUploadModal()">닫기</button>
-      </div>
     </div>
   `;
   document.body.appendChild(overlay);
