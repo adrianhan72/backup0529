@@ -205,7 +205,7 @@ function renderDashRetirementBanner(){
 
   sec.style.display = '';
   sec.innerHTML = `
-  <div class="dash-alert-banner retirement" style="cursor:pointer;border-left:4px solid #7c3aed;border-right:4px solid #7c3aed;background:#fff;" onclick="showPage('retirement-mgmt',document.querySelector('.menu-item[data-page=\\'retirement-mgmt\\']'))">
+  <div class="dash-alert-banner retirement" style="border-left:4px solid #7c3aed;border-right:4px solid #7c3aed;background:#fff;">
     <div class="dash-alert-banner-head" style="align-items:center;gap:20px;">
       <div class="dash-alert-banner-icon" style="background:#7c3aed;flex-shrink:0;">
         <i class="fas fa-user-times" style="color:#fff;"></i>
@@ -221,7 +221,6 @@ function renderDashRetirementBanner(){
           `).join('')}
         </div>
       </div>
-      <div class="dash-alert-banner-arrow" style="flex-shrink:0;"><i class="fas fa-chevron-right"></i></div>
     </div>
   </div>`;
   _updateDashTodoGrid();
