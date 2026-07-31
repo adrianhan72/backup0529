@@ -212,9 +212,9 @@ function renderDashRetirementBanner(){
       </div>
       <div class="dash-alert-banner-body" style="flex:1;min-width:0;display:flex;align-items:center;gap:20px;">
         <div class="dash-alert-banner-title" style="flex-shrink:0;">퇴직 관리</div>
-        <div style="display:flex;gap:20px;flex:1;justify-content:flex-end;">
+        <div style="display:flex;gap:20px;flex:1;justify-content:flex-end;flex-wrap:wrap;">
           ${items.map(it => `
-            <div style="flex:1;max-width:140px;text-align:center;padding:6px 10px;border:1.5px solid #c4b5fd;border-radius:8px;background:#faf9ff;display:flex;align-items:center;justify-content:center;gap:6px;">
+            <div style="flex:1 1 0;min-width:200px;text-align:center;padding:6px 10px;border:1.5px solid #c4b5fd;border-radius:8px;background:#faf9ff;display:flex;align-items:center;justify-content:center;gap:6px;">
               <span class="dash-alert-banner-sub" style="font-weight:500;margin:0;">${it.label}</span>
               <span class="dash-alert-banner-count" style="font-size:13px;">${it.count}명</span>
             </div>
