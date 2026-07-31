@@ -195,6 +195,14 @@
     .cont-alert-table th:nth-child(3){width:24%;}
     .cont-alert-table th:nth-child(4){width:11%;}
     .cont-alert-table th:nth-child(5){width:30%;}
+    /* 예정 사항 카드: 7열 (직원명,성별,고용형태,구분,예정일,D-day,관리) */
+    .cont-alert-scheduled .cont-alert-table th:nth-child(1){width:18%;}
+    .cont-alert-scheduled .cont-alert-table th:nth-child(2){width:7%;}
+    .cont-alert-scheduled .cont-alert-table th:nth-child(3){width:14%;}
+    .cont-alert-scheduled .cont-alert-table th:nth-child(4){width:11%;}
+    .cont-alert-scheduled .cont-alert-table th:nth-child(5){width:13%;}
+    .cont-alert-scheduled .cont-alert-table th:nth-child(6){width:12%;}
+    .cont-alert-scheduled .cont-alert-table th:nth-child(7){width:25%;}
     .cont-alert-table td{padding:9px 10px;vertical-align:middle;border-bottom:1px solid #f3f4f6;overflow:hidden;text-overflow:ellipsis;}
     .cont-alert-table td:last-child{white-space:nowrap;}
     .cont-alert-table tbody tr:nth-child(even) td{background:#f8fafc;}
