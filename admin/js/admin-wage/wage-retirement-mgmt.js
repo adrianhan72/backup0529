@@ -79,6 +79,14 @@ function renderRetirementMgmt(){
   });
   const fmtD = d => d ? d.replace(/-/g, '.') : '-';
 
+  // 사이드바 메뉴 뱃지
+  const total = insuranceList.length + taxList.length + severanceList.length + noticePayList.length;
+  const badge = document.getElementById('badge-retirement-mgmt');
+  if(badge){
+    badge.textContent = total > 0 ? total : '';
+    badge.style.display = total > 0 ? '' : 'none';
+  }
+
   // ── 테이블 렌더링 ──
   renderInsuranceTable(insuranceList, fmtD);
   renderTaxTable(taxList, fmtD);

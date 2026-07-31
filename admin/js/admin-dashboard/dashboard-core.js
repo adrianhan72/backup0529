@@ -231,9 +231,19 @@ function renderDashRetirementBanner(){
     </div>
   </div>`;
   _updateDashTodoGrid();
+
+  const _rmBadge = document.getElementById('badge-retirement-mgmt');
+  if(_rmBadge){
+    _rmBadge.textContent = total > 0 ? total : '';
+    _rmBadge.style.display = total > 0 ? '' : 'none';
+  }
 }
 
-
+/* 기존 대시보드 렌더링 함수에서 renderDashRetirementBanner() 호출 추가 */
+const _origRenderDashboard = (typeof renderDashboard === 'function') ? renderDashboard : null;
+if(_origRenderDashboard){
+  // renderDashboard 내에서 renderDashRetirementBanner 호출은 하단 init()에서 처리
+}
 
 function selectProbMgmtCompanyFromDash(coId, coName, contractId){
   // 수습 근로자 관리 페이지로 이동 후 해당 고객사 선택 및 모달 열기
