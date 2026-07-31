@@ -489,8 +489,9 @@ function _updateDashUnsentContractBanner(){
 
   section.style.display = '';
   section.innerHTML = `
-    <div ${ctrUnsentInactive ? '' : `onclick="showPage('contract-dispatch', document.querySelector('.menu-item[data-page=\\'contract-dispatch\\']'))"`}
-         style="cursor:${ctrUnsentInactive ? 'default' : 'pointer'};background:linear-gradient(135deg,${ctrUnsentBg},${ctrUnsentBg2});border:1px solid ${ctrUnsentBorder};border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:14px;box-shadow:0 2px 10px rgba(0,0,0,.07);"
+    <div class="dash-alert-banner${ctrUnsentInactive ? ' inactive' : ''}"
+         ${ctrUnsentInactive ? '' : `onclick="showPage('contract-dispatch', document.querySelector('.menu-item[data-page=\\'contract-dispatch\\']'))"`}
+         style="--glow-color:rgba(59,130,246,.25);cursor:${ctrUnsentInactive ? 'default' : 'pointer'};background:linear-gradient(135deg,${ctrUnsentBg},${ctrUnsentBg2});border:1px solid ${ctrUnsentBorder};border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:14px;"
          >
       <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,${ctrUnsentIconBg},${ctrUnsentIconBg2});display:flex;align-items:center;justify-content:center;flex-shrink:0;">
         <i class="fas fa-file-contract" style="color:#fff;font-size:17px;"></i>
@@ -529,8 +530,9 @@ function _updateDashUnsentBanner(){
 
   section.style.display = '';
   section.innerHTML = `
-    <div ${piUnsentInactive ? '' : `onclick="showPage('payslip-send', document.querySelector('.menu-item[data-page=\\'payslip-send\\']'))"`}
-         style="cursor:${piUnsentInactive ? 'default' : 'pointer'};background:linear-gradient(135deg,${piUnsentBg},${piUnsentBg2});border:1px solid ${piUnsentBorder};border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:14px;box-shadow:0 2px 10px rgba(0,0,0,.07);"
+    <div class="dash-alert-banner${piUnsentInactive ? ' inactive' : ''}"
+         ${piUnsentInactive ? '' : `onclick="showPage('payslip-send', document.querySelector('.menu-item[data-page=\\'payslip-send\\']'))"`}
+         style="--glow-color:rgba(245,158,11,.25);cursor:${piUnsentInactive ? 'default' : 'pointer'};background:linear-gradient(135deg,${piUnsentBg},${piUnsentBg2});border:1px solid ${piUnsentBorder};border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:14px;"
          >
       <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,${piUnsentIconBg},${piUnsentIconBg2});display:flex;align-items:center;justify-content:center;flex-shrink:0;">
         <i class="fas fa-exclamation-triangle" style="color:#fff;font-size:17px;"></i>

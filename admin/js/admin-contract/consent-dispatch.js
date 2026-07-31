@@ -679,8 +679,9 @@ function _updateDashConsentBanner() {
 
   section.style.display = '';
   section.innerHTML = `
-    <div ${consentInactive ? '' : `onclick="showPage('consent-dispatch', document.querySelector('.menu-item[data-page=\\'consent-dispatch\\']'))"`}
-         style="cursor:${consentInactive ? 'default' : 'pointer'};background:linear-gradient(135deg,${consentBg},${consentBg2});border:1px solid ${consentBorder};border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:14px;box-shadow:0 2px 10px rgba(0,0,0,.07);"
+    <div class="dash-alert-banner${consentInactive ? ' inactive' : ''}"
+         ${consentInactive ? '' : `onclick="showPage('consent-dispatch', document.querySelector('.menu-item[data-page=\\'consent-dispatch\\']'))"`}
+         style="--glow-color:rgba(34,197,94,.25);cursor:${consentInactive ? 'default' : 'pointer'};background:linear-gradient(135deg,${consentBg},${consentBg2});border:1px solid ${consentBorder};border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:14px;"
          >
       <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,${consentIconBg},${consentIconBg2});display:flex;align-items:center;justify-content:center;flex-shrink:0;">
         <i class="fas fa-file-shield" style="color:#fff;font-size:17px;"></i>
