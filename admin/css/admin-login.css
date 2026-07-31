@@ -22,9 +22,9 @@
 
       /* ??불필??UI ?��? */
       body.wl-print-mode .wl-filter-bar,
-      body.wl-print-mode .wl-print-btn,
-      body.wl-print-mode .wl-excel-btn,
-      body.wl-print-mode .wl-pdf-btn,
+      body.wl-print-mode #wl-print-btn,
+      body.wl-print-mode #wl-excel-btn,
+      body.wl-print-mode #wl-pdf-btn,
       body.wl-print-mode #wl-company-select-card,
       body.wl-print-mode #wl-selected-company-label + button { display:none!important; }
 

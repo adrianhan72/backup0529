@@ -341,11 +341,10 @@ function clearWLCompanySelect(){
   document.getElementById('wl-company-search').value = '';
   renderWLCompanyList();
   // 고객사 선택 해제 시 버튼 비활성화
-  ['.wl-excel-btn','.wl-pdf-btn','.wl-print-btn'].forEach(sel=>{
-    const btn=document.querySelector(sel);
+  ['#wl-excel-btn','#wl-pdf-btn','#wl-print-btn'].forEach(id=>{
+    const btn=document.getElementById(id);
     if(!btn) return;
     btn.disabled=true;
-    btn.style.cursor='not-allowed'; btn.style.pointerEvents='none';
   });
 }
 
@@ -443,15 +442,12 @@ function renderWageLedger(){
 
   // 버튼 상태 헬퍼
   const _setWLBtns = enabled => {
-    const excelBtn = document.querySelector('.wl-excel-btn');
-    const pdfBtn   = document.querySelector('.wl-pdf-btn');
-    const printBtn = document.querySelector('.wl-print-btn');
+    const excelBtn = document.getElementById('wl-excel-btn');
+    const pdfBtn   = document.getElementById('wl-pdf-btn');
+    const printBtn = document.getElementById('wl-print-btn');
     [excelBtn, pdfBtn, printBtn].forEach(btn => {
       if(!btn) return;
       btn.disabled = !enabled;
-      btn.style.opacity = enabled ? '' : '0.4';
-      btn.style.cursor  = enabled ? '' : 'not-allowed';
-      btn.style.pointerEvents = enabled ? '' : 'none';
     });
   };
 

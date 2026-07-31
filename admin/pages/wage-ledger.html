@@ -57,9 +57,9 @@
             <select id="wl-month-filter" onchange="renderWageLedger()" class="filt-select"></select>
           </div>
           <div style="display:flex;gap:8px;">
-            <button class="wl-excel-btn" onclick="downloadWageLedgerExcel()" disabled><i class="fas fa-file-excel"></i> 엑셀 다운로드</button>
-            <button class="wl-pdf-btn" onclick="downloadWageLedgerPdf()" disabled><i class="fas fa-file-pdf"></i> PDF 다운로드</button>
-            <button class="wl-print-btn" onclick="printWageLedger()" disabled><i class="fas fa-print"></i> 인쇄</button>
+            <button id="wl-excel-btn" class="btn btn-success btn-sm" onclick="downloadWageLedgerExcel()" disabled><i class="fas fa-file-excel"></i> 엑셀 다운로드</button>
+            <button id="wl-pdf-btn" class="btn btn-success btn-sm" onclick="downloadWageLedgerPdf()" disabled><i class="fas fa-file-pdf"></i> PDF 다운로드</button>
+            <button id="wl-print-btn" class="btn btn-dark btn-sm" onclick="printWageLedger()" disabled><i class="fas fa-print"></i> 인쇄</button>
           </div>
         </div>
 
