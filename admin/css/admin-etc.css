@@ -205,10 +205,10 @@
     .cont-alert-scheduled .cont-alert-table th:nth-child(7){width:10%;}
     .cont-alert-scheduled .cont-alert-table th:nth-child(8){width:10%;}
     .cont-alert-scheduled .cont-alert-table th:nth-child(9){width:20%;}
-    .cont-alert-scheduled .cont-alert-table th:nth-child(2),
-    .cont-alert-scheduled .cont-alert-table td:nth-child(2),
-    .cont-alert-scheduled .cont-alert-table th:nth-child(6),
-    .cont-alert-scheduled .cont-alert-table td:nth-child(6){text-align:center;}
+    .cont-alert-scheduled .cont-alert-table th,
+    .cont-alert-scheduled .cont-alert-table td{text-align:center;}
+    .cont-alert-scheduled .cont-alert-table th:nth-child(1),
+    .cont-alert-scheduled .cont-alert-table td:nth-child(1){text-align:left;}
     .cont-alert-table td{padding:9px 10px;vertical-align:middle;border-bottom:1px solid #f3f4f6;overflow:hidden;text-overflow:ellipsis;}
     .cont-alert-table td:last-child{white-space:nowrap;}
     .cont-alert-table tbody tr:nth-child(even) td{background:#f8fafc;}
