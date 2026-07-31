@@ -211,8 +211,8 @@ function renderDashRetirementBanner(){
   sec.innerHTML = `
   <div class="dash-alert-banner retirement" style="cursor:pointer;border-left:4px solid #7c3aed;border-right:4px solid #7c3aed;background:#fff;" onclick="showPage('retirement-mgmt',document.querySelector('.menu-item[data-page=\\'retirement-mgmt\\']'))">
     <div class="dash-alert-banner-head" style="align-items:center;gap:20px;">
-      <div class="dash-alert-banner-icon" style="background:#f5f3ff;flex-shrink:0;">
-        <i class="fas fa-user-times" style="color:#7c3aed;"></i>
+      <div class="dash-alert-banner-icon" style="background:#7c3aed;flex-shrink:0;">
+        <i class="fas fa-user-times" style="color:#fff;"></i>
       </div>
       <div class="dash-alert-banner-body" style="flex:1;min-width:0;display:flex;align-items:center;gap:20px;">
         <div class="dash-alert-banner-title" style="flex-shrink:0;">퇴직 관리</div>
