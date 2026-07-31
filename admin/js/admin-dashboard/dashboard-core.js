@@ -209,10 +209,10 @@ function renderDashRetirementBanner(){
 
   sec.style.display = '';
   sec.innerHTML = `
-  <div class="dash-alert-banner retirement" style="cursor:pointer;" onclick="showPage('retirement-mgmt',document.querySelector('.menu-item[data-page=\\'retirement-mgmt\\']'))">
+  <div class="dash-alert-banner retirement" style="cursor:pointer;border-left:4px solid #7c3aed;" onclick="showPage('retirement-mgmt',document.querySelector('.menu-item[data-page=\\'retirement-mgmt\\']'))">
     <div class="dash-alert-banner-head" style="align-items:center;flex-wrap:wrap;gap:8px;">
-      <div class="dash-alert-banner-icon" style="background:#fef2f2;">
-        <i class="fas fa-user-times"></i>
+      <div class="dash-alert-banner-icon" style="background:#f5f3ff;">
+        <i class="fas fa-user-times" style="color:#7c3aed;"></i>
       </div>
       <div class="dash-alert-banner-body" style="flex:1;min-width:0;">
         <div class="dash-alert-banner-title">
@@ -222,7 +222,7 @@ function renderDashRetirementBanner(){
         <div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:4px;">
           ${items.map(it => `
             <span style="font-size:12px;white-space:nowrap;color:${it.count>0?'#374151':'#9ca3af'};">
-              <strong style="color:${it.count>0?it.color:'#9ca3af'};">${it.count}명</strong> ${it.label}
+              <strong style="color:${it.count>0?'#7c3aed':'#9ca3af'};">${it.count}명</strong> ${it.label}
             </span>
           `).join('')}
         </div>
