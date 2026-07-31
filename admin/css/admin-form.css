@@ -3,6 +3,9 @@
     #company-modal input[type="text"],
     #company-modal input[type="date"],
     #company-modal input[type="email"] { padding: 7px 12px; height: 36px; box-sizing: border-box; }
+    #company-modal input:not([readonly]):not(:disabled):not([type="checkbox"]):not([type="radio"]):not([type="file"]):hover,
+    #company-modal select:not(:disabled):hover,
+    #company-modal textarea:not([readonly]):not(:disabled):hover { border-color:#6366f1; }
     .work-schedule-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:4px;}
     .work-schedule-table{width:100%;min-width:580px;border-collapse:collapse;font-size:12px;}
     .work-schedule-table th{background:#1e293b;color:#fff;padding:7px 6px;text-align:center;font-weight:600;font-size:11.5px;white-space:nowrap;}

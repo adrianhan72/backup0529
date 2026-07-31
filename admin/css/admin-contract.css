@@ -28,6 +28,10 @@
     #contract-modal .filt-date[readonly]::-webkit-datetime-edit-month-field,
     #contract-modal .filt-date[readonly]::-webkit-datetime-edit-day-field,
     #contract-modal .filt-date[readonly]::-webkit-datetime-edit-year-field{background:transparent!important;color:#555}
+    #contract-modal .filt-date:hover,
+    #contract-modal input:not([readonly]):not(:disabled):not([type="checkbox"]):not([type="radio"]):not([type="file"]):hover,
+    #contract-modal select:not(:disabled):hover,
+    #contract-modal textarea:not([readonly]):not(:disabled):hover { border-color:#6366f1; }
     #contract-modal .form-grid{align-items:stretch}
     #contract-modal .form-grid .form-group{display:flex;flex-direction:column}
     #contract-modal input[type="email"]{height:36px;box-sizing:border-box}
