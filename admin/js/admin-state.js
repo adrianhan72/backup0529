@@ -934,7 +934,7 @@ async function showPage(name,el){
   if(name==='contract-dispatch'){
     if(!_dataReady){
       const tbody = document.getElementById('cdp-unsent-tbody');
-      if(tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:#9ca3af;"><i class="fas fa-circle-notch fa-spin" style="color:#6366f1;margin-right:8px;"></i>고객사 데이터 불러오는 중...</td></tr>`;
+      if(tbody) tbody.innerHTML = `<tr><td colspan="7" class="cen-empty"><i class="fas fa-circle-notch fa-spin"></i> 고객사 데이터 불러오는 중...</td></tr>`;
       if(el) el.classList.add('active');
       return;
     }
@@ -951,7 +951,7 @@ async function showPage(name,el){
   if(name==='consent-dispatch'){
     if(!_dataReady){
       const tbody = document.getElementById('cns-unsent-tbody');
-      if(tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:#9ca3af;"><i class="fas fa-circle-notch fa-spin" style="color:#6366f1;margin-right:8px;"></i>고객사 데이터 불러오는 중...</td></tr>`;
+      if(tbody) tbody.innerHTML = `<tr><td colspan="7" class="cen-empty"><i class="fas fa-circle-notch fa-spin"></i> 고객사 데이터 불러오는 중...</td></tr>`;
       if(el) el.classList.add('active');
       return;
     }
@@ -974,7 +974,7 @@ async function showPage(name,el){
   if(name==='regular-conversion'){
     if(!_dataReady){
       const tbody = document.getElementById('rc-target-tbody');
-      if(tbody) tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:40px;color:#9ca3af;"><i class="fas fa-circle-notch fa-spin" style="color:#6366f1;margin-right:8px;"></i>고객사 데이터 불러오는 중...</td></tr>`;
+      if(tbody) tbody.innerHTML = `<tr><td colspan="8" class="cen-empty"><i class="fas fa-circle-notch fa-spin"></i> 고객사 데이터 불러오는 중...</td></tr>`;
       if(el) el.classList.add('active');
       return;
     }
@@ -1060,7 +1060,7 @@ async function showPage(name,el){
       const chips = document.getElementById('gn-company-chips');
       if(chips) chips.innerHTML = `<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#9ca3af;padding:8px 0;"><div style="width:18px;height:18px;border:2px solid #e2e8f0;border-top-color:#f59e0b;border-radius:50%;animation:tblSpin .7s linear infinite;flex-shrink:0;"></div>고객사 목록 불러오는 중...</div>`;
       const tbody = document.getElementById('gn-log-tbody');
-      if(tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:#9ca3af;"><i class="fas fa-circle-notch fa-spin" style="color:#f59e0b;margin-right:8px;"></i>데이터 불러오는 중...</td></tr>`;
+      if(tbody) tbody.innerHTML = `<tr><td colspan="7" class="cen-empty"><i class="fas fa-circle-notch fa-spin"></i> 데이터 불러오는 중...</td></tr>`;
       if(el) el.classList.add('active');
       return;
     }

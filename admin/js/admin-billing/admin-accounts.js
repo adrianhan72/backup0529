@@ -20,7 +20,7 @@ async function renderAdminAccounts(){
     _aaAccounts = data.data || [];
     _aaRenderTable();
   } catch(e){
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:32px;color:#ef4444;">불러오기 실패</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" class="cen-empty"><i class="fas fa-exclamation-circle"></i> 불러오기 실패</td></tr>';
   }
 }
 

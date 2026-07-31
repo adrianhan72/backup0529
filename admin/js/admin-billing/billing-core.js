@@ -863,10 +863,7 @@ function openPaymentHistoryModal(companyId, companyName){
   if(companyBillings.length === 0){
     tbody.innerHTML = `
       <tr>
-        <td colspan="8" style="text-align:center;padding:40px;color:#888;">
-          <i class="fas fa-inbox" style="font-size:32px;margin-bottom:10px;display:block;"></i>
-          납부이력이 없습니다
-        </td>
+        <td colspan="8" class="cen-empty"><i class="fas fa-inbox"></i> 납부이력이 없습니다</td>
       </tr>
     `;
   } else {

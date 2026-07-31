@@ -82,7 +82,7 @@ function renderMinimumWages(){
   const curYear  = new Date().getFullYear();
   const tbody    = document.querySelector('#std-minwage-table tbody');
   if(!tbody) return;
-  if(!_allMinimumWages.length){ tbody.innerHTML='<tr><td colspan="4" style="color:#9ca3af;text-align:center;padding:16px;">데이터 없음</td></tr>'; return; }
+  if(!_allMinimumWages.length){ tbody.innerHTML='<tr><td colspan="4" class="cen-empty"><i class="fas fa-inbox"></i> 데이터 없음</td></tr>'; return; }
   tbody.innerHTML = _allMinimumWages.map(w=>{
     const isCurrent = Number(w.year) === curYear;
     return `<tr class="${isCurrent?'mw-current-row':''}">
