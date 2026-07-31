@@ -218,7 +218,7 @@ function renderDashRetirementBanner(){
                  onclick="event.stopPropagation();showPage('retirement-mgmt',document.querySelector('.menu-item[data-page=\\'retirement-mgmt\\']'));setTimeout(()=>{if(typeof switchRetirementTab==='function')switchRetirementTab('${it.tab}');},120);">
               <span class="dash-alert-banner-title" style="font-weight:500;margin:0;font-size:13px;flex:1;">${it.label}</span>
               <span class="dash-alert-banner-count" style="color:#7c3aed;">${it.count}명</span>
-              <i class="fas fa-chevron-right" style="color:#7c3aed;font-size:12px;flex-shrink:0;opacity:.6;"></i>
+              <i class="fas fa-chevron-right" style="color:#7c3aed;font-size:13px;flex-shrink:0;opacity:.6;position:relative;top:1px;"></i>
             </div>
           `).join('')}
         </div>
