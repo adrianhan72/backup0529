@@ -143,20 +143,19 @@ function renderDashProbationBanner(){
   sec.style.display = '';
   sec.innerHTML = `
   <div class="dash-alert-banner probation${inactive ? ' inactive' : ''}"
+       style="--glow-color:rgba(45,212,191,.25);display:flex;align-items:center;gap:14px;padding:14px 20px;"
        ${inactive ? '' : `onclick="showPage('probation-mgmt', document.querySelector('.menu-item[data-page=\\'probation-mgmt\\']'))"`}>
-    <div class="dash-alert-banner-head" style="align-items:center;">
-      <div class="dash-alert-banner-icon" style="background:${inactive ? '#d1d5db' : ''};">
-        <i class="fas fa-user-clock"></i>
-      </div>
-      <div class="dash-alert-banner-body">
-        <div class="dash-alert-banner-title${inactive ? ' inactive' : ''}">
-          관리가 필요한 수습 근로자
-          <span class="dash-alert-banner-count" style="color:${inactive ? '#9ca3af' : ''};">${total}명</span>
-        </div>
-        <div class="dash-alert-banner-sub" style="color:${inactive ? '#9ca3af' : ''};">${inactive ? '수습기간 3개월 초과 근로자가 없습니다' : '수습기간 3개월 초과 근로자 해고 시 30일 전 서면 통지 의무'}</div>
-      </div>
-      ${inactive ? '' : '<div class="dash-alert-banner-arrow"><i class="fas fa-chevron-right"></i></div>'}
+    <div class="dash-alert-banner-icon" style="background:${inactive ? '#d1d5db' : ''};">
+      <i class="fas fa-user-clock"></i>
     </div>
+    <div class="dash-alert-banner-body">
+      <div class="dash-alert-banner-title${inactive ? ' inactive' : ''}">
+        관리가 필요한 수습 근로자
+        <span class="dash-alert-banner-count" style="color:${inactive ? '#9ca3af' : ''};">${total}명</span>
+      </div>
+      <div class="dash-alert-banner-sub" style="color:${inactive ? '#9ca3af' : ''};">${inactive ? '수습기간 3개월 초과 근로자가 없습니다' : '수습기간 3개월 초과 근로자 해고 시 30일 전 서면 통지 의무'}</div>
+    </div>
+    ${inactive ? '' : '<div class="dash-alert-banner-arrow"><i class="fas fa-chevron-right"></i></div>'}
   </div>`;
   _updateDashTodoGrid();
 }

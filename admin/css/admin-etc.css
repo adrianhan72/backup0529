@@ -106,12 +106,13 @@
     .cont-todo-grid, .dash-todo-grid{ display:flex;flex-wrap:wrap;gap:10px;margin-bottom:4px; }
     /* 근로계약 관리: 4열 고정 + 최소폭 */
     .cont-todo-grid > div{ flex:1 1 calc(25% - 8px);min-width:220px; }
-    /* 대시보드: 4열 → 2열 → 1열 */
-    .dash-todo-grid > div{ flex:1 1 calc(25% - 8px); }
+    /* 대시보드: 4열 → 2열 → 1열, 셀 내 배너가 높이를 꽉 채우도록 column flex */
+    .dash-todo-grid > div{ flex:1 1 calc(25% - 8px);display:flex;flex-direction:column; }
     /* 퇴직관리 배너: 항상 한 행 전체 사용 */
     #dash-retirement-banner{ flex:1 1 100%; }
 
-    .cont-todo-grid .dash-alert-banner, .dash-todo-grid .dash-alert-banner{ height:100%; }
+    .cont-todo-grid .dash-alert-banner{ height:100%; }
+    .dash-todo-grid .dash-alert-banner{ flex:1; }
     .dash-todo-grid .dash-alert-banner:not(.inactive):not(.retirement){ cursor:pointer; transition:box-shadow .2s; border-radius:10px; }
     .dash-todo-grid .dash-alert-banner:not(.inactive):not(.retirement):hover{ box-shadow:0 0 0 3px var(--glow-color, rgba(99,102,241,.25)); }
 
