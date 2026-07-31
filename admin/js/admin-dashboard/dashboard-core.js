@@ -406,7 +406,7 @@ function renderProbationMgmtTable(){
   if(_s('probmgmt-stat-thismonth')) _s('probmgmt-stat-thismonth').textContent = urgentCnt;
 
   if(!targets.length){
-    tbody.innerHTML = `<tr><td colspan="10" class="cen-empty"><i class="fas fa-inbox"></i> ${keyword ? '검색 결과가 없습니다.' : '현재 수습 중인 근로자가 없습니다.'}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="11" class="cen-empty"><i class="fas fa-inbox"></i> ${keyword ? '검색 결과가 없습니다.' : '현재 수습 중인 근로자가 없습니다.'}</td></tr>`;
     return;
   }
 

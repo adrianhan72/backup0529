@@ -59,7 +59,7 @@ function renderInsuranceRates(){
     const tbody = document.querySelector(`#${tableId} tbody`);
     if(!tbody) return;
     const rows = _allInsuranceRates.filter(r => r.insurance_type === type);
-    if(!rows.length){ tbody.innerHTML='<tr><td colspan="4" class="cen-empty"><i class="fas fa-inbox"></i> 데이터 없음</td></tr>'; return; }
+    if(!rows.length){ tbody.innerHTML=`<tr><td colspan="${hasCap[type] ? 4 : 3}" class="cen-empty"><i class="fas fa-inbox"></i> 데이터 없음</td></tr>`; return; }
     tbody.innerHTML = rows.map(r=>{
       const isCurrent = todayStr >= r.period_start && todayStr <= r.period_end;
       const period = `${r.period_start||''} ~ ${r.period_end||''}`;
