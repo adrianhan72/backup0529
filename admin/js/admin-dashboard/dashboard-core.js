@@ -144,9 +144,13 @@ function renderDashProbationBanner(){
   sec.innerHTML = `
   <div class="dash-alert-banner probation${inactive ? ' inactive' : ''}"
        ${inactive ? '' : `onclick="showPage('probation-mgmt', document.querySelector('.menu-item[data-page=\\'probation-mgmt\\']'))"`}>
-    <div class="dash-alert-banner-head">
+    <div class="dash-alert-banner-head" style="align-items:center;">
       <div class="dash-alert-banner-icon" style="background:${inactive ? '#d1d5db' : ''};">
         <i class="fas fa-user-clock"></i>
+      </div>
+      <div class="dash-alert-banner-body">
+        <div class="dash-alert-banner-title${inactive ? ' inactive' : ''}">
+          관리가 필요한 수습 근로자
       </div>
       <div class="dash-alert-banner-body">
         <div class="dash-alert-banner-title${inactive ? ' inactive' : ''}">
@@ -206,7 +210,7 @@ function renderDashRetirementBanner(){
   sec.style.display = '';
   sec.innerHTML = `
   <div class="dash-alert-banner retirement" style="cursor:pointer;" onclick="showPage('retirement-mgmt',document.querySelector('.menu-item[data-page=\\'retirement-mgmt\\']'))">
-    <div class="dash-alert-banner-head" style="flex-wrap:wrap;gap:8px;">
+    <div class="dash-alert-banner-head" style="align-items:center;flex-wrap:wrap;gap:8px;">
       <div class="dash-alert-banner-icon" style="background:#fef2f2;">
         <i class="fas fa-user-times"></i>
       </div>
