@@ -1,27 +1,29 @@
 /**
- * middleware/security.js — 보안 헤더 (Helmet) + 민감 경로 차단
+ * middleware/security.js — 보안 헤더 (수동 설정) + 민감 경로 차단
+ * Helmet 제거: HSTS가 HTTP에서 캐시된 후 서버에서 해제 불가 (RFC 6797)
  */
-const helmet = require('helmet');
-const path   = require('path');
+const path = require('path');
 
 module.exports = function(app) {
-  // ── Helmet 보안 헤더 ──
-  app.use(helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc:  ["'self'", 'cdn.jsdelivr.net', "'unsafe-inline'", "'unsafe-eval'"],
-        styleSrc:   ["'self'", 'cdn.jsdelivr.net', 'fonts.googleapis.com', "'unsafe-inline'"],
-        imgSrc:     ["'self'", 'data:', 'blob:'],
-        fontSrc:    ["'self'", 'cdn.jsdelivr.net', 'fonts.gstatic.com', 'data:'],
-        connectSrc: ["'self'"],
-        frameSrc:   ["'self'"],
-      },
-    },
-    crossOriginEmbedderPolicy: false,
-    crossOriginResourcePolicy: { policy: 'cross-origin' },
-    strictTransportSecurity: { maxAge: 0 },  // HSTS 캐시 무효화 (maxAge=0 → 즉시 만료)
-  }));
+  // ── 보안 헤더 (HSTS 없음 — 로컬 HTTP 서버) ──
+  app.use((req, res, next) => {
+    // CSP
+    res.setHeader('Content-Security-Policy',
+      "default-src 'self'; " +
+      "script-src 'self' cdn.jsdelivr.net 'unsafe-inline' 'unsafe-eval'; " +
+      "style-src 'self' cdn.jsdelivr.net fonts.googleapis.com 'unsafe-inline'; " +
+      "img-src 'self' data: blob:; " +
+      "font-src 'self' cdn.jsdelivr.net fonts.gstatic.com data:; " +
+      "connect-src 'self'; " +
+      "frame-src 'self'"
+    );
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    // HSTS 의도적 제외 — HTTP 서버에서 설정하면 해제 불가
+    next();
+  });
 
   // ── 민감 경로 차단 ──
   const ROOT = path.join(__dirname, '..');
