@@ -4,11 +4,55 @@
 const CNL_PAGE_SIZE = 20;  // 페이지당 20건
 
 // ── 상태 변수 ──
-let _cnlCompanyId   = '';   // '' = 전체 고객사
+let _cnlCompanyId   = '';   // 선택된 고객사 ID (필수)
 let _cnlCompanyName = '';
 let _cnlList        = [];   // 전체 로드된 원본 목록
 let _cnlPage        = 1;
 let _cnlLoaded      = false;
+
+// ── 고객사 선택 칩 렌더링 ──
+function renderCnlCompanyList(){
+  const chips = document.getElementById('cnl-company-chips');
+  if(!chips) return;
+  const q = (document.getElementById('cnl-company-search')?.value || '').toLowerCase();
+  const activeOnly = allCompanies.filter(c => !c.is_draft);
+  const filtered = q
+    ? activeOnly.filter(c => (c.company_name || '').toLowerCase().includes(q))
+    : activeOnly;
+  const sorted = [...filtered].sort((a,b) => (a.company_name||'').localeCompare(b.company_name||'','ko'));
+  if(!sorted.length){
+    chips.innerHTML = '<div style="color:#9ca3af;padding:8px;">검색된 고객사가 없습니다.</div>';
+    return;
+  }
+  chips.innerHTML = sorted.map(c => {
+    return `<button onclick="selectCnlCompany('${c.id}','${(c.company_name||'').replace(/'/g,"\\'")}');"
+      class="co-chip"><i class="fas fa-building" style="font-size:12px;"></i>${c.company_name}</button>`;
+  }).join('');
+}
+
+/** 고객사 선택 */
+function selectCnlCompany(id, name){
+  _cnlCompanyId   = id;
+  _cnlCompanyName = name;
+  currentGlobalCompanyId = id;
+  document.getElementById('cnl-company-select-card').style.display = 'none';
+  document.getElementById('cnl-main-section').style.display = '';
+  document.getElementById('cnl-selected-company-label').innerHTML =
+    `<i class="fas fa-building" style="margin-right:6px;"></i>${name}`;
+  _cnlLoaded = false;
+  cnlLoadData();
+}
+
+/** 고객사 선택 해제 */
+function clearCnlCompanySelect(){
+  _cnlCompanyId   = '';
+  _cnlCompanyName = '';
+  currentGlobalCompanyId = '';
+  document.getElementById('cnl-company-select-card').style.display = '';
+  document.getElementById('cnl-main-section').style.display = 'none';
+  _cnlList = [];
+  renderCnlCompanyList();
+}
 
 // ── 기간 검증: 최대 3개월 제한 (조회 버튼 클릭 시) ──
 function _cnlDoSearch(){
@@ -97,45 +141,25 @@ const CNL_TYPE_COLOR = {
   notice                        : { bg:'#ede9fe', color:'#6d28d9' },
 };
 
-/** 고객사 드롭다운 옵션 채우기 */
-function _cnlPopulateCompanySelect(){
-  const sel = document.getElementById('cnl-filter-company');
-  if(!sel) return;
-  const list = allCompanies
-    .filter(c => !c.is_draft)
-    .sort((a,b) => (a.company_name||'').localeCompare(b.company_name||'','ko'));
-  // 기존 옵션 유지 (첫 번째 '전체 고객사' 포함) 후 고객사 목록 추가
-  sel.innerHTML = `<option value="">전체 고객사</option>`
-    + list.map(c => `<option value="${c.id}">${c.company_name||''}</option>`).join('');
-  // 이전에 선택된 값 복원
-  if(_cnlCompanyId) sel.value = _cnlCompanyId;
-}
-
 /** 페이지 진입 초기화 */
 async function initCnlPage(){
-  _cnlPopulateCompanySelect();
-  // 전역 고객사 선택 공유: 다른 페이지에서 선택된 고객사가 있으면 드롭다운도 맞춤
-  if(currentGlobalCompanyId && !_cnlCompanyId){
-    _cnlCompanyId = currentGlobalCompanyId;
-    const sel = document.getElementById('cnl-filter-company');
-    if(sel) sel.value = _cnlCompanyId;
+  renderCnlCompanyList();
+  // 선택된 고객사가 없으면 선택 화면 표시
+  if(!_cnlCompanyId){
+    document.getElementById('cnl-company-select-card').style.display = '';
+    document.getElementById('cnl-main-section').style.display = 'none';
+    return;
   }
+  // 이미 선택된 고객사 있으면 바로 로드
+  document.getElementById('cnl-company-select-card').style.display = 'none';
+  document.getElementById('cnl-main-section').style.display = '';
+  document.getElementById('cnl-selected-company-label').innerHTML =
+    `<i class="fas fa-building" style="margin-right:6px;"></i>${_cnlCompanyName}`;
   if(!_cnlLoaded){
     await cnlLoadData();
   } else {
     renderCnlTable();
   }
-}
-
-/** 고객사 드롭다운 변경 핸들러 */
-async function cnlOnCompanyChange(){
-  const sel = document.getElementById('cnl-filter-company');
-  _cnlCompanyId   = sel?.value || '';
-  _cnlCompanyName = sel?.options[sel.selectedIndex]?.text || '';
-  if(_cnlCompanyId) currentGlobalCompanyId = _cnlCompanyId;
-  _cnlPage   = 1;
-  _cnlLoaded = false;
-  await cnlLoadData();
 }
 
 /** 테이블 카드에 로딩 오버레이 표시/숨김 */
@@ -154,12 +178,15 @@ function _cnlShowLoading(show){
   }
 }
 
-/** DB에서 알림 이력 전체 로드 (최대 1000건, 최근순) */
+/** DB에서 알림 이력 로드 (선택 고객사만) */
 async function cnlLoadData(){
+  if(!_cnlCompanyId) return;
   _cnlShowLoading(true);
   try {
     const res = await api(`../tables/company_notices?limit=1000&sort=sent_at`);
-    _cnlList   = (res.data || []).sort((a,b) => {
+    _cnlList   = (res.data || [])
+      .filter(n => String(n.company_id) === _cnlCompanyId)
+      .sort((a,b) => {
       // 기준일: scheduled 상태면 gn_scheduled_at, 아니면 sent_at
       const tA = (a.gn_status==='scheduled' ? a.gn_scheduled_at : null) || a.sent_at || 0;
       const tB = (b.gn_status==='scheduled' ? b.gn_scheduled_at : null) || b.sent_at || 0;
@@ -188,7 +215,7 @@ function renderCnlReserveCard(){
   const badge       = document.getElementById('cnl-reserve-badge');
   if(!reserveCard || !tbody) return;
 
-  const filterCompany = document.getElementById('cnl-filter-company')?.value || '';
+  const filterCompany = _cnlCompanyId || '';
   const filterType    = document.getElementById('cnl-filter-type')?.value || '';
   const searchQ       = (document.getElementById('cnl-search')?.value || '').trim().toLowerCase();
 
@@ -209,10 +236,8 @@ function renderCnlReserveCard(){
   reserveCard.style.display = '';
   if(badge) badge.textContent = `${list.length}건 대기 중`;
 
-  // 고객사 컬럼: 전체 고객사 모드일 때만
-  const showCoCol = !filterCompany;
-  const thCo = document.getElementById('cnl-reserve-th-company');
-  if(thCo) thCo.style.display = showCoCol ? '' : 'none';
+  // 고객사 컬럼: 항상 숨김 (고객사 선택 후 진입하므로)
+  const showCoCol = false;
 
   const fmtDt = ts => {
     if(!ts) return '-';
@@ -324,7 +349,7 @@ function renderCnlTable(){
   const tbody = document.getElementById('cnl-tbody');
   if(!tbody) return;
 
-  const filterCompany = document.getElementById('cnl-filter-company')?.value || '';
+  const filterCompany = _cnlCompanyId || '';
   const filterType    = document.getElementById('cnl-filter-type')?.value || '';
   const searchQ       = (document.getElementById('cnl-search')?.value || '').trim().toLowerCase();
   const dateFrom      = document.getElementById('cnl-filter-date-from')?.value || '';
@@ -349,16 +374,14 @@ function renderCnlTable(){
   const badge = document.getElementById('cnl-total-badge');
   if(badge) badge.textContent = `총 ${list.length}건`;
 
-  // 고객사 컬럼 헤더: 전체 고객사 모드일 때만 표시
-  const thCompany = document.getElementById('cnl-th-company');
-  const showCoCol = !filterCompany;
-  if(thCompany) thCompany.style.display = showCoCol ? '' : 'none';
+  // 고객사 컬럼: 항상 숨김
+  const showCoCol = false;
 
   const totalPages = Math.max(1, Math.ceil(list.length / CNL_PAGE_SIZE));
   if(_cnlPage > totalPages) _cnlPage = totalPages;
   const pageData = list.slice((_cnlPage-1)*CNL_PAGE_SIZE, _cnlPage*CNL_PAGE_SIZE);
 
-  const colSpan = showCoCol ? 8 : 7;
+  const colSpan = 7;
 
   if(!list.length){
     tbody.innerHTML = `<tr><td colspan="${colSpan}" class="cen-empty"><i class="fas fa-inbox"></i> ${_cnlLoaded ? '발송된 알림 이력이 없습니다.' : '데이터를 불러오는 중입니다...'}</td></tr>`;
