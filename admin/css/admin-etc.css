@@ -102,12 +102,27 @@
     .btn-refresh, .btn-secondary.btn-refresh{ background:#6b7280;border-color:#4b5563; }
     .btn-refresh:hover:not(:disabled), .btn-secondary.btn-refresh:hover:not(:disabled){ background:#4b5563;border-color:#374151; }
 
-    /* ── 근로계약 관리 / 대시보드 공통: 할일 목록 3열 그리드 ── */
+    /* ── 근로계약 관리 / 대시보드 공통: 할일 목록 그리드 ── */
     .cont-todo-grid, .dash-todo-grid{ display:flex;flex-wrap:wrap;gap:10px;margin-bottom:4px; }
-    .cont-todo-grid > div, .dash-todo-grid > div{ flex:1 1 calc(25% - 8px);min-width:220px; }
+    /* 근로계약 관리: 4열 고정 + 최소폭 */
+    .cont-todo-grid > div{ flex:1 1 calc(25% - 8px);min-width:220px; }
+    /* 대시보드: 4열 → 2열 → 1열 */
+    .dash-todo-grid > div{ flex:1 1 calc(25% - 8px); }
+    /* 퇴직관리 배너: 항상 한 행 전체 사용 */
+    #dash-retirement-banner{ flex:1 1 100%; }
+
     .cont-todo-grid .dash-alert-banner, .dash-todo-grid .dash-alert-banner{ height:100%; }
     .dash-todo-grid .dash-alert-banner:not(.inactive):not(.retirement){ cursor:pointer; transition:box-shadow .2s; border-radius:10px; }
     .dash-todo-grid .dash-alert-banner:not(.inactive):not(.retirement):hover{ box-shadow:0 0 0 3px var(--glow-color, rgba(99,102,241,.25)); }
+
+    /* 대시보드 할일 그리드: 960px 이하 → 2열 */
+    @media (max-width:960px){
+      .dash-todo-grid > div:not(#dash-retirement-banner){ flex:1 1 calc(50% - 6px); }
+    }
+    /* 대시보드 할일 그리드: 520px 이하 → 1열 */
+    @media (max-width:520px){
+      .dash-todo-grid > div{ flex:1 1 100%; }
+    }
 
     .pss-send-btn:hover{ opacity:.88; }
     .pss-send-btn-all{ background:#f9d000;color:#3b1f00;border:1px solid #eab308;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:7px;transition:background .18s; }
