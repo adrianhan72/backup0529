@@ -93,19 +93,19 @@ function renderRetirementMgmt(){
 function renderInsuranceTable(list, fmtD){
   const tbody = document.querySelector('#retirement-table-insurance tbody');
   if(!tbody) return;
-  if(!list.length){ tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#9ca3af;padding:30px;">미신고 대상자가 없습니다.</td></tr>`; return; }
+  if(!list.length){ tbody.innerHTML = `<tr><td colspan="5" class="retirement-td-empty">미신고 대상자가 없습니다.</td></tr>`; return; }
   tbody.innerHTML = list.map(r => {
     const done = r.insurance_reported_at;
     const btn = done
-      ? `<span class="btn-retire btn-retire-done" style="cursor:default;"><i class="fas fa-check-circle"></i> 완료 (${done.slice(0,10)})</span>
-         <button class="btn-retire" style="background:#f1f5f9;color:#64748b;border-color:#e2e8f0;margin-left:4px;" onclick="undoRetirementDone('${r.id}','insurance')"><i class="fas fa-undo"></i></button>`
+      ? `<span class="btn-retire btn-retire-done"><i class="fas fa-check-circle"></i> 완료 (${done.slice(0,10)})</span>
+         <button class="btn-retire btn-retire-undo" onclick="undoRetirementDone('${r.id}','insurance')"><i class="fas fa-undo"></i></button>`
       : `<button class="btn-retire btn-retire-pending" onclick="markRetirementDone('${r.id}','insurance')"><i class="fas fa-check"></i> 신고완료</button>`;
     return `<tr>
       <td><strong>${r.empName}</strong></td>
       <td>${r.coName}</td>
       <td>${fmtD(r.termDate)}</td>
       <td>${fmtD(r.termDate)}</td>
-      <td style="white-space:nowrap;">${btn}</td>
+      <td class="retirement-td-action">${btn}</td>
     </tr>`;
   }).join('');
 }
@@ -114,18 +114,18 @@ function renderInsuranceTable(list, fmtD){
 function renderTaxTable(list, fmtD){
   const tbody = document.querySelector('#retirement-table-tax tbody');
   if(!tbody) return;
-  if(!list.length){ tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#9ca3af;padding:30px;">미신고 대상자가 없습니다.</td></tr>`; return; }
+  if(!list.length){ tbody.innerHTML = `<tr><td colspan="4" class="retirement-td-empty">미신고 대상자가 없습니다.</td></tr>`; return; }
   tbody.innerHTML = list.map(r => {
     const done = r.tax_reported_at;
     const btn = done
-      ? `<span class="btn-retire btn-retire-done" style="cursor:default;"><i class="fas fa-check-circle"></i> 완료 (${done.slice(0,10)})</span>
-         <button class="btn-retire" style="background:#f1f5f9;color:#64748b;border-color:#e2e8f0;margin-left:4px;" onclick="undoRetirementDone('${r.id}','tax')"><i class="fas fa-undo"></i></button>`
+      ? `<span class="btn-retire btn-retire-done"><i class="fas fa-check-circle"></i> 완료 (${done.slice(0,10)})</span>
+         <button class="btn-retire btn-retire-undo" onclick="undoRetirementDone('${r.id}','tax')"><i class="fas fa-undo"></i></button>`
       : `<button class="btn-retire btn-retire-pending" onclick="markRetirementDone('${r.id}','tax')"><i class="fas fa-check"></i> 신고완료</button>`;
     return `<tr>
       <td><strong>${r.empName}</strong></td>
       <td>${r.coName}</td>
       <td>${fmtD(r.termDate)}</td>
-      <td style="white-space:nowrap;">${btn}</td>
+      <td class="retirement-td-action">${btn}</td>
     </tr>`;
   }).join('');
 }
@@ -134,13 +134,13 @@ function renderTaxTable(list, fmtD){
 function renderSeveranceTable(list, fmtD){
   const tbody = document.querySelector('#retirement-table-severance tbody');
   if(!tbody) return;
-  if(!list.length){ tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#9ca3af;padding:30px;">대상자가 없습니다.</td></tr>`; return; }
+  if(!list.length){ tbody.innerHTML = `<tr><td colspan="6" class="retirement-td-empty">대상자가 없습니다.</td></tr>`; return; }
   tbody.innerHTML = list.map(r => `
     <tr>
       <td><strong>${r.empName}</strong></td>
       <td>${r.coName}</td>
       <td>${fmtD(r.contract_start)}</td>
-      <td>${fmtD(r.termDate)}${r.isPending ? ' <span class="badge badge-amber" style="font-size:10px;">예정</span>' : ''}</td>
+      <td>${fmtD(r.termDate)}${r.isPending ? ' <span class="retirement-badge-pending">예정</span>' : ''}</td>
       <td>${r.tenureLabel} (${r.tenureDays}일)</td>
       <td>
         <button class="btn-retire btn-retire-pending" onclick="openRetirementSettlement('${r.id}')">
@@ -155,15 +155,15 @@ function renderSeveranceTable(list, fmtD){
 function renderNoticePayTable(list, fmtD){
   const tbody = document.querySelector('#retirement-table-noticepay tbody');
   if(!tbody) return;
-  if(!list.length){ tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#9ca3af;padding:30px;">대상자가 없습니다.</td></tr>`; return; }
+  if(!list.length){ tbody.innerHTML = `<tr><td colspan="7" class="retirement-td-empty">대상자가 없습니다.</td></tr>`; return; }
   tbody.innerHTML = list.map(r => `
     <tr>
       <td><strong>${r.empName}</strong></td>
       <td>${r.coName}</td>
       <td>${fmtD(r.contract_start)}</td>
-      <td>${fmtD(r.termDate)}${r.isPending ? ' <span class="badge badge-amber" style="font-size:10px;">예정</span>' : ''}</td>
+      <td>${fmtD(r.termDate)}${r.isPending ? ' <span class="retirement-badge-pending">예정</span>' : ''}</td>
       <td>${r.tenureLabel}</td>
-      <td style="color:#dc2626;font-weight:700;">${r.noticePay.toLocaleString('ko-KR')}원</td>
+      <td class="retirement-td-amount">${r.noticePay.toLocaleString('ko-KR')}원</td>
       <td>
         <button class="btn-retire btn-retire-pending" onclick="openRetirementSettlement('${r.id}')">
           <i class="fas fa-calculator"></i> 퇴직정산
