@@ -143,7 +143,8 @@
     .btn-dark:active:not(:disabled){background:#3d3d5e;}
 
     /* Size: small (필터바 32px 높이) */
-    .btn-sm{height:32px;box-sizing:border-box;padding:0 16px;font-size:12px;}
+    .btn-sm{height:32px;box-sizing:border-box;padding:0 16px;font-size:12px;line-height:1;}
+    .btn-sm i{display:inline-flex;align-items:center;font-size:14px;}
 
     /* Kakao */
     .btn-kakao{background:#f9d000;color:#3b1f00;border-color:#eab308;}
