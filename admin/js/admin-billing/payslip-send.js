@@ -489,20 +489,19 @@ function _updateDashUnsentContractBanner(){
 
   section.style.display = '';
   section.innerHTML = `
-    <div class="dash-alert-banner${ctrUnsentInactive ? ' inactive' : ''}"
+    <div class="dash-alert-banner contract-unsent flat${ctrUnsentInactive ? ' inactive' : ''}"
          ${ctrUnsentInactive ? '' : `onclick="showPage('contract-dispatch', document.querySelector('.menu-item[data-page=\\'contract-dispatch\\']'))"`}
-         style="--glow-color:rgba(59,130,246,.25);cursor:${ctrUnsentInactive ? 'default' : 'pointer'};background:linear-gradient(135deg,${ctrUnsentBg},${ctrUnsentBg2});border:1px solid ${ctrUnsentBorder};border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:14px;"
-         >
-      <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,${ctrUnsentIconBg},${ctrUnsentIconBg2});display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-        <i class="fas fa-file-contract" style="color:#fff;font-size:17px;"></i>
+         style="--glow-color:rgba(59,130,246,.25);">
+      <div class="dash-alert-banner-icon">
+        <i class="fas fa-file-contract"></i>
       </div>
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:13.5px;font-weight:700;color:${ctrUnsentTitle};">
-          근로계약서 미발송 <span style="color:${ctrUnsentCount};font-size:16px;font-weight:800;">${totalUnsent}건</span>
+      <div class="dash-alert-banner-body">
+        <div class="dash-alert-banner-title">
+          근로계약서 미발송 <span class="dash-alert-banner-count">${totalUnsent}건</span>
         </div>
-        <div style="font-size:12px;color:${ctrUnsentSub};margin-top:3px;">${ctrUnsentInactive ? '미발송 계약서가 없습니다' : `클릭하여 ${PAGE_LABELS['contract-dispatch']} 페이지로 이동`}</div>
+        <div class="dash-alert-banner-sub">${ctrUnsentInactive ? '미발송 계약서가 없습니다' : `클릭하여 ${PAGE_LABELS['contract-dispatch']} 페이지로 이동`}</div>
       </div>
-      ` + (ctrUnsentInactive ? '' : '<div style="color:' + ctrUnsentArrow + ';font-size:14px;flex-shrink:0;"><i class="fas fa-chevron-right"></i></div>') + `
+      ${ctrUnsentInactive ? '' : '<div class="dash-alert-banner-arrow"><i class="fas fa-chevron-right"></i></div>'}
     </div>`;
   // 메뉴 배지 동기화
   if(typeof updateMenuBadges === 'function') updateMenuBadges();
@@ -530,20 +529,19 @@ function _updateDashUnsentBanner(){
 
   section.style.display = '';
   section.innerHTML = `
-    <div class="dash-alert-banner${piUnsentInactive ? ' inactive' : ''}"
+    <div class="dash-alert-banner payslip-unsent flat${piUnsentInactive ? ' inactive' : ''}"
          ${piUnsentInactive ? '' : `onclick="showPage('payslip-send', document.querySelector('.menu-item[data-page=\\'payslip-send\\']'))"`}
-         style="--glow-color:rgba(245,158,11,.25);cursor:${piUnsentInactive ? 'default' : 'pointer'};background:linear-gradient(135deg,${piUnsentBg},${piUnsentBg2});border:1px solid ${piUnsentBorder};border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:14px;"
-         >
-      <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,${piUnsentIconBg},${piUnsentIconBg2});display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-        <i class="fas fa-exclamation-triangle" style="color:#fff;font-size:17px;"></i>
+         style="--glow-color:rgba(245,158,11,.25);">
+      <div class="dash-alert-banner-icon">
+        <i class="fas fa-exclamation-triangle"></i>
       </div>
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:13.5px;font-weight:700;color:${piUnsentTitle};">
-          급여명세서 미발송 <span style="color:${piUnsentCount};font-size:16px;font-weight:800;">${totalUnsent}건</span>
+      <div class="dash-alert-banner-body">
+        <div class="dash-alert-banner-title">
+          급여명세서 미발송 <span class="dash-alert-banner-count">${totalUnsent}건</span>
         </div>
-        <div style="font-size:12px;color:${piUnsentSub};margin-top:3px;">${piUnsentInactive ? '미발송 급여명세서가 없습니다' : `클릭하여 ${PAGE_LABELS['payslip-send']} 페이지로 이동`}</div>
+        <div class="dash-alert-banner-sub">${piUnsentInactive ? '미발송 급여명세서가 없습니다' : `클릭하여 ${PAGE_LABELS['payslip-send']} 페이지로 이동`}</div>
       </div>
-      ` + (piUnsentInactive ? '' : '<div style="color:' + piUnsentArrow + ';font-size:14px;flex-shrink:0;"><i class="fas fa-chevron-right"></i></div>') + `
+      ${piUnsentInactive ? '' : '<div class="dash-alert-banner-arrow"><i class="fas fa-chevron-right"></i></div>'}
     </div>`;
   if(typeof _updateDashTodoGrid === 'function') _updateDashTodoGrid();
 }

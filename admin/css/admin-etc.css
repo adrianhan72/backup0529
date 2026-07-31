@@ -115,10 +115,15 @@
     .dash-todo-grid .dash-alert-banner{ flex:1; }
     .dash-todo-grid .dash-alert-banner:not(.inactive):not(.retirement){ cursor:pointer; transition:box-shadow .2s; border-radius:10px; }
     .dash-todo-grid .dash-alert-banner:not(.inactive):not(.retirement):hover{ box-shadow:0 0 0 3px var(--glow-color, rgba(99,102,241,.25)); }
-    /* 퇴직관리 배너 inner box hover 글로우 */
-    .retirement-inner-box{ cursor:pointer;transition:box-shadow .2s; }
+    /* 퇴직관리 배너 inner box */
+    .retirement-inner-box{ flex:1 1 0;min-width:200px;padding:6px 10px 6px 12px;border:1.5px solid #c4b5fd;border-radius:8px;background:#faf9ff;display:flex;align-items:center;gap:6px;cursor:pointer;transition:box-shadow .2s; }
     .retirement-inner-box:not(.inactive):hover{ box-shadow:0 0 0 3px var(--glow-color); }
-    .retirement-inner-box.inactive{ cursor:default; }
+    .retirement-inner-box.inactive{ border-color:#e5e7eb;background:#f9fafb;cursor:default; }
+    .retirement-inner-box .dash-alert-banner-title{ font-weight:500;margin:0;font-size:13px;flex:1; }
+    .retirement-inner-box .dash-alert-banner-count{ color:#7c3aed; }
+    .retirement-inner-box.inactive .dash-alert-banner-title{ color:#6b7280; }
+    .retirement-inner-box.inactive .dash-alert-banner-count{ color:#9ca3af; }
+    .retirement-inner-box .retirement-chevron{ color:#7c3aed;font-size:13px;flex-shrink:0;opacity:.6;position:relative;top:1px; }
 
     /* 대시보드 할일 그리드: 960px 이하 → 2열 */
     @media (max-width:960px){

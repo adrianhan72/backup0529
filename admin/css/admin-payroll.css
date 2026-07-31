@@ -75,6 +75,21 @@
     .dash-alert-banner.probation .dash-alert-banner-arrow{color:#2dd4bf;}
     .dash-alert-banner.probation .dash-alert-banner-chip{background:#ccfbf1;color:#115e59;border:1px solid #5eead4;}
     .dash-alert-banner.probation .dash-alert-banner-chip.urgent{background:#99f6e4;color:#134e4a;border-color:#2dd4bf;font-weight:700;}
+    /* 평면 배너 (head wrapper 없이 icon/body/arrow 직접 배치) */
+    .dash-alert-banner.flat{display:flex;align-items:center;gap:14px;padding:14px 20px;}
+    /* 급여명세서 미발송: 호박(amber) 계열 */
+    .dash-alert-banner.payslip-unsent{background:linear-gradient(135deg,#fff7ed,#fef3c7);border:1px solid #f59e0b;}
+    .dash-alert-banner.payslip-unsent .dash-alert-banner-icon{background:linear-gradient(135deg,#f59e0b,#d97706);}
+    .dash-alert-banner.payslip-unsent .dash-alert-banner-title{color:#92400e;}
+    .dash-alert-banner.payslip-unsent .dash-alert-banner-sub{color:#b45309;}
+    .dash-alert-banner.payslip-unsent .dash-alert-banner-count{color:#d97706;}
+    .dash-alert-banner.payslip-unsent .dash-alert-banner-arrow{color:#d97706;}
+    /* 퇴직 관리 배너 */
+    .dash-alert-banner.retirement{border-left:4px solid #7c3aed;border-right:4px solid #7c3aed;background:#fff;}
+    .dash-alert-banner.retirement .dash-alert-banner-icon{background:#7c3aed;}
+    .dash-alert-banner.retirement .dash-alert-banner-title{flex-shrink:0;color:#7c3aed;}
+    .dash-alert-banner.retirement .dash-alert-banner-head{gap:20px;}
+    .retirement-boxes-wrap{display:flex;align-items:center;gap:20px;flex:1;justify-content:flex-end;flex-wrap:wrap;}
     /* 수습 배너 아코디언 */
     .prob-acc-wrap{border-radius:12px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.07);background:linear-gradient(135deg,#f0fdfa,#ccfbf1);border:1px solid #2dd4bf;}
     .prob-acc-header{display:flex;align-items:center;gap:14px;padding:14px 20px;cursor:pointer;user-select:none;}

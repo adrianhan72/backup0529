@@ -142,18 +142,18 @@ function renderDashProbationBanner(){
 
   sec.style.display = '';
   sec.innerHTML = `
-  <div class="dash-alert-banner probation${inactive ? ' inactive' : ''}"
-       style="--glow-color:rgba(45,212,191,.25);display:flex;align-items:center;gap:14px;padding:14px 20px;"
+  <div class="dash-alert-banner probation flat${inactive ? ' inactive' : ''}"
+       style="--glow-color:rgba(45,212,191,.25);"
        ${inactive ? '' : `onclick="showPage('probation-mgmt', document.querySelector('.menu-item[data-page=\\'probation-mgmt\\']'))"`}>
-    <div class="dash-alert-banner-icon" style="background:${inactive ? '#d1d5db' : ''};">
+    <div class="dash-alert-banner-icon">
       <i class="fas fa-user-clock"></i>
     </div>
     <div class="dash-alert-banner-body">
       <div class="dash-alert-banner-title${inactive ? ' inactive' : ''}">
         관리가 필요한 수습 근로자
-        <span class="dash-alert-banner-count" style="color:${inactive ? '#9ca3af' : ''};">${total}명</span>
+        <span class="dash-alert-banner-count">${total}명</span>
       </div>
-      <div class="dash-alert-banner-sub" style="color:${inactive ? '#9ca3af' : ''};">${inactive ? '수습기간 3개월 초과 근로자가 없습니다' : '수습기간 3개월 초과 근로자 해고 시 30일 전 서면 통지 의무'}</div>
+      <div class="dash-alert-banner-sub">${inactive ? '수습기간 3개월 초과 근로자가 없습니다' : '수습기간 3개월 초과 근로자 해고 시 30일 전 서면 통지 의무'}</div>
     </div>
     ${inactive ? '' : '<div class="dash-alert-banner-arrow"><i class="fas fa-chevron-right"></i></div>'}
   </div>`;
@@ -204,29 +204,24 @@ function renderDashRetirementBanner(){
 
   sec.style.display = '';
   sec.innerHTML = `
-  <div class="dash-alert-banner retirement" style="border-left:4px solid #7c3aed;border-right:4px solid #7c3aed;background:#fff;">
-    <div class="dash-alert-banner-head" style="align-items:center;gap:20px;">
-      <div class="dash-alert-banner-icon" style="background:#7c3aed;flex-shrink:0;">
-        <i class="fas fa-user-times" style="color:#fff;"></i>
+  <div class="dash-alert-banner retirement">
+    <div class="dash-alert-banner-head">
+      <div class="dash-alert-banner-icon">
+        <i class="fas fa-user-times"></i>
       </div>
-      <div class="dash-alert-banner-body" style="flex:1;min-width:0;display:flex;align-items:center;gap:20px;">
-        <div class="dash-alert-banner-title" style="flex-shrink:0;color:#7c3aed;">퇴직 관리</div>
-        <div style="display:flex;gap:20px;flex:1;justify-content:flex-end;flex-wrap:wrap;">
+      <div class="dash-alert-banner-body retirement-boxes-wrap">
+        <div class="dash-alert-banner-title">퇴직 관리</div>
+        <div class="retirement-boxes-wrap">
           ${items.map(it => {
             const inactive = it.count === 0;
-            const boxStyle = inactive
-              ? 'flex:1 1 0;min-width:200px;padding:6px 10px 6px 12px;border:1.5px solid #e5e7eb;border-radius:8px;background:#f9fafb;display:flex;align-items:center;gap:6px;cursor:default;'
-              : `--glow-color:${it.glowColor};flex:1 1 0;min-width:200px;padding:6px 10px 6px 12px;border:1.5px solid #c4b5fd;border-radius:8px;background:#faf9ff;display:flex;align-items:center;gap:6px;`;
-            const titleColor = inactive ? '#6b7280' : '';
-            const countColor = inactive ? '#9ca3af' : '#7c3aed';
             const onclickAttr = inactive ? '' : `onclick="event.stopPropagation();showPage('retirement-mgmt',document.querySelector('.menu-item[data-page=\\'retirement-mgmt\\']'));setTimeout(()=>{if(typeof switchRetirementTab==='function')switchRetirementTab('${it.tab}');},120);"`;
             return `
             <div class="retirement-inner-box${inactive ? ' inactive' : ''}"
-                 style="${boxStyle}"
+                 style="${inactive ? '' : '--glow-color:'+it.glowColor+';'}"
                  ${onclickAttr}>
-              <span class="dash-alert-banner-title" style="font-weight:500;margin:0;font-size:13px;flex:1;${titleColor ? 'color:'+titleColor+';' : ''}">${it.label}</span>
-              <span class="dash-alert-banner-count" style="color:${countColor};">${it.count}명</span>
-              ${inactive ? '' : '<i class="fas fa-chevron-right" style="color:#7c3aed;font-size:13px;flex-shrink:0;opacity:.6;position:relative;top:1px;"></i>'}
+              <span class="dash-alert-banner-title">${it.label}</span>
+              <span class="dash-alert-banner-count">${it.count}명</span>
+              ${inactive ? '' : '<i class="fas fa-chevron-right retirement-chevron"></i>'}
             </div>
           `;
           }).join('')}

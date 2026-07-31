@@ -679,20 +679,19 @@ function _updateDashConsentBanner() {
 
   section.style.display = '';
   section.innerHTML = `
-    <div class="dash-alert-banner${consentInactive ? ' inactive' : ''}"
+    <div class="dash-alert-banner consent flat${consentInactive ? ' inactive' : ''}"
          ${consentInactive ? '' : `onclick="showPage('consent-dispatch', document.querySelector('.menu-item[data-page=\\'consent-dispatch\\']'))"`}
-         style="--glow-color:rgba(34,197,94,.25);cursor:${consentInactive ? 'default' : 'pointer'};background:linear-gradient(135deg,${consentBg},${consentBg2});border:1px solid ${consentBorder};border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:14px;"
-         >
-      <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,${consentIconBg},${consentIconBg2});display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-        <i class="fas fa-file-shield" style="color:#fff;font-size:17px;"></i>
+         style="--glow-color:rgba(34,197,94,.25);">
+      <div class="dash-alert-banner-icon">
+        <i class="fas fa-file-shield"></i>
       </div>
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:13.5px;font-weight:700;color:${consentTitle};">
-          정보제공동의서 미발송 <span style="color:${consentCount};font-size:16px;font-weight:800;">${totalUnsent}건</span>
+      <div class="dash-alert-banner-body">
+        <div class="dash-alert-banner-title">
+          정보제공동의서 미발송 <span class="dash-alert-banner-count">${totalUnsent}건</span>
         </div>
-        <div style="font-size:12px;color:${consentSub};margin-top:3px;">${consentInactive ? '미발송 동의서가 없습니다' : `클릭하여 ${PAGE_LABELS['consent-dispatch']} 페이지로 이동`}</div>
+        <div class="dash-alert-banner-sub">${consentInactive ? '미발송 동의서가 없습니다' : `클릭하여 ${PAGE_LABELS['consent-dispatch']} 페이지로 이동`}</div>
       </div>
-      ` + (consentInactive ? '' : '<div style="color:' + consentArrow + ';font-size:14px;flex-shrink:0;"><i class="fas fa-chevron-right"></i></div>') + `
+      ${consentInactive ? '' : '<div class="dash-alert-banner-arrow"><i class="fas fa-chevron-right"></i></div>'}
     </div>`;
   if(typeof _updateDashTodoGrid === 'function') _updateDashTodoGrid();
 }
