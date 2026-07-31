@@ -20,7 +20,7 @@ module.exports = function(app) {
     },
     crossOriginEmbedderPolicy: false,
     crossOriginResourcePolicy: { policy: 'cross-origin' },
-    strictTransportSecurity: false,  // HSTS 비활성화 (로컬 HTTP 서버)
+    strictTransportSecurity: { maxAge: 0 },  // HSTS 캐시 무효화 (maxAge=0 → 즉시 만료)
   }));
 
   // ── 민감 경로 차단 ──
