@@ -185,8 +185,7 @@
     .cont-alert-pending .cont-alert-card-chevron-btn{background:#a78bfa;}
     .cont-alert-preterminate .cont-alert-card-chevron-btn{background:#22c55e;}
     .cont-alert-probation .cont-alert-card-chevron-btn{background:#2dd4bf;}
-    .cont-alert-renewal .cont-alert-card-chevron-btn{background:#eab308;}
-    .cont-alert-terminate .cont-alert-card-chevron-btn{background:#f43f5e;}
+    .cont-alert-scheduled .cont-alert-card-chevron-btn{background:#7dd3fc;}
     .cont-alert-card-body{border-top:1px solid rgba(0,0,0,.07);background:#fff;}
     .cont-alert-table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:12.5px;}
     .cont-alert-table thead tr{background:#f1f5f9;border-bottom:2px solid #e2e8f0;}
@@ -224,14 +223,10 @@
     .cont-alert-probation{border:1px solid #2dd4bf;border-radius:12px;overflow:hidden;margin-bottom:0;}
     .cont-alert-probation .cont-alert-card-head{background:linear-gradient(135deg,#f0fdfa,#ccfbf1);}
     .cont-alert-probation .cont-alert-card-title{color:#134e4a;}
-/* 갱신예정 — amber (대시보드 renewal과 통일) */
-    .cont-alert-renewal{border:1px solid #eab308;border-radius:12px;overflow:hidden;margin-bottom:0;}
-    .cont-alert-renewal .cont-alert-card-head{background:linear-gradient(135deg,#fefce8,#fef9c3);}
-    .cont-alert-renewal .cont-alert-card-title{color:#854d0e;}
-/* 해지예정 — rose (대시보드 terminate와 통일) */
-    .cont-alert-terminate{border:1px solid #f43f5e;border-radius:12px;overflow:hidden;margin-bottom:0;}
-    .cont-alert-terminate .cont-alert-card-head{background:linear-gradient(135deg,#fff1f2,#ffe4e6);}
-    .cont-alert-terminate .cont-alert-card-title{color:#9f1239;}
+/* 예정 사항 — sky (계약예정·갱신예정·해지예정·만료예정 통합) */
+    .cont-alert-scheduled{border:1px solid #7dd3fc;border-radius:12px;overflow:hidden;margin-bottom:0;}
+    .cont-alert-scheduled .cont-alert-card-head{background:linear-gradient(135deg,#f0f9ff,#e0f2fe);}
+    .cont-alert-scheduled .cont-alert-card-title{color:#0369a1;}
 /* ── 회사별 아코디언 카드 (cont-co-cards-wrap 내) ── */
     #cont-co-cards-wrap { margin-bottom:8px; }
     .cont-co-card { border-radius:12px;overflow:hidden;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.08); }
@@ -252,12 +247,9 @@
     .cont-co-card.cont-alert-preterminate { border:1px solid #22c55e; }
     .cont-co-card.cont-alert-preterminate .cont-alert-card-head { background:linear-gradient(135deg,#f0fdf4,#dcfce7); }
     .cont-co-card.cont-alert-preterminate .cont-alert-card-title { color:#166534; }
-    .cont-co-card.cont-alert-renewal { border:1px solid #eab308; }
-    .cont-co-card.cont-alert-renewal .cont-alert-card-head { background:linear-gradient(135deg,#fefce8,#fef9c3); }
-    .cont-co-card.cont-alert-renewal .cont-alert-card-title { color:#854d0e; }
-    .cont-co-card.cont-alert-terminate { border:1px solid #f43f5e; }
-    .cont-co-card.cont-alert-terminate .cont-alert-card-head { background:linear-gradient(135deg,#fff1f2,#ffe4e6); }
-    .cont-co-card.cont-alert-terminate .cont-alert-card-title { color:#9f1239; }
+    .cont-co-card.cont-alert-scheduled { border:1px solid #7dd3fc; }
+    .cont-co-card.cont-alert-scheduled .cont-alert-card-head { background:linear-gradient(135deg,#f0f9ff,#e0f2fe); }
+    .cont-co-card.cont-alert-scheduled .cont-alert-card-title { color:#0369a1; }
     .cont-co-card.cont-alert-probation { border:1px solid #2dd4bf; }
     .cont-co-card.cont-alert-probation .cont-alert-card-head { background:linear-gradient(135deg,#f0fdfa,#ccfbf1); }
     .cont-co-card.cont-alert-probation .cont-alert-card-title { color:#134e4a; }
