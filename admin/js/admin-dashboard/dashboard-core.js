@@ -216,7 +216,7 @@ function renderDashRetirementBanner(){
           ${items.map(it => `
             <div style="flex:1 1 0;min-width:200px;text-align:center;padding:6px 10px;border:1.5px solid #c4b5fd;border-radius:8px;background:#faf9ff;display:flex;align-items:center;justify-content:center;gap:6px;">
               <span class="dash-alert-banner-title" style="font-weight:500;margin:0;font-size:13px;">${it.label}</span>
-              <span class="dash-alert-banner-count">${it.count}명</span>
+              <span class="dash-alert-banner-count" style="color:#7c3aed;">${it.count}명</span>
             </div>
           `).join('')}
         </div>
