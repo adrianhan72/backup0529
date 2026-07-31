@@ -195,10 +195,10 @@ function renderDashRetirementBanner(){
   ).length;
 
   const items = [
-    { label:'4대보험 상실신고', count: insuranceCount, color:'#dc2626' },
-    { label:'원천징수 신고', count: taxCount, color:'#d97706' },
-    { label:'퇴직정산', count: severanceCount, color:'#7c3aed' },
-    { label:'해고예고수당', count: noticePayCount, color:'#b91c1c' },
+    { label:'4대보험 상실신고', count: insuranceCount, color:'#dc2626', glowColor:'rgba(124,58,237,.25)', tab:'insurance' },
+    { label:'원천징수 신고',   count: taxCount,       color:'#d97706', glowColor:'rgba(124,58,237,.25)', tab:'tax' },
+    { label:'퇴직정산',       count: severanceCount,  color:'#7c3aed', glowColor:'rgba(124,58,237,.25)', tab:'severance' },
+    { label:'해고예고수당',    count: noticePayCount,  color:'#b91c1c', glowColor:'rgba(124,58,237,.25)', tab:'noticepay' },
   ];
   const total = items.reduce((s,i) => s + i.count, 0);
 
@@ -213,7 +213,9 @@ function renderDashRetirementBanner(){
         <div class="dash-alert-banner-title" style="flex-shrink:0;color:#7c3aed;">퇴직 관리</div>
         <div style="display:flex;gap:20px;flex:1;justify-content:flex-end;flex-wrap:wrap;">
           ${items.map(it => `
-            <div style="flex:1 1 0;min-width:200px;text-align:center;padding:6px 10px;border:1.5px solid #c4b5fd;border-radius:8px;background:#faf9ff;display:flex;align-items:center;justify-content:center;gap:6px;">
+            <div class="retirement-inner-box"
+                 style="--glow-color:${it.glowColor};flex:1 1 0;min-width:200px;text-align:center;padding:6px 10px;border:1.5px solid #c4b5fd;border-radius:8px;background:#faf9ff;display:flex;align-items:center;justify-content:center;gap:6px;"
+                 onclick="event.stopPropagation();showPage('retirement-mgmt',document.querySelector('.menu-item[data-page=\\'retirement-mgmt\\']'));setTimeout(()=>{if(typeof switchRetirementTab==='function')switchRetirementTab('${it.tab}');},120);">
               <span class="dash-alert-banner-title" style="font-weight:500;margin:0;font-size:13px;">${it.label}</span>
               <span class="dash-alert-banner-count" style="color:#7c3aed;">${it.count}명</span>
             </div>
