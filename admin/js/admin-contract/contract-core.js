@@ -104,44 +104,7 @@ function _renderContCoSummaryCards(){
     return a.sortOrder - b.sortOrder;
   });
 
-  if (scheduledItems.length > 0) {
-    function _schedActions(item) {
-      const cid = item.contract.id;
-      switch (item.type) {
-        case 'pending':
-          return `<button onclick="viewContract('${cid}')" class="btn btn-sm btn-indigo"><i class="fas fa-search"></i> 조회</button>
-                  <button onclick="openContractModal('${cid}', currentContCompanyId)" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i> 수정 및 재발행</button>
-                  <button onclick="_cancelPendingFromList('${cid}')" class="btn btn-sm btn-secondary"><i class="fas fa-ban"></i> 계약취소</button>`;
-        case 'renewal':
-        case 'terminate':
-          return `<button onclick="viewContract('${cid}')" class="btn btn-sm btn-indigo"><i class="fas fa-search"></i> 조회</button>
-                  <button onclick="openContractModal('${cid}', currentContCompanyId)" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i> 수정</button>`;
-        default:
-          return `<button onclick="viewContract('${cid}')" class="btn btn-sm btn-indigo"><i class="fas fa-search"></i> 조회</button>`;
-      }
-    }
-
-    const rows = scheduledItems.map(item => {
-      const c = item.contract;
-      const emp = allEmployees.find(e=>e.id===c.employee_id);
-      const diff = Math.ceil((new Date(item.targetDate)-new Date(today))/(1000*60*60*24));
-      const dday = diff > 0 ? `D-${diff}` : diff === 0 ? 'D-day' : `D+${Math.abs(diff)}`;
-      const ddayColor = diff <= 7 ? '#dc2626' : '#6b7280';
-      return `<tr>
-        ${empNameCell(c.employee_id)}
-        ${catBadgeCell(c, emp)}
-        <td><span class="badge" style="${item.badgeStyle}font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;">${item.typeLabel}</span></td>
-        <td style="font-size:12px;color:#6b7280;">${item.targetDate}</td>
-        <td><span style="font-weight:700;color:${ddayColor};font-size:12.5px;">${dday}</span></td>
-        <td style="white-space:nowrap;">${_schedActions(item)}</td>
-      </tr>`;
-    }).join('');
-
-    const urgentCount = scheduledItems.filter(item => item.targetDate <= days7LaterStr && item.targetDate > today).length;
-    const extraDesc = urgentCount > 0 ? `7일 이내 도래 ${urgentCount}건 — ` : '';
-    renderOuterCard('scheduled', 'fas fa-calendar-check', '#0284c7', '예정 사항', scheduledItems.length,
-      extraDesc + '계약예정·갱신예정·해지예정·만료예정 통합', ['직원명','고용형태','구분','해당일','D-day','관리'], rows, 'cont-alert-scheduled');
-  }
+  // (예정 사항 렌더링은 아래에서 처리)
 
   // ═══════════════════════════════════════════
   // CARD 2: 임시저장 중인 근로계약서
@@ -311,6 +274,46 @@ function _renderContCoSummaryCards(){
     if(severanceCount>0) extraDesc.push(`해고예고수당 ${severanceCount}명`);
     renderCard('probation', 'fas fa-user-clock', '#0f766e', '관리가 필요한 수습 근로자', probationTargets.length,
       (extraDesc.length>0?extraDesc.join(' · ')+' — ':'')+'수습기간 3개월 초과 시 해고예고 의무 발생', ['직원명','고용형태','수습 만료일','D-day','관리'], rows, 'cont-alert-probation');
+  }
+
+  // ── ① 예정 사항 (계약예정·갱신예정·해지예정·만료예정 통합) ──
+  if (scheduledItems.length > 0) {
+    function _schedActions(item) {
+      const cid = item.contract.id;
+      switch (item.type) {
+        case 'pending':
+          return `<button onclick="viewContract('${cid}')" class="btn btn-sm btn-indigo"><i class="fas fa-search"></i> 조회</button>
+                  <button onclick="openContractModal('${cid}', currentContCompanyId)" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i> 수정 및 재발행</button>
+                  <button onclick="_cancelPendingFromList('${cid}')" class="btn btn-sm btn-secondary"><i class="fas fa-ban"></i> 계약취소</button>`;
+        case 'renewal':
+        case 'terminate':
+          return `<button onclick="viewContract('${cid}')" class="btn btn-sm btn-indigo"><i class="fas fa-search"></i> 조회</button>
+                  <button onclick="openContractModal('${cid}', currentContCompanyId)" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i> 수정</button>`;
+        default:
+          return `<button onclick="viewContract('${cid}')" class="btn btn-sm btn-indigo"><i class="fas fa-search"></i> 조회</button>`;
+      }
+    }
+
+    const schedRows = scheduledItems.map(item => {
+      const c = item.contract;
+      const emp = allEmployees.find(e=>e.id===c.employee_id);
+      const diff = Math.ceil((new Date(item.targetDate)-new Date(today))/(1000*60*60*24));
+      const dday = diff > 0 ? `D-${diff}` : diff === 0 ? 'D-day' : `D+${Math.abs(diff)}`;
+      const ddayColor = diff <= 7 ? '#dc2626' : '#6b7280';
+      return `<tr>
+        ${empNameCell(c.employee_id)}
+        ${catBadgeCell(c, emp)}
+        <td><span class="badge" style="${item.badgeStyle}font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;">${item.typeLabel}</span></td>
+        <td style="font-size:12px;color:#6b7280;">${item.targetDate}</td>
+        <td><span style="font-weight:700;color:${ddayColor};font-size:12.5px;">${dday}</span></td>
+        <td style="white-space:nowrap;">${_schedActions(item)}</td>
+      </tr>`;
+    }).join('');
+
+    const schedUrgent = scheduledItems.filter(item => item.targetDate <= days7LaterStr && item.targetDate > today).length;
+    const schedExtra = schedUrgent > 0 ? `7일 이내 도래 ${schedUrgent}건 — ` : '';
+    renderOuterCard('scheduled', 'fas fa-calendar-check', '#0284c7', '예정 사항', scheduledItems.length,
+      schedExtra + '계약예정·갱신예정·해지예정·만료예정 통합', ['직원명','고용형태','구분','해당일','D-day','관리'], schedRows, 'cont-alert-scheduled');
   }
 }
 
