@@ -1991,12 +1991,22 @@ function setCTPayType(field, type){
   }
   calcContractSalary();
 }
-function _getCTPayTypeVal(field){ return _ctPayTypes[field] || 'fixed'; }
+// 항상 통상임금 포함 (pay_type 선택 불가)
+const _CT_FIXED_ALLOWANCES = new Set(['site','position','skill','license','hazard','remote_area','regular_bonus']);
+
+function _getCTPayTypeVal(field){
+  // 항상 포함 항목은 무조건 fixed, 그 외는 사용자 선택 따름 (기본값 ''=미포함)
+  if (_CT_FIXED_ALLOWANCES.has(field)) return 'fixed';
+  return _ctPayTypes[field] || '';
+}
 // 해당 수당이 월 약정임금 합산 대상인지 반환 (fixed = 매월 정기지급 = 포함, 그 외 제외)
 function _isFixedAllow(field){ return _getCTPayTypeVal(field) === 'fixed'; }
 function _resetCTPayTypes(){
-  ['site','position','skill','license','hazard','remote_area','regular_bonus','car','meal','research','communication','fitness','self_dev','book','overseas']
+  ['site','position','skill','license','hazard','remote_area','regular_bonus']
     .forEach(f=>{ _ctPayTypes[f]='fixed'; setCTPayType(f,'fixed'); });
+  // 사용자 선택 항목은 초기화 (기본값: 통상임금 미포함)
+  ['car','meal','research','communication','fitness','self_dev','book','overseas','childcare']
+    .forEach(f=>{ _ctPayTypes[f]=''; setCTPayType(f,''); });
 }
 
 // ── 근로계약 모달 — 고객사별 옵셔널 수당 show/hide ──
@@ -2066,7 +2076,7 @@ function applyCTAllowanceConfig(cfg, clearValues = false){
   }
   // 보육수당 pay_type 힌트 갱신 (통상임금 항상 제외)
   if(cfg && cfg.childcare){
-    const _ccPt = cfg.childcare_pay_type || 'fixed';
+    const _ccPt = cfg.childcare_pay_type || '';
     const ccHint = document.getElementById('ct-childcare-type-hint');
     if(ccHint){
       ccHint.textContent = '통상임금 제외';

@@ -1190,8 +1190,8 @@ function loadPIContract(){
     ? (getCompanySnapshotAt(_piLcCoId, _piLcContractTs) || allCompanies.find(c=>c.id===_piLcCoId))
     : allCompanies.find(c=>c.id===_piLcCoId);
   const _piLcCfg = _piLcCo?.allowance_config || {};
-  /** 계약서 pay_type → 없으면 회사 설정(계약 당시) fallback */
-  const _ptOf = (contractPt, cfgKey) => contractPt || _piLcCfg[`${cfgKey}_pay_type`] || (_piLcCfg[cfgKey] ? 'fixed' : '');
+  /** 계약서 pay_type → 없으면 회사 설정(계약 당시) fallback → 없으면 '' (통상임금 미포함) */
+  const _ptOf = (contractPt, cfgKey) => contractPt || _piLcCfg[`${cfgKey}_pay_type`] || '';
   // 계약 시작일 기준 allowance_config 적용 (show/hide)
   applyPIAllowanceConfig(_piLcCfg || null);
 

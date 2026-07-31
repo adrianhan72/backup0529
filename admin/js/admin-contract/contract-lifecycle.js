@@ -358,13 +358,13 @@ function generateContractHTMLFromData(c, emp, co){
   const posAllow          = parseFloat(c.position_allowance||0);
   // 차량지원비 = 구 교통비 + 구 자가운전보조금 합산 (레거시 하위호환)
   const carAllow          = parseFloat(c.transportation_allowance||c.car_maintenance||0) + parseFloat(c.self_driving_allowance||0);
-  const carPayType        = c.transportation_pay_type||c.self_driving_pay_type||'fixed';
+  const carPayType        = c.transportation_pay_type||c.self_driving_pay_type||'';
   const remoteAreaAllow   = parseFloat(c.remote_area_allowance||0);
   // remoteAreaPayType: 항상 'fixed' — 선언 생략
   const mealAllow         = parseFloat(c.meal_allowance||0);
-  const mealPayType       = c.meal_pay_type||'fixed';
+  const mealPayType       = c.meal_pay_type||'';
   const researchAllow     = parseFloat(c.research_allowance||0);
-  const researchPayType   = c.research_pay_type||'fixed';
+  const researchPayType   = c.research_pay_type||'';
   const siteAllow         = parseFloat(c.site_allowance||0);
   const skillAllow        = parseFloat(c.skill_allowance||0);
   const licenseAllow      = parseFloat(c.license_allowance||0);
@@ -374,15 +374,15 @@ function generateContractHTMLFromData(c, emp, co){
   try { customOrdinaryItems = JSON.parse(c.custom_ordinary_values||'[]'); } catch(e){}
   if(!Array.isArray(customOrdinaryItems)) customOrdinaryItems = [];
   const commAllow         = parseFloat(c.communication_allowance||0);
-  const commPayType       = c.communication_pay_type||'fixed';
+  const commPayType       = c.communication_pay_type||'';
   const fitnessAllow      = parseFloat(c.fitness_allowance||0);
-  const fitnessPayType    = c.fitness_pay_type||'fixed';
+  const fitnessPayType    = c.fitness_pay_type||'';
   const selfDevAllow      = parseFloat(c.self_dev_allowance||0);
-  const selfDevPayType    = c.self_dev_pay_type||'fixed';
+  const selfDevPayType    = c.self_dev_pay_type||'';
   const bookAllow         = parseFloat(c.book_allowance||0);
-  const bookPayType       = c.book_pay_type||'fixed';
+  const bookPayType       = c.book_pay_type||'';
   const overseasAllow     = parseFloat(c.overseas_allowance||0);
-  const overseasPayType   = c.overseas_pay_type||'fixed';
+  const overseasPayType   = c.overseas_pay_type||'';
   // acfg: allowance_config가 있으면 그 키 값으로 제어, 없으면 null (값>0이면 무조건 표시)
   const _rawAcfg = (co && co.allowance_config) ? co.allowance_config : null;
   // acfgShow(key, amount): allowance_config 없으면 amount>0으로만 판단, 있으면 cfg[key] && amount>0
@@ -1937,26 +1937,26 @@ function openRecontractModal(srcContract){
   setAmountVal('ct-position',    srcContract.position_allowance||0);
   // 차량지원비 = 구 교통비 + 구 자가운전보조금 합산 (레거시 하위호환)
   setAmountVal('ct-car', (parseFloat(srcContract.transportation_allowance||srcContract.car_maintenance||0)) + (parseFloat(srcContract.self_driving_allowance||0)));
-  setCTPayType('car', srcContract.transportation_pay_type||srcContract.self_driving_pay_type||'fixed');
+  setCTPayType('car', srcContract.transportation_pay_type||srcContract.self_driving_pay_type||'');
   setAmountVal('ct-remote-area', srcContract.remote_area_allowance||0);
   // remote-area는 통상임금 항상 포함 — pay_type 세팅 불필요
   setAmountVal('ct-meal',        srcContract.meal_allowance||200000);
-  setCTPayType('meal',           srcContract.meal_pay_type||'fixed');
+  setCTPayType('meal',           srcContract.meal_pay_type||'');
   setAmountVal('ct-research',    srcContract.research_allowance||0);
-  setCTPayType('research',       srcContract.research_pay_type||'fixed');
+  setCTPayType('research',       srcContract.research_pay_type||'');
   setAmountVal('ct-site',        srcContract.site_allowance||0);
   setAmountVal('ct-skill',       srcContract.skill_allowance||0);
   setAmountVal('ct-license',     srcContract.license_allowance||0);
   setAmountVal('ct-communication',srcContract.communication_allowance||0);
-  setCTPayType('communication',  srcContract.communication_pay_type||'fixed');
+  setCTPayType('communication',  srcContract.communication_pay_type||'');
   setAmountVal('ct-fitness',     srcContract.fitness_allowance||0);
-  setCTPayType('fitness',        srcContract.fitness_pay_type||'fixed');
+  setCTPayType('fitness',        srcContract.fitness_pay_type||'');
   setAmountVal('ct-self-dev',    srcContract.self_dev_allowance||0);
-  setCTPayType('self_dev',       srcContract.self_dev_pay_type||'fixed');
+  setCTPayType('self_dev',       srcContract.self_dev_pay_type||'');
   setAmountVal('ct-book',        srcContract.book_allowance||0);
-  setCTPayType('book',           srcContract.book_pay_type||'fixed');
+  setCTPayType('book',           srcContract.book_pay_type||'');
   setAmountVal('ct-overseas',    srcContract.overseas_allowance||0);
-  setCTPayType('overseas',       srcContract.overseas_pay_type||'fixed');
+  setCTPayType('overseas',       srcContract.overseas_pay_type||'');
   // 보육수당 복원
   setAmountVal('ct-childcare',   srcContract.childcare_allowance||0);
   { const _ccDep=document.getElementById('ct-childcare-dependents'); if(_ccDep) _ccDep.value=srcContract.childcare_dependents||0; }
@@ -2702,7 +2702,7 @@ async function saveDraftContract(reason){
     transportation_allowance:carDraft,
     transportation_pay_type: _getCTPayTypeVal('car'),
     self_driving_allowance:  0,
-    self_driving_pay_type:   'fixed',
+    self_driving_pay_type:   _getCTPayTypeVal('car'),
     remote_area_allowance:   remoteAreaDraft,
     remote_area_pay_type:    'fixed', // 벽지수당 항상 통상임금 포함
     meal_allowance:          mealDraft,
@@ -3814,7 +3814,7 @@ async function saveContract(){
     const _hasBothFilesEdit = !!(signedFileData && consentFileData);
   }
 
-  const body={employee_id:empId,company_id:coId,contract_start:contractStart,contract_end:contractEnd,contract_type:contractType,status:contractStatus,probation_months:probMonths,probation_pct:probPct,probation_amt:probAmt,probation_basis:probBasis,probation_end_date:document.getElementById('ct-probation-end-date')?.value||null,work_hours_per_day:avgDayHours,work_days_per_week:isDailySave?0:workDaysCount,schedule_json:JSON.stringify(scheduleJSON),annual_leave_days:parseFloat(document.getElementById('ct-annual')?.value)||15,pre_used_annual_leave:parseFloat(document.getElementById('ct-pre-used-annual')?.value)||0,annual_salary:annual,monthly_salary_agreed:monthly,base_salary:baseSalaryForSave,daily_wage:dailyWageForSave,weekly_holiday_pay:weeklyHol,fixed_ot_pay:getAmountVal('ct-fixed-ot-pay'),fixed_ot_hours:parseFloat(document.getElementById('ct-fixed-ot-hours')?.value)||0,fixed_night_pay:getAmountVal('ct-fixed-night-pay'),fixed_night_hours:parseFloat(document.getElementById('ct-fixed-night-hours')?.value)||0,fixed_hol_pay:getAmountVal('ct-fixed-hol-pay'),fixed_hol_hours:parseFloat(document.getElementById('ct-fixed-hol-hours')?.value)||0,hourly_wage:hourlyWage,position_allowance:getAmountVal('ct-position'),transportation_allowance:getAmountVal('ct-car'),transportation_pay_type:_getCTPayTypeVal('car'),self_driving_allowance:0,self_driving_pay_type:'fixed',remote_area_allowance:getAmountVal('ct-remote-area'),remote_area_pay_type:'fixed',meal_allowance:getAmountVal('ct-meal'),meal_pay_type:_getCTPayTypeVal('meal'),research_allowance:getAmountVal('ct-research'),research_pay_type:_getCTPayTypeVal('research'),site_allowance:getAmountVal('ct-site'),skill_allowance:getAmountVal('ct-skill'),license_allowance:getAmountVal('ct-license'),hazard_allowance:getAmountVal('ct-hazard'),custom_ordinary_values:JSON.stringify(typeof _getCustomOrdinaryValues==='function'?_getCustomOrdinaryValues():[]),communication_allowance:getAmountVal('ct-communication'),communication_pay_type:_getCTPayTypeVal('communication'),fitness_allowance:getAmountVal('ct-fitness'),fitness_pay_type:_getCTPayTypeVal('fitness'),self_dev_allowance:getAmountVal('ct-self-dev'),self_dev_pay_type:_getCTPayTypeVal('self_dev'),book_allowance:getAmountVal('ct-book'),book_pay_type:_getCTPayTypeVal('book'),overseas_allowance:getAmountVal('ct-overseas'),overseas_pay_type:_getCTPayTypeVal('overseas'),car_maintenance:getAmountVal('ct-car'),regular_bonus:getAmountVal('ct-regular-bonus')||0,childcare_allowance:getAmountVal('ct-childcare')||0,childcare_dependents:parseInt(document.getElementById('ct-childcare-dependents')?.value||0)||0,childcare_pay_type:_getCTPayTypeVal('childcare'),pay_period:document.getElementById('ct-pay-period')?.value.trim()||'',pay_period_month:document.getElementById('ct-pay-period-month-hidden')?.value||null,pay_period_day:parseInt(document.getElementById('ct-pay-period-day-hidden')?.value)||null,pay_day:parseInt(document.getElementById('ct-pay-day')?.value)||null,insurance_employment:true,insurance_industrial:true,insurance_pension:true,insurance_health:true,note:document.getElementById('ct-note').value,salary_start_date:document.getElementById('ct-salary-start')?.value||'',salary_end_date:document.getElementById('ct-salary-end')?.value||'',is_draft:false,draft_saved_at:null,signed_file_name:signedFileName,signed_file_data:signedFileData,consent_file_name:consentFileName,consent_file_data:consentFileData};
+  const body={employee_id:empId,company_id:coId,contract_start:contractStart,contract_end:contractEnd,contract_type:contractType,status:contractStatus,probation_months:probMonths,probation_pct:probPct,probation_amt:probAmt,probation_basis:probBasis,probation_end_date:document.getElementById('ct-probation-end-date')?.value||null,work_hours_per_day:avgDayHours,work_days_per_week:isDailySave?0:workDaysCount,schedule_json:JSON.stringify(scheduleJSON),annual_leave_days:parseFloat(document.getElementById('ct-annual')?.value)||15,pre_used_annual_leave:parseFloat(document.getElementById('ct-pre-used-annual')?.value)||0,annual_salary:annual,monthly_salary_agreed:monthly,base_salary:baseSalaryForSave,daily_wage:dailyWageForSave,weekly_holiday_pay:weeklyHol,fixed_ot_pay:getAmountVal('ct-fixed-ot-pay'),fixed_ot_hours:parseFloat(document.getElementById('ct-fixed-ot-hours')?.value)||0,fixed_night_pay:getAmountVal('ct-fixed-night-pay'),fixed_night_hours:parseFloat(document.getElementById('ct-fixed-night-hours')?.value)||0,fixed_hol_pay:getAmountVal('ct-fixed-hol-pay'),fixed_hol_hours:parseFloat(document.getElementById('ct-fixed-hol-hours')?.value)||0,hourly_wage:hourlyWage,position_allowance:getAmountVal('ct-position'),transportation_allowance:getAmountVal('ct-car'),transportation_pay_type:_getCTPayTypeVal('car'),self_driving_allowance:0,self_driving_pay_type:_getCTPayTypeVal('car'),remote_area_allowance:getAmountVal('ct-remote-area'),remote_area_pay_type:'fixed',meal_allowance:getAmountVal('ct-meal'),meal_pay_type:_getCTPayTypeVal('meal'),research_allowance:getAmountVal('ct-research'),research_pay_type:_getCTPayTypeVal('research'),site_allowance:getAmountVal('ct-site'),skill_allowance:getAmountVal('ct-skill'),license_allowance:getAmountVal('ct-license'),hazard_allowance:getAmountVal('ct-hazard'),custom_ordinary_values:JSON.stringify(typeof _getCustomOrdinaryValues==='function'?_getCustomOrdinaryValues():[]),communication_allowance:getAmountVal('ct-communication'),communication_pay_type:_getCTPayTypeVal('communication'),fitness_allowance:getAmountVal('ct-fitness'),fitness_pay_type:_getCTPayTypeVal('fitness'),self_dev_allowance:getAmountVal('ct-self-dev'),self_dev_pay_type:_getCTPayTypeVal('self_dev'),book_allowance:getAmountVal('ct-book'),book_pay_type:_getCTPayTypeVal('book'),overseas_allowance:getAmountVal('ct-overseas'),overseas_pay_type:_getCTPayTypeVal('overseas'),car_maintenance:getAmountVal('ct-car'),regular_bonus:getAmountVal('ct-regular-bonus')||0,childcare_allowance:getAmountVal('ct-childcare')||0,childcare_dependents:parseInt(document.getElementById('ct-childcare-dependents')?.value||0)||0,childcare_pay_type:_getCTPayTypeVal('childcare'),pay_period:document.getElementById('ct-pay-period')?.value.trim()||'',pay_period_month:document.getElementById('ct-pay-period-month-hidden')?.value||null,pay_period_day:parseInt(document.getElementById('ct-pay-period-day-hidden')?.value)||null,pay_day:parseInt(document.getElementById('ct-pay-day')?.value)||null,insurance_employment:true,insurance_industrial:true,insurance_pension:true,insurance_health:true,note:document.getElementById('ct-note').value,salary_start_date:document.getElementById('ct-salary-start')?.value||'',salary_end_date:document.getElementById('ct-salary-end')?.value||'',is_draft:false,draft_saved_at:null,signed_file_name:signedFileName,signed_file_data:signedFileData,consent_file_name:consentFileName,consent_file_data:consentFileData};
 
   // 재계약 연장 페어: renewed_from_id 추가 (기존 계약과 연속되는 경우)
   if(_recontractSourceId){
