@@ -176,8 +176,16 @@
 .cont-alert-card-chevron{font-size:11px;transition:transform .2s;}
     .cont-alert-card-chevron.open{transform:rotate(180deg);}
     /* cont-alert-card chevron 버튼 wrapper */
-    .cont-alert-card-chevron-btn{width:26px;height:26px;border-radius:8px;background:#d1d5db;color:#fff;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;transition:background .15s;margin-left:8px;}
+    .cont-alert-card-chevron-btn{width:26px;height:26px;border-radius:8px;color:#fff;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;transition:background .15s;margin-left:8px;}
     .cont-alert-card-chevron-btn .cont-alert-card-chevron{font-size:12px;}
+    /* 카드 유형별 chevron 버튼 배경색 = 카드 테두리색 */
+    .cont-alert-draft .cont-alert-card-chevron-btn{background:#fcd34d;}
+    .cont-alert-docs .cont-alert-card-chevron-btn{background:#3b82f6;}
+    .cont-alert-renew .cont-alert-card-chevron-btn{background:#f472b6;}
+    .cont-alert-pending .cont-alert-card-chevron-btn{background:#a5b4fc;}
+    .cont-alert-renew-terminate .cont-alert-card-chevron-btn{background:#c084fc;}
+    .cont-alert-preterminate .cont-alert-card-chevron-btn{background:#22c55e;}
+    .cont-alert-probation .cont-alert-card-chevron-btn{background:#2dd4bf;}
     .cont-alert-card-body{border-top:1px solid rgba(0,0,0,.07);background:#fff;}
     .cont-alert-table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:12.5px;}
     .cont-alert-table thead tr{background:#f1f5f9;border-bottom:2px solid #e2e8f0;}
