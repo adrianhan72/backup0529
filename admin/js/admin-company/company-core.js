@@ -1114,6 +1114,44 @@ function _cmValEqual(a, b){
   return na === nb;
 }
 
+/** 사업자등록번호 실시간 유효성 검사 */
+function _validateBizNumber() {
+  const el = document.getElementById('cm-biz');
+  const hint = document.getElementById('cm-biz-hint');
+  if (!el || !hint) return true;
+  const raw = el.value.trim();
+  hint.classList.remove('va-err', 'va-ok');
+  hint.textContent = '';
+  el.classList.remove('va-input-err');
+  if (!raw) return false;
+
+  const digits = raw.replace(/[^0-9]/g, '');
+  if (digits.length !== 10 || !/^\d{10}$/.test(digits)) {
+    hint.textContent = '사업자등록번호는 10자리 숫자여야 합니다 (예: 000-00-00000)';
+    hint.classList.add('va-err');
+    el.classList.add('va-input-err');
+    return false;
+  }
+
+  const weights = [1, 3, 7, 1, 3, 7, 1, 3, 5];
+  let sum = 0;
+  for (let i = 0; i < 9; i++) {
+    sum += parseInt(digits[i]) * weights[i];
+  }
+  sum += Math.floor((parseInt(digits[8]) * 5) / 10);
+  const check = (10 - (sum % 10)) % 10;
+  if (check !== parseInt(digits[9])) {
+    hint.textContent = '유효하지 않은 사업자등록번호입니다';
+    hint.classList.add('va-err');
+    el.classList.add('va-input-err');
+    return false;
+  }
+
+  hint.textContent = '유효한 사업자등록번호입니다';
+  hint.classList.add('va-ok');
+  return true;
+}
+
 async function saveCompany(){
   const code=document.getElementById('cm-code').value || generateAccessCode();
 
@@ -1136,6 +1174,7 @@ async function saveCompany(){
 
   if(!_cmRequire('cm-name',           '회사명을 입력하세요.'))            return;
   if(!_cmRequire('cm-biz',            '사업자등록번호를 입력하세요.'))     return;
+  if(!_validateBizNumber()) return;
   if(!_cmRequire('cm-contract-start', '자문계약 시작일을 입력하세요.'))    return;
   if(!_cmRequire('cm-addr',           '사업장 주소를 입력하세요.'))        return;
   // 급여 산정기간: 저장 전 강제 동기화 후 월·일 각각 검사 (포커스는 해당 셀렉트로)
