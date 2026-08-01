@@ -1748,19 +1748,6 @@ async function syncPairDates(oldContract, newStartDate){
 }
 
 /**
- * 페어 계약을 새 브라우저 창에서 열기 (side-by-side 비교용)
- */
-function _openContractPairWindow(contractId){
-  if(!contractId) return;
-  // 현재 선택된 고객사 정보를 sessionStorage에 저장하여 새 창에서 복원
-  try {
-    sessionStorage.setItem('_pairContractId', contractId);
-    sessionStorage.setItem('_pairCompanyId', currentContCompanyId || '');
-  } catch(e){}
-  window.open('/admin/', '_blank', 'width=1400,height=900');
-}
-
-/**
  * 페어 관계 해제: 양쪽 renewed_from_id/renewed_to_id 정리
  */
 async function breakPair(contract){

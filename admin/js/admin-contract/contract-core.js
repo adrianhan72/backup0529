@@ -586,22 +586,7 @@ function renderContracts(){
         specialBadge = `<span class="badge badge-gray">특수관계인</span>`;
       }
     }
-    // 페어 계약 링크 (새 창 비교용) — 갱신(renewal) 페어인 경우에만 표시, 수정/재발행 파기계약은 제외
-    const _isVoidedAmend = c.status === CONTRACT_STATUS.VOIDED || c.is_voided_by_amend;
-    const _rawPairId = _isVoidedAmend ? null : (c.renewed_from_id || c.renewed_to_id);
-    // 페어 상대방도 파기계약이면 갱신 페어가 아니므로 비교 제외
-    let _pairId = null;
-    if(_rawPairId){
-      const _pairC = allContracts.find(x => x.id === _rawPairId);
-      if(_pairC && !(_pairC.status === CONTRACT_STATUS.VOIDED || _pairC.is_voided_by_amend)){
-        _pairId = _rawPairId;
-      }
     }
-    const _pairLink = _pairId
-      ? `<button class="btn btn-sm" style="background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;margin-right:4px;" 
-            onclick="_openContractPairWindow('${_pairId}')" title="이전 계약을 새 창에서 열어 비교할 수 있습니다.">
-            <i class="fas fa-external-link-alt"></i> 비교</button>`
-      : '';
     return `<tr>
       <td style="font-weight:600">${getEmpName(c.employee_id)}</td>
       <td style="font-size:12px;text-align:center;">${emp?.gender==='female'||emp?.gender==='여성'||emp?.gender==='여'?'여':emp?.gender==='male'||emp?.gender==='남성'||emp?.gender==='남'?'남':'-'}</td>
@@ -632,7 +617,6 @@ function renderContracts(){
           ? `<button class="btn btn-sm btn-secondary" onclick="deleteContract('${c.id}')"><i class="fas fa-trash-alt"></i> 삭제</button>`
           : ''
         }
-        ${_pairLink}
       </td>
     </tr>`;
   }).join('');
@@ -2200,13 +2184,12 @@ function viewContract(id){
     if(el) el.textContent = '';
   });
 
-  // ── 갱신 계약 연관 링크 (수정/재발행 파기계약은 페어에서 제외) ──
+  // ── 갱신 계약 연관 링크 ──
   const _renewLinkEl = document.getElementById('ct-renew-link');
   if(_renewLinkEl && c){
     let renewHTML = '';
     const _isVoidedAmend = c.status === CONTRACT_STATUS.VOIDED || c.is_voided_by_amend;
     const _rawPairId = _isVoidedAmend ? null : (c.renewed_from_id || c.renewed_to_id);
-    // 페어 상대방도 파기계약이면 갱신 페어가 아니므로 비교 제외
     let _pairId = null;
     if(_rawPairId){
       const _pairC = allContracts.find(x => x.id === _rawPairId);
@@ -2218,10 +2201,7 @@ function viewContract(id){
       const _isFrom = !!c.renewed_from_id;
       const _label = _isFrom ? '원본 계약' : '갱신 계약';
       renewHTML = `<span style="font-size:11px;color:#6366f1;cursor:pointer;margin-right:4px;" onclick="viewContract('${_pairId}')" title="${_label} 보기">
-        <i class="fas fa-link"></i> ${_label}</span>
-      <span style="font-size:10px;color:#d1d5db;margin:0 3px;">|</span>
-      <span style="font-size:11px;color:#059669;cursor:pointer;" onclick="_openContractPairWindow('${_pairId}')" title="이전 계약을 새 창에서 열어 비교할 수 있습니다.">
-        <i class="fas fa-external-link-alt"></i> 비교</span>`;
+        <i class="fas fa-link"></i> ${_label}</span>`;
     }
     _renewLinkEl.innerHTML = renewHTML;
     _renewLinkEl.style.display = renewHTML ? 'inline-block' : 'none';
