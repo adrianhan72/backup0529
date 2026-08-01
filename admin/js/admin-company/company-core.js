@@ -891,6 +891,19 @@ function openCompanyModal(id=null){
       if(_draftReps.length === 0) _draftReps = [{ name: '', phone: '', email: '' }];
       _draftReps.forEach(r => _cmAddRepRow(r));
       document.getElementById('cm-rep').value = _draftReps[0]?.name || '';
+      // 등기임원 복원
+      _cmExecutives = [];
+      if(c.draft_executives){
+        try { _cmExecutives = typeof c.draft_executives === 'string' ? JSON.parse(c.draft_executives) : c.draft_executives; } catch(e){ _cmExecutives = []; }
+      }
+      _cmRenderExecutives();
+      // 특수관계인 복원
+      _cmRelatedParties = [];
+      if(c.draft_related_parties){
+        try { _cmRelatedParties = typeof c.draft_related_parties === 'string' ? JSON.parse(c.draft_related_parties) : c.draft_related_parties; } catch(e){ _cmRelatedParties = []; }
+      }
+      _cmRenderRelated();
+      _cmSuggestAllEmpNos();
       _cmPeriodRestore(c.pay_period||'', c.pay_period_month||null, c.pay_period_day!=null?c.pay_period_day:null);
       document.getElementById('cm-payday').value=c.pay_day||'';
       document.getElementById('cm-note').value=c.note||'';
@@ -1019,11 +1032,17 @@ async function saveDraftCompany(){
   document.getElementById('cm-phone').value = _draftReps[0]?.phone || '';
   document.getElementById('cm-email').value = _draftReps[0]?.email || '';
 
+  // 등기임원·특수관계인 수집
+  const _draftExecs = _cmCollectExecutives();
+  const _draftRels  = _cmCollectRelated();
+
   const draftBody = {
     company_name:    name,
     business_number: document.getElementById('cm-biz').value.trim(),
     representative:  document.getElementById('cm-rep').value.trim(),
     representatives: JSON.stringify(_draftReps),
+    draft_executives: JSON.stringify(_draftExecs),
+    draft_related_parties: JSON.stringify(_draftRels),
     industry:        document.getElementById('cm-industry').value.trim(),
     address:         document.getElementById('cm-addr').value.trim(),
     phone:           document.getElementById('cm-phone').value.trim(),
