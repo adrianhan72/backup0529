@@ -43,26 +43,26 @@ function _renderContCoSummaryCards(){
   const days7LaterStr = days7Later.toISOString().slice(0,10);
 
   // ── 발생사유 판별 헬퍼 ──
+  function _getNameKey(name) {
+    return (name || '').replace(/[0-9]+$/, '').trim();
+  }
   function _getPastEmpIds(emp) {
-    if (!emp || !emp.id_number || !emp.phone) return new Set();
-    const idPre = emp.id_number.replace(/[^0-9]/g, '').slice(0, 6);
-    const phone = emp.phone.replace(/[^0-9]/g, '');
-    if (!idPre || !phone) return new Set();
+    if (!emp || !emp.id_number || !emp.name) return new Set();
+    const idPre = emp.id_number.replace(/[^0-9]/g, '').slice(0, 7);
+    const nameKey = _getNameKey(emp.name);
+    if (!idPre || !nameKey) return new Set();
     const matched = (allEmployees || []).filter(e =>
       e.id !== emp.id &&
-      (e.id_number || '').replace(/[^0-9]/g, '').slice(0, 6) === idPre &&
-      (e.phone || '').replace(/[^0-9]/g, '') === phone
+      _getNameKey(e.name) === nameKey &&
+      (e.id_number || '').replace(/[^0-9]/g, '').slice(0, 7) === idPre
     );
     return new Set(matched.map(e => e.id));
   }
-  function _hasPastContracts(empId, pastEmpIds, excludeContractId) {
-    const checkIds = new Set(pastEmpIds);
-    checkIds.add(empId);
+  function _hasOwnPastContracts(empId, excludeContractId) {
     return (allContracts || []).some(c =>
-      c.id !== excludeContractId &&
+      c.id !== excludeContractId && c.employee_id === empId &&
       !c.is_draft && !c.is_voided_by_amend &&
-      ![CONTRACT_STATUS.VOIDED].includes(c.status) &&
-      checkIds.has(c.employee_id)
+      [CONTRACT_STATUS.TERMINATED, CONTRACT_STATUS.EXPIRED].includes(c.status)
     );
   }
 
@@ -97,8 +97,14 @@ function _renderContCoSummaryCards(){
       if (activeProbation && !isProbationType) {
         reason = '수습만료';
       } else {
+        const hasOwn = _hasOwnPastContracts(c.employee_id, c.id);
         const pastEmpIds = _getPastEmpIds(emp);
-        const hasPast = _hasPastContracts(c.employee_id, pastEmpIds, c.id);
+        const hasCross = pastEmpIds.size > 0 && (allContracts || []).some(x =>
+          x.id !== c.id && !x.is_draft && !x.is_voided_by_amend &&
+          [CONTRACT_STATUS.TERMINATED, CONTRACT_STATUS.EXPIRED].includes(x.status) &&
+          pastEmpIds.has(x.employee_id)
+        );
+        const hasPast = hasOwn || hasCross;
         if (!hasPast) {
           reason = '신규입사';
         } else if (emp?.hire_date && emp.hire_date === c.contract_start) {
