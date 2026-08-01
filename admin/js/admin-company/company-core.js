@@ -1013,10 +1013,17 @@ async function saveDraftCompany(){
   const name = document.getElementById('cm-name').value.trim();
   if(!name) return toast('회사명을 먼저 입력하세요.', 'error');
 
+  // 대표자 정보 hidden 필드 동기화
+  const _draftReps = _cmCollectReps();
+  document.getElementById('cm-rep').value = _draftReps[0]?.name || '';
+  document.getElementById('cm-phone').value = _draftReps[0]?.phone || '';
+  document.getElementById('cm-email').value = _draftReps[0]?.email || '';
+
   const draftBody = {
     company_name:    name,
     business_number: document.getElementById('cm-biz').value.trim(),
     representative:  document.getElementById('cm-rep').value.trim(),
+    representatives: JSON.stringify(_draftReps),
     industry:        document.getElementById('cm-industry').value.trim(),
     address:         document.getElementById('cm-addr').value.trim(),
     phone:           document.getElementById('cm-phone').value.trim(),
