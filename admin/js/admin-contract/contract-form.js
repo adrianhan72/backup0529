@@ -533,7 +533,7 @@ function _autoCalcProbationEndDate(){
     if(contractEnd && endStr > contractEnd){
       // 수습 종료일이 계약 종료일을 초과 → 경고 표시 + 수습기간 select 테두리 강조
       if(monthsEl){
-        monthsEl.style.borderColor = '#ef4444';
+        monthsEl.classList.add('va-input-err');
         monthsEl.style.boxShadow = '0 0 0 2px rgba(239,68,68,.2)';
       }
       const infoBox = document.getElementById('ct-prob-info-box');
@@ -547,7 +547,7 @@ function _autoCalcProbationEndDate(){
     } else if(contractEnd){
       // 정상: 수습 종료일 ≤ 계약 종료일 → 계약 종료일 읽기전용 잠금
       if(monthsEl){
-        monthsEl.style.borderColor = '';
+        monthsEl.classList.remove('va-input-err');
         monthsEl.style.boxShadow = '';
       }
       const infoBox2 = document.getElementById('ct-prob-info-box');

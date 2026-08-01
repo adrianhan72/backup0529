@@ -525,8 +525,8 @@ function _renderCpRegistrationUpload(){
       </div>
       <div class="upload-zone" id="cp-upload-zone"
         onclick="document.getElementById('cp-file-input').click()"
-        ondragover="event.preventDefault();this.style.borderColor='#6366f1';"
-        ondragleave="this.style.borderColor='';"
+        ondragover="event.preventDefault();this.classList.add('va-input-err');"
+        ondragleave="this.classList.remove('va-input-err');"
         ondrop="handleContractFileDrop(event)">
         <div class="upload-zone-icon">📄</div>
         <div class="upload-zone-text">날인된 근로계약서를 업로드하세요</div>
@@ -550,8 +550,8 @@ function _renderCpRegistrationUpload(){
       </div>
       <div class="upload-zone" id="cp-consent-zone"
         onclick="document.getElementById('cp-consent-input').click()"
-        ondragover="event.preventDefault();this.style.borderColor='#7c3aed';"
-        ondragleave="this.style.borderColor='';"
+        ondragover="event.preventDefault();this.classList.add('va-input-err');"
+        ondragleave="this.classList.remove('va-input-err');"
         ondrop="handleConsentFileDrop(event)"
         style="border-color:#c4b5fd;">
         <div class="upload-zone-icon">🤝</div>
@@ -671,7 +671,7 @@ function handleContractFileSelect(e){
 }
 function handleContractFileDrop(e){
   e.preventDefault();
-  e.currentTarget.style.borderColor = '';
+  e.currentTarget.classList.remove('va-input-err');
   const file = e.dataTransfer.files[0];
   if(file) _setContractFile(file);
 }
@@ -702,7 +702,7 @@ function handleConsentFileSelect(e){
 }
 function handleConsentFileDrop(e){
   e.preventDefault();
-  e.currentTarget.style.borderColor = '';
+  e.currentTarget.classList.remove('va-input-err');
   const file = e.dataTransfer.files[0];
   if(file) _setConsentFile(file);
 }

@@ -1758,7 +1758,7 @@ function _cmSuggestRelEmpNo(idx) {
 
 // ── 사원번호 중복 검사 (대표자/등기임원/특수관계인 공통) ──
 function _cmCheckEmpNoDup(el) {
-  if (!el || !el.value.trim()) { if(el) el.style.borderColor = ''; _cmEmpNoHint(el, '', ''); return; }
+  if (!el || !el.value.trim()) { if(el) el.classList.remove('va-input-err'); _cmEmpNoHint(el, '', ''); return; }
   const coId = editId.company;
   if (!coId) { _cmEmpNoHint(el, '', ''); return; }
   const empNo = el.value.trim();

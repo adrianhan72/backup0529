@@ -106,7 +106,7 @@ function openAdminAccountModal(){
   }
   ['aa-input-id','aa-input-name','aa-input-pw','aa-input-pw2'].forEach(id=>{
     const el = document.getElementById(id);
-    if(el){ el.value=''; el.style.borderColor=''; }
+    if(el){ el.value=''; el.classList.remove('va-input-err'); }
   });
   ['aa-err-id','aa-err-name','aa-err-pw','aa-err-pw2'].forEach(id=>{
     const el = document.getElementById(id);
@@ -222,7 +222,7 @@ function openChangeNameModal(id, currentName){
 
   const inp = document.getElementById('aa-name-input');
   const err = document.getElementById('aa-name-err');
-  if(inp){ inp.value = currentName || ''; inp.style.borderColor = ''; }
+  if(inp){ inp.value = currentName || ''; inp.classList.remove('va-input-err'); }
   if(err) err.style.display = 'none';
 
   const btn = document.getElementById('aa-name-submit-btn');
@@ -244,16 +244,16 @@ async function submitChangeName(){
   const val = (inp?.value || '').trim();
 
   // 유효성 검사
-  if(inp) inp.style.borderColor = '';
+  if(inp) inp.classList.remove('va-input-err');
   if(err) err.style.display = 'none';
   if(!val){
-    if(inp) inp.style.borderColor = '#ef4444';
+    if(inp) inp.classList.add('va-input-err');
     if(err){ err.textContent = '표시 이름을 입력하세요.'; err.style.display = 'block'; }
     if(inp) inp.focus();
     return;
   }
   if(val.length > 20){
-    if(inp) inp.style.borderColor = '#ef4444';
+    if(inp) inp.classList.add('va-input-err');
     if(err){ err.textContent = '20자 이하로 입력하세요.'; err.style.display = 'block'; }
     if(inp) inp.focus();
     return;
@@ -312,7 +312,7 @@ function openChangePwModal(id, username, displayName){
   // 필드·에러 초기화
   ['aa-cpw-new','aa-cpw-new2'].forEach(id=>{
     const el = document.getElementById(id);
-    el.value = ''; el.type = 'password'; el.style.borderColor = '';
+    el.value = ''; el.type = 'password'; el.classList.remove('va-input-err');
   });
   document.getElementById('aa-cpw-eye1').className = 'fas fa-eye';
   document.getElementById('aa-cpw-eye2').className = 'fas fa-eye';
@@ -332,12 +332,12 @@ function openChangePwModal(id, username, displayName){
 function _cpwFieldErr(inputId, errId, msg){
   const inp = document.getElementById(inputId);
   const err = document.getElementById(errId);
-  inp.style.borderColor = '#ef4444';
+  inp.classList.add('va-input-err');
   err.textContent = msg; err.style.display = 'block';
   inp.focus();
 }
 function _cpwFieldOk(inputId, errId){
-  document.getElementById(inputId).style.borderColor = '';
+  document.getElementById(inputId).classList.remove('va-input-err');
   document.getElementById(errId).style.display = 'none';
 }
 

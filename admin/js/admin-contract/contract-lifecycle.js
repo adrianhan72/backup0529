@@ -1229,11 +1229,11 @@ function _validateRenewNewStart(oldEnd){
   }
   if(ns <= oldEnd){
     if(newStartErr){ newStartErr.textContent = '신규 계약 시작일은 기존 계약 해지일보다 이후여야 합니다.'; newStartErr.style.display = 'block'; }
-    newStartEl.style.borderColor = '#dc2626';
+    newStartEl.classList.add('va-input-err');
     return false;
   }
   if(newStartErr) newStartErr.style.display = 'none';
-  newStartEl.style.borderColor = '#93c5fd';
+  // auto-set to valid state (remove error if any)
   return true;
 }
 

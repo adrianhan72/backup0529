@@ -1300,7 +1300,7 @@ function _lpDoSearch(){
   const noticeEl = document.getElementById('lp-date-notice');
   if(!fromEl || !toEl) return;
   const fromVal = fromEl.value, toVal = toEl.value;
-  const resetBorder = () => { fromEl.style.borderColor = '#d1d5db'; toEl.style.borderColor = '#d1d5db'; };
+  const resetBorder = () => { fromEl.classList.remove('va-input-err'); toEl.classList.remove('va-input-err'); };
   if(fromVal && toVal){
     const from = new Date(fromVal);
     const to = new Date(toVal);
@@ -1308,8 +1308,8 @@ function _lpDoSearch(){
       const maxFrom = new Date(to);
       maxFrom.setMonth(maxFrom.getMonth() - 3);
       if(from < maxFrom){
-        fromEl.style.borderColor = '#dc2626';
-        toEl.style.borderColor = '#dc2626';
+        fromEl.classList.add('va-input-err');
+        toEl.classList.add('va-input-err');
         if(noticeEl) noticeEl.className = 'ct-hint-error';
         toast('조회 기간은 최대 3개월까지 가능합니다.', 'error');
         return;
@@ -1428,7 +1428,7 @@ function _cenDoSearch(){
   const noticeEl = document.getElementById('cen-date-notice');
   if(!fromEl || !toEl) return;
   const fromVal = fromEl.value, toVal = toEl.value;
-  const resetBorder = () => { fromEl.style.borderColor = '#d1d5db'; toEl.style.borderColor = '#d1d5db'; };
+  const resetBorder = () => { fromEl.classList.remove('va-input-err'); toEl.classList.remove('va-input-err'); };
   if(fromVal && toVal){
     const from = new Date(fromVal);
     const to = new Date(toVal);
@@ -1436,8 +1436,8 @@ function _cenDoSearch(){
       const maxFrom = new Date(to);
       maxFrom.setMonth(maxFrom.getMonth() - 3);
       if(from < maxFrom){
-        fromEl.style.borderColor = '#dc2626';
-        toEl.style.borderColor = '#dc2626';
+        fromEl.classList.add('va-input-err');
+        toEl.classList.add('va-input-err');
         if(noticeEl) noticeEl.className = 'ct-hint-error';
         toast('조회 기간은 최대 3개월까지 가능합니다.', 'error');
         return;
