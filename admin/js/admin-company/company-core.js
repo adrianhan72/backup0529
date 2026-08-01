@@ -1903,7 +1903,7 @@ function _cmCheckRelPhone(idx) {
 
 /** 모든 사원번호 필드의 placeholder 추천값을 재계산 */
 function _cmSuggestAllEmpNos() {
-  document.querySelectorAll('[id^="cm-rep-empno-"],[id^="cm-exec-empno-"],[id^="cm-rel-empno-"]').forEach(el => {
+  document.querySelectorAll('input[id^="cm-rep-empno-"],input[id^="cm-exec-empno-"],input[id^="cm-rel-empno-"]').forEach(el => {
     if (!el.value.trim()) _cmSuggestEmpNoFor(el);
   });
 }
@@ -1912,7 +1912,7 @@ function _cmSuggestAllEmpNos() {
 function _cmRenumberAllEmpNos() {
   // 모든 사원번호 입력값 수집 → {el, value} 배열
   const entries = [];
-  document.querySelectorAll('[id^="cm-rep-empno-"],[id^="cm-exec-empno-"],[id^="cm-rel-empno-"]').forEach(el => {
+  document.querySelectorAll('input[id^="cm-rep-empno-"],input[id^="cm-exec-empno-"],input[id^="cm-rel-empno-"]').forEach(el => {
     const val = (el.value || '').trim();
     if (val) entries.push({ el, val, num: parseInt(val) || 0 });
   });
@@ -1930,7 +1930,7 @@ function _cmRenumberAllEmpNos() {
 function _cmValidateAllEmpNos() {
   const coId = editId.company;  // 수정 모드일 때만 회사 ID 있음
   const seen = {}; // { empNo: label } — 폼 내 중복 검사용
-  const allInputs = document.querySelectorAll('[id^="cm-rep-empno-"],[id^="cm-exec-empno-"],[id^="cm-rel-empno-"]');
+  const allInputs = document.querySelectorAll('input[id^="cm-rep-empno-"],input[id^="cm-exec-empno-"],input[id^="cm-rel-empno-"]');
   const errors = [];
 
   // 1) DB 기존 직원 사원번호 Set (본 회사 소속만, 자기 자신 제외)
