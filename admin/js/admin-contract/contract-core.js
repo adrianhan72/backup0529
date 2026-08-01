@@ -68,7 +68,21 @@ function _renderContCoSummaryCards(){
 
   const scheduledItems = [];
 
-  // 계약예정 + 갱신예정 (sortOrder 1~2, 구분 통합)
+  // ── 발생사유 → CSS 클래스 매핑 ──
+  function schedReasonClass(reason) {
+    const map = {
+      [SCHEDULED_REASON.NEW_HIRE]:         'sched-reason-new-hire',
+      [SCHEDULED_REASON.RE_HIRE]:          'sched-reason-re-hire',
+      [SCHEDULED_REASON.CONTRACT_RENEWAL]: 'sched-reason-contract-renewal',
+      [SCHEDULED_REASON.PROBATION_END]:    'sched-reason-probation-end',
+      [SCHEDULED_REASON.DISMISSAL]:        'sched-reason-dismissal',
+      [SCHEDULED_REASON.EXPIRY]:           'sched-reason-expiry',
+      [SCHEDULED_REASON.RESIGNATION]:      'sched-reason-resignation',
+    };
+    return map[reason] || '';
+  }
+
+  // 계약예정 + 갱신예정 (sortOrder 1, 구분 통합)
   const PROBATION_TYPES = [CONTRACT_TYPE.REGULAR_PROBATION, CONTRACT_TYPE.FIXED_PROBATION];
   allContracts.filter(c => c.company_id === coId &&
     (c.status === CONTRACT_STATUS.PENDING || c.status === CONTRACT_STATUS.RENEWAL_PENDING)
@@ -76,8 +90,6 @@ function _renderContCoSummaryCards(){
     const emp = allEmployees.find(e => e.id === c.employee_id);
     const ct = c.contract_type || emp?.employment_category || '';
     const isProbationType = PROBATION_TYPES.includes(ct);
-
-    // 현재 직원의 활성 수습 계약이 있는지 확인
     const activeProbation = isProbationType ? null : (allContracts || []).find(x =>
       x.id !== c.id && x.company_id === coId && x.employee_id === c.employee_id &&
       x.status === CONTRACT_STATUS.ACTIVE && PROBATION_TYPES.includes(x.contract_type || '')
@@ -88,14 +100,12 @@ function _renderContCoSummaryCards(){
       const paired = c.renewal_pair_id ? allContracts.find(x => x.id === c.renewal_pair_id) : null;
       targetDate = paired?.contract_start || c.renewal_date;
       if (!targetDate) return;
-      // RENEWAL_PENDING + 수습 타입 → 수습만료
-      reason = isProbationType ? '수습만료' : '계약갱신';
+      reason = isProbationType ? SCHEDULED_REASON.PROBATION_END : SCHEDULED_REASON.CONTRACT_RENEWAL;
     } else {
       targetDate = c.contract_start;
       if (!targetDate) return;
-      // PENDING + 활성 수습계약 있음 + 새 계약은 비수습 → 수습만료 (채용확정)
       if (activeProbation && !isProbationType) {
-        reason = '수습만료';
+        reason = SCHEDULED_REASON.PROBATION_END;
       } else {
         const hasOwn = _hasOwnPastContracts(c.employee_id, c.id);
         const pastEmpIds = _getPastEmpIds(emp);
@@ -106,59 +116,43 @@ function _renderContCoSummaryCards(){
         );
         const hasPast = hasOwn || hasCross;
         if (!hasPast) {
-          reason = '신규입사';
+          reason = SCHEDULED_REASON.NEW_HIRE;
         } else if (emp?.hire_date && emp.hire_date === c.contract_start) {
-          reason = '재입사';
+          reason = SCHEDULED_REASON.RE_HIRE;
         } else {
-          reason = '계약갱신';
+          reason = SCHEDULED_REASON.CONTRACT_RENEWAL;
         }
       }
     }
 
-    const reasonColors = {
-      '신규입사': 'background:#d1fae5;color:#065f46;',
-      '재입사':   'background:#d1fae5;color:#065f46;',
-      '계약갱신': 'background:#ffedd5;color:#9a3412;',
-      '수습만료': 'background:#fef9c3;color:#92400e;',
-    };
-
     scheduledItems.push({
-      type: 'pending', typeLabel: '계약예정', sortOrder: 1,
+      type: 'pending', sortOrder: 1,
       targetDate, contract: c, reason,
-      reasonBadgeStyle: reasonColors[reason] || '',
-      badgeStyle: 'background:#ede9fe;color:#5b21b6;',
     });
   });
 
   // 해지예정 (sortOrder 2)
-  const terminateReasonColors = {
-    '계약갱신': 'background:#ffedd5;color:#9a3412;',
-    '해고':   'background:#fce7f3;color:#9d174d;',
-    '만료':   'background:#f3f4f6;color:#6b7280;',
-    '사직':   'background:#f3f4f6;color:#6b7280;',
-  };
   allContracts.filter(c => c.company_id === coId && c.status === CONTRACT_STATUS.TERMINATE_PENDING
       && c.terminate_date && c.terminate_date > today)
     .forEach(c => {
       let tReason;
       if (c.renewal_pair_id) {
-        tReason = '계약갱신';
+        tReason = SCHEDULED_REASON.CONTRACT_RENEWAL;
       } else if (c.dismissal_notice_pay) {
-        tReason = '해고';
+        tReason = SCHEDULED_REASON.DISMISSAL;
       } else if (c.contract_end && c.terminate_date === c.contract_end) {
-        tReason = '만료';
+        tReason = SCHEDULED_REASON.EXPIRY;
       } else {
-        tReason = '사직';
+        tReason = SCHEDULED_REASON.RESIGNATION;
       }
       scheduledItems.push({
-        type: 'terminate', typeLabel: '해지예정', sortOrder: 2,
+        type: 'terminate', sortOrder: 2,
         targetDate: c.terminate_date, contract: c,
-        reason: tReason, reasonBadgeStyle: terminateReasonColors[tReason] || '',
-        badgeStyle: 'background:#ffe4e6;color:#9f1239;',
+        reason: tReason,
       });
     });
 
-  // 만료예정 (sortOrder 4)
+  // 만료예정 (sortOrder 3)
   allContracts.filter(c => {
     if (c.company_id !== coId) return false;
     if (c.is_draft || c.is_voided_by_amend) return false;
@@ -171,8 +165,11 @@ function _renderContCoSummaryCards(){
     return true;
   }).forEach(c => {
     scheduledItems.push({
-      type: 'expiry', typeLabel: '만료예정', sortOrder: 3,
+      type: 'expiry', sortOrder: 3,
       targetDate: c.contract_end, contract: c,
+      reason: null,
+    });
+  });
       reason: '-', reasonBadgeStyle: '',
       badgeStyle: 'background:#fce7f3;color:#9d174d;',
     });
@@ -363,23 +360,34 @@ function _renderContCoSummaryCards(){
       return `<button onclick="viewContract('${cid}')" class="btn btn-sm btn-indigo"><i class="fas fa-search"></i> 조회</button>
               <button onclick="openContractPrintModal('${cid}')" class="btn btn-sm btn-indigo"><i class="fas fa-file-contract"></i> 계약서</button>`;
     }
+    function _schedTypeInfo(item) {
+      const map = {
+        pending:   { label: CONTRACT_STATUS_LABEL[CONTRACT_STATUS.PENDING],            cls: 'sched-type-pending' },
+        terminate: { label: CONTRACT_STATUS_LABEL[CONTRACT_STATUS.TERMINATE_PENDING],  cls: 'sched-type-terminate' },
+        expiry:    { label: '만료예정',                                                 cls: 'sched-type-expiry' },
+      };
+      return map[item.type] || { label: item.type, cls: '' };
+    }
 
     const schedRows = scheduledItems.map(item => {
       const c = item.contract;
       const emp = allEmployees.find(e=>e.id===c.employee_id);
       const diff = Math.ceil((new Date(item.targetDate)-new Date(today))/(1000*60*60*24));
       const dday = diff > 0 ? `D-${diff}` : diff === 0 ? 'D-day' : `D+${Math.abs(diff)}`;
-      const ddayColor = diff <= 7 ? '#dc2626' : '#6b7280';
+      const ddayCls = diff <= 7 ? 'sched-dday sched-dday-urgent' : 'sched-dday sched-dday-normal';
+      const typeInfo = _schedTypeInfo(item);
+      const reasonLabel = item.reason ? (SCHEDULED_REASON_LABEL[item.reason] || '-') : '-';
+      const reasonCls = item.reason ? `sched-reason-badge ${schedReasonClass(item.reason)}` : '';
       return `<tr>
         ${empNameCell(c.employee_id)}
-        <td style="text-align:center;font-size:12px;">${genderLabel(emp)}</td>
-        <td style="font-size:12px;color:#6b7280;">${emp?.employee_number||'-'}</td>
+        <td class="sched-cell">${genderLabel(emp)}</td>
+        <td class="sched-cell">${emp?.employee_number||'-'}</td>
         ${catBadgeCell(c, emp)}
-        <td style="font-size:12px;color:#6b7280;">${emp?.hire_date||'-'}</td>
-        <td><span class="badge" style="${item.badgeStyle}font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;">${item.typeLabel}</span></td>
-        <td>${item.reasonBadgeStyle ? `<span class="badge" style="${item.reasonBadgeStyle}font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;">${item.reason}</span>` : `<span style="font-size:11px;color:#9ca3af;">${item.reason||'-'}</span>`}</td>
-        <td style="font-size:12px;color:#6b7280;">${item.targetDate}</td>
-        <td><span style="font-weight:700;color:${ddayColor};font-size:12.5px;">${dday}</span></td>
+        <td class="sched-cell">${emp?.hire_date||'-'}</td>
+        <td><span class="sched-type-badge ${typeInfo.cls}">${typeInfo.label}</span></td>
+        <td>${item.reason ? `<span class="${reasonCls}">${reasonLabel}</span>` : `<span class="sched-cell-sm">-</span>`}</td>
+        <td class="sched-cell">${item.targetDate}</td>
+        <td><span class="${ddayCls}">${dday}</span></td>
         <td style="white-space:nowrap;">${_schedActions(item)}</td>
       </tr>`;
     }).join('');
@@ -387,7 +395,7 @@ function _renderContCoSummaryCards(){
     const schedUrgent = scheduledItems.filter(item => item.targetDate <= days7LaterStr && item.targetDate > today).length;
     const schedExtra = schedUrgent > 0 ? `7일 이내 도래 ${schedUrgent}건 — ` : '';
     renderOuterCard('scheduled', 'fas fa-calendar-check', '#7c3aed', '예정 사항', scheduledItems.length,
-      schedExtra + '계약예정·갱신예정·해지예정·만료예정 통합', ['직원명','성별','사원번호','고용형태','입사일','구분','발생사유','예정일','D-day','관리'], schedRows, 'cont-alert-scheduled');
+      schedExtra + '계약예정·해지예정·만료예정 통합', ['직원명','성별','사원번호','고용형태','입사일','구분','발생사유','예정일','D-day','관리'], schedRows, 'cont-alert-scheduled');
   }
 }
 

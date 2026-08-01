@@ -210,6 +210,26 @@
     .cont-alert-scheduled .cont-alert-table td{text-align:center;}
     .cont-alert-scheduled .cont-alert-table th:nth-child(1),
     .cont-alert-scheduled .cont-alert-table td:nth-child(1){text-align:left;}
+    /* 예정 사항 셀 공통 */
+    .sched-cell{font-size:12px;color:#6b7280;}
+    .sched-cell-sm{font-size:11px;color:#6b7280;}
+    .sched-dday{font-weight:700;font-size:12.5px;}
+    .sched-dday-urgent{color:#dc2626;}
+    .sched-dday-normal{color:#6b7280;}
+    /* 예정 사항 구분 뱃지 */
+    .sched-type-badge{font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;white-space:nowrap;}
+    .sched-type-pending{background:#ede9fe;color:#5b21b6;}
+    .sched-type-terminate{background:#ffe4e6;color:#9f1239;}
+    .sched-type-expiry{background:#fce7f3;color:#9d174d;}
+    /* 예정 사항 발생사유 뱃지 */
+    .sched-reason-badge{font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;white-space:nowrap;}
+    .sched-reason-new-hire{background:#d1fae5;color:#065f46;}
+    .sched-reason-re-hire{background:#d1fae5;color:#065f46;}
+    .sched-reason-contract-renewal{background:#ffedd5;color:#9a3412;}
+    .sched-reason-probation-end{background:#fef9c3;color:#92400e;}
+    .sched-reason-dismissal{background:#fce7f3;color:#9d174d;}
+    .sched-reason-expiry{background:#f3f4f6;color:#6b7280;}
+    .sched-reason-resignation{background:#f3f4f6;color:#6b7280;}
     .cont-alert-table td{padding:9px 10px;vertical-align:middle;border-bottom:1px solid #f3f4f6;overflow:hidden;text-overflow:ellipsis;}
     .cont-alert-table td:last-child{white-space:nowrap;}
     .cont-alert-table tbody tr:nth-child(even) td{background:#f8fafc;}

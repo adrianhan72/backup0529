@@ -566,4 +566,27 @@ function genderLabel(empOrGender) {
   return '-';
 }
 
+// ═══════════════════════════════════════════
+// 예정 사항 발생사유
+// ═══════════════════════════════════════════
+const SCHEDULED_REASON = Object.freeze({
+  NEW_HIRE:         'new_hire',          // 신규입사
+  RE_HIRE:          're_hire',           // 재입사
+  CONTRACT_RENEWAL: 'contract_renewal',  // 계약갱신
+  PROBATION_END:    'probation_end',     // 수습만료
+  DISMISSAL:        'dismissal',         // 해고
+  EXPIRY:           'expiry_scheduled',  // 만료
+  RESIGNATION:      'resignation',       // 사직
+});
+
+const SCHEDULED_REASON_LABEL = Object.freeze({
+  [SCHEDULED_REASON.NEW_HIRE]:         '신규입사',
+  [SCHEDULED_REASON.RE_HIRE]:          '재입사',
+  [SCHEDULED_REASON.CONTRACT_RENEWAL]: '계약갱신',
+  [SCHEDULED_REASON.PROBATION_END]:    '수습만료',
+  [SCHEDULED_REASON.DISMISSAL]:        '해고',
+  [SCHEDULED_REASON.EXPIRY]:           '만료',
+  [SCHEDULED_REASON.RESIGNATION]:      '사직',
+});
+
 
