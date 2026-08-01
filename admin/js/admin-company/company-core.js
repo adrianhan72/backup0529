@@ -470,7 +470,7 @@ function _cmRepRowHTML(idx, data = { name: '', phone: '', email: '', employee_nu
   const isOnlyOne = totalRows <= 1;
   return `<div class="cm-rep-row" id="cm-rep-row-${idx}" style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;margin-bottom:14px;">
     <div class="form-group"><label>대표자명<span style="color:#e94560;">*</span></label><input type="text" id="cm-rep-name-${idx}" placeholder="대표자명" value="${_esc(data.name)}" style="width:100%;box-sizing:border-box;" /></div>
-    <div class="form-group" style="position:relative;"><label>사원번호<span style="color:#e94560;">*</span></label><input type="text" id="cm-rep-empno-${idx}" placeholder="사원번호" value="${_esc(data.employee_number)}" onblur="_cmCheckRepEmpNo(${idx})" style="width:100%;box-sizing:border-box;" /><div id="cm-rep-empno-err-${idx}" class="va-hint" style="position:absolute;top:100%;left:0;right:0;margin-top:2px;"></div></div>
+    <div class="form-group" style="position:relative;"><label>사원번호<span style="color:#e94560;">*</span></label><input type="text" id="cm-rep-empno-${idx}" placeholder="" value="${_esc(data.employee_number)}" onblur="_cmCheckRepEmpNo(${idx})" style="width:100%;box-sizing:border-box;" /><div id="cm-rep-empno-err-${idx}" class="va-hint" style="position:absolute;top:100%;left:0;right:0;margin-top:2px;"></div></div>
     <div class="form-group"><label>휴대전화번호<span style="color:#e94560;">*</span></label><input type="text" id="cm-rep-phone-${idx}" placeholder="010-0000-0000" value="${_esc(data.phone)}" oninput="_onPhoneInput(this)" onblur="_cmCheckRepPhone(${idx})" maxlength="13" style="width:100%;box-sizing:border-box;" /></div>
     <div class="form-group"><label>이메일</label><input type="text" id="cm-rep-email-${idx}" placeholder="example@email.com" value="${_esc(data.email)}" oninput="_onEmailInput(this)" style="width:100%;box-sizing:border-box;" /></div>
     <div style="grid-column:1/-1;text-align:right;">
@@ -1627,7 +1627,7 @@ function _cmExecutiveHTML(idx, data = { name: '', position: '', phone: '', email
       <button type="button" class="btn btn-sm btn-secondary" onclick="_cmRemoveExecutive(${idx})"><i class="fas fa-trash-alt"></i> 삭제</button>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;">
-      <div class="cm-person-fg"><label>사원번호</label><input type="text" id="cm-exec-empno-${idx}" value="${esc(data.employee_number)}" placeholder="사원번호" onblur="_cmCheckExecEmpNo(${idx})" /></div>
+      <div class="cm-person-fg"><label>사원번호</label><input type="text" id="cm-exec-empno-${idx}" value="${esc(data.employee_number)}" placeholder="" onblur="_cmCheckExecEmpNo(${idx})" /></div>
       <div class="cm-person-fg"><label>이름 <span style="color:#c00;">*</span></label><input type="text" id="cm-exec-name-${idx}" value="${esc(data.name)}" placeholder="이름" /></div>
       <div class="cm-person-fg"><label>직책 <span style="color:#c00;">*</span></label><input type="text" id="cm-exec-position-${idx}" value="${esc(data.position)}" placeholder="예: 전무이사" /></div>
       <div class="cm-person-fg"><label>휴대전화번호 <span style="color:#c00;">*</span></label><input type="text" id="cm-exec-phone-${idx}" value="${esc(data.phone)}" placeholder="010-0000-0000" maxlength="13" oninput="_onPhoneInput(this)" onblur="_cmCheckExecPhone(${idx})" /></div>
@@ -1654,7 +1654,7 @@ function _cmRelatedHTML(idx, data = { name: '', relationship: '', phone: '', ema
       <button type="button" class="btn btn-sm btn-secondary" onclick="_cmRemoveRelated(${idx})"><i class="fas fa-trash-alt"></i> 삭제</button>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;">
-      <div class="cm-person-fg"><label>사원번호</label><input type="text" id="cm-rel-empno-${idx}" value="${esc(data.employee_number)}" placeholder="사원번호" onblur="_cmCheckRelEmpNo(${idx})" /></div>
+      <div class="cm-person-fg"><label>사원번호</label><input type="text" id="cm-rel-empno-${idx}" value="${esc(data.employee_number)}" placeholder="" onblur="_cmCheckRelEmpNo(${idx})" /></div>
       <div class="cm-person-fg"><label>이름 <span style="color:#c00;">*</span></label><input type="text" id="cm-rel-name-${idx}" value="${esc(data.name)}" placeholder="이름" /></div>
       <div class="cm-person-fg"><label>관계 <span style="color:#c00;">*</span></label><input type="text" id="cm-rel-relationship-${idx}" value="${esc(data.relationship)}" placeholder="예: 배우자" /></div>
       <div class="cm-person-fg"><label>휴대전화번호 <span style="color:#c00;">*</span></label><input type="text" id="cm-rel-phone-${idx}" value="${esc(data.phone)}" placeholder="010-0000-0000" maxlength="13" oninput="_onPhoneInput(this)" onblur="_cmCheckRelPhone(${idx})" /></div>
