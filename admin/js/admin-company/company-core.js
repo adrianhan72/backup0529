@@ -1722,7 +1722,9 @@ function _cmRenderRelated() {
 
 function _cmAddExecutive() {
   _cmExecutives.push({ name: '', position: '', phone: '', email: '', id_number: '', employee_number: '', bank_name: '', bank_account: '', bank_holder: '' });
+  const idx = _cmExecutives.length - 1;
   _cmRenderExecutives();
+  _cmSuggestExecEmpNo(idx);
   _cmSuggestAllEmpNos();
 }
 
@@ -1735,7 +1737,9 @@ function _cmRemoveExecutive(idx) {
 
 function _cmAddRelated() {
   _cmRelatedParties.push({ name: '', relationship: '', phone: '', email: '', id_number: '', employee_number: '', bank_name: '', bank_account: '', bank_holder: '' });
+  const idx = _cmRelatedParties.length - 1;
   _cmRenderRelated();
+  _cmSuggestRelEmpNo(idx);
   _cmSuggestAllEmpNos();
 }
 
