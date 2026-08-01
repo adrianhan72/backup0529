@@ -1,7 +1,7 @@
 -- =============================================================================
 -- 인사톡 노무톡 — SQLite Schema (한글 주석 포함)
 -- node dump_schema.js 로 자동 생성 (ALTER TABLE 반영)
--- 최종 갱신: 2026-07-30
+-- 최종 갱신: 2026-08-01
 -- 테이블 수: 26개
 -- =============================================================================
 
@@ -52,7 +52,9 @@ CREATE TABLE IF NOT EXISTS companies (
   contract_end_date TEXT, --  -- 자문계약 종료일
   representatives TEXT, --  -- 대표자 정보 (JSON, 복수 가능)
   sick_leave_pay_rate REAL DEFAULT 0, --  -- 병가 유급비율 (%, 0=무급)
-  proration_method TEXT DEFAULT '30day_fixed' --  -- 일할계산 방식
+  proration_method TEXT DEFAULT '30day_fixed', --  -- 일할계산 방식
+  draft_executives TEXT DEFAULT NULL,
+  draft_related_parties TEXT DEFAULT NULL
 );
 
 -- contracts  -- 근로계약
@@ -152,11 +154,11 @@ CREATE TABLE IF NOT EXISTS contracts (
   probation_end_date TEXT, --  -- 수습 종료일
   dismissal_notice_pay REAL DEFAULT 0, --  -- 해고예고수당
   dismissal_notice_pay_reason TEXT, --  -- 해고예고수당 사유
-  insurance_reported_at TEXT, --  -- 4대보험 상실신고 완료일시
-  tax_reported_at TEXT, --  -- 원천징수이행상황신고 완료일시
   pre_used_annual_leave REAL DEFAULT 0, --  -- 기사용 연차일수 (서비스 가입 이전)
   retention_cleared INTEGER DEFAULT 0,
-  retention_cleared_at TEXT
+  retention_cleared_at TEXT,
+  insurance_reported_at TEXT,
+  tax_reported_at TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_contracts_employee ON contracts(employee_id);
