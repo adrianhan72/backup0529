@@ -2178,7 +2178,7 @@ function viewContract(id){
   const {badge:stBadgeCls, label:stLabel} = calcContractStatusDisplay(c||{}, today);
   const _buildLabelHTML = (id, statusLabel, badgeCls, isDraftFlag, isVoidedAmend) => {
     const idHTML = `<span style="font-weight:500;color:#9ca3af;">계약서 고유 ID: ${id||'—'}</span>`
-      + ` <button onclick="event.stopPropagation();_copyContractId('${id||''}')" title="ID 복사" class="btn btn-secondary" style="padding:2px 6px;font-size:11px;"><i class="far fa-copy"></i> 복사</button>`;
+      + ` <button onclick="event.stopPropagation();_copyContractId('${id||''}')" title="ID 복사" class="btn btn-dark" style="padding:2px 6px;font-size:11px;"><i class="far fa-copy"></i> 복사</button>`;
     if(isDraftFlag){
       return `${idHTML} <span class="badge badge-yellow">임시저장</span>`;
     }
