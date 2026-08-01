@@ -187,7 +187,7 @@ function renderCompanies(){
           : ''}
       </div>
       ${payrollSection}
-      <p style="margin-top:10px;">대표: ${(()=>{const reps=_cmParseReps(c);return reps.length>1?`${reps[0].name} 외 ${reps.length-1}명`:c.representative||'-'})()} · 업종: ${c.industry||'-'}<br>사업자: ${c.business_number||'-'}<br>급여일: ${c.pay_day||'-'} · 산정: ${(c.pay_period_month||c.pay_period) ? `${_cmPeriodMonthLabel(c.pay_period_month)||''} ${c.pay_period_day||''}일부터 1개월간` : '미설정'}<br><i class="fas fa-shield-alt" style="color:#6366f1;margin-right:3px;font-size:10px;"></i>4대보험: ${_cmInsuranceLabel(c.insurance_basis)||'요율 기준'} · <i class="fas fa-umbrella-beach" style="color:#0891b2;margin-right:3px;font-size:10px;"></i>연차: ${_cmAnnualLabel(c.annual_leave_basis)||'회계년도 기준'}<br>${c.phone||''}</p>
+      <p style="margin-top:10px;">대표: ${(()=>{const reps=_cmParseReps(c);return reps.length>1?`${reps[0].name} 외 ${reps.length-1}명`:c.representative||'-'})()} · 업종: ${c.industry||'-'}<br>사업자: ${c.business_number||'-'}<br>급여일: ${c.pay_day||'-'} · 산정: ${(c.pay_period_month||c.pay_period) ? `${_cmPeriodMonthLabel(c.pay_period_month)||''} ${c.pay_period_day||''}일부터 1개월간` : '미설정'}<br><i class="fas fa-shield-alt" style="color:#6366f1;margin-right:3px;font-size:10px;"></i>4대보험: ${_cmInsuranceLabel(c.insurance_basis)} · <i class="fas fa-umbrella-beach" style="color:#0891b2;margin-right:3px;font-size:10px;"></i>연차: ${_cmAnnualLabel(c.annual_leave_basis)}<br>${c.phone||''}</p>
       <div style="display:flex;align-items:center;gap:6px;margin-top:10px;font-size:12px;font-weight:600;color:#3b82f6;"><i class="fas fa-users"></i> 유효 근로계약: ${activeContractCount}건</div>
       ${c.note ? `<div style="margin-top:6px;font-size:11.5px;color:#6b7280;"><i class="fas fa-sticky-note" style="margin-right:4px;color:#9ca3af;"></i>${c.note}</div>` : ''}
       ${isDraftComp
@@ -281,7 +281,7 @@ function _cmPeriodCompose(){
 /**
  * 저장된 pay_period_month / pay_period_day 컬럼값(우선) 또는 pay_period 문자열을 파싱해 2개 셀렉트에 복원.
  * @param {string} val  - pay_period 텍스트 (fallback용)
- * @param {string} month - pay_period_month DB 컬럼값 ('전월'|'당월')
+ * @param {string} month - pay_period_month DB 컬럼값 ('prev_month'|'current_month')
  * @param {number|string} day - pay_period_day DB 컬럼값 (1~31)
  */
 function _cmPeriodRestore(val, month, day){
@@ -326,16 +326,16 @@ let _currentCompanyDraftId = null;
 
 // ── 필드값 → 한글 라벨 변환 (DB 영문코드 대응) ──────────────────────────
 function _cmInsuranceLabel(v){
-  const map = { rate_based:'요율 기준', fixed_amount:'확정액 기준', '요율 기준':'요율 기준', '확정액 기준':'확정액 기준' };
-  return map[v] || v || '';
+  const map = { rate_based:'요율 기준', fixed_amount:'확정액 기준' };
+  return map[v] || '요율 기준';
 }
 function _cmAnnualLabel(v){
-  const map = { fiscal_year:'회계년도 기준', hire_date:'입사일 기준', '회계년도 기준':'회계년도 기준', '입사일 기준':'입사일 기준' };
-  return map[v] || v || '';
+  const map = { fiscal_year:'회계년도 기준', hire_date:'입사일 기준' };
+  return map[v] || '회계년도 기준';
 }
 function _cmPeriodMonthLabel(v){
-  const map = { prev_month:'전월', current_month:'당월', '전월':'전월', '당월':'당월' };
-  return map[v] || v || '';
+  const map = { prev_month:'전월', current_month:'당월' };
+  return map[v] || '전월';
 }
 
 // ── 앱 접근코드 자동 생성 ──────────────────────────────────────────────────

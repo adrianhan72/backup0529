@@ -306,8 +306,8 @@ function editPayroll(payrollId){
           const _coMoEdit  = _coEdit?.pay_period_month || null;
           const _coDayEdit = parseInt(_coEdit?.pay_period_day) || 1;
           const _isJeonwolEdit = _coMoEdit
-            ? (_coMoEdit === '전월')
-            : (_coEdit?.pay_period || '').replace(/\s/g,'').startsWith('전월');
+            ? (_coMoEdit === 'prev_month')
+            : (_coEdit?.pay_period_month || 'current_month') === 'prev_month';
           let _sStrEdit;
           if(_isJeonwolEdit){
             const _pm = p.pay_month === 1 ? 12 : p.pay_month - 1;
@@ -429,7 +429,7 @@ function _fillPayrollFields(p, cfgCo){
   setAmountVal('pi-std-pay',     p.standard_monthly_pay);
   // 확정액 기준 고객사인 경우 저장된 보험료 값 복원
   const _editCo = allCompanies.find(x=>x.id===p.company_id);
-  if(_editCo?.insurance_basis === '확정액 기준'){
+  if(_editCo?.insurance_basis === 'fixed_amount'){
     setAmountVal('pi-pension-fixed', p.national_pension);
     setAmountVal('pi-health-fixed',  p.health_insurance);
     setAmountVal('pi-ltcare-fixed',  p.long_term_care);
@@ -740,8 +740,8 @@ function validateAndParseExcel(wb, fileName){
   (function _updateCalcDesc(){
     const el = document.getElementById('upload-calc-desc');
     if(!el) return;
-    const basis = co?.insurance_basis || '요율 기준';
-    const isFixed = basis === '확정액 기준';
+    const basis = co?.insurance_basis || 'rate_based';
+    const isFixed = basis === 'fixed_amount';
     if(isFixed){
       el.innerHTML =
         '※ <strong style="color:#b45309;">확정액 기준</strong> 고객사 — 검증 항목: ' +
@@ -969,10 +969,10 @@ function validateAndParseExcel(wb, fileName){
     // "엑셀에 없는 재직 직원" 경고는 표시하지 않음 (정상 동작)
 
     // ── 고객사 4대보험 적용 기준 확인 ──
-    // '확정액 기준': 보험료를 직접 입력하므로 요율 검증 제외
-    // '요율 기준' (기본): 요율 기반 자동계산이므로 검증 수행
-    const coInsuranceBasis = co?.insurance_basis || '요율 기준';
-    const isFixedInsurance = coInsuranceBasis === '확정액 기준';
+    // 'fixed_amount': 보험료를 직접 입력하므로 요율 검증 제외
+    // 'rate_based' (기본): 요율 기반 자동계산이므로 검증 수행
+    const coInsuranceBasis = co?.insurance_basis || 'rate_based';
+    const isFixedInsurance = coInsuranceBasis === 'fixed_amount';
 
     // ── 요율 사전 조회 (요율 기준 고객사 검증에 사용) ──
     const rateLtCare    = getRateForYearMonth('long_term_care',   targetYear, targetMonth);
@@ -1402,10 +1402,10 @@ function validateAndParseExcel(wb, fileName){
   //  9. 행별 검증
   // ========================================
   // 9-A. 고객사 4대보험 적용 기준 확인
-  // '확정액 기준': 보험료를 직접 입력하므로 요율 검증 제외
-  // '요율 기준' (기본): 요율 기반 자동계산이므로 검증 수행
-  const coInsuranceBasis = co?.insurance_basis || '요율 기준';
-  const isFixedInsurance = coInsuranceBasis === '확정액 기준';
+  // 'fixed_amount': 보험료를 직접 입력하므로 요율 검증 제외
+  // 'rate_based' (기본): 요율 기반 자동계산이므로 검증 수행
+  const coInsuranceBasis = co?.insurance_basis || 'rate_based';
+  const isFixedInsurance = coInsuranceBasis === 'fixed_amount';
 
   // 9-B. 요율 사전 조회 (요율 기준 고객사 검증에 사용)
   const rateLtCare   = getRateForYearMonth('long_term_care',   targetYear, targetMonth);
