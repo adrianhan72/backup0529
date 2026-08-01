@@ -470,7 +470,7 @@ function _cmRepRowHTML(idx, data = { name: '', phone: '', email: '', employee_nu
   const isOnlyOne = totalRows <= 1;
   return `<div class="cm-rep-row" id="cm-rep-row-${idx}" style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;margin-bottom:14px;align-items:end;">
     <div class="form-group"><label>대표자명<span style="color:#e94560;">*</span></label><input type="text" id="cm-rep-name-${idx}" placeholder="대표자명" value="${_esc(data.name)}" style="width:100%;box-sizing:border-box;" /></div>
-    <div class="form-group"><label>사원번호<span style="color:#e94560;">*</span></label><input type="text" id="cm-rep-empno-${idx}" placeholder="" value="${_esc(data.employee_number)}" onblur="_cmCheckRepEmpNo(${idx})" style="width:100%;box-sizing:border-box;" /><div id="cm-empno-err-rep-${idx}" class="va-hint"></div></div>
+    <div class="form-group"><label>사원번호<span style="color:#e94560;">*</span></label><input type="text" id="cm-rep-empno-${idx}" placeholder="" value="${_esc(data.employee_number)}" oninput="_cmCheckRepEmpNo(${idx})" style="width:100%;box-sizing:border-box;" /><div id="cm-empno-err-rep-${idx}" class="va-hint"></div></div>
     <div class="form-group"><label>휴대전화번호<span style="color:#e94560;">*</span></label><input type="text" id="cm-rep-phone-${idx}" placeholder="010-0000-0000" value="${_esc(data.phone)}" oninput="_onPhoneInput(this)" onblur="_cmCheckRepPhone(${idx})" maxlength="13" style="width:100%;box-sizing:border-box;" /></div>
     <div class="form-group"><label>이메일</label><input type="text" id="cm-rep-email-${idx}" placeholder="example@email.com" value="${_esc(data.email)}" oninput="_onEmailInput(this)" style="width:100%;box-sizing:border-box;" /></div>
     <div style="grid-column:1/-1;text-align:right;">
@@ -1650,7 +1650,7 @@ function _cmExecutiveHTML(idx, data = { name: '', position: '', phone: '', email
       <button type="button" class="btn btn-sm btn-secondary" onclick="_cmRemoveExecutive(${idx})"><i class="fas fa-trash-alt"></i> 삭제</button>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;">
-      <div class="cm-person-fg"><label>사원번호</label><input type="text" id="cm-exec-empno-${idx}" value="${esc(data.employee_number)}" placeholder="사원번호" onblur="_cmCheckExecEmpNo(${idx})" /></div>
+      <div class="cm-person-fg"><label>사원번호</label><input type="text" id="cm-exec-empno-${idx}" value="${esc(data.employee_number)}" placeholder="사원번호" oninput="_cmCheckExecEmpNo(${idx})" /><div id="cm-empno-err-exec-${idx}" class="va-hint"></div></div>
       <div class="cm-person-fg"><label>이름 <span style="color:#c00;">*</span></label><input type="text" id="cm-exec-name-${idx}" value="${esc(data.name)}" placeholder="이름" /></div>
       <div class="cm-person-fg"><label>직책 <span style="color:#c00;">*</span></label><input type="text" id="cm-exec-position-${idx}" value="${esc(data.position)}" placeholder="예: 전무이사" /></div>
       <div class="cm-person-fg"><label>휴대전화번호 <span style="color:#c00;">*</span></label><input type="text" id="cm-exec-phone-${idx}" value="${esc(data.phone)}" placeholder="010-0000-0000" maxlength="13" oninput="_onPhoneInput(this)" onblur="_cmCheckExecPhone(${idx})" /></div>
@@ -1677,7 +1677,7 @@ function _cmRelatedHTML(idx, data = { name: '', relationship: '', phone: '', ema
       <button type="button" class="btn btn-sm btn-secondary" onclick="_cmRemoveRelated(${idx})"><i class="fas fa-trash-alt"></i> 삭제</button>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;">
-      <div class="cm-person-fg"><label>사원번호</label><input type="text" id="cm-rel-empno-${idx}" value="${esc(data.employee_number)}" placeholder="사원번호" onblur="_cmCheckRelEmpNo(${idx})" /></div>
+      <div class="cm-person-fg"><label>사원번호</label><input type="text" id="cm-rel-empno-${idx}" value="${esc(data.employee_number)}" placeholder="사원번호" oninput="_cmCheckRelEmpNo(${idx})" /><div id="cm-empno-err-rel-${idx}" class="va-hint"></div></div>
       <div class="cm-person-fg"><label>이름 <span style="color:#c00;">*</span></label><input type="text" id="cm-rel-name-${idx}" value="${esc(data.name)}" placeholder="이름" /></div>
       <div class="cm-person-fg"><label>관계 <span style="color:#c00;">*</span></label><input type="text" id="cm-rel-relationship-${idx}" value="${esc(data.relationship)}" placeholder="예: 배우자" /></div>
       <div class="cm-person-fg"><label>휴대전화번호 <span style="color:#c00;">*</span></label><input type="text" id="cm-rel-phone-${idx}" value="${esc(data.phone)}" placeholder="010-0000-0000" maxlength="13" oninput="_onPhoneInput(this)" onblur="_cmCheckRelPhone(${idx})" /></div>
@@ -1847,27 +1847,25 @@ function _cmEmpNoHint(el, cls, msg) {
 
 function _cmCheckRepEmpNo(idx) {
   _cmCheckEmpNoDup(document.getElementById('cm-rep-empno-' + idx));
-  _cmClearTrailingAndSuggest('cm-rep-empno-', idx);
+  _cmOnEmpNoChanged('cm-rep-empno-', idx);
 }
 function _cmCheckExecEmpNo(idx) {
   _cmCheckEmpNoDup(document.getElementById('cm-exec-empno-' + idx));
-  _cmClearTrailingAndSuggest('cm-exec-empno-', idx);
+  _cmOnEmpNoChanged('cm-exec-empno-', idx);
 }
 function _cmCheckRelEmpNo(idx) {
   _cmCheckEmpNoDup(document.getElementById('cm-rel-empno-' + idx));
-  _cmClearTrailingAndSuggest('cm-rel-empno-', idx);
+  _cmOnEmpNoChanged('cm-rel-empno-', idx);
 }
 
-/** 앞 번호 필드가 비워지면 같은 그룹의 뒷번호 필드들을 초기화하고 전체 재추천 */
-function _cmClearTrailingAndSuggest(idPrefix, idx) {
+/** 사원번호 필드 변경 시: 비워졌으면 모든 사원번호 필드를 초기화하고 재추천 */
+function _cmOnEmpNoChanged(idPrefix, idx) {
   const current = document.getElementById(idPrefix + idx);
   if (!current || current.value.trim()) { _cmSuggestAllEmpNos(); return; }
-  // 현재 필드가 비워졌으면, 같은 그룹의 더 높은 인덱스 필드들을 모두 비운다
-  for (let i = idx + 1; ; i++) {
-    const next = document.getElementById(idPrefix + i);
-    if (!next) break;
-    next.value = '';
-  }
+  // 어떤 그룹이든 사원번호가 비워지면 모든 사원번호 필드를 초기화
+  document.querySelectorAll('[id^="cm-rep-empno-"],[id^="cm-exec-empno-"],[id^="cm-rel-empno-"]').forEach(el => {
+    if (el !== current) el.value = '';
+  });
   _cmSuggestAllEmpNos();
 }
 
