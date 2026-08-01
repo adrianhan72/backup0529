@@ -204,13 +204,13 @@
     .btn-sb:disabled,.btn-sb[disabled]{background:#cccccc;color:#f2f2f2;border:1px solid #cccccc;cursor:not-allowed;pointer-events:none;opacity:1;}
 
     /* 수정 — Orange */
-    .btn-sb-edit{background:#f59e0b;color:#fff;}
-    .btn-sb-edit:hover:not(:disabled){background:#d97706;}
+    .btn-sb-edit{background:#f59e0b;color:#fff;border-color:#d97706;}
+    .btn-sb-edit:hover:not(:disabled){background:#d97706;border-color:#b45309;}
     .btn-sb-edit:active:not(:disabled){background:#b45309;}
 
     /* ?�????Success */
-    .btn-sb-save{background:#16a34a;color:#fff;}
-    .btn-sb-save:hover:not(:disabled){background:#15803d;}
+    .btn-sb-save{background:#16a34a;color:#fff;border-color:#059669;}
+    .btn-sb-save:hover:not(:disabled){background:#15803d;border-color:#047857;}
 
     /* 취소 ??Secondary outline */
     .btn-sb-cancel{background:#475569;color:#fff;border:1px solid #334155;}
