@@ -499,6 +499,7 @@ function _cmAddRepRow(data = { name: '', phone: '', email: '', employee_number: 
 function _cmRemoveRepRow(idx) {
   const row = document.getElementById('cm-rep-row-' + idx);
   if (row) row.remove();
+  _cmRenumberAllEmpNos();
   _cmSuggestAllEmpNos();
   // 남은 행이 1개면 모든 삭제 버튼 비활성화
   const remaining = document.querySelectorAll('#cm-rep-rows .cm-rep-row');
@@ -1731,6 +1732,7 @@ function _cmAddExecutive() {
 function _cmRemoveExecutive(idx) {
   _cmExecutives.splice(idx, 1);
   _cmRenderExecutives();
+  _cmRenumberAllEmpNos();
   _cmSuggestAllEmpNos();
   toast('수정 완료 버튼을 눌러야 삭제하신 내용이 최종 반영됩니다.', 'warning');
 }
@@ -1746,6 +1748,7 @@ function _cmAddRelated() {
 function _cmRemoveRelated(idx) {
   _cmRelatedParties.splice(idx, 1);
   _cmRenderRelated();
+  _cmRenumberAllEmpNos();
   _cmSuggestAllEmpNos();
   toast('수정 완료 버튼을 눌러야 삭제하신 내용이 최종 반영됩니다.', 'warning');
 }
