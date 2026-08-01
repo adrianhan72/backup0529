@@ -1814,7 +1814,7 @@ function _cmCheckEmpNoDup(el) {
 
 /** 사원번호 필드 아래 힌트 표시 */
 function _cmEmpNoHint(el, cls, msg) {
-  const hintId = 'cm-empno-err-' + el.id.replace(/^cm-(rep|exec|rel)-empno-/, '$1');
+  const hintId = 'cm-empno-err-' + el.id.replace(/^cm-(rep|exec|rel)-empno-/, '$1-');
   const hint = document.getElementById(hintId);
   if (!hint) return;
   hint.classList.remove('va-ok', 'va-err');
