@@ -69,37 +69,57 @@ function _renderContCoSummaryCards(){
   const scheduledItems = [];
 
   // 계약예정 + 갱신예정 (sortOrder 1~2, 구분 통합)
+  const PROBATION_TYPES = [CONTRACT_TYPE.REGULAR_PROBATION, CONTRACT_TYPE.FIXED_PROBATION];
   allContracts.filter(c => c.company_id === coId &&
     (c.status === CONTRACT_STATUS.PENDING || c.status === CONTRACT_STATUS.RENEWAL_PENDING)
   ).forEach(c => {
     const emp = allEmployees.find(e => e.id === c.employee_id);
-    const pastEmpIds = _getPastEmpIds(emp);
-    const hasPast = _hasPastContracts(c.employee_id, pastEmpIds, c.id);
+    const ct = c.contract_type || emp?.employment_category || '';
+    const isProbationType = PROBATION_TYPES.includes(ct);
+
+    // 현재 직원의 활성 수습 계약이 있는지 확인
+    const activeProbation = isProbationType ? null : (allContracts || []).find(x =>
+      x.id !== c.id && x.company_id === coId && x.employee_id === c.employee_id &&
+      x.status === CONTRACT_STATUS.ACTIVE && PROBATION_TYPES.includes(x.contract_type || '')
+    );
 
     let targetDate, reason;
     if (c.status === CONTRACT_STATUS.RENEWAL_PENDING) {
-      // 갱신예정 → 계약예정으로 통합, 사유=계약갱신
       const paired = c.renewal_pair_id ? allContracts.find(x => x.id === c.renewal_pair_id) : null;
       targetDate = paired?.contract_start || c.renewal_date;
       if (!targetDate) return;
-      reason = '계약갱신';
+      // RENEWAL_PENDING + 수습 타입 → 수습종료
+      reason = isProbationType ? '수습종료' : '계약갱신';
     } else {
-      // 계약예정 (PENDING): 사유 판별
       targetDate = c.contract_start;
       if (!targetDate) return;
-      if (!hasPast) {
-        reason = '신규입사';
-      } else if (emp?.hire_date && emp.hire_date === c.contract_start) {
-        reason = '재입사';
+      // PENDING + 활성 수습계약 있음 + 새 계약은 비수습 → 수습종료 (채용확정)
+      if (activeProbation && !isProbationType) {
+        reason = '수습종료';
       } else {
-        reason = '계약갱신';
+        const pastEmpIds = _getPastEmpIds(emp);
+        const hasPast = _hasPastContracts(c.employee_id, pastEmpIds, c.id);
+        if (!hasPast) {
+          reason = '신규입사';
+        } else if (emp?.hire_date && emp.hire_date === c.contract_start) {
+          reason = '재입사';
+        } else {
+          reason = '계약갱신';
+        }
       }
     }
+
+    const reasonColors = {
+      '신규입사': 'background:#d1fae5;color:#065f46;',
+      '재입사':   'background:#dbeafe;color:#1e40af;',
+      '계약갱신': 'background:#fef9c3;color:#92400e;',
+      '수습종료': 'background:#ccfbf1;color:#134e4a;',
+    };
 
     scheduledItems.push({
       type: 'pending', typeLabel: '계약예정', sortOrder: 1,
       targetDate, contract: c, reason,
-      reasonBadgeStyle: reason==='신규입사'?'background:#d1fae5;color:#065f46;':reason==='재입사'?'background:#dbeafe;color:#1e40af;':'background:#fef9c3;color:#92400e;',
+      reasonBadgeStyle: reasonColors[reason] || '',
       badgeStyle: 'background:#ede9fe;color:#5b21b6;',
     });
   });
