@@ -470,7 +470,7 @@ function _cmRepRowHTML(idx, data = { name: '', phone: '', email: '', employee_nu
   const isOnlyOne = totalRows <= 1;
   return `<div class="cm-rep-row" id="cm-rep-row-${idx}" style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;margin-bottom:14px;align-items:end;">
     <div class="form-group"><label>대표자명<span style="color:#e94560;">*</span></label><input type="text" id="cm-rep-name-${idx}" placeholder="대표자명" value="${_esc(data.name)}" style="width:100%;box-sizing:border-box;" /></div>
-    <div class="form-group"><label>사원번호<span style="color:#e94560;">*</span></label><input type="text" id="cm-rep-empno-${idx}" placeholder="사원번호" value="${_esc(data.employee_number)}" onblur="_cmCheckRepEmpNo(${idx})" style="width:100%;box-sizing:border-box;" /></div>
+    <div class="form-group"><label>사원번호<span style="color:#e94560;">*</span></label><input type="text" id="cm-rep-empno-${idx}" placeholder="사원번호" value="${_esc(data.employee_number)}" onblur="_cmCheckRepEmpNo(${idx})" style="width:100%;box-sizing:border-box;" /><div id="cm-rep-empno-err-${idx}" class="va-hint"></div></div>
     <div class="form-group"><label>휴대전화번호<span style="color:#e94560;">*</span></label><input type="text" id="cm-rep-phone-${idx}" placeholder="010-0000-0000" value="${_esc(data.phone)}" oninput="_onPhoneInput(this)" onblur="_cmCheckRepPhone(${idx})" maxlength="13" style="width:100%;box-sizing:border-box;" /></div>
     <div class="form-group"><label>이메일</label><input type="text" id="cm-rep-email-${idx}" placeholder="example@email.com" value="${_esc(data.email)}" oninput="_onEmailInput(this)" style="width:100%;box-sizing:border-box;" /></div>
     <div style="grid-column:1/-1;text-align:right;">
@@ -1758,9 +1758,9 @@ function _cmSuggestRelEmpNo(idx) {
 
 // ── 사원번호 중복 검사 (대표자/등기임원/특수관계인 공통) ──
 function _cmCheckEmpNoDup(el) {
-  if (!el || !el.value.trim()) { if(el) el.style.borderColor = ''; return; }
-  const coId = currentGlobalCompanyId || document.getElementById('cm-company')?.value;
-  if (!coId) return;
+  if (!el || !el.value.trim()) { if(el) el.style.borderColor = ''; _cmEmpNoHint(el, '', ''); return; }
+  const coId = editId.company;
+  if (!coId) { _cmEmpNoHint(el, '', ''); return; }
   const empNo = el.value.trim();
 
   // 1) 같은 폼 내 다른 사원번호 필드와 중복 체크
@@ -1768,8 +1768,8 @@ function _cmCheckEmpNoDup(el) {
   for (const other of allEmpNoInputs) {
     if (other === el) continue;
     if ((other.value || '').trim() === empNo) {
-      el.style.borderColor = '#dc2626';
-      toast(`사원번호 "${empNo}"은(는) 이미 다른 항목에서 입력된 번호입니다.`, 'error');
+      el.classList.add('va-input-err');
+      _cmEmpNoHint(el, 'va-err', `사원번호 "${empNo}"은(는) 이미 다른 항목에서 입력된 번호입니다.`);
       return;
     }
   }
@@ -1777,7 +1777,8 @@ function _cmCheckEmpNoDup(el) {
   // 2) DB에 저장된 직원과 중복 체크
   const matched = allEmployees.find(e => e.company_id === coId && e.employee_number === empNo);
   if (!matched) {
-    el.style.borderColor = '#16a34a';
+    el.classList.remove('va-input-err');
+    _cmEmpNoHint(el, 'va-ok', '사용 가능한 사원번호입니다.');
     return;
   }
 
@@ -1785,8 +1786,8 @@ function _cmCheckEmpNoDup(el) {
 
   // 유효 계약 보유 → 사용 중
   if (empContracts.some(c => CONTRACT_ACTIVE_STATUSES.includes(c.status))) {
-    el.style.borderColor = '#dc2626';
-    toast(`사원번호 "${empNo}"은(는) 이미 ${matched.name} 직원이 사용 중입니다.`, 'error');
+    el.classList.add('va-input-err');
+    _cmEmpNoHint(el, 'va-err', `사원번호 "${empNo}"은(는) 이미 ${matched.name} 직원이 사용 중입니다.`);
     return;
   }
 
@@ -1794,14 +1795,25 @@ function _cmCheckEmpNoDup(el) {
   const allVoided = empContracts.length > 0 && empContracts.every(c => c.status === CONTRACT_STATUS.VOIDED);
   const anyRenewedFrom = empContracts.some(c => c.renewed_from_id);
   if (allVoided && !anyRenewedFrom) {
-    el.style.borderColor = '#16a34a';
+    el.classList.remove('va-input-err');
+    _cmEmpNoHint(el, 'va-ok', '사용 가능한 사원번호입니다.');
     return;
   }
 
   // 그 외 → 재사용 불가
-  el.style.borderColor = '#dc2626';
+  el.classList.add('va-input-err');
   const reason = allVoided ? '갱신 승계되어 파기된' : '퇴사 처리된';
-  toast(`사원번호 "${empNo}"은(는) ${reason} ${matched.name} 직원이 사용하던 번호입니다.`, 'error');
+  _cmEmpNoHint(el, 'va-err', `사원번호 "${empNo}"은(는) ${reason} ${matched.name} 직원이 사용하던 번호입니다.`);
+}
+
+/** 사원번호 필드 아래 힌트 표시 */
+function _cmEmpNoHint(el, cls, msg) {
+  const hintId = el.id.replace(/^cm-(rep|exec|rel)-empno-/, 'cm-$1-empno-err-');
+  const hint = document.getElementById(hintId);
+  if (!hint) return;
+  hint.classList.remove('va-ok', 'va-err');
+  hint.textContent = '';
+  if (cls) { hint.classList.add(cls); hint.textContent = msg; }
 }
 
 function _cmCheckRepEmpNo(idx) {
