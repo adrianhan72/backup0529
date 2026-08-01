@@ -1750,16 +1750,12 @@ function _cmSuggestEmpNoFor(inputEl) {
   if (!inputEl) return;
   const coId = editId.company;
   const used = new Set();
-  // 1) DB에 저장된 해당 고객사 직원들의 사원번호 수집 (파기만 된 계약은 재사용 가능)
+  // 1) DB에 저장된 해당 고객사 직원들의 사원번호 수집 (단순: 모든 직원 차단)
   if (coId) {
     for (const emp of allEmployees) {
       if (emp.company_id !== coId) continue;
       const num = parseInt(emp.employee_number);
-      if (isNaN(num)) continue;
-      const empContracts = allContracts.filter(x => x.employee_id === emp.id && x.company_id === coId);
-      const allVoided = empContracts.length > 0 && empContracts.every(x => x.status === CONTRACT_STATUS.VOIDED);
-      const anyRenewed = empContracts.some(x => x.renewed_from_id);
-      if (!allVoided || anyRenewed) used.add(num);
+      if (!isNaN(num)) used.add(num);
     }
   }
   // 2) 현재 폼에 입력된 대표자/등기임원/특수관계인 사원번호도 수집 (자기 자신 제외)
@@ -1803,7 +1799,7 @@ function _cmCheckEmpNoDup(el) {
     }
   }
 
-  // 2) DB에 저장된 직원과 중복 체크
+  // 2) DB에 저장된 직원과 중복 체크 (단순: 존재하면 차단)
   const matched = allEmployees.find(e => e.company_id === coId && e.employee_number === empNo);
   if (!matched) {
     el.classList.remove('va-input-err');
@@ -1811,28 +1807,9 @@ function _cmCheckEmpNoDup(el) {
     return;
   }
 
-  const empContracts = allContracts.filter(c => c.employee_id === matched.id && c.company_id === coId);
-
-  // 유효 계약 보유 → 사용 중
-  if (empContracts.some(c => CONTRACT_ACTIVE_STATUSES.includes(c.status))) {
-    el.classList.add('va-input-err');
-    _cmEmpNoHint(el, 'va-err', `사원번호 "${empNo}"은(는) 이미 ${matched.name} 직원이 사용 중입니다.`);
-    return;
-  }
-
-  // 모든 계약이 VOIDED + 갱신 승계 아님 → 재사용 가능
-  const allVoided = empContracts.length > 0 && empContracts.every(c => c.status === CONTRACT_STATUS.VOIDED);
-  const anyRenewedFrom = empContracts.some(c => c.renewed_from_id);
-  if (allVoided && !anyRenewedFrom) {
-    el.classList.remove('va-input-err');
-    _cmEmpNoHint(el, 'va-ok', '사용 가능한 사원번호입니다.');
-    return;
-  }
-
-  // 그 외 → 재사용 불가
+  // 기존 직원이 사용 중 → 사용 불가
   el.classList.add('va-input-err');
-  const reason = allVoided ? '갱신 승계되어 파기된' : '퇴사 처리된';
-  _cmEmpNoHint(el, 'va-err', `사원번호 "${empNo}"은(는) ${reason} ${matched.name} 직원이 사용하던 번호입니다.`);
+  _cmEmpNoHint(el, 'va-err', `사원번호 "${empNo}"은(는) 이미 ${matched.name} 직원이 사용 중입니다.`);
 }
 
 /** 사원번호 필드 아래 힌트 표시 */
@@ -1847,25 +1824,14 @@ function _cmEmpNoHint(el, cls, msg) {
 
 function _cmCheckRepEmpNo(idx) {
   _cmCheckEmpNoDup(document.getElementById('cm-rep-empno-' + idx));
-  _cmOnEmpNoChanged('cm-rep-empno-', idx);
+  _cmSuggestAllEmpNos();
 }
 function _cmCheckExecEmpNo(idx) {
   _cmCheckEmpNoDup(document.getElementById('cm-exec-empno-' + idx));
-  _cmOnEmpNoChanged('cm-exec-empno-', idx);
+  _cmSuggestAllEmpNos();
 }
 function _cmCheckRelEmpNo(idx) {
   _cmCheckEmpNoDup(document.getElementById('cm-rel-empno-' + idx));
-  _cmOnEmpNoChanged('cm-rel-empno-', idx);
-}
-
-/** 사원번호 필드 변경 시: 비워졌으면 모든 사원번호 필드를 초기화하고 재추천 */
-function _cmOnEmpNoChanged(idPrefix, idx) {
-  const current = document.getElementById(idPrefix + idx);
-  if (!current || current.value.trim()) { _cmSuggestAllEmpNos(); return; }
-  // 어떤 그룹이든 사원번호가 비워지면 모든 사원번호 필드를 초기화
-  document.querySelectorAll('[id^="cm-rep-empno-"],[id^="cm-exec-empno-"],[id^="cm-rel-empno-"]').forEach(el => {
-    if (el !== current) el.value = '';
-  });
   _cmSuggestAllEmpNos();
 }
 
