@@ -1829,7 +1829,7 @@ function openRecontractModal(srcContract){
   const rcCtType = (emp && emp.employment_category) || srcContract.contract_type || CONTRACT_TYPE.REGULAR;
   const rcIsFixed = (rcCtType===CONTRACT_TYPE.FIXED||rcCtType===CONTRACT_TYPE.FIXED_PROBATION||rcCtType===CONTRACT_TYPE.DAILY);
   if(emp){
-    document.getElementById('ct-edit-em-gender').value     = emp.gender||'male';
+    document.getElementById('ct-edit-em-gender').value     = emp.gender==='여'?'female':emp.gender==='남'?'male':(emp.gender||'male');
     (function(){ const _h=document.getElementById('ct-edit-em-gender-hint'); if(_h){ _h.textContent='주민번호 입력 시 자동 설정됩니다'; _h.className='ct-hint-normal'; } })();
     document.getElementById('ct-edit-em-category').value = emp.employment_category||'';
     document.getElementById('ct-edit-em-job').value        = emp.job_description||'';

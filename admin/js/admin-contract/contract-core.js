@@ -921,7 +921,7 @@ function openContractModal(id=null, preCompanyId=null){
       const emp = allEmployees.find(e=>e.id===c.employee_id);
       document.getElementById('ct-edit-emp-name').value = emp ? emp.name : '';
       if(emp){
-        document.getElementById('ct-edit-em-gender').value    = emp.gender || 'male';
+        document.getElementById('ct-edit-em-gender').value    = emp.gender==='여'?'female':emp.gender==='남'?'male':(emp.gender||'male');
         // 계약예정 상태이면 수습 카테고리 정규화 (예: '계약직 수습' → '계약직')
         const _empCatRaw = emp.employment_category || '';
         const _empCatKorean = contractTypeLabel(_empCatRaw) || '-';
