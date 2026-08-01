@@ -147,6 +147,7 @@
     .ctf-row.ctf-row-voided{border-color:#fca5a5;background:#fff5f5;}
     /* ?�무?�???�비??계약???�로??*/
     .cm-svc-section{margin-top:8px;}
+    .cm-svc-label{display:block;margin-bottom:10px;}
     .cm-svc-section-title{font-size:12px;font-weight:700;color:#e94560;padding:10px 0 3px;border-bottom:1px dashed #ffd0d8;margin-bottom:6px;display:flex;align-items:center;gap:6px;}
     .cm-svc-upload-area{display:flex;flex-direction:column;gap:8px;}
     .cm-svc-upload-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:#16a34a;border:1px solid #15803d;border-radius:8px;color:#fff!important;font-size:12.5px;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit;}
