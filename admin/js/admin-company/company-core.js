@@ -1723,7 +1723,7 @@ function _cmRemoveRelated(idx) {
 // ── 사원번호 추천 헬퍼 (대표자/등기임원/특수관계인 공통) ──
 function _cmSuggestEmpNoFor(inputEl) {
   if (!inputEl) return;
-  const coId = currentGlobalCompanyId || document.getElementById('cm-company')?.value;
+  const coId = editId.company;  // 수정 모드일 때만 회사 ID 있음
   const used = new Set();
   // 1) DB에 저장된 해당 고객사 직원들의 사원번호 수집
   if (coId) {
@@ -1898,7 +1898,7 @@ function _cmRenumberAllEmpNos() {
 
 /** 저장 전 최종 유효성 검증: 사원번호 중복·DB 충돌 확인 */
 function _cmValidateAllEmpNos() {
-  const coId = currentGlobalCompanyId || document.getElementById('cm-company')?.value;
+  const coId = editId.company;  // 수정 모드일 때만 회사 ID 있음
   const seen = {}; // { empNo: label } — 폼 내 중복 검사용
   const allInputs = document.querySelectorAll('[id^="cm-rep-empno-"],[id^="cm-exec-empno-"],[id^="cm-rel-empno-"]');
   const errors = [];
