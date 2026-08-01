@@ -1162,7 +1162,7 @@ function _validateBizNumber() {
     return false;
   }
 
-  hint.textContent = '유효한 사업자등록번호입니다 (유효성 검사 통과)';
+  hint.textContent = '유효한 사업자등록번호입니다';
   hint.classList.add('va-ok');
   return true;
 }
