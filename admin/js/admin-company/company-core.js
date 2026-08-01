@@ -1755,12 +1755,17 @@ function _cmSuggestEmpNoFor(inputEl) {
   if (!inputEl) return;
   const coId = editId.company;  // 수정 모드일 때만 회사 ID 있음
   const used = new Set();
-  // 1) DB에 저장된 해당 고객사 직원들의 사원번호 수집
+  // 1) DB에 저장된 해당 고객사 직원들의 사원번호 수집 (파기만 된 계약은 재사용 가능)
   if (coId) {
     for (const emp of allEmployees) {
       if (emp.company_id !== coId) continue;
       const num = parseInt(emp.employee_number);
-      if (!isNaN(num)) used.add(num);
+      if (isNaN(num)) continue;
+      // 모든 계약이 VOIDED + 갱신승계 아님 → 재사용 가능하므로 used에서 제외
+      const empContracts = allContracts.filter(x => x.employee_id === emp.id && x.company_id === coId);
+      const allVoided = empContracts.length > 0 && empContracts.every(x => x.status === CONTRACT_STATUS.VOIDED);
+      const anyRenewed = empContracts.some(x => x.renewed_from_id);
+      if (!allVoided || anyRenewed) used.add(num);
     }
   }
   // 2) 현재 폼에 입력된 대표자/등기임원/특수관계인 사원번호도 수집 (자기 자신 제외)
