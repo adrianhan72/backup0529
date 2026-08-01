@@ -124,14 +124,30 @@ function _renderContCoSummaryCards(){
     });
   });
 
-  // 해지예정 (sortOrder 3)
+  // 해지예정 (sortOrder 2)
+  const terminateReasonColors = {
+    '계약갱신': 'background:#fef9c3;color:#92400e;',
+    '해고':   'background:#fecaca;color:#991b1b;',
+    '만료':   'background:#fce7f3;color:#9d174d;',
+    '사직':   'background:#e0e7ff;color:#3730a3;',
+  };
   allContracts.filter(c => c.company_id === coId && c.status === CONTRACT_STATUS.TERMINATE_PENDING
       && c.terminate_date && c.terminate_date > today)
     .forEach(c => {
+      let tReason;
+      if (c.renewal_pair_id) {
+        tReason = '계약갱신';
+      } else if (c.dismissal_notice_pay) {
+        tReason = '해고';
+      } else if (c.contract_end && c.terminate_date === c.contract_end) {
+        tReason = '만료';
+      } else {
+        tReason = '사직';
+      }
       scheduledItems.push({
         type: 'terminate', typeLabel: '해지예정', sortOrder: 2,
         targetDate: c.terminate_date, contract: c,
-        reason: '-', reasonBadgeStyle: '',
+        reason: tReason, reasonBadgeStyle: terminateReasonColors[tReason] || '',
         badgeStyle: 'background:#ffe4e6;color:#9f1239;',
       });
     });
