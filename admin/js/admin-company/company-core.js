@@ -1831,9 +1831,9 @@ function _cmCheckRelEmpNo(idx) {
 
 // ── 전화번호 중복 검사 (대표자/등기임원/특수관계인 공통) ──
 function _cmCheckPhoneDup(el) {
-  if (!el || !el.value.trim()) { if(el) el.style.borderColor = ''; return; }
-  const phone = el.value.trim().replace(/[^0-9]/g, ''); // 숫자만 추출
-  if (!phone) { el.style.borderColor = ''; return; }
+  if (!el || !el.value.trim()) { if(el) el.classList.remove('va-input-err'); return; }
+  const phone = el.value.trim().replace(/[^0-9]/g, '');
+  if (!phone) { el.classList.remove('va-input-err'); return; }
 
   // 1) 같은 폼 내 다른 전화번호 필드와 중복 체크
   const allPhoneInputs = document.querySelectorAll('[id^="cm-rep-phone-"],[id^="cm-exec-phone-"],[id^="cm-rel-phone-"]');
@@ -1841,24 +1841,24 @@ function _cmCheckPhoneDup(el) {
     if (other === el) continue;
     const otherPhone = (other.value || '').trim().replace(/[^0-9]/g, '');
     if (otherPhone && otherPhone === phone) {
-      el.style.borderColor = '#dc2626';
+      el.classList.add('va-input-err');
       toast('이미 다른 항목에 입력된 전화번호입니다.', 'error');
       return;
     }
   }
 
   // 2) 수정 모드: DB 직원 전화번호와 중복 체크
-  const coId = currentGlobalCompanyId || document.getElementById('cm-company')?.value;
+  const coId = editId.company;
   if (coId) {
     const dupEmp = allEmployees.find(e => e.company_id === coId && e.phone && e.phone.replace(/[^0-9]/g, '') === phone);
     if (dupEmp) {
-      el.style.borderColor = '#dc2626';
+      el.classList.add('va-input-err');
       toast(`"${phone}"은(는) 이미 ${dupEmp.name} 직원의 등록된 전화번호입니다.`, 'error');
       return;
     }
   }
 
-  el.style.borderColor = '#16a34a';
+  el.classList.remove('va-input-err');
 }
 
 function _cmCheckRepPhone(idx) {
