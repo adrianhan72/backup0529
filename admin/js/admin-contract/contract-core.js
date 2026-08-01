@@ -88,14 +88,14 @@ function _renderContCoSummaryCards(){
       const paired = c.renewal_pair_id ? allContracts.find(x => x.id === c.renewal_pair_id) : null;
       targetDate = paired?.contract_start || c.renewal_date;
       if (!targetDate) return;
-      // RENEWAL_PENDING + 수습 타입 → 수습종료
-      reason = isProbationType ? '수습종료' : '계약갱신';
+      // RENEWAL_PENDING + 수습 타입 → 수습만료
+      reason = isProbationType ? '수습만료' : '계약갱신';
     } else {
       targetDate = c.contract_start;
       if (!targetDate) return;
-      // PENDING + 활성 수습계약 있음 + 새 계약은 비수습 → 수습종료 (채용확정)
+      // PENDING + 활성 수습계약 있음 + 새 계약은 비수습 → 수습만료 (채용확정)
       if (activeProbation && !isProbationType) {
-        reason = '수습종료';
+        reason = '수습만료';
       } else {
         const pastEmpIds = _getPastEmpIds(emp);
         const hasPast = _hasPastContracts(c.employee_id, pastEmpIds, c.id);
@@ -113,7 +113,7 @@ function _renderContCoSummaryCards(){
       '신규입사': 'background:#d1fae5;color:#065f46;',
       '재입사':   'background:#dbeafe;color:#1e40af;',
       '계약갱신': 'background:#fef9c3;color:#92400e;',
-      '수습종료': 'background:#ccfbf1;color:#134e4a;',
+      '수습만료': 'background:#ccfbf1;color:#134e4a;',
     };
 
     scheduledItems.push({
