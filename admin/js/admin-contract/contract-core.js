@@ -586,7 +586,6 @@ function renderContracts(){
         specialBadge = `<span class="badge badge-gray">특수관계인</span>`;
       }
     }
-    }
     return `<tr>
       <td style="font-weight:600">${getEmpName(c.employee_id)}</td>
       <td style="font-size:12px;text-align:center;">${emp?.gender==='female'||emp?.gender==='여성'||emp?.gender==='여'?'여':emp?.gender==='male'||emp?.gender==='남성'||emp?.gender==='남'?'남':'-'}</td>
