@@ -1038,8 +1038,8 @@
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
             <select id="cm-period-month" onchange="_cmPeriodCompose()" style="flex:0 0 auto;">
               <option value="">월 선택</option>
-              <option value="전월">전월</option>
-              <option value="당월">당월</option>
+              <option value="prev_month">전월</option>
+              <option value="current_month">당월</option>
             </select>
             <select id="cm-period-day" onchange="_cmPeriodCompose()" style="flex:0 0 auto;">
               <option value="">일 선택</option>
@@ -1064,16 +1064,16 @@
           <label>4대보험 적용 기준 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
           <select id="cm-insurance-basis" style="width:100%;">
             <option value="" disabled selected>선택하세요</option>
-            <option value="요율 기준">요율 기준 (년도별 산정기준 요율 자동계산)</option>
-            <option value="확정액 기준">확정액 기준 (금액 직접 입력)</option>
+            <option value="rate_based">요율 기준 (년도별 산정기준 요율 자동계산)</option>
+            <option value="fixed_amount">확정액 기준 (금액 직접 입력)</option>
           </select>
         </div>
         <div class="form-group">
           <label>연차 휴가 산정 기준 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
           <select id="cm-annual-leave-basis" style="width:100%;">
             <option value="" disabled selected>선택하세요</option>
-            <option value="회계년도 기준">회계년도 기준</option>
-            <option value="입사일 기준">입사일 기준</option>
+            <option value="fiscal_year">회계년도 기준</option>
+            <option value="hire_date">입사일 기준</option>
           </select>
         </div>
         <div class="form-group">

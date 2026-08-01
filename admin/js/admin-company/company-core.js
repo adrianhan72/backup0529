@@ -268,7 +268,7 @@ function _cmPeriodCompose(){
   const dayHidden = document.getElementById('cm-period-day-hidden');
   // 월·일 모두 선택된 경우에만 합성값 세팅, 하나라도 없으면 hidden 비움
   if(mo && day){
-    if(hidden)    hidden.value    = `${mo} ${day}일부터 1개월간`;
+    if(hidden)    hidden.value    = `${_cmPeriodMonthLabel(mo)} ${day}일부터 1개월간`;
     if(moHidden)  moHidden.value  = mo;
     if(dayHidden) dayHidden.value = day;
   } else {
@@ -288,14 +288,14 @@ function _cmPeriodRestore(val, month, day){
   const pmEl = document.getElementById('cm-period-month');
   const pdEl = document.getElementById('cm-period-day');
 
-  // 월 복원
+  // 월 복원 (DB 값: prev_month / current_month)
   let resolvedMonth = '';
   if(month){
     resolvedMonth = month;
   } else if(val){
     const s = val.replace(/\s/g,'');
     const m = s.match(/^(전월|당월)(\d+)일/);
-    if(m) resolvedMonth = m[1];
+    if(m) resolvedMonth = m[1] === '전월' ? 'prev_month' : 'current_month';
   }
   if(pmEl) pmEl.value = resolvedMonth; // 값 없으면 '월 선택' 유지
 
