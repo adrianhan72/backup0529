@@ -170,10 +170,6 @@ function _renderContCoSummaryCards(){
       reason: null,
     });
   });
-      reason: '-', reasonBadgeStyle: '',
-      badgeStyle: 'background:#fce7f3;color:#9d174d;',
-    });
-  });
 
   // 정렬: targetDate ASC → sortOrder ASC
   scheduledItems.sort((a, b) => {
