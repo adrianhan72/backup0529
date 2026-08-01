@@ -1847,14 +1847,27 @@ function _cmEmpNoHint(el, cls, msg) {
 
 function _cmCheckRepEmpNo(idx) {
   _cmCheckEmpNoDup(document.getElementById('cm-rep-empno-' + idx));
-  _cmSuggestAllEmpNos();
+  _cmClearTrailingAndSuggest('cm-rep-empno-', idx);
 }
 function _cmCheckExecEmpNo(idx) {
   _cmCheckEmpNoDup(document.getElementById('cm-exec-empno-' + idx));
-  _cmSuggestAllEmpNos();
+  _cmClearTrailingAndSuggest('cm-exec-empno-', idx);
 }
 function _cmCheckRelEmpNo(idx) {
   _cmCheckEmpNoDup(document.getElementById('cm-rel-empno-' + idx));
+  _cmClearTrailingAndSuggest('cm-rel-empno-', idx);
+}
+
+/** 앞 번호 필드가 비워지면 같은 그룹의 뒷번호 필드들을 초기화하고 전체 재추천 */
+function _cmClearTrailingAndSuggest(idPrefix, idx) {
+  const current = document.getElementById(idPrefix + idx);
+  if (!current || current.value.trim()) { _cmSuggestAllEmpNos(); return; }
+  // 현재 필드가 비워졌으면, 같은 그룹의 더 높은 인덱스 필드들을 모두 비운다
+  for (let i = idx + 1; ; i++) {
+    const next = document.getElementById(idPrefix + i);
+    if (!next) break;
+    next.value = '';
+  }
   _cmSuggestAllEmpNos();
 }
 
