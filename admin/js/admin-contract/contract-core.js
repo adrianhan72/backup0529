@@ -111,9 +111,9 @@ function _renderContCoSummaryCards(){
 
     const reasonColors = {
       '신규입사': 'background:#d1fae5;color:#065f46;',
-      '재입사':   'background:#dbeafe;color:#1e40af;',
-      '계약갱신': 'background:#fef9c3;color:#92400e;',
-      '수습만료': 'background:#ccfbf1;color:#134e4a;',
+      '재입사':   'background:#d1fae5;color:#065f46;',
+      '계약갱신': 'background:#ffedd5;color:#9a3412;',
+      '수습만료': 'background:#fef9c3;color:#92400e;',
     };
 
     scheduledItems.push({
@@ -126,10 +126,10 @@ function _renderContCoSummaryCards(){
 
   // 해지예정 (sortOrder 2)
   const terminateReasonColors = {
-    '계약갱신': 'background:#fef9c3;color:#92400e;',
-    '해고':   'background:#fecaca;color:#991b1b;',
-    '만료':   'background:#fce7f3;color:#9d174d;',
-    '사직':   'background:#e0e7ff;color:#3730a3;',
+    '계약갱신': 'background:#ffedd5;color:#9a3412;',
+    '해고':   'background:#fce7f3;color:#9d174d;',
+    '만료':   'background:#f3f4f6;color:#6b7280;',
+    '사직':   'background:#f3f4f6;color:#6b7280;',
   };
   allContracts.filter(c => c.company_id === coId && c.status === CONTRACT_STATUS.TERMINATE_PENDING
       && c.terminate_date && c.terminate_date > today)
