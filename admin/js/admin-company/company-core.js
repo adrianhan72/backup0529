@@ -803,6 +803,7 @@ function openCompanyModal(id=null){
     : '<i class="fas fa-check-circle"></i> 등록';
 
   ['cm-name','cm-biz','cm-rep','cm-industry','cm-addr','cm-phone','cm-email','cm-period','cm-payday','cm-note','cm-contract-start','cm-contract-end'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});
+  _validateBizNumber();
   // 해지일 행 초기화 (기본 숨김)
   const _cmEndRow = document.getElementById('cm-contract-end-row');
   if(_cmEndRow) _cmEndRow.style.display = 'none';
@@ -821,7 +822,7 @@ function openCompanyModal(id=null){
     const c=_cmpData;
     if(c){
       document.getElementById('cm-name').value=c.company_name||'';
-      document.getElementById('cm-biz').value=c.business_number||'';
+      document.getElementById('cm-biz').value=c.business_number||''; _onBizInput();
       document.getElementById('cm-industry').value=c.industry||'';
       document.getElementById('cm-addr').value=c.address||'';
       document.getElementById('cm-phone').value=c.phone||'';
@@ -873,7 +874,7 @@ function openCompanyModal(id=null){
     if(c){
       // 임시저장 데이터 복원
       document.getElementById('cm-name').value=c.company_name||'';
-      document.getElementById('cm-biz').value=c.business_number||'';
+      document.getElementById('cm-biz').value=c.business_number||''; _onBizInput();
       document.getElementById('cm-industry').value=c.industry||'';
       document.getElementById('cm-addr').value=c.address||'';
       document.getElementById('cm-phone').value=c.phone||'';
@@ -1114,6 +1115,20 @@ function _cmValEqual(a, b){
   return na === nb;
 }
 
+/** 사업자등록번호 자동 포맷 (숫자만 허용, XXX-XX-XXXXX) */
+function _onBizInput() {
+  const el = document.getElementById('cm-biz');
+  if (!el) return;
+  let digits = el.value.replace(/[^0-9]/g, '').slice(0, 10);
+  if (digits.length > 5) {
+    digits = digits.slice(0, 3) + '-' + digits.slice(3, 5) + '-' + digits.slice(5);
+  } else if (digits.length > 3) {
+    digits = digits.slice(0, 3) + '-' + digits.slice(3);
+  }
+  el.value = digits;
+  _validateBizNumber();
+}
+
 /** 사업자등록번호 실시간 유효성 검사 */
 function _validateBizNumber() {
   const el = document.getElementById('cm-biz');
@@ -1205,7 +1220,7 @@ async function saveCompany(){
   document.getElementById('cm-email').value = _representatives[0]?.email || '';
 
   const name   = document.getElementById('cm-name').value.trim();
-  const biz    = document.getElementById('cm-biz').value.trim();
+  const biz    = document.getElementById('cm-biz').value.replace(/[^0-9]/g,'').trim();
   const rep    = _representatives[0]?.name || '';
   const phone  = _representatives[0]?.phone || '';
   const period = document.getElementById('cm-period').value.trim();
@@ -1238,7 +1253,7 @@ async function saveCompany(){
   const _prevStatus = editId.company
     ? (allCompanies.find(x=>x.id===editId.company)?.status || COMPANY_STATUS.ACTIVE)
     : COMPANY_STATUS.ACTIVE;
-  const body={company_name:name,business_number:document.getElementById('cm-biz').value,representative:_representatives[0]?.name||'',representatives:JSON.stringify(_representatives),industry:document.getElementById('cm-industry').value,address:document.getElementById('cm-addr').value,phone:_representatives[0]?.phone||'',email:_representatives[0]?.email||'',pay_period:document.getElementById('cm-period').value,pay_period_month:document.getElementById('cm-period-month-hidden').value||null,pay_period_day:parseInt(document.getElementById('cm-period-day-hidden').value)||null,pay_day:document.getElementById('cm-payday').value,access_code:code,note:document.getElementById('cm-note').value,insurance_basis:insuranceBasis,annual_leave_basis:annualLeaveBasis,sick_leave_pay_rate:parseFloat(document.getElementById('cm-sick-leave-pay-rate')?.value)||0,proration_method:document.querySelector('input[name="cm-proration-method"]:checked')?.value||'30day_fixed',service_contract_file_name:_cmSvcGetSaveData().name,service_contract_file_data:_cmSvcGetSaveData().data,allowance_config:newAllowanceCfg,contract_start_date:document.getElementById('cm-contract-start').value||null,is_draft:false,draft_saved_at:null,status:_prevStatus};
+  const body={company_name:name,business_number:document.getElementById('cm-biz').value.replace(/[^0-9]/g,''),representative:_representatives[0]?.name||'',representatives:JSON.stringify(_representatives),industry:document.getElementById('cm-industry').value,address:document.getElementById('cm-addr').value,phone:_representatives[0]?.phone||'',email:_representatives[0]?.email||'',pay_period:document.getElementById('cm-period').value,pay_period_month:document.getElementById('cm-period-month-hidden').value||null,pay_period_day:parseInt(document.getElementById('cm-period-day-hidden').value)||null,pay_day:document.getElementById('cm-payday').value,access_code:code,note:document.getElementById('cm-note').value,insurance_basis:insuranceBasis,annual_leave_basis:annualLeaveBasis,sick_leave_pay_rate:parseFloat(document.getElementById('cm-sick-leave-pay-rate')?.value)||0,proration_method:document.querySelector('input[name="cm-proration-method"]:checked')?.value||'30day_fixed',service_contract_file_name:_cmSvcGetSaveData().name,service_contract_file_data:_cmSvcGetSaveData().data,allowance_config:newAllowanceCfg,contract_start_date:document.getElementById('cm-contract-start').value||null,is_draft:false,draft_saved_at:null,status:_prevStatus};
 
   // ── 수정 모드: diff 계산 → 변경 있을 때만 적용일 검증 + company_history 기록 ──
   let _effDateStr = ''; // 상위 스코프에서 선언 (등기임원 이력에서도 사용)

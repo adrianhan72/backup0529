@@ -967,7 +967,7 @@
           <div class="cm-allowance-section">
             <div class="form-grid">
         <div class="form-group"><label>회사명 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><input type="text" id="cm-name" /></div>
-        <div class="form-group"><label>사업자등록번호 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><input type="text" id="cm-biz" placeholder="000-00-00000" oninput="_validateBizNumber()" /><div id="cm-biz-hint" class="va-hint"></div></div>
+        <div class="form-group"><label>사업자등록번호 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><input type="text" id="cm-biz" placeholder="000-00-00000" maxlength="12" oninput="_onBizInput()" /><div id="cm-biz-hint" class="va-hint"></div></div>
         <div class="form-group"><label>업종</label><input type="text" id="cm-industry" /></div>
         <div class="form-group"><label>자문계약 시작일 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><input type="date" id="cm-contract-start" class="filt-date" /></div>
         <div class="form-group" id="cm-contract-end-row" style="display:none;"><label style="color:#dc2626;">계약 해지일</label><input type="date" id="cm-contract-end" class="filt-date" readonly /></div>
