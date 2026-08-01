@@ -1785,10 +1785,9 @@ function _cmSuggestRelEmpNo(idx) {
 function _cmCheckEmpNoDup(el) {
   if (!el || !el.value.trim()) { if(el) el.classList.remove('va-input-err'); _cmEmpNoHint(el, '', ''); return; }
   const coId = editId.company;
-  if (!coId) { _cmEmpNoHint(el, '', ''); return; }
   const empNo = el.value.trim();
 
-  // 1) 같은 폼 내 다른 사원번호 필드와 중복 체크
+  // 1) 같은 폼 내 다른 사원번호 필드와 중복 체크 (coId 불필요 — 항상 실행)
   const allEmpNoInputs = document.querySelectorAll('[id^="cm-rep-empno-"],[id^="cm-exec-empno-"],[id^="cm-rel-empno-"]');
   for (const other of allEmpNoInputs) {
     if (other === el) continue;
@@ -1799,7 +1798,8 @@ function _cmCheckEmpNoDup(el) {
     }
   }
 
-  // 2) DB에 저장된 직원과 중복 체크 (단순: 존재하면 차단)
+  // 2) DB에 저장된 직원과 중복 체크 (coId 필요 — 신규작성 시 생략)
+  if (!coId) { el.classList.remove('va-input-err'); _cmEmpNoHint(el, '', ''); return; }
   const matched = allEmployees.find(e => e.company_id === coId && e.employee_number === empNo);
   if (!matched) {
     el.classList.remove('va-input-err');
