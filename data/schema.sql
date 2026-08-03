@@ -453,6 +453,10 @@ CREATE TABLE IF NOT EXISTS wage_ledger_notifications (
   year INTEGER, --  -- 연도
   month INTEGER, --  -- 월
   is_read INTEGER DEFAULT 0, --  -- 확인 여부 (0:미확인, 1:확인)
+  is_renewed INTEGER DEFAULT 0, --  -- 갱신 여부 (0:최초 생성, 1:급여 수정으로 갱신)
+  file_excel_path TEXT, --  -- 생성된 신고용 엑셀 파일 경로
+  file_html_path TEXT, --  -- 생성된 신고용 HTML(열람용) 파일 경로
+  updated_employees TEXT, --  -- 갱신 시 변경된 직원 정보 (JSON: [{empId, name, updatedAt}])
   created_at INTEGER, --  -- 생성일시
   updated_at INTEGER --  -- 수정일시
 );

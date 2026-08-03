@@ -135,26 +135,31 @@ async function _checkWageLedgerComplete(companyId, year, month){
   const alreadyExists = allNotifs.find(n =>
     n.company_id === companyId && Number(n.pay_year)===year && Number(n.pay_month)===month
   );
+  let _wlExistingId = null;
   if(alreadyExists){
-    // 이미 존재하면 is_read=false로 리셋 (재입력 완료 시 다시 N 표시)
+    // 이미 존재하면 갱신: is_read=false, is_renewed=1, updated_at 갱신
+    _wlExistingId = alreadyExists.id;
     await api(`../tables/wage_ledger_notifications/${alreadyExists.id}`,{
       method:'PATCH',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({is_read:false})
+      body:JSON.stringify({is_read:false, is_renewed:1, updated_at:Date.now()})
     });
   } else {
     // 신규 알림 생성
+    const newId = 'wln'+Date.now();
     await api('../tables/wage_ledger_notifications',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
-        id:'wln'+Date.now(),
+        id:newId,
         company_id:companyId,
-        pay_year:year,
-        pay_month:month,
-        is_read:false
+        year, month,
+        is_read:false,
+        is_renewed:0,
+        created_at:Date.now()
       })
     });
+    _wlExistingId = newId;
   }
   // 캐시 갱신 + 뱃지 업데이트
   await loadWLNotifications();
@@ -176,6 +181,17 @@ async function _checkWageLedgerComplete(companyId, year, month){
     });
     if (genRes.ok) {
       console.log('[임금대장] 파일 생성 완료:', genRes.safeName);
+      // 생성된 파일 경로를 wage_ledger_notifications에 저장
+      if (_wlExistingId) {
+        await api('../tables/wage_ledger_notifications/' + _wlExistingId, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            file_excel_path: genRes.excel || '',
+            file_html_path: genRes.html || ''
+          })
+        });
+      }
     }
   } catch (e) {
     console.warn('[임금대장] 파일 생성 실패 (무시됨):', e.message);
