@@ -85,11 +85,11 @@
             </div>
             <!-- 오른쪽: 다운로드 + 업로드 -->
             <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
-              <button onclick="downloadPrevMonthExcel()" id="pi-prev-download-btn" class="btn btn-success btn-sm">
-                <i class="fas fa-file-excel"></i> 전월 임금대장 다운로드
+              <button onclick="downloadPrevMonthExcel()" id="pi-prev-download-btn" class="btn btn-warning btn-sm">
+                <i class="fas fa-file-excel"></i> 편집용 전월 임금대장 다운로드
               </button>
-              <button onclick="openPIUploadModal()" id="pi-bulk-upload-btn" class="btn btn-success btn-sm">
-                <i class="fas fa-upload"></i> 전직원 임금대장 업로드
+              <button onclick="openPIUploadModal()" id="pi-bulk-upload-btn" class="btn btn-danger btn-sm">
+                <i class="fas fa-upload"></i> 당월 임금대장 업로드(전직원 급여 자동생성)
               </button>
             </div>
           </div>
@@ -105,7 +105,7 @@
                   <i class="fas fa-upload" style="color:#fff;font-size:17px;"></i>
                 </div>
                 <div>
-                  <div style="font-size:15px;font-weight:800;color:#1e1b4b;">전직원 임금대장 일괄 업로드</div>
+                  <div style="font-size:15px;font-weight:800;color:#1e1b4b;">당월 임금대장 업로드 (전직원 급여 자동생성)</div>
                   <div id="pi-upload-modal-sub" style="font-size:12px;color:#6b7280;margin-top:2px;"></div>
                 </div>
               </div>
@@ -116,7 +116,7 @@
               <!-- 안내 문구 -->
               <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:12px;color:#92400e;line-height:1.8;">
                 <i class="fas fa-info-circle" style="color:#f59e0b;margin-right:6px;"></i>
-                <strong>전월 임금대장 다운로드</strong>로 받은 엑셀 양식을 작성한 후 업로드하세요.<br>
+                <strong>편집용 전월 임금대장 다운로드</strong>로 받은 엑셀 양식을 수정한 후 업로드하세요.<br>
                 파일명 형식: <code style="background:#fef3c7;padding:1px 6px;border-radius:4px;">[고객사명]_임금대장_YYYY년MM월.xlsx</code>
               </div>
               <!-- 드래그앤드롭 영역 -->
