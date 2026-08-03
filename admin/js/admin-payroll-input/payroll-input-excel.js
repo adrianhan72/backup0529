@@ -580,6 +580,25 @@ const LT_CARE_TOLERANCE=10;    // 장기요양 허용 오차 (요율 반올림 �
 
 let _uploadParsed=null; // 검증 통과한 업로드 데이터 보관
 
+// ── Phase C2.5: 근태/연차 DB 동기화 상태 ──
+let _attSyncCurrent  = [];  // [{ empId, empName, entries }] — 당월 자동반영
+let _attSyncPrev     = [];  // [{ empId, empName, year, month, uploadEntries, dbEntries }] — 이전월 확인필요
+let _leaveSyncCurrent = []; // [{ empId, empName, year, granted, used, remain, carryover, dbRow }] — 당해년도 자동반영
+let _leaveSyncPrev   = [];  // [{ empId, empName, year, upload: {...}, db: {...}, dbRow }] — 이전년도 확인필요
+let _syncPrevConfirmed = false; // 이전 데이터 덮어쓰기 확인 여부
+
+// ── 근태/연차 라벨 매핑 (Excel 한글 ↔ DB 영문 코드) ──
+const _ATT_TYPE_TO_DB   = { '결근':'absent', '지각':'late', '조퇴':'earlyleave' };
+const _ATT_TYPE_TO_EXCEL = { 'absent':'결근', 'late':'지각', 'earlyleave':'조퇴' };
+const _ATT_REASON_TO_DB = {
+  '무단':'unauthorized', '병가(무급)':'sick_unpaid', '병가(유급)':'sick_paid',
+  '산재':'industrial', '생리휴가':'menstrual', '출산(유급)':'maternity_paid',
+  '출산(무급)':'maternity_unpaid', '배우자출산':'paternity_paid',
+  '육아휴직':'childcare_leave', '가족돌봄':'family_care', '휴업휴직':'layoff_leave'
+};
+const _ATT_REASON_TO_EXCEL = {};
+Object.entries(_ATT_REASON_TO_DB).forEach(([k,v])=>{ _ATT_REASON_TO_EXCEL[v]=k; });
+
 function handleExcelUpload(event){
   const file=event.target.files[0];
   if(!file) return;
@@ -820,6 +839,7 @@ function validateAndParseExcel(wb, fileName){
       '휴일수당':       ['휴일수당','휴일근로수당'],
       '연차수당':       ['연차수당'],
       '기타수당':       ['기타수당','기타'],
+      '휴업수당':       ['휴업수당','휴업급여'],
       '지급총액':       ['지급총액'],
       '소득세':         ['소득세'],
       '지방소득세':     ['지방소득세','주민세'],
@@ -893,6 +913,7 @@ function validateAndParseExcel(wb, fileName){
     HOL_PAY:   colIdx('휴일수당'),
     ANNUAL_PAY:colIdx('연차수당'),
     OTHER_PAY: colIdx('기타수당'),
+    LAYOFF_PAY: colIdx('휴업수당'),
     GROSS:     colIdx('지급총액'),
     INC_TAX:   colIdx('소득세'),
     LOCAL_TAX: colIdx('지방소득세'),
@@ -980,8 +1001,275 @@ function validateAndParseExcel(wb, fileName){
     return showUploadReport(false, errors, warnings, calcErrors, fixedErrors, validRows);
   }
 
+  // ────────────────────────────────────────────────────────────
+  //  ★ Phase C1/C2 (전치): 근태·연차 시트 파싱 및 차감액 사전 계산
+  //    수식 검증 전에 차감 정보를 확보해야 정확한 계약 대조가 가능
+  // ────────────────────────────────────────────────────────────
+  _setProgress(25, '근태·연차 시트 파싱 중…');
+
+  // ── 근태관리대장 시트 파싱 ──
+  const ATT_SHEET_NAME = '근태관리대장';
+  const attSheet = wb.SheetNames.find(n => n === ATT_SHEET_NAME);
+  let attByEmp = {}; // { empName: [{ date, type, reason, rate, time, dateTo }, ...] }
+  if (attSheet) {
+    const attWs = wb.Sheets[attSheet];
+    const attRaw = XLSX.utils.sheet_to_json(attWs, {header:1, defval:''});
+    let attHeaderRow = -1;
+    for (let ri = 1; ri < Math.min(attRaw.length, 5); ri++) {
+      const r = attRaw[ri];
+      if (r && String(r[0]||'').includes('직원명')) { attHeaderRow = ri; break; }
+    }
+    if (attHeaderRow >= 0) {
+      const attDataRows = attRaw.slice(attHeaderRow + 1).filter(r => {
+        const nm = String(r[0]||'').trim();
+        return nm && nm !== '합계' && !nm.startsWith('※');
+      });
+      attDataRows.forEach(row => {
+        const empName = String(row[0]||'').trim();
+        const date    = String(row[1]||'').trim();
+        const type    = String(row[2]||'').trim();
+        const reason  = String(row[3]||'').trim();
+        const rate    = parseFloat(row[4]) || 0;
+        const time    = String(row[5]||'').trim();
+        const dateTo  = String(row[6]||'').trim();
+        if (!empName || !date) return;
+        if (!attByEmp[empName]) attByEmp[empName] = [];
+        attByEmp[empName].push({ date, type, reason, rate, time, dateTo });
+      });
+    }
+  }
+
+  // ── 연차관리대장 시트 파싱 ──
+  const LV_SHEET_NAME = '연차관리대장';
+  const lvSheet = wb.SheetNames.find(n => n === LV_SHEET_NAME);
+  let lvByEmp = {}; // { empName: { latest, all: [...] } }
+  if (lvSheet) {
+    const lvWs = wb.Sheets[lvSheet];
+    const lvRaw = XLSX.utils.sheet_to_json(lvWs, {header:1, defval:''});
+    let lvHeaderRow = -1;
+    for (let ri = 1; ri < Math.min(lvRaw.length, 5); ri++) {
+      const r = lvRaw[ri];
+      if (r && String(r[0]||'').includes('직원명')) { lvHeaderRow = ri; break; }
+    }
+    if (lvHeaderRow >= 0) {
+      const lvDataRows = lvRaw.slice(lvHeaderRow + 1).filter(r => {
+        const nm = String(r[0]||'').trim();
+        return nm && !nm.startsWith('※');
+      });
+      lvDataRows.forEach(row => {
+        const empName   = String(row[0]||'').trim();
+        const year      = parseInt(row[1]) || 0;
+        const granted   = parseFloat(row[2]) || 0;
+        const used      = parseFloat(row[3]) || 0;
+        const remain    = parseFloat(row[4]) || 0;
+        const carryover = parseFloat(row[5]) || 0;
+        if (!empName || !year) return;
+        if (!lvByEmp[empName]) lvByEmp[empName] = { latest: null, all: [] };
+        const rec = { year, granted, used, remain, carryover };
+        lvByEmp[empName].all.push(rec);
+        if (!lvByEmp[empName].latest || year > lvByEmp[empName].latest.year) {
+          lvByEmp[empName].latest = rec;
+        }
+      });
+    }
+  }
+
+  // ── 차감액 사전 계산 (employee_id 기준) ──
+  _setProgress(40, '근태 차감액 계산 중…');
+  const _FULL_DEDUCT = new Set(['무단','병가(무급)','생리휴가','가족돌봄']);
+  const _PROTECTED   = new Set(['산재','육아휴직','출산(유급)','출산(무급)','배우자출산']);
+  const attDedByEmpId = {}; // { empId: { dedBasePay, dedWeekHol, dedWeekHolRatio, dedFixedOtP, dedFixedNightP, dedFixedHolP } }
+  const targetMonthStr = `${targetYear}-${String(targetMonth).padStart(2,'0')}`;
+
+  Object.entries(attByEmp).forEach(([empName, entries]) => {
+    const emp = empMatchMap[empName];
+    if (!emp || !entries.length) return;
+    const ct = allContracts.find(c =>
+      c.employee_id === emp.id && CONTRACT_ACTIVE_STATUSES.includes(c.status)) || null;
+    if (!ct) return;
+    const hw = parseFloat(ct.hourly_wage) || 0;
+    const hpd = parseFloat(ct.work_hours_per_day) || 8;
+
+    let dedBasePay = 0, dedHours = 0;
+
+    // ① 기본급 차감 (결근 + 지각/조퇴, 보호휴직 제외)
+    entries.forEach(e => {
+      if (e.type === '결근') {
+        if (_PROTECTED.has(e.reason)) return; // 보호휴직(산재·육아·출산·배우자출산)은 차감 제외
+        const days = e.dateTo ? Math.ceil((new Date(e.dateTo) - new Date(e.date)) / 86400000) + 1 : 1;
+        dedHours += days * hpd;
+        dedBasePay += Math.round(days * hpd * hw);
+      } else if (e.type === '지각' || e.type === '조퇴') {
+        const [h, m] = (e.time || '0:0').split(':').map(Number);
+        const hrs = (h || 0) + (m || 0) / 60;
+        dedHours += hrs;
+        dedBasePay += Math.round(hrs * hw);
+      }
+    });
+
+    // ② 주휴 차감 (주 단위 전일 결근 판정)
+    const absentDates = new Set();
+    entries.forEach(e => {
+      if (e.type !== '결근') return;
+      if (_PROTECTED.has(e.reason)) return;
+      const start = new Date(e.date);
+      const end = e.dateTo ? new Date(e.dateTo) : new Date(e.date);
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        absentDates.add(d.toISOString().slice(0, 10));
+      }
+    });
+    const monthStart = `${targetYear}-${String(targetMonth).padStart(2,'0')}-01`;
+    const lastDay = new Date(targetYear, targetMonth, 0).getDate();
+    const monthEnd = `${targetYear}-${String(targetMonth).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
+    const ws = new Date(monthStart); ws.setDate(ws.getDate() - ((ws.getDay() + 6) % 7));
+    const we = new Date(monthEnd);
+    let missedWeeks = 0, totalWeeks = 0;
+    const monthlyWeeks = 365 / 12 / 7;
+    for (let w = new Date(ws); w <= we; w.setDate(w.getDate() + 7)) {
+      const we2 = new Date(w); we2.setDate(we2.getDate() + 6);
+      let wDays = 0, wAbsent = 0;
+      for (let d = new Date(Math.max(w, new Date(monthStart))); d <= new Date(Math.min(we2, new Date(monthEnd))); d.setDate(d.getDate() + 1)) {
+        if (d.getDay() === 0 || d.getDay() === 6) continue;
+        wDays++;
+        if (absentDates.has(d.toISOString().slice(0, 10))) wAbsent++;
+      }
+      if (wDays > 0) { totalWeeks++; if (wAbsent >= wDays) missedWeeks++; }
+    }
+    const dedWeekHolRatio = totalWeeks > 0 ? missedWeeks / totalWeeks : 0;
+    const fullWeekHol = parseFloat(ct.weekly_holiday_pay) || 0;
+    const dedWeekHol = Math.round(fullWeekHol / monthlyWeeks * missedWeeks);
+
+    // ③ 고정OT/야간/휴일 차감액 추정
+    let dedFixedOtP = 0, dedFixedNightP = 0, dedFixedHolP = 0;
+    if (ct.schedule_json && hw > 0) {
+      let sched;
+      try { sched = typeof ct.schedule_json === 'string' ? JSON.parse(ct.schedule_json) : ct.schedule_json; } catch (e) { sched = null; }
+      if (Array.isArray(sched)) {
+        const allAbsentDates = new Set();
+        entries.forEach(e => {
+          if (e.type !== '결근') return;
+          if (_PROTECTED.has(e.reason)) return;
+          const start = new Date(e.date);
+          const end = e.dateTo ? new Date(e.dateTo) : new Date(e.date);
+          for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+            allAbsentDates.add(d.toISOString().slice(0, 10));
+          }
+        });
+        const dayMap = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+        let dedFOtH = 0, dedFNightH = 0, dedFHolH = 0;
+        allAbsentDates.forEach(ds => {
+          const d = new Date(ds + 'T00:00:00');
+          const dayKey = dayMap[d.getDay()];
+          const daySched = sched.find(s => s.day === dayKey && (s.active === true || s.active === 1));
+          if (!daySched) return;
+          dedFOtH += parseFloat(daySched.ot_hours) || 0;
+          dedFNightH += parseFloat(daySched.night_hours) || 0;
+          dedFHolH += parseFloat(daySched.holiday_hours) || 0;
+        });
+        dedFixedOtP = Math.round(dedFOtH * hw * 1.5);
+        dedFixedNightP = Math.round(dedFNightH * hw * 0.5);
+        dedFixedHolP = Math.round(dedFHolH * hw * 1.5);
+      }
+    }
+
+    attDedByEmpId[emp.id] = {
+      dedBasePay, dedWeekHol, dedWeekHolRatio,
+      dedFixedOtP, dedFixedNightP, dedFixedHolP
+    };
+  });
+
+  // ── 출산휴가 일수 사전 계산 (G6) ──
+  const maternityInfoByEmpId = {}; // { empId: { days, dailyWage } }
+  Object.entries(attByEmp).forEach(([empName, entries]) => {
+    const emp = empMatchMap[empName];
+    if (!emp) return;
+    let matDays = 0;
+    entries.forEach(e => {
+      if (e.type === '결근' && (e.reason === '출산(유급)' || e.reason === '출산(무급)')) {
+        const days = e.dateTo ? Math.ceil((new Date(e.dateTo) - new Date(e.date)) / 86400000) + 1 : 1;
+        matDays += days;
+      }
+    });
+    if (matDays > 0) {
+      const ct = allContracts.find(c =>
+        c.employee_id === emp.id && CONTRACT_ACTIVE_STATUSES.includes(c.status)) || null;
+      const hw = parseFloat(ct?.hourly_wage) || 0;
+      const hpd = parseFloat(ct?.work_hours_per_day) || 8;
+      const dailyWage = hw > 0 ? hw * hpd : 0;
+      maternityInfoByEmpId[emp.id] = { days: matDays, dailyWage };
+    }
+  });
+
+  // ── 휴업수당 사전 계산 (G5) ──
+  const layoffInfoByEmpId = {}; // { empId: { days, dailyWage } }
+  Object.entries(attByEmp).forEach(([empName, entries]) => {
+    const emp = empMatchMap[empName];
+    if (!emp) return;
+    let layoffDays = 0;
+    entries.forEach(e => {
+      if (e.type === '결근' && e.reason === '휴업휴직') {
+        const days = e.dateTo ? Math.ceil((new Date(e.dateTo) - new Date(e.date)) / 86400000) + 1 : 1;
+        layoffDays += days;
+      }
+    });
+    if (layoffDays > 0) {
+      const ct = allContracts.find(c =>
+        c.employee_id === emp.id && CONTRACT_ACTIVE_STATUSES.includes(c.status)) || null;
+      const hw = parseFloat(ct?.hourly_wage) || 0;
+      const hpd = parseFloat(ct?.work_hours_per_day) || 8;
+      const dailyWage = hw > 0 ? hw * hpd : 0;
+      layoffInfoByEmpId[emp.id] = { days: layoffDays, dailyWage };
+    }
+  });
+
+  // ── 연차수당 사전 계산 ──
+  const annlPayExpected = {}; // { empId: expectedAnnlPay }
+  Object.entries(lvByEmp).forEach(([empName, lvInfo]) => {
+    const emp = empMatchMap[empName];
+    if (!emp || !lvInfo.latest || lvInfo.latest.remain <= 0) return;
+    const ct = allContracts.find(c =>
+      c.employee_id === emp.id && CONTRACT_ACTIVE_STATUSES.includes(c.status)) || null;
+    if (!ct) return;
+    const hw = parseFloat(ct.hourly_wage) || 0;
+    if (hw <= 0) return;
+    annlPayExpected[emp.id] = Math.round(lvInfo.latest.remain * hw * 8);
+  });
+
+  // ── 법정보호휴직자 판정 (G13) ──
+  // 모든 근로일이 보호휴직(산재·육아·출산·배우자출산)으로 덮인 직원 → 급여명세서 제외 대상
+  const _protectedEmpIds = new Set();
+  const _monthWorkDays = (() => {
+    const s = new Date(targetYear, targetMonth - 1, 1);
+    const e = new Date(targetYear, targetMonth, 0);
+    let cnt = 0;
+    for (let d = new Date(s); d <= e; d.setDate(d.getDate() + 1)) {
+      if (d.getDay() !== 0 && d.getDay() !== 6) cnt++;
+    }
+    return cnt;
+  })();
+  Object.entries(attByEmp).forEach(([empName, entries]) => {
+    const emp = empMatchMap[empName];
+    if (!emp || !entries.length) return;
+    // 보호휴직으로 덮인 근로일 Set
+    const protectedDates = new Set();
+    entries.forEach(e => {
+      if (e.type !== '결근') return;
+      if (!_PROTECTED.has(e.reason)) return;
+      const start = new Date(e.date);
+      const end = e.dateTo ? new Date(e.dateTo) : new Date(e.date);
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        const ds = d.toISOString().slice(0, 10);
+        if (ds.startsWith(targetMonthStr)) protectedDates.add(ds);
+      }
+    });
+    // 당월 모든 근로일이 보호휴직이면 제외 대상
+    if (protectedDates.size >= _monthWorkDays) {
+      _protectedEmpIds.add(emp.id);
+    }
+  });
+
   // ========================================
-  //  9. 행별 검증
+  //  9. 행별 검증 (차감 반영)
   // ========================================
   // 9-A. 고객사 4대보험 적용 기준 확인
   // 'fixed_amount': 보험료를 직접 입력하므로 요율 검증 제외
@@ -996,7 +1284,7 @@ function validateAndParseExcel(wb, fileName){
   const rateEmploy   = getRateForYearMonth('employment',       targetYear, targetMonth);
   const capPension   = getCapForYearMonth ('national_pension', targetYear, targetMonth) || 6370000;
 
-  _setProgress(25, '계약 대조 검증 중…');
+  _setProgress(50, '계약·수당 대조 중…');
 
   dataRows.forEach((row, di) => {
     const excelRow = (headerRowIdx+1) + di + 1; // 1-based 엑셀 행번호
@@ -1008,6 +1296,7 @@ function validateAndParseExcel(wb, fileName){
       c.employee_id===emp.id && CONTRACT_ACTIVE_STATUSES.includes(c.status)
     ) || null;
     const hw = ct ? (parseFloat(ct.hourly_wage)||0) : 0;
+    const ded = attDedByEmpId[emp.id] || {}; // 사전 계산된 차감 정보
 
     const n = ci => ci<0 ? 0 : nv(row[ci]);
 
@@ -1023,6 +1312,7 @@ function validateAndParseExcel(wb, fileName){
     const nightPay  = n(CI.NIGHT_PAY);
     const holPay    = n(CI.HOL_PAY);
     const annlPay   = n(CI.ANNUAL_PAY);
+    const layoffPayCol = n(CI.LAYOFF_PAY); // 휴업수당 전용 열 (있는 경우)
     const otherPayBase = n(CI.OTHER_PAY);
     // ── 커스텀 항목 열 값 읽기 (allowance_config 기반 동적 열) ──
     const customOrdValues = {}; // { 항목명: 금액 }
@@ -1038,7 +1328,9 @@ function validateAndParseExcel(wb, fileName){
         else customFixedValues[colName] = val;
       }
     });
-    const otherPay = otherPayBase + customColSum;
+    // 휴업수당: 전용 열(CI.LAYOFF_PAY)이 있고, allowance_config 커스텀 항목에 중복되지 않은 경우 otherPay에 합산
+    const layoffPayForCalc = (CI.LAYOFF_PAY >= 0 && !customColMap['휴업수당']) ? layoffPayCol : 0;
+    const otherPay = otherPayBase + customColSum + layoffPayForCalc;
     const gross     = n(CI.GROSS);
     const incTax    = n(CI.INC_TAX);
     const localTax  = n(CI.LOCAL_TAX);
@@ -1053,17 +1345,55 @@ function validateAndParseExcel(wb, fileName){
     const netPay    = n(CI.NET_PAY);
 
     // ──────────────────────────────────────
-    //  [A] 계약 고정 항목 검증
-    //  근로계약에 명시된 고정 금액과 다르면 오류
+    //  [A] 계약 고정 항목 검증 (근태 차감 반영)
+    //  근로계약에 명시된 고정 금액에서 결근·지각·조퇴 차감을 반영한 기대값과 비교
     // ──────────────────────────────────────
     if(ct){
+      // ── 기본급: 차감 반영 ──
+      let adjBaseSalary = Math.max(0, (parseFloat(ct.base_salary)||0) - (ded.dedBasePay || 0));
+      let baseDescExtra = '';
+
+      // ── 기본급: 일할계산 반영 (G7 + G14, 중도입퇴사) ──
+      const prorationMethod = co?.proration_method || '30day_fixed';
+      const ctStart = ct.start_date ? new Date(ct.start_date + 'T00:00:00') : null;
+      const ctEnd   = ct.end_date   ? new Date(ct.end_date   + 'T00:00:00') : null;
+      const moStart = new Date(targetYear, targetMonth - 1, 1);
+      const moEnd   = new Date(targetYear, targetMonth, 0);
+      const enteredMidMonth = ctStart && ctStart > moStart;
+      const exitedMidMonth  = ctEnd   && ctEnd   < moEnd;
+
+      if (enteredMidMonth || exitedMidMonth) {
+        let moWorkDays = 0;
+        for (let d = new Date(moStart); d <= moEnd; d.setDate(d.getDate() + 1)) {
+          if (d.getDay() !== 0 && d.getDay() !== 6) moWorkDays++;
+        }
+        const divisor = prorationMethod === '30day_fixed' ? 30 : moWorkDays;
+        const effectiveWorkDays = workDays > 0 ? workDays : moWorkDays;
+        const proratedBase = Math.round(adjBaseSalary / divisor * Math.min(effectiveWorkDays, divisor));
+        if (proratedBase > 0 && proratedBase < adjBaseSalary) {
+          baseDescExtra = ` 일할(${prorationMethod==='30day_fixed'?'30일 고정':'소정근로일 '+moWorkDays+'일'} 기준, ${enteredMidMonth?'중도입사':''}${enteredMidMonth&&exitedMidMonth?'·':''}${exitedMidMonth?'중도퇴사':''})`;
+          adjBaseSalary = proratedBase;
+        }
+      }
+
+      const adjWeekHol = Math.max(0, (parseFloat(ct.weekly_holiday_pay)||0) - (ded.dedWeekHol || 0));
       const fixedChecks = [
-        // [엑셀값, 계약기준값, 항목명, 관용오차]
-        [base,     parseFloat(ct.base_salary)||0,         '기본급',     0],
-        [weekHol,  parseFloat(ct.weekly_holiday_pay)||0,  '주휴수당',   0],
-        [posAlw,   parseFloat(ct.position_allowance)||0,  '직책수당',   0],
-        [meal,     parseFloat(ct.meal_allowance)||0,      '식대',       0],
+        // [엑셀값, 차감+일할 반영 계약기준값, 항목명, 관용오차]
+        [base,     adjBaseSalary,                       '기본급',     0],
+        [weekHol,  adjWeekHol,                          '주휴수당',   0],
+        [posAlw,   parseFloat(ct.position_allowance)||0,'직책수당',   0],
+        [meal,     parseFloat(ct.meal_allowance)||0,    '식대',       0],
       ];
+      // 근태 차감 내역 상세 표시
+      if (ded.dedBasePay > 0) {
+        fixedChecks[0].push(`결근·지각·조퇴 차감 ${won(ded.dedBasePay)}원 반영`);
+      }
+      if (baseDescExtra) {
+        fixedChecks[0].push(baseDescExtra.trim());
+      }
+      if (ded.dedWeekHol > 0) {
+        fixedChecks[1].push(`결근 ${Math.round(ded.dedWeekHolRatio*100)}% 주휴 차감 ${won(ded.dedWeekHol)}원 반영`);
+      }
       // 차량: 계약서 신규 필드 우선, 없으면 레거시 car_maintenance
       // 테이블형 엑셀의 '차량유지비' 열(CI.CAR)은 교통비+자가운전 합산값일 수 있으므로
       // 계약서의 모든 차량 필드 합산과 비교
@@ -1120,6 +1450,132 @@ function validateAndParseExcel(wb, fileName){
           });
         }
       });
+    }
+
+    // ──────────────────────────────────────
+    //  [A-1.5] 연차수당 검증 (잔여연차 기준, Phase C2 통합)
+    // ──────────────────────────────────────
+    if (annlPay > 0 && annlPayExpected[emp.id]) {
+      const expected = annlPayExpected[emp.id];
+      const diffPct = Math.abs(annlPay - expected) / expected;
+      if (diffPct > 0.1) {
+        calcErrors.push({
+          row: excelRow, colName: '연차수당', empName,
+          input: annlPay, calc: expected, diff: annlPay - expected,
+          desc: `잔여연차 기준 예상 ${won(expected)}원 / 엑셀 입력 ${won(annlPay)}원 (차이 ${Math.round(diffPct*100)}%)`
+        });
+      }
+    } else if (annlPay === 0 && annlPayExpected[emp.id] && annlPayExpected[emp.id] > 0) {
+      warnings.push(`⚠️ ${empName}: 잔여연차가 있으나 연차수당이 0원입니다. 누락 확인이 필요합니다.`);
+    }
+
+    // ──────────────────────────────────────
+    //  [A-1.6] 고정OT/야간/휴일 차감 경고 (Phase C1 통합)
+    // ──────────────────────────────────────
+    if (ded.dedFixedOtP > 0 || ded.dedFixedNightP > 0 || ded.dedFixedHolP > 0) {
+      const _schedOtPay    = Math.round((parseFloat(ct.fixed_ot_hours)||0) * hw * 1.5);
+      const _schedNightPay = Math.round((parseFloat(ct.fixed_night_hours)||0) * hw * 0.5);
+      const _schedHolPay   = Math.round((parseFloat(ct.fixed_hol_hours)||0) * hw * 1.5);
+      const _totalSchedFixed = _schedOtPay + _schedNightPay + _schedHolPay;
+      const _totalDedFixed = ded.dedFixedOtP + ded.dedFixedNightP + ded.dedFixedHolP;
+      if (_totalSchedFixed > 0 && _totalDedFixed > 0) {
+        warnings.push(`⚡ ${empName}: 근태로 인한 고정수당 차감 추정 — 연장 ${won(ded.dedFixedOtP)} · 야간 ${won(ded.dedFixedNightP)} · 휴일 ${won(ded.dedFixedHolP)}. 취업규칙 확인 필요.`);
+      }
+    }
+
+    // ──────────────────────────────────────
+    //  [A-1.7] 출산휴가 급여 검증 (G6)
+    //  근태 시트에서 출산휴가일수 파싱 → 예상 급여 계산
+    // ──────────────────────────────────────
+    const matInfo = maternityInfoByEmpId[emp.id];
+    if (matInfo && matInfo.days > 0) {
+      // 출산급여: 통상임금/30 − 고용보험지원(2,200,000÷30=73,333) × 일수
+      // 1~60일차만 회사 부담 (최대 60일)
+      const companyDays = Math.min(matInfo.days, 60);
+      const dailySubsidy = Math.round(2200000 / 30); // 73,333
+      const dailyCompanyPay = Math.max(0, matInfo.dailyWage - dailySubsidy);
+      const expectedMatPay = Math.round(dailyCompanyPay * companyDays);
+
+      // 엑셀에서 출산급여 찾기: customOrdValues에서 '출산급여' 검색, 없으면 otherPay
+      let excelMatPay = customOrdValues['출산급여'] || customFixedValues['출산급여'] || 0;
+      if (excelMatPay === 0) {
+        // otherPay에 포함되어 있을 가능성 → 경고만
+        if (otherPayBase > 0 && expectedMatPay > 0) {
+          warnings.push(`⚡ ${empName}: 출산휴가 ${matInfo.days}일(${companyDays}일 회사부담) — 예상 출산급여 ${won(expectedMatPay)}원 (통상임금÷30 − 고용보험지원). 기타수당(${won(otherPayBase)})에 포함 여부 확인이 필요합니다.`);
+        } else if (expectedMatPay > 0) {
+          warnings.push(`⚠️ ${empName}: 출산휴가 ${matInfo.days}일(${companyDays}일 회사부담) — 예상 출산급여 ${won(expectedMatPay)}원이나 엑셀에 출산급여 항목이 없습니다. 누락 확인이 필요합니다.`);
+        }
+      } else if (expectedMatPay > 0) {
+        const diffPct = Math.abs(excelMatPay - expectedMatPay) / expectedMatPay;
+        if (diffPct > 0.2) {
+          warnings.push(`⚡ ${empName}: 출산급여 불일치 의심 — 예상 ${won(expectedMatPay)}원 (${matInfo.days}일 중 ${companyDays}일) / 엑셀 입력 ${won(excelMatPay)}원 (차이 ${Math.round(diffPct*100)}%)`);
+        }
+      }
+    }
+
+    // ──────────────────────────────────────
+    //  [A-1.8] 휴업수당 검증 (G5)
+    //  근태 시트에서 휴업휴직일수 파싱 + 고객사 휴업기간 교차 검증
+    //  휴업수당 = 통상임금(시급×소정근로시간) × 휴업일수 × 70%
+    // ──────────────────────────────────────
+    const layoffInfo = layoffInfoByEmpId[emp.id];
+    if (layoffInfo && layoffInfo.days > 0) {
+      const expectedLayoffPay = Math.round(layoffInfo.dailyWage * layoffInfo.days * 0.7);
+
+      // ① 고객사 휴업기간 확인
+      let coLayoffPeriods = [];
+      try {
+        const raw = co?.layoff_periods;
+        coLayoffPeriods = typeof raw === 'string' ? JSON.parse(raw) : (Array.isArray(raw) ? raw : []);
+      } catch(e) {}
+      const payMonthStart = `${targetYear}-${String(targetMonth).padStart(2,'0')}-01`;
+      const lastDay = new Date(targetYear, targetMonth, 0).getDate();
+      const payMonthEnd = `${targetYear}-${String(targetMonth).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
+      const matchingPeriod = coLayoffPeriods.find(p => p.start <= payMonthEnd && p.end >= payMonthStart);
+
+      if (!matchingPeriod) {
+        warnings.push(`⚠️ ${empName}: 휴업휴직 ${layoffInfo.days}일이 있으나 고객사 정보에 ${targetYear}년 ${targetMonth}월을 포함하는 휴업기간이 등록되어 있지 않습니다. 먼저 고객사 정보에 휴업기간을 등록하신 후 다시 업로드해주세요.`);
+      }
+
+      // ② 휴업수당 값 찾기: 전용 열 > customOrdValues > customFixedValues > otherPay 추정
+      let excelLayoffPay = layoffPayCol > 0 ? layoffPayCol : 0;
+      if (excelLayoffPay === 0) {
+        excelLayoffPay = customOrdValues['휴업수당'] || customFixedValues['휴업수당'] || 0;
+      }
+      const layoffSource = layoffPayCol > 0 ? '전용 열' : (excelLayoffPay > 0 ? '커스텀 항목' : '');
+
+      if (excelLayoffPay === 0) {
+        if (otherPayBase > 0 && expectedLayoffPay > 0) {
+          warnings.push(`⚡ ${empName}: 휴업휴직 ${layoffInfo.days}일 — 예상 휴업수당 ${won(expectedLayoffPay)}원 (통상임금 ${won(layoffInfo.dailyWage)}×${layoffInfo.days}일×70%). 기타수당(${won(otherPayBase)})에 포함 여부 확인이 필요합니다.${matchingPeriod ? ' (고객사 휴업기간: '+matchingPeriod.start+'~'+matchingPeriod.end+')' : ''}`);
+        } else if (expectedLayoffPay > 0) {
+          warnings.push(`⚠️ ${empName}: 휴업휴직 ${layoffInfo.days}일 — 예상 휴업수당 ${won(expectedLayoffPay)}원이나 엑셀에 휴업수당 항목이 없습니다. 누락 확인이 필요합니다.${matchingPeriod ? ' (고객사 휴업기간: '+matchingPeriod.start+'~'+matchingPeriod.end+')' : ''}`);
+        }
+      } else if (expectedLayoffPay > 0) {
+        const diffPct = Math.abs(excelLayoffPay - expectedLayoffPay) / expectedLayoffPay;
+        if (diffPct > 0.2) {
+          const periodInfo = matchingPeriod ? ` (고객사 휴업기간: ${matchingPeriod.start}~${matchingPeriod.end})` : '';
+          warnings.push(`⚡ ${empName}: 휴업수당 불일치 의심 — 예상 ${won(expectedLayoffPay)}원 (통상임금 ${won(layoffInfo.dailyWage)}×${layoffInfo.days}일×70%) / 엑셀 ${layoffSource} ${won(excelLayoffPay)}원 (차이 ${Math.round(diffPct*100)}%)${periodInfo}`);
+        }
+      }
+    } else {
+      // 근태에 휴업휴직은 없지만 엑셀에 휴업수당 값이 있는 경우 → 고객사 휴업기간 확인
+      const excelLayoffPay2 = (CI.LAYOFF_PAY >= 0 ? n(CI.LAYOFF_PAY) : 0) || customOrdValues['휴업수당'] || customFixedValues['휴업수당'] || 0;
+      if (excelLayoffPay2 > 0) {
+        let coLayoffPeriods2 = [];
+        try {
+          const raw2 = co?.layoff_periods;
+          coLayoffPeriods2 = typeof raw2 === 'string' ? JSON.parse(raw2) : (Array.isArray(raw2) ? raw2 : []);
+        } catch(e) {}
+        const pms2 = `${targetYear}-${String(targetMonth).padStart(2,'0')}-01`;
+        const ldm2 = new Date(targetYear, targetMonth, 0).getDate();
+        const pme2 = `${targetYear}-${String(targetMonth).padStart(2,'0')}-${String(ldm2).padStart(2,'0')}`;
+        const mp2 = coLayoffPeriods2.find(p => p.start <= pme2 && p.end >= pms2);
+        if (!mp2) {
+          warnings.push(`⚠️ ${empName}: 엑셀에 휴업수당 ${won(excelLayoffPay2)}원이 있으나, 근태 시트에 휴업휴직 기록이 없고 고객사 휴업기간도 등록되어 있지 않습니다.`);
+        } else {
+          warnings.push(`⚡ ${empName}: 엑셀에 휴업수당 ${won(excelLayoffPay2)}원이 있으나 근태 시트에 휴업휴직 기록이 없습니다. 고객사 휴업기간(${mp2.start}~${mp2.end})과 근태 기록을 대조 확인하세요.`);
+        }
+      }
     }
 
     // ──────────────────────────────────────
@@ -1325,6 +1781,16 @@ function validateAndParseExcel(wb, fileName){
           });
         }
       }
+    } else {
+      // ── G9: 확정액 기준 고객사 — 4대보험 과다계상 경고 ──
+      const totalIns = health + ltCare + pension + empIns;
+      const INS_RATIO_WARN = 0.25;
+      if (calcStd > 0 && totalIns > 0) {
+        const insRatio = totalIns / calcStd;
+        if (insRatio > INS_RATIO_WARN) {
+          warnings.push(`⚠️ ${empName}: 4대보험 합계 ${won(totalIns)}원이 보수월액 ${won(calcStd)}원의 ${Math.round(insRatio*100)}%입니다. 확정액 입력값이 과다계상되었는지 확인이 필요합니다. (건강 ${won(health)} · 장기요양 ${won(ltCare)} · 국민연금 ${won(pension)} · 고용 ${won(empIns)})`);
+        }
+      }
     }
 
     // ──────────────────────────────────────
@@ -1347,6 +1813,12 @@ function validateAndParseExcel(wb, fileName){
         input:netPay, calc:calcNet, diff:netPay-calcNet,
         desc:`지급총액(${fmt(gross)}) - 공제합계(${fmt(totalDed)}) = ${fmt(calcNet)}`
       });
+    }
+
+    // ── 법정보호휴직자 제외 (G13) ──
+    if (_protectedEmpIds.has(emp.id)) {
+      warnings.push(`🛡️ ${empName}: 법정보호휴직자입니다. 당월 모든 근로일(${_monthWorkDays}일)이 보호휴직으로 덮여 있어 급여명세서 제외 대상이므로 이 직원의 데이터는 저장되지 않습니다.`);
+      return; // validRows에 추가하지 않음
     }
 
     // ── 오류 없는 행만 validRows에 추가 ──
@@ -1372,7 +1844,227 @@ function validateAndParseExcel(wb, fileName){
     }
   });
 
-  _uploadParsed = {co, year:targetYear, month:targetMonth, validRows, calcErrors, fixedErrors, allRows:dataRows.length};
+  _setProgress(85, '수식·세액·보험 검증 완료');
+
+  // ────────────────────────────────────────────────────────────
+  //  ★ Phase C2.5: 근태/연차 DB 동기화 비교
+  //    (근태·연차 파싱은 메인 루프 앞에서 완료됨)
+  //    - 당월 근태 / 당해년도 연차 → 자동 DB 반영
+  //    - 이전월 근태 / 이전년도 연차 → 차이 있으면 확인 후 반영
+  // ────────────────────────────────────────────────────────────
+  _setProgress(97, 'DB 동기화 비교 중…');
+  _attSyncCurrent = [];
+  _attSyncPrev = [];
+  _leaveSyncCurrent = [];
+  _leaveSyncPrev = [];
+  _syncPrevConfirmed = false;
+
+  // ── 유틸: DB 근태 항목 → 업로드 포맷과 동일한 키 문자열로 정규화 ──
+  const _attEntryKey = (date, type) => `${date}||${type}`;
+  const _normDbAttEntry = (e) => ({
+    date: e.date || '',
+    dateTo: e.dateTo || '',
+    type: _ATT_TYPE_TO_EXCEL[e.type] || e.type || '',       // absent→결근
+    reason: _ATT_REASON_TO_EXCEL[e.absentType] || e.absentType || '',
+    rate: parseFloat(e.rate) || 0,
+    time: e.time || ''
+  });
+  const _normUplAttEntry = (e) => ({
+    date: e.date || '',
+    dateTo: e.dateTo || '',
+    type: e.type || '',
+    reason: e.reason || '',
+    rate: parseFloat(e.rate) || 0,
+    time: e.time || ''
+  });
+
+  // ── 근태 DB 비교 ──
+  if (attSheet) {
+    // DB 근태 데이터를 employee_id 기준으로 인덱싱 (month_data 파싱)
+    const dbAttByEmp = {}; // { empId: [{ date, dateTo, type, absentType, rate, time }, ...] }
+    (window._atlLedgerCache || []).forEach(ledger => {
+      const eid = ledger.employee_id;
+      if (!dbAttByEmp[eid]) dbAttByEmp[eid] = [];
+      try {
+        const monthData = typeof ledger.month_data === 'string'
+          ? JSON.parse(ledger.month_data) : (ledger.month_data || []);
+        monthData.forEach(entry => {
+          dbAttByEmp[eid].push({
+            date: entry.date || '',
+            dateTo: entry.dateTo || '',
+            type: entry.type || 'absent',
+            absentType: entry.absentType || '',
+            rate: parseFloat(entry.rate) || 0,
+            time: entry.time || ''
+          });
+        });
+      } catch(e) {}
+    });
+
+    // 직원별 비교
+    const empNamesDone = new Set();
+    validRows.forEach(vr => {
+      const empName = vr.emp.name || '';
+      if (empNamesDone.has(empName)) return;
+      empNamesDone.add(empName);
+
+      const empId = vr.emp.id;
+      const uplEntries = (attByEmp[empName] || []).map(_normUplAttEntry);
+      const dbEntriesRaw = dbAttByEmp[empId] || [];
+      const dbEntries = dbEntriesRaw.map(_normDbAttEntry);
+
+      // 키(key) 맵 구성
+      const uplMap = {};   // { "2026-08-03||결근": entry }
+      const dbMap = {};
+      uplEntries.forEach(e => { const k = _attEntryKey(e.date, e.type); if (k !== '||') uplMap[k] = e; });
+      dbEntries.forEach(e  => { const k = _attEntryKey(e.date, e.type); if (k !== '||') dbMap[k] = e; });
+
+      const allKeys = new Set([...Object.keys(uplMap), ...Object.keys(dbMap)]);
+
+      const curMonthEntries = [];  // 업로드 기준 당월 항목
+      const prevDiffs = [];       // 이전월 차이 항목
+
+      allKeys.forEach(key => {
+        const upl = uplMap[key];
+        const db  = dbMap[key];
+        const dateStr = (upl || db).date;
+        const isCurrentMonth = dateStr.startsWith(targetMonthStr);
+
+        if (upl && !db) {
+          // 업로드에만 있음 → 신규
+          if (isCurrentMonth) {
+            curMonthEntries.push({ action: 'insert', ...upl });
+          } else {
+            prevDiffs.push({ action: 'insert', date: dateStr, type: upl.type, reason: upl.reason });
+          }
+        } else if (!upl && db) {
+          // DB에만 있음 → 삭제
+          if (isCurrentMonth) {
+            curMonthEntries.push({ action: 'delete', date: db.date, type: db.type, reason: db.reason });
+          } else {
+            prevDiffs.push({ action: 'delete', date: db.date, type: db.type, reason: db.reason });
+          }
+        } else if (upl && db) {
+          // 양쪽에 있음 → 필드 비교
+          const changed =
+            upl.dateTo !== db.dateTo ||
+            upl.reason !== db.reason ||
+            Math.abs(upl.rate - db.rate) > 0.01 ||
+            upl.time !== db.time;
+          if (changed) {
+            if (isCurrentMonth) {
+              curMonthEntries.push({ action: 'update', ...upl, dbReason: db.reason, dbRate: db.rate });
+            } else {
+              prevDiffs.push({ action: 'update', date: dateStr, type: upl.type, reason: upl.reason, dbReason: db.reason });
+            }
+          }
+        }
+      });
+
+      if (curMonthEntries.length > 0) {
+        _attSyncCurrent.push({ empId, empName, entries: curMonthEntries });
+      }
+      if (prevDiffs.length > 0) {
+        _attSyncPrev.push({ empId, empName, diffs: prevDiffs });
+      }
+    });
+  }
+
+  // ── 연차 DB 비교 ──
+  if (lvSheet) {
+    const dbLeaveByEmp = {}; // { empId: [{ year, total_days, total_used, remain_days, carryover_days, dbRow }, ...] }
+    allLeaveLedgers.forEach(l => {
+      const eid = l.employee_id;
+      if (!dbLeaveByEmp[eid]) dbLeaveByEmp[eid] = [];
+      dbLeaveByEmp[eid].push({
+        year: l.year,
+        total_days: parseFloat(l.total_days) || 0,
+        total_used: parseFloat(l.total_used) || 0,
+        remain_days: parseFloat(l.remain_days) || 0,
+        carryover_days: parseFloat(l.carryover_days) || 0,
+        dbRow: l
+      });
+    });
+
+    const empNamesDone = new Set();
+    validRows.forEach(vr => {
+      const empName = vr.emp.name || '';
+      if (empNamesDone.has(empName)) return;
+      empNamesDone.add(empName);
+
+      const empId = vr.emp.id;
+      const lvInfo = lvByEmp[empName];
+      if (!lvInfo || !lvInfo.all.length) return;
+
+      const dbYears = dbLeaveByEmp[empId] || [];
+
+      lvInfo.all.forEach(uplRec => {
+        const year = uplRec.year;
+        const dbRec = dbYears.find(d => d.year === year);
+
+        // 당해년도: 자동 반영 대상
+        if (year === targetYear) {
+          const needSync = !dbRec ||
+            Math.abs((uplRec.granted || 0) - (dbRec.total_days || 0)) > 0.01 ||
+            Math.abs((uplRec.used || 0) - (dbRec.total_used || 0)) > 0.01 ||
+            Math.abs((uplRec.remain || 0) - (dbRec.remain_days || 0)) > 0.01 ||
+            Math.abs((uplRec.carryover || 0) - (dbRec.carryover_days || 0)) > 0.01;
+          if (needSync) {
+            _leaveSyncCurrent.push({
+              empId, empName, year,
+              granted: uplRec.granted, used: uplRec.used,
+              remain: uplRec.remain, carryover: uplRec.carryover,
+              dbRow: dbRec || null
+            });
+          }
+        } else {
+          // 이전년도: 차이 있으면 확인 대상
+          if (dbRec) {
+            const diffGranted   = Math.abs((uplRec.granted || 0) - (dbRec.total_days || 0)) > 0.01;
+            const diffUsed      = Math.abs((uplRec.used || 0) - (dbRec.total_used || 0)) > 0.01;
+            const diffRemain    = Math.abs((uplRec.remain || 0) - (dbRec.remain_days || 0)) > 0.01;
+            const diffCarryover = Math.abs((uplRec.carryover || 0) - (dbRec.carryover_days || 0)) > 0.01;
+            if (diffGranted || diffUsed || diffRemain || diffCarryover) {
+              _leaveSyncPrev.push({
+                empId, empName, year,
+                upload: { granted: uplRec.granted, used: uplRec.used, remain: uplRec.remain, carryover: uplRec.carryover },
+                db: { granted: dbRec.total_days, used: dbRec.total_used, remain: dbRec.remain_days, carryover: dbRec.carryover_days },
+                dbRow: dbRec
+              });
+            }
+          } else {
+            // DB에 없고 업로드에만 있는 이전년도 데이터 (신규)
+            _leaveSyncPrev.push({
+              empId, empName, year,
+              upload: { granted: uplRec.granted, used: uplRec.used, remain: uplRec.remain, carryover: uplRec.carryover },
+              db: null, dbRow: null
+            });
+          }
+        }
+      });
+    });
+  }
+
+  // ── 동기화 요약을 warnings에 추가 ──
+  const totalAttCur = _attSyncCurrent.reduce((s, a) => s + a.entries.length, 0);
+  const totalAttPrev = _attSyncPrev.reduce((s, a) => s + a.diffs.length, 0);
+  const totalLeaveCur = _leaveSyncCurrent.length;
+  const totalLeavePrev = _leaveSyncPrev.length;
+
+  if (totalAttCur > 0) {
+    warnings.push(`🔄 근태 DB 자동반영: ${_attSyncCurrent.length}명 ${totalAttCur}건 (${targetMonthStr}월)`);
+  }
+  if (totalAttPrev > 0) {
+    warnings.push(`🟡 근태 이전월 차이: ${_attSyncPrev.length}명 ${totalAttPrev}건 — 저장 시 확인 다이얼로그가 표시됩니다`);
+  }
+  if (totalLeaveCur > 0) {
+    warnings.push(`🔄 연차 DB 자동반영: ${_leaveSyncCurrent.length}명 (${targetYear}년)`);
+  }
+  if (totalLeavePrev > 0) {
+    warnings.push(`🟡 연차 이전년도 차이: ${_leaveSyncPrev.length}명 — 저장 시 확인 다이얼로그가 표시됩니다`);
+  }
+
+  _uploadParsed = {co, year:targetYear, month:targetMonth, validRows, calcErrors, fixedErrors, allRows:dataRows.length, protectedCount: _protectedEmpIds.size};
   _setProgress(100, '검증 완료');
   setTimeout(() => _hideProgress(), 500);
   showUploadReport(errors.length===0, errors, warnings, calcErrors, fixedErrors, validRows);
@@ -1393,6 +2085,9 @@ function showUploadReport(canSave, errors, warnings, calcErrors, fixedErrors, va
 
   // ── 요약 배너 ──
   const banner = document.getElementById('upload-summary-banner');
+  const protectedNote = (_uploadParsed && _uploadParsed.protectedCount > 0)
+    ? `<div style="font-size:11px;color:#6b7280;margin-top:4px;">🛡️ 법정보호휴직자 ${_uploadParsed.protectedCount}명은 급여명세서 제외 대상으로 저장에서 제외됩니다.</div>`
+    : '';
   if(hasBlockErr){
     banner.style.cssText = 'background:#fef2f2;border:1.5px solid #fca5a5;border-radius:10px;padding:14px 18px;margin-bottom:16px;';
     banner.innerHTML = `<div style="font-weight:700;color:#991b1b;font-size:13.5px;margin-bottom:8px;"><i class="fas fa-times-circle"></i> 유효성 검사 실패 — 저장이 중단되었습니다</div>`
@@ -1404,11 +2099,13 @@ function showUploadReport(canSave, errors, warnings, calcErrors, fixedErrors, va
     if(hasFixedErr) parts.push(`계약 불일치 ${fixedErrors.length}건`);
     banner.style.cssText = 'background:#fffbeb;border:1.5px solid #fcd34d;border-radius:10px;padding:14px 18px;margin-bottom:16px;';
     banner.innerHTML = `<div style="font-weight:700;color:#92400e;font-size:13.5px;margin-bottom:6px;"><i class="fas fa-exclamation-triangle"></i> ${parts.join(' / ')} 발견 — 해당 행 제외 후 ${validRows.length}명 저장 가능</div>`
-      + (warnings.length ? warnings.map(w=>`<div style="color:#b45309;font-size:12px;padding:1px 0;">${w}</div>`).join('') : '');
+      + (warnings.length ? warnings.map(w=>`<div style="color:#b45309;font-size:12px;padding:1px 0;">${w}</div>`).join('') : '')
+      + protectedNote;
   } else {
     banner.style.cssText = 'background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:10px;padding:14px 18px;margin-bottom:16px;';
     banner.innerHTML = `<div style="font-weight:700;color:#166534;font-size:13.5px;margin-bottom:4px;"><i class="fas fa-check-circle"></i> 유효성 검사 통과 — ${validRows.length}명 데이터 저장 가능</div>`
-      + (warnings.length ? warnings.map(w=>`<div style="color:#4d7c0f;font-size:12px;padding:1px 0;">${w}</div>`).join('') : '');
+      + (warnings.length ? warnings.map(w=>`<div style="color:#4d7c0f;font-size:12px;padding:1px 0;">${w}</div>`).join('') : '')
+      + protectedNote;
   }
 
   // ── 경고/메타 섹션 ──
@@ -1419,6 +2116,46 @@ function showUploadReport(canSave, errors, warnings, calcErrors, fixedErrors, va
     metaSec.style.display = 'block';
   } else {
     metaSec.style.display = 'none';
+  }
+
+  // ── Phase C2.5: DB 동기화 예정 섹션 ──
+  let syncSec = document.getElementById('upload-sync-section');
+  if (!syncSec) {
+    syncSec = document.createElement('div');
+    syncSec.id = 'upload-sync-section';
+    const metaSecEl = document.getElementById('upload-meta-section');
+    metaSecEl && metaSecEl.parentNode.insertBefore(syncSec, metaSecEl.nextSibling);
+  }
+  const hasSyncItems = _attSyncCurrent.length > 0 || _attSyncPrev.length > 0
+                    || _leaveSyncCurrent.length > 0 || _leaveSyncPrev.length > 0;
+  if (hasSyncItems && !hasBlockErr) {
+    let syncHtml = '';
+    if (_attSyncCurrent.length > 0) {
+      const totalAttCur = _attSyncCurrent.reduce((s, a) => s + a.entries.length, 0);
+      syncHtml += `<div style="padding:4px 0;font-size:12px;">🔄 <b>근태 ${targetMonth}월</b>: ${_attSyncCurrent.length}명 ${totalAttCur}건 <span style="color:#2563eb;">자동반영</span></div>`;
+    }
+    if (_leaveSyncCurrent.length > 0) {
+      syncHtml += `<div style="padding:4px 0;font-size:12px;">🔄 <b>연차 ${targetYear}년</b>: ${_leaveSyncCurrent.length}명 <span style="color:#2563eb;">자동반영</span></div>`;
+    }
+    if (_attSyncPrev.length > 0) {
+      const totalAttPrev = _attSyncPrev.reduce((s, a) => s + a.diffs.length, 0);
+      syncHtml += `<div style="padding:4px 0;font-size:12px;">🟡 <b>근태 이전월</b>: ${_attSyncPrev.length}명 ${totalAttPrev}건 <span style="color:#d97706;">저장 시 확인</span></div>`;
+    }
+    if (_leaveSyncPrev.length > 0) {
+      syncHtml += `<div style="padding:4px 0;font-size:12px;">🟡 <b>연차 이전년도</b>: ${_leaveSyncPrev.length}명 <span style="color:#d97706;">저장 시 확인</span></div>`;
+    }
+    syncSec.style.display = 'block';
+    syncSec.innerHTML = `
+      <div style="font-weight:700;color:#1e40af;font-size:13px;margin:14px 0 8px;padding:8px 12px;background:#eff6ff;border-left:4px solid #3b82f6;border-radius:4px;">
+        <i class="fas fa-database" style="margin-right:6px;color:#2563eb;"></i>
+        DB 동기화 예정
+        <div style="font-size:11px;font-weight:400;color:#1e40af;margin-top:4px;">
+          업로드된 근태/연차 데이터를 시스템 DB에 반영합니다.
+        </div>
+      </div>
+      <div style="padding:0 8px;">${syncHtml}</div>`;
+  } else {
+    syncSec.style.display = 'none';
   }
 
   // ── 계약 고정 항목 불일치 섹션 ──
@@ -1623,6 +2360,246 @@ async function confirmBulkUpload(){
     }
   }
 
+  // ── Phase C2.5: 근태/연차 이전 데이터 차이 확인 ──
+  const hasPrevAttDiff   = _attSyncPrev.length > 0;
+  const hasPrevLeaveDiff = _leaveSyncPrev.length > 0;
+  _syncPrevConfirmed = false;
+
+  if (hasPrevAttDiff || hasPrevLeaveDiff) {
+    let prevHtml = '';
+    if (hasPrevAttDiff) {
+      prevHtml += `<div style="font-weight:700;margin-bottom:4px;">📋 근태관리대장 이전월 차이 (${_attSyncPrev.length}명)</div>`;
+      _attSyncPrev.forEach(a => {
+        const diffSummary = a.diffs.slice(0, 5).map(d =>
+          `${d.date} ${d.action==='insert'?'➕신규':d.action==='delete'?'➖삭제':'✏️수정'} ${d.type}${d.reason?'('+d.reason+')':''}`
+        ).join('<br>');
+        const more = a.diffs.length > 5 ? `<br>... 외 ${a.diffs.length - 5}건` : '';
+        prevHtml += `<div style="padding:4px 0;font-size:11px;"><strong>${a.empName}</strong><div style="padding-left:8px;color:#78350f;">${diffSummary}${more}</div></div>`;
+      });
+    }
+    if (hasPrevLeaveDiff) {
+      prevHtml += `<div style="font-weight:700;margin-top:8px;margin-bottom:4px;">📋 연차관리대장 이전년도 차이 (${_leaveSyncPrev.length}명)</div>`;
+      _leaveSyncPrev.forEach(l => {
+        const dbStr = l.db ? `DB: 발생${l.db.granted} 사용${l.db.used} 잔여${l.db.remain}` : 'DB: 없음';
+        const uplStr = `업로드: 발생${l.upload.granted} 사용${l.upload.used} 잔여${l.upload.remain}`;
+        prevHtml += `<div style="padding:4px 0;font-size:11px;"><strong>${l.empName}</strong> (${l.year}년)<div style="padding-left:8px;color:#78350f;">${dbStr}<br>→ ${uplStr}</div></div>`;
+      });
+    }
+    const confirmed = await _showConfirm({
+      message: [
+        `<div style="font-size:13px;margin-bottom:8px;">🟡 <b>업로드된 파일의 이전 근태/연차 데이터가 시스템 DB와 다릅니다.</b></div>`,
+        `<div style="max-height:250px;overflow-y:auto;font-size:12px;color:#78350f;margin-bottom:8px;">${prevHtml}</div>`,
+        `<div style="font-size:12px;color:#64748b;">업로드된 데이터로 DB를 갱신하시겠습니까?<br>"취소" 시 당월/당해년도 데이터만 자동 반영됩니다.</div>`
+      ].join(''),
+      okText: 'DB 갱신',
+      cancelText: 'DB 유지',
+      okClass: 'btn-warning'
+    });
+    if (!confirmed) {
+      _syncPrevConfirmed = false;
+    } else {
+      _syncPrevConfirmed = true;
+    }
+  }
+
+  // ── Phase C2.5: 근태 DB 동기화 실행 ──
+  const _syncAttLedger = async (empId, empName, year, mergedEntries) => {
+    // 기존 attendance_ledger 행 찾기 또는 생성
+    let ledgerRow = (window._atlLedgerCache || []).find(r => r.employee_id === empId && r.year === year);
+    const now = Date.now();
+    if (ledgerRow) {
+      // 기존 행 업데이트
+      const body = {
+        ...ledgerRow,
+        month_data: JSON.stringify(mergedEntries),
+        updated_at: now
+      };
+      await api(`../tables/attendance_ledger/${ledgerRow.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      // 로컬 캐시 갱신
+      const idx = window._atlLedgerCache.findIndex(r => r.id === ledgerRow.id);
+      if (idx >= 0) window._atlLedgerCache[idx] = body;
+    } else {
+      // 신규 행 생성
+      const body = {
+        id: 'atl' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+        employee_id: empId,
+        company_id: co.id,
+        year: year,
+        month_data: JSON.stringify(mergedEntries),
+        total_absent_days: 0,
+        total_late_count: 0,
+        total_earlyleave_count: 0,
+        created_at: now,
+        updated_at: now,
+        status: 'active'
+      };
+      await api('../tables/attendance_ledger', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      window._atlLedgerCache.push(body);
+    }
+  };
+
+  // ── 당월 근태 자동 동기화 ──
+  for (const sync of _attSyncCurrent) {
+    try {
+      const empId = sync.empId;
+      // DB에서 해당 직원+연도의 모든 근태 항목 가져오기
+      const ledgerRow = (window._atlLedgerCache || []).find(r => r.employee_id === empId && r.year === targetYear);
+      let allEntries = [];
+      if (ledgerRow) {
+        try {
+          const md = typeof ledgerRow.month_data === 'string'
+            ? JSON.parse(ledgerRow.month_data) : (ledgerRow.month_data || []);
+          allEntries = md.map(e => ({
+            date: e.date || '', dateTo: e.dateTo || '',
+            type: e.type || 'absent', absentType: e.absentType || '',
+            rate: parseFloat(e.rate) || 0, time: e.time || ''
+          }));
+        } catch(e) {}
+      }
+
+      // 당월 항목 제거 후 업로드 항목으로 대체
+      allEntries = allEntries.filter(e => !(e.date || '').startsWith(targetMonthStr));
+
+      // 업로드 항목 추가 (action=delete는 제외)
+      sync.entries.forEach(e => {
+        if (e.action === 'delete') return;
+        allEntries.push({
+          date: e.date,
+          dateTo: e.dateTo || '',
+          type: _ATT_TYPE_TO_DB[e.type] || 'absent',
+          absentType: _ATT_REASON_TO_DB[e.reason] || '',
+          rate: parseFloat(e.rate) || 0,
+          time: e.time || ''
+        });
+      });
+
+      await _syncAttLedger(empId, sync.empName, targetYear, allEntries);
+    } catch(e) {
+      console.error('근태 당월 동기화 실패', sync.empName, e);
+    }
+  }
+
+  // ── 이전월 근태 동기화 (확인된 경우만) ──
+  if (_syncPrevConfirmed) {
+    for (const sync of _attSyncPrev) {
+      try {
+        const empId = sync.empId;
+        // diffs에 있는 날짜들의 연도 추출
+        const years = new Set(sync.diffs.map(d => parseInt((d.date || '').slice(0, 4))).filter(Boolean));
+
+        for (const year of years) {
+          const ledgerRow = (window._atlLedgerCache || []).find(r => r.employee_id === empId && r.year === year);
+          let allEntries = [];
+          if (ledgerRow) {
+            try {
+              const md = typeof ledgerRow.month_data === 'string'
+                ? JSON.parse(ledgerRow.month_data) : (ledgerRow.month_data || []);
+              allEntries = md.map(e => ({
+                date: e.date || '', dateTo: e.dateTo || '',
+                type: e.type || 'absent', absentType: e.absentType || '',
+                rate: parseFloat(e.rate) || 0, time: e.time || ''
+              }));
+            } catch(e) {}
+          }
+
+          const yearDiffs = sync.diffs.filter(d => (d.date || '').startsWith(String(year)));
+          yearDiffs.forEach(d => {
+            // 기존 항목 제거
+            allEntries = allEntries.filter(e => !(e.date === d.date && e.type === _ATT_TYPE_TO_DB[d.type]));
+            if (d.action !== 'delete') {
+              allEntries.push({
+                date: d.date,
+                dateTo: '',
+                type: _ATT_TYPE_TO_DB[d.type] || 'absent',
+                absentType: _ATT_REASON_TO_DB[d.reason] || '',
+                rate: 0,
+                time: ''
+              });
+            }
+          });
+
+          await _syncAttLedger(empId, sync.empName, year, allEntries);
+        }
+      } catch(e) {
+        console.error('근태 이전월 동기화 실패', sync.empName, e);
+      }
+    }
+  }
+
+  // ── Phase C2.5: 연차 DB 동기화 실행 ──
+  const _syncLeaveLedger = async (empId, empName, year, granted, used, remain, carryover, existingRow) => {
+    const now = Date.now();
+    if (existingRow) {
+      const body = {
+        ...existingRow,
+        total_days: granted,
+        total_used: used,
+        remain_days: remain,
+        carryover_days: carryover,
+        updated_at: now
+      };
+      await api(`../tables/annual_leave_ledger/${existingRow.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      // 로컬 캐시 갱신
+      const idx = allLeaveLedgers.findIndex(r => r.id === existingRow.id);
+      if (idx >= 0) allLeaveLedgers[idx] = body;
+    } else {
+      const body = {
+        id: 'all_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+        employee_id: empId,
+        company_id: co.id,
+        year: year,
+        total_days: granted,
+        total_used: used,
+        remain_days: remain,
+        carryover_days: carryover,
+        created_at: now,
+        updated_at: now,
+        status: 'active'
+      };
+      await api('../tables/annual_leave_ledger', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      allLeaveLedgers.push(body);
+    }
+  };
+
+  // ── 당해년도 연차 자동 동기화 ──
+  for (const sync of _leaveSyncCurrent) {
+    try {
+      await _syncLeaveLedger(sync.empId, sync.empName, sync.year,
+        sync.granted, sync.used, sync.remain, sync.carryover, sync.dbRow);
+    } catch(e) {
+      console.error('연차 당해년도 동기화 실패', sync.empName, e);
+    }
+  }
+
+  // ── 이전년도 연차 동기화 (확인된 경우만) ──
+  if (_syncPrevConfirmed) {
+    for (const sync of _leaveSyncPrev) {
+      try {
+        await _syncLeaveLedger(sync.empId, sync.empName, sync.year,
+          sync.upload.granted, sync.upload.used, sync.upload.remain,
+          sync.upload.carryover, sync.dbRow);
+      } catch(e) {
+        console.error('연차 이전년도 동기화 실패', sync.empName, e);
+      }
+    }
+  }
+
   confirmBtn.disabled=true;
   confirmBtn.innerHTML='<i class="fas fa-spinner fa-spin"></i> 저장 중...';
 
@@ -1694,11 +2671,35 @@ async function confirmBulkUpload(){
   renderDashboard();
   closeModal('upload-report-modal');
   _uploadParsed=null;
+  // ── 동기화 상태 초기화 ──
+  const syncAttCur = _attSyncCurrent.length;
+  const syncAttPrev = _attSyncPrev.length;
+  const syncLeaveCur = _leaveSyncCurrent.length;
+  const syncLeavePrev = _syncPrevConfirmed ? _leaveSyncPrev.length : 0;
+  _attSyncCurrent = [];
+  _attSyncPrev = [];
+  _leaveSyncCurrent = [];
+  _leaveSyncPrev = [];
+  _syncPrevConfirmed = false;
   document.getElementById('upload-file-name').textContent='';
 
   let msg = overwritten>0
     ?`✅ ${saved}명 급여 저장 완료 (덮어쓰기 ${overwritten}건${skipped?` / 실패 ${skipped}건`:''})`
     :`✅ ${saved}명 급여 저장 완료${skipped?` / 실패 ${skipped}건`:''}`;
+
+  // ── DB 동기화 결과 메시지 ──
+  const syncParts = [];
+  if (syncAttCur > 0) syncParts.push(`근태 ${syncAttCur}명`);
+  if (syncLeaveCur > 0) syncParts.push(`연차 ${syncLeaveCur}명`);
+  if (syncAttPrev > 0 || syncLeavePrev > 0) {
+    const prevParts = [];
+    if (syncAttPrev > 0) prevParts.push(`근태 이전월 ${syncAttPrev}명`);
+    if (syncLeavePrev > 0) prevParts.push(`연차 이전년도 ${syncLeavePrev}명`);
+    syncParts.push(`이전 데이터 ${prevParts.join(', ')}`);
+  }
+  if (syncParts.length > 0) {
+    msg += `\n\n🔄 DB 동기화 완료: ${syncParts.join(' / ')}`;
+  }
 
   // 동일 내용으로 제외된 직원 안내
   if(identicalSkipped > 0){

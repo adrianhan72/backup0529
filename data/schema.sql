@@ -1,7 +1,7 @@
 -- =============================================================================
 -- 인사톡 노무톡 — SQLite Schema (한글 주석 포함)
 -- node dump_schema.js 로 자동 생성 (ALTER TABLE 반영)
--- 최종 갱신: 2026-08-01
+-- 최종 갱신: 2026-08-03
 -- 테이블 수: 26개
 -- =============================================================================
 
@@ -54,7 +54,8 @@ CREATE TABLE IF NOT EXISTS companies (
   sick_leave_pay_rate REAL DEFAULT 0, --  -- 병가 유급비율 (%, 0=무급)
   proration_method TEXT DEFAULT '30day_fixed', --  -- 일할계산 방식
   draft_executives TEXT DEFAULT NULL,
-  draft_related_parties TEXT DEFAULT NULL
+  draft_related_parties TEXT DEFAULT NULL,
+  layoff_periods TEXT DEFAULT '[]'
 );
 
 -- contracts  -- 근로계약
@@ -438,8 +439,9 @@ CREATE TABLE IF NOT EXISTS payrolls (
   retro_absent_data TEXT DEFAULT '[]', --  -- 소급 결근 상세 (JSON)
   retro_late_data TEXT DEFAULT '[]', --  -- 소급 지각 상세 (JSON)
   retro_earlyleave_data TEXT DEFAULT '[]', --  -- 소급 조퇴 상세 (JSON)
-  custom_ordinary_values TEXT DEFAULT NULL, --  -- 통상임금 사용자 정의 항목 값 (JSON)
-  custom_fixed_values TEXT DEFAULT NULL --  -- 고정수당 사용자 정의 항목 값 (JSON)
+  custom_ordinary_values TEXT DEFAULT NULL, --  -- 통상임금 포함 사용자정의
+  custom_fixed_values TEXT DEFAULT NULL,
+  etc_allowance_items TEXT DEFAULT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_payrolls_employee ON payrolls(employee_id);
@@ -453,12 +455,12 @@ CREATE TABLE IF NOT EXISTS wage_ledger_notifications (
   year INTEGER, --  -- 연도
   month INTEGER, --  -- 월
   is_read INTEGER DEFAULT 0, --  -- 확인 여부 (0:미확인, 1:확인)
-  is_renewed INTEGER DEFAULT 0, --  -- 갱신 여부 (0:최초 생성, 1:급여 수정으로 갱신)
-  file_excel_path TEXT, --  -- 생성된 신고용 엑셀 파일 경로
-  file_html_path TEXT, --  -- 생성된 신고용 HTML(열람용) 파일 경로
-  updated_employees TEXT, --  -- 갱신 시 변경된 직원 정보 (JSON: [{empId, name, updatedAt}])
   created_at INTEGER, --  -- 생성일시
-  updated_at INTEGER --  -- 수정일시
+  updated_at INTEGER, --  -- 수정일시
+  is_renewed TEXT DEFAULT NULL,
+  file_excel_path TEXT DEFAULT NULL,
+  file_html_path TEXT DEFAULT NULL,
+  updated_employees TEXT DEFAULT NULL
 );
 
 -- =============================================================================

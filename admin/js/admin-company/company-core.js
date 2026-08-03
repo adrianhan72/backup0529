@@ -1,4 +1,4 @@
-﻿// ─── COMPANIES ───
+// ─── COMPANIES ───
 /* ─────────────────────────────────────────────────────────────────
    고객사 관리 페이지 — 임시저장 배너
    ───────────────────────────────────────────────────────────────── */
@@ -745,6 +745,129 @@ function _cmSvcGetSaveData(){
 }
 // ──────────────────────────────────────────────────────────────────────────
 
+// ── 휴업기간 UI (Phase G5) ──
+function _cmRenderLayoffPeriods(layoffPeriodsRaw) {
+  const historyEl  = document.getElementById('cm-layoff-history');
+  const currentEl  = document.getElementById('cm-layoff-current');
+  const addBtn     = document.getElementById('cm-layoff-add-btn');
+  if (!historyEl || !currentEl || !addBtn) return;
+
+  let periods = [];
+  try {
+    periods = typeof layoffPeriodsRaw === 'string' ? JSON.parse(layoffPeriodsRaw) : (layoffPeriodsRaw || []);
+  } catch(e) { periods = []; }
+  if (!Array.isArray(periods)) periods = [];
+
+  const today = new Date().toISOString().slice(0, 10);
+  const past    = periods.filter(p => p.end < today);
+  const active  = periods.find(p => p.start <= today && p.end >= today); // 현재 진행 중 (단 1개)
+  const future  = periods.filter(p => p.start > today);
+  // active가 없고 모든 기간이 과거 → 신규 추가 가능
+  const canAddNew = !active && future.length === 0;
+
+  // ── 이전 이력 (readonly) ──
+  let histHtml = '';
+  if (past.length > 0) {
+    histHtml = '<div style="font-size:12px;color:#6b7280;margin-bottom:6px;">이전 휴업 이력</div>';
+    past.forEach((p, i) => {
+      histHtml += `<div style="display:flex;gap:8px;align-items:center;padding:4px 0;font-size:12px;color:#9ca3af;">
+        <span>📅 ${p.start} ~ ${p.end}</span>
+        <span style="color:#9ca3af;">${p.note || ''}</span>
+      </div>`;
+    });
+  }
+  historyEl.innerHTML = histHtml;
+
+  // ── 현재/예정 기간 ──
+  let curHtml = '';
+  if (active) {
+    // 현재 진행 중: 시작일 readonly, 종료일 editable
+    curHtml = `<div style="font-weight:600;font-size:12px;color:#b45309;margin-bottom:4px;">진행 중인 휴업</div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <label style="font-size:11px;">시작일 <input type="date" id="cm-layoff-start" value="${active.start}" readonly style="background:#f3f4f6;font-size:12px;width:140px;" /></label>
+        <label style="font-size:11px;">종료일 <input type="date" id="cm-layoff-end" value="${active.end}" style="font-size:12px;width:140px;" /></label>
+        <label style="font-size:11px;">사유 <input type="text" id="cm-layoff-note" value="${_escHtml(active.note||'')}" placeholder="휴업 사유" style="font-size:12px;width:160px;" /></label>
+        <input type="hidden" id="cm-layoff-idx" value="${periods.indexOf(active)}" />
+      </div>`;
+  } else if (future.length > 0) {
+    // 예정된 휴업: 모두 editable
+    const f = future[0];
+    curHtml = `<div style="font-weight:600;font-size:12px;color:#2563eb;margin-bottom:4px;">예정된 휴업</div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <label style="font-size:11px;">시작일 <input type="date" id="cm-layoff-start" value="${f.start}" style="font-size:12px;width:140px;" /></label>
+        <label style="font-size:11px;">종료일 <input type="date" id="cm-layoff-end" value="${f.end}" style="font-size:12px;width:140px;" /></label>
+        <label style="font-size:11px;">사유 <input type="text" id="cm-layoff-note" value="${_escHtml(f.note||'')}" placeholder="휴업 사유" style="font-size:12px;width:160px;" /></label>
+        <input type="hidden" id="cm-layoff-idx" value="${periods.indexOf(f)}" />
+      </div>`;
+  }
+  currentEl.innerHTML = curHtml;
+
+  // ── 추가 버튼 ──
+  addBtn.style.display = canAddNew ? 'inline-block' : 'none';
+  if (canAddNew) {
+    addBtn.onclick = () => {
+      // 현재 입력된 기간들을 수집
+      const existing = _cmCollectLayoffPeriodsRaw();
+      const todayStr = new Date().toISOString().slice(0, 10);
+      // 새 휴업기간 기본값: 내일부터 30일
+      const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
+      const endDate = new Date(tomorrow); endDate.setDate(endDate.getDate() + 30);
+      existing.push({
+        start: tomorrow.toISOString().slice(0, 10),
+        end: endDate.toISOString().slice(0, 10),
+        note: ''
+      });
+      _cmRenderLayoffPeriods(JSON.stringify(existing));
+    };
+  }
+}
+
+// 현재 DOM에서 휴업기간 원본 배열 수집 (기존 + 편집 중인 것)
+function _cmCollectLayoffPeriodsRaw() {
+  const periods = [];
+  // 이전 이력에서 (readonly로 표시된) 데이터 수집
+  const historyEl = document.getElementById('cm-layoff-history');
+  if (historyEl) {
+    const matches = historyEl.innerHTML.match(/📅\s*(\S+)\s*~\s*(\S+)/g);
+    if (matches) {
+      matches.forEach(m => {
+        const parts = m.replace('📅 ', '').split(' ~ ');
+        // note는 HTML에서 추출하기 어려우므로 빈 문자열로
+        periods.push({ start: parts[0] || '', end: parts[1] || '', note: '' });
+      });
+    }
+  }
+  // 현재 편집 중인 기간
+  const startEl = document.getElementById('cm-layoff-start');
+  const endEl   = document.getElementById('cm-layoff-end');
+  const noteEl  = document.getElementById('cm-layoff-note');
+  const idxEl   = document.getElementById('cm-layoff-idx');
+  if (startEl && endEl) {
+    const cur = { start: startEl.value, end: endEl.value, note: noteEl ? noteEl.value : '' };
+    if (idxEl && idxEl.value !== '') {
+      // 기존 배열의 특정 인덱스 업데이트
+      const idx = parseInt(idxEl.value);
+      if (idx >= 0 && idx < periods.length) {
+        periods[idx] = cur;
+      } else {
+        periods.push(cur);
+      }
+    } else {
+      periods.push(cur);
+    }
+  }
+  return periods;
+}
+
+// DB 저장용 JSON 문자열 반환
+function _cmCollectLayoffPeriods() {
+  const periods = _cmCollectLayoffPeriodsRaw().filter(p => p.start && p.end);
+  return JSON.stringify(periods);
+}
+
+function _escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+// ──────────────────────────────────────────────────────────────────────────
+
 /** 고객사 임시저장 모달에서 삭제 */
 async function deleteDraftCompany(){
   const id = _currentCompanyDraftId;
@@ -919,6 +1042,8 @@ function openCompanyModal(id=null){
       _cmSvcRestore(c.service_contract_file_name||'', c.service_contract_file_data||'');
       // 급여 항목 설정 복원
       _cmSetAllowanceConfig(c.allowance_config || {});
+      // 휴업기간 렌더링
+      _cmRenderLayoffPeriods(c.layoff_periods || '[]');
     } else {
       // 순수 신규: 접근코드 자동 생성
       _setAccessCode(generateAccessCode());
@@ -926,6 +1051,8 @@ function openCompanyModal(id=null){
       _cmSvcReset();
       // 급여 항목 설정 초기화
       _cmSetAllowanceConfig({});
+      // 휴업기간 초기화
+      _cmRenderLayoffPeriods('[]');
       // 대표자 기본 행
       _cmClearRepRows(); _cmAddRepRow();
     }
@@ -1109,6 +1236,9 @@ const _CM_FIELD_LABELS = {
   note:              '비고',
   allowance_config:  '급여항목 설정',
   access_code:       '접근코드',
+  sick_leave_pay_rate:'병가 급여 지급율',
+  proration_method:  '일할 계산 방식',
+  layoff_periods:    '휴업기간',
 };
 
 /** 두 값이 실질적으로 같은지 비교 */
@@ -1278,7 +1408,7 @@ async function saveCompany(){
   const _prevStatus = editId.company
     ? (allCompanies.find(x=>x.id===editId.company)?.status || COMPANY_STATUS.ACTIVE)
     : COMPANY_STATUS.ACTIVE;
-  const body={company_name:name,business_number:document.getElementById('cm-biz').value.replace(/[^0-9]/g,''),representative:_representatives[0]?.name||'',representatives:JSON.stringify(_representatives),industry:document.getElementById('cm-industry').value,address:document.getElementById('cm-addr').value,phone:_representatives[0]?.phone||'',email:_representatives[0]?.email||'',pay_period:document.getElementById('cm-period').value,pay_period_month:document.getElementById('cm-period-month-hidden').value||null,pay_period_day:parseInt(document.getElementById('cm-period-day-hidden').value)||null,pay_day:document.getElementById('cm-payday').value,access_code:code,note:document.getElementById('cm-note').value,insurance_basis:insuranceBasis,annual_leave_basis:annualLeaveBasis,sick_leave_pay_rate:parseFloat(document.getElementById('cm-sick-leave-pay-rate')?.value)||0,proration_method:document.querySelector('input[name="cm-proration-method"]:checked')?.value||'30day_fixed',service_contract_file_name:_cmSvcGetSaveData().name,service_contract_file_data:_cmSvcGetSaveData().data,allowance_config:newAllowanceCfg,contract_start_date:document.getElementById('cm-contract-start').value||null,is_draft:false,draft_saved_at:null,status:_prevStatus};
+  const body={company_name:name,business_number:document.getElementById('cm-biz').value.replace(/[^0-9]/g,''),representative:_representatives[0]?.name||'',representatives:JSON.stringify(_representatives),industry:document.getElementById('cm-industry').value,address:document.getElementById('cm-addr').value,phone:_representatives[0]?.phone||'',email:_representatives[0]?.email||'',pay_period:document.getElementById('cm-period').value,pay_period_month:document.getElementById('cm-period-month-hidden').value||null,pay_period_day:parseInt(document.getElementById('cm-period-day-hidden').value)||null,pay_day:document.getElementById('cm-payday').value,access_code:code,note:document.getElementById('cm-note').value,insurance_basis:insuranceBasis,annual_leave_basis:annualLeaveBasis,sick_leave_pay_rate:parseFloat(document.getElementById('cm-sick-leave-pay-rate')?.value)||0,proration_method:document.querySelector('input[name="cm-proration-method"]:checked')?.value||'30day_fixed',layoff_periods:_cmCollectLayoffPeriods(),service_contract_file_name:_cmSvcGetSaveData().name,service_contract_file_data:_cmSvcGetSaveData().data,allowance_config:newAllowanceCfg,contract_start_date:document.getElementById('cm-contract-start').value||null,is_draft:false,draft_saved_at:null,status:_prevStatus};
 
   // ── 수정 모드: diff 계산 → 변경 있을 때만 적용일 검증 + company_history 기록 ──
   let _effDateStr = ''; // 상위 스코프에서 선언 (등기임원 이력에서도 사용)

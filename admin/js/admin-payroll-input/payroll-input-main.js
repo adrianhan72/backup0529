@@ -3464,10 +3464,11 @@ function calcPI(){
     // 5인 미만 사업장: 0원 (법적 의무 없음)
     // 5인 이상: 평균임금 70% (단, 통상임금 100%를 초과할 수 없음)
     const _dailyOrdinaryWage = Math.round(_hw2 * _hpd2); // 1일 통상임금
+    let _dailyAvgWage = 0; // 표시용 (하단 hint)
     _layoffPay = 0;
     if (!_isSmall && _layoffDays > 0) {
       const _layoffEmpId = document.getElementById('pi-employee')?.value || '';
-      const _dailyAvgWage = _layoffEmpId ? _calcDailyAverageWage(_layoffEmpId, _yr, _mo) : 0;
+      _dailyAvgWage = _layoffEmpId ? _calcDailyAverageWage(_layoffEmpId, _yr, _mo) : 0;
       if (_dailyAvgWage > 0) {
         // 평균임금의 70% (통상임금 상한)
         const _dailyLayoffRate = Math.min(Math.round(_dailyAvgWage * 0.7), _dailyOrdinaryWage);
@@ -3590,7 +3591,14 @@ function calcPI(){
         if (_retroHolidayOverpay > 0) parts.push(`소급 주휴수당 환수 ${won(_retroHolidayOverpay)}`);
         if(_elHours > 0) parts.push(`조퇴 ${_elHours.toFixed(1)}h`);
         if(_lateHours > 0) parts.push(`지각 ${_lateHours.toFixed(1)}h`);
-        if(_layoffDays > 0) parts.push(`휴업수당 ${_layoffDays}일${_isSmall?' (5인미만 면제)':''}`);
+        if(_layoffDays > 0) {
+          const _layoffFormula = _isSmall
+            ? '5인미만 면제'
+            : (_dailyAvgWage > 0
+              ? `min(평균임금 ${won(_dailyAvgWage)}×70%, 통상임금 ${won(_dailyOrdinaryWage)}) × ${_layoffDays}일`
+              : `통상임금 ${won(_dailyOrdinaryWage)} × 70% × ${_layoffDays}일`);
+          parts.push(`휴업수당 ${won(_layoffPay)} (${_layoffFormula})`);
+        }
         if(_maternityPay > 0) parts.push(`출산휴가 급여 ${won(_maternityPay)}${_maternityDayLabelStr ? ' (' + _maternityDayLabelStr + ')' : ''}`);
         if(_dedDetail) _dedDetail.textContent = parts.join(' · ');
         if(_dedLabel) _dedLabel.textContent = (_layoffDays > 0 || _maternityPay > 0 || _retroOverpaymentTotal > 0) ? '결근·조퇴·지각 차감 및 법정수당' : '결근·조퇴·지각 차감';
