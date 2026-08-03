@@ -753,11 +753,49 @@ function renderWageLedger(){
     [ '', '기타공제', '공제합계', '차인지급액' ],
   ];
 
-  // ── 금액 포맷 헬퍼 ──
-  const fmtV = v => {
-    const n = Number(v);
-    return (!v || n === 0) ? '' : n.toLocaleString('ko-KR');
+  // ── 행 최적화: 어떤 직원도 데이터가 없는 행(PAY+DED 모두 0)은 숨김 ──
+  // 각 행 인덱스(0~4)별 pay/ded 컬럼이 전 직원 0인지 검사
+  const _payRowFields = [
+    ['base_salary','bonus_pay','meal_allowance','transport','position_allowance','site_allowance'],
+    ['research_allowance','childcare_allowance','overtime_pay','night_pay','holiday_pay','weekly_holiday_pay'],
+    ['annual_leave_pay','license_allowance','skill_allowance','communication_pay','performance_pay','actual_expense_pay'],
+    ['hazard_allowance','remote_area_allowance','fitness_allowance','self_dev_allowance','book_allowance','overseas_allowance'],
+    ['_customOrd','_customFixed','_etcItems','_empty','_etcOther','gross_pay']  // row4 항상 표시 (gross 존재)
+  ];
+  const _dedRowFields = [
+    ['national_pension','health_insurance','employment_insurance','long_term_care'],
+    ['_empty','health_insurance_adjust','_empty','_empty2'],
+    ['_empty','_empty','_empty','_empty'],
+    ['income_tax','local_income_tax','year_end_tax_adjust','_empty'],
+    ['_empty','advance_deduction','total_deduction','net_pay']
+  ];
+  const _rowHasData = rowIdx => {
+    // row4는 항상 지급합계/공제합계가 있어서 표시
+    if(rowIdx === 4) return true;
+    // pay 컬럼 중 하나라도 데이터 있는 직원이 있으면 표시
+    const payFields = _payRowFields[rowIdx];
+    const hasPay = payFields.some(f => {
+      if(f==='transport') return pays.some(p => (p.self_driving_allowance||p.transportation_allowance||0) !== 0);
+      if(f==='_customOrd') return pays.some(p => _sumCustomOrd(p) > 0);
+      if(f==='_customFixed') return pays.some(p => _sumCustomFixed(p) > 0);
+      if(f==='_etcItems') return pays.some(p => _sumEtcItems(p) > 0);
+      if(f==='_etcOther') return pays.some(p => (p.etc_allowance||0)+(p.other_pay||0) !== 0);
+      if(f==='_empty'||f==='_empty2') return false;
+      return pays.some(p => p[f] && Number(p[f]) !== 0);
+    });
+    if(hasPay) return true;
+    // ded 컬럼 중 하나라도 데이터 있는 직원이 있으면 표시
+    const dedFields = _dedRowFields[rowIdx];
+    return dedFields.some(f => {
+      if(f==='_empty'||f==='_empty2') return false;
+      return pays.some(p => p[f] && Number(p[f]) !== 0);
+    });
   };
+  const _rowVisible = [0,1,2,3,4].map(i => _rowHasData(i));
+  // visibleRows: 표시할 행 인덱스 배열 (0-based, 항상 row4 포함)
+  const _visRows = _rowVisible.map((v,i)=>v?i:-1).filter(i=>i>=0);
+  // 원본 인덱스 → 표시 인덱스 매핑
+  const _rowMap = [0,1,2,3,4].map(i => _visRows.indexOf(i)); // -1 = 숨김
   const fmtB = v => {  // bold
     const n = Number(v);
     return (!v || n === 0) ? '' : `<strong>${n.toLocaleString('ko-KR')}</strong>`;
@@ -835,133 +873,111 @@ function renderWageLedger(){
     }
   };
 
-  // ── 6행 thead 생성 (공통) ──
-  // 행1: 인적사항(1-2병합), 기본급여및제수당(3-8병합), 공제및차인지급액(9-12병합), 영수인(1-6행 rowspan)
-  // 행2~6: 각 항목 th
+  // ── 6행 thead 생성 (행 최적화: 데이터 없는 행은 숨김) ──
+  // visibleCount = 표시할 데이터 행 수 (영수인 rowspan = visibleCount + 1(그룹헤더))
+  const _visCount = _visRows.length;
   const buildThead = () => {
-    // 행1 그룹 헤더
+    // 행1 그룹 헤더 (항상 표시)
+    const signRowspan = _visCount + 1; // 그룹헤더 1 + 데이터 행 n
     const r1 = `<tr class="wl-th-group">
       <th colspan="2" class="wl-th-personal">인적사항</th>
       <th colspan="6" class="wl-th-pay">기본급여 및 제수당</th>
       <th colspan="4" class="wl-th-ded">공제 및 차인지급액</th>
-      <th rowspan="6" class="wl-th-sign">영수인</th>
+      <th rowspan="${signRowspan}" class="wl-th-sign">영수인</th>
     </tr>`;
 
-    // 행2: 사원번호, 성명, 지급row0, 공제row0
-    const payR0 = PAY_TH[0];
-    const dedR0 = DED_TH[0];
-    const r2 = `<tr class="wl-th-row wl-th-row-ind">
-      <th class="wl-th-cell">사원번호</th>
-      <th class="wl-th-cell">성명</th>
-      ${payR0.map(t => `<th class="wl-th-cell">${t}</th>`).join('')}
-      ${dedR0.map(t => `<th class="wl-th-cell">${t}</th>`).join('')}
-    </tr>`;
+    // 행2: 사원번호, 성명, 지급row0, 공제row0 (rowIdx=0)
+    let rows = '';
+    if(_rowVisible[0]){
+      const pv = PAY_TH[0]; const dv = DED_TH[0];
+      rows += `<tr class="wl-th-row wl-th-row-ind">
+        <th class="wl-th-cell">사원번호</th>
+        <th class="wl-th-cell">성명</th>
+        ${pv.map(t => `<th class="wl-th-cell">${t}</th>`).join('')}
+        ${dv.map(t => `<th class="wl-th-cell">${t}</th>`).join('')}
+      </tr>`;
+    }
 
-    // 행3~6: 1열-2열 병합(인적사항 계속), 지급·공제 각 항목
-    const merged34 = [
-      { lbl:'부서',    row:2 },
-      { lbl:'직급',    row:3 },
-      { lbl:'입사일',  row:4 },
-      { lbl:'퇴사일',  row:5 },
-    ];
-    const rows3to6 = merged34.map((m, mi) => {
-      const ri = mi + 1; // PAY_TH/DED_TH index 1~4
-      const pv = PAY_TH[ri];
-      const dv = DED_TH[ri];
-      return `<tr class="wl-th-row wl-th-row-mrg">
-        <th colspan="2" class="wl-th-cell wl-th-merged">${m.lbl}</th>
+    // 행3~6: 부서/직급/입사일/퇴사일 (rowIdx 1~4)
+    const mergedLabels = ['부서','직급','입사일','퇴사일'];
+    for(let ri=1; ri<=4; ri++){
+      if(!_rowVisible[ri]) continue;
+      const pv = PAY_TH[ri]; const dv = DED_TH[ri];
+      rows += `<tr class="wl-th-row wl-th-row-mrg">
+        <th colspan="2" class="wl-th-cell wl-th-merged">${mergedLabels[ri-1]}</th>
         ${pv.map((t,i) => `<th class="wl-th-cell${t==='지급합계'?' wl-th-gross':i===5?' wl-th-pay-last':''}">${t}</th>`).join('')}
         ${dv.map((t,i) => `<th class="wl-th-cell${t==='공제합계'?' wl-th-ded-sum':t==='차인지급액'?' wl-th-net':(ri===2&&(i===0||i===2))?' wl-th-na':''}">${t}</th>`).join('')}
       </tr>`;
-    }).join('');
+    }
 
-    // 행6: 지급합계(bold) / 공제합계·차인지급액(bold) 는 PAY_TH[4], DED_TH[4]에 이미 포함
-    // (위 rows3to6 마지막 행이 행6)
-
-    return `<thead>${r1}${r2}${rows3to6}</thead>`;
+    return `<thead>${r1}${rows}</thead>`;
   };
 
-  // ── 직원 데이터 tbody 행 생성 ──
-  // TH 행2~6 구조와 완전히 동일하게 맞춤:
-  //   데이터 행1 → TH 행2: C1(사원번호) | C2(성명) | C3~C8 | C9~C12 | C13(영수인)
-  //   데이터 행2 → TH 행3: C1+C2 colspan=2(부서)  | C3~C8 | C9~C12
-  //   데이터 행3 → TH 행4: C1+C2 colspan=2(직급)  | C3~C8 | C9~C12
-  //   데이터 행4 → TH 행5: C1+C2 colspan=2(입사일)| C3~C8 | C9~C12
-  //   데이터 행5 → TH 행6: C1+C2 colspan=2(퇴사일)| C3~C8 | C9~C12
-  // → rowspan 없이 각 행을 독립적으로 구성 (TH와 열 구조 1:1 일치)
+  // ── 직원 데이터 tbody 행 생성 (행 최적화: 데이터 없는 행 숨김) ──
+  // rowIdx 0: 사원번호+성명, rowIdx 1: 부서, rowIdx 2: 직급, rowIdx 3: 입사일, rowIdx 4: 퇴사일
+  const _empInfoLabels = ['사원번호/성명','부서','직급','입사일','퇴사일'];
   const buildTbody = (p, emp, idx, isSum) => {
     const resign = (allContracts.filter(c => c.employee_id === (p?.employee_id||'') && !c.is_draft)
       .sort((a,b)=>(b.contract_start||'').localeCompare(a.contract_start||''))[0]?.contract_end) || '';
 
     const cls = `wl-data-row${isSum?' wl-sum-row':''}`;
-
-    // 행1 (TH 행2): 사원번호 | 성명 | 지급row0 | 공제row0 | 영수인
     const empNo   = isSum ? '' : (emp.employee_number||'-');
     const empName = isSum ? `합계 (${pays.length}명)` : (emp.name||'-');
-    const pv0 = isSum ? getSumPayVals(0) : getPayVals(p, 0);
-    const dv0 = isSum ? getSumDedVals(0) : getDedVals(p, 0);
-    const row1 = `<tr class="${cls}">
-      <td class="wl-td-center wl-td-empno">${empNo}</td>
-      <td class="wl-td-center wl-td-name">${empName}</td>
-      ${pv0.map((v,i)=>i===5?`<td class="wl-td-num wl-td-pay-last">${v}</td>`:`<td class="wl-td-num">${v}</td>`).join('')}
-      ${dv0.map(v=>`<td class="wl-td-num">${v}</td>`).join('')}
-      <td rowspan="5" class="wl-td-sign"></td>
-    </tr>`;
-
-    // 행2 (TH 행3): colspan=2(부서) | 지급row1 | 공제row1  ← rowspan=3 점유중 (영수인 td 없음)
     const dept = isSum ? '' : (emp.department||'');
-    const pv1 = isSum ? getSumPayVals(1) : getPayVals(p, 1);
-    const dv1 = isSum ? getSumDedVals(1) : getDedVals(p, 1);
-    const row2 = `<tr class="${cls}">
-      <td colspan="2" class="wl-td-center wl-td-dept">${dept}</td>
-      ${pv1.map((v,i)=>i===5?`<td class="wl-td-num wl-td-pay-last">${v}</td>`:`<td class="wl-td-num">${v}</td>`).join('')}
-      ${dv1.map(v=>`<td class="wl-td-num">${v}</td>`).join('')}
-    </tr>`;
-
-    // 행3 (TH 행4): colspan=2(직급) | 지급row2 | 공제row2  ← rowspan=3 점유중 (영수인 td 없음)
-    const pos = isSum ? '' : (emp.position||'');
-    const pv2 = isSum ? getSumPayVals(2) : getPayVals(p, 2);
-    const dv2 = isSum ? getSumDedVals(2) : getDedVals(p, 2);
-    const row3 = `<tr class="${cls}">
-      <td colspan="2" class="wl-td-center wl-td-dept">${pos}</td>
-      ${pv2.map((v,i)=>i===5?`<td class="wl-td-num wl-td-pay-last">${v}</td>`:`<td class="wl-td-num">${v}</td>`).join('')}
-      ${dv2.map((v,i)=>i===0||i===2?`<td class="wl-td-num wl-td-na">${v}</td>`:`<td class="wl-td-num">${v}</td>`).join('')}
-    </tr>`;
-
-    // 행4 (TH 행5): colspan=2(입사일) | 지급row3 | 공제row3  ← rowspan 범위 밖 → 영수인 td 새로 시작
+    const pos  = isSum ? '' : (emp.position||'');
     const hire = isSum ? '' : (emp.hire_date||'');
-    const pv3 = isSum ? getSumPayVals(3) : getPayVals(p, 3);
-    const dv3 = isSum ? getSumDedVals(3) : getDedVals(p, 3);
-    const row4 = `<tr class="${cls}">
-      <td colspan="2" class="wl-td-center wl-td-dept">${hire}</td>
-      ${pv3.map((v,i)=>i===5?`<td class="wl-td-num wl-td-pay-last">${v}</td>`:`<td class="wl-td-num">${v}</td>`).join('')}
-      ${dv3.map(v=>`<td class="wl-td-num">${v}</td>`).join('')}
-    </tr>`;
+    const res  = isSum ? '' : resign;
 
-    // 행5 (TH 행6): colspan=2(퇴사일) | 지급row4 | 공제row4  ← rowspan=2 점유중 (영수인 td 없음)
-    const res = isSum ? '' : resign;
-    const pv4 = isSum ? getSumPayVals(4) : getPayVals(p, 4);
-    const dv4 = isSum ? getSumDedVals(4) : getDedVals(p, 4);
-    // row5: pv4[5]=지급합계(연두), dv4[2]=공제합계(연빨강), dv4[3]=차인지급액(연파랑)
-    const pv4Cells = pv4.map((v, i) =>
-      i === 5
-        ? `<td class="wl-td-gross">${v}</td>`
-        : `<td class="wl-td-num">${v}</td>`
-    ).join('');
-    const dv4Cells = dv4.map((v, i) =>
-      i === 2
-        ? `<td class="wl-td-ded-sum">${v}</td>`
-        : i === 3
-          ? `<td class="wl-td-net">${v}</td>`
-          : `<td class="wl-td-num">${v}</td>`
-    ).join('');
-    const row5 = `<tr class="${cls}">
-      <td colspan="2" class="wl-td-center wl-td-dept">${res}</td>
-      ${pv4Cells}
-      ${dv4Cells}
-    </tr>`;
+    // rowIdx → 왼쪽 셀(인적사항) + pay/ded 값 생성기
+    const _buildDataRow = (rowIdx, isFirst) => {
+      const pv = isSum ? getSumPayVals(rowIdx) : getPayVals(p, rowIdx);
+      const dv = isSum ? getSumDedVals(rowIdx) : getDedVals(p, rowIdx);
 
-    return row1 + row2 + row3 + row4 + row5;
+      // 왼쪽 인적사항 셀
+      let leftCell = '';
+      if(rowIdx === 0){
+        leftCell = `<td class="wl-td-center wl-td-empno">${empNo}</td><td class="wl-td-center wl-td-name">${empName}</td>`;
+      } else {
+        const infoMap = {1:dept, 2:pos, 3:hire, 4:res};
+        leftCell = `<td colspan="2" class="wl-td-center wl-td-dept">${infoMap[rowIdx]||''}</td>`;
+      }
+
+      // 지급 셀 (row4는 지급합계/공제합계/차인지급액 특별 스타일)
+      let payCells = '';
+      if(rowIdx === 4){
+        payCells = pv.map((v, i) =>
+          i === 5 ? `<td class="wl-td-gross">${v}</td>` : `<td class="wl-td-num">${v}</td>`
+        ).join('');
+      } else {
+        payCells = pv.map((v,i)=>i===5?`<td class="wl-td-num wl-td-pay-last">${v}</td>`:`<td class="wl-td-num">${v}</td>`).join('');
+      }
+
+      // 공제 셀
+      let dedCells = '';
+      if(rowIdx === 4){
+        dedCells = dv.map((v, i) =>
+          i === 2 ? `<td class="wl-td-ded-sum">${v}</td>` :
+          i === 3 ? `<td class="wl-td-net">${v}</td>` :
+          `<td class="wl-td-num">${v}</td>`
+        ).join('');
+      } else if(rowIdx === 2){
+        dedCells = dv.map((v,i)=>i===0||i===2?`<td class="wl-td-num wl-td-na">${v}</td>`:`<td class="wl-td-num">${v}</td>`).join('');
+      } else {
+        dedCells = dv.map(v=>`<td class="wl-td-num">${v}</td>`).join('');
+      }
+
+      // 영수인 셀 (첫 번째 표시 행에만 rowspan 적용)
+      const signCell = isFirst ? `<td rowspan="${_visCount}" class="wl-td-sign"></td>` : '';
+
+      return `<tr class="${cls}">${leftCell}${payCells}${dedCells}${signCell}</tr>`;
+    };
+
+    // visibleRows만 렌더링
+    let rows = '';
+    _visRows.forEach((origIdx, visIdx) => {
+      rows += _buildDataRow(origIdx, visIdx === 0);
+    });
+    return rows;
   };
 
   // ── 직원 정렬 (가나다) ──
