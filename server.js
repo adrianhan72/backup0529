@@ -34,6 +34,7 @@ app.use('/api',           require('./routes/upload')(ROOT));
 // PDF: /view/:type/:id (root) + /api/generate-pdf, /api/verify-pdf-access, /api/client-pdf-access
 app.use('/',    require('./routes/pdf')(db, ROOT));
 app.use('/api', require('./routes/pdf')(db, ROOT));
+app.use('/api', require('./routes/wage-ledger-files')(db, ROOT));
 app.use('/tables',        require('./routes/tables')(db));
 
 // ── 정적 파일 ──

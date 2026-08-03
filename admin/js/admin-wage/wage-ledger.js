@@ -166,6 +166,20 @@ async function _checkWageLedgerComplete(companyId, year, month){
   // 완료 토스트
   const co = allCompanies.find(x=>x.id===companyId);
   toast(`📋 ${co?.company_name||''} ${year}년 ${month}월 임금대장이 생성되었습니다!`, 'success');
+
+  // ── 신고용 Excel + HTML(열람용) 자동 생성 및 파일서버 저장 ──
+  try {
+    const genRes = await api('../api/generate-wage-ledger-files', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ companyId, year, month })
+    });
+    if (genRes.ok) {
+      console.log('[임금대장] 파일 생성 완료:', genRes.safeName);
+    }
+  } catch (e) {
+    console.warn('[임금대장] 파일 생성 실패 (무시됨):', e.message);
+  }
 }
 
 function renderWLCompanyList(){

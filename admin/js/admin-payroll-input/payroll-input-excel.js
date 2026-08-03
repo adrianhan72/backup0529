@@ -1900,6 +1900,20 @@ async function confirmBulkUpload(){
   toast(msg,'success');
   confirmBtn.disabled=false;
   confirmBtn.innerHTML='<i class="fas fa-database"></i> 일괄 저장 실행';
+
+  // ── 신고용 Excel + HTML 자동 생성 및 파일서버 저장 ──
+  try {
+    const genRes = await api('../api/generate-wage-ledger-files', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ companyId: co.id, year, month })
+    });
+    if (genRes.ok) {
+      console.log('[임금대장] 업로드 후 파일 생성 완료:', genRes.safeName);
+    }
+  } catch (e) {
+    console.warn('[임금대장] 파일 생성 실패 (무시됨):', e.message);
+  }
 }
 
 // ─── EXCEL DOWNLOAD ───
