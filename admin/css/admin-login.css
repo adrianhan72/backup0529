@@ -102,8 +102,8 @@
     .pi-section-title.green{color:#10b981;border-color:#a7f3d0}
     .pi-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:12.5px}
 .pi-row.pi-etc-row{justify-content:flex-start;gap:6px;flex-wrap:wrap;padding:4px 0}
-.pi-etc-row .pi-etc-name-input{flex:1 1 70px;min-width:60px;max-width:120px}
-.pi-etc-row input[data-amount]{width:120px;flex:0 0 auto}
+.pi-etc-row .pi-etc-name-input{flex:0 1 60px;min-width:50px;max-width:80px}
+.pi-etc-row input[data-amount]{width:130px;flex:0 0 auto}
 .pi-etc-row .pi-etc-pt-select{width:auto;flex:0 0 auto}
 .pi-etc-row .btn-sm{flex:0 0 auto}
     .pi-row label{color:#666}
