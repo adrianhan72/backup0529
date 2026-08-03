@@ -410,6 +410,19 @@ const MSG_RULE_DEFAULTS = {
 
 ※ 근로자가 동의서를 확인하고 회신하면 앱에서 확인하실 수 있습니다.
 ※ 정보제공동의서는 근로계약 종료일로부터 5년간 보관됩니다.`
+  },
+  wage_ledger_generated: {
+    title: `[임금대장 발행] {회사명} — {급여년도}년 {급여월}월 임금대장이 발행되었습니다`,
+    body: `안녕하세요{발신자명}.
+
+{급여년도}년 {급여월}월 임금대장이 발행되었습니다.
+아래 링크에서 신고용 임금대장 PDF를 확인하실 수 있습니다.
+
+📎 임금대장 보기: {임금대장링크}
+
+⚠️ 아직 근로계약이 등록되지 않은 직원의 급여 명세서는 별도로 발행되어 해당 근로자에게 개별 발송되며, 이 임금대장에서는 제외되어 있습니다. 누락된 근로계약과 급여정보가 시스템에 정상 반영되면 임금대장은 업데이트되어 발행됩니다.
+
+{발신자연락처}`
   }
 };
 
@@ -431,6 +444,7 @@ const MSG_CHANNEL_TYPES = {
     { value: 'contract_renewed', label: '근로계약 갱신완료' },
     { value: 'contract_dispatched', label: '근로계약서 발송 완료' },
     { value: 'consent_dispatched', label: '정보제공동의서 발송 완료' },
+    { value: 'wage_ledger_generated', label: '임금대장 발행' },
   ],
   kakao: [
     { value: 'contract_dispatch_kakao', label: '근로계약서 발송 (알림톡)' },
