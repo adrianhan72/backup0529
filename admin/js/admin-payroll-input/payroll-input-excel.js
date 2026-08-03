@@ -605,6 +605,24 @@ function validateAndParseExcel(wb, fileName){
   const fixedErrors = []; // 계약 고정 항목 오류 → 해당 행만 제외
   const validRows   = [];
 
+  // ── 진행률 업데이트 헬퍼 ──
+  const _setProgress = (pct, label) => {
+    const bar = document.getElementById('pi-upload-progress-bar');
+    const lbl = document.getElementById('pi-upload-progress-label');
+    const pctEl = document.getElementById('pi-upload-progress-pct');
+    const container = document.getElementById('pi-upload-progress');
+    if(container && container.style.display === 'none') container.style.display = 'block';
+    if(bar) bar.style.width = pct + '%';
+    if(lbl) lbl.textContent = label || ('분석 중… (' + pct + '%)');
+    if(pctEl) pctEl.textContent = pct + '%';
+  };
+  const _hideProgress = () => {
+    const container = document.getElementById('pi-upload-progress');
+    if(container) container.style.display = 'none';
+  };
+
+  _setProgress(5, '파일 읽는 중…');
+
   // ========================================
   //  보조 유틸
   // ========================================
@@ -666,6 +684,7 @@ function validateAndParseExcel(wb, fileName){
       errors.push(`❌ 파일명 월 오류: ${fnMonth}월 (1~12 사이여야 합니다)`);
   }
 
+  _setProgress(10, '시트 구조 확인 중…');
   // ========================================
   //  2. 시트 존재 확인
   // ========================================
@@ -713,6 +732,7 @@ function validateAndParseExcel(wb, fileName){
     errors.push(`❌ 년월 불일치\n파일명: ${fnYear}년 ${fnMonth}월 / 시트 타이틀: ${shYear}년 ${shMonth}월`);
   }
 
+  _setProgress(20, '고객사 매칭 중…');
   // ========================================
   //  5. DB 고객사 매칭
   // ========================================
@@ -733,6 +753,7 @@ function validateAndParseExcel(wb, fileName){
   }
 
   if(errors.length > 0){
+    _hideProgress();
     return showUploadReport(false, errors, warnings, calcErrors, fixedErrors, validRows);
   }
 
