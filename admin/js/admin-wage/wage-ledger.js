@@ -341,7 +341,7 @@ function clearWLCompanySelect(){
   document.getElementById('wl-company-search').value = '';
   renderWLCompanyList();
   // 고객사 선택 해제 시 버튼 비활성화
-  ['#wl-excel-btn','#wl-pdf-btn','#wl-print-btn'].forEach(id=>{
+  ['#wl-excel-btn','#wl-excel-report-btn','#wl-pdf-btn','#wl-print-btn'].forEach(id=>{
     const btn=document.getElementById(id);
     if(!btn) return;
     btn.disabled=true;
