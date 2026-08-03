@@ -1361,7 +1361,7 @@ function validateAndParseExcel(wb, fileName){
         yearEnd, healthAdj, advance, totalDed, netPay,
         payDate: CI.PAY_DATE>=0 ? String(row[CI.PAY_DATE]||'') : '',
         note:    CI.NOTE>=0    ? String(row[CI.NOTE]||'')    : '',
-        std,
+        std: calcStd,
         otHours:    hw>0 ? Math.round(otPay    / (hw*1.5)*10)/10 : 0,
         nightHours: hw>0 ? Math.round(nightPay / (hw*0.5)*10)/10 : 0,
         holHours:   hw>0 ? Math.round(holPay   / (hw*1.5)*10)/10 : 0,

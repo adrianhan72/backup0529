@@ -1,4 +1,4 @@
-﻿// ─── WAGE LEDGER (임금대장) ───
+// ─── WAGE LEDGER (임금대장) ───
 let _wlCompanyId = null;
 let _wlCompanyName = '';
 
@@ -125,7 +125,6 @@ async function _checkWageLedgerComplete(companyId, year, month, changedEmpId = n
     const _attRows = (_attRes.data || _attRes || []);
     if (Array.isArray(_attRows) && _attRows.length > 0) {
       // 월 전체 근로일수 계산
-      const _dpw = 5; // 기본 주5일
       const _totalMonthDays = new Date(year, month, 0).getDate();
       let _workDaysInMonth = 0;
       for (let d = 1; d <= _totalMonthDays; d++) {
@@ -1305,6 +1304,11 @@ function printWageLedger(){
 // ★ fill: {patternType:'solid', fgColor:{rgb:...}} — patternType 없으면 색상 미적용
 // ★ A4 가로: pageSetup + sheetView 동시 설정
 function downloadWageLedgerExcel(mode = 'edit', optCompanyId = null, optYear = null, optMonth = null){
+  // 중복 클릭 방지
+  if (downloadWageLedgerExcel._busy) return;
+  downloadWageLedgerExcel._busy = true;
+  setTimeout(() => { downloadWageLedgerExcel._busy = false; }, 3000);
+
   // 호출자가 companyId/yr/mo를 지정하면 그걸 사용, 아니면 wage-ledger 필터에서 읽음
   const _coId = optCompanyId || _wlCompanyId;
   if(!_coId){ toast('고객사를 먼저 선택하세요.','error'); return; }
@@ -1502,8 +1506,8 @@ async function _downloadEditExcel(pays, empMap, yr, mo, moStr) {
   const _coId = pays[0]?.company_id;
   if (_coId) {
     try {
-      const _attRes = await fetch(`../tables/attendance_ledger?company_id=${_coId}&limit=1000`);
-      const _attData = _attRes.ok ? (await _attRes.json()) : [];
+      const _attRes = await api(`../tables/attendance_ledger?company_id=${_coId}&limit=1000`);
+      const _attData = _attRes || [];
       const _attRows = (_attData.data || _attData || []);
       if (_attRows.length > 0) {
         // 직원별 근태 데이터 수집
