@@ -101,6 +101,11 @@
     .pi-section-title.red{color:#e94560;border-color:#ffd0d8}
     .pi-section-title.green{color:#10b981;border-color:#a7f3d0}
     .pi-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:12.5px}
+.pi-row.pi-etc-row{justify-content:flex-start;gap:6px;flex-wrap:wrap;padding:4px 0}
+.pi-etc-row .pi-etc-name-input{flex:1 1 120px;min-width:80px}
+.pi-etc-row input[data-amount]{width:90px;flex:0 0 auto}
+.pi-etc-row .pi-etc-pt-select{width:auto;flex:0 0 auto}
+.pi-etc-row .btn-sm{flex:0 0 auto}
     .pi-row label{color:#666}
     .pi-row input{width:130px;border:1px solid #d1d5db;border-radius:6px;padding:6px 9px;font-size:13px;outline:none;font-family:inherit;text-align:right;color:#000}
     .pi-row input:focus{border-color:#6366f1;outline:none;box-shadow:0 0 0 2px rgba(99,102,241,.25)}
