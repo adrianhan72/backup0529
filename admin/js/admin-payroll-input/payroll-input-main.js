@@ -4166,7 +4166,7 @@ function piAddEtcAllowanceItem(name = '', amount = '', payType = ''){
   if(!container) return;
   const idx = _piEtcAllowanceIdx++;
   const div = document.createElement('div');
-  div.className = 'pi-row pi-etc-row';
+  div.className = 'pi-row pi-etc-row pi-row-h-32';
   div.id = `pi-row-etc-${idx}`;
   div.style.display = '';
   div.innerHTML = `
