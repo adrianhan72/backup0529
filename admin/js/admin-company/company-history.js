@@ -335,7 +335,9 @@ function _cmGetAllowanceConfig(){
   _CM_AW_PT_FIELDS.forEach(f => {
     const hid = _cmAwHtmlId(f);
     cfg[f] = document.getElementById(`cm-aw-${hid}`)?.checked || false;
-    cfg[`${f}_pay_type`] = cfg[f] ? 'fixed' : '';
+    // pay_type: select 요소가 있으면 실제 선택값, 없으면 checked=true일 때 'fixed' 기본
+    const ptSel = document.getElementById(`cm-aw-${hid}-pt`);
+    cfg[`${f}_pay_type`] = cfg[f] ? (ptSel ? (ptSel.value || 'fixed') : 'fixed') : '';
     if(_CM_AW_TAX_EXEMPT.includes(f)) cfg[`${f}_tax_exempt`] = true;
   });
   // 사용자 정의 통상임금 항목 (비어있으면 키 자체를 넣지 않아 DB와 diff 방지)
