@@ -243,7 +243,7 @@ function cmAwRemoveCustomItem(idx){
 /** 커스텀 항목 목록 수집 → [{name, checked}] */
 function _cmAwGetCustomItems(){
   const items = [];
-  document.querySelectorAll('.cm-aw-custom-row').forEach(row => {
+  document.querySelectorAll('.cm-aw-custom-row:not(.cm-aw-fixed-custom-row)').forEach(row => {
     const cb = row.querySelector('input[type="checkbox"]');
     const nameInput = row.querySelector('input[type="text"]');
     const name = (nameInput?.value || '').trim();
@@ -254,7 +254,7 @@ function _cmAwGetCustomItems(){
 
 /** 커스텀 항목 복원 (기존 항목 모두 제거 후 재생성) */
 function _cmAwRestoreCustomItems(items){
-  document.querySelectorAll('.cm-aw-custom-row').forEach(r => r.remove());
+  document.querySelectorAll('.cm-aw-custom-row:not(.cm-aw-fixed-custom-row)').forEach(r => r.remove());
   _cmAwCustomIdx = 0;
   if(Array.isArray(items)){
     items.forEach(item => cmAwAddCustomItem(item.name || ''));
