@@ -94,6 +94,10 @@
       }
       body.wl-print-mode .wl-tbl col.c-sec { width:36px !important; }
       body.wl-print-mode .wl-tbl col.c-val { min-width:0 !important; }
+
+      /* 신고용 PDF: 영수인 컬럼 숨김 */
+      body.wl-print-mode.wl-report-pdf .wl-th-sign,
+      body.wl-print-mode.wl-report-pdf .wl-td-sign { display:none!important; }
     }
     /* 급여?�력 ?�용 */
     .pi-section-title{font-size:12px;font-weight:700;padding:10px 0 7px;border-bottom:1px dashed #e0e0e0;margin-bottom:10px;display:flex;align-items:center;gap:6px}

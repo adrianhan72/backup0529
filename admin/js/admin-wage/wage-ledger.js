@@ -1026,20 +1026,28 @@ function renderWageLedger(){
 
 // ─── 임금대장 인쇄/PDF 공통 실행 함수 ───
 // body에 .wl-print-mode 클래스를 추가 → @media print CSS가 임금대장만 표시
-// afterprint 이벤트에서 클래스·title 복원
+// isPdf=true → 신고용(report) 모드: 영수인 컬럼 숨김, 빈 셀 공란 (fmtV가 이미 처리)
+// afterprint 이벤트에서 클래스·title 복원 및 편집용 모드로 복구
 function _wlDoPrint(isPdf){
   const yr    = Number(document.getElementById('wl-year-filter').value);
   const mo    = Number(document.getElementById('wl-month-filter').value);
   const moStr = String(mo).padStart(2,'0');
 
   const origTitle = document.title;
-  document.title  = `[${_wlCompanyName}]_임금대장_${yr}년${moStr}월`;
+  const suffix = isPdf ? '_신고용' : '';
+  document.title  = `[${_wlCompanyName}]_임금대장_${yr}년${moStr}월${suffix}`;
+
+  // PDF(신고용): 영수인 컬럼 숨김 클래스 추가
+  if(isPdf){
+    document.body.classList.add('wl-report-pdf');
+  }
 
   // body에 wl-print-mode 클래스 추가 → 임금대장 print CSS 활성화
   document.body.classList.add('wl-print-mode');
 
   const cleanup = () => {
     document.body.classList.remove('wl-print-mode');
+    document.body.classList.remove('wl-report-pdf');
     document.title = origTitle;
     window.removeEventListener('afterprint', cleanup);
   };
@@ -1048,13 +1056,13 @@ function _wlDoPrint(isPdf){
   window.print();
 }
 
-// ─── 임금대장 PDF 다운로드 ───
+// ─── 임금대장 PDF 다운로드 (신고용) ───
 function downloadWageLedgerPdf(){
   if(!_wlCompanyId){ toast('고객사를 먼저 선택해 주세요.','warning'); return; }
   _wlDoPrint(true);
 }
 
-// ─── 임금대장 인쇄 ───
+// ─── 임금대장 인쇄 (편집용) ───
 function printWageLedger(){
   if(!_wlCompanyId){ toast('고객사를 먼저 선택해 주세요.','warning'); return; }
   _wlDoPrint(false);
