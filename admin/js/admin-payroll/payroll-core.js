@@ -137,6 +137,8 @@ function openPayslipModal(payrollId){
   // 지급유형 태그 생성 헬퍼
   const payTypeTag = (type) => type === 'daily'
     ? '<span class="pay-type-tag pay-type-tag-daily">출근일수</span>'
+    : type === 'receipt'
+    ? '<span class="pay-type-tag pay-type-tag-receipt">영수증 청구</span>'
     : '<span class="pay-type-tag pay-type-tag-monthly">정기지급</span>';
   const makePayRowType = (label, val, type) => {
     const isZero = !val || val === 0;
@@ -273,17 +275,32 @@ function openPayslipModal(payrollId){
   const _baseSalAmt   = (p.base_salary && p.base_salary > 0)
                           ? p.base_salary
                           : (_inProbation ? _probBaseSal : p.base_salary);
+  // ── 커스텀 항목 행 생성 ──
+  const _customOrdRows = (() => {
+    const vals = (() => { try { return typeof p.custom_ordinary_values === 'string' ? JSON.parse(p.custom_ordinary_values) : (p.custom_ordinary_values || []); } catch(e) { return []; } })();
+    return (Array.isArray(vals) ? vals : []).filter(v => v && v.amount > 0).map(v => makePayRow(v.name, v.amount)).join('');
+  })();
+  const _customFixedRows = (() => {
+    const vals = (() => { try { return typeof p.custom_fixed_values === 'string' ? JSON.parse(p.custom_fixed_values) : (p.custom_fixed_values || []); } catch(e) { return []; } })();
+    return (Array.isArray(vals) ? vals : []).filter(v => v && v.amount > 0).map(v => makePayRowType(v.name, v.amount, v.pay_type || 'fixed')).join('');
+  })();
+
   payTb.innerHTML =
     makeGroupRow('▸ 매월 지급') +
     makePayRow(_baseSalLabel,      _baseSalAmt) +
     makePayRow('주휴수당',          p.weekly_holiday_pay) +
     makePayRow('직책수당',          p.position_allowance) +
+    makePayRow('현장수당',          p.site_allowance) +
     makePayRowType('교통비',        p.transportation_allowance||p.car_maintenance, p.transportation_pay_type||'fixed') +
     makePayRowType('자가운전보조금',p.self_driving_allowance, p.self_driving_pay_type||'fixed') +
     makePayRowType('벽지수당',      p.remote_area_allowance, p.remote_area_pay_type||'fixed') +
     makePayRowType('식대',          p.meal_allowance, p.meal_pay_type||'fixed') +
     makePayRow('보육수당',     p.childcare_allowance) +
     makePayRow('연구활동비',        p.research_allowance) +
+    makePayRow('기술수당',          p.skill_allowance) +
+    makePayRow('면허수당',          p.license_allowance) +
+    makePayRow('위험수당',          p.hazard_allowance) +
+    _customOrdRows +
     makeGroupRow('▸ 추가 근로수당') +
     makePayRow('연장근로수당',      p.overtime_pay) +
     makePayRow('야간근로수당',      p.night_pay) +
@@ -293,9 +310,12 @@ function openPayslipModal(payrollId){
     makePayRow('정기 상여금',       p.bonus_pay) +
     makePayRow('비정기 성과급',     p.performance_pay) +
     makePayRow('실비변상적급여',    p.actual_expense_pay) +
-    makePayRow('통신비',            p.communication_pay) +
-    makePayRow('기술수당',          p.skill_allowance) +
-    makePayRow('면허수당',          p.license_allowance) +
+    makePayRowType('통신비',        p.communication_pay, p.communication_pay_type||'fixed') +
+    makePayRowType('체력증진비',    p.fitness_allowance, p.fitness_pay_type||'fixed') +
+    makePayRowType('자기계발비',    p.self_dev_allowance, p.self_dev_pay_type||'fixed') +
+    makePayRowType('도서지원비',    p.book_allowance, p.book_pay_type||'fixed') +
+    makePayRowType('해외근무수당',  p.overseas_allowance, p.overseas_pay_type||'fixed') +
+    _customFixedRows +
     makePayRow('퇴직금 중간정산',   p.severance_interim_pay) +
     makePayRow('기타수당',          (p.etc_allowance||0)+(p.other_pay||0));
 
