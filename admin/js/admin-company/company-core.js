@@ -937,9 +937,11 @@ function openCompanyModal(id=null){
     if(_effRow) _effRow.style.display = 'none';
   }
 
-  // ── 등기임원 / 특수관계인 데이터 로드 ──
-  _cmLoadExecutives(id && !_isDraft ? id : null);
-  _cmLoadRelated(id && !_isDraft ? id : null);
+  // ── 등기임원 / 특수관계인 데이터 로드 (임시저장 이어쓰기는 위에서 이미 복원 완료) ──
+  if (!_isDraft) {
+    _cmLoadExecutives(id);
+    _cmLoadRelated(id);
+  }
 
   openModal('company-modal');
 }
