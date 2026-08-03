@@ -1,4 +1,4 @@
-﻿// ===============================================================================
+// ===============================================================================
 // _probAutoCreateAndSave()
 //   케이스① (해당 월 전체가 수습 만료 이후): 채용확정 계약서를 자동 생성하고
 //   현재 폼에 입력된 급여를 채용확정 계약 기준으로 저장한다.
@@ -1362,6 +1362,13 @@ function validateAndParseExcel(wb, fileName){
       '자기계발비':     ['자기계발비'],
       '도서지원비':     ['도서지원비'],
       '해외근무수당':   ['해외근무수당'],
+      '연장시간':       ['연장시간','연장근로시간'],
+      '야간시간':       ['야간시간','야간근로시간'],
+      '휴일시간':       ['휴일시간','휴일근로시간'],
+      '정기상여금':     ['정기상여금'],
+      '성과급':         ['성과급'],
+      '실비변상적급여': ['실비변상적급여'],
+      '보수월액':       ['보수월액'],
     };
     const targets = aliases[name] || [name];
     for(let i=0; i<headerRow.length; i++){
@@ -1416,6 +1423,13 @@ function validateAndParseExcel(wb, fileName){
     SELF_DEV:     colIdx('자기계발비'),
     BOOK:         colIdx('도서지원비'),
     OVERSEAS:     colIdx('해외근무수당'),
+    OT_HOURS:     colIdx('연장시간'),
+    NIGHT_HOURS:  colIdx('야간시간'),
+    HOL_HOURS:    colIdx('휴일시간'),
+    BONUS:        colIdx('정기상여금'),
+    PERFORMANCE:  colIdx('성과급'),
+    ACTUAL_EXPENSE: colIdx('실비변상적급여'),
+    STD_MONTHLY:  colIdx('보수월액'),
   };
 
   // 필수 열 누락 검증
