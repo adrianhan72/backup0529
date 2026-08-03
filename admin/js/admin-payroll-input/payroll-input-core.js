@@ -131,9 +131,13 @@ async function downloadPrevMonthExcel(){
   // ── ② 전월 완료 여부 확인 ──
   if(_isPIMonthFullyPaid(coId, prevYr, prevMo)){
     // 전월 정상 다운로드
-    _syncXlFields(coId, prevYr, prevMo);
     toast(`${prevYr}년 ${prevMo}월 임금대장 엑셀 생성 중…`, 'success');
-    await downloadPayrollExcel();
+    if (typeof downloadWageLedgerExcel === 'function') {
+      downloadWageLedgerExcel('edit', coId, prevYr, prevMo);
+    } else {
+      _syncXlFields(coId, prevYr, prevMo);
+      await downloadPayrollExcel();
+    }
     return;
   }
 
@@ -162,9 +166,13 @@ async function downloadPrevMonthExcel(){
   );
   if(!confirmed) return;
 
-  _syncXlFields(coId, foundYr, foundMo);
   toast(`${foundYr}년 ${foundMo}월 임금대장 엑셀 생성 중…`, 'success');
-  await downloadPayrollExcel();
+  if (typeof downloadWageLedgerExcel === 'function') {
+    downloadWageLedgerExcel('edit', coId, foundYr, foundMo);
+  } else {
+    _syncXlFields(coId, foundYr, foundMo);
+    await downloadPayrollExcel();
+  }
 }
 
 /**

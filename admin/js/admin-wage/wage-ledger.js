@@ -1064,15 +1064,17 @@ function printWageLedger(){
 // ★ XLSX.writeFile(wb, fn, {cellStyles:true}) 옵션 필수
 // ★ fill: {patternType:'solid', fgColor:{rgb:...}} — patternType 없으면 색상 미적용
 // ★ A4 가로: pageSetup + sheetView 동시 설정
-function downloadWageLedgerExcel(mode = 'edit'){
-  if(!_wlCompanyId){ toast('고객사를 먼저 선택하세요.','error'); return; }
+function downloadWageLedgerExcel(mode = 'edit', optCompanyId = null, optYear = null, optMonth = null){
+  // 호출자가 companyId/yr/mo를 지정하면 그걸 사용, 아니면 wage-ledger 필터에서 읽음
+  const _coId = optCompanyId || _wlCompanyId;
+  if(!_coId){ toast('고객사를 먼저 선택하세요.','error'); return; }
 
-  const yr    = parseInt(document.getElementById('wl-year-filter')?.value);
-  const mo    = parseInt(document.getElementById('wl-month-filter')?.value);
+  const yr = optYear || parseInt(document.getElementById('wl-year-filter')?.value);
+  const mo = optMonth || parseInt(document.getElementById('wl-month-filter')?.value);
   const moStr = String(mo).padStart(2,'0');
 
   let pays = allPayrolls.filter(p =>
-    p.company_id === _wlCompanyId &&
+    p.company_id === _coId &&
     Number(p.pay_year) === yr &&
     Number(p.pay_month) === mo
   );
