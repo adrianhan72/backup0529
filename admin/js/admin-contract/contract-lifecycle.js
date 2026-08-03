@@ -813,6 +813,37 @@ function cancelPendingEdit(){
   if(c) viewContract(c.id);
 }
 
+// ─── 계약 변경 → 임금대장 재생성 트리거 ───
+// 계약 저장/수정/갱신/해지/파기 시 당월 임금대장이 이미 생성되어 있으면 자동 갱신
+async function _triggerWageLedgerRegen(companyId){
+  if(!companyId) return;
+  if(typeof _checkWageLedgerComplete !== 'function') return;
+  try {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
+    // 기존 임금대장 알림이 있으면 갱신 표시 후 재생성
+    const checkRes = await api('../tables/wage_ledger_notifications?limit=500');
+    const allNotifs = (checkRes && checkRes.data) ? checkRes.data : [];
+    const existing = allNotifs.find(n =>
+      n.company_id === companyId &&
+      (Number(n.pay_year)===year || Number(n.year)===year) &&
+      (Number(n.pay_month)===month || Number(n.month)===month)
+    );
+    if(existing){
+      await api('../tables/wage_ledger_notifications/' + existing.id, {
+        method: 'PATCH',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({is_renewed: 1, updated_at: Date.now()})
+      });
+      await _checkWageLedgerComplete(companyId, year, month);
+    }
+  } catch(e){
+    // 조용히 실패 (임금대장 페이지 아닌 곳에서도 호출될 수 있음)
+    console.warn('[계약→임금대장]', e.message);
+  }
+}
+
 // ─── 예정 계약 수정완료 저장 ───
 async function savePendingContractEdit(){
   if(_ctValidate()) return;
@@ -852,6 +883,7 @@ async function savePendingContractEdit(){
     await loadContracts(); renderContracts(); renderDashboard();
     closeModal('contract-modal');
     toast('계약이 수정됐습니다.');
+    _triggerWageLedgerRegen(c.company_id);
   } catch(e) {
     toast('수정 저장 중 오류가 발생했습니다.', 'error');
     console.error(e);
@@ -1074,6 +1106,7 @@ async function doContractVoid(){
   closeModal('contract-modal');
   await loadContracts(); renderContracts(); renderDashboard();
   toast('계약이 파기 처리됐습니다.');
+  _triggerWageLedgerRegen(c.company_id);
 }
 
 // ─── 갱신 플로우 ───
@@ -1779,6 +1812,7 @@ async function confirmContractRenew(){
   await loadContracts(); await loadEmployees(); renderContracts(); renderDashboard();
   const label = newStatus === CONTRACT_STATUS.PENDING ? '계약예정 (시작일 미도래)' : '계약유효 (활성)';
   toast(`연장 처리 완료. 전 계약: 해지 / 새 계약: ${label}`);
+  _triggerWageLedgerRegen(c.company_id);
 
   // ── 갱신 계약: 계약서 확인 및 발송 여부 확인 ──
   if(newId){
@@ -2146,6 +2180,7 @@ ${_noticePayNote}${_actionGuide}`,
   closeModal('contract-modal');
   await loadContracts(); await loadEmployees(); renderContracts(); renderDashboard();
   toast(`퇴사일(${termDate})이 설정됐습니다.`);
+  _triggerWageLedgerRegen(c.company_id);
 }
 
 function editContract(id){
@@ -4194,6 +4229,7 @@ async function saveContract(){
   closeModal('contract-modal');await loadContracts();await loadEmployees();renderContracts();renderDashboard();
   const _ctIsEdit = !!editId.contract;
   toast(_ctIsEdit ? '근로계약서가 수정되었습니다. ✔' : '근로계약서가 등록되었습니다. ✔');
+  _triggerWageLedgerRegen(coId);
 
   // ── 신규 계약: 계약서 확인 및 발송 여부 확인 ──
   if(!_ctIsEdit && !_wasRecontract && _savedContractId){
