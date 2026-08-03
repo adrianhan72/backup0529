@@ -443,9 +443,10 @@ function renderWageLedger(){
   // 버튼 상태 헬퍼
   const _setWLBtns = enabled => {
     const excelBtn = document.getElementById('wl-excel-btn');
+    const excelReportBtn = document.getElementById('wl-excel-report-btn');
     const pdfBtn   = document.getElementById('wl-pdf-btn');
     const printBtn = document.getElementById('wl-print-btn');
-    [excelBtn, pdfBtn, printBtn].forEach(btn => {
+    [excelBtn, excelReportBtn, pdfBtn, printBtn].forEach(btn => {
       if(!btn) return;
       btn.disabled = !enabled;
     });
@@ -1063,7 +1064,7 @@ function printWageLedger(){
 // ★ XLSX.writeFile(wb, fn, {cellStyles:true}) 옵션 필수
 // ★ fill: {patternType:'solid', fgColor:{rgb:...}} — patternType 없으면 색상 미적용
 // ★ A4 가로: pageSetup + sheetView 동시 설정
-function downloadWageLedgerExcel(){
+function downloadWageLedgerExcel(mode = 'edit'){
   if(!_wlCompanyId){ toast('고객사를 먼저 선택하세요.','error'); return; }
 
   const yr    = parseInt(document.getElementById('wl-year-filter')?.value);
@@ -1348,7 +1349,7 @@ function downloadWageLedgerExcel(){
     // No 셀 2행 병합
     addMg(SR, 0, SR+1, 0);
 
-    // ── 지급내역 5행 ──
+    // ── 지급내역 (신고용: 값 없는 항목은 공란으로 표시) ──
     const payData = [
       [{lbl:'기본급',        val:isSum?sums.base_salary            :nv(p.base_salary)},
        {lbl:'주휴수당',      val:isSum?sums.weekly_holiday_pay     :nv(p.weekly_holiday_pay)},
@@ -1369,16 +1370,21 @@ function downloadWageLedgerExcel(){
       [{lbl:'통신비',        val:isSum?sums.communication_pay      :nv(p.communication_pay)},
        {lbl:'기술수당',      val:isSum?sums.skill_allowance        :nv(p.skill_allowance)},
        {lbl:'면허수당',      val:isSum?sums.license_allowance      :nv(p.license_allowance)},
-       // 국외근로소득 + other_pay를 '기타수당'으로 합산 표시
-       // 화면(임금대장 카드) · 엑셀 빌더 · 파서 레이블을 '기타수당'으로 통일
        {lbl:'기타수당',    val:isSum?(sums.etc_allowance+sums.other_pay):(nv(p.etc_allowance)+nv(p.other_pay))}],
     ];
     const lPay = isSum ? S_PAY_LBL_SUM : S_PAY_LBL;
     const vPay = isSum ? S_PAY_VAL_SUM : S_PAY_VAL;
+    // 신고용: 값이 0인 항목은 셀을 비움 (행 구조 유지)
+    const _showVal = (v) => mode==='report' && v===0 ? 0 : v;
+    const _showLbl = (lbl, v) => mode==='report' && v===0 ? '' : lbl;
     for(let pi=0; pi<5; pi++){
       const it = payData[pi];
       pushRow(
-        [pi===0?'지급내역':'', it[0].lbl,it[0].val, it[1].lbl,it[1].val, it[2].lbl,it[2].val, it[3].lbl,it[3].val],
+        [pi===0?'지급내역':'',
+         _showLbl(it[0].lbl,it[0].val), _showVal(it[0].val),
+         _showLbl(it[1].lbl,it[1].val), _showVal(it[1].val),
+         _showLbl(it[2].lbl,it[2].val), _showVal(it[2].val),
+         _showLbl(it[3].lbl,it[3].val), _showVal(it[3].val)],
         15,
         [pi===0 ? S_SEC_PAY : S_SEC_PAY_E, lPay,vPay, lPay,vPay, lPay,vPay, lPay,vPay],
         [null, null,numFmt, null,numFmt, null,numFmt, null,numFmt]
@@ -1386,7 +1392,7 @@ function downloadWageLedgerExcel(){
     }
     addMg(SR+2, 0, SR+6, 0); // 지급내역 A열 5행 병합 (열 수 고정으로 기타지급은 r4 마지막 슬롯에 포함됨)
 
-    // ── 공제내역 3행 ──
+    // ── 공제내역 (신고용: 값 없는 항목 공란) ──
     const dedData = [
       [{lbl:'보수월액',       val:isSum?sums.standard_monthly_pay   :nv(p.standard_monthly_pay)},
        {lbl:'소득세',         val:isSum?sums.income_tax             :nv(p.income_tax)},
@@ -1400,6 +1406,8 @@ function downloadWageLedgerExcel(){
        {lbl:'기타공제',       val:isSum?sums.advance_deduction      :nv(p.advance_deduction)},
        null, null],
     ];
+    const _showDedLbl = (it, v) => mode==='report' && (!it || v===0) ? '' : (it?it.lbl:'');
+    const _showDedVal = (it, v) => mode==='report' && (!it || v===0) ? 0 : (it?it.val:0);
     for(let di=0; di<3; di++){
       const isF = di===0;
       const it  = dedData[di];
@@ -1415,10 +1423,10 @@ function downloadWageLedgerExcel(){
       };
       pushRow(
         [di===0?'공제내역':'',
-         it[0]?it[0].lbl:'', it[0]?it[0].val:0,
-         it[1]?it[1].lbl:'', it[1]?it[1].val:0,
-         it[2]?it[2].lbl:'', it[2]?it[2].val:0,
-         it[3]?it[3].lbl:'', it[3]?it[3].val:0],
+         _showDedLbl(it[0], it[0]?it[0].val:0), _showDedVal(it[0], it[0]?it[0].val:0),
+         _showDedLbl(it[1], it[1]?it[1].val:0), _showDedVal(it[1], it[1]?it[1].val:0),
+         _showDedLbl(it[2], it[2]?it[2].val:0), _showDedVal(it[2], it[2]?it[2].val:0),
+         _showDedLbl(it[3], it[3]?it[3].val:0), _showDedVal(it[3], it[3]?it[3].val:0)],
         15,
         [isF ? S_SEC_DED : S_SEC_DED_E,
          getLbl(!!it[0]), getVal(!!it[0]),
@@ -1490,5 +1498,5 @@ function downloadWageLedgerExcel(){
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
-  toast(`📥 ${yr}년 ${mo}월 임금대장 엑셀 다운로드 완료`, 'success');
+  toast(`📥 ${yr}년 ${mo}월 임금대장 엑셀 다운로드 완료 (${mode==='report'?'신고용':'편집용'})`, 'success');
 }
