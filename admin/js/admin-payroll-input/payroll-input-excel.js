@@ -1914,6 +1914,18 @@ async function confirmBulkUpload(){
   } catch (e) {
     console.warn('[임금대장] 파일 생성 실패 (무시됨):', e.message);
   }
+
+  // ── 직원별 급여명세서 자동 생성 ──
+  try {
+    const psRes = await api('../api/generate-payslip-pdfs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ companyId: co.id, year, month })
+    });
+    if (psRes.ok) console.log('[급여명세서]', psRes.count + '명 생성 완료');
+  } catch (e) {
+    console.warn('[급여명세서] 생성 실패 (무시됨):', e.message);
+  }
 }
 
 // ─── EXCEL DOWNLOAD ───
