@@ -97,7 +97,7 @@ function _syncPIPeriodSectionVisibility(formVisible){
  * '지급대상자 목록보기' 버튼 클릭 핸들러
  * - 선택된 년/월에 유효한 근로계약이 있는 해당 고객사 근로자 목록을 테이블로 표시
  */
-function loadPITargetList(){
+async function loadPITargetList(){
   const coId = currentGlobalCompanyId;
   if(!coId){ toast('고객사를 먼저 선택하세요.', 'warning'); return; }
 
@@ -120,6 +120,17 @@ function loadPITargetList(){
   if(!stdCheck.ok){
     _showPIStandardsWarn(yr, mo, stdCheck.missing);
     return;
+  }
+
+  // ── 근태 데이터 사전 로드 (법정보호휴직자 판별용) ──
+  if (typeof _atlLedgerCache === 'undefined' || _atlLedgerCache.length === 0) {
+    try {
+      const res = await fetch(`../tables/attendance_ledger?company_id=${coId}&limit=1000`);
+      if (res.ok) {
+        const json = await res.json();
+        window._atlLedgerCache = json.data || json || [];
+      }
+    } catch(e) { window._atlLedgerCache = []; }
   }
 
   // ── 급여 산정기간 계산 (고객사 pay_period_month/day 기준) ──
@@ -298,6 +309,9 @@ function loadPITargetList(){
         contractStatusBadge = `<span class="badge badge-gray">${CONTRACT_STATUS_LABEL[_cs] || _cs || '알 수 없음'}</span>`;
       }
 
+      // 법정보호휴직자 체크 (산재·육아·61~90일차 출산 → 회사 지급분 없음)
+      const _isProtected = _checkPIProtectedLeave(emp.id, yr, mo);
+
       // ④ 급여입력 여부 배지 (CSS class 사용)
       let statusBadge;
       if(isDraft){
@@ -305,7 +319,12 @@ function loadPITargetList(){
       } else if(isPaid){
         statusBadge = '<span class="badge badge-green"><i class="fas fa-check-circle"></i> 입력완료</span>';
       } else {
-        statusBadge = '<span class="badge badge-red"><i class="fas fa-exclamation-circle"></i> 미입력</span>';
+        // 법정보호휴직자 체크 (산재·육아·61~90일차 출산 → 회사 지급분 없음)
+        if (_isProtected) {
+          statusBadge = '<span class="badge badge-gray"><i class="fas fa-shield-alt"></i> 급여명세서 제외</span>';
+        } else {
+          statusBadge = '<span class="badge badge-red"><i class="fas fa-exclamation-circle"></i> 미입력</span>';
+        }
       }
 
       // ⑤ 관리 버튼
@@ -330,10 +349,21 @@ function loadPITargetList(){
           </button>
         </div>`;
       } else {
-        actionBtn = `<button onclick="selectPITarget('${targetEmpId}','${targetContractId}')"
-          class="btn btn-danger btn-sm pi-target-action-btn">
-          <i class="fas fa-calculator"></i> 급여 입력
-        </button>`;
+        // 법정보호휴직자는 급여입력 비활성 + 사유 표시
+        if (_isProtected) {
+          const _reason = _getPIProtectedLeaveReason(emp.id, yr, mo);
+          actionBtn = `<div style="display:inline-flex;flex-direction:column;align-items:center;gap:2px;">
+            <button disabled class="btn btn-sm" style="background:#e5e7eb;color:#9ca3af;cursor:not-allowed;padding:5px 12px;font-size:11px;">
+              <i class="fas fa-shield-alt"></i> 급여입력 제외
+            </button>
+            <span style="font-size:10px;color:#9ca3af;white-space:nowrap;">${_reason}</span>
+          </div>`;
+        } else {
+          actionBtn = `<button onclick="selectPITarget('${targetEmpId}','${targetContractId}')"
+            class="btn btn-danger btn-sm pi-target-action-btn">
+            <i class="fas fa-calculator"></i> 급여 입력
+          </button>`;
+        }
       }
 
       return `<tr class="pi-target-row">
@@ -438,6 +468,23 @@ function selectPITarget(empId, contractId, draftId=null){
   const badgeEl = document.getElementById('pi-form-emp-badge');
   if(nameEl)  nameEl.textContent  = `${emp.name} (${yr}년 ${mo}월)`;
   if(badgeEl){ badgeEl.textContent = cat; badgeEl.className = `badge ${catBadgeCls}`; }
+
+  // ── 법정보호휴직 배너 ──
+  const _banner = document.getElementById('pi-protected-leave-banner');
+  const _bannerText = document.getElementById('pi-protected-leave-text');
+  if (_banner && _bannerText) {
+    const _leaveInfo = _getPIProtectedLeaveDetail(emp.id, yr, mo);
+    if (_leaveInfo.hasLeave) {
+      const _typeLabel = _leaveInfo.types.join(', ');
+      const _dateRange = _leaveInfo.dateFrom && _leaveInfo.dateTo
+        ? `${_leaveInfo.dateFrom}부터 ${_leaveInfo.dateTo}까지의`
+        : '해당 월의';
+      _bannerText.textContent = `이 직원은 ${_typeLabel} 사유로 ${_dateRange} 급여는 계산에서 제외합니다.`;
+      _banner.style.display = '';
+    } else {
+      _banner.style.display = 'none';
+    }
+  }
 
   // 숨김 select 동기화 (기존 loadPIContract 의존)
   const empSel = document.getElementById('pi-employee');
@@ -1003,6 +1050,10 @@ function _updatePIAttendanceSummary(){
       if(retroLine2) retroLine2.style.display = 'none';
     }
   }
+  // ── 법정보호휴직 변경 시 급여 산정기간 표시 갱신 ──
+  _refreshPIPayPeriodDisplay();
+  // ── 주휴·차감·보수월액 전면 재계산 ──
+  calcPI();
   window._attendanceFromPayroll = null;
 }
 
@@ -1387,6 +1438,23 @@ function loadPIContract(){
         }
 
         _ppEl.value = _ppVal;
+        // ── 법정보호휴직 기간 제외 → 실효 산정기간 재계산 ──
+        const _yr2 = parseInt(document.getElementById('pi-year')?.value);
+        const _mo2 = parseInt(document.getElementById('pi-month')?.value);
+        if (_yr2 && _mo2 && piContract) {
+          const _detailedLeave = _getPIProtectedLeaveDetail(piContract.employee_id || '', _yr2, _mo2);
+          if (_detailedLeave.hasLeave && _ppVal && _ppVal.includes('~')) {
+            const _parts = _ppVal.split('~');
+            const _ppStartRaw = _parts[0].replace(/\./g, '-');
+            const _ppEndRaw   = _parts[1].replace(/\./g, '-');
+            const _workingRanges = _calcWorkingPeriodsExcludingLeave(
+              _ppStartRaw, _ppEndRaw, piContract.employee_id || '', _yr2, _mo2
+            );
+            if (_workingRanges.length > 0) {
+              _ppEl.value = _workingRanges.join(', ');
+            }
+          }
+        }
         // ── hidden 필드: 급여 산정기간 시작일/종료일 (연차·근태 계산용) ──
         if(_ppVal && _ppVal.includes('~')){
           const _parts2 = _ppVal.split('~');
@@ -2999,60 +3067,288 @@ function calcPI(){
 
   // 패널 방식 (piContract 있을 때) vs 단순 표시 (없을 때) 구분
   if(piContract){
-    // ── 기본급 일할 재계산 (calcPI 단독 호출 시에도 pi-base-daily-disp 항상 최신 유지) ──
-    {
-      const _workDays  = parseFloat(document.getElementById('pi-work-days')?.value) || 0;
-      const _isDaily   = piContract.contract_type ===CONTRACT_TYPE.DAILY;
-      const _cBase     = parseFloat(piContract.base_salary) || 0;
-      const _dpw       = parseFloat(piContract.work_days_per_week) || 5;
-      // ── 일할 계산 방식: 고객사 proration_method 설정에 따라 분기 ──
-      const _coForProration = allCompanies.find(c => c.id === _coId);
-      const _prorationMethod = _coForProration?.proration_method || '30day_fixed';
-      const _monthDays = (() => {
-        if (_prorationMethod === '30day_fixed') return 30;
-        const _res = _calcPIDefaultWorkDays(piContract, _yr, _mo);
-        return (_res && _res.workDays > 0) ? _res.workDays : Math.round(_dpw * 4.345);
-      })();
-      const _dispEl    = document.getElementById('pi-base-daily-disp');
+    // ── 만근 기준 정보 ──
+    const _cBase     = parseFloat(piContract.base_salary) || 0;
+    const _dpw       = parseFloat(piContract.work_days_per_week) || 5;
+    const _hpd       = parseFloat(piContract.work_hours_per_day) || 8;
+    const _coForProration = allCompanies.find(c => c.id === _coId);
+    const _prorationMethod = _coForProration?.proration_method || '30day_fixed';
+    const _monthDays = (() => {
+      if (_prorationMethod === '30day_fixed') return 30;
+      const _res = _calcPIDefaultWorkDays(piContract, _yr, _mo);
+      return (_res && _res.workDays > 0) ? _res.workDays : Math.round(_dpw * 4.345);
+    })();
+    const _monthStdHours = _monthDays * _hpd;
+    // 만근 기준 표시
+    const _fullDaysEl  = document.getElementById('pi-full-work-days-disp');
+    const _fullHrsEl   = document.getElementById('pi-full-work-hours-disp');
+    const _baseFullEl  = document.getElementById('pi-base-full-disp');
+    if (_fullDaysEl) _fullDaysEl.textContent = _monthDays;
+    if (_fullHrsEl)  _fullHrsEl.textContent  = _monthStdHours;
+    if (_baseFullEl) _baseFullEl.value = won(_cBase);
+    setAmountVal('pi-base', _cBase); // hidden input: 만근 기준 우선 설정
 
-      let _baseLabel;
-      if(!_isDaily && _workDays > 0 && _monthDays > 0){
-        const _calc = Math.round(_cBase / _monthDays * _workDays);
-        const _methodLabel = _prorationMethod === '30day_fixed' ? '30일 고정' : '소정근로일수';
-        _baseLabel = `${won(_calc)} (${won(_cBase)} ÷ ${_monthDays}일(${_methodLabel}) × ${_workDays}일)`;
-        setAmountVal('pi-base', _calc);
-      } else if(_isDaily && _workDays > 0){
-        const _dWage = parseFloat(piContract.daily_wage) || _cBase;
-        const _calc  = Math.round(_dWage * _workDays);
-        _baseLabel = `${won(_calc)} (일급 × ${_workDays}일)`;
-        setAmountVal('pi-base', _calc);
-      } else if(!_isDaily){
-        _baseLabel = _cBase > 0 ? won(_cBase) : '-';
-        setAmountVal('pi-base', _cBase);
-      } else {
-        _baseLabel = '-';
-        setAmountVal('pi-base', 0);
-      }
-      if(_dispEl) _dispEl.textContent = _baseLabel;
+    // ── 실제 근로일수 기반 일할 계산 ──
+    const _workDays = parseFloat(document.getElementById('pi-work-days')?.value) || 0;
+    const _isDaily  = piContract.contract_type === CONTRACT_TYPE.DAILY;
+    let _actualBase = _cBase;
+    const _baseActualEl = document.getElementById('pi-base-actual-disp');
+    if (!_isDaily && _workDays > 0 && _monthDays > 0) {
+      _actualBase = Math.round(_cBase / _monthDays * _workDays);
+    } else if (_isDaily && _workDays > 0) {
+      const _dWage = parseFloat(piContract.daily_wage) || _cBase;
+      _actualBase = Math.round(_dWage * _workDays);
     }
+    if (_baseActualEl) _baseActualEl.value = won(_actualBase);
+    setAmountVal('pi-base', _actualBase); // hidden input: 실제 지급 기준
 
-    // 자동산출 패널 내부 disp 요소 업데이트
-    // ── 고정 수당 ──
+    // ── 결근·지각·조퇴 차감 (무급만) ──
+    // 결근 데이터에서 무급 유형만 추출하여 차감시간·금액 계산
+    const _attDedMain = document.getElementById('pi-attendance-deduction-main');
+    const _dedHoursEl = document.getElementById('pi-ded-hours-disp');
+    let _totalDedHours = 0, _totalDedBasePay = 0;
+    const _FULL_DEDUCT_TYPES_V2 = new Set(['unauthorized', 'sick_unpaid', 'menstrual', 'family_care']);
+    try {
+      const _absData = JSON.parse(document.getElementById('pi-absent-data')?.value || '[]');
+      _absData.forEach(d => {
+        if (!_FULL_DEDUCT_TYPES_V2.has(d.type || 'unauthorized')) return;
+        const expanded = (typeof _atlExpandDateRange === 'function')
+          ? _atlExpandDateRange(d.date, d.dateTo || '') : [d.date];
+        const days = expanded.length;
+        _totalDedHours += days * _hpd;
+        _totalDedBasePay += Math.round(days * _hpd * hw);
+      });
+    } catch(e) {}
+    // 지각·조퇴 시간 추가
+    const _lateHrs = (typeof _getPILateHours === 'function') ? _getPILateHours() : 0;
+    const _earlyHrs = (typeof _getPIEarlyLeaveHours === 'function') ? _getPIEarlyLeaveHours() : 0;
+    _totalDedHours += _lateHrs + _earlyHrs;
+    _totalDedBasePay += Math.round((_lateHrs + _earlyHrs) * hw);
+
+    // 차감 표시
+    if (_attDedMain) _attDedMain.style.display = (_totalDedHours > 0 || _totalDedBasePay > 0) ? '' : 'none';
+    if (_dedHoursEl) _dedHoursEl.value = _totalDedHours > 0 ? `-${_totalDedHours.toFixed(1)}h` : '0h';
+    // 기본급 차감액은 기존 _dedDisp 로직에서 업데이트 (아래 _absentPayTotal 사용)
+
+    // 결근 데이터 수집 (주휴 차감 계산용 — 모든 유형 포함)
+    let _absentDatesSet = new Set();
+    let _allAbsentDatesSet = new Set(); // 보호휴직 포함 전체 결근일 (주휴 주단위 판정용)
+    const _ALL_ABSENT_TYPES = new Set([..._FULL_DEDUCT_TYPES_V2, 'industrial', 'childcare_leave', 'maternity_paid', 'maternity_unpaid', 'paternity_paid']);
+    try {
+      const _absData = JSON.parse(document.getElementById('pi-absent-data')?.value || '[]');
+      _absData.forEach(d => {
+        const isFullDeduct = _FULL_DEDUCT_TYPES_V2.has(d.type || 'unauthorized');
+        const isAnyAbsent = _ALL_ABSENT_TYPES.has(d.type || 'unauthorized');
+        if (!isAnyAbsent) return;
+        const expanded = (typeof _atlExpandDateRange === 'function')
+          ? _atlExpandDateRange(d.date, d.dateTo || '') : [d.date];
+        expanded.forEach(dt => {
+          if (isFullDeduct) _absentDatesSet.add(dt);
+          _allAbsentDatesSet.add(dt);
+        });
+      });
+    } catch(e) {}
+    try {
+      const _retroAbs = JSON.parse(document.getElementById('pi-retro-absent-data')?.value || '[]');
+      _retroAbs.forEach(d => {
+        const isFullDeduct = _FULL_DEDUCT_TYPES_V2.has(d.type || 'unauthorized');
+        const isAnyAbsent = _ALL_ABSENT_TYPES.has(d.type || 'unauthorized');
+        if (!isAnyAbsent) return;
+        const expanded = (typeof _atlExpandDateRange === 'function')
+          ? _atlExpandDateRange(d.date, d.dateTo || '') : [d.date];
+        expanded.forEach(dt => {
+          if (isFullDeduct) _absentDatesSet.add(dt);
+          _allAbsentDatesSet.add(dt);
+        });
+      });
+    } catch(e) {}
+
+    // ── 주휴수당: 만근 vs 실제 ──
+    const _weeklyHolFullEl = document.getElementById('pi-weekly-hol-full-disp');
+    const _weeklyHolActualEl = document.getElementById('pi-weekly-hol-actual-disp');
+    const _weeklyHolDedRow = document.getElementById('pi-weekly-hol-deduction-row');
+    const _weeklyHolDedDisp = document.getElementById('pi-weekly-hol-deduction-disp');
+    const _weeklyHolVal = gv('pi-weekly-hol');
+    if (_weeklyHolFullEl) _weeklyHolFullEl.value = won(_weeklyHolVal);
+    // 주휴 차감: 주 단위로 판정 (한 주의 모든 근로일이 결근이면 해당 주 주휴 미발생)
+    let _holDeduction = 0;
+    if (_allAbsentDatesSet.size > 0 && _weeklyHolVal > 0) {
+      const _monthlyWeeks = 365 / 12 / 7;
+      const _weeklyHolPerWeek = Math.round(_weeklyHolVal / _monthlyWeeks);
+      // 월에 포함된 주(week) 단위로 분석
+      const _ppStart = document.getElementById('pi-pay-period-start')?.value
+        || `${_yr}-${String(_mo).padStart(2,'0')}-01`;
+      const _ppEnd = document.getElementById('pi-pay-period-end')?.value
+        || `${_yr}-${String(_mo).padStart(2,'0')}-${String(new Date(_yr,_mo,0).getDate()).padStart(2,'0')}`;
+      // 주 단위 순회 (월요일~일요일 기준)
+      const _startDate = new Date(_ppStart);
+      const _endDate = new Date(_ppEnd);
+      // 시작일의 주 월요일로 이동
+      const _weekStart = new Date(_startDate);
+      _weekStart.setDate(_weekStart.getDate() - ((_weekStart.getDay() + 6) % 7));
+      let _missedWeeks = 0;
+      for (let _ws = new Date(_weekStart); _ws <= _endDate; _ws.setDate(_ws.getDate() + 7)) {
+        const _we = new Date(_ws); _we.setDate(_we.getDate() + 6);
+        let _weekWorkDays = 0, _weekAbsentDays = 0;
+        for (let _d = new Date(Math.max(_ws, _startDate)); _d <= new Date(Math.min(_we, _endDate)); _d.setDate(_d.getDate() + 1)) {
+          const _ds = _d.toISOString().slice(0, 10);
+          const _dow = _d.getDay();
+          if (_dow === 0 || _dow === 6) continue; // 주말 제외
+          _weekWorkDays++;
+          if (_allAbsentDatesSet.has(_ds)) _weekAbsentDays++;
+        }
+        // 해당 주에 근로일이 있고, 모든 근로일이 결근이면 → 주휴 미발생
+        if (_weekWorkDays > 0 && _weekAbsentDays >= _weekWorkDays) {
+          _missedWeeks++;
+        }
+      }
+      _holDeduction = Math.min(_weeklyHolVal, _weeklyHolPerWeek * _missedWeeks);
+    }
+    }
+    const _actualHol = Math.max(0, _weeklyHolVal - _holDeduction);
+    if (_weeklyHolActualEl) _weeklyHolActualEl.value = won(_actualHol);
+    if (_weeklyHolDedRow) _weeklyHolDedRow.style.display = _holDeduction > 0 ? '' : 'none';
+    if (_weeklyHolDedDisp) _weeklyHolDedDisp.value = _holDeduction > 0 ? `-${won(_holDeduction)}` : '0원';
+
+    // ── 자동산출 패널 내부 disp 요소 업데이트 ──
     const _fixedCalc2 = _getPIFixedHours();
-    const dFOt    = document.getElementById('pi-fixed-ot-pay-disp');
-    const dFNight = document.getElementById('pi-fixed-night-pay-disp');
-    const dFHol   = document.getElementById('pi-fixed-hol-pay-disp');
-    if(dFOt)    dFOt.textContent    = won(_fixedCalc2.otPay);
-    if(dFNight) dFNight.textContent = won(_fixedCalc2.nightPay);
-    if(dFHol)   dFHol.textContent   = won(_fixedCalc2.holPay);
+    const _hw2 = piContract ? (piContract.hourly_wage || 0) : 0;
+    const _hpd2 = piContract ? (piContract.work_hours_per_day || 8) : 8;
 
-    // ── 추가 수당 ──
-    const dOt    = document.getElementById('pi-ot-pay-disp');
-    const dNight = document.getElementById('pi-night-pay-disp');
-    const dHol   = document.getElementById('pi-hol-pay-disp');
-    if(dOt)    dOt.textContent    = won(otPay);
-    if(dNight) dNight.textContent = won(nightPay);
-    if(dHol)   dHol.textContent   = won(holPay);
+    // ── 고정 근로 (근무시간표 기준) ──
+    const _updateFixedRow = (rowId, hoursId, payId, hours, pay) => {
+      const row = document.getElementById(rowId);
+      const hEl = document.getElementById(hoursId);
+      const pEl = document.getElementById(payId);
+      if (row) row.style.display = (hours > 0 || pay > 0) ? '' : 'none';
+      if (hEl) hEl.value = `${hours.toFixed(1)}h`;
+      if (pEl) pEl.value = won(pay);
+    };
+    _updateFixedRow('pi-fixed-ot-row',    'pi-fixed-ot-hours-disp',    'pi-fixed-ot-pay-disp',    _fixedCalc2.otHours,    _fixedCalc2.otPay);
+    _updateFixedRow('pi-fixed-night-row', 'pi-fixed-night-hours-disp', 'pi-fixed-night-pay-disp', _fixedCalc2.nightHours, _fixedCalc2.nightPay);
+    _updateFixedRow('pi-fixed-hol-row',   'pi-fixed-hol-hours-disp',   'pi-fixed-hol-pay-disp',   _fixedCalc2.holHours,   _fixedCalc2.holPay);
+
+    // ── 추가 근로 (실적 입력) ──
+    const _updateAddRow = (hoursId, payId, hours, pay) => {
+      const hEl = document.getElementById(hoursId);
+      const pEl = document.getElementById(payId);
+      if (hEl) hEl.value = `${hours.toFixed(1)}h`;
+      if (pEl) pEl.value = won(pay);
+    };
+    _updateAddRow('pi-ot-hours-disp',    'pi-ot-pay-disp',    otH,    otPay);
+    _updateAddRow('pi-night-hours-disp', 'pi-night-pay-disp', nightH, nightPay);
+    _updateAddRow('pi-hol-hours-disp',   'pi-hol-pay-disp',   holH,   holPay);
+    // 이전 disp 요소도 하위호환 유지 (기존 JS 참조)
+    const dOt2 = document.getElementById('pi-ot-pay-disp');
+    const dNight2 = document.getElementById('pi-night-pay-disp');
+    const dHol2 = document.getElementById('pi-hol-pay-disp');
+    if(dOt2)    dOt2.textContent    = won(otPay);
+    if(dNight2) dNight2.textContent = won(nightPay);
+    if(dHol2)   dHol2.textContent   = won(holPay);
+
+    // ── [A1] 근태 차감: 고정 OT·야간·휴일 — 주 단위 전체/부분 결근 구분 ──
+    // · 주 전체 결근: 체크박스 무관하게 항상 차감 (법적 당위)
+    // · 주 부분 결근: 취업규칙 체크 시에만 차감
+    let _dedOtHours = 0, _dedNightHours = 0, _dedHolHours = 0;
+    let _dedOtPay = 0, _dedNightPay = 0, _dedHolPay = 0;
+    // 주 전체 결근으로 인한 차감 (항상 적용)
+    let _fullWeekOtH = 0, _fullWeekNightH = 0, _fullWeekHolH = 0;
+    let _fullWeekOtP = 0, _fullWeekNightP = 0, _fullWeekHolP = 0;
+    // 주 부분 결근으로 인한 차감 (체크박스 적용)
+    let _partialOtH = 0, _partialNightH = 0, _partialHolH = 0;
+    let _partialOtP = 0, _partialNightP = 0, _partialHolP = 0;
+    const _attDedChk = document.getElementById('pi-attendance-deduction-chk');
+    const _applyAttDed = _attDedChk && _attDedChk.checked;
+    // 체크박스 행 표시
+    const _toggleRow = document.getElementById('pi-row-attendance-deduction-toggle');
+    if (_toggleRow) {
+      _toggleRow.style.display = (_fixedCalc2.otHours > 0 || _fixedCalc2.nightHours > 0 || _fixedCalc2.holHours > 0) ? '' : 'none';
+    }
+    if (_fixedCalc2.otHours > 0 || _fixedCalc2.nightHours > 0 || _fixedCalc2.holHours > 0) {
+      if (_allAbsentDatesSet.size > 0 && piContract?.schedule_json) {
+        let sched;
+        try { sched = typeof piContract.schedule_json === 'string' ? JSON.parse(piContract.schedule_json) : piContract.schedule_json; } catch(e) { sched = null; }
+        if (Array.isArray(sched)) {
+          const dayMap = ['sun','mon','tue','wed','thu','fri','sat'];
+          // 주 단위 순회 (월요일 기준)
+          const _ppStart = document.getElementById('pi-pay-period-start')?.value
+            || `${_yr}-${String(_mo).padStart(2,'0')}-01`;
+          const _ppEnd = document.getElementById('pi-pay-period-end')?.value
+            || `${_yr}-${String(_mo).padStart(2,'0')}-${String(new Date(_yr,_mo,0).getDate()).padStart(2,'0')}`;
+          const _startD = new Date(_ppStart); _startD.setDate(_startD.getDate() - ((_startD.getDay()+6)%7));
+          const _endD = new Date(_ppEnd);
+          for (let _ws = new Date(_startD); _ws <= _endD; _ws.setDate(_ws.getDate() + 7)) {
+            const _we = new Date(_ws); _we.setDate(_we.getDate() + 6);
+            let _wWorkDays = 0, _wAbsentDays = 0;
+            // 이번 주에 속한 결근일의 고정 근로시간 누적
+            let _wOtH = 0, _wNightH = 0, _wHolH = 0;
+            for (let _d = new Date(Math.max(_ws, new Date(_ppStart))); _d <= new Date(Math.min(_we, _endD)); _d.setDate(_d.getDate() + 1)) {
+              const _ds = _d.toISOString().slice(0, 10);
+              const _dow = _d.getDay();
+              if (_dow === 0 || _dow === 6) continue;
+              _wWorkDays++;
+              if (_allAbsentDatesSet.has(_ds)) {
+                _wAbsentDays++;
+                const dayKey = dayMap[_dow];
+                const daySched = sched.find(s => s.day === dayKey && (s.active === true || s.active === 1));
+                if (daySched) {
+                  _wOtH += parseFloat(daySched.ot_hours) || 0;
+                  _wNightH += parseFloat(daySched.night_hours) || 0;
+                  _wHolH += parseFloat(daySched.holiday_hours) || 0;
+                }
+              }
+            }
+            if (_wWorkDays > 0 && _wAbsentDays > 0) {
+              if (_wAbsentDays >= _wWorkDays) {
+                // 🔴 주 전체 결근 → 항상 차감
+                _fullWeekOtH += _wOtH; _fullWeekNightH += _wNightH; _fullWeekHolH += _wHolH;
+              } else if (_applyAttDed) {
+                // 🟡 주 부분 결근 → 취업규칙 체크 시에만 차감
+                _partialOtH += _wOtH; _partialNightH += _wNightH; _partialHolH += _wHolH;
+              }
+            }
+          }
+          _fullWeekOtP = Math.round(_fullWeekOtH * _hw2 * 1.5);
+          _fullWeekNightP = Math.round(_fullWeekNightH * _hw2 * 0.5);
+          _fullWeekHolP = Math.round(_fullWeekHolH * _hw2 * 1.5);
+          _partialOtP = Math.round(_partialOtH * _hw2 * 1.5);
+          _partialNightP = Math.round(_partialNightH * _hw2 * 0.5);
+          _partialHolP = Math.round(_partialHolH * _hw2 * 1.5);
+          // 합산 (전체 주 차감은 항상, 부분 주 차감은 체크 시에만)
+          _dedOtHours = _fullWeekOtH + _partialOtH;
+          _dedNightHours = _fullWeekNightH + _partialNightH;
+          _dedHolHours = _fullWeekHolH + _partialHolH;
+          _dedOtPay = _fullWeekOtP + _partialOtP;
+          _dedNightPay = _fullWeekNightP + _partialNightP;
+          _dedHolPay = _fullWeekHolP + _partialHolP;
+        }
+      }
+    }
+    // ── 근태 차감 섹션 업데이트 ──
+    // 전체 주 결근 → 항상 표시·적용 / 부분 주 결근 → 취업규칙 체크 시에만
+    const _attDedSection = document.getElementById('pi-attendance-deduction-section');
+    const _showDedRow = (rowId, hoursId, payId, hours, pay, label) => {
+      const row = document.getElementById(rowId);
+      const hEl = document.getElementById(hoursId);
+      const pEl = document.getElementById(payId);
+      if (row) row.style.display = (hours > 0) ? '' : 'none';
+      if (hEl) hEl.value = hours > 0 ? `-${hours.toFixed(1)}h` : '0h';
+      if (pEl) pEl.value = hours > 0 ? `-${won(pay)}${label||''}` : '0원';
+      return hours > 0;
+    };
+    // 전체 주 차감: 항상 표시
+    const _hasFullOt    = _showDedRow('pi-ded-ot-row',    'pi-ded-ot-hours-disp',    'pi-ded-ot-pay-disp',    _fullWeekOtH,    _fullWeekOtP);
+    const _hasFullNight = _showDedRow('pi-ded-night-row', 'pi-ded-night-hours-disp', 'pi-ded-night-pay-disp', _fullWeekNightH, _fullWeekNightP);
+    const _hasFullHol   = _showDedRow('pi-ded-hol-row',   'pi-ded-hol-hours-disp',   'pi-ded-hol-pay-disp',   _fullWeekHolH,   _fullWeekHolP);
+    // 부분 주 차감: 취업규칙 체크 시에만 합산하여 표시 (별도 행 없으면 기존 행에 합산)
+    if (_applyAttDed && (_partialOtH > 0 || _partialNightH > 0 || _partialHolH > 0)) {
+      _showDedRow('pi-ded-ot-row',    'pi-ded-ot-hours-disp',    'pi-ded-ot-pay-disp',    _fullWeekOtH+_partialOtH,       _fullWeekOtP+_partialOtP);
+      _showDedRow('pi-ded-night-row', 'pi-ded-night-hours-disp', 'pi-ded-night-pay-disp', _fullWeekNightH+_partialNightH, _fullWeekNightP+_partialNightP);
+      _showDedRow('pi-ded-hol-row',   'pi-ded-hol-hours-disp',   'pi-ded-hol-pay-disp',   _fullWeekHolH+_partialHolH,     _fullWeekHolP+_partialHolP);
+    }
+    if (_attDedSection) {
+      _attDedSection.style.display = (_hasFullOt||_hasFullNight||_hasFullHol||_partialOtH>0||_partialNightH>0||_partialHolH>0) ? '' : 'none';
+    }
 
     // ── 결근·조퇴·지각 차감 (layoff_leave 제외) ──
     // ※ 휴업휴직(layoff_leave)은 회사 귀책 휴업 → 차감이 아닌 휴업수당 지급 대상
@@ -3060,8 +3356,6 @@ function calcPI(){
     const _dedDisp  = document.getElementById('pi-deduction-disp');
     const _dedLabel = document.getElementById('pi-deduction-label');
     const _dedDetail = document.getElementById('pi-deduction-detail');
-    const _hw2 = piContract ? (piContract.hourly_wage || 0) : 0;
-    const _hpd2 = piContract ? (piContract.work_hours_per_day || 8) : 8;
 
     // ── pi-absent-data 파싱하여 유형별 분리 ──
     let _absentDataAll = [];
@@ -3257,7 +3551,7 @@ function calcPI(){
         const _plusParts = [];
         if(_layoffDays > 0) _plusParts.push('+' + won(_layoffPay));
         if(_maternityPay > 0) _plusParts.push('+' + won(_maternityPay));
-        _dedDisp.textContent = (_totalDeductionWithRetro > 0 ? '-' + won(_totalDeductionWithRetro) : '') +
+        _dedDisp.value = (_totalDeductionWithRetro > 0 ? '-' + won(_totalDeductionWithRetro) : '') +
           (_totalDeductionWithRetro > 0 && _plusParts.length > 0 ? ' · ' : '') +
           _plusParts.join(' · ');
         _dedDisp.classList.toggle('pi-deduction-has-allowance', _layoffDays > 0 || _maternityPay > 0);
@@ -3564,6 +3858,18 @@ function _piFinalize(gross,std,incomeTax,localTax,health,ltCare,pension,empIns,t
   const updateAmounts=(g,d,n)=>{ document.getElementById(g).textContent=won(gross); document.getElementById(d).textContent=won(totalDed); document.getElementById(n).textContent=won(net); };
   updateAmounts('pi-gross-disp','pi-ded-disp','pi-net-disp');
   updateAmounts('pi-gross-disp2','pi-ded-disp2','pi-net-disp2');
+  // ── 총 보수월액(과세기준) 표시 ──
+  const _stdDisp = document.getElementById('pi-std-monthly-disp');
+  if (_stdDisp) _stdDisp.value = won(std);
+  // ── 근태 차감 섹션 토글 ──
+  const _attSec = document.getElementById('pi-attendance-deduction-section');
+  if (_attSec) {
+    const _dedOtVis   = document.getElementById('pi-ded-ot-row')?.style.display !== 'none';
+    const _dedNightVis = document.getElementById('pi-ded-night-row')?.style.display !== 'none';
+    const _dedHolVis   = document.getElementById('pi-ded-hol-row')?.style.display !== 'none';
+    const _dedMainVis  = document.getElementById('pi-deduction-row')?.style.display !== 'none';
+    _attSec.style.display = (_dedOtVis || _dedNightVis || _dedHolVis || _dedMainVis) ? '' : 'none';
+  }
   const _pv=id=>parseFloat((document.getElementById(id)?.textContent||'').replace(/[^0-9]/g,'')||0);
   window._piCalc={gross,std,incomeTax,localTax,health,ltCare,pension,empIns,totalDed,net,
     otPay:   _pv('pi-ot-pay-disp')    || _pv('pi-ot-pay-disp-simple'),
@@ -3596,6 +3902,177 @@ function _piFinalize(gross,std,incomeTax,localTax,health,ltCare,pension,empIns,t
  * @param {number} mo    급여 월
  * @returns {{ isSmall:boolean, headcount:number, operDays:number, totalPersonDays:number }}
  */
+/**
+ * 법정보호휴직 여부 확인: 당월 모든 근로일이 산재·육아·61~90일차 출산 등인지
+ * → true이면 회사 지급분 없음 → 급여명세서 제외 대상
+ */
+function _checkPIProtectedLeave(empId, yr, mo){
+  if (!empId || !yr || !mo) return false;
+  const mStart = `${yr}-${String(mo).padStart(2,'0')}-01`;
+  const mEnd = `${yr}-${String(mo).padStart(2,'0')}-${String(new Date(yr,mo,0).getDate()).padStart(2,'0')}`;
+  // 월 근로일수 (주말 제외)
+  const totalDays = new Date(yr, mo, 0).getDate();
+  let workDays = 0;
+  for (let d = 1; d <= totalDays; d++) {
+    const dow = new Date(yr, mo-1, d).getDay();
+    if (dow !== 0 && dow !== 6) workDays++;
+  }
+  const PROTECTED = new Set(['industrial','childcare_leave','maternity_paid','maternity_unpaid','paternity_paid']);
+  let protectedDays = 0;
+  try {
+    const ledgers = (typeof _atlLedgerCache !== 'undefined' ? _atlLedgerCache : []).filter(l => l.employee_id === empId);
+    ledgers.forEach(ledger => {
+      try {
+        const monthData = typeof ledger.month_data === 'string' ? JSON.parse(ledger.month_data) : (ledger.month_data || []);
+        monthData.forEach(entry => {
+          if (entry.type !== 'absent') return;
+          if (!PROTECTED.has(entry.absentType || '')) return;
+          // 출산 1~60일차는 회사 차액 보충 있음 → 제외 대상 아님
+          if (entry.absentType === 'maternity_paid' && entry.dayNumber > 0 && entry.dayNumber <= 60) return;
+          const dates = typeof _atlExpandDateRange === 'function'
+            ? _atlExpandDateRange(entry.date, entry.dateTo || '') : [entry.date];
+          dates.forEach(dt => { if (dt >= mStart && dt <= mEnd) protectedDays++; });
+        });
+      } catch(e) {}
+    });
+  } catch(e) {}
+  return protectedDays >= workDays && workDays > 0;
+}
+
+/** 법정보호휴직 사유 문자열 반환 (UI 힌트용) */
+function _getPIProtectedLeaveReason(empId, yr, mo){
+  const mStart = `${yr}-${String(mo).padStart(2,'0')}-01`;
+  const mEnd = `${yr}-${String(mo).padStart(2,'0')}-${String(new Date(yr,mo,0).getDate()).padStart(2,'0')}`;
+  const labels = { industrial:'산재(근로복지공단)', childcare_leave:'육아휴직(고용보험)', maternity_paid:'출산휴가(고용보험)', maternity_unpaid:'출산(무급)', paternity_paid:'배우자출산(고용보험)' };
+  const found = new Set();
+  try {
+    const ledgers = (typeof _atlLedgerCache !== 'undefined' ? _atlLedgerCache : []).filter(l => l.employee_id === empId);
+    ledgers.forEach(ledger => {
+      try {
+        const monthData = typeof ledger.month_data === 'string' ? JSON.parse(ledger.month_data) : (ledger.month_data || []);
+        monthData.forEach(entry => {
+          if (entry.type !== 'absent') return;
+          const t = entry.absentType || '';
+          if (!labels[t]) return;
+          if (t === 'maternity_paid' && entry.dayNumber > 0 && entry.dayNumber <= 60) return;
+          const dates = typeof _atlExpandDateRange === 'function'
+            ? _atlExpandDateRange(entry.date, entry.dateTo || '') : [entry.date];
+          if (dates.some(dt => dt >= mStart && dt <= mEnd)) found.add(labels[t]);
+        });
+      } catch(e) {}
+    });
+  } catch(e) {}
+  return found.size > 0 ? [...found].join(', ') : '법정보호휴직';
+}
+
+/** 법정보호휴직 상세 정보 (배너 표시용) */
+function _getPIProtectedLeaveDetail(empId, yr, mo){
+  const mStart = `${yr}-${String(mo).padStart(2,'0')}-01`;
+  const mEnd = `${yr}-${String(mo).padStart(2,'0')}-${String(new Date(yr,mo,0).getDate()).padStart(2,'0')}`;
+  const labels = { industrial:'산재(근로복지공단)', childcare_leave:'육아휴직(고용보험)', maternity_paid:'출산휴가(고용보험)', maternity_unpaid:'출산(무급)', paternity_paid:'배우자출산(고용보험)' };
+  const types = new Set();
+  let dateFrom = '', dateTo = '';
+  try {
+    const ledgers = (typeof _atlLedgerCache !== 'undefined' ? _atlLedgerCache : []).filter(l => l.employee_id === empId);
+    ledgers.forEach(ledger => {
+      try {
+        const monthData = typeof ledger.month_data === 'string' ? JSON.parse(ledger.month_data) : (ledger.month_data || []);
+        monthData.forEach(entry => {
+          if (entry.type !== 'absent') return;
+          const t = entry.absentType || '';
+          if (!labels[t]) return;
+          if (t === 'maternity_paid' && entry.dayNumber > 0 && entry.dayNumber <= 60) return;
+          const dates = typeof _atlExpandDateRange === 'function'
+            ? _atlExpandDateRange(entry.date, entry.dateTo || '') : [entry.date];
+          if (dates.some(dt => dt >= mStart && dt <= mEnd)) {
+            types.add(labels[t]);
+            if (!dateFrom || entry.date < dateFrom) dateFrom = entry.date;
+            if (!dateTo || (entry.dateTo || entry.date) > dateTo) dateTo = entry.dateTo || entry.date;
+          }
+        });
+      } catch(e) {}
+    });
+  } catch(e) {}
+  return { hasLeave: types.size > 0, types: [...types], dateFrom, dateTo };
+}
+
+/** 법정보호휴직 기간을 제외한 실효 근로기간 계산 */
+function _calcWorkingPeriodsExcludingLeave(ppStart, ppEnd, empId, yr, mo){
+  if (!ppStart || !ppEnd) return [];
+  const PROTECTED = new Set(['industrial','childcare_leave','maternity_paid','maternity_unpaid','paternity_paid']);
+  // 보호휴직 날짜 Set 수집
+  const leaveDates = new Set();
+  try {
+    const ledgers = (typeof _atlLedgerCache !== 'undefined' ? _atlLedgerCache : []).filter(l => l.employee_id === empId);
+    ledgers.forEach(ledger => {
+      try {
+        const monthData = typeof ledger.month_data === 'string' ? JSON.parse(ledger.month_data) : (ledger.month_data || []);
+        monthData.forEach(entry => {
+          if (entry.type !== 'absent') return;
+          if (!PROTECTED.has(entry.absentType || '')) return;
+          if (entry.absentType === 'maternity_paid' && entry.dayNumber > 0 && entry.dayNumber <= 60) return;
+          const dates = typeof _atlExpandDateRange === 'function'
+            ? _atlExpandDateRange(entry.date, entry.dateTo || '') : [entry.date];
+          dates.forEach(dt => { if (dt >= ppStart && dt <= ppEnd) leaveDates.add(dt); });
+        });
+      } catch(e) {}
+    });
+  } catch(e) {}
+  if (leaveDates.size === 0) return [];
+
+  // 근로일 범위 추출 (보호휴직일 제외한 연속 구간)
+  const start = new Date(ppStart);
+  const end = new Date(ppEnd);
+  const ranges = [];
+  let rangeStart = null;
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    const ds = d.toISOString().slice(0, 10);
+    const dow = d.getDay();
+    const isWeekend = dow === 0 || dow === 6;
+    if (!leaveDates.has(ds) && !isWeekend) {
+      if (!rangeStart) rangeStart = ds;
+    } else {
+      if (rangeStart) {
+        const prev = new Date(d); prev.setDate(prev.getDate() - 1);
+        ranges.push(`${rangeStart}~${prev.toISOString().slice(0,10)}`);
+        rangeStart = null;
+      }
+    }
+  }
+  if (rangeStart) ranges.push(`${rangeStart}~${ppEnd}`);
+  return ranges;
+}
+
+/**
+ * 법정보호휴직 변경 시 급여 산정기간 필드 갱신
+ */
+function _refreshPIPayPeriodDisplay(){
+  if (!piContract) return;
+  const _ppEl = document.getElementById('pi-pay-period');
+  if (!_ppEl) return;
+  const _yr = parseInt(document.getElementById('pi-year')?.value);
+  const _mo = parseInt(document.getElementById('pi-month')?.value);
+  if (!_yr || !_mo) return;
+
+  const _detailedLeave = _getPIProtectedLeaveDetail(piContract.employee_id || '', _yr, _mo);
+  if (!_detailedLeave.hasLeave) return; // 보호휴직 없으면 기존 표시 유지
+
+  // 현재 표시된 산정기간에서 원본 기간 추출 (첫 번째 구간 기준)
+  const _curVal = _ppEl.value || '';
+  const _firstRange = _curVal.split(',')[0].trim();
+  if (!_firstRange.includes('~')) return;
+  const _parts = _firstRange.split('~');
+  const _ppStart = _parts[0].replace(/\./g, '-');
+  const _ppEnd   = _parts[1].replace(/\./g, '-');
+
+  const _workingRanges = _calcWorkingPeriodsExcludingLeave(
+    _ppStart, _ppEnd, piContract.employee_id || '', _yr, _mo
+  );
+  if (_workingRanges.length > 0) {
+    _ppEl.value = _workingRanges.join(', ');
+  }
+}
+
 function _getPISmallFirmInfo(coId, yr, mo){
   const NONE = { isSmall:false, headcount:0, operDays:0, totalPersonDays:0 };
   if(!coId || !yr || !mo) return NONE;
@@ -4467,7 +4944,7 @@ function clearPIFields(){
   ].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   ['pi-ot-pay-disp','pi-night-pay-disp','pi-hol-pay-disp',
    'pi-ot-pay-disp-simple','pi-night-pay-disp-simple','pi-hol-pay-disp-simple'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='0원';});
-  const _baseDailyEl=document.getElementById('pi-base-daily-disp'); if(_baseDailyEl) _baseDailyEl.textContent='-';
+  const _baseDailyEl=document.getElementById('pi-base-daily-disp'); if(_baseDailyEl) _baseDailyEl.value='-';
   const _whdDesc=document.getElementById('pi-weekly-hol-desc'); if(_whdDesc) _whdDesc.textContent='';
   const _whdDisp=document.getElementById('pi-weekly-hol-disp'); if(_whdDisp) _whdDisp.textContent='0원';
   const _ppDisp=document.getElementById('pi-pay-period'); if(_ppDisp) _ppDisp.value='';

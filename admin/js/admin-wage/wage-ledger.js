@@ -115,13 +115,68 @@ async function _checkWageLedgerComplete(companyId, year, month, changedEmpId = n
   const validEmpIds = [...new Set(validContracts.map(ct => ct.employee_id))];
   if(validEmpIds.length === 0) return; // 유효 계약 없음
 
+  // ── 법정보호휴직자(산재·육아·61~90일차 출산) 제외 ──
+  // 당월 모든 근로일이 법정보호휴직인 직원은 회사 지급분이 없으므로
+  // 급여명세서 발행 대상에서 제외 → 임금대장 완료 조건에서도 제외
+  const PROTECTED_LEAVE_TYPES = new Set(['industrial', 'childcare_leave', 'maternity_paid', 'maternity_unpaid', 'paternity_paid']);
+  const _protectedEmpIds = new Set();
+  try {
+    const _attRes = await api(`../tables/attendance_ledger?company_id=${companyId}&limit=1000`);
+    const _attRows = (_attRes.data || _attRes || []);
+    if (Array.isArray(_attRows) && _attRows.length > 0) {
+      // 월 전체 근로일수 계산
+      const _dpw = 5; // 기본 주5일
+      const _totalMonthDays = new Date(year, month, 0).getDate();
+      let _workDaysInMonth = 0;
+      for (let d = 1; d <= _totalMonthDays; d++) {
+        const dt = new Date(year, month - 1, d);
+        const dow = dt.getDay();
+        if (dow !== 0 && dow !== 6) _workDaysInMonth++; // 주말 제외
+      }
+      // 직원별 법정보호휴직 일수 집계
+      const _empProtectedDays = {};
+      _attRows.forEach(ledger => {
+        const eid = ledger.employee_id;
+        try {
+          const monthData = typeof ledger.month_data === 'string' ? JSON.parse(ledger.month_data) : (ledger.month_data || []);
+          monthData.forEach(entry => {
+            if (entry.type !== 'absent') return;
+            if (!PROTECTED_LEAVE_TYPES.has(entry.absentType || '')) return;
+            // 출산휴가 61~90일차만 회사 지급분 없음 (1~60일차는 회사 차액 보충 있음)
+            if (entry.absentType === 'maternity_paid') {
+              const dayNum = entry.dayNumber || 0;
+              if (dayNum > 0 && dayNum <= 60) return; // 1~60일차는 제외 대상 아님
+            }
+            const dates = typeof _atlExpandDateRange === 'function'
+              ? _atlExpandDateRange(entry.date, entry.dateTo || '') : [entry.date];
+            if (!_empProtectedDays[eid]) _empProtectedDays[eid] = 0;
+            // 해당 월에 속한 날짜만 카운트
+            dates.forEach(dt => {
+              if (dt >= mStart && dt <= mEnd) _empProtectedDays[eid]++;
+            });
+          });
+        } catch(e) {}
+      });
+      // 모든 근로일이 보호휴직인 직원 → 제외
+      Object.entries(_empProtectedDays).forEach(([eid, days]) => {
+        if (days >= _workDaysInMonth) {
+          _protectedEmpIds.add(eid);
+        }
+      });
+    }
+  } catch(e) { console.warn('[임금대장] 근태 조회 실패, 보호휴직자 제외 건너뜀:', e.message); }
+
+  // 법정보호휴직자 제외한 유효 직원 목록
+  const _checkEmpIds = validEmpIds.filter(id => !_protectedEmpIds.has(id));
+  if (_checkEmpIds.length === 0) return; // 모든 직원이 보호휴직 → 임금대장 생성 안 함
+
   // 해당 년월에 입력된 급여 직원 목록 (임시저장 제외)
   const inputtedEmpIds = new Set(
     allPayrolls
       .filter(p => !p.is_draft && p.company_id === companyId && Number(p.pay_year)===year && Number(p.pay_month)===month)
       .map(p => p.employee_id)
   );
-  const allInputted = validEmpIds.every(id => inputtedEmpIds.has(id));
+  const allInputted = _checkEmpIds.every(id => inputtedEmpIds.has(id));
   if(!allInputted) return; // 아직 미입력 직원 있음
 
   // ── 모든 직원 급여 입력 완료! ──
@@ -1278,14 +1333,17 @@ function downloadWageLedgerExcel(mode = 'edit', optCompanyId = null, optYear = n
   //  신고용: 카드 레이아웃 (값 없는 항목 공란)
   // ========================================================
   if (mode === 'edit') {
-    _downloadEditExcel(pays, empMap, yr, mo, moStr);
+    _downloadEditExcel(pays, empMap, yr, mo, moStr).catch(e => {
+      console.error('편집용 엑셀 생성 오류:', e);
+      toast('엑셀 생성 중 오류가 발생했습니다.', 'error');
+    });
   } else {
     _downloadReportExcel(pays, empMap, yr, mo, moStr);
   }
 }
 
-// ─── 편집용 엑셀 다운로드 (고정 열 테이블) ───
-function _downloadEditExcel(pays, empMap, yr, mo, moStr) {
+// ─── 편집용 엑셀 다운로드 (고정 열 테이블 + 근태·연차 시트) ───
+async function _downloadEditExcel(pays, empMap, yr, mo, moStr) {
   const nv = v => (v===null||v===undefined||v==='') ? 0 : Number(v);
   const numFmt = '#,##0';
 
@@ -1439,6 +1497,109 @@ function _downloadEditExcel(pays, empMap, yr, mo, moStr) {
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, '임금대장');
+
+  // ── 근태 관리대장 시트 (Sheet2) ──
+  const _coId = pays[0]?.company_id;
+  if (_coId) {
+    try {
+      const _attRes = await fetch(`../tables/attendance_ledger?company_id=${_coId}&limit=1000`);
+      const _attData = _attRes.ok ? (await _attRes.json()) : [];
+      const _attRows = (_attData.data || _attData || []);
+      if (_attRows.length > 0) {
+        // 직원별 근태 데이터 수집
+        const _attByEmp = {};
+        _attRows.forEach(ledger => {
+          const eid = ledger.employee_id;
+          if (!_attByEmp[eid]) _attByEmp[eid] = [];
+          try {
+            const monthData = typeof ledger.month_data === 'string' ? JSON.parse(ledger.month_data) : (ledger.month_data || []);
+            monthData.forEach(entry => {
+              _attByEmp[eid].push({
+                date: entry.date || '',
+                dateTo: entry.dateTo || '',
+                type: entry.type || 'absent',
+                absentType: entry.absentType || '',
+                rate: entry.rate || 0,
+                time: entry.time || ''
+              });
+            });
+          } catch(e) {}
+        });
+
+        const _attTypeLabel = { absent:'결근', late:'지각', earlyleave:'조퇴' };
+        const _absentLabel = { unauthorized:'무단', sick_unpaid:'병가(무급)', sick_paid:'병가(유급)', industrial:'산재', menstrual:'생리휴가', maternity_paid:'출산(유급)', maternity_unpaid:'출산(무급)', paternity_paid:'배우자출산', childcare_leave:'육아휴직', family_care:'가족돌봄', layoff_leave:'휴업휴직' };
+        const ATT_COLS = 8;
+        const _attCells = {};
+        let _attRow = 0;
+        const _attSet = (r,c,v,s) => { _attCells[XLSX.utils.encode_cell({r,c})] = {t:typeof v==='number'?'n':'s',v,s}; };
+        // 타이틀
+        for(let c=0;c<ATT_COLS;c++) _attSet(_attRow,c,c===0?`[${_wlCompanyName}] 근태 관리대장 — ${yr}년 ${moStr}월`:'',S_TITLE);
+        _attRow++;
+        // 헤더
+        ['직원명','날짜','유형','결근사유','지급율(%)','시간','종료일','비고'].forEach((h,ci) => _attSet(_attRow,ci,h,S_HDR));
+        _attRow++;
+        // 데이터
+        Object.entries(_attByEmp).forEach(([eid, entries]) => {
+          const empName = (empMap[eid]||{}).name || '';
+          let _attDi = 0;
+          entries.forEach(e => {
+            const typeLabel = _attTypeLabel[e.type] || e.type;
+            const absLabel = e.type==='absent' ? (_absentLabel[e.absentType]||'결근') : '';
+            const _sty = _attDi % 2 === 0 ? S_TEXT : S_TEXT_ALT;
+            const _styVal = _attDi % 2 === 0 ? S_VAL : S_VAL_ALT;
+            _attSet(_attRow,0,empName, _sty);
+            _attSet(_attRow,1,e.date, _sty);
+            _attSet(_attRow,2,typeLabel, _sty);
+            _attSet(_attRow,3,absLabel, _sty);
+            _attSet(_attRow,4,e.rate||0, _styVal);
+            _attSet(_attRow,5,e.time||'', _sty);
+            _attSet(_attRow,6,e.dateTo||'', _sty);
+            _attSet(_attRow,7,'', _sty);
+            _attRow++;
+            _attDi++;
+          });
+        });
+        const _attWs = { '!ref': XLSX.utils.encode_range({s:{r:0,c:0},e:{r:_attRow-1,c:ATT_COLS-1}}) };
+        Object.assign(_attWs, _attCells);
+        _attWs['!cols'] = [{wch:10},{wch:12},{wch:8},{wch:14},{wch:10},{wch:8},{wch:12},{wch:15}];
+        XLSX.utils.book_append_sheet(wb, _attWs, '근태관리대장');
+      }
+    } catch(e) { console.warn('근태관리대장 시트 생성 실패:', e); }
+  }
+
+  // ── 연차 관리대장 시트 (Sheet3) ──
+  if (typeof allLeaveLedgers !== 'undefined' && allLeaveLedgers.length > 0) {
+    const _leaveRows = allLeaveLedgers.filter(l => {
+      const emp = empMap[l.employee_id];
+      return emp && emp.company_id === _coId;
+    });
+    if (_leaveRows.length > 0) {
+      const LV_COLS = 7;
+      const _lvCells = {};
+      let _lvRow = 0;
+      const _lvSet = (r,c,v,s) => { _lvCells[XLSX.utils.encode_cell({r,c})] = {t:typeof v==='number'?'n':'s',v,s}; };
+      for(let c=0;c<LV_COLS;c++) _lvSet(_lvRow,c,c===0?`[${_wlCompanyName}] 연차 관리대장`:'',S_TITLE);
+      _lvRow++;
+      ['직원명','기준년도','발생일수','사용일수','잔여일수','이월일수','비고'].forEach((h,ci) => _lvSet(_lvRow,ci,h,S_HDR));
+      _lvRow++;
+      _leaveRows.forEach((l, idx) => {
+        const empName = (empMap[l.employee_id]||{}).name||'';
+        _lvSet(_lvRow,0,empName, idx%2===0?S_TEXT:S_TEXT_ALT);
+        _lvSet(_lvRow,1,l.year||'', idx%2===0?S_TEXT:S_TEXT_ALT);
+        _lvSet(_lvRow,2,l.granted_days||0, idx%2===0?S_VAL:S_VAL_ALT);
+        _lvSet(_lvRow,3,l.used_days||0, idx%2===0?S_VAL:S_VAL_ALT);
+        _lvSet(_lvRow,4,l.remain_days||0, idx%2===0?S_VAL:S_VAL_ALT);
+        _lvSet(_lvRow,5,l.carried_days||0, idx%2===0?S_VAL:S_VAL_ALT);
+        _lvSet(_lvRow,6,l.note||'', idx%2===0?S_TEXT:S_TEXT_ALT);
+        _lvRow++;
+      });
+      const _lvWs = { '!ref': XLSX.utils.encode_range({s:{r:0,c:0},e:{r:_lvRow-1,c:LV_COLS-1}}) };
+      Object.assign(_lvWs, _lvCells);
+      _lvWs['!cols'] = [{wch:10},{wch:10},{wch:10},{wch:10},{wch:10},{wch:10},{wch:20}];
+      XLSX.utils.book_append_sheet(wb, _lvWs, '연차관리대장');
+    }
+  }
+
   const wbout = XLSX.write(wb, { cellStyles: true, bookType: 'xlsx', type: 'array' });
   const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   const url = URL.createObjectURL(blob);

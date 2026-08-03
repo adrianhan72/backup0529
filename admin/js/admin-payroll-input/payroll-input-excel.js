@@ -782,524 +782,8 @@ function validateAndParseExcel(wb, fileName){
     }
   })();
 
-  // ========================================
-  //  6. 포맷 감지: 카드형(9열) vs 테이블형(32열)
-  //
-  //  카드형 특징:
-  //   - raw[2] = [숫자, '성명', 이름, '부서', ...]  ← 직원 데이터 행
-  //   - C0 값이 숫자(순번) 또는 '합계'
-  //   - 헤더 행 없음, 항목명이 셀 값으로 분산
-  //
-  //  테이블형 특징:
-  //   - raw[4] = ['No','사원번호','성명','부서',...] ← 컬럼 헤더 행
-  //   - raw[5]~ = 직원 데이터 행 (1인 1행)
-  // ========================================
-
-  // 카드형 감지: raw[2]의 C1 값이 '성명'이고 C0이 숫자인지 확인
-  const isCardFormat = (()=>{
-    for(let ri=2; ri<Math.min(raw.length,6); ri++){
-      const r = raw[ri];
-      if(!r) continue;
-      const c0 = String(r[0]||'').trim();
-      const c1 = String(r[1]||'').trim();
-      // 카드형: C0=순번(숫자), C1='성명'  또는  C0='합계', C1='총 인원'
-      if(c1 === '성명' && (Number(c0) > 0 || c0 === '합계')) return true;
-    }
-    return false;
-  })();
-
   // ────────────────────────────────────────────────────────────
-  //  ★ 카드형 파싱 분기 (임금대장 뷰에서 다운로드한 파일)
-  // ────────────────────────────────────────────────────────────
-  if(isCardFormat){
-    warnings.push('ℹ️ 카드형(임금대장 뷰) 포맷으로 파싱합니다.');
-
-    // 카드형 구조: 직원 1명 = 11행 (헤더A + 헤더B + 지급5행 + 공제3행 + 빈행)
-    // raw[0]=타이틀, raw[1]=빈행, raw[2]~=직원카드들
-    // 각 카드 시작: C0=순번(숫자) 또는 C0='합계'
-
-    // 항목명→DB 필드명 매핑 (카드형에서 사용하는 항목명 기준)
-    const CARD_PAY_MAP = {
-      '기본급':         'base_salary',
-      '주휴수당':       'weekly_holiday_pay',
-      '직책수당':       'position_allowance',
-      '연장근로수당':   'overtime_pay',
-      '야간근로수당':   'night_pay',
-      '휴일근로수당':   'holiday_pay',
-      '교통비':         'transportation_allowance',
-      '자가운전보조금': 'self_driving_allowance',
-      '벽지수당':       'remote_area_allowance',
-      '식대':           'meal_allowance',
-      '보육수당':  'childcare_allowance',
-      '연구활동비':     'research_allowance',
-      '연차수당':       'annual_leave_pay',
-      '정기상여금':     'bonus_pay',
-      '성과급':         'performance_pay',
-      '실비변상적급여': 'actual_expense_pay',
-      '통신비':         'communication_pay',
-      '체력증진비':     'fitness_allowance',
-      '자기계발비':     'self_dev_allowance',
-      '도서지원비':     'book_allowance',
-      '해외근무수당':   'overseas_allowance',
-      '현장수당':       'site_allowance',
-      '기술수당':       'skill_allowance',
-      '면허수당':       'license_allowance',
-      '위험수당':       'hazard_allowance',
-      // '기타수당' 셀 → etc_allowance 필드로 저장
-      // 화면·엑셀·파서 레이블 통일. 하위 호환을 위해 구 레이블도 같은 필드로 매핑
-      '기타수당':       'etc_allowance',
-      '기타지급':       'etc_allowance', // 구 레이블 하위 호환
-      '국외근로소득':   'etc_allowance', // 구 레이블 하위 호환
-    };
-    const CARD_DED_MAP = {
-      '보수월액':       'standard_monthly_pay',
-      '소득세':         'income_tax',
-      '주민세':         'local_income_tax',
-      '건강보험':       'health_insurance',
-      '장기요양보험료': 'long_term_care',
-      '국민연금':       'national_pension',
-      '고용보험':       'employment_insurance',
-      '연말정산':       'year_end_tax_adjust',
-      '건강보험정산':   'health_insurance_adjust',
-      '기타공제':       'advance_deduction',
-    };
-
-    // ── 카드 블록 파싱: 카드 시작 행 인덱스 목록 추출 ──
-    // 판별 기준:
-    //   C1(idx=1) === '성명'  AND  (C0이 양수 숫자 OR C0==='합계')
-    // sheet_to_json은 숫자셀을 number 타입으로 반환하므로 타입 체크 포함
-    const cardStarts = [];
-    for(let ri=2; ri<raw.length; ri++){
-      const r = raw[ri];
-      if(!r || r.length < 2) continue;
-      const c0raw = r[0];
-      const c1    = String(r[1]||'').trim();
-      // C1이 '성명'인지 확인
-      if(c1 !== '성명') continue;
-      // C0이 양수 숫자(number 타입 또는 숫자 문자열)이거나 '합계' 문자열
-      const c0num = typeof c0raw === 'number' ? c0raw : Number(String(c0raw||'').replace(/,/g,'').trim());
-      const c0str = String(c0raw||'').trim();
-      if(c0num > 0 || c0str === '합계' || c0str === '합 계'){
-        cardStarts.push(ri);
-      }
-    }
-
-    // 디버그: 탐지된 카드 수를 경고에 기록 (파싱 이슈 추적용)
-    warnings.push(`ℹ️ 카드 탐지: 총 ${cardStarts.length}개 카드 발견 (합계 카드 포함) / 전체 raw 행수: ${raw.length}`);
-
-    const cardDataRows = []; // 파싱된 직원 데이터 (dataRows 대응)
-
-    for(const startRi of cardStarts){
-      const hdrA = raw[startRi]     || [];  // [No, '성명', 이름, '부서', 부서, '직책', 직책, '고용형태', 고용형태]
-      const hdrB = raw[startRi+1]   || [];  // ['', '근로일수/시간', '연장야간...', '지급총액', 금액, '공제합계', 금액, '실수령액/날짜', 금액]
-
-      // 합계 카드 건너뜀 (C0='합계' 또는 C0='합 계')
-      const c0val = String(hdrA[0]||'').trim();
-      if(c0val === '합계' || c0val === '합 계') continue;
-
-      // 직원 기본정보
-      const empName  = String(hdrA[2]||'').trim();
-      const dept     = String(hdrA[4]||'').trim();
-      const pos      = String(hdrA[6]||'').trim();
-      const empCat   = String(hdrA[8]||'').trim();
-
-      // 헤더B에서 지급총액, 공제합계, 실수령액, 지급일 파싱
-      const grossVal = parseFloat(String(hdrB[4]||'').replace(/,/g,''))||0;
-      const dedVal   = parseFloat(String(hdrB[6]||'').replace(/,/g,''))||0;
-      // 실수령액 / 지급일: C8 값, C7 라벨에서 날짜 추출
-      const netVal   = parseFloat(String(hdrB[8]||'').replace(/,/g,''))||0;
-      const netLbl   = String(hdrB[7]||'');
-      // "실수령액 / 2025-04-25" 형식에서 날짜 추출
-      const payDateM = netLbl.match(/(\d{4}-\d{2}-\d{2})/);
-      const payDate  = payDateM ? payDateM[1] : '';
-
-      // 근로일수/시간: C1 = "10일 / 80H" 형식
-      const workStr  = String(hdrB[1]||'');
-      const workDayM = workStr.match(/(\d+(?:\.\d+)?)\s*일/);
-      const workHrM  = workStr.match(/(\d+(?:\.\d+)?)\s*H/i);
-      const workDays = workDayM ? parseFloat(workDayM[1]) : 0;
-      const workHrs  = workHrM  ? parseFloat(workHrM[1])  : 0;
-
-      // 지급내역/공제내역 행에서 항목명·금액 추출
-      // 지급행: startRi+2 ~ startRi+6 (5행), 공제행: startRi+7 ~ startRi+9 (3행)
-      const fieldVals = {};
-
-      for(let di=0; di<5; di++){
-        const row = raw[startRi+2+di] || [];
-        // 4개 항목 쌍: (C1,C2), (C3,C4), (C5,C6), (C7,C8)
-        for(let ci=0; ci<4; ci++){
-          const lbl = String(row[ci*2+1]||'').trim();
-          const val = parseFloat(String(row[ci*2+2]||'').replace(/,/g,''))||0;
-          if(lbl && CARD_PAY_MAP[lbl] !== undefined){
-            fieldVals[CARD_PAY_MAP[lbl]] = val;
-          }
-        }
-      }
-      for(let di=0; di<3; di++){
-        const row = raw[startRi+7+di] || [];
-        for(let ci=0; ci<4; ci++){
-          const lbl = String(row[ci*2+1]||'').trim();
-          const val = parseFloat(String(row[ci*2+2]||'').replace(/,/g,''))||0;
-          if(lbl && CARD_DED_MAP[lbl] !== undefined){
-            fieldVals[CARD_DED_MAP[lbl]] = val;
-          }
-        }
-      }
-
-      if(!empName) continue;
-
-      cardDataRows.push({
-        _name:    empName,
-        _dept:    dept,
-        _pos:     pos,
-        _cat:     empCat,
-        _workDays:workDays,
-        _workHrs: workHrs,
-        _gross:   grossVal,
-        _ded:     dedVal,
-        _net:     netVal,
-        _payDate: payDate,
-        ...fieldVals
-      });
-    }
-
-    if(!cardDataRows.length){
-      errors.push('❌ 카드형 포맷에서 직원 데이터를 읽을 수 없습니다.');
-      return showUploadReport(false, errors, warnings, calcErrors, fixedErrors, validRows);
-    }
-
-    // ── 직원 명단 검증 (카드형) ──
-    const coEmps     = allEmployees.filter(e => e.company_id===co.id && (e.status===EMP_STATUS.ACTIVE||e.status===EMP_STATUS.ACTIVE));
-    const coEmpNames = coEmps.map(e => e.name);
-    const empMatchMap = {};
-
-    cardDataRows.forEach(row => {
-      const xn = row._name;
-      if(!xn) return;
-      const exact = coEmps.find(e => e.name===xn);
-      if(exact){ empMatchMap[xn]=exact; return; }
-      const fuzzy = coEmps.find(e => e.name.includes(xn) || xn.includes(e.name));
-      if(fuzzy){
-        warnings.push(`⚡ 직원명 유사 매칭: 파일 "${xn}" → DB "${fuzzy.name}"`);
-        empMatchMap[xn] = fuzzy;
-      } else {
-        errors.push(`❌ DB에 없는 직원: "${xn}"\n고객사 재직 직원: ${coEmpNames.join(', ')}`);
-      }
-    });
-    if(errors.length > 0) return showUploadReport(false, errors, warnings, calcErrors, fixedErrors, validRows);
-
-    // 카드형(임금대장 뷰)은 급여가 입력된 직원만 포함하므로
-    // "엑셀에 없는 재직 직원" 경고는 표시하지 않음 (정상 동작)
-
-    // ── 고객사 4대보험 적용 기준 확인 ──
-    // 'fixed_amount': 보험료를 직접 입력하므로 요율 검증 제외
-    // 'rate_based' (기본): 요율 기반 자동계산이므로 검증 수행
-    const coInsuranceBasis = co?.insurance_basis || 'rate_based';
-    const isFixedInsurance = coInsuranceBasis === 'fixed_amount';
-
-    // ── 요율 사전 조회 (요율 기준 고객사 검증에 사용) ──
-    const rateLtCare    = getRateForYearMonth('long_term_care',   targetYear, targetMonth);
-    const ratePension   = getRateForYearMonth('national_pension', targetYear, targetMonth);
-    const rateHealth    = getRateForYearMonth('health',           targetYear, targetMonth);
-    const rateEmploy    = getRateForYearMonth('employment',       targetYear, targetMonth);
-    const capPension    = getCapForYearMonth ('national_pension', targetYear, targetMonth) || 6370000;
-
-    // ── 데이터 행 검증 + validRows 변환 (카드형 → confirmBulkUpload 호환 구조) ──
-    cardDataRows.forEach((row, di) => {
-      const xn  = row._name;
-      const emp = empMatchMap[xn];
-      if(!emp) return;
-
-      const ct = allContracts.find(c => c.employee_id===emp.id &&
-        CONTRACT_ACTIVE_STATUSES.includes(c.status)) || null;
-      const hw = ct ? (parseFloat(ct.hourly_wage)||0) : 0;
-      // 카드형에서 행 번호는 카드 시작 인덱스 기준으로 표시 (대략적 위치)
-      const cardRowLabel = `${xn}(카드형)`;
-
-      const base     = row.base_salary              ?? 0;
-      const weekHol  = row.weekly_holiday_pay        ?? 0;
-      const posAlw   = row.position_allowance        ?? 0;
-      // 차량 관련: 교통비·자가운전보조금 각각 읽기 (계약서 필드 대응)
-      const transp   = row.transportation_allowance  ?? 0; // 계약.transportation_allowance 대응
-      const selfDrv  = row.self_driving_allowance    ?? 0; // 계약.self_driving_allowance 대응
-      const carLegacy= 0; // 카드형에 '차량유지비' 항목명은 없으므로 0
-      const car      = transp + selfDrv;                   // 지급총액 계산용 합산
-      const meal     = row.meal_allowance            ?? 0;
-      const otPay    = row.overtime_pay              ?? 0;
-      const nightPay = row.night_pay                 ?? 0;
-      const holPay   = row.holiday_pay               ?? 0;
-      const annlPay  = row.annual_leave_pay          ?? 0;
-      // '기타수당' 셀 = etc_allowance 필드로 파싱됨
-      // 개별 항목이 0이고 etc_allowance에 합산값이 있는 경우도 정상 처리
-      const otherPay = (row.bonus_pay??0)+(row.performance_pay??0)+(row.site_allowance??0)+(row.skill_allowance??0)
-                      +(row.license_allowance??0)+(row.communication_pay??0)+(row.fitness_allowance??0)+(row.self_dev_allowance??0)+(row.book_allowance??0)+(row.overseas_allowance??0)
-                      +(row.research_allowance??0)+(row.childcare_allowance??0)
-                      +(row.remote_area_allowance??0)+(row.actual_expense_pay??0)
-                      +(row.etc_allowance??0)   // 기타수당 (구: overseas_work_pay)
-                      +(row.other_pay??0);      // other_pay(구 테이블형 업로드 합산값)도 포함
-      const gross    = row._gross  || (base+weekHol+posAlw+car+meal+otPay+nightPay+holPay+annlPay+otherPay);
-      const incTax   = row.income_tax                ?? 0;
-      const localTax = row.local_income_tax          ?? 0;
-      const health   = row.health_insurance          ?? 0;
-      const ltCare   = row.long_term_care            ?? 0;
-      const pension  = row.national_pension          ?? 0;
-      const empIns   = row.employment_insurance      ?? 0;
-      const yearEnd  = row.year_end_tax_adjust       ?? 0;
-      const healthAdj= row.health_insurance_adjust   ?? 0;
-      const advance  = row.advance_deduction         ?? 0;
-      const calcDed  = incTax+localTax+health+ltCare+pension+empIns+yearEnd+healthAdj+advance;
-      const totalDed = row._ded > 0 ? row._ded : calcDed;
-      const netPay   = row._net  > 0 ? row._net  : (gross - totalDed);
-      // std(보수월액): 카드 공제행 '보수월액' 셀 파싱값을 우선 사용
-      // → DB 저장 시 UI에서 정확히 계산된 값이므로 이 값으로 보험료 검증
-      // 없으면(0이면) 지급총액 - 비과세 항목으로 추정
-      const stdFromCard = row.standard_monthly_pay ?? 0;
-      const nonTaxable  = transp + selfDrv + meal
-                        + (row.childcare_allowance??0)
-                        + (row.research_allowance??0);
-      const std = stdFromCard > 0
-        ? stdFromCard
-        : Math.max(0, gross - nonTaxable);
-
-      // ──────────────────────────────────────
-      //  [A] 계약 고정 항목 검증 (카드형)
-      //  근로계약에 명시된 고정 금액과 다르면 fixedErrors에 기록
-      // ──────────────────────────────────────
-      if(ct){
-        // 계약서 차량 관련 필드 통합:
-        //   신규: transportation_allowance(교통비) + self_driving_allowance(자가운전보조금)
-        //   레거시: car_maintenance(차량유지비)
-        // → 셋 중 실제 값이 있는 필드와 엑셀 파싱값을 각각 비교
-        const fixedChecks = [
-          [base,     parseFloat(ct.base_salary)||0,              '기본급',          0],
-          [weekHol,  parseFloat(ct.weekly_holiday_pay)||0,       '주휴수당',        0],
-          [posAlw,   parseFloat(ct.position_allowance)||0,       '직책수당',        0],
-          [meal,     parseFloat(ct.meal_allowance)||0,           '식대',            0],
-        ];
-        // 차량: 계약서 신규 필드 우선, 없으면 레거시 car_maintenance
-        const ctTransp  = parseFloat(ct.transportation_allowance)||0;
-        const ctSelfDrv = parseFloat(ct.self_driving_allowance)||0;
-        const ctCarLeg  = parseFloat(ct.car_maintenance)||0;
-        if(ctTransp > 0)  fixedChecks.push([transp,   ctTransp,  '교통비',          0]);
-        if(ctSelfDrv > 0) fixedChecks.push([selfDrv,  ctSelfDrv, '자가운전보조금',  0]);
-        if(ctCarLeg > 0 && ctTransp === 0 && ctSelfDrv === 0){
-          // 레거시 car_maintenance만 있는 경우: 교통비+자가운전 합산과 비교
-          fixedChecks.push([car, ctCarLeg, '차량유지비', 0]);
-        }
-        if((parseFloat(ct.other_allowance)||0) > 0){
-          fixedChecks.push([otherPay, parseFloat(ct.other_allowance)||0, '기타수당', 0]);
-        }
-        // 12개 개별 수당 항목 (근로계약에 금액이 명시된 경우에만 검사)
-        const allowanceChecks = [
-          [row.research_allowance??0,     parseFloat(ct.research_allowance)||0,     '연구활동비'],
-          [row.childcare_allowance??0,    parseFloat(ct.childcare_allowance)||0,    '보육수당'],
-          [row.communication_pay??0,      parseFloat(ct.communication_pay)||0,      '통신비'],
-          [row.skill_allowance??0,        parseFloat(ct.skill_allowance)||0,        '기술수당'],
-          [row.license_allowance??0,      parseFloat(ct.license_allowance)||0,      '면허수당'],
-          [row.site_allowance??0,         parseFloat(ct.site_allowance)||0,         '현장수당'],
-          [row.hazard_allowance??0,       parseFloat(ct.hazard_allowance)||0,       '위험수당'],
-          [row.remote_area_allowance??0,  parseFloat(ct.remote_area_allowance)||0,  '벽지수당'],
-          [row.fitness_allowance??0,      parseFloat(ct.fitness_allowance)||0,      '체력증진비'],
-          [row.self_dev_allowance??0,     parseFloat(ct.self_dev_allowance)||0,     '자기계발비'],
-          [row.book_allowance??0,         parseFloat(ct.book_allowance)||0,         '도서지원비'],
-          [row.overseas_allowance??0,     parseFloat(ct.overseas_allowance)||0,     '해외근무수당'],
-        ];
-        allowanceChecks.forEach(([xlVal, ctVal, label]) => {
-          if(ctVal === 0) return;
-          if(Math.abs(xlVal - ctVal) > 0){
-            fixedErrors.push({
-              row: cardRowLabel, colName: label, empName: xn,
-              input: xlVal, contract: ctVal, diff: xlVal - ctVal,
-              desc: `근로계약서 기준: ${fmt(ctVal)}원 / 엑셀 입력값: ${fmt(xlVal)}원 (차이: ${fmt(xlVal-ctVal)}원)`
-            });
-          }
-        });
-        fixedChecks.forEach(([xlVal, ctVal, label, tol]) => {
-          if(ctVal === 0) return; // 계약서 미입력 항목은 건너뜀
-          if(Math.abs(xlVal - ctVal) > tol){
-            fixedErrors.push({
-              row: cardRowLabel,
-              colName: label,
-              empName: xn,
-              input: xlVal,
-              contract: ctVal,
-              diff: xlVal - ctVal,
-              desc: `근로계약서 기준: ${fmt(ctVal)}원 / 엑셀 입력값: ${fmt(xlVal)}원 (차이: ${fmt(xlVal-ctVal)}원)`
-            });
-          }
-        });
-      }
-
-      // ──────────────────────────────────────
-      //  [B] 합산·수식 검증 (카드형)
-      // ──────────────────────────────────────
-      // ① 지급총액 = 지급항목 합산 (카드 헤더B의 gross값과 비교)
-      const calcGross = base+weekHol+posAlw+car+meal+otPay+nightPay+holPay+annlPay+otherPay;
-      if(row._gross > 0 && Math.abs(calcGross - row._gross) > CALC_TOLERANCE){
-        calcErrors.push({row: cardRowLabel, colName:'지급총액', empName:xn,
-          input: row._gross, calc: calcGross, diff: row._gross - calcGross,
-          desc:`기본급(${fmt(base)})+주휴(${fmt(weekHol)})+직책(${fmt(posAlw)})+차량(${fmt(car)})+식대(${fmt(meal)})+연장(${fmt(otPay)})+야간(${fmt(nightPay)})+휴일(${fmt(holPay)})+연차(${fmt(annlPay)})+기타지급(${fmt(otherPay)}) = ${fmt(calcGross)}\n※ 기타지급 = 상여+성과급+기술+면허+통신+연구+보육+벽지+실비+국외+기타(${fmt(row.other_pay??0)})`
-        });
-      }
-      // ② 소득세·지방소득세 상호 검증
-      // 소득세와 지방소득세 중 어느 쪽이 잘못됐는지 두 방향으로 동시 판단
-      if(incTax > 0 || localTax > 0){
-        // 방향A: 소득세가 맞다고 가정 → 지방소득세가 맞는지 확인
-        const ltFromInc1 = Math.round(incTax * 0.1);         // 반올림
-        const ltFromInc2 = Math.floor(incTax * 0.1 / 10) * 10; // 10원 내림
-        const ltBestDiff = localTax > 0
-          ? Math.min(Math.abs(ltFromInc1-localTax), Math.abs(ltFromInc2-localTax))
-          : Infinity;
-        const ltBestCalc = Math.abs(ltFromInc1-localTax) <= Math.abs(ltFromInc2-localTax)
-          ? ltFromInc1 : ltFromInc2;
-
-        // 방향B: 지방소득세가 맞다고 가정 → 소득세가 맞는지 역산 (localTax / 0.1)
-        const incFromLt = localTax > 0 ? Math.round(localTax / 0.1) : 0;
-        const incDiff   = incTax > 0 && localTax > 0 ? Math.abs(incTax - incFromLt) : 0;
-
-        if(localTax > 0 && ltBestDiff > LOCAL_TAX_TOLERANCE){
-          // 지방소득세가 소득세의 10%와 다름
-          // → 소득세 오입력 가능성도 안내
-          const hint = incDiff > 1000
-            ? `\n⚠️ 소득세 오입력 의심: 지방소득세(${fmt(localTax)})가 맞다면 소득세는 약 ${fmt(incFromLt)}원이어야 합니다 (현재 ${fmt(incTax)}원, 차이 ${fmt(incTax-incFromLt)}원)`
-            : '';
-          calcErrors.push({row: cardRowLabel, colName:'지방소득세', empName:xn,
-            input: localTax, calc: ltBestCalc, diff: localTax - ltBestCalc,
-            desc:`소득세(${fmt(incTax)}) × 10% → 반올림=${fmt(ltFromInc1)}, 10원내림=${fmt(ltFromInc2)}${hint}`
-          });
-        } else if(localTax === 0 && incTax > 0){
-          // 지방소득세가 0인데 소득세가 있는 경우
-          calcErrors.push({row: cardRowLabel, colName:'지방소득세', empName:xn,
-            input: 0, calc: ltFromInc1, diff: -ltFromInc1,
-            desc:`소득세(${fmt(incTax)})가 있으면 지방소득세(주민세)도 있어야 합니다 → 예상값 ${fmt(ltFromInc1)}원`
-          });
-        }
-      }
-      // ③ 요율 기준: 4대보험 전 항목 요율 검증
-      // ※ 확정액 기준 고객사는 보험료를 직접 입력하므로 요율 검증 전체 제외
-      if(!isFixedInsurance){
-        // 계약서의 4대보험 적용 여부 (false로 명시된 경우에만 검증 제외)
-        const ctApplyPension = ct ? ct.insurance_pension    !== false : true;
-        const ctApplyHealth  = ct ? ct.insurance_health     !== false : true;
-        const ctApplyEmpIns  = ct ? ct.insurance_employment !== false : true;
-        const INS_TOLERANCE  = 10; // ±10원 허용 오차 (반올림 방식 차이 흡수)
-
-        // ③-A 건강보험 = 보수월액 × 건강보험요율
-        if(ctApplyHealth && rateHealth > 0 && std > 0){
-          const calcH    = Math.round(std * rateHealth);
-          const calcHF10 = Math.floor(std * rateHealth / 10) * 10;
-          const bestHDiff = Math.min(Math.abs(calcH-health), Math.abs(calcHF10-health));
-          const bestHCalc = Math.abs(calcH-health) <= Math.abs(calcHF10-health) ? calcH : calcHF10;
-          if(bestHDiff > INS_TOLERANCE){
-            calcErrors.push({row: cardRowLabel, colName:'건강보험', empName:xn,
-              input: health, calc: bestHCalc, diff: health - bestHCalc,
-              desc:`보수월액(${fmt(std)}) × 건강보험요율(${(rateHealth*100).toFixed(3)}%) → 반올림=${fmt(calcH)}, 10원내림=${fmt(calcHF10)}`
-            });
-          }
-        }
-        // ③-B 장기요양 = 건강보험 × 장기요양요율
-        if(ctApplyHealth && rateLtCare > 0 && health > 0){
-          const calcLt    = Math.round(health * rateLtCare);
-          const calcLtF10 = Math.floor(health * rateLtCare / 10) * 10;
-          const bestLtDiff = Math.min(Math.abs(calcLt-ltCare), Math.abs(calcLtF10-ltCare));
-          const bestLtCalc = Math.abs(calcLt-ltCare) <= Math.abs(calcLtF10-ltCare) ? calcLt : calcLtF10;
-          if(bestLtDiff > LT_CARE_TOLERANCE){
-            calcErrors.push({row: cardRowLabel, colName:'장기요양보험', empName:xn,
-              input: ltCare, calc: bestLtCalc, diff: ltCare - bestLtCalc,
-              desc:`건강보험(${fmt(health)}) × 장기요양요율(${(rateLtCare*100).toFixed(2)}%) → 반올림=${fmt(calcLt)}, 10원내림=${fmt(calcLtF10)}`
-            });
-          }
-        }
-        // ③-C 국민연금 = min(보수월액, 상한) × 국민연금요율
-        if(ctApplyPension && ratePension > 0 && std > 0){
-          const pensionBase = Math.min(std, capPension);
-          const calcP    = Math.round(pensionBase * ratePension);
-          const calcPF10 = Math.floor(pensionBase * ratePension / 10) * 10;
-          const bestPDiff = Math.min(Math.abs(calcP-pension), Math.abs(calcPF10-pension));
-          const bestPCalc = Math.abs(calcP-pension) <= Math.abs(calcPF10-pension) ? calcP : calcPF10;
-          if(bestPDiff > INS_TOLERANCE){
-            calcErrors.push({row: cardRowLabel, colName:'국민연금', empName:xn,
-              input: pension, calc: bestPCalc, diff: pension - bestPCalc,
-              desc:`min(보수월액(${fmt(std)}), 상한(${fmt(capPension)})) × 국민연금요율(${(ratePension*100).toFixed(3)}%) → 반올림=${fmt(calcP)}, 10원내림=${fmt(calcPF10)}`
-            });
-          }
-        }
-        // ③-D 고용보험 = 보수월액 × 고용보험요율
-        if(ctApplyEmpIns && rateEmploy > 0 && std > 0){
-          const calcE    = Math.round(std * rateEmploy);
-          const calcEF10 = Math.floor(std * rateEmploy / 10) * 10;
-          const bestEDiff = Math.min(Math.abs(calcE-empIns), Math.abs(calcEF10-empIns));
-          const bestECalc = Math.abs(calcE-empIns) <= Math.abs(calcEF10-empIns) ? calcE : calcEF10;
-          if(bestEDiff > INS_TOLERANCE){
-            calcErrors.push({row: cardRowLabel, colName:'고용보험', empName:xn,
-              input: empIns, calc: bestECalc, diff: empIns - bestECalc,
-              desc:`보수월액(${fmt(std)}) × 고용보험요율(${(rateEmploy*100).toFixed(3)}%) → 반올림=${fmt(calcE)}, 10원내림=${fmt(calcEF10)}`
-            });
-          }
-        }
-      }
-      // ④ 공제합계 = 공제항목 합산
-      // ※ 요율 기준: 개별 보험료 검증(③)으로 세분화됨 / 확정액 기준: 합산으로만 통합 검증
-      if(row._ded > 0 && Math.abs(calcDed - row._ded) > CALC_TOLERANCE){
-        const dedDiff = row._ded - calcDed; // 양수: 입력합계가 더 큰 경우, 음수: 더 작은 경우
-        // 어떤 항목이 차이를 만드는지 힌트 제공
-        // 소득세 역산: 공제합계 차이가 소득세 차이와 비슷한지 확인
-        const incTaxHint = (localTax > 0 && Math.abs(dedDiff - Math.round(localTax/0.1 - incTax)) < 1000)
-          ? `\n⚠️ 소득세 오입력 의심: 지방소득세(${fmt(localTax)}) 기준 소득세 역산값 ≈ ${fmt(Math.round(localTax/0.1))}원 (현재 ${fmt(incTax)}원, 차이 ${fmt(Math.round(localTax/0.1)-incTax)}원)`
-          : '';
-        calcErrors.push({row: cardRowLabel, colName:'공제합계', empName:xn,
-          input: row._ded, calc: calcDed, diff: dedDiff,
-          desc:`소득세(${fmt(incTax)})+지방(${fmt(localTax)})+건강(${fmt(health)})+장기(${fmt(ltCare)})+연금(${fmt(pension)})+고용(${fmt(empIns)})+연말(${fmt(yearEnd)})+건보정산(${fmt(healthAdj)})+기타공제(${fmt(advance)}) = ${fmt(calcDed)}${incTaxHint}`
-        });
-      }
-      // ⑤ 영수액 = 지급총액 - 공제합계
-      if(row._gross > 0 && row._ded > 0){
-        const calcNet = row._gross - row._ded;
-        if(Math.abs(calcNet - row._net) > CALC_TOLERANCE){
-          calcErrors.push({row: cardRowLabel, colName:'영수액(실수령)', empName:xn,
-            input: row._net, calc: calcNet, diff: row._net - calcNet,
-            desc:`지급총액(${fmt(row._gross)}) - 공제합계(${fmt(row._ded)}) = ${fmt(calcNet)}`
-          });
-        }
-      }
-
-      // ── 오류 없는 행만 validRows에 추가 ──
-      const hasRowErr = fixedErrors.some(e => e.empName === xn) || calcErrors.some(e => e.empName === xn);
-      if(!hasRowErr){
-        validRows.push({
-          emp, co,
-          year: targetYear, month: targetMonth,
-          workDays: row._workDays || 0,
-          totalHrs: row._workHrs  || 0,
-          base, weekHol, posAlw,
-          // 차량: transp/selfDrv 분리 저장 (confirmBulkUpload에서 각 필드에 매핑)
-          transp, selfDrv, car,   // car = transp+selfDrv (지급총액 계산용 합산)
-          meal,
-          otPay, nightPay, holPay, annlPay, otherPay, gross,
-          incTax, localTax, health, ltCare, pension, empIns,
-          yearEnd, healthAdj, advance, totalDed, netPay,
-          payDate: row._payDate || '',
-          note: '',
-          std,
-          otHours:    hw>0 ? Math.round(otPay    / (hw*1.5)*10)/10 : 0,
-          nightHours: hw>0 ? Math.round(nightPay / (hw*0.5)*10)/10 : 0,
-          holHours:   hw>0 ? Math.round(holPay   / (hw*1.5)*10)/10 : 0,
-          hourlyWage: hw,
-        });
-      }
-    });
-
-    if(!validRows.length && !fixedErrors.length && !calcErrors.length){
-      errors.push('❌ 유효한 데이터 행이 없습니다.');
-      return showUploadReport(false, errors, warnings, calcErrors, fixedErrors, validRows);
-    }
-
-    const canSaveCard = errors.length === 0 && validRows.length > 0;
-    _uploadParsed = {co, year:targetYear, month:targetMonth, validRows, calcErrors, fixedErrors, allRows:cardDataRows.length};
-    return showUploadReport(canSaveCard, errors, warnings, calcErrors, fixedErrors, validRows);
-  }
-  // ────────────────────────────────────────────────────────────
-  //  ★ 이하: 테이블형(32열) 파싱 (업로드용 양식)
+  //  ★ 테이블형 파싱 (편집용 엑셀 업로드)
   // ────────────────────────────────────────────────────────────
 
   // 헤더 행 위치 자동 탐지 (테이블형: raw[4]에 '성명' 포함)
@@ -1377,6 +861,18 @@ function validateAndParseExcel(wb, fileName){
     }
     return -1;
   }
+
+  // ── 고객사 allowance_config에서 커스텀 항목 열 인덱스 매핑 추가 ──
+  const cfg = co?.allowance_config ? (typeof co.allowance_config === 'string' ? JSON.parse(co.allowance_config) : co.allowance_config) : {};
+  const customOrd = Array.isArray(cfg._custom_ordinary) ? cfg._custom_ordinary.filter(x => x.checked) : [];
+  const customFixed = Array.isArray(cfg._custom_fixed) ? cfg._custom_fixed.filter(x => x.checked) : [];
+  const customColMap = {}; // { 항목명: 컬럼인덱스 }
+  [...customOrd, ...customFixed].forEach(item => {
+    const name = item.name || '';
+    if(!name) return;
+    const idx = colIdx(name);
+    if(idx >= 0) customColMap[name] = idx;
+  });
 
   // 열 인덱스 맵 구성
   const CI = {
@@ -1500,6 +996,8 @@ function validateAndParseExcel(wb, fileName){
   const rateEmploy   = getRateForYearMonth('employment',       targetYear, targetMonth);
   const capPension   = getCapForYearMonth ('national_pension', targetYear, targetMonth) || 6370000;
 
+  _setProgress(25, '계약 대조 검증 중…');
+
   dataRows.forEach((row, di) => {
     const excelRow = (headerRowIdx+1) + di + 1; // 1-based 엑셀 행번호
     const empName  = String(row[CI.NAME]||'').trim();
@@ -1525,7 +1023,22 @@ function validateAndParseExcel(wb, fileName){
     const nightPay  = n(CI.NIGHT_PAY);
     const holPay    = n(CI.HOL_PAY);
     const annlPay   = n(CI.ANNUAL_PAY);
-    const otherPay  = n(CI.OTHER_PAY);
+    const otherPayBase = n(CI.OTHER_PAY);
+    // ── 커스텀 항목 열 값 읽기 (allowance_config 기반 동적 열) ──
+    const customOrdValues = {}; // { 항목명: 금액 }
+    const customFixedValues = {};
+    let customColSum = 0;
+    Object.entries(customColMap).forEach(([colName, colIdx]) => {
+      const val = n(colIdx);
+      if (val > 0) {
+        customColSum += val;
+        // 통상임금/고정수당 구분 (customOrd에 있는 항목명인지 확인)
+        const isOrd = customOrd.some(item => item.name === colName);
+        if (isOrd) customOrdValues[colName] = val;
+        else customFixedValues[colName] = val;
+      }
+    });
+    const otherPay = otherPayBase + customColSum;
     const gross     = n(CI.GROSS);
     const incTax    = n(CI.INC_TAX);
     const localTax  = n(CI.LOCAL_TAX);
@@ -1562,9 +1075,9 @@ function validateAndParseExcel(wb, fileName){
         fixedChecks.push([car, ctCarTotal, '차량관련수당', 0]);
       }
       // 연장·야간·휴일은 근무 실적에 따라 변동 → 계약서 비교 불가, 검증 제외
-      // 기타수당(other_allowance)도 계약서에 있을 때만 비교
-      if((parseFloat(ct.other_allowance)||0)>0){
-        fixedChecks.push([otherPay, parseFloat(ct.other_allowance)||0, '기타수당', 0]);
+      // 기타수당(other_allowance): 계약서에 금액이 명시되어 있으면 경고로만 안내 (금액 변동 가능성 있음)
+      if((parseFloat(ct.other_allowance)||0)>0 && Math.abs(otherPay - (parseFloat(ct.other_allowance)||0)) > 0){
+        warnings.push(`⚡ 기타수당 불일치: ${empName} — 근로계약서 기준: ${fmt(parseFloat(ct.other_allowance)||0)}원 / 엑셀 입력값: ${fmt(otherPay)}원 (차이: ${fmt(otherPay-(parseFloat(ct.other_allowance)||0))}원)`);
       }
       // 12개 개별 수당 항목 (근로계약에 금액이 명시된 경우에만 검사, 테이블형은 컬럼 선택적)
       const tblAllowanceChecks = [
@@ -1610,6 +1123,69 @@ function validateAndParseExcel(wb, fileName){
     }
 
     // ──────────────────────────────────────
+    //  [A-2] 통상시급(hourly_wage) 일관성 검증
+    //  통상시급은 모든 급여 항목의 근원(source of truth)이므로,
+    //  엑셀 값이 계약서 hourly_wage와 일관되는지 검증한다.
+    // ──────────────────────────────────────
+    if(hw > 0){
+      // ① 기본급 + 주휴수당 ≈ 통상시급 기반 예상값
+      // 월 통상임금 = hourly_wage × 월소정근로시간(209h 기준)
+      const _daysPerWeek = parseFloat(ct?.work_days_per_week) || 5;
+      const _hoursPerDay = parseFloat(ct?.work_hours_per_day) || 8;
+      const _monthlyStdH  = typeof _calcMonthlyStdHours === 'function'
+        ? _calcMonthlyStdHours(_hoursPerDay, _daysPerWeek) : 209;
+      const expectedMonthly = Math.round(hw * _monthlyStdH);
+      const baseAndHol = base + weekHol;
+      const HW_TOLERANCE = Math.max(100, Math.round(expectedMonthly * 0.02)); // 2% 또는 최소 100원
+      if(Math.abs(baseAndHol - expectedMonthly) > HW_TOLERANCE){
+        calcErrors.push({row:excelRow, colName:'통상시급 일관성', empName,
+          input:baseAndHol, calc:expectedMonthly, diff:baseAndHol - expectedMonthly,
+          desc:`통상시급(${fmt(hw)}원) × 월소정근로시간(${_monthlyStdH}h) = ${fmt(expectedMonthly)}원 (예상) / 엑셀 기본급+주휴 = ${fmt(baseAndHol)}원 (차이: ${fmt(baseAndHol-expectedMonthly)}원)`
+        });
+      }
+
+      // ② 연장·야간·휴일 수당 ↔ 시간 교차 검증
+      // 시간과 수당이 모두 입력된 경우에만 검증 (한쪽이 0이면 기존 역산 방식 유지)
+      const _otHrs  = n(CI.OT_HOURS);
+      const _ntHrs  = n(CI.NIGHT_HOURS);
+      const _holHrs = n(CI.HOL_HOURS);
+      const CROSS_TOLERANCE = 100; // ±100원 허용 오차
+
+      if(_otHrs > 0 && otPay > 0){
+        const expectedOt = Math.round(_otHrs * hw * 1.5);
+        if(Math.abs(otPay - expectedOt) > CROSS_TOLERANCE){
+          calcErrors.push({row:excelRow, colName:'연장수당↔시간', empName,
+            input:otPay, calc:expectedOt, diff:otPay - expectedOt,
+            desc:`연장시간(${_otHrs}h) × 통상시급(${fmt(hw)}원) × 1.5 = ${fmt(expectedOt)}원 / 엑셀 연장수당 ${fmt(otPay)}원`
+          });
+        }
+      }
+      if(_ntHrs > 0 && nightPay > 0){
+        const expectedNt = Math.round(_ntHrs * hw * 0.5);
+        if(Math.abs(nightPay - expectedNt) > CROSS_TOLERANCE){
+          calcErrors.push({row:excelRow, colName:'야간수당↔시간', empName,
+            input:nightPay, calc:expectedNt, diff:nightPay - expectedNt,
+            desc:`야간시간(${_ntHrs}h) × 통상시급(${fmt(hw)}원) × 0.5 = ${fmt(expectedNt)}원 / 엑셀 야간수당 ${fmt(nightPay)}원`
+          });
+        }
+      }
+      if(_holHrs > 0 && holPay > 0){
+        const expectedHol = Math.round(_holHrs * hw * 1.5);
+        if(Math.abs(holPay - expectedHol) > CROSS_TOLERANCE){
+          calcErrors.push({row:excelRow, colName:'휴일수당↔시간', empName,
+            input:holPay, calc:expectedHol, diff:holPay - expectedHol,
+            desc:`휴일시간(${_holHrs}h) × 통상시급(${fmt(hw)}원) × 1.5 = ${fmt(expectedHol)}원 / 엑셀 휴일수당 ${fmt(holPay)}원`
+          });
+        }
+      }
+    } else {
+      // ③ 통상시급 0원 방어
+      if((otPay > 0 || nightPay > 0 || holPay > 0) && ct){
+        warnings.push(`⚠️ ${empName}: 계약서에 통상시급이 0원입니다. 연장·야간·휴일 시간 산정이 불가능하여 수당÷시급 역산을 건너뜁니다. 계약서의 통상시급을 확인하세요.`);
+      }
+    }
+
+    // ──────────────────────────────────────
     //  [B] 합산 수식 검증
     // ──────────────────────────────────────
     // ① 지급총액 = 지급항목 합산
@@ -1621,119 +1197,150 @@ function validateAndParseExcel(wb, fileName){
       });
     }
 
-    // ② 소득세·지방소득세 상호 검증 (테이블형)
-    if(incTax > 0 || localTax > 0){
-      const ltFromInc1 = Math.round(incTax * 0.1);
-      const ltFromInc2 = Math.floor(incTax * 0.1 / 10) * 10;
-      const ltBestDiff = localTax > 0
-        ? Math.min(Math.abs(ltFromInc1-localTax), Math.abs(ltFromInc2-localTax))
-        : Infinity;
-      const ltBestCalc = Math.abs(ltFromInc1-localTax) <= Math.abs(ltFromInc2-localTax)
-        ? ltFromInc1 : ltFromInc2;
-      const incFromLt   = localTax > 0 ? Math.round(localTax / 0.1) : 0;
-      const incDiff     = incTax > 0 && localTax > 0 ? Math.abs(incTax - incFromLt) : 0;
-      if(localTax > 0 && ltBestDiff > LOCAL_TAX_TOLERANCE){
-        const hint = incDiff > 1000
-          ? `\n⚠️ 소득세 오입력 의심: 지방소득세(${fmt(localTax)})가 맞다면 소득세는 약 ${fmt(incFromLt)}원이어야 합니다 (현재 ${fmt(incTax)}원, 차이 ${fmt(incTax-incFromLt)}원)`
-          : '';
-        calcErrors.push({row:excelRow, colName:'지방소득세', empName,
-          input:localTax, calc:ltBestCalc, diff:localTax-ltBestCalc,
-          desc:`소득세(${fmt(incTax)}) × 10% → 반올림=${fmt(ltFromInc1)}, 10원내림=${fmt(ltFromInc2)}${hint}`
-        });
-      } else if(localTax === 0 && incTax > 0){
-        calcErrors.push({row:excelRow, colName:'지방소득세', empName,
-          input:0, calc:ltFromInc1, diff:-ltFromInc1,
-          desc:`소득세(${fmt(incTax)})가 있으면 지방소득세(주민세)도 있어야 합니다 → 예상값 ${fmt(ltFromInc1)}원`
+    // ──────────────────────────────────────
+    //  [C] 보수월액(std) 재계산 검증
+    //  급여입력 UI와 동일한 공식으로 std를 재계산하여 엑셀 값과 대조
+    // ──────────────────────────────────────
+    // 비과세 한도: 월 20만원 (car/meal/research/childcare)
+    const TAX_EXEMPT_CAP = 200000;
+    // allowance_config에서 비과세·영수증 설정 읽기
+    const _piTaxCfg = (() => {
+      if (!co?.allowance_config) return {};
+      const cfg = co.allowance_config;
+      return typeof cfg === 'string' ? (() => { try { return JSON.parse(cfg); } catch(e) { return {}; } })() : cfg;
+    })();
+    const _teVal = (field, excelVal) => {
+      // 비과세 미설정 → 전액 과세 (std에 포함)
+      if (!_piTaxCfg[`${field}_tax_exempt`]) return excelVal;
+      // 비과세 설정 → 20만원 한도 적용
+      return Math.min(excelVal, TAX_EXEMPT_CAP);
+    };
+    // 개별 수당 항목 (pay_type receipt 여부는 allowance_config로 판단)
+    const _allowItem = (field, excelVal) => {
+      const pt = _piTaxCfg[`${field}_pay_type`] || 'fixed';
+      if (pt === 'receipt') return 0; // 영수증 첨부 → 전액 비과세
+      return excelVal;
+    };
+    const calcStd = base + weekHol + posAlw
+      + n(CI.SITE) + n(CI.SKILL) + n(CI.LICENSE) + n(CI.HAZARD) + n(CI.REMOTE_AREA)
+      + _teVal('car', car)
+      + _teVal('meal', meal)
+      + _teVal('research', n(CI.RESEARCH))
+      + _teVal('childcare', n(CI.CHILDCARE))
+      + _allowItem('communication', n(CI.COMMUNICATION))
+      + _allowItem('fitness', n(CI.FITNESS))
+      + _allowItem('self_dev', n(CI.SELF_DEV))
+      + _allowItem('book', n(CI.BOOK))
+      + _allowItem('overseas', n(CI.OVERSEAS))
+      + otPay + nightPay + holPay + annlPay
+      + customColSum; // 커스텀 항목 합산 (통상임금/고정수당 모두 포함)
+    // 엑셀에 보수월액 열이 있으면 비교
+    const excelStd = n(CI.STD_MONTHLY);
+    if (excelStd > 0 && Math.abs(calcStd - excelStd) > CALC_TOLERANCE) {
+      calcErrors.push({row:excelRow, colName:'보수월액', empName,
+        input:excelStd, calc:calcStd, diff:excelStd - calcStd,
+        desc:`재계산: 기본급+주휴+수당(비과세 한도·영수증 제외 적용) = ${fmt(calcStd)}원`
+      });
+    }
+
+    // ──────────────────────────────────────
+    //  [D] 소득세 검증 (간이세액표 기준)
+    // ──────────────────────────────────────
+    const dependents = Math.max(1, parseInt(emp.tax_dependents) || 1);
+    if (typeof _calcIncomeTax === 'function') {
+      const taxResult = _calcIncomeTax(calcStd, dependents);
+      if (taxResult && taxResult.incomeTax > 0 && Math.abs(taxResult.incomeTax - incTax) > 100) {
+        calcErrors.push({row:excelRow, colName:'소득세', empName,
+          input:incTax, calc:taxResult.incomeTax, diff:incTax - taxResult.incomeTax,
+          desc:`보수월액(${fmt(calcStd)}) · 부양가족 ${dependents}인 · ${taxResult.usedYear || targetYear}년 간이세액표 기준 = ${fmt(taxResult.incomeTax)}원`
         });
       }
     }
 
-    // ③ 요율 기준: 4대보험 전 항목 요율 검증
-    // ※ 확정액 기준 고객사는 보험료를 직접 입력하므로 요율 검증 전체 제외
-    if(!isFixedInsurance){
-      // 보수월액 추정: 테이블형은 보수월액 열이 없으므로 비과세 항목 제외로 추정
-      // 비과세 항목: 교통비(car에 포함), 식대, 연차수당, 연장·야간·휴일은 제외
-      // → 가능한 정확도: 기본급+주휴+직책+연장+야간+휴일 (과세 항목만)
-      // 실제 보수월액과 차이가 날 수 있으므로 허용 오차를 넉넉히 설정
-      const nonTaxableEst = car + meal; // 교통비·식대는 비과세 대표 항목
-      const stdForIns = Math.max(0, gross - nonTaxableEst - annlPay - otherPay);
+    // ──────────────────────────────────────
+    //  [E] 지방소득세 검증 (소득세 × 10%, 10원 내림)
+    // ──────────────────────────────────────
+    if (incTax > 0) {
+      const calcLocalTax = Math.floor(incTax * 0.1 / 10) * 10;
+      if (Math.abs(calcLocalTax - localTax) > LOCAL_TAX_TOLERANCE) {
+        calcErrors.push({row:excelRow, colName:'지방소득세', empName,
+          input:localTax, calc:calcLocalTax, diff:localTax - calcLocalTax,
+          desc:`소득세(${fmt(incTax)}) × 10% → 10원 내림 = ${fmt(calcLocalTax)}원`
+        });
+      }
+    } else if (localTax > 0) {
+      calcErrors.push({row:excelRow, colName:'지방소득세', empName,
+        input:localTax, calc:0, diff:localTax,
+        desc:`소득세가 0원인데 지방소득세 ${fmt(localTax)}원이 입력되어 있습니다.`
+      });
+    }
 
-      // 계약서의 4대보험 적용 여부
+    // ──────────────────────────────────────
+    //  [F] 4대보험 요율 검증 (정확한 std 기준)
+    // ──────────────────────────────────────
+    if (!isFixedInsurance) {
       const ctApplyPension = ct ? ct.insurance_pension    !== false : true;
       const ctApplyHealth  = ct ? ct.insurance_health     !== false : true;
       const ctApplyEmpIns  = ct ? ct.insurance_employment !== false : true;
-      const INS_TOLERANCE  = 10; // ±10원 허용 오차
+      const INS_TOLERANCE  = 10;
 
       // ③-A 건강보험 = 보수월액 × 건강보험요율
-      if(ctApplyHealth && rateHealth > 0 && stdForIns > 0){
-        const calcH    = Math.round(stdForIns * rateHealth);
-        const calcHF10 = Math.floor(stdForIns * rateHealth / 10) * 10;
-        const bestHDiff = Math.min(Math.abs(calcH-health), Math.abs(calcHF10-health));
-        const bestHCalc = Math.abs(calcH-health) <= Math.abs(calcHF10-health) ? calcH : calcHF10;
-        if(bestHDiff > INS_TOLERANCE){
+      if (ctApplyHealth && rateHealth > 0 && calcStd > 0) {
+        const calcH = Math.round(calcStd * rateHealth);
+        if (Math.abs(calcH - health) > INS_TOLERANCE) {
           calcErrors.push({row:excelRow, colName:'건강보험', empName,
-            input:health, calc:bestHCalc, diff:health-bestHCalc,
-            desc:`보수월액추정(${fmt(stdForIns)}) × 건강보험요율(${(rateHealth*100).toFixed(3)}%) → 반올림=${fmt(calcH)}, 10원내림=${fmt(calcHF10)}`
+            input:health, calc:calcH, diff:health - calcH,
+            desc:`보수월액(${fmt(calcStd)}) × 건강보험요율(${(rateHealth*100).toFixed(3)}%) = ${fmt(calcH)}원`
           });
         }
       }
       // ③-B 장기요양 = 건강보험 × 장기요양요율
-      if(ctApplyHealth && rateLtCare > 0 && health > 0){
-        const calcLt    = Math.round(health * rateLtCare);
-        const calcLtF10 = Math.floor(health * rateLtCare / 10) * 10;
-        const bestLtDiff = Math.min(Math.abs(calcLt-ltCare), Math.abs(calcLtF10-ltCare));
-        const bestLtCalc = Math.abs(calcLt-ltCare) <= Math.abs(calcLtF10-ltCare) ? calcLt : calcLtF10;
-        if(bestLtDiff > LT_CARE_TOLERANCE){
+      if (ctApplyHealth && rateLtCare > 0 && health > 0) {
+        const calcLt = Math.round(health * rateLtCare);
+        if (Math.abs(calcLt - ltCare) > LT_CARE_TOLERANCE) {
           calcErrors.push({row:excelRow, colName:'장기요양보험', empName,
-            input:ltCare, calc:bestLtCalc, diff:ltCare-bestLtCalc,
-            desc:`건강보험(${fmt(health)}) × 장기요양요율(${(rateLtCare*100).toFixed(2)}%) → 반올림=${fmt(calcLt)}, 10원내림=${fmt(calcLtF10)}`
+            input:ltCare, calc:calcLt, diff:ltCare - calcLt,
+            desc:`건강보험(${fmt(health)}) × 장기요양요율(${(rateLtCare*100).toFixed(2)}%) = ${fmt(calcLt)}원`
           });
         }
       }
       // ③-C 국민연금 = min(보수월액, 상한) × 국민연금요율
-      if(ctApplyPension && ratePension > 0 && stdForIns > 0){
-        const pensionBase = Math.min(stdForIns, capPension);
-        const calcP    = Math.round(pensionBase * ratePension);
-        const calcPF10 = Math.floor(pensionBase * ratePension / 10) * 10;
-        const bestPDiff = Math.min(Math.abs(calcP-pension), Math.abs(calcPF10-pension));
-        const bestPCalc = Math.abs(calcP-pension) <= Math.abs(calcPF10-pension) ? calcP : calcPF10;
-        if(bestPDiff > INS_TOLERANCE){
+      if (ctApplyPension && ratePension > 0 && calcStd > 0) {
+        const pensionBase = Math.min(calcStd, capPension);
+        const calcP = Math.round(pensionBase * ratePension);
+        if (Math.abs(calcP - pension) > INS_TOLERANCE) {
           calcErrors.push({row:excelRow, colName:'국민연금', empName,
-            input:pension, calc:bestPCalc, diff:pension-bestPCalc,
-            desc:`min(보수월액추정(${fmt(stdForIns)}), 상한(${fmt(capPension)})) × 국민연금요율(${(ratePension*100).toFixed(3)}%) → 반올림=${fmt(calcP)}, 10원내림=${fmt(calcPF10)}`
+            input:pension, calc:calcP, diff:pension - calcP,
+            desc:`min(보수월액(${fmt(calcStd)}), 상한(${fmt(capPension)})) × 국민연금요율(${(ratePension*100).toFixed(3)}%) = ${fmt(calcP)}원`
           });
         }
       }
       // ③-D 고용보험 = 보수월액 × 고용보험요율
-      if(ctApplyEmpIns && rateEmploy > 0 && stdForIns > 0){
-        const calcE    = Math.round(stdForIns * rateEmploy);
-        const calcEF10 = Math.floor(stdForIns * rateEmploy / 10) * 10;
-        const bestEDiff = Math.min(Math.abs(calcE-empIns), Math.abs(calcEF10-empIns));
-        const bestECalc = Math.abs(calcE-empIns) <= Math.abs(calcEF10-empIns) ? calcE : calcEF10;
-        if(bestEDiff > INS_TOLERANCE){
+      if (ctApplyEmpIns && rateEmploy > 0 && calcStd > 0) {
+        const calcE = Math.round(calcStd * rateEmploy);
+        if (Math.abs(calcE - empIns) > INS_TOLERANCE) {
           calcErrors.push({row:excelRow, colName:'고용보험', empName,
-            input:empIns, calc:bestECalc, diff:empIns-bestECalc,
-            desc:`보수월액추정(${fmt(stdForIns)}) × 고용보험요율(${(rateEmploy*100).toFixed(3)}%) → 반올림=${fmt(calcE)}, 10원내림=${fmt(calcEF10)}`
+            input:empIns, calc:calcE, diff:empIns - calcE,
+            desc:`보수월액(${fmt(calcStd)}) × 고용보험요율(${(rateEmploy*100).toFixed(3)}%) = ${fmt(calcE)}원`
           });
         }
       }
     }
 
-    // ④ 공제합계 = 공제항목 합산 (테이블형)
-    // ※ 요율 기준: 개별 보험료 검증(③)으로 세분화됨 / 확정액 기준: 합산으로만 통합 검증
+    // ──────────────────────────────────────
+    //  [G] 공제합계 검증
+    // ──────────────────────────────────────
     const calcTotalDed = incTax+localTax+health+ltCare+pension+empIns+yearEnd+healthAdj+advance;
-    if(Math.abs(calcTotalDed - totalDed) > CALC_TOLERANCE){
-      const dedDiff2 = totalDed - calcTotalDed;
-      const incTaxHint2 = (localTax > 0 && Math.abs(dedDiff2 - Math.round(localTax/0.1 - incTax)) < 1000)
-        ? `\n⚠️ 소득세 오입력 의심: 지방소득세(${fmt(localTax)}) 기준 소득세 역산값 ≈ ${fmt(Math.round(localTax/0.1))}원 (현재 ${fmt(incTax)}원, 차이 ${fmt(Math.round(localTax/0.1)-incTax)}원)`
-        : '';
+    if (Math.abs(calcTotalDed - totalDed) > CALC_TOLERANCE) {
       calcErrors.push({row:excelRow, colName:'공제합계', empName,
-        input:totalDed, calc:calcTotalDed, diff:dedDiff2,
-        desc:`소득세(${fmt(incTax)})+지방(${fmt(localTax)})+건강(${fmt(health)})+장기(${fmt(ltCare)})+연금(${fmt(pension)})+고용(${fmt(empIns)})+연말(${fmt(yearEnd)})+건보정산(${fmt(healthAdj)})+기타공제(${fmt(advance)}) = ${fmt(calcTotalDed)}${incTaxHint2}`
+        input:totalDed, calc:calcTotalDed, diff:totalDed - calcTotalDed,
+        desc:`소득세(${fmt(incTax)})+지방(${fmt(localTax)})+건강(${fmt(health)})+장기(${fmt(ltCare)})+연금(${fmt(pension)})+고용(${fmt(empIns)})+연말(${fmt(yearEnd)})+건보정산(${fmt(healthAdj)})+기타공제(${fmt(advance)}) = ${fmt(calcTotalDed)}`
       });
     }
 
-    // ④ 영수액 = 지급총액 - 공제합계
+    // ──────────────────────────────────────
+    //  [H] 영수액 검증
+    // ──────────────────────────────────────
     const calcNet = gross - totalDed;
     if(Math.abs(calcNet - netPay) > CALC_TOLERANCE){
       calcErrors.push({row:excelRow, colName:'영수액(실수령)', empName,
@@ -1745,7 +1352,6 @@ function validateAndParseExcel(wb, fileName){
     // ── 오류 없는 행만 validRows에 추가 ──
     const hasErr = calcErrors.some(e=>e.row===excelRow) || fixedErrors.some(e=>e.row===excelRow);
     if(!hasErr){
-      const std = base+weekHol+posAlw+otPay+nightPay+holPay+annlPay;
       validRows.push({
         emp, co, year:targetYear, month:targetMonth,
         workDays, totalHrs,
@@ -1760,12 +1366,15 @@ function validateAndParseExcel(wb, fileName){
         nightHours: hw>0 ? Math.round(nightPay / (hw*0.5)*10)/10 : 0,
         holHours:   hw>0 ? Math.round(holPay   / (hw*1.5)*10)/10 : 0,
         hourlyWage: hw,
+        customOrdValues, customFixedValues,
         rawRow: row
       });
     }
   });
 
   _uploadParsed = {co, year:targetYear, month:targetMonth, validRows, calcErrors, fixedErrors, allRows:dataRows.length};
+  _setProgress(100, '검증 완료');
+  setTimeout(() => _hideProgress(), 500);
   showUploadReport(errors.length===0, errors, warnings, calcErrors, fixedErrors, validRows);
 }
 
@@ -2053,6 +1662,8 @@ async function confirmBulkUpload(){
         meal_allowance:      r.meal,
         annual_leave_pay:    r.annlPay,
         other_pay:           r.otherPay,
+        custom_ordinary_values: Object.keys(r.customOrdValues||{}).length > 0 ? JSON.stringify(Object.entries(r.customOrdValues||{}).map(([name, amount]) => ({name, amount}))) : null,
+        custom_fixed_values:    Object.keys(r.customFixedValues||{}).length > 0 ? JSON.stringify(Object.entries(r.customFixedValues||{}).map(([name, amount]) => ({name, amount}))) : null,
         gross_pay:           r.gross,
         standard_monthly_pay:r.std,
         income_tax:          r.incTax,
