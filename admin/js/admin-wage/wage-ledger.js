@@ -1274,12 +1274,191 @@ function downloadWageLedgerExcel(mode = 'edit', optCompanyId = null, optYear = n
   const numFmt = '#,##0';
 
   // ========================================================
-  //  열 구조 (총 9열)
-  //  C0: 구분(지급내역/공제내역/No)
-  //  C1: 항목1  C2: 금액1
-  //  C3: 항목2  C4: 금액2
-  //  C5: 항목3  C6: 금액3
-  //  C7: 항목4  C8: 금액4
+  //  편집용: 고정 열 테이블 형식 (업로드·검증 최적화)
+  //  신고용: 카드 레이아웃 (값 없는 항목 공란)
+  // ========================================================
+  if (mode === 'edit') {
+    _downloadEditExcel(pays, empMap, yr, mo, moStr);
+  } else {
+    _downloadReportExcel(pays, empMap, yr, mo, moStr);
+  }
+}
+
+// ─── 편집용 엑셀 다운로드 (고정 열 테이블) ───
+function _downloadEditExcel(pays, empMap, yr, mo, moStr) {
+  const nv = v => (v===null||v===undefined||v==='') ? 0 : Number(v);
+  const numFmt = '#,##0';
+
+  // ── 고객사 allowance_config에서 커스텀 항목 정보 ──
+  const co = allCompanies.find(c => c.id === (pays[0]?.company_id));
+  const cfg = co?.allowance_config ? (typeof co.allowance_config === 'string' ? JSON.parse(co.allowance_config) : co.allowance_config) : {};
+  const customOrd = Array.isArray(cfg._custom_ordinary) ? cfg._custom_ordinary.filter(x => x.checked) : [];
+  const customFixed = Array.isArray(cfg._custom_fixed) ? cfg._custom_fixed.filter(x => x.checked) : [];
+
+  // ── 열 정의: [헤더레이블, 값추출함수(p), 너비(wch)] ──
+  const COLDEF = [
+    ['No',              (_p,i) => i+1, 5],
+    ['사원번호',        p => (empMap[p.employee_id]||{}).employee_number||'', 10],
+    ['성명',            p => (empMap[p.employee_id]||{}).name||'', 10],
+    ['부서',            p => (empMap[p.employee_id]||{}).department||'', 8],
+    ['직책',            p => (empMap[p.employee_id]||{}).position||'', 8],
+    ['고용형태',        p => (empMap[p.employee_id]||{}).employment_category||'', 10],
+    ['근로일수',        p => nv(p.work_days), 7],
+    ['총근로시간',      p => nv(p.total_work_hours), 8],
+    ['연장시간',        p => nv(p.overtime_hours), 7],
+    ['야간시간',        p => nv(p.night_hours), 7],
+    ['휴일시간',        p => nv(p.holiday_hours), 7],
+    ['기본급',          p => nv(p.base_salary), 12],
+    ['주휴수당',        p => nv(p.weekly_holiday_pay), 10],
+    ['직책수당',        p => nv(p.position_allowance), 10],
+    ['차량유지비',      p => nv(p.self_driving_allowance||p.transportation_allowance), 10],
+    ['식대',            p => nv(p.meal_allowance), 10],
+    ['연장수당',        p => nv(p.overtime_pay), 10],
+    ['야간수당',        p => nv(p.night_pay), 10],
+    ['휴일수당',        p => nv(p.holiday_pay), 10],
+    ['연차수당',        p => nv(p.annual_leave_pay), 10],
+    ['정기상여금',      p => nv(p.bonus_pay), 10],
+    ['성과급',          p => nv(p.performance_pay), 10],
+    ['실비변상적급여',  p => nv(p.actual_expense_pay), 10],
+    ['연구활동비',      p => nv(p.research_allowance), 10],
+    ['보육수당',        p => nv(p.childcare_allowance), 10],
+    ['통신비',          p => nv(p.communication_pay), 10],
+    ['기술수당',        p => nv(p.skill_allowance), 10],
+    ['면허수당',        p => nv(p.license_allowance), 10],
+    ['현장수당',        p => nv(p.site_allowance), 10],
+    ['위험수당',        p => nv(p.hazard_allowance), 10],
+    ['벽지수당',        p => nv(p.remote_area_allowance), 10],
+    ['체력증진비',      p => nv(p.fitness_allowance), 10],
+    ['자기계발비',      p => nv(p.self_dev_allowance), 10],
+    ['도서지원비',      p => nv(p.book_allowance), 10],
+    ['해외근무수당',    p => nv(p.overseas_allowance), 10],
+  ];
+  // 커스텀 통상임금 항목
+  customOrd.forEach(item => {
+    const name = item.name || '커스텀';
+    COLDEF.push([name, p => {
+      try { const v = typeof p.custom_ordinary_values==='string' ? JSON.parse(p.custom_ordinary_values) : (p.custom_ordinary_values||[]); const found = (Array.isArray(v)?v:[]).find(x => x.name===item.name); return found?.amount||0; } catch(e){ return 0; }
+    }, 12]);
+  });
+  // 커스텀 고정수당 항목
+  customFixed.forEach(item => {
+    const name = item.name || '커스텀고정';
+    COLDEF.push([name, p => {
+      try { const v = typeof p.custom_fixed_values==='string' ? JSON.parse(p.custom_fixed_values) : (p.custom_fixed_values||[]); const found = (Array.isArray(v)?v:[]).find(x => x.name===item.name); return found?.amount||0; } catch(e){ return 0; }
+    }, 12]);
+  });
+  // 나머지 고정 열
+  const restCols = [
+    ['기타수당',        p => nv(p.etc_allowance)+nv(p.other_pay), 10],
+    ['지급합계',        p => nv(p.gross_pay), 12],
+    ['보수월액',        p => nv(p.standard_monthly_pay), 10],
+    ['소득세',          p => nv(p.income_tax), 10],
+    ['지방소득세',      p => nv(p.local_income_tax), 10],
+    ['건강보험',        p => nv(p.health_insurance), 10],
+    ['장기요양',        p => nv(p.long_term_care), 10],
+    ['국민연금',        p => nv(p.national_pension), 10],
+    ['고용보험',        p => nv(p.employment_insurance), 10],
+    ['연말정산',        p => nv(p.year_end_tax_adjust), 10],
+    ['건보정산',        p => nv(p.health_insurance_adjust), 10],
+    ['기타공제',        p => nv(p.advance_deduction), 10],
+    ['공제합계',        p => nv(p.total_deduction), 12],
+    ['영수액',          p => nv(p.net_pay), 12],
+    ['지급일',          p => (p.pay_date||'').slice(0,10), 10],
+    ['비고',            p => p.note||'', 15],
+  ];
+  restCols.forEach(c => COLDEF.push(c));
+
+  const COLS = COLDEF.length;
+
+  // ── 스타일 상수 ──
+  const bd = (clr, style='thin') => ({style, color:{rgb:clr}});
+  const border = (clr) => ({top:bd(clr), bottom:bd(clr), left:bd(clr), right:bd(clr)});
+  const fill = rgb => ({patternType:'solid', fgColor:{rgb}});
+  const font = (sz, bold, rgb, name='맑은 고딕') => ({name, sz, bold, color:{rgb}});
+  const al = (h='center', v='center') => ({horizontal:h, vertical:v});
+
+  const S_HDR = { fill: fill('1E293B'), font: font(9, true, 'FFFFFF'), alignment: al('center'), border: border('334155') };
+  const S_VAL = { fill: fill('F8FBFF'), font: font(9, false, '1E293B'), alignment: al('right'), border: border('E5E7EB') };
+  const S_VAL_ALT = { fill: fill('FFFFFF'), font: font(9, false, '1E293B'), alignment: al('right'), border: border('E5E7EB') };
+  const S_GROSS = { fill: fill('DBEAFE'), font: font(9, true, '1D4ED8'), alignment: al('right'), border: border('BFDBFE') };
+  const S_DED = { fill: fill('FEE2E2'), font: font(9, true, 'B91C1C'), alignment: al('right'), border: border('FECACA') };
+  const S_NET = { fill: fill('DCFCE7'), font: font(9, true, '059669'), alignment: al('right'), border: border('BBF7D0') };
+  const S_TITLE = { fill: fill('1A1A2E'), font: font(13, true, 'FFFFFF'), alignment: al('center'), border: border('1A1A2E') };
+  const S_TEXT = { fill: fill('FFFFFF'), font: font(9, false, '1E293B'), alignment: al('left'), border: border('E5E7EB') };
+  const S_TEXT_ALT = { fill: fill('F8FAFC'), font: font(9, false, '1E293B'), alignment: al('left'), border: border('E5E7EB') };
+
+  const wsCells = {};
+  const merges = [];
+  let curRow = 0;
+
+  function setCell(r, c, v, s) {
+    const ref = XLSX.utils.encode_cell({r, c});
+    wsCells[ref] = { t: typeof v === 'number' ? 'n' : 's', v, s };
+  }
+
+  // ── 타이틀 행 ──
+  for (let c = 0; c < COLS; c++) setCell(curRow, c, c === 0 ? `[${_wlCompanyName}] 임금대장 (편집용) — ${yr}년 ${moStr}월` : '', S_TITLE);
+  merges.push({ s: {r: curRow, c: 0}, e: {r: curRow, c: COLS-1} });
+  curRow++;
+
+  // ── 헤더 행 ──
+  COLDEF.forEach((def, ci) => {
+    setCell(curRow, ci, def[0], S_HDR);
+  });
+  curRow++;
+
+  // ── 직원 데이터 행 ──
+  const grossIdx = COLDEF.findIndex(d => d[0] === '지급합계');
+  const dedIdx = COLDEF.findIndex(d => d[0] === '공제합계');
+  const netIdx = COLDEF.findIndex(d => d[0] === '영수액');
+
+  pays.forEach((p, idx) => {
+    const rowStyle = idx % 2 === 0 ? S_VAL : S_VAL_ALT;
+    COLDEF.forEach((def, ci) => {
+      let val = def[1](p, idx);
+      let sty = rowStyle;
+      if (ci === grossIdx) sty = S_GROSS;
+      else if (ci === dedIdx) sty = S_DED;
+      else if (ci === netIdx) sty = S_NET;
+      else if (ci < 5) sty = idx % 2 === 0 ? S_TEXT : S_TEXT_ALT;
+      if (typeof val === 'number' && val === 0) val = 0; // 빈칸 대신 0 표시
+      setCell(curRow, ci, val, sty);
+    });
+    curRow++;
+  });
+
+  // ── 열 너비 ──
+  const colWidths = COLDEF.map(d => ({ wch: d[2] || 10 }));
+
+  // ── 워크시트 조립 ──
+  const ws = { '!ref': XLSX.utils.encode_range({ s: {r:0,c:0}, e: {r:curRow-1,c:COLS-1} }) };
+  Object.assign(ws, wsCells);
+  ws['!merges'] = merges;
+  ws['!cols'] = colWidths;
+  ws['!pageSetup'] = { paperSize: 9, orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0 };
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '임금대장');
+  const wbout = XLSX.write(wb, { cellStyles: true, bookType: 'xlsx', type: 'array' });
+  const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `[${_wlCompanyName}]_임금대장_${yr}년${moStr}월.xlsx`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+  toast(`📥 ${yr}년 ${mo}월 임금대장 엑셀 다운로드 완료 (편집용)`, 'success');
+}
+
+// ─── 신고용 엑셀 다운로드 (기존 카드 레이아웃) ───
+function _downloadReportExcel(pays, empMap, yr, mo, moStr) {
+  const nv = v => (v===null||v===undefined||v==='') ? 0 : Number(v);
+  const numFmt = '#,##0';
+
+  // ========================================================
+  //  열 구조 (총 9열) - 카드 레이아웃
   // ========================================================
   const COLS = 9;
 
@@ -1685,5 +1864,5 @@ function downloadWageLedgerExcel(mode = 'edit', optCompanyId = null, optYear = n
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
-  toast(`📥 ${yr}년 ${mo}월 임금대장 엑셀 다운로드 완료 (${mode==='report'?'신고용':'편집용'})`, 'success');
+  toast(`📥 ${yr}년 ${mo}월 임금대장 엑셀 다운로드 완료 (신고용)`, 'success');
 }
