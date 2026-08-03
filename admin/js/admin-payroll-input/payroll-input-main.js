@@ -3867,7 +3867,9 @@ const _PI_OPT_ROWS = [
   { key:'hazard',        rowId:'pi-row-hazard' },
   { key:'remote_area',   rowId:'pi-row-remote-area' },
   { key:'regular_bonus', rowId:'pi-row-bonus' },
-  // ── 고정수당 설정 그룹 ──
+  // ── 고정수당 설정 그룹 (car/meal은 항상 노출, daily/receipt 시 비정기 이동만) ──
+  { key:'car',           rowId:'pi-transport-row', ptField:'transport' },
+  { key:'meal',          rowId:'pi-row-meal',      ptField:'meal' },
   { key:'childcare',     rowId:'pi-row-childcare', ptField:'childcare' },
   { key:'research',      rowId:'pi-row-research',      ptField:'research' },
   { key:'communication', rowId:'pi-row-communication', ptField:'communication' },
@@ -3947,6 +3949,31 @@ function _renderPIIrregularRows(){
     container.appendChild(row);
     row.style.display = '';  // 반드시 노출
   });
+
+  // ── 커스텀 고정수당 항목: daily/receipt → 비정기 섹션으로 이동 ──
+  document.querySelectorAll('.pi-custom-fixed-row').forEach(row => {
+    const input = row.querySelector('input[data-paytype]');
+    const pt = input?.dataset?.paytype || '';
+    if(pt !== 'daily' && pt !== 'receipt') return;
+    if(row.style.display === 'none') return;
+
+    const prevSib = row.previousElementSibling;
+    row.dataset.irregularOrigin = prevSib?.id || '';
+    row.dataset.irregularMoved = '1';
+
+    const label = row.querySelector('label');
+    if(label && !label.querySelector('.pi-irreg-pt-badge')){
+      const badgeText = pt === 'receipt' ? '영수증 청구' : '출근일수에 따름';
+      const badge = document.createElement('span');
+      badge.className = 'pi-irreg-pt-badge';
+      badge.textContent = badgeText;
+      badge.style.cssText = 'font-size:10px;font-weight:400;color:#6b7280;background:#f3f4f6;border-radius:4px;padding:1px 6px;margin-left:4px;vertical-align:middle;white-space:nowrap;';
+      label.appendChild(badge);
+    }
+
+    container.appendChild(row);
+    row.style.display = '';
+  });
 }
 
 /**
@@ -3966,7 +3993,9 @@ function applyPIAllowanceConfig(cfg){
   // ① 계약 내용 섹션 show/hide + pay_type 기본값 세팅
   _PI_OPT_ROWS.forEach(({ key, rowId, ptField }) => {
     const row = document.getElementById(rowId);
-    const visible = isPI_Daily ? false : !!(cfg && cfg[key]);
+    // car, meal은 항상 노출 (기본값 checked)
+    const isAlwaysVisible = (key === 'car' || key === 'meal');
+    const visible = isPI_Daily ? false : (isAlwaysVisible || !!(cfg && cfg[key]));
     if(row) row.style.display = visible ? '' : 'none';
     if(ptField){
       const defaultPt = (visible && !isPI_Daily)
