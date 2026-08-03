@@ -173,6 +173,7 @@ async function _checkWageLedgerComplete(companyId, year, month){
   toast(`📋 ${co?.company_name||''} ${year}년 ${month}월 임금대장이 생성되었습니다!`, 'success');
 
   // ── 신고용 Excel + HTML(열람용) 자동 생성 및 파일서버 저장 ──
+  let _wlFileHtmlPath = '';
   try {
     const genRes = await api('../api/generate-wage-ledger-files', {
       method: 'POST',
@@ -181,6 +182,7 @@ async function _checkWageLedgerComplete(companyId, year, month){
     });
     if (genRes.ok) {
       console.log('[임금대장] 파일 생성 완료:', genRes.safeName);
+      _wlFileHtmlPath = genRes.html || '';
       // 생성된 파일 경로를 wage_ledger_notifications에 저장
       if (_wlExistingId) {
         await api('../tables/wage_ledger_notifications/' + _wlExistingId, {
@@ -209,6 +211,44 @@ async function _checkWageLedgerComplete(companyId, year, month){
     }
   } catch (e) {
     console.warn('[급여명세서] 생성 실패 (무시됨):', e.message);
+  }
+
+  // ── 고객사 앱 인앱 알림 발송 (임금대장 발행 + PDF 링크) ──
+  if (typeof _sendCompanyNotice === 'function') {
+    try {
+      const _wlCo = allCompanies.find(x => x.id === companyId) || {};
+      const _coRep = typeof getCompanyRepGreeting === 'function'
+        ? getCompanyRepGreeting(_wlCo) : '';
+      const wlHtmlUrl = _wlFileHtmlPath || '';
+      const wlFullUrl = wlHtmlUrl
+        ? (window.location.origin + wlHtmlUrl)
+        : '';
+
+      await _sendCompanyNotice({
+        companyId, companyName: _wlCo.company_name || '',
+        noticeType: 'wage_ledger_generated',
+        title: `[임금대장 발행] ${_wlCo.company_name || ''} — ${year}년 ${month}월 임금대장이 발행되었습니다`,
+        body: [
+          `안녕하세요${_coRep}.`,
+          '',
+          `${year}년 ${month}월 임금대장이 발행되었습니다.`,
+          '아래 링크에서 신고용 임금대장 PDF를 확인하실 수 있습니다.',
+          '',
+          `📎 임금대장 보기: ${wlFullUrl || '(링크 생성 중...)'}`,
+          '',
+          '⚠️ 아직 근로계약이 등록되지 않은 직원의 급여 명세서는 별도로 발행되어 해당 근로자에게 개별 발송되며, 이 임금대장에서는 제외되어 있습니다. 누락된 근로계약과 급여정보가 시스템에 정상 반영되면 임금대장은 업데이트되어 발행됩니다.'
+        ].join('\n'),
+        extraData: {
+          ruleVars: {
+            '{급여년도}': String(year),
+            '{급여월}': String(month),
+            '{임금대장링크}': wlFullUrl
+          }
+        }
+      });
+    } catch (e) {
+      console.warn('[임금대장] 알림 발송 실패 (무시됨):', e.message);
+    }
   }
 }
 
