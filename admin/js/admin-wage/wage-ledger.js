@@ -650,7 +650,9 @@ function renderWageLedger(){
     'remote_area_allowance','research_allowance','childcare_allowance',
     'overtime_pay','night_pay','holiday_pay','annual_leave_pay',
     'license_allowance','skill_allowance','communication_pay','performance_pay',
-    'actual_expense_pay','etc_allowance','other_pay',
+    'actual_expense_pay','position_allowance','site_allowance',
+    'hazard_allowance','fitness_allowance','self_dev_allowance','book_allowance','overseas_allowance',
+    'etc_allowance','other_pay',
     'gross_pay',
     'national_pension','health_insurance','employment_insurance','long_term_care',
     'income_tax','local_income_tax',
@@ -677,39 +679,62 @@ function renderWageLedger(){
   // 직원별 transport 값 가져오기 헬퍼 (하위호환: 구 transportation_allowance 필드도 합산)
   const _transportVal = p => p.self_driving_allowance || p.transportation_allowance || 0;
 
-  // 지급항목 th 레이블 정의 (데이터 없으면 공란)
+  // ── 커스텀 수당 합산 헬퍼 ──
+  const _sumCustomOrd = p => { try { const v=typeof p.custom_ordinary_values==='string'?JSON.parse(p.custom_ordinary_values):(p.custom_ordinary_values||[]); return (Array.isArray(v)?v:[]).reduce((s,x)=>s+(x.amount||0),0); } catch(e){return 0;} };
+  const _sumCustomFixed = p => { try { const v=typeof p.custom_fixed_values==='string'?JSON.parse(p.custom_fixed_values):(p.custom_fixed_values||[]); return (Array.isArray(v)?v:[]).reduce((s,x)=>s+(x.amount||0),0); } catch(e){return 0;} };
+  const _sumEtcItems = p => { try { const v=typeof p.etc_allowance_items==='string'?JSON.parse(p.etc_allowance_items):(p.etc_allowance_items||[]); return (Array.isArray(v)?v:[]).reduce((s,x)=>s+(x.amount||0),0); } catch(e){return 0;} };
+
+  // ── 고객사 allowance_config에서 실제 사용 항목 확인 ──
+  const _wlCfg = (() => {
+    const co = allCompanies.find(c => c.id === currentPayCompanyId || c.id === (pays[0]?.company_id));
+    if (!co?.allowance_config) return {};
+    const cfg = co.allowance_config;
+    return typeof cfg === 'string' ? JSON.parse(cfg) : cfg;
+  })();
+  const _hasCfg = key => !!(_wlCfg && _wlCfg[key]);
+  const _hasCustomOrd = _wlCfg && Array.isArray(_wlCfg._custom_ordinary) && _wlCfg._custom_ordinary.length > 0;
+  const _hasCustomFixed = _wlCfg && Array.isArray(_wlCfg._custom_fixed) && _wlCfg._custom_fixed.length > 0;
+  const _hasEtcItems = pays.some(p => _sumEtcItems(p) > 0);
+
+  // 지급항목 th 레이블 정의 (데이터 없으면 공란) — 6열 × 5행
   // 행2: C3=기본급, C4=정기상여금, C5=식대, C6=차량유지비(기본)/교통비/벽지수당(선택), C7~C8=공란
   // 요청 스펙대로 행·열 매핑
   // [행][열-3] (0-indexed, 지급 cols 0~5)
   const PAY_TH = [
-    // 행2 (index 0): C3=기본급, C4=정기상여금, C5=식대, C6=차량교통비(동적), C7=공란, C8=공란
+    // 행2 (index 0): 기본급~현장수당
     [ '기본급',
       '정기상여금',
       '식대',
       _transportLabel,
-      '',
-      '' ],
-    // 행3 (index 1): C3=연구활동비, C4=육아수당, C5=연장근로수당, C6=야간근로수당, C7=휴일근로수당, C8=주휴수당
-    [ '연구활동비',
-      '육아수당',
+      hasData('position_allowance') ? '직책수당' : '',
+      hasData('site_allowance') ? '현장수당' : '' ],
+    // 행3 (index 1): 연구~주휴
+    [ hasData('research_allowance') ? '연구활동비' : '',
+      hasData('childcare_allowance') ? '보육수당' : '',
       '연장근로수당',
       '야간근로수당',
       '휴일근로수당',
       '주휴수당' ],
-    // 행4 (index 2): C3=연차수당, C4=면허수당, C5=기술수당, C6=통신비, C7=성과급, C8=실비변상적급여
+    // 행4 (index 2): 연차~실비
     [ '연차수당',
-      '면허수당',
-      '기술수당',
-      '통신비',
-      '성과급',
-      '실비변상적급여' ],
-    // 행5 (index 3): C3~C6=공란(추가 입력 항목용), C7=기타, C8=공란
-    [ '', '', '', '',
-      '기타',
-      '' ],
-    // 행6 (index 4): C3~C6=공란, C7=공란, C8=지급합계(bold)
-    [ '', '', '', '',
+      hasData('license_allowance') ? '면허수당' : '',
+      hasData('skill_allowance') ? '기술수당' : '',
+      hasData('communication_pay') ? '통신비' : '',
+      hasData('performance_pay') ? '성과급' : '',
+      hasData('actual_expense_pay') ? '실비변상적급여' : '' ],
+    // 행5 (index 3): 위험~해외
+    [ hasData('hazard_allowance') ? '위험수당' : '',
+      hasData('remote_area_allowance') ? '벽지수당' : '',
+      hasData('fitness_allowance') ? '체력증진비' : '',
+      hasData('self_dev_allowance') ? '자기계발비' : '',
+      hasData('book_allowance') ? '도서지원비' : '',
+      hasData('overseas_allowance') ? '해외근무수당' : '' ],
+    // 행6 (index 4): 커스텀 + 기타 + 지급합계
+    [ _hasCustomOrd ? '커스텀통상임금' : '',
+      _hasCustomFixed ? '커스텀고정수당' : '',
+      _hasEtcItems ? '기타수당(커스텀)' : '',
       '',
+      hasData('etc_allowance')||hasData('other_pay') ? '기타' : '',
       '지급합계' ],
   ];
 
@@ -743,16 +768,19 @@ function renderWageLedger(){
     switch(rowIdx){
       case 0: return [ fmtV(p.base_salary), fmtV(p.bonus_pay),
                        fmtV(p.meal_allowance), fmtV(_transportVal(p)),
-                       '', '' ];
+                       fmtV(p.position_allowance), fmtV(p.site_allowance) ];
       case 1: return [ fmtV(p.research_allowance), fmtV(p.childcare_allowance),
                        fmtV(p.overtime_pay), fmtV(p.night_pay),
                        fmtV(p.holiday_pay), fmtV(p.weekly_holiday_pay) ];
       case 2: return [ fmtV(p.annual_leave_pay), fmtV(p.license_allowance),
                        fmtV(p.skill_allowance), fmtV(p.communication_pay),
                        fmtV(p.performance_pay), fmtV(p.actual_expense_pay) ];
-      case 3: return [ '', '', '', '',
-                       fmtV((p.etc_allowance||0)+(p.other_pay||0)), '' ];
-      case 4: return [ '', '', '', '', '', fmtB(p.gross_pay) ];
+      case 3: return [ fmtV(p.hazard_allowance), fmtV(p.remote_area_allowance),
+                       fmtV(p.fitness_allowance), fmtV(p.self_dev_allowance),
+                       fmtV(p.book_allowance), fmtV(p.overseas_allowance) ];
+      case 4: return [ fmtV(_sumCustomOrd(p)), fmtV(_sumCustomFixed(p)),
+                       fmtV(_sumEtcItems(p)), '',
+                       fmtV((p.etc_allowance||0)+(p.other_pay||0)), fmtB(p.gross_pay) ];
       default: return ['','','','','',''];
     }
   };
@@ -776,16 +804,19 @@ function renderWageLedger(){
       case 0: return [ fmtV(sums.base_salary), fmtV(sums.bonus_pay),
                        fmtV(sums.meal_allowance),
                        fmtV((sums.self_driving_allowance||0)+(sums.transportation_allowance||0)+(sums.remote_area_allowance||0)),
-                       '', '' ];
+                       fmtV(sums.position_allowance), fmtV(sums.site_allowance) ];
       case 1: return [ fmtV(sums.research_allowance), fmtV(sums.childcare_allowance),
                        fmtV(sums.overtime_pay), fmtV(sums.night_pay),
                        fmtV(sums.holiday_pay), fmtV(sums.weekly_holiday_pay) ];
       case 2: return [ fmtV(sums.annual_leave_pay), fmtV(sums.license_allowance),
                        fmtV(sums.skill_allowance), fmtV(sums.communication_pay),
                        fmtV(sums.performance_pay), fmtV(sums.actual_expense_pay) ];
-      case 3: return [ '', '', '', '',
-                       fmtV(sums.etc_allowance + sums.other_pay), '' ];
-      case 4: return [ '', '', '', '', '', fmtB(sums.gross_pay) ];
+      case 3: return [ fmtV(sums.hazard_allowance), fmtV(sums.remote_area_allowance),
+                       fmtV(sums.fitness_allowance), fmtV(sums.self_dev_allowance),
+                       fmtV(sums.book_allowance), fmtV(sums.overseas_allowance) ];
+      case 4: return [ fmtV(sums.custom_ord_total||0), fmtV(sums.custom_fixed_total||0),
+                       fmtV(sums.etc_items_total||0), '',
+                       fmtV(sums.etc_allowance + sums.other_pay), fmtB(sums.gross_pay) ];
       default: return ['','','','','',''];
     }
   };
@@ -941,8 +972,14 @@ function renderWageLedger(){
 
   // ── 합계 누산 + tbody HTML 생성 ──
   let tbodyRows = '';
+  sums.custom_ord_total = 0;
+  sums.custom_fixed_total = 0;
+  sums.etc_items_total = 0;
   pays.forEach((p, idx) => {
     sumFields.forEach(f => sums[f] += wonNum(p[f]));
+    sums.custom_ord_total += _sumCustomOrd(p);
+    sums.custom_fixed_total += _sumCustomFixed(p);
+    sums.etc_items_total += _sumEtcItems(p);
     const emp = empMap[p.employee_id] || {};
     tbodyRows += buildTbody(p, emp, idx, false);
   });
