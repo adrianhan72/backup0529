@@ -599,11 +599,14 @@
               <div class="pi-row"><label>실비변상적급여</label><input type="text" inputmode="numeric" id="pi-actual-expense" data-amount oninput="onAmountInput(this,calcPI)" /></div>
               <!-- ── 비정기 지급: daily/receipt 항목 동적 삽입 영역 ── -->
               <div id="pi-irregular-dynamic-rows"></div>
-              <div class="pi-row" style="align-items:center;">
-                <label>기타수당</label>
-                <input type="text" id="pi-etc-allowance-memo" placeholder="메모 (예: 명절수당)" maxlength="100"
-                  style="flex:1;min-width:0;margin:0 8px;" />
-                <input type="text" inputmode="numeric" id="pi-etc-allowance" data-amount oninput="onAmountInput(this,calcPI)" />
+              <!-- ── 기타수당 (동적 항목 추가/삭제) ── -->
+              <div id="pi-etc-allowance-container">
+                <!-- JS로 동적 생성: pi-row-etc-N -->
+              </div>
+              <div class="pi-row" style="justify-content:flex-end;padding:4px 0;">
+                <button type="button" class="btn btn-sm btn-secondary" onclick="piAddEtcAllowanceItem()">
+                  <i class="fas fa-plus"></i> 기타수당 항목 추가
+                </button>
               </div>
             </div>
             <!-- 공제 -->

@@ -284,6 +284,10 @@ function openPayslipModal(payrollId){
     const vals = (() => { try { return typeof p.custom_fixed_values === 'string' ? JSON.parse(p.custom_fixed_values) : (p.custom_fixed_values || []); } catch(e) { return []; } })();
     return (Array.isArray(vals) ? vals : []).filter(v => v && v.amount > 0).map(v => makePayRowType(v.name, v.amount, v.pay_type || 'fixed')).join('');
   })();
+  const _etcAllowanceRows = (() => {
+    const vals = (() => { try { return typeof p.etc_allowance_items === 'string' ? JSON.parse(p.etc_allowance_items) : (p.etc_allowance_items || []); } catch(e) { return []; } })();
+    return (Array.isArray(vals) ? vals : []).filter(v => v && v.amount > 0).map(v => makePayRowType(v.name, v.amount, v.pay_type || 'daily')).join('');
+  })();
 
   payTb.innerHTML =
     makeGroupRow('▸ 매월 지급') +
@@ -317,7 +321,8 @@ function openPayslipModal(payrollId){
     makePayRowType('해외근무수당',  p.overseas_allowance, p.overseas_pay_type||'fixed') +
     _customFixedRows +
     makePayRow('퇴직금 중간정산',   p.severance_interim_pay) +
-    makePayRow('기타수당',          (p.etc_allowance||0)+(p.other_pay||0));
+    makePayRow('기타수당',          (p.etc_allowance||0)+(p.other_pay||0)) +
+    _etcAllowanceRows;
 
   // ── 계약상 임금 정보 행 (인적사항 그리드) ──
   // 고용형태별 표시 규칙:

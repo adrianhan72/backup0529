@@ -3329,7 +3329,7 @@ function calcPI(){
   const _customFixedGross = _sumCustomFixed('all');
   const _customFixedStd = _sumCustomFixed('taxable'); // receipt 제외, daily+fixed 포함
 
-  const gross=gv('pi-base')+gv('pi-weekly-hol')+gv('pi-site')+gv('pi-remote-area')+gv('pi-position')+gv('pi-skill')+gv('pi-license')+gv('pi-transport')+gv('pi-meal')+gv('pi-childcare')+gv('pi-research')+otPay+nightPay+holPay+_fixedOtPay+_fixedNightPay+_fixedHolPay+gv('pi-annual-pay')+gv('pi-bonus')+gv('pi-performance')+gv('pi-actual-expense')+gv('pi-communication')+gv('pi-fitness')+gv('pi-self-dev')+gv('pi-book')+gv('pi-overseas')+gv('pi-etc-allowance')+gv('pi-severance-interim')+_layoffPay+_maternityPay - _retroOverpaymentTotal - _retroHolidayOverpay + _customOrdSum + _customFixedGross;
+  const gross=gv('pi-base')+gv('pi-weekly-hol')+gv('pi-site')+gv('pi-remote-area')+gv('pi-position')+gv('pi-skill')+gv('pi-license')+gv('pi-transport')+gv('pi-meal')+gv('pi-childcare')+gv('pi-research')+otPay+nightPay+holPay+_fixedOtPay+_fixedNightPay+_fixedHolPay+gv('pi-annual-pay')+gv('pi-bonus')+gv('pi-performance')+gv('pi-actual-expense')+gv('pi-communication')+gv('pi-fitness')+gv('pi-self-dev')+gv('pi-book')+gv('pi-overseas')+gv('pi-severance-interim')+_layoffPay+_maternityPay - _retroOverpaymentTotal - _retroHolidayOverpay + _customOrdSum + _customFixedGross + _etcGross;
   // ── 통상임금(보수월액) 계산 ──────────────────────────────────────────
   // · receipt(영수증 청구): 실비변상적 급여 → 전액 비과세 → std 제외
   // · daily(출근일수에 따름): 근로의 대가 → 과세 → std 포함
@@ -3374,7 +3374,8 @@ function calcPI(){
     +gv('pi-license')
     +otPay+nightPay+holPay+gv('pi-annual-pay')
     + _customOrdSum        // 통상임금 커스텀: 항상 과세 → std 포함
-    + _customFixedStd;      // 고정수당 커스텀: receipt 제외, daily+fixed 포함
+    + _customFixedStd       // 고정수당 커스텀: receipt 제외, daily+fixed 포함
+    + _etcStd;              // 기타수당: receipt 제외, daily 포함
   const curStd=gv('pi-std-pay');
   if(!curStd||curStd===0) setAmountVal('pi-std-pay', std);
   const isFixed = _getPIInsuranceBasis() === 'fixed_amount';
@@ -4157,6 +4158,79 @@ function _getPIFixedCustomValues(){
   return items;
 }
 
+// ── 기타수당 동적 항목 관리 ──
+let _piEtcAllowanceIdx = 0;
+
+function piAddEtcAllowanceItem(name = '', amount = '', payType = ''){
+  const container = document.getElementById('pi-etc-allowance-container');
+  if(!container) return;
+  const idx = _piEtcAllowanceIdx++;
+  const div = document.createElement('div');
+  div.className = 'pi-row pi-etc-row';
+  div.id = `pi-row-etc-${idx}`;
+  div.style.display = '';
+  div.innerHTML = `
+    <input type="text" id="pi-etc-name-${idx}" class="pi-etc-name-input"
+      placeholder="항목명" value="${name.replace(/"/g,'&quot;')}" maxlength="50"
+      style="flex:1;min-width:0;" />
+    <input type="text" inputmode="numeric" id="pi-etc-amount-${idx}" data-amount
+      oninput="onAmountInput(this,calcPI)" placeholder="금액" value="${amount}"
+      style="width:100px;" />
+    <select id="pi-etc-pt-${idx}" class="pi-etc-pt-select" style="width:auto;" onchange="calcPI()">
+      <option value="" ${!payType?'selected':''}>선택</option>
+      <option value="daily" ${payType==='daily'?'selected':''}>출근일수에 따름</option>
+      <option value="receipt" ${payType==='receipt'?'selected':''}>영수증 청구</option>
+    </select>
+    <button type="button" class="btn btn-sm btn-secondary" onclick="piRemoveEtcAllowanceItem(${idx})" title="삭제">
+      <i class="fas fa-trash-alt"></i>
+    </button>
+  `;
+  container.appendChild(div);
+}
+
+function piRemoveEtcAllowanceItem(idx){
+  const row = document.getElementById(`pi-row-etc-${idx}`);
+  if(row) row.remove();
+  calcPI();
+}
+
+function _getPIEtcAllowanceItems(){
+  const items = [];
+  for(let i = 0; i < _piEtcAllowanceIdx; i++){
+    const nameEl = document.getElementById(`pi-etc-name-${i}`);
+    const amtEl  = document.getElementById(`pi-etc-amount-${i}`);
+    const ptEl   = document.getElementById(`pi-etc-pt-${i}`);
+    const name = (nameEl?.value || '').trim();
+    if(!name) continue;
+    const amount = (() => { const v=(amtEl?.value||'').replace(/[^\d]/g,''); return parseInt(v)||0; })();
+    const payType = ptEl?.value || '';
+    items.push({ name, amount, pay_type: payType });
+  }
+  return items;
+}
+
+function _restorePIEtcAllowanceItems(items){
+  document.querySelectorAll('.pi-etc-row').forEach(r => r.remove());
+  _piEtcAllowanceIdx = 0;
+  if(Array.isArray(items)){
+    items.forEach(item => piAddEtcAllowanceItem(item.name || '', item.amount || '', item.pay_type || ''));
+  }
+}
+
+function _sumPIEtcAllowance(payTypeFilter){
+  let sum = 0;
+  for(let i = 0; i < _piEtcAllowanceIdx; i++){
+    const amtEl = document.getElementById(`pi-etc-amount-${i}`);
+    const ptEl  = document.getElementById(`pi-etc-pt-${i}`);
+    const amount = (() => { const v=(amtEl?.value||'').replace(/[^\d]/g,''); return parseInt(v)||0; })();
+    const pt = ptEl?.value || '';
+    if(payTypeFilter === 'all' || pt === payTypeFilter || (payTypeFilter === 'taxable' && pt !== 'receipt')){
+      sum += amount;
+    }
+  }
+  return sum;
+}
+
 /** 급여 수정 모드: 저장된 커스텀 항목 값 복원 */
 function _restorePICustomValues(p){
   if(!p) return;
@@ -4178,6 +4252,13 @@ function _restorePICustomValues(p){
         const amtEl = document.getElementById(`pi-custom-fixed-${i}`);
         if(amtEl && item.amount) amtEl.value = item.amount;
       });
+    }
+  } catch(e){}
+  // 기타수당 커스텀
+  try {
+    const etcVals = typeof p.etc_allowance_items === 'string' ? JSON.parse(p.etc_allowance_items) : (p.etc_allowance_items || []);
+    if(Array.isArray(etcVals) && etcVals.length > 0 && typeof _restorePIEtcAllowanceItems === 'function'){
+      _restorePIEtcAllowanceItems(etcVals);
     }
   } catch(e){}
 }

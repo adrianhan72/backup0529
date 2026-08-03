@@ -98,6 +98,7 @@ function _buildPIBody(){
     retro_earlyleave_data: document.getElementById('pi-retro-earlyleave-data')?.value || '[]',
     custom_ordinary_values: JSON.stringify(typeof _getPICustomOrdinaryValues === 'function' ? _getPICustomOrdinaryValues() : []),
     custom_fixed_values:    JSON.stringify(typeof _getPIFixedCustomValues === 'function' ? _getPIFixedCustomValues() : []),
+    etc_allowance_items:    JSON.stringify(typeof _getPIEtcAllowanceItems === 'function' ? _getPIEtcAllowanceItems() : []),
   };
 }
 
