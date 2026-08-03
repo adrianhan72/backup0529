@@ -3305,7 +3305,31 @@ function calcPI(){
   const _fixedOtPay    = _fixedCalc.otPay;
   const _fixedNightPay = _fixedCalc.nightPay;
   const _fixedHolPay   = _fixedCalc.holPay;
-  const gross=gv('pi-base')+gv('pi-weekly-hol')+gv('pi-site')+gv('pi-remote-area')+gv('pi-position')+gv('pi-skill')+gv('pi-license')+gv('pi-transport')+gv('pi-meal')+gv('pi-childcare')+gv('pi-research')+otPay+nightPay+holPay+_fixedOtPay+_fixedNightPay+_fixedHolPay+gv('pi-annual-pay')+gv('pi-bonus')+gv('pi-performance')+gv('pi-actual-expense')+gv('pi-communication')+gv('pi-fitness')+gv('pi-self-dev')+gv('pi-book')+gv('pi-overseas')+gv('pi-etc-allowance')+gv('pi-severance-interim')+_layoffPay+_maternityPay - _retroOverpaymentTotal - _retroHolidayOverpay;
+  // ── 커스텀 항목 합산 헬퍼 ──────────────────────────────────────────
+  const _sumCustomOrd = () => {
+    let sum = 0;
+    for (let i = 0; i < _piCustomOrdCount; i++) {
+      sum += gv(`pi-custom-ord-${i}`);
+    }
+    return sum;
+  };
+  const _sumCustomFixed = (payTypeFilter) => {
+    let sum = 0;
+    for (let i = 0; i < _piCustomFixedCount; i++) {
+      const amt = gv(`pi-custom-fixed-${i}`);
+      const el = document.getElementById(`pi-custom-fixed-${i}`);
+      const pt = el?.dataset?.paytype || 'fixed';
+      if (payTypeFilter === 'all' || pt === payTypeFilter || (payTypeFilter === 'taxable' && pt !== 'receipt')) {
+        sum += amt;
+      }
+    }
+    return sum;
+  };
+  const _customOrdSum = _sumCustomOrd();
+  const _customFixedGross = _sumCustomFixed('all');
+  const _customFixedStd = _sumCustomFixed('taxable'); // receipt 제외, daily+fixed 포함
+
+  const gross=gv('pi-base')+gv('pi-weekly-hol')+gv('pi-site')+gv('pi-remote-area')+gv('pi-position')+gv('pi-skill')+gv('pi-license')+gv('pi-transport')+gv('pi-meal')+gv('pi-childcare')+gv('pi-research')+otPay+nightPay+holPay+_fixedOtPay+_fixedNightPay+_fixedHolPay+gv('pi-annual-pay')+gv('pi-bonus')+gv('pi-performance')+gv('pi-actual-expense')+gv('pi-communication')+gv('pi-fitness')+gv('pi-self-dev')+gv('pi-book')+gv('pi-overseas')+gv('pi-etc-allowance')+gv('pi-severance-interim')+_layoffPay+_maternityPay - _retroOverpaymentTotal - _retroHolidayOverpay + _customOrdSum + _customFixedGross;
   // ── 통상임금(보수월액) 계산 ──────────────────────────────────────────
   // · receipt(영수증 청구): 실비변상적 급여 → 전액 비과세 → std 제외
   // · daily(출근일수에 따름): 근로의 대가 → 과세 → std 포함
@@ -3348,7 +3372,9 @@ function calcPI(){
     +(_notReceipt('overseas')      ? gv('pi-overseas')      : 0)
     +gv('pi-skill')
     +gv('pi-license')
-    +otPay+nightPay+holPay+gv('pi-annual-pay');
+    +otPay+nightPay+holPay+gv('pi-annual-pay')
+    + _customOrdSum        // 통상임금 커스텀: 항상 과세 → std 포함
+    + _customFixedStd;      // 고정수당 커스텀: receipt 제외, daily+fixed 포함
   const curStd=gv('pi-std-pay');
   if(!curStd||curStd===0) setAmountVal('pi-std-pay', std);
   const isFixed = _getPIInsuranceBasis() === 'fixed_amount';
@@ -3367,7 +3393,7 @@ function calcPIManual(){
   const gross=gv('pi-base')+gv('pi-weekly-hol')+gv('pi-site')+gv('pi-remote-area')+gv('pi-position')+gv('pi-skill')+gv('pi-license')
              +gv('pi-transport')+gv('pi-meal')+gv('pi-childcare')+gv('pi-research')+gv('pi-fitness')+gv('pi-self-dev')+gv('pi-book')+gv('pi-overseas')
              +otPay+nightPay+holPay
-             +gv('pi-annual-pay')+gv('pi-bonus')+gv('pi-performance')+gv('pi-actual-expense')+gv('pi-communication')+gv('pi-severance-interim')+gv('pi-etc-allowance')+_layoffPay+_maternityPay - _retroOverpaymentTotal - _retroHolidayOverpay;
+             +gv('pi-annual-pay')+gv('pi-bonus')+gv('pi-performance')+gv('pi-actual-expense')+gv('pi-communication')+gv('pi-severance-interim')+gv('pi-etc-allowance')+_layoffPay+_maternityPay - _retroOverpaymentTotal - _retroHolidayOverpay + _sumCustomOrd() + _sumCustomFixed('all');
   const isFixed = _getPIInsuranceBasis() === 'fixed_amount';
   if(isFixed) calcPIFixed(gross);
   else calcPIDeductions(gross);
