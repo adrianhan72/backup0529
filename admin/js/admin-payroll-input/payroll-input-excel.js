@@ -437,6 +437,8 @@ function _fillPayrollFields(p, cfgCo){
   }
   // 4대보험 적용 기준 UI 전환 (수정 모드 진입 시 명시적 재적용)
   _switchInsuranceModeUI();
+  // ── 커스텀 항목 값 복원 ──
+  _restorePICustomValues(p);
   // 근로 실적 자동산출 패널 (수정 모드: 기존 근로일수가 있을 때 패널 표시)
   (function(){
     const wp = document.getElementById('pi-work-auto-panel');

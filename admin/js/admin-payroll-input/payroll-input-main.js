@@ -3981,6 +3981,12 @@ function applyPIAllowanceConfig(cfg){
     const container = document.getElementById(_PI_CUSTOM_ORD_CONTAINER);
     if(container){ container.style.display = 'none'; container.querySelectorAll('.pi-custom-ord-row').forEach(r => r.remove()); }
   }
+  // ③ 사용자 정의 고정수당 항목 렌더링 (일용직 제외)
+  if(!isPI_Daily) _renderPIFixedCustomRows(cfg);
+  else {
+    const container = document.getElementById(_PI_CUSTOM_FIXED_CONTAINER);
+    if(container){ container.style.display = 'none'; container.querySelectorAll('.pi-custom-fixed-row').forEach(r => r.remove()); }
+  }
 }
 
 // ── 급여 입력: 사용자 정의 통상임금 항목 ──
@@ -4029,6 +4035,82 @@ function _getPICustomOrdinaryValues(){
     if(name) items.push({ name, amount });
   }
   return items;
+}
+
+// ── 급여 입력: 사용자 정의 고정수당 항목 ──
+const _PI_CUSTOM_FIXED_CONTAINER = 'pi-custom-fixed-container';
+let _piCustomFixedCount = 0;
+
+function _renderPIFixedCustomRows(cfg){
+  let container = document.getElementById(_PI_CUSTOM_FIXED_CONTAINER);
+  if(!container){
+    const ordContainer = document.getElementById(_PI_CUSTOM_ORD_CONTAINER);
+    if(!ordContainer) return;
+    container = document.createElement('div');
+    container.id = _PI_CUSTOM_FIXED_CONTAINER;
+    ordContainer.parentNode.insertBefore(container, ordContainer.nextSibling);
+  }
+  container.querySelectorAll('.pi-custom-fixed-row').forEach(r => r.remove());
+  _piCustomFixedCount = 0;
+
+  const items = (cfg && Array.isArray(cfg._custom_fixed)) ? cfg._custom_fixed : [];
+  if(!items.length){ container.style.display = 'none'; return; }
+  container.style.display = '';
+
+  items.forEach(item => {
+    if(!item || !item.name || !item.checked) return;
+    const idx = _piCustomFixedCount++;
+    const div = document.createElement('div');
+    div.className = 'pi-row pi-custom-fixed-row';
+    div.id = `pi-row-custom-fixed-${idx}`;
+    div.style.display = '';
+    const payType = item.pay_type || 'fixed';
+    div.innerHTML = `
+      <label>${item.name.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</label>
+      <input type="text" inputmode="numeric" id="pi-custom-fixed-${idx}" data-amount
+        oninput="onAmountInput(this,calcPI)" data-paytype="${payType}" />
+    `;
+    container.appendChild(div);
+  });
+}
+
+/** 급여 입력 → 커스텀 고정수당 값 수집 */
+function _getPIFixedCustomValues(){
+  const items = [];
+  for(let i = 0; i < _piCustomFixedCount; i++){
+    const nameEl = document.querySelector(`#pi-row-custom-fixed-${i} label`);
+    const amtEl  = document.getElementById(`pi-custom-fixed-${i}`);
+    const name = nameEl ? nameEl.textContent.trim() : '';
+    const amount = (() => { const v=(amtEl?.value||'').replace(/[^\d]/g,''); return parseInt(v)||0; })();
+    const payType = amtEl?.dataset?.paytype || 'fixed';
+    if(name) items.push({ name, amount, pay_type: payType });
+  }
+  return items;
+}
+
+/** 급여 수정 모드: 저장된 커스텀 항목 값 복원 */
+function _restorePICustomValues(p){
+  if(!p) return;
+  // 통상임금 커스텀
+  try {
+    const ordVals = typeof p.custom_ordinary_values === 'string' ? JSON.parse(p.custom_ordinary_values) : (p.custom_ordinary_values || []);
+    if(Array.isArray(ordVals)){
+      ordVals.forEach((item, i) => {
+        const amtEl = document.getElementById(`pi-custom-ord-${i}`);
+        if(amtEl && item.amount) amtEl.value = item.amount;
+      });
+    }
+  } catch(e){}
+  // 고정수당 커스텀
+  try {
+    const fixedVals = typeof p.custom_fixed_values === 'string' ? JSON.parse(p.custom_fixed_values) : (p.custom_fixed_values || []);
+    if(Array.isArray(fixedVals)){
+      fixedVals.forEach((item, i) => {
+        const amtEl = document.getElementById(`pi-custom-fixed-${i}`);
+        if(amtEl && item.amount) amtEl.value = item.amount;
+      });
+    }
+  } catch(e){}
 }
 
 /**

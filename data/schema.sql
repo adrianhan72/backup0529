@@ -437,7 +437,9 @@ CREATE TABLE IF NOT EXISTS payrolls (
   retro_absent_dates TEXT DEFAULT '', --  -- 소급 결근일자 (CSV)
   retro_absent_data TEXT DEFAULT '[]', --  -- 소급 결근 상세 (JSON)
   retro_late_data TEXT DEFAULT '[]', --  -- 소급 지각 상세 (JSON)
-  retro_earlyleave_data TEXT DEFAULT '[]' --  -- 소급 조퇴 상세 (JSON)
+  retro_earlyleave_data TEXT DEFAULT '[]', --  -- 소급 조퇴 상세 (JSON)
+  custom_ordinary_values TEXT DEFAULT NULL, --  -- 통상임금 사용자 정의 항목 값 (JSON)
+  custom_fixed_values TEXT DEFAULT NULL --  -- 고정수당 사용자 정의 항목 값 (JSON)
 );
 
 CREATE INDEX IF NOT EXISTS idx_payrolls_employee ON payrolls(employee_id);

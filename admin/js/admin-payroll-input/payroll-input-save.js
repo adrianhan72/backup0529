@@ -96,6 +96,8 @@ function _buildPIBody(){
     retro_absent_data:  document.getElementById('pi-retro-absent-data')?.value || '[]',
     retro_late_data:    document.getElementById('pi-retro-late-data')?.value || '[]',
     retro_earlyleave_data: document.getElementById('pi-retro-earlyleave-data')?.value || '[]',
+    custom_ordinary_values: JSON.stringify(typeof _getPICustomOrdinaryValues === 'function' ? _getPICustomOrdinaryValues() : []),
+    custom_fixed_values:    JSON.stringify(typeof _getPIFixedCustomValues === 'function' ? _getPIFixedCustomValues() : []),
   };
 }
 
