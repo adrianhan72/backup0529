@@ -524,7 +524,7 @@ async function savePI(){
     // ── [연동] Payroll → Ledger: 급여 저장 후 관리대장 해당 월 자동 갱신 ──
     await _syncPayrollToLedger(empId, yr, mo, body.annual_leave_used || 0);
     // 임금대장 완성 여부 체크
-    await _checkWageLedgerComplete(coId, yr, mo);
+    await _checkWageLedgerComplete(coId, yr, mo, empId);
     // 고객사 인앱 알림 발송 (급여 수정 완료)
     {
       const _piCo  = allCompanies.find(x => x.id === coId) || {};
@@ -581,7 +581,7 @@ async function savePI(){
     // ── [연동] Payroll → Ledger: 급여 저장 후 관리대장 해당 월 자동 갱신 ──
     await _syncPayrollToLedger(empId, yr, mo, body.annual_leave_used || 0);
     // 임금대장 완성 여부 체크
-    await _checkWageLedgerComplete(coId, yr, mo);
+    await _checkWageLedgerComplete(coId, yr, mo, empId);
     // 고객사 인앱 알림 발송 (급여 입력 완료 — 개별 건)
     {
       const _piCo  = allCompanies.find(x => x.id === coId) || {};
@@ -1052,7 +1052,7 @@ async function savePISplit(){
     _setPIInputLocked(false);
 
     // 임금대장 완성 여부 체크
-    await _checkWageLedgerComplete(coId, yr, mo);
+    await _checkWageLedgerComplete(coId, yr, mo, empId);
 
   } catch(e){
     console.error('[savePISplit]', e);

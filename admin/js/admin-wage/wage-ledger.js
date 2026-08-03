@@ -95,7 +95,7 @@ function _updateWLMenuBadge(){
 }
 
 // ── 급여 전체 입력 완료 여부 확인 → 알림 생성 ──
-async function _checkWageLedgerComplete(companyId, year, month){
+async function _checkWageLedgerComplete(companyId, year, month, changedEmpId = null){
   // 열람 대상 월의 첫날·말일
   const mStart = new Date(year, month - 1, 1).toISOString().slice(0,10);
   const mEnd   = new Date(year, month, 0).toISOString().slice(0,10);
@@ -139,10 +139,27 @@ async function _checkWageLedgerComplete(companyId, year, month){
   if(alreadyExists){
     // 이미 존재하면 갱신: is_read=false, is_renewed=1, updated_at 갱신
     _wlExistingId = alreadyExists.id;
+    // changedEmpId가 있으면 updated_employees에 추가
+    let updEmps = [];
+    try {
+      const existingUpd = alreadyExists.updated_employees;
+      updEmps = existingUpd ? (typeof existingUpd === 'string' ? JSON.parse(existingUpd) : existingUpd) : [];
+    } catch(e){ updEmps = []; }
+    if(changedEmpId){
+      const emp = allEmployees.find(e => e.id === changedEmpId);
+      if(emp){
+        updEmps.push({ empId: changedEmpId, name: emp.name || '', updatedAt: new Date().toISOString() });
+        // 최대 20개까지만 유지
+        if(updEmps.length > 20) updEmps = updEmps.slice(-20);
+      }
+    }
     await api(`../tables/wage_ledger_notifications/${alreadyExists.id}`,{
       method:'PATCH',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({is_read:false, is_renewed:1, updated_at:Date.now()})
+      body:JSON.stringify({
+        is_read:false, is_renewed:1, updated_at:Date.now(),
+        updated_employees: JSON.stringify(updEmps)
+      })
     });
   } else {
     // 신규 알림 생성
@@ -502,6 +519,33 @@ function _setWLFilterReady(ready){
       </div>`;
     }
   }
+}
+
+// ── 임금대장 갱신 정보 배너 (관리자 화면) ──
+function _wlRenewalBanner(yr, mo){
+  if(!_wlCompanyId) return '';
+  const notif = allWLNotifications.find(n =>
+    n.company_id === _wlCompanyId &&
+    (Number(n.pay_year)===yr || Number(n.year)===yr) &&
+    (Number(n.pay_month)===mo || Number(n.month)===mo)
+  );
+  if(!notif || !(Number(notif.is_renewed) === 1)) return '';
+
+  let updEmps = [];
+  try {
+    const raw = notif.updated_employees;
+    updEmps = raw ? (typeof raw === 'string' ? JSON.parse(raw) : raw) : [];
+  } catch(e){ updEmps = []; }
+
+  const updatedAt = notif.updated_at
+    ? new Date(Number(notif.updated_at)).toLocaleString('ko-KR', {year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'})
+    : '';
+  const empNames = updEmps.map(e => e.name).filter(Boolean).join(', ');
+
+  return `<div style="display:flex;align-items:center;gap:8px;padding:6px 16px;background:#fef3c7;border-bottom:1px solid #fcd34d;font-size:11px;color:#92400e;">
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:1px 7px;font-size:10px;font-weight:700;">갱신됨</span>
+    <span>${updatedAt}${empNames ? ' · ' + empNames + ' 급여 정정' : ''}</span>
+  </div>`;
 }
 
 function renderWageLedger(){
@@ -1102,6 +1146,7 @@ function renderWageLedger(){
     <div style="padding:10px 16px 6px;font-size:12px;color:#6b7280;">
       ${_wlCompanyName} &nbsp;·&nbsp; ${yr}년 ${mo}월 임금대장 &nbsp;·&nbsp; 총 <strong style="color:#1a1a2e;">${pays.length}명</strong>
     </div>
+    ${_wlRenewalBanner(yr, mo)}
     <div class="wl-ledger-wrap">
       <table class="wl-ledger-tbl">${CG}
         ${thead}
