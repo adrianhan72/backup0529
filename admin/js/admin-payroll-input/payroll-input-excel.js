@@ -1848,6 +1848,59 @@ async function confirmBulkUpload(){
   if(!_uploadParsed||!_uploadParsed.validRows.length) return;
   const {validRows,year,month,co}=_uploadParsed;
   const confirmBtn=document.getElementById('upload-confirm-btn');
+
+  // ── 기존 급여 데이터와의 덮어쓰기 비교 확인 ──
+  const existingPayrolls = allPayrolls.filter(p =>
+    !p.is_draft && p.company_id === co.id &&
+    Number(p.pay_year) === year && Number(p.pay_month) === month
+  );
+  const willOverwrite = validRows.filter(r => {
+    return existingPayrolls.some(p => p.employee_id === r.emp.id);
+  });
+
+  if (willOverwrite.length > 0) {
+    const empMap = {};
+    allEmployees.forEach(e => { empMap[e.id] = e; });
+
+    let diffHtml = '';
+    const fmt = v => (v || 0).toLocaleString('ko-KR') + '원';
+    for (const r of willOverwrite) {
+      const old = existingPayrolls.find(p => p.employee_id === r.emp.id);
+      if (!old) continue;
+      const name = r.emp.name || (empMap[r.emp.id]?.name) || '-';
+      const changes = [];
+      if (Math.abs((old.base_salary || 0) - (r.base || 0)) > 1) changes.push(`기본급: ${fmt(old.base_salary)} → ${fmt(r.base)}`);
+      if (Math.abs((old.gross_pay || 0) - (r.gross || 0)) > 1) changes.push(`지급합계: ${fmt(old.gross_pay)} → ${fmt(r.gross)}`);
+      if (Math.abs((old.net_pay || 0) - (r.netPay || 0)) > 1) changes.push(`실수령액: ${fmt(old.net_pay)} → ${fmt(r.netPay)}`);
+      if (Math.abs((old.total_deduction || 0) - (r.totalDed || 0)) > 1) changes.push(`공제합계: ${fmt(old.total_deduction)} → ${fmt(r.totalDed)}`);
+
+      if (changes.length > 0) {
+        diffHtml += `<div style="padding:6px 0;border-bottom:1px solid #fde68a;">
+          <strong>${name}</strong>
+          <div style="font-size:11px;color:#92400e;padding-left:8px;">${changes.join('<br>')}</div>
+        </div>`;
+      }
+    }
+
+    if (diffHtml) {
+      const confirmed = await _showConfirm({
+        message: [
+          `<div style="font-size:13px;margin-bottom:8px;">⚠️ <b>${willOverwrite.length}명</b>의 기존 급여 데이터를 덮어씁니다.</div>`,
+          `<div style="max-height:200px;overflow-y:auto;font-size:12px;color:#78350f;">${diffHtml}</div>`,
+          `<div style="margin-top:8px;font-size:12px;color:#64748b;">계속하시겠습니까?</div>`
+        ].join(''),
+        okText: '덮어쓰기',
+        cancelText: '취소',
+        okClass: 'btn-warning'
+      });
+      if (!confirmed) {
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = '<i class="fas fa-database"></i> 일괄 저장 실행';
+        return;
+      }
+    }
+  }
+
   confirmBtn.disabled=true;
   confirmBtn.innerHTML='<i class="fas fa-spinner fa-spin"></i> 저장 중...';
 

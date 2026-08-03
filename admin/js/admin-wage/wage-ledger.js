@@ -136,9 +136,11 @@ async function _checkWageLedgerComplete(companyId, year, month, changedEmpId = n
     n.company_id === companyId && Number(n.pay_year)===year && Number(n.pay_month)===month
   );
   let _wlExistingId = null;
+  let _wlIsRenewal = false;
   if(alreadyExists){
-    // 이미 존재하면 갱신: is_read=false, is_renewed=1, updated_at 갱신
+    // 이미 존재하면 갱신
     _wlExistingId = alreadyExists.id;
+    _wlIsRenewal = true;
     // changedEmpId가 있으면 updated_employees에 추가
     let updEmps = [];
     try {
@@ -265,6 +267,36 @@ async function _checkWageLedgerComplete(companyId, year, month, changedEmpId = n
       });
     } catch (e) {
       console.warn('[임금대장] 알림 발송 실패 (무시됨):', e.message);
+    }
+
+    // ── 갱신된 경우: wage_ledger_renewed 알림 별도 발송 ──
+    if (_wlIsRenewal) {
+      try {
+        await _sendCompanyNotice({
+          companyId, companyName: _wlCo.company_name || '',
+          noticeType: 'wage_ledger_renewed',
+          title: `[임금대장 갱신] ${_wlCo.company_name || ''} — ${year}년 ${month}월 임금대장이 갱신되었습니다`,
+          body: [
+            `안녕하세요${_coRep}.`,
+            '',
+            `${year}년 ${month}월 임금대장이 급여 정정으로 인해 갱신되었습니다.`,
+            '갱신된 임금대장 PDF를 아래 링크에서 확인하실 수 있습니다.',
+            '',
+            `📎 갱신된 임금대장 보기: ${wlFullUrl || '(링크 생성 중...)'}`,
+            '',
+            '⚠️ 아직 근로계약이 등록되지 않은 직원의 급여 명세서는 별도로 발행되어 해당 근로자에게 개별 발송되며, 이 임금대장에서는 제외되어 있습니다.'
+          ].join('\n'),
+          extraData: {
+            ruleVars: {
+              '{급여년도}': String(year),
+              '{급여월}': String(month),
+              '{임금대장링크}': wlFullUrl
+            }
+          }
+        });
+      } catch (e) {
+        console.warn('[임금대장] 갱신 알림 발송 실패 (무시됨):', e.message);
+      }
     }
   }
 }
