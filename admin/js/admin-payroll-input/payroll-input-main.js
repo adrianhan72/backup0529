@@ -3306,8 +3306,11 @@ function calcPI(){
   const _fixedNightPay = _fixedCalc.nightPay;
   const _fixedHolPay   = _fixedCalc.holPay;
   const gross=gv('pi-base')+gv('pi-weekly-hol')+gv('pi-site')+gv('pi-remote-area')+gv('pi-position')+gv('pi-skill')+gv('pi-license')+gv('pi-transport')+gv('pi-meal')+gv('pi-childcare')+gv('pi-research')+otPay+nightPay+holPay+_fixedOtPay+_fixedNightPay+_fixedHolPay+gv('pi-annual-pay')+gv('pi-bonus')+gv('pi-performance')+gv('pi-actual-expense')+gv('pi-communication')+gv('pi-fitness')+gv('pi-self-dev')+gv('pi-book')+gv('pi-overseas')+gv('pi-etc-allowance')+gv('pi-severance-interim')+_layoffPay+_maternityPay - _retroOverpaymentTotal - _retroHolidayOverpay;
-  // 통상임금 기준: 매월 정기지급 항목만 포함 (출근일수에 따름은 제외)
-  // 단, 비과세 항목(childcare/car/meal/research)은 fixed 여부와 관계없이 월 20만원 한도로 포함
+  // ── 통상임금(보수월액) 계산 ──────────────────────────────────────────
+  // · receipt(영수증 청구): 실비변상적 급여 → 전액 비과세 → std 제외
+  // · daily(출근일수에 따름): 근로의 대가 → 과세 → std 포함
+  // · fixed(매월 정기지급): 근로의 대가 → 과세 → std 포함
+  // · 비과세 항목(car/meal/research/childcare): fixed/daily 여부 관계없이 월 20만원 한도
   const _TAX_EXEMPT_CAP = 200000;
   const _piTaxCfg = (() => {
     const co = allCompanies.find(c => c.id === currentGlobalCompanyId);
@@ -3315,11 +3318,22 @@ function calcPI(){
     const cfg = co.allowance_config;
     return typeof cfg === 'string' ? (() => { try { return JSON.parse(cfg); } catch(e) { return {}; } })() : cfg;
   })();
+  // pay_type map: field name → piPayTypes key
+  const _ptMap = { car:'transport', meal:'meal', research:'research', childcare:'childcare' };
   const _teVal = (field) => {
     const _idMap = { car:'transport', remote_area:'remote-area' };
     const amt = gv(`pi-${_idMap[field] || field}`);
+    // receipt(영수증 청구) → 실비변상 전액 비과세 → std 0
+    const ptKey = _ptMap[field];
+    if (ptKey && _getPIPayTypeVal(ptKey) === 'receipt') return 0;
+    // 비과세 항목: 20만원 한도 적용
     if (_piTaxCfg[`${field}_tax_exempt`]) return Math.min(amt, _TAX_EXEMPT_CAP);
     return amt; // 비과세 미설정 시 전액 포함 (통상임금이므로)
+  };
+  // receipt 제외(daily 포함) 여부 체크 헬퍼
+  const _notReceipt = (ptKey) => {
+    const pt = _getPIPayTypeVal(ptKey);
+    return pt !== 'receipt' && pt !== ''; // receipt는 제외, 미선택도 제외
   };
   const std=gv('pi-base')+gv('pi-weekly-hol')+gv('pi-site')+gv('pi-position')
     + _teVal('car')
@@ -3327,11 +3341,11 @@ function calcPI(){
     + _teVal('research')
     + _teVal('childcare')
     + _teVal('remote_area')
-    +(_getPIPayTypeVal('communication')==='fixed'?gv('pi-communication'):0)
-    +(_getPIPayTypeVal('fitness')==='fixed'    ?gv('pi-fitness')    :0)
-    +(_getPIPayTypeVal('self_dev')==='fixed'   ?gv('pi-self-dev')   :0)
-    +(_getPIPayTypeVal('book')==='fixed'       ?gv('pi-book')       :0)
-    +(_getPIPayTypeVal('overseas')==='fixed'   ?gv('pi-overseas')   :0)
+    +(_notReceipt('communication') ? gv('pi-communication') : 0)
+    +(_notReceipt('fitness')       ? gv('pi-fitness')       : 0)
+    +(_notReceipt('self_dev')      ? gv('pi-self-dev')      : 0)
+    +(_notReceipt('book')          ? gv('pi-book')          : 0)
+    +(_notReceipt('overseas')      ? gv('pi-overseas')      : 0)
     +gv('pi-skill')
     +gv('pi-license')
     +otPay+nightPay+holPay+gv('pi-annual-pay');
