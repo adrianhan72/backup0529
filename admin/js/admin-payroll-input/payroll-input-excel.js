@@ -1854,39 +1854,64 @@ async function confirmBulkUpload(){
     !p.is_draft && p.company_id === co.id &&
     Number(p.pay_year) === year && Number(p.pay_month) === month
   );
-  const willOverwrite = validRows.filter(r => {
-    return existingPayrolls.some(p => p.employee_id === r.emp.id);
-  });
+  const existingEmpIds = new Set(existingPayrolls.map(p => p.employee_id));
+  const empMap = {};
+  allEmployees.forEach(e => { empMap[e.id] = e; });
+  const fmt = v => (v || 0).toLocaleString('ko-KR') + '원';
 
-  if (willOverwrite.length > 0) {
-    const empMap = {};
-    allEmployees.forEach(e => { empMap[e.id] = e; });
+  // 동일 내용(스킵), 다른 내용(덮어쓰기 확인), 신규(그냥 저장) 분류
+  const identicalRows = [];  // 완전 동일 → 제외
+  const diffRows = [];       // 차이 있음 → 확인 후 덮어쓰기
+  const skipEmpIds = new Set();
 
-    let diffHtml = '';
-    const fmt = v => (v || 0).toLocaleString('ko-KR') + '원';
-    for (const r of willOverwrite) {
+  if (existingPayrolls.length > 0) {
+    for (const r of validRows) {
+      if (!existingEmpIds.has(r.emp.id)) continue;
       const old = existingPayrolls.find(p => p.employee_id === r.emp.id);
       if (!old) continue;
-      const name = r.emp.name || (empMap[r.emp.id]?.name) || '-';
-      const changes = [];
-      if (Math.abs((old.base_salary || 0) - (r.base || 0)) > 1) changes.push(`기본급: ${fmt(old.base_salary)} → ${fmt(r.base)}`);
-      if (Math.abs((old.gross_pay || 0) - (r.gross || 0)) > 1) changes.push(`지급합계: ${fmt(old.gross_pay)} → ${fmt(r.gross)}`);
-      if (Math.abs((old.net_pay || 0) - (r.netPay || 0)) > 1) changes.push(`실수령액: ${fmt(old.net_pay)} → ${fmt(r.netPay)}`);
-      if (Math.abs((old.total_deduction || 0) - (r.totalDed || 0)) > 1) changes.push(`공제합계: ${fmt(old.total_deduction)} → ${fmt(r.totalDed)}`);
 
-      if (changes.length > 0) {
+      // 핵심 필드 비교 (금액 차이가 1원 이하면 동일로 간주)
+      const isIdentical =
+        Math.abs((old.base_salary || 0) - (r.base || 0)) <= 1 &&
+        Math.abs((old.gross_pay || 0) - (r.gross || 0)) <= 1 &&
+        Math.abs((old.net_pay || 0) - (r.netPay || 0)) <= 1 &&
+        Math.abs((old.total_deduction || 0) - (r.totalDed || 0)) <= 1;
+
+      if (isIdentical) {
+        identicalRows.push(r);
+        skipEmpIds.add(r.emp.id);
+      } else {
+        const name = r.emp.name || (empMap[r.emp.id]?.name) || '-';
+        const changes = [];
+        if (Math.abs((old.base_salary || 0) - (r.base || 0)) > 1) changes.push(`기본급: ${fmt(old.base_salary)} → ${fmt(r.base)}`);
+        if (Math.abs((old.gross_pay || 0) - (r.gross || 0)) > 1) changes.push(`지급합계: ${fmt(old.gross_pay)} → ${fmt(r.gross)}`);
+        if (Math.abs((old.net_pay || 0) - (r.netPay || 0)) > 1) changes.push(`실수령액: ${fmt(old.net_pay)} → ${fmt(r.netPay)}`);
+        if (Math.abs((old.total_deduction || 0) - (r.totalDed || 0)) > 1) changes.push(`공제합계: ${fmt(old.total_deduction)} → ${fmt(r.totalDed)}`);
+        diffRows.push({ row: r, name, changes });
+      }
+    }
+  }
+
+  // 다른 내용이 있을 때만 덮어쓰기 확인
+  if (diffRows.length > 0) {
+    let diffHtml = '';
+    for (const d of diffRows) {
+      if (d.changes.length > 0) {
         diffHtml += `<div style="padding:6px 0;border-bottom:1px solid #fde68a;">
-          <strong>${name}</strong>
-          <div style="font-size:11px;color:#92400e;padding-left:8px;">${changes.join('<br>')}</div>
+          <strong>${d.name}</strong>
+          <div style="font-size:11px;color:#92400e;padding-left:8px;">${d.changes.join('<br>')}</div>
         </div>`;
       }
     }
-
     if (diffHtml) {
+      const identicalNote = identicalRows.length > 0
+        ? `<div style="font-size:11px;color:#6b7280;margin-top:6px;">ℹ️ ${identicalRows.map(r=>r.emp.name).join(', ')} 외 ${identicalRows.length}명은 이미 동일 내용으로 저장되어 있어 덮어쓰기 대상에서 제외됩니다.</div>`
+        : '';
       const confirmed = await _showConfirm({
         message: [
-          `<div style="font-size:13px;margin-bottom:8px;">⚠️ <b>${willOverwrite.length}명</b>의 기존 급여 데이터를 덮어씁니다.</div>`,
+          `<div style="font-size:13px;margin-bottom:8px;">⚠️ <b>${diffRows.length}명</b>의 기존 급여 데이터와 차이가 있어 덮어씁니다.</div>`,
           `<div style="max-height:200px;overflow-y:auto;font-size:12px;color:#78350f;">${diffHtml}</div>`,
+          identicalNote,
           `<div style="margin-top:8px;font-size:12px;color:#64748b;">계속하시겠습니까?</div>`
         ].join(''),
         okText: '덮어쓰기',
@@ -1904,10 +1929,14 @@ async function confirmBulkUpload(){
   confirmBtn.disabled=true;
   confirmBtn.innerHTML='<i class="fas fa-spinner fa-spin"></i> 저장 중...';
 
-  let saved=0,skipped=0,overwritten=0;
+  let saved=0,skipped=0,overwritten=0,identicalSkipped=identicalRows.length;
   for(const r of validRows){
     try{
-      // 중복 체크 (임시저장 제외)
+      // 동일 내용이면 건너뛰기
+      if(skipEmpIds.has(r.emp.id)){
+        continue;
+      }
+      // 중복 체크 (임시저장 제외) → 기존 건 삭제 후 재저장
       const dup=allPayrolls.find(p=>!p.is_draft&&p.employee_id===r.emp.id&&p.pay_year===year&&p.pay_month===month);
       if(dup){
         await api(`../tables/payrolls/${dup.id}`,{method:'DELETE'});
@@ -1968,9 +1997,15 @@ async function confirmBulkUpload(){
   _uploadParsed=null;
   document.getElementById('upload-file-name').textContent='';
 
-  const msg=overwritten>0
+  let msg = overwritten>0
     ?`✅ ${saved}명 급여 저장 완료 (덮어쓰기 ${overwritten}건${skipped?` / 실패 ${skipped}건`:''})`
     :`✅ ${saved}명 급여 저장 완료${skipped?` / 실패 ${skipped}건`:''}`;
+
+  // 동일 내용으로 제외된 직원 안내
+  if(identicalSkipped > 0){
+    const names = identicalRows.map(r => r.emp.name).join(', ');
+    msg += `\n\nℹ️ 다음 직원들은 이미 동일한 내용으로 급여입력이 완료되어 급여명세서가 발행되어 있어서 등록에서 제외합니다.\n→ ${names}`;
+  }
   toast(msg,'success');
   confirmBtn.disabled=false;
   confirmBtn.innerHTML='<i class="fas fa-database"></i> 일괄 저장 실행';
