@@ -24,12 +24,25 @@ function renderPayrolls(){
   const tb=document.getElementById('pay-tbody');
   if(!f.length){tb.innerHTML='<tr><td colspan="12" class="cen-empty"><i class="fas fa-inbox"></i> 급여 내역이 없습니다</td></tr>';document.getElementById('pay-pagination').innerHTML='';return;}
   tb.innerHTML=paged.map(p=>{
-    // 매월지급 소계: 기본급 + 주휴수당 + 자격수당 + 차량유지비 + 식대
-    const monthlyTotal = (p.base_salary||0)+(p.weekly_holiday_pay||0)+(p.position_allowance||0)+(p.car_maintenance||0)+(p.meal_allowance||0);
-    // 추가근로수당 소계: 연장 + 야간 + 휴일
+    // ── 커스텀 항목 합산 ──
+    const _sumCustomOrd = (() => { try { const v=typeof p.custom_ordinary_values==='string'?JSON.parse(p.custom_ordinary_values):(p.custom_ordinary_values||[]); return (Array.isArray(v)?v:[]).reduce((s,x)=>s+(x.amount||0),0); } catch(e) { return 0; } })();
+    const _sumCustomFixed = (() => { try { const v=typeof p.custom_fixed_values==='string'?JSON.parse(p.custom_fixed_values):(p.custom_fixed_values||[]); return (Array.isArray(v)?v:[]).reduce((s,x)=>s+(x.amount||0),0); } catch(e) { return 0; } })();
+    const _sumEtcItems = (() => { try { const v=typeof p.etc_allowance_items==='string'?JSON.parse(p.etc_allowance_items):(p.etc_allowance_items||[]); return (Array.isArray(v)?v:[]).reduce((s,x)=>s+(x.amount||0),0); } catch(e) { return 0; } })();
+    // 매월지급 소계: 통상임금 + 고정수당
+    const monthlyTotal = (p.base_salary||0)+(p.weekly_holiday_pay||0)+(p.position_allowance||0)
+      +(p.site_allowance||0)+(p.skill_allowance||0)+(p.license_allowance||0)
+      +(p.hazard_allowance||0)+(p.remote_area_allowance||0)
+      +(p.transportation_allowance||p.car_maintenance||0)+(p.meal_allowance||0)
+      +(p.regular_bonus||0)+(p.childcare_allowance||0)+(p.research_allowance||0)
+      +(_sumCustomOrd||0);
+    // 추가근로수당 소계
     const extraTotal = (p.overtime_pay||0)+(p.night_pay||0)+(p.holiday_pay||0);
-    // 부정기지급 소계: 연차 + 기타
-    const irregularTotal = (p.annual_leave_pay||0)+(p.other_pay||0);
+    // 비정기지급 소계
+    const irregularTotal = (p.annual_leave_pay||0)+(p.bonus_pay||0)+(p.performance_pay||0)
+      +(p.actual_expense_pay||0)+(p.communication_pay||0)+(p.fitness_allowance||0)
+      +(p.self_dev_allowance||0)+(p.book_allowance||0)+(p.overseas_allowance||0)
+      +(p.severance_interim_pay||0)+(p.etc_allowance||0)+(p.other_pay||0)
+      +(_sumCustomFixed||0)+(_sumEtcItems||0);
     const payEmp = allEmployees.find(x=>x.id===p.employee_id)||{};
     const payCat = payEmp.employment_category||'-';
     return `<tr class="pay-tbody-row" onclick="openPayslipModal('${p.id}')" title="클릭하면 급여명세서를 볼 수 있습니다">
