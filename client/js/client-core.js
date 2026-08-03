@@ -1,6 +1,7 @@
 // ══ STATE ══
 let currentCompany = null;
 let allEmployees = [], allPayrolls = [], allContracts = [], allBillings = [];
+let _wlNotifications = []; // 임금대장 알림 (파일 경로 포함)
 let _clientSevTab = 'history'; // severance tab state
 let statsYear    = new Date().getFullYear();
 let statsMonth   = new Date().getMonth() + 1;
@@ -131,17 +132,19 @@ function logout(){
 
 // ══ DATA ══
 async function loadData(){
-  const [er,pr,cr,br] = await Promise.all([
+  const [er,pr,cr,br,wr] = await Promise.all([
     fetch('../tables/employees?limit=300'),
     fetch('../tables/payrolls?limit=1000'),
     fetch('../tables/contracts?limit=300'),
     fetch('../tables/billings?limit=200'),
+    fetch('../tables/wage_ledger_notifications?limit=100'),
   ]);
-  const [ed,pd,cd,bd] = await Promise.all([er.json(),pr.json(),cr.json(),br.json()]);
+  const [ed,pd,cd,bd,wd] = await Promise.all([er.json(),pr.json(),cr.json(),br.json(),wr.json()]);
   allEmployees = (ed.data||[]).filter(e => e.company_id === currentCompany.id);
   allPayrolls  = (pd.data||[]).filter(p => p.company_id === currentCompany.id);
   allContracts = (cd.data||[]).filter(c => c.company_id === currentCompany.id);
   allBillings  = (bd.data||[]).filter(b => b.company_id === currentCompany.id);
+  _wlNotifications = (wd.data||[]).filter(n => n.company_id === currentCompany.id);
 }
 
 

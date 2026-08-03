@@ -144,6 +144,45 @@ module.exports = function(db, ROOT) {
     res.send(pwPageHTML(type));
   });
 
+  // ── 임금대장 HTML 열람 (고객사 앱 접근코드 검증) ──
+  router.get('/view-wage-ledger/:companyId/:year/:month', (req, res) => {
+    const { companyId, year, month } = req.params;
+    const accessCode = (req.query.code || '').trim();
+
+    if (!accessCode) {
+      return res.status(403).send(`
+        <!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>접근 제한</title>
+        <style>body{font-family:sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f8fafc;color:#64748b;text-align:center}</style>
+        </head><body><div><h2>🔒 접근이 제한된 문서입니다</h2><p>고객사 앱에서 로그인 후 접근해 주세요.</p></div></body></html>`);
+    }
+
+    try {
+      const company = db.companies.findByAccessCode(accessCode);
+      if (!company || company.id !== companyId) {
+        return res.status(403).send('<h2>🔒 접근 권한이 없습니다</h2>');
+      }
+    } catch (e) {
+      return res.status(403).send('<h2>🔒 인증 오류</h2>');
+    }
+
+    // wage_ledger_notifications에서 파일 경로 조회
+    const notif = db.get(
+      'SELECT * FROM wage_ledger_notifications WHERE company_id = ? AND year = ? AND month = ? LIMIT 1',
+      [companyId, Number(year), Number(month)]
+    );
+    if (!notif || !notif.file_html_path) {
+      return res.status(404).send('<h2>📋 아직 생성된 임금대장이 없습니다</h2>');
+    }
+
+    const filePath = path.join(ROOT, notif.file_html_path.replace(/^\//, ''));
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).send('<h2>📋 임금대장 파일을 찾을 수 없습니다</h2>');
+    }
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.sendFile(filePath);
+  });
+
   // PDF 접근 검증
   router.post('/verify-pdf-access', (req, res) => {
     try {

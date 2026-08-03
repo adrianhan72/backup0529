@@ -360,6 +360,9 @@ function renderStats(){
     renderDistChart(pays);
     renderTrendChart();
   });
+
+  // 임금대장 보기 버튼 상태 업데이트
+  _updateWageLedgerButton();
 }
 
 // ─ 분포 차트 ─
@@ -816,3 +819,50 @@ const PS_CAT_COLOR = Object.freeze({
 });
 
 // ── 1단계 대분류 탭 선택 ──
+// ─── 임금대장 보기 버튼 ───
+function _updateWageLedgerButton(){
+  const btn = document.getElementById("wl-view-btn");
+  const badge = document.getElementById("wl-renewed-badge");
+  if(!btn) return;
+
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
+
+  const wl = (_wlNotifications || []).find(n =>
+    (Number(n.year)===year || Number(n.pay_year)===year) &&
+    (Number(n.month)===month || Number(n.pay_month)===month)
+  );
+
+  if(wl && wl.file_html_path){
+    btn.disabled = false;
+    btn.title = "클릭하여 신고용 임금대장 PDF 보기";
+    btn.style.background = "#3b82f6";
+    btn.style.color = "#fff";
+    if(wl.is_renewed && Number(wl.is_renewed) === 1){
+      if(badge) badge.style.display = "inline-block";
+    } else {
+      if(badge) badge.style.display = "none";
+    }
+    btn.setAttribute("data-wl-url", wl.file_html_path);
+  } else {
+    btn.disabled = true;
+    btn.title = "아직 임금대장이 생성되지 않았습니다";
+    btn.style.background = "#f3f4f6";
+    btn.style.color = "#d1d5db";
+    if(badge) badge.style.display = "none";
+    btn.removeAttribute("data-wl-url");
+  }
+}
+
+function openWageLedgerFromClient(){
+  const btn = document.getElementById("wl-view-btn");
+  if(!btn || btn.disabled) return;
+  const accessCode = currentCompany?.access_code || "";
+  if(!accessCode) return;
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
+  const fullUrl = window.location.origin + "/view-wage-ledger/" + currentCompany.id + "/" + year + "/" + month + "?code=" + encodeURIComponent(accessCode);
+  window.open(fullUrl, "_blank");
+}

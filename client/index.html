@@ -197,6 +197,12 @@
           <div class="chart-title">📊 이달 급여 현황</div>
           <div class="chart-sub">인원별 / 부서별 / 직급별</div>
         </div>
+        <div style="position:relative;">
+          <button id="wl-view-btn" class="wl-view-btn" disabled onclick="openWageLedgerFromClient()" title="아직 임금대장이 생성되지 않았습니다">
+            📋 임금대장 보기
+          </button>
+          <span id="wl-renewed-badge" class="wl-renewed-badge" style="display:none;">갱신됨</span>
+        </div>
       </div>
       <div class="dist-tab-row">
         <button class="dist-tab-btn active" onclick="switchDistTab('emp',this)">인원별</button>

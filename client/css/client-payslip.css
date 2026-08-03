@@ -148,6 +148,12 @@
     .chart-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;gap:8px}
     .chart-badge{font-size:10.5px;padding:3px 8px;border-radius:20px;font-weight:600;white-space:nowrap;flex-shrink:0}
 
+    /* ─ 임금대장 보기 버튼 ─ */
+    .wl-view-btn{padding:6px 14px;border:1.5px solid #3b82f6;border-radius:20px;background:#fff;color:#3b82f6;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .15s}
+    .wl-view-btn:hover:not(:disabled){background:#3b82f6;color:#fff}
+    .wl-view-btn:disabled{background:#f3f4f6;color:#d1d5db;border-color:#e5e7eb;cursor:not-allowed}
+    .wl-renewed-badge{position:absolute;top:-6px;right:-6px;background:#ef4444;color:#fff;font-size:9px;font-weight:700;padding:1px 7px;border-radius:10px;white-space:nowrap}
+
     /* ─ Dist tab ─ */
     .dist-tab-row{display:flex;gap:0;background:#f3f4f6;border-radius:8px;padding:3px;margin-bottom:10px}
     .dist-tab-btn{flex:1;padding:6px 8px;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;background:transparent;color:#6b7280;transition:all .15s;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
