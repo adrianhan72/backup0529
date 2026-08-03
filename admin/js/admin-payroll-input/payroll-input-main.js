@@ -3328,6 +3328,8 @@ function calcPI(){
   const _customOrdSum = _sumCustomOrd();
   const _customFixedGross = _sumCustomFixed('all');
   const _customFixedStd = _sumCustomFixed('taxable'); // receipt 제외, daily+fixed 포함
+  const _etcGross = _sumPIEtcAllowance('all');
+  const _etcStd = _sumPIEtcAllowance('taxable'); // receipt 제외
 
   const gross=gv('pi-base')+gv('pi-weekly-hol')+gv('pi-site')+gv('pi-remote-area')+gv('pi-position')+gv('pi-skill')+gv('pi-license')+gv('pi-transport')+gv('pi-meal')+gv('pi-childcare')+gv('pi-research')+otPay+nightPay+holPay+_fixedOtPay+_fixedNightPay+_fixedHolPay+gv('pi-annual-pay')+gv('pi-bonus')+gv('pi-performance')+gv('pi-actual-expense')+gv('pi-communication')+gv('pi-fitness')+gv('pi-self-dev')+gv('pi-book')+gv('pi-overseas')+gv('pi-severance-interim')+_layoffPay+_maternityPay - _retroOverpaymentTotal - _retroHolidayOverpay + _customOrdSum + _customFixedGross + _etcGross;
   // ── 통상임금(보수월액) 계산 ──────────────────────────────────────────
@@ -4171,12 +4173,10 @@ function piAddEtcAllowanceItem(name = '', amount = '', payType = ''){
   div.style.display = '';
   div.innerHTML = `
     <input type="text" id="pi-etc-name-${idx}" class="pi-etc-name-input"
-      placeholder="항목명" value="${name.replace(/"/g,'&quot;')}" maxlength="50"
-      style="flex:1;min-width:0;" />
+      placeholder="항목명" value="${name.replace(/"/g,'&quot;')}" maxlength="50" />
     <input type="text" inputmode="numeric" id="pi-etc-amount-${idx}" data-amount
-      oninput="onAmountInput(this,calcPI)" placeholder="금액" value="${amount}"
-      style="width:100px;" />
-    <select id="pi-etc-pt-${idx}" class="pi-etc-pt-select" style="width:auto;" onchange="calcPI()">
+      oninput="onAmountInput(this,calcPI)" placeholder="금액" value="${amount}" />
+    <select id="pi-etc-pt-${idx}" class="pi-etc-pt-select" onchange="calcPI()">
       <option value="" ${!payType?'selected':''}>선택</option>
       <option value="daily" ${payType==='daily'?'selected':''}>출근일수에 따름</option>
       <option value="receipt" ${payType==='receipt'?'selected':''}>영수증 청구</option>
