@@ -1089,6 +1089,31 @@ function validateAndParseExcel(wb, fileName){
         if((parseFloat(ct.other_allowance)||0) > 0){
           fixedChecks.push([otherPay, parseFloat(ct.other_allowance)||0, '기타수당', 0]);
         }
+        // 12개 개별 수당 항목 (근로계약에 금액이 명시된 경우에만 검사)
+        const allowanceChecks = [
+          [row.research_allowance??0,     parseFloat(ct.research_allowance)||0,     '연구활동비'],
+          [row.childcare_allowance??0,    parseFloat(ct.childcare_allowance)||0,    '보육수당'],
+          [row.communication_pay??0,      parseFloat(ct.communication_pay)||0,      '통신비'],
+          [row.skill_allowance??0,        parseFloat(ct.skill_allowance)||0,        '기술수당'],
+          [row.license_allowance??0,      parseFloat(ct.license_allowance)||0,      '면허수당'],
+          [row.site_allowance??0,         parseFloat(ct.site_allowance)||0,         '현장수당'],
+          [row.hazard_allowance??0,       parseFloat(ct.hazard_allowance)||0,       '위험수당'],
+          [row.remote_area_allowance??0,  parseFloat(ct.remote_area_allowance)||0,  '벽지수당'],
+          [row.fitness_allowance??0,      parseFloat(ct.fitness_allowance)||0,      '체력증진비'],
+          [row.self_dev_allowance??0,     parseFloat(ct.self_dev_allowance)||0,     '자기계발비'],
+          [row.book_allowance??0,         parseFloat(ct.book_allowance)||0,         '도서지원비'],
+          [row.overseas_allowance??0,     parseFloat(ct.overseas_allowance)||0,     '해외근무수당'],
+        ];
+        allowanceChecks.forEach(([xlVal, ctVal, label]) => {
+          if(ctVal === 0) return;
+          if(Math.abs(xlVal - ctVal) > 0){
+            fixedErrors.push({
+              row: cardRowLabel, colName: label, empName: xn,
+              input: xlVal, contract: ctVal, diff: xlVal - ctVal,
+              desc: `근로계약서 기준: ${fmt(ctVal)}원 / 엑셀 입력값: ${fmt(xlVal)}원 (차이: ${fmt(xlVal-ctVal)}원)`
+            });
+          }
+        });
         fixedChecks.forEach(([xlVal, ctVal, label, tol]) => {
           if(ctVal === 0) return; // 계약서 미입력 항목은 건너뜀
           if(Math.abs(xlVal - ctVal) > tol){
@@ -1325,6 +1350,18 @@ function validateAndParseExcel(wb, fileName){
       '영수액(실수령)': ['영수액(실수령)','영수액','실수령액','실수령'],
       '지급일':         ['지급일','급여지급일'],
       '비고':           ['비고','메모','노트'],
+      '연구활동비':     ['연구활동비','연구비'],
+      '보육수당':       ['보육수당'],
+      '통신비':         ['통신비'],
+      '기술수당':       ['기술수당'],
+      '면허수당':       ['면허수당'],
+      '현장수당':       ['현장수당'],
+      '위험수당':       ['위험수당'],
+      '벽지수당':       ['벽지수당'],
+      '체력증진비':     ['체력증진비'],
+      '자기계발비':     ['자기계발비'],
+      '도서지원비':     ['도서지원비'],
+      '해외근무수당':   ['해외근무수당'],
     };
     const targets = aliases[name] || [name];
     for(let i=0; i<headerRow.length; i++){
@@ -1367,6 +1404,18 @@ function validateAndParseExcel(wb, fileName){
     NET_PAY:   colIdx('영수액(실수령)'),
     PAY_DATE:  colIdx('지급일'),
     NOTE:      colIdx('비고'),
+    RESEARCH:     colIdx('연구활동비'),
+    CHILDCARE:    colIdx('보육수당'),
+    COMMUNICATION:colIdx('통신비'),
+    SKILL:        colIdx('기술수당'),
+    LICENSE:      colIdx('면허수당'),
+    SITE:         colIdx('현장수당'),
+    HAZARD:       colIdx('위험수당'),
+    REMOTE_AREA:  colIdx('벽지수당'),
+    FITNESS:      colIdx('체력증진비'),
+    SELF_DEV:     colIdx('자기계발비'),
+    BOOK:         colIdx('도서지원비'),
+    OVERSEAS:     colIdx('해외근무수당'),
   };
 
   // 필수 열 누락 검증
@@ -1503,6 +1552,31 @@ function validateAndParseExcel(wb, fileName){
       if((parseFloat(ct.other_allowance)||0)>0){
         fixedChecks.push([otherPay, parseFloat(ct.other_allowance)||0, '기타수당', 0]);
       }
+      // 12개 개별 수당 항목 (근로계약에 금액이 명시된 경우에만 검사, 테이블형은 컬럼 선택적)
+      const tblAllowanceChecks = [
+        [n(CI.RESEARCH),     parseFloat(ct.research_allowance)||0,     '연구활동비'],
+        [n(CI.CHILDCARE),    parseFloat(ct.childcare_allowance)||0,    '보육수당'],
+        [n(CI.COMMUNICATION),parseFloat(ct.communication_pay)||0,      '통신비'],
+        [n(CI.SKILL),        parseFloat(ct.skill_allowance)||0,        '기술수당'],
+        [n(CI.LICENSE),      parseFloat(ct.license_allowance)||0,      '면허수당'],
+        [n(CI.SITE),         parseFloat(ct.site_allowance)||0,         '현장수당'],
+        [n(CI.HAZARD),       parseFloat(ct.hazard_allowance)||0,       '위험수당'],
+        [n(CI.REMOTE_AREA),  parseFloat(ct.remote_area_allowance)||0,  '벽지수당'],
+        [n(CI.FITNESS),      parseFloat(ct.fitness_allowance)||0,      '체력증진비'],
+        [n(CI.SELF_DEV),     parseFloat(ct.self_dev_allowance)||0,     '자기계발비'],
+        [n(CI.BOOK),         parseFloat(ct.book_allowance)||0,         '도서지원비'],
+        [n(CI.OVERSEAS),     parseFloat(ct.overseas_allowance)||0,     '해외근무수당'],
+      ];
+      tblAllowanceChecks.forEach(([xlVal, ctVal, label]) => {
+        if(ctVal === 0) return;
+        if(Math.abs(xlVal - ctVal) > 0){
+          fixedErrors.push({
+            row: excelRow, colName: label, empName,
+            input: xlVal, contract: ctVal, diff: xlVal - ctVal,
+            desc: `근로계약서 기준: ${fmt(ctVal)}원 / 엑셀 입력값: ${fmt(xlVal)}원 (차이: ${fmt(xlVal-ctVal)}원)`
+          });
+        }
+      });
 
       fixedChecks.forEach(([xlVal, ctVal, label, tol]) => {
         // 계약서에 0으로 되어 있으면 미입력으로 보고 건너뜀 (엑셀에 값이 있어도 허용)
