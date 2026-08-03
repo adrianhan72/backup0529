@@ -176,7 +176,7 @@
        좌측 ?�스???�백 = ?�측 ?�살???�백 = 8px
        ?�외: cm-aw-pt-select, pi-pay-type-select
     ?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═ */
-    select:not(.cm-aw-pt-select):not(.pi-pay-type-select):not(.filt-select) {
+    select:not(.cm-aw-pt-select):not(.pi-pay-type-select):not(.filt-select):not(.pi-etc-pt-select) {
       border: 1px solid #d1d5db;
       border-radius: 7px;
       height: 36px;
@@ -195,10 +195,10 @@
       -webkit-appearance: none;
       -moz-appearance: none;
     }
-    select:not(.cm-aw-pt-select):not(.pi-pay-type-select):not(.filt-select):hover {
+    select:not(.cm-aw-pt-select):not(.pi-pay-type-select):not(.filt-select):not(.pi-etc-pt-select):hover {
       border-color: #9ca3af;
     }
-    select:not(.cm-aw-pt-select):not(.pi-pay-type-select):not(.filt-select):focus {
+    select:not(.cm-aw-pt-select):not(.pi-pay-type-select):not(.filt-select):not(.pi-etc-pt-select):focus {
       border-color: #6366f1;
       outline: none;
       box-shadow: 0 0 0 2px rgba(99,102,241,.25);
