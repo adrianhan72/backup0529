@@ -73,6 +73,173 @@ module.exports = function(db, ROOT) {
     }
   });
 
+  // ─── POST /api/generate-payslip-pdfs ───
+  // 당월 급여 데이터 기준으로 직원별 급여명세서 HTML 생성 및 저장
+  router.post('/generate-payslip-pdfs', (req, res) => {
+    try {
+      const { companyId, year, month } = req.body;
+      if (!companyId || !year || !month) {
+        return res.status(400).json({ error: 'companyId, year, month required' });
+      }
+
+      const pays = db.all(
+        'SELECT * FROM payrolls WHERE company_id = ? AND pay_year = ? AND pay_month = ? AND is_draft = 0',
+        [companyId, year, month]
+      );
+      if (!pays.length) return res.status(404).json({ error: 'No payroll data' });
+
+      const co = db.companies.findById(companyId);
+      const empMap = {};
+      db.all('SELECT * FROM employees WHERE company_id = ?', [companyId])
+        .forEach(e => { empMap[e.id] = e; });
+
+      const payslipDir = path.join(ROOT, 'data', 'generated', 'payslips');
+      fs.mkdirSync(payslipDir, { recursive: true });
+
+      const generated = [];
+      for (const p of pays) {
+        const emp = empMap[p.employee_id] || {};
+        const html = _generatePayslipHtml(p, emp, co);
+        const filePath = path.join(payslipDir, `${p.id}.html`);
+        fs.writeFileSync(filePath, html, 'utf8');
+        generated.push({
+          payrollId: p.id,
+          employeeName: emp.name || '-',
+          htmlUrl: `/generated/payslips/${p.id}.html`
+        });
+      }
+
+      console.log(`[급여명세서] ${generated.length}명 생성 완료`);
+      res.json({ ok: true, count: generated.length, files: generated });
+    } catch (err) {
+      console.error('[급여명세서 생성 오류]', err.message);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ═══════════════════════════════════════════════════════════════
+  // 급여명세서 HTML 생성 (개인별, 인쇄 최적화)
+  // ═══════════════════════════════════════════════════════════════
+  function _generatePayslipHtml(p, emp, co) {
+    const moStr = String(p.pay_month).padStart(2, '0');
+    const fmt = v => (v === null || v === undefined || v === 0) ? '0원' : Number(v).toLocaleString('ko-KR') + '원';
+    const fmtZ = v => (!v || Number(v) === 0) ? '-' : Number(v).toLocaleString('ko-KR') + '원';
+    const payDate = p.pay_date || (co.pay_day ? `${p.pay_year}-${moStr}-${String(co.pay_day).padStart(2, '0')}` : '-');
+
+    const gross = p.gross_pay || 0;
+    const incTax = p.income_tax || 0;
+    const locTax = p.local_income_tax || 0;
+    const health = p.health_insurance || 0;
+    const ltCare = p.long_term_care || 0;
+    const pension = p.national_pension || 0;
+    const empIns = p.employment_insurance || 0;
+    const yearEnd = p.year_end_tax_adjust || 0;
+    const hlAdj = p.health_insurance_adjust || 0;
+    const advance = p.advance_deduction || 0;
+    const totalDed = p.total_deduction || (incTax + locTax + health + ltCare + pension + empIns + yearEnd + hlAdj + advance);
+    const netPay = p.net_pay || (gross - totalDed);
+
+    const makeRow = (label, val) => {
+      const isZero = !val || Number(val) === 0;
+      return `<tr class="${isZero ? 'zero' : ''}"><td class="lbl">${label}</td><td class="amt">${fmtZ(val)}</td></tr>`;
+    };
+
+    return `<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>급여명세서 - ${emp.name || ''} (${p.pay_year}년 ${moStr}월)</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Malgun Gothic','Noto Sans KR',sans-serif;color:#1e293b;max-width:700px;margin:0 auto;padding:30px 20px}
+  .header{text-align:center;border-bottom:2px solid #1a1a2e;padding-bottom:16px;margin-bottom:20px}
+  .header h1{font-size:20px;color:#1a1a2e;margin-bottom:4px}
+  .header .sub{font-size:12px;color:#64748b}
+  .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 24px;margin-bottom:20px;font-size:12px}
+  .info-grid .label{color:#64748b}
+  .info-grid .value{font-weight:600}
+  table{width:100%;border-collapse:collapse;margin-bottom:16px}
+  th.section{background:#dbeafe;color:#1d4ed8;font-size:11px;text-align:left;padding:6px 10px;border-radius:4px 4px 0 0}
+  td.lbl{font-size:11px;color:#64748b;padding:3px 10px;border-bottom:1px solid #f1f5f9;width:60%}
+  td.amt{font-size:11px;text-align:right;padding:3px 10px;border-bottom:1px solid #f1f5f9;width:40%}
+  tr.zero{display:none}
+  .totals{border-top:2px solid #1a1a2e;margin-top:8px;padding-top:8px}
+  .totals td{font-size:13px;font-weight:700;padding:4px 10px}
+  .totals .gross{color:#2563eb}
+  .totals .ded{color:#dc2626}
+  .totals .net{color:#059669}
+  .footer{text-align:center;font-size:10px;color:#94a3b8;margin-top:24px;border-top:1px solid #e5e7eb;padding-top:12px}
+  @media print{body{padding:10px 0}}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>급여명세서</h1>
+  <div class="sub">${co.company_name || ''} · ${p.pay_year}년 ${moStr}월분</div>
+</div>
+<div class="info-grid">
+  <div><span class="label">성명</span> <span class="value">${emp.name || '-'}</span></div>
+  <div><span class="label">부서/직급</span> <span class="value">${emp.department || '-'} / ${emp.position || '-'}</span></div>
+  <div><span class="label">근무일수</span> <span class="value">${p.work_days ? p.work_days + '일' : '-'}</span></div>
+  <div><span class="label">총근로시간</span> <span class="value">${p.total_work_hours ? p.total_work_hours + '시간' : '-'}</span></div>
+  <div><span class="label">연장/야간/휴일</span> <span class="value">${p.overtime_hours || 0}h / ${p.night_hours || 0}h / ${p.holiday_hours || 0}h</span></div>
+  <div><span class="label">지급일</span> <span class="value">${payDate}</span></div>
+</div>
+<table>
+  <thead><tr><th colspan="2" class="section">🟦 지급내역</th></tr></thead>
+  <tbody>
+    ${makeRow('기본급', p.base_salary)}
+    ${makeRow('주휴수당', p.weekly_holiday_pay)}
+    ${makeRow('직책수당', p.position_allowance)}
+    ${makeRow('식대', p.meal_allowance)}
+    ${makeRow('차량유지비', (p.self_driving_allowance || p.transportation_allowance || 0))}
+    ${makeRow('연구활동비', p.research_allowance)}
+    ${makeRow('보육수당', p.childcare_allowance)}
+    ${makeRow('연장근로수당', p.overtime_pay)}
+    ${makeRow('야간근로수당', p.night_pay)}
+    ${makeRow('휴일근로수당', p.holiday_pay)}
+    ${makeRow('연차수당', p.annual_leave_pay)}
+    ${makeRow('면허수당', p.license_allowance)}
+    ${makeRow('기술수당', p.skill_allowance)}
+    ${makeRow('통신비', p.communication_pay)}
+    ${makeRow('정기상여금', p.bonus_pay)}
+    ${makeRow('성과급', p.performance_pay)}
+    ${makeRow('실비변상적급여', p.actual_expense_pay)}
+    ${makeRow('현장수당', p.site_allowance)}
+    ${makeRow('위험수당', p.hazard_allowance)}
+    ${makeRow('벽지수당', p.remote_area_allowance)}
+    ${makeRow('체력증진비', p.fitness_allowance)}
+    ${makeRow('자기계발비', p.self_dev_allowance)}
+    ${makeRow('도서지원비', p.book_allowance)}
+    ${makeRow('해외근무수당', p.overseas_allowance)}
+    ${makeRow('기타수당', (p.etc_allowance || 0) + (p.other_pay || 0))}
+  </tbody>
+</table>
+<table>
+  <thead><tr><th colspan="2" class="section" style="background:#fee2e2;color:#b91c1c;">🟥 공제내역</th></tr></thead>
+  <tbody>
+    ${makeRow('소득세', incTax)}
+    ${makeRow('지방소득세', locTax)}
+    ${makeRow('건강보험', health)}
+    ${makeRow('장기요양보험', ltCare)}
+    ${makeRow('국민연금', pension)}
+    ${makeRow('고용보험', empIns)}
+    ${makeRow('연말정산', yearEnd)}
+    ${makeRow('건강보험정산', hlAdj)}
+    ${makeRow('기타공제', advance)}
+  </tbody>
+</table>
+<table class="totals">
+  <tr><td>지급합계</td><td class="gross" style="text-align:right">${fmt(gross)}</td></tr>
+  <tr><td>공제합계</td><td class="ded" style="text-align:right">${fmt(totalDed)}</td></tr>
+  <tr style="font-size:15px"><td>실수령액</td><td class="net" style="text-align:right">${fmt(netPay)}</td></tr>
+</table>
+<div class="footer">인사톡 노무톡 · 대화인사노무파트너스</div>
+</body>
+</html>`;
+  }
+
   // ═══════════════════════════════════════════════════════════════
   // Excel 생성 (신고용: 값 0인 항목 공란)
   // ═══════════════════════════════════════════════════════════════
