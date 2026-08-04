@@ -70,7 +70,7 @@ for (const ct of ctNulls) {
   const isDaily = type === '일용직';
   const baseSal = ct.base_salary > 0 ? ct.base_salary : (isDaily ? 2200000 : 2500000);
   const hw = ct.hourly_wage > 0 ? ct.hourly_wage : r(baseSal / monthlyStdH);
-  const weekly = isDaily ? 0 : r(hw * hpd * WEEKS);
+  const weekly = isDaily ? 0 : r(hw * r(hpd * WEEKS));  // 시급 × 월주휴시간(35h 전일제)
   const monthly = ct.monthly_salary_agreed > 0 ? ct.monthly_salary_agreed : r(baseSal + weekly);
   const annual = isDaily ? 0 : r(monthly * 12);
 

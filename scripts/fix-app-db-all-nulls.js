@@ -89,7 +89,7 @@ for (const ct of ctAll) {
     if (hw <= 0) hw = r(baseSal / monthlyStdH);
     if (monthly <= 0) monthly = baseSal;
   }
-  const weekly = isDaily ? 0 : r(hw * hpd * WEEKS);
+  const weekly = isDaily ? 0 : r(hw * r(hpd * WEEKS));  // 시급 × 월주휴시간(35h 전일제)
   const annual = isDaily ? 0 : r(monthly * 12);
 
   stmtCt.run(

@@ -974,9 +974,9 @@
         <div class="form-group">
           <label>앱 접근 코드</label>
           <div style="display:flex;align-items:center;gap:6px;">
-            <input type="text" id="cm-code-display" style="width:130px;letter-spacing:2px;" placeholder="접근 코드" readonly oninput="_onCmCodeInput()" />
-            <button type="button" id="cm-code-action-btn" onclick="_toggleCmCodeEdit()" class="btn btn-sm btn-warning" style="padding:4px 10px;font-size:11px;white-space:nowrap;"><i class="fas fa-pen"></i> 변경</button>
-            <button type="button" id="cm-code-cancel-btn" onclick="_cancelCmCodeEdit()" class="btn btn-sm btn-secondary" style="padding:4px 10px;font-size:11px;white-space:nowrap;display:none;"><i class="fas fa-times"></i> 취소</button>
+            <input type="text" id="cm-code-display" class="input-slim" style="width:130px;letter-spacing:2px;" placeholder="접근 코드" readonly oninput="_onCmCodeInput()" />
+            <button type="button" id="cm-code-action-btn" onclick="_toggleCmCodeEdit()" class="btn btn-sm btn-warning input-slim" style="padding:4px 10px;font-size:11px;white-space:nowrap;"><i class="fas fa-pen"></i> 변경</button>
+            <button type="button" id="cm-code-cancel-btn" onclick="_cancelCmCodeEdit()" class="btn btn-sm btn-secondary input-slim" style="padding:4px 10px;font-size:11px;white-space:nowrap;display:none;"><i class="fas fa-times"></i> 취소</button>
           </div>
           <div id="cm-code-msg" style="font-size:11px;margin-top:4px;"><i class="fas fa-info-circle"></i> 숫자+영문 대문자 혼합 6~8자리</div>
           <input type="hidden" id="cm-code" />
@@ -1028,6 +1028,19 @@
         <input type="hidden" id="cm-phone" />
         <input type="hidden" id="cm-email" />
 
+        <!-- ══ 담당자 정보 섹션 ══ -->
+        <div class="form-group full">
+          <div class="form-section-title" style="justify-content:space-between;">
+            <span>담당자 정보</span>
+            <button type="button" onclick="_cmAddContactRow()" class="btn btn-sm btn-warning"><i class="fas fa-plus"></i> 추가</button>
+          </div>
+          <div class="cm-allowance-section">
+            <div id="cm-contact-rows" style="margin-top:14px;">
+              <!-- 동적 생성: _cmContactRowHTML(idx) -->
+            </div>
+          </div>
+        </div>
+
         <!-- ══ 관리 기준 ══ -->
         <div class="form-group full">
           <span class="form-section-title">관리 기준</span>
@@ -1043,15 +1056,7 @@
             </select>
             <select id="cm-period-day" onchange="_cmPeriodCompose()" style="flex:0 0 auto;">
               <option value="">일 선택</option>
-              <option value="1">1일</option>
-              <option value="5">5일</option>
-              <option value="10">10일</option>
-              <option value="11">11일</option>
-              <option value="15">15일</option>
-              <option value="16">16일</option>
-              <option value="20">20일</option>
-              <option value="21">21일</option>
-              <option value="25">25일</option>
+              <option value="1">1일</option><option value="2">2일</option><option value="3">3일</option><option value="4">4일</option><option value="5">5일</option><option value="6">6일</option><option value="7">7일</option><option value="8">8일</option><option value="9">9일</option><option value="10">10일</option><option value="11">11일</option><option value="12">12일</option><option value="13">13일</option><option value="14">14일</option><option value="15">15일</option><option value="16">16일</option><option value="17">17일</option><option value="18">18일</option><option value="19">19일</option><option value="20">20일</option><option value="21">21일</option><option value="22">22일</option><option value="23">23일</option><option value="24">24일</option><option value="25">25일</option><option value="26">26일</option><option value="27">27일</option><option value="28">28일</option><option value="29">29일</option><option value="30">30일</option><option value="31">31일</option>
             </select>
             <span style="font-size:13px;color:#6b7280;font-weight:500;">부터 1개월간</span>
           </div>
@@ -1094,16 +1099,6 @@
           <span style="font-size:11px;color:#6b7280;">급여 일할 계산 시 기준일수를 선택합니다. 월 소정근로일수(평일) 또는 30일 고정 중 선택 가능합니다.</span>
         </div>
 
-        <!-- 휴업기간 설정 (Phase G5) -->
-        <div class="form-group full" id="cm-layoff-group">
-          <span class="form-section-title">휴업기간</span>
-          <div id="cm-layoff-history"></div>
-          <div id="cm-layoff-current" style="margin-top:8px;"></div>
-          <button type="button" id="cm-layoff-add-btn" class="btn-outline" style="display:none;margin-top:8px;font-size:12px;">
-            <i class="fas fa-plus"></i> 휴업기간 추가
-          </button>
-          <span style="font-size:11px;color:#6b7280;margin-top:4px;display:block;">휴업기간이 설정된 월의 급여 입력 시 휴업수당이 자동 계산됩니다. 과거 휴업기간은 수정할 수 없습니다.</span>
-        </div>
             </div>
           </div>
         </div>
@@ -1536,7 +1531,7 @@
 <!-- Contract -->
 <div class="modal-overlay" id="contract-modal">
   <div class="modal" style="max-width:720px;">
-    <div class="modal-header"><span class="modal-title" id="ct-title">근로계약서 추가</span><span id="ct-title-info" class="ct-title-info"></span><span id="ct-renew-link" style="margin-left:8px;display:none;"></span><button class="btn btn-close" onclick="closeModal('contract-modal')"><i class="fas fa-times"></i></button></div>
+    <div class="modal-header"><span class="modal-title" id="ct-title">근로계약서 추가</span><span id="ct-title-info" class="ct-title-info"></span><button class="btn btn-close" onclick="closeModal('contract-modal')"><i class="fas fa-times"></i></button></div>
     <!-- 등록 프로세스 단계 표시바 (작성 모드 전용) -->
     <div id="ct-step-bar" class="ct-step-bar" style="display:none;">
       <div class="ct-step active" id="ct-step-1"><div class="ct-step-num">1</div><span>계약 정보 입력</span></div>
@@ -1759,7 +1754,7 @@
               <div class="form-group full"><span class="form-section-title" style="font-size:11px;">인사 정보 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></span></div>
               <div class="form-group">
                 <label>사원번호 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
-                <input type="text" id="ct-edit-em-empno" placeholder="예: 0001" onblur="checkCtEditEmpNoUniqueness();_checkAmendBtnState();" autocomplete="off" />
+                <input type="text" id="ct-edit-em-empno" placeholder="예: 0001" readonly style="background:#f1f5f9;" />
                 <span id="ct-edit-empno-lock-hint" class="va-hint" style="color:#9ca3af;"></span>
                 <div id="ct-edit-em-empno-alert" class="va-hint"><span class="empno-alert-msg"></span></div>
               </div>
@@ -1931,9 +1926,8 @@
           </div>
         </div>
         <div class="form-group" id="ct-row-renewed-pair-end" style="display:none;">
-          <label>연결된 원본 계약 해지일 <span id="ct-renewed-pair-required" class="lbl-req" style="display:none;">*</span></label>
+          <label>연결된 직전 계약 해지일 <span id="ct-renewed-pair-required" class="lbl-req" style="display:none;">*</span></label>
           <input type="date" id="ct-renewed-pair-end" class="filt-date" oninput="_onRenewedPairEndChange()" />
-          <span id="ct-renewed-pair-hint" class="fld-hint" style="display:block;margin-top:2px;"></span>
         </div>
         <div class="form-group" id="ct-row-terminate" style="display:none;"><label style="color:#7c3aed;">계약 해지일</label><input type="date" id="ct-terminate-display" class="filt-date" readonly /></div>
         <div class="form-group" id="ct-row-voided" style="display:none;"><label style="color:#7c3aed;">계약 파기일</label><input type="text" id="ct-voided-display" readonly /></div>
@@ -2056,8 +2050,8 @@
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
             <select id="ct-pay-period-month" onchange="_ctPeriodCompose()" style="flex:0 0 auto;">
               <option value="">월 선택</option>
-              <option value="전월">전월</option>
-              <option value="당월">당월</option>
+              <option value="prev_month">전월</option>
+              <option value="current_month">당월</option>
             </select>
             <select id="ct-pay-period-day" onchange="_ctPeriodCompose()" style="flex:0 0 auto;">
               <option value="">일 선택</option>

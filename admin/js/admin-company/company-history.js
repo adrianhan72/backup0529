@@ -227,7 +227,7 @@ function cmAwAddCustomItem(name = ''){
     <label class="cm-aw-check-label" style="min-width:auto;">
       <input type="checkbox" id="cm-aw-custom-${idx}" class="cm-aw-cb" checked />
       <input type="text" id="cm-aw-custom-name-${idx}" class="cm-aw-custom-input"
-        placeholder="항목명 입력" value="${name.replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}" style="width:110px;" />
+        placeholder="항목명 입력" value="${name.replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}" style="width:165px;" />
     </label>
     <button type="button" class="cm-aw-custom-del" onclick="cmAwRemoveCustomItem(${idx})" title="삭제"><i class="fas fa-trash-alt"></i> 삭제</button>
   `;
@@ -265,7 +265,7 @@ function _cmAwRestoreCustomItems(items){
 let _cmAwFixedCustomIdx = 0;
 
 /** "+" 버튼 클릭 → 고정수당 커스텀 항목 추가 */
-function cmAwAddFixedCustomItem(name = '', payType = 'fixed'){
+function cmAwAddFixedCustomItem(name = '', payType = ''){
   const addRow = document.getElementById('cm-aw-fixed-add-row');
   if(!addRow) return;
   const idx = _cmAwFixedCustomIdx++;
@@ -273,12 +273,12 @@ function cmAwAddFixedCustomItem(name = '', payType = 'fixed'){
   div.className = 'cm-aw-row cm-aw-custom-row cm-aw-fixed-custom-row';
   div.id = `cm-aw-fixed-custom-row-${idx}`;
   div.innerHTML = `
-    <label class="cm-aw-check-label" style="min-width:auto;">
+    <label class="cm-aw-check-label" style="min-width:auto;flex:1;">
       <input type="checkbox" id="cm-aw-fixed-custom-${idx}" class="cm-aw-cb" checked onchange="cmAwToggleFixedCustomPayType(${idx},this.checked)" />
       <input type="text" id="cm-aw-fixed-custom-name-${idx}" class="cm-aw-custom-input"
-        placeholder="항목명 입력" value="${name.replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}" style="width:110px;" />
+        placeholder="항목명 입력" value="${name.replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}" style="flex:1;" />
     </label>
-    <select id="cm-aw-fixed-custom-pt-${idx}" class="cm-aw-pt-select" style="flex:1;min-width:0;" ${payType ? '' : 'disabled'}>
+    <select id="cm-aw-fixed-custom-pt-${idx}" class="cm-aw-pt-select">
       <option value="">고정수당 포함여부</option>
       <option value="fixed" ${payType==='fixed'?'selected':''}>매월 정기지급</option>
       <option value="daily" ${payType==='daily'?'selected':''}>출근일수에 따름</option>

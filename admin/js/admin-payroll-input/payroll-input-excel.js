@@ -1139,7 +1139,7 @@ function validateAndParseExcel(wb, fileName){
     const fullWeekHol = parseFloat(ct.weekly_holiday_pay) || 0;
     const dedWeekHol = Math.round(fullWeekHol / monthlyWeeks * missedWeeks);
 
-    // ③ 고정OT/야간/휴일 차감액 추정
+    // ③ 고정OT/야간/휴일 차감액 (일별 ≤8h/＞8h 정확 분기)
     let dedFixedOtP = 0, dedFixedNightP = 0, dedFixedHolP = 0;
     if (ct.schedule_json && hw > 0) {
       let sched;
@@ -1156,19 +1156,24 @@ function validateAndParseExcel(wb, fileName){
           }
         });
         const dayMap = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
-        let dedFOtH = 0, dedFNightH = 0, dedFHolH = 0;
+        const _hpdEx = parseFloat(ct.work_hours_per_day) || 8;
+        let dedOtH = 0, dedNightH = 0, dedHol8H = 0, dedHolOvrH = 0;
         allAbsentDates.forEach(ds => {
           const d = new Date(ds + 'T00:00:00');
           const dayKey = dayMap[d.getDay()];
           const daySched = sched.find(s => s.day === dayKey && (s.active === true || s.active === 1));
           if (!daySched) return;
-          dedFOtH += parseFloat(daySched.ot_hours) || 0;
-          dedFNightH += parseFloat(daySched.night_hours) || 0;
-          dedFHolH += parseFloat(daySched.holiday_hours) || 0;
+          const _dh = typeof _calcDayFixedHours === 'function'
+            ? _calcDayFixedHours(daySched, _hpdEx) : { otH:0, nightH:0, holH8:0, holHOvr:0 };
+          dedOtH    += _dh.otH;
+          dedNightH += _dh.nightH;
+          dedHol8H  += _dh.holH8;
+          dedHolOvrH+= _dh.holHOvr;
         });
-        dedFixedOtP = Math.round(dedFOtH * hw * 1.5);
-        dedFixedNightP = Math.round(dedFNightH * hw * 0.5);
-        dedFixedHolP = Math.round(dedFHolH * hw * 1.5);
+        // 연장 150%, 야간 50%, 휴일 ≤8h 150% / ＞8h 200%
+        dedFixedOtP    = Math.round(dedOtH     * hw * 1.5);
+        dedFixedNightP = Math.round(dedNightH  * hw * 0.5);
+        dedFixedHolP   = Math.round(dedHol8H   * hw * 1.5 + dedHolOvrH * hw * 2.0);
       }
     }
 
@@ -1515,29 +1520,14 @@ function validateAndParseExcel(wb, fileName){
 
     // ──────────────────────────────────────
     //  [A-1.8] 휴업수당 검증 (G5)
-    //  근태 시트에서 휴업휴직일수 파싱 + 고객사 휴업기간 교차 검증
+    //  근태 시트에서 휴업휴직일수 파싱 → 통상임금 기준 예상 수당 계산
     //  휴업수당 = 통상임금(시급×소정근로시간) × 휴업일수 × 70%
     // ──────────────────────────────────────
     const layoffInfo = layoffInfoByEmpId[emp.id];
     if (layoffInfo && layoffInfo.days > 0) {
       const expectedLayoffPay = Math.round(layoffInfo.dailyWage * layoffInfo.days * 0.7);
 
-      // ① 고객사 휴업기간 확인
-      let coLayoffPeriods = [];
-      try {
-        const raw = co?.layoff_periods;
-        coLayoffPeriods = typeof raw === 'string' ? JSON.parse(raw) : (Array.isArray(raw) ? raw : []);
-      } catch(e) {}
-      const payMonthStart = `${targetYear}-${String(targetMonth).padStart(2,'0')}-01`;
-      const lastDay = new Date(targetYear, targetMonth, 0).getDate();
-      const payMonthEnd = `${targetYear}-${String(targetMonth).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
-      const matchingPeriod = coLayoffPeriods.find(p => p.start <= payMonthEnd && p.end >= payMonthStart);
-
-      if (!matchingPeriod) {
-        warnings.push(`⚠️ ${empName}: 휴업휴직 ${layoffInfo.days}일이 있으나 고객사 정보에 ${targetYear}년 ${targetMonth}월을 포함하는 휴업기간이 등록되어 있지 않습니다. 먼저 고객사 정보에 휴업기간을 등록하신 후 다시 업로드해주세요.`);
-      }
-
-      // ② 휴업수당 값 찾기: 전용 열 > customOrdValues > customFixedValues > otherPay 추정
+      // 휴업수당 값 찾기: 전용 열 > customOrdValues > customFixedValues > otherPay 추정
       let excelLayoffPay = layoffPayCol > 0 ? layoffPayCol : 0;
       if (excelLayoffPay === 0) {
         excelLayoffPay = customOrdValues['휴업수당'] || customFixedValues['휴업수당'] || 0;
@@ -1546,35 +1536,21 @@ function validateAndParseExcel(wb, fileName){
 
       if (excelLayoffPay === 0) {
         if (otherPayBase > 0 && expectedLayoffPay > 0) {
-          warnings.push(`⚡ ${empName}: 휴업휴직 ${layoffInfo.days}일 — 예상 휴업수당 ${won(expectedLayoffPay)}원 (통상임금 ${won(layoffInfo.dailyWage)}×${layoffInfo.days}일×70%). 기타수당(${won(otherPayBase)})에 포함 여부 확인이 필요합니다.${matchingPeriod ? ' (고객사 휴업기간: '+matchingPeriod.start+'~'+matchingPeriod.end+')' : ''}`);
+          warnings.push(`⚡ ${empName}: 휴업휴직 ${layoffInfo.days}일 — 예상 휴업수당 ${won(expectedLayoffPay)}원 (통상임금 ${won(layoffInfo.dailyWage)}×${layoffInfo.days}일×70%). 기타수당(${won(otherPayBase)})에 포함 여부 확인이 필요합니다.`);
         } else if (expectedLayoffPay > 0) {
-          warnings.push(`⚠️ ${empName}: 휴업휴직 ${layoffInfo.days}일 — 예상 휴업수당 ${won(expectedLayoffPay)}원이나 엑셀에 휴업수당 항목이 없습니다. 누락 확인이 필요합니다.${matchingPeriod ? ' (고객사 휴업기간: '+matchingPeriod.start+'~'+matchingPeriod.end+')' : ''}`);
+          warnings.push(`⚠️ ${empName}: 휴업휴직 ${layoffInfo.days}일 — 예상 휴업수당 ${won(expectedLayoffPay)}원이나 엑셀에 휴업수당 항목이 없습니다. 누락 확인이 필요합니다.`);
         }
       } else if (expectedLayoffPay > 0) {
         const diffPct = Math.abs(excelLayoffPay - expectedLayoffPay) / expectedLayoffPay;
         if (diffPct > 0.2) {
-          const periodInfo = matchingPeriod ? ` (고객사 휴업기간: ${matchingPeriod.start}~${matchingPeriod.end})` : '';
-          warnings.push(`⚡ ${empName}: 휴업수당 불일치 의심 — 예상 ${won(expectedLayoffPay)}원 (통상임금 ${won(layoffInfo.dailyWage)}×${layoffInfo.days}일×70%) / 엑셀 ${layoffSource} ${won(excelLayoffPay)}원 (차이 ${Math.round(diffPct*100)}%)${periodInfo}`);
+          warnings.push(`⚡ ${empName}: 휴업수당 불일치 의심 — 예상 ${won(expectedLayoffPay)}원 (통상임금 ${won(layoffInfo.dailyWage)}×${layoffInfo.days}일×70%) / 엑셀 ${layoffSource} ${won(excelLayoffPay)}원 (차이 ${Math.round(diffPct*100)}%)`);
         }
       }
     } else {
-      // 근태에 휴업휴직은 없지만 엑셀에 휴업수당 값이 있는 경우 → 고객사 휴업기간 확인
+      // 근태에 휴업휴직은 없지만 엑셀에 휴업수당 값이 있는 경우
       const excelLayoffPay2 = (CI.LAYOFF_PAY >= 0 ? n(CI.LAYOFF_PAY) : 0) || customOrdValues['휴업수당'] || customFixedValues['휴업수당'] || 0;
       if (excelLayoffPay2 > 0) {
-        let coLayoffPeriods2 = [];
-        try {
-          const raw2 = co?.layoff_periods;
-          coLayoffPeriods2 = typeof raw2 === 'string' ? JSON.parse(raw2) : (Array.isArray(raw2) ? raw2 : []);
-        } catch(e) {}
-        const pms2 = `${targetYear}-${String(targetMonth).padStart(2,'0')}-01`;
-        const ldm2 = new Date(targetYear, targetMonth, 0).getDate();
-        const pme2 = `${targetYear}-${String(targetMonth).padStart(2,'0')}-${String(ldm2).padStart(2,'0')}`;
-        const mp2 = coLayoffPeriods2.find(p => p.start <= pme2 && p.end >= pms2);
-        if (!mp2) {
-          warnings.push(`⚠️ ${empName}: 엑셀에 휴업수당 ${won(excelLayoffPay2)}원이 있으나, 근태 시트에 휴업휴직 기록이 없고 고객사 휴업기간도 등록되어 있지 않습니다.`);
-        } else {
-          warnings.push(`⚡ ${empName}: 엑셀에 휴업수당 ${won(excelLayoffPay2)}원이 있으나 근태 시트에 휴업휴직 기록이 없습니다. 고객사 휴업기간(${mp2.start}~${mp2.end})과 근태 기록을 대조 확인하세요.`);
-        }
+        warnings.push(`⚠️ ${empName}: 엑셀에 휴업수당 ${won(excelLayoffPay2)}원이 있으나 근태 시트에 휴업휴직 기록이 없습니다. 근태 기록을 확인하세요.`);
       }
     }
 
@@ -1585,18 +1561,14 @@ function validateAndParseExcel(wb, fileName){
     // ──────────────────────────────────────
     if(hw > 0){
       // ① 기본급 + 주휴수당 ≈ 통상시급 기반 예상값
-      // 월 통상임금 = hourly_wage × 월소정근로시간(209h 기준)
-      const _daysPerWeek = parseFloat(ct?.work_days_per_week) || 5;
-      const _hoursPerDay = parseFloat(ct?.work_hours_per_day) || 8;
-      const _monthlyStdH  = typeof _calcMonthlyStdHours === 'function'
-        ? _calcMonthlyStdHours(_hoursPerDay, _daysPerWeek) : 209;
-      const expectedMonthly = Math.round(hw * _monthlyStdH);
+      // 월 통상임금 = hourly_wage × 209h (고용노동부 고시 기준)
+      const expectedMonthly = Math.round(hw * MAGIC.MONTHLY_STD_HOURS);
       const baseAndHol = base + weekHol;
       const HW_TOLERANCE = Math.max(100, Math.round(expectedMonthly * 0.02)); // 2% 또는 최소 100원
       if(Math.abs(baseAndHol - expectedMonthly) > HW_TOLERANCE){
         calcErrors.push({row:excelRow, colName:'통상시급 일관성', empName,
           input:baseAndHol, calc:expectedMonthly, diff:baseAndHol - expectedMonthly,
-          desc:`통상시급(${fmt(hw)}원) × 월소정근로시간(${_monthlyStdH}h) = ${fmt(expectedMonthly)}원 (예상) / 엑셀 기본급+주휴 = ${fmt(baseAndHol)}원 (차이: ${fmt(baseAndHol-expectedMonthly)}원)`
+          desc:`통상시급(${fmt(hw)}원) × 209h = ${fmt(expectedMonthly)}원 (예상) / 엑셀 기본급+주휴 = ${fmt(baseAndHol)}원 (차이: ${fmt(baseAndHol-expectedMonthly)}원)`
         });
       }
 
@@ -1626,11 +1598,14 @@ function validateAndParseExcel(wb, fileName){
         }
       }
       if(_holHrs > 0 && holPay > 0){
-        const expectedHol = Math.round(_holHrs * hw * 1.5);
+        // 휴일근로: 8h 이내 150%, 8h 초과 200% (휴일+연장 중복)
+        const _holH8   = Math.min(_holHrs, 8);
+        const _holHOvr = Math.max(_holHrs - 8, 0);
+        const expectedHol = Math.round(_holH8 * hw * 1.5 + _holHOvr * hw * 2.0);
         if(Math.abs(holPay - expectedHol) > CROSS_TOLERANCE){
           calcErrors.push({row:excelRow, colName:'휴일수당↔시간', empName,
             input:holPay, calc:expectedHol, diff:holPay - expectedHol,
-            desc:`휴일시간(${_holHrs}h) × 통상시급(${fmt(hw)}원) × 1.5 = ${fmt(expectedHol)}원 / 엑셀 휴일수당 ${fmt(holPay)}원`
+            desc:`휴일시간(${_holHrs}h: 8h×1.5 + ${_holHOvr}h×2.0) × 통상시급(${fmt(hw)}원) = ${fmt(expectedHol)}원 / 엑셀 휴일수당 ${fmt(holPay)}원`
           });
         }
       }

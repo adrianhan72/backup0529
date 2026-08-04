@@ -89,6 +89,22 @@
     .input-std.input[type="datetime-local"], .input-std.input[type="email"] {
       height:36px; box-sizing:border-box;
     }
+    /* ── 모달 내 모든 폼 요소 기본 높이 = 36px (input-std) ── */
+    /* .input-slim 클래스로 개별 요소만 32px 축소 가능 */
+    .modal input[type="text"]:not(.input-slim),
+    .modal input[type="number"]:not(.input-slim),
+    .modal input[type="date"]:not(.input-slim),
+    .modal input[type="time"]:not(.input-slim),
+    .modal input[type="datetime-local"]:not(.input-slim),
+    .modal input[type="email"]:not(.input-slim),
+    .modal input[type="password"]:not(.input-slim),
+    .modal select:not(.input-slim) {
+      height:36px; box-sizing:border-box;
+    }
+    /* 모달 내 버튼도 동일 행 높이에 맞춤 (btn-sm는 기본 32px, input-slim과 세트) */
+    .modal .form-group .btn.btn-sm:not(.input-slim) {
+      height:36px; box-sizing:border-box;
+    }
     /* ── 같은 행 내 모든 폼 요소는 동일한 높이 변형(slim/std)을 사용할 것 ── */
     /* ?�기/?�제 ?�이�??�용 ?????�고 ?�평?�게 */
     .btn-close{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:transparent;color:#64748b;border:1px solid #d1d5db;padding:0;font-size:16px;line-height:1;flex-shrink:0;}

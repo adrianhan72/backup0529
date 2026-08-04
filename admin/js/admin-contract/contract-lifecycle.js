@@ -1166,6 +1166,7 @@ function _collectRenewFormFields(){
   fields.license_allowance     = getAmountVal('ct-license') || 0;
   fields.hazard_allowance      = getAmountVal('ct-hazard') || 0;
   fields.custom_ordinary_values = JSON.stringify(typeof _getCustomOrdinaryValues==='function' ? _getCustomOrdinaryValues() : []);
+  fields.custom_fixed_values    = JSON.stringify(typeof _getCustomFixedValues==='function'    ? _getCustomFixedValues()    : []);
   fields.communication_allowance = getAmountVal('ct-communication') || 0;
   fields.fitness_allowance     = getAmountVal('ct-fitness') || 0;
   fields.self_dev_allowance    = getAmountVal('ct-self-dev') || 0;
@@ -1234,16 +1235,25 @@ function _collectRenewFormFields(){
   fields.car_maintenance = getAmountVal('ct-car') || 0;
 
   // ── 주휴수당·통상시급 재계산 (급여 변경 반영) ──
+  // 기본급 = 시급×174h(소정근로), 주휴수당 = 시급×35h, 합계 = 시급×209h
   const ht = fields.work_hours_per_day || 8;
   const dy = fields.work_days_per_week || 5;
-  const monthlyStdH = typeof _calcMonthlyStdHours === 'function'
-    ? _calcMonthlyStdHours(ht, dy) : (ht * dy * 365 / 12 / 7);
+  const _renewMonthlyStdH = typeof _calcMonthlyStdHours === 'function'
+    ? _calcMonthlyStdHours(ht, dy) : Math.round(ht * dy * 365 / 12 / 7);
+  const _renewMonthlyHolH = typeof _calcMonthlyHolHours === 'function'
+    ? _calcMonthlyHolHours(ht) : Math.round(ht * 365 / 12 / 7);
   const base = fields.base_salary || 0;
   const monthlyForCalc = fields.monthly_salary_agreed || 0;
-  fields.weekly_holiday_pay = (monthlyStdH > 0 && base > 0) ? Math.round(base / monthlyStdH * ht) : 0;
-  fields.hourly_wage = monthlyForCalc > 0
-    ? Math.round(monthlyForCalc / monthlyStdH)
-    : (fields.daily_wage > 0 && ht > 0 ? Math.round(fields.daily_wage / ht) : 0);
+  // 주휴수당: 통상시급 있으면 시급×월주휴시간(35h), 없으면 기본급/174×8 로 추정
+  fields.weekly_holiday_pay = fields.hourly_wage > 0
+    ? Math.round(fields.hourly_wage * _renewMonthlyHolH)
+    : (_renewMonthlyStdH > 0 && base > 0 ? Math.round(base / _renewMonthlyStdH * ht) : 0);
+  // 통상시급: 이미 있으면 유지, 없으면 월약정임금÷209h 역산
+  fields.hourly_wage = fields.hourly_wage > 0
+    ? fields.hourly_wage
+    : monthlyForCalc > 0
+      ? Math.round(monthlyForCalc / MAGIC.MONTHLY_STD_HOURS)
+      : (fields.daily_wage > 0 && ht > 0 ? Math.round(fields.daily_wage / ht) : 0);
 
   return fields;
 }
@@ -1460,7 +1470,7 @@ function doContractRenew(){
     }
   });
   // ct-start-hint, ct-end-hint 숨김
-  ['ct-start-hint','ct-end-hint','ct-renewed-pair-hint'].forEach(id => {
+  ['ct-start-hint','ct-end-hint'].forEach(id => {
     const el = document.getElementById(id);
     if(el) el.style.display = 'none';
   });
@@ -2873,7 +2883,9 @@ async function saveDraftContract(reason){
     if(isDailyDraft) return 0;
     if(hourlyDraft > 0){
       const _drHpd = parseFloat(document.getElementById('ct-hours')?.value) || 8;
-      return Math.round(hourlyDraft * _drHpd * (365 / 12 / 7));
+      const _drMonthlyHolH = typeof _calcMonthlyHolHours === 'function'
+        ? _calcMonthlyHolHours(_drHpd) : Math.round(_drHpd * 365 / 12 / 7);
+      return Math.round(hourlyDraft * _drMonthlyHolH);
     }
     return Math.round((baseDraft + _ordinaryDraft + fixedExtraDr) / 5);
   })();
@@ -3764,8 +3776,10 @@ async function saveContract(){
       + (_isFixedAllow('remote_area')? remoteArea2 : 0)
       + (typeof _getCustomOrdinarySum==='function' ? _getCustomOrdinarySum() : 0);
     if(hourlyWage > 0){
-      // 주휴수당 = 통상시급 × hpd × 4.345 [근로기준법 제55조]
-      weeklyHol = Math.round(hourlyWage * hours * (365 / 12 / 7));
+      // 주휴수당 = 통상시급 × 월주휴시간(35h 전일제) [근로기준법 제55조]
+      const _svMonthlyHolH = typeof _calcMonthlyHolHours === 'function'
+        ? _calcMonthlyHolHours(hours) : Math.round(hours * 365 / 12 / 7);
+      weeklyHol = Math.round(hourlyWage * _svMonthlyHolH);
     } else {
       weeklyHol = Math.round((base + _ordinarySave + fixedExtra2) / days);
     }

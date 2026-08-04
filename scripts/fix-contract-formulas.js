@@ -12,9 +12,15 @@ const DRY_RUN = process.argv.includes('--dry-run');
 
 // ── 상수 ──
 const MONTHLY_STD_HOURS = 209; // MAGIC.MONTHLY_STD_HOURS
+// ── 가산 수당 배율 (근로기준법 제56조) ──
+// 연장: 기본100%+가산50% = 1.5배
+// 야간: 가산50% = 0.5배 (기본급 별도)
+// 휴일≤8h: 기본100%+가산50% = 1.5배
+// 휴일>8h: 휴일+연장 중복 = 2.0배 (대법원 전원합의체 판결)
 const OT_RATE_OVERTIME = 1.5;
 const OT_RATE_NIGHT = 0.5;
 const OT_RATE_HOLIDAY = 1.5;
+const OT_RATE_HOLIDAY_OVERTIME = 2.0;  // 휴일 8h 초과분
 const DEFAULT_ANNUAL_LEAVE = 15;
 const WEEKS_PER_MONTH = 365 / 12 / 7; // ≈ 4.345
 
@@ -24,9 +30,14 @@ function isNull(v) { return v === null || v === undefined; }
 function num(v, def = 0) { const n = Number(v); return isNaN(n) ? def : n; }
 function hasVal(v) { return !isNull(v) && v !== '' && v !== 0; }
 
-// ── 월 소정근로시간 ──
+// ── 월 소정근로시간 (174h 전일제) ──
 function calcMonthlyStdH(hpd, dpw) {
   return r((hpd || 8) * (dpw || 5) * WEEKS_PER_MONTH);
+}
+
+// ── 월 주휴시간 (35h 전일제) ──
+function calcMonthlyHolH(hpd) {
+  return r((hpd || 8) * WEEKS_PER_MONTH);
 }
 
 // ── 연차일수 계산 ──
@@ -118,9 +129,9 @@ function recalcContract(ct, companies, employees) {
   }
   const hw = num(ct.hourly_wage, calcHourly);
 
-  // ── 2. weekly_holiday_pay (프론트엔드 산식: hourly × hpd × 4.345) ──
+  // ── 2. weekly_holiday_pay (프론트엔드 산식: hourly × 월주휴시간(35h 전일제)) ──
   if (hw > 0 && hpd > 0) {
-    const calcHol = r(hw * hpd * WEEKS_PER_MONTH);
+    const calcHol = r(hw * calcMonthlyHolH(hpd));
     const curHol = num(ct.weekly_holiday_pay);
     if (isNull(ct.weekly_holiday_pay) || Math.abs(curHol - calcHol) > 1) {
       if (calcHol !== curHol) {
@@ -156,10 +167,12 @@ function recalcContract(ct, companies, employees) {
     ct.fixed_night_pay = 0;
   }
 
-  // ── 5. fixed_hol_pay ──
+  // ── 5. fixed_hol_pay (8h 이내 150%, 초과 200%) ──
   const holHours = num(ct.fixed_hol_hours);
   if (holHours > 0 && hw > 0) {
-    const calcHolPay = r(hw * holHours * OT_RATE_HOLIDAY);
+    const holH8   = Math.min(holHours, 8);
+    const holHOvr = Math.max(holHours - 8, 0);
+    const calcHolPay = r(hw * holH8 * OT_RATE_HOLIDAY + hw * holHOvr * OT_RATE_HOLIDAY_OVERTIME);
     if (isNull(ct.fixed_hol_pay) || Math.abs(num(ct.fixed_hol_pay) - calcHolPay) > 1) {
       fixes.push(`fixed_hol_pay: ${ct.fixed_hol_pay} → ${calcHolPay}`);
       ct.fixed_hol_pay = calcHolPay;

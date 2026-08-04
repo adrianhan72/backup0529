@@ -103,9 +103,11 @@ for (const ct of contracts) {
       }
     }
     if (hlH > 0) {
-      const calcHl = r(storedHourly * hlH * 1.5);
+      const holH8   = Math.min(hlH, 8);
+      const holHOvr = Math.max(hlH - 8, 0);
+      const calcHl = r(storedHourly * holH8 * 1.5 + storedHourly * holHOvr * 2.0);
       if (Math.abs(num(ct.fixed_hol_pay) - calcHl) > 1) {
-        issues.push(`${prefix}: fixed_hol_pay 불일치 (stored=${ct.fixed_hol_pay}, calc=${calcHl})`);
+        issues.push(`${prefix}: fixed_hol_pay 불일치 (stored=${ct.fixed_hol_pay}, calc=${calcHl}, ≤8h:${holH8}@150% + >8h:${holHOvr}@200%)`);
       }
     }
   }

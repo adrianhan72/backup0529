@@ -69,7 +69,7 @@ for (const ct of (db.contracts || [])) {
       else fixes.hourly_wage = r(baseSal / monthlyStdH);
     }
     const hw = num(fixes.hourly_wage || ct.hourly_wage);
-    if (!ct.weekly_holiday_pay || num(ct.weekly_holiday_pay) === 0) fixes.weekly_holiday_pay = r(hw * hpd * WEEKS);
+    if (!ct.weekly_holiday_pay || num(ct.weekly_holiday_pay) === 0) fixes.weekly_holiday_pay = r(hw * r(hpd * WEEKS));  // 시급 × 월주휴시간
     if (!ct.base_salary || num(ct.base_salary) === 0) fixes.base_salary = baseSal;
     if (!ct.monthly_salary_agreed || num(ct.monthly_salary_agreed) === 0) {
       fixes.monthly_salary_agreed = r(num(fixes.base_salary || ct.base_salary) + num(fixes.weekly_holiday_pay || ct.weekly_holiday_pay));

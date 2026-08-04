@@ -4,6 +4,30 @@
     #ct-em-gender,#ct-edit-em-gender{background:#f1f5f9!important;border-color:#e8eaed!important;color:#555!important;cursor:default;opacity:1!important;font-weight:400!important;-webkit-text-fill-color:#555!important}
     /* 라디오/체크박스: disabled 시에도 시각적 스타일 유지 */
     #contract-modal input[type="radio"]:disabled,#contract-modal input[type="checkbox"]:disabled{opacity:1!important;cursor:default}
+    /* ── 계약 모달 전체 폼 요소 높이 통일: 기본 36px (input-std) ── */
+    /* .input-slim(32px) 클래스로 개별 축소 가능 */
+    #contract-modal .form-grid input[type="text"]:not(.input-slim),
+    #contract-modal .form-grid input[type="number"]:not(.input-slim),
+    #contract-modal .form-grid input[type="date"]:not(.input-slim),
+    #contract-modal .form-grid input[type="time"]:not(.input-slim),
+    #contract-modal .form-grid input[type="datetime-local"]:not(.input-slim),
+    #contract-modal .form-grid input[type="email"]:not(.input-slim),
+    #contract-modal .form-grid select:not(.input-slim),
+    #contract-modal .form-grid .btn:not(.input-slim):not(.btn-sm):not(.btn-lg),
+    #contract-modal .form-grid .amount-wrap input,
+    #contract-modal .form-grid .form-computed{
+      height:36px;box-sizing:border-box;
+    }
+    /* select 공통 패딩 */
+    #contract-modal .form-grid select:not(.input-slim){
+      padding:6px 28px 6px 12px;font-size:13px;border:1px solid #d1d5db;border-radius:7px;background:#fff;color:#000;font-weight:400;
+    }
+    /* input 공통 패딩 */
+    #contract-modal .form-grid input[type="text"]:not(.input-slim):not([readonly]),
+    #contract-modal .form-grid input[type="number"]:not(.input-slim):not([readonly]),
+    #contract-modal .form-grid input[type="email"]:not(.input-slim):not([readonly]){
+      padding:6px 12px;font-size:13px;border:1px solid #d1d5db;border-radius:7px;background:#fff;color:#000;font-weight:400;
+    }
     /* 임금조건 섹션 내 필드 높이 통일 (급여 산정기간 ~ 벽지수당 영역) */
     #ct-wage-section-title ~ .form-group input[type="text"],
     #ct-wage-section-title ~ .form-group input[type="number"],

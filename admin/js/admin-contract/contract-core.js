@@ -2130,19 +2130,11 @@ function viewContract(id){
   if(_pairOrigC){
     const _pairRow = document.getElementById('ct-row-renewed-pair-end');
     const _pairInput = document.getElementById('ct-renewed-pair-end');
-    const _pairHint = document.getElementById('ct-renewed-pair-hint');
-    if(_pairRow && _pairInput && _pairHint){
+    if(_pairRow && _pairInput){
       const _pairEnd = _pairOrigC.contract_end || _pairOrigC.terminate_date || '';
       _pairInput.value = _pairEnd;
       _pairInput.disabled = true;
       _pairRow.style.display = '';
-      if(_pairEnd){
-        _pairHint.textContent = `원본 계약(${_pairEnd.replace(/-/g, '.')})의 해지일 — 갱신된 계약의 시작일은 ${c.contract_start ? c.contract_start.replace(/-/g, '.') : '?'}입니다.`;
-        _pairHint.className = 'ct-hint-normal';
-      } else {
-        _pairHint.textContent = '원본 계약의 해지일이 설정되지 않았습니다.';
-        _pairHint.className = 'ct-hint-muted';
-      }
       // 발견한 페어 ID를 renewed_from_id에 보정 (갱신 페어인 경우에만 — 수정/재발행 파기계약은 제외)
       if(!c.renewed_from_id && (c.status === CONTRACT_STATUS.RENEWAL_PENDING || c.status === CONTRACT_STATUS.ACTIVE)) c.renewed_from_id = _pairOrigC.id;
     }
@@ -2186,29 +2178,6 @@ function viewContract(id){
   [document.getElementById('ct-action-label'), document.getElementById('ct-action-label-bottom')].forEach(el=>{
     if(el) el.textContent = '';
   });
-
-  // ── 갱신 계약 연관 링크 ──
-  const _renewLinkEl = document.getElementById('ct-renew-link');
-  if(_renewLinkEl && c){
-    let renewHTML = '';
-    const _isVoidedAmend = c.status === CONTRACT_STATUS.VOIDED || c.is_voided_by_amend;
-    const _rawPairId = _isVoidedAmend ? null : (c.renewed_from_id || c.renewed_to_id);
-    let _pairId = null;
-    if(_rawPairId){
-      const _pairC = allContracts.find(x => x.id === _rawPairId);
-      if(_pairC && !(_pairC.status === CONTRACT_STATUS.VOIDED || _pairC.is_voided_by_amend)){
-        _pairId = _rawPairId;
-      }
-    }
-    if(_pairId){
-      const _isFrom = !!c.renewed_from_id;
-      const _label = _isFrom ? '원본 계약' : '갱신 계약';
-      renewHTML = `<span style="font-size:11px;color:#6366f1;cursor:pointer;margin-right:4px;" onclick="viewContract('${_pairId}')" title="${_label} 보기">
-        <i class="fas fa-link"></i> ${_label}</span>`;
-    }
-    _renewLinkEl.innerHTML = renewHTML;
-    _renewLinkEl.style.display = renewHTML ? 'inline-block' : 'none';
-  }
 
   // 임시저장 계속 수정 버튼 (draft 전용)
   const draftEditBtn = document.getElementById('ct-btn-draft-edit');
@@ -2561,8 +2530,7 @@ function cancelContractAmend(){
 function _initRenewedPairEndField(amendC){
   const rowEl = document.getElementById('ct-row-renewed-pair-end');
   const inputEl = document.getElementById('ct-renewed-pair-end');
-  const hintEl = document.getElementById('ct-renewed-pair-hint');
-  if(!rowEl || !inputEl || !hintEl || !amendC) return;
+  if(!rowEl || !inputEl || !amendC) return;
   
   // 중앙 유틸리티로 페어 탐색
   const origC = (typeof findPairContract === 'function') ? findPairContract(amendC) : null;
@@ -2607,7 +2575,6 @@ function _onRenewedPairEndChange(){
 function _validateRenewedPairDates(){
   const pairEndEl = document.getElementById('ct-renewed-pair-end');
   const startEl = document.getElementById('ct-start');
-  const hintEl = document.getElementById('ct-renewed-pair-hint');
   const startHintEl = document.getElementById('ct-start-hint');
   
   if(!pairEndEl || !startEl) return;
@@ -2620,30 +2587,12 @@ function _validateRenewedPairDates(){
   
   if(!pairEnd || !start) return;
   
-  // 해지일이 시작일보다 같거나 이후인 경우 → 시작일을 해지일+1로 조정해야 함
-  // 또는 해지일을 시작일-1로 조정
   if(start <= pairEnd){
-    // 해지일을 시작일 -1일로 자동 조정
     const startDate = new Date(start);
     startDate.setDate(startDate.getDate() - 1);
-    const newPairEnd = startDate.toISOString().slice(0, 10);
-    
-    pairEndEl.value = newPairEnd;
-    
-    const fmtNew = newPairEnd.replace(/-/g, '.');
-    if(hintEl){
-      hintEl.innerHTML = `<i class="fas fa-sync-alt" style="color:#7c3aed;margin-right:4px;"></i>연결된 해지 예정 계약의 해지일도 <strong>${fmtNew}</strong>로 함께 변경됩니다.`;
-      hintEl.style.color = '#7c3aed';
-    }
+    pairEndEl.value = startDate.toISOString().slice(0, 10);
     if(startHintEl){
       startHintEl.textContent = '갱신 계약의 효력 발생일 (원본 해지일 다음 날)';
-    }
-  } else {
-    // 정상: 시작일 > 해지일
-    if(hintEl){
-      const fmtPair = pairEnd.replace(/-/g, '.');
-      hintEl.textContent = `원본 계약(${fmtPair})의 해지일 — 갱신 계약 시작일은 이 날짜 이후여야 합니다.`;
-      hintEl.style.color = '#6b7280';
     }
   }
 }
@@ -2759,7 +2708,10 @@ async function openAmendPreview(){
     return;
   }
 
-  const _monthlyStdH = typeof _calcMonthlyStdHours==='function' ? _calcMonthlyStdHours(hours_,days_) : (hours_*days_*365/12/7);
+  // 주휴수당 추정: 기본급(소정근로 174h 분) ÷ 월소정근로시간 × 1일소정근로시간
+  // 기본급 = 시급×174h, 주휴수당 = 시급×35h → 기본급/174×8 = 시급×8 = 주휴(주)
+  const _monthlyStdH = typeof _calcMonthlyStdHours === 'function'
+    ? _calcMonthlyStdHours(hours_, days_) : MAGIC.MONTHLY_STD_HOURS;
   const wkHol_  = isDailyA ? 0 : (_monthlyStdH > 0 ? Math.round(base_ / _monthlyStdH * hours_) : 0);
   const pos_    = getAmountVal('ct-position');
   const car_    = getAmountVal('ct-car');
@@ -2779,8 +2731,8 @@ async function openAmendPreview(){
     : isFixedA && annualSalInput_ > 0 ? annualSalInput_
     : isRegGrp && annual_ > 0         ? Math.round(annual_ / 12)
     : (base_+wkHol_+pos_+car_+meal_+res_+other_+site_+skill_+lic_+comm_+fit_+sdev_+book_+ovseas_);
-  // 통상시급 = 월 통상임금 ÷ 법령 기준 산정시간 (근로기준법 시행령 제6조 제2항)
-  const hWage_  = monthly_>0 ? Math.round(monthly_/_calcMonthlyStdHours(hours_,days_)) : (dWage_>0&&hours_>0 ? Math.round(dWage_/hours_) : 0);
+  // 통상시급 = 월 통상임금 ÷ 209h (고용노동부 고시, calcContractSalary와 동일 기준)
+  const hWage_  = monthly_>0 ? Math.round(monthly_ / MAGIC.MONTHLY_STD_HOURS) : (dWage_>0&&hours_>0 ? Math.round(dWage_/hours_) : 0);
 
   const commonFields = {
     employee_id:'', company_id:coId, contract_start:start, contract_end:end, contract_type:cType,
@@ -2807,6 +2759,7 @@ async function openAmendPreview(){
     research_pay_type: _getCTPayTypeVal('research'),
     site_allowance: site_, skill_allowance: skill_, license_allowance: lic_, hazard_allowance: getAmountVal('ct-hazard')||0,
     custom_ordinary_values: JSON.stringify(typeof _getCustomOrdinaryValues==='function' ? _getCustomOrdinaryValues() : []),
+    custom_fixed_values:    JSON.stringify(typeof _getCustomFixedValues==='function'    ? _getCustomFixedValues()    : []),
     communication_allowance: comm_, communication_pay_type: _getCTPayTypeVal('communication'),
     fitness_allowance: fit_, fitness_pay_type: _getCTPayTypeVal('fitness'),
     self_dev_allowance: sdev_, self_dev_pay_type: _getCTPayTypeVal('self_dev'),

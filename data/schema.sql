@@ -1,7 +1,7 @@
 -- =============================================================================
 -- 인사톡 노무톡 — SQLite Schema (한글 주석 포함)
 -- node dump_schema.js 로 자동 생성 (ALTER TABLE 반영)
--- 최종 갱신: 2026-08-03
+-- 최종 갱신: 2026-08-04
 -- 테이블 수: 26개
 -- =============================================================================
 
@@ -55,7 +55,7 @@ CREATE TABLE IF NOT EXISTS companies (
   proration_method TEXT DEFAULT '30day_fixed', --  -- 일할계산 방식
   draft_executives TEXT DEFAULT NULL,
   draft_related_parties TEXT DEFAULT NULL,
-  layoff_periods TEXT DEFAULT '[]'
+  contacts TEXT DEFAULT '[]'
 );
 
 -- contracts  -- 근로계약

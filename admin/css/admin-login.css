@@ -310,7 +310,8 @@
 .cm-aw-hint           { font-size:10.5px; color:#6b7280; align-self:center; white-space:nowrap; }
 .cm-aw-add-btn        { font-size:11.5px; color:#6366f1; background:none; border:1.5px dashed #c7d2fe; border-radius:6px; padding:4px 14px; cursor:pointer; transition:all .15s; }
 .cm-aw-add-btn:hover  { background:#eef2ff; border-color:#6366f1; }
-.cm-aw-custom-row     { display:flex; align-items:center; gap:6px; min-height:32px; }
+#cm-aw-add-row, #cm-aw-fixed-add-row { grid-column:1/-1; }
+.cm-aw-custom-row     { display:flex; align-items:center; gap:6px; min-height:32px; grid-column:1/-1; }
 .cm-aw-custom-input   { flex:1; border:1px solid #d1d5db; border-radius:5px; padding:3px 8px; font-size:13px; min-width:0; }
 .cm-aw-custom-del     { cursor:pointer; color:#9ca3af; font-size:13px; padding:2px; transition:color .15s; background:none; border:none; }
 .cm-aw-custom-del:hover{ color:#ef4444; }

@@ -1,8 +1,14 @@
 ﻿    /* ?�?�??�일�?근무?�간 ?�이�??�?�?*/
-    /* ── 고객사 모달 입력필드 높이 통일 (textarea 제외) ── */
-    #company-modal input[type="text"],
-    #company-modal input[type="date"],
-    #company-modal input[type="email"] { padding: 7px 12px; height: 36px; box-sizing: border-box; }
+    /* ── 고객사 모달 입력필드 높이 통일: 기본 36px (input-std) ── */
+    #company-modal input[type="text"]:not(.input-slim),
+    #company-modal input[type="date"]:not(.input-slim),
+    #company-modal input[type="email"]:not(.input-slim),
+    #company-modal input[type="number"]:not(.input-slim),
+    #company-modal select:not(.input-slim) {
+      padding: 7px 12px; height: 36px; box-sizing: border-box;
+      font-size:13px;border:1px solid #d1d5db;border-radius:7px;background:#fff;color:#000;font-weight:400;
+    }
+    #company-modal select:not(.input-slim){padding-right:28px;}
     #company-modal input:not([readonly]):not(:disabled):not([type="checkbox"]):not([type="radio"]):not([type="file"]):hover,
     #company-modal select:not(:disabled):hover,
     #company-modal textarea:not([readonly]):not(:disabled):hover { border-color:#6366f1; }

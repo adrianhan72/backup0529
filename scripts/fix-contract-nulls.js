@@ -99,7 +99,7 @@ for (const ct of contracts) {
     // weekly_holiday_pay
     const hw = num(ct.hourly_wage);
     if (hw > 0 && (!ct.weekly_holiday_pay || num(ct.weekly_holiday_pay) === 0)) {
-      const calcWeekly = r(hw * hpd * WEEKS_PER_MONTH);
+      const calcWeekly = r(hw * r(hpd * WEEKS_PER_MONTH));  // 시급 × 월주휴시간(35h 전일제)
       fixes.push(`weekly_holiday_pay: ${ct.weekly_holiday_pay} → ${calcWeekly}`);
       ct.weekly_holiday_pay = calcWeekly;
     }

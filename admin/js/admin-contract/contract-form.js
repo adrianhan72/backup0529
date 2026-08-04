@@ -181,8 +181,9 @@ function _autoFillCTPeriod(){
   const co   = allCompanies.find(c => c.id === coId);
   const hint = document.getElementById('ct-pay-period-hint');
   if(hint && co?.pay_period){
+    const _monthLabel = typeof _cmPeriodMonthLabel === 'function' ? _cmPeriodMonthLabel(co.pay_period_month) : co.pay_period_month;
     const _ppHint = (co.pay_period_month&&co.pay_period_day)
-      ? `${co.pay_period_month} ${co.pay_period_day}일부터 1개월간`
+      ? `${_monthLabel} ${co.pay_period_day}일부터 1개월간`
       : (co.pay_period.includes('~') ? co.pay_period : co.pay_period);
     hint.textContent = `(고객사 기본값: ${_ppHint})`;
     hint.style.display = 'inline';
@@ -868,12 +869,13 @@ function _checkMinWageWarning(){
       + (_isFixedAllow('hazard')? _mwHazard : 0)
       + (_isFixedAllow('remote_area')? _mwRemote : 0)
       + (typeof _getCustomOrdinarySum==='function' ? _getCustomOrdinarySum() : 0);
-    // 시급 기반: 주휴수당 = 통상시급 × hpd × 4.345 [근로기준법 제55조]
+    // 시급 기반: 주휴수당 = 통상시급 × 월주휴시간(35h 전일제) [근로기준법 제55조]
     const _mwHourly = getAmountVal('ct-hourly-input') || 0;
     const _mwHpd = parseFloat(document.getElementById('ct-hours')?.value) || 8;
+    const _mwMonthlyHolH = _calcMonthlyHolHours(_mwHpd);
     let wkHol;
     if(_mwHourly > 0){
-      wkHol = Math.round(_mwHourly * _mwHpd * (365 / 12 / 7));
+      wkHol = Math.round(_mwHourly * _mwMonthlyHolH);
     } else {
       // 주휴수당 폴백: (기본급 + 통상임금성 수당) ÷ 월소정근로시간 × 1일소정근로시간
       // 고정OT·야간·휴일근로수당은 통상임금에서 제외 (근로기준법 시행령 제6조)
@@ -906,6 +908,8 @@ function _checkMinWageWarning(){
                    + (_isFixedAllow('remote_area')   ? rmtArea : 0)
                    + other
                    + 0;
+    // ── 비교 시급 결정 ──
+    // calcContractSalary와 동일하게 209시간 기준 (고용노동부 고시)
     compareHourly  = compareMonthly > 0 ? Math.round(compareMonthly / MAGIC.MONTHLY_STD_HOURS) : 0;
     compareLabel   = `기본급 ${fmt(base)}원 + 주휴 ${fmt(wkHol)}원 + 수당 합계 → 월 ${fmt(compareMonthly)}원 (시급 ${fmt(compareHourly)}원)`;
   }
@@ -1991,9 +1995,9 @@ function _isFixedAllow(field){ return _getCTPayTypeVal(field) === 'fixed'; }
 function _resetCTPayTypes(){
   ['site','position','skill','license','hazard','remote_area','regular_bonus']
     .forEach(f=>{ _ctPayTypes[f]='fixed'; setCTPayType(f,'fixed'); });
-  // 사용자 선택 항목은 초기화 (기본값: 통상임금 미포함)
+  // 사용자 선택 항목은 pay_type만 초기화 (DOM 제거하지 않음 — applyCTAllowanceConfig에서 재설정)
   ['car','meal','research','communication','fitness','self_dev','book','overseas','childcare']
-    .forEach(f=>{ _ctPayTypes[f]=''; setCTPayType(f,''); });
+    .forEach(f=>{ _ctPayTypes[f]=''; });
 }
 
 // ── 근로계약 모달 — 고객사별 옵셔널 수당 show/hide ──
@@ -2072,6 +2076,8 @@ function applyCTAllowanceConfig(cfg, clearValues = false){
   }
   // ── 사용자 정의 통상임금 항목 렌더링 ──
   _renderCustomOrdinaryRows(cfg);
+  // ── 사용자 정의 고정수당 항목 렌더링 ──
+  _renderCustomFixedRows(cfg);
   
   // 일용직: 고정 연장/야간/휴일근로수당 + 사용자 정의 항목 숨김
   if(isDaily){
@@ -2080,6 +2086,8 @@ function applyCTAllowanceConfig(cfg, clearValues = false){
     });
     const _customOrd = document.getElementById('ct-custom-ord-container');
     if(_customOrd) _customOrd.style.display = 'none';
+    const _customFixed = document.getElementById('ct-custom-fixed-container');
+    if(_customFixed) _customFixed.style.display = 'none';
   }
 }
 
@@ -2137,6 +2145,59 @@ function _setCustomOrdinaryValues(values){
   if(!Array.isArray(values)) return;
   values.forEach((v, i) => {
     if(v && v.amount) setAmountVal(`ct-custom-ord-${i}`, v.amount);
+  });
+}
+
+// ── 사용자 정의 고정수당 항목 (계약서) ──
+const _CUSTOM_FIXED_CONTAINER_ID = 'ct-custom-fixed-container';
+let _customFixedRowCount = 0;
+
+function _renderCustomFixedRows(cfg){
+  let container = document.getElementById(_CUSTOM_FIXED_CONTAINER_ID);
+  if(!container){
+    const refRow = document.getElementById('ct-row-overseas');
+    if(!refRow) return;
+    container = document.createElement('div');
+    container.id = _CUSTOM_FIXED_CONTAINER_ID;
+    refRow.parentNode.insertBefore(container, refRow.nextSibling);
+  }
+  container.querySelectorAll('.ct-custom-fixed-row').forEach(r => r.remove());
+  _customFixedRowCount = 0;
+
+  const items = (cfg && Array.isArray(cfg._custom_fixed)) ? cfg._custom_fixed : [];
+  if(!items.length){ container.style.display = 'none'; return; }
+  container.style.display = '';
+
+  items.forEach(item => {
+    if(!item || !item.name) return;
+    const idx = _customFixedRowCount++;
+    const payTypeLabel = item.pay_type === 'daily' ? '(출근일수에 따름)' : item.pay_type === 'receipt' ? '(영수증 청구)' : '';
+    const div = document.createElement('div');
+    div.className = 'form-group ct-custom-fixed-row';
+    div.id = `ct-row-custom-fixed-${idx}`;
+    div.innerHTML = `
+      <label>${_hEsc(item.name)}<span class="lbl-desc">${payTypeLabel}</span></label>
+      <div class="amount-wrap"><input type="text" inputmode="numeric" id="ct-custom-fixed-${idx}" data-amount placeholder="0" oninput="onAmountInput(this,calcContractSalary)" /></div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function _getCustomFixedValues(){
+  const items = [];
+  for(let i = 0; i < _customFixedRowCount; i++){
+    const nameEl = document.querySelector(`#ct-row-custom-fixed-${i} label`);
+    const name = nameEl ? nameEl.textContent.replace(/\(.*\)/,'').trim() : '';
+    const amount = getAmountVal(`ct-custom-fixed-${i}`) || 0;
+    if(name) items.push({ name, amount });
+  }
+  return items;
+}
+
+function _setCustomFixedValues(values){
+  if(!Array.isArray(values)) return;
+  values.forEach((v, i) => {
+    if(v && v.amount) setAmountVal(`ct-custom-fixed-${i}`, v.amount);
   });
 }
 
@@ -2318,25 +2379,35 @@ function _forceShowNonZeroCTRows(c){
 }
 
 /**
- * 법령 기준 월 통상임금 산정 기준시간 수 (근로기준법 시행령 제6조 제2항)
+ * 월 소정근로시간 (주휴 제외, 반올림)
  *
- * 공식: (주 소정근로시간 + 주휴시간) × 52 ÷ 12
- *   - 주휴시간 = 1일 소정근로시간 (= hpd)
- *   - 전일제 주5일 8h: (40+8)×52÷12 ≈ 208 → 실무상 209h 사용(연도말 보정)
- *     ※ 고용노동부 및 대법원 통례: 주 40h 전일제는 209h 적용
- *   - 단시간: (주소정h + hpd) × 52 ÷ 12 (비례 계산)
+ * 공식: round(주 소정근로시간 × 365 ÷ 12 ÷ 7)
+ *   - 전일제(주 40h): round(40 × 365÷12÷7) = 174h
+ *   - 주휴 포함 월 총 시간 = 174h + 35h = 209h (고용노동부 고시)
  *
  * @param {number} hpd  1일 소정근로시간 (hours per day)
  * @param {number} dpw  주 소정근로일수 (days per week)
- * @returns {number}    월 통상임금 산정 기준시간 수 (정수)
+ * @returns {number}    월 소정근로시간 (정수, 주휴 제외)
  */
 function _calcMonthlyStdHours(hpd, dpw){
   hpd = parseFloat(hpd) || 8;
   dpw = parseFloat(dpw) || 5;
-  const weeklyH    = hpd * dpw;                     // 주 소정근로시간
-  // 소정근로시간만 반환 (주휴 제외) — 주휴수당은 별도 계산
-  // 전일제(주 40h): 8h×5d×4.345≈174h
+  const weeklyH = hpd * dpw;                     // 주 소정근로시간
   return Math.round(weeklyH * 365 / 12 / 7);
+}
+
+/**
+ * 월 주휴시간 (반올림)
+ *
+ * 공식: round(1일 소정근로시간 × 365 ÷ 12 ÷ 7)
+ *   - 전일제(1일 8h): round(8 × 365÷12÷7) = 35h
+ *
+ * @param {number} hpd  1일 소정근로시간
+ * @returns {number}    월 주휴시간 (정수)
+ */
+function _calcMonthlyHolHours(hpd){
+  hpd = parseFloat(hpd) || 8;
+  return Math.round(hpd * 365 / 12 / 7);
 }
 
 function calcContractSalary(){
@@ -2430,24 +2501,25 @@ function calcContractSalary(){
   // 주 소정근로시간 파악
   const _hpd = parseFloat(document.getElementById('ct-hours')?.value) || 8;
   const _dpw = parseFloat(document.getElementById('ct-days')?.value)  || 5;
-  const _monthlyStdH = _calcMonthlyStdHours(_hpd, _dpw); // 법령 기준 월 산정시간
+  const _monthlyStdH = _calcMonthlyStdHours(_hpd, _dpw); // 월 소정근로시간 (174h 전일제)
+  const _monthlyHolH  = _calcMonthlyHolHours(_hpd);        // 월 주휴시간 (35h 전일제)
 
   // ── 시급 기반 자동계산: 정규직·계약직·계약직수습·정규직수습 ──
   const isHourlyBased = isRegularGroup || isFixedTerm;
   if(isHourlyBased && hourlyWage > 0){
-    // 월 통상임금 = 시급 × 월소정근로시간
-    const totalOrdinary = Math.round(hourlyWage * _monthlyStdH);
-    // 기본급 = 월 통상임금 - ordinaryGroup (통상임금 = 기본급 + 통상임금성 수당)
-    const autoBase = Math.max(0, totalOrdinary - _ordinaryGroup);
+    // 기본급 = 시급 × 월소정근로시간(174h) − 통상임금성 수당
+    // 주휴수당 = 시급 × 월주휴시간(35h) [근로기준법 제55조]
+    // 합계 = 시급 × 209h (고용노동부 고시)
+    const autoBase = Math.max(0, Math.round(hourlyWage * _monthlyStdH) - _ordinaryGroup);
     setAmountVal('ct-base', autoBase);
   }
 
   const base      = getAmountVal('ct-base');
-  // 주휴수당 = 통상시급 × 1일소정근로시간 × 월평균주수(4.345) [근로기준법 제55조]
-  // 시급이 없을 때: (월 통상임금 ÷ 월 소정근로시간) × 1일 소정근로시간
+  // 주휴수당 = 통상시급 × 월주휴시간(35h 전일제) [근로기준법 제55조]
+  // 시급이 없을 때: (기본급 + 통상임금성 수당) ÷ 월소정근로시간 × 1일소정근로시간
   // 고정OT·야간·휴일근로수당은 통상임금에서 제외 (근로기준법 시행령 제6조)
   const weeklyHol = (isHourlyBased && hourlyWage > 0)
-    ? Math.round(hourlyWage * _hpd * (365 / 12 / 7))
+    ? Math.round(hourlyWage * _monthlyHolH)
     : (_monthlyStdH > 0 ? Math.round((base + _ordinaryGroup) / _monthlyStdH * _hpd) : 0);
   document.getElementById('ct-weekly-hol-computed').textContent = won(weeklyHol);
 
@@ -2472,7 +2544,11 @@ function calcContractSalary(){
 }
 
 // ── 고정 연장/야간/휴일근로수당 양방향 자동계산 ──
-// 공식: 연장 = 통상시급 × h × 1.5 / 야간 = 통상시급 × h × 0.5 / 휴일 = 통상시급 × h × 1.5
+// · 연장근로: 통상시급 × 1.5 (기본100% + 가산50%) [근로기준법 제56조①]
+// · 야간근로: 통상시급 × 0.5 (가산50% only, 기본급 별도) [근로기준법 제56조③]
+// · 휴일근로: 통상시급 × 1.5 (기본100% + 가산50%, 8h 이내) [근로기준법 제56조②]
+//   ※ 8h 초과 휴일근로: 통상시급 × 2.0 (휴일+연장 중복, 대법원 전합 판결)
+//   ※ 휴일+야간 중복: 통상시급 × 2.0 (휴일150% + 야간50%)
 function _getContractHourlyWage(){
   return getAmountVal('ct-hourly-input') || 0;
 }
