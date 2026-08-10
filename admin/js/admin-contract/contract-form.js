@@ -184,16 +184,6 @@ function _autoCalcFixedHoursFromSchedule(){
     holHint.textContent = weeklyHol > 0 ? '(월 약 ' + Math.round(weeklyHol * WEEK_TO_MONTH) + 'h)' : '';
   }
 }
-  const subs = substituteHolidays[y] || [];
-  if(subs.includes(mmdd)) return true;
-
-  // ── 일요일은 주휴일 (제55조) ──
-  const date = new Date(y, m-1, d);
-  if(date.getDay() === 0) return true; // Sunday
-
-  return false;
-}
-
 // ─── EMPLOYEES ───
 // ─── CONTRACTS ───
 function toggleEmExpire(){
