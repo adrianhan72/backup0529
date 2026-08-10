@@ -1705,6 +1705,10 @@ async function confirmContractRenew(){
   const today = new Date().toISOString().slice(0,10);
   const origEnd = c.contract_end || '';
 
+  // ── 갱신 폼 필드 미리 수집 (요약 메시지에 필요) ──
+  const _renewFields = _collectRenewFormFields();
+  const newStatus = newStart > today ? CONTRACT_STATUS.PENDING : CONTRACT_STATUS.ACTIVE;
+
   // ── 계약 연속성 검사: 해지일~시작일 사이에 평일 갭이 있으면 입사일 변경 ──
   const _emp = allEmployees.find(e => e.id === c.employee_id);
   const _oldHireDate = _emp?.hire_date || '';
@@ -1712,25 +1716,40 @@ async function confirmContractRenew(){
   if(_hasGap && _emp){
     const _fmtOld = oldEnd.replace(/-/g, '.');
     const _fmtNew = newStart.replace(/-/g, '.');
-    if(!confirm(
-      `⚠️ 계약 연속성 단절 안내\n\n` +
-      `기존 계약 해지일(${_fmtOld})과 신규 계약 시작일(${_fmtNew}) 사이에 평일 공백이 있습니다.\n` +
-      `이 경우 근로계약의 연속성이 단절된 것으로 보아 입사일이 신규 계약 시작일(${_fmtNew})로 변경됩니다.\n\n` +
-      `현재 입사일: ${_oldHireDate.replace(/-/g, '.')}\n` +
-      `변경될 입사일: ${_fmtNew}\n\n` +
-      `계속 진행하시겠습니까?`
-    )) return;
+    const confirmed = await _showConfirm({
+      message: `⚠️ 계약 연속성 단절 안내\n\n` +
+        `기존 계약 해지일(${_fmtOld})과 신규 계약 시작일(${_fmtNew}) 사이에 평일 공백이 있습니다.\n` +
+        `이 경우 입사일이 신규 계약 시작일(${_fmtNew})로 변경됩니다.\n\n` +
+        `현재 입사일: ${_oldHireDate.replace(/-/g, '.')}\n` +
+        `변경될 입사일: ${_fmtNew}`,
+      okText: '계속 진행',
+      cancelText: '취소'
+    });
+    if(!confirmed) return;
   }
 
-  // 해지일이 원래 계약 종료일보다 앞당겨졌는지 확인
-  if(origEnd && oldEnd < origEnd){
-    if(!confirm(`원래 계약 종료일(${origEnd})보다 앞당겨진 해지일(${oldEnd})입니다.\n계약 종료일 이전 해지는 [해지]로 처리됩니다.\n그래도 계속 진행하시겠습니까?`)) return;
-  }
+  // 갱신 요약 메시지 생성
+  const _empName = _emp?.name || '';
+  const _ctLabel = contractTypeLabel(c.contract_type) || '';
+  const _fmtD = d => d ? d.replace(/-/g, '.') : '-';
+  const _newEnd = _renewFields?.contract_end || '';
+  const _summaryMsg = `[계약 갱신 확인]\n\n` +
+    `근로자: ${_empName}\n` +
+    `고용형태: ${_ctLabel}\n\n` +
+    `기존 계약 해지일: ${_fmtD(oldEnd)}\n` +
+    `신규 계약 시작일: ${_fmtD(newStart)}${_newEnd ? '\n신규 계약 종료일: ' + _fmtD(_newEnd) : ''}\n` +
+    `계약 상태: ${newStatus === CONTRACT_STATUS.PENDING ? '계약예정 (시작일 미도래)' : '계약유효 (활성)'}\n\n` +
+    (origEnd && oldEnd < origEnd ? `※ 기존 계약 종료일(${_fmtD(origEnd)})보다 해지일이 앞당겨집니다.\n` : '') +
+    `계속 진행하시겠습니까?`;
+
+  const confirmed = await _showConfirm({
+    message: _summaryMsg,
+    okText: '갱신 완료',
+    cancelText: '취소'
+  });
+  if(!confirmed) return;
 
   // 1. 신규 계약 생성 (현재 폼 입력값 + 기존 계약 병합)
-  //    - 시작일이 오늘 이후면 '계약예정', 오늘이거나 이전이면 '활성'
-  const newStatus = newStart > today ? CONTRACT_STATUS.PENDING : CONTRACT_STATUS.ACTIVE;
-  const _renewFields = _collectRenewFormFields();
   const newContract = Object.assign({}, c, _renewFields, {
     contract_start: newStart,                              // 갱신 패널에서 지정한 시작일 우선
     contract_end:   _renewFields.contract_end !== undefined ? _renewFields.contract_end : '',  // 계약직은 폼 종료일, 정규직은 빈값
