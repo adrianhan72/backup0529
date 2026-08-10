@@ -3240,21 +3240,24 @@ function _validatePhoneNumber(val){
 function _onPhoneInput(el, checkBtnFn){
   _formatPhoneInput(el);
   const val = el.value;
-  let hint = el.parentElement.querySelector('.phone-format-hint');
+  const fg = el.closest('.form-group') || el.parentElement;
+  let hint = fg.querySelector('.phone-format-hint');
   if(!hint){
     hint = document.createElement('span');
     hint.className = 'phone-format-hint ct-hint-normal';
-    el.parentElement.appendChild(hint);
+    fg.appendChild(hint);
   }
   if(!val){
     hint.textContent = '';
     hint.className = 'phone-format-hint ct-hint-normal';
+    if(fg) fg.classList.remove('ct-field-error');
   } else {
     const digits = val.replace(/[^0-9]/g, '');
     const { ok, msg } = _validatePhoneNumber(val);
     if(ok){
       hint.textContent = '✓ 형식 확인';
       hint.className = 'phone-format-hint ct-hint-success';
+      if(fg) fg.classList.remove('ct-field-error');
     } else if(digits.length < 11){
       hint.textContent = `${11-digits.length}자리 더 입력하세요`;
       hint.className = 'phone-format-hint ct-hint-normal';
