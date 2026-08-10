@@ -1909,7 +1909,7 @@ function openRecontractModal(srcContract){
   document.getElementById('ct-end').value     = srcContract.contract_end||'';
   document.getElementById('ct-status').value  = CONTRACT_STATUS.ACTIVE;
   document.getElementById('ct-annual').value  = srcContract.annual_leave_days||15;
-  document.getElementById('ct-pre-used-annual').value = srcContract.pre_used_annual_leave||'';
+  document.getElementById('ct-pre-used-annual').value = srcContract.pre_used_annual_leave||0;
   // 요일별 스케줄 복원 (재계약: 이전 계약 스케줄 그대로 복사)
   if(srcContract.schedule_json){
     try{ setScheduleFromJSON(JSON.parse(srcContract.schedule_json)); }
