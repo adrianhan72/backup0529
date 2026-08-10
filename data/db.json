@@ -34081,7 +34081,8 @@
       "fixed_night_hours": 8,
       "fixed_hol_pay": 0,
       "fixed_hol_hours": 4,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp05_prob03",
@@ -34132,7 +34133,8 @@
       "updated_at": 1779872945702,
       "_ts": 1779872945,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp05_prob03",
@@ -34183,7 +34185,8 @@
       "updated_at": 1779863431875,
       "_ts": 1779863431,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp05_prob03",
@@ -34234,7 +34237,8 @@
       "updated_at": 1779861110613,
       "_ts": 1779861110,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp05_prob03",
@@ -34285,7 +34289,8 @@
       "updated_at": 1779860956361,
       "_ts": 1779860956,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp05_prob03",
@@ -34342,7 +34347,8 @@
       "fixed_night_hours": 8,
       "fixed_hol_pay": 63156,
       "fixed_hol_hours": 4,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp05_prob02",
@@ -34399,7 +34405,8 @@
       "fixed_night_hours": 8,
       "fixed_hol_pay": 63156,
       "fixed_hol_hours": 4,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp05_prob01",
@@ -34456,7 +34463,8 @@
       "fixed_night_hours": 8,
       "fixed_hol_pay": 77586,
       "fixed_hol_hours": 4,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp05_02",
@@ -34513,7 +34521,8 @@
       "fixed_night_hours": 8,
       "fixed_hol_pay": 138270,
       "fixed_hol_hours": 4,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp05_08",
@@ -34570,7 +34579,8 @@
       "fixed_night_hours": 8,
       "fixed_hol_pay": 71964,
       "fixed_hol_hours": 4,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp05_05",
@@ -34627,7 +34637,8 @@
       "fixed_night_hours": 8,
       "fixed_hol_pay": 56976,
       "fixed_hol_hours": 4,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp05_04",
@@ -34684,7 +34695,8 @@
       "fixed_night_hours": 8,
       "fixed_hol_pay": 67698,
       "fixed_hol_hours": 4,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp05_13",
@@ -34741,7 +34753,8 @@
       "fixed_night_hours": 8,
       "fixed_hol_pay": 50592,
       "fixed_hol_hours": 4,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp04_t8",
@@ -34798,7 +34811,8 @@
       "fixed_night_hours": 8,
       "fixed_hol_pay": 72288,
       "fixed_hol_hours": 4,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "e003",
@@ -34855,7 +34869,8 @@
       "fixed_night_hours": 8,
       "fixed_hol_pay": 80460,
       "fixed_hol_hours": 4,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "e004",
@@ -34912,7 +34927,8 @@
       "fixed_night_hours": 8,
       "fixed_hol_pay": 113508,
       "fixed_hol_hours": 4,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "e012",
@@ -34969,7 +34985,8 @@
       "fixed_night_hours": 8,
       "fixed_hol_pay": 155172,
       "fixed_hol_hours": 4,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "e007",
@@ -35026,7 +35043,8 @@
       "fixed_night_hours": 8,
       "fixed_hol_pay": 86208,
       "fixed_hol_hours": 4,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "e010",
@@ -35083,7 +35101,8 @@
       "fixed_night_hours": 8,
       "fixed_hol_pay": 83334,
       "fixed_hol_hours": 4,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "e009",
@@ -35140,7 +35159,8 @@
       "fixed_night_hours": 8,
       "fixed_hol_pay": 90516,
       "fixed_hol_hours": 4,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "e006",
@@ -35197,7 +35217,8 @@
       "fixed_night_hours": 8,
       "fixed_hol_pay": 93390,
       "fixed_hol_hours": 4,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "e005",
@@ -35254,7 +35275,8 @@
       "fixed_night_hours": 8,
       "fixed_hol_pay": 83334,
       "fixed_hol_hours": 4,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "e008",
@@ -35311,7 +35333,8 @@
       "fixed_night_hours": 8,
       "fixed_hol_pay": 135060,
       "fixed_hol_hours": 4,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "e011",
@@ -35368,7 +35391,8 @@
       "fixed_night_hours": 8,
       "fixed_hol_pay": 96264,
       "fixed_hol_hours": 4,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "e002",
@@ -35425,7 +35449,8 @@
       "fixed_night_hours": 8,
       "fixed_hol_pay": 90516,
       "fixed_hol_hours": 4,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "e001",
@@ -35482,7 +35507,8 @@
       "fixed_night_hours": 8,
       "fixed_hol_pay": 103446,
       "fixed_hol_hours": 4,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "e030",
@@ -35539,7 +35565,8 @@
       "fixed_night_hours": 8,
       "fixed_hol_pay": 122124,
       "fixed_hol_hours": 4,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "e017",
@@ -35596,7 +35623,8 @@
       "fixed_night_hours": 8,
       "fixed_hol_pay": 103446,
       "fixed_hol_hours": 4,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "e022",
@@ -35653,7 +35681,8 @@
       "fixed_night_hours": 8,
       "fixed_hol_pay": 113508,
       "fixed_hol_hours": 4,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "e014",
@@ -35710,7 +35739,8 @@
       "fixed_night_hours": 8,
       "fixed_hol_pay": 129312,
       "fixed_hol_hours": 4,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "e026",
@@ -35761,7 +35791,8 @@
       "updated_at": 1780289061104,
       "_ts": 1779358139,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "e015",
@@ -35818,7 +35849,8 @@
       "fixed_night_hours": 8,
       "fixed_hol_pay": 116382,
       "fixed_hol_hours": 4,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "e023",
@@ -35875,7 +35907,8 @@
       "fixed_night_hours": 8,
       "fixed_hol_pay": 145116,
       "fixed_hol_hours": 4,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "e024",
@@ -35932,7 +35965,8 @@
       "fixed_night_hours": 8,
       "fixed_hol_pay": 96264,
       "fixed_hol_hours": 4,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp-sev-G",
@@ -35983,7 +36017,8 @@
       "updated_at": 1780289061104,
       "_ts": 1779356691,
       "pay_period": "당월 1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp-sev-E",
@@ -36040,7 +36075,8 @@
       "fixed_night_hours": 8,
       "fixed_hol_pay": 99138,
       "fixed_hol_hours": 4,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp-sev-J",
@@ -36091,7 +36127,8 @@
       "updated_at": 1780289061104,
       "_ts": 1779356692,
       "pay_period": "당월 1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp-sev-F",
@@ -36142,7 +36179,8 @@
       "updated_at": 1780289061104,
       "_ts": 1779356692,
       "pay_period": "당월 1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp-sev-I",
@@ -36193,7 +36231,8 @@
       "updated_at": 1780289061104,
       "_ts": 1779356690,
       "pay_period": "당월 1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp-sev-H",
@@ -36244,7 +36283,8 @@
       "updated_at": 1780289061104,
       "_ts": 1779356693,
       "pay_period": "당월 1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp-sev-G",
@@ -36295,7 +36335,8 @@
       "updated_at": 1780289061104,
       "_ts": 1779356693,
       "pay_period": "당월 1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp-sev-B",
@@ -36346,7 +36387,8 @@
       "updated_at": 1780289061104,
       "_ts": 1779356693,
       "pay_period": "당월 1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp-sev-C",
@@ -36397,7 +36439,8 @@
       "updated_at": 1780289061104,
       "_ts": 1779356693,
       "pay_period": "당월 1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp-sev-D",
@@ -36454,7 +36497,8 @@
       "fixed_night_hours": 8,
       "fixed_hol_pay": 61782,
       "fixed_hol_hours": 4,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp-sev-C",
@@ -36511,7 +36555,8 @@
       "fixed_night_hours": 8,
       "fixed_hol_pay": 91956,
       "fixed_hol_hours": 4,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp-sev-A",
@@ -36568,7 +36613,8 @@
       "fixed_night_hours": 8,
       "fixed_hol_pay": 81894,
       "fixed_hol_hours": 4,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp-sev-B",
@@ -36625,7 +36671,8 @@
       "fixed_night_hours": 8,
       "fixed_hol_pay": 89658,
       "fixed_hol_hours": 4,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp-sev-C",
@@ -36676,7 +36723,8 @@
       "updated_at": 1780289061104,
       "_ts": 1779783613,
       "pay_period": "당월 1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp04_t8",
@@ -36733,7 +36781,8 @@
       "fixed_night_hours": 8,
       "fixed_hol_pay": 77934,
       "fixed_hol_hours": 4,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp04_t7",
@@ -36790,7 +36839,8 @@
       "fixed_night_hours": 8,
       "fixed_hol_pay": 91956,
       "fixed_hol_hours": 4,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp04_t5",
@@ -36841,7 +36891,8 @@
       "updated_at": 1779356697848,
       "_ts": 1779356697,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp04_t6",
@@ -36892,7 +36943,8 @@
       "updated_at": 1779273934903,
       "_ts": 1779273934,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp04_t1",
@@ -36943,7 +36995,8 @@
       "updated_at": 1778554663396,
       "_ts": 1778554663,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp04_t2",
@@ -37003,7 +37056,8 @@
       "fixed_night_hours": 8,
       "fixed_hol_pay": 77934,
       "fixed_hol_hours": 4,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp04_t4",
@@ -37054,7 +37108,8 @@
       "updated_at": 1779273936822,
       "_ts": 1779273936,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp04_t1",
@@ -37114,7 +37169,8 @@
       "fixed_night_hours": 8,
       "fixed_hol_pay": 86208,
       "fixed_hol_hours": 4,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp01_t01",
@@ -37171,7 +37227,8 @@
       "fixed_night_hours": 8,
       "fixed_hol_pay": 93390,
       "fixed_hol_hours": 4,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp01_t05",
@@ -37229,7 +37286,8 @@
       "fixed_night_hours": 8,
       "fixed_hol_pay": 60870,
       "fixed_hol_hours": 4,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp01_t02",
@@ -37280,7 +37338,8 @@
       "updated_at": 1779783615312,
       "_ts": 1779783615,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp01_t03",
@@ -37331,7 +37390,8 @@
       "updated_at": 1779358138463,
       "_ts": 1779358138,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp01_t04",
@@ -37388,7 +37448,8 @@
       "fixed_night_hours": 8,
       "fixed_hol_pay": 74376,
       "fixed_hol_hours": 4,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp_daily_001",
@@ -37440,7 +37501,8 @@
       "_ts": 1779358138,
       "daily_wage": 131496,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp_daily_001",
@@ -37492,7 +37554,8 @@
       "_ts": 1779358139,
       "daily_wage": 131496,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp_daily_001",
@@ -37544,7 +37607,8 @@
       "_ts": 1779358141,
       "daily_wage": 131496,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp06_03",
@@ -37595,7 +37659,8 @@
       "updated_at": 1778554667443,
       "_ts": 1778554667,
       "pay_period": "전월 1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp06_02",
@@ -37646,7 +37711,8 @@
       "updated_at": 1778554668044,
       "_ts": 1778554668,
       "pay_period": "전월 1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp06_01",
@@ -37697,7 +37763,8 @@
       "updated_at": 1778554668884,
       "_ts": 1778554668,
       "pay_period": "전월 1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp05_07",
@@ -37748,7 +37815,8 @@
       "updated_at": 1779358143259,
       "_ts": 1779358143,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp05_01",
@@ -37799,7 +37867,8 @@
       "updated_at": 1779358142179,
       "_ts": 1779358142,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp05_10",
@@ -37850,7 +37919,8 @@
       "updated_at": 1779358141197,
       "_ts": 1779358141,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp05_03",
@@ -37901,7 +37971,8 @@
       "updated_at": 1779358141194,
       "_ts": 1779358141,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp05_08",
@@ -37952,7 +38023,8 @@
       "updated_at": 1779358144551,
       "_ts": 1779358144,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp05_04",
@@ -38003,7 +38075,8 @@
       "updated_at": 1779358145171,
       "_ts": 1779358145,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp05_14",
@@ -38054,7 +38127,8 @@
       "updated_at": 1779358144767,
       "_ts": 1779358144,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp05_15",
@@ -38105,7 +38179,8 @@
       "updated_at": 1779358145029,
       "_ts": 1779358145,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp05_09",
@@ -38156,7 +38231,8 @@
       "updated_at": 1779358144555,
       "_ts": 1779358144,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp05_02",
@@ -38207,7 +38283,8 @@
       "updated_at": 1779358152576,
       "_ts": 1779358152,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp05_11",
@@ -38258,7 +38335,8 @@
       "updated_at": 1779358147390,
       "_ts": 1779358147,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp05_06",
@@ -38309,7 +38387,8 @@
       "updated_at": 1779358147611,
       "_ts": 1779358147,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp05_12",
@@ -38360,7 +38439,8 @@
       "updated_at": 1779358147530,
       "_ts": 1779358147,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp05_13",
@@ -38411,7 +38491,8 @@
       "updated_at": 1779358147592,
       "_ts": 1779358147,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp05_05",
@@ -38462,7 +38543,8 @@
       "updated_at": 1779358159044,
       "_ts": 1779358159,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp04_05",
@@ -38513,7 +38595,8 @@
       "updated_at": 1779357707182,
       "_ts": 1779357707,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp04_01",
@@ -38564,7 +38647,8 @@
       "updated_at": 1779357702119,
       "_ts": 1779357702,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp04_04",
@@ -38615,7 +38699,8 @@
       "updated_at": 1779357705823,
       "_ts": 1779357705,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp04_02",
@@ -38666,7 +38751,8 @@
       "updated_at": 1779357703370,
       "_ts": 1779357703,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp04_03",
@@ -38717,7 +38803,8 @@
       "updated_at": 1779357704341,
       "_ts": 1779357704,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp03_14",
@@ -38768,7 +38855,8 @@
       "updated_at": 1779358155528,
       "_ts": 1779358155,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp03_09",
@@ -38819,7 +38907,8 @@
       "updated_at": 1779358154365,
       "_ts": 1779358154,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp03_02",
@@ -38870,7 +38959,8 @@
       "updated_at": 1779358153742,
       "_ts": 1779358153,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp03_10",
@@ -38921,7 +39011,8 @@
       "updated_at": 1779358153741,
       "_ts": 1779358153,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp03_15",
@@ -38972,7 +39063,8 @@
       "updated_at": 1779358159977,
       "_ts": 1779358159,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp03_12",
@@ -39023,7 +39115,8 @@
       "updated_at": 1779358159800,
       "_ts": 1779358159,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp03_13",
@@ -39074,7 +39167,8 @@
       "updated_at": 1779358159905,
       "_ts": 1779358159,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp03_08",
@@ -39125,7 +39219,8 @@
       "updated_at": 1779358159858,
       "_ts": 1779358159,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp03_17",
@@ -39176,7 +39271,8 @@
       "updated_at": 1779358160057,
       "_ts": 1779358160,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp03_04",
@@ -39227,7 +39323,8 @@
       "updated_at": 1779358160891,
       "_ts": 1779358160,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp03_05",
@@ -39278,7 +39375,8 @@
       "updated_at": 1779358161088,
       "_ts": 1779358161,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp03_06",
@@ -39329,7 +39427,8 @@
       "updated_at": 1779358160774,
       "_ts": 1779358160,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp03_03",
@@ -39380,7 +39479,8 @@
       "updated_at": 1779358160899,
       "_ts": 1779358160,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp03_07",
@@ -39431,7 +39531,8 @@
       "updated_at": 1779358160837,
       "_ts": 1779358160,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp03_01",
@@ -39482,7 +39583,8 @@
       "updated_at": 1779358162029,
       "_ts": 1779358162,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp03_18",
@@ -39533,7 +39635,8 @@
       "updated_at": 1779358162048,
       "_ts": 1779358162,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp03_11",
@@ -39584,7 +39687,8 @@
       "updated_at": 1779358162218,
       "_ts": 1779358162,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp03_16",
@@ -39635,7 +39739,8 @@
       "updated_at": 1779358162414,
       "_ts": 1779358162,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp02_08",
@@ -39686,7 +39791,8 @@
       "updated_at": 1779358162340,
       "_ts": 1779358162,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp02_06",
@@ -39737,7 +39843,8 @@
       "updated_at": 1779358163383,
       "_ts": 1779358163,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp02_04",
@@ -39788,7 +39895,8 @@
       "updated_at": 1779358164922,
       "_ts": 1779358164,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp02_02",
@@ -39839,7 +39947,8 @@
       "updated_at": 1779358168146,
       "_ts": 1779358168,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp02_03",
@@ -39890,7 +39999,8 @@
       "updated_at": 1779358163890,
       "_ts": 1779358163,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp02_05",
@@ -39941,7 +40051,8 @@
       "updated_at": 1779358163309,
       "_ts": 1779358163,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp02_01",
@@ -39992,7 +40103,8 @@
       "updated_at": 1779358169134,
       "_ts": 1779358169,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp02_07",
@@ -40043,7 +40155,8 @@
       "updated_at": 1779358168959,
       "_ts": 1779358168,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp01_01",
@@ -40094,7 +40207,8 @@
       "updated_at": 1779358169092,
       "_ts": 1779358169,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp01_05",
@@ -40145,7 +40259,8 @@
       "updated_at": 1779358169045,
       "_ts": 1779358169,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp01_09",
@@ -40196,7 +40311,8 @@
       "updated_at": 1779358170276,
       "_ts": 1779358170,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp01_10",
@@ -40247,7 +40363,8 @@
       "updated_at": 1779358171877,
       "_ts": 1779358171,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp01_07",
@@ -40298,7 +40415,8 @@
       "updated_at": 1779358171626,
       "_ts": 1779358171,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp01_02",
@@ -40349,7 +40467,8 @@
       "updated_at": 1779358171323,
       "_ts": 1779358171,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp01_08",
@@ -40400,7 +40519,8 @@
       "updated_at": 1779358171392,
       "_ts": 1779358171,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp01_04",
@@ -40451,7 +40571,8 @@
       "updated_at": 1779358171869,
       "_ts": 1779358171,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp01_11",
@@ -40502,7 +40623,8 @@
       "updated_at": 1779358175914,
       "_ts": 1779358175,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp01_06",
@@ -40553,7 +40675,8 @@
       "updated_at": 1779358172660,
       "_ts": 1779358172,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp01_03",
@@ -40604,7 +40727,8 @@
       "updated_at": 1779358172861,
       "_ts": 1779358172,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp01_12",
@@ -40655,7 +40779,8 @@
       "updated_at": 1779358173137,
       "_ts": 1779358173,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "id": "ct05_new01",
@@ -40728,7 +40853,8 @@
       "created_at": 1780549889175,
       "updated_at": 1780637238411,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "id": "ct05_new02",
@@ -40801,7 +40927,8 @@
       "created_at": 1780549889175,
       "updated_at": 1780640074503,
       "pay_period": "전월1일~말일",
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "id": "ct05_new03",
@@ -40881,7 +41008,8 @@
       "fixed_night_hours": 8,
       "fixed_hol_pay": 66090,
       "fixed_hol_hours": 4,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "id": "ct05_new04",
@@ -40961,7 +41089,8 @@
       "fixed_night_hours": 8,
       "fixed_hol_pay": 60342,
       "fixed_hol_hours": 4,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "id": "ct05_new05",
@@ -41041,7 +41170,8 @@
       "fixed_night_hours": 8,
       "fixed_hol_pay": 75864,
       "fixed_hol_hours": 4,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp05_new01",
@@ -41118,7 +41248,8 @@
       "fixed_hol_hours": 4,
       "work_days_per_month": 22,
       "break_time": 1,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "employee_id": "emp05_new02",
@@ -41195,7 +41326,8 @@
       "fixed_hol_hours": 4,
       "work_days_per_month": 22,
       "break_time": 1,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "id": "ct_null_01",
@@ -41250,7 +41382,8 @@
       "note": "테스트: contract_start, contract_end, 근로시간, 4대보험, 수당 전부 null — 월급여만 300만원 [null 필드 보정됨] [null 필드 보정됨]",
       "created_at": 1779855241000,
       "updated_at": 1785216404481,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "id": "ct_null_02",
@@ -41305,7 +41438,8 @@
       "note": "테스트: contract_type, monthly_salary_agreed, base_salary, hourly_wage, weekly_holiday_pay null — 식대/교통비만 설정 [null 필드 보정됨] [null 필드 보정됨]",
       "created_at": 1779855242000,
       "updated_at": 1785216404481,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "id": "ct_null_03",
@@ -41360,7 +41494,8 @@
       "note": "테스트: 4대보험 전부 null, break_time, hourly_wage, weekly_holiday_pay null [null 필드 보정됨] [null 필드 보정됨]",
       "created_at": 1779855243000,
       "updated_at": 1785216404481,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "id": "ct_null_04",
@@ -41416,7 +41551,8 @@
       "note": "테스트: 일용직 — 근로시간, 임금정보, 4대보험, 일급여 전부 null [null 필드 보정됨] [null 필드 보정됨]",
       "created_at": 1779855244000,
       "updated_at": 1785216404481,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "id": "ct_null_05",
@@ -41471,7 +41607,8 @@
       "note": "테스트: contract_start, contract_end, contract_type, 모든 임금·수당 정보 null — 완전 빈 계약 [null 필드 보정됨] [null 필드 보정됨]",
       "created_at": 1779855245000,
       "updated_at": 1785216404481,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     },
     {
       "id": "ct_null_06",
@@ -41526,7 +41663,8 @@
       "note": "테스트: 임시저장 상태 — 모든 필드 null, 직원 정보도 name·id_number·phone 등 전부 null [null 필드 보정됨]",
       "created_at": 1779855246000,
       "updated_at": 1785216404481,
-      "pre_used_annual_leave": 0
+      "pre_used_annual_leave": 0,
+      "custom_fixed_values": null
     }
   ],
   "companies": [
