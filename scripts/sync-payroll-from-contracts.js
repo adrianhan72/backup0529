@@ -3,8 +3,8 @@
  * - 만근 시 base_salary, weekly_holiday_pay, 고정수당, 각종 수당을 계약값으로 동기화
  * - standard_monthly_pay, gross_pay, 공제항목 재계산
  */
-const fs = require('fs');
-const db = JSON.parse(fs.readFileSync('data/db.json', 'utf8'));
+const { loadDB, saveDB } = require('./_db');
+const db = loadDB();
 const payrolls = db.payrolls || [];
 const contracts = db.contracts || [];
 const employees = db.employees || [];
@@ -267,6 +267,6 @@ for (const pay of payrolls) {
 console.log(`\n급여 ${payrolls.filter(p=>!p.is_draft).length}건 중 ${totalFixed}건 보정`);
 
 if (!DRY_RUN) {
-  fs.writeFileSync('data/db.json', JSON.stringify(db, null, 2), 'utf8');
+  saveDB(db);
   console.log('db.json 저장 완료');
 }

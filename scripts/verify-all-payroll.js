@@ -2,8 +2,8 @@
  * 급여 데이터 전체 필드 산식 검증
  * gross_pay, 모든 수당, 공제 항목을 계약 데이터와 비교
  */
-const fs = require('fs');
-const db = JSON.parse(fs.readFileSync('data/db.json', 'utf8'));
+const { loadDB, saveDB } = require('./_db');
+const db = loadDB();
 const payrolls = (db.payrolls || []).filter(p => !p.is_draft);
 const contracts = db.contracts || [];
 const companies = db.companies || [];

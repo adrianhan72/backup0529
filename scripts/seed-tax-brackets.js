@@ -5,7 +5,8 @@
 const fs = require('fs');
 const path = require('path');
 
-const DB_PATH = path.join(__dirname, '..', 'data', 'db.json');
+const { loadDB, saveDB } = require('./_db');
+const db = loadDB();
 const db = JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
 
 const now = Date.now();

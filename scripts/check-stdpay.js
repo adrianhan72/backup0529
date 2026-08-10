@@ -1,4 +1,5 @@
-const db = JSON.parse(require('fs').readFileSync('data/db.json', 'utf8'));
+const { loadDB, saveDB } = require('./_db');
+const db = loadDB();
 const p = db.payrolls || [];
 const noStd = p.filter(x => !x.is_draft && (!x.standard_monthly_pay || x.standard_monthly_pay === 0));
 

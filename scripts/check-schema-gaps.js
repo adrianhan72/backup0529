@@ -1,4 +1,5 @@
-const db = JSON.parse(require('fs').readFileSync('data/db.json', 'utf8'));
+const { loadDB, saveDB } = require('./_db');
+const db = loadDB();
 const ct = db.contracts.filter(c => !c.is_draft);
 const first = ct[0];
 console.log('Contract fields:', Object.keys(first).filter(k => !k.startsWith('_') && !k.startsWith('gs_')).sort().join('\n'));

@@ -5,7 +5,8 @@
 const fs = require('fs');
 const path = require('path');
 
-const DB_PATH = path.join(__dirname, '..', 'data', 'db.json');
+const { loadDB, saveDB } = require('./_db');
+const db = loadDB();
 const TEST_PATH = path.join(__dirname, '..', 'data', 'generated', 'test-null-required-fields.json');
 
 console.log('DB 경로:', DB_PATH);

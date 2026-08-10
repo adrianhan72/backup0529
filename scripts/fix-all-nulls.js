@@ -4,8 +4,8 @@
  * - ct_null_* 계약: 계약 산식에 맞게 계산된 값으로 채움
  * - con01_s66/s62, cont_draft_*: 삭제 (연결된 직원 없음)
  */
-const fs = require('fs');
-const db = JSON.parse(fs.readFileSync('data/db.json', 'utf8'));
+const { loadDB, saveDB } = require('./_db');
+const db = loadDB();
 const now = Date.now();
 const r = v => Math.round(v);
 const num = (v, d = 0) => { const n = Number(v); return isNaN(n) ? d : n; };
@@ -107,5 +107,5 @@ const empBefore = db.employees.length;
 db.employees = (db.employees || []).filter(e => !empToDelete.includes(e.id));
 console.log(`orphan 직원 삭제: ${empBefore - db.employees.length}건 (${empToDelete.join(', ')})`)
 
-fs.writeFileSync('data/db.json', JSON.stringify(db, null, 2), 'utf8');
+saveDB(db);
 console.log('\n저장 완료');

@@ -2,8 +2,8 @@
  * 근로계약 데이터 전면 검증
  * - 수당·공제·근무시간·연결관계까지 모두 확인
  */
-const fs = require('fs');
-const db = JSON.parse(fs.readFileSync('data/db.json', 'utf8'));
+const { loadDB, saveDB } = require('./_db');
+const db = loadDB();
 const contracts = db.contracts || [];
 const employees = db.employees || [];
 const companies = db.companies || [];

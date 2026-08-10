@@ -1,4 +1,5 @@
-const db = JSON.parse(require('fs').readFileSync('data/db.json', 'utf8'));
+const { loadDB, saveDB } = require('./_db');
+const db = loadDB();
 const emps = db.employees || [];
 const cos = db.companies || [];
 

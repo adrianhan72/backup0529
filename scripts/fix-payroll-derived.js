@@ -3,8 +3,8 @@
  * - 계약 기반 필드(base_salary, weekly_holiday_pay, fixed_ot/night/hol, 수당, hourly_wage)는 보존
  * - 파생 필드(standard_monthly_pay, gross_pay, 4대보험, 소득세, total_deduction, net_pay)는 재계산
  */
-const fs = require('fs');
-const db = JSON.parse(fs.readFileSync('data/db.json', 'utf8'));
+const { loadDB, saveDB } = require('./_db');
+const db = loadDB();
 const payrolls = db.payrolls || [];
 const contracts = db.contracts || [];
 const employees = db.employees || [];
@@ -195,7 +195,7 @@ for (const pay of nonDraft) {
 console.log(`\n급여 ${nonDraft.length}건 중 ${totalFixed}건 보정 필요`);
 
 if (!DRY_RUN && totalFixed > 0) {
-  fs.writeFileSync('data/db.json', JSON.stringify(db, null, 2), 'utf8');
+  saveDB(db);
   console.log('db.json 저장 완료');
 } else if (DRY_RUN) {
   console.log('DRY RUN - 저장 안 함');

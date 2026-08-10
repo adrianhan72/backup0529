@@ -4,8 +4,8 @@
  * - 누락된 근로시간: 기본값(8h/5d) 설정
  * - 보험 가입여부: null → 'Y'
  */
-const fs = require('fs');
-const db = JSON.parse(fs.readFileSync('data/db.json', 'utf8'));
+const { loadDB, saveDB } = require('./_db');
+const db = loadDB();
 const contracts = db.contracts || [];
 const DRY_RUN = process.argv.includes('--dry-run');
 
@@ -152,6 +152,6 @@ for (const ct of contracts) {
 
 console.log(`\n계약 ${contracts.length}건 중 ${totalFixed}건 보정 필요`);
 if (!DRY_RUN && totalFixed > 0) {
-  fs.writeFileSync('data/db.json', JSON.stringify(db, null, 2), 'utf8');
+  saveDB(db);
   console.log('db.json 저장 완료');
 }

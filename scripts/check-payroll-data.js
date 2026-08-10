@@ -1,4 +1,5 @@
-const db = JSON.parse(require('fs').readFileSync('data/db.json', 'utf8'));
+const { loadDB, saveDB } = require('./_db');
+const db = loadDB();
 const p = db.payrolls || [];
 
 // 1. work_days 없는 급여
