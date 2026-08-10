@@ -1728,19 +1728,30 @@ async function confirmContractRenew(){
     if(!confirmed) return;
   }
 
-  // 갱신 요약 메시지 생성
+  // 갱신 변경사항 요약
   const _empName = _emp?.name || '';
   const _ctLabel = contractTypeLabel(c.contract_type) || '';
   const _fmtD = d => d ? d.replace(/-/g, '.') : '-';
-  const _newEnd = _renewFields?.contract_end || '';
+  const _fmtW = v => Math.round(v||0).toLocaleString('ko-KR') + '원';
+
+  const _changes = [];
+  _changes.push(`기존 계약 종료: ${_fmtD(oldEnd)} → 신규 계약 시작: ${_fmtD(newStart)}`);
+  if(_renewFields.contract_end) _changes.push(`신규 계약 종료일: ${_fmtD(_renewFields.contract_end)}`);
+  if(_renewFields.hourly_wage !== c.hourly_wage) _changes.push(`통상시급: ${_fmtW(c.hourly_wage)} → ${_fmtW(_renewFields.hourly_wage)}`);
+  if(_renewFields.base_salary !== c.base_salary) _changes.push(`기본급: ${_fmtW(c.base_salary)} → ${_fmtW(_renewFields.base_salary)}`);
+  if(_renewFields.monthly_salary_agreed !== c.monthly_salary_agreed) _changes.push(`월 약정임금: ${_fmtW(c.monthly_salary_agreed)} → ${_fmtW(_renewFields.monthly_salary_agreed)}`);
+  if(_renewFields.work_hours_per_day !== c.work_hours_per_day) _changes.push(`1일 근로시간: ${c.work_hours_per_day||0}h → ${_renewFields.work_hours_per_day||0}h`);
+  if(_renewFields.work_days_per_week !== c.work_days_per_week) _changes.push(`주 근로일수: ${c.work_days_per_week||0}일 → ${_renewFields.work_days_per_week||0}일`);
+  const _changedAllowances = [];
+  for(const key of ['position_allowance','meal_allowance','transportation_allowance','site_allowance','skill_allowance','license_allowance','hazard_allowance','remote_area_allowance','communication_allowance','research_allowance','regular_bonus','childcare_allowance']){
+    if((_renewFields[key]||0) !== (c[key]||0)) _changedAllowances.push(key);
+  }
+  if(_changedAllowances.length) _changes.push(`수당 변경: ${_changedAllowances.length}개 항목`);
+
   const _summaryMsg = `[계약 갱신 확인]\n\n` +
-    `근로자: ${_empName}\n` +
-    `고용형태: ${_ctLabel}\n\n` +
-    `기존 계약 해지일: ${_fmtD(oldEnd)}\n` +
-    `신규 계약 시작일: ${_fmtD(newStart)}${_newEnd ? '\n신규 계약 종료일: ' + _fmtD(_newEnd) : ''}\n` +
-    `계약 상태: ${newStatus === CONTRACT_STATUS.PENDING ? '계약예정 (시작일 미도래)' : '계약유효 (활성)'}\n\n` +
-    (origEnd && oldEnd < origEnd ? `※ 기존 계약 종료일(${_fmtD(origEnd)})보다 해지일이 앞당겨집니다.\n` : '') +
-    `계속 진행하시겠습니까?`;
+    `근로자: ${_empName} (${_ctLabel})\n\n` +
+    `갱신 내용:\n` +
+    _changes.map((ch, i) => `${i+1}. ${ch}`).join('\n');
 
   const confirmed = await _showConfirm({
     message: _summaryMsg,
