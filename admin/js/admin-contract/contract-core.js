@@ -925,7 +925,10 @@ function openContractModal(id=null, preCompanyId=null){
         document.getElementById('ct-edit-em-expire').value    = emp.expire_date || emp.resign_date || '';
         document.getElementById('ct-edit-em-id').value        = emp.id_number || '';
         document.getElementById('ct-edit-em-phone').value     = emp.phone || '';
+        // oninput 미발생 → 수동 트리거 (오류 힌트 표시용)
+        if(typeof _onPhoneInput === 'function') _onPhoneInput(document.getElementById('ct-edit-em-phone'), _checkAmendBtnState);
         document.getElementById('ct-edit-em-email').value     = emp.email || '';
+        if(typeof _onEmailInput === 'function') _onEmailInput(document.getElementById('ct-edit-em-email'));
         document.getElementById('ct-edit-em-address').value   = emp.address || '';
         document.getElementById('ct-edit-em-bank').value      = emp.bank_name || '';
         document.getElementById('ct-edit-em-account').value   = emp.bank_account || '';
