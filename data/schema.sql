@@ -1,7 +1,7 @@
 -- =============================================================================
 -- 인사톡 노무톡 — SQLite Schema (한글 주석 포함)
 -- node dump_schema.js 로 자동 생성 (ALTER TABLE 반영)
--- 최종 갱신: 2026-08-04
+-- 최종 갱신: 2026-08-10
 -- 테이블 수: 26개
 -- =============================================================================
 
@@ -159,7 +159,8 @@ CREATE TABLE IF NOT EXISTS contracts (
   retention_cleared INTEGER DEFAULT 0,
   retention_cleared_at TEXT,
   insurance_reported_at TEXT,
-  tax_reported_at TEXT
+  tax_reported_at TEXT,
+  custom_fixed_values TEXT DEFAULT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_contracts_employee ON contracts(employee_id);
