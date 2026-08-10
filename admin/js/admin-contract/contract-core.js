@@ -990,13 +990,15 @@ function openContractModal(id=null, preCompanyId=null){
       if(expireRowEl) expireRowEl.style.display  = (isFixedType || isRegularType) ? 'none' : '';
       // 계약 종료일 행: toggleCtEndDate에서 고용형태별 레이아웃 자동 제어
       toggleCtEndDate(true);
-      // 계약유형에 따라 연봉 행 표시 제어 (수습은 연봉제 미적용 — 정규직만)
-      const isRegEdit  = ctVal===CONTRACT_TYPE.REGULAR;  // 정규직 수습 제외
+      // 계약유형에 따라 연봉/월약정임금 행 표시 제어
+      const isRegEdit  = ctVal===CONTRACT_TYPE.REGULAR;
+      const isFixedEdit= ctVal===CONTRACT_TYPE.FIXED || ctVal===CONTRACT_TYPE.FIXED_PROBATION;
       const isProbEdit = ctVal===CONTRACT_TYPE.REGULAR_PROBATION || ctVal===CONTRACT_TYPE.FIXED_PROBATION;
       const isDailyEdit= ctVal===CONTRACT_TYPE.DAILY;
       const rowM=document.getElementById('ct-row-monthly');
-      if(rowM) rowM.style.display=isRegEdit?'':'none';
-      // 연봉 섹션 (연봉 필드 포함) — 정규직만, 수습 제외
+      // 월약정임금: 정규직·계약직 모두 표시, 일용직만 숨김
+      if(rowM) rowM.style.display=isDailyEdit?'none':'';
+      // 연봉 섹션 — 정규직만 (수습 제외)
       ['ct-row-salary-period','ct-row-annual-sal'].forEach(id=>{
         const el=document.getElementById(id); if(el) el.style.display=isRegEdit?'':'none';
       });
