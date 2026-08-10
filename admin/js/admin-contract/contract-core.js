@@ -2764,7 +2764,6 @@ async function openAmendPreview(){
     research_pay_type: _getCTPayTypeVal('research'),
     site_allowance: site_, skill_allowance: skill_, license_allowance: lic_, hazard_allowance: getAmountVal('ct-hazard')||0,
     custom_ordinary_values: JSON.stringify(typeof _getCustomOrdinaryValues==='function' ? _getCustomOrdinaryValues() : []),
-    custom_fixed_values:    JSON.stringify(typeof _getCustomFixedValues==='function'    ? _getCustomFixedValues()    : []),
     communication_allowance: comm_, communication_pay_type: _getCTPayTypeVal('communication'),
     fitness_allowance: fit_, fitness_pay_type: _getCTPayTypeVal('fitness'),
     self_dev_allowance: sdev_, self_dev_pay_type: _getCTPayTypeVal('self_dev'),

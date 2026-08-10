@@ -1166,7 +1166,6 @@ function _collectRenewFormFields(){
   fields.license_allowance     = getAmountVal('ct-license') || 0;
   fields.hazard_allowance      = getAmountVal('ct-hazard') || 0;
   fields.custom_ordinary_values = JSON.stringify(typeof _getCustomOrdinaryValues==='function' ? _getCustomOrdinaryValues() : []);
-  fields.custom_fixed_values    = JSON.stringify(typeof _getCustomFixedValues==='function'    ? _getCustomFixedValues()    : []);
   fields.communication_allowance = getAmountVal('ct-communication') || 0;
   fields.fitness_allowance     = getAmountVal('ct-fitness') || 0;
   fields.self_dev_allowance    = getAmountVal('ct-self-dev') || 0;
