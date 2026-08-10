@@ -3313,11 +3313,16 @@ function _onEmailInput(el){
 
 // ── 필수 입력 유효성 검사 + 하이라이트 헬퍼 ──────────────────────────────
 function _ctMarkError(fieldId, label, errors){
-  // form-group 부모에 에러 클래스 부여
   const el = document.getElementById(fieldId);
   if(!el) return;
   const fg = el.closest('.form-group') || el.parentElement;
   if(fg) fg.classList.add('ct-field-error');
+  // phone/email 포맷 힌트도 오류 메시지로 갱신
+  const hint = fg?.querySelector('.phone-format-hint, .email-format-hint');
+  if(hint){
+    hint.textContent = '✗ ' + label;
+    hint.className = (hint.className.includes('phone') ? 'phone-format-hint' : 'email-format-hint') + ' ct-hint-error';
+  }
   errors.push(label);
 }
 
