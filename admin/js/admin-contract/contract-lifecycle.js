@@ -390,9 +390,21 @@ function generateContractHTMLFromData(c, emp, co){
   const childcareAllow    = parseFloat(c.childcare_allowance||0);
   const regularBonus      = parseFloat(c.regular_bonus||0);
   // acfg: allowance_config가 있으면 그 키 값으로 제어, 없으면 null (값>0이면 무조건 표시)
-  const _rawAcfg = (co && co.allowance_config) ? co.allowance_config : null;
+  // JSON 문자열인 경우 파싱 (getCompanySnapshotAt는 파싱하지만, 다른 호출자는 아닐 수 있음)
+  const _rawCfgRaw = (co && co.allowance_config) ? co.allowance_config : null;
+  const _rawAcfg = (() => {
+    if (!_rawCfgRaw) return null;
+    if (typeof _rawCfgRaw === 'string') { try { return JSON.parse(_rawCfgRaw); } catch(e) { return null; } }
+    return _rawCfgRaw;
+  })();
   // acfgShow(key, amount): allowance_config 없으면 amount>0으로만 판단, 있으면 cfg[key] && amount>0
   const acfgShow = (key, amount) => amount > 0 && (_rawAcfg === null || !!_rawAcfg[key]);
+  // acfgIsFixed(key): 회사 allowance_config 기준 pay_type 확인 (계약서 데이터보다 회사 설정 우선)
+  const acfgIsFixed = (key) => {
+    if (!_rawAcfg) return true; // config 없으면 기본 fixed로 간주
+    const pt = _rawAcfg[key + '_pay_type'] || 'fixed';
+    return pt === 'fixed';
+  };
   const fixedOtPay        = parseFloat(c.fixed_ot_pay||0);
   const fixedNightPay     = parseFloat(c.fixed_night_pay||0);
   const fixedHolPay       = parseFloat(c.fixed_hol_pay||0);
@@ -492,24 +504,24 @@ function generateContractHTMLFromData(c, emp, co){
           ${fixedOtPay > 0    ? row('고정 연장근로수당', `${fmt(fixedOtPay)}원`)   : ''}
           ${fixedNightPay > 0 ? row('고정 야간근로수당', `${fmt(fixedNightPay)}원`) : ''}
           ${fixedHolPay > 0   ? row('고정 휴일근로수당', `${fmt(fixedHolPay)}원`)   : ''}
-          ${posAllow > 0       ? row('직책수당',         `${fmt(posAllow)}원`)     : ''}
-          ${carAllow > 0        && isFixedType(carPayType)                              ? row('차량지원비',    `${fmt(carAllow)}원`)        : ''}
-          ${remoteAreaAllow > 0                                                          ? row('벽지수당',     `${fmt(remoteAreaAllow)}원`) : ''}
-          ${mealAllow > 0       && isFixedType(mealPayType)                             ? row('식대',         `${fmt(mealAllow)}원`)       : ''}
-          ${researchAllow > 0   && isFixedType(researchPayType)                         ? row('연구활동비',   `${fmt(researchAllow)}원`)   : ''}
-          ${acfgShow('site',          siteAllow)                                         ? row('현장수당',     `${fmt(siteAllow)}원`)       : ''}
-          ${acfgShow('skill',         skillAllow)                                        ? row('기술수당',     `${fmt(skillAllow)}원`)      : ''}
-          ${acfgShow('license',       licenseAllow)                                      ? row('면허수당',     `${fmt(licenseAllow)}원`)    : ''}
-          ${acfgShow('hazard',        hazardAllow)                                       ? row('위험수당',     `${fmt(hazardAllow)}원`)     : ''}
+          ${acfgShow('position',      posAllow)                                          ? row('직책수당',     `${fmt(posAllow)}원`)          : ''}
+          ${acfgShow('car',           carAllow)      && acfgIsFixed('car')              ? row('차량지원비',   `${fmt(carAllow)}원`)          : ''}
+          ${acfgShow('remote_area',   remoteAreaAllow)                                  ? row('벽지수당',     `${fmt(remoteAreaAllow)}원`)   : ''}
+          ${acfgShow('meal',          mealAllow)     && acfgIsFixed('meal')             ? row('식대',         `${fmt(mealAllow)}원`)         : ''}
+          ${acfgShow('research',      researchAllow) && acfgIsFixed('research')         ? row('연구활동비',   `${fmt(researchAllow)}원`)     : ''}
+          ${acfgShow('site',          siteAllow)                                        ? row('현장수당',     `${fmt(siteAllow)}원`)         : ''}
+          ${acfgShow('skill',         skillAllow)                                       ? row('기술수당',     `${fmt(skillAllow)}원`)        : ''}
+          ${acfgShow('license',       licenseAllow)                                     ? row('면허수당',     `${fmt(licenseAllow)}원`)      : ''}
+          ${acfgShow('hazard',        hazardAllow)                                      ? row('위험수당',     `${fmt(hazardAllow)}원`)       : ''}
           ${customOrdinaryItems.filter(it=>it&&it.amount>0).map(it=>row((it.name||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'), `${fmt(it.amount)}원`)).join('')}
           ${customFixedItems.filter(it=>it&&it.amount>0).map(it=>row((it.name||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'), `${fmt(it.amount)}원`)).join('')}
-          ${acfgShow('communication', commAllow)    && isFixedType(commPayType)          ? row('통신비',       `${fmt(commAllow)}원`)       : ''}
-          ${acfgShow('fitness',       fitnessAllow) && isFixedType(fitnessPayType)       ? row('체력증진비',   `${fmt(fitnessAllow)}원`)    : ''}
-          ${acfgShow('self_dev',      selfDevAllow) && isFixedType(selfDevPayType)       ? row('자기계발비',   `${fmt(selfDevAllow)}원`)    : ''}
-          ${acfgShow('book',          bookAllow)    && isFixedType(bookPayType)          ? row('도서지원비',   `${fmt(bookAllow)}원`)       : ''}
-          ${acfgShow('overseas',      overseasAllow)&& isFixedType(overseasPayType)      ? row('해외근무수당', `${fmt(overseasAllow)}원`)   : ''}
-          ${childcareAllow > 0                                                           ? row('보육수당',     `${fmt(childcareAllow)}원`)    : ''}
-          ${regularBonus > 0                                                             ? row('정기상여금',   `${fmt(regularBonus)}원`)      : ''}
+          ${acfgShow('communication', commAllow)    && acfgIsFixed('communication')     ? row('통신비',       `${fmt(commAllow)}원`)         : ''}
+          ${acfgShow('fitness',       fitnessAllow) && acfgIsFixed('fitness')           ? row('체력증진비',   `${fmt(fitnessAllow)}원`)      : ''}
+          ${acfgShow('self_dev',      selfDevAllow) && acfgIsFixed('self_dev')          ? row('자기계발비',   `${fmt(selfDevAllow)}원`)      : ''}
+          ${acfgShow('book',          bookAllow)    && acfgIsFixed('book')              ? row('도서지원비',   `${fmt(bookAllow)}원`)         : ''}
+          ${acfgShow('overseas',      overseasAllow)&& acfgIsFixed('overseas')          ? row('해외근무수당', `${fmt(overseasAllow)}원`)     : ''}
+          ${acfgShow('childcare',     childcareAllow) && acfgIsFixed('childcare')       ? row('보육수당',     `${fmt(childcareAllow)}원`)     : ''}
+          ${acfgShow('regular_bonus', regularBonus)                                     ? row('정기상여금',   `${fmt(regularBonus)}원`)       : ''}
           <tr class="total-row"><th>월 약정임금 합계</th><td><strong class="highlight">${fmt(monthlySal)}원</strong></td></tr>
           ${hourlyWage > 0 ? row('통상시급', `${fmt(hourlyWage)}원/시간`) : ''}
           ${row('임금 지급일', payDayStr)}
@@ -1508,6 +1520,11 @@ function doContractRenew(){
       newStartEl.min = oe;
       _renewDateSyncing = false;
       if(newStartErr) newStartErr.style.display = 'none';
+      // 해지일 입력으로 새 시작일 자동 설정 시에도 allowance_config 재적용
+      const _renewCoId2 = (_renewC && _renewC.company_id) || '';
+      if (_renewCoId2 && newStartEl.value && typeof _reapplyAllowanceConfigForDate === 'function') {
+        _reapplyAllowanceConfigForDate(_renewCoId2, newStartEl.value, true);
+      }
     } else {
       newStartEl.disabled = true;
       newStartEl.value = '';
@@ -1524,6 +1541,15 @@ function doContractRenew(){
       oldEndEl.value = _prevBusinessDay(ns);
       _renewDateSyncing = false;
       _validateRenewNewStart(oldEndEl.value);
+      // ── 갱신: 새 계약 시작일 기준 allowance_config 재적용 ──
+      const _renewCoId = (allContracts||[]).find(x => x.id === editId.contract)?.company_id;
+      if (_renewCoId && typeof _reapplyAllowanceConfigForDate === 'function') {
+        _reapplyAllowanceConfigForDate(_renewCoId, ns, true);
+      }
+    } else {
+      // 시작일 삭제 시 해지일도 함께 초기화
+      oldEndEl.value = '';
+      if(newStartErr) newStartErr.style.display = 'none';
     }
   };
 
@@ -2013,29 +2039,37 @@ function openRecontractModal(srcContract){
     setAmountVal('ct-childcare',   0);
     { const _ccDep=document.getElementById('ct-childcare-dependents'); if(_ccDep) _ccDep.value=0; }
   } else {
+  // ── 초기 pay_type: 현재 회사 설정 사용 (시작일 변경 시 onCtStartChange가 historical로 보정) ──
+  const _coForPT = (allCompanies||[]).find(x => x.id === (srcContract.company_id || ''));
+  let _cfgForPT = _coForPT?.allowance_config ?? null;
+  if (typeof _cfgForPT === 'string') { try { _cfgForPT = JSON.parse(_cfgForPT); } catch(e) { _cfgForPT = {}; } }
+  const _getPTSrc = (key, contractVal) => {
+    const cfgPT = (_cfgForPT && _cfgForPT[key + '_pay_type']) || '';
+    return cfgPT || contractVal || '';
+  };
   setAmountVal('ct-position',    srcContract.position_allowance||0);
   // 차량지원비 = 구 교통비 + 구 자가운전보조금 합산 (레거시 하위호환)
   setAmountVal('ct-car', (parseFloat(srcContract.transportation_allowance||srcContract.car_maintenance||0)) + (parseFloat(srcContract.self_driving_allowance||0)));
-  setCTPayType('car', srcContract.transportation_pay_type||srcContract.self_driving_pay_type||'');
+  setCTPayType('car', _getPTSrc('car', srcContract.transportation_pay_type||srcContract.self_driving_pay_type));
   setAmountVal('ct-remote-area', srcContract.remote_area_allowance||0);
   // remote-area는 통상임금 항상 포함 — pay_type 세팅 불필요
-  setAmountVal('ct-meal',        srcContract.meal_allowance||200000);
-  setCTPayType('meal',           srcContract.meal_pay_type||'');
+  setAmountVal('ct-meal',        srcContract.meal_allowance != null ? srcContract.meal_allowance : 200000);
+  setCTPayType('meal',           _getPTSrc('meal', srcContract.meal_pay_type));
   setAmountVal('ct-research',    srcContract.research_allowance||0);
-  setCTPayType('research',       srcContract.research_pay_type||'');
+  setCTPayType('research',       _getPTSrc('research', srcContract.research_pay_type));
   setAmountVal('ct-site',        srcContract.site_allowance||0);
   setAmountVal('ct-skill',       srcContract.skill_allowance||0);
   setAmountVal('ct-license',     srcContract.license_allowance||0);
   setAmountVal('ct-communication',srcContract.communication_allowance||0);
-  setCTPayType('communication',  srcContract.communication_pay_type||'');
+  setCTPayType('communication',  _getPTSrc('communication', srcContract.communication_pay_type));
   setAmountVal('ct-fitness',     srcContract.fitness_allowance||0);
-  setCTPayType('fitness',        srcContract.fitness_pay_type||'');
+  setCTPayType('fitness',        _getPTSrc('fitness', srcContract.fitness_pay_type));
   setAmountVal('ct-self-dev',    srcContract.self_dev_allowance||0);
-  setCTPayType('self_dev',       srcContract.self_dev_pay_type||'');
+  setCTPayType('self_dev',       _getPTSrc('self_dev', srcContract.self_dev_pay_type));
   setAmountVal('ct-book',        srcContract.book_allowance||0);
-  setCTPayType('book',           srcContract.book_pay_type||'');
+  setCTPayType('book',           _getPTSrc('book', srcContract.book_pay_type));
   setAmountVal('ct-overseas',    srcContract.overseas_allowance||0);
-  setCTPayType('overseas',       srcContract.overseas_pay_type||'');
+  setCTPayType('overseas',       _getPTSrc('overseas', srcContract.overseas_pay_type));
   // 보육수당 복원
   setAmountVal('ct-childcare',   srcContract.childcare_allowance||0);
   { const _ccDep=document.getElementById('ct-childcare-dependents'); if(_ccDep) _ccDep.value=srcContract.childcare_dependents||0; }

@@ -906,6 +906,26 @@ function autoComment(name) {
     memo: '메모',
     note: '비고',
     variables: '변수',
+    // ── 누락 보충 (2026-08-10) ──
+    executives: '임원',
+    related: '특수관계',
+    parties: '인',
+    contacts: '연락처',
+    retention: '보존',
+    cleared: '해제',
+    reported: '신고',
+    custom: '사용자정의',
+    values: '값',
+    items: '항목',
+    is: '여부',
+    excel: '엑셀',
+    path: '경로',
+    updated: '갱신된',
+    employees: '직원',
+    draft: '임시저장',
+    at: '일시',
+    html: 'HTML',
+    file: '파일',
   };
   // 정확 매칭
   if (map[name]) return ` -- ${map[name]}`;

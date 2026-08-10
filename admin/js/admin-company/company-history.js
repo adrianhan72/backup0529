@@ -171,17 +171,23 @@ function _cmHistToggle(){
 function getCompanySnapshotAt(companyId, contractTimestamp){
   const co = (allCompanies||[]).find(x=>x.id===companyId);
   if(!co) return null;
+  // contractTimestamp → ISO date string (YYYY-MM-DD)
+  const contractDate = contractTimestamp
+    ? new Date(contractTimestamp).toISOString().slice(0,10)
+    : '';
+  // effective_date <= contractDate 인 이력 중 가장 최신 것을 찾는다 (내림차순 정렬)
   const hist = (allCompanyHistories||[])
-    .filter(h => h.company_id === companyId && parseFloat(h.changed_at||0) > (contractTimestamp||0))
-    .sort((a,b) => parseFloat(a.changed_at||0) - parseFloat(b.changed_at||0)); // 오름차순
-  if(!hist.length){
-    // 계약 이후 변경 없음 → 현재 회사 정보 (allowance_config 파싱 보장)
-    return _parseCo(co);
+    .filter(h => h.company_id === companyId && h.effective_date && h.effective_date <= contractDate)
+    .sort((a,b) => (b.effective_date||'').localeCompare(a.effective_date||'')); // 내림차순 (최신순)
+  if(hist.length > 0){
+    // 계약 시작일 이전 가장 마지막 변경의 snapshot = 계약 당시 상태
+    let snap = hist[0].snapshot || {};
+    if(typeof snap === 'string'){ try{ snap = JSON.parse(snap); }catch(e){ snap = {}; } }
+    return _parseCo({ ...co, ...snap });
   }
-  // 계약 이후 가장 첫 변경의 snapshot = 계약 당시 상태
-  let snap = hist[0].snapshot || {};
-  if(typeof snap === 'string'){ try{ snap = JSON.parse(snap); }catch(e){ snap = {}; } }
-  return _parseCo({ ...co, ...snap });
+  // 계약 시작일 이전 이력 없음 → 가장 오래된 이력이 계약 당시보다 이후이면 현재 설정 사용
+  // (또는 이력 자체가 없는 경우도 현재 설정)
+  return _parseCo(co);
 }
 
 /** 고객사 객체의 JSON 문자열 필드를 파싱하여 반환 */

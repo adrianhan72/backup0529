@@ -53,9 +53,9 @@ CREATE TABLE IF NOT EXISTS companies (
   representatives TEXT, --  -- 대표자 정보 (JSON, 복수 가능)
   sick_leave_pay_rate REAL DEFAULT 0, --  -- 병가 유급비율 (%, 0=무급)
   proration_method TEXT DEFAULT '30day_fixed', --  -- 일할계산 방식
-  draft_executives TEXT DEFAULT NULL,
-  draft_related_parties TEXT DEFAULT NULL,
-  contacts TEXT DEFAULT '[]'
+  draft_executives TEXT DEFAULT NULL, --  -- 임시저장 임원
+  draft_related_parties TEXT DEFAULT NULL, --  -- 임시저장 특수관계 인
+  contacts TEXT DEFAULT '[]' --  -- 연락처
 );
 
 -- contracts  -- 근로계약
@@ -156,11 +156,11 @@ CREATE TABLE IF NOT EXISTS contracts (
   dismissal_notice_pay REAL DEFAULT 0, --  -- 해고예고수당
   dismissal_notice_pay_reason TEXT, --  -- 해고예고수당 사유
   pre_used_annual_leave REAL DEFAULT 0, --  -- 기사용 연차일수 (서비스 가입 이전)
-  retention_cleared INTEGER DEFAULT 0,
-  retention_cleared_at TEXT,
-  insurance_reported_at TEXT,
-  tax_reported_at TEXT,
-  custom_fixed_values TEXT DEFAULT NULL
+  retention_cleared INTEGER DEFAULT 0, --  -- 보존 해제
+  retention_cleared_at TEXT, --  -- 보존 해제 일시
+  insurance_reported_at TEXT, --  -- 보험 신고 일시
+  tax_reported_at TEXT, --  -- 세금 신고 일시
+  custom_fixed_values TEXT DEFAULT NULL --  -- 사용자정의 고정 값
 );
 
 CREATE INDEX IF NOT EXISTS idx_contracts_employee ON contracts(employee_id);
@@ -441,8 +441,8 @@ CREATE TABLE IF NOT EXISTS payrolls (
   retro_late_data TEXT DEFAULT '[]', --  -- 소급 지각 상세 (JSON)
   retro_earlyleave_data TEXT DEFAULT '[]', --  -- 소급 조퇴 상세 (JSON)
   custom_ordinary_values TEXT DEFAULT NULL, --  -- 통상임금 포함 사용자정의
-  custom_fixed_values TEXT DEFAULT NULL,
-  etc_allowance_items TEXT DEFAULT NULL
+  custom_fixed_values TEXT DEFAULT NULL, --  -- 사용자정의 고정 값
+  etc_allowance_items TEXT DEFAULT NULL --  -- 기타 수당 항목
 );
 
 CREATE INDEX IF NOT EXISTS idx_payrolls_employee ON payrolls(employee_id);
@@ -458,10 +458,10 @@ CREATE TABLE IF NOT EXISTS wage_ledger_notifications (
   is_read INTEGER DEFAULT 0, --  -- 확인 여부 (0:미확인, 1:확인)
   created_at INTEGER, --  -- 생성일시
   updated_at INTEGER, --  -- 수정일시
-  is_renewed TEXT DEFAULT NULL,
-  file_excel_path TEXT DEFAULT NULL,
-  file_html_path TEXT DEFAULT NULL,
-  updated_employees TEXT DEFAULT NULL
+  is_renewed TEXT DEFAULT NULL, --  -- 여부 갱신
+  file_excel_path TEXT DEFAULT NULL, --  -- 파일 엑셀 경로
+  file_html_path TEXT DEFAULT NULL, --  -- 파일 HTML 경로
+  updated_employees TEXT DEFAULT NULL --  -- 갱신된 직원
 );
 
 -- =============================================================================

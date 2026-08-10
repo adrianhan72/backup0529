@@ -1091,16 +1091,27 @@ function openContractModal(id=null, preCompanyId=null){
         setAmountVal('ct-childcare',   0);
         { const _ccDep=document.getElementById('ct-childcare-dependents'); if(_ccDep) _ccDep.value=0; }
       } else {
+      // ── 계약 시작일 기준 historical allowance_config로 pay_type 결정 ──
+      const _ctStartForPT = c.contract_start ? new Date(c.contract_start).getTime() : 0;
+      const _histCo = (typeof getCompanySnapshotAt === 'function')
+        ? getCompanySnapshotAt(c.company_id || '', _ctStartForPT)
+        : (allCompanies||[]).find(x => x.id === (c.company_id || ''));
+      let _cfgForPT = _histCo?.allowance_config ?? null;
+      if (typeof _cfgForPT === 'string') { try { _cfgForPT = JSON.parse(_cfgForPT); } catch(e) { _cfgForPT = {}; } }
+      const _getPTSrc = (key, contractVal) => {
+        const cfgPT = (_cfgForPT && _cfgForPT[key + '_pay_type']) || '';
+        return cfgPT || contractVal || '';
+      };
       setAmountVal('ct-position',    c.position_allowance||0);
       // 차량지원비 = 구 교통비 + 구 자가운전보조금 합산 (레거시 데이터 하위호환)
       setAmountVal('ct-car', (parseFloat(c.transportation_allowance||c.car_maintenance||0)) + (parseFloat(c.self_driving_allowance||0)));
-      setCTPayType('car', c.transportation_pay_type||c.self_driving_pay_type||'');
+      setCTPayType('car', _getPTSrc('car', c.transportation_pay_type||c.self_driving_pay_type));
       setAmountVal('ct-remote-area', c.remote_area_allowance||0);
       // remote-area는 통상임금 항상 포함 — pay_type 세팅 불필요
-      setAmountVal('ct-meal',        c.meal_allowance||200000);
-      setCTPayType('meal',           c.meal_pay_type||'');
+      setAmountVal('ct-meal',        c.meal_allowance != null ? c.meal_allowance : 200000);
+      setCTPayType('meal',           _getPTSrc('meal', c.meal_pay_type));
       setAmountVal('ct-research',    c.research_allowance||0);
-      setCTPayType('research',       c.research_pay_type||'');
+      setCTPayType('research',       _getPTSrc('research', c.research_pay_type));
       setAmountVal('ct-site',        c.site_allowance||0);
       setAmountVal('ct-skill',       c.skill_allowance||0);
       setAmountVal('ct-license',     c.license_allowance||0);
@@ -1108,15 +1119,15 @@ function openContractModal(id=null, preCompanyId=null){
       // 사용자 정의 통상임금 항목 복원
       try { _setCustomOrdinaryValues(JSON.parse(c.custom_ordinary_values||'[]')); } catch(e){}
       setAmountVal('ct-communication',c.communication_allowance||0);
-      setCTPayType('communication',  c.communication_pay_type||'');
+      setCTPayType('communication',  _getPTSrc('communication', c.communication_pay_type));
       setAmountVal('ct-fitness',     c.fitness_allowance||0);
-      setCTPayType('fitness',        c.fitness_pay_type||'');
+      setCTPayType('fitness',        _getPTSrc('fitness', c.fitness_pay_type));
       setAmountVal('ct-self-dev',    c.self_dev_allowance||0);
-      setCTPayType('self_dev',       c.self_dev_pay_type||'');
+      setCTPayType('self_dev',       _getPTSrc('self_dev', c.self_dev_pay_type));
       setAmountVal('ct-book',        c.book_allowance||0);
-      setCTPayType('book',           c.book_pay_type||'');
+      setCTPayType('book',           _getPTSrc('book', c.book_pay_type));
       setAmountVal('ct-overseas',    c.overseas_allowance||0);
-      setCTPayType('overseas',       c.overseas_pay_type||'');
+      setCTPayType('overseas',       _getPTSrc('overseas', c.overseas_pay_type));
       setAmountVal('ct-regular-bonus', c.regular_bonus||0);
       // 보육수당 복원
       setAmountVal('ct-childcare', c.childcare_allowance||0);

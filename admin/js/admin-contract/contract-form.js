@@ -619,7 +619,7 @@ function toggleAnnualSal(){
   }
   calcContractSalary();
 }
-// onSalaryStartChange 제거 — salary_start_date = contract_start 통합으로 불필요
+// onSalaryStartChange 제거 — salary_start_date = contract_start 통합
 
 function toggleProbation(){
   const rawCat = document.getElementById('ct-em-category')?.value 
@@ -2085,7 +2085,7 @@ function setCTPayType(field, type){
       hintEl.style.color  = colors[type]  || (isAlwaysExcluded ? '#f59e0b' : '#9ca3af');
     }
 
-    // ── 통상임금 불포함(daily/receipt) 항목은 근로계약 임금조건에서 DOM 완전 제거 ──
+    // ── 통상임금 불포함(daily/receipt) 항목은 display:none 처리 ──
     // allowance_config 기준 활성화된 항목에만 적용
     // (비활성 항목은 applyCTAllowanceConfig에서 이미 display:none 처리)
     const rowId = _CT_PAY_TYPE_ROWS[field];
@@ -2094,13 +2094,14 @@ function setCTPayType(field, type){
       if(rowEl){
         const isFixed = (type === 'fixed');
         if(!isFixed){
-          // 입력값 초기화 후 DOM에서 완전 제거
+          // 입력값 초기화 후 숨김 (DOM 제거 대신 display:none으로 복구 가능하게)
           const inputEl = document.getElementById(`ct-${field.replace(/_/g,'-')}`);
           if(inputEl) inputEl.value = '';
-          rowEl.remove();
+          rowEl.style.display = 'none';
+        } else {
+          // fixed로 변경 시 표시 (applyCTAllowanceConfig에서 hide되었을 수 있음)
+          rowEl.style.display = '';
         }
-        // isFixed인 경우: row가 이미 DOM에 존재하므로 별도 처리 불필요
-        // (applyCTAllowanceConfig 내 setCTPayType 순서 보장)
       }
     }
   }
@@ -2158,7 +2159,9 @@ function applyCTAllowanceConfig(cfg, clearValues = false){
   
   _CT_OPT_ROWS.forEach(({ key, rowId }) => {
     const rowEl = document.getElementById(rowId);
-    const visible = isDaily ? false : !!(cfg && cfg[key]);
+    // pay_type이 'fixed'인 항목만 근로계약서에 표시 (daily/receipt 등 비고정 항목은 급여 입력 시 직접 입력)
+    const payType = (cfg && cfg[`${key}_pay_type`]) || 'fixed';
+    const visible = isDaily ? false : !!(cfg && cfg[key] && payType === 'fixed');
     if(rowEl) rowEl.style.display = visible ? '' : 'none';
     if(!visible && clearValues){
       if(key === 'childcare'){
@@ -2213,6 +2216,56 @@ function applyCTAllowanceConfig(cfg, clearValues = false){
     const _customFixed = document.getElementById('ct-custom-fixed-container');
     if(_customFixed) _customFixed.style.display = 'none';
   }
+}
+
+/**
+ * 계약 시작일 기준으로 고객사 이력에서 allowance_config를 조회하여
+ * 폼의 수당 행 가시성과 pay_type을 재적용한다.
+ * @param {string} companyId - 고객사 ID
+ * @param {string} dateStr - 계약 시작일 (YYYY-MM-DD)
+ * @param {boolean} clearHidden - true: 숨겨진 행의 입력값도 0으로 초기화 (기본값 true)
+ */
+function _reapplyAllowanceConfigForDate(companyId, dateStr, clearHidden = true) {
+  if (!companyId || !dateStr) return;
+  const ts = new Date(dateStr).getTime();
+  if (isNaN(ts)) return;
+  const snapCo = typeof getCompanySnapshotAt === 'function'
+    ? getCompanySnapshotAt(companyId, ts)
+    : (allCompanies||[]).find(x => x.id === companyId);
+  let cfg = snapCo?.allowance_config ?? null;
+  if (typeof cfg === 'string') { try { cfg = JSON.parse(cfg); } catch(e) { cfg = {}; } }
+  // cfg가 null이면 빈 객체로 정규화 (빈 config도 적용하여 모든 수당 행 숨김)
+  if (!cfg) cfg = {};
+
+  // 1. 사용자 정의 수당 행 값 보존 (applyCTAllowanceConfig가 DOM을 재생성하므로)
+  const _savedCustomOrd = typeof _getCustomOrdinaryValues === 'function' ? _getCustomOrdinaryValues() : [];
+  const _savedCustomFix = typeof _getCustomFixedValues === 'function' ? _getCustomFixedValues() : [];
+
+  // 2. 수당 행 가시성 + pay_type 재적용 (기존 입력값 유지)
+  applyCTAllowanceConfig(cfg, false);
+
+  // 3. 사용자 정의 수당 행 값 복원
+  if (typeof _setCustomOrdinaryValues === 'function') _setCustomOrdinaryValues(_savedCustomOrd);
+  if (typeof _setCustomFixedValues === 'function') _setCustomFixedValues(_savedCustomFix);
+
+  // 4. 숨겨진 행의 입력값 0으로 초기화 (새 시작일에 제공 안 하는 수당)
+  if (clearHidden && typeof _CT_OPT_ROWS !== 'undefined') {
+    _CT_OPT_ROWS.forEach(({ key, rowId }) => {
+      const rowEl = document.getElementById(rowId);
+      if (rowEl && rowEl.style.display === 'none') {
+        if (key === 'childcare') {
+          setAmountVal('ct-childcare', 0);
+          const depEl = document.getElementById('ct-childcare-dependents');
+          if (depEl) depEl.value = 0;
+        } else {
+          const inputId = rowId.replace('ct-row-', 'ct-');
+          setAmountVal(inputId, 0);
+        }
+      }
+    });
+  }
+
+  calcContractSalary();
 }
 
 // ── 사용자 정의 통상임금 항목 (계약서 모달) ──
@@ -2385,6 +2438,23 @@ function onCtStartChange(){
   }
   // clearValues=false: 기입력 금액은 유지하면서 show/hide + pay_type만 갱신
   applyCTAllowanceConfig(cfg, false);
+  // 숨겨진 수당 행 값 0으로 초기화 (시작일 변경으로 제공 중단된 항목)
+  if (typeof _CT_OPT_ROWS !== 'undefined') {
+    _CT_OPT_ROWS.forEach(({ key, rowId }) => {
+      const rowEl = document.getElementById(rowId);
+      if (rowEl && rowEl.style.display === 'none') {
+        if (key === 'childcare') {
+          setAmountVal('ct-childcare', 0);
+          const depEl = document.getElementById('ct-childcare-dependents');
+          if (depEl) depEl.value = 0;
+        } else {
+          const inputId = rowId.replace('ct-row-', 'ct-');
+          setAmountVal(inputId, 0);
+        }
+      }
+    });
+  }
+  calcContractSalary();
   // 수습 계약이면 계약 종료일 재계산 + 수습기간 활성화
   if(typeof _updateProbationPeriodState === 'function') _updateProbationPeriodState();
   if(typeof _autoCalcProbationEndDate === 'function') _autoCalcProbationEndDate();
@@ -2493,7 +2563,7 @@ function _forceShowNonZeroCTRows(c){
     const field = _fieldMap[key];
     if(field && Number(c[field]||0) > 0){
       // 통상임금 불포함(daily/receipt) 항목은 force-show 하지 않음
-      // — 해당 항목은 setCTPayType에서 이미 DOM 제거됨
+      // — 해당 항목은 setCTPayType에서 display:none 처리됨
       const ptKey = _ptKeyMap[key];
       if(ptKey && _ctPayTypes[ptKey] && _ctPayTypes[ptKey] !== 'fixed') return;
       const rowEl = document.getElementById(rowId);
