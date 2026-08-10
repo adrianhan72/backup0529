@@ -2537,41 +2537,38 @@ function cancelContractAmend(){
 }
 
 // ── 갱신 페어 계약: amend 모드에서 원본 계약 해지일 필드 초기화 ──
+// ※ 수정재발행 시에는 갱신 페어만 해당 필드를 표시 (findPairContract tier 3/4 허위매칭 방지)
 function _initRenewedPairEndField(amendC){
   const rowEl = document.getElementById('ct-row-renewed-pair-end');
   const inputEl = document.getElementById('ct-renewed-pair-end');
   if(!rowEl || !inputEl || !amendC) return;
-  
-  // 중앙 유틸리티로 페어 탐색
-  const origC = (typeof findPairContract === 'function') ? findPairContract(amendC) : null;
+
+  // 진짜 갱신 페어만 대상: renewed_from_id 또는 renewed_to_id가 명시적으로 설정된 경우만
+  const isGenuinePair = !!(amendC.renewed_from_id || amendC.renewed_to_id);
+  if(!isGenuinePair){
+    rowEl.style.display = 'none';
+    return;
+  }
+
+  const origC = allContracts.find(x => x.id === (amendC.renewed_from_id || amendC.renewed_to_id));
   if(!origC){
     rowEl.style.display = 'none';
     return;
   }
-  
-  // 페어 발견 시 in-memory 보정
-  if(!amendC.renewed_from_id && !amendC.renewed_to_id && typeof _persistPairLink === 'function'){
-    if(amendC.status === CONTRACT_STATUS.RENEWAL_PENDING){
-      _persistPairLink(amendC, origC, 'renewed_from');
-    } else if(amendC.status === CONTRACT_STATUS.RENEWED){
-      _persistPairLink(amendC, origC, 'renewed_to');
-    }
-  }
-  
-  // 원본 계약의 종료일 또는 해지일
+
   const pairEnd = origC.contract_end || origC.terminate_date || '';
   inputEl.value = pairEnd;
   rowEl.style.display = '';
-  
-  // 힌트 텍스트
-  if(pairEnd){
-    const fmtDate = pairEnd.replace(/-/g, '.');
-    hintEl.textContent = `원본 계약(${fmtDate})의 해지일 — 갱신 계약 시작일은 이 날짜 이후여야 합니다.`;
-  } else {
-    hintEl.textContent = '원본 계약의 해지일이 설정되지 않았습니다.';
+
+  const hintEl = document.getElementById('ct-renewed-pair-hint');
+  if(hintEl){
+    if(pairEnd){
+      hintEl.textContent = '원본 계약(' + pairEnd.replace(/-/g, '.') + ')의 해지일 — 갱신 계약 시작일은 이 날짜 이후여야 합니다.';
+    } else {
+      hintEl.textContent = '원본 계약의 해지일이 설정되지 않았습니다.';
+    }
   }
-  
-  // 시작일이 해지일보다 앞서는지 초기 검증
+
   _validateRenewedPairDates();
 }
 
@@ -2866,31 +2863,20 @@ async function openAmendPreview(){
     return;
   }
 
-  // ③-1 갱신 페어 관계 갱신: 원본 계약의 renewed_to_id를 새 계약 ID로 업데이트 + 해지일 동기화
-  const _pairContract = (typeof findPairContract === 'function') ? findPairContract(origC) : null;
-  if(_pairContract){
-    const _pairEndEl = document.getElementById('ct-renewed-pair-end');
-    const _newPairEnd = _pairEndEl?.value || '';
-    const _origPairEnd = _pairContract.terminate_date || '';
-    
-    // renewed_to_id 갱신 + terminate_date 동기화 (contract_end는 보존)
-    const _patchBody = { renewed_to_id: newContractId };
-    if(_newPairEnd && _newPairEnd !== _origPairEnd){
-      _patchBody.terminate_date = _newPairEnd;
-    }
-    
-    try {
-      await fetch(`../tables/contracts/${_pairContract.id}`, {
-        method: 'PATCH',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify(_patchBody)
-      });
-      _pairContract.renewed_to_id = newContractId;
-      if(_newPairEnd && _newPairEnd !== _origPairEnd){
-        _pairContract.terminate_date = _newPairEnd;
+  // ③-1 갱신 페어 관계 갱신: 원본이 갱신 계약인 경우에만 (renewed_from_id가 명시된 경우)
+  if(origC.renewed_from_id){
+    const _pairContract = allContracts.find(x => x.id === origC.renewed_from_id);
+    if(_pairContract){
+      try {
+        await fetch(`../tables/contracts/${_pairContract.id}`, {
+          method: 'PATCH',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ renewed_to_id: newContractId })
+        });
+        _pairContract.renewed_to_id = newContractId;
+      } catch(e){
+        console.warn('[갱신 페어 갱신 실패]', e);
       }
-    } catch(e){
-      console.warn('[갱신 페어 갱신 실패]', e);
     }
   }
 
