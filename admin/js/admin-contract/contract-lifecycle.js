@@ -373,6 +373,10 @@ function generateContractHTMLFromData(c, emp, co){
   let customOrdinaryItems = [];
   try { customOrdinaryItems = JSON.parse(c.custom_ordinary_values||'[]'); } catch(e){}
   if(!Array.isArray(customOrdinaryItems)) customOrdinaryItems = [];
+  // 사용자 정의 고정수당 항목 (통상임금 제외)
+  let customFixedItems = [];
+  try { customFixedItems = JSON.parse(c.custom_fixed_values||'[]'); } catch(e){}
+  if(!Array.isArray(customFixedItems)) customFixedItems = [];
   const commAllow         = parseFloat(c.communication_allowance||0);
   const commPayType       = c.communication_pay_type||'';
   const fitnessAllow      = parseFloat(c.fitness_allowance||0);
@@ -383,6 +387,8 @@ function generateContractHTMLFromData(c, emp, co){
   const bookPayType       = c.book_pay_type||'';
   const overseasAllow     = parseFloat(c.overseas_allowance||0);
   const overseasPayType   = c.overseas_pay_type||'';
+  const childcareAllow    = parseFloat(c.childcare_allowance||0);
+  const regularBonus      = parseFloat(c.regular_bonus||0);
   // acfg: allowance_config가 있으면 그 키 값으로 제어, 없으면 null (값>0이면 무조건 표시)
   const _rawAcfg = (co && co.allowance_config) ? co.allowance_config : null;
   // acfgShow(key, amount): allowance_config 없으면 amount>0으로만 판단, 있으면 cfg[key] && amount>0
@@ -496,11 +502,14 @@ function generateContractHTMLFromData(c, emp, co){
           ${acfgShow('license',       licenseAllow)                                      ? row('면허수당',     `${fmt(licenseAllow)}원`)    : ''}
           ${acfgShow('hazard',        hazardAllow)                                       ? row('위험수당',     `${fmt(hazardAllow)}원`)     : ''}
           ${customOrdinaryItems.filter(it=>it&&it.amount>0).map(it=>row((it.name||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'), `${fmt(it.amount)}원`)).join('')}
+          ${customFixedItems.filter(it=>it&&it.amount>0).map(it=>row((it.name||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'), `${fmt(it.amount)}원`)).join('')}
           ${acfgShow('communication', commAllow)    && isFixedType(commPayType)          ? row('통신비',       `${fmt(commAllow)}원`)       : ''}
           ${acfgShow('fitness',       fitnessAllow) && isFixedType(fitnessPayType)       ? row('체력증진비',   `${fmt(fitnessAllow)}원`)    : ''}
           ${acfgShow('self_dev',      selfDevAllow) && isFixedType(selfDevPayType)       ? row('자기계발비',   `${fmt(selfDevAllow)}원`)    : ''}
           ${acfgShow('book',          bookAllow)    && isFixedType(bookPayType)          ? row('도서지원비',   `${fmt(bookAllow)}원`)       : ''}
           ${acfgShow('overseas',      overseasAllow)&& isFixedType(overseasPayType)      ? row('해외근무수당', `${fmt(overseasAllow)}원`)   : ''}
+          ${childcareAllow > 0                                                           ? row('보육수당',     `${fmt(childcareAllow)}원`)    : ''}
+          ${regularBonus > 0                                                             ? row('정기상여금',   `${fmt(regularBonus)}원`)      : ''}
           <tr class="total-row"><th>월 약정임금 합계</th><td><strong class="highlight">${fmt(monthlySal)}원</strong></td></tr>
           ${hourlyWage > 0 ? row('통상시급', `${fmt(hourlyWage)}원/시간`) : ''}
           ${row('임금 지급일', payDayStr)}
@@ -1235,7 +1244,7 @@ function _collectRenewFormFields(){
   fields.car_maintenance = getAmountVal('ct-car') || 0;
 
   // ── 주휴수당·통상시급 재계산 (급여 변경 반영) ──
-  // 기본급 = 시급×174h(소정근로), 주휴수당 = 시급×35h, 합계 = 시급×209h
+  // 기본급 = 시급×209h (주휴 35h 포함), 주휴수당 = 시급×35h (참고용)
   const ht = fields.work_hours_per_day || 8;
   const dy = fields.work_days_per_week || 5;
   const _renewMonthlyStdH = typeof _calcMonthlyStdHours === 'function'
@@ -1243,17 +1252,11 @@ function _collectRenewFormFields(){
   const _renewMonthlyHolH = typeof _calcMonthlyHolHours === 'function'
     ? _calcMonthlyHolHours(ht) : Math.round(ht * 365 / 12 / 7);
   const base = fields.base_salary || 0;
-  const monthlyForCalc = fields.monthly_salary_agreed || 0;
-  // 주휴수당: 통상시급 있으면 시급×월주휴시간(35h), 없으면 기본급/174×8 로 추정
+  // 주휴수당: 통상시급 × 월주휴시간(35h) [근로기준법 제55조]
   fields.weekly_holiday_pay = fields.hourly_wage > 0
-    ? Math.round(fields.hourly_wage * _renewMonthlyHolH)
-    : (_renewMonthlyStdH > 0 && base > 0 ? Math.round(base / _renewMonthlyStdH * ht) : 0);
-  // 통상시급: 이미 있으면 유지, 없으면 월약정임금÷209h 역산
-  fields.hourly_wage = fields.hourly_wage > 0
-    ? fields.hourly_wage
-    : monthlyForCalc > 0
-      ? Math.round(monthlyForCalc / MAGIC.MONTHLY_STD_HOURS)
-      : (fields.daily_wage > 0 && ht > 0 ? Math.round(fields.daily_wage / ht) : 0);
+    ? Math.round(fields.hourly_wage * _renewMonthlyHolH) : 0;
+  // 통상시급: 폼에서 입력된 값 유지 (필수값, 폴백 없음)
+  fields.hourly_wage = fields.hourly_wage || 0;
 
   return fields;
 }
@@ -2767,6 +2770,7 @@ async function saveDraftContract(reason){
 
   // ── 신규 직원인 경우 먼저 직원 생성 (임시저장도 직원 DB에 저장) ──
   const coId = document.getElementById('ct-company')?.value || '';
+  let _isNewEmpForDraft = false;
   if(isNew && !empId){
     const newEmpNo = document.getElementById('ct-em-empno')?.value.trim() || '';
     const newEmpName = document.getElementById('ct-em-name')?.value.trim() || '';
@@ -2809,6 +2813,7 @@ async function saveDraftContract(reason){
       note: ''
     })});
     empId = saved.id;
+    _isNewEmpForDraft = true;
     await loadEmployees();
   }
   } // if(isNew && !empId) — 직원 생성 완료, 이후는 공통 임시저장 로직
@@ -2966,9 +2971,9 @@ async function saveDraftContract(reason){
     childcare_dependents:    parseInt(document.getElementById('ct-childcare-dependents')?.value||0)||0,
     childcare_pay_type:      _getCTPayTypeVal('childcare'),
     fixed_ot_pay:            getAmountVal('ct-fixed-ot-pay'),
-    fixed_ot_hours:          parseFloat(document.getElementById('ct-fixed-ot-hours')?.value)||0,
+    fixed_ot_hours:          typeof _weeklyToMonthlyHours==='function'?_weeklyToMonthlyHours('ct-fixed-ot-hours'):(parseFloat(document.getElementById('ct-fixed-ot-hours')?.value)||0),
     fixed_night_pay:         getAmountVal('ct-fixed-night-pay'),
-    fixed_night_hours:       parseFloat(document.getElementById('ct-fixed-night-hours')?.value)||0,
+    fixed_night_hours:       typeof _weeklyToMonthlyHours==='function'?_weeklyToMonthlyHours('ct-fixed-night-hours'):(parseFloat(document.getElementById('ct-fixed-night-hours')?.value)||0),
     fixed_hol_pay:           getAmountVal('ct-fixed-hol-pay'),
     fixed_hol_hours:         parseFloat(document.getElementById('ct-fixed-hol-hours')?.value)||0,
     insurance_employment: true,
@@ -3013,6 +3018,11 @@ async function saveDraftContract(reason){
   }
   } catch(e){
     console.error('[saveDraftContract] Exception:', e);
+    // 신규 생성된 직원 롤백 (고아 레코드 방지)
+    if(_isNewEmpForDraft && empId && !isEditMode && !editId.contract){
+      try { await api('../tables/employees/' + empId, { method: 'DELETE' }); await loadEmployees(); }
+      catch(e2){ console.warn('[임시저장 직원 롤백 실패]', empId, e2); }
+    }
     toast('임시저장 중 오류가 발생했습니다.', 'error');
     return;
   }
@@ -3699,6 +3709,8 @@ async function saveContract(){
   }
 
   // ── 신규 직원인 경우 먼저 직원 저장 ──
+  // ※ 고아 레코드 방지: 직원 생성 후 계약 저장이 실패하면 자동 롤백
+  let _isNewEmployee = false;
   if(!empId && !editId.contract && !_recontractEmpId){
     const newName = document.getElementById('ct-em-name').value.trim();
     const newHire  = document.getElementById('ct-edit-em-hire')?.value?.trim() || '';
@@ -3732,10 +3744,19 @@ async function saveContract(){
     };
     const saved = await api('../tables/employees',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(empBody)});
     empId = saved.id;
+    _isNewEmployee = true;
     await loadEmployees();
   }
 
   if(!empId) return saveDraftContract('직원 정보 누락');
+
+  // ── 고아 레코드 방지 헬퍼: 신규 생성된 직원 삭제 ──
+  const _cleanupNewEmployee = async () => {
+    if(_isNewEmployee && empId){
+      try { await api('../tables/employees/' + empId, { method: 'DELETE' }); await loadEmployees(); }
+      catch(e){ console.warn('[직원 롤백 실패]', empId, e); }
+    }
+  };
 
   // 정규직 계열 여부 판단 (신규: 구분 선택값, 수정/재계약: 계약유형 select)
   // 고용형태는 인사정보(ct-edit-em-category) 기준으로 읽음
@@ -3769,28 +3790,16 @@ async function saveContract(){
     monthly = 0;
   } else {
     dailyWageForSave = 0;
+    // 기본급 = 시급 × 209h (한국 표준, calcContractSalary와 동일)
     baseSalaryForSave = base;
-    // 통상임금 = 기본급 + 고정OT·야간·휴일근로수당
+    // 주휴수당 = 통상시급 × 월주휴시간(35h) [근로기준법 제55조] — 기본급에 포함, 참고용
+    const _svMonthlyHolH = typeof _calcMonthlyHolHours === 'function'
+      ? _calcMonthlyHolHours(hours) : Math.round(hours * 365 / 12 / 7);
+    weeklyHol = hourlyWage > 0 ? Math.round(hourlyWage * _svMonthlyHolH) : 0;
     const fixedOt2    = getAmountVal('ct-fixed-ot-pay')    || 0;
     const fixedNgt2   = getAmountVal('ct-fixed-night-pay') || 0;
     const fixedHol2   = getAmountVal('ct-fixed-hol-pay')   || 0;
     const fixedExtra2 = fixedOt2 + fixedNgt2 + fixedHol2;
-    // 통상임금 설정 그룹 (주휴수당 계산용 통상임금에 포함)
-    const _ordinarySave = (_isFixedAllow('site')? site2 : 0)
-      + (_isFixedAllow('position')? position2 : 0)
-      + (_isFixedAllow('skill')? skill2 : 0)
-      + (_isFixedAllow('license')? lic2 : 0)
-      + (_isFixedAllow('hazard')? hazard2 : 0)
-      + (_isFixedAllow('remote_area')? remoteArea2 : 0)
-      + (typeof _getCustomOrdinarySum==='function' ? _getCustomOrdinarySum() : 0);
-    if(hourlyWage > 0){
-      // 주휴수당 = 통상시급 × 월주휴시간(35h 전일제) [근로기준법 제55조]
-      const _svMonthlyHolH = typeof _calcMonthlyHolHours === 'function'
-        ? _calcMonthlyHolHours(hours) : Math.round(hours * 365 / 12 / 7);
-      weeklyHol = Math.round(hourlyWage * _svMonthlyHolH);
-    } else {
-      weeklyHol = Math.round((base + _ordinarySave + fixedExtra2) / days);
-    }
     const position2   = getAmountVal('ct-position');
     const car2        = getAmountVal('ct-car');
     const remoteArea2 = getAmountVal('ct-remote-area');
@@ -3806,7 +3815,15 @@ async function saveContract(){
     const sdev2       = getAmountVal('ct-self-dev')||0;
     const book2       = getAmountVal('ct-book')||0;
     const ovseas2     = getAmountVal('ct-overseas')||0;
-    // 등록 저장: 통상임금 여부는 pay_type으로 판단
+    // 통상임금 포함 고정 수당 (pay_type='fixed')
+    const _ordinarySave2 = (_isFixedAllow('site')? site2 : 0)
+      + (_isFixedAllow('position')? position2 : 0)
+      + (_isFixedAllow('skill')? skill2 : 0)
+      + (_isFixedAllow('license')? lic2 : 0)
+      + (_isFixedAllow('hazard')? hazard2 : 0)
+      + (_isFixedAllow('remote_area')? remoteArea2 : 0)
+      + (typeof _getCustomOrdinarySum==='function' ? _getCustomOrdinarySum() : 0);
+    // 통상임금 제외 고정 수당 (pay_type='fixed'이나 식대 등)
     const fixedGroup2 = (_isFixedAllow('car')           ? car2        : 0)
       + (_isFixedAllow('meal')          ? meal2       : 0)
       + (_isFixedAllow('research')      ? research2   : 0)
@@ -3816,17 +3833,15 @@ async function saveContract(){
       + (_isFixedAllow('self_dev')      ? sdev2       : 0)
       + (_isFixedAllow('book')          ? book2       : 0)
       + (_isFixedAllow('overseas')      ? ovseas2     : 0);
-    const allAllow2 = _ordinarySave + fixedGroup2;
-    // 월 약정임금 결정:
-    //   계약직 → ct-annual-sal 입력값(월약정급여) 그대로
-    //   정규직 → 연봉÷12
-    //   그 외  → 기본급+주휴+수당 합산
+    const allAllow2 = _ordinarySave2 + fixedGroup2;
+    // 월 약정임금 = 기본급(시급×209, 주휴포함) + 각종 수당 + 고정OT/야간/휴일
+    // 주휴수당은 기본급에 이미 포함되어 있으므로 별도 합산하지 않음
     if(isFixedTermSave && annualSalInputSave > 0){
       monthly = annualSalInputSave;
     } else if(isRegularGroup && annual > 0){
       monthly = Math.round(annual / 12);
     } else {
-      monthly = base + weeklyHol + allAllow2 + fixedExtra2;
+      monthly = base + allAllow2 + fixedExtra2;
     }
   }
 
@@ -3835,6 +3850,7 @@ async function saveContract(){
     const _gwRow = document.getElementById('ct-general-minwage-warning-row');
     if(_gwRow && _gwRow.style.display !== 'none'){
       openModal('ct-minwage-warn-modal');
+      await _cleanupNewEmployee();
       return;
     }
   }
@@ -3926,6 +3942,7 @@ async function saveContract(){
           }
         }
         openModal('ct-minwage-warn-modal');
+        await _cleanupNewEmployee();
         return; // 저장 차단
       }
     }
@@ -3957,10 +3974,8 @@ async function saveContract(){
         // 종료일 연장: 기존 계약 만료 + 새 계약 등록 정책 → 등록 차단 후 갱신 플로우 유도
         toast('계약 종료일을 연장하려면 [갱신] 버튼을 사용해 주세요.\n편집 저장으로는 종료일을 연장할 수 없습니다.', 'error');
         return;
-      } else {
-        // 종료일 앞당김 (원래보다 이전, 오늘 이후) → 해지로 처리
-        autoStatus = CONTRACT_STATUS.TERMINATED;
       }
+      // 그 외 (종료일 단축 but 미래): 기존 상태 유지, 종료일만 변경
     }
     contractStatus= autoStatus;
   } else if(isRecontract){
@@ -4062,7 +4077,7 @@ async function saveContract(){
     const _hasBothFilesEdit = !!(signedFileData && consentFileData);
   }
 
-  const body={employee_id:empId,company_id:coId,contract_start:contractStart,contract_end:contractEnd,contract_type:contractType,status:contractStatus,probation_months:probMonths,probation_pct:probPct,probation_amt:probAmt,probation_basis:probBasis,probation_end_date:document.getElementById('ct-probation-end-date')?.value||null,work_hours_per_day:avgDayHours,work_days_per_week:isDailySave?0:workDaysCount,schedule_json:JSON.stringify(scheduleJSON),annual_leave_days:parseFloat(document.getElementById('ct-annual')?.value)||15,pre_used_annual_leave:parseFloat(document.getElementById('ct-pre-used-annual')?.value)||0,annual_salary:annual,monthly_salary_agreed:monthly,base_salary:baseSalaryForSave,daily_wage:dailyWageForSave,weekly_holiday_pay:weeklyHol,fixed_ot_pay:getAmountVal('ct-fixed-ot-pay'),fixed_ot_hours:parseFloat(document.getElementById('ct-fixed-ot-hours')?.value)||0,fixed_night_pay:getAmountVal('ct-fixed-night-pay'),fixed_night_hours:parseFloat(document.getElementById('ct-fixed-night-hours')?.value)||0,fixed_hol_pay:getAmountVal('ct-fixed-hol-pay'),fixed_hol_hours:parseFloat(document.getElementById('ct-fixed-hol-hours')?.value)||0,hourly_wage:hourlyWage,position_allowance:getAmountVal('ct-position'),transportation_allowance:getAmountVal('ct-car'),transportation_pay_type:_getCTPayTypeVal('car'),self_driving_allowance:0,self_driving_pay_type:_getCTPayTypeVal('car'),remote_area_allowance:getAmountVal('ct-remote-area'),remote_area_pay_type:'fixed',meal_allowance:getAmountVal('ct-meal'),meal_pay_type:_getCTPayTypeVal('meal'),research_allowance:getAmountVal('ct-research'),research_pay_type:_getCTPayTypeVal('research'),site_allowance:getAmountVal('ct-site'),skill_allowance:getAmountVal('ct-skill'),license_allowance:getAmountVal('ct-license'),hazard_allowance:getAmountVal('ct-hazard'),custom_ordinary_values:JSON.stringify(typeof _getCustomOrdinaryValues==='function'?_getCustomOrdinaryValues():[]),communication_allowance:getAmountVal('ct-communication'),communication_pay_type:_getCTPayTypeVal('communication'),fitness_allowance:getAmountVal('ct-fitness'),fitness_pay_type:_getCTPayTypeVal('fitness'),self_dev_allowance:getAmountVal('ct-self-dev'),self_dev_pay_type:_getCTPayTypeVal('self_dev'),book_allowance:getAmountVal('ct-book'),book_pay_type:_getCTPayTypeVal('book'),overseas_allowance:getAmountVal('ct-overseas'),overseas_pay_type:_getCTPayTypeVal('overseas'),car_maintenance:getAmountVal('ct-car'),regular_bonus:getAmountVal('ct-regular-bonus')||0,childcare_allowance:getAmountVal('ct-childcare')||0,childcare_dependents:parseInt(document.getElementById('ct-childcare-dependents')?.value||0)||0,childcare_pay_type:_getCTPayTypeVal('childcare'),pay_period:document.getElementById('ct-pay-period')?.value.trim()||'',pay_period_month:document.getElementById('ct-pay-period-month-hidden')?.value||null,pay_period_day:parseInt(document.getElementById('ct-pay-period-day-hidden')?.value)||null,pay_day:parseInt(document.getElementById('ct-pay-day')?.value)||null,insurance_employment:true,insurance_industrial:true,insurance_pension:true,insurance_health:true,note:document.getElementById('ct-note').value,salary_start_date:document.getElementById('ct-salary-start')?.value||'',salary_end_date:document.getElementById('ct-salary-end')?.value||'',is_draft:false,draft_saved_at:null,signed_file_name:signedFileName,signed_file_data:signedFileData,consent_file_name:consentFileName,consent_file_data:consentFileData};
+  const body={employee_id:empId,company_id:coId,contract_start:contractStart,contract_end:contractEnd,contract_type:contractType,status:contractStatus,probation_months:probMonths,probation_pct:probPct,probation_amt:probAmt,probation_basis:probBasis,probation_end_date:document.getElementById('ct-probation-end-date')?.value||null,work_hours_per_day:avgDayHours,work_days_per_week:isDailySave?0:workDaysCount,schedule_json:JSON.stringify(scheduleJSON),annual_leave_days:parseFloat(document.getElementById('ct-annual')?.value)||15,pre_used_annual_leave:parseFloat(document.getElementById('ct-pre-used-annual')?.value)||0,annual_salary:annual,monthly_salary_agreed:monthly,base_salary:baseSalaryForSave,daily_wage:dailyWageForSave,weekly_holiday_pay:weeklyHol,fixed_ot_pay:getAmountVal('ct-fixed-ot-pay'),fixed_ot_hours:typeof _weeklyToMonthlyHours==='function'?_weeklyToMonthlyHours('ct-fixed-ot-hours'):(parseFloat(document.getElementById('ct-fixed-ot-hours')?.value)||0),fixed_night_pay:getAmountVal('ct-fixed-night-pay'),fixed_night_hours:typeof _weeklyToMonthlyHours==='function'?_weeklyToMonthlyHours('ct-fixed-night-hours'):(parseFloat(document.getElementById('ct-fixed-night-hours')?.value)||0),fixed_hol_pay:getAmountVal('ct-fixed-hol-pay'),fixed_hol_hours:parseFloat(document.getElementById('ct-fixed-hol-hours')?.value)||0,hourly_wage:hourlyWage,position_allowance:getAmountVal('ct-position'),transportation_allowance:getAmountVal('ct-car'),transportation_pay_type:_getCTPayTypeVal('car'),self_driving_allowance:0,self_driving_pay_type:_getCTPayTypeVal('car'),remote_area_allowance:getAmountVal('ct-remote-area'),remote_area_pay_type:'fixed',meal_allowance:getAmountVal('ct-meal'),meal_pay_type:_getCTPayTypeVal('meal'),research_allowance:getAmountVal('ct-research'),research_pay_type:_getCTPayTypeVal('research'),site_allowance:getAmountVal('ct-site'),skill_allowance:getAmountVal('ct-skill'),license_allowance:getAmountVal('ct-license'),hazard_allowance:getAmountVal('ct-hazard'),custom_ordinary_values:JSON.stringify(typeof _getCustomOrdinaryValues==='function'?_getCustomOrdinaryValues():[]),communication_allowance:getAmountVal('ct-communication'),communication_pay_type:_getCTPayTypeVal('communication'),fitness_allowance:getAmountVal('ct-fitness'),fitness_pay_type:_getCTPayTypeVal('fitness'),self_dev_allowance:getAmountVal('ct-self-dev'),self_dev_pay_type:_getCTPayTypeVal('self_dev'),book_allowance:getAmountVal('ct-book'),book_pay_type:_getCTPayTypeVal('book'),overseas_allowance:getAmountVal('ct-overseas'),overseas_pay_type:_getCTPayTypeVal('overseas'),car_maintenance:getAmountVal('ct-car'),regular_bonus:getAmountVal('ct-regular-bonus')||0,childcare_allowance:getAmountVal('ct-childcare')||0,childcare_dependents:parseInt(document.getElementById('ct-childcare-dependents')?.value||0)||0,childcare_pay_type:_getCTPayTypeVal('childcare'),pay_period:document.getElementById('ct-pay-period')?.value.trim()||'',pay_period_month:document.getElementById('ct-pay-period-month-hidden')?.value||null,pay_period_day:parseInt(document.getElementById('ct-pay-period-day-hidden')?.value)||null,pay_day:parseInt(document.getElementById('ct-pay-day')?.value)||null,insurance_employment:true,insurance_industrial:true,insurance_pension:true,insurance_health:true,note:document.getElementById('ct-note').value,salary_start_date:document.getElementById('ct-salary-start')?.value||'',salary_end_date:document.getElementById('ct-salary-end')?.value||'',is_draft:false,draft_saved_at:null,signed_file_name:signedFileName,signed_file_data:signedFileData,consent_file_name:consentFileName,consent_file_data:consentFileData};
 
   // 재계약 연장 페어: renewed_from_id 추가 (기존 계약과 연속되는 경우)
   if(_recontractSourceId){
@@ -4121,8 +4136,15 @@ async function saveContract(){
     } else {
       // ID는 서버에서 UUID 생성 (프론트에서 미리 만들지 않음)
       delete body.id;
-      const _saved = await api('../tables/contracts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-      _savedContractId_ = _saved.id;
+      try {
+        const _saved = await api('../tables/contracts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+        _savedContractId_ = _saved.id;
+      } catch(e){
+        console.error('[계약 저장 실패]', e);
+        await _cleanupNewEmployee();
+        toast('계약 저장 중 오류가 발생했습니다. 다시 시도해 주세요.', 'error');
+        return;
+      }
     }
     // ── 재계약 연장 페어: 기존 계약에 renewed_to_id 설정 ──
     if(body.renewed_from_id && _savedContractId_){

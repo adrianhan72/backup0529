@@ -2090,8 +2090,8 @@
         <div class="form-group full ct-allowance-section-header">
           <span>📌 통상임금 포함 수당</span>
         </div>
-        <div class="form-group" id="ct-row-base"><label>기본급 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span> <span id="ct-base-auto-mark" class="lbl-desc">(자동계산)</span><span id="ct-base-required-mark" style="display:none;"></span></label><div class="amount-wrap"><input type="text" inputmode="numeric" id="ct-base" data-amount placeholder="0" oninput="onAmountInput(this,calcContractSalary);_checkRegisterBtnState();" /></div></div>
-        <div class="form-group" id="ct-row-weekly-hol"><label>주휴수당 <span class="lbl-desc">(자동계산)</span></label><div class="form-computed" id="ct-weekly-hol-computed">0원</div></div>
+        <div class="form-group" id="ct-row-base"><label>기본급 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span> <span id="ct-base-auto-mark" class="lbl-desc">(자동계산, 주휴수당을 포함한 금액임)</span><span id="ct-base-required-mark" style="display:none;"></span></label><div class="amount-wrap"><input type="text" inputmode="numeric" id="ct-base" data-amount placeholder="0" oninput="onAmountInput(this,calcContractSalary);_checkRegisterBtnState();" /></div></div>
+        <div class="form-group" id="ct-row-weekly-hol"><label>주휴수당 <span class="lbl-desc">(자동계산, 기본급에 포함)</span></label><div class="form-computed" id="ct-weekly-hol-computed">0원</div></div>
         <div class="form-group" id="ct-row-regular-bonus" style="display:none;">
           <label>정기 상여금 <span class="lbl-desc">(매월 고정 지급)</span></label>
           <div class="amount-wrap"><input type="text" inputmode="numeric" id="ct-regular-bonus" data-amount placeholder="0" oninput="onAmountInput(this,calcContractSalary)" /></div>
@@ -2111,28 +2111,31 @@
           <span>📌 통상임금 제외 고정수당</span>
         </div>
         <div class="form-group" id="ct-row-fixed-ot">
-          <label>고정 연장근로수당</label>
+          <label>고정 연장근로수당 <span class="lbl-desc">(근무시간표 자동계산)</span></label>
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
             <input type="number" id="ct-fixed-ot-hours" placeholder="0" min="0" step="0.5" readonly />
-            <span class="fld-unit">h/월 <span class="lbl-desc">(주×4.345)</span></span>
+            <span class="fld-unit">h/주</span>
+            <span id="ct-fixed-ot-monthly" class="lbl-desc"></span>
             <span class="fld-hint">,</span>
             <div class="amount-wrap" style="flex:1;min-width:95px;"><input type="text" inputmode="numeric" id="ct-fixed-ot-pay" data-amount placeholder="0" readonly /></div>
           </div>
         </div>
         <div class="form-group" id="ct-row-fixed-night">
-          <label>고정 야간근로수당</label>
+          <label>고정 야간근로수당 <span class="lbl-desc">(근무시간표 자동계산)</span></label>
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
             <input type="number" id="ct-fixed-night-hours" placeholder="0" min="0" step="0.5" readonly />
-            <span class="fld-unit">h/월 <span class="lbl-desc">(주×4.345)</span></span>
+            <span class="fld-unit">h/주</span>
+            <span id="ct-fixed-night-monthly" class="lbl-desc"></span>
             <span class="fld-hint">,</span>
             <div class="amount-wrap" style="flex:1;min-width:95px;"><input type="text" inputmode="numeric" id="ct-fixed-night-pay" data-amount placeholder="0" readonly /></div>
           </div>
         </div>
         <div class="form-group" id="ct-row-fixed-hol">
-          <label>고정 휴일근로수당</label>
+          <label>고정 휴일근로수당 <span class="lbl-desc">(근무시간표 자동계산, 토·일요일)</span></label>
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
             <input type="number" id="ct-fixed-hol-hours" placeholder="0" min="0" step="0.5" readonly />
-            <span class="fld-unit">h/월 <span class="lbl-desc">(주×4.345)</span></span>
+            <span class="fld-unit">h/주</span>
+            <span id="ct-fixed-hol-monthly" class="lbl-desc"></span>
             <span class="fld-hint">,</span>
             <div class="amount-wrap" style="flex:1;min-width:95px;"><input type="text" inputmode="numeric" id="ct-fixed-hol-pay" data-amount placeholder="0" readonly /></div>
           </div>

@@ -28,8 +28,8 @@ function renderPayrolls(){
     const _sumCustomOrd = (() => { try { const v=typeof p.custom_ordinary_values==='string'?JSON.parse(p.custom_ordinary_values):(p.custom_ordinary_values||[]); return (Array.isArray(v)?v:[]).reduce((s,x)=>s+(x.amount||0),0); } catch(e) { return 0; } })();
     const _sumCustomFixed = (() => { try { const v=typeof p.custom_fixed_values==='string'?JSON.parse(p.custom_fixed_values):(p.custom_fixed_values||[]); return (Array.isArray(v)?v:[]).reduce((s,x)=>s+(x.amount||0),0); } catch(e) { return 0; } })();
     const _sumEtcItems = (() => { try { const v=typeof p.etc_allowance_items==='string'?JSON.parse(p.etc_allowance_items):(p.etc_allowance_items||[]); return (Array.isArray(v)?v:[]).reduce((s,x)=>s+(x.amount||0),0); } catch(e) { return 0; } })();
-    // 매월지급 소계: 통상임금 + 고정수당
-    const monthlyTotal = (p.base_salary||0)+(p.weekly_holiday_pay||0)+(p.position_allowance||0)
+    // 매월지급 소계: 기본급(주휴포함) + 각종 수당
+    const monthlyTotal = (p.base_salary||0)+(p.position_allowance||0)
       +(p.site_allowance||0)+(p.skill_allowance||0)+(p.license_allowance||0)
       +(p.hazard_allowance||0)+(p.remote_area_allowance||0)
       +(p.transportation_allowance||p.car_maintenance||0)+(p.meal_allowance||0)
@@ -260,11 +260,9 @@ function openPayslipModal(payrollId){
       // 수습 기준 월 급여: monthly_salary_agreed × pct/100 (없으면 base_salary 기준)
       const agreedSal = ct.monthly_salary_agreed || ct.base_salary || 0;
       _probMonthly = agreedSal ? Math.round(agreedSal * pct / 100) : 0;
-      // 수습 기준 시급: hourly_wage × pct/100 (없으면 수습기본급 ÷ 209)
+      // 수습 기준 시급: hourly_wage × pct/100 (필수값, 폴백 없음)
       if(ct.hourly_wage && Number(ct.hourly_wage) > 0){
         _probHourly = Math.round(Number(ct.hourly_wage) * pct / 100);
-      } else if(_probBaseSal > 0){
-        _probHourly = Math.round(_probBaseSal / MAGIC.MONTHLY_STD_HOURS);
       }
     }
   }
@@ -275,8 +273,7 @@ function openPayslipModal(payrollId){
     ? _probHourly
     : ct
       ? (ct.hourly_wage && Number(ct.hourly_wage) > 0
-          ? Number(ct.hourly_wage)
-          : (ct.base_salary ? Math.round(Number(ct.base_salary) / MAGIC.MONTHLY_STD_HOURS) : 0))
+          ? Number(ct.hourly_wage) : 0)
       : 0;
   const monthlySal = _inProbation
     ? _probMonthly
@@ -372,15 +369,13 @@ function openPayslipModal(payrollId){
     // 통상시급 결정:
     //   수습 중  → _probHourly (이미 수습 비율 적용된 시급)
     //   수습 외  → hourly_wage 직접 보유 → 그대로 사용
-    //             없고 base_salary 있으면 → base_salary ÷ 209h 역산
+    // 통상시급: ct.hourly_wage 직접 사용 (필수값, 폴백 없음)
     const hpd = parseFloat(ct ? ct.work_hours_per_day : 0) || 8;
     let effHourlyWage = 0;
     if(_inProbation && _probHourly > 0){
-      effHourlyWage = _probHourly;                                  // 수습 통상시급
+      effHourlyWage = _probHourly;
     } else if(ct && ct.hourly_wage && Number(ct.hourly_wage) > 0){
       effHourlyWage = Number(ct.hourly_wage);
-    } else if(ct && ct.base_salary && Number(ct.base_salary) > 0){
-      effHourlyWage = Math.round(Number(ct.base_salary) / MAGIC.MONTHLY_STD_HOURS);     // 월 소정근로시간
     }
 
     // 통상일급: 통상시급 × 소정근로시간/일

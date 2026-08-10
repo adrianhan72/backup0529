@@ -143,19 +143,8 @@ function calcEmployeeAnnualLeave(emp, contract, company, refYear){
 
   const remainDays = totalDays - usedDays;  // 음수 허용 (연차 빌려쓰기)
 
-  // 통상시급 계산 (계약서 기본급 ÷ 209시간)
-  const baseS       = parseFloat(contract.base_salary)             || 0;
-  const weeklyHol   = parseFloat(contract.weekly_holiday_pay)      || 0;
-  const positionA   = parseFloat(contract.position_allowance)      || 0;
-  const childcareA  = parseFloat(contract.childcare_allowance)     || 0;
-  const researchA   = parseFloat(contract.research_allowance)      || 0;
-  // fixed 수당만 통상임금 포함
-  const carA        = contract.transportation_pay_type === 'fixed' ? (parseFloat(contract.transportation_allowance)||0) : 0;
-  const selfDrivA   = contract.self_driving_pay_type   === 'fixed' ? (parseFloat(contract.self_driving_allowance)||0)  : 0;
-  const remoteA     = contract.remote_area_pay_type    === 'fixed' ? (parseFloat(contract.remote_area_allowance)||0)   : 0;
-  const mealA       = contract.meal_pay_type           === 'fixed' ? (parseFloat(contract.meal_allowance)||0)           : 0;
-  const stdMonthly  = baseS + weeklyHol + positionA + carA + selfDrivA + remoteA + mealA + childcareA + researchA;
-  const hourlyWage  = stdMonthly > 0 ? Math.round(stdMonthly / MAGIC.MONTHLY_STD_HOURS) : 0;
+  // 통상시급: 계약서에 저장된 hourly_wage 사용 (필수값, 폴백 없음)
+  const hourlyWage = parseFloat(contract.hourly_wage) || 0;
   const workHours   = parseFloat(contract.work_hours_per_day) || 8;
   // 잔여 연차 수당 추계 = 통상시급 × 1일 근로시간 × 잔여일수
   const leavePay    = Math.round(hourlyWage * workHours * remainDays);

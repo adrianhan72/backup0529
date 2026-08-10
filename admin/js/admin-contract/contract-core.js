@@ -1145,8 +1145,8 @@ function openContractModal(id=null, preCompanyId=null){
       setAmountVal('ct-fixed-ot-pay',    c.fixed_ot_pay   ||0);
       setAmountVal('ct-fixed-night-pay', c.fixed_night_pay||0);
       setAmountVal('ct-fixed-hol-pay',   c.fixed_hol_pay  ||0);
-      const _fotH = document.getElementById('ct-fixed-ot-hours');    if(_fotH)    _fotH.value    = c.fixed_ot_hours   ||'';
-      const _fniH = document.getElementById('ct-fixed-night-hours'); if(_fniH)    _fniH.value    = c.fixed_night_hours||'';
+      const _fotH = document.getElementById('ct-fixed-ot-hours');    if(_fotH)    _fotH.value    = c.fixed_ot_hours   ? (c.fixed_ot_hours / (365/12/7)).toFixed(1) :'';
+      const _fniH = document.getElementById('ct-fixed-night-hours'); if(_fniH)    _fniH.value    = c.fixed_night_hours? (c.fixed_night_hours / (365/12/7)).toFixed(1) :'';
       const _fhoH = document.getElementById('ct-fixed-hol-hours');   if(_fhoH)    _fhoH.value    = c.fixed_hol_hours  ||'';
       }
       // ── 연봉/월약정급여 섹션 표시 최종 강제 적용 (ctVal 기준 — emp.employment_category 우선) ──
@@ -1563,15 +1563,20 @@ function _validateEmpNoUniqueness(empNo, companyId, selfEmpId, newContractStart,
       };
     }
 
-    // 2. 모든 계약이 VOIDED + 갱신 이력 없음 → 파기된 번호, 재사용 가능
-    const allVoided = empContracts.length > 0 && empContracts.every(c => c.status === CONTRACT_STATUS.VOIDED);
+    // 2. 계약이 전혀 없는 직원 → 고아 레코드, 사원번호 재사용 허용
+    if(empContracts.length === 0) {
+      return { ok: true, type: 'ok', msg: '' };
+    }
+
+    // 3. 모든 계약이 VOIDED + 갱신 이력 없음 → 파기된 번호, 재사용 가능
+    const allVoided = empContracts.every(c => c.status === CONTRACT_STATUS.VOIDED);
     const anyRenewedFrom = empContracts.some(c => c.renewed_from_id);
     if(allVoided && !anyRenewedFrom) {
       // 파기된 계약이며 갱신 승계가 아님 → 사원번호 재사용 허용
       return { ok: true, type: 'ok', msg: '' };
     }
 
-    // 3. 그 외 (해지·만료·취소, 또는 갱신 승계된 파기) → 재사용 불가
+    // 4. 그 외 (해지·만료·취소, 또는 갱신 승계된 파기) → 재사용 불가
     const reason = allVoided ? '갱신 승계되어 파기된' : '퇴사 처리된';
     return {
       ok: false, type: 'duplicate',
@@ -2713,11 +2718,13 @@ async function openAmendPreview(){
     return;
   }
 
-  // 주휴수당 추정: 기본급(소정근로 174h 분) ÷ 월소정근로시간 × 1일소정근로시간
-  // 기본급 = 시급×174h, 주휴수당 = 시급×35h → 기본급/174×8 = 시급×8 = 주휴(주)
-  const _monthlyStdH = typeof _calcMonthlyStdHours === 'function'
-    ? _calcMonthlyStdHours(hours_, days_) : MAGIC.MONTHLY_STD_HOURS;
-  const wkHol_  = isDailyA ? 0 : (_monthlyStdH > 0 ? Math.round(base_ / _monthlyStdH * hours_) : 0);
+  // 통상시급: 사용자가 직접 입력한 값(ct-hourly-input) 사용 (필수값)
+  const _directHW = getAmountVal('ct-hourly-input');
+  const hWage_  = _directHW > 0 ? _directHW : 0;
+  // 주휴수당 = 통상시급 × 35h (참고용, 기본급에 포함) [근로기준법 제55조]
+  const _monthlyHolH = typeof _calcMonthlyHolHours === 'function'
+    ? _calcMonthlyHolHours(hours_) : Math.round(hours_ * 365 / 12 / 7);
+  const wkHol_  = isDailyA ? 0 : Math.round(hWage_ * _monthlyHolH);
   const pos_    = getAmountVal('ct-position');
   const car_    = getAmountVal('ct-car');
   const meal_   = getAmountVal('ct-meal');
@@ -2732,12 +2739,12 @@ async function openAmendPreview(){
   const sdev_   = getAmountVal('ct-self-dev')||0;
   const book_   = getAmountVal('ct-book')||0;
   const ovseas_ = getAmountVal('ct-overseas')||0;
+  // 월 약정임금 = 기본급(시급×209, 주휴포함) + 각종 수당 + 고정OT/야간/휴일
+  const _allAllowances = pos_+car_+meal_+res_+other_+site_+skill_+lic_+comm_+fit_+sdev_+book_+ovseas_;
   const monthly_= isDailyA ? 0
     : isFixedA && annualSalInput_ > 0 ? annualSalInput_
     : isRegGrp && annual_ > 0         ? Math.round(annual_ / 12)
-    : (base_+wkHol_+pos_+car_+meal_+res_+other_+site_+skill_+lic_+comm_+fit_+sdev_+book_+ovseas_);
-  // 통상시급 = 월 통상임금 ÷ 209h (고용노동부 고시, calcContractSalary와 동일 기준)
-  const hWage_  = monthly_>0 ? Math.round(monthly_ / MAGIC.MONTHLY_STD_HOURS) : (dWage_>0&&hours_>0 ? Math.round(dWage_/hours_) : 0);
+    : (base_ + _allAllowances);
 
   const commonFields = {
     employee_id:'', company_id:coId, contract_start:start, contract_end:end, contract_type:cType,
@@ -2780,9 +2787,9 @@ async function openAmendPreview(){
     pay_day: parseInt(document.getElementById('ct-pay-day')?.value) || null,
     car_maintenance: car_,
     fixed_ot_pay:    getAmountVal('ct-fixed-ot-pay'),
-    fixed_ot_hours:  parseFloat(document.getElementById('ct-fixed-ot-hours')?.value)||0,
+    fixed_ot_hours:  typeof _weeklyToMonthlyHours === 'function' ? _weeklyToMonthlyHours('ct-fixed-ot-hours') : (parseFloat(document.getElementById('ct-fixed-ot-hours')?.value)||0),
     fixed_night_pay: getAmountVal('ct-fixed-night-pay'),
-    fixed_night_hours: parseFloat(document.getElementById('ct-fixed-night-hours')?.value)||0,
+    fixed_night_hours: typeof _weeklyToMonthlyHours === 'function' ? _weeklyToMonthlyHours('ct-fixed-night-hours') : (parseFloat(document.getElementById('ct-fixed-night-hours')?.value)||0),
     fixed_hol_pay:   getAmountVal('ct-fixed-hol-pay'),
     fixed_hol_hours: parseFloat(document.getElementById('ct-fixed-hol-hours')?.value)||0,
     insurance_employment: origC.insurance_employment!==undefined ? origC.insurance_employment : true,

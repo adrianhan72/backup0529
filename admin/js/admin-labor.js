@@ -116,10 +116,9 @@ function renderLsPieChart(){
   // 항목별 합산 헬퍼
   const s = f => pays.reduce((a,p)=>a+(p[f]||0),0);
 
-  // ── 지급 항목 ──
+  // ── 지급 항목 (기본급에 주휴수당 포함되어 있으므로 주휴수당 별도 표시 안 함) ──
   const payItems = [
     { label:'기본급',         val: s('base_salary'),              color:'#3b82f6' },
-    { label:'주휴수당',       val: s('weekly_holiday_pay'),       color:'#60a5fa' },
     { label:'직책수당',       val: s('position_allowance'),       color:'#93c5fd' },
     { label:'교통비',         val: s('transportation_allowance')||s('car_maintenance'), color:'#6366f1' },
     { label:'자가운전보조금', val: s('self_driving_allowance'),   color:'#7c3aed' },

@@ -4259,10 +4259,14 @@ function _getPISmallFirmInfo(coId, yr, mo){
   // 상시근로자 수 = 연인원 ÷ 가동일수
   const headcount = totalPersonDays / operDays;
 
-  // 5인 이상 특례: 가동일의 50% 초과 날 동안 5인 이상이면 5인 이상 사업장
+  // 근로기준법 시행령 제7조의2 예외 법칙:
+  // ① 평균 5인 미만이지만 5인 이상인 날이 가동일수의 절반 초과 → 5인 이상으로 봄
   const specialOver5 = daysOver5 > operDays / 2;
+  // ② 평균 5인 이상이지만 5인 미만인 날이 가동일수의 절반 초과 → 5인 미만으로 봄
+  const daysUnder5 = operDays - daysOver5;
+  const specialUnder5 = headcount >= 5 && daysUnder5 > operDays / 2;
 
-  const isSmall = headcount < 5 && !specialOver5;
+  const isSmall = specialUnder5 ? true : (headcount < 5 && !specialOver5);
   return { isSmall, headcount, operDays, totalPersonDays, daysOver5 };
 }
 

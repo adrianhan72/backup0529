@@ -858,9 +858,9 @@ function renderWageLedger(){
   const empMap = {};
   allEmployees.forEach(e => { empMap[e.id] = e; });
 
-  // 합계 계산용
+  // 합계 계산용 (기본급에 주휴수당 포함되어 있으므로 weekly_holiday_pay는 합계에서 제외)
   const sumFields = [
-    'base_salary','weekly_holiday_pay',
+    'base_salary',
     'bonus_pay','meal_allowance','self_driving_allowance','transportation_allowance',
     'remote_area_allowance','research_allowance','childcare_allowance',
     'overtime_pay','night_pay','holiday_pay','annual_leave_pay',
@@ -1802,7 +1802,7 @@ function _downloadReportExcel(pays, empMap, yr, mo, moStr) {
   // ── 합계 누적 필드 ──
   const sumFields = [
     'work_days','total_work_hours','overtime_hours','night_hours','holiday_hours',
-    'base_salary','weekly_holiday_pay','position_allowance',
+    'base_salary','position_allowance',
     'overtime_pay','night_pay','holiday_pay',
     'transportation_allowance','self_driving_allowance','remote_area_allowance',
     'meal_allowance','childcare_allowance','research_allowance',

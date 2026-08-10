@@ -127,11 +127,11 @@ function getPrev3MonthsPayrolls(empId, baseDate){
 }
 
 // ── 통상임금 (3개월 합계) 계산 ──
-// 통상임금: 기본급 + 주휴수당 + 직책수당 + 기술수당 + 면허수당 + 보육수당 + 연구활동비
+// 기본급(주휴포함) + 직책수당 + 기술수당 + 면허수당 + 보육수당 + 연구활동비
 // (식대/교통비 등 실비 비과세 항목, 성과급 등 비정기 항목 제외)
 function calcOrdinaryWage3(pays){
   return pays.reduce((sum, p) =>
-    sum + (p.base_salary||0) + (p.weekly_holiday_pay||0) + (p.position_allowance||0)
+    sum + (p.base_salary||0) + (p.position_allowance||0)
         + (p.skill_allowance||0) + (p.license_allowance||0)
         + (p.childcare_allowance||0) + (p.research_allowance||0)
   , 0);
