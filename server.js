@@ -2,17 +2,19 @@
  * 인사톡 노무톡 - Express 서버 (SQLite 버전)
  * 대화인사노무파트너스
  *
- * v2.39.0 — 구조 리팩토링 (라우트/크론잡 분리, DB 마이그레이션 제거)
- *   routes/   — API 라우트 (auth, companies, kakao, upload, pdf, tables)
- *   lib/      — 유틸리티, 크론잡, DB, 솔라피
- *   middleware/ — 인증, CORS, 보안
- *   data/     — schema.sql (DBA 관리), app.db
+ * v2.40.0 — 크론잡 Worker Thread 분리 (Main Thread 블록 해소)
+ *   lib/cron/worker.js  — Worker Thread (better-sqlite3 별도 연결, cron 패키지)
+ *   lib/cron/index.js   — CronWorkerManager (Main Thread에서 Worker 관리)
+ *   lib/cron/jobs/      — 7개 크론 작업 함수 (API-First, batchedQuery, setImmediate)
  */
 require('dotenv').config();
 const express = require('express');
 const path    = require('path');
 const { DB }  = require('./lib/database');
 const { createSolapiClient } = require('./lib/solapi');
+const { CronWorkerManager } = require('./lib/cron');
+
+// Solapi 클라이언트 (카카오 라우트 + 크론 Worker 각각 별도 인스턴스)
 const solapi = createSolapiClient();
 
 const app  = express();
@@ -49,11 +51,35 @@ app.use('/generated', express.static(path.join(ROOT, 'data', 'generated'), stati
 // ── 보안 ──
 require('./middleware/security')(app);
 
+// ── 크론잡 Worker Thread (별도 이벤트 루프, Express 블록 영향 ZERO) ──
+const cronManager = new CronWorkerManager(
+  path.join(ROOT, 'data', 'app.db'),
+  {
+    apiKey: process.env.SOLAPI_API_KEY || '',
+    apiSecret: process.env.SOLAPI_API_SECRET || '',
+    pfId: process.env.SOLAPI_KAKAO_PF_ID || '',
+    defaultSender: process.env.SOLAPI_DEFAULT_SENDER || '',
+  }
+);
+cronManager.start();
+
+// ── 크론 헬스체크 API (catch-all 보다 먼저 등록) ──
+app.get('/health/cron', (req, res) => res.json(cronManager.getHealth()));
+
 app.get('/', (req, res) => res.sendFile(path.join(ROOT, 'index.html')));
 app.get('*', (req, res) => res.sendFile(path.join(ROOT, 'index.html')));
 
-// ── 크론잡 ──
-require('./lib/cron')(db, solapi);
+// ── Graceful Shutdown ──
+process.on('SIGTERM', () => {
+  console.log('[Server] SIGTERM — shutting down');
+  cronManager.stop();
+  process.exit(0);
+});
+process.on('SIGINT', () => {
+  console.log('[Server] SIGINT — shutting down');
+  cronManager.stop();
+  process.exit(0);
+});
 
 // ── 서버 시작 ──
 app.listen(PORT, '0.0.0.0', () => {
