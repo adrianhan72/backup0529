@@ -38,6 +38,7 @@ async function renderSystemSettings() {
 
     // 시스템 스위치 초기화
     _ssInitProbationToggle();
+    _ssInitContractExpiryToggle();
   } catch (e) {
     console.warn('[시스템 설정 로드 오류]', e);
     toast('설정 정보를 불러오지 못했습니다.', 'error');
@@ -686,6 +687,62 @@ function _syncProbationMenuVisibility() {
   const menuItem = document.querySelector('.menu-item[data-page="probation-mgmt"]');
   if (menuItem) {
     menuItem.style.display = window._probationFeatureEnabled ? '' : 'none';
+  }
+}
+
+// ═══════════════════════════════════════════
+// 시스템 기능 스위치 — 계약만료 통지 발송
+// ═══════════════════════════════════════════
+
+function _ssInitContractExpiryToggle() {
+  const chk = document.getElementById('ss-toggle-ce');
+  if (!chk) return;
+  chk.checked = window._contractExpiryNoticeEnabled === true;
+  _ssUpdateContractExpiryToggleUI(chk.checked);
+}
+
+function _ssUpdateContractExpiryToggleUI(on) {
+  const slider = document.getElementById('ss-toggle-ce-slider');
+  const knob = document.getElementById('ss-toggle-ce-knob');
+  const label = document.getElementById('ss-toggle-ce-label');
+  if (slider) slider.style.background = on ? '#4f46e5' : '#cbd5e1';
+  if (knob) knob.style.left = on ? '23px' : '3px';
+  if (label) {
+    label.textContent = on ? 'ON' : 'OFF';
+    label.style.color = on ? '#4f46e5' : '#9ca3af';
+  }
+}
+
+async function ssToggleContractExpiry(checked) {
+  _ssUpdateContractExpiryToggleUI(checked);
+  try {
+    await api('../tables/system_settings/set_ce_notice', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        setting_key: 'contract_expiry_notice_enabled',
+        setting_value: checked ? '1' : '0',
+        description: '계약만료 통지 발송 ON/OFF',
+        updated_at: Date.now()
+      })
+    });
+    window._contractExpiryNoticeEnabled = checked;
+    window._systemSettings['contract_expiry_notice_enabled'] = checked ? '1' : '0';
+    toast(checked ? '계약만료 통지 발송이 활성화되었습니다.' : '계약만료 통지 발송이 비활성화되었습니다.', 'success');
+    _syncContractExpiryMenuVisibility();
+  } catch (e) {
+    console.error('[ssToggleContractExpiry]', e);
+    toast('설정 저장에 실패했습니다.', 'error');
+    const chk = document.getElementById('ss-toggle-ce');
+    if (chk) chk.checked = !checked;
+    _ssUpdateContractExpiryToggleUI(!checked);
+  }
+}
+
+function _syncContractExpiryMenuVisibility() {
+  const menuItem = document.querySelector('.menu-item[data-page="contract-expiry-notice"]');
+  if (menuItem) {
+    menuItem.style.display = window._contractExpiryNoticeEnabled ? '' : 'none';
   }
 }
 

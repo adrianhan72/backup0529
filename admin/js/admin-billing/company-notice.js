@@ -292,6 +292,11 @@ function cenToggleAll(chkEl){
 
 /** 개별 통지 발송 */
 async function cenSendOne(contractId, method){
+  // 계약만료 통지 기능 OFF → 발송 차단
+  if (!window._contractExpiryNoticeEnabled) {
+    toast('계약만료 통지 기능이 비활성화되어 있습니다. 시스템 설정에서 활성화해 주세요.', 'warning');
+    return;
+  }
   const c   = allContracts.find(x=>x.id===contractId);
   const emp = c ? allEmployees.find(e=>e.id===c.employee_id) : null;
   const co  = c ? allCompanies.find(x=>x.id===c.company_id)  : null;
@@ -322,6 +327,11 @@ async function cenSendOne(contractId, method){
 
 /** 일괄 발송 */
 async function cenBulkSend(method){
+  // 계약만료 통지 기능 OFF → 발송 차단
+  if (!window._contractExpiryNoticeEnabled) {
+    toast('계약만료 통지 기능이 비활성화되어 있습니다. 시스템 설정에서 활성화해 주세요.', 'warning');
+    return;
+  }
   const checked = [...document.querySelectorAll('.cen-row-chk:checked')];
   if(!checked.length){ toast('발송할 항목을 선택하세요.','warning'); return; }
 
@@ -480,6 +490,8 @@ async function _sendCompanyNotice({
  */
 async function _cenSendCompanyNotice({ c, emp, co, daysLeft }){
   if(!c || !co) return;
+  // 계약만료 통지 기능 OFF → 발송 차단 (이중 방어)
+  if (!window._contractExpiryNoticeEnabled) return;
   const cat       = emp?.employment_category || c.contract_type || '';
     const coRep     = getCompanyRepName(co);
   const ddayStr   = daysLeft === 0 ? 'D-day' : `D-${daysLeft}`;

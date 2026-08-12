@@ -10,6 +10,7 @@ let pages={cont:1,pay:1};
 // ─── 시스템 설정 (DB system_settings → 글로벌 플래그) ──────────────────
 window._systemSettings = {}; // { key: value, ... }
 window._probationFeatureEnabled = false; // 기본값 OFF
+window._contractExpiryNoticeEnabled = false; // 기본값 OFF
 
 // ─── 공통 헬퍼: 실질 이용중 고객사 판별 ──────────────────────────────────────
 // DB status=ACTIVE이더라도 contract_end_date가 오늘 이하면 해지 완료로 간주
@@ -230,6 +231,7 @@ async function init(){
     populateFilters(); populatePICompanies(); initBreakSelects();
     _syncMenuLabels();  // PAGE_LABELS 기준으로 사이드바 메뉴명 동기화
     if (typeof _syncProbationMenuVisibility === 'function') _syncProbationMenuVisibility(); // 수습 메뉴
+    if (typeof _syncContractExpiryMenuVisibility === 'function') _syncContractExpiryMenuVisibility(); // 계약만료 통지 메뉴
     _syncContractTypeSelects(); // 수습 옵션 필터링
     
     // ── 페어 계약 새 창에서 열기: sessionStorage에 저장된 계약 자동 조회 ──
@@ -437,6 +439,7 @@ async function loadSystemSettings(){
   }
   // 글로벌 플래그 동기화
   window._probationFeatureEnabled = (window._systemSettings['probation_feature_enabled'] === '1');
+  window._contractExpiryNoticeEnabled = (window._systemSettings['contract_expiry_notice_enabled'] === '1');
 }
 async function loadContracts(){
   const d=await api('../tables/contracts?limit=200');
