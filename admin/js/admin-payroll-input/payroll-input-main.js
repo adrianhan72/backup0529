@@ -4354,11 +4354,16 @@ function _getPISmallFirmInfo(coId, yr, mo){
   // dayWorkers[d] = d번째 날(1-based) 근무 인원 수
   const dayWorkers = new Array(totalDays+1).fill(0);
   empContractMap.forEach(c => {
-    const cs = c.contract_start ? new Date(c.contract_start) : monthStart;
+    let cs = c.contract_start ? new Date(c.contract_start) : monthStart;
+    if(isNaN(cs.getTime())) cs = monthStart;
     // 해지예정: 근로관계 종료일은 terminate_date 기준
-    const ce = c.status === CONTRACT_STATUS.TERMINATE_PENDING
-      ? (c.terminate_date ? new Date(c.terminate_date) : monthEnd)
-      : (c.contract_end ? new Date(c.contract_end) : monthEnd);
+    let ce;
+    if (c.status === CONTRACT_STATUS.TERMINATE_PENDING) {
+      ce = c.terminate_date ? new Date(c.terminate_date) : monthEnd;
+    } else {
+      ce = c.contract_end ? new Date(c.contract_end) : monthEnd;
+    }
+    if(isNaN(ce.getTime())) ce = monthEnd;
     for(let d = 1; d <= totalDays; d++){
       const day = new Date(yr, mo-1, d);
       if(day >= cs && day <= ce) dayWorkers[d]++;

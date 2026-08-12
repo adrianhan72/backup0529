@@ -3057,6 +3057,11 @@ async function saveDraftContract(reason){
     daily_wage:           isDailyDraft ? dailyDraft : 0,
     weekly_holiday_pay:   0,
     hourly_wage:          hourlyDraft,
+    probation_months:      parseInt(document.getElementById('ct-probation-months')?.value)||0,
+    probation_pct:         parseFloat(document.getElementById('ct-probation-pct')?.value)||0,
+    probation_amt:         getAmountVal('ct-probation-amt')||0,
+    probation_basis:       document.querySelector('input[name="ct-probation-basis"]:checked')?.value || 'salary',
+    probation_end_date:    document.getElementById('ct-probation-end-date')?.value || null,
     position_allowance:      posDraft,
     transportation_allowance:carDraft,
     transportation_pay_type: _getCTPayTypeVal('car'),
@@ -3124,7 +3129,7 @@ async function saveDraftContract(reason){
     const res = await api(`../tables/contracts/${editId.contract}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:bodyJSON});
     if(res && res.error){ toast('임시저장 실패: ' + res.error, 'error'); return; }
     savedId = editId.contract;
-  } else if(editId.contract === null && (_currentDraftId || window._resumeDraftId)){
+  } else if(editId.contract == null && (_currentDraftId || window._resumeDraftId)){
     // 이전 임시저장 ID가 있으면 덮어쓰기
     const draftId = window._resumeDraftId || _currentDraftId;
     draftBody.id = draftId;
@@ -3759,7 +3764,9 @@ function _ctValidate(){
 
   // ── 계약기간 1개월 미만 위반 검사 (계약직·계약직 수습) ──
   const _shortTermRow = document.getElementById('ct-short-term-warning-row');
-  if(_shortTermRow && _shortTermRow.style.display !== 'none')
+  const _editShortTermRow = document.getElementById('ct-edit-short-term-warning-row');
+  if((_shortTermRow && _shortTermRow.style.display !== 'none') ||
+     (_editShortTermRow && _editShortTermRow.style.display !== 'none'))
     errors.push('계약기간 1개월 미만 — 일용직으로 변경하거나 종료일을 조정해 주세요.');
 
   // ── 정규직 전환 의무 검사 (계약직·계약직 수습·정규직 수습·일용직) ──
@@ -4224,7 +4231,8 @@ async function saveContract(){
   let _savedContractId_ = '';
 
   if(isEditMode){
-    body.id=editId.contract;
+    try {
+      body.id=editId.contract;
     await api(`../tables/contracts/${editId.contract}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     // ── 직원 정보도 함께 업데이트 ──
     const editEmpId = (allContracts.find(x=>x.id===editId.contract)||{}).employee_id;
@@ -4257,6 +4265,11 @@ async function saveContract(){
       if(_nameElSave && !_nameElSave.readOnly && _nameElSave.value.trim()) empPatch.name = _nameElSave.value.trim();
       if(_catElSave  && !_catElSave.disabled  && _catElSave.value)         empPatch.employment_category = _catElSave.value;
       await api(`../tables/employees/${editEmpId}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(empPatch)});
+    }
+    } catch(e){
+      console.error('[saveContract edit PUT 오류]', e);
+      toast('저장 중 오류가 발생했습니다. 다시 시도해 주세요.', 'error');
+      return;
     }
   } else {
     // 임시저장에서 이어서 등록하는 경우: 기존 draft ID 재사용
