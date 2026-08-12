@@ -2,7 +2,7 @@
 -- 인사톡 노무톡 — SQLite Schema (한글 주석 포함)
 -- node dump_schema.js 로 자동 생성 (ALTER TABLE 반영)
 -- 최종 갱신: 2026-08-12
--- 테이블 수: 26개
+-- 테이블 수: 27개
 -- =============================================================================
 
 PRAGMA journal_mode = WAL;
@@ -247,15 +247,6 @@ CREATE TABLE IF NOT EXISTS representative_contact (
   outbound_smtp_host TEXT DEFAULT NULL, --  -- SMTP 서버 주소
   outbound_smtp_port TEXT DEFAULT NULL, --  -- SMTP 포트
   msg_body_rules TEXT DEFAULT NULL --  -- 메시지 본문 규칙 (JSON)
-);
-
--- system_settings  -- 시스템 설정 스위치 (key-value)
-CREATE TABLE IF NOT EXISTS system_settings (
-  id TEXT PRIMARY KEY, --  -- 고유식별자
-  setting_key TEXT UNIQUE NOT NULL, --  -- 설정 키
-  setting_value TEXT DEFAULT '0', --  -- 설정 값 (0:OFF, 1:ON)
-  description TEXT, --  -- 설정 설명
-  updated_at INTEGER --  -- 수정일시
 );
 
 -- =============================================================================
@@ -697,5 +688,14 @@ CREATE TABLE IF NOT EXISTS severance_interim_settlements (
   reason TEXT, --  -- 사유
   note TEXT, --  -- 비고
   created_at TEXT --  -- 생성일시
+);
+
+-- system_settings
+CREATE TABLE IF NOT EXISTS system_settings (
+  id TEXT PRIMARY KEY, --  -- ID
+  setting_key TEXT NOT NULL, --  -- 설정 키
+  setting_value TEXT DEFAULT '0', --  -- 설정 값
+  description TEXT, --  -- 설명
+  updated_at INTEGER --  -- 수정일시
 );
 

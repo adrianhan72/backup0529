@@ -168,6 +168,7 @@ const PAYMENT_STATUS = Object.freeze({
   PARTIAL: 'partial',
   UNPAID:  'unpaid',
   PAID:    'paid',
+  BILLING_TARGET: 'billing_target', // 가상 청구대상 (DB 저장 전)
 });
 
 const PAYMENT_STATUS_LABEL = Object.freeze({
@@ -175,6 +176,7 @@ const PAYMENT_STATUS_LABEL = Object.freeze({
   [PAYMENT_STATUS.PARTIAL]: '일부납',
   [PAYMENT_STATUS.UNPAID]:  '미납',
   [PAYMENT_STATUS.PAID]:    '완납',
+  [PAYMENT_STATUS.BILLING_TARGET]: '청구대상',
 });
 
 const PAYMENT_STATUS_LEGACY_MAP = {
@@ -182,6 +184,7 @@ const PAYMENT_STATUS_LEGACY_MAP = {
   '일부납':   PAYMENT_STATUS.PARTIAL,
   '미납':     PAYMENT_STATUS.UNPAID,
   '완납':     PAYMENT_STATUS.PAID,
+  '청구대상': PAYMENT_STATUS.BILLING_TARGET,
 };
 
 // ═══════════════════════════════════════════

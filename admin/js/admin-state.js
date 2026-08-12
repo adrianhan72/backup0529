@@ -283,10 +283,12 @@ async function loadHeavyData(){
       _setWLFilterReady(true);
       renderWageLedger();
     }
-    // [사용료 숨김] 대시보드 사용료 카드·차트 - 원복 시 아래 주석 해제
-    // renderDashBillingCards();
-    // renderBillingTrendChart();
-    // 고객사 카드 갱신 (사용료 현황 섹션은 주석처리됨)
+    // 사용료 수납관리 ON → 대시보드 카드·차트 + 고객사 카드 재렌더링
+    if (window._billingFeatureEnabled) {
+      renderDashBillingCards();
+      renderBillingTrendChart();
+      renderCompanies();
+    }
     renderDashboardCompanies();
     // 대시보드 트렌드 차트 재렌더링 (allPayrolls 로드 완료 후)
     renderCompanyTrendChart();

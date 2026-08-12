@@ -8,8 +8,10 @@ async function generateMonthlyBilling(){
   const _calcBP = (contractStartDate) => {
     if (!contractStartDate) return { yr: now.getFullYear(), mo: now.getMonth()+1 };
     const start = new Date(contractStartDate);
-    const monthsSince = (today.getFullYear() - start.getFullYear()) * 12
-                      + (today.getMonth() - start.getMonth());
+    if (isNaN(start.getTime())) return { yr: now.getFullYear(), mo: now.getMonth()+1 };
+    const monthsSince = Math.max(0,
+      (today.getFullYear() - start.getFullYear()) * 12
+      + (today.getMonth() - start.getMonth()));
     const billingDate = new Date(start);
     billingDate.setMonth(billingDate.getMonth() + monthsSince);
     return { yr: billingDate.getFullYear(), mo: billingDate.getMonth() + 1 };
@@ -254,8 +256,10 @@ function renderBillings(){
   const _calcBillingPeriod = (contractStartDate) => {
     if (!contractStartDate) return { year: currentYear, month: currentMonth };
     const start = new Date(contractStartDate);
-    const monthsSince = (today.getFullYear() - start.getFullYear()) * 12
-                      + (today.getMonth() - start.getMonth());
+    if (isNaN(start.getTime())) return { year: currentYear, month: currentMonth };
+    const monthsSince = Math.max(0,
+      (today.getFullYear() - start.getFullYear()) * 12
+      + (today.getMonth() - start.getMonth()));
     const billingDate = new Date(start);
     billingDate.setMonth(billingDate.getMonth() + monthsSince);
     return { year: billingDate.getFullYear(), month: billingDate.getMonth() + 1 };
@@ -357,7 +361,7 @@ function renderBillings(){
             employee_count: empCount,
             amount_per_employee: amountPerEmp,
             total_amount: totalAmount,
-            payment_status: '청구대상',
+            payment_status: PAYMENT_STATUS.BILLING_TARGET,
             payment_date: '',
             partial_paid_amount: 0,
             remaining_amount: totalAmount,
@@ -783,7 +787,8 @@ async function bulkCreateBilling(){
     const _calcBP = (csd) => {
       if (!csd) return { yr: now.getFullYear(), mo: now.getMonth()+1 };
       const s = new Date(csd);
-      const ms = (today.getFullYear()-s.getFullYear())*12 + (today.getMonth()-s.getMonth());
+      if (isNaN(s.getTime())) return { yr: now.getFullYear(), mo: now.getMonth()+1 };
+      const ms = Math.max(0, (today.getFullYear()-s.getFullYear())*12 + (today.getMonth()-s.getMonth()));
       const bd = new Date(s); bd.setMonth(bd.getMonth()+ms);
       return { yr: bd.getFullYear(), mo: bd.getMonth()+1 };
     };
