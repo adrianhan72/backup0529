@@ -523,7 +523,8 @@ CREATE TABLE IF NOT EXISTS consent_dispatch (
   contract_start TEXT, --  -- 계약 시작일
   contract_end TEXT, --  -- 계약 종료일
   created_at INTEGER, --  -- 생성일시
-  updated_at INTEGER --  -- 수정일시
+  updated_at INTEGER, --  -- 수정일시
+  is_expired INTEGER DEFAULT 0 --  -- 보존기간 만료 여부 (retention-cleanup)
 );
 
 -- contract_dispatch  -- 근로계약서 발송 이력
