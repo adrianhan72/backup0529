@@ -176,6 +176,12 @@ function renderDashProbationBanner(){
    대시보드 퇴직관리 배너 — 4대보험·원천징수·퇴직정산·해고예고수당
    ───────────────────────────────────────────────────────────────── */
 function renderDashRetirementBanner(){
+  // 퇴직 관리 OFF → 배너 숨김
+  if (!window._retirementMgmtEnabled) {
+    const secOff = document.getElementById('dash-retirement-banner');
+    if (secOff) { secOff.style.display = 'none'; secOff.innerHTML = ''; }
+    return;
+  }
   const sec = document.getElementById('dash-retirement-banner');
   if(!sec) return;
   const today = new Date().toISOString().slice(0,10);
@@ -256,6 +262,7 @@ if(_origRenderDashboard){
 }
 
 function selectProbMgmtCompanyFromDash(coId, coName, contractId){
+  if (!window._probationFeatureEnabled) return;
   // 수습 근로자 관리 페이지로 이동 후 해당 고객사 선택 및 모달 열기
   const menuEl = document.querySelector('.menu-item[data-page="probation-mgmt"]');
   showPage('probation-mgmt', menuEl);
@@ -274,6 +281,7 @@ let _probMgmtSelectedCoName = '';
 let _rcContact              = null; // 대표 연락처 캐시
 
 function renderProbMgmtCompanyList(){
+  if (!window._probationFeatureEnabled) return;
   const chips = document.getElementById('probmgmt-company-chips');
   if(!chips) return;
   const q = (document.getElementById('probmgmt-company-search')?.value || '').toLowerCase();
@@ -315,6 +323,7 @@ function renderProbMgmtCompanyList(){
 }
 
 async function selectProbMgmtCompany(coId, coName){
+  if (!window._probationFeatureEnabled) return;
   _probMgmtSelectedCoId   = coId;
   _probMgmtSelectedCoName = coName;
   // 글로벌 공유 변수 업데이트 — 다른 페이지(근로 계약 관리 등) 이동 시 고객사 유지
@@ -483,6 +492,7 @@ let _probMgmtSelectedOpt  = null;  // 선택한 처리 옵션
 
 /* ── 모달 열기 ── */
 function openProbMgmtModal(contractId){
+  if (!window._probationFeatureEnabled) return;
   _probMgmtCurrentId   = contractId;
   _probMgmtSelectedOpt = null;
 
@@ -744,6 +754,7 @@ async function _patchProbmgmtAction(contractId, action){
 
 /* ── 채용 확정 ── */
 async function execProbConfirm(){
+  if (!window._probationFeatureEnabled) return;
   const targets = _getProbationAllTargets();
   const t = targets.find(x => x.contract.id === _probMgmtCurrentId);
   if(!t) return;
@@ -813,6 +824,7 @@ async function execProbConfirm(){
 
 /* ── 채용 확정 처리취소 ── */
 async function execProbConfirmRevoke(){
+  if (!window._probationFeatureEnabled) return;
   const targets = _getProbationAllTargets();
   const t = targets.find(x => x.contract.id === _probMgmtCurrentId);
   if(!t) return;
@@ -879,6 +891,7 @@ async function execProbConfirmRevoke(){
 
 /* ── 채용 취소 ── */
 async function execProbCancel(){
+  if (!window._probationFeatureEnabled) return;
   const targets = _getProbationAllTargets();
   const t = targets.find(x => x.contract.id === _probMgmtCurrentId);
   if(!t) return;
@@ -903,6 +916,7 @@ async function execProbCancel(){
 
 /* ── 조기 해고 ── */
 async function execProbDismiss(){
+  if (!window._probationFeatureEnabled) return;
   const targets = _getProbationAllTargets();
   const t = targets.find(x => x.contract.id === _probMgmtCurrentId);
   if(!t) return;
@@ -959,6 +973,7 @@ async function execProbDismiss(){
 
 /* ── 수습 연장 ── */
 async function execProbExtend(){
+  if (!window._probationFeatureEnabled) return;
   const targets = _getProbationAllTargets();
   const t = targets.find(x => x.contract.id === _probMgmtCurrentId);
   if(!t) return;

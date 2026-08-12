@@ -18,6 +18,7 @@ const SEEDS = [
   { id: 'set_ce_notice',   key: 'contract_expiry_notice_enabled',     desc: '계약만료 통지 발송 ON/OFF' },
   { id: 'set_rc_notice',   key: 'regular_conversion_notice_enabled',  desc: '정규직 전환 고지 발송 ON/OFF' },
   { id: 'set_billing',     key: 'billing_feature_enabled',            desc: '고객사 사용료 수납관리 ON/OFF' },
+  { id: 'set_retirement',  key: 'retirement_mgmt_enabled',           desc: '퇴직 관리 기능 ON/OFF' },
 ];
 
 SEEDS.forEach(s => {

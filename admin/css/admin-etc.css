@@ -668,3 +668,10 @@
       padding:12px 20px;background:#fafafa;
       border-bottom:1px solid #f3f4f6;
     }
+/* 시스템 설정 — 스위치 행 간격 */
+.ss-toggle-row {
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 16px;border:1px solid #e5e7eb;border-radius:8px;
+  margin-bottom:10px;
+}
+.ss-toggle-row:last-child { margin-bottom:0; }

@@ -1,6 +1,7 @@
 // ─── BILLING (시스템 사용료) ───
 
 async function generateMonthlyBilling(){
+  if (!window._billingFeatureEnabled) return;
   const now=new Date();
   const today=new Date();
   
@@ -242,6 +243,7 @@ function updateBillingStats(){
 }
 
 function renderBillings(){
+  if (!window._billingFeatureEnabled) return;
   const tbody=document.getElementById('bill-tbody');
   const summary=document.getElementById('bill-summary');
   if(!tbody || !summary) return;
@@ -756,6 +758,7 @@ async function bulkPayment(){
 
 // 선택 일괄 청구 생성
 async function bulkCreateBilling(){
+  if (!window._billingFeatureEnabled) return;
   const checkboxes = document.querySelectorAll('.bill-check:checked');
   
   if(checkboxes.length === 0){

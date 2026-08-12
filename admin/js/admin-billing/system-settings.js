@@ -41,6 +41,7 @@ async function renderSystemSettings() {
     _ssInitContractExpiryToggle();
     _ssInitRegularConversionToggle();
     _ssInitBillingToggle();
+    _ssInitRetirementToggle();
   } catch (e) {
     console.warn('[시스템 설정 로드 오류]', e);
     toast('설정 정보를 불러오지 못했습니다.', 'error');
@@ -787,7 +788,7 @@ async function ssToggleRegularConversion(checked) {
     window._regularConversionNoticeEnabled = checked;
     window._systemSettings['regular_conversion_notice_enabled'] = checked ? '1' : '0';
     toast(checked ? '정규직 전환 고지 발송이 활성화되었습니다.' : '정규직 전환 고지 발송이 비활성화되었습니다.', 'success');
-    _syncRegularConversionMenuVisibility();
+    _syncRegularConversionVisibility();
   } catch (e) {
     console.error('[ssToggleRegularConversion]', e);
     toast('설정 저장에 실패했습니다.', 'error');
@@ -801,6 +802,19 @@ function _syncRegularConversionMenuVisibility() {
   const menuItem = document.querySelector('.menu-item[data-page="regular-conversion"]');
   if (menuItem) {
     menuItem.style.display = window._regularConversionNoticeEnabled ? '' : 'none';
+  }
+}
+
+function _syncRegularConversionVisibility() {
+  _syncRegularConversionMenuVisibility();
+  // 페이지 컨테이너 표시/숨김
+  const pageEl = document.getElementById('page-regular-conversion');
+  if (pageEl) {
+    pageEl.style.display = window._regularConversionNoticeEnabled ? '' : 'none';
+  }
+  // OFF 시 정규직전환 페이지에 있다면 대시보드로 리다이렉트
+  if (!window._regularConversionNoticeEnabled && document.getElementById('page-regular-conversion')?.classList.contains('active')) {
+    if (typeof showPage === 'function') showPage('dashboard');
   }
 }
 
@@ -880,6 +894,78 @@ function _syncBillingVisibility() {
   }
   // 고객사 카드 재렌더링 (사용료 배지 표시/숨김)
   if (typeof renderCompanies === 'function') renderCompanies();
+  if (typeof renderDashboard === 'function') renderDashboard();
+}
+
+// ═══════════════════════════════════════════
+// 시스템 기능 스위치 — 퇴직 관리
+// ═══════════════════════════════════════════
+
+function _ssInitRetirementToggle() {
+  const chk = document.getElementById('ss-toggle-retirement');
+  if (!chk) return;
+  chk.checked = window._retirementMgmtEnabled === true;
+  _ssUpdateRetirementToggleUI(chk.checked);
+}
+
+function _ssUpdateRetirementToggleUI(on) {
+  const slider = document.getElementById('ss-toggle-retirement-slider');
+  const knob = document.getElementById('ss-toggle-retirement-knob');
+  const label = document.getElementById('ss-toggle-retirement-label');
+  if (slider) slider.style.background = on ? '#4f46e5' : '#cbd5e1';
+  if (knob) knob.style.left = on ? '23px' : '3px';
+  if (label) {
+    label.textContent = on ? 'ON' : 'OFF';
+    label.style.color = on ? '#4f46e5' : '#9ca3af';
+  }
+}
+
+async function ssToggleRetirement(checked) {
+  _ssUpdateRetirementToggleUI(checked);
+  try {
+    await api('../tables/system_settings/set_retirement', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        setting_key: 'retirement_mgmt_enabled',
+        setting_value: checked ? '1' : '0',
+        description: '퇴직 관리 기능 ON/OFF',
+        updated_at: Date.now()
+      })
+    });
+    window._retirementMgmtEnabled = checked;
+    window._systemSettings['retirement_mgmt_enabled'] = checked ? '1' : '0';
+    _syncRetirementVisibility();
+    toast(checked ? '퇴직 관리 기능이 활성화되었습니다.' : '퇴직 관리 기능이 비활성화되었습니다.', 'success');
+  } catch (e) {
+    console.error('[ssToggleRetirement]', e);
+    toast('설정 저장에 실패했습니다.', 'error');
+    const chk = document.getElementById('ss-toggle-retirement');
+    if (chk) chk.checked = !checked;
+    _ssUpdateRetirementToggleUI(!checked);
+  }
+}
+
+function _syncRetirementMenuVisibility() {
+  const menuItem = document.querySelector('.menu-item[data-page="retirement-mgmt"]');
+  if (menuItem) {
+    menuItem.style.display = window._retirementMgmtEnabled ? '' : 'none';
+  }
+}
+
+function _syncRetirementVisibility() {
+  _syncRetirementMenuVisibility();
+  // 페이지 컨테이너 표시/숨김
+  const pageEl = document.getElementById('page-retirement-mgmt');
+  if (pageEl) {
+    pageEl.style.display = window._retirementMgmtEnabled ? '' : 'none';
+  }
+  // OFF 시 퇴직관리 페이지에 있다면 대시보드로 리다이렉트
+  if (!window._retirementMgmtEnabled && document.getElementById('page-retirement-mgmt')?.classList.contains('active')) {
+    if (typeof showPage === 'function') showPage('dashboard');
+  }
+  // 대시보드 퇴직 배너 재렌더링
+  if (typeof renderDashRetirementBanner === 'function') renderDashRetirementBanner();
   if (typeof renderDashboard === 'function') renderDashboard();
 }
 

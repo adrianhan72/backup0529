@@ -13,6 +13,7 @@ window._probationFeatureEnabled = false; // 기본값 OFF
 window._contractExpiryNoticeEnabled = false; // 기본값 OFF
 window._regularConversionNoticeEnabled = false; // 기본값 OFF
 window._billingFeatureEnabled = false; // 기본값 OFF
+window._retirementMgmtEnabled = false; // 기본값 OFF
 
 // ─── 공통 헬퍼: 실질 이용중 고객사 판별 ──────────────────────────────────────
 // DB status=ACTIVE이더라도 contract_end_date가 오늘 이하면 해지 완료로 간주
@@ -236,6 +237,7 @@ async function init(){
     if (typeof _syncContractExpiryMenuVisibility === 'function') _syncContractExpiryMenuVisibility(); // 계약만료 통지 메뉴
     if (typeof _syncRegularConversionMenuVisibility === 'function') _syncRegularConversionMenuVisibility(); // 정규직 전환 고지 메뉴
     if (typeof _syncBillingMenuVisibility === 'function') _syncBillingMenuVisibility(); // 사용료 관리 메뉴
+    if (typeof _syncRetirementMenuVisibility === 'function') _syncRetirementMenuVisibility(); // 퇴직 관리 메뉴
     _syncContractTypeSelects(); // 수습 옵션 필터링
     
     // ── 페어 계약 새 창에서 열기: sessionStorage에 저장된 계약 자동 조회 ──
@@ -277,7 +279,7 @@ async function loadHeavyData(){
     _heavyDataReady = true;
     // 현재 보이는 페이지에 맞게 추가 렌더링
     renderPayrolls();
-    renderBillings();
+    if (window._billingFeatureEnabled) renderBillings();
     // 임금대장 페이지가 열려 있고 고객사가 선택된 상태라면 필터 활성화 + 재렌더링
     if(_wlCompanyId && document.getElementById('page-wage-ledger')?.classList.contains('active')){
       _setWLFilterReady(true);
@@ -308,6 +310,7 @@ async function loadHeavyData(){
       renderDraftAlerts();      // 급여 임시저장 포함 전체 임시저장 카드 갱신 (allPayrolls 로드 완료 후)
       renderDashProbationBanner();
       renderDashSeveranceBanner();
+      renderDashRetirementBanner();
     }
     // 수습 근로자 관리 페이지 활성화 시 고객사 칩 갱신
     if(document.getElementById('page-probation-mgmt')?.classList.contains('active')){
@@ -448,6 +451,7 @@ async function loadSystemSettings(){
   window._contractExpiryNoticeEnabled = (window._systemSettings['contract_expiry_notice_enabled'] === '1');
   window._regularConversionNoticeEnabled = (window._systemSettings['regular_conversion_notice_enabled'] === '1');
   window._billingFeatureEnabled = (window._systemSettings['billing_feature_enabled'] === '1');
+  window._retirementMgmtEnabled = (window._systemSettings['retirement_mgmt_enabled'] === '1');
 }
 async function loadContracts(){
   const d=await api('../tables/contracts?limit=200');
@@ -1022,6 +1026,11 @@ async function showPage(name,el){
     })();
   }
   if(name==='contract-expiry-notice'){
+    if (!window._contractExpiryNoticeEnabled) {
+      toast('계약만료 통지 발송 기능이 비활성화되어 있습니다.', 'warning');
+      showPage('dashboard');
+      return;
+    }
     if(!_dataReady){
       if(el) el.classList.add('active');
       return;
@@ -1029,6 +1038,11 @@ async function showPage(name,el){
     (async()=>{ await initCenPage(); _setDefaultDateRange('cen-log-filter-date-from', 'cen-log-filter-date-to'); renderCenHistory(); })();
   }
   if(name==='regular-conversion'){
+    if (!window._regularConversionNoticeEnabled) {
+      toast('정규직 전환 고지 발송 기능이 비활성화되어 있습니다.', 'warning');
+      showPage('dashboard');
+      return;
+    }
     if(!_dataReady){
       const tbody = document.getElementById('rc-target-tbody');
       if(tbody) tbody.innerHTML = `<tr><td colspan="8" class="cen-empty"><i class="fas fa-circle-notch fa-spin"></i> 고객사 데이터 불러오는 중...</td></tr>`;
@@ -1037,7 +1051,31 @@ async function showPage(name,el){
     }
     (async()=>{ await initRcPage(); _setDefaultDateRange('rc-log-filter-date-from', 'rc-log-filter-date-to'); })();
   }
+  if(name==='retirement-mgmt'){
+    if (!window._retirementMgmtEnabled) {
+      toast('퇴직 관리 기능이 비활성화되어 있습니다.', 'warning');
+      showPage('dashboard');
+      return;
+    }
+    // showPage 후크가 wage-retirement-mgmt.js 에서 initRetirementMgmtPage() 호출
+    if(el) el.classList.add('active');
+    return;
+  }
+  if(name==='billing'){
+    if (!window._billingFeatureEnabled) {
+      toast('사용료 수납관리 기능이 비활성화되어 있습니다.', 'warning');
+      showPage('dashboard');
+      return;
+    }
+    if(el) el.classList.add('active');
+    return;
+  }
   if(name==='probation-mgmt'){
+    if (!window._probationFeatureEnabled) {
+      toast('수습근로자 관리 기능이 비활성화되어 있습니다.', 'warning');
+      showPage('dashboard');
+      return;
+    }
     if(!_dataReady){
       const chips = document.getElementById('probmgmt-company-chips');
       if(chips) chips.innerHTML = `<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#9ca3af;padding:8px 0;"><div style="width:18px;height:18px;border:2px solid #e2e8f0;border-top-color:#0d9488;border-radius:50%;animation:tblSpin .7s linear infinite;flex-shrink:0;"></div>고객사 목록 불러오는 중...</div>`;
@@ -1175,6 +1213,7 @@ async function refreshCurrentPage(){
         renderLpTable();
         break;
       case 'regular-conversion':
+        if (!window._regularConversionNoticeEnabled) return;
         await loadContracts();
         await rcRefresh();
         break;

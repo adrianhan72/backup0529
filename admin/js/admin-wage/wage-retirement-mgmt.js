@@ -6,6 +6,7 @@ let _retirementCurrentTab = 'insurance';
 
 /** 탭 전환 */
 function switchRetirementTab(tab){
+  if (!window._retirementMgmtEnabled) return;
   _retirementCurrentTab = tab;
   document.querySelectorAll('.std-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
   document.querySelectorAll('.std-tab-panel').forEach(c => c.style.display = 'none');
@@ -15,11 +16,13 @@ function switchRetirementTab(tab){
 
 /** 페이지 초기화 + 전체 렌더링 */
 function initRetirementMgmtPage(){
+  if (!window._retirementMgmtEnabled) return;
   renderRetirementMgmt();
 }
 
 /** 전체 대상자 집계 및 테이블 렌더링 */
 function renderRetirementMgmt(){
+  if (!window._retirementMgmtEnabled) return;
   const today = new Date().toISOString().slice(0,10);
 
   // ── 해지/해지예정 계약 수집 ──
@@ -180,6 +183,7 @@ function renderNoticePayTable(list, fmtD){
 
 /** 신고완료 마킹 (DB 저장) */
 async function markRetirementDone(contractId, type){
+  if (!window._retirementMgmtEnabled) return;
   if(!confirm('신고 완료 처리하시겠습니까?')) return;
   try {
     const field = type === 'insurance' ? 'insurance_reported_at' : 'tax_reported_at';
@@ -204,6 +208,7 @@ async function markRetirementDone(contractId, type){
 
 /** 신고완료 취소 (DB 초기화) */
 async function undoRetirementDone(contractId, type){
+  if (!window._retirementMgmtEnabled) return;
   if(!confirm('신고완료를 취소하시겠습니까?')) return;
   try {
     const field = type === 'insurance' ? 'insurance_reported_at' : 'tax_reported_at';
@@ -226,17 +231,18 @@ async function undoRetirementDone(contractId, type){
 
 /** 퇴직정산 모달 (추후 구현) */
 function openRetirementSettlement(contractId){
+  if (!window._retirementMgmtEnabled) return;
   toast('퇴직정산 모달은 이후에 별도로 구현됩니다.', 'info');
   console.log('[퇴직정산] contractId:', contractId);
 }
 
-/** showPage 후크 — 페이지 진입 시 초기화 */
+/** showPage 후크 — 페이지 진입 시 초기화 (OFF 시 후크 무력화) */
 (function(){
   const _orig = window.showPage;
   if(typeof _orig === 'function'){
     window.showPage = function(name, el){
       _orig(name, el);
-      if(name === 'retirement-mgmt') setTimeout(initRetirementMgmtPage, 50);
+      if(name === 'retirement-mgmt' && window._retirementMgmtEnabled) setTimeout(initRetirementMgmtPage, 50);
     };
   }
 })();
