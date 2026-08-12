@@ -2962,35 +2962,40 @@ function _getContractHourlyWage(){
   return getAmountVal('ct-hourly-input') || 0;
 }
 
-/** 고정 연장근로수당 = 연장OT × 4.345 × 시급 × 1.5 + 휴일연장 × 4.345 × 시급 × 2.0 */
+/** 고정 연장근로수당 = 연장OT × 4.345 반올림 × 시급 × 1.5 + 휴일연장 × 4.345 반올림 × 시급 × 2.0 (근로자 유리) */
 function _calcFixedOtFromHours(){
   const hw = _getContractHourlyWage();
-  const hTotal = parseFloat(document.getElementById('ct-fixed-ot-hours')?.value)||0; // 합산 표시값
+  const hTotal = parseFloat(document.getElementById('ct-fixed-ot-hours')?.value)||0;
   const hHolOt = parseFloat(document.getElementById('ct-fixed-hol-ot-hours')?.value)||0;
-  const hRegular = Math.max(0, hTotal - hHolOt); // 평일연장만 추출 (음수 방어)
+  const hRegular = Math.max(0, hTotal - hHolOt);
   const coId = document.getElementById('ct-company')?.value || '';
   const mult = _getLegalMultiplier(coId);
-  const otPay = (hw > 0 && hRegular > 0) ? Math.round(hw * hRegular * WEEK_TO_MONTH * mult.overtime) : 0;
-  const holOtPay = (hw > 0 && hHolOt > 0) ? Math.round(hw * hHolOt * WEEK_TO_MONTH * mult.holiday_8h_over) : 0;
+  // 주간→월간 변환 후 소수점 1자리 반올림 → 근로자 유리
+  const mRegular = Math.round(hRegular * WEEK_TO_MONTH * 10) / 10;
+  const mHolOt   = Math.round(hHolOt   * WEEK_TO_MONTH * 10) / 10;
+  const otPay    = (hw > 0 && mRegular > 0) ? Math.round(hw * mRegular * mult.overtime) : 0;
+  const holOtPay = (hw > 0 && mHolOt > 0)   ? Math.round(hw * mHolOt   * mult.holiday_8h_over) : 0;
   setAmountVal('ct-fixed-ot-pay', otPay + holOtPay);
 }
 
-/** 고정 야간근로수당 = 주간야간 × 4.345 × 시급 × 법정배율(0.5/0.0) */
+/** 고정 야간근로수당 = 주간야간 × 4.345 반올림 × 시급 × 법정배율(0.5/0.0) (근로자 유리) */
 function _calcFixedNightFromHours(){
   const hw = _getContractHourlyWage();
   const h  = parseFloat(document.getElementById('ct-fixed-night-hours')?.value)||0;
   const coId = document.getElementById('ct-company')?.value || '';
   const mult = _getLegalMultiplier(coId);
-  setAmountVal('ct-fixed-night-pay', (hw > 0 && h > 0) ? Math.round(hw * h * WEEK_TO_MONTH * mult.night) : 0);
+  const mNight = Math.round(h * WEEK_TO_MONTH * 10) / 10;
+  setAmountVal('ct-fixed-night-pay', (hw > 0 && mNight > 0) ? Math.round(hw * mNight * mult.night) : 0);
 }
 
-/** 고정 휴일근로수당 = 주간휴일≤8h × 4.345 × 시급 × 1.5 [근로기준법 제56조②] */
+/** 고정 휴일근로수당 = 주간휴일≤8h × 4.345 반올림 × 시급 × 1.5 (근로자 유리) */
 function _calcFixedHolFromHours(){
   const hw = _getContractHourlyWage();
   const h  = parseFloat(document.getElementById('ct-fixed-hol-hours')?.value)||0;
   const coId = document.getElementById('ct-company')?.value || '';
   const mult = _getLegalMultiplier(coId);
-  setAmountVal('ct-fixed-hol-pay', (hw > 0 && h > 0) ? Math.round(hw * h * WEEK_TO_MONTH * mult.holiday_8h) : 0);
+  const mHol = Math.round(h * WEEK_TO_MONTH * 10) / 10;
+  setAmountVal('ct-fixed-hol-pay', (hw > 0 && mHol > 0) ? Math.round(hw * mHol * mult.holiday_8h) : 0);
 }
 
 /** ── 근로계약 관리 알림 카드 렌더링 ── */

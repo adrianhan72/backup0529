@@ -2806,8 +2806,7 @@ function _calcFixedHoursFromSchedule(scheduleJson, hourlyWage, companyId){
     result.otRegularHours += (weeklyOtMin / 60) * WEEKS_PER_MONTH;
   }
 
-  // 소수점 1자리 반올림
-  result.otHours       = Math.round((result.otRegularHours + result.holOtHours) * 10) / 10; // 합산 표시용
+  // 소수점 1자리 반올림 (근로자 유리: 반올림 후 금액 계산)
   result.otRegularHours= Math.round(result.otRegularHours * 10) / 10;
   result.otHolHours    = Math.round(result.otHolHours * 10) / 10;
   result.nightHours    = Math.round(result.nightHours * 10) / 10;
@@ -2815,17 +2814,16 @@ function _calcFixedHoursFromSchedule(scheduleJson, hourlyWage, companyId){
   result.nightSunHours = Math.round(result.nightSunHours * 10) / 10;
   result.holHours      = Math.round(result.holHours * 10) / 10;
   result.holOtHours    = Math.round(result.holOtHours * 10) / 10;
+  result.otHours       = Math.round((result.otRegularHours + result.holOtHours) * 10) / 10;
 
-  // 수당 계산 (법정할증률: 5인 이상 1.5/0.5/1.5/2.0, 5인 미만 1.0/0.0/1.0/1.0)
+  // 수당 계산 (반올림된 시간 × 시급 × 법정할증률)
   if(hw > 0){
     const mult = (typeof _getLegalMultiplier === 'function' && companyId)
       ? _getLegalMultiplier(companyId)
       : { overtime: 1.5, night: 0.5, holiday_8h: 1.5, holiday_8h_over: 2.0 };
-    result.otPay    = Math.round(hw * result.otHours    * mult.overtime);
-    result.nightPay = Math.round(hw * result.nightHours * mult.night);
-    const holH8     = Math.min(result.holHours, 8 * WEEKS_PER_MONTH); // 월 환산 8h 기준
-    const holHOvr   = Math.max(result.holHours - 8 * WEEKS_PER_MONTH, 0);
-    result.holPay   = Math.round(hw * holH8 * mult.holiday_8h + hw * holHOvr * mult.holiday_8h_over);
+    result.otPay    = Math.round(hw * result.otRegularHours * mult.overtime + hw * result.holOtHours * mult.holiday_8h_over);
+    result.nightPay = Math.round(hw * result.nightHours    * mult.night);
+    result.holPay   = Math.round(hw * result.holHours      * mult.holiday_8h);
   }
 
   return result;
