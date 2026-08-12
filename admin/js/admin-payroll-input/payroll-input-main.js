@@ -276,7 +276,8 @@ async function loadPITargetList(){
           cStart += ' (예정)';
         }
       } else if(emp.created_at){
-        cStart = new Date(emp.created_at).toISOString().slice(0,10);
+        const _createdDt = new Date(emp.created_at);
+        cStart = isNaN(_createdDt.getTime()) ? '-' : _createdDt.toISOString().slice(0,10);
       } else if(_type === 'representative' && coData){
         cStart = coData.contract_start_date || '-';
       } else {
@@ -2296,8 +2297,9 @@ function _calcProbationEndDate(ct){
   const isProb = (ct.contract_type ===CONTRACT_TYPE.REGULAR_PROBATION || ct.contract_type ===CONTRACT_TYPE.FIXED_PROBATION);
   if(!isProb) return null;
   const months = ct.probation_months ? Number(ct.probation_months) : 0;
-  if(months > 0){
+  if(months > 0 && ct.contract_start){
     const d = new Date(ct.contract_start);
+    if(isNaN(d.getTime())) return ct.contract_end || null;
     d.setMonth(d.getMonth() + months);
     d.setDate(d.getDate() - 1);
     return d.toISOString().slice(0,10);
