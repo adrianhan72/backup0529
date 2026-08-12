@@ -1842,12 +1842,13 @@ async function confirmContractRenew(){
   const savedNew = await api('../tables/contracts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(newContract)});
   const newId = savedNew.id;
 
-  // 2. 기존 계약: 해지일 기록 + 상태 '갱신됨' + renewed_to_id (contract_end는 보존)
+  // 2. 기존 계약: 해지일 기록 + 상태 변경 (해지일 미래면 TERMINATE_PENDING, 과거면 TERMINATED)
+  const _oldTermStatus = oldEnd > today ? CONTRACT_STATUS.TERMINATE_PENDING : CONTRACT_STATUS.TERMINATED;
   await api(`../tables/contracts/${c.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({terminate_date: oldEnd, status: CONTRACT_STATUS.TERMINATED, renewed_to_id: newId})});
+    body:JSON.stringify({terminate_date: oldEnd, status: _oldTermStatus, renewed_to_id: newId})});
   // 로컬 갱신
   c.terminate_date = oldEnd;
-  c.status = CONTRACT_STATUS.TERMINATED;
+  c.status = _oldTermStatus;
   c.renewed_to_id = newId;
 
   // ── 계약 연속성 단절 시 근로자 입사일 변경 ──

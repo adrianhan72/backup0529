@@ -152,8 +152,8 @@ async function loadPITargetList(){
 
   // 해당 고객사 + 해당 년월에 유효 계약이 있는 근로자 필터링
   // 유효 조건: is_draft=false, 파기되지 않음, 계약 기간이 해당 월과 겹침
-  // terminate_pending 포함: 해지일 전까지는 급여 지급 대상
-  const VALID_STATUSES = new Set([CONTRACT_STATUS.ACTIVE, CONTRACT_STATUS.PENDING, CONTRACT_STATUS.DOCS_INCOMPLETE, CONTRACT_STATUS.TERMINATE_PENDING]);
+  // terminate_pending·terminated 포함: 해지일 전까지는 급여 지급 대상
+  const VALID_STATUSES = new Set([CONTRACT_STATUS.ACTIVE, CONTRACT_STATUS.PENDING, CONTRACT_STATUS.DOCS_INCOMPLETE, CONTRACT_STATUS.TERMINATE_PENDING, CONTRACT_STATUS.RENEWAL_PENDING, CONTRACT_STATUS.TERMINATED]);
   const targetContracts = allContracts.filter(c => {
     if(c.company_id !== coId) return false;
     if(c.is_draft) return false;
@@ -161,26 +161,26 @@ async function loadPITargetList(){
     if(!VALID_STATUSES.has(c.status)) return false;
     // 계약 기간이 급여 산정기간과 겹치는지 확인
     const cStart = c.contract_start || '';
-    const cEnd   = c.contract_end   || '';
+    // 종료일: TERMINATED/TERMINATE_PENDING은 terminate_date, 그 외는 contract_end
+    const cEnd   = (c.status === CONTRACT_STATUS.TERMINATED || c.status === CONTRACT_STATUS.TERMINATE_PENDING)
+      ? (c.terminate_date || c.contract_end || '')
+      : (c.contract_end || '');
     if(cStart && cStart > _salEnd)   return false; // 계약 시작 전
     if(cEnd   && cEnd   < _salStart) return false; // 계약 종료 후
     return true;
   });
 
-  // 중복 직원 제거 (한 직원에 계약이 여러 개면 최신 계약 1개만)
-  const empContractMap = new Map();
-  targetContracts.forEach(c => {
-    const prev = empContractMap.get(c.employee_id);
-    if(!prev || (c.contract_start||'') > (prev.contract_start||'')){
-      empContractMap.set(c.employee_id, c);
-    }
-  });
-
-  const targets = [...empContractMap.entries()].map(([empId, c]) => {
-    const emp = allEmployees.find(e => e.id === empId);
+  // 동일 직원의 해지예정+갱신예정 계약이 월 중 공존할 수 있으므로 중복 제거하지 않음
+  // (계약상태 배지로 구분: 해지예정/갱신예정)
+  const targets = targetContracts.map(c => {
+    const emp = allEmployees.find(e => e.id === c.employee_id);
     return { emp, contract: c, _type: 'employee' };
   }).filter(t => t.emp)
-    .sort((a,b) => (a.emp.name||'').localeCompare(b.emp.name||'','ko'));
+    .sort((a,b) => {
+      // 같은 직원이면 계약시작일 역순 (최신 계약 먼저)
+      if (a.emp.name === b.emp.name) return (b.contract.contract_start||'').localeCompare(a.contract.contract_start||'');
+      return (a.emp.name||'').localeCompare(b.emp.name||'','ko');
+    });
 
   // ── 대표자, 등기임원, 특수관계인 추가 (별도 근로계약 없음) ──
   const coData = (allCompanies||[]).find(c => c.id === coId);
@@ -271,6 +271,10 @@ async function loadPITargetList(){
       let cStart;
       if(actualContract){
         cStart = actualContract.contract_start || '-';
+        // 갱신예정: 시작일 뒤에 (예정) 표시
+        if (actualContract.status === CONTRACT_STATUS.RENEWAL_PENDING && cStart !== '-') {
+          cStart += ' (예정)';
+        }
       } else if(emp.created_at){
         cStart = new Date(emp.created_at).toISOString().slice(0,10);
       } else if(_type === 'representative' && coData){
@@ -278,7 +282,15 @@ async function loadPITargetList(){
       } else {
         cStart = '-';
       }
-      const cEnd = actualContract ? (actualContract.contract_end || '무기한') : '무기한';
+      // 계약 종료일: TERMINATED/TERMINATE_PENDING이면 해지예정일 우선, 없으면 contract_end
+      let cEnd;
+      if (actualContract && (actualContract.status === CONTRACT_STATUS.TERMINATE_PENDING || actualContract.status === CONTRACT_STATUS.TERMINATED) && actualContract.terminate_date) {
+        cEnd = actualContract.terminate_date + (actualContract.status === CONTRACT_STATUS.TERMINATE_PENDING ? ' (예정)' : '');
+      } else if (actualContract && actualContract.status === CONTRACT_STATUS.RENEWAL_PENDING && actualContract.contract_end) {
+        cEnd = actualContract.contract_end + ' (예정)';
+      } else {
+        cEnd = actualContract ? (actualContract.contract_end || '무기한') : '무기한';
+      }
       
       const isDraft  = draftEmpMap.has(emp.id);
       const isPaid   = paidEmpIds.has(emp.id);
@@ -2895,7 +2907,17 @@ function _getPIFixedHours(){
   if(!piContract) return { otHours:0, nightHours:0, holHours:0, otPay:0, nightPay:0, holPay:0 };
 
   const _sched = piContract.schedule_json || null;
-  const _hw    = piContract.hourly_wage || 0;
+  // 수습 기간이면 probation_amt ÷ 209h로 실질 시급 계산
+  // (salary/minwage/direct 모든 산정기준에 정확)
+  let _hw = piContract.hourly_wage || 0;
+  const probAmt = parseFloat(piContract.probation_amt) || 0;
+  if (probAmt > 0) {
+    const probPct = parseFloat(piContract.probation_pct) || 0;
+    const basis = piContract.probation_basis || 'salary';
+    if (basis === 'direct' || (probPct > 0 && probPct < 100)) {
+      _hw = Math.round(probAmt / 209);
+    }
+  }
 
   if(_sched){
     return _calcFixedHoursFromSchedule(_sched, _hw, piContract.company_id);
@@ -3159,7 +3181,18 @@ function calcPI(){
     _retroHolidayOverpay = 0;
   }
 
-  const hw=piContract?piContract.hourly_wage:0;
+  // 수습 시급: probation_amt ÷ 209h (세 가지 산정기준 모두 정확)
+  let hw = piContract ? (piContract.hourly_wage || 0) : 0;
+  if (piContract) {
+    const probAmt = parseFloat(piContract.probation_amt) || 0;
+    if (probAmt > 0) {
+      const probPct = parseFloat(piContract.probation_pct) || 0;
+      const basis = piContract.probation_basis || 'salary';
+      if (basis === 'direct' || (probPct > 0 && probPct < 100)) {
+        hw = Math.round(probAmt / 209);
+      }
+    }
+  }
   const otH=gv('pi-ot-hours'),nightH=gv('pi-night-hours'),holH=gv('pi-hol-hours');
 
   // ── 5인 미만 사업장 판정 ─────────────────────────────────────────────────
@@ -3188,8 +3221,18 @@ function calcPI(){
 
   // 패널 방식 (piContract 있을 때) vs 단순 표시 (없을 때) 구분
   if(piContract){
-    // ── 만근 기준 정보 ──
-    const _cBase     = parseFloat(piContract.base_salary) || 0;
+    // ── 만근 기준 정보 (수습 중이면 probation_amt 기준) ──
+    let _cBase = parseFloat(piContract.base_salary) || 0;
+    {
+      const probAmt3 = parseFloat(piContract.probation_amt) || 0;
+      if (probAmt3 > 0) {
+        const probPct3 = parseFloat(piContract.probation_pct) || 0;
+        const basis3 = piContract.probation_basis || 'salary';
+        if (basis3 === 'direct' || (probPct3 > 0 && probPct3 < 100)) {
+          _cBase = probAmt3;
+        }
+      }
+    }
     const _dpw       = parseFloat(piContract.work_days_per_week) || 5;
     const _hpd       = parseFloat(piContract.work_hours_per_day) || 8;
     const _coForProration = allCompanies.find(c => c.id === _coId);
@@ -3332,7 +3375,18 @@ function calcPI(){
 
     // ── 자동산출 패널 내부 disp 요소 업데이트 ──
     const _fixedCalc2 = _getPIFixedHours();
-    const _hw2 = piContract ? (piContract.hourly_wage || 0) : 0;
+    // 수습 시급: probation_amt ÷ 209h
+    let _hw2 = piContract ? (piContract.hourly_wage || 0) : 0;
+    if (piContract) {
+      const _probAmt2 = parseFloat(piContract.probation_amt) || 0;
+      if (_probAmt2 > 0) {
+        const _probPct2 = parseFloat(piContract.probation_pct) || 0;
+        const _basis2 = piContract.probation_basis || 'salary';
+        if (_basis2 === 'direct' || (_probPct2 > 0 && _probPct2 < 100)) {
+          _hw2 = Math.round(_probAmt2 / 209);
+        }
+      }
+    }
     const _hpd2 = piContract ? (piContract.work_hours_per_day || 8) : 8;
 
     // ── 고정 근로 (근무시간표 기준) ──
@@ -4402,7 +4456,18 @@ function calcWeeklyHolidayPay(){
   }
 
   const isDaily = piContract.contract_type === CONTRACT_TYPE.DAILY;
-  const hw        = parseFloat(piContract.hourly_wage)       || 0;
+  // 수습 시급: probation_amt ÷ 209h
+  let hw = parseFloat(piContract.hourly_wage) || 0;
+  {
+    const probAmt = parseFloat(piContract.probation_amt) || 0;
+    if (probAmt > 0) {
+      const probPct = parseFloat(piContract.probation_pct) || 0;
+      const basis = piContract.probation_basis || 'salary';
+      if (basis === 'direct' || (probPct > 0 && probPct < 100)) {
+        hw = Math.round(probAmt / 209);
+      }
+    }
+  }
   const hpd       = parseFloat(piContract.work_hours_per_day)|| 8;   // 일 소정근로시간
   // 일용직: work_days_per_week 없으면 실제 근로일 기준으로 추정 (기본 5일)
   const dpw       = isDaily

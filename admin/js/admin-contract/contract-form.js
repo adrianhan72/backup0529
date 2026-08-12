@@ -2957,9 +2957,21 @@ function _weeklyToMonthlyHours(fieldId){
   return Math.round((parseFloat(document.getElementById(fieldId)?.value)||0) * WEEK_TO_MONTH);
 }
 
-/** 통상시급 반환 (ct-hourly-input 직접 입력값) */
+/** 통상시급 반환 (수습 중이면 probation_amt ÷ 209h 기준) */
 function _getContractHourlyWage(){
-  return getAmountVal('ct-hourly-input') || 0;
+  const hw = getAmountVal('ct-hourly-input') || 0;
+  // 수습 기간: probation_amt가 있으면 수습 월급여 ÷ 209h로 실질 시급 계산
+  // (salary/minwage/direct 모든 산정기준에 정확)
+  const probAmt = getAmountVal('ct-probation-amt') || 0;
+  if (probAmt > 0) {
+    const probPct = parseFloat(document.getElementById('ct-probation-pct')?.value) || 0;
+    const basis = document.querySelector('input[name=\"ct-probation-basis\"]:checked')?.value || 'salary';
+    // direct 모드이거나 %가 100 미만이면 수습 시급 적용
+    if (basis === 'direct' || (probPct > 0 && probPct < 100)) {
+      return Math.round(probAmt / 209);
+    }
+  }
+  return hw;
 }
 
 /** 고정 연장근로수당 = 연장OT × 4.345 반올림 × 시급 × 1.5 + 휴일연장 × 4.345 반올림 × 시급 × 2.0 (근로자 유리) */
