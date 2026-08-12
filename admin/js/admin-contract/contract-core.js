@@ -819,9 +819,6 @@ function openContractModal(id=null, preCompanyId=null){
   ['ct-pay-period-month','ct-pay-period-day'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});
   const _ppHint = document.getElementById('ct-pay-period-hint'); if(_ppHint) _ppHint.textContent='';
   document.getElementById('ct-annual').value=15;
-  // 요일별 스케줄 테이블 초기화 (기본값: 월~금 09:00~18:00, 휴게 1h)
-  initScheduleTable();
-  if(typeof _initBulkTimePickers === 'function') _initBulkTimePickers();
   document.getElementById('ct-annual-sal').value='';
   setAmountVal('ct-position',0);
   setAmountVal('ct-car',0); setAmountVal('ct-remote-area',0);
@@ -832,17 +829,23 @@ function openContractModal(id=null, preCompanyId=null){
   setAmountVal('ct-regular-bonus',0);
   setAmountVal('ct-childcare',0); { const _ccDep=document.getElementById('ct-childcare-dependents'); if(_ccDep) _ccDep.value=0; }
   setAmountVal('ct-hourly-input',0);
-  // 고정 연장/야간/휴일근로수당 초기화
-  setAmountVal('ct-fixed-ot-pay',    0); setAmountVal('ct-fixed-night-pay', 0); setAmountVal('ct-fixed-hol-pay',   0);
-  { const _foh=document.getElementById('ct-fixed-ot-hours');    if(_foh) _foh.value=''; }
+  // 기본급·고정수당금액 초기화 (새 모달 열 때 이전 세션 잔재 제거)
+  setAmountVal('ct-base', 0);
+  setAmountVal('ct-fixed-ot-pay', 0);
+  setAmountVal('ct-fixed-night-pay', 0);
+  setAmountVal('ct-fixed-hol-pay', 0);
+  { const _foh=document.getElementById('ct-fixed-ot-hours'); if(_foh) _foh.value=''; }
   { const _fnh=document.getElementById('ct-fixed-night-hours'); if(_fnh) _fnh.value=''; }
-  { const _fhh=document.getElementById('ct-fixed-hol-hours');   if(_fhh) _fhh.value=''; }
+  { const _fhh=document.getElementById('ct-fixed-hol-hours'); if(_fhh) _fhh.value=''; }
   _resetCTPayTypes();
   // 모달 초기화: _CT_OPT_ROWS 전체 숨김 리셋 (이전 모달 상태 잔재 제거)
   // applyCTAllowanceConfig가 이후에 고객사 설정에 따라 개별 show 처리
   if(typeof _CT_OPT_ROWS !== 'undefined'){
     _CT_OPT_ROWS.forEach(({rowId})=>{ const el=document.getElementById(rowId); if(el) el.style.display='none'; });
   }
+  // ── 초기화 완료 후 스케줄 테이블 생성 + 근로시간 계산 ──
+  initScheduleTable();
+  if(typeof _initBulkTimePickers === 'function') _initBulkTimePickers();
   document.getElementById('ct-type').value=CONTRACT_TYPE.REGULAR;
   document.getElementById('ct-status').value=CONTRACT_STATUS.ACTIVE;toggleCtEndDate();
   document.getElementById('ct-monthly-computed').textContent='0원';document.getElementById('ct-weekly-hol-computed').textContent='0원';

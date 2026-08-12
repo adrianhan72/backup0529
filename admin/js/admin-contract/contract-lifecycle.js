@@ -118,8 +118,11 @@ function buildScheduleTableHTML(activeDays){
     // 소정 vs 연장 분리
     var dayStat = Math.min(mins, STATUTORY_DAILY);
     var dayOt   = Math.max(0, mins - STATUTORY_DAILY);
-    totalStatMins += dayStat;
-    totalOtMins   += dayOt;
+    // 주말(토·일)은 소정근로 합산에서 제외 (휴일근로로만 집계, 주40h 초과 연장 이중계상 방지)
+    if (!isWeekend) {
+      totalStatMins += dayStat;
+      totalOtMins   += dayOt;
+    }
 
     // 야간
     var dayNight = (sm!==null&&em!==null) ? nightMins(sm, em, brk) : 0;
@@ -131,11 +134,19 @@ function buildScheduleTableHTML(activeDays){
     var h = mins/60;
     var statH = dayStat/60;
     var otH   = dayOt/60;
-    var hrs = mins===0 ? '-' :
-      (isWeekend
-        ? '<span style="color:#dc2626;font-size:10px;">+' + (Number.isInteger(statH)?statH:statH.toFixed(1)) + 'h (휴일)</span>'
-        : (Number.isInteger(statH)?statH:statH.toFixed(1)) + 'h')
-      + (otH>0 ? '<span style="color:#f59e0b;font-size:10px;"> +'+(Number.isInteger(otH)?otH:otH.toFixed(1))+'h(연장)</span>' : '');
+    var nightH = dayNight/60;
+    var fmtH = function(h){ return Number.isInteger(h) ? h : h.toFixed(1); };
+    var hrsLines = [];
+    if (mins===0) {
+      hrsLines.push('-');
+    } else if (isWeekend) {
+      hrsLines.push('<span style="color:#dc2626;font-size:10px;">휴일 ' + fmtH(statH) + 'h</span>');
+    } else {
+      hrsLines.push(fmtH(statH) + 'h');
+    }
+    if (otH>0) hrsLines.push('<span style="color:#f59e0b;font-size:10px;">연장 +' + fmtH(otH) + 'h</span>');
+    if (nightH>0 && !isWeekend) hrsLines.push('<span style="color:#7c3aed;font-size:10px;">야간 +' + fmtH(nightH) + 'h</span>');
+    var hrs = hrsLines.join('<br>');
 
     var chk = isWork ? '✔' : '';
     var brkSlots = normBreaks(s);
@@ -3156,8 +3167,8 @@ function _formatIdInput(el){
  */
 function _inferGender(genderCode){
   const n = parseInt(genderCode, 10);
-  if([1,3,5,7].includes(n)) return '남';
-  if([2,4,6,8].includes(n)) return '여';
+  if([1,3,5,7].includes(n)) return 'male';
+  if([2,4,6,8].includes(n)) return 'female';
   return null;
 }
 
@@ -3225,17 +3236,25 @@ function _onIdInput(el, checkBtnFn){
       const _gCode = val.replace(/-/g,'').slice(6,7);
       const _gender = _inferGender(_gCode);
       if(_gender){
+        const _genderLabel = _gender === 'male' ? '남성' : '여성';
         const _newGenderEl = document.getElementById('ct-em-gender');
         if(_newGenderEl && document.getElementById('ct-em-id') === el){
           _newGenderEl.value = _gender;
           const _newHint = document.getElementById('ct-em-gender-hint');
-          if(_newHint){ _newHint.textContent = `성별 자동 설정: ${_gender}`; _newHint.className='ct-hint-success'; }
+          if(_newHint){ _newHint.textContent = _genderLabel + ' (자동 설정)'; _newHint.className='ct-hint-success'; }
         }
         const _editGenderEl = document.getElementById('ct-edit-em-gender');
         if(_editGenderEl && document.getElementById('ct-edit-em-id') === el){
           _editGenderEl.value = _gender;
-          const _editHint = document.getElementById('ct-edit-em-gender-hint');
-          if(_editHint){ _editHint.textContent = `성별 자동 설정: ${_gender}`; _editHint.className='ct-hint-success'; }
+          let _editHint = document.getElementById('ct-edit-em-gender-hint');
+          if(!_editHint){
+            _editHint = document.createElement('span');
+            _editHint.id = 'ct-edit-em-gender-hint';
+            _editHint.style.cssText = 'font-size:11px;margin-top:3px;display:block;';
+            _editGenderEl.parentElement.appendChild(_editHint);
+          }
+          _editHint.textContent = _genderLabel + ' (자동 설정)';
+          _editHint.className = 'ct-hint-success';
         }
       }
     } else if(val.replace(/[^0-9]/g,'').length < 7){

@@ -108,82 +108,6 @@ function _isLegalHoliday(dateStr){
   return false;
 }
 
-/** ── 근무시간표 → 고정 연장/야간/휴일 시간 자동 계산 ── */
-function _autoCalcFixedHoursFromSchedule(){
-  const schedule = getScheduleJSON();
-  const coId = document.getElementById('ct-company')?.value || '';
-  const mult = _getLegalMultiplier(coId);
-  let weeklyOT = 0, weeklyNight = 0, weeklyHol = 0;
-
-  for(let i = 0; i < schedule.length; i++){
-    const day = schedule[i];
-    if(!day.active) continue;
-    const isWeekend = (i === 5 || i === 6); // index 5=토, 6=일
-
-    for(const shift of day.shifts){
-      if(!shift.start || !shift.end) continue;
-      const startMin = timeToMins(shift.start);
-      let endMin = timeToMins(shift.end);
-      if(endMin <= startMin) endMin += 24 * 60;
-
-      let breakMin = 0;
-      if(shift.breaks && Array.isArray(shift.breaks)){
-        for(const brk of shift.breaks){
-          if(brk.s && brk.e){
-            let bs = timeToMins(brk.s), be = timeToMins(brk.e);
-            if(be <= bs) be += 24 * 60;
-            breakMin += Math.max(0, be - bs);
-          }
-        }
-      }
-
-      const totalWorkMin = Math.max(0, endMin - startMin - breakMin);
-      const totalWorkH = totalWorkMin / 60;
-
-      if(isWeekend){
-        // 토·일요일: 전부 휴일근로
-        weeklyHol += totalWorkH;
-      } else {
-        // 평일: 8h 초과분 = 연장근로
-        weeklyOT += Math.max(0, totalWorkH - 8);
-      }
-
-      // 야간근로: 22:00~06:00 시간대 (휴일 포함)
-      let nightMin = 0;
-      const nightCheck = [
-        { ns: 22*60, ne: 24*60 },
-        { ns: 0, ne: 6*60 },
-      ];
-      for(const nr of nightCheck){
-        const os = Math.max(startMin, nr.ns), oe = Math.min(endMin, nr.ne);
-        if(oe > os) nightMin += oe - os;
-      }
-      const nightH = Math.min(totalWorkH, nightMin / 60);
-      weeklyNight += nightH;
-    }
-  }
-
-  // ── 필드 업데이트 (주간 시간) ──
-  const otEl = document.getElementById('ct-fixed-ot-hours');
-  const nightEl = document.getElementById('ct-fixed-night-hours');
-  const holEl = document.getElementById('ct-fixed-hol-hours');
-  const otHint = document.getElementById('ct-fixed-ot-monthly');
-  const nightHint = document.getElementById('ct-fixed-night-monthly');
-  const holHint = document.getElementById('ct-fixed-hol-monthly');
-
-  if(otEl){
-    otEl.value = weeklyOT > 0 ? weeklyOT.toFixed(1) : '';
-    if(otHint) otHint.textContent = weeklyOT > 0 ? '(월 약 ' + Math.round(weeklyOT * WEEK_TO_MONTH) + 'h)' : '';
-  }
-  if(nightEl){
-    nightEl.value = weeklyNight > 0 ? weeklyNight.toFixed(1) : '';
-    if(nightHint) nightHint.textContent = weeklyNight > 0 ? '(월 약 ' + Math.round(weeklyNight * WEEK_TO_MONTH) + 'h)' : '';
-  }
-  if(holEl && holHint){
-    holEl.value = weeklyHol > 0 ? weeklyHol.toFixed(1) : '';
-    holHint.textContent = weeklyHol > 0 ? '(월 약 ' + Math.round(weeklyHol * WEEK_TO_MONTH) + 'h)' : '';
-  }
-}
 // ─── EMPLOYEES ───
 // ─── CONTRACTS ───
 function toggleEmExpire(){
@@ -1251,10 +1175,6 @@ function _syncTimePicker(id){
     const m = id.match(/^ct-sch-(?:start|end)-(\w+)/);
     if(m) _refreshShiftConstraints(m[1]);
     if(typeof calcWorkHours === 'function') calcWorkHours();
-    // 통상시급 반영된 상태에서 근무시간표 변경 시 고정수당 금액 즉시 갱신
-    if(typeof _calcFixedOtFromHours === 'function') _calcFixedOtFromHours();
-    if(typeof _calcFixedNightFromHours === 'function') _calcFixedNightFromHours();
-    if(typeof _calcFixedHolFromHours === 'function') _calcFixedHolFromHours();
   }
 }
 
@@ -1422,7 +1342,6 @@ function _deactivateShift(key){
   if(!container) return;
   container.innerHTML = _shiftGroupHTML(key, 0, false, '', '', []);
   calcWorkHours();
-  if(typeof _syncBulkCheckboxes === 'function') _syncBulkCheckboxes();
 }
 
 // ── 시프트용 휴게 슬롯 HTML (idx 포함) ──
@@ -1456,7 +1375,6 @@ function _addShift(key){
       container.innerHTML = _shiftGroupHTML(key, 0, true, '', '', []);
       _refreshShiftConstraints(key);
       calcWorkHours();
-      if(typeof _syncBulkCheckboxes === 'function') _syncBulkCheckboxes();
       return;
     }
   }
@@ -1475,7 +1393,6 @@ function _addShift(key){
   container.appendChild(div.firstElementChild);
   _refreshShiftConstraints(key);
   calcWorkHours();
-  if(typeof _syncBulkCheckboxes === 'function') _syncBulkCheckboxes();
 }
 
 // ── 시프트 삭제 ──
@@ -1486,7 +1403,6 @@ function _removeShift(key, idx){
   if(shift) shift.remove();
   _refreshShiftConstraints(key);
   calcWorkHours();
-  if(typeof _syncBulkCheckboxes === 'function') _syncBulkCheckboxes();
 }
 
 // ── 시프트용 휴게 슬롯 추가 ──
@@ -1670,23 +1586,36 @@ function calcWorkHours(){
       // ── 소정근로 vs 연장 분리 ──
       const dayStatMins = Math.min(dayMins, STATUTORY_DAILY);
       const dayOtMins   = Math.max(0, dayMins - STATUTORY_DAILY);
-      totalStatMins += dayStatMins;
-      totalOtMins   += dayOtMins;
-
+      // 주말(토·일)은 소정근로 합산에서 제외 (휴일근로로만 집계, 주40h 초과 연장 이중계상 방지)
+      if (!isWeekend) {
+        totalStatMins += dayStatMins;
+        totalOtMins   += dayOtMins;
+      }
       // ── 야간근로 ──
       totalNightMins += dayNightMins;
 
       // ── 휴일근로 ──
-      if (isWeekend) totalHolMins += dayMins;
+      if (isWeekend) {
+        // 주말: 8h까지 휴일, 초과분은 연장 (셀 표시와 동일 로직)
+        totalHolMins += Math.min(dayMins, STATUTORY_DAILY);
+        totalOtMins  += Math.max(0, dayMins - STATUTORY_DAILY);
+      }
 
-      // ── 셀 표시: 소정(최대8h), 휴일(붉은색 +h), 연장(주황색 +h) ──
+      // ── 셀 표시: 소정·연장·야간·휴일 각각 줄바꿈 ──
       const statH = dayStatMins / 60;
       const otH   = dayOtMins / 60;
+      const nightH = dayNightMins / 60;
+      const fmtH = h => Number.isInteger(h) ? h : h.toFixed(1);
       if (hrsEl) {
-        let label = (Number.isInteger(statH) ? statH : statH.toFixed(1)) + 'h';
-        if (isWeekend) label = '<span style="color:#dc2626;font-size:10px;">+' + label + ' (휴일)</span>';
-        if (otH > 0) label += '<span style="color:#f59e0b;font-size:10px;"> +' + (Number.isInteger(otH) ? otH : otH.toFixed(1)) + 'h(연장)</span>';
-        hrsEl.innerHTML = label;
+        const lines = [];
+        if (isWeekend) {
+          lines.push('<span style="color:#dc2626;font-size:10px;">휴일 ' + fmtH(statH) + 'h</span>');
+        } else {
+          lines.push(fmtH(statH) + 'h');
+        }
+        if (otH > 0) lines.push('<span style="color:#f59e0b;font-size:10px;">연장 +' + fmtH(otH) + 'h</span>');
+        if (nightH > 0 && !isWeekend) lines.push('<span style="color:#7c3aed;font-size:10px;">야간 +' + fmtH(nightH) + 'h</span>');
+        hrsEl.innerHTML = lines.join('<br>');
       }
     } else {
       if (hrsEl) hrsEl.textContent = '-';
@@ -1741,15 +1670,27 @@ function calcWorkHours(){
   const daysHid = document.getElementById('ct-days');
   if (daysHid) daysHid.value = workDays;
 
-  // ── 월 환산 고정연장/야간/휴일근로시간 (주 × 4.345) ──
-  const WEEKS_PER_MONTH = 4.345;
+  // ── 고정 연장/야간/휴일근로시간 + 월간 힌트 + 금액 (셀 합계와 동일한 값 사용) ──
   const elOtH = document.getElementById('ct-fixed-ot-hours');
   const elNiH = document.getElementById('ct-fixed-night-hours');
   const elHoH = document.getElementById('ct-fixed-hol-hours');
-  if (elOtH) { elOtH.value = (weekOtH * WEEKS_PER_MONTH).toFixed(1); _calcFixedOtFromHours(); }
-  if (elNiH) { elNiH.value = (weekNightH * WEEKS_PER_MONTH).toFixed(1); _calcFixedNightFromHours(); }
-  if (elHoH) { elHoH.value = (weekHolH * WEEKS_PER_MONTH).toFixed(1); _calcFixedHolFromHours(); }
+  const elOtHint = document.getElementById('ct-fixed-ot-monthly');
+  const elNiHint = document.getElementById('ct-fixed-night-monthly');
+  const elHoHint = document.getElementById('ct-fixed-hol-monthly');
+  if (elOtH) {
+    elOtH.value = weekOtH.toFixed(1);
+    if (elOtHint) elOtHint.textContent = weekOtH > 0 ? '(월 약 ' + Math.round(weekOtH * WEEK_TO_MONTH) + 'h)' : '';
+  }
+  if (elNiH) {
+    elNiH.value = weekNightH.toFixed(1);
+    if (elNiHint) elNiHint.textContent = weekNightH > 0 ? '(월 약 ' + Math.round(weekNightH * WEEK_TO_MONTH) + 'h)' : '';
+  }
+  if (elHoH) {
+    elHoH.value = weekHolH.toFixed(1);
+    if (elHoHint) elHoHint.textContent = weekHolH > 0 ? '(월 약 ' + Math.round(weekHolH * WEEK_TO_MONTH) + 'h)' : '';
+  }
 
+  // ── 급여 계산: calcContractSalary() 내에서 _calcFixed*FromHours() 일괄 호출 ──
   calcContractSalary();
 }
 
@@ -2683,12 +2624,6 @@ function calcContractSalary(){
   const _ordinaryGroup = allAllow.ordinaryGroup;
   const _allAllowTotal = allAllow.total;
 
-  // 고정 연장/야간/휴일근로수당 (통상임금 제외, 월 약정임금에 합산)
-  const fixedOtPay    = getAmountVal('ct-fixed-ot-pay')    || 0;
-  const fixedNightPay = getAmountVal('ct-fixed-night-pay') || 0;
-  const fixedHolPay   = getAmountVal('ct-fixed-hol-pay')   || 0;
-  const fixedExtraAll = fixedOtPay + fixedNightPay + fixedHolPay;
-
   const annualSal = getAmountVal('ct-annual-sal');
   const hourlyWage = getAmountVal('ct-hourly-input') || 0;
 
@@ -2704,6 +2639,17 @@ function calcContractSalary(){
     const autoBase = Math.round(hourlyWage * MAGIC.MONTHLY_STD_HOURS);
     setAmountVal('ct-base', autoBase);
   }
+
+  // ── 고정 수당 금액 먼저 계산 (월 약정임금에 반영하기 위해 선행) ──
+  _calcFixedOtFromHours();
+  _calcFixedNightFromHours();
+  _calcFixedHolFromHours();
+
+  // 고정 연장/야간/휴일근로수당 (통상임금 제외, 월 약정임금에 합산)
+  const fixedOtPay    = getAmountVal('ct-fixed-ot-pay')    || 0;
+  const fixedNightPay = getAmountVal('ct-fixed-night-pay') || 0;
+  const fixedHolPay   = getAmountVal('ct-fixed-hol-pay')   || 0;
+  const fixedExtraAll = fixedOtPay + fixedNightPay + fixedHolPay;
 
   const base      = getAmountVal('ct-base');
   const weeklyHol = (isHourlyBased && hourlyWage > 0)
@@ -2724,20 +2670,12 @@ function calcContractSalary(){
   _checkMinWageWarning();
   _checkRegisterBtnState();
   _checkAmendBtnState();
-
-  // 근무시간표 → 고정OT/야간 시간 자동 계산 → 수당 재계산
-  _autoCalcFixedHoursFromSchedule();
-  _calcFixedOtFromHours();
-  _calcFixedNightFromHours();
-  _calcFixedHolFromHours();
 }
 
 /** 주간 시간 필드값 → 월간 변환 (저장용) */
 function _weeklyToMonthlyHours(fieldId){
   return Math.round((parseFloat(document.getElementById(fieldId)?.value)||0) * WEEK_TO_MONTH);
 }
-
-// _autoCalcFixedHoursFromSchedule() — 상단에 정의됨 (line ~72)
 
 /** 통상시급 반환 (ct-hourly-input 직접 입력값) */
 function _getContractHourlyWage(){
