@@ -1,4 +1,4 @@
-﻿    /* ?�?�??�일�?근무?�간 ?�이�??�?�?*/
+    /* ?�?�??�일�?근무?�간 ?�이�??�?�?*/
     /* ── 고객사 모달 입력필드 높이 통일: 기본 36px (input-std) ── */
     #company-modal input[type="text"]:not(.input-slim),
     #company-modal input[type="date"]:not(.input-slim),
@@ -278,3 +278,20 @@
   border-top: 1.5px dashed #cbd5e1;
   font-size: 12.5px; font-weight: 700; color: #3730a3;
 }
+
+/* ── 계약서 폼 인라인 힌트 (span) ── */
+.ct-sub-hint { font-size: 11px; font-weight: 400; color: #6b7280; }
+.ct-req-star { color: #c00; font-weight: 900; font-size: 13px; margin-left: 1px; }
+.ct-text-danger { color: #ef4444; }
+
+/* ── 계약서 유효성 검증 경고 배너 (동적 생성) ── */
+.ct-va-banner { font-weight: 700; margin-bottom: 4px; }
+.ct-va-banner-title { font-weight: 800; font-size: 12px; margin-bottom: 6px; color: #b91c1c; display: flex; align-items: center; gap: 7px; }
+.ct-va-banner-item { margin-bottom: 3px; }
+.ct-va-banner-detail { font-size: 11px; color: #b91c1c; margin-bottom: 3px; }
+.ct-va-banner-detail-plain { font-size: 11px; color: #b91c1c; }
+.ct-va-banner-box { background: #fff; border-radius: 6px; padding: 8px 10px; margin-bottom: 6px; font-size: 11.5px; line-height: 2; border: 1px dashed #fca5a5; }
+.ct-va-banner-danger { border-radius: 7px; padding: 9px 12px; font-size: 11.5px; line-height: 1.7; background: #fef2f2; border: 1.5px solid #fca5a5; color: #991b1b; }
+.ct-va-icon-danger { margin-right: 5px; color: #dc2626; }
+.ct-va-icon-danger-lg { color: #dc2626; font-size: 14px; }
+.ct-va-footer-note { font-size: 11px; color: #9f1239; line-height: 1.6; }

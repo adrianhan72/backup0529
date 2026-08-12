@@ -1,4 +1,4 @@
-﻿// ─── 브랜드 서명 (모든 발송 메시지 하단 공통) ───
+// ─── 브랜드 서명 (모든 발송 메시지 하단 공통) ───
 const _BRAND_SIG = '─────────────────────\n인사톡 노무톡 · 대화인사노무파트너스';
 
 // ─── 상시근로자 5인 미만/이상 법정 배율 ───
@@ -427,19 +427,19 @@ function toggleAnnualSal(){
 
   if(isRegularOnly || isRegularProb){
     if(salaryPeriodTitle) salaryPeriodTitle.textContent = '연봉';
-    if(labelAnnualSal)    labelAnnualSal.innerHTML    = '연봉 <span style="font-size:11px;font-weight:400;color:#6b7280;">(자동계산)</span>';
+    if(labelAnnualSal)    labelAnnualSal.innerHTML    = '연봉 <span class="ct-sub-hint">(자동계산)</span>';
     if(wageSectionTitle)  wageSectionTitle.textContent = '임금 조건 (월)';
     if(labelMonthly)      labelMonthly.innerHTML      = '월 약정임금 <span class="lbl-desc">(자동계산)</span>';
   } else if(isFixedTerm){
-    if(salaryPeriodTitle) salaryPeriodTitle.innerHTML = '월 약정급여 <span style="font-size:11px;font-weight:400;color:#6b7280;">(시급 기준 자동계산)</span>';
-    if(labelAnnualSal)    labelAnnualSal.innerHTML    = '월 약정급여 (통상월급) <span style="font-size:11px;font-weight:400;color:#6b7280;">(직접 입력 시)</span>';
+    if(salaryPeriodTitle) salaryPeriodTitle.innerHTML = '월 약정급여 <span class="ct-sub-hint">(시급 기준 자동계산)</span>';
+    if(labelAnnualSal)    labelAnnualSal.innerHTML    = '월 약정급여 (통상월급) <span class="ct-sub-hint">(직접 입력 시)</span>';
     if(wageSectionTitle)  wageSectionTitle.textContent = '임금 조건 (월)';
     if(labelMonthly)      labelMonthly.innerHTML      = '월 약정임금 <span class="lbl-desc">(자동계산)</span>';
   } else if(isDaily){
-    if(salaryPeriodTitle) salaryPeriodTitle.innerHTML = '일 약정일급 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span>';
+    if(salaryPeriodTitle) salaryPeriodTitle.innerHTML = '일 약정일급 <span class="ct-req-star">*</span>';
     if(wageSectionTitle)  wageSectionTitle.textContent = '임금 조건 (일일 기준)';
     if(labelMonthly)      labelMonthly.innerHTML      = '일 약정임금 <span class="lbl-desc">(자동계산)</span>';
-    if(dailyWageLabel)    dailyWageLabel.innerHTML    = '일 약정일급 (통상일급) <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span>';
+    if(dailyWageLabel)    dailyWageLabel.innerHTML    = '일 약정일급 (통상일급) <span class="ct-req-star">*</span>';
   }
 
   // ── (일급) suffix 토글 ──
@@ -649,7 +649,7 @@ function _autoCalcProbationEndDate(){
       if(infoBox) infoBox.style.background = '#fef2f2';
       if(infoBox) infoBox.style.border = '1px solid #fca5a5';
       if(infoBox) infoBox.style.color = '#991b1b';
-      if(infoText) infoText.innerHTML = '<i class="fas fa-exclamation-triangle" style="margin-right:4px;"></i>수습 종료일(' + endStr + ')이 계약 종료일(' + contractEnd + ')보다 늦습니다. 수습기간을 줄여주세요.';
+      if(infoText) infoText.innerHTML = '<i class="fas fa-exclamation-triangle ct-va-icon-danger"></i>수습 종료일(' + endStr + ')이 계약 종료일(' + contractEnd + ')보다 늦습니다. 수습기간을 줄여주세요.';
       // 계약 종료일은 변경 방지 (읽기전용)
       _setProbationEndReadonly(true);
     } else if(contractEnd){
@@ -692,7 +692,7 @@ function onProbationBasisChange(){
 
   // ── % 레이블 업데이트 ──
   const pctLabel = document.getElementById('ct-prob-pct-label');
-  if(pctLabel) pctLabel.innerHTML = (isMinwage ? '수습 임금 (최저임금의 %)' : '수습 임금 (약정 보수의 %)') + ' <span style="color:#ef4444;font-weight:900;">*</span>';
+  if(pctLabel) pctLabel.innerHTML = (isMinwage ? '수습 임금 (최저임금의 %)' : '수습 임금 (약정 보수의 %)') + ' <span class="ct-req-star">*</span>';
 
   // ── 금액 입력 필드 읽기전용 여부 ──
   // salary/minwage: % 연동으로 자동계산 → readonly
@@ -737,7 +737,7 @@ function onProbationBasisChange(){
       infoText.innerHTML = `${yr}년 최저시급 기준으로 계산됩니다.`
         + (mwAmt > 0
           ? ` <strong>${yr}년 최저시급: ${mwAmt.toLocaleString('ko-KR')}원 → 월 환산: ${mwMonthly.toLocaleString('ko-KR')}원</strong>`
-          : ' <span style="color:#ef4444;">(최저임금 데이터를 먼저 등록해주세요)</span>');
+          : ' <span class="ct-text-danger">(최저임금 데이터를 먼저 등록해주세요)</span>');
     } else {
       infoText.textContent = '월 약정임금 기준으로 계산됩니다. %를 입력하면 금액이, 금액을 입력하면 %가 자동 계산됩니다.';
     }
@@ -868,32 +868,32 @@ function _checkProbMinWageWarning(){
       + '<i class="fas fa-times-circle" style="margin-right:5px;color:#dc2626;"></i>'
       + '⚠️ 최저임금 법 위반 — 수습 임금(' + fmt(actualAmt) + '원)이 최저임금의 90% 미만입니다'
       + '</div>'
-      + '<div style="margin-bottom:3px;">'
+      + '<div class="ct-va-banner-item">'
       + '정규직 수습 근로자의 임금은 <strong>최저임금의 90% 이상</strong>이어야 합니다.'
       + ' (' + yr + '년 최저임금 월환산 ' + fmt(mwMonthly) + '원의 90% = <strong>' + fmt(limit90) + '원</strong> 이상)'
       + '</div>'
-      + '<div style="font-size:11px;color:#b91c1c;margin-bottom:3px;">'
+      + '<div class="ct-va-banner-detail">'
       + '📖 <strong>최저임금법 제5조 제2항</strong>: 수습을 시작한 날부터 3개월 이내인 자에 대하여는 '
       + '최저임금액의 100분의 10을 감한 금액을 최저임금액으로 한다.'
       + '</div>'
-      + '<div style="font-size:11px;color:#b91c1c;">'
+      + '<div class="ct-va-banner-detail">'
       + '※ 단, <strong>1년 미만 기간제(계약직 수습)</strong>에는 감액 규정이 적용되지 않아 '
       + '반드시 최저임금의 <strong>100%</strong> 이상이어야 합니다.'
       + '</div>';
     warningRow.style.display = '';
   } else if(isContract && actualAmt < limit100){
     // 계약직 수습 — 100% 미만: 법 위반 (1년 미만 기간제 → 감액 불가)
-    warningBox.style.cssText = 'border-radius:7px;padding:9px 12px;font-size:11.5px;line-height:1.7;background:#fef2f2;border:1.5px solid #fca5a5;color:#991b1b;';
+    warningBox.className = 'ct-va-banner-box ct-va-banner-danger';
     warningBox.innerHTML =
-      '<div style="font-weight:700;margin-bottom:4px;">'
-      + '<i class="fas fa-times-circle" style="margin-right:5px;color:#dc2626;"></i>'
+      '<div class="ct-va-banner">'
+      + '<i class="fas fa-times-circle ct-va-icon-danger"></i>'
       + '⚠️ 최저임금 법 위반 — 수습 임금(' + fmt(actualAmt) + '원)이 최저임금(100%) 미만입니다'
       + '</div>'
-      + '<div style="margin-bottom:3px;">'
+      + '<div class="ct-va-banner-item">'
       + '계약직(1년 미만 기간제) 수습 근로자의 임금은 <strong>최저임금의 100% 이상</strong>이어야 합니다.'
       + ' (' + yr + '년 최저임금 월환산 <strong>' + fmt(limit100) + '원</strong> 이상)'
       + '</div>'
-      + '<div style="font-size:11px;color:#b91c1c;">'
+      + '<div class="ct-va-banner-detail">'
       + '📖 <strong>최저임금법 제5조 제2항 단서</strong>: 1년 미만의 기간을 정하여 근로계약을 체결한 '
       + '근로자에 대해서는 수습 기간 감액 규정을 적용하지 아니한다.'
       + '</div>';
@@ -971,11 +971,11 @@ function _checkMinWageWarning(){
     const typeName = isDaily ? CONTRACT_TYPE_LABEL[CONTRACT_TYPE.DAILY] : isRegular ? CONTRACT_TYPE_LABEL[CONTRACT_TYPE.REGULAR] : CONTRACT_TYPE_LABEL[CONTRACT_TYPE.FIXED];
 
     wBox.innerHTML =
-      `<div style="display:flex;align-items:center;gap:7px;font-weight:800;font-size:12px;margin-bottom:6px;color:#b91c1c;">
-         <i class="fas fa-exclamation-triangle" style="color:#dc2626;font-size:14px;"></i>
+      `<div class="ct-va-banner-title">
+         <i class="fas fa-exclamation-triangle ct-va-icon-danger"></i>
          ⚠️ 최저임금 법 위반 — ${typeName} 급여가 ${yr}년 법정 최저임금에 미달합니다
        </div>
-       <div style="background:#fff;border-radius:6px;padding:8px 10px;margin-bottom:6px;font-size:11.5px;line-height:2;border:1px dashed #fca5a5;">
+       <div class="ct-va-banner-box">
          <div style="display:flex;justify-content:space-between;border-bottom:1px dashed #fca5a5;padding-bottom:4px;margin-bottom:4px;">
            <span>⚖️ ${yr}년 법정 최저시급</span>
            <strong style="color:#b91c1c;">${fmt(legalHourly)}원 (월 ${fmt(legalMonthly)}원)</strong>
