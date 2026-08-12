@@ -2858,6 +2858,9 @@ function calcContractSalary(){
     const hours      = parseFloat(document.getElementById('ct-hours').value)||8;
     const hWage      = getAmountVal('ct-hourly-input') || 0;
 
+    // 일용직은 기본급 0 (일급여 기준)
+    setAmountVal('ct-base', 0);
+
     // 통상시급이 입력되어 있고 일급이 0이면 자동계산: 일급 = 시급 × 일소정근로시간
     if(hWage > 0 && dailyWage <= 0){
       const autoDaily = Math.round(hWage * hours);
