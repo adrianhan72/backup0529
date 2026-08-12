@@ -369,6 +369,11 @@ ${contactFoot}`;
  * — _2yrSendNotice 호출 후 RC 페이지 이력 새로고침
  */
 async function rcSendNotice(empId){
+  // 정규직 전환 고지 기능 OFF → 발송 차단
+  if (!window._regularConversionNoticeEnabled) {
+    toast('정규직 전환 고지 기능이 비활성화되어 있습니다. 시스템 설정에서 활성화해 주세요.', 'warning');
+    return;
+  }
   await _2yrSendNotice(empId);
   // CEN 발송 이력과 별개로 RC 페이지 이력도 재조회
   _rcHistoryLoaded = false;

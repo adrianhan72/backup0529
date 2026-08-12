@@ -155,11 +155,11 @@ function render2YrTargetList(){
       <td style="font-size:12px;font-weight:600;color:${x.status==='exceeded'?'#dc2626':'#d97706'};">${fmtDays(x.totalDays)}</td>
       <td>${statusBadge}</td>
       <td style="text-align:center;white-space:nowrap;">
-        ${x.status === 'exceeded' ? `
+        ${x.status === 'exceeded' && window._regularConversionNoticeEnabled ? `
         <button onclick="_2yrSendNotice('${x.empId}')"
           class="btn btn-danger btn-sm" style="padding:5px 12px;font-size:11.5px;">
           <i class="fas fa-paper-plane"></i> 전환 안내 발송
-        </button>` : `<span style="font-size:11.5px;color:#9ca3af;">전환 의무 미도달</span>`}
+        </button>` : x.status === 'exceeded' ? `<span style="font-size:11.5px;color:#9ca3af;">발송 기능 OFF</span>` : `<span style="font-size:11.5px;color:#9ca3af;">전환 의무 미도달</span>`}
       </td>
     </tr>`;
   }).join('');
@@ -171,6 +171,11 @@ function render2YrTargetList(){
  * ② contract_expiry_notices 이력 저장 (기존 발송 이력 테이블 재활용)
  */
 async function _2yrSendNotice(empId){
+  // 정규직 전환 고지 기능 OFF → 발송 차단
+  if (!window._regularConversionNoticeEnabled) {
+    toast('정규직 전환 고지 기능이 비활성화되어 있습니다. 시스템 설정에서 활성화해 주세요.', 'warning');
+    return;
+  }
   const item = _calc2YrExceedList().find(x => x.empId === empId);
   if(!item){ toast('대상자 정보를 찾을 수 없습니다.','error'); return; }
 

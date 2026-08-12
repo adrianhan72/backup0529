@@ -39,6 +39,7 @@ async function renderSystemSettings() {
     // 시스템 스위치 초기화
     _ssInitProbationToggle();
     _ssInitContractExpiryToggle();
+    _ssInitRegularConversionToggle();
   } catch (e) {
     console.warn('[시스템 설정 로드 오류]', e);
     toast('설정 정보를 불러오지 못했습니다.', 'error');
@@ -743,6 +744,62 @@ function _syncContractExpiryMenuVisibility() {
   const menuItem = document.querySelector('.menu-item[data-page="contract-expiry-notice"]');
   if (menuItem) {
     menuItem.style.display = window._contractExpiryNoticeEnabled ? '' : 'none';
+  }
+}
+
+// ═══════════════════════════════════════════
+// 시스템 기능 스위치 — 정규직 전환 고지 발송
+// ═══════════════════════════════════════════
+
+function _ssInitRegularConversionToggle() {
+  const chk = document.getElementById('ss-toggle-rc');
+  if (!chk) return;
+  chk.checked = window._regularConversionNoticeEnabled === true;
+  _ssUpdateRegularConversionToggleUI(chk.checked);
+}
+
+function _ssUpdateRegularConversionToggleUI(on) {
+  const slider = document.getElementById('ss-toggle-rc-slider');
+  const knob = document.getElementById('ss-toggle-rc-knob');
+  const label = document.getElementById('ss-toggle-rc-label');
+  if (slider) slider.style.background = on ? '#4f46e5' : '#cbd5e1';
+  if (knob) knob.style.left = on ? '23px' : '3px';
+  if (label) {
+    label.textContent = on ? 'ON' : 'OFF';
+    label.style.color = on ? '#4f46e5' : '#9ca3af';
+  }
+}
+
+async function ssToggleRegularConversion(checked) {
+  _ssUpdateRegularConversionToggleUI(checked);
+  try {
+    await api('../tables/system_settings/set_rc_notice', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        setting_key: 'regular_conversion_notice_enabled',
+        setting_value: checked ? '1' : '0',
+        description: '정규직 전환 고지 발송 ON/OFF',
+        updated_at: Date.now()
+      })
+    });
+    window._regularConversionNoticeEnabled = checked;
+    window._systemSettings['regular_conversion_notice_enabled'] = checked ? '1' : '0';
+    toast(checked ? '정규직 전환 고지 발송이 활성화되었습니다.' : '정규직 전환 고지 발송이 비활성화되었습니다.', 'success');
+    _syncRegularConversionMenuVisibility();
+  } catch (e) {
+    console.error('[ssToggleRegularConversion]', e);
+    toast('설정 저장에 실패했습니다.', 'error');
+    const chk = document.getElementById('ss-toggle-rc');
+    if (chk) chk.checked = !checked;
+    _ssUpdateRegularConversionToggleUI(!checked);
+  }
+}
+
+function _syncRegularConversionMenuVisibility() {
+  const menuItem = document.querySelector('.menu-item[data-page="regular-conversion"]');
+  if (menuItem) {
+    menuItem.style.display = window._regularConversionNoticeEnabled ? '' : 'none';
   }
 }
 
