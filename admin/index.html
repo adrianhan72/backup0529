@@ -2011,6 +2011,12 @@
                 <span class="wsh-item" id="ct-wsh-hol-wrap" style="display:none;">
                   &bull; 고정휴일근로시간: <span class="wsh-val" id="ct-wsh-hol-hours">0</span>h/주
                 </span>
+                <span class="wsh-item" id="ct-wsh-hol-ot-wrap" style="display:none;">
+                  &bull; 고정휴일연장근로시간: <span class="wsh-val" id="ct-wsh-hol-ot-hours">0</span>h/주
+                </span>
+                <span class="wsh-item" id="ct-wsh-hol-night-wrap" style="display:none;">
+                  &bull; 고정휴일야간근로시간: <span class="wsh-val" id="ct-wsh-hol-night-hours">0</span>h/주
+                </span>
               </div>
             </div>
           </div>
@@ -2111,6 +2117,7 @@
         <div class="form-group full ct-allowance-section-header" style="margin-top:14px;">
           <span>📌 통상임금 제외 고정수당</span>
         </div>
+        <div class="ct-fixed-grid">
         <div class="form-group" id="ct-row-fixed-ot">
           <label>고정 연장근로수당 <span class="lbl-desc">(근무시간표 자동계산)</span></label>
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
@@ -2120,6 +2127,20 @@
             <span class="fld-hint">,</span>
             <div class="amount-wrap" style="flex:1;min-width:95px;"><input type="text" inputmode="numeric" id="ct-fixed-ot-pay" data-amount placeholder="0" readonly /></div>
           </div>
+          <div id="ct-fixed-ot-formula" class="ct-formula-line"></div>
+        </div>
+        <div class="form-group" id="ct-row-fixed-hol">
+          <label>고정 휴일근로수당 <span class="lbl-desc">(근무시간표 자동계산, 일요일)</span></label>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <input type="number" id="ct-fixed-hol-hours" placeholder="0" min="0" step="0.5" readonly />
+            <span class="fld-unit">h/주</span>
+            <span id="ct-fixed-hol-monthly" class="lbl-desc"></span>
+            <span class="fld-hint">,</span>
+            <div class="amount-wrap" style="flex:1;min-width:95px;"><input type="text" inputmode="numeric" id="ct-fixed-hol-pay" data-amount placeholder="0" readonly /></div>
+          </div>
+          <div id="ct-fixed-hol-formula" class="ct-formula-line"></div>
+          <input type="hidden" id="ct-fixed-hol-ot-hours" value="0" />
+          <span id="ct-fixed-hol-ot-monthly" class="lbl-desc" style="display:none;"></span>
         </div>
         <div class="form-group" id="ct-row-fixed-night">
           <label>고정 야간근로수당 <span class="lbl-desc">(근무시간표 자동계산)</span></label>
@@ -2130,16 +2151,12 @@
             <span class="fld-hint">,</span>
             <div class="amount-wrap" style="flex:1;min-width:95px;"><input type="text" inputmode="numeric" id="ct-fixed-night-pay" data-amount placeholder="0" readonly /></div>
           </div>
+          <div id="ct-fixed-night-formula" class="ct-formula-line"></div>
         </div>
-        <div class="form-group" id="ct-row-fixed-hol">
-          <label>고정 휴일근로수당 <span class="lbl-desc">(근무시간표 자동계산, 토·일요일)</span></label>
-          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-            <input type="number" id="ct-fixed-hol-hours" placeholder="0" min="0" step="0.5" readonly />
-            <span class="fld-unit">h/주</span>
-            <span id="ct-fixed-hol-monthly" class="lbl-desc"></span>
-            <span class="fld-hint">,</span>
-            <div class="amount-wrap" style="flex:1;min-width:95px;"><input type="text" inputmode="numeric" id="ct-fixed-hol-pay" data-amount placeholder="0" readonly /></div>
-          </div>
+        <div class="ct-biz-badge-cell">
+          <span id="ct-biz-size-badge" class="ct-biz-badge"></span>
+          <div id="ct-biz-size-hint" class="ct-formula-line"></div>
+        </div>
         </div>
         <div class="form-group full" id="ct-row-childcare" style="display:none;">
           <label>보육수당 <span class="lbl-desc">(올해 1월 1일 기준)</span></label>

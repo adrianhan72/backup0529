@@ -52,8 +52,8 @@ function _getContractPrintCSS(){
     '.work-schedule-table .day-label{font-weight:700;font-size:12.5px;}',
     '.work-schedule-table .computed-h{font-size:11.5px;color:#0369a1;font-weight:600;min-width:48px;display:inline-block;}',
     '.wsh-total{font-size:12px;color:#374151;margin-top:8px;padding:7px 12px;background:#f8fafc;border-radius:7px;border:1px solid #e2e8f0;display:flex;flex-direction:column;gap:4px;}',
-    '.wsh-total .wsh-row{display:flex;width:100%;gap:0;}',
-    '.wsh-total .wsh-item{flex:1;text-align:left;}',
+    '.wsh-total .wsh-row{display:grid;grid-template-columns:repeat(3,1fr);gap:2px 8px;width:100%;}',
+    '.wsh-total .wsh-item{text-align:left;}',
     '.wsh-total span{font-weight:400;color:#374151;}',
     '.wsh-total .wsh-val{color:#0369a1;}',
     '.wsh-total .wsh-extra{font-size:11.5px;}',
@@ -74,7 +74,7 @@ function buildScheduleTableHTML(activeDays){
   const dayOrder  = ['mon','tue','wed','thu','fri','sat','sun'];
   const daysKr    = {mon:'월',tue:'화',wed:'수',thu:'목',fri:'금',sat:'토',sun:'일'};
   const dayColors = {sat:'#2563eb', sun:'#dc2626'};
-  const toM = function(t){ if(!t) return null; var p=t.split(':'); return parseInt(p[0])*60+parseInt(p[1]); };
+  const toM = function(t){ if(!t) return null; var m=t.match(/^(\d{1,2}):(\d{2})$/); return m ? parseInt(m[1])*60+parseInt(m[2]) : null; };
   const sortedDays = activeDays.slice().sort(function(a,b){ return dayOrder.indexOf(a.day)-dayOrder.indexOf(b.day); });
 
   const STATUTORY_DAILY = 8 * 60;
@@ -95,57 +95,91 @@ function buildScheduleTableHTML(activeDays){
       return sum+(be-bs);
     },0);
   };
-  var nightMins = function(sm, em, brk){
-    // 근무시간과 22:00~06:00 교차분 (휴게시간 제외 전 근무시간 기준)
-    var rawMins = em - sm;
+  var nightMins = function(sm, em, breakSlots){
+    // 근무시간과 22:00~06:00 교차분
     var overlap = Math.max(0, Math.min(em, NIGHT_END) - Math.max(sm, NIGHT_START))
                 + Math.max(0, Math.min(em, NIGHT_END + 24*60) - Math.max(sm, NIGHT_START + 24*60));
-    return Math.max(0, overlap);
+    // 야간 시간대와 겹치는 휴게시간 차감
+    var nightBrk = 0;
+    (breakSlots||[]).forEach(function(b){
+      var bs = toM(b.s), be = toM(b.e);
+      if(bs===null||be===null) return;
+      if(be<=bs) be += 24*60;
+      nightBrk += Math.max(0, Math.min(be, NIGHT_END) - Math.max(bs, NIGHT_START))
+                + Math.max(0, Math.min(be, NIGHT_END + 24*60) - Math.max(bs, NIGHT_START + 24*60));
+    });
+    return Math.max(0, overlap - nightBrk);
   };
 
-  var totalStatMins = 0, totalOtMins = 0, totalNightMins = 0, totalHolMins = 0;
+  var totalStatMins = 0, totalOtMins = 0, totalNightMins = 0, totalHolMins = 0, totalHolOtMins = 0;
 
-  var rows = sortedDays.map(function(s){
+  // ── Pass 1: 요일별 근로시간 산출 ──
+  var dayData = sortedDays.map(function(s){
     var isWork = !!(s.start && s.end);
-    var cls   = s.day==='sat' ? 'day-sat' : s.day==='sun' ? 'day-sun' : '';
-    var color = dayColors[s.day] || '#1e293b';
-    var isWeekend = s.day === 'sat' || s.day === 'sun';
+    var isSunday = s.day === 'sun';
     var sm=toM(s.start), em=toM(s.end);
     if(sm!==null && em!==null && em<=sm) em += 24*60;
     var brk = totalBrkMins(s);
     var mins = (sm!==null&&em!==null&&em>sm) ? Math.max(0,em-sm-brk) : 0;
 
-    // 소정 vs 연장 분리
-    var dayStat = Math.min(mins, STATUTORY_DAILY);
-    var dayOt   = Math.max(0, mins - STATUTORY_DAILY);
-    // 주말(토·일)은 소정근로 합산에서 제외 (휴일근로로만 집계, 주40h 초과 연장 이중계상 방지)
-    if (!isWeekend) {
+    var dayStat = 0, dayOt = 0, dayHol = 0, dayHolOt = 0;
+    if (isSunday) {
+      dayHol   = Math.min(mins, STATUTORY_DAILY);
+      dayHolOt = Math.max(0, mins - STATUTORY_DAILY);
+      totalHolMins   += dayHol;
+      totalHolOtMins += dayHolOt;
+    } else {
+      dayStat = Math.min(mins, STATUTORY_DAILY);
+      dayOt   = Math.max(0, mins - STATUTORY_DAILY);
       totalStatMins += dayStat;
       totalOtMins   += dayOt;
     }
 
-    // 야간
-    var dayNight = (sm!==null&&em!==null) ? nightMins(sm, em, brk) : 0;
+    var dayNight = (sm!==null&&em!==null) ? nightMins(sm, em, normBreaks(s)) : 0;
     totalNightMins += dayNight;
 
-    // 휴일
-    if(isWeekend) totalHolMins += mins;
+    return { s:s, isWork:isWork, isSunday:isSunday, mins:mins, dayStat:dayStat, dayOt:dayOt, dayHol:dayHol, dayHolOt:dayHolOt, dayNight:dayNight };
+  });
 
-    var h = mins/60;
-    var statH = dayStat/60;
-    var otH   = dayOt/60;
-    var nightH = dayNight/60;
-    var fmtH = function(h){ return Number.isInteger(h) ? h : h.toFixed(1); };
-    var hrsLines = [];
-    if (mins===0) {
-      hrsLines.push('-');
-    } else if (isWeekend) {
-      hrsLines.push('<span style="color:#dc2626;font-size:10px;">휴일 ' + fmtH(statH) + 'h</span>');
-    } else {
-      hrsLines.push(fmtH(statH) + 'h');
+  // ── 주 40h 상한: 초과분을 토→월 역순으로 dayStat→dayOt 재분배 ──
+  if(totalStatMins > STATUTORY_WEEKLY){
+    var overflow = totalStatMins - STATUTORY_WEEKLY;
+    totalOtMins += overflow;
+    totalStatMins = STATUTORY_WEEKLY;
+    // 토→월 역순으로 순회하며 overflow 차감
+    for(var i = dayData.length-1; i >= 0 && overflow > 0; i--){
+      var dd = dayData[i];
+      if(dd.isSunday || dd.dayStat <= 0) continue;
+      var deduct = Math.min(dd.dayStat, overflow);
+      dd.dayStat -= deduct;
+      dd.dayOt   += deduct;
+      overflow   -= deduct;
     }
-    if (otH>0) hrsLines.push('<span style="color:#f59e0b;font-size:10px;">연장 +' + fmtH(otH) + 'h</span>');
-    if (nightH>0 && !isWeekend) hrsLines.push('<span style="color:#7c3aed;font-size:10px;">야간 +' + fmtH(nightH) + 'h</span>');
+  }
+
+  // ── Pass 2: HTML 행 생성 ──
+  var rows = dayData.map(function(dd){
+    var s = dd.s;
+    var isWork = dd.isWork, isSunday = dd.isSunday;
+    var cls   = s.day==='sat' ? 'day-sat' : s.day==='sun' ? 'day-sun' : '';
+    var color = dayColors[s.day] || '#1e293b';
+    var fmtH = function(h){ return Number.isInteger(h) ? h : h.toFixed(1); };
+
+    var hrsLines = [];
+    if (dd.mins===0) {
+      hrsLines.push('-');
+    } else if (isSunday) {
+      hrsLines.push('<span style="color:#dc2626;font-size:10px;">휴일 ' + fmtH(dd.dayHol/60) + 'h</span>');
+      if (dd.dayHolOt>0) hrsLines.push('<span style="color:#b91c1c;font-size:10px;">휴일연장 +' + fmtH(dd.dayHolOt/60) + 'h</span>');
+    } else {
+      // 월~토: 소정근로 + 연장근로 (40h 캡 반영 완료)
+      hrsLines.push(fmtH(dd.dayStat/60) + 'h');
+      if (dd.dayOt>0) hrsLines.push('<span style="color:#f59e0b;font-size:10px;">연장 +' + fmtH(dd.dayOt/60) + 'h</span>');
+    }
+    if (dd.dayNight>0) {
+      var nightLabel = isSunday ? '휴일야간' : '야간';
+      hrsLines.push('<span style="color:#7c3aed;font-size:10px;">' + nightLabel + ' +' + fmtH(dd.dayNight/60) + 'h</span>');
+    }
     var hrs = hrsLines.join('<br>');
 
     var chk = isWork ? '✔' : '';
@@ -153,21 +187,17 @@ function buildScheduleTableHTML(activeDays){
     var brkCell = brkSlots.length
       ? brkSlots.map(function(b){ return (b.s||'') + (b.s&&b.e?' ~ ':'') + (b.e||''); }).join('<br/>')
       : '-';
-    return '<tr class="'+cls+'">'+'<td style="text-align:center;">'+chk+'</td>'+'<td style="text-align:center;"><span class="day-label" style="color:'+color+';">'+( daysKr[s.day]||s.day)+'</span></td>'+'<td style="text-align:center;">'+(s.start||'')+'</td>'+'<td style="text-align:center;">'+(s.end||'')+'</td>'+'<td class="td-brk" style="text-align:center;line-height:1.6;">'+brkCell+'</td>'+'<td style="text-align:center;"><span class="computed-h">'+hrs+'</span></td>'+'<td></td>'+'</tr>';
+    return '<tr class="'+cls+'">'+'<td style="text-align:center;">'+chk+'</td>'+'<td style="text-align:center;"><span class="day-label" style="color:'+color+';">'+( daysKr[s.day]||s.day)+'</span></td>'+'<td style="text-align:center;">'+(s.start||'')+'</td>'+'<td style="text-align:center;">'+(s.end||'')+'</td>'+'<td class="td-brk" style="text-align:center;line-height:1.6;">'+brkCell+'</td>'+'<td style="text-align:center;"><span class="computed-h">'+hrs+'</span></td>'+'</tr>';
   }).join('');
 
-  // 주 40h 초과 → 연장 이관
-  if(totalStatMins > STATUTORY_WEEKLY){
-    totalOtMins += (totalStatMins - STATUTORY_WEEKLY);
-    totalStatMins = STATUTORY_WEEKLY;
-  }
+  // 주 40h 초과 → 연장 이관 (이미 Pass 1 후 처리됨, totalStatMins/totalOtMins는 여기서 재확인용)
 
   var wDays  = sortedDays.filter(function(s){ return !!(s.start && s.end); }).length;
   // 주 소정근무일수: 최대 5일
   var statDays = Math.min(wDays, 5);
   var weekStatH = totalStatMins/60;
   // 일 평균 소정근로시간: 총 주간근로시간 ÷ 5, 최대 8h
-  var totalWeekMins = totalStatMins + totalOtMins + totalNightMins + totalHolMins;
+  var totalWeekMins = totalStatMins + totalOtMins + totalNightMins + totalHolMins + totalHolOtMins;
   var avgDay = totalWeekMins > 0 ? totalWeekMins / 5 / 60 : 0;
   var fmtH   = function(h){ return Number.isInteger(h)?h:h.toFixed(1); };
 
@@ -175,6 +205,7 @@ function buildScheduleTableHTML(activeDays){
   if(totalOtMins > 0) extraLines.push('<span class="wsh-item">&bull; 고정연장근로시간: <span class="wsh-val">'+fmtH(totalOtMins/60)+'</span>h/주</span>');
   if(totalNightMins > 0) extraLines.push('<span class="wsh-item">&bull; 고정야간근로시간: <span class="wsh-val">'+fmtH(totalNightMins/60)+'</span>h/주</span>');
   if(totalHolMins > 0) extraLines.push('<span class="wsh-item">&bull; 고정휴일근로시간: <span class="wsh-val">'+fmtH(totalHolMins/60)+'</span>h/주</span>');
+  if(totalHolOtMins > 0) extraLines.push('<span class="wsh-item">&bull; 고정휴일연장근로시간: <span class="wsh-val">'+fmtH(totalHolOtMins/60)+'</span>h/주</span>');
 
   return '<div class="work-schedule-wrap">'
     +'<table class="work-schedule-table">'
@@ -184,8 +215,7 @@ function buildScheduleTableHTML(activeDays){
     +'<th style="width:88px;">출근</th>'
     +'<th style="width:88px;">퇴근</th>'
     +'<th class="th-brk">휴게시간</th>'
-    +'<th style="width:72px;">근로시간</th>'
-    +'<th>비고</th>'
+    +'<th style="width:72px;">소정시간</th>'
     +'</tr></thead>'
     +'<tbody>'+rows+'</tbody>'
     +'</table>'
@@ -694,7 +724,7 @@ function generateContractHTMLFromData(c, emp, co){
   <div class="doc-section">
     <div class="doc-section-title">${art('(휴일)')}</div>
     <p class="doc-text" style="padding:4px 0 4px;">① "사용자"는 1주일에 소정근로일수를 개근한 경우 주휴일을 부여한다.</p>
-    <p class="doc-text" style="padding:4px 0 4px;">② 주휴일과 근로자의 날(5월 1일)은 유급휴일로, 토요일은 무급휴일로 한다. 단, 휴일이 중복되는 경우 1일의 휴일로 처리한다.</p>
+    <p class="doc-text" style="padding:4px 0 4px;">② 주휴일(일요일)과 근로자의 날(5월 1일)은 유급휴일로, 토요일은 무급휴무일로 한다. 단, 휴일이 중복되는 경우 1일의 휴일로 처리한다.</p>
     <p class="doc-text" style="padding:4px 0 4px;">③ 기타 휴일에 관한 사항은 "공휴일에 관한 법률"에 따른다.</p>
   </div>` : ''}
   ${salarySection.replace('__ART_SALARY__', art('(임금)'))}
@@ -2866,24 +2896,24 @@ async function saveDraftContract(reason){
     } else {
     const saved = await api('../tables/employees',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
       company_id: coId,
-      name: document.getElementById('ct-em-name').value.trim(),
-      gender: document.getElementById('ct-em-gender').value,
-      employment_category: CONTRACT_TYPE_LEGACY_MAP[document.getElementById('ct-em-category').value] || document.getElementById('ct-em-category').value,
-      employee_number: document.getElementById('ct-em-empno')?.value.trim() || '',
-      job_description: document.getElementById('ct-em-job').value.trim(),
-      id_number: document.getElementById('ct-em-id').value,
-      department: document.getElementById('ct-em-dept').value,
-      position: document.getElementById('ct-em-position').value,
+      name: document.getElementById('ct-em-name')?.value?.trim() || '',
+      gender: document.getElementById('ct-em-gender')?.value || '',
+      employment_category: CONTRACT_TYPE_LEGACY_MAP[document.getElementById('ct-em-category')?.value] || document.getElementById('ct-em-category')?.value || '',
+      employee_number: document.getElementById('ct-em-empno')?.value?.trim() || '',
+      job_description: document.getElementById('ct-em-job')?.value?.trim() || '',
+      id_number: document.getElementById('ct-em-id')?.value || '',
+      department: document.getElementById('ct-em-dept')?.value || '',
+      position: document.getElementById('ct-em-position')?.value || '',
       hire_date: document.getElementById('ct-edit-em-hire')?.value || '',
       expire_date: document.getElementById('ct-end')?.value || '',
       status: EMP_STATUS.ACTIVE,
       dependents: parseInt(document.getElementById('ct-childcare-dependents')?.value)||0,
       tax_dependents: parseInt(document.getElementById('ct-em-tax-dependents')?.value)||1,
-      phone: document.getElementById('ct-em-phone').value,
-      email: document.getElementById('ct-em-email').value,
-      address: document.getElementById('ct-em-address').value,
-      bank_name: document.getElementById('ct-em-bank')?.value.trim() || '',
-      bank_account: document.getElementById('ct-em-account')?.value.trim() || '',
+      phone: document.getElementById('ct-em-phone')?.value || '',
+      email: document.getElementById('ct-em-email')?.value || '',
+      address: document.getElementById('ct-em-address')?.value || '',
+      bank_name: document.getElementById('ct-em-bank')?.value?.trim() || '',
+      bank_account: document.getElementById('ct-em-account')?.value?.trim() || '',
       is_representative: document.getElementById('ct-em-is-rep')?.checked ? 1 : 0,
       note: ''
     })});
@@ -2924,7 +2954,7 @@ async function saveDraftContract(reason){
   const finalContractEnd = isRegNoProbDraft ? '' : contractEnd;
 
   // ── 정규직 전환 의무 검사 (임시저장 시에도 적용) ──
-  const TARGET_TYPES_DRAFT = ['fixed_term', 'fixed_probation', 'regular_probation', 'daily'];
+  const TARGET_TYPES_DRAFT = ['fixed_term', 'fixed_probation', 'fixed_term_probation', 'regular_probation', 'daily'];
   if(TARGET_TYPES_DRAFT.includes(catForDraft) && finalContractEnd){
     const _hireDraft = document.getElementById('ct-edit-em-hire')?.value || '';
     if(_hireDraft){
@@ -3067,9 +3097,18 @@ async function saveDraftContract(reason){
   // (직원이 이미 생성되었으므로 note에 직원명 별도 보관 불필요)
   let savedId;
   const bodyJSON = JSON.stringify(draftBody);
+
+  // ── 고아 레코드 방지: 신규 직원 생성 실패 시 롤백 헬퍼 ──
+  const _rollbackDraftEmp = async () => {
+    if(_isNewEmpForDraft && empId){
+      try { await api('../tables/employees/' + empId, { method: 'DELETE' }); await loadEmployees(); }
+      catch(e2){ console.warn('[임시저장 직원 롤백 실패]', empId, e2); }
+    }
+  };
+
   try {
   if(isEditMode){
-    // 기존 계약 수정 중 임시저장 → PATCH
+    // 기존 계약 수정 중 임시저장 → PATCH (신규 직원 생성 없음, 롤백 불필요)
     draftBody.id = editId.contract;
     const res = await api(`../tables/contracts/${editId.contract}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:bodyJSON});
     if(res && res.error){ toast('임시저장 실패: ' + res.error, 'error'); return; }
@@ -3079,25 +3118,21 @@ async function saveDraftContract(reason){
     const draftId = window._resumeDraftId || _currentDraftId;
     draftBody.id = draftId;
     const res = await api(`../tables/contracts/${draftId}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:bodyJSON});
-    if(res && res.error){ toast('임시저장 실패: ' + res.error, 'error'); return; }
+    if(res && res.error){ await _rollbackDraftEmp(); toast('임시저장 실패: ' + res.error, 'error'); return; }
     savedId = draftId;
     _currentDraftId = draftId;
     window._resumeDraftId = null;
   } else {
-    // 최초 임시저장 → POST (ID는 서버에서 UUID 생성)
+    // 최초 임시저장 → POST (ID는 서버에서 UUID 생성) — 실패 시 신규 직원 롤백
     delete draftBody.id;
     const res = await api('../tables/contracts',{method:'POST',headers:{'Content-Type':'application/json'},body:bodyJSON});
-    if(res && res.error){ console.error('[saveDraftContract] Server error:', res.error); toast('임시저장 실패: ' + res.error, 'error'); return; }
+    if(res && res.error){ await _rollbackDraftEmp(); console.error('[saveDraftContract] Server error:', res.error); toast('임시저장 실패: ' + res.error, 'error'); return; }
     savedId = res.id;
     _currentDraftId = savedId;
   }
   } catch(e){
     console.error('[saveDraftContract] Exception:', e);
-    // 신규 생성된 직원 롤백 (고아 레코드 방지)
-    if(_isNewEmpForDraft && empId && !isEditMode && !editId.contract){
-      try { await api('../tables/employees/' + empId, { method: 'DELETE' }); await loadEmployees(); }
-      catch(e2){ console.warn('[임시저장 직원 롤백 실패]', empId, e2); }
-    }
+    await _rollbackDraftEmp();
     toast('임시저장 중 오류가 발생했습니다.', 'error');
     return;
   }
@@ -3458,7 +3493,7 @@ function _ctValidate(){
   }
 
   // ── 공통: 회사 (모달 오픈 시 항상 설정됨) ──
-  const coId = document.getElementById('ct-company').value;
+  const coId = document.getElementById('ct-company')?.value || '';
 
   // ── 수정/재계약: 계약 시작일 ──
   if(isEditOrRecontract){
@@ -3486,7 +3521,7 @@ function _ctValidate(){
         _showEmpNoAlert(document.getElementById('ct-em-empno-alert'), _empNoCheck.msg, 'error');
       }
     }
-    if(!document.getElementById('ct-em-name').value.trim())
+    if(!(document.getElementById('ct-em-name')?.value?.trim() || ''))
       _ctMarkError('ct-em-name', '이름', errors);
     if(!document.getElementById('ct-edit-em-hire')?.value)
       _ctMarkError('ct-edit-em-hire', '입사일', errors);
@@ -3501,7 +3536,7 @@ function _ctValidate(){
       }
     })();
     (function(){
-      const _idVal = document.getElementById('ct-em-id').value.trim();
+      const _idVal = document.getElementById('ct-em-id')?.value?.trim() || '';
       if(!_idVal){
         _ctMarkError('ct-em-id', '주민등록번호', errors);
       } else {
@@ -3509,12 +3544,12 @@ function _ctValidate(){
         if(!_idChk.ok) _ctMarkError('ct-em-id', '주민등록번호 형식 오류', errors);
       }
     })();
-    if(!document.getElementById('ct-em-job').value.trim())
+    if(!(document.getElementById('ct-em-job')?.value?.trim() || ''))
       _ctMarkError('ct-em-job', '담당업무', errors);
-    if(!document.getElementById('ct-em-address').value.trim())
+    if(!(document.getElementById('ct-em-address')?.value?.trim() || ''))
       _ctMarkError('ct-em-address', '주소', errors);
     (function(){
-      const _phoneVal = document.getElementById('ct-em-phone').value.trim();
+      const _phoneVal = document.getElementById('ct-em-phone')?.value?.trim() || '';
       if(!_phoneVal){
         _ctMarkError('ct-em-phone', '휴대전화', errors);
       } else {
@@ -3532,13 +3567,13 @@ function _ctValidate(){
       }
     })();
     (function(){
-      const _emailVal = document.getElementById('ct-em-email').value.trim();
+      const _emailVal = document.getElementById('ct-em-email')?.value?.trim() || '';
       if(_emailVal){
         const _emailChk = _validateEmail(_emailVal);
         if(!_emailChk.ok) _ctMarkError('ct-em-email', '이메일 형식 오류', errors);
       }
     })();
-    if(!document.getElementById('ct-em-category').value)
+    if(!(document.getElementById('ct-em-category')?.value || ''))
       _ctMarkError('ct-em-category', '고용형태', errors);
 
     // ── 통상시급: 모든 고용형태 공통 필수 ──
@@ -3717,20 +3752,24 @@ function _ctValidate(){
     errors.push('계약기간 1개월 미만 — 일용직으로 변경하거나 종료일을 조정해 주세요.');
 
   // ── 정규직 전환 의무 검사 (계약직·계약직 수습·정규직 수습·일용직) ──
+  // ── 정규직 전환 의무 검사 (계약직·계약직 수습·정규직 수습·일용직) ──
   // 입사일로부터 730일을 초과하는 계약 종료일 설정 불가
   (function(){
-    const _ctTypeEl = document.getElementById('ct-type');
-    const _ctType = (_ctTypeEl?.value || '').trim();
-    const TARGET_TYPES = ['fixed_term', 'fixed_probation', 'regular_probation', 'daily'];
+    // 신규: ct-em-category, 수정/재계약: ct-type (hidden)
+    const _ctTypeRaw = isNew
+      ? (document.getElementById('ct-em-category')?.value || '')
+      : (document.getElementById('ct-type')?.value || '');
+    const _ctType = CONTRACT_TYPE_LEGACY_MAP[_ctTypeRaw] || _ctTypeRaw;
+    const TARGET_TYPES = ['fixed_term', 'fixed_probation', 'fixed_term_probation', 'regular_probation', 'daily'];
     if(!TARGET_TYPES.includes(_ctType)) return;
 
     const _hireEl = document.getElementById('ct-edit-em-hire');
     const _hire = _hireEl?.value || '';
-    if(!_hire) return; // 입사일 없으면 검사 불가
+    if(!_hire) return;
 
     const _endEl = document.getElementById('ct-end');
     const _end = _endEl?.value || '';
-    if(!_end) return; // 종료일 없으면 검사 불가 (다른 검사에서 걸러짐)
+    if(!_end) return;
 
     const hireDate = new Date(_hire);
     const endDate  = new Date(_end);
@@ -4243,8 +4282,8 @@ async function saveContract(){
     }
   }
   // ── 고객사 인앱 알림 발송 ──
+  const _savedContractId = isEditMode ? editId.contract : (_savedContractId_ || '');
   {
-    const _savedContractId = isEditMode ? editId.contract : (_savedContractId_ || '');
     const _co  = allCompanies.find(x => x.id === coId) || {};
     const _emp = allEmployees.find(x => x.id === empId) || {};
     const _coName  = _co.company_name || '';

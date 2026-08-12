@@ -2709,14 +2709,20 @@ function _switchInsuranceModeUI(){
 //
 //   ■ 연장근로: 일 소정근로시간(workHoursPerDay) 초과분 → 월 환산 (×4.345주)
 //   ■ 야간근로: 22:00~06:00 근무시간 → 월 환산
-//   ■ 휴일근로: 토·일 활성 근무시간 → 월 환산
+//   ■ 휴일근로: 일요일(주휴일) 활성 근무시간 → 월 환산
 //
 //   반환: { otHours, nightHours, holHours, otPay, nightPay, holPay }
 // ──────────────────────────────────────────────────────────────────────────────
-function _calcFixedHoursFromSchedule(scheduleJson, workHoursPerDay, hourlyWage){
-  const STATUTORY_DAILY = 8 * 60; // 법정 1일 소정근로시간 (480분)
+function _calcFixedHoursFromSchedule(scheduleJson, hourlyWage, companyId){
+  const STATUTORY_DAILY = 8 * 60;
+  const STATUTORY_WEEKLY = 40 * 60;
+  const NIGHT_START = 22 * 60, NIGHT_END = 30 * 60;
   const hw = parseFloat(hourlyWage) || 0;
-  const result = { otHours:0, nightHours:0, holHours:0, otPay:0, nightPay:0, holPay:0 };
+  const result = {
+    otHours:0, nightHours:0, holHours:0, holOtHours:0,
+    otPay:0, nightPay:0, holPay:0,
+    otRegularHours:0, otHolHours:0, nightWdayHours:0, nightSunHours:0,
+  };
 
   if(!scheduleJson) return result;
 
@@ -2725,69 +2731,101 @@ function _calcFixedHoursFromSchedule(scheduleJson, workHoursPerDay, hourlyWage){
   catch(e){ return result; }
   if(!Array.isArray(sched) || !sched.length) return result;
 
-  const WEEKS_PER_MONTH = 4.345; // 365/12/7
+  // 전역 WEEK_TO_MONTH (contract-form.js) 참조, 없으면 폴백
+  const WEEKS_PER_MONTH = typeof WEEK_TO_MONTH !== 'undefined' ? WEEK_TO_MONTH : 365/12/7;
+
+  // ── 주 40시간 상한 적용을 위한 소정근로 누적 (분) ──
+  let _totalStatMins = 0;
 
   sched.forEach(d => {
     if(!d.active) return;
-    const isWeekend = d.day === 'sat' || d.day === 'sun';
+    const isSunday = d.day === 'sun';   // 일요일만 유급주휴일 (제55조)
 
     (d.shifts||[]).forEach(sh => {
       if(!sh.start || !sh.end) return;
-      // 24시 형식 파싱 (HH:MM)
       const _parseTime = t => { const m = t.match(/^(\d{1,2}):(\d{2})$/); return m ? parseInt(m[1])*60+parseInt(m[2]) : null; };
       const startMin = _parseTime(sh.start);
       let   endMin   = _parseTime(sh.end);
       if(startMin === null || endMin === null) return;
-      if(endMin <= startMin) endMin += 24 * 60; // 익일 종료
+      if(endMin <= startMin) endMin += 24 * 60;
 
-      // 휴게시간 차감
       let breakMin = 0;
       (sh.breaks||[]).forEach(b => {
         if(!b.s || !b.e) return;
         const bs = _parseTime(b.s), be = _parseTime(b.e);
         if(bs !== null && be !== null && be > bs) breakMin += be - bs;
-        else if(bs !== null && be !== null && be <= bs) breakMin += (be + 24*60) - bs; // 익일 종료 휴게
+        else if(bs !== null && be !== null && be <= bs) breakMin += (be + 24*60) - bs;
       });
       const workMin = endMin - startMin - breakMin;
       if(workMin <= 0) return;
 
-      const standardMin = STATUTORY_DAILY;
-
-      // ── 휴일근로: 주말 활성 근무 ──
-      // 휴일근로는 연장근로와 별도 분류 (중복 집계 방지)
-      if(isWeekend){
-        result.holHours += (workMin / 60) * WEEKS_PER_MONTH;
+      if(isSunday){
+        // ── 일요일(유급주휴일): ≤8h 휴일, >8h 휴일연장 ──
+        const dayMinsH = workMin / 60;
+        const hol8h = Math.min(dayMinsH, 8);
+        const holOth = Math.max(0, dayMinsH - 8);
+        result.holHours    += hol8h * WEEKS_PER_MONTH;
+        result.holOtHours  += holOth * WEEKS_PER_MONTH;
+        result.otHolHours  += holOth * WEEKS_PER_MONTH;
       } else {
-        // ── 연장근로: 평일 소정근로시간(8h) 초과분 (휴일 제외) ──
-        const dailyOtMin = Math.max(0, workMin - standardMin);
-        result.otHours += (dailyOtMin / 60) * WEEKS_PER_MONTH;
+        // ── 월~토: 1일 8h 초과분 → 일단위 연장, 8h 이내 → 소정근로 누적 (주40h캡) ──
+        const dailyOtMin = Math.max(0, workMin - STATUTORY_DAILY);
+        result.otRegularHours += (dailyOtMin / 60) * WEEKS_PER_MONTH;
+        _totalStatMins += Math.min(workMin, STATUTORY_DAILY);
       }
 
-      // ── 야간근로: 22:00~06:00 교차분 (평일·휴일 공통, 중복 가산) ──
-      // 휴일+야간 중복 시: 휴일(150%/200%) + 야간(50%) = 200%/250%
-      const nightStart = 22 * 60;      // 1320 (22:00)
-      const nightEnd   = 30 * 60;      // 1800 (익일 06:00)
-      const s = startMin, e = endMin;  // endMin은 이미 익일 보정됨
-      // shift 시간대와 야간시간대(22:00~06:00)의 교차분 계산
-      const nightOverlap = Math.max(0, Math.min(e, nightEnd) - Math.max(s, nightStart))
-                         + Math.max(0, Math.min(e, nightEnd + 24*60) - Math.max(s, nightStart + 24*60));
-      const dailyNightMin = Math.max(0, nightOverlap);
-      result.nightHours += (dailyNightMin / 60) * WEEKS_PER_MONTH;
+      // ── 야간근로 (평일/일요일 구분) ──
+      const s = startMin, e = endMin;
+      const nightOverlap = Math.max(0, Math.min(e, NIGHT_END) - Math.max(s, NIGHT_START))
+                         + Math.max(0, Math.min(e, NIGHT_END + 24*60) - Math.max(s, NIGHT_START + 24*60));
+      // 야간 시간대와 겹치는 휴게시간 차감
+      let nightBrkMin = 0;
+      (sh.breaks||[]).forEach(b => {
+        if(!b.s || !b.e) return;
+        const bs = _parseTime(b.s), be = _parseTime(b.e);
+        if(bs === null || be === null) return;
+        let be2 = be;
+        if(be2 <= bs) be2 += 24 * 60;
+        nightBrkMin += Math.max(0, Math.min(be2, NIGHT_END) - Math.max(bs, NIGHT_START))
+                     + Math.max(0, Math.min(be2, NIGHT_END + 24*60) - Math.max(bs, NIGHT_START + 24*60));
+      });
+      const dailyNightMin = Math.max(0, nightOverlap - nightBrkMin);
+      const dailyNightH = (dailyNightMin / 60) * WEEKS_PER_MONTH;
+      result.nightHours += dailyNightH;
+      if (isSunday) {
+        result.nightSunHours += dailyNightH;
+      } else {
+        result.nightWdayHours += dailyNightH;
+      }
     });
   });
 
-  // 소수점 1자리 반올림
-  result.otHours    = Math.round(result.otHours    * 10) / 10;
-  result.nightHours = Math.round(result.nightHours * 10) / 10;
-  result.holHours   = Math.round(result.holHours   * 10) / 10;
+  // ── 주 40시간 상한: 소정근로 누적 40h 초과분 → 연장 이관 ──
+  if(_totalStatMins > STATUTORY_WEEKLY){
+    const weeklyOtMin = _totalStatMins - STATUTORY_WEEKLY;
+    result.otRegularHours += (weeklyOtMin / 60) * WEEKS_PER_MONTH;
+  }
 
-  // 수당 계산
+  // 소수점 1자리 반올림
+  result.otHours       = Math.round((result.otRegularHours + result.holOtHours) * 10) / 10; // 합산 표시용
+  result.otRegularHours= Math.round(result.otRegularHours * 10) / 10;
+  result.otHolHours    = Math.round(result.otHolHours * 10) / 10;
+  result.nightHours    = Math.round(result.nightHours * 10) / 10;
+  result.nightWdayHours= Math.round(result.nightWdayHours * 10) / 10;
+  result.nightSunHours = Math.round(result.nightSunHours * 10) / 10;
+  result.holHours      = Math.round(result.holHours * 10) / 10;
+  result.holOtHours    = Math.round(result.holOtHours * 10) / 10;
+
+  // 수당 계산 (법정할증률: 5인 이상 1.5/0.5/1.5/2.0, 5인 미만 1.0/0.0/1.0/1.0)
   if(hw > 0){
-    result.otPay    = Math.round(hw * result.otHours    * 1.5);
-    result.nightPay = Math.round(hw * result.nightHours * 0.5);
+    const mult = (typeof _getLegalMultiplier === 'function' && companyId)
+      ? _getLegalMultiplier(companyId)
+      : { overtime: 1.5, night: 0.5, holiday_8h: 1.5, holiday_8h_over: 2.0 };
+    result.otPay    = Math.round(hw * result.otHours    * mult.overtime);
+    result.nightPay = Math.round(hw * result.nightHours * mult.night);
     const holH8     = Math.min(result.holHours, 8 * WEEKS_PER_MONTH); // 월 환산 8h 기준
     const holHOvr   = Math.max(result.holHours - 8 * WEEKS_PER_MONTH, 0);
-    result.holPay   = Math.round(hw * holH8 * 1.5 + hw * holHOvr * 2.0);
+    result.holPay   = Math.round(hw * holH8 * mult.holiday_8h + hw * holHOvr * mult.holiday_8h_over);
   }
 
   return result;
@@ -2807,7 +2845,8 @@ function _calcDayFixedHours(daySched, hpd){
 
   if(!daySched || !daySched.active) return { otH:0, nightH:0, holH8:0, holHOvr:0 };
 
-  const isWeekend = daySched.day === 'sat' || daySched.day === 'sun';
+  const isSunday = daySched.day === 'sun';   // 일요일만 유급주휴일
+  const isSaturday = daySched.day === 'sat'; // 토요일은 무급휴무일
   const _parseTime = t => { const m = (t||'').match(/^(\d{1,2}):(\d{2})$/); return m ? parseInt(m[1])*60+parseInt(m[2]) : null; };
 
   (daySched.shifts||[]).forEach(sh => {
@@ -2827,10 +2866,10 @@ function _calcDayFixedHours(daySched, hpd){
     const workMin = endMin - startMin - breakMin;
     if(workMin <= 0) return;
 
-    if(isWeekend){
-      holMin += workMin;  // 휴일: 모든 근로시간
+    if(isSunday){
+      holMin += workMin;  // 일요일: 모든 근로시간 → 휴일
     } else {
-      otMin += Math.max(0, workMin - STATUTORY_DAILY);  // 평일: 8h 초과분만 연장
+      otMin += Math.max(0, workMin - STATUTORY_DAILY);  // 월~토: 8h 초과분만 연장
     }
 
     // 야간: 22:00~06:00 교차분 (평일·휴일 공통)
@@ -2858,11 +2897,10 @@ function _getPIFixedHours(){
   if(!piContract) return { otHours:0, nightHours:0, holHours:0, otPay:0, nightPay:0, holPay:0 };
 
   const _sched = piContract.schedule_json || null;
-  const _hpd   = piContract.work_hours_per_day || 8;
   const _hw    = piContract.hourly_wage || 0;
 
   if(_sched){
-    return _calcFixedHoursFromSchedule(_sched, _hpd, _hw);
+    return _calcFixedHoursFromSchedule(_sched, _hw, piContract.company_id);
   }
 
   // fallback: 계약서에 저장된 값
@@ -3300,28 +3338,51 @@ function calcPI(){
     const _hpd2 = piContract ? (piContract.work_hours_per_day || 8) : 8;
 
     // ── 고정 근로 (근무시간표 기준) ──
-    const _updateFixedRow = (rowId, hoursId, payId, hours, pay) => {
+    const _updateFixedRow = (rowId, hoursId, payId, formulaId, hours, pay, formulaText) => {
       const row = document.getElementById(rowId);
       const hEl = document.getElementById(hoursId);
       const pEl = document.getElementById(payId);
+      const fEl = document.getElementById(formulaId);
       if (row) row.style.display = (hours > 0 || pay > 0) ? '' : 'none';
       if (hEl) hEl.value = `${hours.toFixed(1)}h`;
       if (pEl) pEl.value = won(pay);
+      if (fEl) fEl.textContent = formulaText || '';
     };
-    _updateFixedRow('pi-fixed-ot-row',    'pi-fixed-ot-hours-disp',    'pi-fixed-ot-pay-disp',    _fixedCalc2.otHours,    _fixedCalc2.otPay);
-    _updateFixedRow('pi-fixed-night-row', 'pi-fixed-night-hours-disp', 'pi-fixed-night-pay-disp', _fixedCalc2.nightHours, _fixedCalc2.nightPay);
-    _updateFixedRow('pi-fixed-hol-row',   'pi-fixed-hol-hours-disp',   'pi-fixed-hol-pay-disp',   _fixedCalc2.holHours,   _fixedCalc2.holPay);
+    
+    const _m = _sfInfo.isSmall ? {ot:1,night:0,hol:1,holOt:1} : {ot:1.5,night:0.5,hol:1.5,holOt:2};
+    const fmtH2 = h => Number.isInteger(h) ? h : h.toFixed(1);
+    
+    _updateFixedRow('pi-fixed-ot-row',    'pi-fixed-ot-hours-disp',    'pi-fixed-ot-pay-disp',    'pi-fixed-ot-formula',
+      _fixedCalc2.otHours, _fixedCalc2.otPay,
+      (_fixedCalc2.otRegularHours > 0 || _fixedCalc2.otHolHours > 0) ?
+        '↳ 평일연장 ' + fmtH2(_fixedCalc2.otRegularHours) + 'h × ' + _m.ot + '배' +
+        (_fixedCalc2.otHolHours > 0 ? ' + 휴일연장 ' + fmtH2(_fixedCalc2.otHolHours) + 'h × ' + _m.holOt + '배' : '')
+      : '');
+    _updateFixedRow('pi-fixed-night-row', 'pi-fixed-night-hours-disp', 'pi-fixed-night-pay-disp', 'pi-fixed-night-formula',
+      _fixedCalc2.nightHours, _fixedCalc2.nightPay,
+      (_fixedCalc2.nightWdayHours > 0 || _fixedCalc2.nightSunHours > 0) ?
+        '↳ ' + 
+        (_fixedCalc2.nightWdayHours > 0 ? '평일야간 ' + fmtH2(_fixedCalc2.nightWdayHours) + 'h × ' + _m.night + '배' : '') +
+        (_fixedCalc2.nightWdayHours > 0 && _fixedCalc2.nightSunHours > 0 ? ' + ' : '') +
+        (_fixedCalc2.nightSunHours > 0 ? '휴일야간 ' + fmtH2(_fixedCalc2.nightSunHours) + 'h × ' + _m.night + '배' : '')
+      : '');
+    _updateFixedRow('pi-fixed-hol-row',   'pi-fixed-hol-hours-disp',   'pi-fixed-hol-pay-disp',   'pi-fixed-hol-formula',
+      _fixedCalc2.holHours, _fixedCalc2.holPay,
+      _fixedCalc2.holHours > 0 ? '↳ 휴일 ' + fmtH2(_fixedCalc2.holHours) + 'h × ' + _m.hol + '배' : '');
 
     // ── 추가 근로 (실적 입력) ──
-    const _updateAddRow = (hoursId, payId, hours, pay) => {
+    const _updateAddRow = (hoursId, payId, formulaId, hours, pay, formulaText) => {
       const hEl = document.getElementById(hoursId);
       const pEl = document.getElementById(payId);
+      const fEl = document.getElementById(formulaId);
       if (hEl) hEl.value = `${hours.toFixed(1)}h`;
       if (pEl) pEl.value = won(pay);
+      if (fEl) fEl.textContent = formulaText || '';
     };
-    _updateAddRow('pi-ot-hours-disp',    'pi-ot-pay-disp',    otH,    otPay);
-    _updateAddRow('pi-night-hours-disp', 'pi-night-pay-disp', nightH, nightPay);
-    _updateAddRow('pi-hol-hours-disp',   'pi-hol-pay-disp',   holH,   holPay);
+    const _mAdd = _sfInfo.isSmall ? {ot:1,night:0,hol:1.5,holOt:2} : {ot:1.5,night:0.5,hol:1.5,holOt:2};
+    _updateAddRow('pi-ot-hours-disp',    'pi-ot-pay-disp',    'pi-ot-formula',    otH,    otPay,    otH > 0 ? '↳ 추가연장 ' + otH.toFixed(1) + 'h × ' + _mAdd.ot + '배' : '');
+    _updateAddRow('pi-night-hours-disp', 'pi-night-pay-disp', 'pi-night-formula', nightH, nightPay, nightH > 0 ? '↳ 추가야간 ' + nightH.toFixed(1) + 'h × ' + _mAdd.night + '배' : '');
+    _updateAddRow('pi-hol-hours-disp',   'pi-hol-pay-disp',   'pi-hol-formula',   holH,   holPay,   holH > 0 ? '↳ 추가휴일 ' + holH.toFixed(1) + 'h (≤8h×' + _mAdd.hol + '배, >8h×' + _mAdd.holOt + '배)' : '');
     // 이전 disp 요소도 하위호환 유지 (기존 JS 참조)
     const dOt2 = document.getElementById('pi-ot-pay-disp');
     const dNight2 = document.getElementById('pi-night-pay-disp');
@@ -3428,24 +3489,30 @@ function calcPI(){
     // ── 근태 차감 섹션 업데이트 ──
     // 전체 주 결근 → 항상 표시·적용 / 부분 주 결근 → 취업규칙 체크 시에만
     const _attDedSection = document.getElementById('pi-attendance-deduction-section');
-    const _showDedRow = (rowId, hoursId, payId, hours, pay, label) => {
+    const _showDedRow = (rowId, hoursId, payId, formulaId, hours, pay, formulaText) => {
       const row = document.getElementById(rowId);
       const hEl = document.getElementById(hoursId);
       const pEl = document.getElementById(payId);
+      const fEl = document.getElementById(formulaId);
       if (row) row.style.display = (hours > 0) ? '' : 'none';
       if (hEl) hEl.value = hours > 0 ? `-${hours.toFixed(1)}h` : '0h';
-      if (pEl) pEl.value = hours > 0 ? `-${won(pay)}${label||''}` : '0원';
+      if (pEl) pEl.value = hours > 0 ? `-${won(pay)}` : '0원';
+      if (fEl) fEl.textContent = formulaText || '';
       return hours > 0;
     };
+    const _mDed = _sfInfo.isSmall ? {ot:1,night:0,hol:1} : {ot:1.5,night:0.5,hol:1.5};
     // 전체 주 차감: 항상 표시
-    const _hasFullOt    = _showDedRow('pi-ded-ot-row',    'pi-ded-ot-hours-disp',    'pi-ded-ot-pay-disp',    _fullWeekOtH,    _fullWeekOtP);
-    const _hasFullNight = _showDedRow('pi-ded-night-row', 'pi-ded-night-hours-disp', 'pi-ded-night-pay-disp', _fullWeekNightH, _fullWeekNightP);
-    const _hasFullHol   = _showDedRow('pi-ded-hol-row',   'pi-ded-hol-hours-disp',   'pi-ded-hol-pay-disp',   _fullWeekHolH,   _fullWeekHolP);
-    // 부분 주 차감: 취업규칙 체크 시에만 합산하여 표시 (별도 행 없으면 기존 행에 합산)
+    const _hasFullOt    = _showDedRow('pi-ded-ot-row',    'pi-ded-ot-hours-disp',    'pi-ded-ot-pay-disp',    'pi-ded-ot-formula',    _fullWeekOtH,    _fullWeekOtP,       _fullWeekOtH > 0 ? '↳ 차감연장 -' + _fullWeekOtH.toFixed(1) + 'h × ' + _mDed.ot + '배' : '');
+    const _hasFullNight = _showDedRow('pi-ded-night-row', 'pi-ded-night-hours-disp', 'pi-ded-night-pay-disp', 'pi-ded-night-formula', _fullWeekNightH, _fullWeekNightP, _fullWeekNightH > 0 ? '↳ 차감야간 -' + _fullWeekNightH.toFixed(1) + 'h × ' + _mDed.night + '배' : '');
+    const _hasFullHol   = _showDedRow('pi-ded-hol-row',   'pi-ded-hol-hours-disp',   'pi-ded-hol-pay-disp',   'pi-ded-hol-formula',   _fullWeekHolH,   _fullWeekHolP,   _fullWeekHolH > 0 ? '↳ 차감휴일 -' + _fullWeekHolH.toFixed(1) + 'h × ' + _mDed.hol + '배' : '');
+    // 부분 주 차감: 취업규칙 체크 시에만 합산하여 표시
     if (_applyAttDed && (_partialOtH > 0 || _partialNightH > 0 || _partialHolH > 0)) {
-      _showDedRow('pi-ded-ot-row',    'pi-ded-ot-hours-disp',    'pi-ded-ot-pay-disp',    _fullWeekOtH+_partialOtH,       _fullWeekOtP+_partialOtP);
-      _showDedRow('pi-ded-night-row', 'pi-ded-night-hours-disp', 'pi-ded-night-pay-disp', _fullWeekNightH+_partialNightH, _fullWeekNightP+_partialNightP);
-      _showDedRow('pi-ded-hol-row',   'pi-ded-hol-hours-disp',   'pi-ded-hol-pay-disp',   _fullWeekHolH+_partialHolH,     _fullWeekHolP+_partialHolP);
+      const _totOtH = _fullWeekOtH + _partialOtH, _totOtP = _fullWeekOtP + _partialOtP;
+      const _totNightH = _fullWeekNightH + _partialNightH, _totNightP = _fullWeekNightP + _partialNightP;
+      const _totHolH = _fullWeekHolH + _partialHolH, _totHolP = _fullWeekHolP + _partialHolP;
+      _showDedRow('pi-ded-ot-row',    'pi-ded-ot-hours-disp',    'pi-ded-ot-pay-disp',    'pi-ded-ot-formula',    _totOtH,    _totOtP,    _totOtH > 0 ? '↳ 차감연장 -' + _totOtH.toFixed(1) + 'h × ' + _mDed.ot + '배' : '');
+      _showDedRow('pi-ded-night-row', 'pi-ded-night-hours-disp', 'pi-ded-night-pay-disp', 'pi-ded-night-formula', _totNightH, _totNightP, _totNightH > 0 ? '↳ 차감야간 -' + _totNightH.toFixed(1) + 'h × ' + _mDed.night + '배' : '');
+      _showDedRow('pi-ded-hol-row',   'pi-ded-hol-hours-disp',   'pi-ded-hol-pay-disp',   'pi-ded-hol-formula',   _totHolH,   _totHolP,   _totHolH > 0 ? '↳ 차감휴일 -' + _totHolH.toFixed(1) + 'h × ' + _mDed.hol + '배' : '');
     }
     if (_attDedSection) {
       _attDedSection.style.display = (_hasFullOt||_hasFullNight||_hasFullHol||_partialOtH>0||_partialNightH>0||_partialHolH>0) ? '' : 'none';
@@ -4291,31 +4358,18 @@ function _updatePISmallFirmBadge(sfInfo, yr, mo){
   }
   const { isSmall, headcount, operDays, totalPersonDays, daysOver5 } = sfInfo;
   const hcStr = (typeof headcount === 'number' && !isNaN(headcount))
-    ? headcount.toFixed(2)
-    : '-';
-  if(isSmall){
-    badge.style.display = '';
-    badge.innerHTML =
-      `<span style="color:#b45309;font-weight:700;">⚠ 5인 미만 사업장</span>` +
-      `<span style="color:#92400e;margin-left:6px;">` +
-        `상시근로자 약 <strong>${hcStr}명</strong>` +
-        ` (연인원 ${totalPersonDays}명 ÷ 가동 ${operDays}일)` +
-        ` — 연장·야간·휴일 <strong>가산수당 미적용</strong> · 휴업수당 <strong>면제</strong>` +
-      `</span>`;
-  } else {
-    badge.style.display = '';
-    let reason = '';
-    if(daysOver5 > operDays / 2){
-      reason = ` (5인↑ 근무일 ${daysOver5}일 > 가동일 ${operDays}일의 50% — 특례 적용)`;
-    } else {
-      reason = ` (상시 약 ${hcStr}명)`;
-    }
-    badge.innerHTML =
-      `<span style="color:#166534;font-weight:700;">✔ 5인 이상 사업장${reason}</span>` +
-      `<span style="color:#14532d;margin-left:6px;">` +
-        `연장 ×1.5 &nbsp;·&nbsp; 야간 ×0.5 &nbsp;·&nbsp; 휴일 8h↓×1.5 / 8h↑×2.0` +
-      `</span>`;
-  }
+    ? headcount.toFixed(1) : '-';
+  
+  // Contract-form style badge
+  const cls = isSmall ? 'small' : 'normal';
+  badge.className = 'ct-biz-badge ' + cls;
+  badge.style.display = '';
+  badge.style.cssText = '';
+  badge.innerHTML =
+    '<span class="ct-biz-badge ' + cls + '">적용기준: 5인 ' + (isSmall ? '미만' : '이상') + ' 사업장</span>' +
+    '<div class="ct-formula-line" style="margin-top:2px;">직전: 상시근로자 ' + hcStr + '명 (연인원 ' + totalPersonDays + '명 ÷ 가동 ' + operDays + '일, ≥5인 ' + daysOver5 + '일)' +
+    (isSmall ? ' — 연장·야간·휴일 가산수당 미적용' : ' — 연장×1.5 · 야간×0.5 · 휴일≤8h×1.5 · 휴일>8h×2.0') +
+    '</div>';
 }
 
 // ─── 주휴수당 자동계산 ───
@@ -4639,7 +4693,7 @@ function applyPIAllowanceConfig(cfg){
     if(row) row.style.display = visible ? '' : 'none';
     if(ptField){
       const defaultPt = (visible && !isPI_Daily)
-        ? (cfg[`${key}_pay_type`] || 'fixed')
+        ? ((cfg && cfg[`${key}_pay_type`]) || 'fixed')
         : '';
       setPIPayType(ptField, defaultPt);
     }

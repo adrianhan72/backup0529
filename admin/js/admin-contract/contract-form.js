@@ -5,9 +5,18 @@ const _BRAND_SIG = '────────────────────
 const WEEK_TO_MONTH = 365 / 12 / 7; // 4.345주/월 (고용노동부 공식)
 
 /** 상시근로자 수 (대표자·등기임원·특수관계인 제외, 유효 계약 보유 직원만) */
-function _getEmployeeCount(companyId){
+/**
+ * 상시근로자 수 산정 (근로기준법 시행령 제7조의2)
+ * - 산정기간 1개월 연인원 ÷ 가동일수
+ * - 대표자·등기임원·특수관계인 제외
+ * - 50% 초과 예외 법칙 적용
+ */
+function _getEmployeeCount(companyId, refYr, refMo){
   if(!companyId) return 0;
-  // 제외 대상 이름 수집 (대표자, 등기임원, 특수관계인)
+  const yr = refYr || new Date().getFullYear();
+  const mo = refMo || (new Date().getMonth() + 1);
+
+  // 제외 대상 (대표자, 등기임원, 특수관계인)
   const excludedNames = new Set();
   const coData = (allCompanies||[]).find(c => c.id === companyId);
   if(coData && coData.representatives){
@@ -22,27 +31,194 @@ function _getEmployeeCount(companyId){
   for(const rp of (allRelatedParties||[])){
     if(rp.company_id === companyId && rp.name) excludedNames.add(rp.name);
   }
-  // 제외 대상 직원 ID
-  const excludedEmpIds = new Set();
+  const repEmpIds = new Set();
   for(const e of (allEmployees||[])){
     if(e.company_id === companyId && (e.is_representative || excludedNames.has(e.name))){
-      excludedEmpIds.add(e.id);
+      repEmpIds.add(e.id);
     }
   }
 
-  const activeStatuses = ['active','pending','renewal_pending','terminate_pending','docs_incomplete'];
-  const empIds = new Set();
-  for(const c of (allContracts||[])){
-    if(c.company_id === companyId && activeStatuses.includes(c.status) && !c.is_draft && !c.is_voided_by_amend){
-      if(c.employee_id && !excludedEmpIds.has(c.employee_id)) empIds.add(c.employee_id);
+  // 유효 상태: active, docs_incomplete, terminate_pending (현재 근로관계 유지)
+  const VALID_ST = new Set(['active', 'docs_incomplete', 'terminate_pending']);
+  const monthStart = new Date(yr, mo-1, 1);
+  const monthEnd   = new Date(yr, mo, 0);
+  const totalDays  = monthEnd.getDate();
+
+  // 직원별 최신 유효 계약 1건
+  const empContractMap = new Map();
+  (allContracts||[])
+    .filter(c =>
+      c.company_id === companyId &&
+      !c.is_draft && !c.is_voided_by_amend &&
+      VALID_ST.has(c.status) &&
+      !repEmpIds.has(c.employee_id)
+    )
+    .sort((a,b) => (b.contract_start||'').localeCompare(a.contract_start||''))
+    .forEach(c => {
+      if(!empContractMap.has(c.employee_id)) empContractMap.set(c.employee_id, c);
+    });
+
+  // 일별 근무 인원 계산
+  const dayWorkers = new Array(totalDays+1).fill(0);
+  empContractMap.forEach(c => {
+    let cs = c.contract_start ? new Date(c.contract_start) : monthStart;
+    if(isNaN(cs.getTime())) cs = monthStart;
+    let ce;
+    if(c.status === 'terminate_pending'){
+      ce = c.terminate_date ? new Date(c.terminate_date) : monthEnd;
+    } else {
+      ce = c.contract_end ? new Date(c.contract_end) : monthEnd;
+    }
+    if(isNaN(ce.getTime())) ce = monthEnd;
+    for(let d = 1; d <= totalDays; d++){
+      const day = new Date(yr, mo-1, d);
+      if(day >= cs && day <= ce) dayWorkers[d]++;
+    }
+  });
+
+  // 가동일수(1명 이상 근무), 연인원, 5인 이상 일수
+  let operDays = 0, totalPersonDays = 0, daysOver5 = 0;
+  for(let d = 1; d <= totalDays; d++){
+    if(dayWorkers[d] > 0){
+      operDays++;
+      totalPersonDays += dayWorkers[d];
+      if(dayWorkers[d] >= 5) daysOver5++;
     }
   }
-  return empIds.size;
+  if(operDays === 0) return 0;
+
+  const avgHeadcount = totalPersonDays / operDays;
+  return Math.round(avgHeadcount * 10) / 10;
 }
 
-/** 5인 미만 사업장 판별 (계약서용 근사값, 급여입력은 _getPISmallFirmInfo로 정밀 계산) */
-function _isSmallBiz(companyId){
-  return _getEmployeeCount(companyId) < 5;
+/** 5인 미만 사업장 판별 (근로기준법 시행령 제7조의2 예외 법칙 포함) */
+function _isSmallBiz(companyId, refYr, refMo){
+  if(!companyId) return true;
+  const yr = refYr || new Date().getFullYear();
+  const mo = refMo || (new Date().getMonth() + 1);
+
+  // 제외 대상
+  const excludedNames = new Set();
+  const coData = (allCompanies||[]).find(c => c.id === companyId);
+  if(coData && coData.representatives){
+    try {
+      const reps = typeof coData.representatives === 'string' ? JSON.parse(coData.representatives) : (coData.representatives || []);
+      (Array.isArray(reps)?reps:[]).forEach(r => { if(r.name) excludedNames.add(r.name); });
+    } catch(e){}
+  }
+  for(const ex of (allExecutives||[])){
+    if(ex.company_id === companyId && ex.name) excludedNames.add(ex.name);
+  }
+  for(const rp of (allRelatedParties||[])){
+    if(rp.company_id === companyId && rp.name) excludedNames.add(rp.name);
+  }
+  const repEmpIds = new Set();
+  for(const e of (allEmployees||[])){
+    if(e.company_id === companyId && (e.is_representative || excludedNames.has(e.name))){
+      repEmpIds.add(e.id);
+    }
+  }
+
+  const VALID_ST = new Set(['active', 'docs_incomplete', 'terminate_pending']);
+  const monthStart = new Date(yr, mo-1, 1);
+  const monthEnd   = new Date(yr, mo, 0);
+  const totalDays  = monthEnd.getDate();
+
+  const empContractMap = new Map();
+  (allContracts||[])
+    .filter(c =>
+      c.company_id === companyId &&
+      !c.is_draft && !c.is_voided_by_amend &&
+      VALID_ST.has(c.status) &&
+      !repEmpIds.has(c.employee_id)
+    )
+    .sort((a,b) => (b.contract_start||'').localeCompare(a.contract_start||''))
+    .forEach(c => {
+      if(!empContractMap.has(c.employee_id)) empContractMap.set(c.employee_id, c);
+    });
+
+  const dayWorkers = new Array(totalDays+1).fill(0);
+  empContractMap.forEach(c => {
+    let cs = c.contract_start ? new Date(c.contract_start) : monthStart;
+    if(isNaN(cs.getTime())) cs = monthStart;
+    let ce;
+    if(c.status === 'terminate_pending'){
+      ce = c.terminate_date ? new Date(c.terminate_date) : monthEnd;
+    } else {
+      ce = c.contract_end ? new Date(c.contract_end) : monthEnd;
+    }
+    if(isNaN(ce.getTime())) ce = monthEnd;
+    for(let d = 1; d <= totalDays; d++){
+      const day = new Date(yr, mo-1, d);
+      if(day >= cs && day <= ce) dayWorkers[d]++;
+    }
+  });
+
+  let operDays = 0, daysOver5 = 0, totalPersonDays = 0;
+  for(let d = 1; d <= totalDays; d++){
+    if(dayWorkers[d] > 0){
+      operDays++;
+      totalPersonDays += dayWorkers[d];
+      if(dayWorkers[d] >= 5) daysOver5++;
+    }
+  }
+  if(operDays === 0) return true;
+
+  const headcount = totalPersonDays / operDays;
+  const daysUnder5 = operDays - daysOver5;
+
+  // 근로기준법 시행령 제7조의2
+  const specialOver5  = daysOver5 > operDays / 2;   // 평균 5 미만이지만 5인 이상일 > 50%
+  const specialUnder5 = headcount >= 5 && daysUnder5 > operDays / 2; // 평균 5 이상이지만 5인 미만일 > 50%
+
+  return specialUnder5 ? true : (headcount < 5 && !specialOver5);
+}
+
+/** 상시근로자 수 산정 상세 정보 (배지 힌트용) */
+function _getSmallBizInfo(companyId, refYr, refMo){
+  if(!companyId) return { isSmall:true, headcount:0, operDays:0, totalPersonDays:0, daysOver5:0 };
+  const yr = refYr || new Date().getFullYear();
+  const mo = refMo || (new Date().getMonth() + 1);
+
+  const excludedNames = new Set();
+  const coData = (allCompanies||[]).find(c => c.id === companyId);
+  if(coData && coData.representatives){
+    try {
+      const reps = typeof coData.representatives === 'string' ? JSON.parse(coData.representatives) : (coData.representatives || []);
+      (Array.isArray(reps)?reps:[]).forEach(r => { if(r.name) excludedNames.add(r.name); });
+    } catch(e){}
+  }
+  for(const ex of (allExecutives||[])){ if(ex.company_id === companyId && ex.name) excludedNames.add(ex.name); }
+  for(const rp of (allRelatedParties||[])){ if(rp.company_id === companyId && rp.name) excludedNames.add(rp.name); }
+  const repEmpIds = new Set();
+  for(const e of (allEmployees||[])){ if(e.company_id === companyId && (e.is_representative || excludedNames.has(e.name))) repEmpIds.add(e.id); }
+
+  const VALID_ST = new Set(['active', 'docs_incomplete', 'terminate_pending']);
+  const monthStart = new Date(yr, mo-1, 1), monthEnd = new Date(yr, mo, 0);
+  const totalDays = monthEnd.getDate();
+  const empContractMap = new Map();
+  (allContracts||[]).filter(c => c.company_id === companyId && !c.is_draft && !c.is_voided_by_amend && VALID_ST.has(c.status) && !repEmpIds.has(c.employee_id))
+    .sort((a,b) => (b.contract_start||'').localeCompare(a.contract_start||''))
+    .forEach(c => { if(!empContractMap.has(c.employee_id)) empContractMap.set(c.employee_id, c); });
+
+  const dayWorkers = new Array(totalDays+1).fill(0);
+  empContractMap.forEach(c => {
+    let cs = c.contract_start ? new Date(c.contract_start) : monthStart;
+    if(isNaN(cs.getTime())) cs = monthStart;
+    let ce = c.status === 'terminate_pending' ? (c.terminate_date ? new Date(c.terminate_date) : monthEnd) : (c.contract_end ? new Date(c.contract_end) : monthEnd);
+    if(isNaN(ce.getTime())) ce = monthEnd;
+    for(let d=1; d<=totalDays; d++){ const day=new Date(yr,mo-1,d); if(day>=cs && day<=ce) dayWorkers[d]++; }
+  });
+
+  let operDays=0, totalPersonDays=0, daysOver5=0;
+  for(let d=1; d<=totalDays; d++){ if(dayWorkers[d]>0){ operDays++; totalPersonDays+=dayWorkers[d]; if(dayWorkers[d]>=5) daysOver5++; } }
+  if(operDays===0) return { isSmall:true, headcount:0, operDays:0, totalPersonDays:0, daysOver5:0 };
+
+  const headcount = totalPersonDays / operDays;
+  const specialOver5 = daysOver5 > operDays/2;
+  const specialUnder5 = headcount >= 5 && (operDays-daysOver5) > operDays/2;
+  const isSmall = specialUnder5 ? true : (headcount < 5 && !specialOver5);
+  return { isSmall, headcount, operDays, totalPersonDays, daysOver5 };
 }
 
 /** 법정 가산 배율 (상시근로자 5인 이상=근로기준법 제56조 전면 적용, 5인 미만=가산 없음) */
@@ -100,10 +276,10 @@ function _isLegalHoliday(dateStr){
   const subs = substituteHolidays[y] || [];
   if(subs.includes(mmdd)) return true;
 
-  // ── 일요일은 주휴일 (제55조), 토요일은 무급휴무일 ──
+  // ── 일요일은 주휴일 (제55조), 토요일은 무급휴무일 (법정휴일 아님) ──
   const date = new Date(y, m-1, d);
   const dow = date.getDay();
-  if(dow === 0 || dow === 6) return true; // Sunday(0) or Saturday(6)
+  if(dow === 0) return true; // Sunday(0) only — Saturday(6) is NOT a legal holiday
 
   return false;
 }
@@ -1541,12 +1717,14 @@ function calcWorkHours(){
   const NIGHT_START = 22 * 60;      // 야간 시작 22:00 (1320분)
   const NIGHT_END   = 30 * 60;      // 야간 종료 익일 06:00 (1800분)
 
-  let totalStatMins = 0, totalOtMins = 0, totalNightMins = 0, totalHolMins = 0;
+  let totalStatMins = 0, totalOtMins = 0, totalNightMins = 0, totalHolMins = 0, totalHolOtMins = 0;
+  let totalWdayNightMins = 0, totalSunNightMins = 0; // 평일야간/휴일야간 구분
   let workDays = 0;
 
+  // ── Pass 1: 요일별 근로시간 산출 ──
+  const dayResults = [];
   DAY_KEYS.forEach(key => {
-    const hrsEl = document.getElementById(`ct-sch-hrs-${key}`);
-    const isWeekend = key === 'sat' || key === 'sun';
+    const isSunday = key === 'sun';
     let dayMins = 0, dayNightMins = 0;
 
     let shiftIdx = 0;
@@ -1558,7 +1736,7 @@ function calcWorkHours(){
       const eRaw = (document.getElementById(`ct-sch-end-${key}${sid}`) || {}).value;
       let e = timeToMins(eRaw);
       if (s === null || e === null) { shiftIdx++; continue; }
-      if (e <= s) e += 24 * 60; // 익일 종료
+      if (e <= s) e += 24 * 60;
 
       const slots = _getBrkSlots2(key, shiftIdx);
       const totalBrk = slots.reduce((sum, b) => {
@@ -1572,71 +1750,100 @@ function calcWorkHours(){
       const shiftMins = Math.max(0, e - s - totalBrk);
       dayMins += shiftMins;
 
-      // ── 야간근로: shift와 22:00~06:00 교차분 ──
       const nightOverlap =
         Math.max(0, Math.min(e, NIGHT_END) - Math.max(s, NIGHT_START)) +
         Math.max(0, Math.min(e, NIGHT_END + 24 * 60) - Math.max(s, NIGHT_START + 24 * 60));
-      dayNightMins += Math.max(0, nightOverlap);
+      const nightBrk = slots.reduce((sum, b) => {
+        const bs = timeToMins(b.s), be = timeToMins(b.e);
+        if (bs === null || be === null) return sum;
+        let be2 = be;
+        if (be2 <= bs) be2 += 24 * 60;
+        return sum + Math.max(0, Math.min(be2, NIGHT_END) - Math.max(bs, NIGHT_START))
+                   + Math.max(0, Math.min(be2, NIGHT_END + 24 * 60) - Math.max(bs, NIGHT_START + 24 * 60));
+      }, 0);
+      dayNightMins += Math.max(0, nightOverlap - nightBrk);
 
       shiftIdx++;
     }
 
     if (dayMins > 0) {
       workDays++;
-      // ── 소정근로 vs 연장 분리 ──
       const dayStatMins = Math.min(dayMins, STATUTORY_DAILY);
       const dayOtMins   = Math.max(0, dayMins - STATUTORY_DAILY);
-      // 주말(토·일)은 소정근로 합산에서 제외 (휴일근로로만 집계, 주40h 초과 연장 이중계상 방지)
-      if (!isWeekend) {
+
+      if (isSunday) {
+        totalHolMins    += Math.min(dayMins, STATUTORY_DAILY);
+        totalHolOtMins  += Math.max(0, dayMins - STATUTORY_DAILY);
+      } else {
         totalStatMins += dayStatMins;
         totalOtMins   += dayOtMins;
       }
-      // ── 야간근로 ──
       totalNightMins += dayNightMins;
+      if (isSunday) totalSunNightMins += dayNightMins;
+      else          totalWdayNightMins += dayNightMins;
 
-      // ── 휴일근로 ──
-      if (isWeekend) {
-        // 주말: 8h까지 휴일, 초과분은 연장 (셀 표시와 동일 로직)
-        totalHolMins += Math.min(dayMins, STATUTORY_DAILY);
-        totalOtMins  += Math.max(0, dayMins - STATUTORY_DAILY);
-      }
-
-      // ── 셀 표시: 소정·연장·야간·휴일 각각 줄바꿈 ──
-      const statH = dayStatMins / 60;
-      const otH   = dayOtMins / 60;
-      const nightH = dayNightMins / 60;
-      const fmtH = h => Number.isInteger(h) ? h : h.toFixed(1);
-      if (hrsEl) {
-        const lines = [];
-        if (isWeekend) {
-          lines.push('<span style="color:#dc2626;font-size:10px;">휴일 ' + fmtH(statH) + 'h</span>');
-        } else {
-          lines.push(fmtH(statH) + 'h');
-        }
-        if (otH > 0) lines.push('<span style="color:#f59e0b;font-size:10px;">연장 +' + fmtH(otH) + 'h</span>');
-        if (nightH > 0 && !isWeekend) lines.push('<span style="color:#7c3aed;font-size:10px;">야간 +' + fmtH(nightH) + 'h</span>');
-        hrsEl.innerHTML = lines.join('<br>');
-      }
+      dayResults.push({ key, isSunday, dayMins, dayStatMins, dayOtMins, dayNightMins,
+        dayHolMins: isSunday ? Math.min(dayMins, STATUTORY_DAILY) : 0,
+        dayHolOtMins: isSunday ? Math.max(0, dayMins - STATUTORY_DAILY) : 0 });
     } else {
-      if (hrsEl) hrsEl.textContent = '-';
+      dayResults.push({ key, isSunday, dayMins:0, dayStatMins:0, dayOtMins:0, dayNightMins:0,
+        dayHolMins:0, dayHolOtMins:0 });
     }
   });
 
-  // ── 주 소정근로시간 40h 초과분 → 연장으로 이관 ──
+  // ── 주 40h 상한: 초과분을 토→월 역순으로 dayStat→dayOt 재분배 ──
   if (totalStatMins > STATUTORY_WEEKLY) {
-    totalOtMins += (totalStatMins - STATUTORY_WEEKLY);
+    let overflow = totalStatMins - STATUTORY_WEEKLY;
+    totalOtMins += overflow;
     totalStatMins = STATUTORY_WEEKLY;
+    for (let i = dayResults.length - 1; i >= 0 && overflow > 0; i--) {
+      const dr = dayResults[i];
+      if (dr.isSunday || dr.dayStatMins <= 0) continue;
+      const deduct = Math.min(dr.dayStatMins, overflow);
+      dr.dayStatMins -= deduct;
+      dr.dayOtMins   += deduct;
+      overflow       -= deduct;
+    }
   }
+
+  // ── Pass 2: 셀 표시 업데이트 ──
+  const fmtH2 = h => Number.isInteger(h) ? h : h.toFixed(1);
+  dayResults.forEach(dr => {
+    const hrsEl = document.getElementById(`ct-sch-hrs-${dr.key}`);
+    if (!hrsEl) return;
+    if (dr.dayMins === 0) { hrsEl.textContent = '-'; return; }
+
+    const statH = dr.dayStatMins / 60;
+    const otH   = dr.dayOtMins / 60;
+    const nightH = dr.dayNightMins / 60;
+    const lines = [];
+    if (dr.isSunday) {
+      lines.push('<span style="color:#dc2626;font-size:10px;">휴일 ' + fmtH2(dr.dayHolMins/60) + 'h</span>');
+      if (dr.dayHolOtMins > 0) lines.push('<span style="color:#b91c1c;font-size:10px;">휴일연장 +' + fmtH2(dr.dayHolOtMins/60) + 'h</span>');
+    } else {
+      lines.push(fmtH2(statH) + 'h');
+      if (otH > 0) lines.push('<span style="color:#f59e0b;font-size:10px;">연장 +' + fmtH2(otH) + 'h</span>');
+    }
+    if (nightH > 0) {
+      const nightLabel = dr.isSunday ? '휴일야간' : '야간';
+      lines.push('<span style="color:#7c3aed;font-size:10px;">' + nightLabel + ' +' + fmtH2(nightH) + 'h</span>');
+    }
+    hrsEl.innerHTML = lines.join('<br>');
+  });
+
+  // ── 주 소정근로시간 40h 초과분 → 연장으로 이관 (이미 Pass 1 후 처리됨) ──
 
   const weekStatH = totalStatMins / 60;
   const weekOtH   = totalOtMins / 60;
+  const weekWdayNightH = totalWdayNightMins / 60;
+  const weekSunNightH  = totalSunNightMins / 60;
   const weekNightH = totalNightMins / 60;
   const weekHolH   = totalHolMins / 60;
+  const weekHolOtH = totalHolOtMins / 60;
 
-  // 주 소정근무일수: 최대 5일, 초과분은 고정 연장/야간/휴일로 확인
+  // 주 소정근무일수: 최대 5일
   const statWorkDays = Math.min(workDays, 5);
-  // 일 평균 소정근로시간: 총 주간근로시간 ÷ 5, 최대 8h, 초과분은 고정 연장/야간/휴일
-  const totalWeekMins = totalStatMins + totalOtMins + totalNightMins + totalHolMins;
+  const totalWeekMins = totalStatMins + totalOtMins + totalNightMins + totalHolMins + totalHolOtMins;
   const avgDayH = totalWeekMins > 0 ? totalWeekMins / 5 / 60 : 0;
 
   const fmtH = h => Number.isInteger(h) ? h : h.toFixed(1);
@@ -1647,15 +1854,19 @@ function calcWorkHours(){
   const el_a = document.getElementById('ct-wsh-day-hours');
   if (el_d) el_d.textContent = statWorkDays;
   if (el_w) el_w.textContent = fmtH(weekStatH);
-  if (el_a) el_a.textContent = fmtH(Math.min(avgDayH, 8)); // 일 평균 최대 8h
+  if (el_a) el_a.textContent = fmtH(Math.min(avgDayH, 8));
 
-  // ── 연장/야간/휴일 표시 ──
+  // ── 연장/야간/휴일/휴일연장 표시 ──
   const el_ot = document.getElementById('ct-wsh-ot-hours');
   const el_otW = document.getElementById('ct-wsh-ot-wrap');
   const el_ni = document.getElementById('ct-wsh-night-hours');
   const el_niW = document.getElementById('ct-wsh-night-wrap');
   const el_ho = document.getElementById('ct-wsh-hol-hours');
   const el_hoW = document.getElementById('ct-wsh-hol-wrap');
+  const el_hoOt = document.getElementById('ct-wsh-hol-ot-hours');
+  const el_hoOtW = document.getElementById('ct-wsh-hol-ot-wrap');
+  const el_hoNi = document.getElementById('ct-wsh-hol-night-hours');
+  const el_hoNiW = document.getElementById('ct-wsh-hol-night-wrap');
 
   if (el_ot) el_ot.textContent = fmtH(weekOtH);
   if (el_otW) el_otW.style.display = weekOtH > 0 ? '' : 'none';
@@ -1663,31 +1874,100 @@ function calcWorkHours(){
   if (el_niW) el_niW.style.display = weekNightH > 0 ? '' : 'none';
   if (el_ho) el_ho.textContent = fmtH(weekHolH);
   if (el_hoW) el_hoW.style.display = weekHolH > 0 ? '' : 'none';
+  if (el_hoOt) el_hoOt.textContent = fmtH(weekHolOtH);
+  if (el_hoOtW) el_hoOtW.style.display = weekHolOtH > 0 ? '' : 'none';
+  if (el_hoNi) el_hoNi.textContent = fmtH(weekSunNightH);
+  if (el_hoNiW) el_hoNiW.style.display = weekSunNightH > 0 ? '' : 'none';
 
-  // ── hidden 필드 (소정근로시간 기준) ──
+  // ── hidden 필드 ──
   const hrsHid = document.getElementById('ct-hours');
   if (hrsHid) hrsHid.value = Math.min(avgDayH, 8).toFixed(2);
   const daysHid = document.getElementById('ct-days');
   if (daysHid) daysHid.value = workDays;
 
-  // ── 고정 연장/야간/휴일근로시간 + 월간 힌트 + 금액 (셀 합계와 동일한 값 사용) ──
+  // ── 고정 연장/야간/휴일/휴일연장 시간 + 월간 힌트 + 계산식 (실제 배율 반영) ──
   const elOtH = document.getElementById('ct-fixed-ot-hours');
   const elNiH = document.getElementById('ct-fixed-night-hours');
   const elHoH = document.getElementById('ct-fixed-hol-hours');
+  const elHoOtH = document.getElementById('ct-fixed-hol-ot-hours');
   const elOtHint = document.getElementById('ct-fixed-ot-monthly');
   const elNiHint = document.getElementById('ct-fixed-night-monthly');
   const elHoHint = document.getElementById('ct-fixed-hol-monthly');
+  const elHoOtHint = document.getElementById('ct-fixed-hol-ot-monthly');
+  const elOtFormula = document.getElementById('ct-fixed-ot-formula');
+  const elNiFormula = document.getElementById('ct-fixed-night-formula');
+  const elHolFormula = document.getElementById('ct-fixed-hol-formula');
+  const coIdForMult = document.getElementById('ct-company')?.value || '';
+  const mult = _getLegalMultiplier(coIdForMult);
+  const fmtMult = v => Number.isInteger(v) ? v : v.toFixed(1);
   if (elOtH) {
-    elOtH.value = weekOtH.toFixed(1);
-    if (elOtHint) elOtHint.textContent = weekOtH > 0 ? '(월 약 ' + Math.round(weekOtH * WEEK_TO_MONTH) + 'h)' : '';
+    elOtH.value = (weekOtH + weekHolOtH).toFixed(1); // 평일연장 + 휴일연장 합산 표시
+    if (elOtHint) elOtHint.textContent = (weekOtH + weekHolOtH) > 0 ? '(월 약 ' + Math.round((weekOtH + weekHolOtH) * WEEK_TO_MONTH) + 'h)' : '';
+    if (elOtFormula) {
+      let f = '↳ 평일연장 ' + fmtH(weekOtH) + 'h × ' + fmtMult(mult.overtime) + '배';
+      if (weekHolOtH > 0) f += ' + 휴일연장 ' + fmtH(weekHolOtH) + 'h × ' + fmtMult(mult.holiday_8h_over) + '배';
+      elOtFormula.textContent = (weekOtH > 0 || weekHolOtH > 0) ? f : '';
+    }
   }
   if (elNiH) {
     elNiH.value = weekNightH.toFixed(1);
     if (elNiHint) elNiHint.textContent = weekNightH > 0 ? '(월 약 ' + Math.round(weekNightH * WEEK_TO_MONTH) + 'h)' : '';
+    if (elNiFormula) {
+      let parts = [];
+      if (weekWdayNightH > 0) parts.push('평일야간 ' + fmtH(weekWdayNightH) + 'h × ' + fmtMult(mult.night) + '배');
+      if (weekSunNightH > 0) parts.push('휴일야간 ' + fmtH(weekSunNightH) + 'h × ' + fmtMult(mult.night) + '배');
+      elNiFormula.textContent = parts.length > 0 ? '↳ ' + parts.join(' + ') : '';
+    }
   }
   if (elHoH) {
     elHoH.value = weekHolH.toFixed(1);
     if (elHoHint) elHoHint.textContent = weekHolH > 0 ? '(월 약 ' + Math.round(weekHolH * WEEK_TO_MONTH) + 'h)' : '';
+    if (elHolFormula) {
+      elHolFormula.textContent = weekHolH > 0 ? '↳ 휴일 ' + fmtH(weekHolH) + 'h × ' + fmtMult(mult.holiday_8h) + '배' : '';
+    }
+  }
+  if (elHoOtH) {
+    elHoOtH.value = weekHolOtH.toFixed(1);
+    if (elHoOtHint) elHoOtHint.style.display = 'none';
+  }
+
+  // ── 사업장 규모 배지 + 산정 기준 힌트 (신규 계약 시 인원 변동 반영) ──
+  const bizBadge = document.getElementById('ct-biz-size-badge');
+  const bizHint = document.getElementById('ct-biz-size-hint');
+  if (bizBadge || bizHint) {
+    const info = _getSmallBizInfo(coIdForMult);
+    // 신규 직원 추가 시: 현재 직원이 아닌 경우 +1명으로 재산정
+    const isNewEmp = !editId.contract && !_recontractEmpId;
+    const newEmpName = isNewEmp ? (document.getElementById('ct-em-name')?.value?.trim() || '') : '';
+    const hasNewEmp = isNewEmp && newEmpName.length > 0;
+    
+    let projected = info;
+    if (hasNewEmp && info.operDays > 0) {
+      // 신규 직원 추가: 계약 시작일부터 월말까지 +1명으로 재산정
+      const startStr = document.getElementById('ct-start')?.value || document.getElementById('ct-edit-em-hire')?.value || '';
+      const startDate = startStr ? new Date(startStr) : new Date();
+      const monthEnd = new Date(startDate.getFullYear(), startDate.getMonth()+1, 0);
+      const remainingDays = Math.max(0, monthEnd.getDate() - startDate.getDate() + 1);
+      const newTotalPersonDays = info.totalPersonDays + remainingDays;
+      const newHeadcount = newTotalPersonDays / info.operDays;
+      const newDaysOver5 = info.daysOver5 + (newHeadcount >= 5 ? remainingDays : 0);
+      const newIsSmall = newHeadcount < 5 && newDaysOver5 <= info.operDays / 2;
+      projected = { ...info, headcount: newHeadcount, totalPersonDays: newTotalPersonDays, isSmall: newIsSmall };
+    }
+    
+    if (bizBadge) {
+      bizBadge.textContent = projected.isSmall ? '적용기준: 5인 미만 사업장' : '적용기준: 5인 이상 사업장';
+      bizBadge.className = 'ct-biz-badge ' + (projected.isSmall ? 'small' : 'normal');
+    }
+    if (bizHint) {
+      const hc = info.headcount.toFixed(1);
+      let hintHTML = '<span class="ct-biz-hint">직전: 상시근로자 ' + hc + '명 (연인원 ' + info.totalPersonDays + '명 ÷ 가동 ' + info.operDays + '일, ≥5인 ' + info.daysOver5 + '일)</span>';
+      if (hasNewEmp && info.isSmall && !projected.isSmall) {
+        hintHTML += '<br><span class="ct-biz-transition">이 계약의 체결로 5인 이상 사업장으로 전환됩니다.</span>';
+      }
+      bizHint.innerHTML = hintHTML;
+      bizHint.style.whiteSpace = 'normal';
+    }
   }
 
   // ── 급여 계산: calcContractSalary() 내에서 _calcFixed*FromHours() 일괄 호출 ──
@@ -2682,13 +2962,17 @@ function _getContractHourlyWage(){
   return getAmountVal('ct-hourly-input') || 0;
 }
 
-/** 고정 연장근로수당 = 주간OT × 4.345 × 시급 × 법정배율(1.5/1.0) */
+/** 고정 연장근로수당 = 연장OT × 4.345 × 시급 × 1.5 + 휴일연장 × 4.345 × 시급 × 2.0 */
 function _calcFixedOtFromHours(){
   const hw = _getContractHourlyWage();
-  const h  = parseFloat(document.getElementById('ct-fixed-ot-hours')?.value)||0;
+  const hTotal = parseFloat(document.getElementById('ct-fixed-ot-hours')?.value)||0; // 합산 표시값
+  const hHolOt = parseFloat(document.getElementById('ct-fixed-hol-ot-hours')?.value)||0;
+  const hRegular = Math.max(0, hTotal - hHolOt); // 평일연장만 추출 (음수 방어)
   const coId = document.getElementById('ct-company')?.value || '';
   const mult = _getLegalMultiplier(coId);
-  setAmountVal('ct-fixed-ot-pay', (hw > 0 && h > 0) ? Math.round(hw * h * WEEK_TO_MONTH * mult.overtime) : 0);
+  const otPay = (hw > 0 && hRegular > 0) ? Math.round(hw * hRegular * WEEK_TO_MONTH * mult.overtime) : 0;
+  const holOtPay = (hw > 0 && hHolOt > 0) ? Math.round(hw * hHolOt * WEEK_TO_MONTH * mult.holiday_8h_over) : 0;
+  setAmountVal('ct-fixed-ot-pay', otPay + holOtPay);
 }
 
 /** 고정 야간근로수당 = 주간야간 × 4.345 × 시급 × 법정배율(0.5/0.0) */
@@ -2700,7 +2984,7 @@ function _calcFixedNightFromHours(){
   setAmountVal('ct-fixed-night-pay', (hw > 0 && h > 0) ? Math.round(hw * h * WEEK_TO_MONTH * mult.night) : 0);
 }
 
-/** 고정 휴일근로수당 = 주간휴일 × 4.345 × 시급 × 법정배율(1.5/1.0) [근로기준법 제56조②] */
+/** 고정 휴일근로수당 = 주간휴일≤8h × 4.345 × 시급 × 1.5 [근로기준법 제56조②] */
 function _calcFixedHolFromHours(){
   const hw = _getContractHourlyWage();
   const h  = parseFloat(document.getElementById('ct-fixed-hol-hours')?.value)||0;

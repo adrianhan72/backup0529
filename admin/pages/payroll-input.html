@@ -496,6 +496,7 @@
                     <input type="text" id="pi-fixed-ot-hours-disp" readonly tabindex="-1" class="pi-wap-val hours indigo-bold" value="0h" />
                     <input type="text" id="pi-fixed-ot-pay-disp" readonly tabindex="-1" class="pi-wap-val pay purple" value="0원" />
                   </div>
+                  <div id="pi-fixed-ot-formula" class="pi-formula-line"></div>
                 </div>
                 <div class="pi-row pi-auto-row-indigo" id="pi-fixed-night-row" style="display:none;">
                   <label style="color:#4338ca;font-size:11px;">고정 야간근로</label>
@@ -503,6 +504,7 @@
                     <input type="text" id="pi-fixed-night-hours-disp" readonly tabindex="-1" class="pi-wap-val hours indigo-bold" value="0h" />
                     <input type="text" id="pi-fixed-night-pay-disp" readonly tabindex="-1" class="pi-wap-val pay purple" value="0원" />
                   </div>
+                  <div id="pi-fixed-night-formula" class="pi-formula-line"></div>
                 </div>
                 <div class="pi-row pi-auto-row-indigo" id="pi-fixed-hol-row" style="display:none;">
                   <label style="color:#4338ca;font-size:11px;">고정 휴일근로</label>
@@ -510,6 +512,7 @@
                     <input type="text" id="pi-fixed-hol-hours-disp" readonly tabindex="-1" class="pi-wap-val hours indigo-bold" value="0h" />
                     <input type="text" id="pi-fixed-hol-pay-disp" readonly tabindex="-1" class="pi-wap-val pay purple" value="0원" />
                   </div>
+                  <div id="pi-fixed-hol-formula" class="pi-formula-line"></div>
                 </div>
                 <!-- 근태차감 적용 여부 -->
                 <div class="pi-row" id="pi-row-attendance-deduction-toggle" style="display:none;">
@@ -526,6 +529,7 @@
                       <input type="text" id="pi-ded-ot-hours-disp" readonly tabindex="-1" class="pi-wap-val hours red-bold" value="-0h" />
                       <input type="text" id="pi-ded-ot-pay-disp" readonly tabindex="-1" class="pi-wap-val pay red" value="-0원" />
                     </div>
+                    <div id="pi-ded-ot-formula" class="pi-formula-line"></div>
                   </div>
                   <div class="pi-row" id="pi-ded-night-row" style="display:none;background:#fff5f5;border-radius:4px;padding:3px 6px;">
                     <label>차감 야간근로</label>
@@ -533,6 +537,7 @@
                       <input type="text" id="pi-ded-night-hours-disp" readonly tabindex="-1" class="pi-wap-val hours red-bold" value="-0h" />
                       <input type="text" id="pi-ded-night-pay-disp" readonly tabindex="-1" class="pi-wap-val pay red" value="-0원" />
                     </div>
+                    <div id="pi-ded-night-formula" class="pi-formula-line"></div>
                   </div>
                   <div class="pi-row" id="pi-ded-hol-row" style="display:none;background:#fff5f5;border-radius:4px;padding:3px 6px;">
                     <label>차감 휴일근로</label>
@@ -540,6 +545,7 @@
                       <input type="text" id="pi-ded-hol-hours-disp" readonly tabindex="-1" class="pi-wap-val hours red-bold" value="-0h" />
                       <input type="text" id="pi-ded-hol-pay-disp" readonly tabindex="-1" class="pi-wap-val pay red" value="-0원" />
                     </div>
+                    <div id="pi-ded-hol-formula" class="pi-formula-line"></div>
                   </div>
                 </div>
                 <!-- ── 추가 근로 (실적 입력) ── -->
@@ -550,6 +556,7 @@
                     <input type="text" id="pi-ot-hours-disp" readonly tabindex="-1" class="pi-wap-val hours blue-bold" value="0h" />
                     <input type="text" id="pi-ot-pay-disp" readonly tabindex="-1" class="pi-wap-val pay blue" value="0원" />
                   </div>
+                  <div id="pi-ot-formula" class="pi-formula-line"></div>
                 </div>
                 <div class="pi-row pi-auto-row-blue">
                   <label>추가 야간근로</label>
@@ -557,6 +564,7 @@
                     <input type="text" id="pi-night-hours-disp" readonly tabindex="-1" class="pi-wap-val hours blue-bold" value="0h" />
                     <input type="text" id="pi-night-pay-disp" readonly tabindex="-1" class="pi-wap-val pay blue" value="0원" />
                   </div>
+                  <div id="pi-night-formula" class="pi-formula-line"></div>
                 </div>
                 <div class="pi-row pi-auto-row-blue">
                   <label>추가 휴일근로</label>
@@ -564,6 +572,7 @@
                     <input type="text" id="pi-hol-hours-disp" readonly tabindex="-1" class="pi-wap-val hours blue-bold" value="0h" />
                     <input type="text" id="pi-hol-pay-disp" readonly tabindex="-1" class="pi-wap-val pay blue" value="0원" />
                   </div>
+                  <div id="pi-hol-formula" class="pi-formula-line"></div>
                 </div>
                 <span id="pi-weekly-hol-desc" style="display:none;font-size:9.5px;color:#9ca3af;"></span>
                 <!-- ── 보수월액 (총계) ── -->

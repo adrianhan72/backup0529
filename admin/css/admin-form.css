@@ -83,8 +83,8 @@
     .shift-add{width:22px!important;height:22px!important;font-size:12px!important;line-height:1!important;padding:0!important;}
     .shift-del{width:22px!important;height:22px!important;font-size:12px!important;line-height:1!important;padding:0!important;}
     .wsh-total{font-size:12px;color:#374151;margin-top:8px;padding:7px 12px;background:#f8fafc;border-radius:7px;border:1px solid #e2e8f0;display:flex;flex-direction:column;gap:4px;}
-    .wsh-total .wsh-row{display:flex;width:100%;gap:0;}
-    .wsh-total .wsh-item{flex:1;text-align:left;}
+    .wsh-total .wsh-row{display:grid;grid-template-columns:repeat(3,1fr);gap:2px 8px;width:100%;}
+    .wsh-total .wsh-item{text-align:left;}
     .wsh-total span{font-weight:400;color:#374151;}
     .wsh-total .wsh-val{color:#0369a1;}
     .wsh-total .wsh-extra{font-size:11.5px;}
@@ -283,6 +283,19 @@
 .ct-sub-hint { font-size: 11px; font-weight: 400; color: #6b7280; }
 .ct-req-star { color: #c00; font-weight: 900; font-size: 13px; margin-left: 1px; }
 .ct-text-danger { color: #ef4444; }
+.ct-formula { font-size: 10px; color: #6366f1; font-weight: 500; margin-left: 2px; white-space: nowrap; }
+.ct-formula-line { font-size: 10.5px; color: #6366f1; font-weight: 500; padding: 2px 0 0 2px; min-height: 18px; }
+.ct-biz-badge { font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 10px; white-space: nowrap; }
+.ct-biz-badge.small { background: #fef3c7; color: #92400e; }
+.ct-biz-badge.normal { background: #dbeafe; color: #1e40af; }
+.ct-fixed-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; grid-column: 1 / -1; align-items: center; }
+.ct-fixed-grid .form-group { min-width: 0; max-width: none; }
+.ct-biz-badge-cell { display: flex; flex-direction: column; align-items: flex-end; justify-content: center; padding: 4px 0; }
+.ct-biz-hint { font-size: 10.5px; color: #6b7280; }
+.ct-biz-transition { font-size: 10.5px; color: #dc2626; font-weight: 600; }
+
+/* ── 급여입력 계산식 힌트 ── */
+.pi-formula-line { font-size: 10px; color: #6366f1; font-weight: 500; padding: 1px 0 0 2px; min-height: 14px; }
 
 /* ── 계약서 유효성 검증 경고 배너 (동적 생성) ── */
 .ct-va-banner { font-weight: 700; margin-bottom: 4px; }
