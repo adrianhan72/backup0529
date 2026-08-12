@@ -1843,26 +1843,36 @@ async function confirmContractRenew(){
   const newId = savedNew.id;
 
   // 2. 기존 계약: 해지일 기록 + 상태 변경 (해지일 미래면 TERMINATE_PENDING, 과거면 TERMINATED)
-  const _oldTermStatus = oldEnd > today ? CONTRACT_STATUS.TERMINATE_PENDING : CONTRACT_STATUS.TERMINATED;
-  await api(`../tables/contracts/${c.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({terminate_date: oldEnd, status: _oldTermStatus, renewed_to_id: newId})});
-  // 로컬 갱신
-  c.terminate_date = oldEnd;
-  c.status = _oldTermStatus;
-  c.renewed_to_id = newId;
+  //    실패 시 새로 생성한 계약 롤백
+  try {
+    const _oldTermStatus = oldEnd > today ? CONTRACT_STATUS.TERMINATE_PENDING : CONTRACT_STATUS.TERMINATED;
+    await api(`../tables/contracts/${c.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({terminate_date: oldEnd, status: _oldTermStatus, renewed_to_id: newId})});
+    // 로컬 갱신
+    c.terminate_date = oldEnd;
+    c.status = _oldTermStatus;
+    c.renewed_to_id = newId;
 
-  // ── 계약 연속성 단절 시 근로자 입사일 변경 ──
-  if(_hasGap && _emp){
-    try {
-      await api(`../tables/employees/${_emp.id}`, {
-        method: 'PATCH', headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ hire_date: newStart })
-      });
-      _emp.hire_date = newStart;
-      toast(`계약 연속성 단절로 입사일이 ${newStart.replace(/-/g, '.')}(으)로 변경되었습니다.`, 'warning');
-    } catch(e){
-      console.error('[입사일 변경 실패]', e);
+    // ── 계약 연속성 단절 시 근로자 입사일 변경 ──
+    if(_hasGap && _emp){
+      try {
+        await api(`../tables/employees/${_emp.id}`, {
+          method: 'PATCH', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ hire_date: newStart })
+        });
+        _emp.hire_date = newStart;
+        toast(`계약 연속성 단절로 입사일이 ${newStart.replace(/-/g, '.')}(으)로 변경되었습니다.`, 'warning');
+      } catch(e){
+        console.error('[입사일 변경 실패]', e);
+      }
     }
+  } catch(e){
+    // PATCH 실패 → 새 계약 롤백
+    console.error('[갱신 PATCH 실패]', e);
+    try { await api('../tables/contracts/' + newId, { method: 'DELETE' }); }
+    catch(e2){ console.error('[롤백 실패]', e2); }
+    toast('갱신 처리 중 오류가 발생했습니다. 다시 시도해 주세요.', 'error');
+    return;
   }
 
   // ── 고객사 인앱 알림 발송 (갱신/갱신예약) ──
@@ -3498,7 +3508,7 @@ function _ctValidate(){
 
   // ── 수정/재계약: 계약 시작일 ──
   if(isEditOrRecontract){
-    const start = document.getElementById('ct-start').value;
+    const start = document.getElementById('ct-start')?.value || '';
     if(!start) _ctMarkError('ct-start', '계약 시작일', errors);
     // 계약 시작일은 입사일보다 이전일 수 없음
     (function(){
@@ -3511,7 +3521,7 @@ function _ctValidate(){
 
   if(isNew){
     // ── 신규 직원 필수 필드 ──
-    const _empNoNewVal = document.getElementById('ct-em-empno')?.value.trim() || '';
+    const _empNoNewVal = document.getElementById('ct-em-empno')?.value?.trim() || '';
     if(!_empNoNewVal){
       _ctMarkError('ct-em-empno', '사원번호', errors);
     } else {
@@ -3582,7 +3592,7 @@ function _ctValidate(){
       _ctMarkError('ct-hourly-input', '통상시급', errors);
 
     // ── 임금 관련 (고용형태 기준) ──
-    const cat = CONTRACT_TYPE_LEGACY_MAP[document.getElementById('ct-em-category').value] || document.getElementById('ct-em-category').value;
+    const cat = CONTRACT_TYPE_LEGACY_MAP[document.getElementById('ct-em-category')?.value] || document.getElementById('ct-em-category')?.value || '';
     if(cat ===CONTRACT_TYPE.DAILY){
       if(!getAmountVal('ct-daily-wage'))
         _ctMarkError('ct-daily-wage', '일급여', errors);

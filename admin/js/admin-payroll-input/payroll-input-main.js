@@ -3202,13 +3202,16 @@ function calcPI(){
   const _sfInfo = (_coId && _yr && _mo) ? _getPISmallFirmInfo(_coId, _yr, _mo) : { isSmall:false };
   const _isSmall = _sfInfo.isSmall;
 
-  // 연장·야간: 5인 미만이면 가산 없음(×1.0), 5인 이상이면 법정 배율 적용
-  // 휴일: 5인 미만이면 0, 5인 이상이면 8h 이하 ×1.5 / 초과분 ×2.0
-  const otPay    = _isSmall ? 0 : Math.round(hw * otH    * 1.5);
-  const nightPay = _isSmall ? 0 : Math.round(hw * nightH * 0.5);
+  // 연장·야간·휴일: 5인 미만이면 기본급만(×1.0), 5인 이상이면 법정 배율 적용
+  // ※ 야간은 기본급과 별도 가산분만 계산 (5인 이상 0.5, 5인 미만 0.0)
+  const _addMult = _isSmall
+    ? { ot: 1.0, night: 0.0, hol: 1.0, holOt: 1.0 }
+    : { ot: 1.5, night: 0.5, hol: 1.5, holOt: 2.0 };
+  const otPay    = Math.round(hw * otH    * _addMult.ot);
+  const nightPay = Math.round(hw * nightH * _addMult.night);
   const _holH8   = Math.min(holH, 8);
   const _holHOvr = Math.max(holH - 8, 0);
-  const holPay   = _isSmall ? 0 : Math.round(hw * _holH8 * 1.5 + hw * _holHOvr * 2.0);
+  const holPay   = Math.round(hw * _holH8 * _addMult.hol + hw * _holHOvr * _addMult.holOt);
   _layoffPay = 0;    // 휴업수당 — if(piContract) 블록에서 계산, else 분기에서는 0 유지
   _maternityPay = 0; // 출산휴가 급여 — if(piContract) 블록에서 계산
   _retroOverpaymentTotal = 0; // 과지급 환수액
@@ -3431,7 +3434,7 @@ function calcPI(){
       if (pEl) pEl.value = won(pay);
       if (fEl) fEl.textContent = formulaText || '';
     };
-    const _mAdd = _sfInfo.isSmall ? {ot:1,night:0,hol:1.5,holOt:2} : {ot:1.5,night:0.5,hol:1.5,holOt:2};
+    const _mAdd = _sfInfo.isSmall ? {ot:1,night:0,hol:1,holOt:1} : {ot:1.5,night:0.5,hol:1.5,holOt:2};
     _updateAddRow('pi-ot-hours-disp',    'pi-ot-pay-disp',    'pi-ot-formula',    otH,    otPay,    otH > 0 ? '↳ 추가연장 ' + otH.toFixed(1) + 'h × ' + _mAdd.ot + '배' : '');
     _updateAddRow('pi-night-hours-disp', 'pi-night-pay-disp', 'pi-night-formula', nightH, nightPay, nightH > 0 ? '↳ 추가야간 ' + nightH.toFixed(1) + 'h × ' + _mAdd.night + '배' : '');
     _updateAddRow('pi-hol-hours-disp',   'pi-hol-pay-disp',   'pi-hol-formula',   holH,   holPay,   holH > 0 ? '↳ 추가휴일 ' + holH.toFixed(1) + 'h (≤8h×' + _mAdd.hol + '배, >8h×' + _mAdd.holOt + '배)' : '');
@@ -3519,15 +3522,16 @@ function calcPI(){
               }
             }
           }
-          // ── 차감 금액 계산 ──
-          // 평일 OT: 150%, 야간: 50%
-          _fullWeekOtP    = Math.round(_fullWeekOtH    * _hw2 * 1.5);
-          _fullWeekNightP = Math.round(_fullWeekNightH * _hw2 * 0.5);
-          _partialOtP     = Math.round(_partialOtH     * _hw2 * 1.5);
-          _partialNightP  = Math.round(_partialNightH  * _hw2 * 0.5);
-          // 휴일: ≤8h 150%, ＞8h 200%, 야간 +50%
-          _fullWeekHolP   = Math.round(_dedHol8H * _hw2 * 1.5 + _dedHolOvrH * _hw2 * 2.0 + _dedHolNightH * _hw2 * 0.5);
-          _partialHolP    = 0;  // 휴일은 주단위 판정 없이 항상 차감 → fullWeekHolP에 통합
+          // ── 차감 금액 계산 (5인 미만/이상 할증률 반영) ──
+          const _dedM = _sfInfo.isSmall
+            ? { ot: 1.0, night: 0.0, hol: 1.0, holOt: 1.0 }
+            : { ot: 1.5, night: 0.5, hol: 1.5, holOt: 2.0 };
+          _fullWeekOtP    = Math.round(_fullWeekOtH    * _hw2 * _dedM.ot);
+          _fullWeekNightP = Math.round(_fullWeekNightH * _hw2 * _dedM.night);
+          _partialOtP     = Math.round(_partialOtH     * _hw2 * _dedM.ot);
+          _partialNightP  = Math.round(_partialNightH  * _hw2 * _dedM.night);
+          _fullWeekHolP   = Math.round(_dedHol8H * _hw2 * _dedM.hol + _dedHolOvrH * _hw2 * _dedM.holOt + _dedHolNightH * _hw2 * _dedM.night);
+          _partialHolP    = 0;
           // 합산
           _dedOtHours   = _fullWeekOtH   + _partialOtH;
           _dedNightHours = _fullWeekNightH + _partialNightH;
