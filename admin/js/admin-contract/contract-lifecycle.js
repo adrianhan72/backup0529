@@ -1300,16 +1300,13 @@ function _collectRenewFormFields(){
   // 기본급 = 시급×209h (주휴 35h 포함), 주휴수당 = 시급×35h (참고용)
   const ht = fields.work_hours_per_day || 8;
   const dy = fields.work_days_per_week || 5;
-  const _renewMonthlyStdH = typeof _calcMonthlyStdHours === 'function'
-    ? _calcMonthlyStdHours(ht, dy) : Math.round(ht * dy * 365 / 12 / 7);
   const _renewMonthlyHolH = typeof _calcMonthlyHolHours === 'function'
     ? _calcMonthlyHolHours(ht) : Math.round(ht * 365 / 12 / 7);
-  const base = fields.base_salary || 0;
+  // 통상시급: 폼에서 입력된 값 읽기 (필수값 — 갱신 시 원본 덮어쓰기 방지)
+  fields.hourly_wage = getAmountVal('ct-hourly-input') || 0;
   // 주휴수당: 통상시급 × 월주휴시간(35h) [근로기준법 제55조]
   fields.weekly_holiday_pay = fields.hourly_wage > 0
     ? Math.round(fields.hourly_wage * _renewMonthlyHolH) : 0;
-  // 통상시급: 폼에서 입력된 값 유지 (필수값, 폴백 없음)
-  fields.hourly_wage = fields.hourly_wage || 0;
 
   return fields;
 }
