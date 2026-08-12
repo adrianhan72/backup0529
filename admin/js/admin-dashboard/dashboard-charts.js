@@ -178,9 +178,11 @@ function renderDashboard(){
   // 고객사 목록 렌더링
   renderDashboardCompanies();
 
-  // [사용료 숨김] 이번달 사용료 요약 카드 + 매출추이 차트 - 원복 시 아래 주석 해제
-  // renderDashBillingCards();
-  // renderBillingTrendChart();
+  // 사용료 수납관리 ON → 사용료 요약 카드 + 매출추이 차트 표시
+  if (window._billingFeatureEnabled) {
+    renderDashBillingCards();
+    renderBillingTrendChart();
+  }
 
   // 월별 고객사 수 변동 추이 차트
   renderCompanyTrendChart();
@@ -188,7 +190,7 @@ function renderDashboard(){
   renderEmployeeTrendChart();
 }
 
-/* [사용료 숨김] renderDashBillingCards 함수 전체 - 원복 시 아래 주석 해제
+// 사용료 요약 카드 (시스템 설정 스위치로 제어)
 function renderDashBillingCards(){
   // 급여·청구 데이터 미준비 시 로딩 표시
   if(!_heavyDataReady){
@@ -265,7 +267,6 @@ function renderDashBillingCards(){
       ? 'linear-gradient(135deg,#fff5f5,#fff)' : '#fff';
   }
 }
-*/ // [사용료 숨김] renderDashBillingCards 끝
 
 // ─── 월별 고객사 수 변동 추이 차트 ───
 let companyTrendChartInstance = null;
@@ -567,7 +568,7 @@ function renderEmployeeTrendChart(){
 // ─── 사용료 매출 추이 차트 ───
 let billingTrendChartInstance = null;
 
-/* [사용료 숨김] renderBillingTrendChart 함수 전체 - 원복 시 아래 주석 해제
+// 사용료 매출 추이 차트 (시스템 설정 스위치로 제어)
 function renderBillingTrendChart(){
   if(!_heavyDataReady) return; // 급여·청구 데이터 미준비 시 skip
   const rangeEl = document.getElementById('billing-trend-range');
@@ -764,7 +765,6 @@ function renderBillingTrendChart(){
     }
   });
 }
-*/ // [사용료 숨김] renderBillingTrendChart 끝
 
 function goCompaniesWithFilter(status){
   const sf=document.getElementById('company-status-filter');

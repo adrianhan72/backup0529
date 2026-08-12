@@ -669,43 +669,128 @@ function clearPayrollCompanyFilter(){ clearPayCompanySelect(); }
 // 해지 대상 고객사 임시 저장
 let terminateTargetId = null;
 
-// [사용료 숨김] terminateCompany - 단순화 버전 (미납금 체크 제거)
 function terminateCompany(id, name){
   terminateTargetId = id;
   const c = allCompanies.find(x => x.id === id);
-  document.getElementById('tm-company-name').innerHTML =
-    `<i class="fas fa-building" style="color:#64748b;margin-right:6px;"></i>${name}`;
-  // 해지일 기본값: 오늘
   const todayStr = new Date().toISOString().slice(0, 10);
   const endDateEl = document.getElementById('tm-end-date');
+
+  // 사용료 수납관리 ON → 미납금 체크 모달
+  if (window._billingFeatureEnabled) {
+    let unpaidAmount = 0, unpaidCount = 0;
+    let pendingAmount = 0, pendingCount = 0;
+    (allBillings||[]).filter(b => b.company_id === id).forEach(b => {
+      if(b.payment_status === PAYMENT_STATUS.PAID) return;
+      const paid = b.partial_paid_amount || 0;
+      const rem  = (b.total_amount || 0) - paid;
+      if(rem <= 0) return;
+      if(b.due_date && b.due_date < todayStr){
+        unpaidAmount += rem; unpaidCount++;
+      } else {
+        pendingAmount += rem; pendingCount++;
+      }
+    });
+    const totalLoss = unpaidAmount + pendingAmount;
+    const hasBalance = totalLoss > 0;
+    // billing-aware modal: tm-company-name-old + tm-end-date
+    document.getElementById('tm-company-name-old').innerHTML =
+      `<i class="fas fa-building" style="color:#64748b;margin-right:6px;"></i>${name}`;
+    if (endDateEl) {
+      endDateEl.min = c?.contract_start_date || '';
+      endDateEl.value = todayStr;
+    }
+    if(hasBalance){
+      document.getElementById('tm-no-balance').style.display   = 'none';
+      document.getElementById('tm-has-balance').style.display  = 'block';
+      document.getElementById('tm-buttons-balance').style.cssText = 'display:flex;flex:2;gap:8px;';
+      document.getElementById('tm-buttons-clean').style.display  = 'none';
+      document.getElementById('tm-unpaid-amount').textContent  = Math.round(unpaidAmount).toLocaleString('ko-KR') + '원';
+      document.getElementById('tm-unpaid-count').textContent   = unpaidCount + '건';
+      document.getElementById('tm-pending-amount').textContent = Math.round(pendingAmount).toLocaleString('ko-KR') + '원';
+      document.getElementById('tm-pending-count').textContent  = pendingCount + '건';
+      document.getElementById('tm-total-loss-preview').textContent = Math.round(totalLoss).toLocaleString('ko-KR') + '원';
+    } else {
+      document.getElementById('tm-no-balance').style.display   = 'block';
+      document.getElementById('tm-has-balance').style.display  = 'none';
+      document.getElementById('tm-buttons-balance').style.display = 'none';
+      document.getElementById('tm-buttons-clean').style.cssText   = 'display:block;';
+    }
+    openModal('terminate-modal-billing');
+    return;
+  }
+
+  // 사용료 수납관리 OFF → 단순 해지 (미납금 체크 없음)
+  document.getElementById('tm-company-name').innerHTML =
+    `<i class="fas fa-building" style="color:#64748b;margin-right:6px;"></i>${name}`;
   if(endDateEl){
-    // 해지일은 계약 시작일 이후만 선택 가능
     endDateEl.min = c?.contract_start_date || '';
     endDateEl.value = todayStr;
   }
+  // 미납금 UI 숨김
+  ['tm-no-balance','tm-has-balance','tm-buttons-balance'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.style.display = 'none';
+  });
+  const cleanBtn = document.getElementById('tm-buttons-clean');
+  if (cleanBtn) cleanBtn.style.cssText = 'display:block;';
   openModal('terminate-modal');
 }
 
-// [사용료 숨김] doTerminate - 단순화 버전 (미납금 체크 없이 즉시 해지)
-async function doTerminate(){
+async function doTerminate(withLoss){
   const id = terminateTargetId;
   if(!id) return;
   const c = allCompanies.find(x => x.id === id);
   if(!c) return;
-  // 해지일: 입력값 우선, 없으면 오늘
+  const todayStr = new Date().toISOString().slice(0, 10);
   const endDateEl = document.getElementById('tm-end-date');
-  const endDateStr = endDateEl?.value || new Date().toISOString().slice(0, 10);
+  const endDateStr = endDateEl?.value || todayStr;
   if(!endDateStr) return toast('계약 해지일을 입력해 주세요.', 'error');
-  // 해지일이 계약 시작일 이전이면 차단
   if(c.contract_start_date && endDateStr < c.contract_start_date){
     return toast(`해지일은 계약 시작일(${c.contract_start_date}) 이후여야 합니다.`, 'error');
   }
-  const todayStr = new Date().toISOString().slice(0, 10);
-  // 해지일이 오늘 이하면 즉시 해지(INACTIVE), 미래면 해지예정(ACTIVE + contract_end_date 세팅)
+
+  // 사용료 수납관리 ON → 미납금 체크 + 손실 처리
+  const _termModalId = window._billingFeatureEnabled ? 'terminate-modal-billing' : 'terminate-modal';
+  if (window._billingFeatureEnabled) {
+    if(!withLoss){
+      const hasBalance = (allBillings||[]).some(b => {
+        if(b.company_id !== id || b.payment_status === PAYMENT_STATUS.PAID) return false;
+        const rem = (b.total_amount || 0) - (b.partial_paid_amount || 0);
+        return rem > 0;
+      });
+      if(hasBalance){
+        closeModal(_termModalId);
+        toast('완납 후 해지할 수 있습니다. 미정산 금액을 먼저 처리해 주세요.', 'error');
+        return;
+      }
+    }
+    if(withLoss){
+      let totalLoss = 0;
+      const unpaidBillings = (allBillings||[]).filter(b => {
+        if(b.company_id !== id || b.payment_status === PAYMENT_STATUS.PAID) return false;
+        const rem = (b.total_amount || 0) - (b.partial_paid_amount || 0);
+        return rem > 0;
+      });
+      for(const b of unpaidBillings){
+        const rem = (b.total_amount || 0) - (b.partial_paid_amount || 0);
+        totalLoss += rem;
+        const updBody = {...b, payment_status: PAYMENT_STATUS.PAID, loss_amount: rem, loss_date: todayStr};
+        await api(`../tables/billings/${b.id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(updBody)});
+      }
+      const compBody = {...c, status: COMPANY_STATUS.INACTIVE, contract_end_date: endDateStr, loss_amount: (c.loss_amount||0)+totalLoss, loss_date: todayStr};
+      await api(`../tables/companies/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(compBody)});
+      closeModal(_termModalId);
+      closeModal('company-modal');
+      await loadCompanies(); populateFilters(); populatePICompanies(); renderCompanies(); renderDashboard();
+      toast(`"${c.company_name}" 손실 처리(${Math.round(totalLoss).toLocaleString('ko-KR')}원) 후 해지 완료`);
+      return;
+    }
+  }
+
+  // 공통 해지 처리
   const newStatus = endDateStr <= todayStr ? COMPANY_STATUS.INACTIVE : COMPANY_STATUS.ACTIVE;
   const patch = { status: newStatus, contract_end_date: endDateStr };
   await api(`../tables/companies/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(patch)});
-  closeModal('terminate-modal');
+  closeModal(_termModalId);
   closeModal('company-modal');
   await loadCompanies();
   populateFilters();

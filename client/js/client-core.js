@@ -11,6 +11,7 @@ let psGroup    = 'all'; // 1단계: all | cat | dept | rank
 let psSubVal   = '__all__'; // 2단계 세부 선택값 ('__all__' = 해당 그룹 전체)
 let psYear   = new Date().getFullYear(), psMonth   = new Date().getMonth() + 1;
 let billingYear  = new Date().getFullYear(), billingMonth  = new Date().getMonth() + 1;
+let _billingFeatureEnabled = false; // 사용료 수납관리 스위치 (시스템 설정)
 let distTab = 'emp';
 
 let distChart = null, distDonutChart = null, trendChart = null;
@@ -145,6 +146,13 @@ async function loadData(){
   allContracts = (cd.data||[]).filter(c => c.company_id === currentCompany.id);
   allBillings  = (bd.data||[]).filter(b => b.company_id === currentCompany.id);
   _wlNotifications = (wd.data||[]).filter(n => n.company_id === currentCompany.id);
+  // 시스템 설정 로드 (사용료 스위치)
+  try {
+    const sr = await fetch('../tables/system_settings?setting_key=billing_feature_enabled');
+    const sd = await sr.json();
+    const row = (sd.data||[]).find(r => r.setting_key === 'billing_feature_enabled');
+    _billingFeatureEnabled = row ? row.setting_value === '1' : false;
+  } catch(e) { _billingFeatureEnabled = false; }
 }
 
 
@@ -162,6 +170,13 @@ function startApp(){
   // 초기 탭(급여현황)에 맞게 헤더 월 네비 설정
   _configHeaderMonth('stats');
   renderStats();
+  // 사용료 수납관리 ON → 사용료 탭/페이지 활성화
+  if (_billingFeatureEnabled) {
+    const navBilling = document.getElementById('nav-billing');
+    const pageBilling = document.getElementById('page-billing');
+    if (navBilling) navBilling.style.display = '';
+    if (pageBilling) pageBilling.style.display = '';
+  }
   renderBilling();
   renderMyco();
   // 로그인 시 loadClientNotices가 이미 완료되어 _clientNotices가 스토어됨 — 로드된 데이터로 즉시 업데이트

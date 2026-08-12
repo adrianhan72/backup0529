@@ -189,6 +189,26 @@ function renderCompanies(){
       ${payrollSection}
       <p style="margin-top:10px;">대표: ${(()=>{const reps=_cmParseReps(c);return reps.length>1?`${reps[0].name} 외 ${reps.length-1}명`:c.representative||'-'})()} · 업종: ${c.industry||'-'}<br>사업자: ${c.business_number||'-'}<br>급여일: ${c.pay_day||'-'} · 산정: ${(c.pay_period_month||c.pay_period) ? `${_cmPeriodMonthLabel(c.pay_period_month)||''} ${c.pay_period_day||''}일부터 1개월간` : '미설정'}<br><i class="fas fa-shield-alt" style="color:#6366f1;margin-right:3px;font-size:10px;"></i>4대보험: ${_cmInsuranceLabel(c.insurance_basis)} · <i class="fas fa-umbrella-beach" style="color:#0891b2;margin-right:3px;font-size:10px;"></i>연차: ${_cmAnnualLabel(c.annual_leave_basis)}<br>${c.phone||''}</p>
       <div style="display:flex;align-items:center;gap:6px;margin-top:10px;font-size:12px;font-weight:600;color:#3b82f6;"><i class="fas fa-users"></i> 유효 근로계약: ${activeContractCount}건</div>
+      ${/* 사용료 수납관리 ON → 카드에 사용료 현황 표시 */
+        window._billingFeatureEnabled ? (() => {
+          const bi = typeof getBillingInfoForDashCard === 'function' ? getBillingInfoForDashCard(c.id) : null;
+          if (!bi) return '';
+          const statusColors = {
+            paid:    { bg:'#f0fdf4', color:'#166534', label:'완납' },
+            partial: { bg:'#fef3c7', color:'#92400e', label:'부분납' },
+            unpaid:  { bg:'#fef2f2', color:'#991b1b', label:'미납' },
+            pending: { bg:'#f8fafc', color:'#64748b', label:'납부대기' },
+          };
+          const sc = statusColors[bi.status] || statusColors.pending;
+          const won = v => Math.round(v||0).toLocaleString('ko-KR') + '원';
+          return `<div style="margin-top:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <span style="font-size:11px;padding:2px 8px;border-radius:10px;background:${sc.bg};color:${sc.color};font-weight:600;">${sc.label}</span>
+            ${bi.type === 'actual' ? `<span style="font-size:11px;color:#6b7280;">청구: ${won(bi.bill?.total_amount)}</span>` : ''}
+            ${bi.prevUnpaid > 0 ? `<span style="font-size:11px;color:#dc2626;font-weight:600;">이월미납: ${won(bi.prevUnpaid)}</span>` : ''}
+            ${bi.totalUnpaid > 0 ? `<span style="font-size:11px;color:#991b1b;font-weight:700;">미납합계: ${won(bi.totalUnpaid)}</span>` : ''}
+          </div>`;
+        })() : ''
+      }
       ${c.note ? `<div style="margin-top:6px;font-size:11.5px;color:#6b7280;"><i class="fas fa-sticky-note" style="margin-right:4px;color:#9ca3af;"></i>${c.note}</div>` : ''}
       ${isDraftComp
         ? `<div style="margin-top:10px;padding:9px 12px;background:linear-gradient(90deg,#fffbeb,#fef3c7);border:1.5px dashed #f59e0b;border-radius:8px;display:flex;flex-direction:column;gap:8px;">

@@ -17,6 +17,7 @@ const SEEDS = [
   { id: 'set_probation',   key: 'probation_feature_enabled',          desc: '수습근로자 관리 기능 ON/OFF' },
   { id: 'set_ce_notice',   key: 'contract_expiry_notice_enabled',     desc: '계약만료 통지 발송 ON/OFF' },
   { id: 'set_rc_notice',   key: 'regular_conversion_notice_enabled',  desc: '정규직 전환 고지 발송 ON/OFF' },
+  { id: 'set_billing',     key: 'billing_feature_enabled',            desc: '고객사 사용료 수납관리 ON/OFF' },
 ];
 
 SEEDS.forEach(s => {

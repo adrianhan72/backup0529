@@ -85,9 +85,8 @@
     <div class="menu-item" data-page="companies" onclick="showPage('companies',this)"><i class="fas fa-building"></i> 고객사 관리<span class="count-badge menu-todo-badge" id="badge-companies" style="display:none;"></span></div>
     <div class="menu-item" data-page="general-notice" onclick="showPage('general-notice',this)"><i class="fas fa-bullhorn"></i> 중요공지 관리</div>
     <div class="menu-item" data-page="company-notice-log" onclick="showPage('company-notice-log',this)"><i class="fas fa-bell"></i> 고객사앱 알림 이력</div>
-    <!-- [사용료 숨김] 사용료 관리 메뉴 - 원복 시 아래 주석 해제
-    <div class="menu-item" data-page="billing" onclick="showPage('billing',this)"><i class="fas fa-file-invoice-dollar"></i> 사용료 관리</div>
-    -->
+    <!-- 사용료 관리 메뉴 — 시스템 설정 스위치로 제어 -->
+    <div class="menu-item" data-page="billing" onclick="showPage('billing',this)" style="display:none;"><i class="fas fa-file-invoice-dollar"></i> 사용료 관리</div>
     <div class="menu-section">근로계약 관리</div>
     <div class="menu-item" data-page="contracts" onclick="showPage('contracts',this)"><i class="fas fa-file-signature"></i> 근로계약 현황<span class="count-badge menu-todo-badge" id="badge-contracts" style="display:none;"></span></div>
     <div class="menu-item" data-page="contract-dispatch" onclick="showPage('contract-dispatch',this)"><i class="fas fa-paper-plane"></i> 근로계약서 발송<span class="count-badge menu-todo-badge" id="badge-contract-dispatch" style="display:none;"></span></div>
@@ -285,9 +284,8 @@
       </div>
     </div>
 
-    <!-- [사용료 숨김] #page-billing 전체 - 원복 시 아래 주석 해제
-    ══ BILLING ══
-    <div id="page-billing" class="page">
+    <!-- ══ BILLING (시스템 설정 스위치로 제어) ══ -->
+    <div id="page-billing" class="page" style="display:none;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
         <p style="font-size:12px;color:#888;margin:0;">직원당 월 2만원 · 고객사별 급여일까지 납부</p>
         <div id="billing-stats" style="text-align:right;">
@@ -362,7 +360,6 @@
         <div id="bill-summary" style="padding:16px 22px;border-top:1px solid #f0f2f5;background:#f8f9fb;"></div>
       </div>
     </div>
-    -->
 
     <!-- ══ EMPLOYEES ══ -->
     <!-- ══ CONTRACTS ══ -->
@@ -2936,8 +2933,8 @@
   </div>
 </div>
 
-<!-- [사용료 숨김] 기존 해지 확인 모달 (미납금 체크 포함) - 원복 시 아래 주석 해제
-<div class="modal-overlay" id="terminate-modal-DISABLED">
+<!-- 기존 해지 확인 모달 (미납금 체크 포함) — 시스템 설정 스위치로 제어 -->
+<div class="modal-overlay" id="terminate-modal-billing" style="display:none;">
   <div class="modal-card" style="max-width:480px;width:95%">
     <div class="modal-header" style="background:linear-gradient(135deg,#1e293b,#334155);">
       <span class="modal-title" style="color:#fff;"><i class="fas fa-ban" style="color:#f87171;margin-right:6px;"></i> 고객사 해지 처리</span>
@@ -2945,6 +2942,10 @@
     </div>
     <div class="modal-body" style="padding:24px;">
       <div id="tm-company-name-old" style="font-size:17px;font-weight:700;color:#1e293b;margin-bottom:16px;"></div>
+      <div style="margin-bottom:16px;">
+        <label style="display:block;font-size:12.5px;font-weight:600;color:#374151;margin-bottom:6px;">계약 해지일 <span style="color:#c00;font-weight:900;">*</span></label>
+        <input type="date" id="tm-end-date" class="filt-date" style="width:100%" />
+      </div>
       잔액 없을 때
       <div id="tm-no-balance" style="display:none;">
         <div style="display:flex;align-items:center;gap:10px;padding:14px 16px;background:#f0fdf4;border:1px solid #86efac;border-radius:10px;margin-bottom:18px;">
@@ -3001,7 +3002,6 @@
     </div>
   </div>
 </div>
--->
 
 <div class="toast" id="toast"></div>
 

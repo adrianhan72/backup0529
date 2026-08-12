@@ -2,10 +2,20 @@
 
 async function generateMonthlyBilling(){
   const now=new Date();
-  const yr=now.getFullYear();
-  const mo=now.getMonth()+1;
+  const today=new Date();
   
-  if(!confirm(`${yr}년 ${mo}월 시스템 사용료를 생성하시겠습니까?\n\n이용중인 고객사의 재직 직원 수 기준으로 자동 계산됩니다.`)) return;
+  // ── 계약시작일 기준 당월 청구 연월 계산 ──
+  const _calcBP = (contractStartDate) => {
+    if (!contractStartDate) return { yr: now.getFullYear(), mo: now.getMonth()+1 };
+    const start = new Date(contractStartDate);
+    const monthsSince = (today.getFullYear() - start.getFullYear()) * 12
+                      + (today.getMonth() - start.getMonth());
+    const billingDate = new Date(start);
+    billingDate.setMonth(billingDate.getMonth() + monthsSince);
+    return { yr: billingDate.getFullYear(), mo: billingDate.getMonth() + 1 };
+  };
+  
+  if(!confirm(`시스템 사용료를 생성하시겠습니까?\n\n각 고객사의 자문계약 시작일 기준 당월 청구분이 생성됩니다.`)) return;
   
   try {
     const newBillings=[];
@@ -14,6 +24,9 @@ async function generateMonthlyBilling(){
     const activeCompanies=allCompanies.filter(c=>c.status===COMPANY_STATUS.ACTIVE);
     
     for(const co of activeCompanies){
+      // 계약시작일 기준 당월 청구 연월
+      const bp = _calcBP(co.contract_start_date);
+      const yr = bp.yr, mo = bp.mo;
       // 이미 해당 연월에 청구 데이터가 있는지 확인
       const exists=allBillings.find(b=>b.company_id===co.id&&b.billing_year==yr&&b.billing_month==mo);
       if(exists){
@@ -229,7 +242,6 @@ function updateBillingStats(){
 function renderBillings(){
   const tbody=document.getElementById('bill-tbody');
   const summary=document.getElementById('bill-summary');
-  // [사용료 숨김] #page-billing DOM이 주석처리된 경우 early return
   if(!tbody || !summary) return;
   
   // 현재 날짜
@@ -237,6 +249,17 @@ function renderBillings(){
   const todayStr=today.toISOString().split('T')[0];
   const currentYear = today.getFullYear();
   const currentMonth = today.getMonth() + 1;
+
+  // ── 헬퍼: 계약시작일 기준 당월 청구 연월 계산 ──
+  const _calcBillingPeriod = (contractStartDate) => {
+    if (!contractStartDate) return { year: currentYear, month: currentMonth };
+    const start = new Date(contractStartDate);
+    const monthsSince = (today.getFullYear() - start.getFullYear()) * 12
+                      + (today.getMonth() - start.getMonth());
+    const billingDate = new Date(start);
+    billingDate.setMonth(billingDate.getMonth() + monthsSince);
+    return { year: billingDate.getFullYear(), month: billingDate.getMonth() + 1 };
+  };
 
   // 필터에 따라 일괄 버튼 활성/비활성
   const filterNow = document.querySelector('input[name="billing-filter"]:checked')?.value || 'all';
@@ -294,11 +317,13 @@ function renderBillings(){
     const activeCompanies = allCompanies.filter(c => c.status===COMPANY_STATUS.ACTIVE);
     
     activeCompanies.forEach(co => {
-      // 이번 달 청구가 있는지 확인
+      // 계약시작일 기준 당월 청구 연월 계산
+      const bp = _calcBillingPeriod(co.contract_start_date);
+      // 당월 청구가 있는지 확인
       const hasBilling = allBillings.some(b => 
         b.company_id === co.id && 
-        b.billing_year === currentYear && 
-        b.billing_month === currentMonth
+        b.billing_year === bp.year && 
+        b.billing_month === bp.month
       );
       
       // 청구가 없으면 가상 청구 데이터 생성
@@ -311,8 +336,8 @@ function renderBillings(){
         
         const payrollEmps = allPayrolls.filter(p => 
           p.company_id === co.id && 
-          p.pay_year == currentYear && 
-          p.pay_month == currentMonth
+          p.pay_year == bp.year && 
+          p.pay_month == bp.month
         );
         
         const empCount = payrollEmps.length > 0 ? payrollEmps.length : activeEmps.length;
@@ -321,14 +346,14 @@ function renderBillings(){
           const amountPerEmp = 20000;
           const totalAmount = empCount * amountPerEmp;
           const dueDay = co.pay_day || 25;
-          const dueDate = `${currentYear}-${String(currentMonth).padStart(2,'0')}-${String(dueDay).padStart(2,'0')}`;
+          const dueDate = `${bp.year}-${String(bp.month).padStart(2,'0')}-${String(dueDay).padStart(2,'0')}`;
           
           // 가상 청구 데이터 (청구 대상)
           filtered.push({
-            id: null, // 청구 데이터 없음 표시
+            id: null,
             company_id: co.id,
-            billing_year: currentYear,
-            billing_month: currentMonth,
+            billing_year: bp.year,
+            billing_month: bp.month,
             employee_count: empCount,
             amount_per_employee: amountPerEmp,
             total_amount: totalAmount,
@@ -339,7 +364,7 @@ function renderBillings(){
             due_date: dueDate,
             created_date: '',
             note: '청구 생성 전',
-            isVirtual: true // 가상 데이터 표시
+            isVirtual: true
           });
         }
       }
@@ -752,12 +777,23 @@ async function bulkCreateBilling(){
   try {
     let successCount = 0;
     const now = new Date();
-    const yr = now.getFullYear();
-    const mo = now.getMonth() + 1;
+    const today = new Date();
+    
+    // 계약시작일 기준 당월 청구 연월 계산
+    const _calcBP = (csd) => {
+      if (!csd) return { yr: now.getFullYear(), mo: now.getMonth()+1 };
+      const s = new Date(csd);
+      const ms = (today.getFullYear()-s.getFullYear())*12 + (today.getMonth()-s.getMonth());
+      const bd = new Date(s); bd.setMonth(bd.getMonth()+ms);
+      return { yr: bd.getFullYear(), mo: bd.getMonth()+1 };
+    };
     
     for(const item of virtualItems){
       const co = allCompanies.find(c => c.id === item.companyId);
       if(!co || co.status!==COMPANY_STATUS.ACTIVE) continue;
+      
+      const bp = _calcBP(co.contract_start_date);
+      const yr = bp.yr, mo = bp.mo;
       
       // 이미 청구가 있는지 확인
       const exists = allBillings.find(b => 

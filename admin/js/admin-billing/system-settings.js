@@ -40,6 +40,7 @@ async function renderSystemSettings() {
     _ssInitProbationToggle();
     _ssInitContractExpiryToggle();
     _ssInitRegularConversionToggle();
+    _ssInitBillingToggle();
   } catch (e) {
     console.warn('[시스템 설정 로드 오류]', e);
     toast('설정 정보를 불러오지 못했습니다.', 'error');
@@ -801,6 +802,85 @@ function _syncRegularConversionMenuVisibility() {
   if (menuItem) {
     menuItem.style.display = window._regularConversionNoticeEnabled ? '' : 'none';
   }
+}
+
+// ═══════════════════════════════════════════
+// 시스템 기능 스위치 — 고객사 사용료 수납관리
+// ═══════════════════════════════════════════
+
+function _ssInitBillingToggle() {
+  const chk = document.getElementById('ss-toggle-billing');
+  if (!chk) return;
+  chk.checked = window._billingFeatureEnabled === true;
+  _ssUpdateBillingToggleUI(chk.checked);
+  _syncBillingVisibility(); // 페이지 로드 시 초기 표시 상태 적용
+}
+
+function _ssUpdateBillingToggleUI(on) {
+  const slider = document.getElementById('ss-toggle-billing-slider');
+  const knob = document.getElementById('ss-toggle-billing-knob');
+  const label = document.getElementById('ss-toggle-billing-label');
+  if (slider) slider.style.background = on ? '#4f46e5' : '#cbd5e1';
+  if (knob) knob.style.left = on ? '23px' : '3px';
+  if (label) {
+    label.textContent = on ? 'ON' : 'OFF';
+    label.style.color = on ? '#4f46e5' : '#9ca3af';
+  }
+}
+
+async function ssToggleBilling(checked) {
+  _ssUpdateBillingToggleUI(checked);
+  try {
+    await api('../tables/system_settings/set_billing', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        setting_key: 'billing_feature_enabled',
+        setting_value: checked ? '1' : '0',
+        description: '고객사 사용료 수납관리 ON/OFF',
+        updated_at: Date.now()
+      })
+    });
+    window._billingFeatureEnabled = checked;
+    window._systemSettings['billing_feature_enabled'] = checked ? '1' : '0';
+    _syncBillingVisibility();
+    toast(checked ? '사용료 관리 기능이 활성화되었습니다.' : '사용료 관리 기능이 비활성화되었습니다.', 'success');
+  } catch (e) {
+    console.error('[ssToggleBilling]', e);
+    toast('설정 저장에 실패했습니다.', 'error');
+    const chk = document.getElementById('ss-toggle-billing');
+    if (chk) chk.checked = !checked;
+    _ssUpdateBillingToggleUI(!checked);
+  }
+}
+
+function _syncBillingMenuVisibility() {
+  const menuItem = document.querySelector('.menu-item[data-page="billing"]');
+  if (menuItem) {
+    menuItem.style.display = window._billingFeatureEnabled ? '' : 'none';
+  }
+}
+
+function _syncBillingVisibility() {
+  _syncBillingMenuVisibility();
+  // 페이지 컨테이너 표시/숨김
+  const pageEl = document.getElementById('page-billing');
+  if (pageEl) {
+    pageEl.style.display = window._billingFeatureEnabled ? '' : 'none';
+  }
+  // 대시보드 사용료 섹션 표시/숨김
+  const dashSec = document.getElementById('dash-billing-section');
+  if (dashSec) {
+    dashSec.style.display = window._billingFeatureEnabled ? '' : 'none';
+  }
+  // 대시보드 차트 재렌더링 (ON 시에만)
+  if (window._billingFeatureEnabled) {
+    if (typeof renderDashBillingCards === 'function') renderDashBillingCards();
+    if (typeof renderBillingTrendChart === 'function') renderBillingTrendChart();
+  }
+  // 고객사 카드 재렌더링 (사용료 배지 표시/숨김)
+  if (typeof renderCompanies === 'function') renderCompanies();
+  if (typeof renderDashboard === 'function') renderDashboard();
 }
 
 // ═══════════════════════════════════════════

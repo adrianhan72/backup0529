@@ -12,6 +12,7 @@ window._systemSettings = {}; // { key: value, ... }
 window._probationFeatureEnabled = false; // 기본값 OFF
 window._contractExpiryNoticeEnabled = false; // 기본값 OFF
 window._regularConversionNoticeEnabled = false; // 기본값 OFF
+window._billingFeatureEnabled = false; // 기본값 OFF
 
 // ─── 공통 헬퍼: 실질 이용중 고객사 판별 ──────────────────────────────────────
 // DB status=ACTIVE이더라도 contract_end_date가 오늘 이하면 해지 완료로 간주
@@ -234,6 +235,7 @@ async function init(){
     if (typeof _syncProbationMenuVisibility === 'function') _syncProbationMenuVisibility(); // 수습 메뉴
     if (typeof _syncContractExpiryMenuVisibility === 'function') _syncContractExpiryMenuVisibility(); // 계약만료 통지 메뉴
     if (typeof _syncRegularConversionMenuVisibility === 'function') _syncRegularConversionMenuVisibility(); // 정규직 전환 고지 메뉴
+    if (typeof _syncBillingMenuVisibility === 'function') _syncBillingMenuVisibility(); // 사용료 관리 메뉴
     _syncContractTypeSelects(); // 수습 옵션 필터링
     
     // ── 페어 계약 새 창에서 열기: sessionStorage에 저장된 계약 자동 조회 ──
@@ -443,6 +445,7 @@ async function loadSystemSettings(){
   window._probationFeatureEnabled = (window._systemSettings['probation_feature_enabled'] === '1');
   window._contractExpiryNoticeEnabled = (window._systemSettings['contract_expiry_notice_enabled'] === '1');
   window._regularConversionNoticeEnabled = (window._systemSettings['regular_conversion_notice_enabled'] === '1');
+  window._billingFeatureEnabled = (window._systemSettings['billing_feature_enabled'] === '1');
 }
 async function loadContracts(){
   const d=await api('../tables/contracts?limit=200');

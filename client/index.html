@@ -260,13 +260,12 @@
     <div id="payslip-list-content"></div>
   </div>
 
-  <!-- [사용료 숨김] ③ 사용료 조회 페이지 - 원복 시 아래 주석 해제
-  <div class="page" id="page-billing">
+  <!-- ③ 사용료 조회 페이지 (시스템 설정 스위치로 제어) -->
+  <div class="page" id="page-billing" style="display:none;">
     <div id="billing-content">
       <div class="no-data"><i class="fas fa-receipt"></i><p>데이터를 불러오는 중...</p></div>
     </div>
   </div>
-  -->
 
   <!-- ⑦ 퇴직금 관리 -->
   <div class="page" id="page-severance">
@@ -739,11 +738,10 @@
   <button class="nav-item" id="nav-annual-leave" onclick="showPage('annual-leave',this)">
     <i class="fas fa-umbrella-beach"></i>연차
   </button>
-  <!-- [사용료 숨김] 사용료 탭 메뉴 - 원복 시 아래 주석 해제
-  <button class="nav-item" id="nav-billing" onclick="showPage('billing',this)">
+  <!-- 사용료 탭 메뉴 (시스템 설정 스위치로 제어) -->
+  <button class="nav-item" id="nav-billing" onclick="showPage('billing',this)" style="display:none;">
     <i class="fas fa-credit-card"></i>사용료
   </button>
-  -->
 </nav>
 
 
