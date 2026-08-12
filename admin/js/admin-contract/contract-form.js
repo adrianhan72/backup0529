@@ -726,7 +726,10 @@ function toggleProbation(){
               || document.getElementById('ct-type')?.value 
               || CONTRACT_TYPE.REGULAR;
   const cat = CONTRACT_TYPE_LEGACY_MAP[rawCat] || rawCat;
-  const isProbation = cat ===CONTRACT_TYPE.REGULAR_PROBATION || cat ===CONTRACT_TYPE.FIXED_PROBATION;
+
+  // 시스템 설정: 수습 기능 OFF → 항상 숨김
+  const _probFeatureOn = window._probationFeatureEnabled !== false;
+  const isProbation = _probFeatureOn && (cat ===CONTRACT_TYPE.REGULAR_PROBATION || cat ===CONTRACT_TYPE.FIXED_PROBATION);
   const sec = document.getElementById('ct-probation-section');
   const probRow = document.getElementById('ct-probation-row');  // 수습기간+종료일 2열 행
   const probPeriodRow = document.getElementById('ct-row-probation-period'); // 수습기간 select

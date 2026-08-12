@@ -23,6 +23,8 @@ function _updateDashTodoGrid(){
    활성 수습 계약 목록을 반환 (만료 안 됐고 아직 활성인 것만)
    ───────────────────────────────────────────────────────────────── */
 function _getProbationNoticeTargets(){
+  // 수습 기능 OFF → 빈 배열 반환 (대시보드 배너·계약 알림 카드 미표시)
+  if (!window._probationFeatureEnabled) return [];
   const NOTICE_DAYS_BEFORE = 45;  // 1.5개월 ≈ 45일
   const today = new Date();
   today.setHours(0,0,0,0);
@@ -84,6 +86,8 @@ function _getProbationNoticeTargets(){
 //   (만료일이 오늘 이후인 수습 계약 전체 = 아직 수습 기간 중)
 // ─────────────────────────────────────────────────────────────────
 function _getProbationAllTargets(){
+  // 수습 기능 OFF → 빈 배열 반환 (수습 근로자 관리 페이지 미표시)
+  if (!window._probationFeatureEnabled) return [];
   const today = new Date();
   today.setHours(0,0,0,0);
 
@@ -131,6 +135,13 @@ function _getProbationAllTargets(){
    대시보드 수습 만료 통지 대상 배너 렌더링
    ───────────────────────────────────────────────────────────────── */
 function renderDashProbationBanner(){
+  // 수습 기능 OFF → 대시보드 배너 숨김
+  if (!window._probationFeatureEnabled) {
+    const secOff = document.getElementById('dash-probation-banner');
+    if (secOff) secOff.style.display = 'none';
+    _updateDashTodoGrid();
+    return;
+  }
   const sec = document.getElementById('dash-probation-banner');
   if(!sec) return;
 
@@ -382,6 +393,11 @@ function clearProbMgmtCompany(){
 function renderProbationMgmtTable(){
   const tbody = document.getElementById('probmgmt-table-body');
   if(!tbody) return;
+  // 수습 기능 OFF → 페이지 접근 차단
+  if (!window._probationFeatureEnabled) {
+    tbody.innerHTML = '<tr><td colspan="11" class="cen-empty"><i class="fas fa-ban"></i> 수습근로자 관리 기능이 비활성화되어 있습니다. 시스템 설정에서 활성화해 주세요.</td></tr>';
+    return;
+  }
 
   const keyword = (document.getElementById('probmgmt-search')?.value || '').trim().toLowerCase();
   // 전체 수습 중인 직원 기준 (45일 통지 범위 제한 없음)
@@ -1289,7 +1305,9 @@ function _renderContractsBanners(){
   (function(){
     const sec    = document.getElementById('contracts-draft-banner');
     if(!sec) return;
-    const drafts = allContracts.filter(c => !!c.is_draft);
+    // 수습 기능 OFF → 수습 임시저장 제외
+    const drafts = allContracts.filter(c => !!c.is_draft &&
+      (window._probationFeatureEnabled || !(typeof isProbationType === 'function' && isProbationType(c.contract_type))));
     if(!drafts.length){ sec.style.display='none'; sec.innerHTML=''; return; }
 
     function fmtDraftTime(ts){
@@ -1351,7 +1369,9 @@ function _renderContractsBanners(){
       !c.is_draft && !c.is_voided_by_amend &&
       ![CONTRACT_STATUS.VOIDED].includes(c.status) &&
       CONTRACT_ACTIVE_STATUSES.includes(c.status) &&
-      !c.signed_file_name
+      !c.signed_file_name &&
+      // 수습 기능 OFF → 수습 계약 제외
+      (window._probationFeatureEnabled || !(typeof isProbationType === 'function' && isProbationType(c.contract_type)))
     );
     const cnt = unsignedContracts.length;
     const inactive = cnt === 0;
@@ -1378,7 +1398,9 @@ function _renderContractsBanners(){
       !c.is_draft && !c.is_voided_by_amend &&
       ![CONTRACT_STATUS.VOIDED].includes(c.status) &&
       CONTRACT_ACTIVE_STATUSES.includes(c.status) &&
-      !c.consent_file_name
+      !c.consent_file_name &&
+      // 수습 기능 OFF → 수습 계약 제외
+      (window._probationFeatureEnabled || !(typeof isProbationType === 'function' && isProbationType(c.contract_type)))
     );
     const cnt2 = unsignedConsent.length;
     const inactive2 = cnt2 === 0;
@@ -1401,6 +1423,8 @@ function _renderContractsBanners(){
   (function(){
     const sec = document.getElementById('contracts-probation-banner');
     if(!sec) return;
+    // 수습 기능 OFF → 배너 완전 숨김
+    if (!window._probationFeatureEnabled) { sec.style.display = 'none'; sec.innerHTML = ''; return; }
     if(typeof _getProbationNoticeTargets !== 'function'){ sec.style.display='none'; return; }
     const targets = _getProbationNoticeTargets();
     const noticTargets = targets.filter(t => t.probMonths > 3 && t.daysLeft >= 30);

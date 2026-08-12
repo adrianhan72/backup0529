@@ -229,6 +229,8 @@ function _cenGetTargetContracts(){
     const cat = emp?.employment_category || c.contract_type || '';
     const normalizedCat = normalizeContractType(cat);
     if(![CONTRACT_TYPE.FIXED, CONTRACT_TYPE.FIXED_PROBATION, CONTRACT_TYPE.DAILY].includes(normalizedCat)) return false;
+    // 수습 기능 OFF → 수습 계약 제외
+    if (!window._probationFeatureEnabled && typeof isProbationType === 'function' && isProbationType(normalizedCat)) return false;
     // 계약 만료일 확인
     if(!c.contract_end) return false;
     const endDate = new Date(c.contract_end);
@@ -415,9 +417,16 @@ async function _sendCompanyNotice({
   companyId, companyName='',
   noticeType, title, body,
   contractId='', employeeId='', employeeName='',
-  contractEnd='', extraData={}
+  contractEnd='', contractType='', extraData={}
 }){
   if(!companyId || !noticeType || !title || !body) return;
+
+  // 수습 기능 OFF → 수습 계약 관련 알림 제외
+  if (!window._probationFeatureEnabled) {
+    const _ct = contractType
+      || (contractId ? ((allContracts||[]).find(c => c.id === contractId) || {}).contract_type : '');
+    if (_ct && typeof isProbationType === 'function' && isProbationType(_ct)) return;
+  }
 
   // 시스템 설정 메시지 규칙 적용 (커스텀 규칙 있으면 덮어씀)
   const _rule = await _getCompanyMsgRule(noticeType);

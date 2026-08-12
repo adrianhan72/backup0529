@@ -418,6 +418,8 @@ function openPayslipModal(payrollId){
   (function _renderProbationBanner(){
     const banner = document.getElementById('ps-probation-banner');
     if(!banner) return;
+    // 수습 기능 OFF → 배너 완전 숨김
+    if (!window._probationFeatureEnabled) { banner.classList.add('d-none'); return; }
 
     // 수습 계약 유형 여부 (contract_type 또는 employment_category 기준)
     const catStr = (ct ? ct.contract_type : '') || e.employment_category || '';
@@ -461,6 +463,8 @@ function openPayslipModal(payrollId){
     const ob  = document.getElementById('ps-prob-overrun-banner');
     const obd = document.getElementById('ps-prob-overrun-detail');
     if(!ob || !obd){ return; }
+    // 수습 기능 OFF → 배너 완전 숨김
+    if (!window._probationFeatureEnabled) { ob.classList.add('d-none'); return; }
 
     // 수습 계약이 아닌 경우 숨김
     const catStr2 = (ct ? ct.contract_type : '') || e.employment_category || '';

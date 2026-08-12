@@ -29,12 +29,11 @@ function _renderContCoSummaryCards(){
   // ═══════════════════════════════════════════
   // CARD 1: 예정 사항 (계약예정·갱신예정·해지예정·만료예정 통합)
   // ═══════════════════════════════════════════
-  const EXPIRY_ELIGIBLE_TYPES = [
-    CONTRACT_TYPE.FIXED,
-    CONTRACT_TYPE.REGULAR_PROBATION,
-    CONTRACT_TYPE.FIXED_PROBATION,
-    CONTRACT_TYPE.DAILY,
-  ];
+  // 수습 기능 OFF → probation 타입 제외
+  const _expiryBaseTypes = [CONTRACT_TYPE.FIXED, CONTRACT_TYPE.REGULAR_PROBATION, CONTRACT_TYPE.FIXED_PROBATION, CONTRACT_TYPE.DAILY];
+  const EXPIRY_ELIGIBLE_TYPES = window._probationFeatureEnabled
+    ? _expiryBaseTypes
+    : _expiryBaseTypes.filter(t => t !== CONTRACT_TYPE.REGULAR_PROBATION && t !== CONTRACT_TYPE.FIXED_PROBATION);
   const days29Later = new Date(today);
   days29Later.setDate(days29Later.getDate() + 29);
   const days29LaterStr = days29Later.toISOString().slice(0,10);
@@ -85,12 +84,15 @@ function _renderContCoSummaryCards(){
   // 계약예정 + 갱신예정 (sortOrder 1, 구분 통합)
   const PROBATION_TYPES = [CONTRACT_TYPE.REGULAR_PROBATION, CONTRACT_TYPE.FIXED_PROBATION];
   allContracts.filter(c => c.company_id === coId &&
-    (c.status === CONTRACT_STATUS.PENDING || c.status === CONTRACT_STATUS.RENEWAL_PENDING)
+    (c.status === CONTRACT_STATUS.PENDING || c.status === CONTRACT_STATUS.RENEWAL_PENDING) &&
+    // 수습 기능 OFF → 수습 계약 제외
+    (window._probationFeatureEnabled || !PROBATION_TYPES.includes(c.contract_type || ''))
   ).forEach(c => {
     const emp = allEmployees.find(e => e.id === c.employee_id);
     const ct = c.contract_type || emp?.employment_category || '';
     const isProbationType = PROBATION_TYPES.includes(ct);
-    const activeProbation = isProbationType ? null : (allContracts || []).find(x =>
+    // 수습 기능 OFF → activeProbation 검색 건너뜀
+    const activeProbation = (!window._probationFeatureEnabled || isProbationType) ? null : (allContracts || []).find(x =>
       x.id !== c.id && x.company_id === coId && x.employee_id === c.employee_id &&
       x.status === CONTRACT_STATUS.ACTIVE && PROBATION_TYPES.includes(x.contract_type || '')
     );
@@ -192,7 +194,9 @@ function _renderContCoSummaryCards(){
     c.company_id === coId && !c.is_draft && !c.is_voided_by_amend &&
     ![CONTRACT_STATUS.VOIDED].includes(c.status) &&
     CONTRACT_ACTIVE_STATUSES.includes(c.status) &&
-    !c.signed_file_name);
+    !c.signed_file_name &&
+    // 수습 기능 OFF → 수습 계약 제외
+    (window._probationFeatureEnabled || !(typeof isProbationType === 'function' && isProbationType(c.contract_type))));
 
   // ═══════════════════════════════════════════
   // CARD 4: 정보제공동의서 미발송
@@ -201,13 +205,15 @@ function _renderContCoSummaryCards(){
     c.company_id === coId && !c.is_draft && !c.is_voided_by_amend &&
     ![CONTRACT_STATUS.VOIDED].includes(c.status) &&
     CONTRACT_ACTIVE_STATUSES.includes(c.status) &&
-    !c.consent_file_name);
+    !c.consent_file_name &&
+    // 수습 기능 OFF → 수습 계약 제외
+    (window._probationFeatureEnabled || !(typeof isProbationType === 'function' && isProbationType(c.contract_type))));
 
   // ═══════════════════════════════════════════
   // CARD 5: 수습근로자 관리 대상
   // ═══════════════════════════════════════════
   let probationTargets = [];
-  if(typeof _getProbationNoticeTargets === 'function'){
+  if (window._probationFeatureEnabled && typeof _getProbationNoticeTargets === 'function'){
     probationTargets = _getProbationNoticeTargets().filter(t => t.contract.company_id === coId);
   }
 
@@ -506,6 +512,8 @@ function renderContracts(){
 
   let f=allContracts.filter(c=>{
     if(c.company_id!==currentContCompanyId) return false;
+    // 수습 기능 OFF → 수습 계약 전체 제외
+    if (!window._probationFeatureEnabled && typeof isProbationType === 'function' && isProbationType(c.contract_type)) return false;
     // 계약서 고유 ID 검색 (독립적 — ID 입력 시 해당 계약만 표시)
     if(filterById && c.id !== filterById) return false;
     // 직원명 검색

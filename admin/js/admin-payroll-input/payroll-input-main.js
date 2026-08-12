@@ -159,6 +159,8 @@ async function loadPITargetList(){
     if(c.is_draft) return false;
     if(c.is_voided_by_amend) return false;
     if(!VALID_STATUSES.has(c.status)) return false;
+    // 수습 기능 OFF → 수습 계약 제외
+    if (!window._probationFeatureEnabled && typeof isProbationType === 'function' && isProbationType(c.contract_type)) return false;
     // 계약 기간이 급여 산정기간과 겹치는지 확인
     const cStart = c.contract_start || '';
     // 종료일: TERMINATED/TERMINATE_PENDING은 terminate_date, 그 외는 contract_end
@@ -1240,7 +1242,9 @@ function loadPIContract(){
     const _piCandidates = allContracts.filter(c=>
       c.employee_id===empId &&
       (c.status===EMP_STATUS.ACTIVE||c.status===CONTRACT_STATUS.ACTIVE||c.status===CONTRACT_STATUS.DOCS_INCOMPLETE||c.status===CONTRACT_STATUS.PENDING) &&
-      !c.is_voided_by_amend && !c.is_draft
+      !c.is_voided_by_amend && !c.is_draft &&
+      // 수습 기능 OFF → 수습 계약 제외
+      (window._probationFeatureEnabled || !(typeof isProbationType === 'function' && isProbationType(c.contract_type)))
     );
     if(_piCandidates.length > 1){
       // 복수 활성 계약: contract_start 기준 내림차순 → 가장 최근 계약 선택
@@ -2294,6 +2298,7 @@ function _applyPIPayDate(forceOverwrite){
 // ──────────────────────────────────────────────────────────────────────────────
 function _calcProbationEndDate(ct){
   if(!ct) return null;
+  if (!window._probationFeatureEnabled) return null; // 수습 기능 OFF
   const isProb = (ct.contract_type ===CONTRACT_TYPE.REGULAR_PROBATION || ct.contract_type ===CONTRACT_TYPE.FIXED_PROBATION);
   if(!isProb) return null;
   const months = ct.probation_months ? Number(ct.probation_months) : 0;
@@ -2317,6 +2322,7 @@ function _calcProbationEndDate(ct){
 //   ③ 수습 기간 내 → 배너 전체 숨김 → false 반환
 // ──────────────────────────────────────────────────────────────────────────────
 function _checkPIProbationOverrun(){
+  if (!window._probationFeatureEnabled) return false; // 수습 기능 OFF
   const banner   = document.getElementById('pi-prob-overrun-banner');
   const panel1   = document.getElementById('pi-prob-case1-panel');
   const panel2   = document.getElementById('pi-prob-case2-panel');

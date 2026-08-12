@@ -365,6 +365,19 @@ function isContractTerminal(status) {
 function isProbationType(contractType) {
   return CONTRACT_PROBATION_TYPES.includes(normalizeContractType(contractType));
 }
+
+/** 수습 기능 OFF 시 probation 타입을 필터링한 고용형태 옵션 배열 반환 */
+function getAvailableContractTypes() {
+  const all = [
+    { value: CONTRACT_TYPE.REGULAR,           label: CONTRACT_TYPE_LABEL[CONTRACT_TYPE.REGULAR] },
+    { value: CONTRACT_TYPE.REGULAR_PROBATION, label: CONTRACT_TYPE_LABEL[CONTRACT_TYPE.REGULAR_PROBATION] },
+    { value: CONTRACT_TYPE.FIXED,             label: CONTRACT_TYPE_LABEL[CONTRACT_TYPE.FIXED] },
+    { value: CONTRACT_TYPE.FIXED_PROBATION,   label: CONTRACT_TYPE_LABEL[CONTRACT_TYPE.FIXED_PROBATION] },
+    { value: CONTRACT_TYPE.DAILY,             label: CONTRACT_TYPE_LABEL[CONTRACT_TYPE.DAILY] },
+  ];
+  if (window._probationFeatureEnabled) return all;
+  return all.filter(t => !isProbationType(t.value));
+}
 function isFixedTermType(contractType) {
   return CONTRACT_FIXED_TERM_TYPES.includes(normalizeContractType(contractType));
 }

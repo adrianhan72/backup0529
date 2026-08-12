@@ -28,6 +28,8 @@ function _calc2YrExceedList(){
     if([CONTRACT_STATUS.VOIDED].includes(c.status)) return false; // 파기는 제외
     const emp = allEmployees.find(e => e.id === c.employee_id);
     const cat = emp?.employment_category || c.contract_type || '';
+    // 수습 기능 OFF → 수습 계약 제외
+    if (!window._probationFeatureEnabled && typeof isProbationType === 'function' && isProbationType(cat)) return;
     if(![CONTRACT_TYPE.FIXED, CONTRACT_TYPE.FIXED_PROBATION, CONTRACT_TYPE.DAILY, CONTRACT_TYPE.REGULAR_PROBATION].includes(cat)) return; // 계약직·수습·일용직 계열
     if(!c.contract_start) return;
     if(!byEmp[c.employee_id]) byEmp[c.employee_id] = [];

@@ -35,6 +35,9 @@ async function renderSystemSettings() {
 
     // 메시지 규칙 로드
     ssLoadMessageRule();
+
+    // 시스템 스위치 초기화
+    _ssInitProbationToggle();
   } catch (e) {
     console.warn('[시스템 설정 로드 오류]', e);
     toast('설정 정보를 불러오지 못했습니다.', 'error');
@@ -623,6 +626,66 @@ function getMsgBodyRule(ruleType) {
     return rules[ruleType] || MSG_RULE_DEFAULTS[ruleType] || null;
   } catch(e) {
     return MSG_RULE_DEFAULTS[ruleType] || null;
+  }
+}
+
+// ═══════════════════════════════════════════
+// 시스템 기능 스위치 — 수습근로자 관리
+// ═══════════════════════════════════════════
+
+/** 페이지 로드 시 스위치 초기화 */
+function _ssInitProbationToggle() {
+  const chk = document.getElementById('ss-toggle-probation');
+  if (!chk) return;
+  chk.checked = window._probationFeatureEnabled === true;
+  _ssUpdateProbationToggleUI(chk.checked);
+}
+
+function _ssUpdateProbationToggleUI(on) {
+  const slider = document.getElementById('ss-toggle-probation-slider');
+  const knob = document.getElementById('ss-toggle-probation-knob');
+  const label = document.getElementById('ss-toggle-probation-label');
+  if (slider) slider.style.background = on ? '#4f46e5' : '#cbd5e1';
+  if (knob) knob.style.left = on ? '23px' : '3px';
+  if (label) {
+    label.textContent = on ? 'ON' : 'OFF';
+    label.style.color = on ? '#4f46e5' : '#9ca3af';
+  }
+}
+
+async function ssToggleProbation(checked) {
+  _ssUpdateProbationToggleUI(checked);
+  try {
+    await api('../tables/system_settings/set_probation', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        setting_key: 'probation_feature_enabled',
+        setting_value: checked ? '1' : '0',
+        description: '수습근로자 관리 기능 ON/OFF',
+        updated_at: Date.now()
+      })
+    });
+    window._probationFeatureEnabled = checked;
+    window._systemSettings['probation_feature_enabled'] = checked ? '1' : '0';
+    toast(checked ? '수습근로자 관리 기능이 활성화되었습니다.' : '수습근로자 관리 기능이 비활성화되었습니다. 새로고침을 권장합니다.', 'success');
+    // 사이드바 메뉴 즉시 반영
+    _syncProbationMenuVisibility();
+  } catch (e) {
+    console.error('[ssToggleProbation]', e);
+    toast('설정 저장에 실패했습니다.', 'error');
+    // 롤백
+    const chk = document.getElementById('ss-toggle-probation');
+    if (chk) chk.checked = !checked;
+    _ssUpdateProbationToggleUI(!checked);
+  }
+}
+
+/** 사이드바 수습근로자 관리 메뉴 표시/숨김 */
+function _syncProbationMenuVisibility() {
+  const menuItem = document.querySelector('.menu-item[data-page="probation-mgmt"]');
+  if (menuItem) {
+    menuItem.style.display = window._probationFeatureEnabled ? '' : 'none';
   }
 }
 

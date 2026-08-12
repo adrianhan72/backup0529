@@ -671,9 +671,11 @@ function renderLaborStatus(){
   // 고용형태별 카운트 (전체 직원 기준) — 영문 DB 값으로 비교
   const catCount = cat => targetEmps.filter(e => normalizeContractType(e.employment_category) === cat).length;
   const cntRegular     = catCount(CONTRACT_TYPE.REGULAR);
-  const cntRegularProb = catCount(CONTRACT_TYPE.REGULAR_PROBATION);
+  // 수습 기능 OFF → 수습 인원수 0으로 집계
+  const cntRegularProb = window._probationFeatureEnabled ? catCount(CONTRACT_TYPE.REGULAR_PROBATION) : 0;
   const cntContract    = catCount(CONTRACT_TYPE.FIXED);
-  const cntContractProb= catCount(CONTRACT_TYPE.FIXED_PROBATION);
+  // 수습 기능 OFF → 수습 인원수 0으로 집계
+  const cntContractProb= window._probationFeatureEnabled ? catCount(CONTRACT_TYPE.FIXED_PROBATION) : 0;
   const cntDaily       = catCount(CONTRACT_TYPE.DAILY);
 
   const expiredContracts = targetContracts.filter(c => c.status === CONTRACT_STATUS.EXPIRED);

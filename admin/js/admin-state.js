@@ -7,6 +7,10 @@ let editId={company:null,contract:null};
 const ITEMS=10;
 let pages={cont:1,pay:1};
 
+// ─── 시스템 설정 (DB system_settings → 글로벌 플래그) ──────────────────
+window._systemSettings = {}; // { key: value, ... }
+window._probationFeatureEnabled = false; // 기본값 OFF
+
 // ─── 공통 헬퍼: 실질 이용중 고객사 판별 ──────────────────────────────────────
 // DB status=ACTIVE이더라도 contract_end_date가 오늘 이하면 해지 완료로 간주
 function isCompanyActive(c){
@@ -199,7 +203,7 @@ async function init(){
 
     // ── 1단계: critical path – 화면 표시에 필수인 3개 테이블만 먼저 로드 ──
     showSkeletons();
-    await Promise.all([loadCompanies(), loadEmployees(), loadContracts(), loadAdminAccounts(), loadCompanyHistories(), loadExecutives(), loadRelatedParties()]);
+    await Promise.all([loadCompanies(), loadEmployees(), loadContracts(), loadAdminAccounts(), loadCompanyHistories(), loadExecutives(), loadRelatedParties(), loadSystemSettings()]);
 
     // 데이터 정규화 (한글 레거시 → 영문)
     _normalizeLoadedData();
@@ -225,6 +229,8 @@ async function init(){
     renderDashboard(); renderCompanies(); renderContracts();
     populateFilters(); populatePICompanies(); initBreakSelects();
     _syncMenuLabels();  // PAGE_LABELS 기준으로 사이드바 메뉴명 동기화
+    if (typeof _syncProbationMenuVisibility === 'function') _syncProbationMenuVisibility(); // 수습 메뉴
+    _syncContractTypeSelects(); // 수습 옵션 필터링
     
     // ── 페어 계약 새 창에서 열기: sessionStorage에 저장된 계약 자동 조회 ──
     _restorePairContractWindow();
@@ -363,6 +369,30 @@ function _normalizeLoadedData() {
   });
 }
 
+/** 수습 기능 OFF 시 고용형태 select에서 수습 옵션 제거 */
+function _syncContractTypeSelects() {
+  const types = typeof getAvailableContractTypes === 'function' ? getAvailableContractTypes() : [];
+  if (!types.length) return;
+  const html = types.map(t => `<option value="${t.value}">${t.label}</option>`).join('');
+
+  // 신규 직원 고용형태 (ct-em-category)
+  const newSel = document.getElementById('ct-em-category');
+  if (newSel) {
+    const cur = newSel.value;
+    newSel.innerHTML = '<option value="" disabled selected>-- 선택하세요 --</option>' + html;
+    if (types.some(t => t.value === cur)) newSel.value = cur;
+  }
+
+  // 수정/재계약 고용형태 (ct-edit-em-category)
+  const editSel = document.getElementById('ct-edit-em-category');
+  if (editSel) {
+    const cur2 = editSel.value;
+    editSel.innerHTML = html;
+    if (types.some(t => t.value === cur2)) editSel.value = cur2;
+    else if (types.length > 0) editSel.value = types[0].value;
+  }
+}
+
 async function loadCompanies(){
   const d=await api('../tables/companies?limit=100');
   allCompanies=(d.data||[]).map(c=>{
@@ -392,6 +422,22 @@ async function loadCompanyHistories(){
 async function loadEmployees(){const d=await api('../tables/employees?limit=200');allEmployees=d.data||[]}
 async function loadExecutives(){const d=await api('../tables/registered_executives?limit=200');allExecutives=d.data||[]}
 async function loadRelatedParties(){const d=await api('../tables/related_party_workers?limit=200');allRelatedParties=d.data||[]}
+
+/** system_settings 테이블 → window._systemSettings + 글로벌 플래그 동기화 */
+async function loadSystemSettings(){
+  try {
+    const res = await api('../tables/system_settings?limit=100');
+    const data = res.data || [];
+    window._systemSettings = {};
+    data.forEach(row => {
+      window._systemSettings[row.setting_key] = row.setting_value;
+    });
+  } catch(e) {
+    console.warn('[system_settings] 로드 실패', e);
+  }
+  // 글로벌 플래그 동기화
+  window._probationFeatureEnabled = (window._systemSettings['probation_feature_enabled'] === '1');
+}
 async function loadContracts(){
   const d=await api('../tables/contracts?limit=200');
   allContracts=d.data||[];

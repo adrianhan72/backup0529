@@ -249,6 +249,15 @@ CREATE TABLE IF NOT EXISTS representative_contact (
   msg_body_rules TEXT DEFAULT NULL --  -- 메시지 본문 규칙 (JSON)
 );
 
+-- system_settings  -- 시스템 설정 스위치 (key-value)
+CREATE TABLE IF NOT EXISTS system_settings (
+  id TEXT PRIMARY KEY, --  -- 고유식별자
+  setting_key TEXT UNIQUE NOT NULL, --  -- 설정 키
+  setting_value TEXT DEFAULT '0', --  -- 설정 값 (0:OFF, 1:ON)
+  description TEXT, --  -- 설정 설명
+  updated_at INTEGER --  -- 수정일시
+);
+
 -- =============================================================================
 -- SECTION 2: 급여 및 근태
 -- =============================================================================
