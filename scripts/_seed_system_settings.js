@@ -12,16 +12,24 @@ db.run(`
   )
 `);
 
-// Seed probation feature toggle
-const existing = db.get('SELECT id FROM system_settings WHERE setting_key = ?', ['probation_feature_enabled']);
-if (!existing) {
-  db.run(
-    'INSERT INTO system_settings (id, setting_key, setting_value, description, updated_at) VALUES (?, ?, ?, ?, ?)',
-    ['set_probation', 'probation_feature_enabled', '0', '수습근로자 관리 기능 ON/OFF', Date.now()]
-  );
-  console.log('[OK] Seeded: probation_feature_enabled = 0');
-} else {
-  console.log('[SKIP] Already exists:', existing.id);
-}
+// Seed all system setting keys
+const SEEDS = [
+  { id: 'set_probation',   key: 'probation_feature_enabled',          desc: '수습근로자 관리 기능 ON/OFF' },
+  { id: 'set_ce_notice',   key: 'contract_expiry_notice_enabled',     desc: '계약만료 통지 발송 ON/OFF' },
+  { id: 'set_rc_notice',   key: 'regular_conversion_notice_enabled',  desc: '정규직 전환 고지 발송 ON/OFF' },
+];
+
+SEEDS.forEach(s => {
+  const existing = db.get('SELECT id FROM system_settings WHERE setting_key = ?', [s.key]);
+  if (!existing) {
+    db.run(
+      'INSERT INTO system_settings (id, setting_key, setting_value, description, updated_at) VALUES (?, ?, ?, ?, ?)',
+      [s.id, s.key, '0', s.desc, Date.now()]
+    );
+    console.log('[OK] Seeded:', s.key, '= 0');
+  } else {
+    console.log('[SKIP] Already exists:', s.key, '=', existing.id);
+  }
+});
 
 console.log('[DONE] system_settings ready');
