@@ -521,6 +521,7 @@ const KO = {
       contract_end: '계약 종료일',
       created_at: '생성일시',
       updated_at: '수정일시',
+      is_expired: '만료 여부 (0:진행중, 1:만료)',
     }
   },
 };

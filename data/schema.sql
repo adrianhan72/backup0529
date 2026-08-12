@@ -1,7 +1,7 @@
 -- =============================================================================
 -- 인사톡 노무톡 — SQLite Schema (한글 주석 포함)
 -- node dump_schema.js 로 자동 생성 (ALTER TABLE 반영)
--- 최종 갱신: 2026-08-10
+-- 최종 갱신: 2026-08-12
 -- 테이블 수: 26개
 -- =============================================================================
 
@@ -524,7 +524,7 @@ CREATE TABLE IF NOT EXISTS consent_dispatch (
   contract_end TEXT, --  -- 계약 종료일
   created_at INTEGER, --  -- 생성일시
   updated_at INTEGER, --  -- 수정일시
-  is_expired INTEGER DEFAULT 0 --  -- 보존기간 만료 여부 (retention-cleanup)
+  is_expired INTEGER DEFAULT 0 --  -- 만료 여부 (0:진행중, 1:만료)
 );
 
 -- contract_dispatch  -- 근로계약서 발송 이력
