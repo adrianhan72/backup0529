@@ -122,20 +122,22 @@
 .pi-etc-row .btn-sm{flex:0 0 auto}
     .pi-row label{color:#666}
     .pi-row input{width:130px;border:1px solid #d1d5db;border-radius:6px;padding:6px 9px;font-size:13px;outline:none;font-family:inherit;text-align:right;color:#000}
-    .pi-row input:focus{border-color:#6366f1;outline:none;box-shadow:0 0 0 2px rgba(99,102,241,.25)}
+    .pi-row input:focus:not([readonly]):not(:disabled){border-color:#6366f1;outline:none;box-shadow:0 0 0 2px rgba(99,102,241,.25)}
     /* 비고: ?�이�???· textarea ?�래 · 카드?�??�일 ?�체 ??*/
     .pi-note-wrap{display:block;margin-top:6px;margin-bottom:4px;}
     .pi-note-label{display:block;font-size:12.5px;color:#666;margin-bottom:4px;}
     .pi-note-wrap textarea{display:block;width:100%;min-height:62px;border:1px solid #d1d5db;border-radius:6px;padding:6px 9px;font-size:13px;outline:none;font-family:inherit;resize:vertical;line-height:1.55;color:#000;box-sizing:border-box;}
-    .pi-note-wrap textarea:focus{border-color:#6366f1;outline:none;box-shadow:0 0 0 2px rgba(99,102,241,.25);}
+    .pi-note-wrap textarea:focus:not([readonly]):not(:disabled){border-color:#6366f1;outline:none;box-shadow:0 0 0 2px rgba(99,102,241,.25);}
 /* 계약??고정??�� readonly ?��???*/
 .pi-readonly-field{background:#f1f5f9!important;color:#555!important;cursor:default!important;border-color:#e8eaed!important;user-select:none!important;-webkit-text-fill-color:#555!important}
-.pi-readonly-field:focus{border-color:#e8eaed!important;outline:none!important;}
+.pi-readonly-field:focus,.pi-readonly-field:focus-visible{border-color:#e8eaed!important;outline:none!important;box-shadow:none!important;}
+/* 연차수당 자동계산 등 JS로 readOnly 처리되는 필드 통일 */
+.pi-input-readonly{background:#f1f5f9!important;color:#555!important;cursor:default!important;border-color:#e8eaed!important;-webkit-text-fill-color:#555!important;}
 .pi-pay-type-select.pi-btn-locked{opacity:.45!important;cursor:default!important;pointer-events:none!important;}
     .pi-row .pi-val{font-weight:600;font-size:13px;color:#1a1a2e}
     /* ?�상?�금 지급유???�?�운 select (기존 버튼 UI ?��? */
     .pi-pay-type-select{font-size:12px;padding:0 6px;border-radius:4px;border:1px solid #d1d5db;background:#fff;color:#374151;cursor:pointer;outline:none;height:28px;font-family:inherit;flex-shrink:0;}
-    .pi-pay-type-select:focus{border-color:#6366f1;outline:none;box-shadow:0 0 0 2px rgba(99,102,241,.25)}
+    .pi-pay-type-select:focus:not(:disabled){border-color:#6366f1;outline:none;box-shadow:0 0 0 2px rgba(99,102,241,.25)}
     .pi-pay-type-select:disabled { background:#f1f5f9; color:#555; cursor:default; border-color:#e8eaed; -webkit-text-fill-color:#555; }
     /* 미선???�태(value="") ???�색 ?�레?�스?�???�상 */
     .pi-pay-type-select.pi-pt-unset{border-color:#fbbf24;background:#fffbeb;color:#92400e;}
@@ -147,14 +149,14 @@
     .pi-pt-fixed-badge{display:inline-flex;align-items:center;height:28px;padding:0 10px;border-radius:4px;background:#eff6ff;color:#1d4ed8;font-size:12px;font-weight:600;white-space:nowrap;flex-shrink:0;user-select:none;cursor:default;}
     /* 주휴?�당 ?�동계산 배�? */
 .pi-auto-badge{display:inline-flex;align-items:center;height:17px;padding:0 6px;border-radius:3px;background:#dcfce7;color:#15803d;font-size:10px;font-weight:500;margin-left:4px;vertical-align:middle;user-select:none;}
-    /* 주휴?�당 ?�동계산 ?�기?�용 ?�력 */
-    .pi-weekly-hol-input{background:#f0fdf4!important;color:#15803d!important;cursor:default!important;border-color:#bbf7d0!important;font-weight:600!important;}
-    .pi-weekly-hol-input:focus{border-color:#bbf7d0!important;outline:none!important;}
+    /* 주휴?�당 ?�동계산 ?�기?�용 (readonly 통일: 지급일과 동일) */
+    .pi-weekly-hol-input{background:#f1f5f9!important;color:#555!important;cursor:default!important;border-color:#e8eaed!important;font-weight:400!important;}
+    .pi-weekly-hol-input:focus{border-color:#e8eaed!important;outline:none!important;box-shadow:none!important;}
     /* 주휴?�당 ?�출?�역 ?�스??*/
     .pi-weekly-hol-desc{font-size:10.5px;color:#6b7280;white-space:nowrap;min-height:14px;}
-    /* �?근로?�간 ?�동계산 ?�기?�용 */
-    .pi-total-hours-auto{background:#f0fdf4!important;color:#15803d!important;cursor:default!important;border-color:#bbf7d0!important;font-weight:600!important;}
-    .pi-total-hours-auto:focus{border-color:#bbf7d0!important;outline:none!important;}
+    /* �?근로?�간 ?�동계산 ?�기?�용 (readonly 통일: 지급일과 동일) */
+    .pi-total-hours-auto{background:#f1f5f9!important;color:#555!important;cursor:default!important;border-color:#e8eaed!important;font-weight:400!important;}
+    .pi-total-hours-auto:focus{border-color:#e8eaed!important;outline:none!important;box-shadow:none!important;}
     /* .pi-row-amount: 금액 ?�력 ?�드 공통 (inline style ?��? */
     .pi-row-amount{width:120px;border:1px solid #d1d5db;border-radius:6px;padding:6px 9px;font-size:13px;outline:none;font-family:inherit;text-align:right;color:#000}
     .pi-row-amount:focus{border-color:#6366f1;outline:none;box-shadow:0 0 0 2px rgba(99,102,241,.25)}
@@ -191,15 +193,15 @@
     .pi-wap-row.green-bg{background:#f0fdf4}
     .pi-wap-row.indigo-bg{background:#f0f4ff}
     /* readonly 입력값 표시 */
-    .pi-wap-val{text-align:right;background:transparent;border:none;padding:0;font-family:inherit}
+    .pi-wap-val{text-align:right;background:transparent;border:none;padding:0;font-family:inherit;color:#555!important}
     .pi-wap-val.hours{width:50px;font-size:11px;font-weight:600}
     .pi-wap-val.pay{width:90px;font-size:11px}
     .pi-wap-val.wide{width:100px;font-size:11px;font-weight:600}
-    .pi-wap-val.purple{color:#4338ca}.pi-wap-val.purple-bold{color:#4338ca;font-weight:600}
-    .pi-wap-val.indigo{color:#6366f1}.pi-wap-val.indigo-bold{color:#6366f1;font-weight:600}
-    .pi-wap-val.red{color:#dc2626}.pi-wap-val.red-bold{color:#ef4444;font-weight:600}
-    .pi-wap-val.green{color:#059669;font-weight:700}
-    .pi-wap-val.blue{color:#3b82f6}.pi-wap-val.blue-bold{color:#2563eb;font-weight:600}
+    .pi-wap-val.purple{font-weight:400}.pi-wap-val.purple-bold{font-weight:600}
+    .pi-wap-val.indigo{font-weight:400}.pi-wap-val.indigo-bold{font-weight:600}
+    .pi-wap-val.red{font-weight:400}.pi-wap-val.red-bold{font-weight:600}
+    .pi-wap-val.green{font-weight:700}
+    .pi-wap-val.blue{font-weight:400}.pi-wap-val.blue-bold{font-weight:600}
     /* 차감행 */
     .pi-wap-ded-row{font-size:10.5px}.pi-wap-ded-row label{font-size:10.5px}
     /* 보수월액 총계 */

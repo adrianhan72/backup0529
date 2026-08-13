@@ -17,14 +17,28 @@
       -webkit-text-fill-color: #000 !important;
       transition: background-color 5000s ease-in-out 0s;
     }
-    input[type="text"]:focus:not(.filt-search):not([readonly]),
-    input[type="number"]:focus:not([readonly]),
-    input[type="date"]:focus:not(.filt-date):not([readonly]),
-    input[type="datetime-local"]:focus,
-    input[type="datetime-local"]:focus,
-    textarea:focus,
-    select:focus:not(.filt-select):not(.cm-aw-pt-select):not(.pi-pay-type-select) {
+    input[type="text"]:focus:not(.filt-search):not([readonly]):not(:disabled),
+    input[type="number"]:focus:not([readonly]):not(:disabled),
+    input[type="date"]:focus:not(.filt-date):not([readonly]):not(:disabled),
+    input[type="datetime-local"]:focus:not([readonly]):not(:disabled),
+    input[type="datetime-local"]:focus:not([readonly]):not(:disabled),
+    textarea:focus:not([readonly]):not(:disabled),
+    select:focus:not(.filt-select):not(.cm-aw-pt-select):not(.pi-pay-type-select):not(:disabled) {
       border-color:#6366f1; outline:none; box-shadow:0 0 0 2px rgba(99,102,241,.25);
+    }
+    /* ── readonly·disabled 통일: 포커스 시 글로우·아웃라인 금지 (모든 비활성 입력 공통) ── */
+    input[readonly]:focus,
+    input[readonly]:focus-visible,
+    textarea[readonly]:focus,
+    textarea[readonly]:focus-visible,
+    input:disabled:focus,
+    input:disabled:focus-visible,
+    textarea:disabled:focus,
+    textarea:disabled:focus-visible,
+    select:disabled:focus,
+    select:disabled:focus-visible {
+      box-shadow:none!important;
+      outline:none!important;
     }
     /* 단독 input 기본 스타일 */
     input[type="text"]:not(.filt-search),
@@ -489,8 +503,8 @@
       background-repeat:no-repeat;background-position:right 8px center;background-size:12px;
     }
     select.filt-select:hover { border-color:#6366f1; }
-    select.filt-select:focus,
-    select.filt-select:focus-visible { border-color:#6366f1; outline:none; box-shadow:0 0 0 2px rgba(99,102,241,.25); }
+    select.filt-select:focus:not(:disabled),
+    select.filt-select:focus-visible:not(:disabled) { border-color:#6366f1; outline:none; box-shadow:0 0 0 2px rgba(99,102,241,.25); }
     .filt-date {
       border:1px solid #d1d5db;border-radius:7px;
       padding:4px 6px;height:32px;box-sizing:border-box;
@@ -499,9 +513,9 @@
       cursor:pointer;font-family:inherit;
       outline:none;transition:border-color .15s,box-shadow .15s;
     }
-    .filt-date:hover { border-color:#6366f1; }
-    .filt-date:focus,
-    .filt-date:focus-visible {
+    .filt-date:hover:not([readonly]):not(:disabled) { border-color:#6366f1; }
+    .filt-date:focus:not([readonly]):not(:disabled),
+    .filt-date:focus-visible:not([readonly]):not(:disabled) {
       border-color:#6366f1; outline:none; box-shadow:0 0 0 2px rgba(99,102,241,.25);
     }
     /* Chrome date input shadow-DOM: 배경 흰색 + 포커스 링 제거 */
@@ -525,6 +539,15 @@
     .filt-date:disabled::-webkit-datetime-edit-day-field,
     .filt-date:disabled::-webkit-datetime-edit-year-field { background:transparent !important; color:#555; }
     .filt-date[readonly] { background:#f1f5f9 !important; cursor:default; border:1px solid #e8eaed !important; color:#555; -webkit-text-fill-color:#555; }
+    /* readonly·disabled 상태: 포커스·호버에도 테두리 색 변화·글로우 없음 */
+    .filt-date[readonly]:hover,
+    .filt-date[readonly]:focus,
+    .filt-date[readonly]:focus-visible,
+    .filt-date:disabled:hover,
+    .filt-date:disabled:focus,
+    .filt-date:disabled:focus-visible {
+      border-color:#e8eaed !important; box-shadow:none !important; outline:none !important;
+    }
     .filt-date[readonly]::-webkit-datetime-edit,
     .filt-date[readonly]::-webkit-datetime-edit-fields-wrapper,
     .filt-date[readonly]::-webkit-datetime-edit-text,

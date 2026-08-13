@@ -421,12 +421,12 @@ function getKoreanHolidays(year) {
     `${year}-05-01`, // 근로자의 날 (공휴일 아님 — 유급휴일, 별도 처리)
     `${year}-05-05`, // 어린이날
     `${year}-06-06`, // 현충일
-    `${year}-07-17`, // 제헌절
     `${year}-08-15`, // 광복절
     `${year}-10-03`, // 개천절
     `${year}-10-09`, // 한글날
     `${year}-12-25`, // 성탄절
   ];
+  if(year >= 2026) fixed.push(`${year}-07-17`); // 제헌절 (2026년부터 공휴일)
 
   // ── 음력 기반 공휴일 양력 변환 테이블 (2020~2035) ──
   // 설날 전날·당일·다음날 / 부처님오신날 / 추석 전날·당일·다음날
@@ -438,8 +438,8 @@ function getKoreanHolidays(year) {
     2024: { seol:['02-09','02-10','02-11'], buddha:'05-15', chuseok:['09-16','09-17','09-18'] },
     2025: { seol:['01-28','01-29','01-30'], buddha:'05-05', chuseok:['10-05','10-06','10-07'] },
     2026: { seol:['02-16','02-17','02-18'], buddha:'05-24', chuseok:['09-24','09-25','09-26'] },
-    2027: { seol:['02-06','02-07','02-08'], buddha:'05-13', chuseok:['10-14','10-15','10-16'] },
-    2028: { seol:['01-26','01-27','01-28'], buddha:'05-02', chuseok:['10-02','10-03','10-04'] },
+    2027: { seol:['02-05','02-06','02-07'], buddha:'05-13', chuseok:['09-14','09-15','09-16'] },
+    2028: { seol:['01-25','01-26','01-27'], buddha:'05-02', chuseok:['10-02','10-03','10-04'] },
     2029: { seol:['02-12','02-13','02-14'], buddha:'05-20', chuseok:['09-21','09-22','09-23'] },
     2030: { seol:['02-02','02-03','02-04'], buddha:'05-09', chuseok:['09-11','09-12','09-13'] },
     2031: { seol:['01-22','01-23','01-24'], buddha:'04-28', chuseok:['09-30','10-01','10-02'] },
@@ -458,62 +458,28 @@ function getKoreanHolidays(year) {
     lunar.chuseok.forEach(d => holidays.add(`${year}-${d}`));
   }
 
-  // ── 대체공휴일 계산 ──
-  // 대상: 설·추석 연휴, 3·1절, 광복절, 개천절, 한글날, 어린이날 (2021년 개정)
-  // 규칙: 해당 공휴일이 일요일 → 다음 비공휴일 평일로 대체
-  //        설·추석 연휴가 다른 공휴일과 겹치면 → 연휴 다음 비공휴일 평일로 대체
-  const substituteTargets = new Set([
-    `${year}-03-01`,
-    `${year}-05-05`,
-    `${year}-08-15`,
-    `${year}-10-03`,
-    `${year}-10-09`,
-  ]);
-  if (lunar) {
-    lunar.seol.forEach(d => substituteTargets.add(`${year}-${d}`));
-    lunar.chuseok.forEach(d => substituteTargets.add(`${year}-${d}`));
-  }
-
-  // 설·추석 연휴 겹침 대체: 연휴 내 다른 공휴일과 겹치는 날 수만큼 다음 날 대체
-  const _addSubstitute = (baseDate) => {
-    const d = new Date(baseDate);
-    d.setDate(d.getDate() + 1);
-    while (holidays.has(_fmt(d)) || d.getDay() === 0 || d.getDay() === 6) {
-      d.setDate(d.getDate() + 1);
-    }
-    holidays.add(_fmt(d));
+  // ── 대체공휴일 (법령 기준 명시 테이블) ──
+  // 대상: 설·추석 연휴(토·일 포함 또는 다른 공휴일 겹침), 어린이날, 3·1절, 광복절, 개천절, 한글날이 토·일과 겹치는 경우
+  // (신정·현충일·석가탄신일·성탄절·근로자의날·제헌절은 대체공휴일 없음)
+  const SUBSTITUTE_TABLE = {
+    2020: ['01-27'],
+    2021: ['02-15', '08-16', '10-04', '10-11'],
+    2022: ['09-12', '10-10'],
+    2023: ['01-24', '10-02'],
+    2024: ['02-12', '05-06'],
+    2025: ['03-03', '10-08'],
+    2026: ['03-02', '08-17', '09-28', '10-05'],
+    2027: ['02-08', '08-16', '10-04', '10-11'],
+    2028: ['10-05'],
+    2029: ['05-07', '09-24'],
+    2030: ['02-05', '05-06'],
+    2031: ['03-03'],
+    2032: ['08-16', '09-21', '10-04', '10-11'],
+    2033: ['02-02', '10-10'],
+    2034: ['02-21'],
+    2035: ['05-07', '09-19'],
   };
-  const _fmt = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-
-  // 일요일에 걸리는 대체공휴일 대상
-  substituteTargets.forEach(dateStr => {
-    const d = new Date(dateStr);
-    if (d.getDay() === 0) _addSubstitute(dateStr); // 일요일 → 다음 평일
-  });
-
-  // 토요일 겹침: 설·추석 연휴만 토요일 대체 적용 (2023년부터 토요일 대체 확대 적용)
-  if (lunar && year >= 2023) {
-    [...lunar.seol, ...lunar.chuseok].forEach(md => {
-      const dateStr = `${year}-${md}`;
-      const d = new Date(dateStr);
-      if (d.getDay() === 6) _addSubstitute(dateStr);
-    });
-  }
-
-  // 설·추석 연휴 안에서 다른 공휴일과 겹치는 경우 대체 (예: 추석+개천절)
-  if (lunar) {
-    const lunarClusters = [lunar.seol, lunar.chuseok];
-    lunarClusters.forEach(cluster => {
-      const dates = cluster.map(md => `${year}-${md}`);
-      // 연휴 내 다른 공휴일(설·추석 외)과 겹치는 날 찾기
-      dates.forEach(dateStr => {
-        const d = new Date(dateStr);
-        // 같은 날이 연휴 외 공휴일이기도 한 경우 대체 추가
-        const isOtherHoliday = [...holidays].some(h => h === dateStr && !dates.includes(h));
-        if (isOtherHoliday) _addSubstitute(dateStr);
-      });
-    });
-  }
+  (SUBSTITUTE_TABLE[year] || []).forEach(d => holidays.add(`${year}-${d}`));
 
   return holidays;
 }

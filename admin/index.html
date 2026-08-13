@@ -13,15 +13,15 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-    <link rel="stylesheet" href="css/admin-base.css?v=20260716" />
-  <link rel="stylesheet" href="css/admin-modal.css?v=20260716" />
-  <link rel="stylesheet" href="css/admin-contract.css?v=20260716" />
-  <link rel="stylesheet" href="css/admin-form.css?v=20260716" />
-  <link rel="stylesheet" href="css/admin-notice.css?v=20260716" />
-  <link rel="stylesheet" href="css/admin-payroll.css?v=20260716" />
-  <link rel="stylesheet" href="css/admin-wage.css?v=20260716" />
-  <link rel="stylesheet" href="css/admin-login.css?v=20260716" />
-  <link rel="stylesheet" href="css/admin-etc.css?v=20260716" />
+    <link rel="stylesheet" href="css/admin-base.css?v=20260813c" />
+  <link rel="stylesheet" href="css/admin-modal.css?v=20260813c" />
+  <link rel="stylesheet" href="css/admin-contract.css?v=20260813c" />
+  <link rel="stylesheet" href="css/admin-form.css?v=20260813c" />
+  <link rel="stylesheet" href="css/admin-notice.css?v=20260813c" />
+  <link rel="stylesheet" href="css/admin-payroll.css?v=20260813c" />
+  <link rel="stylesheet" href="css/admin-wage.css?v=20260813c" />
+  <link rel="stylesheet" href="css/admin-login.css?v=20260813c" />
+  <link rel="stylesheet" href="css/admin-etc.css?v=20260813c" />
 </head>
 <body>
 
@@ -1552,7 +1552,7 @@
         <div class="cft-field">
           <label>해지 사유 <span style="color:#c00;font-weight:900;font-size:13px;">*</span></label>
           <div class="cft-reason-btns" id="cft-reason-chips">
-            <button type="button" class="cft-reason-chip" onclick="_cftSelectReason(this,'자발적 퇴사')" data-type="voluntary">자발적 퇴사</button>
+            <button type="button" class="cft-reason-chip" onclick="_cftSelectReason(this,'사직')" data-type="voluntary">사직</button>
             <button type="button" class="cft-reason-chip" onclick="_cftSelectReason(this,'해고')" data-type="dismissal">해고</button>
           </div>
         </div>
@@ -1583,7 +1583,6 @@
         <button class="btn btn-secondary" style="padding:7px 14px;font-size:12.5px;" onclick="_cftClose()">
           <i class="fas fa-times"></i> 취소
         </button>
-        <span id="ct-cft-status-hint" style="font-size:12px;font-weight:700;margin-left:4px;"></span>
       </div>
     </div>
 
@@ -1600,7 +1599,7 @@
       <div style="margin-bottom:12px;">
         <label style="font-size:12.5px;font-weight:600;color:#374151;">해지 사유 <span style="color:#c00;font-weight:900;font-size:13px;">*</span></label>
         <div class="cft-reason-btns" id="ct-term-reason-chips">
-          <button type="button" class="cft-reason-chip" onclick="_ctTermSelectReason(this,'자발적 퇴사')" data-type="voluntary">자발적 퇴사</button>
+          <button type="button" class="cft-reason-chip" onclick="_ctTermSelectReason(this,'사직')" data-type="voluntary">사직</button>
           <button type="button" class="cft-reason-chip" onclick="_ctTermSelectReason(this,'해고')" data-type="dismissal">해고</button>
         </div>
       </div>
@@ -2034,14 +2033,36 @@
             <select id="ct-pay-period-day" onchange="_ctPeriodCompose()" style="flex:0 0 auto;">
               <option value="">일 선택</option>
               <option value="1">1일</option>
+              <option value="2">2일</option>
+              <option value="3">3일</option>
+              <option value="4">4일</option>
               <option value="5">5일</option>
+              <option value="6">6일</option>
+              <option value="7">7일</option>
+              <option value="8">8일</option>
+              <option value="9">9일</option>
               <option value="10">10일</option>
               <option value="11">11일</option>
+              <option value="12">12일</option>
+              <option value="13">13일</option>
+              <option value="14">14일</option>
               <option value="15">15일</option>
               <option value="16">16일</option>
+              <option value="17">17일</option>
+              <option value="18">18일</option>
+              <option value="19">19일</option>
               <option value="20">20일</option>
               <option value="21">21일</option>
+              <option value="22">22일</option>
+              <option value="23">23일</option>
+              <option value="24">24일</option>
               <option value="25">25일</option>
+              <option value="26">26일</option>
+              <option value="27">27일</option>
+              <option value="28">28일</option>
+              <option value="29">29일</option>
+              <option value="30">30일</option>
+              <option value="31">31일</option>
             </select>
             <span style="font-size:13px;color:#6b7280;font-weight:500;">부터 1개월간</span>
           </div>
@@ -2052,7 +2073,7 @@
         <div class="form-group">
           <label>급여일 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span> <span style="font-size:11px;font-weight:400;color:#6b7280;">(매월)</span></label>
           <div style="display:flex;align-items:center;gap:6px;">
-            <input type="number" id="ct-pay-day" min="1" max="31" placeholder="미입력 시 고객사 급여일 적용" style="width:80px;" />
+            <input type="number" id="ct-pay-day" min="1" max="31" placeholder="1~31 필수 입력" style="width:80px;" />
             <span style="font-size:12px;color:#6b7280;">일</span>
             <span id="ct-pay-day-default" class="lbl-desc"></span>
           </div>
@@ -2317,10 +2338,6 @@
     </div>
     <!-- 툴바 -->
     <div style="display:flex;align-items:center;gap:10px;padding:10px 20px;background:#f8fafc;border-bottom:1px solid #e2e8f0;flex-shrink:0;flex-wrap:wrap;">
-      <div style="display:flex;align-items:flex-start;gap:6px;font-size:12px;color:#64748b;margin-right:4px;line-height:1.7;" id="cpm-guide-text">
-        <i class="fas fa-info-circle" style="color:#6366f1;margin-top:2px;"></i>
-        <span>• 계약서는 반드시 근로자에게 알림톡 또는 이메일로 발송하거나 수동교부해야 합니다.<br>• 조회 모드에서 계약서와 제3자 정보제공동의서는 각 날인본을 업로드해서 보관할 수 있습니다.</span>
-      </div>
       <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
         <button onclick="printContractDoc()" class="btn btn-slate">
           <i class="fas fa-print"></i> 인쇄
@@ -3040,57 +3057,57 @@
   </div>
 </div>
 
-      <script src="js/constants.js"></script>
-      <script src="js/message-templates.js"></script>
-      <script src="js/admin-loader.js"></script>
-<script src="js/admin-state.js"></script>
-  <script src="js/admin-labor.js"></script>
+      <script src="js/constants.js?v=20260814c"></script>
+      <script src="js/message-templates.js?v=20260814c"></script>
+      <script src="js/admin-loader.js?v=20260814c"></script>
+<script src="js/admin-state.js?v=20260814c"></script>
+  <script src="js/admin-labor.js?v=20260814c"></script>
   <!-- admin-dashboard 모듈 -->
-  <script src="js/admin-dashboard/dashboard-core.js"></script>
-  <script src="js/admin-dashboard/dashboard-charts.js"></script>
-  <script src="js/admin-dashboard.js"></script>
-  <script src="js/admin-standards.js"></script>
+  <script src="js/admin-dashboard/dashboard-core.js?v=20260814c"></script>
+  <script src="js/admin-dashboard/dashboard-charts.js?v=20260814c"></script>
+  <script src="js/admin-dashboard.js?v=20260814c"></script>
+  <script src="js/admin-standards.js?v=20260814c"></script>
   <!-- admin-wage 모듈 -->
-  <script src="js/admin-wage/wage-ledger.js"></script>
-  <script src="js/admin-wage/wage-severance.js"></script>
-  <script src="js/admin-wage/wage-retirement-mgmt.js"></script>
-  <script src="js/admin-wage.js"></script>
+  <script src="js/admin-wage/wage-ledger.js?v=20260814c"></script>
+  <script src="js/admin-wage/wage-severance.js?v=20260814c"></script>
+  <script src="js/admin-wage/wage-retirement-mgmt.js?v=20260814c"></script>
+  <script src="js/admin-wage.js?v=20260814c"></script>
   <!-- admin-company 모듈 -->
-  <script src="js/admin-company/company-core.js"></script>
-  <script src="js/admin-company/company-history.js"></script>
-  <script src="js/admin-company.js"></script>
+  <script src="js/admin-company/company-core.js?v=20260814c"></script>
+  <script src="js/admin-company/company-history.js?v=20260814c"></script>
+  <script src="js/admin-company.js?v=20260814c"></script>
   <!-- admin-contract 모듈 (기능별 분리) -->
-  <script src="js/admin-contract/contract-form.js"></script>
-  <script src="js/admin-contract/contract-core.js"></script>
-  <script src="js/admin-contract/contract-docs.js"></script>
-  <script src="js/admin-contract/contract-dispatch.js"></script>
-  <script src="js/admin-contract/consent-dispatch.js"></script>
-  <script src="js/admin-contract/contract-lifecycle.js"></script>
-  <script src="js/admin-contract.js"></script>
+  <script src="js/admin-contract/contract-form.js?v=20260814c"></script>
+  <script src="js/admin-contract/contract-core.js?v=20260814c"></script>
+  <script src="js/admin-contract/contract-docs.js?v=20260814c"></script>
+  <script src="js/admin-contract/contract-dispatch.js?v=20260814c"></script>
+  <script src="js/admin-contract/consent-dispatch.js?v=20260814c"></script>
+  <script src="js/admin-contract/contract-lifecycle.js?v=20260814c"></script>
+  <script src="js/admin-contract.js?v=20260814c"></script>
   <!-- admin-payroll 모듈 -->
-  <script src="js/admin-payroll/payroll-core.js"></script>
-  <script src="js/admin-payroll/payroll-bulk.js"></script>
-  <script src="js/admin-payroll.js"></script>
+  <script src="js/admin-payroll/payroll-core.js?v=20260814c"></script>
+  <script src="js/admin-payroll/payroll-bulk.js?v=20260814c"></script>
+  <script src="js/admin-payroll.js?v=20260814c"></script>
   <!-- admin-payroll-input 모듈 (기능별 분리) -->
-  <script src="js/admin-payroll-input/payroll-input-core.js"></script>
-  <script src="js/admin-payroll-input/payroll-input-main.js"></script>
-  <script src="js/admin-payroll-input/payroll-input-save.js"></script>
-  <script src="js/admin-payroll-input/payroll-input-excel.js"></script>
-  <script src="js/admin-payroll-input.js"></script>
+  <script src="js/admin-payroll-input/payroll-input-core.js?v=20260814c"></script>
+  <script src="js/admin-payroll-input/payroll-input-main.js?v=20260814c"></script>
+  <script src="js/admin-payroll-input/payroll-input-save.js?v=20260814c"></script>
+  <script src="js/admin-payroll-input/payroll-input-excel.js?v=20260814c"></script>
+  <script src="js/admin-payroll-input.js?v=20260814c"></script>
   <!-- admin-billing 모듈 (기능별 분리) -->
-  <script src="js/admin-billing/billing-core.js"></script>
-  <script src="js/admin-billing/auth.js"></script>
-  <script src="js/admin-billing/payslip-send.js"></script>
-  <script src="js/admin-billing/admin-accounts.js"></script>
-  <script src="js/admin-billing/system-settings.js"></script>
-  <script src="js/admin-billing/company-notice.js"></script>
-  <script src="js/admin-billing/two-year-exceed.js"></script>
-  <script src="js/admin-billing/regular-conversion.js"></script>
-  <script src="js/admin-billing/annual-leave.js"></script>
-  <script src="js/admin-billing/company-notice-log.js"></script>
-  <script src="js/admin-billing/general-notice.js"></script>
-  <script src="js/admin-billing/attendance-ledger.js"></script>
-  <script src="js/admin-billing.js"></script>
+  <script src="js/admin-billing/billing-core.js?v=20260814c"></script>
+  <script src="js/admin-billing/auth.js?v=20260814c"></script>
+  <script src="js/admin-billing/payslip-send.js?v=20260814c"></script>
+  <script src="js/admin-billing/admin-accounts.js?v=20260814c"></script>
+  <script src="js/admin-billing/system-settings.js?v=20260814c"></script>
+  <script src="js/admin-billing/company-notice.js?v=20260814c"></script>
+  <script src="js/admin-billing/two-year-exceed.js?v=20260814c"></script>
+  <script src="js/admin-billing/regular-conversion.js?v=20260814c"></script>
+  <script src="js/admin-billing/annual-leave.js?v=20260814c"></script>
+  <script src="js/admin-billing/company-notice-log.js?v=20260814c"></script>
+  <script src="js/admin-billing/general-notice.js?v=20260814c"></script>
+  <script src="js/admin-billing/attendance-ledger.js?v=20260814c"></script>
+  <script src="js/admin-billing.js?v=20260814c"></script>
 
   <!-- ─── 범용 확인 모달 ─── -->
   <div class="modal-overlay" id="ct-confirm-modal">

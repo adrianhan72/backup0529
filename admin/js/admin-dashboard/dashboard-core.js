@@ -1589,6 +1589,12 @@ function goDraftPayroll(draftId){
     piEditPayrollId = null;
 
     piDraftId = draftId;
+
+    // 이어쓰기 폼 진입: 임시저장 배너 둘 다 숨김
+    const _adbDraft = document.getElementById('pi-all-draft-banner');
+    if(_adbDraft) _adbDraft.style.display = 'none';
+    const _cdbDraft = document.getElementById('pi-co-draft-banner');
+    if(_cdbDraft) _cdbDraft.style.display = 'none';
     
     // 계약 로드 및 임시저장 복원
     setTimeout(() => {

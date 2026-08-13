@@ -859,7 +859,7 @@ function openContractModal(id=null, preCompanyId=null){
   ['ct-pay-period-month','ct-pay-period-day'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});
   const _ppHint = document.getElementById('ct-pay-period-hint'); if(_ppHint) _ppHint.textContent='';
   document.getElementById('ct-annual').value=15;
-  { const _pua = document.getElementById('ct-pre-used-annual'); if(_pua) _pua.value = '0'; }
+  { const _pua = document.getElementById('ct-pre-used-annual'); if(_pua){ _pua.value = '0'; _pua.disabled = false; _pua.readOnly = false; _pua.classList.remove('ct-input-locked-dark'); } }
   { const _ped = document.getElementById('ct-probation-end-date'); if(_ped) _ped.value = ''; }
   { const _pdd = document.getElementById('ct-pay-day-default'); if(_pdd) _pdd.textContent = ''; }
   document.getElementById('ct-annual-sal').value='';
@@ -1389,7 +1389,7 @@ function _setEditNameCategoryLock(lock, lockCat = lock) {
   if(nameEl)   { nameEl.readOnly   = lock;    nameEl.classList.toggle('ct-input-locked-dark', lock); }
   if(idEl)     { idEl.readOnly     = lock;    idEl.classList.toggle('ct-input-locked-dark', lock); }
   if(genderEl) { genderEl.disabled = lock;    genderEl.classList.toggle('ct-input-locked-dark', lock); }
-  if(empnoEl)  { empnoEl.readOnly  = lock;    empnoEl.classList.toggle('ct-input-locked-dark', lock); }
+  if(empnoEl)  { empnoEl.readOnly  = lock;    empnoEl.classList.toggle('ct-input-locked-dark', lock); empnoEl.style.background = lock ? '#f1f5f9' : ''; }
   // 고용형태: lockCat 적용 (재계약은 false → 편집 가능)
   if(catEl)    { catEl.disabled    = lockCat; catEl.classList.toggle('ct-input-locked-dark', lockCat); }
   if(nameLock) nameLock.style.display = lock    ? 'block' : 'none';
@@ -1646,6 +1646,25 @@ function _hideAllNameDupAlerts(){
  */
 function _validateEmpNoUniqueness(empNo, companyId, selfEmpId, newContractStart, newContractType) {
   if(!empNo || !companyId) return { ok: true, type: 'ok', msg: '' };
+
+  // ── 대표자·등기임원·특수관계인과의 교차 중복 검사 (4개 그룹 통합 유니크) ──
+  {
+    const _co = allCompanies.find(c => c.id === companyId);
+    if(_co){
+      let _reps = [];
+      try { _reps = typeof _co.representatives === 'string' ? JSON.parse(_co.representatives) : (_co.representatives || []); } catch(e){ _reps = []; }
+      if(Array.isArray(_reps)){
+        const _repHit = _reps.find(r => String(r.employee_number||'').trim() === empNo);
+        if(_repHit) return { ok:false, type:'duplicate', msg:`사원번호 "${empNo}"은(는) 대표자(${_repHit.name||''})가 사용 중입니다. 다른 번호를 입력하세요.` };
+      }
+    }
+    const _execHit = (typeof allExecutives !== 'undefined' && allExecutives)
+      ? allExecutives.find(e => e.company_id === companyId && String(e.employee_number||'').trim() === empNo) : null;
+    if(_execHit) return { ok:false, type:'duplicate', msg:`사원번호 "${empNo}"은(는) 등기임원(${_execHit.name||''})가 사용 중입니다. 다른 번호를 입력하세요.` };
+    const _relHit = (typeof allRelatedParties !== 'undefined' && allRelatedParties)
+      ? allRelatedParties.find(r => r.company_id === companyId && String(r.employee_number||'').trim() === empNo) : null;
+    if(_relHit) return { ok:false, type:'duplicate', msg:`사원번호 "${empNo}"은(는) 특수관계인(${_relHit.name||''})가 사용 중입니다. 다른 번호를 입력하세요.` };
+  }
 
   // 사원번호 일치하는 직원 찾기 (본인 제외)
   const sameNoEmps = allEmployees.filter(e =>
@@ -2290,10 +2309,6 @@ function viewContract(id){
       + ` <button onclick="event.stopPropagation();_copyContractId('${id||''}')" title="ID 복사" class="btn btn-dark" style="padding:2px 6px;font-size:11px;"><i class="far fa-copy"></i> 복사</button>`;
     if(isDraftFlag){
       return `${idHTML} <span class="badge badge-yellow">임시저장</span>`;
-    }
-    if(isVoidedAmend){
-      return `${idHTML} <span class="badge ${badgeCls}" >${statusLabel}</span>`
-        + `&nbsp;<span class="badge badge-red"><i class="fas fa-ban"></i> 수정재발행 파기</span>`;
     }
     return `${idHTML} <span class="badge ${badgeCls}">${statusLabel}</span>`;
   };

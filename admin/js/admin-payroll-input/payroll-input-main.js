@@ -214,13 +214,6 @@ async function loadPITargetList(){
     });
   });
 
-  // ① 임시저장 직원 Map: empId → draftPayrollId
-  const draftEmpMap = new Map(
-    (allPayrolls||[])
-      .filter(p => p.company_id===coId && p.pay_year===yr && p.pay_month===mo && p.is_draft)
-      .map(p => [p.employee_id, p.id])
-  );
-
   // ③ 확정 저장 직원 Set (is_draft=false 만) + payrollId 매핑
   const paidPayrollMap = new Map(); // employee_id → payroll_id
   (allPayrolls||[])
@@ -291,10 +284,8 @@ async function loadPITargetList(){
         cEnd = actualContract ? (actualContract.contract_end || '무기한') : '무기한';
       }
       
-      const isDraft  = draftEmpMap.has(emp.id);
+      // 임시저장 항목은 목록 상단 배너에서만 표시 — 목록에서는 미입력으로 처리
       const isPaid   = paidEmpIds.has(emp.id);
-      const draftId  = isDraft ? draftEmpMap.get(emp.id) : null;
-      const deptPos  = isVirtual ? (emp.position || '') : [emp.department, emp.position].filter(v=>v&&v.trim()).join('/');
 
       // ④-0 계약상태 배지 (CSS class 사용)
       const _cs = actualContract ? (actualContract.status || CONTRACT_STATUS.ACTIVE) : '';
@@ -328,9 +319,7 @@ async function loadPITargetList(){
 
       // ④ 급여입력 여부 배지 (CSS class 사용)
       let statusBadge;
-      if(isDraft){
-        statusBadge = '<span class="badge badge-amber"><i class="fas fa-clock"></i> 임시저장</span>';
-      } else if(isPaid){
+      if(isPaid){
         statusBadge = '<span class="badge badge-green"><i class="fas fa-check-circle"></i> 입력완료</span>';
       } else {
         // 법정보호휴직자 체크 (산재·육아·61~90일차 출산 → 회사 지급분 없음)
@@ -345,12 +334,7 @@ async function loadPITargetList(){
       let actionBtn;
       const targetEmpId = emp.id;
       const targetContractId = contract ? contract.id : '';
-      if(isDraft){
-        actionBtn = `<button onclick="selectPITarget('${targetEmpId}','${targetContractId}','${draftId}')"
-          class="btn btn-teal" style="padding:7px 16px;font-size:12px;">
-          <i class="fas fa-play-circle"></i> 이어 입력
-        </button>`;
-      } else if(isPaid){
+      if(isPaid){
         const paidPid = paidPayrollMap.get(emp.id) || '';
         actionBtn = `<div style="display:inline-flex;gap:4px;align-items:center;flex-wrap:nowrap;">
           <button onclick="openPayslipModal('${paidPid}')"
@@ -382,7 +366,7 @@ async function loadPITargetList(){
 
       return `<tr class="pi-target-row">
         <td class="pi-target-name">
-          ${emp.name}${deptPos?`<span class="pi-target-dept">${deptPos}</span>`:''}
+          ${emp.name}
         </td>
         <td class="pi-target-gender">${emp.gender==='female'||emp.gender==='여성'||emp.gender==='여'?'여':emp.gender==='male'||emp.gender==='남성'||emp.gender==='남'?'남':'-'}</td>
         <td>
@@ -402,18 +386,21 @@ async function loadPITargetList(){
   document.getElementById('pi-target-list-section').style.display='';
   document.getElementById('pi-form-section').style.display='none';
   _syncPIPeriodSectionVisibility(false);
+  // 임시저장 배너: 지급대상 목록 단계에서만 선택 고객사 배너 표시
+  const _adbList = document.getElementById('pi-all-draft-banner');
+  if(_adbList) _adbList.style.display = 'none';
+  if(typeof renderPICoDraftBanner === 'function') renderPICoDraftBanner();
 }
 
 /** 대상자 목록 닫기 */
 function hidePITargetList(){
   const sec = document.getElementById('pi-target-list-section');
   if(sec) sec.style.display='none';
-  // 고객사 선택 여부에 따라 적절한 배너 복원
-  if(currentGlobalCompanyId){
-    if(typeof renderPICoDraftBanner === 'function') renderPICoDraftBanner();
-  } else {
-    if(typeof renderPIAllDraftBanner === 'function') renderPIAllDraftBanner();
-  }
+  // 임시저장 배너는 지급대상 목록 단계에서만 표시 → 목록 닫으면 둘 다 숨김
+  const _adb = document.getElementById('pi-all-draft-banner');
+  if(_adb) _adb.style.display = 'none';
+  const _cdb = document.getElementById('pi-co-draft-banner');
+  if(_cdb) _cdb.style.display = 'none';
 }
 
 /**
@@ -527,13 +514,15 @@ function selectPITarget(empId, contractId, draftId=null){
     empSel.onchange = _prevOnchange;
   }
 
-  // 폼 표시 + 년월 카드 숨김 + 임시저장 전체 배너 숨김
+  // 폼 표시 + 년월 카드 숨김 + 임시저장 배너 숨김 (둘 다)
   document.getElementById('pi-target-list-section').style.display='none';
   document.getElementById('pi-form-section').style.display='';
   _syncPIPeriodSectionVisibility(true);
-  // ★ 직원 폼 진입 시 임시저장 배너 숨김 (년월 선택 단계에서만 표시)
+  // ★ 직원 폼 진입 시 임시저장 배너 숨김 (전 고객사·선택 고객사 모두)
   const _adbHideOnSelect = document.getElementById('pi-all-draft-banner');
   if(_adbHideOnSelect) _adbHideOnSelect.style.display = 'none';
+  const _cdbHideOnSelect = document.getElementById('pi-co-draft-banner');
+  if(_cdbHideOnSelect) _cdbHideOnSelect.style.display = 'none';
 
   // 계약 데이터 로드 + 자동입력 (onchange 이중 호출 없이 1회만 실행)
   loadPIContract();
@@ -541,6 +530,7 @@ function selectPITarget(empId, contractId, draftId=null){
   if(draftId){
     // ── '이어 입력': 임시저장 자동 복원 ──
     if(typeof piDraftId !== 'undefined') piDraftId = draftId;
+    if(typeof _updatePIDraftDeleteBtn === 'function') _updatePIDraftDeleteBtn();
     setTimeout(() => {
       if(typeof loadPIDraft === 'function') loadPIDraft();
     }, 400);
@@ -562,12 +552,13 @@ function selectPITarget(empId, contractId, draftId=null){
       const _newDropZone = document.getElementById('pi-upload-drop-zone');
       if(_newDropZone) _newDropZone.style.display = '';
       // 저장 버튼 텍스트 신규 모드로 복원
-      document.querySelectorAll('#page-payroll-input .btn-primary').forEach(btn => {
-        if(btn.textContent.includes('수정 저장') || btn.textContent.includes('저장')){
-          btn.innerHTML = '<i class="fas fa-save"></i> 급여 저장';
-          btn.style.background = '';
-        }
-      });
+      const _newSaveBtn = document.querySelector('#page-payroll-input button[onclick="savePI()"]');
+      if(_newSaveBtn){
+        _newSaveBtn.innerHTML = '<i class="fas fa-save"></i> 급여 저장';
+        _newSaveBtn.classList.remove('btn-danger');
+        _newSaveBtn.classList.add('btn-primary');
+        _newSaveBtn.style.background = '';
+      }
       _updatePICancelBtn();
       _updatePIDraftBtnForMode();
       _updatePIBottomBtns();
@@ -1250,15 +1241,15 @@ function loadPIContract(){
     piContract = _piCandidates[0] || null;
     // 근로계약서의 급여 산정기간 설정 (필수)
     if(piContract && !piContract.is_virtual){
-      const _ctPpMo = piContract.pay_period_month;
-      const _ctPpDay = piContract.pay_period_day;
+      let _ctPpMo = piContract.pay_period_month;
+      let _ctPpDay = parseInt(piContract.pay_period_day);
       if(!_ctPpMo || !_ctPpDay){
-        toast('해당 근로계약의 급여 산정기간이 누락되어 있어 급여입력을 완료할 수 없습니다.', 'error');
-        document.getElementById('pi-form-section').style.display = 'none';
-        document.getElementById('pi-target-list-section').style.display = '';
-        piContract = null;
-        _piContractLoading = false;
-        return;
+        // 계약서에 산정기간이 없으면 고객사 설정으로 폴백 (차단하지 않음)
+        const _coFbId = currentGlobalCompanyId || document.getElementById('pi-company')?.value;
+        const _coFb = (allCompanies||[]).find(c => c.id === _coFbId);
+        _ctPpMo = _coFb?.pay_period_month || 'current_month';
+        _ctPpDay = parseInt(_coFb?.pay_period_day) || 1;
+        toast('근로계약서에 급여 산정기간이 없어 고객사 설정을 사용합니다.', 'warning');
       }
       const yr = parseInt(document.getElementById('pi-year')?.value) || new Date().getFullYear();
       const mo = parseInt(document.getElementById('pi-month')?.value) || (new Date().getMonth() + 1);
@@ -1528,11 +1519,8 @@ function loadPIContract(){
       if(wp) wp.style.display = 'none';
       if(sw) sw.style.display = 'none';
     })();
-    // 서류미비/계약예정 상태 안내 배너 (활성이 아닌 경우) — 계약 조건은 정상 표시, 유효 계약으로 처리
-    const _piContractStatusBanner = piContract.status===CONTRACT_STATUS.DOCS_INCOMPLETE
-      ? `<div style="background:#fef9c3;border-radius:6px;padding:6px 10px;margin-bottom:8px;font-size:12px;color:#92400e;">
-           ⚠️ <b>서류미비</b> 상태 — 유효 계약으로 급여 처리됩니다. 날인 서류를 <a href="#" onclick="event.preventDefault();openContractForUpload('${piContract.id}')" style="color:#b45309;font-weight:700;text-decoration:underline;cursor:pointer;">보완</a>해 주세요.</div>`
-      : piContract.status===CONTRACT_STATUS.PENDING
+    // 계약예정 상태 안내 배너 (계약 효력 개시 전인 경우만)
+    const _piContractStatusBanner = piContract.status===CONTRACT_STATUS.PENDING
       ? `<div style="background:#fef9c3;border-radius:6px;padding:6px 10px;margin-bottom:8px;font-size:12px;color:#92400e;">
            ⚠️ <b>계약예정</b> 상태 — 계약 효력 개시 전입니다.</div>`
       : '';
@@ -1997,6 +1985,8 @@ function _onPITaxDependentsChange(){
 // ──────────────────────────────────────────────────────────────────────────────
 function _applyPIDefaultWorkDays(forceOverwrite){
   if(!piContract) return;
+  // 수정 모드: 저장된 근로일수·총근로시간 보존 (자동입력 덮어쓰기 금지, max·배지만 갱신)
+  if(typeof piEditPayrollId !== 'undefined' && piEditPayrollId) forceOverwrite = false;
   const cType = piContract.contract_type || '';
   // 일용직은 자동 계산 제외 (날짜별 입력)
   if(cType ===CONTRACT_TYPE.DAILY) return;
@@ -2174,31 +2164,30 @@ function _applyPIPayDate(forceOverwrite){
   const badgeEl = document.getElementById('pi-paydate-badge');
   if(!pdEl) return;
 
-  // 모든 계약 유형에서 수정 가능 (readonly 없음)
-  pdEl.readOnly = false;
-  pdEl.classList.remove('pi-input-locked');
-
-  // ── 급여일 우선순위: 근로계약서 pay_day > 고객사 pay_day ────────────
-  const coId = currentGlobalCompanyId || document.getElementById('pi-company')?.value;
-  const co   = allCompanies.find(c => c.id === coId);
-  // 근로계약서에 개별 급여일이 설정된 경우 우선 사용
-  const contractPayDay = piContract?.pay_day;
-  const rawPayDay = contractPayDay ? String(contractPayDay) : (co?.pay_day);
-  const payDayNum = parseInt(String(rawPayDay || '').replace(/[^0-9]/g, '')) || 0;
-  const isFromContract = !!(contractPayDay && payDayNum);
-
-  const yr = parseInt(document.getElementById('pi-year')?.value)  || 0;
-  const mo = parseInt(document.getElementById('pi-month')?.value) || 0;
-
-  if(!payDayNum || !yr || !mo){
-    // pay_day 미설정: 경고 배지 표시 후 직접 입력
-    if(badgeEl){
-      badgeEl.textContent  = '⚠ 고객사 급여지급일 미설정 — 직접 입력';
-      badgeEl.className = 'pi-paydate-badge-warn';
-      badgeEl.style.display = '';
-    }
+  // ── 날짜 직접 입력: 근로계약이 없는 가상 인원(대표자/등기임원/특수관계인 본인)만 허용 ──
+  const isVirtual = !piContract || !!piContract.is_virtual;
+  if(isVirtual){
+    pdEl.readOnly = false;
+    pdEl.classList.remove('pi-input-locked');
+    if(badgeEl) badgeEl.style.display = 'none';
     return;
   }
+
+  // ── 근로계약 존재: 지급일은 근로계약이 정한 날짜 → readonly 표시 ──
+  pdEl.readOnly = true;
+  pdEl.classList.add('pi-input-locked');
+
+  const contractPayDay = piContract?.pay_day;
+  const payDayNum = parseInt(String(contractPayDay || '').replace(/[^0-9]/g, '')) || 0;
+
+  if(!payDayNum){
+    // 지급일 누락 계약(해지 등 — 홀드 이슈): 별도 안내 없이 빈 값 readonly 유지
+    if(badgeEl) badgeEl.style.display = 'none';
+    return;
+  }
+
+  const yr = parseInt(document.getElementById('pi-year')?.value)  || new Date().getFullYear();
+  const mo = parseInt(document.getElementById('pi-month')?.value) || (new Date().getMonth() + 1);
 
   // 지급일 날짜 구성: pay_day일이 해당 월 말일 초과이면 말일로 clamp
   const lastDayOfMonth = new Date(yr, mo, 0).getDate();
@@ -2215,8 +2204,8 @@ function _applyPIPayDate(forceOverwrite){
   }
 
   if(badgeEl){
-    badgeEl.textContent   = isFromContract ? `근로계약서 설정: 매월${day}일` : `고객사 설정: 매월${day}일`;
-    badgeEl.className = isFromContract ? 'pi-paydate-badge-contract' : 'pi-paydate-badge-company';
+    badgeEl.textContent   = `근로계약서 설정: 매월${day}일`;
+    badgeEl.className = 'pi-paydate-badge-contract';
     badgeEl.style.display = '';
   }
 }
@@ -2626,13 +2615,8 @@ function _switchInsuranceModeUI(){
   const isFixed = _getPIInsuranceBasis() === 'fixed_amount';
   const autoBlock  = document.getElementById('pi-ded-auto-block');
   const fixedBlock = document.getElementById('pi-ded-fixed-block');
-  const badge      = document.getElementById('pi-ded-mode-badge');
   if(autoBlock)  autoBlock.style.display  = isFixed ? 'none' : '';
   if(fixedBlock) fixedBlock.style.display = isFixed ? '' : 'none';
-  if(badge){
-    badge.textContent = isFixed ? '확정액 직접입력' : '요율 자동계산';
-    badge.className = isFixed ? 'pi-ded-badge-fixed' : 'pi-ded-badge-rate';
-  }
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -3180,11 +3164,28 @@ function calcPI(){
     const _isDaily  = piContract.contract_type === CONTRACT_TYPE.DAILY;
     let _actualBase = _cBase;
     const _baseActualEl = document.getElementById('pi-base-actual-disp');
-    if (!_isDaily && _workDays > 0 && _monthDays > 0) {
-      _actualBase = Math.round(_cBase / _monthDays * _workDays);
-    } else if (_isDaily && _workDays > 0) {
+    if (_isDaily && _workDays > 0) {
       const _dWage = parseFloat(piContract.daily_wage) || _cBase;
       _actualBase = Math.round(_dWage * _workDays);
+    } else if (!_isDaily && _workDays > 0 && _monthDays > 0) {
+      if (_prorationMethod === '30day_fixed') {
+        // 30일 고정 기준: 만근이면 전액, 결근 시에만 1일당 1/30 차감
+        const _fullWdRes = _calcPIDefaultWorkDays(piContract, _yr, _mo);
+        const _fullWd    = (_fullWdRes && _fullWdRes.workDays > 0) ? _fullWdRes.workDays : 0;
+        if (!_fullWd || _workDays >= _fullWd) {
+          _actualBase = _cBase; // 만근 → 월급 전액
+        } else if (_fullWdRes.mode === 'full') {
+          // 만근 기준 월에서 결근 발생 → 결근일수만큼 1/30씩 차감
+          const _absentCnt = _fullWd - _workDays;
+          _actualBase = Math.max(0, Math.round(_cBase * (30 - Math.min(_absentCnt, 30)) / 30));
+        } else {
+          // 입사월·퇴사월 등 부분월 → 근무일수/30 비율 일할
+          _actualBase = Math.max(0, Math.round(_cBase * _workDays / 30));
+        }
+      } else {
+        // 소정근로일수 기준 일할 (working_days)
+        _actualBase = Math.round(_cBase / _monthDays * _workDays);
+      }
     }
     if (_baseActualEl) _baseActualEl.value = won(_actualBase);
     setAmountVal('pi-base', _actualBase); // hidden input: 실제 지급 기준
@@ -4442,6 +4443,7 @@ function calcWeeklyHolidayPay(){
   const _allAbsentDatesForHoliday = new Set([..._absentDatesForHoliday, ..._retroAbsentDatesForHoliday]);
 
   let fullWeeks = 0;
+  let retroBrokenWeeks = 0; // 소급 결근으로 주휴가 깨진 주 수 (과지급 환수 대상)
   if (_ppStart && _ppEnd && dpw > 0) {
     // 주 단위 순회: 급여산정기간 내 각 역주(월~일)별 소정근로일 충족 여부 검사
     const _periodStart = new Date(_ppStart);
@@ -4948,33 +4950,41 @@ function _forceShowNonZeroPIRows(p){
  * - applyPIAllowanceConfig() + 계약서 값 세팅 이후, _renderPIIrregularRows() 이전에 호출.
  */
 function _hideZeroContractPIRows(){
-  if(!piContract) return;
-  // key → 계약서(piContract) 필드명 매핑
+  if(!piContract || piContract.is_virtual) return;
+  // key → 계약서(piContract) 필드명 매핑 (배열이면 앞에서부터 첫 0 초과 값 사용)
   const _ctFieldMap = {
-    regular_bonus: 'regular_bonus',
-    site:          'site_allowance',
-    position:      'position_allowance',
-    skill:         'skill_allowance',
-    license:       'license_allowance',
-    remote_area:   'remote_area_allowance',
-    research:      'research_allowance',
-    communication: 'communication_allowance',
-    fitness:       'fitness_allowance',
-    self_dev:      'self_dev_allowance',
-    book:          'book_allowance',
-    overseas:      'overseas_allowance',
+    regular_bonus: ['regular_bonus'],
+    site:          ['site_allowance'],
+    position:      ['position_allowance'],
+    skill:         ['skill_allowance'],
+    license:       ['license_allowance'],
+    hazard:        ['hazard_allowance'],
+    remote_area:   ['remote_area_allowance'],
+    research:      ['research_allowance'],
+    communication: ['communication_allowance'],
+    fitness:       ['fitness_allowance'],
+    self_dev:      ['self_dev_allowance'],
+    book:          ['book_allowance'],
+    overseas:      ['overseas_allowance'],
+    car:           ['self_driving_allowance', 'transportation_allowance', 'car_maintenance'],
+    meal:          ['meal_allowance'],
   };
   _PI_OPT_ROWS.forEach(({ key, rowId, ptField }) => {
     if(key === 'childcare') return;  // 보육수당: 매월 직접 입력 — 제외
-    const ctField = _ctFieldMap[key];
-    if(!ctField) return;
-    const ctAmt = parseFloat(piContract[ctField] || 0);
+    const ctFields = _ctFieldMap[key];
+    if(!ctFields) return;
+    const ctAmt = ctFields.reduce((acc, f) => acc || parseFloat(piContract[f] || 0), 0);
     if(ctAmt > 0) return;  // 계약서 금액 있으면 그대로 표시
     // 계약서 금액 0 → 숨김 (단, daily/receipt 항목은 _renderPIIrregularRows가 처리)
     const pt = ptField ? (_piPayTypes[ptField] || '') : '';
     if(pt === 'daily' || pt === 'receipt') return;  // 비정기 항목은 건드리지 않음
     const row = document.getElementById(rowId);
-    if(row) row.style.display = 'none';
+    if(!row) return;
+    // 이미 입력된 값이 있으면(수정/임시저장 복원) 유지
+    const _inEl = row.querySelector('input[data-amount]');
+    const _inVal = parseFloat(String(_inEl?.value || '').replace(/[^\d]/g, '')) || 0;
+    if(_inVal > 0) return;
+    row.style.display = 'none';
   });
 }
 
@@ -5052,8 +5062,6 @@ function _setPIContractReadonly(on){
   // piContract.regular_bonus > 0 인 경우에만 잠금 적용
   (function(){
     const bonusEl    = document.getElementById('pi-bonus');
-    const bonusBadge = document.getElementById('pi-bonus-contract-badge');
-    const bonusRow   = document.getElementById('pi-row-bonus');
     const hasContractBonus = on && piContract && (parseFloat(piContract.regular_bonus)||0) > 0;
     if(bonusEl){
       if(hasContractBonus){
@@ -5070,8 +5078,6 @@ function _setPIContractReadonly(on){
         bonusEl.setAttribute('oninput', saved);
       }
     }
-    if(bonusBadge) bonusBadge.style.display = hasContractBonus ? '' : 'none';
-
   })();
 
   // 지급유형 select 잠금/해제
@@ -5093,6 +5099,18 @@ function _setPIContractReadonly(on){
     }
     // 배지 상태는 setPIPayType에서 이미 제어하므로 여기서는 건드리지 않음
   });
+}
+
+/**
+ * 계약정보 모달 열기 (좌측 계약정보 카드 헤더의 파란 버튼)
+ * → 근로계약 조회 모달(viewContract)을 호출
+ */
+function _openPIContractInfo(){
+  if(!piContract || !piContract.id){
+    toast('계약 정보를 불러오는 중입니다.', 'error');
+    return;
+  }
+  viewContract(piContract.id);
 }
 
 function clearPIFields(){
@@ -5302,14 +5320,14 @@ function _updatePIBottomBtns(){
     // ── 수정 모드 ──
     if(cancelBtn && cancelLabel){
       cancelLabel.textContent      = '수정 취소';
-      cancelBtn.classList.remove('btn-secondary');
-      cancelBtn.classList.add('btn-warning');
+      cancelBtn.classList.remove('btn-warning');
+      cancelBtn.classList.add('btn-secondary');
     }
     if(clearBtn && clearLabel){
       clearLabel.textContent       = '원상복구';
       if(clearIcon) clearIcon.className = 'fas fa-rotate-left';
-      clearBtn.classList.remove('btn-secondary');
-      clearBtn.classList.add('btn-warning');
+      clearBtn.classList.remove('btn-warning');
+      clearBtn.classList.add('btn-secondary');
     }
     // 진입 직후(스냅샷 있음)에는 비활성 → 변경 감지 후 활성
     _checkPIRestoreBtn();
@@ -5386,6 +5404,17 @@ function _updatePIDraftBtnForMode(){
     btn.style.cursor           = '';
     btn.title                  = '';
   }
+  _updatePIDraftDeleteBtn();
+}
+
+/**
+ * 임시저장 이어쓰기 모드(piDraftId 존재)일 때 임시저장 옆 삭제 버튼 표시
+ * - 수정 모드에서는 숨김
+ */
+function _updatePIDraftDeleteBtn(){
+  const btn = document.getElementById('pi-draft-delete-btn');
+  if(!btn) return;
+  btn.style.display = (piDraftId && !piEditPayrollId) ? '' : 'none';
 }
 
 /**
@@ -5468,4 +5497,7 @@ function _showPISavedModal(empName, yr, mo, payrollId, isEdit){
 
 // ─── 임시저장 상태 ───
 let piDraftId = null; // 현재 임시저장 레코드 ID (null이면 없음)
+
+// ─── 차량유지비 유형 (항상 self_driving 고정) ───
+let _piTransportType = 'self_driving';
 

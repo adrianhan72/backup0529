@@ -1342,12 +1342,12 @@ function selectPICompany(companyId, companyName){
     // 수정 모드가 아닌 경우 항상 표시 복원
     const periodSec = document.getElementById('pi-period-section');
     if(periodSec) periodSec.style.display='';
-    // ★ 임시저장 배너: 고객사+년월 선택 단계에서만 표시
-    // 목록·폼이 숨겨진 이 시점(년월 선택 단계)에서만 배너를 갱신·표시
-    // ★ 급여 입력: 고객사 선택 시 전체 임시저장 배너 숨기고 해당 고객사 배너 표시
+    // ★ 임시저장 배너: 전 고객사 배너는 고객사 선택 단계에서만 표시 → 숨김
+    //   선택 고객사 배너는 지급대상 목록 단계에서만 표시 → 여기서는 숨김
     const _adb = document.getElementById('pi-all-draft-banner');
     if(_adb) _adb.style.display = 'none';
-    if(typeof renderPICoDraftBanner === 'function') renderPICoDraftBanner();
+    const _cdb = document.getElementById('pi-co-draft-banner');
+    if(_cdb) _cdb.style.display = 'none';
   } else {
     // 수정 모드 진입 시 임시저장 배너 숨김
     const _adb = document.getElementById('pi-all-draft-banner');

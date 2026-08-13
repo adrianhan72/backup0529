@@ -82,12 +82,6 @@ function _buildPIBody(){
     note:               document.getElementById('pi-note')?.value   || '',
     dependents: Math.max(1, parseInt(document.getElementById('pi-dependents')?.value || '1') || 1),
     tax_dependents: (piContract?.is_virtual) ? (parseInt(document.getElementById('pi-tax-dependents-input')?.value) || 1) : (parseInt(document.getElementById('pi-dependents')?.value) || 1),
-    // 가상 직원 수동 입력 pay_period
-    pay_period_month: (piContract?.is_virtual) ? (() => {
-      const _s = document.getElementById('pi-pay-period-start')?.value || '';
-      const _e = document.getElementById('pi-pay-period-end')?.value || '';
-      return _s && _e ? `${_s}~${_e}` : '';
-    })() : (piContract?.pay_period || ''),
     absent_dates:       document.getElementById('pi-absent-dates')?.value || '',
     absent_data:        document.getElementById('pi-absent-data')?.value || '[]',
     earlyleave_data:    document.getElementById('pi-earlyleave-data')?.value || '[]',
@@ -181,6 +175,8 @@ async function savePIDraft(){
 
     // ── 임시저장 완료 모달 표시 (계속 입력 / 목록으로 돌아가기) ──
     _showPIDraftSavedModal(yr, mo, timeStr);
+    // 이어쓰기 모드: 임시저장 옆 삭제 버튼 표시
+    if(typeof _updatePIDraftDeleteBtn === 'function') _updatePIDraftDeleteBtn();
 
   } catch(e){
     console.error('[savePIDraft]', e);
@@ -211,7 +207,7 @@ function _checkAndShowPIDraftBanner(empId, yr, mo){
   const draft = allPayrolls.find(
     p => p.employee_id === empId && p.pay_year === _yr && p.pay_month === _mo && p.is_draft
   );
-  if(!draft){ piDraftId = null; banner.style.display = 'none'; return; }
+  if(!draft){ piDraftId = null; banner.style.display = 'none'; if(typeof _updatePIDraftDeleteBtn === 'function') _updatePIDraftDeleteBtn(); return; }
 
   // 확정 레코드가 이미 있는 경우:
   //   - 수정 모드 draft(edit_source_id 있음) → 배너 표시 (수정 세션 진행 중)
@@ -231,6 +227,7 @@ function _checkAndShowPIDraftBanner(empId, yr, mo){
   const editLabel = draft.edit_source_id ? ' [수정 임시저장]' : '';
   if(subLabel) subLabel.textContent = `${_yr}년 ${_mo}월분${editLabel}${savedAt ? '  ·  ' + savedAt + ' 저장' : ''}`;
   banner.style.display = 'flex';
+  if(typeof _updatePIDraftDeleteBtn === 'function') _updatePIDraftDeleteBtn();
 }
 
 // ==============================================================================
@@ -348,8 +345,12 @@ function loadPIDraft(){
 
   // pay_type 복원 완료 후 비정기 섹션 이동 재처리
   _renderPIIrregularRows();
+  // 계약서 NULL 항목 숨김 (임시저장 복원: 이미 값 있는 행은 보존)
+  if(typeof _hideZeroContractPIRows === 'function') _hideZeroContractPIRows();
   calcAnnualLeaveTable();
   calcPI();
+  // 이어쓰기 모드: 임시저장 옆 삭제 버튼 표시
+  if(typeof _updatePIDraftDeleteBtn === 'function') _updatePIDraftDeleteBtn();
 
   // 배너 숨김 (불러온 뒤에는 더 이상 안내 불필요)
   const banner = document.getElementById('pi-draft-banner');
@@ -364,14 +365,13 @@ function loadPIDraft(){
     if(srcPayroll){
       piEditPayrollId = draft.edit_source_id;
       _updatePICancelBtn();
-      // 저장 버튼 → "수정 저장" 표기 + 수정 배너 표시
-      document.querySelectorAll('#page-payroll-input .btn-primary').forEach(btn => {
-        if(btn.textContent.includes('급여 저장') || btn.textContent.includes('저장')){
-          btn.innerHTML = '<i class="fas fa-save"></i> 수정 저장';
-          btn.classList.remove('btn-primary');
-          btn.classList.add('btn-warning');
-        }
-      });
+      // 저장 버튼 → "수정 저장"(빨강) 표기 + 수정 배너 표시
+      const _draftSaveBtn = document.querySelector('#page-payroll-input button[onclick="savePI()"]');
+      if(_draftSaveBtn){
+        _draftSaveBtn.innerHTML = '<i class="fas fa-save"></i> 수정 저장';
+        _draftSaveBtn.classList.remove('btn-primary');
+        _draftSaveBtn.classList.add('btn-danger');
+      }
       // 수정 모드 배너 제거됨 — 드롭존만 숨김
       document.getElementById('pi-upload-drop-zone').style.display = 'none';
       const emp2 = allEmployees.find(e => e.id === draft.employee_id) || {};
@@ -406,7 +406,10 @@ async function discardPIDraft(){
     if(banner) banner.style.display = 'none';
     // 전체 임시저장 목록 배너 갱신
     renderPIAllDraftBanner();
+    if(typeof _updatePIDraftDeleteBtn === 'function') _updatePIDraftDeleteBtn();
     toast('임시저장이 삭제되었습니다.', 'info');
+    // 삭제 후 지급대상자 목록으로 복귀
+    if(typeof backToPITargetList === 'function') backToPITargetList();
   } catch(e){
     toast('삭제 중 오류: ' + e.message, 'error');
   }
@@ -508,6 +511,7 @@ async function savePI(){
       const orphanDraft = allPayrolls.find(p=>p.employee_id===empId&&Number(p.pay_year)===yr&&Number(p.pay_month)===mo&&!!p.is_draft);
       if(orphanDraft){ try{ await api(`../tables/payrolls/${orphanDraft.id}`,{method:'DELETE'}); }catch(e){} }
     }
+    if(typeof _updatePIDraftDeleteBtn === 'function') _updatePIDraftDeleteBtn();
     // 임시저장 배너 숨김
     const _editDraftBanner = document.getElementById('pi-draft-banner');
     if(_editDraftBanner) _editDraftBanner.style.display = 'none';
@@ -562,6 +566,7 @@ async function savePI(){
       const orphanDraft = allPayrolls.find(p=>p.employee_id===empId&&p.pay_year===yr&&p.pay_month===mo&&p.is_draft);
       if(orphanDraft){ try{ await api(`../tables/payrolls/${orphanDraft.id}`,{method:'DELETE'}); }catch(e){} }
     }
+    if(typeof _updatePIDraftDeleteBtn === 'function') _updatePIDraftDeleteBtn();
     const _newPayrollId = 'pay' + Date.now();
     body.id = _newPayrollId;
     await api('../tables/payrolls',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});

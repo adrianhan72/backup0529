@@ -151,6 +151,7 @@ async function _probAutoCreateAndSave(){
     }
     // 임시저장 레코드가 있으면 삭제
     if(piDraftId){ try{ await api(`../tables/payrolls/${piDraftId}`,{method:'DELETE'}); }catch(e){} piDraftId=null; }
+    if(typeof _updatePIDraftDeleteBtn === 'function') _updatePIDraftDeleteBtn();
 
     await api('../tables/payrolls', {
       method: 'POST',
@@ -227,14 +228,17 @@ function editPayroll(payrollId){
   // 급여 입력 페이지로 이동
   const piMenuItem=document.querySelector('[data-page="payroll-input"]');
   showPage('payroll-input', piMenuItem);
-  // 저장 버튼 텍스트를 "수정 저장"으로 변경
-  document.querySelectorAll('#page-payroll-input .btn-primary').forEach(btn=>{
-    if(btn.textContent.includes('급여 저장')||btn.textContent.includes('저장')){
-      btn.innerHTML='<i class="fas fa-save"></i> 수정 저장';
-      btn.classList.remove('btn-primary');
-      btn.classList.add('btn-warning');
-    }
-  });
+  // ★ 페이지 프래그먼트가 비동기 로드되는 경우에도 버튼 라벨 갱신 보장
+  setTimeout(() => {
+    if(typeof _updatePIBottomBtns === 'function') _updatePIBottomBtns();
+  }, 150);
+  // 저장 버튼 텍스트를 "수정 저장"(빨강)으로 변경
+  const _editSaveBtn = document.querySelector('#page-payroll-input button[onclick="savePI()"]');
+  if(_editSaveBtn){
+    _editSaveBtn.innerHTML='<i class="fas fa-save"></i> 수정 저장';
+    _editSaveBtn.classList.remove('btn-primary');
+    _editSaveBtn.classList.add('btn-danger');
+  }
   // 엑셀 업로드 드롭존 숨김 + 임시저장 복원 배너 숨김 (수정 모드에서는 불필요)
   document.getElementById('pi-upload-drop-zone').style.display='none';
   const _editDraftBannerHide = document.getElementById('pi-draft-banner');
@@ -242,6 +246,8 @@ function editPayroll(payrollId){
   // ★ 수정 모드 진입 시 임시저장 전체 배너 숨김 (년월 선택 단계에서만 표시)
   const _editAllDraftBanner = document.getElementById('pi-all-draft-banner');
   if(_editAllDraftBanner) _editAllDraftBanner.style.display = 'none';
+  const _editCoDraftBanner = document.getElementById('pi-co-draft-banner');
+  if(_editCoDraftBanner) _editCoDraftBanner.style.display = 'none';
   // 고객사 칩 UI 전환
   const coEdit = allCompanies.find(x=>x.id===p.company_id);
   if(coEdit){
@@ -280,14 +286,34 @@ function editPayroll(payrollId){
     // 직원 선택
     const empSel=document.getElementById('pi-employee');
     empSel.value=p.employee_id;
-    // 계약 정보 로드
-    loadPIContract();
+    // 계약 정보 로드: 이미 동일 직원 계약이 로드된 경우(목록 경유) 생략 —
+    // 중복 로드 시 계약서값이 저장값을 덮어써 수정 화면 초기값이 틀어지는 문제 방지
+    const _alreadyLoaded = piContract && piContract.employee_id === p.employee_id;
+    if(!_alreadyLoaded && typeof loadPIContract === 'function') loadPIContract();
+    // 계약 로드 여부와 무관하게 저장된 급여값으로 최종 재복원 (저장값 우선)
+    if(typeof _fillPayrollFields === 'function') _fillPayrollFields(p, _editCfgCo);
+    // 년월 최종 재적용 (비동기 초기화로 덮어쓰인 경우 대비)
+    _setEditYrMo();
+    // 버튼 라벨 재적용 (페이지 프래그먼트 로드 전 초기 호출이 무시된 경우 대비)
+    if(typeof _updatePIBottomBtns === 'function') _updatePIBottomBtns();
   });
-  // 년도·월 설정
-  document.getElementById('pi-year').value=p.pay_year;
-  // 월 셀렉트에 해당 월 옵션 세팅 후 선택
-  const moSel=document.getElementById('pi-month');
-  moSel.value=p.pay_month;
+  // 년도·월 설정 — 비동기 페이지 로드·initPIMonths 재빌드와의 경합 방지를 위해
+  // 즉시 + 지연 + 계약 로드 완료 후 총 3회 적용 (저장된 년월이 최종 우선)
+  const _setEditYrMo = () => {
+    document.getElementById('pi-year').value = p.pay_year;
+    const _moSel = document.getElementById('pi-month');
+    if(_moSel){
+      if(![..._moSel.options].some(o => o.value === String(p.pay_month))){
+        const _opt = document.createElement('option');
+        _opt.value = String(p.pay_month);
+        _opt.textContent = p.pay_month + '월';
+        _moSel.appendChild(_opt);
+      }
+      _moSel.value = String(p.pay_month);
+    }
+  };
+  _setEditYrMo();
+  setTimeout(_setEditYrMo, 300);
   // 수정 모드: 년/월 세팅 후 급여 산정기간 재계산
   // (loadPIContract 시점에는 pi-year/pi-month가 아직 미세팅 → 부분월 판정 불가)
   { const _ppElEdit = document.getElementById('pi-pay-period');
@@ -399,6 +425,9 @@ function _fillPayrollFields(p, cfgCo){
   document.getElementById('pi-work-days').value=p.work_days||0;
   // 기본급 hidden input 및 주휴수당 자동계산 (pi-base, pi-weekly-hol 갱신)
   if(typeof calcPIWorkActual === 'function') calcPIWorkActual();
+  // 총 근로시간: 저장값 우선 복원 (원상복구 시 자동계산으로 값이 달라지는 것 방지)
+  { const _thEl = document.getElementById('pi-total-hours');
+    if(_thEl && p.total_work_hours !== null && p.total_work_hours !== undefined && p.total_work_hours !== '') _thEl.value = p.total_work_hours; }
   { const autoLbl = document.getElementById('pi-workdays-auto-label'); if(autoLbl) autoLbl.style.display='none'; }
   document.getElementById('pi-paydate').value=p.pay_date||'';
   // 수정 모드: 기존 지급일 유지 + readonly 제어만 적용 (값은 덮어쓰지 않음)
@@ -444,6 +473,8 @@ function _fillPayrollFields(p, cfgCo){
   // 값 있는 옵셔널 행(보육수당 등) 강제 노출 재확인 후 비정기 섹션 이동 처리
   _forceShowNonZeroPIRows(p);
   _renderPIIrregularRows();
+  // 계약서 NULL 항목 숨김 (수정 모드: 이미 값 있는 행은 보존)
+  if(typeof _hideZeroContractPIRows === 'function') _hideZeroContractPIRows();
   // 계산 갱신
   calcAnnualLeaveTable();
   calcPI();
@@ -467,6 +498,7 @@ function restoreEditPayroll(){
 
   // 임시저장 draft가 있으면 메모리 참조만 해제 (DB는 유지 — 복원 후 다시 임시저장 가능)
   piDraftId = null;
+  if(typeof _updatePIDraftDeleteBtn === 'function') _updatePIDraftDeleteBtn();
 
   // ── 계약 기준 고객사 스냅샷 취득 (allowance_config pay_type fallback에 필요) ──
   const _restoreEmpCon = (allContracts||[]).find(c =>
@@ -513,6 +545,7 @@ async function cancelEditPayroll(){
     await loadPayrolls();
     renderPIAllDraftBanner();
   }
+  if(typeof _updatePIDraftDeleteBtn === 'function') _updatePIDraftDeleteBtn();
   // ── 수정 모드 상태 완전 해제 ──
   piEditPayrollId  = null;
   _piEditSnapshot  = null;
@@ -520,12 +553,13 @@ async function cancelEditPayroll(){
   const dropZone = document.getElementById('pi-upload-drop-zone');
   if(dropZone) dropZone.style.display = '';
   // ── 저장 버튼 텍스트 복원 ──
-  document.querySelectorAll('#page-payroll-input .btn-primary').forEach(btn => {
-    if(btn.textContent.includes('수정 저장') || btn.textContent.includes('저장')){
-      btn.innerHTML = '<i class="fas fa-save"></i> 급여 저장';
-      btn.style.background = '';
-    }
-  });
+  const _cancelSaveBtn = document.querySelector('#page-payroll-input button[onclick="savePI()"]');
+  if(_cancelSaveBtn){
+    _cancelSaveBtn.innerHTML = '<i class="fas fa-save"></i> 급여 저장';
+    _cancelSaveBtn.classList.remove('btn-danger');
+    _cancelSaveBtn.classList.add('btn-primary');
+    _cancelSaveBtn.style.background = '';
+  }
   // ── 버튼 레이블 초기화 (신규 모드로 전환) ──
   _updatePICancelBtn();
   // ── 즉시 대상자 목록으로 복귀 ──

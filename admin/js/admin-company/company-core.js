@@ -1919,6 +1919,15 @@ function _cmSuggestEmpNoFor(inputEl) {
       const num = parseInt(emp.employee_number);
       if (!isNaN(num)) used.add(num);
     }
+    // 1-1) 등기임원·특수관계인·대표자 사원번호도 수집 (4개 그룹 통합 연번)
+    (allExecutives||[]).forEach(e => { if(e.company_id===coId){ const n=parseInt(e.employee_number); if(!isNaN(n)) used.add(n); } });
+    (allRelatedParties||[]).forEach(r => { if(r.company_id===coId){ const n=parseInt(r.employee_number); if(!isNaN(n)) used.add(n); } });
+    const _co = allCompanies.find(c => c.id === coId);
+    if(_co){
+      let _reps = [];
+      try { _reps = typeof _co.representatives==='string' ? JSON.parse(_co.representatives) : (_co.representatives||[]); } catch(e){ _reps = []; }
+      if(Array.isArray(_reps)) _reps.forEach(r => { const n=parseInt(r.employee_number); if(!isNaN(n)) used.add(n); });
+    }
   }
   // 2) 현재 폼에 입력된 대표자/등기임원/특수관계인 사원번호도 수집 (자기 자신 제외)
   const allEmpNoInputs = document.querySelectorAll('[id^="cm-rep-empno-"],[id^="cm-exec-empno-"],[id^="cm-rel-empno-"]');
@@ -1964,6 +1973,31 @@ function _cmCheckEmpNoDup(el) {
   if (!coId) { el.classList.remove('va-input-err'); _cmEmpNoHint(el, '', ''); return; }
   const matched = allEmployees.find(e => e.company_id === coId && e.employee_number === empNo);
   if (!matched) {
+    // 2-1) 등기임원·특수관계인·대표자와 교차 중복 체크
+    const _execHit = (allExecutives||[]).find(e => e.company_id === coId && String(e.employee_number||'').trim() === empNo);
+    if (_execHit) {
+      el.classList.add('va-input-err');
+      _cmEmpNoHint(el, 'va-err', `사원번호 "${empNo}"은(는) 이미 ${_execHit.name} 등기임원이 사용 중입니다.`);
+      return;
+    }
+    const _relHit = (allRelatedParties||[]).find(r => r.company_id === coId && String(r.employee_number||'').trim() === empNo);
+    if (_relHit) {
+      el.classList.add('va-input-err');
+      _cmEmpNoHint(el, 'va-err', `사원번호 "${empNo}"은(는) 이미 ${_relHit.name} 특수관계인이 사용 중입니다.`);
+      return;
+    }
+    let _repHit = null;
+    const _co = allCompanies.find(c => c.id === coId);
+    if(_co){
+      let _reps = [];
+      try { _reps = typeof _co.representatives==='string' ? JSON.parse(_co.representatives) : (_co.representatives||[]); } catch(e){ _reps = []; }
+      if(Array.isArray(_reps)) _repHit = _reps.find(r => String(r.employee_number||'').trim() === empNo);
+    }
+    if (_repHit) {
+      el.classList.add('va-input-err');
+      _cmEmpNoHint(el, 'va-err', `사원번호 "${empNo}"은(는) 이미 대표자(${_repHit.name||''})가 사용 중입니다.`);
+      return;
+    }
     el.classList.remove('va-input-err');
     _cmEmpNoHint(el, 'va-ok', '사용 가능한 사원번호입니다.');
     return;

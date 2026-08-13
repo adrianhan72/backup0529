@@ -238,7 +238,7 @@ function _isLegalHoliday(dateStr){
   const [y, m, d] = dateStr.split('-').map(Number);
   if(!y || !m || !d) return false;
 
-  // ── 양력 고정 공휴일 ──
+  // ── 양력 고정 공휴일 (제헌절은 2026년부터 공휴일) ──
   const fixedHolidays = {
     '01-01': '신정',
     '03-01': '삼일절',
@@ -250,15 +250,21 @@ function _isLegalHoliday(dateStr){
     '10-09': '한글날',
     '12-25': '성탄절',
   };
+  if(y >= 2026) fixedHolidays['07-17'] = '제헌절';
   const mmdd = `${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
   if(fixedHolidays[mmdd]) return true;
 
   // ── 설날 (음력 1월 1일) / 추석 (음력 8월 15일) — 연도별 양력 변환 ──
   const lunarHolidays = {
+    2021: { seol: ['02-11','02-12','02-13'], chuseok: ['09-20','09-21','09-22'] },
+    2022: { seol: ['01-31','02-01','02-02'], chuseok: ['09-09','09-10','09-11'] },
+    2023: { seol: ['01-21','01-22','01-23'], chuseok: ['09-28','09-29','09-30'] },
+    2024: { seol: ['02-09','02-10','02-11'], chuseok: ['09-16','09-17','09-18'] },
     2025: { seol: ['01-28','01-29','01-30'], chuseok: ['10-05','10-06','10-07'] },
     2026: { seol: ['02-16','02-17','02-18'], chuseok: ['09-24','09-25','09-26'] },
     2027: { seol: ['02-05','02-06','02-07'], chuseok: ['09-14','09-15','09-16'] },
     2028: { seol: ['01-25','01-26','01-27'], chuseok: ['10-02','10-03','10-04'] },
+    2029: { seol: ['02-12','02-13','02-14'], chuseok: ['09-21','09-22','09-23'] },
   };
   const yearData = lunarHolidays[y];
   if(yearData){
@@ -266,12 +272,17 @@ function _isLegalHoliday(dateStr){
     if(allLunar.includes(mmdd)) return true;
   }
 
-  // ── 대체공휴일 ──
+  // ── 대체공휴일 (법령 기준) ──
   const substituteHolidays = {
-    2025: ['05-06'],
-    2026: [],
-    2027: [],
-    2028: [],
+    2021: ['02-15','08-16','10-04','10-11'],
+    2022: ['09-12','10-10'],
+    2023: ['01-24','10-02'],
+    2024: ['02-12','05-06'],
+    2025: ['03-03','10-08'],
+    2026: ['03-02','08-17','09-28','10-05'],
+    2027: ['02-08','08-16','10-04','10-11'],
+    2028: ['10-05'],
+    2029: ['05-07','09-24'],
   };
   const subs = substituteHolidays[y] || [];
   if(subs.includes(mmdd)) return true;
@@ -433,10 +444,19 @@ function _suggestEmpNo(coId){
   const input = document.getElementById('ct-em-empno');
   if(!input || !coId) return;
   let max = 0;
+  const bump = (v) => { const num = parseInt(v); if (!isNaN(num) && num > max) max = num; };
   for (const emp of allEmployees) {
     if (emp.company_id !== coId) continue;
-    const num = parseInt(emp.employee_number);
-    if (!isNaN(num) && num > max) max = num;
+    bump(emp.employee_number);
+  }
+  // 대표자·등기임원·특수관계인 번호도 포함 (4개 그룹 통합 연번 기준)
+  (allExecutives||[]).forEach(e => { if(e.company_id===coId) bump(e.employee_number); });
+  (allRelatedParties||[]).forEach(r => { if(r.company_id===coId) bump(r.employee_number); });
+  const co = allCompanies.find(c => c.id === coId);
+  if(co){
+    let reps = [];
+    try { reps = typeof co.representatives==='string' ? JSON.parse(co.representatives) : (co.representatives||[]); } catch(e){ reps = []; }
+    if(Array.isArray(reps)) reps.forEach(r => bump(r.employee_number));
   }
   input.placeholder = `추천: ${String(max + 1).padStart(4, '0')}`;
 }

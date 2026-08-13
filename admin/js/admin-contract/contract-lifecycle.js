@@ -1353,6 +1353,16 @@ function _validateRenewFields(){
   const _hwEl = document.getElementById('ct-hourly-input');
   if(_hwEl && (!_hwEl.value || parseFloat(_hwEl.value) <= 0)){
     _ctMarkError('ct-hourly-input', '통상시급', errors);
+  } else if(_hwEl){
+    // 통상시급 최저임금 하한 (계약시작연도 법정 최저시급 기준)
+    const _hwValRenew = parseFloat(_hwEl.value) || 0;
+    const _startRawR = document.getElementById('ct-start')?.value || '';
+    const _yrR = _startRawR ? parseInt(_startRawR.slice(0,4)) : new Date().getFullYear();
+    const _minR = _getCTLegalMinWage(_yrR);
+    if(_minR > 0 && _hwValRenew < _minR){
+      _ctMarkError('ct-hourly-input',
+        `통상시급은 ${_yrR}년 법정 최저시급(${_minR.toLocaleString('ko-KR')}원) 이상이어야 합니다`, errors);
+    }
   }
   // 급여 산정기간
   const _ppEl = document.getElementById('ct-pay-period-month');
@@ -1425,53 +1435,53 @@ function _isHoliday(d){
 function _getYearHolidays(y){
   if(_yearHolidayCache[y]) return _yearHolidayCache[y];
 
-  // ── 매년 고정 공휴일 ──
+  // ── 매년 고정 공휴일 (제헌절은 2026년부터 공휴일) ──
   const fixed = [
     '01-01', // 신정
     '03-01', // 삼일절
     '05-01', // 근로자의 날
     '05-05', // 어린이날
     '06-06', // 현충일
-    '07-17', // 제헌절
     '08-15', // 광복절
     '10-03', // 개천절
     '10-09', // 한글날
     '12-25', // 성탄절
   ];
+  if(y >= 2026) fixed.push('07-17'); // 제헌절
 
   // ── 연도별 음력 공휴일 (설날 3일, 석가탄신일, 추석 3일) ──
   const LUNAR_HOLIDAYS = {
+    2021: ['02-11','02-12','02-13', '05-19', '09-20','09-21','09-22'],
+    2022: ['01-31','02-01','02-02', '05-08', '09-09','09-10','09-11'],
+    2023: ['01-21','01-22','01-23', '05-27', '09-28','09-29','09-30'],
     2024: ['02-09','02-10','02-11', '05-15', '09-16','09-17','09-18'],
     2025: ['01-28','01-29','01-30', '05-05', '10-05','10-06','10-07'],
     2026: ['02-16','02-17','02-18', '05-24', '09-24','09-25','09-26'],
     2027: ['02-05','02-06','02-07', '05-13', '09-14','09-15','09-16'],
     2028: ['01-25','01-26','01-27', '05-02', '10-02','10-03','10-04'],
+    2029: ['02-12','02-13','02-14', '05-20', '09-21','09-22','09-23'],
   };
 
-  const allDates = new Set([...fixed, ...(LUNAR_HOLIDAYS[y] || [])]);
+  // ── 연도별 대체공휴일 (법령 기준) ──
+  // 대상: 설·추석 연휴(토·일 포함 또는 다른 공휴일 겹침), 어린이날, 삼일절, 광복절, 개천절, 한글날
+  // (신정·현충일·석가탄신일·성탄절·근로자의날·제헌절은 대체공휴일 없음)
+  const SUBSTITUTE_HOLIDAYS = {
+    2021: ['02-15', '08-16', '10-04', '10-11'],
+    2022: ['09-12', '10-10'],
+    2023: ['01-24', '10-02'],
+    2024: ['02-12', '05-06'],
+    2025: ['03-03', '10-08'],
+    2026: ['03-02', '08-17', '09-28', '10-05'],
+    2027: ['02-08', '08-16', '10-04', '10-11'],
+    2028: ['10-05'],
+    2029: ['05-07', '09-24'],
+  };
 
-  // ── 대체공휴일 동적 계산 ──
-  // 공휴일이 토(6)/일(0)이면 다음 평일(기존 공휴일 제외)을 대체공휴일로 추가
-  for (const mmdd of [...allDates]){
-    const [mStr, dStr] = mmdd.split('-');
-    const hDate = new Date(y, parseInt(mStr)-1, parseInt(dStr));
-    const dow = hDate.getDay(); // 0=일, 6=토
-    if(dow === 0 || dow === 6){
-      // 다음 평일 찾기 (최대 7일 탐색)
-      let next = new Date(hDate);
-      for(let i=0; i<7; i++){
-        next.setDate(next.getDate() + 1);
-        const nextDow = next.getDay();
-        if(nextDow === 0 || nextDow === 6) continue; // 주말 건너뜀
-        const nextMMDD = `${String(next.getMonth()+1).padStart(2,'0')}-${String(next.getDate()).padStart(2,'0')}`;
-        if(next.getFullYear() !== y) break; // 연도 넘어가면 중단
-        if(!allDates.has(nextMMDD)){ // 기존 공휴일이 아니면 대체공휴일로 추가
-          allDates.add(nextMMDD);
-          break;
-        }
-      }
-    }
-  }
+  const allDates = new Set([
+    ...fixed,
+    ...(LUNAR_HOLIDAYS[y] || []),
+    ...(SUBSTITUTE_HOLIDAYS[y] || []),
+  ]);
 
   _yearHolidayCache[y] = allDates;
   return allDates;
@@ -2002,9 +2012,8 @@ function openRecontractModal(srcContract){
     if(rcExpRow)    rcExpRow.style.display    = (rcIsFixed || rcIsRegular) ? 'none' : '';
     // 정규직이면 계약 종료일도 숨김
     if(rcEndRow)    rcEndRow.style.display    = rcIsRegular ? 'none' : '';
-    // 입사일: 고용형태에 무관하게 항상 채움 (유효성 검사 통과 + hire_date 갱신 목적)
-    const _rcEarliestStart = getEarliestContractStart(emp.id);
-    document.getElementById('ct-edit-em-hire').value = _rcEarliestStart || emp.hire_date || '';
+    // 재계약 = 재입사: 입사일은 이전 계약에서 승계하지 않고 새로 입력 (빈 값)
+    document.getElementById('ct-edit-em-hire').value = '';
     if(!rcIsFixed && !rcIsRegular){
       document.getElementById('ct-edit-em-expire').value = emp.expire_date||emp.resign_date||'';
     }
@@ -2018,10 +2027,18 @@ function openRecontractModal(srcContract){
   // 계약 조건 복사
   document.getElementById('ct-start').value   = '';
   document.getElementById('ct-type').value    = rcCtType; toggleCtEndDate(true); toggleProbation();
-  document.getElementById('ct-end').value     = srcContract.contract_end||'';
+  // 재계약 = 새 계약: 종료일은 승계하지 않고 빈 값 (새 기간 직접 입력)
+  document.getElementById('ct-end').value     = '';
   document.getElementById('ct-status').value  = CONTRACT_STATUS.ACTIVE;
-  document.getElementById('ct-annual').value  = srcContract.annual_leave_days||15;
-  document.getElementById('ct-pre-used-annual').value = srcContract.pre_used_annual_leave||0;
+  // 재계약 = 재입사: 연차일수 0으로 리셋, 기사용 연차는 발생 불가 → 0 + 잠금
+  document.getElementById('ct-annual').value  = 0;
+  { const _preUsedEl = document.getElementById('ct-pre-used-annual');
+    if(_preUsedEl){
+      _preUsedEl.value = 0;
+      _preUsedEl.disabled = true; // select는 readOnly 미적용 → disabled로 잠금
+      _preUsedEl.classList.add('ct-input-locked-dark');
+    }
+  }
   // 요일별 스케줄 복원 (재계약: 이전 계약 스케줄 그대로 복사)
   if(srcContract.schedule_json){
     try{ setScheduleFromJSON(JSON.parse(srcContract.schedule_json)); }
@@ -2141,6 +2158,12 @@ function openRecontractModal(srcContract){
   const _reconEmpNoEl = document.getElementById('ct-edit-em-empno');
   if(_reconEmpNoEl){
     _reconEmpNoEl.value = '';
+    // 재계약 = 재입사: 새 사원번호 직접 입력 가능 (잠금 해제, 추천번호는 placeholder로 안내)
+    _reconEmpNoEl.readOnly = false;
+    _reconEmpNoEl.classList.remove('ct-input-locked-dark');
+    _reconEmpNoEl.style.background = ''; // 인라인 회색 배경 제거 (잠금 스타일 잔재)
+    const _empnoLockHintR = document.getElementById('ct-edit-empno-lock-hint');
+    if(_empnoLockHintR) _empnoLockHintR.style.display = 'none';
     // 해당 고객사 내 사용 중인 사원번호 기준으로 추천 생성
     const _coId = srcContract.company_id;
     const _usedNos = new Set();
@@ -2429,8 +2452,13 @@ function doFixedTerminate(){
   if(terminatePanel) terminatePanel.style.display = 'none';
   if(renewPanel)     renewPanel.style.display     = 'none';
 
-  // 이미 열려있으면 토글로 닫기
-  if(isOpen){ panel.style.display = 'none'; return; }
+  // 이미 열려있으면 토글로 닫기 (액션 버튼 복구)
+  if(isOpen){
+    panel.style.display = 'none';
+    const _cid = editId?.contract;
+    if(_cid) viewContract(_cid);
+    return;
+  }
 
   // 계약 정보 조회
   const c   = allContracts.find(x => x.id === editId.contract) || {};
@@ -2454,11 +2482,9 @@ function doFixedTerminate(){
   // 나머지 입력 초기화
   const noteEl        = document.getElementById('ct-fixed-terminate-note');
   const hintEl        = document.getElementById('ct-cft-date-hint');
-  const statusHintEl  = document.getElementById('ct-cft-status-hint');
   const confirmBtn    = document.getElementById('ct-cft-confirm-btn');
   if(noteEl)       noteEl.value = '';
   if(hintEl)       hintEl.innerHTML = '';
-  if(statusHintEl) statusHintEl.innerHTML = '';
   if(confirmBtn)   confirmBtn.disabled = true;
 
   // 사유 칩 선택 초기화
@@ -2473,6 +2499,15 @@ function doFixedTerminate(){
   // 패널 열기 + 스크롤
   panel.style.display = 'block';
   setTimeout(() => panel.scrollIntoView({ behavior:'smooth', block:'center' }), 100);
+
+  // 액션 버튼 숨김 (상단·하단: 수정 및 재발행 / 갱신 / 퇴사·해지 설정)
+  ['ct-btn-amend','ct-btn-amend2','ct-btn-renew','ct-btn-renew2',
+   'ct-btn-terminate','ct-btn-terminate2','ct-btn-recontract','ct-btn-recontract2',
+   'ct-btn-fixed-terminate','ct-btn-fixed-terminate2',
+   'ct-btn-amend-complete2','ct-btn-amend-cancel2',
+   'ct-btn-renew-complete2','ct-btn-renew-cancel2'].forEach(bid=>{
+    const el = document.getElementById(bid); if(el) el.style.display='none';
+  });
 
   // 기존 terminate_date가 있으면 validate 실행하여 버튼 활성화 처리
   if(dateEl && dateEl.value) _cftValidate();
@@ -2489,14 +2524,12 @@ function _cftValidate(){
   const today      = new Date().toISOString().slice(0, 10);
   const termDate   = (document.getElementById('ct-fixed-terminate-date') || {}).value || '';
   const hintEl     = document.getElementById('ct-cft-date-hint');
-  const statusHint = document.getElementById('ct-cft-status-hint');
   const confirmBtn = document.getElementById('ct-cft-confirm-btn');
 
   // 입력 없으면 초기화
   if(!termDate){
     if(confirmBtn)   confirmBtn.disabled = true;
     if(hintEl)       hintEl.innerHTML = '';
-    if(statusHint)   statusHint.innerHTML = '';
     return;
   }
 
@@ -2504,7 +2537,6 @@ function _cftValidate(){
   if(c.contract_end && termDate >= c.contract_end){
     if(hintEl) hintEl.innerHTML =
       `<span style="color:#dc2626;">⚠ 계약 만료일(${c.contract_end}) 이전 날짜만 입력 가능합니다.</span>`;
-    if(statusHint) statusHint.innerHTML = '';
     if(confirmBtn) confirmBtn.disabled = true;
     return;
   }
@@ -2513,7 +2545,6 @@ function _cftValidate(){
   if(c.contract_start && termDate < c.contract_start){
     if(hintEl) hintEl.innerHTML =
       `<span style="color:#dc2626;">⚠ 계약 시작일(${c.contract_start}) 이후 날짜만 입력 가능합니다.</span>`;
-    if(statusHint) statusHint.innerHTML = '';
     if(confirmBtn) confirmBtn.disabled = true;
     return;
   }
@@ -2521,7 +2552,6 @@ function _cftValidate(){
   // 유효 — 상태 계산
   const isFuture   = termDate > today;
   const newStatus  = isFuture ? CONTRACT_STATUS.TERMINATE_PENDING : CONTRACT_STATUS.TERMINATED;
-  const statusCls  = isFuture ? 'badge-orange' : 'badge-red';
 
   // 날짜 힌트
   if(hintEl){
@@ -2531,15 +2561,6 @@ function _cftValidate(){
     hintEl.innerHTML = labels
       ? `<span style="color:#6b7280;">${labels}</span>`
       : '';
-  }
-
-  // 상태 힌트 (확정 버튼 옆)
-  if(statusHint){
-    statusHint.innerHTML =
-      `→ 계약 상태: <span class="badge ${statusCls}">${contractStatusLabel(newStatus)}</span>` +
-      (newStatus === CONTRACT_STATUS.TERMINATED
-        ? ' <span style="font-size:11px;color:#9ca3af;">(직원 상태 → 퇴직)</span>'
-        : '');
   }
 
   // 확정 버튼 활성화
@@ -2686,18 +2707,20 @@ function _cftClose(){
   const dateEl     = document.getElementById('ct-fixed-terminate-date');
   const noteEl     = document.getElementById('ct-fixed-terminate-note');
   const hintEl     = document.getElementById('ct-cft-date-hint');
-  const statusHint = document.getElementById('ct-cft-status-hint');
   const confirmBtn = document.getElementById('ct-cft-confirm-btn');
   const noticeRow  = document.getElementById('cft-notice-pay-row');
   const noticeChk  = document.getElementById('cft-notice-pay-chk');
   if(dateEl)     dateEl.value = '';
   if(noteEl)     noteEl.value = '';
   if(hintEl)     hintEl.innerHTML = '';
-  if(statusHint) statusHint.innerHTML = '';
   if(confirmBtn) confirmBtn.disabled = true;
   if(noticeRow)  noticeRow.style.display = 'none';
   if(noticeChk)  noticeChk.checked = false;
   document.querySelectorAll('#cft-reason-chips .cft-reason-chip').forEach(ch => ch.classList.remove('selected'));
+
+  // 액션 버튼(상단·하단) 복구 — 조회 모드 재렌더
+  const _cid = editId?.contract;
+  if(_cid) viewContract(_cid);
 }
 
 /**
@@ -2951,6 +2974,19 @@ async function saveDraftContract(reason){
     toast('직원 정보를 확인할 수 없습니다. 이름을 입력해 주세요.', 'error');
     return;
   }
+
+  // ── 통상시급 최저임금 하한 차단 (값이 입력된 경우만) ──
+  (function(){
+    const _hwDraft = getAmountVal('ct-hourly-input') || 0;
+    if(_hwDraft <= 0) return;
+    const _startRawD = document.getElementById('ct-start')?.value || '';
+    const _yrD = _startRawD ? parseInt(_startRawD.slice(0,4)) : new Date().getFullYear();
+    const _minD = _getCTLegalMinWage(_yrD);
+    if(_minD > 0 && _hwDraft < _minD){
+      toast(`통상시급은 ${_yrD}년 법정 최저시급(${_minD.toLocaleString('ko-KR')}원) 이상이어야 합니다.`, 'error');
+      throw new Error('MIN_WAGE_BELOW');
+    }
+  })();
 
   // 현재 입력값 수집 + 영문 정규화
   const _rawCatDraft = isEditMode
@@ -3494,12 +3530,23 @@ function _ctShowErrors(errors){
   }
 }
 
+/**
+ * 계약시작연도 기준 법정 최저시급 반환 (해당 연도 없으면 최신 연도 폴백)
+ * @param {number} year
+ * @returns {number}
+ */
+function _getCTLegalMinWage(year){
+  const list = _allMinimumWages || [];
+  const mw = list.find(w => Number(w.year) === year)
+    || list.slice().sort((a,b) => Number(b.year) - Number(a.year))[0];
+  return mw ? Number(mw.hourly_wage) : 0;
+}
+
 function _ctValidate(){
   _ctClearErrors();
   const errors = [];
   const isNew     = !editId.contract && !_recontractEmpId;
   const isEditOrRecontract = !isNew;
-
   // ── 공통: 근무시간표 (일괄적용 또는 개별 입력 필수) ──
   const _schDays  = parseInt(document.getElementById('ct-days')?.value) || 0;
   const _schHours = parseFloat(document.getElementById('ct-hours')?.value) || 0;
@@ -3771,6 +3818,19 @@ function _ctValidate(){
   if(_violatesMW)
     errors.push('최저임금 위반 — 기본급(또는 일급여)을 최저임금 이상으로 올려주세요.');
 
+  // ── 통상시급 최저임금 하한 (계약시작연도 법정 최저시급 기준) ──
+  (function(){
+    const _hwVal = getAmountVal('ct-hourly-input') || 0;
+    if(_hwVal <= 0) return; // 미입력은 위에서 필수 검증
+    const _startRaw = document.getElementById('ct-start')?.value || '';
+    const _yr = _startRaw ? parseInt(_startRaw.slice(0,4)) : new Date().getFullYear();
+    const _min = _getCTLegalMinWage(_yr);
+    if(_min > 0 && _hwVal < _min){
+      _ctMarkError('ct-hourly-input',
+        `통상시급은 ${_yr}년 법정 최저시급(${_min.toLocaleString('ko-KR')}원) 이상이어야 합니다`, errors);
+    }
+  })();
+
   // ── 계약기간 1개월 미만 위반 검사 (계약직·계약직 수습) ──
   const _shortTermRow = document.getElementById('ct-short-term-warning-row');
   const _editShortTermRow = document.getElementById('ct-edit-short-term-warning-row');
@@ -3816,6 +3876,14 @@ function _ctValidate(){
   // ── 급여 산정기간 필수 ──
   if(!document.getElementById('ct-pay-period')?.value.trim()){
     _ctMarkError('ct-pay-period-month', '급여 산정기간', errors);
+  }
+
+  // ── 급여지급일 필수 (근로계약 기준, 1~31) ──
+  {
+    const _payDayVal = parseInt(document.getElementById('ct-pay-day')?.value) || 0;
+    if(_payDayVal < 1 || _payDayVal > 31){
+      _ctMarkError('ct-pay-day', '급여지급일 (1~31)', errors);
+    }
   }
 
   // ── 신규계약/재계약: 제3자정보제공동의서 필수 (Rule 9) ──
