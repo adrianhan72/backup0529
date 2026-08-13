@@ -525,7 +525,8 @@ function selectPITarget(empId, contractId, draftId=null){
   if(_cdbHideOnSelect) _cdbHideOnSelect.style.display = 'none';
 
   // 계약 데이터 로드 + 자동입력 (onchange 이중 호출 없이 1회만 실행)
-  loadPIContract();
+  // → 목록 행에서 선택한 계약 ID를 전달하여 해당 월을 커버하는 계약(해지 계약 포함)을 로드
+  loadPIContract(contractId);
 
   if(draftId){
     // ── '이어 입력': 임시저장 자동 복원 ──
@@ -1143,7 +1144,7 @@ function onAnnualAutoChkChange(){
   }
 }
 
-function loadPIContract(){
+function loadPIContract(contractId){
   _piContractLoading = true;  // setPIPayType 내 calcPI 중복 호출 방지 시작
   // 기타수당 동적 항목 초기화 (직원 변경 시 이전 항목 잔류 방지)
   if(typeof _restorePIEtcAllowanceItems === 'function') _restorePIEtcAllowanceItems([]);
@@ -1227,15 +1228,49 @@ function loadPIContract(){
   // - 수습→채용확정 자동 생성 시 원본 수습 계약이 is_voided_by_amend=true로 무효화되지 않은
   //   예외 상황(네트워크 오류 등)에서도 가장 최근 계약이 올바르게 선택되도록 방어한다.
   {
-    const _piCandidates = allContracts.filter(c=>
-      c.employee_id===empId &&
-      (c.status===EMP_STATUS.ACTIVE||c.status===CONTRACT_STATUS.ACTIVE||c.status===CONTRACT_STATUS.DOCS_INCOMPLETE||c.status===CONTRACT_STATUS.PENDING) &&
-      !c.is_voided_by_amend && !c.is_draft &&
-      // 수습 기능 OFF → 수습 계약 제외
-      (window._probationFeatureEnabled || !(typeof isProbationType === 'function' && isProbationType(c.contract_type)))
-    );
+    const yr = parseInt(document.getElementById('pi-year')?.value) || 0;
+    const mo = parseInt(document.getElementById('pi-month')?.value) || 0;
+    let _piCandidates = [];
+    // ── ① 명시적 계약 ID(지급대상 목록 행) → 해당 계약을 그대로 사용 (해지 계약 포함) ──
+    if(contractId){
+      const _byId = allContracts.find(c => c.id===contractId && c.employee_id===empId && !c.is_voided_by_amend && !c.is_draft);
+      if(_byId) _piCandidates = [_byId];
+    }
+    // ── ② 명시 ID가 없으면 선택 년월을 실제로 커버하는 계약 우선 선택 ──
+    // (과거 월 입력 시 미래 시작 계약이 로드되어 산정기간이 역전되는 버그 방지)
+    if(_piCandidates.length === 0){
+      // 지급대상 목록과 동일 상태 집합 (해지 계약 포함)
+      const _VALID_ST = new Set([CONTRACT_STATUS.ACTIVE, CONTRACT_STATUS.PENDING, CONTRACT_STATUS.DOCS_INCOMPLETE,
+        CONTRACT_STATUS.TERMINATE_PENDING, CONTRACT_STATUS.RENEWAL_PENDING, CONTRACT_STATUS.TERMINATED]);
+      const _pool = allContracts.filter(c=>
+        c.employee_id===empId && _VALID_ST.has(c.status) &&
+        !c.is_voided_by_amend && !c.is_draft &&
+        // 수습 기능 OFF → 수습 계약 제외
+        (window._probationFeatureEnabled || !(typeof isProbationType === 'function' && isProbationType(c.contract_type)))
+      );
+      if(yr && mo){
+        const _pStart = `${yr}-${String(mo).padStart(2,'0')}-01`;
+        const _pEnd   = `${yr}-${String(mo).padStart(2,'0')}-${String(new Date(yr, mo, 0).getDate()).padStart(2,'0')}`;
+        const _covering = _pool.filter(c=>{
+          const cS = c.contract_start || '';
+          const cE = (c.status===CONTRACT_STATUS.TERMINATED || c.status===CONTRACT_STATUS.TERMINATE_PENDING)
+            ? (c.terminate_date || c.contract_end || '')
+            : (c.contract_end || '');
+          if(cS && cS > _pEnd) return false;   // 계약 시작이 월 말일 이후
+          if(cE && cE < _pStart) return false; // 계약 종료가 월 1일 이전
+          return true;
+        });
+        _piCandidates = _covering;
+      }
+      // ── ③ 커버 계약이 없으면 기존 동작: 유효(활성) 계약 중 최신 ──
+      if(_piCandidates.length === 0){
+        _piCandidates = _pool.filter(c=>
+          c.status===EMP_STATUS.ACTIVE||c.status===CONTRACT_STATUS.ACTIVE||c.status===CONTRACT_STATUS.DOCS_INCOMPLETE||c.status===CONTRACT_STATUS.PENDING
+        );
+      }
+    }
     if(_piCandidates.length > 1){
-      // 복수 활성 계약: contract_start 기준 내림차순 → 가장 최근 계약 선택
+      // 복수 계약: contract_start 기준 내림차순 → 가장 최근 계약 선택
       _piCandidates.sort((a,b)=>(b.contract_start||'').localeCompare(a.contract_start||''));
     }
     piContract = _piCandidates[0] || null;
@@ -1426,14 +1461,17 @@ function loadPIContract(){
         }
 
         // ── 계약 시작 부분월: 급여산정기간 시작일이 계약시작일 이후면 조정 ──
+        // 단, 계약시작일이 산정기간 종료일보다 늦으면(해당 월에 계약이 아직 시작되지 않음)
+        // 시작일을 치환하지 않음 → "2026.07.20~2026.05.31" 같은 역전 구간 방지
         {
           const _startRaw = piContract.salary_start_date || piContract.contract_start || '';
           if(_startRaw && _ppVal && _ppVal.includes('~')){
             const _startDate = new Date(_startRaw);
             const _parts = _ppVal.split('~');
             const _origStart = new Date(_parts[0].replace(/\./g,'-'));
+            const _origEnd   = new Date(_parts[1].replace(/\./g,'-'));
             // 계약시작일이 산정기간 시작일보다 이후 → 산정기간 시작일을 계약시작일로 조정
-            if(_startDate > _origStart){
+            if(_startDate > _origStart && _startDate <= _origEnd){
               const _sYr3 = _startDate.getFullYear();
               const _sMo3 = String(_startDate.getMonth()+1).padStart(2,'0');
               const _sDay3 = String(_startDate.getDate()).padStart(2,'0');
@@ -3778,7 +3816,8 @@ function calcPI(){
   const _etcGross = _sumPIEtcAllowance('all');
   const _etcStd = _sumPIEtcAllowance('taxable'); // receipt 제외
 
-  const gross=gv('pi-base')+gv('pi-weekly-hol')+gv('pi-site')+gv('pi-remote-area')+gv('pi-position')+gv('pi-skill')+gv('pi-license')+gv('pi-transport')+gv('pi-meal')+gv('pi-childcare')+gv('pi-research')+otPay+nightPay+holPay+_fixedOtPay+_fixedNightPay+_fixedHolPay+gv('pi-annual-pay')+gv('pi-bonus')+gv('pi-performance')+gv('pi-actual-expense')+gv('pi-communication')+gv('pi-fitness')+gv('pi-self-dev')+gv('pi-book')+gv('pi-overseas')+_layoffPay+_maternityPay - _retroOverpaymentTotal - _retroHolidayOverpay + _customOrdSum + _customFixedGross + _etcGross - _fullWeekOtP - _fullWeekNightP - _fullWeekHolP - (_applyAttDed ? (_partialOtP + _partialNightP + _partialHolP) : 0);
+  // ── 지급총액: 주휴수당은 기본급(시급×209h, 주휴 35h 포함)에 이미 포함 → 미가산 ──
+  const gross=gv('pi-base')+gv('pi-site')+gv('pi-remote-area')+gv('pi-position')+gv('pi-skill')+gv('pi-license')+gv('pi-transport')+gv('pi-meal')+gv('pi-childcare')+gv('pi-research')+otPay+nightPay+holPay+_fixedOtPay+_fixedNightPay+_fixedHolPay+gv('pi-annual-pay')+gv('pi-bonus')+gv('pi-performance')+gv('pi-actual-expense')+gv('pi-communication')+gv('pi-fitness')+gv('pi-self-dev')+gv('pi-book')+gv('pi-overseas')+_layoffPay+_maternityPay - _retroOverpaymentTotal - _retroHolidayOverpay + _customOrdSum + _customFixedGross + _etcGross - _fullWeekOtP - _fullWeekNightP - _fullWeekHolP - (_applyAttDed ? (_partialOtP + _partialNightP + _partialHolP) : 0);
   // ── 통상임금(보수월액) 계산 ──────────────────────────────────────────
   // · receipt(영수증 청구): 실비변상적 급여 → 전액 비과세 → std 제외
   // · daily(출근일수에 따름): 근로의 대가 → 과세 → std 포함
@@ -3808,7 +3847,8 @@ function calcPI(){
     const pt = _getPIPayTypeVal(ptKey);
     return pt !== 'receipt' && pt !== ''; // receipt는 제외, 미선택도 제외
   };
-  const std=gv('pi-base')+gv('pi-weekly-hol')+gv('pi-site')+gv('pi-position')
+  // ── 보수월액: 주휴수당은 기본급(시급×209h)에 이미 포함 → 미가산 ──
+  const std=gv('pi-base')+gv('pi-site')+gv('pi-position')
     + _teVal('car')
     + _teVal('meal')
     + _teVal('research')
@@ -3842,7 +3882,7 @@ function calcPIManual(){
   const otPay    = _parsePay('pi-ot-pay-disp')    || _parsePay('pi-ot-pay-disp-simple');
   const nightPay = _parsePay('pi-night-pay-disp') || _parsePay('pi-night-pay-disp-simple');
   const holPay   = _parsePay('pi-hol-pay-disp')   || _parsePay('pi-hol-pay-disp-simple');
-  const gross=gv('pi-base')+gv('pi-weekly-hol')+gv('pi-site')+gv('pi-remote-area')+gv('pi-position')+gv('pi-skill')+gv('pi-license')
+  const gross=gv('pi-base')+gv('pi-site')+gv('pi-remote-area')+gv('pi-position')+gv('pi-skill')+gv('pi-license')
              +gv('pi-transport')+gv('pi-meal')+gv('pi-childcare')+gv('pi-research')+gv('pi-fitness')+gv('pi-self-dev')+gv('pi-book')+gv('pi-overseas')
              +otPay+nightPay+holPay
              +gv('pi-annual-pay')+gv('pi-bonus')+gv('pi-performance')+gv('pi-actual-expense')+gv('pi-communication')+_layoffPay+_maternityPay - _retroOverpaymentTotal - _retroHolidayOverpay + _sumCustomOrd() + _sumCustomFixed('all');
@@ -3975,7 +4015,7 @@ function calcPIFixed(gross){
     const otPay=   _pf('pi-ot-pay-disp')    || _pf('pi-ot-pay-disp-simple');
     const nightPay=_pf('pi-night-pay-disp') || _pf('pi-night-pay-disp-simple');
     const holPay=  _pf('pi-hol-pay-disp')   || _pf('pi-hol-pay-disp-simple');
-    gross=gv('pi-base')+gv('pi-weekly-hol')+gv('pi-site')+gv('pi-remote-area')+gv('pi-position')+gv('pi-skill')+gv('pi-license')+gv('pi-transport')+gv('pi-meal')+gv('pi-childcare')+gv('pi-research')+otPay+nightPay+holPay+gv('pi-annual-pay')+gv('pi-bonus')+gv('pi-performance')+gv('pi-actual-expense')+gv('pi-communication')+gv('pi-fitness')+gv('pi-self-dev')+gv('pi-book')+gv('pi-overseas')+_layoffPay+_maternityPay - _retroOverpaymentTotal - _retroHolidayOverpay;
+    gross=gv('pi-base')+gv('pi-site')+gv('pi-remote-area')+gv('pi-position')+gv('pi-skill')+gv('pi-license')+gv('pi-transport')+gv('pi-meal')+gv('pi-childcare')+gv('pi-research')+otPay+nightPay+holPay+gv('pi-annual-pay')+gv('pi-bonus')+gv('pi-performance')+gv('pi-actual-expense')+gv('pi-communication')+gv('pi-fitness')+gv('pi-self-dev')+gv('pi-book')+gv('pi-overseas')+_layoffPay+_maternityPay - _retroOverpaymentTotal - _retroHolidayOverpay;
   }
   const std=gv('pi-std-pay')||gross;
 
