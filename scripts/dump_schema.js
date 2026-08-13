@@ -99,6 +99,9 @@ const KO = {
       updated_at: '수정일시',
       annual_leave_days: '연차일수 (자동계산)',
       pre_used_annual_leave: '기사용 연차일수 (서비스 가입 이전)',
+      created_reason: '계약 생성 사유 (new/renewal/recontract/amended_reissue)',
+      hire_reason: '입사 사유 (new_hire/re_hire/contract_renewal/probation_end)',
+      close_reason: '계약 종료 사유 (resignation/dismissal/expiry/renewal/void)',
     }
   },
   payrolls: {
@@ -213,6 +216,7 @@ const KO = {
       dispatched_by: '발송 처리자',
       recipient: '수신처',
       created_at: '생성일시',
+      dispatch_reason: '교부사유 (new/renewal/recontract/amended_reissue)',
     }
   },
   consent_dispatch: {
@@ -499,6 +503,7 @@ const KO = {
       contract_end: '계약 종료일',
       created_at: '생성일시',
       updated_at: '수정일시',
+      dispatch_reason: '교부사유 (new/renewal/recontract/amended_reissue)',
     }
   },
   consent_dispatch: {

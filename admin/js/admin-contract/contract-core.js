@@ -1,3 +1,27 @@
+/* ── 발생사유 판별 공용 헬퍼 (예정 사항 카드 + 신규계약 저장 hire_reason) ── */
+function _ctNameKey(name) {
+  return (name || '').replace(/[0-9]+$/, '').trim();
+}
+function _ctPastEmpIds(emp) {
+  if (!emp || !emp.id_number || !emp.name) return new Set();
+  const idPre = emp.id_number.replace(/[^0-9]/g, '').slice(0, 7);
+  const nameKey = _ctNameKey(emp.name);
+  if (!idPre || !nameKey) return new Set();
+  const matched = (allEmployees || []).filter(e =>
+    e.id !== emp.id &&
+    _ctNameKey(e.name) === nameKey &&
+    (e.id_number || '').replace(/[^0-9]/g, '').slice(0, 7) === idPre
+  );
+  return new Set(matched.map(e => e.id));
+}
+function _ctHasOwnPastContracts(empId, excludeContractId) {
+  return (allContracts || []).some(c =>
+    c.id !== excludeContractId && c.employee_id === empId &&
+    !c.is_draft && !c.is_voided_by_amend &&
+    [CONTRACT_STATUS.TERMINATED, CONTRACT_STATUS.EXPIRED].includes(c.status)
+  );
+}
+
 /**
  * _renderContCoSummaryCards()
  * 선택된 고객사에 대한 아코디언 카드 렌더링 (총 5종)
@@ -41,32 +65,6 @@ function _renderContCoSummaryCards(){
   days7Later.setDate(days7Later.getDate() + 7);
   const days7LaterStr = days7Later.toISOString().slice(0,10);
 
-  // ── 발생사유 판별 헬퍼 ──
-  function _getNameKey(name) {
-    return (name || '').replace(/[0-9]+$/, '').trim();
-  }
-  function _getPastEmpIds(emp) {
-    if (!emp || !emp.id_number || !emp.name) return new Set();
-    const idPre = emp.id_number.replace(/[^0-9]/g, '').slice(0, 7);
-    const nameKey = _getNameKey(emp.name);
-    if (!idPre || !nameKey) return new Set();
-    const matched = (allEmployees || []).filter(e =>
-      e.id !== emp.id &&
-      _getNameKey(e.name) === nameKey &&
-      (e.id_number || '').replace(/[^0-9]/g, '').slice(0, 7) === idPre
-    );
-    return new Set(matched.map(e => e.id));
-  }
-  function _hasOwnPastContracts(empId, excludeContractId) {
-    return (allContracts || []).some(c =>
-      c.id !== excludeContractId && c.employee_id === empId &&
-      !c.is_draft && !c.is_voided_by_amend &&
-      [CONTRACT_STATUS.TERMINATED, CONTRACT_STATUS.EXPIRED].includes(c.status)
-    );
-  }
-
-  const scheduledItems = [];
-
   // ── 발생사유 → CSS 클래스 매핑 ──
   function schedReasonClass(reason) {
     const map = {
@@ -80,6 +78,8 @@ function _renderContCoSummaryCards(){
     };
     return map[reason] || '';
   }
+
+  const scheduledItems = [];
 
   // 계약예정 + 갱신예정 (sortOrder 1, 구분 통합)
   const PROBATION_TYPES = [CONTRACT_TYPE.REGULAR_PROBATION, CONTRACT_TYPE.FIXED_PROBATION];
@@ -108,9 +108,13 @@ function _renderContCoSummaryCards(){
       if (!targetDate) return;
       if (activeProbation && !isProbationType) {
         reason = SCHEDULED_REASON.PROBATION_END;
+      } else if (c.hire_reason && [SCHEDULED_REASON.NEW_HIRE, SCHEDULED_REASON.RE_HIRE, SCHEDULED_REASON.CONTRACT_RENEWAL].includes(c.hire_reason)) {
+        // DB에 기록된 입사 사유 우선 (계약 저장 시점 확정값)
+        reason = c.hire_reason;
       } else {
-        const hasOwn = _hasOwnPastContracts(c.employee_id, c.id);
-        const pastEmpIds = _getPastEmpIds(emp);
+        // 레거시 폴백 (hire_reason 미기록 행)
+        const hasOwn = _ctHasOwnPastContracts(c.employee_id, c.id);
+        const pastEmpIds = _ctPastEmpIds(emp);
         const hasCross = pastEmpIds.size > 0 && (allContracts || []).some(x =>
           x.id !== c.id && !x.is_draft && !x.is_voided_by_amend &&
           [CONTRACT_STATUS.TERMINATED, CONTRACT_STATUS.EXPIRED].includes(x.status) &&
@@ -138,14 +142,27 @@ function _renderContCoSummaryCards(){
       && c.terminate_date && c.terminate_date > today)
     .forEach(c => {
       let tReason;
-      if (c.renewal_pair_id) {
-        tReason = SCHEDULED_REASON.CONTRACT_RENEWAL;
-      } else if (c.dismissal_notice_pay) {
-        tReason = SCHEDULED_REASON.DISMISSAL;
-      } else if (c.contract_end && c.terminate_date === c.contract_end) {
-        tReason = SCHEDULED_REASON.EXPIRY;
-      } else {
-        tReason = SCHEDULED_REASON.RESIGNATION;
+      if (c.close_reason) {
+        // DB에 기록된 종료 사유 우선 (해지·만료 처리 시점 확정값)
+        const _closeMap = {
+          dismissal  : SCHEDULED_REASON.DISMISSAL,
+          expiry     : SCHEDULED_REASON.EXPIRY,
+          renewal    : SCHEDULED_REASON.CONTRACT_RENEWAL,
+          resignation: SCHEDULED_REASON.RESIGNATION,
+        };
+        tReason = _closeMap[c.close_reason] || null;
+      }
+      if (!tReason) {
+        // 레거시 폴백 (close_reason 미기록 행)
+        if (c.renewal_pair_id) {
+          tReason = SCHEDULED_REASON.CONTRACT_RENEWAL;
+        } else if (c.dismissal_notice_pay) {
+          tReason = SCHEDULED_REASON.DISMISSAL;
+        } else if (c.contract_end && c.terminate_date === c.contract_end) {
+          tReason = SCHEDULED_REASON.EXPIRY;
+        } else {
+          tReason = SCHEDULED_REASON.RESIGNATION;
+        }
       }
       scheduledItems.push({
         type: 'terminate', sortOrder: 2,
@@ -410,7 +427,7 @@ async function _cancelPendingFromList(contractId){
   if(!confirm(`[계약예정 취소]\n\n${empName}\n계약 시작일: ${c.contract_start||'-'}\n\n예정된 근로계약을 취소하고 파기 처리하시겠습니까?\n파기된 계약은 계약 목록에서 확인 후 관리자가 직접 삭제할 수 있습니다.`)) return;
   try {
     await api(`../tables/contracts/${contractId}`, { method: 'PATCH', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({status: CONTRACT_STATUS.VOIDED}) });
+      body: JSON.stringify({status: CONTRACT_STATUS.VOIDED, close_reason:'void'}) });
     await loadContracts();
     toast('계약예정이 파기 처리됐습니다.');
     if(typeof renderContracts === 'function') renderContracts();
@@ -1013,6 +1030,26 @@ function openContractModal(id=null, preCompanyId=null){
           termDispEl.value = _effectiveTermDate;
         } else {
           termRowEl.style.display = 'none';
+        }
+      }
+      // 해지 사유 뱃지: contracts.close_reason (영문 코드 → 한글 라벨, 해지일 행 옆 표시)
+      const termReasonEl = document.getElementById('ct-terminate-reason-badge');
+      if(termReasonEl){
+        const _effTermDate2 = c.terminate_date || (isTerminatedOrPending ? c.contract_end : '');
+        const _reasonBadgeCls = {
+          resignation: 'badge-gray',
+          dismissal  : 'badge-pink',
+          expiry     : 'badge-orange',
+          renewal    : 'badge-blue',
+          void       : 'badge-red',
+        }[c.close_reason];
+        const _reasonLabel = (typeof CLOSE_REASON_LABEL !== 'undefined') ? (CLOSE_REASON_LABEL[c.close_reason] || '') : '';
+        if(_reasonLabel && _reasonBadgeCls && _effTermDate2){
+          termReasonEl.style.display = '';
+          termReasonEl.innerHTML = `<span class="badge ${_reasonBadgeCls}">${_reasonLabel}</span>`;
+        } else {
+          termReasonEl.style.display = 'none';
+          termReasonEl.innerHTML = '';
         }
       }
       // 계약 파기일 행: is_voided_by_amend인 경우 표시
@@ -2076,7 +2113,6 @@ function viewContract(id){
         const contractEndKr = fmtDate(c.contract_end) || '—';
         dateHtml = `계약 해지일: <span id="ct-sb-term-text"><strong>${termKr}</strong></span>`
           + `<span id="ct-sb-term-edit" style="display:none;"><input type="date" id="ct-sb-term-input" value="${termDate}" style="border:1.5px solid #6366f1;border-radius:6px;padding:3px 8px;font-size:13px;font-family:inherit;width:140px;" /></span>`
-          + ` <button id="ct-sb-term-change-btn" onclick="changeTerminateDate()" class="btn btn-teal" style="padding:2px 10px;font-size:11.5px;margin-left:4px;">변경</button>`
           + ` <button id="ct-sb-term-confirm-btn" onclick="confirmTerminateDateChange()" class="btn btn-indigo" style="display:none;padding:2px 10px;font-size:11.5px;margin-left:4px;">확인</button>`
           + ` <button id="ct-sb-term-cancel-btn" onclick="cancelTerminateDateChange()" class="btn btn-secondary" style="display:none;padding:2px 10px;font-size:11.5px;margin-left:2px;">취소</button>`;
         if(!isRegType && c.contract_end){
@@ -2118,6 +2154,23 @@ function viewContract(id){
       _destroyBtn.className     = 'btn btn-secondary';
       _destroyBtn.style.display = 'inline-flex';
       _destroyBtn.innerHTML     = tm.destroyLabel;
+
+      // 해지 사유 뱃지 (배너 제목 옆 — D-day 앞, 해지예정 전용)
+      const _reasonBadgeEl = document.getElementById('ct-sb-reason-badge');
+      if(_reasonBadgeEl){
+        const _rbCls = { resignation:'badge-gray', dismissal:'badge-pink', expiry:'badge-orange', renewal:'badge-blue', void:'badge-red' }[c.close_reason];
+        const _rbLabel = (typeof CLOSE_REASON_LABEL !== 'undefined') ? (CLOSE_REASON_LABEL[c.close_reason] || '') : '';
+        if(isPreTerm && _rbCls && _rbLabel){
+          _reasonBadgeEl.style.display = 'inline-block';
+          _reasonBadgeEl.innerHTML = `<span class="badge ${_rbCls}">${_rbLabel}</span>`;
+        } else {
+          _reasonBadgeEl.style.display = 'none';
+          _reasonBadgeEl.innerHTML = '';
+        }
+      }
+      // 해지일 변경 버튼: 해지철회 버튼 옆 표시 (해지예정 전용)
+      const _termChgBtn = document.getElementById('ct-sb-term-change-btn');
+      if(_termChgBtn) _termChgBtn.style.display = isPreTerm ? 'inline-flex' : 'none';
 
       // 계약예정: 시작일 도래 시 수정·취소 버튼 비활성화
       if(isPendingSt && c.contract_start && today >= c.contract_start){
@@ -2426,7 +2479,7 @@ function cancelTerminateDateChange(){
 
   textEl.style.display      = 'inline';
   editEl.style.display      = 'none';
-  changeBtn.style.display   = 'inline';
+  changeBtn.style.display   = 'inline-flex';
   confirmBtn.style.display  = 'none';
   cancelBtn.style.display   = 'none';
 }
@@ -2670,7 +2723,7 @@ async function openAmendPreview(){
             const patchResp = await fetch(`../tables/contracts/${origId}`, {
               method : 'PATCH',
               headers: {'Content-Type':'application/json'},
-              body   : JSON.stringify({ status: CONTRACT_STATUS.VOIDED, is_voided_by_amend:true, voided_at:nowISO })
+              body   : JSON.stringify({ status: CONTRACT_STATUS.VOIDED, is_voided_by_amend:true, voided_at:nowISO, close_reason:'void' })
             });
             if(!patchResp.ok) throw new Error(`원본 파기 실패 (HTTP ${patchResp.status})`);
       const origIdx = allContracts.findIndex(x => x.id === origId);
@@ -2873,6 +2926,7 @@ async function openAmendPreview(){
   const newBody = {
     ...commonFields,
     status: newStatus,
+    created_reason: 'amended_reissue', // 수정재발행으로 생성된 계약 (영문 코드)
     amended_from: origId, is_voided_by_amend: false,
     // 갱신 페어 관계 유지: renewed_from_id를 새 계약으로 이전
     renewed_from_id: origC.renewed_from_id || null,
@@ -2919,11 +2973,11 @@ async function openAmendPreview(){
     }
   }
 
-  // ④ 발송 이력 기록
+  // ④ 발송 이력 기록 (수정재발행 — 발송 방식은 알림톡, 교부사유는 dispatch_reason으로 기록)
   const _emp = allEmployees.find(e => e.id === empId) || {};
   const _co  = allCompanies.find(x => x.id === coId)  || {};
   await _saveDispatchRecord({
-    method: DISPATCH_METHOD.REISSUE, status: DISPATCH_STATUS.COMPLETED, recipient: _emp.phone||_emp.email||'',
+    method: DISPATCH_METHOD.KAKAO, status: DISPATCH_STATUS.COMPLETED, recipient: _emp.phone||_emp.email||'',
     note: `계약 내용 수정 후 재발행 완료 (원본 ID: ${origId})`, contractId: newContractId,
   });
 

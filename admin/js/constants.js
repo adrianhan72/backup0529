@@ -605,4 +605,13 @@ const SCHEDULED_REASON_LABEL = Object.freeze({
   [SCHEDULED_REASON.RESIGNATION]:      '사직',
 });
 
+// 계약 종료 사유 (contracts.close_reason → 표시 라벨)
+const CLOSE_REASON_LABEL = Object.freeze({
+  resignation: '사직',
+  dismissal  : '해고',
+  expiry     : '만료',
+  renewal    : '계약갱신',
+  void       : '파기',
+});
+
 

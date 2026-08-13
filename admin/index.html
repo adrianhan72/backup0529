@@ -1627,12 +1627,13 @@
     <div id="ct-status-banner" class="ct-status-banner">
       <div class="banner-icon" id="ct-sb-icon">⚠️</div>
       <div class="banner-body">
-        <div class="banner-title"><span id="ct-sb-title-icon"></span>&nbsp;<span id="ct-sb-title-text"></span>&nbsp;<span id="ct-sb-dday" style="display:inline-block;color:#fff;border-radius:20px;padding:1px 11px;font-size:11.5px;margin-left:4px;"></span></div>
+        <div class="banner-title"><span id="ct-sb-title-icon"></span>&nbsp;<span id="ct-sb-title-text"></span>&nbsp;<span id="ct-sb-reason-badge" style="display:none;"></span>&nbsp;<span id="ct-sb-dday" style="display:inline-block;color:#fff;border-radius:20px;padding:1px 11px;font-size:11.5px;margin-left:4px;"></span></div>
         <div class="banner-date" id="ct-sb-date"></div>
         <div class="banner-actions">
           <button class="btn-sb btn-sb-edit" id="ct-sb-btn-edit" onclick="doContractAmend()"><i class="fas fa-pencil-alt"></i> 수정 및 재발행</button>
           <button class="btn-sb btn-sb-save" id="ct-sb-btn-save" style="display:none;" onclick="openAmendPreview()"><i class="fas fa-check"></i> 수정 및 재발행 완료</button>
           <button class="btn-sb btn-sb-cancel" id="ct-sb-btn-cancel" style="display:none;" onclick="cancelContractAmend()"><i class="fas fa-times"></i> 취소</button>
+          <button class="btn btn-warning" id="ct-sb-term-change-btn" style="display:none;" onclick="changeTerminateDate()"><i class="fas fa-calendar-alt"></i> 해지일 변경</button>
           <button class="btn btn-secondary" id="ct-sb-btn-destroy" onclick="doContractVoidOrCancel()"><i class="fas fa-times-circle"></i> 계약 취소</button>
         </div>
       </div>
@@ -1900,7 +1901,7 @@
           <input type="date" id="ct-renewed-pair-end" class="filt-date" oninput="_onRenewedPairEndChange()" />
           <div id="ct-renewed-pair-hint" style="font-size:11px;color:#6b7280;margin-top:2px;"></div>
         </div>
-        <div class="form-group" id="ct-row-terminate" style="display:none;"><label style="color:#7c3aed;">계약 해지일</label><input type="date" id="ct-terminate-display" class="filt-date" readonly /></div>
+        <div class="form-group" id="ct-row-terminate" style="display:none;"><label style="color:#7c3aed;">계약 해지일</label><input type="date" id="ct-terminate-display" class="filt-date" readonly /><span id="ct-terminate-reason-badge" style="display:none;"></span></div>
         <div class="form-group" id="ct-row-voided" style="display:none;"><label style="color:#7c3aed;">계약 파기일</label><input type="text" id="ct-voided-display" readonly /></div>
         <div class="form-group full" id="ct-edit-short-term-warning-row" style="display:none;">
           <div style="display:flex;align-items:flex-start;gap:9px;background:#fff7ed;border:1.5px solid #fb923c;border-radius:8px;padding:10px 13px;font-size:12px;line-height:1.65;color:#7c2d12;">

@@ -535,7 +535,7 @@ async function autoExpireFixedTermContracts(){
     try {
       await fetch(`../tables/contracts/${c.id}`, {
         method:'PATCH', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ status: CONTRACT_STATUS.EXPIRED })
+        body: JSON.stringify({ status: CONTRACT_STATUS.EXPIRED, close_reason: 'expiry' })
       });
       const idx = allContracts.findIndex(x => x.id === c.id);
       if(idx > -1) allContracts[idx].status = CONTRACT_STATUS.EXPIRED;

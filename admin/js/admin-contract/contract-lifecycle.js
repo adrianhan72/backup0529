@@ -799,10 +799,14 @@ function _resetStatusBanner(){
   const btnSave    = document.getElementById('ct-sb-btn-save');
   const btnCancel  = document.getElementById('ct-sb-btn-cancel');
   const btnDestroy = document.getElementById('ct-sb-btn-destroy');
+  const btnTermChange = document.getElementById('ct-sb-term-change-btn');
+  const reasonBadge   = document.getElementById('ct-sb-reason-badge');
   if(btnEdit)    btnEdit.style.display    = 'inline-flex';
   if(btnSave)    btnSave.style.display    = 'none';
   if(btnCancel)  btnCancel.style.display  = 'none';
   if(btnDestroy) btnDestroy.style.display = 'inline-flex';
+  if(btnTermChange) btnTermChange.style.display = 'none';
+  if(reasonBadge){ reasonBadge.style.display = 'none'; reasonBadge.innerHTML = ''; }
 }
 
 // ─── 예정 계약 수정 모드 진입 (해지예정 / 계약예정 / 갱신예정 공용) ───
@@ -1111,7 +1115,7 @@ async function cancelPendingContract(){
 
   // 계약을 VOIDED(파기) 상태로 변경 (삭제하지 않음 — 관리자가 추후 확인 후 직접 삭제)
   await api(`../tables/contracts/${c.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({status: CONTRACT_STATUS.VOIDED})});
+    body:JSON.stringify({status: CONTRACT_STATUS.VOIDED, close_reason:'void'})});
 
   closeModal('contract-modal');
   await loadContracts();
@@ -1135,7 +1139,7 @@ async function doContractVoid(){
   if(!confirm(`정말 이 계약을 파기하시겠습니까?\n\n[${statusLabel}] 상태의 계약을 파기합니다.\n파기된 계약은 복구할 수 없으며, 계약이 성립되지 않은 것으로 처리됩니다.`)) return;
 
   await api(`../tables/contracts/${c.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({status: CONTRACT_STATUS.VOIDED})});
+    body:JSON.stringify({status: CONTRACT_STATUS.VOIDED, close_reason:'void'})});
 
   // ── 고객사 인앱 알림 발송 (계약 파기) ──
   {
@@ -1728,7 +1732,7 @@ async function cancelContractRenew(){
 
     // 2. 갱신예정 계약 삭제 (또는 void 처리)
     await api(`../tables/contracts/${cid}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({status: CONTRACT_STATUS.VOIDED})});
+      body:JSON.stringify({status: CONTRACT_STATUS.VOIDED, close_reason:'void'})});
 
     closeModal('contract-modal');
     await loadContracts(); await loadEmployees();
@@ -1832,6 +1836,7 @@ async function confirmContractRenew(){
     is_draft:       false,
     terminate_date: '',
     renewed_from_id: c.id,                                 // 원본 계약 ID 참조
+    created_reason:  'renewal',                            // 갱신으로 생성된 계약 (영문 코드)
     note: document.getElementById('ct-note')?.value || c.note || '',
   });
   // API 시스템 필드 및 DB 미존재 컬럼 제거 (id는 서버에서 UUID 생성)
@@ -1844,7 +1849,7 @@ async function confirmContractRenew(){
   try {
     const _oldTermStatus = oldEnd > today ? CONTRACT_STATUS.TERMINATE_PENDING : CONTRACT_STATUS.TERMINATED;
     await api(`../tables/contracts/${c.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({terminate_date: oldEnd, status: _oldTermStatus, renewed_to_id: newId})});
+      body:JSON.stringify({terminate_date: oldEnd, status: _oldTermStatus, renewed_to_id: newId, close_reason:'renewal'})});
     // 로컬 갱신
     c.terminate_date = oldEnd;
     c.status = _oldTermStatus;
@@ -2246,7 +2251,7 @@ async function confirmContractTerminate(){
   if(!confirm(_confirmLines.join('\n'))) return;
 
   // 계약 PATCH
-  const patchBody = { terminate_date: termDate, status: newStatus };
+  const patchBody = { terminate_date: termDate, status: newStatus, close_reason: isDismissal ? 'dismissal' : 'resignation' };
   if(isDismissal && noticePayChk?.checked && noticePayAmt > 0){
     patchBody.dismissal_notice_pay = noticePayAmt;
     patchBody.dismissal_notice_pay_reason = `해고 (${reason}) — 근로기준법 제26조`;
@@ -2787,7 +2792,8 @@ async function confirmFixedTerminate(){
     const patchBody = {
       terminate_date : termDate,
       status         : newStatus,
-      note           : finalNote
+      note           : finalNote,
+      close_reason   : isDismissal ? 'dismissal' : 'resignation'
     };
     // 해고예고수당 저장
     if(isDismissal && noticePayChk?.checked && noticePayAmt > 0){
@@ -3108,6 +3114,7 @@ async function saveDraftContract(reason){
       ? (document.getElementById('ct-start')?.value || '')
       : (document.getElementById('ct-start')?.value || document.getElementById('ct-edit-em-hire')?.value || ''),
     salary_end_date:      '',
+    created_reason:       'new',
     is_draft:             true,
     draft_saved_at:       Date.now(),
   };
@@ -4221,6 +4228,26 @@ async function saveContract(){
     const _srcReconEnd = _srcRecon?.terminate_date || _srcRecon?.contract_end || '';
     if(_srcRecon && _srcReconEnd && contractStart && !_hasWeekdayGap(_srcReconEnd, contractStart)){
       body.renewed_from_id = _recontractSourceId;
+    }
+  }
+
+  // ── 계약 생성 사유 기록 (신규/재계약 — DB 영문 코드, 편집 모드는 기존값 유지) ──
+  if(!isEditMode){
+    if(isRecontract){
+      body.created_reason = 'recontract';
+      body.hire_reason    = 're_hire';
+    } else {
+      body.created_reason = 'new';
+      const _empHire  = allEmployees.find(e => e.id === empId);
+      const _hasOwnP  = typeof _ctHasOwnPastContracts === 'function' ? _ctHasOwnPastContracts(empId, null) : false;
+      const _crossIds = typeof _ctPastEmpIds === 'function' ? _ctPastEmpIds(_empHire) : new Set();
+      const _hasCross = _crossIds.size > 0 && (allContracts || []).some(x =>
+        !x.is_draft && !x.is_voided_by_amend &&
+        [CONTRACT_STATUS.TERMINATED, CONTRACT_STATUS.EXPIRED].includes(x.status) &&
+        _crossIds.has(x.employee_id));
+      const _hasPast = _hasOwnP || _hasCross;
+      body.hire_reason = !_hasPast ? 'new_hire'
+        : (_empHire?.hire_date && _empHire.hire_date === contractStart ? 're_hire' : 'contract_renewal');
     }
   }
 

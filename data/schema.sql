@@ -160,7 +160,10 @@ CREATE TABLE IF NOT EXISTS contracts (
   retention_cleared_at TEXT, --  -- 보존 해제 일시
   insurance_reported_at TEXT, --  -- 보험 신고 일시
   tax_reported_at TEXT, --  -- 세금 신고 일시
-  custom_fixed_values TEXT DEFAULT NULL --  -- 사용자정의 고정 값
+  custom_fixed_values TEXT DEFAULT NULL, --  -- 사용자정의 고정 값
+  created_reason TEXT, --  -- 계약 생성 사유 (new/renewal/recontract/amended_reissue)
+  hire_reason TEXT, --  -- 입사 사유 (new_hire/re_hire/contract_renewal/probation_end)
+  close_reason TEXT --  -- 계약 종료 사유 (resignation/dismissal/expiry/renewal/void)
 );
 
 CREATE INDEX IF NOT EXISTS idx_contracts_employee ON contracts(employee_id);
@@ -545,7 +548,8 @@ CREATE TABLE IF NOT EXISTS contract_dispatch (
   contract_start TEXT, --  -- 계약 시작일
   contract_end TEXT, --  -- 계약 종료일
   created_at INTEGER, --  -- 생성일시
-  updated_at INTEGER --  -- 수정일시
+  updated_at INTEGER, --  -- 수정일시
+  dispatch_reason TEXT --  -- 교부사유 (new/renewal/recontract/amended_reissue)
 );
 
 -- contract_expiry_notice  -- 계약만료 통지 이력

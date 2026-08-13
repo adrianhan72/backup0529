@@ -155,27 +155,35 @@ async function loadContractDispatchList(forceReload = false){
 
 /**
  * 발송 이력 행의 교부사유 도출
- * - 수정재발행: 발송 방식이 reissue인 행
- * - 계약갱신:   계약이 renewed_from_id로 이어졌고, 원본 계약에 종료일(terminate_date)이 기록된 경우
- *               (갱신 완료 시 원본에 종료일 + renewed_to_id가 함께 설정됨)
- * - 재계약:     renewed_from_id로 이어졌지만 원본 종료일 변경이 없는 경우
- *               (재계약은 원본에 renewed_to_id만 연결)
- * - 신규계약:   renewed_from_id가 없는 계약
+ * 1) DB에 기록된 dispatch_reason 우선 (발송 저장 시점 확정값, 영문 코드)
+ * 2) 레거시 폴백: dispatch_reason 미기록 행은 계약 페어링 기반 추정
+ *   - reissue 마커 → 수정재발행
+ *   - renewed_from_id + 원본 종료일·연결 존재 → 계약갱신 / 그 외 → 재계약
+ *   - renewed_from_id 없음 → 신규계약
  */
 function _cdpReasonInfo(r){
   if(!r) return { code:'', label:'-', bg:'#f3f4f6', color:'#374151' };
+  const DB_REASON_MAP = {
+    new             : { code:'new',      label:'신규계약',   bg:'rgba(16,185,129,.1)',  color:'#059669' },
+    renewal         : { code:'renewal',  label:'계약갱신',   bg:'rgba(59,130,246,.1)',  color:'#2563eb' },
+    recontract      : { code:'recontract', label:'재계약',   bg:'rgba(139,92,246,.1)',  color:'#7c3aed' },
+    amended_reissue : { code:'reissue',  label:'수정재발행', bg:'rgba(236,72,153,.1)', color:'#db2777' },
+  };
+  if(r.dispatch_reason && DB_REASON_MAP[r.dispatch_reason]){
+    return { ...DB_REASON_MAP[r.dispatch_reason] };
+  }
   if(r.dispatch_method === DISPATCH_METHOD.REISSUE){
-    return { code:'reissue', label:'수정재발행', bg:'rgba(236,72,153,.1)', color:'#db2777' };
+    return { ...DB_REASON_MAP.amended_reissue };
   }
   const c = (allContracts||[]).find(x => x.id === r.contract_id);
   if(c && c.renewed_from_id){
     const orig = (allContracts||[]).find(x => x.id === c.renewed_from_id);
     if(orig && orig.renewed_to_id === c.id && orig.terminate_date){
-      return { code:'renewal', label:'계약갱신', bg:'rgba(59,130,246,.1)', color:'#2563eb' };
+      return { ...DB_REASON_MAP.renewal };
     }
-    return { code:'recontract', label:'재계약', bg:'rgba(139,92,246,.1)', color:'#7c3aed' };
+    return { ...DB_REASON_MAP.recontract };
   }
-  return { code:'new', label:'신규계약', bg:'rgba(16,185,129,.1)', color:'#059669' };
+  return { ...DB_REASON_MAP.new };
 }
 
 /** 발송 관리 페이지 전체 렌더링 */
@@ -743,8 +751,12 @@ async function _saveDispatchRecord({ method: dispatchMethod, status: dispatchSta
     if(_co){  coId = _co.id || ''; coName = _co.company_name || ''; }
   }
 
+  const _dcReason = ((allContracts || []).find(x => x.id === cId) || {}).created_reason
+    || (dispatchMethod === DISPATCH_METHOD.REISSUE ? 'amended_reissue' : null);
+
   const payload = {
     contract_id     : cId,
+    dispatch_reason : _dcReason,
     employee_id     : empId,
     employee_name   : empName,
     company_id      : coId,

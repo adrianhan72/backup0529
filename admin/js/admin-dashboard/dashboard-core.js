@@ -900,7 +900,7 @@ async function execProbCancel(){
   try {
     await fetch(`../tables/contracts/${t.contract.id}`, {
       method:'PATCH', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ status: CONTRACT_STATUS.EXPIRED })
+      body: JSON.stringify({ status: CONTRACT_STATUS.EXPIRED, close_reason: 'expiry' })
     });
     const idx = allContracts.findIndex(c => c.id === t.contract.id);
     if(idx > -1) allContracts[idx].status = CONTRACT_STATUS.EXPIRED;
