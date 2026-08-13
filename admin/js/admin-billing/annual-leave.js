@@ -450,6 +450,10 @@ async function openLeaveLedger(empId, empName, refYear){
   _ledgerYear     = refYear || new Date().getFullYear();
   _ledgerRecordId = '';
 
+  // 입력 필드 초기화 (이전 직원 세션 잔재 제거)
+  { const _d = document.getElementById('ledger-entry-date'); if(_d) _d.value = ''; }
+  { const _s = document.getElementById('ledger-entry-days'); if(_s) _s.value = '1'; }
+
   await _loadAndRenderLedger();
   openModal('al-ledger-modal');
 }

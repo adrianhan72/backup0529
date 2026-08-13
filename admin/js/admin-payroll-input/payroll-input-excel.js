@@ -2715,6 +2715,9 @@ async function confirmBulkUpload(){
 
 // ─── EXCEL DOWNLOAD ───
 function openExcelModal(){
+  // 포함 옵션 체크박스 초기화 (이전 세션 잔재 제거)
+  { const _oe = document.getElementById('xl-opt-existing'); if(_oe) _oe.checked = true; }
+  { const _oc = document.getElementById('xl-opt-contract');  if(_oc) _oc.checked = true; }
   // 고객사 드롭다운 채우기
   const sel=document.getElementById('xl-company');
   sel.innerHTML='<option value="">-- 고객사를 선택하세요 --</option>'+
@@ -2736,23 +2739,15 @@ function openExcelModal(){
     sel.style.display='';
   }
 
-  // 년도 드롭다운 동기화 (현재 선택된 연도 반영)
+  // 년도 드롭다운 동기화 (옵션 리빌드로 중복 누적 방지)
   const yrSel = document.getElementById('xl-year');
   const payYrSel = document.getElementById('pay-year-filter');
-  if(payYrSel && payYrSel.value){
-    // 해당 연도가 옵션에 없으면 추가
-    if(!Array.from(yrSel.options).find(o=>o.value===payYrSel.value)){
-      yrSel.innerHTML += `<option value="${payYrSel.value}">${payYrSel.value}년</option>`;
-    }
-    yrSel.value = payYrSel.value;
-  } else {
-    // 현재 연도 기본 선택
-    const curYr = String(new Date().getFullYear());
-    if(!Array.from(yrSel.options).find(o=>o.value===curYr)){
-      yrSel.innerHTML += `<option value="${curYr}">${curYr}년</option>`;
-    }
-    yrSel.value = curYr;
-  }
+  const baseYears = ['2024','2025','2026'];
+  const targetYear = payYrSel && payYrSel.value ? payYrSel.value : String(new Date().getFullYear());
+  if(!baseYears.includes(targetYear)) baseYears.push(targetYear);
+  baseYears.sort();
+  yrSel.innerHTML = baseYears.map(y=>`<option value="${y}">${y}년</option>`).join('');
+  yrSel.value = targetYear;
 
   // 월 드롭다운 (현재 임금대장에서 선택된 월 반영)
   const ms=document.getElementById('xl-month');

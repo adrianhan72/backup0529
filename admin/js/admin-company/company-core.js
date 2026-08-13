@@ -865,6 +865,25 @@ async function deleteDraftCompany(){
 
 function openCompanyModal(id=null){
   window._cmViewOnly = false; // 기본: 편집 모드
+  // ── 조회 전용 모드(viewCompanyInfo) 잔재 복원 ──
+  // viewCompanyInfo가 모든 입력 disabled/readOnly + 버튼 숨김 처리 → 다음 신규/수정 열 때 해제
+  {
+    const _cmModalEl = document.getElementById('company-modal');
+    if(_cmModalEl){
+      _cmModalEl.querySelectorAll('input, textarea, select').forEach(el=>{
+        el.disabled = false;
+        el.readOnly = false;
+      });
+      _cmModalEl.querySelectorAll('button:not(.modal-close)').forEach(b=>{
+        b.style.display = '';
+      });
+      // 조회 모드에서 숨겨진 섹션 복원 (이후 _cmRenderExecutives/_cmRenderRelated가 내용 재구성)
+      const _cmExecSec = document.getElementById('cm-executives-section');
+      const _cmRelSec  = document.getElementById('cm-related-section');
+      if(_cmExecSec) _cmExecSec.style.display = '';
+      if(_cmRelSec)  _cmRelSec.style.display  = '';
+    }
+  }
   // 임시저장 항목인지 먼저 확인
   const _cmpData = id ? allCompanies.find(x=>x.id===id) : null;
   const _isDraft = !!(_cmpData && _cmpData.is_draft);
@@ -903,6 +922,10 @@ function openCompanyModal(id=null){
 
   ['cm-name','cm-biz','cm-rep','cm-industry','cm-addr','cm-phone','cm-email','cm-period','cm-payday','cm-note','cm-contract-start','cm-contract-end'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});
   _validateBizNumber();
+  // 병가 급여 지급율 초기화 (기본값 0 = 무급만)
+  { const _cmSickEl = document.getElementById('cm-sick-leave-pay-rate'); if(_cmSickEl) _cmSickEl.value = 0; }
+  // 일할 계산 방식 초기화 (기본값 30일 고정)
+  { const _cmProrRadio = document.querySelector('input[name="cm-proration-method"][value="30day_fixed"]'); if(_cmProrRadio) _cmProrRadio.checked = true; }
   // 해지일 행 초기화 (기본 숨김)
   const _cmEndRow = document.getElementById('cm-contract-end-row');
   if(_cmEndRow) _cmEndRow.style.display = 'none';
@@ -2154,6 +2177,8 @@ async function _cmLoadExecutives(companyId) {
   if (!companyId) { _cmRenderExecutives(); return; }
   try {
     const res = await api(`../tables/registered_executives?company_id=${companyId}`);
+    // 비동기 경합 가드: 응답이 도착했을 때 열려 있는 모달이 다른 고객사면 폐기
+    if (editId.company !== companyId) return;
     const rows = res?.data || res || [];
     _cmExecutives = (Array.isArray(rows) ? rows : []).map(r => ({
       id: r.id, name: r.name, position: r.position, phone: r.phone, id_number: r.id_number,
@@ -2170,6 +2195,8 @@ async function _cmLoadRelated(companyId) {
   if (!companyId) { _cmRenderRelated(); return; }
   try {
     const res = await api(`../tables/related_party_workers?company_id=${companyId}`);
+    // 비동기 경합 가드: 응답이 도착했을 때 열려 있는 모달이 다른 고객사면 폐기
+    if (editId.company !== companyId) return;
     const rows = res?.data || res || [];
     _cmRelatedParties = (Array.isArray(rows) ? rows : []).map(r => ({
       id: r.id, name: r.name, relationship: r.relationship, phone: r.phone, id_number: r.id_number,

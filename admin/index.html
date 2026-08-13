@@ -2934,17 +2934,17 @@
 </div>
 
 <!-- 기존 해지 확인 모달 (미납금 체크 포함) — 시스템 설정 스위치로 제어 -->
-<div class="modal-overlay" id="terminate-modal-billing" style="display:none;">
+<div class="modal-overlay" id="terminate-modal-billing">
   <div class="modal-card" style="max-width:480px;width:95%">
     <div class="modal-header" style="background:linear-gradient(135deg,#1e293b,#334155);">
       <span class="modal-title" style="color:#fff;"><i class="fas fa-ban" style="color:#f87171;margin-right:6px;"></i> 고객사 해지 처리</span>
-      <button class="btn btn-icon-dark" onclick="closeModal('terminate-modal')"><i class="fas fa-times"></i></button>
+      <button class="btn btn-icon-dark" onclick="closeModal('terminate-modal-billing')"><i class="fas fa-times"></i></button>
     </div>
     <div class="modal-body" style="padding:24px;">
       <div id="tm-company-name-old" style="font-size:17px;font-weight:700;color:#1e293b;margin-bottom:16px;"></div>
       <div style="margin-bottom:16px;">
         <label style="display:block;font-size:12.5px;font-weight:600;color:#374151;margin-bottom:6px;">계약 해지일 <span style="color:#c00;font-weight:900;">*</span></label>
-        <input type="date" id="tm-end-date" class="filt-date" style="width:100%" />
+        <input type="date" id="tm-end-date-billing" class="filt-date" style="width:100%" />
       </div>
       잔액 없을 때
       <div id="tm-no-balance" style="display:none;">
@@ -2985,7 +2985,7 @@
       </div>
     </div>
     <div class="modal-footer" style="gap:8px;flex-wrap:wrap;">
-      <button class="btn btn-secondary" onclick="closeModal('terminate-modal')" style="flex:1;min-width:100px;">취소</button>
+      <button class="btn btn-secondary" onclick="closeModal('terminate-modal-billing')" style="flex:1;min-width:100px;">취소</button>
       <div id="tm-buttons-balance" style="display:none;flex:2;display:none;gap:8px;">
         <button class="btn btn-warning" style="flex:1;" onclick="doTerminate(false)">
           <i class="fas fa-pause-circle"></i> 완납시까지 해지 연기

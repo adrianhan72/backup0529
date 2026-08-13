@@ -692,12 +692,13 @@ function terminateCompany(id, name){
     });
     const totalLoss = unpaidAmount + pendingAmount;
     const hasBalance = totalLoss > 0;
-    // billing-aware modal: tm-company-name-old + tm-end-date
+    // billing-aware modal: tm-company-name-old + tm-end-date-billing (ID 분리 — terminate-modal과 중복 방지)
     document.getElementById('tm-company-name-old').innerHTML =
       `<i class="fas fa-building" style="color:#64748b;margin-right:6px;"></i>${name}`;
-    if (endDateEl) {
-      endDateEl.min = c?.contract_start_date || '';
-      endDateEl.value = todayStr;
+    const endDateBillingEl = document.getElementById('tm-end-date-billing');
+    if (endDateBillingEl) {
+      endDateBillingEl.min = c?.contract_start_date || '';
+      endDateBillingEl.value = todayStr;
     }
     if(hasBalance){
       document.getElementById('tm-no-balance').style.display   = 'none';
@@ -741,7 +742,10 @@ async function doTerminate(withLoss){
   const c = allCompanies.find(x => x.id === id);
   if(!c) return;
   const todayStr = new Date().toISOString().slice(0, 10);
-  const endDateEl = document.getElementById('tm-end-date');
+  // 사용료 수납관리 ON → billing 모달 전용 날짜 필드 사용 (ID 분리)
+  const _termModalId = window._billingFeatureEnabled ? 'terminate-modal-billing' : 'terminate-modal';
+  const _termDateId = window._billingFeatureEnabled ? 'tm-end-date-billing' : 'tm-end-date';
+  const endDateEl = document.getElementById(_termDateId);
   const endDateStr = endDateEl?.value || todayStr;
   if(!endDateStr) return toast('계약 해지일을 입력해 주세요.', 'error');
   if(c.contract_start_date && endDateStr < c.contract_start_date){
@@ -749,7 +753,6 @@ async function doTerminate(withLoss){
   }
 
   // 사용료 수납관리 ON → 미납금 체크 + 손실 처리
-  const _termModalId = window._billingFeatureEnabled ? 'terminate-modal-billing' : 'terminate-modal';
   if (window._billingFeatureEnabled) {
     if(!withLoss){
       const hasBalance = (allBillings||[]).some(b => {
