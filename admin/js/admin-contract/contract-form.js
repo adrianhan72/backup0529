@@ -2636,6 +2636,49 @@ function onCtStartChange(){
   // 수습 계약이면 계약 종료일 재계산 + 수습기간 활성화
   if(typeof _updateProbationPeriodState === 'function') _updateProbationPeriodState();
   if(typeof _autoCalcProbationEndDate === 'function') _autoCalcProbationEndDate();
+
+  // ── 계약 연속성: 이전 계약 만료/해지일 기준 입사일 상속·역전 차단 ──
+  // (재계약·신규계약 모드에서만 판정 — 수정/조회 모드에서는 실행하지 않음)
+  if((isNewMode || _recontractSourceId) && typeof _ctGetPrevContractForContinuity === 'function'){
+    const prev    = _ctGetPrevContractForContinuity();
+    const hireEl  = document.getElementById('ct-edit-em-hire');
+    const startHint = document.getElementById('ct-start-hint');
+    const hireHint  = document.getElementById('ct-hire-inherit-hint');
+    if(prev && prev.endDate){
+      if(startVal <= prev.endDate){
+        // ── 역전 차단: 시작일은 이전 계약 만료/해지일보다 이후여야 함 ──
+        if(startHint){
+          startHint.textContent = `⚠ 계약 시작일은 이전 계약의 만료/해지일(${prev.endDate.replace(/-/g, '.')})보다 이후여야 합니다.`;
+          startHint.style.color = '#dc2626';
+        }
+        if(hireHint){ hireHint.textContent = ''; hireHint.style.display = 'none'; }
+      } else {
+        if(startHint){ startHint.textContent = '이 계약의 효력 발생일'; startHint.style.color = ''; }
+        const nextBiz = (typeof _nextBusinessDay === 'function') ? _nextBusinessDay(prev.endDate) : '';
+        if(nextBiz && startVal <= nextBiz){
+          // ── 연속: 입사일 강제 상속 (이전 계약 입사일) ──
+          if(prev.hireDate && hireEl){
+            hireEl.value   = prev.hireDate;
+            hireEl.readOnly = true;
+            hireEl.classList.add('ct-input-locked');
+          }
+          if(hireHint){
+            hireHint.textContent = `🔗 계약 연속성 — 이전 계약 입사일(${(prev.hireDate || '').replace(/-/g, '.')}) 상속`;
+            hireHint.style.display = '';
+          }
+        } else {
+          // ── 갭(재입사): 입사일 새로 입력 허용 ──
+          if(hireEl){ hireEl.readOnly = false; hireEl.classList.remove('ct-input-locked'); }
+          if(hireHint){ hireHint.textContent = ''; hireHint.style.display = 'none'; }
+        }
+      }
+    } else {
+      // 이전 계약 없음: 잠금 해제·안내 초기화
+      if(hireEl){ hireEl.readOnly = false; hireEl.classList.remove('ct-input-locked'); }
+      if(hireHint){ hireHint.textContent = ''; hireHint.style.display = 'none'; }
+      if(startHint){ startHint.textContent = '이 계약의 효력 발생일'; startHint.style.color = ''; }
+    }
+  }
 }
 
 /**

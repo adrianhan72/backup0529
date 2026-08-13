@@ -1504,6 +1504,52 @@ function _hasWeekdayGap(oldEnd, newStart){
   return false; // 주말·공휴일만 있거나 연속된 경우
 }
 
+/**
+ * 입사일 상속·시작일 역전 차단용 "이전 계약" 탐색 (재계약·신규계약 모드 전용)
+ * - 재계약 모드: _recontractSourceId 계약
+ * - 신규계약 모드: 동일인(이름+주민번호 앞7자리 매칭)의 과거 만료/해지 계약 중 종료일 최신
+ * @returns {{contract:object, endDate:string, hireDate:string}|null}
+ */
+function _ctGetPrevContractForContinuity(){
+  // ── 재계약 모드: 원본 계약 ──
+  if(_recontractSourceId){
+    const src = (allContracts||[]).find(x => x.id === _recontractSourceId && !x.is_draft);
+    if(src){
+      const end = src.terminate_date || src.contract_end || '';
+      const emp = (allEmployees||[]).find(e => e.id === src.employee_id);
+      return { contract: src, endDate: end, hireDate: emp?.hire_date || '' };
+    }
+    return null;
+  }
+  // ── 신규계약 모드: 신규 직원 입력 섹션이 보일 때만 ──
+  const newSec = document.getElementById('ct-new-emp-section');
+  if(newSec && newSec.style.display !== 'none'){
+    const name = document.getElementById('ct-em-name')?.value?.trim() || '';
+    const idNumber = document.getElementById('ct-em-id')?.value?.trim() || '';
+    const idPre = idNumber.replace(/[^0-9]/g, '').slice(0, 7);
+    const nameKey = _ctNameKey(name);
+    if(!name || !idPre || !nameKey) return null;
+    const matchedEmpIds = new Set(
+      (allEmployees||[]).filter(e =>
+        _ctNameKey(e.name) === nameKey &&
+        ((e.id_number || '').replace(/[^0-9]/g, '').slice(0, 7) === idPre)
+      ).map(e => e.id)
+    );
+    if(!matchedEmpIds.size) return null;
+    const prevs = (allContracts||[]).filter(c =>
+      matchedEmpIds.has(c.employee_id) && !c.is_draft && !c.is_voided_by_amend &&
+      [CONTRACT_STATUS.TERMINATED, CONTRACT_STATUS.EXPIRED].includes(c.status) &&
+      (c.terminate_date || c.contract_end)
+    );
+    if(!prevs.length) return null;
+    prevs.sort((a,b) => (b.terminate_date||b.contract_end||'').localeCompare(a.terminate_date||a.contract_end||''));
+    const prev = prevs[0];
+    const emp = (allEmployees||[]).find(e => e.id === prev.employee_id);
+    return { contract: prev, endDate: prev.terminate_date || prev.contract_end || '', hireDate: emp?.hire_date || '' };
+  }
+  return null;
+}
+
 function doContractRenew(){
   // P9: 이중 갱신 방지 가드
   const _renewC = allContracts.find(x => x.id === editId.contract);
@@ -2153,6 +2199,9 @@ function openRecontractModal(srcContract){
   _prevEditCategory = document.getElementById('ct-edit-em-category')?.value || '';
   // saveContract 재계약 플래그 저장
   _recontractEmpId = srcContract.employee_id;
+  // 재계약 원본 계약 ID 저장 — openContractModal이 리셋한 _recontractSourceId를 복원
+  // (저장 시 연속성 판정·renewed_from_id 페어링에 사용)
+  _recontractSourceId = srcContract.id;
 
   // ── 재계약: 사원번호는 이전 계약의 것을 승계하지 않고 새로 추천 ──
   const _reconEmpNoEl = document.getElementById('ct-edit-em-empno');
@@ -3567,6 +3616,15 @@ function _ctValidate(){
   // ── 공통: 회사 (모달 오픈 시 항상 설정됨) ──
   const coId = document.getElementById('ct-company')?.value || '';
 
+  // ── 신규/재계약: 계약 시작일 역전 차단 — 이전 계약 만료/해지일보다 같거나 앞설 수 없음 ──
+  if(isNew || _recontractEmpId){
+    const _prevContV = typeof _ctGetPrevContractForContinuity === 'function' ? _ctGetPrevContractForContinuity() : null;
+    const _startValV = document.getElementById('ct-start')?.value || '';
+    if(_prevContV && _prevContV.endDate && _startValV && _startValV <= _prevContV.endDate){
+      _ctMarkError('ct-start', `계약 시작일은 이전 계약의 만료/해지일(${_prevContV.endDate.replace(/-/g, '.')})보다 이후여야 합니다.`, errors);
+    }
+  }
+
   // ── 수정/재계약: 계약 시작일 ──
   if(isEditOrRecontract){
     const start = document.getElementById('ct-start')?.value || '';
@@ -3931,6 +3989,18 @@ async function saveContract(){
   if(!empId && !editId.contract && !_recontractEmpId){
     const newName = document.getElementById('ct-em-name').value.trim();
     const newHire  = document.getElementById('ct-edit-em-hire')?.value?.trim() || '';
+    // ── 계약 연속성 강제 상속: 시작일이 이전 계약 만료/해지일의 익영업일 이내면 입사일 강제 상속 ──
+    let _finalHireDate = newHire;
+    {
+      const _prevCont = typeof _ctGetPrevContractForContinuity === 'function' ? _ctGetPrevContractForContinuity() : null;
+      const _startForHire = document.getElementById('ct-start')?.value || '';
+      if(_prevCont && _prevCont.endDate && _prevCont.hireDate && _startForHire){
+        const _nextBiz = typeof _nextBusinessDay === 'function' ? _nextBusinessDay(_prevCont.endDate) : '';
+        if(_startForHire > _prevCont.endDate && _nextBiz && _startForHire <= _nextBiz){
+          _finalHireDate = _prevCont.hireDate; // 연속 계약 → 이전 계약 입사일 상속
+        }
+      }
+    }
     const newId    = document.getElementById('ct-em-id').value.trim();
     const newJob = document.getElementById('ct-em-job').value.trim();
     const newAddress = document.getElementById('ct-em-address').value.trim();
@@ -3946,7 +4016,7 @@ async function saveContract(){
       id_number: document.getElementById('ct-em-id').value,
       department: document.getElementById('ct-em-dept').value,
       position: document.getElementById('ct-em-position').value,
-      hire_date: document.getElementById('ct-edit-em-hire')?.value || '',
+      hire_date: _finalHireDate,
       expire_date: document.getElementById('ct-end')?.value || '',
       status: EMP_STATUS.ACTIVE,
       dependents: parseInt(document.getElementById('ct-childcare-dependents')?.value)||0,
@@ -4394,6 +4464,15 @@ async function saveContract(){
         const _oldPair = allContracts.find(x => x.id === body.renewed_from_id);
         if(_oldPair) _oldPair.renewed_to_id = _savedContractId_;
       } catch(e){ console.warn('[재계약 페어링 실패]', e); }
+    }
+    // ── 재계약: 직원 입사일 반영 (연속이면 이전 입사일 유지, 갭이면 새 입력값) ──
+    if(isRecontract && _savedContractId_){
+      try {
+        const _rcType = document.getElementById('ct-type')?.value || CONTRACT_TYPE.REGULAR;
+        const _rcIsFixed = _rcType===CONTRACT_TYPE.FIXED || _rcType===CONTRACT_TYPE.FIXED_PROBATION || _rcType===CONTRACT_TYPE.DAILY;
+        await api(`../tables/employees/${empId}`, { method:'PATCH', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ hire_date: _rcIsFixed ? contractStart : (document.getElementById('ct-edit-em-hire')?.value || '') }) });
+      } catch(e){ console.warn('[재계약 입사일 반영 실패]', e); }
     }
   }
   // ── 고객사 인앱 알림 발송 ──
