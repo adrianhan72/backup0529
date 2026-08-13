@@ -1612,7 +1612,7 @@ function loadPIContract(contractId){
         ? `<b>수습기간:</b> ${_probPeriodStr}<br>`
         : '';
 
-      // 입사일 행 (정규직 전용)
+      // 입사일 행 (정규직 전용) — 직원 hire_date 우선 (재입사 시 갱신된 값이 이미 반영됨)
       let _hireDateLine = '';
       if(_isRegular){
         const _piEmpData = allEmployees.find(e => e.id === empId);

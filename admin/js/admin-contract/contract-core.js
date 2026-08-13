@@ -975,9 +975,12 @@ function openContractModal(id=null, preCompanyId=null){
         document.getElementById('ct-edit-em-job').value       = emp.job_description || '';
         document.getElementById('ct-edit-em-dept').value      = emp.department || '';
         document.getElementById('ct-edit-em-position').value  = emp.position || '';
-        // 입사일: 동일 직원의 가장 앞선 계약 시작일을 상속 (emp.hire_date 폴백)
+        // 입사일: 직원 hire_date 우선.
+        // 가장 이른 계약 시작일 상속은 연속성이 있을 때만 허용 — 갱신·만료일 익영업일 재계약은
+        // hire_date가 최초 입사일을 유지하므로 상속 불필요, 퇴사 후 재입사는 hire_date가 새
+        // 입사일이므로 최초 계약 시작일로 덮어쓰면 안 됨. (hire_date 비어있을 때만 폴백)
         const _earliestStart = getEarliestContractStart(emp.id);
-        document.getElementById('ct-edit-em-hire').value = _earliestStart || emp.hire_date || '';
+        document.getElementById('ct-edit-em-hire').value = emp.hire_date || _earliestStart || '';
         document.getElementById('ct-edit-em-expire').value    = emp.expire_date || emp.resign_date || '';
         document.getElementById('ct-edit-em-id').value        = emp.id_number || '';
         document.getElementById('ct-edit-em-phone').value     = emp.phone || '';
