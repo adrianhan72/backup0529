@@ -1529,10 +1529,12 @@ function _ctGetPrevContractForContinuity(){
     const idPre = idNumber.replace(/[^0-9]/g, '').slice(0, 7);
     const nameKey = _ctNameKey(name);
     if(!name || !idPre || !nameKey) return null;
+    const coId = document.getElementById('ct-company')?.value || '';
     const matchedEmpIds = new Set(
       (allEmployees||[]).filter(e =>
         _ctNameKey(e.name) === nameKey &&
-        ((e.id_number || '').replace(/[^0-9]/g, '').slice(0, 7) === idPre)
+        ((e.id_number || '').replace(/[^0-9]/g, '').slice(0, 7) === idPre) &&
+        (!coId || e.company_id === coId)
       ).map(e => e.id)
     );
     if(!matchedEmpIds.size) return null;

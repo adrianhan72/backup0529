@@ -2655,9 +2655,9 @@ function onCtStartChange(){
       } else {
         if(startHint){ startHint.textContent = '이 계약의 효력 발생일'; startHint.style.color = ''; }
         const nextBiz = (typeof _nextBusinessDay === 'function') ? _nextBusinessDay(prev.endDate) : '';
-        if(nextBiz && startVal <= nextBiz){
+        if(nextBiz && startVal <= nextBiz && prev.hireDate){
           // ── 연속: 입사일 강제 상속 (이전 계약 입사일) ──
-          if(prev.hireDate && hireEl){
+          if(hireEl){
             hireEl.value   = prev.hireDate;
             hireEl.readOnly = true;
             hireEl.classList.add('ct-input-locked');
@@ -2667,7 +2667,7 @@ function onCtStartChange(){
             hireHint.style.display = '';
           }
         } else {
-          // ── 갭(재입사): 입사일 새로 입력 허용 ──
+          // ── 갭(재입사) 또는 이전 입사일 부재: 입사일 새로 입력 허용 ──
           if(hireEl){ hireEl.readOnly = false; hireEl.classList.remove('ct-input-locked'); }
           if(hireHint){ hireHint.textContent = ''; hireHint.style.display = 'none'; }
         }
