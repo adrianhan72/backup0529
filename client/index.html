@@ -352,69 +352,10 @@
     </div>
     <div style="padding:12px 12px 80px;">
       <div style="font-size:12px;color:#6b7280;margin-bottom:12px;padding:10px 12px;background:#f0f9ff;border-radius:8px;border:1px solid #bae6fd;">
-        <i class="fas fa-info-circle" style="color:#0284c7;margin-right:5px;"></i>2026년 기준 요율입니다. (근로자 부담분)
+        <i class="fas fa-info-circle" style="color:#0284c7;margin-right:5px;"></i><span id="ir-info-year">현재 적용 기준</span> 요율입니다. (근로자 부담분 · 어드민 산정기준표 연동)
       </div>
-      <!-- 국민연금 -->
-      <div style="background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.07);padding:16px;margin-bottom:12px;">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-          <div style="width:36px;height:36px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);border-radius:10px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-shield-alt" style="color:#fff;font-size:16px;"></i></div>
-          <div><div style="font-size:14px;font-weight:800;color:#1a1a2e;">국민연금</div><div style="font-size:11px;color:#6b7280;">National Pension</div></div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
-          <div style="background:#eff6ff;border-radius:10px;padding:10px;text-align:center;"><div style="font-size:10px;color:#3b82f6;font-weight:600;">근로자</div><div style="font-size:18px;font-weight:800;color:#1d4ed8;">4.5%</div></div>
-          <div style="background:#dbeafe;border-radius:10px;padding:10px;text-align:center;"><div style="font-size:10px;color:#3b82f6;font-weight:600;">사용자</div><div style="font-size:18px;font-weight:800;color:#1d4ed8;">4.5%</div></div>
-          <div style="background:#bfdbfe;border-radius:10px;padding:10px;text-align:center;"><div style="font-size:10px;color:#1d4ed8;font-weight:600;">합계</div><div style="font-size:18px;font-weight:800;color:#1d4ed8;">9.0%</div></div>
-        </div>
-        <div style="margin-top:10px;font-size:11px;color:#6b7280;line-height:1.7;">
-          • 기준소득월액 하한: <strong>390,000원</strong> / 상한: <strong>6,170,000원</strong><br>
-          • 의무 가입: 18세 이상 60세 미만 근로자
-        </div>
-      </div>
-      <!-- 건강보험 -->
-      <div style="background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.07);padding:16px;margin-bottom:12px;">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-          <div style="width:36px;height:36px;background:linear-gradient(135deg,#10b981,#059669);border-radius:10px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-heartbeat" style="color:#fff;font-size:16px;"></i></div>
-          <div><div style="font-size:14px;font-weight:800;color:#1a1a2e;">건강보험</div><div style="font-size:11px;color:#6b7280;">Health Insurance</div></div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px;">
-          <div style="background:#ecfdf5;border-radius:10px;padding:10px;text-align:center;"><div style="font-size:10px;color:#059669;font-weight:600;">근로자</div><div style="font-size:18px;font-weight:800;color:#065f46;">3.545%</div></div>
-          <div style="background:#d1fae5;border-radius:10px;padding:10px;text-align:center;"><div style="font-size:10px;color:#059669;font-weight:600;">사용자</div><div style="font-size:18px;font-weight:800;color:#065f46;">3.545%</div></div>
-          <div style="background:#a7f3d0;border-radius:10px;padding:10px;text-align:center;"><div style="font-size:10px;color:#065f46;font-weight:600;">합계</div><div style="font-size:18px;font-weight:800;color:#065f46;">7.09%</div></div>
-        </div>
-        <div style="background:#f0fdf4;border-radius:8px;padding:8px 10px;margin-bottom:6px;">
-          <div style="font-size:11.5px;font-weight:700;color:#065f46;margin-bottom:4px;">└ 장기요양보험 (건강보험의 12.95%)</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
-            <div style="background:#ecfdf5;border-radius:8px;padding:8px;text-align:center;"><div style="font-size:9px;color:#059669;">근로자</div><div style="font-size:15px;font-weight:700;color:#065f46;">0.4591%</div></div>
-            <div style="background:#d1fae5;border-radius:8px;padding:8px;text-align:center;"><div style="font-size:9px;color:#059669;">사용자</div><div style="font-size:15px;font-weight:700;color:#065f46;">0.4591%</div></div>
-            <div style="background:#a7f3d0;border-radius:8px;padding:8px;text-align:center;"><div style="font-size:9px;color:#065f46;">합계</div><div style="font-size:15px;font-weight:700;color:#065f46;">0.9182%</div></div>
-          </div>
-        </div>
-        <div style="font-size:11px;color:#6b7280;line-height:1.7;">
-          • 보수월액 하한: <strong>279,260원</strong> / 상한: <strong>119,625,106원</strong>
-        </div>
-      </div>
-      <!-- 고용보험 -->
-      <div style="background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.07);padding:16px;margin-bottom:12px;">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-          <div style="width:36px;height:36px;background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:10px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-briefcase" style="color:#fff;font-size:16px;"></i></div>
-          <div><div style="font-size:14px;font-weight:800;color:#1a1a2e;">고용보험</div><div style="font-size:11px;color:#6b7280;">Employment Insurance</div></div>
-        </div>
-        <div style="overflow-x:auto;">
-          <table style="width:100%;border-collapse:collapse;font-size:12px;">
-            <thead><tr style="background:#fffbeb;">
-              <th style="padding:8px;text-align:left;color:#92400e;font-weight:700;border-bottom:1px solid #fde68a;">구분</th>
-              <th style="padding:8px;text-align:center;color:#92400e;font-weight:700;border-bottom:1px solid #fde68a;">근로자</th>
-              <th style="padding:8px;text-align:center;color:#92400e;font-weight:700;border-bottom:1px solid #fde68a;">사용자</th>
-            </tr></thead>
-            <tbody>
-              <tr style="border-bottom:1px solid #f3f4f6;"><td style="padding:8px;color:#374151;">실업급여</td><td style="padding:8px;text-align:center;font-weight:700;">0.9%</td><td style="padding:8px;text-align:center;font-weight:700;">0.9%</td></tr>
-              <tr style="background:#fffbeb;border-bottom:1px solid #f3f4f6;"><td style="padding:8px;color:#374151;">고용안정·직업능력개발<br><span style="font-size:10px;color:#9ca3af;">(150인 미만 사업)</span></td><td style="padding:8px;text-align:center;color:#9ca3af;">-</td><td style="padding:8px;text-align:center;font-weight:700;">0.25%</td></tr>
-              <tr style="border-bottom:1px solid #f3f4f6;"><td style="padding:8px;color:#374151;">고용안정·직업능력개발<br><span style="font-size:10px;color:#9ca3af;">(150인 이상 우선지원)</span></td><td style="padding:8px;text-align:center;color:#9ca3af;">-</td><td style="padding:8px;text-align:center;font-weight:700;">0.45%</td></tr>
-              <tr style="background:#fffbeb;"><td style="padding:8px;color:#374151;">고용안정·직업능력개발<br><span style="font-size:10px;color:#9ca3af;">(150인 이상)</span></td><td style="padding:8px;text-align:center;color:#9ca3af;">-</td><td style="padding:8px;text-align:center;font-weight:700;">0.65%~0.85%</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <!-- 국민연금·건강보험·고용보험 카드 (DB 연동) -->
+      <div id="ir-cards"></div>
       <!-- 산재보험 -->
       <div style="background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.07);padding:16px;margin-bottom:12px;">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
@@ -443,20 +384,8 @@
         </div>
         <div style="margin-top:8px;font-size:10.5px;color:#9ca3af;">※ 업종별 세부 요율은 근로복지공단(kcomwel.or.kr) 참조</div>
       </div>
-      <!-- 근로자 부담 공제 요약표 -->
-      <div style="background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.07);padding:16px;">
-        <div style="font-size:13px;font-weight:800;color:#1a1a2e;margin-bottom:10px;"><i class="fas fa-calculator" style="color:#6366f1;margin-right:6px;"></i>근로자 공제 요율 요약</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-          <div style="background:#eff6ff;border-radius:10px;padding:10px;text-align:center;"><div style="font-size:10px;color:#3b82f6;">국민연금</div><div style="font-size:17px;font-weight:800;color:#1d4ed8;">4.5%</div></div>
-          <div style="background:#ecfdf5;border-radius:10px;padding:10px;text-align:center;"><div style="font-size:10px;color:#059669;">건강보험</div><div style="font-size:17px;font-weight:800;color:#065f46;">3.545%</div></div>
-          <div style="background:#f0fdf4;border-radius:10px;padding:10px;text-align:center;"><div style="font-size:10px;color:#16a34a;">장기요양</div><div style="font-size:17px;font-weight:800;color:#15803d;">0.4591%</div></div>
-          <div style="background:#fffbeb;border-radius:10px;padding:10px;text-align:center;"><div style="font-size:10px;color:#d97706;">고용보험</div><div style="font-size:17px;font-weight:800;color:#92400e;">0.9%</div></div>
-        </div>
-        <div style="margin-top:10px;background:#f5f3ff;border-radius:10px;padding:10px;text-align:center;">
-          <div style="font-size:11px;color:#7c3aed;">근로자 총 부담률 (실업급여 기준)</div>
-          <div style="font-size:22px;font-weight:800;color:#5b21b6;">약 9.4%</div>
-        </div>
-      </div>
+      <!-- 근로자 부담 공제 요약표 (DB 연동) -->
+      <div id="ir-summary"></div>
     </div>
   </div>
 
@@ -472,14 +401,14 @@
       <div style="font-size:12px;color:#6b7280;margin-bottom:12px;padding:10px 12px;background:#faf5ff;border-radius:8px;border:1px solid #e9d5ff;">
         <i class="fas fa-info-circle" style="color:#7c3aed;margin-right:5px;"></i>최저임금은 모든 사업장에 동일 적용됩니다. (수습 3개월 이내 10% 감액 가능)
       </div>
-      <!-- 2026년 강조 카드 -->
+      <!-- 최신 연도 강조 카드 (어드민 산정기준표 DB 연동) -->
       <div style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);border-radius:16px;padding:20px;margin-bottom:16px;color:#fff;">
-        <div style="font-size:12px;opacity:.8;margin-bottom:4px;">2026년 적용 최저임금</div>
-        <div style="font-size:32px;font-weight:900;letter-spacing:-1px;">10,030원<span style="font-size:14px;opacity:.8;font-weight:400;"> / 시간</span></div>
+        <div style="font-size:12px;opacity:.8;margin-bottom:4px;"><span id="mw-hero-year">-</span>년 적용 최저임금</div>
+        <div style="font-size:32px;font-weight:900;letter-spacing:-1px;"><span id="mw-hero-hourly">-</span>원<span style="font-size:14px;opacity:.8;font-weight:400;"> / 시간</span></div>
         <div style="display:flex;gap:16px;margin-top:10px;flex-wrap:wrap;">
-          <div><div style="font-size:10px;opacity:.7;">일급 (8시간)</div><div style="font-size:15px;font-weight:700;">80,240원</div></div>
-          <div><div style="font-size:10px;opacity:.7;">월급 (209시간)</div><div style="font-size:15px;font-weight:700;">2,096,270원</div></div>
-          <div><div style="font-size:10px;opacity:.7;">전년 대비</div><div style="font-size:15px;font-weight:700;">+1.7% ↑</div></div>
+          <div><div style="font-size:10px;opacity:.7;">일급 (8시간)</div><div style="font-size:15px;font-weight:700;" id="mw-hero-daily">-</div></div>
+          <div><div style="font-size:10px;opacity:.7;">월급 (209시간)</div><div style="font-size:15px;font-weight:700;" id="mw-hero-monthly">-</div></div>
+          <div><div style="font-size:10px;opacity:.7;">전년 대비</div><div style="font-size:15px;font-weight:700;" id="mw-hero-rate">-</div></div>
         </div>
       </div>
       <!-- 연도별 표 -->
@@ -494,16 +423,6 @@
               <th style="padding:10px 12px;text-align:right;color:#7c3aed;font-weight:700;border-bottom:1px solid #e9d5ff;">인상률</th>
             </tr></thead>
             <tbody id="min-wage-tbody">
-              <tr style="background:#f5f3ff;"><td style="padding:9px 12px;text-align:center;font-weight:800;color:#7c3aed;">2026</td><td style="padding:9px 12px;text-align:right;font-weight:700;">10,030원</td><td style="padding:9px 12px;text-align:right;">2,096,270원</td><td style="padding:9px 12px;text-align:right;color:#16a34a;font-weight:600;">+1.7%</td></tr>
-              <tr><td style="padding:9px 12px;text-align:center;font-weight:700;">2025</td><td style="padding:9px 12px;text-align:right;">10,030원</td><td style="padding:9px 12px;text-align:right;">2,096,270원</td><td style="padding:9px 12px;text-align:right;color:#16a34a;font-weight:600;">+1.7%</td></tr>
-              <tr style="background:#faf5ff;"><td style="padding:9px 12px;text-align:center;">2024</td><td style="padding:9px 12px;text-align:right;">9,860원</td><td style="padding:9px 12px;text-align:right;">2,060,740원</td><td style="padding:9px 12px;text-align:right;color:#16a34a;">+2.5%</td></tr>
-              <tr><td style="padding:9px 12px;text-align:center;">2023</td><td style="padding:9px 12px;text-align:right;">9,620원</td><td style="padding:9px 12px;text-align:right;">2,010,580원</td><td style="padding:9px 12px;text-align:right;color:#16a34a;">+5.0%</td></tr>
-              <tr style="background:#faf5ff;"><td style="padding:9px 12px;text-align:center;">2022</td><td style="padding:9px 12px;text-align:right;">9,160원</td><td style="padding:9px 12px;text-align:right;">1,914,440원</td><td style="padding:9px 12px;text-align:right;color:#16a34a;">+5.1%</td></tr>
-              <tr><td style="padding:9px 12px;text-align:center;">2021</td><td style="padding:9px 12px;text-align:right;">8,720원</td><td style="padding:9px 12px;text-align:right;">1,822,480원</td><td style="padding:9px 12px;text-align:right;color:#16a34a;">+1.5%</td></tr>
-              <tr style="background:#faf5ff;"><td style="padding:9px 12px;text-align:center;">2020</td><td style="padding:9px 12px;text-align:right;">8,590원</td><td style="padding:9px 12px;text-align:right;">1,795,310원</td><td style="padding:9px 12px;text-align:right;color:#16a34a;">+2.9%</td></tr>
-              <tr><td style="padding:9px 12px;text-align:center;">2019</td><td style="padding:9px 12px;text-align:right;">8,350원</td><td style="padding:9px 12px;text-align:right;">1,745,150원</td><td style="padding:9px 12px;text-align:right;color:#16a34a;">+10.9%</td></tr>
-              <tr style="background:#faf5ff;"><td style="padding:9px 12px;text-align:center;">2018</td><td style="padding:9px 12px;text-align:right;">7,530원</td><td style="padding:9px 12px;text-align:right;">1,573,770원</td><td style="padding:9px 12px;text-align:right;color:#16a34a;">+16.4%</td></tr>
-              <tr><td style="padding:9px 12px;text-align:center;">2017</td><td style="padding:9px 12px;text-align:right;">6,470원</td><td style="padding:9px 12px;text-align:right;">1,352,230원</td><td style="padding:9px 12px;text-align:right;color:#16a34a;">+7.3%</td></tr>
             </tbody>
           </table>
         </div>

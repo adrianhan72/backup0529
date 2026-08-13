@@ -15,6 +15,8 @@ let _billingFeatureEnabled = false; // 사용료 수납관리 스위치 (시스�
 let distTab = 'emp';
 
 let distChart = null, distDonutChart = null, trendChart = null;
+let _allClientMinWages = []; // 연도별 최저임금 (어드민 산정기준표 DB 연동)
+let _allClientInsRates = []; // 4대보험 요율 (어드민 산정기준표 DB 연동)
 
 const TREND_ITEMS = [
   {key:'gross',  label:'총 지급액',    color:'#3b82f6', borderColor:'#3b82f6', bgColor:'#eff6ff', textColor:'#1d4ed8', def:true},
@@ -179,6 +181,8 @@ function startApp(){
   }
   renderBilling();
   renderMyco();
+  loadClientMinWages(); // 연도별 최저임금표 (산정기준표 DB 연동)
+  loadClientInsRates(); // 4대보험 요율표 (산정기준표 DB 연동)
   // 로그인 시 loadClientNotices가 이미 완료되어 _clientNotices가 스토어됨 — 로드된 데이터로 즉시 업데이트
   _updateNotifBadge();
 
@@ -314,6 +318,191 @@ function showPage(name, el){
   if(name === 'myco') renderMyco();
   if(name === 'severance') renderClientSeverance();
   if(name === 'annual-leave') renderClientAnnualLeave();
+  if(name === 'min-wage' && !_allClientMinWages.length) loadClientMinWages();
+  if(name === 'insurance-rates' && !_allClientInsRates.length) loadClientInsRates();
+}
+
+// ══ 연도별 최저임금 (어드민 년도별 산정기준표 DB 연동) ══
+async function loadClientMinWages(){
+  try{
+    const res = await fetch('../tables/minimum_wages?limit=100');
+    const jd  = await res.json();
+    _allClientMinWages = (jd.data||[]).slice().sort((a,b)=> Number(b.year) - Number(a.year));
+  }catch(e){ console.error('[최저임금] 로드 실패', e); }
+  renderClientMinWages();
+}
+function renderClientMinWages(){
+  const list  = _allClientMinWages;
+  const tbody = document.getElementById('min-wage-tbody');
+  if(!list.length){
+    if(tbody) tbody.innerHTML = '<tr><td colspan="4" style="padding:16px;text-align:center;color:#9ca3af;">산정기준표 데이터가 없습니다</td></tr>';
+    return;
+  }
+  const fmt = n => Number(n||0).toLocaleString('ko-KR');
+  const _set = (id, txt) => { const el = document.getElementById(id); if(el) el.textContent = txt; };
+  const _rateHtml = (cur, prev) => {
+    if(!prev || Number(prev.hourly_wage||0) <= 0) return '<span style="color:#9ca3af;">-</span>';
+    const r = (Number(cur.hourly_wage) - Number(prev.hourly_wage)) / Number(prev.hourly_wage) * 100;
+    const color = r > 0 ? '#16a34a' : (r < 0 ? '#dc2626' : '#6b7280');
+    return `<span style="color:${color};font-weight:600;">${r>=0?'+':''}${r.toFixed(1)}%${r>0?' ↑':(r<0?' ↓':'')}</span>`;
+  };
+  // ── 최신 연도 강조 카드 ──
+  const latest = list[0], prev = list[1];
+  _set('mw-hero-year',   latest.year);
+  _set('mw-hero-hourly', fmt(latest.hourly_wage));
+  _set('mw-hero-daily',  fmt((Number(latest.hourly_wage)||0) * 8) + '원');
+  _set('mw-hero-monthly',fmt(latest.monthly_wage) + '원');
+  const heroRateEl = document.getElementById('mw-hero-rate');
+  if(heroRateEl) heroRateEl.innerHTML = _rateHtml(latest, prev);
+  // ── 연도별 표 ──
+  if(tbody){
+    tbody.innerHTML = list.map((w, i) => {
+      const p = list[i+1];
+      const hlBg = i === 0 ? 'background:#f5f3ff;' : (i % 2 === 0 ? 'background:#faf5ff;' : '');
+      const hlTx = i === 0 ? 'font-weight:800;color:#7c3aed;' : '';
+      return `<tr style="${hlBg}">
+        <td style="padding:9px 12px;text-align:center;${hlTx}">${w.year}</td>
+        <td style="padding:9px 12px;text-align:right;${i===0?'font-weight:700;':''}">${fmt(w.hourly_wage)}원</td>
+        <td style="padding:9px 12px;text-align:right;">${fmt(w.monthly_wage)}원</td>
+        <td style="padding:9px 12px;text-align:right;">${_rateHtml(w, p)}</td>
+      </tr>`;
+    }).join('');
+  }
+}
+
+// ══ 4대보험 요율표 (어드민 년도별 산정기준표 DB 연동) ══
+async function loadClientInsRates(){
+  try{
+    const res = await fetch('../tables/insurance_rates?limit=200');
+    const jd  = await res.json();
+    _allClientInsRates = (jd.data||[]).slice();
+  }catch(e){ console.error('[보험요율] 로드 실패', e); }
+  renderClientInsRates();
+}
+// 오늘 적용 중인 요율 행 우선, 없으면 기간 있는 최신 연도 폴백
+function _pickInsRate(type){
+  const rows = _allClientInsRates.filter(r => r.insurance_type === type);
+  if(!rows.length) return null;
+  const today = new Date().toISOString().slice(0,10);
+  const cur = rows.find(r => r.period_start && r.period_end && r.period_start <= today && today <= r.period_end);
+  if(cur) return cur;
+  const dated = rows.filter(r => r.period_start);
+  return dated.sort((a,b) => (Number(b.year)||0) - (Number(a.year)||0))[0] || rows[0];
+}
+function renderClientInsRates(){
+  const cardsEl = document.getElementById('ir-cards');
+  const sumEl   = document.getElementById('ir-summary');
+  if(!cardsEl && !sumEl) return;
+
+  const _fmtRate = n => String(parseFloat(Number(n||0).toFixed(4)));
+  const _fmtPeriod = r => {
+    if(r.period_start && r.period_end) return `${String(r.period_start).replace(/-/g,'.')} ~ ${String(r.period_end).replace(/-/g,'.')} 적용`;
+    if(r.year) return `${r.year}년 적용`;
+    return '';
+  };
+  const _card = (icon, grad, title, en, bodyHtml) => `
+    <div style="background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.07);padding:16px;margin-bottom:12px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <div style="width:36px;height:36px;background:${grad};border-radius:10px;display:flex;align-items:center;justify-content:center;"><i class="fas ${icon}" style="color:#fff;font-size:16px;"></i></div>
+        <div><div style="font-size:14px;font-weight:800;color:#1a1a2e;">${title}</div><div style="font-size:11px;color:#6b7280;">${en}</div></div>
+      </div>
+      ${bodyHtml}
+    </div>`;
+  const _tri = (bg1, bg2, bg3, c1, c2, c3, v1, v2, v3) => `
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+      <div style="background:${bg1};border-radius:10px;padding:10px;text-align:center;"><div style="font-size:10px;color:${c1};font-weight:600;">근로자</div><div style="font-size:18px;font-weight:800;color:${c2};">${v1}</div></div>
+      <div style="background:${bg2};border-radius:10px;padding:10px;text-align:center;"><div style="font-size:10px;color:${c1};font-weight:600;">사용자</div><div style="font-size:18px;font-weight:800;color:${c2};">${v2}</div></div>
+      <div style="background:${bg3};border-radius:10px;padding:10px;text-align:center;"><div style="font-size:10px;color:${c3};font-weight:600;">합계</div><div style="font-size:18px;font-weight:800;color:${c2};">${v3}</div></div>
+    </div>`;
+
+  const pension = _pickInsRate('national_pension');
+  const health  = _pickInsRate('health');
+  const ltcare  = _pickInsRate('long_term_care');
+  const employ  = _pickInsRate('employment');
+
+  const pRate = pension ? Number(pension.rate) : 0;
+  const hRate = health  ? Number(health.rate)  : 0;
+  const ltRate= ltcare  ? Number(ltcare.rate)  : 0;
+  const eRate = employ  ? Number(employ.rate)  : 0;
+  const ltWorker = hRate * ltRate / 100; // 건강보험료의 장기요양 비율
+
+  const noData = !pension && !health && !employ;
+  if(noData){
+    if(cardsEl) cardsEl.innerHTML = '<div style="text-align:center;padding:24px;color:#9ca3af;">산정기준표 데이터가 없습니다</div>';
+    if(sumEl) sumEl.innerHTML = '';
+    return;
+  }
+  const yearTxt = (pension||health||employ)?.year ? `${(pension||health||employ).year}년` : '현재 적용 기준';
+  const infoEl = document.getElementById('ir-info-year');
+  if(infoEl) infoEl.textContent = yearTxt;
+
+  // ── 국민연금 카드 ──
+  let cardsHtml = '';
+  if(pension){
+    const capTxt = pension.cap_amount ? `• 기준소득월액 상한: <strong>${Number(pension.cap_amount).toLocaleString('ko-KR')}원</strong><br>` : '';
+    cardsHtml += _card('fa-shield-alt', 'linear-gradient(135deg,#3b82f6,#1d4ed8)', '국민연금', 'National Pension',
+      _tri('#eff6ff','#dbeafe','#bfdbfe','#3b82f6','#1d4ed8','#1d4ed8',
+           `${_fmtRate(pRate)}%`, `${_fmtRate(pRate)}%`, `${_fmtRate(pRate*2)}%`) +
+      `<div style="margin-top:10px;font-size:11px;color:#6b7280;line-height:1.7;">
+        ${capTxt}• 적용기간: <strong>${_fmtPeriod(pension)}</strong><br>
+        • 의무 가입: 18세 이상 60세 미만 근로자
+      </div>`);
+  }
+  // ── 건강보험 카드 (장기요양 포함) ──
+  if(health){
+    cardsHtml += _card('fa-heartbeat', 'linear-gradient(135deg,#10b981,#059669)', '건강보험', 'Health Insurance',
+      _tri('#ecfdf5','#d1fae5','#a7f3d0','#059669','#065f46','#065f46',
+           `${_fmtRate(hRate)}%`, `${_fmtRate(hRate)}%`, `${_fmtRate(hRate*2)}%`) +
+      `<div style="background:#f0fdf4;border-radius:8px;padding:8px 10px;margin:8px 0 6px;">
+        <div style="font-size:11.5px;font-weight:700;color:#065f46;margin-bottom:4px;">└ 장기요양보험 (건강보험료의 ${_fmtRate(ltRate)}%)</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
+          <div style="background:#ecfdf5;border-radius:8px;padding:8px;text-align:center;"><div style="font-size:9px;color:#059669;">근로자</div><div style="font-size:15px;font-weight:700;color:#065f46;">${_fmtRate(ltWorker)}%</div></div>
+          <div style="background:#d1fae5;border-radius:8px;padding:8px;text-align:center;"><div style="font-size:9px;color:#059669;">사용자</div><div style="font-size:15px;font-weight:700;color:#065f46;">${_fmtRate(ltWorker)}%</div></div>
+          <div style="background:#a7f3d0;border-radius:8px;padding:8px;text-align:center;"><div style="font-size:9px;color:#065f46;">합계</div><div style="font-size:15px;font-weight:700;color:#065f46;">${_fmtRate(ltWorker*2)}%</div></div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:#6b7280;line-height:1.7;">• 적용기간: <strong>${_fmtPeriod(health)}</strong></div>`);
+  }
+  // ── 고용보험 카드 ──
+  if(employ){
+    cardsHtml += _card('fa-briefcase', 'linear-gradient(135deg,#f59e0b,#d97706)', '고용보험', 'Employment Insurance',
+      `<div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+          <thead><tr style="background:#fffbeb;">
+            <th style="padding:8px;text-align:left;color:#92400e;font-weight:700;border-bottom:1px solid #fde68a;">구분</th>
+            <th style="padding:8px;text-align:center;color:#92400e;font-weight:700;border-bottom:1px solid #fde68a;">근로자</th>
+            <th style="padding:8px;text-align:center;color:#92400e;font-weight:700;border-bottom:1px solid #fde68a;">사용자</th>
+          </tr></thead>
+          <tbody>
+            <tr style="border-bottom:1px solid #f3f4f6;"><td style="padding:8px;color:#374151;">실업급여</td><td style="padding:8px;text-align:center;font-weight:700;">${_fmtRate(eRate)}%</td><td style="padding:8px;text-align:center;font-weight:700;">${_fmtRate(eRate)}%</td></tr>
+            <tr style="background:#fffbeb;"><td style="padding:8px;color:#374151;">고용안정·직업능력개발<br><span style="font-size:10px;color:#9ca3af;">(사업주 부담)</span></td><td style="padding:8px;text-align:center;color:#9ca3af;">-</td><td style="padding:8px;text-align:center;font-weight:700;">0.25%~0.85%</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:8px;font-size:11px;color:#6b7280;line-height:1.7;">• 적용기간: <strong>${_fmtPeriod(employ)}</strong><br>• 고용안정·직업능력개발 사업 부담률은 사업장 규모에 따라 상이</div>`);
+  }
+  if(cardsEl) cardsEl.innerHTML = cardsHtml;
+
+  // ── 근로자 공제 요율 요약 ──
+  const total = pRate + hRate + ltWorker + eRate;
+  const _sumTile = (label, bg, lc, bc, val) => `
+    <div style="background:${bg};border-radius:10px;padding:10px;text-align:center;"><div style="font-size:10px;color:${lc};">${label}</div><div style="font-size:17px;font-weight:800;color:${bc};">${val}</div></div>`;
+  if(sumEl){
+    sumEl.innerHTML = `
+      <div style="background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.07);padding:16px;">
+        <div style="font-size:13px;font-weight:800;color:#1a1a2e;margin-bottom:10px;"><i class="fas fa-calculator" style="color:#6366f1;margin-right:6px;"></i>근로자 공제 요율 요약</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          ${_sumTile('국민연금', '#eff6ff', '#3b82f6', '#1d4ed8', `${_fmtRate(pRate)}%`)}
+          ${_sumTile('건강보험', '#ecfdf5', '#059669', '#065f46', `${_fmtRate(hRate)}%`)}
+          ${_sumTile('장기요양', '#f0fdf4', '#16a34a', '#15803d', `${_fmtRate(ltWorker)}%`)}
+          ${_sumTile('고용보험', '#fffbeb', '#d97706', '#92400e', `${_fmtRate(eRate)}%`)}
+        </div>
+        <div style="margin-top:10px;background:#f5f3ff;border-radius:10px;padding:10px;text-align:center;">
+          <div style="font-size:11px;color:#7c3aed;">근로자 총 부담률 (실업급여 기준)</div>
+          <div style="font-size:22px;font-weight:800;color:#5b21b6;">약 ${total.toFixed(1)}%</div>
+        </div>
+      </div>`;
+  }
 }
 
 // ── 명세서 sticky 필터 top 위치 동적 조정 ──
