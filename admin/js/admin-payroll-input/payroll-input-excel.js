@@ -4,6 +4,7 @@
 //   현재 폼에 입력된 급여를 채용확정 계약 기준으로 저장한다.
 // ===============================================================================
 async function _probAutoCreateAndSave(){
+  if (!window._probationFeatureEnabled) return;
   const empId = document.getElementById('pi-employee').value;
   const coId  = currentGlobalCompanyId || document.getElementById('pi-company').value;
   const yr    = parseInt(document.getElementById('pi-year').value);

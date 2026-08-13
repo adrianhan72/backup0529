@@ -798,6 +798,7 @@ async function _autoCreateConfirmedContract(probEndDate){
 //   6. allPayrolls 갱신, UI 반영
 // ===============================================================================
 async function savePISplit(){
+  if (!window._probationFeatureEnabled) return;
   const saveBtn = document.getElementById('pi-prob-split-save-btn');
   if(saveBtn && saveBtn.disabled) return;
 

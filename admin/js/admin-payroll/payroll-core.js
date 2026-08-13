@@ -228,7 +228,8 @@ function openPayslipModal(payrollId){
   // ── 수습기간 판정 ──
   // 수습 조건: contract_type 이 수습 → probation_months 없어도 수습 계약으로 간주
   //   probation_months 있으면 수습기간 계산, 없으면 계약 전체 기간을 수습으로 처리
-  const _isProbContract = ct && (ct.contract_type ===CONTRACT_TYPE.REGULAR_PROBATION || ct.contract_type ===CONTRACT_TYPE.FIXED_PROBATION);
+  const _probFeatureOn = window._probationFeatureEnabled === true;
+  const _isProbContract = _probFeatureOn && ct && (ct.contract_type ===CONTRACT_TYPE.REGULAR_PROBATION || ct.contract_type ===CONTRACT_TYPE.FIXED_PROBATION);
   let _inProbation = false;   // 이번 지급월이 수습기간 내인가
   let _probBaseSal  = 0;      // 수습 중 기본급 (= base_salary × pct/100)
   let _probHourly   = 0;      // 수습 중 통상시급

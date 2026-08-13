@@ -824,6 +824,10 @@ function openContractModal(id=null, preCompanyId=null){
   { const _vdEl=document.getElementById('ct-voided-display'); if(_vdEl) _vdEl.value=''; }
   { const _vrEl=document.getElementById('ct-row-voided'); if(_vrEl) _vrEl.style.display='none'; }
   { const _ppRow=document.getElementById('ct-row-probation-period'); if(_ppRow) _ppRow.style.display='none'; }
+  // 갱신 페어: 직전계약 해지일 행 리셋 (이전 조회 상태 잔재 제거)
+  { const _rpe=document.getElementById('ct-renewed-pair-end'); if(_rpe){ _rpe.value=''; _rpe.disabled=false; } }
+  { const _rpr=document.getElementById('ct-row-renewed-pair-end'); if(_rpr) _rpr.style.display='none'; }
+  { const _rph=document.getElementById('ct-renewed-pair-hint'); if(_rph) _rph.textContent=''; }
   ['ct-pay-period-month','ct-pay-period-day'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});
   const _ppHint = document.getElementById('ct-pay-period-hint'); if(_ppHint) _ppHint.textContent='';
   document.getElementById('ct-annual').value=15;
