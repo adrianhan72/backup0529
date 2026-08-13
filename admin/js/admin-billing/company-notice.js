@@ -250,46 +250,6 @@ function _cenGetTargetContracts(){
   }).sort((a,b) => a._daysLeft - b._daysLeft); // 만료 임박순
 }
 
-/** 선택 건수 업데이트 및 일괄 버튼 상태 */
-function cenUpdateSelectedCount(){
-  const checked = document.querySelectorAll('.cen-row-chk:checked');
-  const count = checked.length;
-  const el = document.getElementById('cen-selected-count');
-  if(el) el.textContent = count > 0 ? `${count}건 선택됨` : '';
-  _cenUpdateBulkBtns();
-}
-
-function _cenUpdateBulkBtns(){
-  const checked = document.querySelectorAll('.cen-row-chk:checked');
-  const hasPhone = [...checked].some(chk => {
-    const cId = chk.dataset.contractId;
-    const c = allContracts.find(x=>x.id===cId);
-    const emp = c ? allEmployees.find(e=>e.id===c.employee_id) : null;
-    return !!(emp?.phone);
-  });
-  const hasEmail = [...checked].some(chk => {
-    const cId = chk.dataset.contractId;
-    const c = allContracts.find(x=>x.id===cId);
-    const emp = c ? allEmployees.find(e=>e.id===c.employee_id) : null;
-    return !!(emp?.email);
-  });
-  const kakaoBtn = document.getElementById('cen-btn-bulk-kakao');
-  const emailBtn = document.getElementById('cen-btn-bulk-email');
-  if(kakaoBtn) kakaoBtn.disabled = !(checked.length > 0 && hasPhone);
-  if(emailBtn) emailBtn.disabled = !(checked.length > 0 && hasEmail);
-}
-
-/** 전체 선택/해제 */
-function cenToggleAll(chkEl){
-  const isChecked = chkEl.checked;
-  document.querySelectorAll('.cen-row-chk').forEach(c=>{ c.checked = isChecked; });
-  // thead/footer 체크박스 동기화
-  ['cen-chk-all','cen-thead-chk'].forEach(id=>{
-    const el=document.getElementById(id); if(el) el.checked=isChecked;
-  });
-  cenUpdateSelectedCount();
-}
-
 /** 개별 통지 발송 */
 async function cenSendOne(contractId, method){
   // 계약만료 통지 기능 OFF → 발송 차단
@@ -323,58 +283,6 @@ async function cenSendOne(contractId, method){
     toast(`✅ ${emp.name} 계약만료 통지(${method}) 완료 + 고객사 알림 발송`, 'success');
     await cenRefresh();
   } catch(e){ console.error(e); toast('발송 중 오류가 발생했습니다.','error'); }
-}
-
-/** 일괄 발송 */
-async function cenBulkSend(method){
-  // 계약만료 통지 기능 OFF → 발송 차단
-  if (!window._contractExpiryNoticeEnabled) {
-    toast('계약만료 통지 기능이 비활성화되어 있습니다. 시스템 설정에서 활성화해 주세요.', 'warning');
-    return;
-  }
-  const checked = [...document.querySelectorAll('.cen-row-chk:checked')];
-  if(!checked.length){ toast('발송할 항목을 선택하세요.','warning'); return; }
-
-  const targets = checked.map(chk=>{
-    const cId = chk.dataset.contractId;
-    const c   = allContracts.find(x=>x.id===cId);
-    const emp = c ? allEmployees.find(e=>e.id===c.employee_id) : null;
-    const co  = c ? allCompanies.find(x=>x.id===c.company_id)  : null;
-    return { c, emp, co };
-  }).filter(({c,emp,co})=>{
-    if(!c||!emp||!co) return false;
-    if(method===DISPATCH_METHOD.KAKAO && !emp.phone) return false;
-    if(method===DISPATCH_METHOD.EMAIL && !emp.email) return false;
-    return true;
-  });
-
-  if(!targets.length){ toast(`${method} 발송 가능한 대상이 없습니다. (연락처 미등록)`, 'warning'); return; }
-
-  const names = targets.slice(0,3).map(({emp})=>emp.name).join(', ');
-  const more  = targets.length > 3 ? ` 외 ${targets.length-3}명` : '';
-  if(!confirm(`[계약만료 일괄 ${method} 발송]\n\n총 ${targets.length}건을 발송하시겠습니까?\n대상: ${names}${more}`)) return;
-
-  const today = new Date(); today.setHours(0,0,0,0);
-  const bulkKakaoBtn = document.getElementById('cen-btn-bulk-kakao');
-  const bulkEmailBtn = document.getElementById('cen-btn-bulk-email');
-  if(bulkKakaoBtn) bulkKakaoBtn.disabled=true;
-  if(bulkEmailBtn) bulkEmailBtn.disabled=true;
-
-  let ok=0, fail=0;
-  for(const {c, emp, co} of targets){
-    const endDate = new Date(c.contract_end); endDate.setHours(0,0,0,0);
-    const daysLeft = Math.ceil((endDate-today)/(1000*60*60*24));
-    const recipient = method===DISPATCH_METHOD.KAKAO ? emp.phone : emp.email;
-    try{
-      // 근로자 통지 이력 저장
-      await _cenSaveNotice({ contractId: c.id, method, status: DISPATCH_STATUS.COMPLETED, recipient, note:`일괄 ${method} — ${emp.name}`, daysLeft });
-      // 고객사 인앱 알림 발송
-      await _cenSendCompanyNotice({ c, emp, co, daysLeft });
-      ok++;
-    } catch(e){ fail++; }
-  }
-  toast(`일괄 ${method} 완료 — 성공 ${ok}건 + 고객사 알림 발송${fail?` / 실패 ${fail}건`:''}`, ok>0?'success':'error');
-  await cenRefresh();
 }
 
 /**

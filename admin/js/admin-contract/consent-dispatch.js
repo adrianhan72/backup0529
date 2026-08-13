@@ -209,9 +209,6 @@ async function renderConsentDispatchPage() {
     return true;
   }).sort((a, b) => ((b.dispatched_at || b.created_at || '')).localeCompare((a.dispatched_at || a.created_at || '')));
 
-  const countEl = document.getElementById('cns-record-count');
-  if (countEl) countEl.textContent = `총 ${filtered.length.toLocaleString('ko-KR')}건`;
-
   const totalPages = Math.max(1, Math.ceil(filtered.length / _cnsPageSize));
   if (_cnsPage > totalPages) _cnsPage = totalPages;
   const pageData = filtered.slice((_cnsPage - 1) * _cnsPageSize, _cnsPage * _cnsPageSize);
@@ -344,9 +341,7 @@ function renderCnsUnsentMonthTabs() {
     if (ym) monthMap[ym] = (monthMap[ym] || 0) + 1;
   });
 
-  // 총 미발송 건수 배지 업데이트
-  const totalBadge = document.getElementById('cns-unsent-total-badge');
-  if (totalBadge) totalBadge.textContent = `(총 ${allUnsent.length}건)`;
+  // 총 미발송 건수 배지 업데이트 (배지 UI 제거됨)
 
   const months = Object.keys(monthMap).sort().reverse().slice(0, 12);
   if (months.length === 0) {
@@ -461,27 +456,6 @@ async function cnsUnsentEmail(contractId, empName, email, coName) {
 async function cnsUnsentManual(contractId, empName, coName) {
   if (!confirm(`'${empName}'님에게 제3자 정보제공 동의서를 수동교부 처리하시겠습니까?`)) return;
   await _cnsSaveDispatchRecord({ method: 'manual', status: 'completed', recipient: '수동교부', note: '수동교부', contractId, empName, coName });
-  _cnsRefreshUnsent();
-}
-
-async function cnsSendAllKakao() {
-  if (!_cnsSelectedYM) return;
-  const unsent = _cnsGetUnsentContracts(_cnsSelectedYM.year, _cnsSelectedYM.month);
-  if (unsent.length === 0) { toast('모든 동의서가 이미 발송되었습니다.', 'info'); return; }
-  if (!confirm(`선택된 ${_cnsSelectedYM.year}년 ${_cnsSelectedYM.month}월의 미발송 동의서 ${unsent.length}건을\n일괄 알림톡으로 발송하시겠습니까?`)) return;
-
-  let success = 0, fail = 0;
-  for (const c of unsent) {
-    try {
-      const emp = (allEmployees || []).find(e => e.id === c.employee_id);
-      const phone = emp ? (emp.phone || '') : '';
-      if (!phone) { fail++; continue; }
-      const co = (allCompanies || []).find(x => x.id === c.company_id);
-      await _cnsSaveDispatchRecord({ method: 'kakao', status: 'completed', recipient: phone, note: '일괄 알림톡 발송', contractId: c.id, empName: emp?.name || '-', coName: co?.company_name || '-' });
-      success++;
-    } catch (e) { fail++; }
-  }
-  toast(`발송 완료: ${success}건 성공, ${fail}건 실패`, success > 0 ? 'success' : 'error');
   _cnsRefreshUnsent();
 }
 

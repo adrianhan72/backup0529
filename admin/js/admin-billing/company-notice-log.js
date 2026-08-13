@@ -486,11 +486,9 @@ function renderCnlPagination(total){
 
 /** 상세 모달 열기 */
 function openCnlDetail(listIdx){
-  const filterCompany = document.getElementById('cnl-filter-company')?.value || '';
   const filterType    = document.getElementById('cnl-filter-type')?.value || '';
   const searchQ       = (document.getElementById('cnl-search')?.value || '').trim().toLowerCase();
   const list = _cnlList.filter(n => {
-    if(filterCompany && n.company_id !== filterCompany) return false;
     if(filterType    && n.notice_type !== filterType)   return false;
     if(searchQ       && !(n.title||'').toLowerCase().includes(searchQ)) return false;
     return true;

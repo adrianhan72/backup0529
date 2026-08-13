@@ -445,6 +445,13 @@ function ccNewInputCheck(){
   }
 }
 
+// STEP 2 새 코드 입력란 Enter: 강도 검증 통과 시 확인란으로 이동
+function ccNew1Confirm(){
+  ccNewInputCheck();
+  const newVal = document.getElementById('cc-new-input').value.trim();
+  if(!_ccValidateStrength(newVal)) document.getElementById('cc-confirm-input').focus();
+}
+
 // STEP 2: 새 코드 최종 저장
 async function submitChangeCode(){
   const newVal  = document.getElementById('cc-new-input').value.trim();

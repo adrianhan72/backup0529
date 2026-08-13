@@ -198,7 +198,7 @@ function renderAlCompanyChips(){
   }
   container.innerHTML = active.map(c => {
     const empCnt = allEmployees.filter(e =>
-      e.company_id === c.id && (e.status===EMP_STATUS.ACTIVE || e.status===EMP_STATUS.ACTIVE)
+      e.company_id === c.id && (e.status===EMP_STATUS.ACTIVE)
     ).length;
     return `<button class="co-chip${_alCompanyId===c.id?' selected':''}" onclick="selectAlCompany('${c.id}','${(c.company_name||'').replace(/'/g,"\\'")}')">
       <i class="fas fa-building" style="font-size:11px;"></i>

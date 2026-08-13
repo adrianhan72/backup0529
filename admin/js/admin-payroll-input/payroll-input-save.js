@@ -49,15 +49,15 @@ function _buildPIBody(){
     overseas_allowance:  gv('pi-overseas')  || 0,
     overseas_pay_type:   _getPIPayTypeVal('overseas'),
     contract_etc_allowance: 0,
-    annual_leave_used:  parseFloat(document.getElementById('pi-annual-used')?.value || 0) || 0,
+    annual_leave_used:  (typeof _getPIAnnualUsedFromLedger === 'function') ? _getPIAnnualUsedFromLedger() : 0,
     annual_leave_pay:   gv('pi-annual-pay'),
     bonus_pay:          gv('pi-bonus'),
     performance_pay:    gv('pi-performance'),
     actual_expense_pay: gv('pi-actual-expense'),
     communication_pay:  gv('pi-communication'),
-    severance_interim_pay: gv('pi-severance-interim'),
-    etc_allowance:      gv('pi-etc-allowance'),
-    etc_allowance_memo: document.getElementById('pi-etc-allowance-memo')?.value || '',
+    severance_interim_pay: 0,
+    etc_allowance:      0,
+    etc_allowance_memo: '',
     gross_pay:          c.gross     || 0,
     standard_monthly_pay: c.std     || 0,
     income_tax:         c.incomeTax || 0,
@@ -68,8 +68,8 @@ function _buildPIBody(){
     employment_insurance: c.empIns  || 0,
     year_end_tax_adjust:  gv('pi-yearend'),
     year_end_tax_adjust_memo: document.getElementById('pi-yearend-memo')?.value || '',
-    health_insurance_adjust: gv('pi-health-adj'),
-    health_insurance_adjust_memo: document.getElementById('pi-health-adj-memo')?.value || '',
+    health_insurance_adjust: gv('pi-health-adj-retro'),
+    health_insurance_adjust_memo: '',
     health_insurance_adjust_yearend: gv('pi-health-adj-yearend'),
     health_insurance_adjust_yearend_memo: document.getElementById('pi-health-adj-yearend-memo')?.value || '',
     ltcare_adjust_yearend: gv('pi-ltcare-adj-yearend'),
@@ -289,16 +289,11 @@ function loadPIDraft(){
   document.getElementById('pi-ot-hours').value   = draft.overtime_hours || 0;
   document.getElementById('pi-night-hours').value= draft.night_hours    || 0;
   document.getElementById('pi-hol-hours').value  = draft.holiday_hours  || 0;
-  const _alUsed = document.getElementById('pi-annual-used');
-  if(_alUsed) _alUsed.value = draft.annual_leave_used || 0;
   setAmountVal('pi-annual-pay',    draft.annual_leave_pay);
   setAmountVal('pi-bonus',         draft.bonus_pay         || 0);
   setAmountVal('pi-performance',   draft.performance_pay   || 0);
   setAmountVal('pi-actual-expense',draft.actual_expense_pay|| 0);
   setAmountVal('pi-communication',  draft.communication_pay       || 0);
-  setAmountVal('pi-etc-allowance',  draft.etc_allowance           || 0);
-  const _etcMemoDraft = document.getElementById('pi-etc-allowance-memo');
-  if(_etcMemoDraft) _etcMemoDraft.value = draft.etc_allowance_memo || '';
   document.getElementById('pi-work-days').value    = draft.work_days        || 0;
   // 결근일 복원
   { const _absEl = document.getElementById('pi-absent-dates');
@@ -327,10 +322,7 @@ function loadPIDraft(){
   setAmountVal('pi-yearend',       draft.year_end_tax_adjust);
   const _yeMemo = document.getElementById('pi-yearend-memo');
   if(_yeMemo) _yeMemo.value = draft.year_end_tax_adjust_memo || '';
-  setAmountVal('pi-health-adj',    draft.health_insurance_adjust);
-  const _haMemo = document.getElementById('pi-health-adj-memo');
-  if(_haMemo) _haMemo.value = draft.health_insurance_adjust_memo || '';
-  setAmountVal('pi-health-adj-retro', draft.health_insurance_adjust_retro);
+  setAmountVal('pi-health-adj-retro', draft.health_insurance_adjust);
   setAmountVal('pi-health-adj-yearend', draft.health_insurance_adjust_yearend);
   const _hayMemo = document.getElementById('pi-health-adj-yearend-memo');
   if(_hayMemo) _hayMemo.value = draft.health_insurance_adjust_yearend_memo || '';
@@ -504,7 +496,7 @@ async function savePI(){
     const _cont = confirm('⚠️ 공제항목이 계산되지 않았습니다.\n보험요율 산정기준을 다시 확인해 주세요.\n\n그래도 저장하시겠습니까?');
     if(!_cont) return;
   }
-  const body={employee_id:empId,company_id:coId,pay_year:yr,pay_month:mo,work_days:gv('pi-work-days'),total_work_hours:gv('pi-total-hours'),overtime_hours:gv('pi-ot-hours'),night_hours:gv('pi-night-hours'),holiday_hours:gv('pi-hol-hours'),hourly_wage:(piContract?.is_virtual)?(parseFloat(document.getElementById('pi-hourly-wage-input')?.value)||0):(piContract?piContract.hourly_wage:0),base_salary:gv('pi-base'),weekly_holiday_pay:gv('pi-weekly-hol'),position_allowance:gv('pi-position'),remote_area_allowance:gv('pi-remote-area')||0,site_allowance:gv('pi-site')||0,skill_allowance:gv('pi-skill'),license_allowance:gv('pi-license'),hazard_allowance:gv('pi-hazard'),overtime_pay:c.otPay||0,night_pay:c.nightPay||0,holiday_pay:c.holPay||0,..._getPITransportFields(),transport_type:_piTransportType,transport_pay_type:_getPIPayTypeVal('transport'),meal_allowance:gv('pi-meal'),meal_pay_type:_getPIPayTypeVal('meal'),childcare_allowance:gv('pi-childcare'),childcare_pay_type:_getPIPayTypeVal('childcare'),research_allowance:gv('pi-research'),research_pay_type:_getPIPayTypeVal('research'),communication_pay_type:_getPIPayTypeVal('communication'),annual_leave_used:parseFloat(document.getElementById('pi-annual-used')?.value||0)||0,annual_leave_pay:gv('pi-annual-pay'),bonus_pay:gv('pi-bonus'),performance_pay:gv('pi-performance'),actual_expense_pay:gv('pi-actual-expense'),communication_pay:gv('pi-communication'),fitness_allowance:gv('pi-fitness')||0,fitness_pay_type:_getPIPayTypeVal('fitness'),self_dev_allowance:gv('pi-self-dev')||0,self_dev_pay_type:_getPIPayTypeVal('self_dev'),book_allowance:gv('pi-book')||0,book_pay_type:_getPIPayTypeVal('book'),overseas_allowance:gv('pi-overseas')||0,overseas_pay_type:_getPIPayTypeVal('overseas'),contract_etc_allowance:0,severance_interim_pay:gv('pi-severance-interim'),etc_allowance:gv('pi-etc-allowance'),etc_allowance_memo:document.getElementById('pi-etc-allowance-memo')?.value||'',absent_dates:document.getElementById('pi-absent-dates')?.value||'',absent_data:document.getElementById('pi-absent-data')?.value||'[]',earlyleave_data:document.getElementById('pi-earlyleave-data')?.value||'[]',late_data:document.getElementById('pi-late-data')?.value||'[]',retro_absent_dates:document.getElementById('pi-retro-absent-dates')?.value||'',retro_absent_data:document.getElementById('pi-retro-absent-data')?.value||'[]',retro_late_data:document.getElementById('pi-retro-late-data')?.value||'[]',retro_earlyleave_data:document.getElementById('pi-retro-earlyleave-data')?.value||'[]',gross_pay:c.gross||0,standard_monthly_pay:c.std||0,income_tax:c.incomeTax||0,local_income_tax:c.localTax||0,health_insurance:c.health||0,long_term_care:c.ltCare||0,national_pension:c.pension||0,employment_insurance:c.empIns||0,year_end_tax_adjust:gv('pi-yearend'),year_end_tax_adjust_memo:document.getElementById('pi-yearend-memo')?.value||'',health_insurance_adjust:gv('pi-health-adj'),health_insurance_adjust_memo:document.getElementById('pi-health-adj-memo')?.value||'',health_insurance_adjust_retro:gv('pi-health-adj-retro'),health_insurance_adjust_yearend:gv('pi-health-adj-yearend'),health_insurance_adjust_yearend_memo:document.getElementById('pi-health-adj-yearend-memo')?.value||'',ltcare_adjust_yearend:gv('pi-ltcare-adj-yearend'),ltcare_adjust_yearend_memo:document.getElementById('pi-ltcare-adj-yearend-memo')?.value||'',advance_deduction:gv('pi-advance'),advance_deduction_memo:document.getElementById('pi-advance-memo')?.value||'',total_deduction:c.totalDed||0,net_pay:c.net||0,pay_date:document.getElementById('pi-paydate')?.value||'',note:document.getElementById('pi-note')?.value||'',dependents:Math.max(1,parseInt(document.getElementById('pi-dependents')?.value||'1')||1),tax_dependents:Math.max(1,parseInt(document.getElementById('pi-dependents')?.value||'1')||1)};
+  const body={employee_id:empId,company_id:coId,pay_year:yr,pay_month:mo,work_days:gv('pi-work-days'),total_work_hours:gv('pi-total-hours'),overtime_hours:gv('pi-ot-hours'),night_hours:gv('pi-night-hours'),holiday_hours:gv('pi-hol-hours'),hourly_wage:(piContract?.is_virtual)?(parseFloat(document.getElementById('pi-hourly-wage-input')?.value)||0):(piContract?piContract.hourly_wage:0),base_salary:gv('pi-base'),weekly_holiday_pay:gv('pi-weekly-hol'),position_allowance:gv('pi-position'),remote_area_allowance:gv('pi-remote-area')||0,site_allowance:gv('pi-site')||0,skill_allowance:gv('pi-skill'),license_allowance:gv('pi-license'),hazard_allowance:gv('pi-hazard'),overtime_pay:c.otPay||0,night_pay:c.nightPay||0,holiday_pay:c.holPay||0,..._getPITransportFields(),transport_type:_piTransportType,transport_pay_type:_getPIPayTypeVal('transport'),meal_allowance:gv('pi-meal'),meal_pay_type:_getPIPayTypeVal('meal'),childcare_allowance:gv('pi-childcare'),childcare_pay_type:_getPIPayTypeVal('childcare'),research_allowance:gv('pi-research'),research_pay_type:_getPIPayTypeVal('research'),communication_pay_type:_getPIPayTypeVal('communication'),annual_leave_used:(typeof _getPIAnnualUsedFromLedger==='function')?_getPIAnnualUsedFromLedger():0,annual_leave_pay:gv('pi-annual-pay'),bonus_pay:gv('pi-bonus'),performance_pay:gv('pi-performance'),actual_expense_pay:gv('pi-actual-expense'),communication_pay:gv('pi-communication'),fitness_allowance:gv('pi-fitness')||0,fitness_pay_type:_getPIPayTypeVal('fitness'),self_dev_allowance:gv('pi-self-dev')||0,self_dev_pay_type:_getPIPayTypeVal('self_dev'),book_allowance:gv('pi-book')||0,book_pay_type:_getPIPayTypeVal('book'),overseas_allowance:gv('pi-overseas')||0,overseas_pay_type:_getPIPayTypeVal('overseas'),contract_etc_allowance:0,severance_interim_pay:0,etc_allowance:0,etc_allowance_memo:'',absent_dates:document.getElementById('pi-absent-dates')?.value||'',absent_data:document.getElementById('pi-absent-data')?.value||'[]',earlyleave_data:document.getElementById('pi-earlyleave-data')?.value||'[]',late_data:document.getElementById('pi-late-data')?.value||'[]',retro_absent_dates:document.getElementById('pi-retro-absent-dates')?.value||'',retro_absent_data:document.getElementById('pi-retro-absent-data')?.value||'[]',retro_late_data:document.getElementById('pi-retro-late-data')?.value||'[]',retro_earlyleave_data:document.getElementById('pi-retro-earlyleave-data')?.value||'[]',gross_pay:c.gross||0,standard_monthly_pay:c.std||0,income_tax:c.incomeTax||0,local_income_tax:c.localTax||0,health_insurance:c.health||0,long_term_care:c.ltCare||0,national_pension:c.pension||0,employment_insurance:c.empIns||0,year_end_tax_adjust:gv('pi-yearend'),year_end_tax_adjust_memo:document.getElementById('pi-yearend-memo')?.value||'',health_insurance_adjust:gv('pi-health-adj-retro'),health_insurance_adjust_memo:'',health_insurance_adjust_retro:gv('pi-health-adj-retro'),health_insurance_adjust_yearend:gv('pi-health-adj-yearend'),health_insurance_adjust_yearend_memo:document.getElementById('pi-health-adj-yearend-memo')?.value||'',ltcare_adjust_yearend:gv('pi-ltcare-adj-yearend'),ltcare_adjust_yearend_memo:document.getElementById('pi-ltcare-adj-yearend-memo')?.value||'',advance_deduction:gv('pi-advance'),advance_deduction_memo:document.getElementById('pi-advance-memo')?.value||'',total_deduction:c.totalDed||0,net_pay:c.net||0,pay_date:document.getElementById('pi-paydate')?.value||'',note:document.getElementById('pi-note')?.value||'',dependents:Math.max(1,parseInt(document.getElementById('pi-dependents')?.value||'1')||1),tax_dependents:Math.max(1,parseInt(document.getElementById('pi-dependents')?.value||'1')||1)};
   if(piEditPayrollId){
     // ── 수정 모드: PUT ──
     await api(`../tables/payrolls/${piEditPayrollId}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
@@ -1082,6 +1074,37 @@ async function savePISplit(){
  * @param {number} month         - 급여 월  (pay_month)
  * @param {number} annualUsedVal - 저장된 annual_leave_used 값
  */
+/**
+ * 현재 입력 폼 컨텍스트(직원·급여월·산정기간) 기준 연차 관리대장의 사용일수를 계산.
+ * (pi-annual-used 입력란이 제거된 이후의 단일 원천 — 관리대장 month_data.dates 기준)
+ */
+function _getPIAnnualUsedFromLedger(){
+  try{
+    const empId = document.getElementById('pi-employee')?.value || '';
+    const yr    = parseInt(document.getElementById('pi-year')?.value) || 0;
+    if(!empId || !yr) return 0;
+    const ledger = (allLeaveLedgers || []).find(r =>
+      r.employee_id === empId && Number(r.year) === yr
+    );
+    if(!ledger) return 0;
+    let mData = [];
+    try { mData = JSON.parse(ledger.month_data || '[]'); } catch(e){ mData = []; }
+    const ppStart = document.getElementById('pi-pay-period-start')?.value || '';
+    const ppEnd   = document.getElementById('pi-pay-period-end')?.value || '';
+    if(ppStart && ppEnd){
+      // 산정기간 내 실제 사용일수 (dates 콤마 분리)
+      return mData.reduce((sum, md) => {
+        const dates = (md.dates || '').split(',').map(d => d.trim()).filter(Boolean);
+        return sum + dates.filter(d => d >= ppStart && d <= ppEnd).length;
+      }, 0);
+    }
+    // 산정기간 미설정 시: 해당 급여월의 days 값
+    const mo = parseInt(document.getElementById('pi-month')?.value) || 0;
+    const mEntry = mData.find(d => Number(d.month) === mo);
+    return mEntry ? (parseFloat(mEntry.days) || 0) : 0;
+  }catch(e){ return 0; }
+}
+
 async function _syncPayrollToLedger(empId, year, month, annualUsedVal){
   try {
     // 해당 직원·연도 관리대장 찾기

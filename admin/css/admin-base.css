@@ -236,3 +236,5 @@
 .cm-msg-muted{color:#9ca3af}
 .cm-msg-error{color:#dc2626}
 .cm-msg-success{color:#16a34a}
+/* 유틸리티: 요소 숨김 (JS 토글 전용) */
+.d-none { display: none !important; }

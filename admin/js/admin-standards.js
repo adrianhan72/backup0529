@@ -1177,7 +1177,6 @@ async function saveInsuranceRate(){
   // 입력 초기화
   ['std-new-year','std-new-start','std-new-end','std-new-rate','std-new-cap','std-new-note'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   toast('요율이 업데이트 되었습니다. ✔','success');
-  _renderStandardsBanner(); // 배너 재확인
   // 중요공지 자동 발송
   const _irTypeLabel = {national_pension:'국민연금 요율',health:'건강보험 요율',long_term_care:'장기요양보험 요율',employment:'고용보험 요율'}[type]||'4대보험 요율';
   await _gnSendStandardsUpdateNotice(
@@ -1207,89 +1206,9 @@ async function saveMinimumWage(){
   renderMinimumWages();
   ['mw-new-year','mw-new-hourly','mw-new-monthly','mw-new-note'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   toast('최저임금이 업데이트 되었습니다. ✔','success');
-  _renderStandardsBanner();
   // 중요공지 자동 발송
   await _gnSendStandardsUpdateNotice(
     `${year}년 최저임금`,
     `■ 시급: ${Number(hourly).toLocaleString('ko-KR')}원\n■ 월급여: ${Number(monthly).toLocaleString('ko-KR')}원`
   );
-}
-
-// ── 대시보드 산정기준 배너 ──
-function _renderStandardsBanner(){
-  const banner = document.getElementById('dash-standards-banner');
-  if(!banner) return;
-  const now    = new Date();
-  const today  = now.toISOString().slice(0,10);
-  const curYear= now.getFullYear();
-  const month  = now.getMonth()+1; // 1~12
-  const day    = now.getDate();
-  const notices= [];
-
-  // ① 국민연금: 매년 7월 1일 변경. 현재 기간 커버하는 데이터 없으면 알림
-  const hasPension = _allInsuranceRates.some(r=>
-    r.insurance_type==='national_pension' && today >= r.period_start && today <= r.period_end
-  );
-  // 6월 이후(새 적용기간 발표 예상) 또는 데이터 없을 때 알림
-  if(!hasPension){
-    notices.push({cls:'pension', icon:'🏛️',
-      title: '국민연금 요율 업데이트 필요',
-      desc:  `${curYear}년 7월 1일부터 적용될 국민연금 요율 및 상한금액을 입력해 주세요.`,
-      tab:   'insurance'});
-  } else if(month===6 && day>=15){
-    // 6월 15일 이후엔 다음 기간 미리 알림
-    const nextStart = `${curYear}-07-01`;
-    const hasNext = _allInsuranceRates.some(r=>r.insurance_type==='national_pension' && r.period_start===nextStart);
-    if(!hasNext) notices.push({cls:'pension', icon:'🏛️',
-      title: `${curYear+1}년 7월 국민연금 요율 사전 입력 안내`,
-      desc:  `7월 1일부터 적용될 국민연금 새 요율이 발표되면 미리 입력해 두세요.`,
-      tab:   'insurance'});
-  }
-
-  // ② 건강보험: 매년 1월 1일 변경. 현재 연도 데이터 없으면 알림
-  const hasHealth = _allInsuranceRates.some(r=>
-    r.insurance_type==='health' && Number(r.year)===curYear
-  );
-  if(!hasHealth){
-    notices.push({cls:'health', icon:'🏥',
-      title: `${curYear}년 건강보험·장기요양 요율 업데이트 필요`,
-      desc:  `${curYear}년 1월 1일부터 적용되는 건강보험 및 장기요양보험 요율을 입력해 주세요.`,
-      tab:   'insurance'});
-  } else if(month===12 && day>=1){
-    const hasNextHealth = _allInsuranceRates.some(r=>r.insurance_type==='health' && Number(r.year)===(curYear+1));
-    if(!hasNextHealth) notices.push({cls:'health', icon:'🏥',
-      title: `${curYear+1}년 건강보험 요율 사전 입력 안내`,
-      desc:  `내년 1월 1일부터 적용될 건강보험 새 요율이 발표되면 미리 입력해 두세요.`,
-      tab:   'insurance'});
-  }
-
-  // ③ 최저임금: 매년 1월 1일 변경. 현재 연도 데이터 없으면 알림
-  const hasMinWage = _allMinimumWages.some(w=> Number(w.year)===curYear);
-  if(!hasMinWage){
-    notices.push({cls:'minwage', icon:'💰',
-      title: `${curYear}년 최저임금 업데이트 필요`,
-      desc:  `${curYear}년 1월 1일부터 적용되는 최저임금(시급·월급여)을 입력해 주세요.`,
-      tab:   'minwage'});
-  } else if(month>=9){
-    // 9월 이후 다음연도 최저임금 고시 예상
-    const hasNextMW = _allMinimumWages.some(w=>Number(w.year)===(curYear+1));
-    if(!hasNextMW) notices.push({cls:'minwage', icon:'💰',
-      title: `${curYear+1}년 최저임금 사전 입력 안내`,
-      desc:  `내년도 최저임금이 발표되면 최저임금표에 입력해 두세요. (보통 8~9월 고시)`,
-      tab:   'minwage'});
-  }
-
-  if(!notices.length){ banner.style.display='none'; banner.innerHTML=''; return; }
-  banner.style.display='';
-  banner.innerHTML = notices.map(n=>`
-    <div class="std-banner ${n.cls}" style="margin-bottom:8px;">
-      <div class="std-banner-icon">${n.icon}</div>
-      <div class="std-banner-body">
-        <div class="std-banner-title" style="color:${n.cls==='minwage'?'#065f46':n.cls==='health'?'#991b1b':'#1e40af'};">${n.title}</div>
-        <div class="std-banner-desc">${n.desc}</div>
-      </div>
-      <button class="std-banner-btn" onclick="showPage('standards',document.querySelector('[data-page=\\'standards\\']'));switchStdTab('${n.tab}')">
-        입력하기
-      </button>
-    </div>`).join('');
 }

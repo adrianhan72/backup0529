@@ -391,8 +391,8 @@ function openPayslipModal(payrollId){
     for(let i = 1; i <= 6; i++){
       const _l = document.getElementById(`ps-ct-wage-lbl${i}`);
       const _v = document.getElementById(`ps-ct-wage-val${i}`);
-      if(_l){ _l.textContent=''; _l.classList.add('d-none'); }
-      if(_v){ _v.textContent=''; _v.classList.add('d-none'); }
+      if(_l){ _l.textContent=''; _l.classList.add('d-none'); _l.style.display='none'; }
+      if(_v){ _v.textContent=''; _v.classList.add('d-none'); _v.style.display='none'; }
     }
 
     // 슬롯 채우기 (최대 6개, lbl1~6 / val1~6)
@@ -404,13 +404,13 @@ function openPayslipModal(payrollId){
       if(item){
         lbl.textContent   = item.lbl;
         val.textContent   = item.val;
-        lbl.classList.remove('d-none');
-        val.classList.remove('d-none');
+        lbl.classList.remove('d-none'); lbl.style.display='';
+        val.classList.remove('d-none'); val.style.display='';
       } else {
         lbl.textContent   = '';
         val.textContent   = '';
-        lbl.classList.add('d-none');
-        val.classList.add('d-none');
+        lbl.classList.add('d-none'); lbl.style.display='none';
+        val.classList.add('d-none'); val.style.display='none';
       }
     }
   })();
@@ -457,6 +457,7 @@ function openPayslipModal(payrollId){
       : '(기본급 정보 없음)';
 
     banner.classList.remove('d-none');
+    banner.style.display = ''; // 인라인 display:none 해제
   })();
 
   // ── 수습 만료일 초과 경고 배너 ──
@@ -495,6 +496,7 @@ function openPayslipModal(payrollId){
         `<div>· 이 명세서 기간 <strong>${payYr}년 ${payMo}월</strong>은 수습이 이미 만료된 달입니다.</div>` +
         `<div class="prob-overrun-warn">채용확정 근로계약서 기준으로 급여명세서를 별도 발행하세요.</div>`;
       ob.classList.remove('d-none');
+      ob.style.display = ''; // 인라인 display:none 해제
       return;
     }
 
@@ -508,6 +510,7 @@ function openPayslipModal(payrollId){
           ② <u>${fmtD(nextDay(_probEndStr))} ~ ${fmtD(mEnd)}</u>: 채용확정 기준 급여명세서 <strong>별도 발행 필요</strong>
          </div>`;
       ob.classList.remove('d-none');
+      ob.style.display = ''; // 인라인 display:none 해제
       return;
     }
 

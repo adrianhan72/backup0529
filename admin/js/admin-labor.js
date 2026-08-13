@@ -258,10 +258,6 @@ function renderLsDistChart(){
   const mo = parseInt(document.getElementById('ls-month')?.value) || new Date().getMonth()+1;
   const pays = allPayrolls.filter(p => !p.is_draft && p.company_id===selCo && p.pay_year==yr && p.pay_month==mo);
 
-  // 뱃지
-  const badge = document.getElementById('ls-dist-month-badge');
-  if(badge) badge.textContent = `${yr}년 ${mo}월 기준`;
-
   const grossTotal = pays.reduce((a,p)=>a+(p.gross_pay||0),0);
   const netTotal   = pays.reduce((a,p)=>a+(p.net_pay||0),0);
   const dedTotal   = grossTotal - netTotal;

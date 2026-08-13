@@ -165,14 +165,6 @@ function _resolveAdminName(val){
   return val;
 }
 
-// ─── 대시보드 로딩 모달 ───
-function _closeDashLoadingModal(){
-  const m = document.getElementById('dash-loading-modal');
-  if(!m) return;
-  m.classList.add('closing');
-  setTimeout(() => m.remove(), 320);
-}
-
 // ─── 버튼 Ripple 효과 ───
 (function _initRipple(){
   function addRipple(e){
@@ -258,7 +250,7 @@ async function init(){
 
     // ── 2단계: lazy load – 급여·청구 데이터 + 산정기준 데이터 백그라운드 로드 ──
     loadHeavyData();
-    loadStandards().then(()=>{ _renderStandardsBanner(); });
+    loadStandards();
     // 중요공지 예약 발송 타이머 복원 (미발송 scheduled 건 복구) + 폴링 시작
     _gnRestoreScheduledTimers();
     _gnStartPolling();
@@ -302,8 +294,6 @@ async function loadHeavyData(){
     // 임금대장 메뉴 뱃지 갱신
     _updateWLMenuBadge();
     // 대시보드 계약만료 통지 / 정규직 전환 / 퇴직금 지급 이력 배너 갱신 (heavy 로드 완료 후)
-    // 로딩 모달 닫기 (페이드아웃 후 제거)
-    _closeDashLoadingModal();
     // 급여 입력 전체 임시저장 배너 갱신 (활성 여부 무관 — 다음 진입 시 즉시 표시)
     renderPIAllDraftBanner();
     if(document.getElementById('page-dashboard')?.classList.contains('active')){
@@ -325,9 +315,7 @@ async function loadHeavyData(){
     // 좌측 메뉴 할일 배지 업데이트 (heavy 로드 완료 후 전체 데이터 확정)
     updateMenuBadges();
     // 급여명세서 발송 관리 고객사 칩 배지 갱신 (발송이력·급여데이터 확정 후)
-    if(!document.getElementById('pss-main-section') || document.getElementById('pss-main-section').style.display === 'none'){
-      renderPssCompanyList();
-    }
+    renderPssCompanyList();
   } catch(err) {
     console.error('[급여관리] 급여·청구 로드 실패:', err);
   }
@@ -1044,8 +1032,6 @@ async function showPage(name,el){
       return;
     }
     if(!_dataReady){
-      const tbody = document.getElementById('rc-target-tbody');
-      if(tbody) tbody.innerHTML = `<tr><td colspan="8" class="cen-empty"><i class="fas fa-circle-notch fa-spin"></i> 고객사 데이터 불러오는 중...</td></tr>`;
       if(el) el.classList.add('active');
       return;
     }
@@ -1154,8 +1140,6 @@ async function showPage(name,el){
     if(!_dataReady){
       const chips = document.getElementById('gn-company-chips');
       if(chips) chips.innerHTML = `<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#9ca3af;padding:8px 0;"><div style="width:18px;height:18px;border:2px solid #e2e8f0;border-top-color:#f59e0b;border-radius:50%;animation:tblSpin .7s linear infinite;flex-shrink:0;"></div>고객사 목록 불러오는 중...</div>`;
-      const tbody = document.getElementById('gn-log-tbody');
-      if(tbody) tbody.innerHTML = `<tr><td colspan="7" class="cen-empty"><i class="fas fa-circle-notch fa-spin"></i> 데이터 불러오는 중...</td></tr>`;
       if(el) el.classList.add('active');
       return;
     }

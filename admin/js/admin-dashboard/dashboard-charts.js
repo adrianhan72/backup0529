@@ -271,6 +271,52 @@ function renderDashBillingCards(){
 // ─── 월별 고객사 수 변동 추이 차트 ───
 let companyTrendChartInstance = null;
 
+// ═══ 시계열 공통 헬퍼 (과거 월 판정 — 현재 상태 소급 금지) ═══
+
+// 월말 기준 고객사 서비스 유효 여부 (계약 시작일/해지일 기준)
+function _coActiveAtMonthEnd(c, monthEndStr){
+  if(!c || c.is_draft) return false;
+  const start = c.contract_start_date || '';
+  if(start && start > monthEndStr) return false;   // 서비스 시작 전
+  const end = c.contract_end_date || '';
+  if(end && end <= monthEndStr) return false;      // 해당 월말 이전 해지
+  return true;
+}
+
+// 계약의 유효 종료 시점 (해지일 우선, 없으면 계약 종료일)
+function _ctEffectiveEnd(ct){
+  if(ct.terminate_date) return ct.terminate_date;
+  return ct.contract_end || '';
+}
+
+// 월말 기준 계약 유효 여부
+function _ctActiveAtMonthEnd(ct, monthEndStr){
+  if(!ct || ct.is_draft || ct.is_voided_by_amend || ct.status === CONTRACT_STATUS.VOIDED) return false;
+  if(!ct.contract_start || ct.contract_start > monthEndStr) return false;
+  const end = _ctEffectiveEnd(ct);
+  if(end && end <= monthEndStr) return false;
+  return true;
+}
+
+// 대표자 본인·등기임원·특수관계인 제외 대상 직원 ID 집합 (상시근로자 산정용)
+function _chartExcludedEmpIds(){
+  const excluded = new Set();
+  (allCompanies||[]).forEach(c => {
+    if(c.is_draft) return;
+    let repNames = [];
+    try {
+      const reps = typeof c.representatives === 'string' ? JSON.parse(c.representatives) : (c.representatives || []);
+      repNames = (Array.isArray(reps) ? reps : []).map(r => r.name).filter(Boolean);
+    } catch(e){}
+    const execNames = (allExecutives||[]).filter(e => e.company_id === c.id).map(e => e.name).filter(Boolean);
+    const relNames  = (allRelatedParties||[]).filter(r => r.company_id === c.id).map(r => r.name).filter(Boolean);
+    const names = new Set([...repNames, ...execNames, ...relNames]);
+    (allEmployees||[]).filter(e => e.company_id === c.id && (e.is_representative || names.has(e.name)))
+      .forEach(e => excluded.add(e.id));
+  });
+  return excluded;
+}
+
 function renderCompanyTrendChart(){
   const rangeEl = document.getElementById('dash-chart-range');
   const months = rangeEl ? parseInt(rangeEl.value) : 12;
@@ -287,45 +333,45 @@ function renderCompanyTrendChart(){
   const activeData = [];    // 이용중
   const inactiveData = [];  // 해지
 
-  // 회사 ID → { status, empCount } 매핑 (현재 기준)
-  const coMeta = {};
-  allCompanies.forEach(c => {
-    if(c.is_draft) return;
-    const active = isCompanyActive(c);
-    // 상시근로자 수: 대표자 본인(is_representative)·등기임원·특수관계인 제외, 유효계약 기준
-    let repNamesD = [];
-    try { const reps = typeof c.representatives === 'string' ? JSON.parse(c.representatives) : (c.representatives || []); repNamesD = (Array.isArray(reps) ? reps : []).map(r => r.name).filter(Boolean); } catch(e){}
-    const execNamesD = (allExecutives||[]).filter(e => e.company_id === c.id).map(e => e.name).filter(Boolean);
-    const relNamesD  = (allRelatedParties||[]).filter(r => r.company_id === c.id).map(r => r.name).filter(Boolean);
-    const excludedNames = new Set([...repNamesD, ...execNamesD, ...relNamesD]);
-    const repEmpIds = new Set(
-      (allEmployees||[]).filter(e => e.company_id === c.id && (e.is_representative || excludedNames.has(e.name))).map(e => e.id)
-    );
-    const empCount = allContracts.filter(ct =>
-      ct.company_id === c.id && !ct.is_draft &&
-      ct.status !== CONTRACT_STATUS.VOIDED &&
-      !repEmpIds.has(ct.employee_id)
-    ).length;
-    coMeta[c.id] = { status: active ? COMPANY_STATUS.ACTIVE : COMPANY_STATUS.INACTIVE, empCount };
-  });
+  const excludedEmpIds = _chartExcludedEmpIds();
+  // 유효 계약 후보 (드래프트·파기·수정재발행 파기 제외)
+  const validContracts = (allContracts||[]).filter(ct =>
+    !ct.is_draft && !ct.is_voided_by_amend && ct.status !== CONTRACT_STATUS.VOIDED
+  );
 
   for(let i = months - 1; i >= 0; i--){
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const yr = d.getFullYear();
     const mo = d.getMonth() + 1;
+    const monthEnd = new Date(yr, mo, 0);
+    const monthEndStr = `${yr}-${String(mo).padStart(2,'0')}-${String(monthEnd.getDate()).padStart(2,'0')}`;
     labels.push(`${yr}.${String(mo).padStart(2,'0')}`);
 
-    const monthCoIds = [...new Set(
-      allPayrolls
-        .filter(p => Number(p.pay_year) === yr && Number(p.pay_month) === mo)
-        .map(p => p.company_id)
-    )];
+    // 해당 월말 기준 서비스 유효 고객사 ID
+    const activeCoIds = new Set(
+      (allCompanies||[]).filter(c => _coActiveAtMonthEnd(c, monthEndStr)).map(c => c.id)
+    );
+    // 해당 월말 기준 "존재한" 고객사 (시작일 <= 월말) — 해지 포함 전체
+    const existedCoIds = new Set(
+      (allCompanies||[]).filter(c =>
+        !c.is_draft && (!c.contract_start_date || c.contract_start_date <= monthEndStr)
+      ).map(c => c.id)
+    );
 
-    allData.push(monthCoIds.length);
-    under5Data.push(monthCoIds.filter(id => (coMeta[id]?.empCount || 0) < 5).length);
-    over5Data.push(monthCoIds.filter(id => (coMeta[id]?.empCount || 0) >= 5).length);
-    activeData.push(monthCoIds.filter(id => coMeta[id]?.status === COMPANY_STATUS.ACTIVE).length);
-    inactiveData.push(monthCoIds.filter(id => coMeta[id]?.status === COMPANY_STATUS.INACTIVE).length);
+    // 고객사별 월말 상시근로자 수 (대표자·등기임원·특수관계인 제외)
+    const empCountMap = {};
+    validContracts.forEach(ct => {
+      if(!_ctActiveAtMonthEnd(ct, monthEndStr)) return;
+      if(excludedEmpIds.has(ct.employee_id)) return;
+      if(!empCountMap[ct.company_id]) empCountMap[ct.company_id] = new Set();
+      empCountMap[ct.company_id].add(ct.employee_id);
+    });
+
+    allData.push(existedCoIds.size);
+    under5Data.push([...existedCoIds].filter(id => ((empCountMap[id]?.size)||0) < 5).length);
+    over5Data.push([...existedCoIds].filter(id => ((empCountMap[id]?.size)||0) >= 5).length);
+    activeData.push(activeCoIds.size);
+    inactiveData.push([...existedCoIds].filter(id => !activeCoIds.has(id)).length);
   }
 
   const ctx = document.getElementById('company-trend-chart');
@@ -449,49 +495,52 @@ function renderEmployeeTrendChart(){
 
   const now = new Date();
   const labels = [];
-  const typeKeys = ['total', 'regular', 'regular_probation', 'fixed_term', 'fixed_term_probation', 'daily'];
+  // 수습 스위치 OFF → 수습 유형 차트 제외
+  const typeKeys = ['total', 'regular', 'regular_probation', 'fixed_term', 'fixed_term_probation', 'daily']
+    .filter(k => window._probationFeatureEnabled || (k !== 'regular_probation' && k !== 'fixed_term_probation'));
   const dataMap = {};
   typeKeys.forEach(k => { dataMap[k] = []; });
 
-  // 이용중 고객사 ID 목록 (현재 기준)
-  const activeCompanyIds = new Set(
-    allCompanies.filter(c => isCompanyActive(c)).map(c => c.id)
+  const excludedEmpIds = _chartExcludedEmpIds();
+  // 유효 계약 후보 (드래프트·파기·수정재발행 파기 제외)
+  const validContracts = (allContracts||[]).filter(ct =>
+    !ct.is_draft && !ct.is_voided_by_amend && ct.status !== CONTRACT_STATUS.VOIDED
   );
-
-  // 직원 ID → 현재 계약의 contract_type 매핑
-  const empTypeMap = {};
-  allContracts
-    .filter(ct => !ct.is_draft && activeCompanyIds.has(ct.company_id) &&
-      ct.status !== CONTRACT_STATUS.VOIDED)
-    .sort((a, b) => (b.contract_start || '').localeCompare(a.contract_start || ''))
-    .forEach(ct => {
-      if (!empTypeMap[ct.employee_id]) {
-        empTypeMap[ct.employee_id] = ct.contract_type || ct.employment_category || 'regular';
-      }
-    });
 
   for(let i = months - 1; i >= 0; i--){
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const yr = d.getFullYear();
     const mo = d.getMonth() + 1;
+    const monthEnd = new Date(yr, mo, 0);
+    const monthEndStr = `${yr}-${String(mo).padStart(2,'0')}-${String(monthEnd.getDate()).padStart(2,'0')}`;
     labels.push(`${yr}.${String(mo).padStart(2,'0')}`);
 
-    // 해당 월 급여 입력된 직원들 (이용중 고객사 소속)
-    const monthEmps = allPayrolls
-      .filter(p =>
-        Number(p.pay_year) === yr && Number(p.pay_month) === mo &&
-        activeCompanyIds.has(p.company_id)
-      )
-      .map(p => p.employee_id);
-    const uniqueEmpIds = [...new Set(monthEmps)];
+    // 해당 월말 기준 서비스 유효 고객사
+    const activeCoIds = new Set(
+      (allCompanies||[]).filter(c => _coActiveAtMonthEnd(c, monthEndStr)).map(c => c.id)
+    );
+
+    // 직원별 해당 월말 유효 계약 중 최신 시작일 계약으로 유형 판정
+    const empType = {};       // eid -> { start, type }
+    const monthEmpSet = new Set();
+    validContracts.forEach(ct => {
+      if(!activeCoIds.has(ct.company_id)) return;
+      if(!_ctActiveAtMonthEnd(ct, monthEndStr)) return;
+      if(excludedEmpIds.has(ct.employee_id)) return;
+      const start = ct.contract_start || '';
+      if(!empType[ct.employee_id] || start > empType[ct.employee_id].start){
+        empType[ct.employee_id] = { start, type: ct.contract_type || ct.employment_category || 'regular' };
+      }
+      monthEmpSet.add(ct.employee_id);
+    });
 
     // 전체
-    dataMap.total.push(uniqueEmpIds.length);
+    dataMap.total.push(monthEmpSet.size);
     // 고용형태별 카운트
     const counts = {};
     typeKeys.filter(k => k !== 'total').forEach(k => { counts[k] = 0; });
-    uniqueEmpIds.forEach(eid => {
-      const tp = empTypeMap[eid] || 'regular';
+    monthEmpSet.forEach(eid => {
+      const tp = empType[eid] ? empType[eid].type : 'regular';
       if (counts[tp] !== undefined) counts[tp]++;
     });
     typeKeys.filter(k => k !== 'total').forEach(k => dataMap[k].push(counts[k]));

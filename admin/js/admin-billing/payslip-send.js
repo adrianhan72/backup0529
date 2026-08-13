@@ -13,7 +13,6 @@ let _pssSelectedMethod = 'kakao';   // 단건 모달 선택 방법
 function _pssDoSearch(){
   const fromEl = document.getElementById('pss-filter-date-from');
   const toEl = document.getElementById('pss-filter-date-to');
-  const noticeEl = document.getElementById('pss-date-notice');
   if(!fromEl || !toEl) return;
   const fromVal = fromEl.value, toVal = toEl.value;
   const resetBorder = () => { fromEl.classList.remove('va-input-err'); toEl.classList.remove('va-input-err'); };
@@ -26,14 +25,12 @@ function _pssDoSearch(){
       if(from < maxFrom){
         fromEl.classList.add('va-input-err');
         toEl.classList.add('va-input-err');
-        if(noticeEl) noticeEl.className = 'ct-hint-error';
         toast('조회 기간은 최대 3개월까지 가능합니다.', 'error');
         return;
       }
     }
   }
   resetBorder();
-  if(noticeEl) noticeEl.className = 'ct-hint-muted';
   _pssLogPage = 1;
   renderPssLogs();
 }

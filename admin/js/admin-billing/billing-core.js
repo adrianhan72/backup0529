@@ -40,7 +40,7 @@ async function generateMonthlyBilling(){
       // 해당 월에 급여 데이터가 있는 재직 직원 수 계산
       const activeEmps=allEmployees.filter(e=>
         e.company_id===co.id && 
-        (e.status===EMP_STATUS.ACTIVE||e.status===EMP_STATUS.ACTIVE)
+        (e.status===EMP_STATUS.ACTIVE)
       );
       
       // 해당 월 급여 데이터가 있는 직원만 카운트
@@ -140,7 +140,7 @@ async function generateBillingForCompany(companyId, companyName){
     // 해당 월에 급여 데이터가 있는 재직 직원 수 계산
     const activeEmps=allEmployees.filter(e=>
       e.company_id===companyId && 
-      (e.status===EMP_STATUS.ACTIVE||e.status===EMP_STATUS.ACTIVE)
+      (e.status===EMP_STATUS.ACTIVE)
     );
     
     // 해당 월 급여 데이터가 있는 직원만 카운트
@@ -231,7 +231,7 @@ function updateBillingStats(){
   const activeCompanies = allCompanies.filter(c => c.status===COMPANY_STATUS.ACTIVE).length;
   
   // 등록 직원 수 (재직 중인 직원만)
-  const activeEmployees = allEmployees.filter(e => e.status===EMP_STATUS.ACTIVE || e.status===EMP_STATUS.ACTIVE).length;
+  const activeEmployees = allEmployees.filter(e => e.status===EMP_STATUS.ACTIVE).length;
   
   // [사용료 숨김] #page-billing 요소가 주석처리되어 null일 수 있으므로 optional chaining 사용
   const bdEl = document.getElementById('billing-date');
@@ -337,7 +337,7 @@ function renderBillings(){
         // 직원 수 계산
         const activeEmps = allEmployees.filter(e => 
           e.company_id === co.id && 
-          (e.status===EMP_STATUS.ACTIVE || e.status===EMP_STATUS.ACTIVE)
+          (e.status===EMP_STATUS.ACTIVE)
         );
         
         const payrollEmps = allPayrolls.filter(p => 
@@ -814,7 +814,7 @@ async function bulkCreateBilling(){
       // 직원 수 계산
       const activeEmps = allEmployees.filter(e => 
         e.company_id === item.companyId && 
-        (e.status===EMP_STATUS.ACTIVE || e.status===EMP_STATUS.ACTIVE)
+        (e.status===EMP_STATUS.ACTIVE)
       );
       
       const payrollEmps = allPayrolls.filter(p => 

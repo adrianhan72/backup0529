@@ -1126,7 +1126,7 @@ function _buildDocx(){
 function _collectContractData(){
   const coId = document.getElementById('ct-company')?.value;
   // 계약 체결 시점 기준 고객사 스냅샷 사용 (수정 모드: 계약 시작일 기준)
-  const _ctStartForSnap = document.getElementById('ct-start')?.value || document.getElementById('ct-em-hire')?.value || '';
+  const _ctStartForSnap = document.getElementById('ct-start')?.value || '';
   const _ctTsForSnap = _ctStartForSnap ? new Date(_ctStartForSnap).getTime() : 0;
   const company = (coId && typeof getCompanySnapshotAt === 'function')
     ? (getCompanySnapshotAt(coId, _ctTsForSnap) || allCompanies.find(c=>c.id===coId) || {})
@@ -1207,7 +1207,8 @@ function _collectContractData(){
 
   const monthlySalary = parseFloat(document.getElementById('ct-monthly-computed')?.textContent?.replace(/[^\d]/g,'')||0)||0;
   const weeklyHolText = document.getElementById('ct-weekly-hol-computed')?.textContent||'0원';
-  const hourlyText    = document.getElementById('ct-hourly-computed')?.textContent||'0원/시간';
+  // 통상시급: ct-hourly-input에서 수집 (구 ct-hourly-computed는 UI 재구성으로 제거됨)
+  const hourlyText    = String((typeof getAmountVal === 'function') ? getAmountVal('ct-hourly-input') : 0);
 
   // 수습 조건
   const probationMonths = isProbation ? parseInt(document.getElementById('ct-probation-months')?.value)||3 : 0;
@@ -1222,8 +1223,8 @@ function _collectContractData(){
     representative:    getCompanyRepName(company),
     payDay:            company.pay_day||'',
     empName, phone, address, idNumber, jobDescription, department, position,
-    contractStart:     document.getElementById('ct-start')?.value || document.getElementById('ct-em-hire')?.value || '',
-    contractEnd:       document.getElementById('ct-end')?.value || document.getElementById('ct-em-expire')?.value || '',
+    contractStart:     document.getElementById('ct-start')?.value || '',
+    contractEnd:       document.getElementById('ct-end')?.value || '',
     contractType:      ctType,
     hoursPerDay, daysPerWeek, weekHours,
     workDays, breakInfo, breakSchedule, startTime, endTime,

@@ -1587,8 +1587,6 @@ function goDraftPayroll(draftId){
     if(moEl) moEl.value = p.pay_month;
 
     piEditPayrollId = null;
-    const editBanner = document.getElementById('pi-edit-banner');
-    if(editBanner) editBanner.style.display = 'none';
 
     piDraftId = draftId;
     

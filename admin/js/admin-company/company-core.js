@@ -648,8 +648,6 @@ function _cmContactSyncFromRep(idx, checked) {
   document.getElementById(`cm-contact-mobile-phone-${idx}`).value = rep.phone || '';
 }
 
-function _esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
-
 function _onCmCodeInput(){
   const el = document.getElementById('cm-code-display');
   // 숫자와 대문자만 허용 (소문자 입력 시 자동 대문자 변환, 그 외 문자 제거)

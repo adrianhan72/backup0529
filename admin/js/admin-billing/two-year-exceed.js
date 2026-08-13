@@ -93,76 +93,7 @@ function _calc2YrExceedList(){
 
 /** 2년 초과 통계 업데이트 (대시보드 배너) */
 function render2YrStats(){
-  const list     = _calc2YrExceedList();
-  const exceeded = list.filter(x => x.status === 'exceeded').length;
-  // RC 탭 배지 제거됨 (전환 대상 탭 삭제) — 안전하게 null 체크
-  const rcBadge = document.getElementById('rc-tab-target-badge');
-  if(rcBadge){
-    rcBadge.textContent   = exceeded;
-    rcBadge.style.display = exceeded > 0 ? 'inline-flex' : 'none';
-  }
-}
-
-/** 정규직 전환 대상 테이블 렌더링 */
-function render2YrTargetList(){
-  const tbody = document.getElementById('2yr-tbody');
-  if(!tbody) return;
-
-  const filterCo = document.getElementById('2yr-filter-company')?.value || '';
-  const searchQ  = (document.getElementById('2yr-search')?.value || '').trim().toLowerCase();
-
-  // 고객사 필터 옵션 동적 채우기 (1회)
-  const coSel = document.getElementById('2yr-filter-company');
-  if(coSel && coSel.options.length <= 1){
-    const seen = new Set();
-    _calc2YrExceedList().forEach(x => {
-      if(!seen.has(x.companyId)){
-        seen.add(x.companyId);
-        const opt = document.createElement('option');
-        opt.value = x.companyId; opt.textContent = x.company;
-        coSel.appendChild(opt);
-      }
-    });
-  }
-
-  let list = _calc2YrExceedList().filter(x => {
-    if(filterCo && x.companyId !== filterCo) return false;
-    if(searchQ  && !x.empName.toLowerCase().includes(searchQ)) return false;
-    return true;
-  });
-
-  if(!list.length){
-    tbody.innerHTML = `<tr><td colspan="7" class="cen-empty"><i class="fas fa-inbox"></i> 정규직 전환 의무 대상자가 없습니다.</td></tr>`;
-    return;
-  }
-
-  const fmtDays = (d) => {
-    const y = Math.floor(d / 365);
-    const m = Math.floor((d % 365) / 30);
-    return (y > 0 ? `${y}년 ` : '') + (m > 0 ? `${m}개월 ` : '') + `(${d}일)`;
-  };
-
-  tbody.innerHTML = list.map(x => {
-    const statusBadge = x.status === 'exceeded'
-      ? `<span class="badge-2yr-over"><i class="fas fa-exclamation-circle"></i> 2년 초과</span>`
-      : `<span class="badge-2yr-warn"><i class="fas fa-clock"></i> 주의 (1.5년+)</span>`;
-    const catText = contractTypeLabel(x.activeContract?.contract_type) || CONTRACT_TYPE_LABEL[CONTRACT_TYPE.FIXED];
-    return `<tr>
-      <td style="font-weight:700;color:#111827;">${x.empName}</td>
-      <td style="font-size:12px;color:#374151;">${x.company}</td>
-      <td><span class="badge ${empCatBadge(x.activeContract?.contract_type)}">${catText}</span></td>
-      <td style="font-size:12px;color:#6b7280;">${x.firstStart || '-'}</td>
-      <td style="font-size:12px;font-weight:600;color:${x.status==='exceeded'?'#dc2626':'#d97706'};">${fmtDays(x.totalDays)}</td>
-      <td>${statusBadge}</td>
-      <td style="text-align:center;white-space:nowrap;">
-        ${x.status === 'exceeded' && window._regularConversionNoticeEnabled ? `
-        <button onclick="_2yrSendNotice('${x.empId}')"
-          class="btn btn-danger btn-sm" style="padding:5px 12px;font-size:11.5px;">
-          <i class="fas fa-paper-plane"></i> 전환 안내 발송
-        </button>` : x.status === 'exceeded' ? `<span style="font-size:11.5px;color:#9ca3af;">발송 기능 OFF</span>` : `<span style="font-size:11.5px;color:#9ca3af;">전환 의무 미도달</span>`}
-      </td>
-    </tr>`;
-  }).join('');
+  _calc2YrExceedList(); // 2년 초과 목록 계산 (대시보드 배너·전환 고지 공용)
 }
 
 /**

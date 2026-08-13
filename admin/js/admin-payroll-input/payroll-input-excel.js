@@ -100,7 +100,7 @@ async function _probAutoCreateAndSave(){
       meal_pay_type:      _getPIPayTypeVal('meal'),
       childcare_allowance:gv('pi-childcare') || 0,
       research_allowance: gv('pi-research')  || 0,
-      annual_leave_used:  parseFloat(document.getElementById('pi-annual-used')?.value||0)||0,
+      annual_leave_used:  (typeof _getPIAnnualUsedFromLedger === 'function') ? _getPIAnnualUsedFromLedger() : 0,
       annual_leave_pay:   gv('pi-annual-pay'),
       bonus_pay:          gv('pi-bonus'),
       performance_pay:    gv('pi-performance'),
@@ -115,8 +115,8 @@ async function _probAutoCreateAndSave(){
       overseas_allowance:  gv('pi-overseas') || 0,
       overseas_pay_type:   _getPIPayTypeVal('overseas'),
       contract_etc_allowance: 0,
-      etc_allowance:      gv('pi-etc-allowance'),
-      etc_allowance_memo: document.getElementById('pi-etc-allowance-memo')?.value || '',
+      etc_allowance:      0,
+      etc_allowance_memo: '',
       gross_pay:          c.gross     || 0,
       standard_monthly_pay: c.std     || 0,
       income_tax:         c.incomeTax || 0,
@@ -127,9 +127,8 @@ async function _probAutoCreateAndSave(){
       employment_insurance: c.empIns  || 0,
       year_end_tax_adjust:  gv('pi-yearend'),
       year_end_tax_adjust_memo: document.getElementById('pi-yearend-memo').value || '',
-      health_insurance_adjust: gv('pi-health-adj'),
-      health_insurance_adjust_memo: document.getElementById('pi-health-adj-memo').value || '',
-      health_insurance_adjust_retro: gv('pi-health-adj-retro'),
+      health_insurance_adjust: gv('pi-health-adj-retro'),
+      health_insurance_adjust_memo: '',
       health_insurance_adjust_yearend: gv('pi-health-adj-yearend'),
       health_insurance_adjust_yearend_memo: document.getElementById('pi-health-adj-yearend-memo')?.value || '',
       ltcare_adjust_yearend: gv('pi-ltcare-adj-yearend'),
@@ -388,7 +387,6 @@ function _fillPayrollFields(p, cfgCo){
   document.getElementById('pi-ot-hours').value=p.overtime_hours||0;
   document.getElementById('pi-night-hours').value=p.night_hours||0;
   document.getElementById('pi-hol-hours').value=p.holiday_hours||0;
-  const _alUsedEl = document.getElementById('pi-annual-used'); if(_alUsedEl) _alUsedEl.value = p.annual_leave_used || 0;
   setAmountVal('pi-annual-pay',    p.annual_leave_pay);
   // 정기 상여금: 계약서 고정값이 있으면 계약서 값 우선 (DB 저장값은 fallback)
   { const _contractBonus = parseFloat(piContract?.regular_bonus||0)||0;
@@ -397,9 +395,6 @@ function _fillPayrollFields(p, cfgCo){
   setAmountVal('pi-performance',   p.performance_pay||0);
   setAmountVal('pi-actual-expense',p.actual_expense_pay||0);
   setAmountVal('pi-communication',  p.communication_pay||0);
-  setAmountVal('pi-etc-allowance',  p.etc_allowance||0);
-  const _etcMemoEdit = document.getElementById('pi-etc-allowance-memo');
-  if(_etcMemoEdit) _etcMemoEdit.value = p.etc_allowance_memo || '';
   // 근로 실적 (수정 모드: 기존 저장값 복원 → 자동입력 배지 숨김)
   document.getElementById('pi-work-days').value=p.work_days||0;
   // 기본급 hidden input 및 주휴수당 자동계산 (pi-base, pi-weekly-hol 갱신)
@@ -413,10 +408,7 @@ function _fillPayrollFields(p, cfgCo){
   setAmountVal('pi-yearend',     p.year_end_tax_adjust);
   const _yeMemoEl = document.getElementById('pi-yearend-memo');
   if(_yeMemoEl) _yeMemoEl.value = p.year_end_tax_adjust_memo || '';
-  setAmountVal('pi-health-adj',  p.health_insurance_adjust);
-  const _haMemoEl = document.getElementById('pi-health-adj-memo');
-  if(_haMemoEl) _haMemoEl.value = p.health_insurance_adjust_memo || '';
-  setAmountVal('pi-health-adj-retro', p.health_insurance_adjust_retro);
+  setAmountVal('pi-health-adj-retro',  p.health_insurance_adjust);
   setAmountVal('pi-health-adj-yearend', p.health_insurance_adjust_yearend);
   const _hayMemoEl = document.getElementById('pi-health-adj-yearend-memo');
   if(_hayMemoEl) _hayMemoEl.value = p.health_insurance_adjust_yearend_memo || '';
@@ -605,7 +597,6 @@ function handleExcelUpload(event){
   if(!file) return;
   // 파일 input 초기화 (같은 파일 재업로드 허용)
   event.target.value='';
-  document.getElementById('upload-file-name').textContent='📎 '+file.name;
   const reader=new FileReader();
   reader.onload=e=>{
     try{
@@ -975,7 +966,7 @@ function validateAndParseExcel(wb, fileName){
   // ========================================
   //  8. 직원 명단 검증 (테이블형)
   // ========================================
-  const coEmps     = allEmployees.filter(e => e.company_id===co.id && (e.status===EMP_STATUS.ACTIVE||e.status===EMP_STATUS.ACTIVE));
+  const coEmps     = allEmployees.filter(e => e.company_id===co.id && (e.status===EMP_STATUS.ACTIVE));
   const coEmpNames = coEmps.map(e => e.name);
   const xlNames    = dataRows.map(r => String(r[CI.NAME]||'').trim());
   const empMatchMap = {};
@@ -2226,7 +2217,7 @@ function showUploadReport(canSave, errors, warnings, calcErrors, fixedErrors, va
   if(_uploadParsed && _uploadParsed.allRows){
     const coEmps = allEmployees.filter(e =>
       _uploadParsed.co && e.company_id===_uploadParsed.co.id &&
-      (e.status===EMP_STATUS.ACTIVE||e.status===EMP_STATUS.ACTIVE)
+      (e.status===EMP_STATUS.ACTIVE)
     );
     const errRows = new Set([...calcErrors.map(e=>e.row), ...fixedErrors.map(e=>e.row)]);
     empList.innerHTML = `DB 재직 인원 <b>${coEmps.length}명</b> / 엑셀 데이터 <b>${_uploadParsed.allRows}행</b>`
@@ -2657,7 +2648,6 @@ async function confirmBulkUpload(){
   _leaveSyncCurrent = [];
   _leaveSyncPrev = [];
   _syncPrevConfirmed = false;
-  document.getElementById('upload-file-name').textContent='';
 
   let msg = overwritten>0
     ?`✅ ${saved}명 급여 저장 완료 (덮어쓰기 ${overwritten}건${skipped?` / 실패 ${skipped}건`:''})`
@@ -2785,7 +2775,7 @@ function onXlCompanyChange(){
   const preview=document.getElementById('xl-preview');
   const list=document.getElementById('xl-preview-list');
   if(!coId){preview.style.display='none';return;}
-  const emps=allEmployees.filter(e=>e.company_id===coId&&(e.status===EMP_STATUS.ACTIVE||e.status===EMP_STATUS.ACTIVE));
+  const emps=allEmployees.filter(e=>e.company_id===coId&&(e.status===EMP_STATUS.ACTIVE));
   if(!emps.length){list.innerHTML='<span style="color:#aaa;">해당 고객사의 재직 직원이 없습니다.</span>';preview.style.display='block';return;}
   list.innerHTML=emps.map((e,i)=>`<span style="display:inline-flex;align-items:center;gap:5px;margin-right:12px;">
     <i class="fas fa-user-circle" style="color:#10b981;"></i>${e.name}
@@ -2808,7 +2798,7 @@ async function downloadPayrollExcel(){
   if(!yr||!mo) return toast('년도와 월을 선택하세요.','error');
 
   const co=allCompanies.find(c=>c.id===coId);
-  const emps=allEmployees.filter(e=>e.company_id===coId&&(e.status===EMP_STATUS.ACTIVE||e.status===EMP_STATUS.ACTIVE));
+  const emps=allEmployees.filter(e=>e.company_id===coId&&(e.status===EMP_STATUS.ACTIVE));
   if(!emps.length) return toast('재직 직원이 없습니다.','error');
 
   toast('엑셀 파일 생성 중...','success');

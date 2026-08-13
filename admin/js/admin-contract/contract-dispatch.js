@@ -198,10 +198,6 @@ async function renderContractDispatchPage(){
     return true;
   }).sort((a,b)=>((b.dispatched_at||b.created_at||'')).localeCompare((a.dispatched_at||a.created_at||'')));
 
-  // 레코드 수
-  const countEl = document.getElementById('cdp-record-count');
-  if(countEl) countEl.textContent = `총 ${filtered.length.toLocaleString('ko-KR')}건`;
-
   // 페이지네이션
   const totalPages = Math.max(1, Math.ceil(filtered.length / _cdpPageSize));
   if(_cdpPage > totalPages) _cdpPage = totalPages;
@@ -384,10 +380,6 @@ function renderCdpUnsentMonthTabs(){
 
   const ymList = [...ymMap.values()]
     .sort((a, b) => b.year !== a.year ? b.year - a.year : b.month - a.month);
-
-  // 총 미발송 건수 배지 업데이트
-  const totalBadge = document.getElementById('cdp-unsent-total-badge');
-  if(totalBadge) totalBadge.textContent = `(총 ${allUnsent.length}건)`;
 
   if(!ymList.length){
     wrap.innerHTML = '';
@@ -652,29 +644,6 @@ async function cdpUnsentManual(contractId){
     toast(`✅ ${emp.name} 수동 교부 완료 처리됐습니다.`, 'success');
     await _cdpRefreshUnsent();
   } catch(e){ toast('처리 중 오류가 발생했습니다.', 'error'); }
-}
-
-/** 일괄 알림톡 발송 */
-async function cdpSendAllKakao(){
-  if(!_cdpUnsentYM) return;
-  const list = _cdpGetUnsentContracts(_cdpUnsentYM.year, _cdpUnsentYM.month)
-    .filter(c => { const emp = allEmployees.find(e => e.id === c.employee_id); return emp && emp.phone; });
-  if(!list.length){ toast('알림톡 발송 가능한 대상이 없습니다. (전화번호 미등록)', 'warning'); return; }
-  if(!confirm(`[일괄 알림톡 발송]\n\n${_cdpUnsentYM.year}년 ${_cdpUnsentYM.month}월 입사 미발송 계약서\n총 ${list.length}건을 알림톡으로 일괄 발송하시겠습니까?`)) return;
-  const btn = document.getElementById('cdp-unsent-send-all-btn');
-  if(btn){ btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 발송 중...'; }
-  let ok = 0, fail = 0;
-  for(const c of list){
-    const emp = allEmployees.find(e => e.id === c.employee_id) || {};
-    try{
-      await _saveDispatchRecord({ method: DISPATCH_METHOD.KAKAO, status: DISPATCH_STATUS.COMPLETED, recipient: emp.phone || '',
-        note:`일괄 알림톡 — ${emp.name}`, contractId: c.id });
-      ok++;
-    } catch(e){ fail++; }
-  }
-  toast(`일괄 알림톡 완료 — 성공 ${ok}건${fail ? ` / 실패 ${fail}건` : ''}`, ok > 0 ? 'success' : 'error');
-  if(btn){ btn.disabled = false; btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg> 일괄 알림톡 발송'; }
-  await _cdpRefreshUnsent();
 }
 
 /** 미발송 카드 새로고침 (이력 캐시 갱신 후 재렌더) */

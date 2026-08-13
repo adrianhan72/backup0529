@@ -4,7 +4,6 @@
 // ==============================================================
 let _sevCompanyId = null;
 let _sevCompanyName = '';
-let _sevCurrentRecord = null; // 현재 팝업에 열린 퇴직금 정산 데이터
 
 // ── 고객사 목록 렌더 ──
 function renderSevCompanyList(){
@@ -72,14 +71,13 @@ function clearSevCompanySelect(){
 
 // ── 탭 전환 ──
 function switchSevTab(tab){
-  const tabs = ['status', 'history', 'interim'];
+  const tabs = ['status', 'history'];
   tabs.forEach(t => {
     const el = document.getElementById('sev-tab-' + t);
     const btn = document.getElementById('sev-tab-' + t + '-btn');
     if(el) el.style.display = (t === tab) ? '' : 'none';
     if(btn) btn.classList.toggle('active', t === tab);
   });
-  if(tab === 'interim') renderSevInterimTab();
 }
 
 // ── 재직 기간 계산 (년·개월·일 텍스트) ──
@@ -203,7 +201,7 @@ function sevStatusBadge(emp, contract){
   if(!contract) return '<span class="sev-nodata-sm">계약 없음</span>';
   const s = contract.status || '';
   const today = new Date().toISOString().slice(0,10);
-  if(contract.status === CONTRACT_STATUS.TERMINATED || emp?.status===EMP_STATUS.RESIGNED || emp?.status===EMP_STATUS.RESIGNED){
+  if(contract.status === CONTRACT_STATUS.TERMINATED || emp?.status===EMP_STATUS.RESIGNED){
     const resignDate = emp?.resign_date || contract.terminate_date || contract.contract_end || '';
     return `<span class="badge badge-red">해지·퇴직${resignDate?' ('+resignDate+')':''}</span>`;
   }
@@ -252,7 +250,7 @@ function renderSevStatusTab(){
   const _SEV_EXCLUDED_TYPES = new Set([CONTRACT_TYPE.DAILY, CONTRACT_TYPE.EXECUTIVE, CONTRACT_TYPE.REPRESENTATIVE, CONTRACT_TYPE.RELATED_PARTY]);
   const emps = allEmployees.filter(e =>
     e.company_id === _sevCompanyId &&
-    (e.status===EMP_STATUS.ACTIVE || e.status===EMP_STATUS.ACTIVE || !e.status || e.status === '') &&
+    (e.status===EMP_STATUS.ACTIVE || !e.status || e.status === '') &&
     !_SEV_EXCLUDED_TYPES.has(e.employment_category)
   );
 
@@ -338,7 +336,7 @@ function renderSevStatusTab(){
         const isLast = idx === empContracts.length - 1;
         const numBadge = `<span class="sev-contract-num">${idx+1}</span>`;
         const cStatus = c.status===COMPANY_STATUS.INACTIVE ? '<span class="sev-contract-status sev-contract-status-terminated">해지</span>'
-          : (c.status===CONTRACT_STATUS.EXPIRED||c.status===CONTRACT_STATUS.EXPIRED) ? '<span class="sev-contract-status sev-contract-status-expired">만료</span>'
+          : (c.status===CONTRACT_STATUS.EXPIRED) ? '<span class="sev-contract-status sev-contract-status-expired">만료</span>'
           : CONTRACT_ACTIVE_STATUSES.includes(c.status) ? '<span class="sev-contract-status sev-contract-status-active">진행중</span>'
           : '';
         contractRows += `<tr class="sev-contract-row ${isLast?'sev-contract-row-last':'sev-contract-row-normal'}"
@@ -379,7 +377,7 @@ function renderSevStatusTab(){
             <span class="sev-contract-sep">~</span>
             <span class="sev-contract-end">${empContracts[0].contract_end ? fmtDate(empContracts[0].contract_end) : '현재'}</span>
             ${empContracts[0].status===COMPANY_STATUS.INACTIVE?'<span class="sev-contract-status sev-contract-status-terminated">해지</span>'
-              :(empContracts[0].status===CONTRACT_STATUS.EXPIRED||empContracts[0].status===CONTRACT_STATUS.EXPIRED)?'<span class="sev-contract-status sev-contract-status-expired">만료</span>'
+              :(empContracts[0].status===CONTRACT_STATUS.EXPIRED)?'<span class="sev-contract-status sev-contract-status-expired">만료</span>'
               :CONTRACT_ACTIVE_STATUSES.includes(empContracts[0].status)?'<span class="sev-contract-status sev-contract-status-active">진행중</span>':''}
             <i class="fas fa-search sev-contract-search"></i>
           </td>
@@ -407,7 +405,7 @@ function renderSevStatusTab(){
         const rowCls = (idx+1) % 2 === 0 ? 'sev-contract-row sev-contract-row-even' : 'sev-contract-row';
         const numBadge = `<span class="sev-contract-num">${idx+2}</span>`;
         const cStatus = c.status===COMPANY_STATUS.INACTIVE?'<span class="sev-contract-status sev-contract-status-terminated">해지</span>'
-          :(c.status===CONTRACT_STATUS.EXPIRED||c.status===CONTRACT_STATUS.EXPIRED)?'<span class="sev-contract-status sev-contract-status-expired">만료</span>'
+          :(c.status===CONTRACT_STATUS.EXPIRED)?'<span class="sev-contract-status sev-contract-status-expired">만료</span>'
           :CONTRACT_ACTIVE_STATUSES.includes(c.status)?'<span class="sev-contract-status sev-contract-status-active">진행중</span>':'';
         const realIdx = idx + 1;
         return `<tr class="${rowCls} ${isLast?'sev-contract-row-last':'sev-contract-row-normal'}"
@@ -525,11 +523,9 @@ function renderSevHistoryTab(){
 }
 
 // ──────────────────────────────────────────────────────────────────
-// 중간정산 (Interim Severance Settlement)
-// ──────────────────────────────────────────────────────────────────
+// 중간정산 데이터 로드 (중간정산 탭 UI는 제거됨 — 추계 차감용 데이터 로드만 유지)
+// ※ window._allInterimSettlements로 전역 공유 (퇴직금 추계·급여 명세서 차감 계산에서 사용)
 let _allInterimSettlements = [];
-// ※ payroll-input-main.js의 _autoFillSeveranceInterim()에서 window._allInterimSettlements로 공유
-let _sevInterimEditId = null;
 
 async function loadSevInterimSettlements(){
   if(!_sevCompanyId) return;
@@ -540,125 +536,48 @@ async function loadSevInterimSettlements(){
   } catch(e){ _allInterimSettlements = []; }
 }
 
-function renderSevInterimTab(){
-  const tbody = document.getElementById('sev-interim-tbody');
-  if(!tbody) return;
-  if(!_sevCompanyId){ tbody.innerHTML = '<tr><td colspan="8" class="cen-empty"><i class="fas fa-inbox"></i> 고객사를 선택하면 중간정산 내역이 표시됩니다.</td></tr>'; return; }
+// ═════════════════════════════════════════════════
+// 계약 조건 조회 모달 (레거시 퇴직급여 페이지)
+// ═════════════════════════════════════════════════
 
-  loadSevInterimSettlements().then(() => {
-    const items = (_allInterimSettlements || []).sort((a,b) => (b.settlement_date||'').localeCompare(a.settlement_date||''));
-    if(!items.length){
-      tbody.innerHTML = '<tr><td colspan="8" class="cen-empty"><i class="fas fa-inbox"></i> 중간정산 내역이 없습니다.</td></tr>';
-      return;
-    }
-    const won = v => Math.round(v||0).toLocaleString('ko-KR') + '원';
-    tbody.innerHTML = items.map(s => {
-      const emp = allEmployees.find(e => e.id === s.employee_id);
-      const empName = emp ? emp.name : '(알 수 없음)';
-      const reasonLabel = { '주택구입':'🏠 주택구입', '의료비':'🏥 의료비', '파산':'📉 파산·회생', '기타':'📋 기타' }[s.reason] || s.reason || '-';
-      return `<tr>
-        <td>${s.settlement_date||'-'}</td>
-        <td class="sev-interim-emp-name">${empName}</td>
-        <td class="sev-interim-right">${(s.tenure_days||0).toLocaleString('ko-KR')}일</td>
-        <td class="sev-interim-right">${won(s.daily_average_wage)}</td>
-        <td class="sev-interim-amount">${won(s.settlement_amount)}</td>
-        <td>${reasonLabel}</td>
-        <td class="sev-interim-note-td">${s.note||'-'}</td>
-        <td><button onclick="deleteSevInterim('${s.id}')" class="btn btn-sm btn-secondary sev-interim-btn"><i class="fas fa-trash"></i></button></td>
-      </tr>`;
-    }).join('');
-  });
-}
+/** 계약 행 클릭 → 계약 조건 상세 모달 열기 */
+function openSevContractModal(contractId, empName, idx){
+  const c = (allContracts||[]).find(x => x.id === contractId);
+  const body  = document.getElementById('sev-contract-modal-body');
+  const title = document.getElementById('sev-contract-modal-title');
+  const modal = document.getElementById('sev-contract-modal');
+  if(!body) return;
 
-function openSevInterimModal(){
-  _sevInterimEditId = null;
-  document.getElementById('sev-interim-modal-title').textContent = '퇴직금 중간정산 기록';
-  document.getElementById('sev-interim-date').value = new Date().toISOString().slice(0,10);
-  document.getElementById('sev-interim-reason').value = '';
-  document.getElementById('sev-interim-tenure-days').value = '';
-  document.getElementById('sev-interim-daily-wage').value = '';
-  document.getElementById('sev-interim-amount').value = '';
-  document.getElementById('sev-interim-note').value = '';
-
-  // 직원 드롭다운 채우기 (일용직·등기임원 제외)
-  const empSel = document.getElementById('sev-interim-emp');
-  empSel.innerHTML = '<option value="">직원을 선택하세요</option>';
-  const _EXCL = new Set([CONTRACT_TYPE.DAILY, CONTRACT_TYPE.EXECUTIVE, CONTRACT_TYPE.REPRESENTATIVE, CONTRACT_TYPE.RELATED_PARTY]);
-  (allEmployees||[]).filter(e => e.company_id === _sevCompanyId && !_EXCL.has(e.employment_category))
-    .sort((a,b) => (a.name||'').localeCompare(b.name||'','ko'))
-    .forEach(e => {
-      empSel.innerHTML += `<option value="${e.id}">${e.name||''}</option>`;
-    });
-
-  document.getElementById('sev-interim-modal').style.display = 'flex';
-}
-
-function closeSevInterimModal(){
-  document.getElementById('sev-interim-modal').style.display = 'none';
-}
-
-function onSevInterimEmpChange(){
-  const empId = document.getElementById('sev-interim-emp').value;
-  if(!empId) return;
-  const emp = allEmployees.find(e => e.id === empId);
-  if(!emp) return;
-
-  // 근속일수: hire_date → settlement_date (또는 오늘)
-  const settleDate = document.getElementById('sev-interim-date').value || new Date().toISOString().slice(0,10);
-  const tenure = calcTenure(emp.hire_date || '', settleDate);
-  document.getElementById('sev-interim-tenure-days').value = tenure.totalDays || 0;
-
-  // 1일 평균임금 추정: 직전 3개월 급여 기준
-  const pays3 = getPrev3MonthsPayrolls(empId, settleDate);
-  if(pays3.length > 0){
-    const avg3 = calcAverageWage3(pays3);
-    const s3 = new Date(settleDate);
-    const start3 = new Date(s3.getFullYear(), s3.getMonth()-3, s3.getDate());
-    const days3 = Math.ceil((s3 - start3) / 86400000);
-    const dailyAvg = days3 > 0 ? Math.round(avg3 / days3) : 0;
-    document.getElementById('sev-interim-daily-wage').value = dailyAvg || '';
+  if(!c){
+    body.innerHTML = '<div style="padding:20px;text-align:center;color:#9ca3af;font-size:13px;"><i class="fas fa-inbox"></i> 계약 정보를 찾을 수 없습니다.</div>';
+  } else {
+    const emp = (allEmployees||[]).find(e => e.id === c.employee_id) || {};
+    const fmtD = d => d ? d.replace(/-/g,'.') : '-';
+    const rows = [
+      ['근로자',       emp.name || '-'],
+      ['고용형태',     contractTypeLabel(c.contract_type || emp.employment_category) || '-'],
+      ['계약 시작일',  fmtD(c.contract_start)],
+      ['계약 종료일',  c.contract_end ? fmtD(c.contract_end) : '기한 없음 (정규직)'],
+      ['계약 상태',    contractStatusLabel(c.status) || '-'],
+      ['근무시간',     `${parseFloat(c.work_hours_per_day)||8}시간/일 × ${parseFloat(c.work_days_per_week)||5}일`],
+      ['통상시급',     Math.round(parseFloat(c.hourly_wage)||0).toLocaleString('ko-KR') + '원'],
+      ['기본급 (월)',   Math.round(parseFloat(c.base_salary)||0).toLocaleString('ko-KR') + '원'],
+      ['월 약정임금',  Math.round(parseFloat(c.monthly_salary_agreed)||0).toLocaleString('ko-KR') + '원'],
+      ['연봉',         Math.round(parseFloat(c.annual_salary)||0).toLocaleString('ko-KR') + '원']
+    ];
+    body.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:13px;">`
+      + rows.map(([k,v]) => `<tr style="border-bottom:1px solid #f1f5f9;">
+          <td style="padding:10px 12px;width:140px;color:#64748b;font-weight:600;background:#f8fafc;white-space:nowrap;">${k}</td>
+          <td style="padding:10px 12px;color:#1e293b;">${v}</td>
+        </tr>`).join('')
+      + `</table>`;
   }
+  if(title) title.textContent = `${empName || '근로자'} — 계약 조건 상세`;
+  if(modal) modal.style.display = 'flex';
 }
 
-async function saveSevInterim(){
-  const empId = document.getElementById('sev-interim-emp').value;
-  const date = document.getElementById('sev-interim-date').value;
-  const reason = document.getElementById('sev-interim-reason').value;
-  const amountRaw = document.getElementById('sev-interim-amount').value.replace(/[^0-9]/g,'');
-  const amount = parseInt(amountRaw) || 0;
-  if(!empId || !date || !reason || !amount){ toast('필수 항목을 모두 입력하세요.', 'error'); return; }
-
-  const body = {
-    employee_id: empId,
-    company_id: _sevCompanyId,
-    settlement_date: date,
-    tenure_days: parseInt(document.getElementById('sev-interim-tenure-days').value) || 0,
-    daily_average_wage: parseInt((document.getElementById('sev-interim-daily-wage').value||'').replace(/[^0-9]/g,'')) || 0,
-    settlement_amount: amount,
-    reason: reason,
-    note: document.getElementById('sev-interim-note').value,
-    created_at: new Date().toISOString()
-  };
-
-  try {
-    const method = _sevInterimEditId ? 'PATCH' : 'POST';
-    const url = _sevInterimEditId
-      ? `../tables/severance_interim_settlements/${_sevInterimEditId}`
-      : '../tables/severance_interim_settlements';
-    await fetch(url, { method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
-    closeSevInterimModal();
-    renderSevInterimTab();
-    renderSevStatusTab(); // 추계 탭 갱신 (중간정산 차감 반영)
-    toast('중간정산 내역이 저장되었습니다.', 'success');
-  } catch(e){ toast('저장 중 오류가 발생했습니다.', 'error'); }
-}
-
-async function deleteSevInterim(id){
-  if(!confirm('중간정산 내역을 삭제하시겠습니까?')) return;
-  try {
-    await fetch(`../tables/severance_interim_settlements/${id}`, { method: 'DELETE' });
-    renderSevInterimTab();
-    renderSevStatusTab();
-    toast('삭제되었습니다.', 'info');
-  } catch(e){ toast('삭제 중 오류가 발생했습니다.', 'error'); }
+/** 계약 조건 조회 모달 닫기 */
+function closeSevContractModal(){
+  const modal = document.getElementById('sev-contract-modal');
+  if(modal) modal.style.display = 'none';
 }
