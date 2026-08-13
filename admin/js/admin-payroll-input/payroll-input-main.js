@@ -1620,6 +1620,16 @@ function loadPIContract(contractId){
         _hireDateLine = `<b>입사일:</b> ${_fmtDate(_hireDate)}<br>`;
       }
 
+      // 해지일 행 (해지·해지예정 계약): 입사일 다음행에 붉은색으로 표시
+      let _terminateDateLine = '';
+      if(piContract.status === CONTRACT_STATUS.TERMINATED || piContract.status === CONTRACT_STATUS.TERMINATE_PENDING){
+        const _td = piContract.terminate_date || piContract.contract_end || '';
+        if(_td){
+          const _tdLabel = piContract.status === CONTRACT_STATUS.TERMINATE_PENDING ? '해지예정일' : '해지일';
+          _terminateDateLine = `<b>${_tdLabel}:</b> <span style="color:#dc2626;font-weight:700;">${_fmtDate(_td)}</span><br>`;
+        }
+      }
+
       // 공통 하단 행
       // 휴게시간: schedule_json에서 추출, 없으면 break_time fallback
       let _breakDisplay = '-';
@@ -1652,6 +1662,7 @@ function loadPIContract(contractId){
         _contractPeriodLine +
         _probPeriodLine +
         _hireDateLine +
+        _terminateDateLine +
         _salaryLine +
         `<b>통상시급:</b> ${won(piContract.hourly_wage)}/h<br>` +
         _bottomLine;
@@ -2211,6 +2222,32 @@ function _applyPIPayDate(forceOverwrite){
     return;
   }
 
+  // ── 해지계약(TERMINATED): 근로기준법 제36조 — 해지(퇴직)일로부터 14일 이내 지급 의무 ──
+  //   지급일은 해지일+14일(법정 기한)로 강제. 기존 값이 법정 기한 내면 유지.
+  const _isTerminatedPI = piContract.status === CONTRACT_STATUS.TERMINATED;
+  const _termDatePI     = _isTerminatedPI ? (piContract.terminate_date || piContract.contract_end || '') : '';
+  if(_isTerminatedPI && _termDatePI){
+    pdEl.readOnly = true;
+    pdEl.classList.add('pi-input-locked');
+    const _tdD = new Date(_termDatePI + 'T00:00:00');
+    const _dlD = new Date(_tdD);
+    _dlD.setDate(_dlD.getDate() + 14);
+    const _dlStr = `${_dlD.getFullYear()}-${String(_dlD.getMonth()+1).padStart(2,'0')}-${String(_dlD.getDate()).padStart(2,'0')}`;
+    const _curVal = pdEl.value || '';
+    if(!_curVal || forceOverwrite || _curVal > _dlStr){ // 빈 값·덮어쓰기·기한 초과 → 강제 보정
+      pdEl.value = _dlStr;
+    }
+    if(badgeEl){
+      badgeEl.textContent    = '근로기준법 제36조 · 해지일+14일 이내 지급';
+      badgeEl.style.display  = '';
+      badgeEl.style.color    = '#b91c1c';
+      badgeEl.style.background = '#fee2e2';
+      badgeEl.style.border   = '1px solid #fca5a5';
+      badgeEl.title          = `해지일 ${_termDatePI} 기준 법정 지급기한 ${_dlStr}`;
+    }
+    return;
+  }
+
   // ── 근로계약 존재: 지급일은 근로계약이 정한 날짜 → readonly 표시 ──
   pdEl.readOnly = true;
   pdEl.classList.add('pi-input-locked');
@@ -2220,7 +2257,10 @@ function _applyPIPayDate(forceOverwrite){
 
   if(!payDayNum){
     // 지급일 누락 계약(해지 등 — 홀드 이슈): 별도 안내 없이 빈 값 readonly 유지
-    if(badgeEl) badgeEl.style.display = 'none';
+    if(badgeEl){
+      badgeEl.style.display = 'none';
+      badgeEl.style.color=''; badgeEl.style.background=''; badgeEl.style.border=''; badgeEl.title='';
+    }
     return;
   }
 
@@ -2245,6 +2285,7 @@ function _applyPIPayDate(forceOverwrite){
     badgeEl.textContent   = `근로계약서 설정: 매월${day}일`;
     badgeEl.className = 'pi-paydate-badge-contract';
     badgeEl.style.display = '';
+    badgeEl.style.color=''; badgeEl.style.background=''; badgeEl.style.border=''; badgeEl.title='';
   }
 }
 
