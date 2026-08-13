@@ -2326,6 +2326,8 @@ function continueDraftContract(id){
   window._resumeDraftId = id;
   
   setTimeout(() => {
+    // 비동기 경합 가드: 대기 중 다른 모달(신규 작성 등)이 열렸으면 이어쓰기 UI 복원 금지
+    if(window._resumeDraftId !== id) return;
     document.getElementById('ct-title').textContent = '근로계약서 추가 (이어 작성)';
     const draftBtn = document.getElementById('ct-btn-draft');
     if(draftBtn) draftBtn.style.display = '';

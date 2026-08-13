@@ -437,37 +437,7 @@ function _toggleContAlertCard(headEl){
   chevron.classList.toggle('open', !isOpen);
 }
 
-// ── 갱신·해지 요약 배너 ──
-function _renderSummaryBanner(){
-  const banner = document.getElementById('cont-summary-banner');
-  if(!banner || !currentContCompanyId) { if(banner) banner.style.display = 'none'; return; }
-  
-  const coContracts = allContracts.filter(c => c.company_id === currentContCompanyId);
-  const today = new Date().toISOString().slice(0,10);
-  
-  const renewalPending = coContracts.filter(c => c.status === CONTRACT_STATUS.RENEWAL_PENDING).length;
-  const terminatePending = coContracts.filter(c => 
-    c.status === CONTRACT_STATUS.TERMINATE_PENDING && c.terminate_date && c.terminate_date > today
-  ).length;
-  
-  if(renewalPending === 0 && terminatePending === 0){
-    banner.style.display = 'none';
-    return;
-  }
-  
-  let html = '<span style="font-weight:700;color:#1e293b;">📋 예정된 계약 변경</span>';
-  if(renewalPending > 0){
-    html += `<span style="display:inline-flex;align-items:center;gap:4px;background:#fef9c3;color:#92400e;padding:3px 10px;border-radius:12px;font-weight:600;font-size:11px;">
-      <i class="fas fa-sync-alt"></i> 갱신 예정 ${renewalPending}건</span>`;
-  }
-  if(terminatePending > 0){
-    html += `<span style="display:inline-flex;align-items:center;gap:4px;background:#ffe4e6;color:#9f1239;padding:3px 10px;border-radius:12px;font-weight:600;font-size:11px;">
-      <i class="fas fa-user-clock"></i> 해지 예정 ${terminatePending}건</span>`;
-  }
-  
-  banner.innerHTML = html;
-  banner.style.display = 'flex';
-}
+// ── 갱신·해지 요약 배너 (예정사항 통합 카드와 중복되어 제거됨) ──
 
 function renderContracts(){
   if(!document.getElementById('cont-list-section')) return;
@@ -497,8 +467,8 @@ function renderContracts(){
   // ── 회사별 아코디언 카드 렌더링 (7종) ──
   _renderContCoSummaryCards();
 
-  // ── 갱신·해지 요약 배너 ──
-  _renderSummaryBanner();
+  // ── 수습 스위치 상태에 따라 고용형태 필터 옵션 동기화 ──
+  _syncContEmpcatOptions();
 
   const q=(document.getElementById('cont-search')?.value||'').toLowerCase();
   const filterEmpCat=(document.getElementById('cont-filter-empcat')?.value||'');
@@ -635,6 +605,43 @@ function renderContracts(){
 }
 function setContPage(p){pages.cont=p;renderContracts()}
 function filterContracts(){pages.cont=1;renderContracts()}
+
+// ── 고용형태 필터 옵션 동기화 (수습 스위치 연동) ──
+let _contEmpcatProbState = null; // 마지막 적용 상태 (null=미적용)
+const _CONT_EMPCAT_PROB = {
+  regular_probation : '정규직 수습',
+  fixed_term_probation: '계약직 수습',
+};
+function _syncContEmpcatOptions(){
+  const sel = document.getElementById('cont-filter-empcat');
+  if(!sel) return;
+  const isOff = !window._probationFeatureEnabled;
+  if(_contEmpcatProbState === isOff) return; // 상태 변화 없으면 skip
+  _contEmpcatProbState = isOff;
+
+  const entries = Object.entries(_CONT_EMPCAT_PROB);
+  if(isOff){
+    // 수습 OFF → 수습 옵션 제거 (선택되어 있었다면 초기화)
+    entries.forEach(([v]) => {
+      const opt = [...sel.options].find(o => o.value === v);
+      if(opt){
+        if(sel.value === v) sel.value = '';
+        opt.remove();
+      }
+    });
+  } else {
+    // 수습 ON → 원래 위치에 옵션 복원 (regular 뒤 / fixed_term 뒤)
+    const anchor = { regular_probation: 'regular', fixed_term_probation: 'fixed_term' };
+    entries.forEach(([v, label]) => {
+      if([...sel.options].some(o => o.value === v)) return;
+      const opt = document.createElement('option');
+      opt.value = v; opt.textContent = label;
+      const anchorOpt = [...sel.options].find(o => o.value === anchor[v]);
+      if(anchorOpt) anchorOpt.after(opt);
+      else sel.appendChild(opt);
+    });
+  }
+}
 
 // 개별 상태 체크박스 변경 시 전체 연동
 function _onStatusFilterChange(){

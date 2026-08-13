@@ -443,29 +443,166 @@ const MSG_RULE_DEFAULTS = {
 ⚠️ 아직 근로계약이 등록되지 않은 직원의 급여 명세서는 별도로 발행되어 해당 근로자에게 개별 발송되며, 이 임금대장에서는 제외되어 있습니다.
 
 {발신자연락처}`
+  },
+  contract_updated: {
+    title: `[계약 수정] {근로자명} — 근로계약이 수정되었습니다`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+소속 근로자의 근로계약 내용이 수정되었습니다.
+
+■ 근로자: {근로자명}
+■ 고용형태: {고용형태}
+■ 계약 기간: {계약기간}
+■ 처리 일시: {처리일시}`
+  },
+  contract_amended: {
+    title: `[계약 수정재발행] {근로자명} — 수정된 새 계약이 발행되었습니다`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+소속 근로자의 수정재발행 근로계약이 완료되었습니다.
+
+■ 근로자: {근로자명}
+■ 고용형태: {고용형태}
+■ 새 계약 기간: {계약기간}
+■ 처리 일시: {처리일시}`
+  },
+  contract_signed_uploaded: {
+    title: `[날인본 등록] {근로자명} — 근로계약서 날인본이 등록되었습니다`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+소속 근로자의 근로계약서 날인본이 등록되었습니다.
+
+■ 근로자: {근로자명}
+■ 처리 일시: {처리일시}`
+  },
+  contract_consent_uploaded: {
+    title: `[동의서 등록] {근로자명} — 정보제공동의서 날인본이 등록되었습니다`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+소속 근로자의 정보제공동의서 날인본이 등록되었습니다.
+
+■ 근로자: {근로자명}
+■ 처리 일시: {처리일시}`
+  },
+  contract_fully_documented: {
+    title: `[서류 완비] {근로자명} — 계약 서류가 모두 등록되었습니다`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+소속 근로자의 근로계약 서류가 모두 등록되었습니다.
+
+■ 근로자: {근로자명}
+■ 처리 일시: {처리일시}`
+  },
+  payroll_input_complete: {
+    title: `[급여 입력] {근로자명} — {급여년도}년 {급여월}월 급여가 저장되었습니다`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+소속 근로자의 {급여년도}년 {급여월}월 급여가 입력되었습니다.
+
+■ 근로자: {근로자명}
+■ 처리 일시: {처리일시}`
+  },
+  payslip_dispatched: {
+    title: `[급여명세서 발송] {근로자명} — {급여년도}년 {급여월}월 급여명세서가 발송되었습니다`,
+    body: `근로기준법 제48조(임금대장 및 급여명세서)에 따라 소속 근로자 {근로자명}에게 {급여년도}년 {급여월}월분 급여명세서가 {발송방법}(으)로 발송 완료되었음을 알려드립니다.
+
+■ 근로자: {근로자명}
+■ 대상 년월: {급여년도}년 {급여월}월
+■ 발송 방법: {발송방법}
+■ 발송 시각: {발송시각}`
+  },
+  severance_paid: {
+    title: `[퇴직급여 지급] {근로자명} — 퇴직급여가 지급되었습니다`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+소속 근로자의 퇴직급여 지급이 완료되었습니다.
+
+■ 근로자: {근로자명}
+■ 지급 금액: {지급금액}
+■ 처리 일시: {처리일시}`
+  },
+  contract_expiry: {
+    title: `[계약만료 예정] {근로자명} — {D-day}`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+소속 직원의 근로계약 만료일이 다가와 안내드립니다.
+
+■ 직원명: {근로자명}
+■ 고용형태: {고용형태}
+■ 계약 만료일: {계약만료일} ({D-day})
+
+담당 노무사에게 갱신 여부를 확인해 주세요.
+
+※ 「기간제 및 단시간근로자 보호 등에 관한 법률」에 따른 사전 통지`
+  },
+  regular_conversion: {
+    title: `[정규직 전환 의무] {근로자명} — 기간제 2년 초과`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+소속 직원의 기간제 근로 누적 기간이 2년을 초과하여 법률에 따른 정규직 전환 의무가 발생하였음을 안내드립니다.
+
+■ 직원명: {근로자명}
+■ 고용형태: {고용형태}
+■ 입사일: {입사일}
+■ 누적 근로일수: {근속일수}
+
+◆ 관련 법령
+「기간제 및 단시간근로자 보호 등에 관한 법률」 제4조`
+  },
+  probation_expiry: {
+    title: `[수습만료 통지] {근로자명} — 수습 기간이 만료됩니다`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+소속 근로자의 수습 기간이 곧 만료됩니다.
+
+■ 근로자: {근로자명}
+■ 수습 만료일: {수습만료일}
+
+수습 만료 후 채용확정 여부를 결정해 주세요.`
+  },
+  leave_promotion: {
+    title: `[연차 사용촉진] {근로자명} — 연차휴가 사용을 촉진합니다`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+근로기준법 제61조에 따라 연차휴가 사용촉진 조치가 진행되었습니다.
+
+■ 근로자: {근로자명}
+■ 처리 일시: {처리일시}`
   }
 };
 
 // ── 발송 수단별 메시지 유형 매핑 ──
 const MSG_CHANNEL_TYPES = {
   inapp: [
-    { value: 'company_welcome', label: '가입환영 메시지' },
-    { value: 'company_updated', label: '고객사 정보 변경 안내' },
-    { value: 'company_terminate_scheduled', label: '서비스 해지 예정 안내' },
-    { value: 'company_terminate_changed', label: '서비스 해지 예정일 변경 안내' },
-    { value: 'company_terminate_cancelled', label: '서비스 해지 취소 안내' },
-    { value: 'contract_created', label: '근로계약 등록' },
+    { value: 'company_welcome', label: '고객사 가입환영' },
+    { value: 'company_updated', label: '고객사 정보 수정' },
+    { value: 'company_terminate_scheduled', label: '서비스 해지 예정' },
+    { value: 'company_terminate_changed', label: '서비스 해지 예정일 변경' },
+    { value: 'company_terminate_cancelled', label: '서비스 해지 취소' },
+    { value: 'contract_created', label: '신규 근로계약' },
+    { value: 'contract_renewed', label: '근로계약 갱신' },
+    { value: 'contract_renewal_scheduled', label: '근로계약 갱신 예약' },
     { value: 'contract_renewed_new', label: '근로계약 재계약' },
+    { value: 'contract_updated', label: '근로계약 수정' },
+    { value: 'contract_amended', label: '근로계약 수정재발행' },
+    { value: 'contract_dispatched', label: '근로계약서 발송' },
+    { value: 'consent_dispatched', label: '정보제공동의서 발송' },
+    { value: 'contract_signed_uploaded', label: '근로계약서 날인본 등록' },
+    { value: 'contract_consent_uploaded', label: '동의서 날인본 등록' },
+    { value: 'contract_fully_documented', label: '서류 완비' },
     { value: 'contract_terminated', label: '근로계약 해지' },
-    { value: 'contract_terminate_scheduled', label: '근로계약 해지예정' },
-    { value: 'contract_termination_cancelled', label: '근로계약 해지철회' },
+    { value: 'contract_terminate_scheduled', label: '근로계약 해지 예정' },
+    { value: 'contract_termination_cancelled', label: '근로계약 해지 취소' },
     { value: 'contract_voided', label: '근로계약 파기' },
-    { value: 'contract_renewal_scheduled', label: '근로계약 갱신예약' },
-    { value: 'contract_renewed', label: '근로계약 갱신완료' },
-    { value: 'contract_dispatched', label: '근로계약서 발송 완료' },
-    { value: 'consent_dispatched', label: '정보제공동의서 발송 완료' },
+    { value: 'probation_expiry', label: '수습만료 통지' },
+    { value: 'contract_expiry', label: '근로계약 만료 통지' },
+    { value: 'regular_conversion', label: '정규직 전환' },
+    { value: 'payroll_input_complete', label: '급여 입력/수정' },
+    { value: 'payslip_dispatched', label: '급여명세서 발송' },
     { value: 'wage_ledger_generated', label: '임금대장 발행' },
     { value: 'wage_ledger_renewed', label: '임금대장 갱신' },
+    { value: 'severance_paid', label: '퇴직급여 지급' },
+    { value: 'leave_promotion', label: '연차 사용촉진' },
   ],
   kakao: [
     { value: 'contract_dispatch_kakao', label: '근로계약서 발송 (알림톡)' },

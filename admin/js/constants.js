@@ -231,7 +231,7 @@ const NOTICE_TYPE = Object.freeze({
   CONTRACT_VOIDED:        'contract_voided',
   CONTRACT_AMENDED:       'contract_amended',
   PAYROLL_INPUT_COMPLETE: 'payroll_input_complete',
-  PAYSLIP_SENT:           'payslip_individual_sent',
+  PAYSLIP_SENT:           'payslip_dispatched',
   REGULAR_CONVERSION:     'regular_conversion',
   LEAVE_PROMOTION:        'leave_promotion',
   SIGNED_UPLOADED:        'contract_signed_uploaded',

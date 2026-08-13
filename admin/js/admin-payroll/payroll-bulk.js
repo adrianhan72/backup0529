@@ -472,7 +472,7 @@ async function _bulkEmailSend(idx){
       const _coRep = getCompanyRepGreeting(_beCo);
       await _sendCompanyNotice({
         companyId  : item.companyId || '', companyName: _beCo.company_name || '',
-        noticeType : 'payslip_individual_sent',
+        noticeType : 'payslip_dispatched',
         title      : `[급여명세서 발송] ${item.empName} — ${yr}년 ${mo}월 이메일 발송`,
         body       :
 `안녕하세요${_coRep}.

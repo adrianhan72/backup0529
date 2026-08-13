@@ -772,7 +772,7 @@ async function sendPayslipPDF(){
       const _coRep = getCompanyRepGreeting(_skCo);
       await _sendCompanyNotice({
         companyId  : companyId || '', companyName: _skCo.company_name || '',
-        noticeType : 'payslip_individual_sent',
+        noticeType : 'payslip_dispatched',
         title      : `[급여명세서 발송] ${empName} — ${payYear}년 ${payMonth}월 알림톡 발송`,
         body       :
 `안녕하세요${_coRep}.
@@ -858,7 +858,7 @@ async function sendPayslipEmail(){
       const _coRep = getCompanyRepGreeting(_seCo);
       await _sendCompanyNotice({
         companyId  : companyId || '', companyName: _seCo.company_name || '',
-        noticeType : 'payslip_individual_sent',
+        noticeType : 'payslip_dispatched',
         title      : `[급여명세서 발송] ${empName} — ${payYear}년 ${payMonth}월 이메일 발송`,
         body       :
 `안녕하세요${_coRep}.

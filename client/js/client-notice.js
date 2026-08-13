@@ -28,6 +28,7 @@ function _notifIcon(type){
     'payment':             { icon:'fas fa-won-sign',        bg:'linear-gradient(135deg,#3b82f6,#2563eb)' },
     'notice':              { icon:'fas fa-bullhorn',        bg:'linear-gradient(135deg,#8b5cf6,#7c3aed)' },
     'welcome':             { icon:'fas fa-handshake',       bg:'linear-gradient(135deg,#06b6d4,#0891b2)' },
+    'company_welcome':     { icon:'fas fa-handshake',       bg:'linear-gradient(135deg,#06b6d4,#0891b2)' },
   };
   return map[type] || { icon:'fas fa-bell', bg:'linear-gradient(135deg,#4f46e5,#6366f1)' };
 }
@@ -181,8 +182,8 @@ async function openNotifDetail(id){
   if(metaEl)    metaEl.textContent   = _notifFmtDate(n.created_at) + (n.sent_by ? ' · 발송: ' + n.sent_by : '');
   if(bodyEl)    bodyEl.textContent   = n.body || '';
 
-  // 계약 정보 박스 표시 여부 — welcome 타입은 고객사명 표시
-  const isWelcome = n.notice_type === 'welcome';
+  // 계약 정보 박스 표시 여부 — 가입환영(company_welcome) 타입은 고객사명 표시
+  const isWelcome = n.notice_type === 'company_welcome' || n.notice_type === 'welcome';
   const label1El  = document.getElementById('notif-info-label-1');
   const row2El    = document.getElementById('notif-info-row-2');
 

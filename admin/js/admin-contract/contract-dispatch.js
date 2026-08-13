@@ -153,6 +153,31 @@ async function loadContractDispatchList(forceReload = false){
   }
 }
 
+/**
+ * 발송 이력 행의 교부사유 도출
+ * - 수정재발행: 발송 방식이 reissue인 행
+ * - 계약갱신:   계약이 renewed_from_id로 이어졌고, 원본 계약에 종료일(terminate_date)이 기록된 경우
+ *               (갱신 완료 시 원본에 종료일 + renewed_to_id가 함께 설정됨)
+ * - 재계약:     renewed_from_id로 이어졌지만 원본 종료일 변경이 없는 경우
+ *               (재계약은 원본에 renewed_to_id만 연결)
+ * - 신규계약:   renewed_from_id가 없는 계약
+ */
+function _cdpReasonInfo(r){
+  if(!r) return { code:'', label:'-', bg:'#f3f4f6', color:'#374151' };
+  if(r.dispatch_method === DISPATCH_METHOD.REISSUE){
+    return { code:'reissue', label:'수정재발행', bg:'rgba(236,72,153,.1)', color:'#db2777' };
+  }
+  const c = (allContracts||[]).find(x => x.id === r.contract_id);
+  if(c && c.renewed_from_id){
+    const orig = (allContracts||[]).find(x => x.id === c.renewed_from_id);
+    if(orig && orig.renewed_to_id === c.id && orig.terminate_date){
+      return { code:'renewal', label:'계약갱신', bg:'rgba(59,130,246,.1)', color:'#2563eb' };
+    }
+    return { code:'recontract', label:'재계약', bg:'rgba(139,92,246,.1)', color:'#7c3aed' };
+  }
+  return { code:'new', label:'신규계약', bg:'rgba(16,185,129,.1)', color:'#059669' };
+}
+
 /** 발송 관리 페이지 전체 렌더링 */
 async function renderContractDispatchPage(){
   // 데이터 로드 (캐시가 없을 때만, 강제 갱신은 showPage에서 처리)
@@ -160,6 +185,7 @@ async function renderContractDispatchPage(){
 
   // 필터 값 수집
   const filterMethod  = document.getElementById('cdp-filter-method')?.value  || '';
+  const filterReason  = document.getElementById('cdp-filter-reason')?.value  || '';
   const filterStatus  = document.getElementById('cdp-filter-status')?.value  || '';
   const filterCompany = document.getElementById('cdp-filter-company')?.value || '';
   const filterDateFrom= document.getElementById('cdp-filter-date-from')?.value || '';  // 'YYYY-MM-DD'
@@ -182,8 +208,11 @@ async function renderContractDispatchPage(){
   // 필터링
   const filtered = window._contractDispatchList.filter(r => {
     if(filterMethod  && r.dispatch_method  !== filterMethod)  return false;
+    if(filterReason  && _cdpReasonInfo(r).code !== filterReason) return false;
     if(filterStatus  && r.dispatch_status  !== filterStatus)  return false;
     if(filterCompany && r.company_id       !== filterCompany) return false;
+    // 수습 기능 OFF → 수습 계약 발송 이력 제외
+    if(!window._probationFeatureEnabled && typeof isProbationType === 'function' && isProbationType(normalizeContractType(r.contract_type))) return false;
     // 기간 필터: dispatched_at (ISO 문자열 'YYYY-MM-DDT...' 앞 10자리로 비교)
     if(filterDateFrom || filterDateTo){
       const raw = r.dispatched_at || r.created_at || '';
@@ -208,7 +237,7 @@ async function renderContractDispatchPage(){
   if(!tbody) return;
 
   if(filtered.length === 0){
-    tbody.innerHTML = `<tr><td colspan="9" class="cen-empty"><i class="fas fa-inbox"></i> 발송 이력이 없습니다.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10" class="cen-empty"><i class="fas fa-inbox"></i> 발송 이력이 없습니다.</td></tr>`;
     document.getElementById('cdp-pagination').innerHTML = '';
     return;
   }
@@ -226,7 +255,6 @@ async function renderContractDispatchPage(){
       [DISPATCH_METHOD.KAKAO]:  { bg:'#f9d000', color:'#3b1f00', icon:'M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z', isSvg:true },
       [DISPATCH_METHOD.EMAIL]:  { bg:'#dbeafe', color:'#1e40af', fa:'fa-envelope' },
       [DISPATCH_METHOD.MANUAL]: { bg:'#d1fae5', color:'#065f46', fa:'fa-hand-paper' },
-      [DISPATCH_METHOD.REISSUE]: { bg:'#fce7f3', color:'#9d174d', fa:'fa-sync-alt' },
     };
     const c = cfg[m] || { bg:'#f3f4f6', color:'#374151', fa:'fa-question' };
     const label = DISPATCH_METHOD_LABEL[m] || m || '-';
@@ -234,6 +262,11 @@ async function renderContractDispatchPage(){
       ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="${c.color}"><path d="${c.icon}"/></svg>`
       : `<i class="fas ${c.fa}" style="font-size:11px;"></i>`;
     return `<span style="display:inline-flex;align-items:center;gap:4px;background:${c.bg};color:${c.color};padding:2px 9px;border-radius:20px;font-size:11.5px;white-space:nowrap;">${icon}${label}</span>`;
+  };
+
+  const reasonBadge = r => {
+    const info = _cdpReasonInfo(r);
+    return `<span style="display:inline-flex;align-items:center;gap:4px;background:${info.bg};color:${info.color};padding:2px 9px;border-radius:20px;font-size:11.5px;white-space:nowrap;">${info.label}</span>`;
   };
 
   const statusBadge = s => {
@@ -268,7 +301,10 @@ async function renderContractDispatchPage(){
       <td style="font-weight:600;color:#111827;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.company_name||''}">${r.company_name||'-'}</td>
       <td style="font-weight:700;color:#111827;">${r.employee_name||'-'}</td>
       <td>${typeBadge(r.contract_type)}</td>
-      <td class="ctr">${methodBadge(r.dispatch_method)}</td>
+      <td class="ctr">${r.dispatch_method === DISPATCH_METHOD.REISSUE
+        ? '<span style="font-size:11.5px;color:#d1d5db;">-</span>'
+        : methodBadge(r.dispatch_method)}</td>
+      <td class="ctr">${reasonBadge(r)}</td>
       <td style="font-size:12px;color:#374151;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.recipient||''}">${r.recipient||'-'}</td>
       <td class="ctr">${statusBadge(r.dispatch_status)}</td>
       <td style="font-size:12px;color:#6b7280;">${_resolveAdminName(r.dispatched_by)||'-'}</td>
@@ -346,6 +382,8 @@ function _cdpGetUnsentContracts(year, month){
     if(c.is_voided_by_amend) return false;
     // 필수항목 완비 여부: contract_start, employee_id, company_id, contract_type 존재
     if(!c.contract_start || !c.employee_id || !c.company_id || !c.contract_type) return false;
+    // 수습 기능 OFF → 수습 계약 발송 대상에서 제외
+    if(!window._probationFeatureEnabled && typeof isProbationType === 'function' && isProbationType(normalizeContractType(c.contract_type))) return false;
     // 이미 발송 이력 있으면 제외
     if(sentIds.has(c.id)) return false;
     // 고객사 필터
@@ -387,9 +425,22 @@ function renderCdpUnsentMonthTabs(){
     return;
   }
 
-  // 현재 선택 년월이 목록에 없으면 최신으로 초기화
+  // 현재 선택 년월이 목록에 없으면 기본 선택 초기화
+  // 기본: 현재 월 (미래 계약 월이 최종월로 잡히지 않도록)
+  //  - 현재 월이 목록에 없으면 과거 중 가장 최근 월
+  //  - 과거 월도 없으면(전부 미래) 가장 이른 월
   const inList = _cdpUnsentYM && ymList.some(x => x.year === _cdpUnsentYM.year && x.month === _cdpUnsentYM.month);
-  if(!inList) _cdpUnsentYM = { ...ymList[0] };
+  if(!inList){
+    const now = new Date();
+    const curY = now.getFullYear();
+    const curM = now.getMonth() + 1;
+    const curKey = `${curY}-${String(curM).padStart(2,'0')}`;
+    const cur = ymList.find(x => x.year === curY && x.month === curM);
+    const past = ymList
+      .filter(x => `${x.year}-${String(x.month).padStart(2,'0')}` <= curKey)
+      .sort((a, b) => (b.year - a.year) || (b.month - a.month))[0];
+    _cdpUnsentYM = cur || past || { ...ymList[ymList.length - 1] };
+  }
 
   wrap.innerHTML = ymList.map(ym => {
     const isActive = _cdpUnsentYM && ym.year === _cdpUnsentYM.year && ym.month === _cdpUnsentYM.month;

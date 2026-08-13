@@ -105,6 +105,17 @@
               <option value="manual">수동교부</option>
             </select>
           </div>
+          <!-- 교부사유 -->
+          <div style="display:flex;align-items:center;gap:5px;">
+            <span class="filt-label">교부사유</span>
+            <select id="cdp-filter-reason" onchange="_cdpPage=1;renderContractDispatchPage()" class="filt-select">
+              <option value="">전체</option>
+              <option value="new">신규계약</option>
+              <option value="renewal">계약갱신</option>
+              <option value="recontract">재계약</option>
+              <option value="reissue">수정재발행</option>
+            </select>
+          </div>
           <!-- 발송 상태 -->
           <div style="display:flex;align-items:center;gap:5px;">
             <span class="filt-label">발송 상태</span>
@@ -145,6 +156,7 @@
                 <th>직원명</th>
                 <th>계약 유형</th>
                 <th class="ctr">발송 방식</th>
+                <th class="ctr">교부사유</th>
                 <th>수신처</th>
                 <th class="ctr">결과</th>
                 <th>처리자</th>
@@ -152,7 +164,7 @@
               </tr>
             </thead>
             <tbody id="cdp-tbody">
-              <tr><td colspan="9" class="cen-empty"><i class="fas fa-spinner fa-spin"></i> 데이터 로딩 중...</td></tr>
+              <tr><td colspan="10" class="cen-empty"><i class="fas fa-spinner fa-spin"></i> 데이터 로딩 중...</td></tr>
             </tbody>
           </table>
         </div>

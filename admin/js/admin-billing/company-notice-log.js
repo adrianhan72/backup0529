@@ -3,6 +3,53 @@
 
 const CNL_PAGE_SIZE = 20;  // 페이지당 20건
 
+// ── 기능 스위치 연동 유형 (스위치 OFF 시 select·목록에서 제외) ──
+const CNL_TYPE_FEATURE_GATES = [
+  { type: 'probation_expiry',   enabled: () => !!window._probationFeatureEnabled },
+  { type: 'contract_expiry',    enabled: () => !!window._contractExpiryNoticeEnabled },
+  { type: 'regular_conversion', enabled: () => !!window._regularConversionNoticeEnabled },
+  { type: 'severance_paid',     enabled: () => !!window._retirementMgmtEnabled },
+];
+
+/** 현재 비활성 유형 집합 반환 */
+function _cnlDisabledTypes(){
+  const set = new Set();
+  CNL_TYPE_FEATURE_GATES.forEach(g => { if(!g.enabled()) set.add(g.type); });
+  return set;
+}
+
+// ── 유형 select 옵션 그룹 순서 (--- 구분자로 그룹 분리) ──
+const CNL_TYPE_OPTION_GROUPS = [
+  ['general'],
+  ['company_welcome','company_updated','company_terminate_scheduled','company_terminate_changed','company_terminate_cancelled'],
+  ['contract_created','contract_renewed','contract_renewal_scheduled','contract_renewed_new','contract_updated','contract_amended'],
+  ['contract_dispatched','consent_dispatched','contract_signed_uploaded','contract_consent_uploaded','contract_fully_documented'],
+  ['contract_terminated','contract_terminate_scheduled','contract_termination_cancelled','contract_voided'],
+  ['probation_expiry','contract_expiry','regular_conversion'],
+  ['payroll_input_complete','payslip_dispatched','wage_ledger_generated','wage_ledger_renewed'],
+  ['severance_paid','leave_promotion'],
+];
+
+/** 유형 select 옵션을 그룹 순서·기능 스위치 기준으로 재구성 (--- 구분자 포함) */
+function _cnlSyncTypeOptions(){
+  const sel = document.getElementById('cnl-filter-type');
+  if(!sel) return;
+  const disabled = _cnlDisabledTypes();
+  const prev = (sel.value && !disabled.has(sel.value)) ? sel.value : '';
+  let html = '<option value="">전체</option>';
+  let firstShown = true;
+  CNL_TYPE_OPTION_GROUPS.forEach(group => {
+    const visible = group.filter(t => !disabled.has(t) && CNL_TYPE_LABEL[t]);
+    if(!visible.length) return; // 그룹 전체가 비활성이면 그룹·구분자 모두 생략
+    if(!firstShown) html += '<option disabled>---</option>';
+    firstShown = false;
+    visible.forEach(t => {
+      html += `<option value="${t}"${t===prev?' selected':''}>${CNL_TYPE_LABEL[t]}</option>`;
+    });
+  });
+  sel.innerHTML = html;
+}
+
 // ── 상태 변수 ──
 let _cnlCompanyId   = '';   // 선택된 고객사 ID (필수)
 let _cnlCompanyName = '';
@@ -15,10 +62,16 @@ function renderCnlCompanyList(){
   const chips = document.getElementById('cnl-company-chips');
   if(!chips) return;
   const q = (document.getElementById('cnl-company-search')?.value || '').toLowerCase();
-  const activeOnly = allCompanies.filter(c => !c.is_draft);
+  const statusFilter = document.getElementById('cnl-company-status-filter')?.value || 'active';
+  // 임시저장 제외 후 상태 필터 적용 (기본: 이용중만)
+  let pool = allCompanies.filter(c => !c.is_draft);
+  if(statusFilter !== 'all'){
+    const target = statusFilter === 'active' ? COMPANY_STATUS.ACTIVE : COMPANY_STATUS.INACTIVE;
+    pool = pool.filter(c => normalizeCompanyStatus(c.status) === target);
+  }
   const filtered = q
-    ? activeOnly.filter(c => (c.company_name || '').toLowerCase().includes(q))
-    : activeOnly;
+    ? pool.filter(c => (c.company_name || '').toLowerCase().includes(q))
+    : pool;
   const sorted = [...filtered].sort((a,b) => (a.company_name||'').localeCompare(b.company_name||'','ko'));
   if(!sorted.length){
     chips.innerHTML = '<div style="color:#9ca3af;padding:8px;">검색된 고객사가 없습니다.</div>';
@@ -87,11 +140,12 @@ function _cnlDoSearch(){
 // ── notice_type → 한글 레이블 ──
 const CNL_TYPE_LABEL = {
   contract_created              : '신규 근로계약',
+  contract_updated              : '근로계약 수정',
   contract_voided               : '근로계약 파기',
-  contract_amended              : '근로계약 수정',
+  contract_amended              : '근로계약 수정재발행',
   contract_terminated           : '근로계약 해지',
-  contract_termination_scheduled: '근로계약 해지 예약',
   contract_termination_cancelled: '근로계약 해지 취소',
+  contract_terminate_scheduled : '근로계약 해지 예정',
   contract_renewed              : '근로계약 갱신',
   contract_renewal_scheduled    : '근로계약 갱신 예약',
   contract_renewed_new          : '근로계약 재계약',
@@ -100,49 +154,60 @@ const CNL_TYPE_LABEL = {
   contract_consent_uploaded     : '동의서 날인본 등록',
   contract_fully_documented     : '서류 완비',
   payroll_input_complete        : '급여 입력/수정',
-  payslip_individual_sent       : '급여명세서 개별',
-  payslip_bulk_sent             : '급여명세서 일괄',
+  payslip_dispatched            : '급여명세서 발송',
   severance_paid                : '퇴직급여 지급',
   contract_expiry               : '근로계약 만료 통지',
   regular_conversion            : '정규직 전환',
   probation_expiry              : '수습만료 통지',
   leave_promotion               : '연차 사용촉진',
+  company_updated               : '고객사 정보 수정',
+  company_welcome               : '고객사 가입환영',
+  company_terminate_scheduled   : '서비스 해지 예정',
+  company_terminate_changed     : '서비스 해지 예정일 변경',
+  company_terminate_cancelled   : '서비스 해지 취소',
+  consent_dispatched            : '정보제공동의서 발송',
+  wage_ledger_generated         : '임금대장 발행',
+  wage_ledger_renewed           : '임금대장 갱신',
   general                       : '중요공지',
-  welcome                       : '가입환영',
-  notice                        : '이용안내',
 };
 
-// notice_type → 색상 팔레트
-const CNL_TYPE_COLOR = {
-  contract_created              : { bg:'#dcfce7', color:'#166534' },
-  contract_updated              : { bg:'#dbeafe', color:'#1e40af' },
-  contract_voided               : { bg:'#fee2e2', color:'#991b1b' },
-  contract_amended              : { bg:'#fef3c7', color:'#92400e' },
-  contract_terminated           : { bg:'#fce7f3', color:'#9d174d' },
-  contract_termination_scheduled: { bg:'#fff7ed', color:'#c2410c' },
-  contract_termination_cancelled: { bg:'#f0fdf4', color:'#15803d' },
-  contract_renewed              : { bg:'#ede9fe', color:'#5b21b6' },
-  contract_renewal_scheduled    : { bg:'#f5f3ff', color:'#6d28d9' },
-  contract_renewed_new          : { bg:'#d1fae5', color:'#065f46' },
-  contract_dispatched           : { bg:'#e0f2fe', color:'#075985' },
-  contract_signed_uploaded      : { bg:'#f0f9ff', color:'#0369a1' },
-  contract_consent_uploaded     : { bg:'#eff6ff', color:'#1d4ed8' },
-  contract_fully_documented     : { bg:'#ecfdf5', color:'#047857' },
-  payroll_input_complete        : { bg:'#fef9c3', color:'#713f12' },
-  payslip_individual_sent       : { bg:'#fdf4ff', color:'#7e22ce' },
-  payslip_bulk_sent             : { bg:'#f5f3ff', color:'#4c1d95' },
-  severance_paid                : { bg:'#fae8ff', color:'#86198f' },
-  contract_expiry               : { bg:'#fff1f2', color:'#be123c' },
-  regular_conversion            : { bg:'#f0fdf4', color:'#166534' },
-  probation_expiry              : { bg:'#fff7ed', color:'#c2410c' },
-  leave_promotion               : { bg:'#fefce8', color:'#854d0e' },
-  general                       : { bg:'#fef3c7', color:'#b45309' },
-  welcome                       : { bg:'#ecfeff', color:'#0e7490' },
-  notice                        : { bg:'#ede9fe', color:'#6d28d9' },
+// notice_type → 뱃지 클래스 (기존 .badge-* 계열: admin-modal.css)
+const CNL_TYPE_BADGE = {
+  general                       : 'badge-red',
+  company_welcome               : 'badge-amber',
+  company_updated               : 'badge-orange',
+  company_terminate_scheduled   : 'badge-gray',
+  company_terminate_changed     : 'badge-gray',
+  company_terminate_cancelled   : 'badge-gray',
+  contract_created              : 'badge-blue',
+  contract_renewed              : 'badge-blue',
+  contract_renewal_scheduled    : 'badge-blue',
+  contract_renewed_new          : 'badge-blue',
+  contract_updated              : 'badge-orange',
+  contract_amended              : 'badge-orange',
+  contract_dispatched           : 'badge-green',
+  consent_dispatched            : 'badge-green',
+  contract_signed_uploaded      : 'badge-green',
+  contract_consent_uploaded     : 'badge-green',
+  contract_fully_documented     : 'badge-green',
+  contract_terminated           : 'badge-gray',
+  contract_terminate_scheduled  : 'badge-gray',
+  contract_termination_cancelled: 'badge-gray',
+  contract_voided               : 'badge-gray',
+  probation_expiry              : 'badge-pink',
+  contract_expiry               : 'badge-pink',
+  regular_conversion            : 'badge-pink',
+  payroll_input_complete        : 'badge-purple',
+  payslip_dispatched            : 'badge-purple',
+  wage_ledger_generated         : 'badge-purple',
+  wage_ledger_renewed           : 'badge-purple',
+  severance_paid                : 'badge-slate',
+  leave_promotion               : 'badge-teal',
 };
 
 /** 페이지 진입 초기화 */
 async function initCnlPage(){
+  _cnlSyncTypeOptions();
   renderCnlCompanyList();
   // 선택된 고객사가 없으면 선택 화면 표시
   if(!_cnlCompanyId){
@@ -218,10 +283,12 @@ function renderCnlReserveCard(){
   const filterCompany = _cnlCompanyId || '';
   const filterType    = document.getElementById('cnl-filter-type')?.value || '';
   const searchQ       = (document.getElementById('cnl-search')?.value || '').trim().toLowerCase();
+  const disabledTypes = _cnlDisabledTypes();
 
   // scheduled 건 + 현재 필터 적용
   const list = _cnlList.filter(n => {
     if(n.gn_status !== 'scheduled') return false;
+    if(disabledTypes.has(n.notice_type)) return false;  // 기능 OFF 유형 제외
     if(filterCompany && n.company_id !== filterCompany) return false;
     if(filterType    && n.notice_type !== filterType)   return false;
     if(searchQ       && !(n.title||'').toLowerCase().includes(searchQ)) return false;
@@ -251,9 +318,8 @@ function renderCnlReserveCard(){
 
   const typeBadge = t => {
     const label = CNL_TYPE_LABEL[t] || t || '-';
-    const clr   = CNL_TYPE_COLOR[t] || { bg:'#f3f4f6', color:'#374151' };
-    return `<span style="display:inline-block;background:${clr.bg};color:${clr.color};
-      padding:3px 9px;border-radius:20px;font-size:11.5px;white-space:nowrap;">${label}</span>`;
+    const cls   = CNL_TYPE_BADGE[t] || 'badge-gray';
+    return `<span class="badge ${cls}">${label}</span>`;
   };
 
   const dispatchMethodBadge = n => {
@@ -313,7 +379,6 @@ function openCnlDetailById(recordId){
     return isNaN(d) ? '-' : d.toLocaleString('ko-KR', {year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'});
   };
   const typeLbl = CNL_TYPE_LABEL[n.notice_type] || n.notice_type || '-';
-  const typeClr = CNL_TYPE_COLOR[n.notice_type] || { bg:'#f3f4f6', color:'#374151' };
   const isGeneral = n.notice_type === 'general';
   const gnSt = isGeneral ? (n.gn_status || 'sent') : null;
   const gnStatusTxt = gnSt === 'scheduled'
@@ -354,10 +419,12 @@ function renderCnlTable(){
   const searchQ       = (document.getElementById('cnl-search')?.value || '').trim().toLowerCase();
   const dateFrom      = document.getElementById('cnl-filter-date-from')?.value || '';
   const dateTo        = document.getElementById('cnl-filter-date-to')?.value || '';
+  const disabledTypes = _cnlDisabledTypes();
 
   // scheduled 제외 + 필터 적용 (발송완료/취소됨만)
   let list = _cnlList.filter(n => {
     if(n.gn_status === 'scheduled') return false;          // 예약 대기는 예약 현황 카드에서 표시
+    if(disabledTypes.has(n.notice_type)) return false;     // 기능 OFF 유형 제외
     if(filterCompany && n.company_id !== filterCompany) return false;
     if(filterType    && n.notice_type !== filterType)   return false;
     if(searchQ       && !(n.title||'').toLowerCase().includes(searchQ)) return false;
@@ -401,9 +468,8 @@ function renderCnlTable(){
 
   const typeBadge = t => {
     const label = CNL_TYPE_LABEL[t] || t || '-';
-    const clr   = CNL_TYPE_COLOR[t]  || { bg:'#f3f4f6', color:'#374151' };
-    return `<span style="display:inline-block;background:${clr.bg};color:${clr.color};
-      padding:3px 9px;border-radius:20px;font-size:11.5px;white-space:nowrap;">${label}</span>`;
+    const cls   = CNL_TYPE_BADGE[t] || 'badge-gray';
+    return `<span class="badge ${cls}">${label}</span>`;
   };
 
   const _isRead = v => v === true || v === 'true' || v === 1 || v === '1';
@@ -488,7 +554,9 @@ function renderCnlPagination(total){
 function openCnlDetail(listIdx){
   const filterType    = document.getElementById('cnl-filter-type')?.value || '';
   const searchQ       = (document.getElementById('cnl-search')?.value || '').trim().toLowerCase();
+  const disabledTypes = _cnlDisabledTypes();
   const list = _cnlList.filter(n => {
+    if(disabledTypes.has(n.notice_type)) return false;     // 기능 OFF 유형 제외
     if(filterType    && n.notice_type !== filterType)   return false;
     if(searchQ       && !(n.title||'').toLowerCase().includes(searchQ)) return false;
     return true;
@@ -507,7 +575,6 @@ function openCnlDetail(listIdx){
   };
 
   const typeLbl = CNL_TYPE_LABEL[n.notice_type] || n.notice_type || '-';
-  const typeClr = CNL_TYPE_COLOR[n.notice_type] || { bg:'#f3f4f6', color:'#374151' };
   const readTxt = n.is_read
     ? `<span style="color:#166534;"><i class="fas fa-check-circle"></i> 읽음 (${fmtDtFull(n.read_at)})</span>`
     : `<span style="color:#dc2626;"><i class="fas fa-circle" style="font-size:10px;"></i> 미확인</span>`;

@@ -196,6 +196,8 @@ async function renderConsentDispatchPage() {
     if (filterMethod && r.dispatch_method !== filterMethod) return false;
     if (filterStatus && r.dispatch_status !== filterStatus) return false;
     if (filterCompany && r.company_id !== filterCompany) return false;
+    // 수습 기능 OFF → 수습 계약 발송 이력 제외
+    if (!window._probationFeatureEnabled && typeof isProbationType === 'function' && isProbationType(normalizeContractType(r.contract_type))) return false;
     if (filterDateFrom || filterDateTo) {
       const raw = r.dispatched_at || r.created_at || '';
       const recDate = typeof raw === 'string' ? raw.slice(0, 10) : String(raw).slice(0, 10);
@@ -318,6 +320,8 @@ function _cnsGetUnsentContracts(year, month) {
     ![CONTRACT_STATUS.VOIDED, CONTRACT_STATUS.TERMINATED].includes(c.status) &&
     !c.is_voided_by_amend &&
     !c.renewed_from_id &&  // 갱신계약은 계약 연속성이 유지되므로 동의서 재발송 제외
+    // 수습 기능 OFF → 수습 근로자에게는 동의서 발송 제외
+    !(!window._probationFeatureEnabled && typeof isProbationType === 'function' && isProbationType(normalizeContractType(c.contract_type))) &&
     !consentEmpIds.has(c.employee_id) &&
     (!_cnsUnsentCoId || c.company_id === _cnsUnsentCoId)
   );
@@ -349,15 +353,30 @@ function renderCnsUnsentMonthTabs() {
     return;
   }
 
+  // 기본 선택 월 결정
+  //  - 기존 선택이 목록에 있으면 유지
+  //  - 없으면 현재 월 (미래 계약 월이 최종월로 잡히지 않도록)
+  //  - 현재 월이 없으면 과거 중 가장 최근, 전부 미래면 가장 이른 월
+  const now = new Date();
+  const curYM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  let defaultYM = _cnsSelectedYM
+    ? `${_cnsSelectedYM.year}-${String(_cnsSelectedYM.month).padStart(2, '0')}`
+    : null;
+  if (!defaultYM || !months.includes(defaultYM)) {
+    defaultYM = months.includes(curYM)
+      ? curYM
+      : (months.filter(ym => ym <= curYM)[0] || months[months.length - 1]);
+  }
+
   let html = '';
   months.forEach((ym, i) => {
     const [y, m] = ym.split('-');
-    html += `<div class="cdp-month-tab${i === 0 ? ' active' : ''}" onclick="cnsSelectUnsentYM(${y},${parseInt(m)})">${y}년 ${String(m).padStart(2,'0')}월 ${monthMap[ym] > 0 ? `<span class="count-badge">${monthMap[ym]}</span>` : ''}</div>`;
+    html += `<div class="cdp-month-tab${ym === defaultYM ? ' active' : ''}" onclick="cnsSelectUnsentYM(${y},${parseInt(m)})">${y}년 ${String(m).padStart(2,'0')}월 ${monthMap[ym] > 0 ? `<span class="count-badge">${monthMap[ym]}</span>` : ''}</div>`;
   });
   tabsEl.innerHTML = html;
 
   if (months.length > 0) {
-    const [y, m] = months[0].split('-');
+    const [y, m] = defaultYM.split('-');
     cnsSelectUnsentYM(parseInt(y), parseInt(m));
   }
 }
