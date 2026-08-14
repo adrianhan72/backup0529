@@ -64,6 +64,11 @@
             <button onclick="closeHrEmployeeView()" class="btn btn-icon-dark"><i class="fas fa-times"></i></button>
           </div>
           <div class="modal-body" style="padding:18px 20px;">
+            <!-- 상태 기반 계약 작업 (Phase 3) -->
+            <div class="form-group full" id="hr-view-actions-wrap" style="display:none;">
+              <span class="form-section-title">계약 작업</span>
+              <div id="hr-view-actions" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;"></div>
+            </div>
             <!-- 1. 기본 인사정보 -->
             <div class="form-group full"><span class="form-section-title">기본 인사정보</span></div>
             <div class="form-grid" style="gap:10px;">

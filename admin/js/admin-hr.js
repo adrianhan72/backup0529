@@ -115,6 +115,117 @@ function renderHrEmployees() {
   }).join('');
 }
 
+// ── 상태 기반 계약 작업 액션 (Phase 3) ──
+// 계약 상태 매트릭스에 따라 현재 가능한 작업만 노출
+function _hrRenderActions(e){
+  const wrap = document.getElementById('hr-view-actions-wrap');
+  const box  = document.getElementById('hr-view-actions');
+  if(!wrap || !box || !e) return;
+
+  const cts = (allContracts||[]).filter(c => c.employee_id === e.id);
+  const today = fmtLocalDate(new Date());
+  const live  = cts.filter(c => !c.is_draft && !c.is_voided_by_amend);
+  const drafts = cts.filter(c => c.is_draft);
+  const active = live.filter(c => c.status === CONTRACT_STATUS.ACTIVE);
+  const pending = live.filter(c => c.status === CONTRACT_STATUS.PENDING);
+  const termPending = live.filter(c => c.status === CONTRACT_STATUS.TERMINATE_PENDING);
+  const renewalPending = live.filter(c =>
+    c.status === CONTRACT_STATUS.RENEWAL_PENDING ||
+    (c.status === CONTRACT_STATUS.ACTIVE && c.contract_start && c.contract_start > today)
+  );
+  const ended = live.filter(c => [CONTRACT_STATUS.TERMINATED, CONTRACT_STATUS.EXPIRED].includes(c.status));
+  const latestEnded = ended.length
+    ? ended.slice().sort((a,b) => (b.terminate_date||b.contract_end||'').localeCompare(a.terminate_date||a.contract_end||''))[0]
+    : null;
+
+  const html = [];
+  const B = (label, cls, fn, icon) =>
+    `<button type="button" class="btn btn-sm ${cls}" onclick="${fn}"><i class="fas ${icon}"></i> ${label}</button>`;
+
+  // 임시저장
+  drafts.forEach(d => {
+    html.push(B('임시저장 이어작성', 'btn-indigo', `_hrActDraftEdit('${d.id}')`, 'fa-pencil-alt'));
+    html.push(B('임시저장 삭제', 'btn-secondary', `_hrActDraftDelete('${d.id}')`, 'fa-trash-alt'));
+  });
+
+  // 유효 계약
+  active.forEach(c => {
+    const ct = c.contract_type || '';
+    const isReg = ct === CONTRACT_TYPE.REGULAR || ct === CONTRACT_TYPE.REGULAR_PROBATION;
+    const isFixed = ct === CONTRACT_TYPE.FIXED || ct === CONTRACT_TYPE.FIXED_PROBATION || ct === CONTRACT_TYPE.DAILY;
+    const startFuture = c.contract_start && c.contract_start > today;
+    if(!startFuture){
+      html.push(B('계약 조회', 'btn-indigo', `_hrActView('${c.id}')`, 'fa-search'));
+      html.push(B('수정 및 재발행', 'btn-indigo', `_hrActAmend('${c.id}')`, 'fa-edit'));
+      html.push(B('갱신', 'btn-indigo', `_hrActRenew('${c.id}')`, 'fa-sync-alt'));
+      if(isReg)   html.push(B('퇴사 설정', 'btn-secondary', `_hrActTerminate('${c.id}')`, 'fa-user-clock'));
+      if(isFixed) html.push(B('해지 설정', 'btn-secondary', `_hrActFixedTerminate('${c.id}')`, 'fa-scissors'));
+      // 서류미비: 날인본·계약서
+      if(!c.signed_file_data || !c.consent_file_data){
+        html.push(B('날인본 업로드', 'btn-success', `_hrActDocsUpload('${c.id}')`, 'fa-upload'));
+        html.push(B('계약서 발송', 'btn-indigo', `_hrActPrint('${c.id}')`, 'fa-file-contract'));
+      }
+    }
+  });
+
+  // 계약예정
+  pending.forEach(c => {
+    html.push(B('예정계약 수정', 'btn-indigo', `_hrActPendingEdit('${c.id}')`, 'fa-calendar-alt'));
+    html.push(B('계약 취소(파기)', 'btn-secondary', `_hrActVoidCancel('${c.id}')`, 'fa-times-circle'));
+  });
+
+  // 해지예정
+  termPending.forEach(c => {
+    html.push(B('해지일 변경', 'btn-indigo', `_hrActView('${c.id}')`, 'fa-calendar-check'));
+    html.push(B('해지 철회', 'btn-secondary', `_hrActPreTermCancel('${c.id}')`, 'fa-undo-alt'));
+  });
+
+  // 갱신예정
+  renewalPending.forEach(c => {
+    html.push(B('갱신 취소', 'btn-secondary', `_hrActRenewalCancel('${c.id}')`, 'fa-times-circle'));
+  });
+
+  // 재계약 (유효·예정 계약 없음 + 만료·해지 이력 있음)
+  if(!active.length && !pending.length && !termPending.length && !renewalPending.length && latestEnded){
+    html.push(B('재계약', 'btn-indigo', `_hrActRecontract('${latestEnded.id}')`, 'fa-file-signature'));
+  }
+
+  // 신규계약 (계약 이력 없음)
+  if(!live.length && !drafts.length){
+    html.push(B('신규계약 작성', 'btn-primary', `_hrActNewContract('${e.id}')`, 'fa-file-signature'));
+  }
+
+  wrap.style.display = html.length ? '' : 'none';
+  box.innerHTML = html.join('');
+}
+
+// ── 액션 핸들러: 계약 조회 모달을 열고 해당 액션 실행 ──
+function _hrActView(cid){ closeHrEmployeeView(); viewContract(cid); }
+function _hrActAmend(cid){ closeHrEmployeeView(); viewContract(cid); setTimeout(() => { if(typeof doContractAmend === 'function') doContractAmend(); }, 120); }
+function _hrActRenew(cid){ closeHrEmployeeView(); viewContract(cid); setTimeout(() => { if(typeof doContractRenew === 'function') doContractRenew(); }, 120); }
+function _hrActRecontract(cid){ closeHrEmployeeView(); viewContract(cid); setTimeout(() => { if(typeof doContractRecontract === 'function') doContractRecontract(); }, 120); }
+function _hrActTerminate(cid){ closeHrEmployeeView(); viewContract(cid); setTimeout(() => { if(typeof doContractTerminate === 'function') doContractTerminate(); }, 120); }
+function _hrActFixedTerminate(cid){ closeHrEmployeeView(); viewContract(cid); setTimeout(() => { if(typeof doFixedTerminate === 'function') doFixedTerminate(); }, 120); }
+function _hrActPendingEdit(cid){ closeHrEmployeeView(); viewContract(cid); setTimeout(() => { if(typeof editPendingContract === 'function') editPendingContract(); }, 120); }
+function _hrActVoidCancel(cid){ closeHrEmployeeView(); viewContract(cid); setTimeout(() => { if(typeof doContractVoidOrCancel === 'function') doContractVoidOrCancel(); }, 120); }
+function _hrActPreTermCancel(cid){ closeHrEmployeeView(); viewContract(cid); setTimeout(() => { if(typeof cancelPreTerminate === 'function') cancelPreTerminate(); }, 120); }
+function _hrActRenewalCancel(cid){ closeHrEmployeeView(); viewContract(cid); setTimeout(() => { if(typeof cancelContractRenew === 'function') cancelContractRenew(); }, 120); }
+function _hrActDraftEdit(cid){ closeHrEmployeeView(); if(typeof continueDraftContract === 'function') continueDraftContract(cid); }
+function _hrActDraftDelete(cid){
+  closeHrEmployeeView();
+  openContractModal(cid);
+  setTimeout(() => { if(typeof deleteDraftContract === 'function') deleteDraftContract(); }, 120);
+}
+function _hrActDocsUpload(cid){ closeHrEmployeeView(); if(typeof openDocsUploadModal === 'function') openDocsUploadModal(cid); }
+function _hrActPrint(cid){ closeHrEmployeeView(); if(typeof openContractPrintModal === 'function') openContractPrintModal(cid); }
+function _hrActNewContract(empId){
+  const e = (allEmployees||[]).find(x => x.id === empId);
+  if(!e) return;
+  closeHrEmployeeView();
+  openContractModal(null, e.company_id);
+  setTimeout(() => { if(typeof _ctSetSelectedEmp === 'function') _ctSetSelectedEmp(empId); }, 120);
+}
+
 // ── 상세 조회 모달 ──
 function openHrEmployeeView(empId) {
   const e = (allEmployees || []).find(x => x.id === empId);
@@ -152,6 +263,9 @@ function openHrEmployeeView(empId) {
   set('hr-v-marital', e.marital_status);
   set('hr-v-military', e.military_status);
   set('hr-v-special', e.special_notes);
+
+  // 상태 기반 계약 작업 액션 (Phase 3)
+  _hrRenderActions(e);
 
   // 계약 이력
   const tb = document.getElementById('hr-view-contracts-tbody');

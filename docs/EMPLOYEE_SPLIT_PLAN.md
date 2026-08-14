@@ -143,8 +143,10 @@ companies ──< employees (25 + 확장 5컬럼, 직원 마스터) ──< cont
 > **Phase 2 후속 완료 (2026-08-14)**: 수정·amend 모드에서 개인정보 섹션(ct-edit-emp-info) 전체 잠금(인사관리대장에서만 수정, Q6) + 인사카드 버튼, 신규 직원 입력 섹션(ct-new-emp-section)·데드 함수(checkCtDuplicateName 등)·데드 ID 15건 제거, 계약기간 경고행 복원, TOTAL:0
 ### Phase 3 — 상태 기반 액션 이관
 
-1. `viewContract()`(2035)의 버튼 표시 로직(2328~2440) + 상태 배너 로직을 추출 → 직원 패널 액션 렌더러로 포팅
-2. 액션 함수 자체(`doContractRenew`, `doContractAmend`, `doContractRecontract`, `doContractTerminate`, `doFixedTerminate`, `confirmContractRenew`, `confirmTerminate`, `confirmFixedTerminate`, `deleteDraftContract`, `deleteContract`)는 **재사용** — 대상 계약 ID만 직원 패널에서 결정
+> **완료 (2026-08-14)**: 인사관리대장 직원 상세 모달에 상태 기반 액션 영역(`hr-view-actions`) 신설 — 유효계약(조회/수정재발행/갱신/퇴사·해지설정/서류미비), 계약예정(수정/파기), 해지예정(해지일변경/철회), 갱신예정(취소), 임시저장(이어작성/삭제), 만료·해지(재계약), 무이력(신규계약 작성·직원 프리셋) — 액션 클릭 시 계약 모달 열고 해당 라이프사이클 함수 실행(120ms 후). 브라우저 검증 완료
+
+1. `viewContract()`(2035)의 버튼 표시 로직(2328~2440) + 상태 배너 로직을 추출 → 직원 패널 액션 렌더러로 포팅 ✅ (`_hrRenderActions`)
+2. 액션 함수 자체(`doContractRenew`, `doContractAmend`, `doContractRecontract`, `doContractTerminate`, `doFixedTerminate`, `confirmContractRenew`, `confirmTerminate`, `confirmFixedTerminate`, `deleteDraftContract`, `deleteContract`)는 **재사용** — 대상 계약 ID만 직원 패널에서 결정 ✅ (viewContract 후 실행 패턴)
 3. 계약 목록 카드(`_renderContCoSummaryCards`) 진입점도 `employee_id` 기반으로 동일 함수 호출
 
 ### Phase 4 — 동일인 판단 단순화
