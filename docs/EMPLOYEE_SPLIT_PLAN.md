@@ -55,7 +55,7 @@ companies ──< employees (25 + 확장 5컬럼, 직원 마스터) ──< cont
 ### 1-4. 확장 인사정보 필드 (신규 스키마)
 
 > **확정 내역 (2026-08-14)**: Q7 전 필드 자유입력 / Q8 변경이력 제외 / Q9 Tier A에서 birth_date 제외, Tier B 전부, Tier C 전부 제외 / Q10 4대보험은 계약별 저장 유지 (오픈 후 재검토)
-> **최종 추가 컬럼 (11개, 모두 TEXT 자유입력)**: `resign_date`, `career_history`, `military_status`, `education`, `major`, `certifications`, `language_skills`, `special_notes`, `marital_status`, `emergency_contact`, `emergency_relation`
+> **최종 추가 컬럼 (11개, 모두 TEXT 자유입력)**: `resign_date`, `career_history`, `military_status`, `education`, `major`, `certifications`, `language_skills`, `special_notes`, `marital_status`, `emergency_contact`, `emergency_relation` ✅ **전부 ADD 완료 (Phase 0)**
 
 계약에 포함되지 않는 개인정보도 인사관리대장에서 계약과 **독립적으로 등록·변경**한다. 컬럼은 `employees`에 ADD COLUMN (평면 구조 유지):
 
@@ -104,14 +104,16 @@ companies ──< employees (25 + 확장 5컬럼, 직원 마스터) ──< cont
 
 ### Phase 0 — 사전 데이터 정비 + 스키마 확장 (진행 전 필수)
 
-1. 서버 정상 종료 → WAL 확인·체크포인트 → DB 3종 백업 (글로벌 룰 순서 엄수)
-2. **employees 스키마 확장**: `ALTER TABLE employees ADD COLUMN` (1-4 필드 전체, 모두 TEXT) → `PRAGMA integrity_check` = ok
+> **진행 현황 (2026-08-14)**: ①② 완료(resign_date 포함 11컬럼 추가, 1차 커밋 2fd0c8e) / ④ 정규화 완료(12건→active) / ⑤ **병합 불필요 판정** / ⑥ 완료(schema.sql 557컬럼 주석 0 누락) / ③ 9명은 고객사 보완 대상으로 별도 보고 예정
+
+1. 서버 정상 종료 → WAL 확인·체크포인트 → DB 3종 백업 (글로벌 룰 순서 엄수) ✅
+2. **employees 스키마 확장**: `ALTER TABLE employees ADD COLUMN` (1-4 필드 전체, 모두 TEXT) → `PRAGMA integrity_check` = ok ✅
    - **필수 포함**: `resign_date` — 없으면 해지 시 직원 PATCH가 400으로 실패하는 기존 버그 지속
-3. **해지 흐름 직원 PATCH 수정**: `confirmContractTerminate`(2364)·`confirmFixedTerminate`(2911)의 `resign_date` PATCH가 정상 동작하도록 하고, "resign_date 컬럼 없음 — expire_date 사용" 우회 주석(1052) 제거. 해지 시나리오 회귀 테스트 필수
-4. `employees.status` 정규화: `'재직'`(한글 레거시) **12건** → `'active'`
+3. **해지 흐름 직원 PATCH 수정**: `confirmContractTerminate`(2364)·`confirmFixedTerminate`(2911)의 `resign_date` PATCH가 정상 동작하도록 하고, "resign_date 컬럼 없음 — expire_date 사용" 우회 주석(1052) 제거. 해지 시나리오 회귀 테스트 필수 ✅ (커밋 2fd0c8e)
+4. `employees.status` 정규화: `'재직'`(한글 레거시) **12건** → `'active'` ✅
 5. 주민번호 부재 직원 **9명** 확인 → 고객사에 보완 요청 or "매칭 제외" 명시
-6. 동일인 중복 검사: 회사 내 주민번호 앞7자리 중복 4그룹 — 전부 테스트 고객사(co-sev-test-01, comp-welcome-test, comp05). 병합 스크립트로 정리 (운영 데이터 중복 0건 확인됨)
-7. `scripts/dump_schema.js` KO 맵에 신규 컬럼 한글 주석 추가 → `schema.sql` 재생성 → `check-missing-comments.js` → 커밋
+6. 동일인 중복 검사: **조사 완료 — 병합 불필요 판정**. 중복 4그룹(co-sev-test-01·comp-welcome-test·comp05)은 전부 테스트 더미 주민번호(900101-·101010-·121212-)를 공유하는 서로 다른 테스트 직원들. 병합 시 한 직원에 활성계약 2개가 생겨 1인1활성 원칙 위반 → 병합 생략, 문서화로 종결
+7. `scripts/dump_schema.js` KO 맵에 신규 컬럼 한글 주석 추가 → `schema.sql` 재생성 → `check-missing-comments.js` → 커밋 ✅
 
 ### Phase 1 — 인사관리대장 페이지 신설
 
