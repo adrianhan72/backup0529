@@ -45,7 +45,7 @@ function switchStdTab(tab){
 // ── 4대보험 요율표 렌더링 ──
 function renderInsuranceRates(){
   const now      = new Date();
-  const todayStr = now.toISOString().slice(0,10);
+  const todayStr = fmtLocalDate(now);
 
   const typeMap = {
     national_pension:'std-pension-table',

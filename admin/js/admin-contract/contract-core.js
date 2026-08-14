@@ -33,7 +33,7 @@ function _renderContCoSummaryCards(){
   if(!wrap || !currentContCompanyId){ if(wrap) wrap.innerHTML=''; if(outer) outer.innerHTML=''; return; }
 
   const coId = currentContCompanyId;
-  const today = new Date().toISOString().slice(0,10);
+  const today = fmtLocalDate(new Date());
 
   // 공통 헬퍼: 직원명 + 고용형태 뱃지 렌더링
   function empNameCell(empId){ return `<td style="font-weight:700;color:#111827;">${getEmpName(empId)}</td>`; }
@@ -492,7 +492,7 @@ function renderContracts(){
   const filterStatus=Array.from(document.querySelectorAll('.cont-filter-status-cb:checked')).map(cb=>cb.value).filter(v=>v!=='전체');
   const filterDocsOnly=document.getElementById('cont-filter-docs-incomplete')?.checked||false;
   const filterById=(document.getElementById('cont-filter-id')?.value||'').trim();
-  const today=new Date().toISOString().slice(0,10);
+  const today=fmtLocalDate(new Date());
 
   // 알림 카드에서 관리되는 상태는 메인 테이블 기본 제외 (서류미비는 유효 계약이므로 메인 테이블에 포함)
   const ALERT_ONLY_LABELS = new Set(['임시저장',CONTRACT_STATUS_LABEL[CONTRACT_STATUS.RENEWAL_PENDING]]);
@@ -2038,7 +2038,7 @@ function viewContract(id){
   openContractModal(id);
 
   const c = allContracts.find(x=>x.id===id);
-  const today = new Date().toISOString().slice(0,10);
+  const today = fmtLocalDate(new Date());
   const {label:stName} = calcContractStatusDisplay(c||{}, today);
 
   // openContractModal 에서 이미 c.contract_type 우선 기준으로 ctVal이 결정되지만,
@@ -2451,7 +2451,7 @@ async function confirmTerminateDateChange(){
   if(!cid) return;
 
   const c = allContracts.find(x => x.id === cid);
-  const today = new Date().toISOString().slice(0,10);
+  const today = fmtLocalDate(new Date());
 
   // 해지일은 계약 만료일 이전이어야 함
   if(c?.contract_end && newDate >= c.contract_end){
@@ -2545,7 +2545,7 @@ function doContractAmend(){
   // 계약예정: 시작일 당일부터 수정 불가
   const _amendC = allContracts.find(x => x.id === editId.contract);
   if(_amendC && _amendC.status===CONTRACT_STATUS.PENDING){
-    const _today = new Date().toISOString().slice(0,10);
+    const _today = fmtLocalDate(new Date());
     if(_amendC.contract_start && _today >= _amendC.contract_start){
       toast(`계약 시작일(${_amendC.contract_start}) 이후에는 예정 계약을 수정할 수 없습니다.`, 'error');
       return;

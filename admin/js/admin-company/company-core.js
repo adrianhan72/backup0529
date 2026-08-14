@@ -81,7 +81,7 @@ function renderCompanies(){
   const searchInput=document.getElementById('company-search').value.toLowerCase();
   
   // 오늘 날짜 (필터 기준)
-  const _todayStr = new Date().toISOString().slice(0, 10);
+  const _todayStr = fmtLocalDate(new Date());
 
   // effectiveStatus 계산 헬퍼: DB status=ACTIVE이더라도 해지일이 오늘 이하면 inactive 취급
   function _effectiveStatus(c){
@@ -1129,10 +1129,10 @@ function _cmInitEffectiveDateUI(companyId){
     d.setDate(d.getDate() + 1);
     minDate = d.toISOString().slice(0, 10);
   } else {
-    minDate = new Date().toISOString().slice(0, 10);
+    minDate = fmtLocalDate(new Date());
   }
   dateInput.min   = minDate;
-  dateInput.value = new Date().toISOString().slice(0, 10); // 기본값: 오늘 날짜
+  dateInput.value = fmtLocalDate(new Date()); // 기본값: 오늘 날짜
 
   if(hintEl){
     hintEl.textContent = lastPay
@@ -1575,7 +1575,7 @@ async function saveCompany(){
     body.id='comp'+Date.now();
     await api('../tables/companies',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     // ── 신규 등록 이력 기록 ──
-    const _histNew = { id: 'cmhist_'+Date.now(), company_id: body.id, changed_at: Date.now(), effective_date: new Date().toISOString().slice(0,10),
+    const _histNew = { id: 'cmhist_'+Date.now(), company_id: body.id, changed_at: Date.now(), effective_date: fmtLocalDate(new Date()),
       changes: [{ field: 'status', label: '고객사 상태', before: '', after: 'active' }],
       snapshot: {}
     };

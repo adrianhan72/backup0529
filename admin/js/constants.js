@@ -8,6 +8,22 @@
  * @version 2.35.0
  */
 
+/**
+ * fmtLocalDate(d) — 로컬 타임존 기준 'YYYY-MM-DD' 문자열 반환
+ * ⚠️ 시계열 글로벌 룰 (2026-08-14 제정):
+ *   로컬 자정 기반 Date(new Date(y,m,d), setDate/setMonth 결과, 또는 new Date())에서
+ *   'YYYY-MM-DD'를 얻을 때 `toISOString().slice(0,10)` 사용 금지.
+ *   UTC+9(KST) 등 로컬 자정이 UTC 전날 15시가 되어 날짜가 하루 밀리는 버그의 원인.
+ *   → 반드시 fmtLocalDate() 사용. (new Date('YYYY-MM-DD') 문자열 파싱은 UTC 자정이므로 예외적으로 허용)
+ */
+function fmtLocalDate(d){
+  if(!d || isNaN(d.getTime())) return '';
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 // ═══════════════════════════════════════════
 // 직원 상태 (employees.status)
 // ═══════════════════════════════════════════

@@ -390,7 +390,7 @@ function _atlGetPayPeriod(dateStr, company) {
   const endDate = new Date(refY, refM - 1, ppDay);
   endDate.setMonth(endDate.getMonth() + 1);
   endDate.setDate(endDate.getDate() - 1);
-  const endStr = endDate.toISOString().slice(0,10);
+  const endStr = fmtLocalDate(endDate);
 
   return [startStr, endStr];
 }

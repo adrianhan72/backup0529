@@ -1,4 +1,4 @@
-﻿// ─── LABOR STATUS ───
+// ─── LABOR STATUS ───
 // currentLsCompanyId → 최상단 STATE 블록에서 선언됨
 const LS_ITEMS = 15;
 
@@ -747,7 +747,7 @@ function renderLaborStatus(){
             <i class="fas fa-plus"></i> 입력
           </button>`;
       // 계약 상태 뱃지
-      const {badge:stBadge2, label:stName2} = calcContractStatusDisplay(c, new Date().toISOString().slice(0,10));
+      const {badge:stBadge2, label:stName2} = calcContractStatusDisplay(c, fmtLocalDate(new Date()));
       const stBadge = stBadge2; const stLabel2 = stName2;
       return `<tr>
         <td style="font-weight:600;">${getEmpName(c.employee_id)}</td>

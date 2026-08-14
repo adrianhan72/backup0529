@@ -653,7 +653,7 @@ function renderCtContracts(){
   if(!listEl || !currentCompany) return;
 
   const coId = currentCompany.id;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = fmtLocalDate(new Date());
 
   // 계약 상태 판별 헬퍼
   const isCtActive  = c => _isContractActive(c);

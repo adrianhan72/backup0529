@@ -926,7 +926,7 @@ async function savePendingContractEdit(){
   // 현재 폼에서 수정된 값을 수집
   const newStart = document.getElementById('ct-start')?.value || c.contract_start;
   const newEnd   = document.getElementById('ct-end')?.value   || '';
-  const today3   = new Date().toISOString().slice(0,10);
+  const today3   = fmtLocalDate(new Date());
   if(!newStart) return toast('계약 시작일을 입력해 주세요.','error');
   // 상태 재결정
   let newStatus = c.status;
@@ -1079,14 +1079,14 @@ async function cancelPendingContract(){
   if(!c) return;
 
   // 시작일 당일부터 취소 불가
-  const _todayCancel = new Date().toISOString().slice(0,10);
+  const _todayCancel = fmtLocalDate(new Date());
   if(c.contract_start && _todayCancel >= c.contract_start){
     toast(`계약 시작일(${c.contract_start}) 이후에는 예정 계약을 취소할 수 없습니다.`, 'error');
     return;
   }
 
   const isRenew     = (c.status===CONTRACT_STATUS.RENEWAL_PENDING)
-                   || (CONTRACT_ACTIVE_STATUSES.includes(c.status) && (c.contract_start||'') > new Date().toISOString().slice(0,10));
+                   || (CONTRACT_ACTIVE_STATUSES.includes(c.status) && (c.contract_start||'') > fmtLocalDate(new Date()));
   const statusLabel = isRenew ? '갱신예정' : '계약예정';
   const emp         = allEmployees.find(e=>e.id===c.employee_id)||{};
   const empName     = emp.name || '';
@@ -1828,7 +1828,7 @@ async function confirmContractRenew(){
   // ── 갱신 전용 유효성 검사 (직원 신상정보 제외, 계약조건만) ──
   if(_validateRenewFields()) return;
 
-  const today = new Date().toISOString().slice(0,10);
+  const today = fmtLocalDate(new Date());
   const origEnd = c.contract_end || '';
 
   // ── 갱신 폼 필드 미리 수집 (요약 메시지에 필요) ──
@@ -2240,7 +2240,7 @@ function doContractTerminate(){
   if(tp.style.display==='block'){
     const c = allContracts.find(x=>x.id===editId.contract)||{};
     const dateEl = document.getElementById('ct-terminate-date');
-    dateEl.value = c.terminate_date || new Date().toISOString().slice(0,10);
+    dateEl.value = c.terminate_date || fmtLocalDate(new Date());
     dateEl.disabled = false;
 
     // 사유 칩 초기화
@@ -2289,7 +2289,7 @@ async function confirmContractTerminate(){
   const noticePayChk = document.getElementById('ct-term-notice-pay-chk');
   const noticePayAmt = parseInt(document.getElementById('ct-term-notice-pay-amount')?.value || '0') || 0;
 
-  const today = new Date().toISOString().slice(0,10);
+  const today = fmtLocalDate(new Date());
 
   // 계약 만료일(contract_end)보다 이후 날짜는 입력 불가
   if(c.contract_end && termDate >= c.contract_end){
@@ -2572,7 +2572,7 @@ function doFixedTerminate(){
  */
 function _cftValidate(){
   const c          = allContracts.find(x => x.id === editId.contract) || {};
-  const today      = new Date().toISOString().slice(0, 10);
+  const today      = fmtLocalDate(new Date());
   const termDate   = (document.getElementById('ct-fixed-terminate-date') || {}).value || '';
   const hintEl     = document.getElementById('ct-cft-date-hint');
   const confirmBtn = document.getElementById('ct-cft-confirm-btn');
@@ -2625,7 +2625,7 @@ function _cftValidate(){
 function _calcDismissalNoticePay(contract, termDate){
   if(!contract || !termDate) return { applicable: false, amount: 0, tenureDays: 0, noticeDays: 0, reason: '' };
   const cStart  = contract.contract_start || '';
-  const today   = new Date().toISOString().slice(0, 10);
+  const today   = fmtLocalDate(new Date());
   if(!cStart) return { applicable: false, amount: 0, tenureDays: 0, noticeDays: 0, reason: '입사일 정보 없음' };
 
   const hireDate = new Date(cStart);
@@ -2789,7 +2789,7 @@ async function confirmFixedTerminate(){
   const termDate = (document.getElementById('ct-fixed-terminate-date') || {}).value || '';
   if(!termDate) return toast('해지일을 선택하세요.', 'error');
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = fmtLocalDate(new Date());
 
   // 만료일 이상 불가
   if(c.contract_end && termDate >= c.contract_end){
@@ -4233,7 +4233,7 @@ async function saveContract(){
 
   // 신규/재계약 모드: 계약시작일, 종료일, 유형, 상태 결정
   const isRecontract = !!_recontractEmpId && !editId.contract;
-  const today3 = new Date().toISOString().slice(0,10);
+  const today3 = fmtLocalDate(new Date());
   let contractStart, contractEnd, contractType, contractStatus;
   if(isEditMode){
     contractStart = start;
@@ -4265,7 +4265,7 @@ async function saveContract(){
     contractStart = document.getElementById('ct-start').value;
     contractEnd   = document.getElementById('ct-end').value;
     contractType  = document.getElementById('ct-type').value;
-    const today2  = new Date().toISOString().slice(0,10);
+    const today2  = fmtLocalDate(new Date());
     contractStatus= contractStart > today2 ? CONTRACT_STATUS.PENDING : CONTRACT_STATUS.ACTIVE;
 
     // ── 재계약 연속성 검사: 기존 계약 해지/만료일과 연속되면 계약 연장으로 처리 ──
@@ -4291,7 +4291,7 @@ async function saveContract(){
                  || document.getElementById('ct-edit-em-hire')?.value || '';
     contractEnd   = document.getElementById('ct-end')?.value || '';
     contractType  = document.getElementById('ct-em-category').value;
-    const today2new = new Date().toISOString().slice(0,10);
+    const today2new = fmtLocalDate(new Date());
     contractStatus = contractStart > today2new ? CONTRACT_STATUS.PENDING : CONTRACT_STATUS.ACTIVE;
   }
 

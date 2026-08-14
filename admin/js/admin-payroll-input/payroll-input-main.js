@@ -144,7 +144,7 @@ async function loadPITargetList(){
   const _salEndDate = new Date(_salStartYr, _salStartMo - 1, _ppDay);
   _salEndDate.setMonth(_salEndDate.getMonth() + 1);
   _salEndDate.setDate(_salEndDate.getDate() - 1);
-  const _salEnd = _salEndDate.toISOString().slice(0,10);
+  const _salEnd = fmtLocalDate(_salEndDate);
 
   // 해당 고객사 + 해당 년월에 유효 계약이 있는 근로자 필터링
   // 유효 조건: is_draft=false, 파기되지 않음, 계약 기간이 해당 월과 겹침
@@ -268,7 +268,7 @@ async function loadPITargetList(){
         }
       } else if(emp.created_at){
         const _createdDt = new Date(emp.created_at);
-        cStart = isNaN(_createdDt.getTime()) ? '-' : _createdDt.toISOString().slice(0,10);
+        cStart = isNaN(_createdDt.getTime()) ? '-' : fmtLocalDate(_createdDt);
       } else if(_type === 'representative' && coData){
         cStart = coData.contract_start_date || '-';
       } else {
@@ -1213,7 +1213,7 @@ function loadPIContract(contractId){
     _eDate.setMonth(_eDate.getMonth() + 1);
     _eDate.setDate(_eDate.getDate() - 1);
     document.getElementById('pi-pay-period-start').value = `${_sYr}-${String(_sMo).padStart(2,'0')}-${String(_ppDay).padStart(2,'0')}`;
-    document.getElementById('pi-pay-period-end').value = _eDate.toISOString().slice(0,10);
+    document.getElementById('pi-pay-period-end').value = fmtLocalDate(_eDate);
     // 최저임금 기본값
     const _mwYear = parseInt(document.getElementById('pi-year')?.value) || new Date().getFullYear();
     const _mw = allMinimumWages?.find(m => m.year === _mwYear) || { hourly_wage: 10030 };
@@ -1295,7 +1295,7 @@ function loadPIContract(contractId){
       _eDate.setMonth(_eDate.getMonth() + 1);
       _eDate.setDate(_eDate.getDate() - 1);
       document.getElementById('pi-pay-period-start').value = `${_sYr}-${String(_sMo).padStart(2,'0')}-${String(_ctPpDay).padStart(2,'0')}`;
-      document.getElementById('pi-pay-period-end').value = _eDate.toISOString().slice(0,10);
+      document.getElementById('pi-pay-period-end').value = fmtLocalDate(_eDate);
     }
   }
   // 기준 모드 UI 전환 (고객사마다 다를 수 있으므로 직원 선택 시도 재확인)
@@ -1947,7 +1947,7 @@ function _calcPIDefaultWorkDays(contract, year, month){
 
   // ── 모드·설명 ───────────────────────────────────────────────────────
   let mode, description;
-  const _ppLabel = `${ppStart.toISOString().slice(0,10)}~${ppEnd.toISOString().slice(0,10)}`;
+  const _ppLabel = `${fmtLocalDate(ppStart)}~${fmtLocalDate(ppEnd)}`;
   if(isFixed){
     const pStartInPeriod = periodStartDate && periodStartDate >= ppStart && periodStartDate <= ppEnd;
     const pEndInPeriod   = periodEndDate   && periodEndDate   >= ppStart && periodEndDate   <= ppEnd;

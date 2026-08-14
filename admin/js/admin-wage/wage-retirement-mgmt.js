@@ -23,7 +23,7 @@ function initRetirementMgmtPage(){
 /** 전체 대상자 집계 및 테이블 렌더링 */
 function renderRetirementMgmt(){
   if (!window._retirementMgmtEnabled) return;
-  const today = new Date().toISOString().slice(0,10);
+  const today = fmtLocalDate(new Date());
 
   // ── 해지/해지예정 계약 수집 ──
   const terminatedContracts = (allContracts||[]).filter(c => {

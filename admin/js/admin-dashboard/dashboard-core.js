@@ -1,4 +1,4 @@
-﻿// ─── DASHBOARD ───
+// ─── DASHBOARD ───
 
 
 // ── 대시보드 임시저장 알림 카드 ──
@@ -184,7 +184,7 @@ function renderDashRetirementBanner(){
   }
   const sec = document.getElementById('dash-retirement-banner');
   if(!sec) return;
-  const today = new Date().toISOString().slice(0,10);
+  const today = fmtLocalDate(new Date());
 
   const terminatedContracts = (allContracts||[]).filter(c => {
     if(c.is_draft || c.is_voided_by_amend) return false;
@@ -613,7 +613,7 @@ function openProbMgmtModal(contractId){
         <div class="probmgmt-opt-expand-row">
           <span class="probmgmt-opt-expand-label">채용 전환일자</span>
           <input type="date" id="probmgmt-confirm-date" class="probmgmt-opt-expand-input"
-            style="flex:1;" value="${t.probEnd}" min="${new Date().toISOString().slice(0,10)}" />
+            style="flex:1;" value="${t.probEnd}" min="${fmtLocalDate(new Date())}" />
         </div>
         <div class="probmgmt-opt-expand-row">
           <span class="probmgmt-opt-expand-label">${salaryLabel}</span>

@@ -381,7 +381,7 @@ function _cmSetAllowanceConfig(cfg){
 }
 // ── 대시보드 카드용 사용료 현황 계산 ──
 function getBillingInfoForDashCard(companyId){
-  const todayStr = new Date().toISOString().slice(0,10);
+  const todayStr = fmtLocalDate(new Date());
   const now = new Date();
   const yr  = now.getFullYear();
   const mo  = now.getMonth() + 1;
@@ -672,7 +672,7 @@ let terminateTargetId = null;
 function terminateCompany(id, name){
   terminateTargetId = id;
   const c = allCompanies.find(x => x.id === id);
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = fmtLocalDate(new Date());
   const endDateEl = document.getElementById('tm-end-date');
 
   // 사용료 수납관리 ON → 미납금 체크 모달
@@ -741,7 +741,7 @@ async function doTerminate(withLoss){
   if(!id) return;
   const c = allCompanies.find(x => x.id === id);
   if(!c) return;
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = fmtLocalDate(new Date());
   // 사용료 수납관리 ON → billing 모달 전용 날짜 필드 사용 (ID 분리)
   const _termModalId = window._billingFeatureEnabled ? 'terminate-modal-billing' : 'terminate-modal';
   const _termDateId = window._billingFeatureEnabled ? 'tm-end-date-billing' : 'tm-end-date';
@@ -822,7 +822,7 @@ function changeEndDate(id, name, currentEndDate){
   if(dateEl){
     // 해지일은 계약 시작일 이후만 선택 가능
     dateEl.min = c?.contract_start_date || '';
-    dateEl.value = currentEndDate || new Date().toISOString().slice(0,10);
+    dateEl.value = currentEndDate || fmtLocalDate(new Date());
   }
   openModal('change-end-date-modal');
 }
@@ -840,7 +840,7 @@ async function doChangeEndDate(){
   if(c.contract_start_date && newDateStr < c.contract_start_date){
     return toast(`해지일은 계약 시작일(${c.contract_start_date}) 이후여야 합니다.`, 'error');
   }
-  const todayStr = new Date().toISOString().slice(0,10);
+  const todayStr = fmtLocalDate(new Date());
   // 오늘 이하면 즉시 해지(INACTIVE), 미래면 해지예정(ACTIVE) 유지
   const newStatus = newDateStr <= todayStr ? COMPANY_STATUS.INACTIVE : COMPANY_STATUS.ACTIVE;
   const patch = { status: newStatus, contract_end_date: newDateStr };
@@ -877,7 +877,7 @@ async function cancelTerminate(id, name){
   const patch = { status: COMPANY_STATUS.ACTIVE, contract_end_date: null };
   await api(`../tables/companies/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(patch)});
   // ── 해지 취소 이력 기록 ──
-  const _histCancel = { id: 'cmhist_'+Date.now(), company_id: id, changed_at: Date.now(), effective_date: new Date().toISOString().slice(0,10),
+  const _histCancel = { id: 'cmhist_'+Date.now(), company_id: id, changed_at: Date.now(), effective_date: fmtLocalDate(new Date()),
     changes: [{ field: 'contract_end_date', label: '계약 해지일', before: c?.contract_end_date || '', after: '(취소)' },
               { field: 'status', label: '고객사 상태', before: c?.status || '', after: COMPANY_STATUS.ACTIVE }],
     snapshot: { contract_end_date: c?.contract_end_date, status: c?.status }
@@ -984,7 +984,7 @@ async function _createCancelNotice(company){
 
 /* [사용료 숨김] 기존 terminateCompany / doTerminate (미납금 체크 포함) - 원복 시 아래 주석 해제
 function terminateCompany_DISABLED(id, name){
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = fmtLocalDate(new Date());
   terminateTargetId = id;
   let unpaidAmount = 0, unpaidCount = 0;
   let pendingAmount = 0, pendingCount = 0;
@@ -1027,7 +1027,7 @@ async function doTerminate_DISABLED(withLoss){
   if(!id) return;
   const c = allCompanies.find(x => x.id === id);
   if(!c) return;
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = fmtLocalDate(new Date());
   if(!withLoss){
     const hasBalance = allBillings.some(b => {
       if(b.company_id !== id || b.payment_status ===PAYMENT_STATUS.PAID) return false;

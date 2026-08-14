@@ -27,13 +27,13 @@ function _isPIMonthFullyPaid(coId, yr, mo){
     const _eDate = new Date(_prevYr, _prevMo - 1, _ppDay);
     _eDate.setMonth(_eDate.getMonth() + 1);
     _eDate.setDate(_eDate.getDate() - 1);
-    periodEnd = _eDate.toISOString().slice(0,10);
+    periodEnd = fmtLocalDate(_eDate);
   } else {
     periodStart = `${yr}-${String(mo).padStart(2,'0')}-${String(_ppDay).padStart(2,'0')}`;
     const _eDate = new Date(yr, mo - 1, _ppDay);
     _eDate.setMonth(_eDate.getMonth() + 1);
     _eDate.setDate(_eDate.getDate() - 1);
-    periodEnd = _eDate.toISOString().slice(0,10);
+    periodEnd = fmtLocalDate(_eDate);
   }
 
   // 해당 월에 유효 계약이 있는 직원 Set

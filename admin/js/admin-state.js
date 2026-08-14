@@ -22,7 +22,7 @@ function isCompanyActive(c){
   if(c.status !== COMPANY_STATUS.ACTIVE) return false;
   // 해지일이 설정되어 있고, 오늘 이하면 해지 완료
   if(c.contract_end_date){
-    const today = new Date().toISOString().slice(0,10);
+    const today = fmtLocalDate(new Date());
     if(c.contract_end_date <= today) return false;
   }
   return true;
@@ -452,7 +452,7 @@ async function loadContracts(){
 
 /* 계약예정 상태 중 contract_start <= 오늘인 계약을 활성으로 전환 */
 async function autoActivatePendingContracts(){
-  const todayStr = new Date().toISOString().slice(0,10);
+  const todayStr = fmtLocalDate(new Date());
   const toActivate = allContracts.filter(c =>
     c.status === CONTRACT_STATUS.PENDING && c.contract_start && c.contract_start <= todayStr
   );
@@ -499,7 +499,7 @@ function _restorePairContractWindow(){
 
 /* 해지예정/퇴사예정 상태 중 terminate_date <= 오늘인 계약을 해지로 전환 */
 async function autoProcessTerminatePendingContracts(){
-  const todayStr = new Date().toISOString().slice(0,10);
+  const todayStr = fmtLocalDate(new Date());
   const toTerminate = allContracts.filter(c =>
     c.status === CONTRACT_STATUS.TERMINATE_PENDING && c.terminate_date && c.terminate_date <= todayStr
   );
@@ -520,7 +520,7 @@ async function autoProcessTerminatePendingContracts(){
 
 /* 계약직/일용직 중 contract_end < 오늘인 활성 계약을 만료로 전환 */
 async function autoExpireFixedTermContracts(){
-  const todayStr = new Date().toISOString().slice(0,10);
+  const todayStr = fmtLocalDate(new Date());
   const FIXED_TERM_TYPES = ['fixed_term', 'fixed_term_probation', 'daily', '계약직', '계약직 수습', '일용직'];
   const toExpire = allContracts.filter(c => {
     if (!CONTRACT_ACTIVE_STATUSES.includes(c.status)) return false;

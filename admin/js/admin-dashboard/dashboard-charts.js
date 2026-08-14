@@ -206,7 +206,7 @@ function renderDashBillingCards(){
   const now    = new Date();
   const yr     = now.getFullYear();
   const mo     = now.getMonth() + 1;
-  const today  = now.toISOString().slice(0, 10); // 'YYYY-MM-DD'
+  const today  = fmtLocalDate(now); // 'YYYY-MM-DD'
 
   // 섹션 타이틀 동적 업데이트
   const titleEl = document.getElementById('dash-billing-section-title');
@@ -624,7 +624,7 @@ function renderBillingTrendChart(){
   const months = rangeEl ? parseInt(rangeEl.value) : 12;
 
   const now = new Date();
-  const todayStr = now.toISOString().slice(0, 10);
+  const todayStr = fmtLocalDate(now);
   const labels = [];
   const billedData  = [];  // 총 청구금액
   const paidData    = [];  // 납부 총액

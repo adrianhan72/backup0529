@@ -97,8 +97,8 @@ function _updateWLMenuBadge(){
 // ── 급여 전체 입력 완료 여부 확인 → 알림 생성 ──
 async function _checkWageLedgerComplete(companyId, year, month, changedEmpId = null){
   // 열람 대상 월의 첫날·말일
-  const mStart = new Date(year, month - 1, 1).toISOString().slice(0,10);
-  const mEnd   = new Date(year, month, 0).toISOString().slice(0,10);
+  const mStart = fmtLocalDate(new Date(year, month - 1, 1));
+  const mEnd   = fmtLocalDate(new Date(year, month, 0));
 
   // 해당 월에 유효했던 계약 중 서류완비(is_draft=false, signed+consent) 직원
   const validContracts = allContracts.filter(ct => {
@@ -681,8 +681,8 @@ function renderWageLedger(){
   // 열람 대상 월의 첫날·말일 계산
   const targetMonthStart = new Date(yr, mo - 1, 1);          // 1일 00:00
   const targetMonthEnd   = new Date(yr, mo, 0);              // 말일 23:59
-  const tmStartStr = targetMonthStart.toISOString().slice(0,10); // 'YYYY-MM-DD'
-  const tmEndStr   = targetMonthEnd.toISOString().slice(0,10);
+  const tmStartStr = fmtLocalDate(targetMonthStart); // 'YYYY-MM-DD'
+  const tmEndStr   = fmtLocalDate(targetMonthEnd);
 
   // 해당 고객사의 모든 계약 목록
   const coContracts = allContracts.filter(c => c.company_id === _wlCompanyId);

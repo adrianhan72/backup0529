@@ -67,7 +67,7 @@ async function tryLogin(){
   if(!found){ showErr('코드가 올바르지 않습니다. 담당 노무사에게 문의하세요.'); return; }
 
   // 해지된 고객사 차단
-  const today = new Date().toISOString().slice(0, 10);
+  const today = fmtLocalDate(new Date());
   const isInactive = found.status === 'inactive';
   const isAutoTerminated = found.status === 'active' && found.contract_end_date && found.contract_end_date <= today;
   if(isInactive || isAutoTerminated){
@@ -383,7 +383,7 @@ async function loadClientInsRates(){
 function _pickInsRate(type){
   const rows = _allClientInsRates.filter(r => r.insurance_type === type);
   if(!rows.length) return null;
-  const today = new Date().toISOString().slice(0,10);
+  const today = fmtLocalDate(new Date());
   const cur = rows.find(r => r.period_start && r.period_end && r.period_start <= today && today <= r.period_end);
   if(cur) return cur;
   const dated = rows.filter(r => r.period_start);

@@ -81,7 +81,7 @@ function renderClientSevHistory(){
   const list = document.getElementById('sev-history-list');
   if(!list || !currentCompany) return;
   const coId = currentCompany.id;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = fmtLocalDate(new Date());
 
   const resignedEmps = allEmployees.filter(e => {
     if(e.company_id !== coId) return false;
@@ -171,7 +171,7 @@ function renderClientSevStatus(){
   const summaryCard = document.getElementById('sev-client-summary');
   if(!list || !currentCompany) return;
   const coId = currentCompany.id;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = fmtLocalDate(new Date());
 
   const activeEmps = allEmployees.filter(e => {
     if(e.company_id !== coId) return false;

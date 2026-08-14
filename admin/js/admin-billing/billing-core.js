@@ -66,7 +66,7 @@ async function generateMonthlyBilling(){
       
       // 청구일: 오늘
       const today = new Date();
-      const createdDate = today.toISOString().split('T')[0];
+      const createdDate = fmtLocalDate(today);
       
       const billing={
         company_id:co.id,
@@ -166,7 +166,7 @@ async function generateBillingForCompany(companyId, companyName){
     
     // 청구일: 오늘
     const today = new Date();
-    const createdDate = today.toISOString().split('T')[0];
+    const createdDate = fmtLocalDate(today);
     
     const billing={
       company_id:companyId,
@@ -201,7 +201,7 @@ async function generateBillingForCompany(companyId, companyName){
 // 고객사별 누적 미납금 계산 함수
 function calculateTotalUnpaid(companyId, currentBillingYear, currentBillingMonth){
   // 해당 청구보다 이전 월 중 마감일이 지났는데도 미납된 금액만 합산
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = fmtLocalDate(new Date());
   const previousBillings = allBillings.filter(b => {
     if(b.company_id !== companyId) return false;
     // 현재 청구보다 이전 월인지 확인
@@ -250,7 +250,7 @@ function renderBillings(){
   
   // 현재 날짜
   const today=new Date();
-  const todayStr=today.toISOString().split('T')[0];
+  const todayStr=fmtLocalDate(today);
   const currentYear = today.getFullYear();
   const currentMonth = today.getMonth() + 1;
 
@@ -659,7 +659,7 @@ async function confirmFullPayment(billingId){
   if(!confirm(`${coName} ${bill.billing_year}년 ${bill.billing_month}월 사용료\n${Math.round(bill.total_amount).toLocaleString('ko-KR')}원을 완납 확인하시겠습니까?`)) return;
   
   try {
-    const today=new Date().toISOString().split('T')[0];
+    const today=fmtLocalDate(new Date());
     const updated={
       ...bill,
       payment_status: PAYMENT_STATUS.PAID,
@@ -714,7 +714,7 @@ async function bulkPayment(){
   if(!confirm(`선택한 ${billingIds.length}건을 완납 처리하시겠습니까?`)) return;
   
   try {
-    const today = new Date().toISOString().split('T')[0];
+    const today = fmtLocalDate(new Date());
     let successCount = 0;
     
     for(const billingId of billingIds){
@@ -831,7 +831,7 @@ async function bulkCreateBilling(){
       const dueDay = co.pay_day || 25;
       const dueDate = `${yr}-${String(mo).padStart(2,'0')}-${String(dueDay).padStart(2,'0')}`;
       const today = new Date();
-      const createdDate = today.toISOString().split('T')[0];
+      const createdDate = fmtLocalDate(today);
       
       const billing = {
         company_id: item.companyId,
@@ -927,7 +927,7 @@ function openPaymentHistoryModal(companyId, companyName){
       } else if(paidAmt > 0 && remaining > 0){
         status = PAYMENT_STATUS.PARTIAL;
         statusBadge = `<span class="badge badge-yellow">${PAYMENT_STATUS_LABEL[PAYMENT_STATUS.PARTIAL]}</span>`;
-      } else if(b.due_date && b.due_date < new Date().toISOString().split('T')[0]){
+      } else if(b.due_date && b.due_date < fmtLocalDate(new Date())){
         status = PAYMENT_STATUS.UNPAID;
         statusBadge = `<span class="badge badge-red">${PAYMENT_STATUS_LABEL[PAYMENT_STATUS.UNPAID]}</span>`;
       }
@@ -1052,7 +1052,7 @@ async function confirmPartialPayment(){
   if(!confirm(confirmMsg)) return;
   
   try {
-    const today=new Date().toISOString().split('T')[0];
+    const today=fmtLocalDate(new Date());
     
     const updated={
       ...bill,

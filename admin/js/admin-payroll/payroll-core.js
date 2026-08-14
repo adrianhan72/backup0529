@@ -200,7 +200,7 @@ function openPayslipModal(payrollId){
   // 2차: 없으면 해당 직원의 가장 최근 계약(start 기준 내림차순)을 폴백으로 사용
   const _psYr = Number(p.pay_year), _psMo = Number(p.pay_month);
   const _psMonthStart = `${_psYr}-${String(_psMo).padStart(2,'0')}-01`;
-  const _psMonthEnd   = new Date(_psYr, _psMo, 0).toISOString().slice(0,10); // 말일
+  const _psMonthEnd   = fmtLocalDate(new Date(_psYr, _psMo, 0)); // 말일
 
   // 유효 계약 후보 (취소·파기·임시저장·개정무효 제외)
   const _empContracts = allContracts.filter(c => {

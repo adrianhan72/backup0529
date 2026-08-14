@@ -1,4 +1,4 @@
-﻿
+
 // ==============================================================
 //  퇴직급여 관리
 // ==============================================================
@@ -200,7 +200,7 @@ function getContinuousContractChain(employeeId){
 function sevStatusBadge(emp, contract){
   if(!contract) return '<span class="sev-nodata-sm">계약 없음</span>';
   const s = contract.status || '';
-  const today = new Date().toISOString().slice(0,10);
+  const today = fmtLocalDate(new Date());
   if(contract.status === CONTRACT_STATUS.TERMINATED || emp?.status===EMP_STATUS.RESIGNED){
     const resignDate = emp?.resign_date || contract.terminate_date || contract.contract_end || '';
     return `<span class="badge badge-red">해지·퇴직${resignDate?' ('+resignDate+')':''}</span>`;
@@ -244,7 +244,7 @@ function renderSevStatusTab(){
     return;
   }
 
-  const todayStr = new Date().toISOString().slice(0,10);
+  const todayStr = fmtLocalDate(new Date());
 
   // 해당 고객사 재직 직원 (일용직·등기임원·대표자·특수관계인 제외)
   const _SEV_EXCLUDED_TYPES = new Set([CONTRACT_TYPE.DAILY, CONTRACT_TYPE.EXECUTIVE, CONTRACT_TYPE.REPRESENTATIVE, CONTRACT_TYPE.RELATED_PARTY]);
@@ -474,7 +474,7 @@ function renderSevHistoryTab(){
   // ── 퇴직금 지급 발생 이력 대상 조건 ──
   // "마지막 계약의 status가 해지 또는 만료로 명시 선언된" 직원만 표시
   // contract_end < today 여부만으로는 노출하지 않음 (명시적 선언 필요)
-  const todayStr2 = new Date().toISOString().slice(0,10);
+  const todayStr2 = fmtLocalDate(new Date());
   const resignedEmps = allEmployees.filter(e => {
     if(e.company_id !== _sevCompanyId) return false;
     if(e.employment_category ===CONTRACT_TYPE.DAILY) return false;

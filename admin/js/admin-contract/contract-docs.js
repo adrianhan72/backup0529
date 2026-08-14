@@ -1,4 +1,4 @@
-﻿
+
 // ── 계약 조회 모달 첨부 서류 섹션 렌더링 (업로드/삭제/미리보기/다운로드) ──
 function _renderContractFilesSection(c){
   const existing = document.getElementById('ct-files-section');
@@ -890,7 +890,7 @@ function _buildDocx(){
     indent:{left:60},
   });
 
-  const contractDate = data.contractStart || new Date().toISOString().slice(0,10);
+  const contractDate = data.contractStart || fmtLocalDate(new Date());
 
   // ── 동적 조항 번호 카운터 (Word 문서용) ──
   let _wArtNo = 0;
@@ -1281,7 +1281,7 @@ function generateContractHTML(){
       : (value||'—');
     return '<tr><th>' + label + '</th><td>' + cellContent + '</td></tr>';
   };
-  const today = new Date().toISOString().slice(0,10);
+  const today = fmtLocalDate(new Date());
   const todayKr = new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'});
   const contractDateKr = d.contractStart ? new Date(d.contractStart).toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'}) : todayKr;
 
@@ -1714,7 +1714,7 @@ async function downloadContractPdf(){
 
     const empName = window._printingEmpName || '근로자';
     const ctType  = window._printingContractType || '';
-    const today   = new Date().toISOString().slice(0,10).replace(/-/g,'');
+    const today   = fmtLocalDate(new Date()).replace(/-/g,'');
     pdf.save(`근로계약서_${empName}_${ctType}_${today}.pdf`);
     toast('PDF가 저장되었습니다.');
   } catch(e){
