@@ -792,6 +792,9 @@ function openContractModal(id=null, preCompanyId=null){
   // 연속성 상속 힌트·입사일 잠금 리셋 (이전 재계약/신규 세션 잔재 방지)
   { const _hih = document.getElementById('ct-hire-inherit-hint'); if(_hih){ _hih.textContent = ''; _hih.style.display = 'none'; } }
   { const _hir = document.getElementById('ct-edit-em-hire'); if(_hir){ _hir.readOnly = false; _hir.classList.remove('ct-input-locked'); } }
+  // 연속성 사원번호 잠금·힌트 리셋 (이전 세션 잔재 방지)
+  { const _eno = document.getElementById('ct-em-empno'); if(_eno){ _eno.readOnly = false; _eno.classList.remove('ct-input-locked-dark'); _eno.style.background=''; } }
+  { const _enh = document.getElementById('ct-edit-empno-lock-hint'); if(_enh){ _enh.textContent=''; _enh.style.display='none'; } }
   // 잠금 힌트 텍스트/클래스 초기화 (갱신 세션 문구 잔재 방지)
   ['ct-edit-name-lock-hint','ct-edit-empno-lock-hint','ct-edit-category-lock-hint'].forEach(hid=>{
     const _h = document.getElementById(hid); if(_h){ _h.textContent = ''; _h.classList.remove('va-ok'); }

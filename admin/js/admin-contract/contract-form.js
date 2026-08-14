@@ -2637,13 +2637,39 @@ function onCtStartChange(){
   if(typeof _updateProbationPeriodState === 'function') _updateProbationPeriodState();
   if(typeof _autoCalcProbationEndDate === 'function') _autoCalcProbationEndDate();
 
-  // ── 계약 연속성: 이전 계약 만료/해지일 기준 입사일 상속·역전 차단 ──
+  // ── 계약 연속성: 이전 계약 만료/해지일 기준 입사일·사원번호 상속 + 역전 차단 ──
   // (재계약·신규계약 모드에서만 판정 — 수정/조회 모드에서는 실행하지 않음)
   if((isNewMode || _recontractSourceId) && typeof _ctGetPrevContractForContinuity === 'function'){
     const prev    = _ctGetPrevContractForContinuity();
     const hireEl  = document.getElementById('ct-edit-em-hire');
     const startHint = document.getElementById('ct-start-hint');
     const hireHint  = document.getElementById('ct-hire-inherit-hint');
+    // 재계약: ct-edit-em-empno / 신규: ct-em-empno
+    const empNoEl = document.getElementById(isNewMode ? 'ct-em-empno' : 'ct-edit-em-empno');
+    const empNoHint = document.getElementById('ct-edit-empno-lock-hint');
+
+    const _unlockEmpNo = () => {
+      if(empNoEl){
+        empNoEl.readOnly = false;
+        empNoEl.classList.remove('ct-input-locked-dark');
+        empNoEl.style.background = '';
+      }
+      if(empNoHint){ empNoHint.style.display = 'none'; empNoHint.textContent = ''; }
+    };
+    const _lockEmpNo = (empNo) => {
+      if(empNoEl && empNo){
+        empNoEl.value = empNo;
+        empNoEl.readOnly = true;
+        empNoEl.classList.add('ct-input-locked-dark');
+        empNoEl.style.background = '#f1f5f9';
+      }
+      if(empNoHint){
+        empNoHint.textContent = `🔗 계약 연속성 — 이전 계약 사원번호(${empNo || ''}) 승계`;
+        empNoHint.className = 'va-hint va-ok';
+        empNoHint.style.display = 'block';
+      }
+    };
+
     if(prev && prev.endDate){
       if(startVal <= prev.endDate){
         // ── 역전 차단: 시작일은 이전 계약 만료/해지일보다 이후여야 함 ──
@@ -2652,6 +2678,7 @@ function onCtStartChange(){
           startHint.style.color = '#dc2626';
         }
         if(hireHint){ hireHint.textContent = ''; hireHint.style.display = 'none'; }
+        _unlockEmpNo();
       } else {
         if(startHint){ startHint.textContent = '이 계약의 효력 발생일'; startHint.style.color = ''; }
         const nextBiz = (typeof _nextBusinessDay === 'function') ? _nextBusinessDay(prev.endDate) : '';
@@ -2666,10 +2693,13 @@ function onCtStartChange(){
             hireHint.textContent = `🔗 계약 연속성 — 이전 계약 입사일(${(prev.hireDate || '').replace(/-/g, '.')}) 상속`;
             hireHint.style.display = '';
           }
+          // ── 연속: 사원번호 강제 상속 (이전 계약 사원번호) ──
+          _lockEmpNo(prev.empNo);
         } else {
           // ── 갭(재입사) 또는 이전 입사일 부재: 입사일 새로 입력 허용 ──
           if(hireEl){ hireEl.readOnly = false; hireEl.classList.remove('ct-input-locked'); }
           if(hireHint){ hireHint.textContent = ''; hireHint.style.display = 'none'; }
+          _unlockEmpNo();
         }
       }
     } else {
@@ -2677,6 +2707,7 @@ function onCtStartChange(){
       if(hireEl){ hireEl.readOnly = false; hireEl.classList.remove('ct-input-locked'); }
       if(hireHint){ hireHint.textContent = ''; hireHint.style.display = 'none'; }
       if(startHint){ startHint.textContent = '이 계약의 효력 발생일'; startHint.style.color = ''; }
+      _unlockEmpNo();
     }
   }
 }
