@@ -841,6 +841,25 @@ async function showPage(name,el){
     // 고객사 선택과 무관하게 상단 배너(임시저장 등)는 항상 갱신
     if(typeof _renderContractsBanners === 'function') _renderContractsBanners();
   }
+  if(name==='employees'){
+    // 데이터 미준비 — 칩 영역 스피너
+    if(!_dataReady){
+      const chips = document.getElementById('hr-company-chips');
+      if(chips) chips.innerHTML = `<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#9ca3af;padding:8px 0;"><div style="width:18px;height:18px;border:2px solid #e2e8f0;border-top-color:#6366f1;border-radius:50%;animation:tblSpin .7s linear infinite;flex-shrink:0;"></div>고객사 목록 불러오는 중...</div>`;
+      document.getElementById('hr-company-select-card').style.display = '';
+      document.getElementById('hr-list-section').style.display = 'none';
+      if(el) el.classList.add('active');
+      return;
+    }
+    // 글로벌 공유: 선택된 고객사가 있으면 자동 복원
+    if(currentGlobalCompanyId){
+      const _gco = allCompanies.find(c=>c.id===currentGlobalCompanyId);
+      if(_gco){ if(el) el.classList.add('active'); selectHrCompany(currentGlobalCompanyId, _gco.company_name); return; }
+    }
+    renderHrCompanyList();
+    document.getElementById('hr-company-select-card').style.display = '';
+    document.getElementById('hr-list-section').style.display = 'none';
+  }
   if(name==='payroll-input'){
     // 페이지 진입 시 년월 option 목록 재생성
     // ※ initPIYears/initPIMonths 내부에서 기존 선택값을 보존하므로

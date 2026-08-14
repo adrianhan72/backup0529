@@ -85,6 +85,8 @@
     <div class="menu-item" data-page="companies" onclick="showPage('companies',this)"><i class="fas fa-building"></i> 고객사 관리<span class="count-badge menu-todo-badge" id="badge-companies" style="display:none;"></span></div>
     <div class="menu-item" data-page="general-notice" onclick="showPage('general-notice',this)"><i class="fas fa-bullhorn"></i> 중요공지 관리</div>
     <div class="menu-item" data-page="company-notice-log" onclick="showPage('company-notice-log',this)"><i class="fas fa-bell"></i> 고객사앱 알림 이력</div>
+    <div class="menu-section">인사 관리</div>
+    <div class="menu-item" data-page="employees" onclick="showPage('employees',this)"><i class="fas fa-id-card"></i> 인사관리대장</div>
     <!-- 사용료 관리 메뉴 — 시스템 설정 스위치로 제어 -->
     <div class="menu-item" data-page="billing" onclick="showPage('billing',this)" style="display:none;"><i class="fas fa-file-invoice-dollar"></i> 사용료 관리</div>
     <div class="menu-section">근로계약 관리</div>
@@ -3086,6 +3088,8 @@
   <script src="js/admin-contract/consent-dispatch.js?v=20260814s"></script>
   <script src="js/admin-contract/contract-lifecycle.js?v=20260814u"></script>
   <script src="js/admin-contract.js?v=20260814s"></script>
+  <!-- admin-hr 모듈 (인사관리대장) -->
+  <script src="js/admin-hr.js?v=20260814w"></script>
   <!-- admin-payroll 모듈 -->
   <script src="js/admin-payroll/payroll-core.js?v=20260814s"></script>
   <script src="js/admin-payroll/payroll-bulk.js?v=20260814s"></script>

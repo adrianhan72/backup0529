@@ -19,6 +19,7 @@
 const PAGE_REGISTRY = {
   'dashboard':            { external: true },
   'companies':            { external: true },
+  'employees':            { external: true },
   'contracts':            { external: true },
   'standards':            { external: true },
   'wage-ledger':          { external: true },

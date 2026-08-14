@@ -531,6 +531,7 @@ function calcMonthWorkDays(year, month) {
 const PAGE_LABELS = Object.freeze({
   dashboard:              '대시보드',
   companies:              '고객사 관리',
+  employees:              '인사관리대장',
   'company-notice-log':   '고객사앱 알림 이력',
   'general-notice':       '중요공지 관리',
   billing:                '시스템 사용료 관리',

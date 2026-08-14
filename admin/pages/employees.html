@@ -1,0 +1,208 @@
+<div id="page-employees" class="page">
+      <!-- 고객사 선택 -->
+      <div id="hr-company-select-card">
+        <div class="section-title" style="margin-top:40px;">
+          <i class="fas fa-building" style="font-size:13px;"></i>
+          <span style="font-size:14px;">고객사별 인사관리대장 조회</span>
+          <div class="filt-search-wrap" style="margin-left:auto;">
+            <i class="fas fa-search"></i>
+            <input type="text" id="hr-company-search" class="filt-search w-160" placeholder="고객사명 검색" oninput="renderHrCompanyList()" />
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:16px;overflow:hidden;">
+          <div id="hr-company-chips" style="padding:20px;display:flex;flex-wrap:wrap;gap:8px;"></div>
+        </div>
+      </div>
+
+      <!-- 선택된 고객사 직원 목록 -->
+      <div id="hr-list-section" style="display:none;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:12px 18px;background:linear-gradient(90deg,#1e1b4b,#312e81);border-radius:10px;">
+          <span id="hr-selected-company-label" style="font-size:14px;font-weight:700;color:#fff;"></span>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <button class="btn btn-primary" id="hr-add-btn" onclick="openHrEmployeeForm(null)"><i class="fas fa-user-plus"></i> 신규 직원 등록</button>
+            <button onclick="clearHrCompanySelect()" class="btn btn-icon-dark" title="고객사 선택 해제"><i class="fas fa-times"></i></button>
+          </div>
+        </div>
+
+        <div class="section-title">
+          <i class="fas fa-id-card"></i>
+          <span>직원 목록</span>
+          <span id="hr-emp-count" style="font-size:11.5px;color:#6b7280;margin-left:8px;font-weight:400;"></span>
+        </div>
+
+        <!-- 필터 바 -->
+        <div class="card" style="margin-bottom:12px;overflow:hidden;">
+          <div class="filt-bar">
+            <select id="hr-filter-status" onchange="renderHrEmployees()" class="filt-select">
+              <option value="all">상태 전체</option>
+              <option value="active" selected>재직</option>
+              <option value="resigned">퇴직</option>
+            </select>
+            <div class="filt-search-wrap">
+              <i class="fas fa-search"></i>
+              <input type="text" id="hr-search" class="filt-search" style="width:180px;" placeholder="이름·사번·부서 검색" oninput="renderHrEmployees()" />
+            </div>
+          </div>
+        </div>
+
+        <!-- 직원 목록 테이블 -->
+        <div class="card" style="padding:0;overflow:hidden;">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>이름</th><th>성별</th><th>사원번호</th><th>부서 / 직책</th><th>입사일</th><th>퇴사일</th><th>휴대전화</th><th>상태</th><th>관리</th></tr></thead>
+              <tbody id="hr-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 직원 상세 조회 모달 -->
+      <div class="modal-overlay" id="hr-emp-view-modal" style="display:none;">
+        <div class="modal-card" style="max-width:780px;width:95%;">
+          <div class="modal-header" style="display:flex;align-items:center;justify-content:space-between;">
+            <h3 id="hr-view-title" style="margin:0;font-size:15px;"><i class="fas fa-id-card"></i> 직원 정보</h3>
+            <button onclick="closeHrEmployeeView()" class="btn btn-icon-dark"><i class="fas fa-times"></i></button>
+          </div>
+          <div class="modal-body" style="padding:18px 20px;">
+            <!-- 1. 기본 인사정보 -->
+            <div class="form-group full"><span class="form-section-title">기본 인사정보</span></div>
+            <div class="form-grid" style="gap:10px;">
+              <div class="form-group"><label>사원번호</label><div id="hr-v-empno" class="hr-view-val"></div></div>
+              <div class="form-group"><label>이름</label><div id="hr-v-name" class="hr-view-val"></div></div>
+              <div class="form-group"><label>성별</label><div id="hr-v-gender" class="hr-view-val"></div></div>
+              <div class="form-group"><label>고용형태</label><div id="hr-v-category" class="hr-view-val"></div></div>
+              <div class="form-group"><label>담당업무</label><div id="hr-v-job" class="hr-view-val"></div></div>
+              <div class="form-group"><label>부서</label><div id="hr-v-dept" class="hr-view-val"></div></div>
+              <div class="form-group"><label>직책</label><div id="hr-v-position" class="hr-view-val"></div></div>
+              <div class="form-group"><label>입사일</label><div id="hr-v-hire" class="hr-view-val"></div></div>
+              <div class="form-group"><label>퇴사일</label><div id="hr-v-resign" class="hr-view-val"></div></div>
+              <div class="form-group"><label>대표자</label><div id="hr-v-rep" class="hr-view-val"></div></div>
+            </div>
+
+            <!-- 2. 연락처·급여 -->
+            <div class="form-group full" style="margin-top:6px;"><span class="form-section-title">연락처·급여</span></div>
+            <div class="form-grid" style="gap:10px;">
+              <div class="form-group"><label>휴대전화</label><div id="hr-v-phone" class="hr-view-val"></div></div>
+              <div class="form-group"><label>이메일</label><div id="hr-v-email" class="hr-view-val"></div></div>
+              <div class="form-group full"><label>주소</label><div id="hr-v-address" class="hr-view-val"></div></div>
+              <div class="form-group"><label>비상연락처</label><div id="hr-v-emergency" class="hr-view-val"></div></div>
+              <div class="form-group"><label>은행명</label><div id="hr-v-bank" class="hr-view-val"></div></div>
+              <div class="form-group"><label>계좌번호</label><div id="hr-v-account" class="hr-view-val"></div></div>
+              <div class="form-group"><label>부양가족 수</label><div id="hr-v-dependents" class="hr-view-val"></div></div>
+            </div>
+
+            <!-- 3. 인적사항 -->
+            <div class="form-group full" style="margin-top:6px;"><span class="form-section-title">인적사항</span></div>
+            <div class="form-grid" style="gap:10px;">
+              <div class="form-group"><label>최종학력</label><div id="hr-v-education" class="hr-view-val"></div></div>
+              <div class="form-group"><label>전공</label><div id="hr-v-major" class="hr-view-val"></div></div>
+              <div class="form-group full"><label>경력</label><div id="hr-v-career" class="hr-view-val"></div></div>
+              <div class="form-group full"><label>자격증</label><div id="hr-v-certifications" class="hr-view-val"></div></div>
+              <div class="form-group full"><label>어학능력</label><div id="hr-v-language" class="hr-view-val"></div></div>
+              <div class="form-group"><label>결혼 여부</label><div id="hr-v-marital" class="hr-view-val"></div></div>
+              <div class="form-group"><label>병역</label><div id="hr-v-military" class="hr-view-val"></div></div>
+              <div class="form-group full"><label>특이사항</label><div id="hr-v-special" class="hr-view-val"></div></div>
+            </div>
+
+            <!-- 계약 이력 -->
+            <div class="form-group full" style="margin-top:6px;">
+              <span class="form-section-title">근로계약 이력</span>
+              <div class="table-wrap" style="margin-top:8px;max-height:220px;overflow-y:auto;">
+                <table>
+                  <thead><tr><th>계약기간</th><th>고용형태</th><th>상태</th><th>관리</th></tr></thead>
+                  <tbody id="hr-view-contracts-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer" style="justify-content:flex-end;gap:8px;">
+            <button class="btn btn-secondary" onclick="closeHrEmployeeView()">닫기</button>
+            <button class="btn btn-primary" onclick="openHrEmployeeForm(_hrViewEmpId)"><i class="fas fa-pencil-alt"></i> 개인정보 편집</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 신규/편집 폼 모달 -->
+      <div class="modal-overlay" id="hr-emp-form-modal" style="display:none;">
+        <div class="modal-card" style="max-width:860px;width:95%;">
+          <div class="modal-header" style="display:flex;align-items:center;justify-content:space-between;">
+            <h3 id="hr-form-title" style="margin:0;font-size:15px;"><i class="fas fa-user-plus"></i> 신규 직원 등록</h3>
+            <button onclick="closeHrEmployeeForm()" class="btn btn-icon-dark"><i class="fas fa-times"></i></button>
+          </div>
+          <div class="modal-body" style="padding:18px 20px;">
+            <input type="hidden" id="hr-em-company" />
+            <div class="form-grid" style="gap:10px;">
+              <div class="form-group full"><span class="form-section-title">인사 정보 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></span></div>
+              <div class="form-group">
+                <label>사원번호 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
+                <input type="text" id="hr-em-empno" placeholder="예: 0001" onblur="hrCheckEmpNoUniqueness()" autocomplete="off" />
+                <div id="hr-em-empno-alert" class="va-hint"></div>
+              </div>
+              <div class="form-group">
+                <label>이름 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
+                <input type="text" id="hr-em-name" onblur="_hrCheckDuplicateName()" autocomplete="off" />
+                <div id="hr-em-name-dup-alert" class="va-hint" style="margin-top:6px;"></div>
+              </div>
+              <div class="form-group"><label>고용형태 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
+                <select id="hr-em-category">
+                  <option value="" disabled selected>-- 선택하세요 --</option>
+                  <option value="regular">정규직</option>
+                  <option value="regular_probation">정규직 수습</option>
+                  <option value="fixed_term">계약직</option>
+                  <option value="fixed_term_probation">계약직 수습</option>
+                  <option value="daily">일용직</option>
+                </select>
+              </div>
+              <div class="form-group"><label>담당업무 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><input type="text" id="hr-em-job" placeholder="담당업무를 입력하세요" /></div>
+              <div class="form-group"><label>부서</label><input type="text" id="hr-em-dept" /></div>
+              <div class="form-group"><label>직책</label><input type="text" id="hr-em-position" /></div>
+              <div class="form-group"><label>입사일 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><input type="date" id="hr-em-hire" class="filt-date" /></div>
+              <div class="form-group full">
+                <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;font-weight:600;color:#1f2937;">
+                  <input type="checkbox" id="hr-em-is-rep" style="accent-color:#7c3aed;width:17px;height:17px;" />
+                  <span>대표자 본인입니다.</span>
+                </label>
+                <div style="font-size:10.5px;color:#9ca3af;margin-bottom:4px;padding-left:24px;">본인일 경우 상시근로자 수에서 제외되며, 근로계약서를 작성하지 않아도 급여를 입력할 수 있습니다.</div>
+              </div>
+
+              <div class="form-group full"><span class="form-section-title">개인 정보</span></div>
+              <div class="form-group">
+                <label>주민등록번호 <span class="lbl-desc">(앞7자리)</span> <span class="lbl-req">*</span></label>
+                <input type="text" id="hr-em-id" placeholder="YYMMDD-N" maxlength="8" autocomplete="off" oninput="_hrOnIdInput(this)" />
+              </div>
+              <div class="form-group"><label>성별 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
+                <select id="hr-em-gender" disabled><option value="male">남</option><option value="female">여</option></select>
+                <span id="hr-em-gender-hint" style="font-size:11px;margin-top:3px;display:block;color:#6b7280;">주민번호 입력 시 자동 설정됩니다</span>
+              </div>
+              <div class="form-group"><label>휴대전화 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><input type="text" id="hr-em-phone" placeholder="010-0000-0000" maxlength="13" autocomplete="off" oninput="_onPhoneInput(this)" /></div>
+              <div class="form-group"><label>이메일 주소</label><input type="email" id="hr-em-email" placeholder="example@email.com" oninput="_onEmailInput(this)" /></div>
+              <div class="form-group full"><label>주소 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><input type="text" id="hr-em-address" /></div>
+
+              <div class="form-group full"><span class="form-section-title">과세 기준</span></div>
+              <div class="form-group"><label>부양가족 수 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span> <span style="font-weight:400;color:#6b7280;">(본인 포함, 소득세 공제용)</span></label><input type="number" id="hr-em-tax-dependents" min="1" value="1" /></div>
+
+              <div class="form-group full"><span class="form-section-title">급여 계좌</span></div>
+              <div class="form-group"><label>은행명</label><input type="text" id="hr-em-bank" placeholder="예: 국민은행" /></div>
+              <div class="form-group"><label>계좌번호</label><input type="text" id="hr-em-account" placeholder="000-0000-000000" /></div>
+
+              <div class="form-group full"><span class="form-section-title">인적사항</span></div>
+              <div class="form-group"><label>최종학력</label><input type="text" id="hr-em-education" placeholder="예: 대졸" /></div>
+              <div class="form-group"><label>전공</label><input type="text" id="hr-em-major" /></div>
+              <div class="form-group full"><label>경력</label><textarea id="hr-em-career" rows="2" placeholder="회사명 / 기간 / 업무 (줄바꿈 구분)"></textarea></div>
+              <div class="form-group full"><label>자격증</label><textarea id="hr-em-certifications" rows="2" placeholder="자격증명 (줄바꿈 구분)"></textarea></div>
+              <div class="form-group full"><label>어학능력</label><input type="text" id="hr-em-language" placeholder="예: 토익 850, JLPT N2" /></div>
+              <div class="form-group"><label>결혼 여부</label><input type="text" id="hr-em-marital" placeholder="예: 기혼" /></div>
+              <div class="form-group"><label>병역</label><input type="text" id="hr-em-military" placeholder="예: 군필, 면제" /></div>
+              <div class="form-group"><label>비상연락처</label><input type="text" id="hr-em-emergency-contact" placeholder="010-0000-0000" maxlength="13" /></div>
+              <div class="form-group"><label>비상연락처 관계</label><input type="text" id="hr-em-emergency-relation" placeholder="예: 배우자, 부모" /></div>
+              <div class="form-group full"><label>특이사항</label><textarea id="hr-em-special-notes" rows="2" placeholder="건강, 복지 등 참고사항"></textarea></div>
+            </div>
+            <div id="hr-form-error" class="va-hint" style="margin-top:8px;"></div>
+          </div>
+          <div class="modal-footer" style="justify-content:flex-end;gap:8px;">
+            <button class="btn btn-secondary" onclick="closeHrEmployeeForm()">취소</button>
+            <button class="btn btn-primary" id="hr-form-save-btn" onclick="saveHrEmployee()"><i class="fas fa-check"></i> 저장</button>
+          </div>
+        </div>
+      </div>
+    </div>
