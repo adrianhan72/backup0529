@@ -1131,11 +1131,11 @@ function _collectContractData(){
   const company = (coId && typeof getCompanySnapshotAt === 'function')
     ? (getCompanySnapshotAt(coId, _ctTsForSnap) || allCompanies.find(c=>c.id===coId) || {})
     : (allCompanies.find(c=>c.id===coId)||{});
-  // 고용형태는 인사정보 기준으로 읽음: 수정 모드는 ct-edit-em-category, 신규는 ct-em-category
+  // 고용형태는 인사정보 기준으로 읽음: 수정 모드는 ct-edit-em-category, 신규는 선택된 근로자
   const _isEditModeCD = !!editId.contract;
   const ctType = _isEditModeCD
     ? (document.getElementById('ct-edit-em-category')?.value||CONTRACT_TYPE.REGULAR)
-    : (document.getElementById('ct-em-category')?.value||CONTRACT_TYPE.REGULAR);
+    : (_ctNewCat()||CONTRACT_TYPE.REGULAR);
   const isEdit = !!editId.contract;
   const isDaily = ctType===CONTRACT_TYPE.DAILY;
   const isProbation = ctType===CONTRACT_TYPE.REGULAR_PROBATION || ctType===CONTRACT_TYPE.FIXED_PROBATION;
@@ -1153,13 +1153,14 @@ function _collectContractData(){
     department    = document.getElementById('ct-edit-em-dept')?.value || existE?.department || '';
     position      = document.getElementById('ct-edit-em-position')?.value || existE?.position || '';
   } else {
-    empName       = document.getElementById('ct-em-name')?.value || '';
-    phone         = document.getElementById('ct-em-phone')?.value || '';
-    address       = document.getElementById('ct-em-address')?.value || '';
-    idNumber      = document.getElementById('ct-em-id')?.value || '';
-    jobDescription= document.getElementById('ct-em-job')?.value || '';
-    department    = document.getElementById('ct-em-dept')?.value || '';
-    position      = document.getElementById('ct-em-position')?.value || '';
+    const selE = _ctSelectedEmpId ? (allEmployees||[]).find(e=>e.id===_ctSelectedEmpId) : null;
+    empName       = selE?.name || document.getElementById('ct-em-name')?.value || '';
+    phone         = selE?.phone || document.getElementById('ct-em-phone')?.value || '';
+    address       = selE?.address || document.getElementById('ct-em-address')?.value || '';
+    idNumber      = selE?.id_number || document.getElementById('ct-em-id')?.value || '';
+    jobDescription= selE?.job_description || document.getElementById('ct-em-job')?.value || '';
+    department    = selE?.department || document.getElementById('ct-em-dept')?.value || '';
+    position      = selE?.position || document.getElementById('ct-em-position')?.value || '';
   }
 
   // 근무 스케줄 파싱

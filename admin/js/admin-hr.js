@@ -187,7 +187,8 @@ function closeHrEmployeeView() {
 }
 
 // ── 신규/편집 폼 모달 ──
-function openHrEmployeeForm(empId) {
+// presetCompanyId: 신규 등록 시 고객사 강제 지정 (계약 모달에서 호출 시 사용)
+function openHrEmployeeForm(empId, presetCompanyId) {
   _hrEditEmpId = empId || null;
   const isEdit = !!empId;
 
@@ -212,7 +213,7 @@ function openHrEmployeeForm(empId) {
   document.querySelectorAll('#hr-emp-form-modal .id-format-hint, #hr-emp-form-modal .phone-format-hint, #hr-emp-form-modal .email-format-hint').forEach(el => el.remove());
 
   const titleEl = document.getElementById('hr-form-title');
-  const coId = isEdit ? ((allEmployees || []).find(x => x.id === empId) || {}).company_id : _hrSelectedCoId;
+  const coId = isEdit ? ((allEmployees || []).find(x => x.id === empId) || {}).company_id : (presetCompanyId || _hrSelectedCoId);
   const hiddenCo = document.getElementById('hr-em-company');
   if (hiddenCo) hiddenCo.value = coId || '';
 
@@ -430,8 +431,14 @@ async function saveHrEmployee() {
     }
     await loadEmployees();
     renderHrEmployees();
+    const _savedEmpId = _hrEditEmpId;
     closeHrEmployeeForm();
     toast(`${name} — ${wasEdit ? '저장되었습니다.' : '등록되었습니다.'}`, 'success');
+    // 계약 모달 등 외부 호출자 콜백 (신규 등록 직원을 근로자로 선택)
+    if (typeof window._hrOnSaved === 'function') {
+      try { window._hrOnSaved(_savedEmpId, wasEdit); } catch (e) { console.warn('[hrOnSaved]', e); }
+      window._hrOnSaved = null;
+    }
   } catch (e) {
     console.error('[saveHrEmployee]', e);
     toast('저장 중 오류가 발생했습니다. 다시 시도해 주세요.', 'error');

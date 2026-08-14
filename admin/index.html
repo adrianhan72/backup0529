@@ -1790,6 +1790,38 @@
           </div>
         </div>
 
+        <!-- ══ 근로자 선택 섹션 (신규 모드) ══ -->
+        <div id="ct-emp-select-section" class="form-group full" style="display:none;">
+          <div style="background:#f0f9ff;border:1.5px solid #93c5fd;border-radius:10px;padding:16px 18px;margin-top:4px;">
+            <div style="font-size:12px;font-weight:700;color:#0369a1;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+              <i class="fas fa-user-check"></i> 근로자 선택
+              <span style="font-weight:400;color:#0369a1;">(계약을 체결할 직원을 선택하세요)</span>
+            </div>
+            <div id="ct-emp-card-empty">
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button type="button" class="btn btn-primary" onclick="openCtEmpPicker()"><i class="fas fa-search"></i> 기존 직원 선택</button>
+                <button type="button" class="btn btn-indigo" onclick="_ctRegisterNewEmp()"><i class="fas fa-user-plus"></i> 신규 직원 등록</button>
+              </div>
+              <div style="font-size:11px;color:#6b7280;margin-top:8px;">신규 직원은 인사관리대장에 등록된 후 계약 작성으로 이어집니다.</div>
+            </div>
+            <div id="ct-emp-card-filled" style="display:none;">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+                <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                  <i class="fas fa-user-circle" style="font-size:30px;color:#0369a1;"></i>
+                  <div>
+                    <div id="ct-emp-card-name" style="font-size:13.5px;font-weight:700;color:#0f172a;"></div>
+                    <div id="ct-emp-card-meta" style="font-size:11.5px;color:#475569;margin-top:2px;"></div>
+                  </div>
+                </div>
+                <div style="display:flex;gap:6px;">
+                  <button type="button" class="btn btn-sm btn-secondary" onclick="openCtEmpPicker()"><i class="fas fa-exchange-alt"></i> 변경</button>
+                  <button type="button" class="btn btn-sm btn-indigo" onclick="_ctOpenEmpCard()"><i class="fas fa-id-card"></i> 인사카드</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- ══ 신규 직원 입력 섹션 ══ -->
         <div id="ct-new-emp-section" class="form-group full" style="display:block;">
           <div style="background:#f0f9ff;border:1.5px solid #93c5fd;border-radius:10px;padding:16px 18px;margin-top:4px;">
@@ -3081,15 +3113,15 @@
   <script src="js/admin-company/company-history.js?v=20260814s"></script>
   <script src="js/admin-company.js?v=20260814s"></script>
   <!-- admin-contract 모듈 (기능별 분리) -->
-  <script src="js/admin-contract/contract-form.js?v=20260814s"></script>
-  <script src="js/admin-contract/contract-core.js?v=20260814u"></script>
-  <script src="js/admin-contract/contract-docs.js?v=20260814s"></script>
+  <script src="js/admin-contract/contract-form.js?v=20260814x"></script>
+  <script src="js/admin-contract/contract-core.js?v=20260814x"></script>
+  <script src="js/admin-contract/contract-docs.js?v=20260814x"></script>
   <script src="js/admin-contract/contract-dispatch.js?v=20260814s"></script>
   <script src="js/admin-contract/consent-dispatch.js?v=20260814s"></script>
-  <script src="js/admin-contract/contract-lifecycle.js?v=20260814u"></script>
+  <script src="js/admin-contract/contract-lifecycle.js?v=20260814x"></script>
   <script src="js/admin-contract.js?v=20260814s"></script>
   <!-- admin-hr 모듈 (인사관리대장) -->
-  <script src="js/admin-hr.js?v=20260814w"></script>
+  <script src="js/admin-hr.js?v=20260814x"></script>
   <!-- admin-payroll 모듈 -->
   <script src="js/admin-payroll/payroll-core.js?v=20260814s"></script>
   <script src="js/admin-payroll/payroll-bulk.js?v=20260814s"></script>
@@ -3114,6 +3146,26 @@
   <script src="js/admin-billing/general-notice.js?v=20260814s"></script>
   <script src="js/admin-billing/attendance-ledger.js?v=20260814s"></script>
   <script src="js/admin-billing.js?v=20260814s"></script>
+
+  <!-- ══ 근로자 선택 모달 (신규계약) ══ -->
+  <div class="modal-overlay" id="ct-emp-picker-modal" style="display:none;">
+    <div class="modal-card" style="max-width:520px;width:95%;">
+      <div class="modal-header" style="display:flex;align-items:center;justify-content:space-between;">
+        <h3 style="margin:0;font-size:15px;"><i class="fas fa-user-check"></i> 기존 직원 선택</h3>
+        <button onclick="closeCtEmpPicker()" class="btn btn-icon-dark"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body" style="padding:16px 20px;">
+        <div class="filt-search-wrap" style="margin-bottom:12px;">
+          <i class="fas fa-search"></i>
+          <input type="text" id="ct-emp-picker-search" class="filt-search" style="width:100%;" placeholder="이름·사번·부서 검색" oninput="renderCtEmpPickerList()" />
+        </div>
+        <div id="ct-emp-picker-list" style="max-height:340px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;"></div>
+      </div>
+      <div class="modal-footer" style="justify-content:flex-end;">
+        <button class="btn btn-secondary" onclick="closeCtEmpPicker()">닫기</button>
+      </div>
+    </div>
+  </div>
 
   <!-- ─── 범용 확인 모달 ─── -->
   <div class="modal-overlay" id="ct-confirm-modal">

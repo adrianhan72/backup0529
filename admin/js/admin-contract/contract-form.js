@@ -319,7 +319,7 @@ function _checkFixedTermDuration(){
     if(editWarningRow) editWarningRow.style.display = 'none';
     if(!warningRow) return false;
 
-    const rawCat = document.getElementById('ct-em-category')?.value || '';
+    const rawCat = _ctNewCat();
     const cat = CONTRACT_TYPE_LEGACY_MAP[rawCat] || rawCat;
     const isFixedContract = cat ===CONTRACT_TYPE.FIXED || cat ===CONTRACT_TYPE.FIXED_PROBATION;
 
@@ -589,7 +589,7 @@ function toggleAnnualSal(){
   // 수정 모드(editId.contract 있음)이면 ct-type 기준, 신규이면 ct-em-category 기준
   const rawCat = (editId.contract || _recontractEmpId)
     ? (document.getElementById('ct-type')?.value || '')
-    : document.getElementById('ct-em-category').value;
+    : _ctNewCat();
   const cat = CONTRACT_TYPE_LEGACY_MAP[rawCat] || rawCat;
   const isRegularGroup = cat ===CONTRACT_TYPE.REGULAR || cat ===CONTRACT_TYPE.REGULAR_PROBATION;
   const isRegularOnly  = cat ===CONTRACT_TYPE.REGULAR;                        // 정규직(수습 제외)
@@ -717,7 +717,7 @@ function toggleAnnualSal(){
 // onSalaryStartChange 제거 — salary_start_date = contract_start 통합
 
 function toggleProbation(){
-  const rawCat = document.getElementById('ct-em-category')?.value 
+  const rawCat = _ctNewCat()
               || document.getElementById('ct-type')?.value 
               || CONTRACT_TYPE.REGULAR;
   const cat = CONTRACT_TYPE_LEGACY_MAP[rawCat] || rawCat;
@@ -795,7 +795,7 @@ function _autoCalcProbationEndDate(){
   if(probEndEl) probEndEl.value = endStr;
 
   // ── 계약직 수습: 수습 종료일이 계약 종료일을 초과하는지 검증 ──
-  const rawCat = document.getElementById('ct-em-category')?.value
+  const rawCat = _ctNewCat()
               || document.getElementById('ct-type')?.value
               || CONTRACT_TYPE.REGULAR;
   const cat2 = CONTRACT_TYPE_LEGACY_MAP[rawCat] || rawCat;
@@ -967,7 +967,7 @@ function _checkProbMinWageWarning(){
   const warningBox = document.getElementById('ct-prob-minwage-warning-box');
   if(!warningRow || !warningBox) return;
 
-  const _rawEmCat = document.getElementById('ct-em-category')?.value
+  const _rawEmCat = _ctNewCat()
                   || document.getElementById('ct-edit-em-category')?.value
                   || document.getElementById('ct-type')?.value
                   || '';
@@ -1077,8 +1077,8 @@ function _checkMinWageWarning(){
   const wBox = document.getElementById('ct-general-minwage-warning-box');
   if(!wRow || !wBox){ _checkRegisterBtnState(); return; }
 
-  // 고용형태 결정 (신규: ct-em-category, 수정/재계약: ct-edit-em-category 텍스트 또는 ct-type)
-  const rawCat = document.getElementById('ct-em-category')?.value
+  // 고용형태 결정 (신규: 선택된 근로자, 수정/재계약: ct-edit-em-category 또는 ct-type)
+  const rawCat = _ctNewCat()
     || document.getElementById('ct-edit-em-category')?.value
     || document.getElementById('ct-type')?.value
     || '';
@@ -1952,7 +1952,8 @@ function calcWorkHours(){
     const info = _getSmallBizInfo(coIdForMult);
     // 신규 직원 추가 시: 현재 직원이 아닌 경우 +1명으로 재산정
     const isNewEmp = !editId.contract && !_recontractEmpId;
-    const newEmpName = isNewEmp ? (document.getElementById('ct-em-name')?.value?.trim() || '') : '';
+    const _selEmp = _ctSelectedEmpId ? (allEmployees||[]).find(x=>x.id===_ctSelectedEmpId) : null;
+    const newEmpName = isNewEmp ? (_selEmp?.name || document.getElementById('ct-em-name')?.value?.trim() || '') : '';
     const hasNewEmp = isNewEmp && newEmpName.length > 0;
     
     let projected = info;
@@ -2234,8 +2235,8 @@ function initBreakSelects(){ initScheduleTable(); }
 function getBreakMins(hId,mId){ return 0; }
 function setBreakMins(hId,mId,totalMins){}
 function toggleCtEndDate(preserveValue=false){
-  // ct-em-category 우선 (신규 모드), 없으면 ct-type (수정 모드)
-  const rawCat = document.getElementById('ct-em-category')?.value 
+  // 선택된 근로자 우선 (신규 모드), 없으면 ct-type (수정 모드)
+  const rawCat = _ctNewCat()
               || document.getElementById('ct-type')?.value 
               || CONTRACT_TYPE.REGULAR;
   const type = CONTRACT_TYPE_LEGACY_MAP[rawCat] || rawCat;
@@ -2376,7 +2377,7 @@ function applyCTAllowanceConfig(cfg, clearValues = false){
   // 일용직: 통상임금 및 고정수당 항목 전체 숨김 (cfg 무시)
   const rawCat = (editId.contract || _recontractEmpId)
     ? (document.getElementById('ct-type')?.value || '')
-    : (document.getElementById('ct-em-category')?.value || '');
+    : _ctNewCat();
   const cat = CONTRACT_TYPE_LEGACY_MAP[rawCat] || rawCat;
   const isDaily = cat === CONTRACT_TYPE.DAILY;
   
