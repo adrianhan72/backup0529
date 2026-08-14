@@ -374,14 +374,6 @@ function _syncContractTypeSelects() {
   if (!types.length) return;
   const html = types.map(t => `<option value="${t.value}">${t.label}</option>`).join('');
 
-  // 신규 직원 고용형태 (ct-em-category)
-  const newSel = document.getElementById('ct-em-category');
-  if (newSel) {
-    const cur = newSel.value;
-    newSel.innerHTML = '<option value="" disabled selected>-- 선택하세요 --</option>' + html;
-    if (types.some(t => t.value === cur)) newSel.value = cur;
-  }
-
   // 수정/재계약 고용형태 (ct-edit-em-category)
   const editSel = document.getElementById('ct-edit-em-category');
   if (editSel) {

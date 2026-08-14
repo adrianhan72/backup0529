@@ -731,7 +731,7 @@ function _updateProbationPeriodState(){
   const startEl = document.getElementById('ct-start');
   const startVal = startEl?.value;
   // 계약직 수습: 계약 종료일도 필요 (수습 종료일이 계약 종료일을 초과할 수 없음)
-  const rawCat = document.getElementById('ct-em-category')?.value
+  const rawCat = _ctNewCat()
               || document.getElementById('ct-type')?.value
               || CONTRACT_TYPE.REGULAR;
   const cat = CONTRACT_TYPE_LEGACY_MAP[rawCat] || rawCat;
@@ -784,13 +784,13 @@ function _validateCtStartVsHire(startId, hireId, hintId){
 // ── 신규계약 모드에서 선택된 근로자 (Phase 2: 인사관리대장 기반 선택) ──
 let _ctSelectedEmpId = null;
 
-// 신규 모드 고용형태: 선택된 근로자의 인사정보 우선, 없으면 입력 섹션 값
+// 신규 모드 고용형태: 선택된 근로자의 인사정보 기준 (입력 섹션 제거됨)
 function _ctNewCat(){
   if(_ctSelectedEmpId){
     const e = (allEmployees||[]).find(x=>x.id===_ctSelectedEmpId);
     if(e) return e.employment_category || '';
   }
-  return document.getElementById('ct-em-category')?.value || '';
+  return '';
 }
 
 function _ctEsc(s){
@@ -906,12 +906,19 @@ async function _ctRegisterNewEmp(){
 }
 
 // ── 인사카드 보기 (인사관리대장 상세 모달 재사용) ──
-async function _ctOpenEmpCard(){
-  if(!_ctSelectedEmpId) return;
+async function _ctOpenEmpCard(empId){
+  const targetId = empId || _ctSelectedEmpId;
+  if(!targetId) return;
   if(!document.getElementById('hr-emp-view-modal')){
     if(typeof _loadExternalPage === 'function') await _loadExternalPage('employees');
   }
-  if(typeof openHrEmployeeView === 'function') openHrEmployeeView(_ctSelectedEmpId);
+  if(typeof openHrEmployeeView === 'function') openHrEmployeeView(targetId);
+}
+
+// ── 수정 모드 직원 정보 섹션의 인사카드 버튼 ──
+async function _ctOpenEmpCardFromEdit(){
+  const c = editId.contract ? allContracts.find(x=>x.id===editId.contract) : null;
+  if(c && c.employee_id) await _ctOpenEmpCard(c.employee_id);
 }
 
 function openContractModal(id=null, preCompanyId=null){
@@ -927,7 +934,6 @@ function openContractModal(id=null, preCompanyId=null){
   { const _hih = document.getElementById('ct-hire-inherit-hint'); if(_hih){ _hih.textContent = ''; _hih.style.display = 'none'; } }
   { const _hir = document.getElementById('ct-edit-em-hire'); if(_hir){ _hir.readOnly = false; _hir.classList.remove('ct-input-locked'); } }
   // 연속성 사원번호 잠금·힌트 리셋 (이전 세션 잔재 방지)
-  { const _eno = document.getElementById('ct-em-empno'); if(_eno){ _eno.readOnly = false; _eno.classList.remove('ct-input-locked-dark'); _eno.style.background=''; } }
   { const _enh = document.getElementById('ct-edit-empno-lock-hint'); if(_enh){ _enh.textContent=''; _enh.style.display='none'; } }
   // 잠금 힌트 텍스트/클래스 초기화 (갱신 세션 문구 잔재 방지)
   ['ct-edit-name-lock-hint','ct-edit-empno-lock-hint','ct-edit-category-lock-hint'].forEach(hid=>{
@@ -971,6 +977,8 @@ function openContractModal(id=null, preCompanyId=null){
     modalEl.querySelectorAll('input,select,textarea').forEach(el=>{
       // 성별 필드는 항상 readonly (주민번호 자동설정 전용)
       if(el.id === 'ct-em-gender' || el.id === 'ct-edit-em-gender') return;
+      // 개인정보는 인사관리대장에서만 수정 (Q6) — 직원 정보 섹션 전체 잠금
+      if(el.closest('#ct-edit-emp-info')) return;
       el.disabled = false;
       el.tabIndex = 0;
       el.style.pointerEvents = '';
@@ -1036,11 +1044,6 @@ function openContractModal(id=null, preCompanyId=null){
   document.getElementById('ct-status').value=CONTRACT_STATUS.ACTIVE;toggleCtEndDate();
   document.getElementById('ct-monthly-computed').textContent='0원';document.getElementById('ct-weekly-hol-computed').textContent='0원';
 
-  // 신규 직원 섹션 초기화
-  ['ct-em-empno','ct-em-name','ct-em-id','ct-em-dept','ct-em-position','ct-em-job','ct-em-phone','ct-em-email','ct-em-address','ct-em-bank','ct-em-account'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});
-  document.getElementById('ct-em-gender').value='male';
-  document.getElementById('ct-em-category').value='';toggleEmExpire();toggleAnnualSal();toggleProbation();
-  { const _tdEl = document.getElementById('ct-em-tax-dependents'); if(_tdEl) _tdEl.value = 1; }
   // 수정 직원 섹션 초기화
   ['ct-edit-em-empno','ct-edit-emp-name','ct-edit-em-job','ct-edit-em-dept','ct-edit-em-position','ct-edit-em-hire','ct-edit-em-expire','ct-edit-em-id','ct-edit-em-phone','ct-edit-em-email','ct-edit-em-address','ct-edit-em-bank','ct-edit-em-account'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});
   const editCatEl=document.getElementById('ct-edit-em-category');if(editCatEl)editCatEl.value='';
@@ -1050,15 +1053,11 @@ function openContractModal(id=null, preCompanyId=null){
   document.getElementById('ct-probation-pct').value='';
   document.getElementById('ct-probation-amt').value='';
   
-  document.getElementById('ct-em-name-dup-alert').style.display='none';
   const _editNameDupAlert = document.getElementById('ct-edit-em-name-dup-alert');
   if(_editNameDupAlert) _editNameDupAlert.style.display='none';
-  const _repRowNew = document.getElementById('ct-em-rep-self-row');
   const _repRowEdit = document.getElementById('ct-edit-em-rep-self-row');
-  if(_repRowNew) _repRowNew.style.display = 'none';
   if(_repRowEdit) _repRowEdit.style.display = 'none';
   // 대표자 본인 체크박스 초기화 (이전 세션 잔재 방지)
-  { const _irn = document.getElementById('ct-em-is-rep'); if(_irn) _irn.checked = false; }
   { const _ire = document.getElementById('ct-edit-em-is-rep'); if(_ire) _ire.checked = false; }
   // 일괄설정 바 요일 체크박스 기본값 복원 (평일 체크 / 토·일 해제)
   ['bulk-chk-weekday','bulk-chk-mon','bulk-chk-tue','bulk-chk-wed','bulk-chk-thu','bulk-chk-fri'].forEach(cid=>{ const _c = document.getElementById(cid); if(_c) _c.checked = true; });
@@ -1066,7 +1065,6 @@ function openContractModal(id=null, preCompanyId=null){
   { const _swr = document.getElementById('ct-edit-short-term-warning-row'); if(_swr) _swr.style.display = 'none'; }
   { const _swrN = document.getElementById('ct-short-term-warning-row'); if(_swrN) _swrN.style.display = 'none'; }
   { const _sh = document.getElementById('ct-start-hint'); if(_sh){ _sh.textContent = '이 계약의 효력 발생일'; _sh.style.color = '#6b7280'; } }
-  const _empnoAlertNew  = document.getElementById('ct-em-empno-alert');      if(_empnoAlertNew)  _empnoAlertNew.style.display='none';
   const _empnoAlertEdit = document.getElementById('ct-edit-em-empno-alert'); if(_empnoAlertEdit) _empnoAlertEdit.style.display='none';
 
   // 계약 시작일·종료일·고용형태·계약상태는 수정 모드 섹션 내부에 있으므로
@@ -1086,7 +1084,6 @@ function openContractModal(id=null, preCompanyId=null){
       let _newCfg = _newCo?.allowance_config ?? null;
       if(typeof _newCfg === 'string'){ try{ _newCfg = JSON.parse(_newCfg); }catch(e){ _newCfg = {}; } }
       applyCTAllowanceConfig(_newCfg, true); }
-    document.getElementById('ct-new-emp-section').style.display = 'none';
     document.getElementById('ct-edit-emp-info').style.display = 'none';
     const _selSec = document.getElementById('ct-emp-select-section');
     if(_selSec) _selSec.style.display = '';
@@ -1098,8 +1095,7 @@ function openContractModal(id=null, preCompanyId=null){
     toggleCtEndDate();
     document.getElementById('ct-title').textContent = '근로계약서 추가';
   } else {
-    // 수정: 기존 직원 정보 표시, 신규 입력 섹션 숨김 (draft도 employee_id 있으므로 정상 동작)
-    document.getElementById('ct-new-emp-section').style.display = 'none';
+    // 수정: 기존 직원 정보 표시 (draft도 employee_id 있으므로 정상 동작)
     document.getElementById('ct-edit-emp-info').style.display = 'block';
     const _selSecEdit = document.getElementById('ct-emp-select-section');
     if(_selSecEdit) _selSecEdit.style.display = 'none';
@@ -1637,14 +1633,7 @@ function _repUseAltName(inputId, rowId, altName){
   const rowEl = document.getElementById(rowId);
   if(rowEl) rowEl.style.display = 'none';
   // 이름 변경 후 재검사 트리거
-  if(inputId === 'ct-em-name') checkCtDuplicateName();
-  else if(inputId === 'ct-edit-emp-name') checkCtEditDuplicateName();
-}
-function checkCtDuplicateName(){
-  const name = (document.getElementById('ct-em-name')?.value || '').trim();
-  const coId = document.getElementById('ct-company')?.value || '';
-  _renderNameDuplicateAlert(name, coId, null, 'ct-em-name', 'ct-em-name-dup');
-  _checkRepSelf('ct-em-name', 'ct-em-rep-self-row', 'ct-em-is-rep', 'ct-em-rep-alt-names');
+  if(inputId === 'ct-edit-emp-name') checkCtEditDuplicateName();
 }
 
 // ── 수정 모드(이어쓰기) 이름 중복 검사 ──
@@ -1772,9 +1761,7 @@ function _ctDupRecontract(contractId){
 }
 
 function _hideAllNameDupAlerts(){
-  const _a1 = document.getElementById('ct-em-name-dup-alert');
   const _a2 = document.getElementById('ct-edit-em-name-dup-alert');
-  if(_a1) _a1.style.display = 'none';
   if(_a2) _a2.style.display = 'none';
 }
 
@@ -2049,24 +2036,6 @@ function _checkEmpNoContinuity(empNo, companyId, selfEmpId, newStart, newType) {
   }
 
   return { ok: true, type: 'ok', msg: '' };
-}
-
-// ── 사원번호 실시간 피드백 UI 표시 (신규 모드) ──
-function checkCtEmpNoUniqueness(){
-  const empNo    = (document.getElementById('ct-em-empno')?.value || '').trim();
-  const alertEl  = document.getElementById('ct-em-empno-alert');
-  if(!alertEl) return;
-  if(!empNo){ alertEl.className = 'va-hint'; return; }
-
-  const companyId = document.getElementById('ct-company')?.value || '';
-  if(!companyId){ alertEl.className = 'va-hint'; return; }
-
-  const result = _validateEmpNoUniqueness(empNo, companyId, null, null, null);
-  if(!result.ok){
-    _showEmpNoAlert(alertEl, result.msg, 'error');
-    return;
-  }
-  _showEmpNoAlert(alertEl, `사용 가능한 사원번호입니다.`, 'ok');
 }
 
 // ── 사원번호 실시간 피드백 UI 표시 (수정 모드) ──
@@ -2713,6 +2682,12 @@ function doContractAmend(){
   modalEl.classList.remove('ct-readonly');
   const bodyEl = modalEl.querySelector('.modal-body');
   if(bodyEl) bodyEl.querySelectorAll('input,select,textarea').forEach(el=>{
+    // 개인정보는 인사관리대장에서만 수정 (Q6) — 직원 정보 섹션 전체 잠금 유지
+    if(el.closest('#ct-edit-emp-info')){
+      el.disabled = true;
+      el.style.pointerEvents = 'none';
+      return;
+    }
     el.disabled = false;
     el.tabIndex = 0;
     el.style.pointerEvents = '';

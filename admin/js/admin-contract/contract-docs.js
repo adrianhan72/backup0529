@@ -1154,13 +1154,13 @@ function _collectContractData(){
     position      = document.getElementById('ct-edit-em-position')?.value || existE?.position || '';
   } else {
     const selE = _ctSelectedEmpId ? (allEmployees||[]).find(e=>e.id===_ctSelectedEmpId) : null;
-    empName       = selE?.name || document.getElementById('ct-em-name')?.value || '';
-    phone         = selE?.phone || document.getElementById('ct-em-phone')?.value || '';
-    address       = selE?.address || document.getElementById('ct-em-address')?.value || '';
-    idNumber      = selE?.id_number || document.getElementById('ct-em-id')?.value || '';
-    jobDescription= selE?.job_description || document.getElementById('ct-em-job')?.value || '';
-    department    = selE?.department || document.getElementById('ct-em-dept')?.value || '';
-    position      = selE?.position || document.getElementById('ct-em-position')?.value || '';
+    empName       = selE?.name || '';
+    phone         = selE?.phone || '';
+    address       = selE?.address || '';
+    idNumber      = selE?.id_number || '';
+    jobDescription= selE?.job_description || '';
+    department    = selE?.department || '';
+    position      = selE?.position || '';
   }
 
   // 근무 스케줄 파싱

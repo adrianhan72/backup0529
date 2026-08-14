@@ -140,7 +140,7 @@ companies ──< employees (25 + 확장 5컬럼, 직원 마스터) ──< cont
    - 선택된 `employee_id` 재사용 (POST employees 신규 생성 경로는 "명부 등록"에서만 수행)
    - 임시저장: 직원은 명부에 이미 존재 → 계약 데이터만 저장
 5. `checkCtDuplicateName`(1504)·`checkCtEmpNoUniqueness`(1916)·`_validateEmpNoUniqueness`(1658)를 **직원 마스터 기준**으로 이동 (명부 등록 폼에서 검증, 계약 모달에서는 선택된 직원만 확인)
-
+> **Phase 2 후속 완료 (2026-08-14)**: 수정·amend 모드에서 개인정보 섹션(ct-edit-emp-info) 전체 잠금(인사관리대장에서만 수정, Q6) + 인사카드 버튼, 신규 직원 입력 섹션(ct-new-emp-section)·데드 함수(checkCtDuplicateName 등)·데드 ID 15건 제거, 계약기간 경고행 복원, TOTAL:0
 ### Phase 3 — 상태 기반 액션 이관
 
 1. `viewContract()`(2035)의 버튼 표시 로직(2328~2440) + 상태 배너 로직을 추출 → 직원 패널 액션 렌더러로 포팅

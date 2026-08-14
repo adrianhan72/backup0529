@@ -1563,34 +1563,6 @@ function _ctGetPrevContractForContinuity(){
     }
     return null;
   }
-  // ── 신규계약 모드: 신규 직원 입력 섹션이 보일 때만 ──
-  const newSec = document.getElementById('ct-new-emp-section');
-  if(newSec && newSec.style.display !== 'none'){
-    const name = document.getElementById('ct-em-name')?.value?.trim() || '';
-    const idNumber = document.getElementById('ct-em-id')?.value?.trim() || '';
-    const idPre = idNumber.replace(/[^0-9]/g, '').slice(0, 7);
-    const nameKey = _ctNameKey(name);
-    if(!name || !idPre || !nameKey) return null;
-    const coId = document.getElementById('ct-company')?.value || '';
-    const matchedEmpIds = new Set(
-      (allEmployees||[]).filter(e =>
-        _ctNameKey(e.name) === nameKey &&
-        ((e.id_number || '').replace(/[^0-9]/g, '').slice(0, 7) === idPre) &&
-        (!coId || e.company_id === coId)
-      ).map(e => e.id)
-    );
-    if(!matchedEmpIds.size) return null;
-    const prevs = (allContracts||[]).filter(c =>
-      matchedEmpIds.has(c.employee_id) && !c.is_draft && !c.is_voided_by_amend &&
-      [CONTRACT_STATUS.TERMINATED, CONTRACT_STATUS.EXPIRED].includes(c.status) &&
-      (c.terminate_date || c.contract_end)
-    );
-    if(!prevs.length) return null;
-    prevs.sort((a,b) => (b.terminate_date||b.contract_end||'').localeCompare(a.terminate_date||a.contract_end||''));
-    const prev = prevs[0];
-    const emp = (allEmployees||[]).find(e => e.id === prev.employee_id);
-    return { contract: prev, endDate: prev.terminate_date || prev.contract_end || '', hireDate: emp?.hire_date || '', empNo: emp?.employee_number || '', prevEmpId: emp?.id || '' };
-  }
   return null;
 }
 
@@ -2076,7 +2048,6 @@ function openRecontractModal(srcContract){
   const emp = allEmployees.find(e=>e.id===srcContract.employee_id)||{};
 
   // 직원 섹션 → 수정 직원 섹션으로 전환
-  document.getElementById('ct-new-emp-section').style.display = 'none';
   document.getElementById('ct-edit-emp-info').style.display = 'block';
   const _selSecRc = document.getElementById('ct-emp-select-section');
   if(_selSecRc) _selSecRc.style.display = 'none';
@@ -3375,10 +3346,7 @@ function _onIdInput(el, checkBtnFn){
   if(!val){
     hint.textContent = '';
     hint.className = 'id-format-hint ct-hint-normal';
-    const _nhint = document.getElementById('ct-em-gender-hint');
     const _ehint = document.getElementById('ct-edit-em-gender-hint');
-    if(_nhint && document.getElementById('ct-em-id') === el)
-      { _nhint.textContent = ''; _nhint.className=''; }
     if(_ehint && document.getElementById('ct-edit-em-id') === el)
       { _ehint.textContent = ''; _ehint.className=''; }
   } else {
@@ -3390,12 +3358,6 @@ function _onIdInput(el, checkBtnFn){
       const _gender = _inferGender(_gCode);
       if(_gender){
         const _genderLabel = _gender === 'male' ? '남성' : '여성';
-        const _newGenderEl = document.getElementById('ct-em-gender');
-        if(_newGenderEl && document.getElementById('ct-em-id') === el){
-          _newGenderEl.value = _gender;
-          const _newHint = document.getElementById('ct-em-gender-hint');
-          if(_newHint){ _newHint.textContent = _genderLabel + ' (자동 설정)'; _newHint.className='ct-hint-success'; }
-        }
         const _editGenderEl = document.getElementById('ct-edit-em-gender');
         if(_editGenderEl && document.getElementById('ct-edit-em-id') === el){
           _editGenderEl.value = _gender;
@@ -3651,69 +3613,8 @@ function _ctValidate(){
 
   if(isNew){
     // ── 근로자 선택 필수 (Phase 2: 인사관리대장 기반) ──
-    const _hasSelEmp = !!_ctSelectedEmpId;
-    if(!_hasSelEmp){
+    if(!_ctSelectedEmpId){
       _ctMarkError('ct-emp-select-section', '근로자 선택', errors);
-    }
-    // ── 신규 직원 입력 필드 검증 — 선택된 근로자가 있으면 생략 (인사관리대장에서 이미 검증) ──
-    if(!_hasSelEmp){
-      const _empNoNewVal = document.getElementById('ct-em-empno')?.value?.trim() || '';
-      if(!_empNoNewVal){
-        _ctMarkError('ct-em-empno', '사원번호', errors);
-      } else {
-        const _coIdForEmpno = document.getElementById('ct-company')?.value || '';
-        // 연속 계약: 이전 계약 사원번호 승계 시 동일인 중복 검사 면제
-        const _isEmpNoInherited = _isContinuity && _prevContCtx && _prevContCtx.empNo === _empNoNewVal;
-        if(!_isEmpNoInherited){
-          const _empNoCheck = _validateEmpNoUniqueness(_empNoNewVal, _coIdForEmpno, null, null, null);
-          if(!_empNoCheck.ok) {
-            _ctMarkError('ct-em-empno', `사원번호 중복: ${_empNoCheck.msg}`, errors);
-            _showEmpNoAlert(document.getElementById('ct-em-empno-alert'), _empNoCheck.msg, 'error');
-          }
-        }
-      }
-      if(!(document.getElementById('ct-em-name')?.value?.trim() || ''))
-        _ctMarkError('ct-em-name', '이름', errors);
-      (function(){
-        const _idVal = document.getElementById('ct-em-id')?.value?.trim() || '';
-        if(!_idVal){
-          _ctMarkError('ct-em-id', '주민등록번호', errors);
-        } else {
-          const _idChk = _validateIdNumber(_idVal);
-          if(!_idChk.ok) _ctMarkError('ct-em-id', '주민등록번호 형식 오류', errors);
-        }
-      })();
-      if(!(document.getElementById('ct-em-job')?.value?.trim() || ''))
-        _ctMarkError('ct-em-job', '담당업무', errors);
-      if(!(document.getElementById('ct-em-address')?.value?.trim() || ''))
-        _ctMarkError('ct-em-address', '주소', errors);
-      (function(){
-        const _phoneVal = document.getElementById('ct-em-phone')?.value?.trim() || '';
-        if(!_phoneVal){
-          _ctMarkError('ct-em-phone', '휴대전화', errors);
-        } else {
-          const _phoneChk = _validatePhoneNumber(_phoneVal);
-          if(!_phoneChk.ok) _ctMarkError('ct-em-phone', '휴대전화 형식 오류', errors);
-          else {
-            // 휴대폰번호 중복 검사 (유효·예정 계약 기준)
-            const _phoneDigits = _phoneVal.replace(/[^0-9]/g, '');
-            const _newStart = document.getElementById('ct-start')?.value || '';
-            const _newName = document.getElementById('ct-em-name')?.value?.trim() || '';
-            const _newIdFront = document.getElementById('ct-em-id')?.value?.trim() || '';
-            const _phoneUniq = _validatePhoneUniqueness(_phoneDigits, coId, null, _newStart, _newName, _newIdFront);
-            if(!_phoneUniq.ok) _ctMarkError('ct-em-phone', _phoneUniq.msg, errors);
-          }
-        }
-      })();
-      (function(){
-        const _emailVal = document.getElementById('ct-em-email')?.value?.trim() || '';
-        if(_emailVal){
-          const _emailChk = _validateEmail(_emailVal);
-          if(!_emailChk.ok) _ctMarkError('ct-em-email', '이메일 형식 오류', errors);
-        }
-      })();
-      if(!(document.getElementById('ct-em-category')?.value || ''))
-        _ctMarkError('ct-em-category', '고용형태', errors);
     }
 
     if(!document.getElementById('ct-edit-em-hire')?.value)
@@ -4274,7 +4175,7 @@ async function saveContract(){
     contractStart = document.getElementById('ct-start')?.value
                  || document.getElementById('ct-edit-em-hire')?.value || '';
     contractEnd   = document.getElementById('ct-end')?.value || '';
-    contractType  = document.getElementById('ct-em-category').value;
+    contractType  = _ctNewCat() || CONTRACT_TYPE.REGULAR;
     const today2new = fmtLocalDate(new Date());
     contractStatus = contractStart > today2new ? CONTRACT_STATUS.PENDING : CONTRACT_STATUS.ACTIVE;
   }

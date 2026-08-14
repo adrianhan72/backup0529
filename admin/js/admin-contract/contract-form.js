@@ -297,10 +297,6 @@ function _isLegalHoliday(dateStr){
 
 // ─── EMPLOYEES ───
 // ─── CONTRACTS ───
-function toggleEmExpire(){
-  // 구 퇴사예정일 UI(ct-em-expire/ct-new-row-expire)는 레이아웃 재구성으로 제거됨 — 기간제 계약기간 경고만 수행
-  _checkFixedTermDuration();
-}
 
 // ── 계약직·계약직 수습 계약기간 최소 1개월 검사 ──
 // 계약기간이 1개월 미만이면 경고 배너 표시 후 true 반환 (버튼 비활성 신호)
@@ -311,8 +307,7 @@ function _checkFixedTermDuration(){
   const editWarningRow = document.getElementById('ct-edit-short-term-warning-row');
 
   // 신규/수정 공통: 계약 시작일(ct-start) / 종료일(ct-end) 참조
-  const newSection = document.getElementById('ct-new-emp-section');
-  const isNewMode  = newSection && newSection.style.display !== 'none';
+  const isNewMode  = !editId.contract && !_recontractEmpId;
 
   if(isNewMode){
     // 수정 모드 경고 숨김
@@ -438,28 +433,6 @@ function calcAnnualLeaveDays(hireDateStr, basisType, contractStartStr){
 }
 
 // 현재 폼의 입사일·고객사 정보를 읽어 연차일수 자동 계산 후 필드에 반영
-
-/** 사원번호 추천: 해당 회사 최대 사원번호 + 1 (해지/만료 포함) */
-function _suggestEmpNo(coId){
-  const input = document.getElementById('ct-em-empno');
-  if(!input || !coId) return;
-  let max = 0;
-  const bump = (v) => { const num = parseInt(v); if (!isNaN(num) && num > max) max = num; };
-  for (const emp of allEmployees) {
-    if (emp.company_id !== coId) continue;
-    bump(emp.employee_number);
-  }
-  // 대표자·등기임원·특수관계인 번호도 포함 (4개 그룹 통합 연번 기준)
-  (allExecutives||[]).forEach(e => { if(e.company_id===coId) bump(e.employee_number); });
-  (allRelatedParties||[]).forEach(r => { if(r.company_id===coId) bump(r.employee_number); });
-  const co = allCompanies.find(c => c.id === coId);
-  if(co){
-    let reps = [];
-    try { reps = typeof co.representatives==='string' ? JSON.parse(co.representatives) : (co.representatives||[]); } catch(e){ reps = []; }
-    if(Array.isArray(reps)) reps.forEach(r => bump(r.employee_number));
-  }
-  input.placeholder = `추천: ${String(max + 1).padStart(4, '0')}`;
-}
 
 /** 고객사 선택 시 ct-pay-period 셀렉트에 기본값 자동 세팅 */
 function _autoFillCTPeriod(){
@@ -1953,7 +1926,7 @@ function calcWorkHours(){
     // 신규 직원 추가 시: 현재 직원이 아닌 경우 +1명으로 재산정
     const isNewEmp = !editId.contract && !_recontractEmpId;
     const _selEmp = _ctSelectedEmpId ? (allEmployees||[]).find(x=>x.id===_ctSelectedEmpId) : null;
-    const newEmpName = isNewEmp ? (_selEmp?.name || document.getElementById('ct-em-name')?.value?.trim() || '') : '';
+    const newEmpName = isNewEmp ? (_selEmp?.name || '') : '';
     const hasNewEmp = isNewEmp && newEmpName.length > 0;
     
     let projected = info;
@@ -2619,7 +2592,7 @@ function _getCustomOrdinarySum(){
  */
 function onCtStartChange(){
   // 신규/수정 공통: ct-start 참조
-  const isNewMode = document.getElementById('ct-new-emp-section')?.style.display !== 'none';
+  const isNewMode = !editId.contract && !_recontractEmpId;
   // 계약 시작일: 신규/수정 공통으로 ct-start 참조 (구 ct-em-start는 UI 재구성으로 제거됨)
   const startVal  = document.getElementById('ct-start')?.value || '';
   const coId     = document.getElementById('ct-company')?.value;
@@ -2769,9 +2742,6 @@ function onCtCompanyChange(){
     return;
   }
 
-  // 사원번호 placeholder 추천
-  _suggestEmpNo(coId);
-
   let cfg = null;
   if(!isNewModeForCompany && startVal){
     // 수정·재계약 모드 + 계약시작일 있음: 스냅샷 기준
@@ -2886,10 +2856,10 @@ function _calcMonthlyHolHours(hpd){
 }
 
 function calcContractSalary(){
-  // 수정 모드이면 ct-edit-em-category, 신규이면 ct-em-category 기준
+  // 수정 모드이면 ct-edit-em-category, 신규이면 선택된 근로자 기준
   const rawCat = (editId.contract || _recontractEmpId)
-    ? (document.getElementById('ct-edit-em-category')?.value || document.getElementById('ct-em-category').value)
-    : document.getElementById('ct-em-category').value;
+    ? (document.getElementById('ct-edit-em-category')?.value || '')
+    : _ctNewCat();
   const cat = CONTRACT_TYPE_LEGACY_MAP[rawCat] || rawCat;
   const isDaily        = cat ===CONTRACT_TYPE.DAILY;
   const isRegularGroup = cat ===CONTRACT_TYPE.REGULAR || cat ===CONTRACT_TYPE.REGULAR_PROBATION;
