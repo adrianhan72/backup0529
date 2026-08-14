@@ -1049,10 +1049,13 @@ async function cancelPreTerminate(){
     // 갱신 페어가 있는 경우 해제 (P4)
     if(typeof breakPair === 'function') await breakPair(c);
 
-    // 2) 직원 상태 복원 (resign_date 컬럼 없음 — expire_date 사용)
-    if(emp.id && emp.status===EMP_STATUS.RESIGNED){
+    // 2) 직원 상태 복원
+    if(emp.id){
+      const empPatch = emp.status === EMP_STATUS.RESIGNED
+        ? { status: EMP_STATUS.ACTIVE, resign_date: '', expire_date: '' }
+        : { resign_date: '' };
       await api(`../tables/employees/${emp.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({status: EMP_STATUS.ACTIVE, expire_date:''})});
+        body:JSON.stringify(empPatch)});
     }
 
     // 3) 모달 닫기 + 페이지 새로고침
@@ -2303,6 +2306,8 @@ async function confirmContractTerminate(){
   const c = allContracts.find(x=>x.id===editId.contract);
   if(!c) return toast('계약 정보를 찾을 수 없습니다.','error');
 
+  const emp = allEmployees.find(e=>e.id===c.employee_id);
+
   // 해지 사유 필수
   const selectedChip = document.querySelector('#ct-term-reason-chips .cft-reason-chip.selected');
   const reason = selectedChip ? selectedChip.textContent.trim() : '';
@@ -2358,7 +2363,6 @@ async function confirmContractTerminate(){
     body:JSON.stringify(patchBody)});
 
   // 퇴사일 → 직원 기록 업데이트
-  const emp = allEmployees.find(e=>e.id===c.employee_id);
   if(emp){
     const empPatch = newStatus === CONTRACT_STATUS.TERMINATED
       ? {status: EMP_STATUS.RESIGNED, resign_date: termDate}

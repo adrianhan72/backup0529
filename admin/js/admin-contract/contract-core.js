@@ -2471,6 +2471,19 @@ async function confirmTerminateDateChange(){
     body: JSON.stringify({ terminate_date: newDate, status: newStatus })
   });
 
+  // ── 직원 퇴사일 동기화 (resign_date) ──
+  const _emp = allEmployees.find(e => e.id === c?.employee_id);
+  if(_emp){
+    const _empPatch = newStatus === CONTRACT_STATUS.TERMINATED
+      ? { status: EMP_STATUS.RESIGNED, resign_date: newDate }
+      : { resign_date: newDate };
+    await api(`../tables/employees/${_emp.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(_empPatch)
+    });
+  }
+
   // ── 연계된 갱신 계약이 있으면 시작일도 함께 조정 ──
   if(c?.renewed_to_id){
     const _renewedContract = allContracts.find(x => x.id === c.renewed_to_id);

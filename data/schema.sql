@@ -195,7 +195,8 @@ CREATE TABLE IF NOT EXISTS employees (
   bank_name TEXT, --  -- 은행명
   bank_account TEXT, --  -- 계좌번호
   expire_date TEXT, --  -- 만료일
-  tax_dependents INTEGER DEFAULT 0 --  -- 부양가족 수(세금)
+  tax_dependents INTEGER DEFAULT 0, --  -- 부양가족 수(세금)
+  resign_date TEXT --  -- 퇴사일
 );
 
 CREATE INDEX IF NOT EXISTS idx_employees_company ON employees(company_id);
