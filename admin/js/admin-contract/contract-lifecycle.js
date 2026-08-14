@@ -112,18 +112,19 @@ function buildScheduleTableHTML(activeDays){
   };
 
   var totalStatMins = 0, totalOtMins = 0, totalNightMins = 0, totalHolMins = 0, totalHolOtMins = 0;
+  var totalWdayNightMins = 0, totalSunNightMins = 0; // 평일야간/휴일야간(토·일) 구분
 
   // ── Pass 1: 요일별 근로시간 산출 ──
   var dayData = sortedDays.map(function(s){
     var isWork = !!(s.start && s.end);
-    var isSunday = s.day === 'sun';
+    var isHol = s.day === 'sun' || s.day === 'sat'; // 토·일 모두 휴일근로 (2026-08-14 규칙)
     var sm=toM(s.start), em=toM(s.end);
     if(sm!==null && em!==null && em<=sm) em += 24*60;
     var brk = totalBrkMins(s);
     var mins = (sm!==null&&em!==null&&em>sm) ? Math.max(0,em-sm-brk) : 0;
 
     var dayStat = 0, dayOt = 0, dayHol = 0, dayHolOt = 0;
-    if (isSunday) {
+    if (isHol) {
       dayHol   = Math.min(mins, STATUTORY_DAILY);
       dayHolOt = Math.max(0, mins - STATUTORY_DAILY);
       totalHolMins   += dayHol;
@@ -137,9 +138,30 @@ function buildScheduleTableHTML(activeDays){
 
     var dayNight = (sm!==null&&em!==null) ? nightMins(sm, em, normBreaks(s)) : 0;
     totalNightMins += dayNight;
+    if (isHol) totalSunNightMins += dayNight; else totalWdayNightMins += dayNight;
 
-    return { s:s, isWork:isWork, isSunday:isSunday, mins:mins, dayStat:dayStat, dayOt:dayOt, dayHol:dayHol, dayHolOt:dayHolOt, dayNight:dayNight };
+    return { s:s, isWork:isWork, isHol:isHol, mins:mins, dayStat:dayStat, dayOt:dayOt, dayHol:dayHol, dayHolOt:dayHolOt, dayNight:dayNight, satFill:0 };
   });
+
+  // ── Pass 1.5: 토요일 40h 미달 충당 (2026-08-14 규칙) ──
+  var satD = null;
+  dayData.forEach(function(dd){ if(dd.s.day === 'sat' && dd.mins > 0) satD = dd; });
+  if(satD && totalStatMins < STATUTORY_WEEKLY){
+    var gap2 = STATUTORY_WEEKLY - totalStatMins;
+    var fill2 = Math.min(satD.mins, gap2, STATUTORY_DAILY);
+    if(fill2 > 0){
+      totalHolMins   -= satD.dayHol;
+      totalHolOtMins -= satD.dayHolOt;
+      satD.dayStat   = fill2;
+      satD.satFill   = fill2;
+      var rem2 = satD.mins - fill2;
+      satD.dayHol    = Math.min(rem2, STATUTORY_DAILY);
+      satD.dayHolOt  = Math.max(0, rem2 - STATUTORY_DAILY);
+      totalHolMins   += satD.dayHol;
+      totalHolOtMins += satD.dayHolOt;
+      totalStatMins  += fill2;
+    }
+  }
 
   // ── 주 40h 상한: 초과분을 토→월 역순으로 dayStat→dayOt 재분배 ──
   if(totalStatMins > STATUTORY_WEEKLY){
@@ -149,7 +171,7 @@ function buildScheduleTableHTML(activeDays){
     // 토→월 역순으로 순회하며 overflow 차감
     for(var i = dayData.length-1; i >= 0 && overflow > 0; i--){
       var dd = dayData[i];
-      if(dd.isSunday || dd.dayStat <= 0) continue;
+      if(dd.isHol || dd.dayStat <= 0) continue;
       var deduct = Math.min(dd.dayStat, overflow);
       dd.dayStat -= deduct;
       dd.dayOt   += deduct;
@@ -160,7 +182,7 @@ function buildScheduleTableHTML(activeDays){
   // ── Pass 2: HTML 행 생성 ──
   var rows = dayData.map(function(dd){
     var s = dd.s;
-    var isWork = dd.isWork, isSunday = dd.isSunday;
+    var isWork = dd.isWork, isHol = dd.isHol;
     var cls   = s.day==='sat' ? 'day-sat' : s.day==='sun' ? 'day-sun' : '';
     var color = dayColors[s.day] || '#1e293b';
     var fmtH = function(h){ return Number.isInteger(h) ? h : h.toFixed(1); };
@@ -168,16 +190,17 @@ function buildScheduleTableHTML(activeDays){
     var hrsLines = [];
     if (dd.mins===0) {
       hrsLines.push('-');
-    } else if (isSunday) {
-      hrsLines.push('<span style="color:#dc2626;font-size:10px;">휴일 ' + fmtH(dd.dayHol/60) + 'h</span>');
+    } else if (isHol) {
+      if (dd.dayStat>0) hrsLines.push(fmtH(dd.dayStat/60) + 'h <span style="color:#64748b;font-size:10px;">40h충당</span>');
+      if (dd.dayHol>0) hrsLines.push('<span style="color:#dc2626;font-size:10px;">휴일 ' + fmtH(dd.dayHol/60) + 'h</span>');
       if (dd.dayHolOt>0) hrsLines.push('<span style="color:#b91c1c;font-size:10px;">휴일연장 +' + fmtH(dd.dayHolOt/60) + 'h</span>');
     } else {
-      // 월~토: 소정근로 + 연장근로 (40h 캡 반영 완료)
+      // 월~금: 소정근로 + 연장근로 (40h 캡 반영 완료)
       hrsLines.push(fmtH(dd.dayStat/60) + 'h');
       if (dd.dayOt>0) hrsLines.push('<span style="color:#f59e0b;font-size:10px;">연장 +' + fmtH(dd.dayOt/60) + 'h</span>');
     }
     if (dd.dayNight>0) {
-      var nightLabel = isSunday ? '휴일야간' : '야간';
+      var nightLabel = isHol ? '휴일야간' : '야간';
       hrsLines.push('<span style="color:#7c3aed;font-size:10px;">' + nightLabel + ' +' + fmtH(dd.dayNight/60) + 'h</span>');
     }
     var hrs = hrsLines.join('<br>');
@@ -203,9 +226,10 @@ function buildScheduleTableHTML(activeDays){
 
   var extraLines = [];
   if(totalOtMins > 0) extraLines.push('<span class="wsh-item">&bull; 고정연장근로시간: <span class="wsh-val">'+fmtH(totalOtMins/60)+'</span>h/주</span>');
-  if(totalNightMins > 0) extraLines.push('<span class="wsh-item">&bull; 고정야간근로시간: <span class="wsh-val">'+fmtH(totalNightMins/60)+'</span>h/주</span>');
-  if(totalHolMins > 0) extraLines.push('<span class="wsh-item">&bull; 고정휴일근로시간: <span class="wsh-val">'+fmtH(totalHolMins/60)+'</span>h/주</span>');
+  if(totalWdayNightMins > 0) extraLines.push('<span class="wsh-item">&bull; 고정야간근로시간: <span class="wsh-val">'+fmtH(totalWdayNightMins/60)+'</span>h/주</span>');
+  if((totalHolMins + totalHolOtMins) > 0) extraLines.push('<span class="wsh-item">&bull; 고정휴일근로시간: <span class="wsh-val">'+fmtH((totalHolMins + totalHolOtMins)/60)+'</span>h/주</span>');
   if(totalHolOtMins > 0) extraLines.push('<span class="wsh-item">&bull; 고정휴일연장근로시간: <span class="wsh-val">'+fmtH(totalHolOtMins/60)+'</span>h/주</span>');
+  if(totalSunNightMins > 0) extraLines.push('<span class="wsh-item">&bull; 고정휴일야간근로시간: <span class="wsh-val">'+fmtH(totalSunNightMins/60)+'</span>h/주</span>');
 
   return '<div class="work-schedule-wrap">'
     +'<table class="work-schedule-table">'
@@ -724,7 +748,7 @@ function generateContractHTMLFromData(c, emp, co){
   <div class="doc-section">
     <div class="doc-section-title">${art('(휴일)')}</div>
     <p class="doc-text" style="padding:4px 0 4px;">① "사용자"는 1주일에 소정근로일수를 개근한 경우 주휴일을 부여한다.</p>
-    <p class="doc-text" style="padding:4px 0 4px;">② 주휴일(일요일)과 근로자의 날(5월 1일)은 유급휴일로, 토요일은 무급휴무일로 한다. 단, 휴일이 중복되는 경우 1일의 휴일로 처리한다.</p>
+    <p class="doc-text" style="padding:4px 0 4px;">② 주휴일(일요일)과 근로자의 날(5월 1일) 및 토요일은 휴일로 한다. 단, 휴일이 중복되는 경우 1일의 휴일로 처리한다.</p>
     <p class="doc-text" style="padding:4px 0 4px;">③ 기타 휴일에 관한 사항은 "공휴일에 관한 법률"에 따른다.</p>
   </div>` : ''}
   ${salarySection.replace('__ART_SALARY__', art('(임금)'))}
@@ -1287,11 +1311,11 @@ function _collectRenewFormFields(){
 
   // 고정OT
   fields.fixed_ot_pay    = getAmountVal('ct-fixed-ot-pay') || 0;
-  fields.fixed_ot_hours  = parseFloat(document.getElementById('ct-fixed-ot-hours')?.value) || 0;
+  fields.fixed_ot_hours  = typeof _weeklyToMonthlyHours === 'function' ? _weeklyToMonthlyHours('ct-fixed-ot-hours') : (parseFloat(document.getElementById('ct-fixed-ot-hours')?.value) || 0);
   fields.fixed_night_pay = getAmountVal('ct-fixed-night-pay') || 0;
-  fields.fixed_night_hours = parseFloat(document.getElementById('ct-fixed-night-hours')?.value) || 0;
+  fields.fixed_night_hours = typeof _weeklyToMonthlyHours === 'function' ? _weeklyToMonthlyHours('ct-fixed-night-hours') : (parseFloat(document.getElementById('ct-fixed-night-hours')?.value) || 0);
   fields.fixed_hol_pay   = getAmountVal('ct-fixed-hol-pay') || 0;
-  fields.fixed_hol_hours = parseFloat(document.getElementById('ct-fixed-hol-hours')?.value) || 0;
+  fields.fixed_hol_hours = typeof _weeklyToMonthlyHours === 'function' ? _weeklyToMonthlyHours('ct-fixed-hol-hours') : (parseFloat(document.getElementById('ct-fixed-hol-hours')?.value) || 0);
 
   // 보육수당
   fields.childcare_dependents = parseInt(document.getElementById('ct-childcare-dependents')?.value) || 0;
@@ -3204,7 +3228,7 @@ async function saveDraftContract(reason){
     fixed_night_pay:         getAmountVal('ct-fixed-night-pay'),
     fixed_night_hours:       typeof _weeklyToMonthlyHours==='function'?_weeklyToMonthlyHours('ct-fixed-night-hours'):(parseFloat(document.getElementById('ct-fixed-night-hours')?.value)||0),
     fixed_hol_pay:           getAmountVal('ct-fixed-hol-pay'),
-    fixed_hol_hours:         parseFloat(document.getElementById('ct-fixed-hol-hours')?.value)||0,
+    fixed_hol_hours:         typeof _weeklyToMonthlyHours==='function'?_weeklyToMonthlyHours('ct-fixed-hol-hours'):(parseFloat(document.getElementById('ct-fixed-hol-hours')?.value)||0),
     insurance_employment: true,
     insurance_industrial: true,
     insurance_pension:    true,
@@ -4386,7 +4410,7 @@ async function saveContract(){
     const _hasBothFilesEdit = !!(signedFileData && consentFileData);
   }
 
-  const body={employee_id:empId,company_id:coId,contract_start:contractStart,contract_end:contractEnd,contract_type:contractType,status:contractStatus,probation_months:probMonths,probation_pct:probPct,probation_amt:probAmt,probation_basis:probBasis,probation_end_date:document.getElementById('ct-probation-end-date')?.value||null,work_hours_per_day:avgDayHours,work_days_per_week:isDailySave?0:workDaysCount,schedule_json:JSON.stringify(scheduleJSON),annual_leave_days:parseFloat(document.getElementById('ct-annual')?.value)||15,pre_used_annual_leave:parseFloat(document.getElementById('ct-pre-used-annual')?.value)||0,annual_salary:annual,monthly_salary_agreed:monthly,base_salary:baseSalaryForSave,daily_wage:dailyWageForSave,weekly_holiday_pay:weeklyHol,fixed_ot_pay:getAmountVal('ct-fixed-ot-pay'),fixed_ot_hours:typeof _weeklyToMonthlyHours==='function'?_weeklyToMonthlyHours('ct-fixed-ot-hours'):(parseFloat(document.getElementById('ct-fixed-ot-hours')?.value)||0),fixed_night_pay:getAmountVal('ct-fixed-night-pay'),fixed_night_hours:typeof _weeklyToMonthlyHours==='function'?_weeklyToMonthlyHours('ct-fixed-night-hours'):(parseFloat(document.getElementById('ct-fixed-night-hours')?.value)||0),fixed_hol_pay:getAmountVal('ct-fixed-hol-pay'),fixed_hol_hours:parseFloat(document.getElementById('ct-fixed-hol-hours')?.value)||0,hourly_wage:hourlyWage,position_allowance:getAmountVal('ct-position'),transportation_allowance:getAmountVal('ct-car'),transportation_pay_type:_getCTPayTypeVal('car'),self_driving_allowance:0,self_driving_pay_type:_getCTPayTypeVal('car'),remote_area_allowance:getAmountVal('ct-remote-area'),remote_area_pay_type:'fixed',meal_allowance:getAmountVal('ct-meal'),meal_pay_type:_getCTPayTypeVal('meal'),research_allowance:getAmountVal('ct-research'),research_pay_type:_getCTPayTypeVal('research'),site_allowance:getAmountVal('ct-site'),skill_allowance:getAmountVal('ct-skill'),license_allowance:getAmountVal('ct-license'),hazard_allowance:getAmountVal('ct-hazard'),custom_ordinary_values:JSON.stringify(typeof _getCustomOrdinaryValues==='function'?_getCustomOrdinaryValues():[]),communication_allowance:getAmountVal('ct-communication'),communication_pay_type:_getCTPayTypeVal('communication'),fitness_allowance:getAmountVal('ct-fitness'),fitness_pay_type:_getCTPayTypeVal('fitness'),self_dev_allowance:getAmountVal('ct-self-dev'),self_dev_pay_type:_getCTPayTypeVal('self_dev'),book_allowance:getAmountVal('ct-book'),book_pay_type:_getCTPayTypeVal('book'),overseas_allowance:getAmountVal('ct-overseas'),overseas_pay_type:_getCTPayTypeVal('overseas'),car_maintenance:getAmountVal('ct-car'),regular_bonus:getAmountVal('ct-regular-bonus')||0,childcare_allowance:getAmountVal('ct-childcare')||0,childcare_dependents:parseInt(document.getElementById('ct-childcare-dependents')?.value||0)||0,childcare_pay_type:_getCTPayTypeVal('childcare'),pay_period:document.getElementById('ct-pay-period')?.value.trim()||'',pay_period_month:document.getElementById('ct-pay-period-month-hidden')?.value||null,pay_period_day:parseInt(document.getElementById('ct-pay-period-day-hidden')?.value)||null,pay_day:parseInt(document.getElementById('ct-pay-day')?.value)||null,insurance_employment:true,insurance_industrial:true,insurance_pension:true,insurance_health:true,note:document.getElementById('ct-note').value,salary_start_date:contractStart,salary_end_date:contractEnd,is_draft:false,draft_saved_at:null,signed_file_name:signedFileName,signed_file_data:signedFileData,consent_file_name:consentFileName,consent_file_data:consentFileData};
+  const body={employee_id:empId,company_id:coId,contract_start:contractStart,contract_end:contractEnd,contract_type:contractType,status:contractStatus,probation_months:probMonths,probation_pct:probPct,probation_amt:probAmt,probation_basis:probBasis,probation_end_date:document.getElementById('ct-probation-end-date')?.value||null,work_hours_per_day:avgDayHours,work_days_per_week:isDailySave?0:workDaysCount,schedule_json:JSON.stringify(scheduleJSON),annual_leave_days:parseFloat(document.getElementById('ct-annual')?.value)||15,pre_used_annual_leave:parseFloat(document.getElementById('ct-pre-used-annual')?.value)||0,annual_salary:annual,monthly_salary_agreed:monthly,base_salary:baseSalaryForSave,daily_wage:dailyWageForSave,weekly_holiday_pay:weeklyHol,fixed_ot_pay:getAmountVal('ct-fixed-ot-pay'),fixed_ot_hours:typeof _weeklyToMonthlyHours==='function'?_weeklyToMonthlyHours('ct-fixed-ot-hours'):(parseFloat(document.getElementById('ct-fixed-ot-hours')?.value)||0),fixed_night_pay:getAmountVal('ct-fixed-night-pay'),fixed_night_hours:typeof _weeklyToMonthlyHours==='function'?_weeklyToMonthlyHours('ct-fixed-night-hours'):(parseFloat(document.getElementById('ct-fixed-night-hours')?.value)||0),fixed_hol_pay:getAmountVal('ct-fixed-hol-pay'),fixed_hol_hours:typeof _weeklyToMonthlyHours==='function'?_weeklyToMonthlyHours('ct-fixed-hol-hours'):(parseFloat(document.getElementById('ct-fixed-hol-hours')?.value)||0),hourly_wage:hourlyWage,position_allowance:getAmountVal('ct-position'),transportation_allowance:getAmountVal('ct-car'),transportation_pay_type:_getCTPayTypeVal('car'),self_driving_allowance:0,self_driving_pay_type:_getCTPayTypeVal('car'),remote_area_allowance:getAmountVal('ct-remote-area'),remote_area_pay_type:'fixed',meal_allowance:getAmountVal('ct-meal'),meal_pay_type:_getCTPayTypeVal('meal'),research_allowance:getAmountVal('ct-research'),research_pay_type:_getCTPayTypeVal('research'),site_allowance:getAmountVal('ct-site'),skill_allowance:getAmountVal('ct-skill'),license_allowance:getAmountVal('ct-license'),hazard_allowance:getAmountVal('ct-hazard'),custom_ordinary_values:JSON.stringify(typeof _getCustomOrdinaryValues==='function'?_getCustomOrdinaryValues():[]),communication_allowance:getAmountVal('ct-communication'),communication_pay_type:_getCTPayTypeVal('communication'),fitness_allowance:getAmountVal('ct-fitness'),fitness_pay_type:_getCTPayTypeVal('fitness'),self_dev_allowance:getAmountVal('ct-self-dev'),self_dev_pay_type:_getCTPayTypeVal('self_dev'),book_allowance:getAmountVal('ct-book'),book_pay_type:_getCTPayTypeVal('book'),overseas_allowance:getAmountVal('ct-overseas'),overseas_pay_type:_getCTPayTypeVal('overseas'),car_maintenance:getAmountVal('ct-car'),regular_bonus:getAmountVal('ct-regular-bonus')||0,childcare_allowance:getAmountVal('ct-childcare')||0,childcare_dependents:parseInt(document.getElementById('ct-childcare-dependents')?.value||0)||0,childcare_pay_type:_getCTPayTypeVal('childcare'),pay_period:document.getElementById('ct-pay-period')?.value.trim()||'',pay_period_month:document.getElementById('ct-pay-period-month-hidden')?.value||null,pay_period_day:parseInt(document.getElementById('ct-pay-period-day-hidden')?.value)||null,pay_day:parseInt(document.getElementById('ct-pay-day')?.value)||null,insurance_employment:true,insurance_industrial:true,insurance_pension:true,insurance_health:true,note:document.getElementById('ct-note').value,salary_start_date:contractStart,salary_end_date:contractEnd,is_draft:false,draft_saved_at:null,signed_file_name:signedFileName,signed_file_data:signedFileData,consent_file_name:consentFileName,consent_file_data:consentFileData};
 
   // 재계약 연장 페어: renewed_from_id 추가 (기존 계약과 연속되는 경우)
   if(_recontractSourceId){

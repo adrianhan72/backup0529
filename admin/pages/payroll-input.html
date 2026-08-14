@@ -526,6 +526,22 @@
                 <!-- ── 근태 차감 (취업규칙 체크 시에만) ── -->
                 <div id="pi-attendance-deduction-section" style="display:none;">
                   <div class="pi-wap-sec-title red">근태 차감 내역</div>
+                  <div class="pi-row" id="pi-ded-normal-row" style="display:none;background:#fff5f5;border-radius:4px;padding:3px 6px;">
+                    <label>차감 일반근로</label>
+                    <div class="pi-wap-inline">
+                      <input type="text" id="pi-ded-normal-hours-disp" readonly tabindex="-1" class="pi-wap-val hours red-bold" value="-0h" />
+                      <input type="text" id="pi-ded-normal-pay-disp" readonly tabindex="-1" class="pi-wap-val pay red" value="-0원" />
+                    </div>
+                    <div id="pi-ded-normal-formula" class="pi-formula-line"></div>
+                  </div>
+                  <div class="pi-row" id="pi-ded-legalhol-row" style="display:none;background:#fff7ed;border-radius:4px;padding:3px 6px;">
+                    <label>차감 공휴일</label>
+                    <div class="pi-wap-inline">
+                      <input type="text" id="pi-ded-legalhol-hours-disp" readonly tabindex="-1" class="pi-wap-val hours red-bold" value="-0h" />
+                      <input type="text" id="pi-ded-legalhol-pay-disp" readonly tabindex="-1" class="pi-wap-val pay red" value="-0원" />
+                    </div>
+                    <div id="pi-ded-legalhol-formula" class="pi-formula-line"></div>
+                  </div>
                   <div class="pi-row" id="pi-ded-ot-row" style="display:none;background:#fff5f5;border-radius:4px;padding:3px 6px;">
                     <label>차감 연장근로</label>
                     <div class="pi-wap-inline">

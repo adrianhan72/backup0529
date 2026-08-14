@@ -1183,23 +1183,30 @@ function validateAndParseExcel(wb, fileName){
         });
         const dayMap = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
         const _hpdEx = parseFloat(ct.work_hours_per_day) || 8;
-        let dedOtH = 0, dedNightH = 0, dedHol8H = 0, dedHolOvrH = 0;
+        let dedOtH = 0, dedNightH = 0, dedHol8H = 0, dedHolOvrH = 0, dedHolNightH = 0;
+        // 공휴일(유급) 결근 → 차감 보호 (2026-08-14 규칙)
+        const _exHolSet = (typeof getKoreanHolidays === 'function')
+          ? (() => { try { return getKoreanHolidays(targetYear); } catch(e) { return new Set(); } })()
+          : new Set();
         allAbsentDates.forEach(ds => {
+          if (_exHolSet.has(ds)) return; // 공휴일 결근 → 유급(차감 보호)
           const d = new Date(ds + 'T00:00:00');
           const dayKey = dayMap[d.getDay()];
           const daySched = sched.find(s => s.day === dayKey && (s.active === true || s.active === 1));
           if (!daySched) return;
+          const isHolDay = dayKey === 'sun' || dayKey === 'sat'; // 토·일 휴일 (2026-08-14 규칙)
           const _dh = typeof _calcDayFixedHours === 'function'
             ? _calcDayFixedHours(daySched, _hpdEx) : { otH:0, nightH:0, holH8:0, holHOvr:0 };
           dedOtH    += _dh.otH;
-          dedNightH += _dh.nightH;
+          if (isHolDay) dedHolNightH += _dh.nightH;   // 휴일야간 → 휴일근로 차감으로 합산
+          else         dedNightH     += _dh.nightH;
           dedHol8H  += _dh.holH8;
           dedHolOvrH+= _dh.holHOvr;
         });
-        // 연장 150%, 야간 50%, 휴일 ≤8h 150% / ＞8h 200%
+        // 연장 150%, 야간 50%, 휴일 ≤8h 150% / ＞8h 200% / 휴일야간 50% (모두 휴일근로 합산)
         dedFixedOtP    = Math.round(dedOtH     * hw * 1.5);
         dedFixedNightP = Math.round(dedNightH  * hw * 0.5);
-        dedFixedHolP   = Math.round(dedHol8H   * hw * 1.5 + dedHolOvrH * hw * 2.0);
+        dedFixedHolP   = Math.round(dedHol8H   * hw * 1.5 + dedHolOvrH * hw * 2.0 + dedHolNightH * hw * 0.5);
       }
     }
 
@@ -1504,9 +1511,40 @@ function validateAndParseExcel(wb, fileName){
     //  [A-1.6] 고정OT/야간/휴일 차감 경고 (Phase C1 통합)
     // ──────────────────────────────────────
     if (ded.dedFixedOtP > 0 || ded.dedFixedNightP > 0 || ded.dedFixedHolP > 0) {
-      const _schedOtPay    = Math.round((parseFloat(ct.fixed_ot_hours)||0) * hw * 1.5);
-      const _schedNightPay = Math.round((parseFloat(ct.fixed_night_hours)||0) * hw * 0.5);
-      const _schedHolPay   = Math.round((parseFloat(ct.fixed_hol_hours)||0) * hw * 1.5);
+      // 계약서에 저장된 고정 수당 기준으로 추정 (주간시간 → 금액 재계산 대신 저장값 우선)
+      let _schedOtPay    = parseFloat(ct.fixed_ot_pay)    || 0;
+      let _schedNightPay = parseFloat(ct.fixed_night_pay) || 0;
+      const _schedHolPay = parseFloat(ct.fixed_hol_pay)   || 0;
+      // 공휴일(평일) 고정 연장·야간 차감 반영 (2026-08-14 규칙)
+      if (ct.schedule_json && typeof _calcFixedHoursFromSchedule === 'function') {
+        try {
+          const _sL = (typeof ct.schedule_json === 'string') ? JSON.parse(ct.schedule_json) : ct.schedule_json;
+          const _hl = (typeof getKoreanHolidays === 'function') ? getKoreanHolidays(targetYear) : new Set();
+          if (Array.isArray(_sL) && _hl.size > 0) {
+            const _dayMapE = ['sun','mon','tue','wed','thu','fri','sat'];
+            const _moS = `${targetYear}-${String(targetMonth).padStart(2,'0')}-01`;
+            const _moE = `${targetYear}-${String(targetMonth).padStart(2,'0')}-${String(new Date(targetYear, targetMonth, 0).getDate()).padStart(2,'0')}`;
+            const _keys = new Set();
+            _hl.forEach(ds => {
+              if (ds < _moS || ds > _moE) return;
+              const _dowE = new Date(ds + 'T00:00:00').getDay();
+              if (_dowE === 0 || _dowE === 6) return;
+              _keys.add(_dayMapE[_dowE]);
+            });
+            if (_keys.size) {
+              const _mod = _sL.map(d => ((_keys.has(d.day) && (d.active === true || d.active === 1))
+                ? { ...d, shifts: [{ start:'09:00', end:'17:00', breaks:[] }] } : d));
+              const _fullR = _calcFixedHoursFromSchedule(JSON.stringify(_sL), hw, ct.company_id);
+              const _holR  = _calcFixedHoursFromSchedule(JSON.stringify(_mod), hw, ct.company_id);
+              const _WK = 365/12/7;
+              const _otDed = Math.max(0, Math.round((_fullR.otHours - _holR.otHours) / _WK * 10) / 10);
+              const _niDed = Math.max(0, Math.round((_fullR.nightHours - _holR.nightHours) / _WK * 10) / 10);
+              _schedOtPay    = Math.max(0, Math.round(_schedOtPay    - _otDed * hw * 1.5));
+              _schedNightPay = Math.max(0, Math.round(_schedNightPay - _niDed * hw * 0.5));
+            }
+          }
+        } catch(e) {}
+      }
       const _totalSchedFixed = _schedOtPay + _schedNightPay + _schedHolPay;
       const _totalDedFixed = ded.dedFixedOtP + ded.dedFixedNightP + ded.dedFixedHolP;
       if (_totalSchedFixed > 0 && _totalDedFixed > 0) {

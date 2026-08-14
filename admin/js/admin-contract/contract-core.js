@@ -887,6 +887,8 @@ function openContractModal(id=null, preCompanyId=null){
   { const _foh=document.getElementById('ct-fixed-ot-hours'); if(_foh) _foh.value=''; }
   { const _fnh=document.getElementById('ct-fixed-night-hours'); if(_fnh) _fnh.value=''; }
   { const _fhh=document.getElementById('ct-fixed-hol-hours'); if(_fhh) _fhh.value=''; }
+  { const _fhot=document.getElementById('ct-fixed-hol-ot-hours'); if(_fhot) _fhot.value='0'; }
+  { const _fhnh=document.getElementById('ct-fixed-hol-night-hours'); if(_fhnh) _fhnh.value='0'; }
   _resetCTPayTypes();
   // 모달 초기화: _CT_OPT_ROWS 전체 숨김 리셋 (이전 모달 상태 잔재 제거)
   // applyCTAllowanceConfig가 이후에 고객사 설정에 따라 개별 show 처리
@@ -1241,7 +1243,7 @@ function openContractModal(id=null, preCompanyId=null){
       setAmountVal('ct-fixed-hol-pay',   c.fixed_hol_pay  ||0);
       const _fotH = document.getElementById('ct-fixed-ot-hours');    if(_fotH)    _fotH.value    = c.fixed_ot_hours   ? (c.fixed_ot_hours / (365/12/7)).toFixed(1) :'';
       const _fniH = document.getElementById('ct-fixed-night-hours'); if(_fniH)    _fniH.value    = c.fixed_night_hours? (c.fixed_night_hours / (365/12/7)).toFixed(1) :'';
-      const _fhoH = document.getElementById('ct-fixed-hol-hours');   if(_fhoH)    _fhoH.value    = c.fixed_hol_hours  ||'';
+      const _fhoH = document.getElementById('ct-fixed-hol-hours');   if(_fhoH)    _fhoH.value    = c.fixed_hol_hours  ? (c.fixed_hol_hours / (365/12/7)).toFixed(1) :'';
       }
       // ── 연봉/월약정급여 섹션 표시 최종 강제 적용 (ctVal 기준 — emp.employment_category 우선) ──
       const isFixedEdit2 = ctVal===CONTRACT_TYPE.FIXED || ctVal===CONTRACT_TYPE.FIXED_PROBATION;
@@ -2819,11 +2821,12 @@ async function openAmendPreview(){
     _cmp('수습산정기준', document.querySelector('input[name="ct-probation-basis"]:checked')?.value||'salary', origC.probation_basis);
   }
   _cmp('고정OT금액', getAmountVal('ct-fixed-ot-pay'), origC.fixed_ot_pay);
-  _cmp('고정OT시간', parseFloat(document.getElementById('ct-fixed-ot-hours')?.value)||0, origC.fixed_ot_hours);
+  const _wkHrs = v => (v > 0 ? Math.round((parseFloat(v) / (365/12/7)) * 10) / 10 : 0);
+  _cmp('고정OT시간', parseFloat(document.getElementById('ct-fixed-ot-hours')?.value)||0, _wkHrs(origC.fixed_ot_hours));
   _cmp('고정야간금액', getAmountVal('ct-fixed-night-pay'), origC.fixed_night_pay);
-  _cmp('고정야간시간', parseFloat(document.getElementById('ct-fixed-night-hours')?.value)||0, origC.fixed_night_hours);
+  _cmp('고정야간시간', parseFloat(document.getElementById('ct-fixed-night-hours')?.value)||0, _wkHrs(origC.fixed_night_hours));
   _cmp('고정휴일금액', getAmountVal('ct-fixed-hol-pay'), origC.fixed_hol_pay);
-  _cmp('고정휴일시간', parseFloat(document.getElementById('ct-fixed-hol-hours')?.value)||0, origC.fixed_hol_hours);
+  _cmp('고정휴일시간', parseFloat(document.getElementById('ct-fixed-hol-hours')?.value)||0, _wkHrs(origC.fixed_hol_hours));
   _cmp('급여산정기간', document.getElementById('ct-pay-period')?.value.trim()||'', origC.pay_period||'');
   _cmp('급여지급일', parseInt(document.getElementById('ct-pay-day')?.value)||0, origC.pay_day);
 
@@ -2904,7 +2907,7 @@ async function openAmendPreview(){
     fixed_night_pay: getAmountVal('ct-fixed-night-pay'),
     fixed_night_hours: typeof _weeklyToMonthlyHours === 'function' ? _weeklyToMonthlyHours('ct-fixed-night-hours') : (parseFloat(document.getElementById('ct-fixed-night-hours')?.value)||0),
     fixed_hol_pay:   getAmountVal('ct-fixed-hol-pay'),
-    fixed_hol_hours: parseFloat(document.getElementById('ct-fixed-hol-hours')?.value)||0,
+    fixed_hol_hours: typeof _weeklyToMonthlyHours === 'function' ? _weeklyToMonthlyHours('ct-fixed-hol-hours') : (parseFloat(document.getElementById('ct-fixed-hol-hours')?.value)||0),
     insurance_employment: origC.insurance_employment!==undefined ? origC.insurance_employment : true,
     insurance_industrial: origC.insurance_industrial!==undefined ? origC.insurance_industrial : true,
     insurance_pension:    origC.insurance_pension!==undefined    ? origC.insurance_pension    : true,

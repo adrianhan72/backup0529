@@ -2123,7 +2123,7 @@
           <div id="ct-fixed-ot-formula" class="ct-formula-line"></div>
         </div>
         <div class="form-group" id="ct-row-fixed-hol">
-          <label>고정 휴일근로수당 <span class="lbl-desc">(근무시간표 자동계산, 일요일)</span></label>
+          <label>고정 휴일근로수당 <span class="lbl-desc">(근무시간표 자동계산, 토·일 휴일)</span></label>
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
             <input type="number" id="ct-fixed-hol-hours" placeholder="0" min="0" step="0.5" readonly />
             <span class="fld-unit">h/주</span>
@@ -2133,6 +2133,7 @@
           </div>
           <div id="ct-fixed-hol-formula" class="ct-formula-line"></div>
           <input type="hidden" id="ct-fixed-hol-ot-hours" value="0" />
+          <input type="hidden" id="ct-fixed-hol-night-hours" value="0" />
           <span id="ct-fixed-hol-ot-monthly" class="lbl-desc" style="display:none;"></span>
         </div>
         <div class="form-group" id="ct-row-fixed-night">
@@ -3058,57 +3059,57 @@
   </div>
 </div>
 
-      <script src="js/constants.js?v=20260814k"></script>
-      <script src="js/message-templates.js?v=20260814k"></script>
-      <script src="js/admin-loader.js?v=20260814k"></script>
-<script src="js/admin-state.js?v=20260814k"></script>
-  <script src="js/admin-labor.js?v=20260814k"></script>
+      <script src="js/constants.js?v=20260814s"></script>
+      <script src="js/message-templates.js?v=20260814s"></script>
+      <script src="js/admin-loader.js?v=20260814s"></script>
+<script src="js/admin-state.js?v=20260814s"></script>
+  <script src="js/admin-labor.js?v=20260814s"></script>
   <!-- admin-dashboard 모듈 -->
-  <script src="js/admin-dashboard/dashboard-core.js?v=20260814k"></script>
-  <script src="js/admin-dashboard/dashboard-charts.js?v=20260814k"></script>
-  <script src="js/admin-dashboard.js?v=20260814k"></script>
-  <script src="js/admin-standards.js?v=20260814k"></script>
+  <script src="js/admin-dashboard/dashboard-core.js?v=20260814s"></script>
+  <script src="js/admin-dashboard/dashboard-charts.js?v=20260814s"></script>
+  <script src="js/admin-dashboard.js?v=20260814s"></script>
+  <script src="js/admin-standards.js?v=20260814s"></script>
   <!-- admin-wage 모듈 -->
-  <script src="js/admin-wage/wage-ledger.js?v=20260814k"></script>
-  <script src="js/admin-wage/wage-severance.js?v=20260814k"></script>
-  <script src="js/admin-wage/wage-retirement-mgmt.js?v=20260814k"></script>
-  <script src="js/admin-wage.js?v=20260814k"></script>
+  <script src="js/admin-wage/wage-ledger.js?v=20260814s"></script>
+  <script src="js/admin-wage/wage-severance.js?v=20260814s"></script>
+  <script src="js/admin-wage/wage-retirement-mgmt.js?v=20260814s"></script>
+  <script src="js/admin-wage.js?v=20260814s"></script>
   <!-- admin-company 모듈 -->
-  <script src="js/admin-company/company-core.js?v=20260814k"></script>
-  <script src="js/admin-company/company-history.js?v=20260814k"></script>
-  <script src="js/admin-company.js?v=20260814k"></script>
+  <script src="js/admin-company/company-core.js?v=20260814s"></script>
+  <script src="js/admin-company/company-history.js?v=20260814s"></script>
+  <script src="js/admin-company.js?v=20260814s"></script>
   <!-- admin-contract 모듈 (기능별 분리) -->
-  <script src="js/admin-contract/contract-form.js?v=20260814k"></script>
-  <script src="js/admin-contract/contract-core.js?v=20260814k"></script>
-  <script src="js/admin-contract/contract-docs.js?v=20260814k"></script>
-  <script src="js/admin-contract/contract-dispatch.js?v=20260814k"></script>
-  <script src="js/admin-contract/consent-dispatch.js?v=20260814k"></script>
-  <script src="js/admin-contract/contract-lifecycle.js?v=20260814k"></script>
-  <script src="js/admin-contract.js?v=20260814k"></script>
+  <script src="js/admin-contract/contract-form.js?v=20260814s"></script>
+  <script src="js/admin-contract/contract-core.js?v=20260814s"></script>
+  <script src="js/admin-contract/contract-docs.js?v=20260814s"></script>
+  <script src="js/admin-contract/contract-dispatch.js?v=20260814s"></script>
+  <script src="js/admin-contract/consent-dispatch.js?v=20260814s"></script>
+  <script src="js/admin-contract/contract-lifecycle.js?v=20260814s"></script>
+  <script src="js/admin-contract.js?v=20260814s"></script>
   <!-- admin-payroll 모듈 -->
-  <script src="js/admin-payroll/payroll-core.js?v=20260814k"></script>
-  <script src="js/admin-payroll/payroll-bulk.js?v=20260814k"></script>
-  <script src="js/admin-payroll.js?v=20260814k"></script>
+  <script src="js/admin-payroll/payroll-core.js?v=20260814s"></script>
+  <script src="js/admin-payroll/payroll-bulk.js?v=20260814s"></script>
+  <script src="js/admin-payroll.js?v=20260814s"></script>
   <!-- admin-payroll-input 모듈 (기능별 분리) -->
-  <script src="js/admin-payroll-input/payroll-input-core.js?v=20260814k"></script>
-  <script src="js/admin-payroll-input/payroll-input-main.js?v=20260814k"></script>
-  <script src="js/admin-payroll-input/payroll-input-save.js?v=20260814k"></script>
-  <script src="js/admin-payroll-input/payroll-input-excel.js?v=20260814k"></script>
-  <script src="js/admin-payroll-input.js?v=20260814k"></script>
+  <script src="js/admin-payroll-input/payroll-input-core.js?v=20260814s"></script>
+  <script src="js/admin-payroll-input/payroll-input-main.js?v=20260814s"></script>
+  <script src="js/admin-payroll-input/payroll-input-save.js?v=20260814s"></script>
+  <script src="js/admin-payroll-input/payroll-input-excel.js?v=20260814s"></script>
+  <script src="js/admin-payroll-input.js?v=20260814s"></script>
   <!-- admin-billing 모듈 (기능별 분리) -->
-  <script src="js/admin-billing/billing-core.js?v=20260814k"></script>
-  <script src="js/admin-billing/auth.js?v=20260814k"></script>
-  <script src="js/admin-billing/payslip-send.js?v=20260814k"></script>
-  <script src="js/admin-billing/admin-accounts.js?v=20260814k"></script>
-  <script src="js/admin-billing/system-settings.js?v=20260814k"></script>
-  <script src="js/admin-billing/company-notice.js?v=20260814k"></script>
-  <script src="js/admin-billing/two-year-exceed.js?v=20260814k"></script>
-  <script src="js/admin-billing/regular-conversion.js?v=20260814k"></script>
-  <script src="js/admin-billing/annual-leave.js?v=20260814k"></script>
-  <script src="js/admin-billing/company-notice-log.js?v=20260814k"></script>
-  <script src="js/admin-billing/general-notice.js?v=20260814k"></script>
-  <script src="js/admin-billing/attendance-ledger.js?v=20260814k"></script>
-  <script src="js/admin-billing.js?v=20260814k"></script>
+  <script src="js/admin-billing/billing-core.js?v=20260814s"></script>
+  <script src="js/admin-billing/auth.js?v=20260814s"></script>
+  <script src="js/admin-billing/payslip-send.js?v=20260814s"></script>
+  <script src="js/admin-billing/admin-accounts.js?v=20260814s"></script>
+  <script src="js/admin-billing/system-settings.js?v=20260814s"></script>
+  <script src="js/admin-billing/company-notice.js?v=20260814s"></script>
+  <script src="js/admin-billing/two-year-exceed.js?v=20260814s"></script>
+  <script src="js/admin-billing/regular-conversion.js?v=20260814s"></script>
+  <script src="js/admin-billing/annual-leave.js?v=20260814s"></script>
+  <script src="js/admin-billing/company-notice-log.js?v=20260814s"></script>
+  <script src="js/admin-billing/general-notice.js?v=20260814s"></script>
+  <script src="js/admin-billing/attendance-ledger.js?v=20260814s"></script>
+  <script src="js/admin-billing.js?v=20260814s"></script>
 
   <!-- ─── 범용 확인 모달 ─── -->
   <div class="modal-overlay" id="ct-confirm-modal">
