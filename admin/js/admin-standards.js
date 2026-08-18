@@ -82,16 +82,37 @@ function renderMinimumWages(){
   const curYear  = new Date().getFullYear();
   const tbody    = document.querySelector('#std-minwage-table tbody');
   if(!tbody) return;
-  if(!_allMinimumWages.length){ tbody.innerHTML='<tr><td colspan="4" class="cen-empty"><i class="fas fa-inbox"></i> 데이터 없음</td></tr>'; return; }
+  if(!_allMinimumWages.length){ tbody.innerHTML='<tr><td colspan="5" class="cen-empty"><i class="fas fa-inbox"></i> 데이터 없음</td></tr>'; return; }
   tbody.innerHTML = _allMinimumWages.map(w=>{
     const isCurrent = Number(w.year) === curYear;
     return `<tr class="${isCurrent?'mw-current-row':''}">
       <td class="mw-year">${w.year}년${isCurrent?' <span style="display:inline-block;background:#10b981;color:#fff;font-size:10px;padding:1px 6px;border-radius:10px;margin-left:4px;">현재</span>':''}</td>
       <td class="mw-hourly">${Number(w.hourly_wage).toLocaleString('ko-KR')}원</td>
+      <td class="mw-daily">${Number(w.hourly_wage*8).toLocaleString('ko-KR')}원</td>
       <td class="mw-monthly">${Number(w.monthly_wage).toLocaleString('ko-KR')}원</td>
       <td style="font-size:11.5px;color:#9ca3af;">${w.note||'-'}</td>
     </tr>`;
   }).join('');
+}
+
+// ── 최저임금 추가: 시급 입력 시 일급여(×8)·월급여(×209) 자동 계산 + 천단위 콤마 ──
+function calcMwDailyMonthly(){
+  const hEl = document.getElementById('mw-new-hourly');
+  if(!hEl) return;
+  // 숫자만 남기고 3자리 콤마 포맷
+  const raw = String(hEl.value||'').replace(/[^\d]/g,'');
+  hEl.value = raw ? Number(raw).toLocaleString('ko-KR') : '';
+  const h = raw ? parseInt(raw,10) : 0;
+  const d = document.getElementById('mw-new-daily');
+  const m = document.getElementById('mw-new-monthly');
+  if(d) d.value = h ? (h*8).toLocaleString('ko-KR') : '';
+  if(m) m.value = h ? (h*209).toLocaleString('ko-KR') : '';
+}
+
+/** 금액 입력값에서 콤마 제거 후 정수 반환 */
+function _mwNum(id){
+  const el = document.getElementById(id);
+  return el ? parseInt(String(el.value||'').replace(/[^\d]/g,''),10) || 0 : 0;
 }
 
 // ── 과세 기준 패널 렌더링 ──
@@ -1188,12 +1209,12 @@ async function saveInsuranceRate(){
 // ── 최저임금 저장 ──
 async function saveMinimumWage(){
   const year    = parseInt(document.getElementById('mw-new-year').value);
-  const hourly  = parseInt(document.getElementById('mw-new-hourly').value);
-  const monthly = parseInt(document.getElementById('mw-new-monthly').value);
+  const hourly  = _mwNum('mw-new-hourly');
+  const daily   = _mwNum('mw-new-daily')   || (hourly ? hourly*8 : 0);
+  const monthly = _mwNum('mw-new-monthly') || (hourly ? hourly*209 : 0);
   const note    = document.getElementById('mw-new-note').value.trim();
   if(!year||isNaN(year))     return toast('연도를 입력하세요.','error');
   if(!hourly||isNaN(hourly)) return toast('시급을 입력하세요.','error');
-  if(!monthly||isNaN(monthly)) return toast('월급여를 입력하세요.','error');
   const id = `mw_${year}`;
   const existing = _allMinimumWages.find(w=>w.id===id);
   const body = { id, year, hourly_wage:hourly, monthly_wage:monthly, note };
@@ -1204,11 +1225,11 @@ async function saveMinimumWage(){
   }
   await loadStandards();
   renderMinimumWages();
-  ['mw-new-year','mw-new-hourly','mw-new-monthly','mw-new-note'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  ['mw-new-year','mw-new-hourly','mw-new-daily','mw-new-monthly','mw-new-note'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   toast('최저임금이 업데이트 되었습니다. ✔','success');
   // 중요공지 자동 발송
   await _gnSendStandardsUpdateNotice(
     `${year}년 최저임금`,
-    `■ 시급: ${Number(hourly).toLocaleString('ko-KR')}원\n■ 월급여: ${Number(monthly).toLocaleString('ko-KR')}원`
+    `■ 시급: ${Number(hourly).toLocaleString('ko-KR')}원\n■ 일급여: ${Number(daily).toLocaleString('ko-KR')}원\n■ 월급여: ${Number(monthly).toLocaleString('ko-KR')}원`
   );
 }
