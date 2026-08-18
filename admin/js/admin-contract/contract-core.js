@@ -784,8 +784,10 @@ function _validateCtStartVsHire(startId, hireId, hintId){
 // ── 신규계약 모드에서 선택된 근로자 (Phase 2: 인사관리대장 기반 선택) ──
 let _ctSelectedEmpId = null;
 
-// 신규 모드 고용형태: 선택된 근로자의 인사정보 기준 (입력 섹션 제거됨)
+// 신규 모드 고용형태: 신규계약 인사정보 선택값 우선 → 선택된 근로자의 인사정보 기준
 function _ctNewCat(){
+  const sel = document.getElementById('ct-new-category');
+  if(sel && sel.value) return sel.value;
   if(_ctSelectedEmpId){
     const e = (allEmployees||[]).find(x=>x.id===_ctSelectedEmpId);
     if(e) return e.employment_category || '';
@@ -793,11 +795,32 @@ function _ctNewCat(){
   return '';
 }
 
+/** 신규계약 인사정보 고용형태 변경 → ct-type 동기화 + 고용형태별 UI 재적용 */
+function _ctNewCategoryChange(){
+  const v = document.getElementById('ct-new-category')?.value || '';
+  const ctTypeEl = document.getElementById('ct-type');
+  if(ctTypeEl) ctTypeEl.value = v;
+  if(typeof toggleCtEndDate === 'function') toggleCtEndDate(true);
+  if(typeof toggleProbation === 'function') toggleProbation();
+  if(typeof _updateProbationPeriodState === 'function') _updateProbationPeriodState();
+}
+
 function _ctEsc(s){
   return String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
 
 // ── 근로자 선택 카드 렌더링 (신규 모드) ──
+/** 신규계약: 근로자 선택 전까지 계약 입력창 전체 잠금 (근로자 선택 카드 제외) */
+function _ctSetEmpGate(locked){
+  const modal = document.querySelector('#contract-modal .modal');
+  if(!modal) return;
+  modal.querySelectorAll('input,select,textarea').forEach(el=>{
+    if(el.closest('#ct-emp-card-empty') || el.closest('#ct-emp-card-filled')) return; // 근로자 선택 카드
+    if(el.id === 'ct-company') return; // 고객사 프리셋 hidden
+    if(el.id === 'ct-em-gender' || el.id === 'ct-edit-em-gender') return; // 성별은 항상 readonly
+    el.disabled = locked;
+  });
+}
 function _ctRenderEmpSelect(){
   const emptyEl = document.getElementById('ct-emp-card-empty');
   const filledEl = document.getElementById('ct-emp-card-filled');
@@ -807,7 +830,8 @@ function _ctRenderEmpSelect(){
   if(e){
     const nameEl = document.getElementById('ct-emp-card-name');
     const metaEl = document.getElementById('ct-emp-card-meta');
-    if(nameEl) nameEl.textContent = e.name + (e.is_representative ? ' (대표자)' : '');
+    const pType = personnelTypeOf(e);
+    if(nameEl) nameEl.textContent = e.name + (pType !== PERSONNEL_TYPE.EMPLOYEE ? ` (${personnelTypeLabel(pType)})` : '');
     if(metaEl){
       const parts = [
         e.employee_number ? `사번 ${e.employee_number}` : null,
@@ -822,7 +846,13 @@ function _ctRenderEmpSelect(){
 
 // ── 근로자 선택 확정 ──
 function _ctSetSelectedEmp(empId){
-  if(!empId) { _ctSelectedEmpId = null; _ctRenderEmpSelect(); return; }
+  if(!empId) {
+    _ctSelectedEmpId = null;
+    _ctRenderEmpSelect();
+    const _nF = document.getElementById('ct-new-emp-fields'); if(_nF) _nF.style.display = 'none';
+    _ctSetEmpGate(true);
+    return;
+  }
   if(empId === _ctSelectedEmpId) return;
   // 상태 기반 차단: 유효·예정 계약 보유 직원은 신규계약 대상이 아님
   const hasActive = (allContracts||[]).some(c =>
@@ -835,42 +865,105 @@ function _ctSetSelectedEmp(empId){
   }
   _ctSelectedEmpId = empId || null;
   _ctRenderEmpSelect();
+  _ctSetEmpGate(false); // 근로자 선택 완료 → 입력창 활성화
   if(_ctSelectedEmpId){
     const e = (allEmployees||[]).find(x=>x.id===_ctSelectedEmpId);
     const cat = (e && e.employment_category) || CONTRACT_TYPE.REGULAR;
     const ctTypeEl = document.getElementById('ct-type');
     if(ctTypeEl) ctTypeEl.value = cat;
+    // 신규계약 인사정보 필드 표시 + 프리필 (고용형태·담당업무·부서·직책 — 근로계약에서 등록)
+    const _nF = document.getElementById('ct-new-emp-fields');
+    if(_nF) _nF.style.display = '';
+    { const _nc = document.getElementById('ct-new-category'); if(_nc) _nc.value = (e && e.employment_category) || ''; }
+    { const _nj = document.getElementById('ct-new-job'); if(_nj) _nj.value = (e && e.job_description) || ''; }
+    { const _nd = document.getElementById('ct-new-dept'); if(_nd) _nd.value = (e && e.department) || ''; }
+    { const _np = document.getElementById('ct-new-position'); if(_np) _np.value = (e && e.position) || ''; }
     if(typeof toggleCtEndDate === 'function') toggleCtEndDate(true);
     if(typeof toggleProbation === 'function') toggleProbation();
+    // 선행 입력 잠금 재적용: 입사일 미입력 시 계약 시작일 잠금 (기존 프로세스 유지)
+    if(typeof _onCtHireChange === 'function') _onCtHireChange();
     if(typeof _updateProbationPeriodState === 'function') _updateProbationPeriodState();
   }
 }
 
 // ── 근로자 선택 모달 ──
-function openCtEmpPicker(){
+// opts: { title, companyId, typeFilter, onSelect(emp) } — 고객사 정보 등에서 재사용
+let _ctPickerOpts = null;
+function openCtEmpPicker(opts){
   const modal = document.getElementById('ct-emp-picker-modal');
   if(!modal) return;
+  _ctPickerOpts = (opts && typeof opts === 'object') ? opts : null;
+  const titleEl = document.getElementById('ct-emp-picker-title');
+  if(titleEl) titleEl.innerHTML = `<i class="fas fa-user-check"></i> ${_ctEsc((_ctPickerOpts && _ctPickerOpts.title) || '직원 선택')}`;
   const s = document.getElementById('ct-emp-picker-search');
   if(s) s.value = '';
   renderCtEmpPickerList();
   modal.style.display = 'flex';
+  modal.classList.add('open');
 }
 function closeCtEmpPicker(){
   const modal = document.getElementById('ct-emp-picker-modal');
-  if(modal) modal.style.display = 'none';
+  if(modal){
+    modal.classList.remove('open');
+    modal.style.display = 'none';
+  }
+  _ctPickerOpts = null;
+}
+/** 피커 항목 선택 공통 처리 (재사용 콜백 지원) */
+function _ctPickerSelect(empId){
+  const e = (allEmployees||[]).find(x => x.id === empId);
+  if(!e) return;
+  if(_ctPickerOpts && typeof _ctPickerOpts.onSelect === 'function'){
+    _ctPickerOpts.onSelect(e);
+    closeCtEmpPicker();
+    return;
+  }
+  _ctSetSelectedEmp(empId);
+  closeCtEmpPicker();
 }
 function renderCtEmpPickerList(){
   const listEl = document.getElementById('ct-emp-picker-list');
   if(!listEl) return;
-  const coId = document.getElementById('ct-company')?.value || '';
+  const coId = (_ctPickerOpts && _ctPickerOpts.companyId) || document.getElementById('ct-company')?.value || '';
+  const typeFilter = _ctPickerOpts && _ctPickerOpts.typeFilter;
   const q = (document.getElementById('ct-emp-picker-search')?.value || '').toLowerCase().trim();
   let emps = (allEmployees||[]).filter(e => e.company_id === coId);
+  if(typeFilter) emps = emps.filter(e => personnelTypeOf(e) === typeFilter);
+  // 근로계약서 내 직원 선택 모드: 현재 유효한 계약이 있는 직원은 제외
+  // (계약 없음·만료·해지된 직원만 표시). 수정 모드의 현재 선택 직원은 계속 표시.
+  if(!_ctPickerOpts){
+    const LIVE = new Set([
+      CONTRACT_STATUS.ACTIVE, CONTRACT_STATUS.PENDING, CONTRACT_STATUS.DOCS_INCOMPLETE,
+      CONTRACT_STATUS.RENEWAL_PENDING, CONTRACT_STATUS.TERMINATE_PENDING,
+    ]);
+    emps = emps.filter(e => {
+      if(_ctSelectedEmpId && e.id === _ctSelectedEmpId) return true;
+      return !(allContracts || []).some(c =>
+        c.employee_id === e.id && !c.is_draft && !c.is_voided_by_amend &&
+        c.id !== editId.contract && LIVE.has(c.status)
+      );
+    });
+  }
   if(q){
     emps = emps.filter(e => [e.name, e.employee_number, e.department, e.position].map(v=>String(v||'').toLowerCase()).join(' ').includes(q));
   }
-  emps.sort((a,b)=>(a.name||'').localeCompare(b.name||'','ko'));
+  // 정렬: 계약없음(직원→대표자→등기임원→특수관계인) → 계약만료 → 계약해지, 각 그룹 내 가나다순
+  const groupOf = e => {
+    const real = (allContracts || []).filter(c => c.employee_id === e.id && !c.is_draft && !c.is_voided_by_amend);
+    if (real.some(c => c.status === CONTRACT_STATUS.EXPIRED)) return 4;      // 계약 만료
+    if (real.some(c => c.status === CONTRACT_STATUS.TERMINATED)) return 5;   // 계약 해지
+    const p = personnelTypeOf(e);
+    if (p === PERSONNEL_TYPE.REPRESENTATIVE) return 1;                       // 계약없음 대표자
+    if (p === PERSONNEL_TYPE.EXECUTIVE) return 2;                            // 계약없음 등기임원
+    if (p === PERSONNEL_TYPE.RELATED) return 3;                              // 계약없음 특수관계인
+    return 0;                                                                // 계약없음 직원
+  };
+  emps.sort((a, b) => (groupOf(a) - groupOf(b)) || (a.name || '').localeCompare(b.name || '', 'ko'));
   if(!emps.length){
-    listEl.innerHTML = `<div style="color:#9ca3af;font-size:12.5px;padding:12px 4px;text-align:center;">${q ? '검색 결과가 없습니다' : '등록된 직원이 없습니다. 인사관리대장에서 먼저 등록해 주세요.'}</div>`;
+    const emptyMsg = q
+      ? '검색 결과가 없습니다'
+      : (!_ctPickerOpts ? '선택할 직원이 없습니다. (계약이 없거나 만료·해지된 직원만 표시됩니다)' : '등록된 인원이 없습니다. 인사관리대장에서 먼저 등록해 주세요.');
+    listEl.innerHTML = `<div style="color:#9ca3af;font-size:12.5px;padding:12px 4px;text-align:center;">${emptyMsg}</div>`;
     return;
   }
   listEl.innerHTML = emps.map(e => {
@@ -880,10 +973,14 @@ function renderCtEmpPickerList(){
     const deptPos = [e.department, e.position].filter(v=>v&&String(v).trim()).join('/');
     const meta = [e.employee_number ? '사번 '+e.employee_number : null, contractTypeLabel(e.employment_category), deptPos, e.phone].filter(Boolean).join(' · ');
     const isSel = e.id === _ctSelectedEmpId;
-    return `<div onclick="_ctSetSelectedEmp('${e.id}');closeCtEmpPicker();" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid ${isSel ? '#6366f1' : '#e5e7eb'};border-radius:8px;cursor:pointer;background:${isSel ? '#eef2ff' : '#fff'};">
+    const pType = personnelTypeOf(e);
+    const typeBadge = pType !== PERSONNEL_TYPE.EMPLOYEE
+      ? ` <span class="badge ${pType === PERSONNEL_TYPE.REPRESENTATIVE ? 'badge-indigo' : pType === PERSONNEL_TYPE.EXECUTIVE ? 'badge-blue' : 'badge-purple'}">${personnelTypeLabel(pType)}</span>`
+      : '';
+    return `<div onclick="_ctPickerSelect('${e.id}')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid ${isSel ? '#6366f1' : '#e5e7eb'};border-radius:8px;cursor:pointer;background:${isSel ? '#eef2ff' : '#fff'};">
       <i class="fas fa-user-circle" style="font-size:22px;color:#6366f1;flex-shrink:0;"></i>
       <div style="min-width:0;flex:1;">
-        <div style="font-size:13px;font-weight:600;color:#111827;">${_ctEsc(e.name)}${e.is_representative ? ' <span class="badge badge-indigo">대표자</span>' : ''}</div>
+        <div style="font-size:13px;font-weight:600;color:#111827;">${_ctEsc(e.name)}${typeBadge}</div>
         <div style="font-size:11px;color:#6b7280;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${_ctEsc(meta)}</div>
       </div>
       <span class="badge ${stCls}" style="flex-shrink:0;">${stLabel}</span>
@@ -891,27 +988,43 @@ function renderCtEmpPickerList(){
   }).join('');
 }
 
-// ── 신규 직원 등록 (인사관리대장 폼 재사용 → 저장 후 자동 선택) ──
+// ── 신규 직원 등록 (계약 모달 닫기 → 인사관리대장 페이지 이동 → 신규 직원 등록 모달) ──
 async function _ctRegisterNewEmp(){
-  if(!document.getElementById('hr-emp-form-modal')){
-    if(typeof _loadExternalPage === 'function') await _loadExternalPage('employees');
-  }
-  if(!document.getElementById('hr-emp-form-modal')){
-    toast('인사관리대장 페이지를 불러오지 못했습니다. 페이지 새로고침 후 다시 시도해 주세요.', 'error');
-    return;
-  }
   const coId = document.getElementById('ct-company')?.value || '';
-  window._hrOnSaved = (empId) => { _ctSetSelectedEmp(empId); };
+  closeModal('contract-modal');
+  if(typeof _loadExternalPage === 'function') await _loadExternalPage('employees');
+  const menuEl = document.querySelector('.menu-item[data-page="employees"]');
+  if (typeof showPage === 'function') await showPage('employees', menuEl);
+  if (coId) {
+    const _co = (allCompanies||[]).find(c => c.id === coId);
+    if (typeof selectHrCompany === 'function') selectHrCompany(coId, _co?.company_name || '');
+  }
+  await new Promise(r => setTimeout(r, 350));
   openHrEmployeeForm(null, coId);
 }
 
-// ── 인사카드 보기 (인사관리대장 상세 모달 재사용) ──
+// ── 인사카드 보기 (확인 메시지 → 인사관리대장 페이지 이동 + 인사기록대장 모달) ──
 async function _ctOpenEmpCard(empId){
   const targetId = empId || _ctSelectedEmpId;
   if(!targetId) return;
-  if(!document.getElementById('hr-emp-view-modal')){
-    if(typeof _loadExternalPage === 'function') await _loadExternalPage('employees');
-  }
+  if(typeof _loadExternalPage === 'function') await _loadExternalPage('employees');
+  // 이동 확인 메시지 (시스템 메시지)
+  const _ok = (typeof _showConfirm === 'function')
+    ? await _showConfirm({
+        message: '저장하지 않은 편집중이던 내용은 편집 전 상태로 유지됩니다.\n인사관리대장 페이지로 즉시 이동하시겠습니까?',
+        okText: '이동', okClass: 'btn-indigo',
+      })
+    : true;
+  if(!_ok) return;
+
+  const emp = (allEmployees||[]).find(x => x.id === targetId);
+  closeModal('contract-modal');
+  const menuEl = document.querySelector('.menu-item[data-page="employees"]');
+  if (typeof showPage === 'function') await showPage('employees', menuEl);
+  const _coId = emp?.company_id || '';
+  const _co = _coId ? (allCompanies||[]).find(c => c.id === _coId) : null;
+  if(typeof selectHrCompany === 'function') selectHrCompany(_coId, _co?.company_name || '');
+  await new Promise(r => setTimeout(r, 350));
   if(typeof openHrEmployeeView === 'function') openHrEmployeeView(targetId);
 }
 
@@ -1066,6 +1179,8 @@ function openContractModal(id=null, preCompanyId=null){
   { const _swrN = document.getElementById('ct-short-term-warning-row'); if(_swrN) _swrN.style.display = 'none'; }
   { const _sh = document.getElementById('ct-start-hint'); if(_sh){ _sh.textContent = '이 계약의 효력 발생일'; _sh.style.color = '#6b7280'; } }
   const _empnoAlertEdit = document.getElementById('ct-edit-em-empno-alert'); if(_empnoAlertEdit) _empnoAlertEdit.style.display='none';
+  // 신규계약 인사정보 필드 (근로자 선택 후 표시) — 신규 모드 오픈 시 숨김
+  { const _nF = document.getElementById('ct-new-emp-fields'); if(_nF) _nF.style.display = 'none'; }
 
   // 계약 시작일·종료일·고용형태·계약상태는 수정 모드 섹션 내부에 있으므로
   // ct-edit-emp-info 섹션의 show/hide로 자동 제어됨
@@ -1088,6 +1203,7 @@ function openContractModal(id=null, preCompanyId=null){
     const _selSec = document.getElementById('ct-emp-select-section');
     if(_selSec) _selSec.style.display = '';
     _ctRenderEmpSelect();
+    _ctSetEmpGate(true); // 근로자 선택 전까지 모든 입력창 잠금
     // 계약 시작일: 입사일 입력 전까지 비활성화
     const _startNew = document.getElementById('ct-start');
     if(_startNew){ _startNew.disabled = true; _startNew.value = ''; }

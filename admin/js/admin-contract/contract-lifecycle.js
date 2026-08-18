@@ -3617,6 +3617,14 @@ function _ctValidate(){
       _ctMarkError('ct-emp-select-section', '근로자 선택', errors);
     }
 
+    // ── 근로계약에 기재할 인사정보 (고용형태·담당업무) ──
+    if(!document.getElementById('ct-new-category')?.value)
+      _ctMarkError('ct-new-category', '고용형태', errors);
+    (function(){
+      const _nj = document.getElementById('ct-new-job');
+      if(_nj && !_nj.value.trim()) _ctMarkError('ct-new-job', '담당업무', errors);
+    })();
+
     if(!document.getElementById('ct-edit-em-hire')?.value)
       _ctMarkError('ct-edit-em-hire', '입사일', errors);
     if(!document.getElementById('ct-start')?.value)
@@ -4000,7 +4008,6 @@ async function saveContract(){
     const fixedGroup2 = (_isFixedAllow('car')           ? car2        : 0)
       + (_isFixedAllow('meal')          ? meal2       : 0)
       + (_isFixedAllow('research')      ? research2   : 0)
-      + other2
       + (_isFixedAllow('communication') ? comm2       : 0)
       + (_isFixedAllow('fitness')       ? fit2        : 0)
       + (_isFixedAllow('self_dev')      ? sdev2       : 0)
@@ -4292,12 +4299,10 @@ async function saveContract(){
       const _isFixedForSave = (_ctTypeForSave===CONTRACT_TYPE.FIXED||_ctTypeForSave===CONTRACT_TYPE.FIXED_PROBATION||_ctTypeForSave===CONTRACT_TYPE.DAILY);
       const _nameElSave = document.getElementById('ct-edit-emp-name');
       const _catElSave  = document.getElementById('ct-edit-em-category');
+      const _editEmpCur = allEmployees.find(x => x.id === editEmpId) || {};
       const empPatch = {
         gender:              document.getElementById('ct-edit-em-gender').value,
         employee_number:     document.getElementById('ct-edit-em-empno')?.value.trim() || '',
-        job_description:     document.getElementById('ct-edit-em-job').value,
-        department:          document.getElementById('ct-edit-em-dept').value,
-        position:            document.getElementById('ct-edit-em-position').value,
         hire_date:           _isFixedForSave ? document.getElementById('ct-start').value : document.getElementById('ct-edit-em-hire').value,
         expire_date:         _isFixedForSave ? document.getElementById('ct-end').value   : document.getElementById('ct-edit-em-expire').value,
         id_number:           document.getElementById('ct-edit-em-id').value,
@@ -4309,9 +4314,28 @@ async function saveContract(){
         bank_account:        document.getElementById('ct-edit-em-account').value,
         is_representative:   document.getElementById('ct-edit-em-is-rep')?.checked ? 1 : 0,
       };
+      // 담당업무·부서·직책: 인사카드에 비어 있을 때만 최초 저장 (이후 인사카드 수정값 유지)
+      if(!(_editEmpCur.job_description ?? '')) empPatch.job_description = document.getElementById('ct-edit-em-job').value;
+      if(!(_editEmpCur.department ?? ''))     empPatch.department      = document.getElementById('ct-edit-em-dept').value;
+      if(!(_editEmpCur.position ?? ''))       empPatch.position        = document.getElementById('ct-edit-em-position').value;
       // 이름·고용형태: readOnly/disabled가 아닐 때만 업데이트 (수정 모드에서만 반영)
       if(_nameElSave && !_nameElSave.readOnly && _nameElSave.value.trim()) empPatch.name = _nameElSave.value.trim();
       if(_catElSave  && !_catElSave.disabled  && _catElSave.value)         empPatch.employment_category = _catElSave.value;
+      // 인사카드 수정 이력 기록 (계약 수정으로 인한 기재)
+      (function(){
+        const _hist = (typeof _hrParseHistory === 'function') ? _hrParseHistory(_editEmpCur.hr_edit_history) : (Array.isArray(_editEmpCur.hr_edit_history) ? _editEmpCur.hr_edit_history : []);
+        const _lbl = { employment_category:'고용형태', job_description:'담당업무', department:'부서', position:'직책', hire_date:'입사일' };
+        const _fields = [];
+        Object.keys(_lbl).forEach(k => {
+          const _b = _editEmpCur[k] == null ? '' : String(_editEmpCur[k]);
+          const _a = empPatch[k] == null ? '' : String(empPatch[k]);
+          if(_b !== _a) _fields.push({ label:_lbl[k], before:_b, after:_a });
+        });
+        if(_fields.length){
+          _hist.push({ at: new Date().toISOString(), kind: 'contract', summary: '근로계약 수정', fields:_fields });
+          empPatch.hr_edit_history = _hist;
+        }
+      })();
       await api(`../tables/employees/${editEmpId}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(empPatch)});
     }
     } catch(e){
@@ -4363,6 +4387,38 @@ async function saveContract(){
         await api(`../tables/employees/${empId}`, { method:'PATCH', headers:{'Content-Type':'application/json'},
           body: JSON.stringify(_rcPatch) });
       } catch(e){ console.warn('[재계약 입사일·사원번호 반영 실패]', e); }
+    }
+    // ── 신규·재계약: 근로계약 데이터 → 인사카드 최초 기재 ──
+    //    고용형태는 계약 기준으로 항상 반영, 입사일·담당업무·부서·직책은 비어 있을 때만 저장
+    if(_savedContractId_){
+      const _syncEmp = allEmployees.find(x => x.id === empId);
+      if(_syncEmp){
+        try {
+          const _nCat = document.getElementById('ct-new-category')?.value || _ctNewCat() || contractType;
+          const _nJob = document.getElementById('ct-new-job')?.value || document.getElementById('ct-edit-em-job')?.value || '';
+          const _nDept = document.getElementById('ct-new-dept')?.value || document.getElementById('ct-edit-em-dept')?.value || '';
+          const _nPos = document.getElementById('ct-new-position')?.value || document.getElementById('ct-edit-em-position')?.value || '';
+          const _isFixedSync = [CONTRACT_TYPE.FIXED, CONTRACT_TYPE.FIXED_PROBATION, CONTRACT_TYPE.DAILY].includes(contractType);
+          const _nHire = _isFixedSync ? contractStart : (document.getElementById('ct-edit-em-hire')?.value || '');
+          const _patch = {};
+          const _auto = [];
+          if(_nCat){ _patch.employment_category = _nCat; _auto.push(`고용형태 '${contractTypeLabel(_nCat) || _nCat}'`); }
+          const _setIfEmpty = (k, v, label) => {
+            if(v && !(_syncEmp[k] ?? '')){ _patch[k] = v; _auto.push(`${label} '${v}'`); }
+          };
+          _setIfEmpty('hire_date', _nHire, '입사일');
+          _setIfEmpty('job_description', _nJob, '담당업무');
+          _setIfEmpty('department', _nDept, '부서');
+          _setIfEmpty('position', _nPos, '직책');
+          if(Object.keys(_patch).length){
+            const _syncHist = (typeof _hrParseHistory === 'function') ? _hrParseHistory(_syncEmp.hr_edit_history) : (Array.isArray(_syncEmp.hr_edit_history) ? _syncEmp.hr_edit_history : []);
+            _syncHist.push({ at: new Date().toISOString(), kind: 'contract', summary: '근로계약 등록 — ' + (_auto.join(' / ') || '인사카드 기재') });
+            _patch.hr_edit_history = _syncHist;
+            await api(`../tables/employees/${empId}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify(_patch) });
+            Object.assign(_syncEmp, _patch);
+          }
+        } catch(e){ console.warn('[계약→인사카드 최초 기재 실패]', e); }
+      }
     }
   }
   // ── 고객사 인앱 알림 발송 ──

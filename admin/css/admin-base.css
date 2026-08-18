@@ -153,6 +153,12 @@
     .btn-indigo:active:not(:disabled){background:#3730a3;}
     .btn-indigo.selected,.btn-indigo[aria-selected="true"]{background:#3730a3;}
 
+    /* Purple (보라) */
+    .btn-purple{background:#7c3aed;border-color:#6d28d9;}
+    .btn-purple:hover:not(:disabled){background:#6d28d9;}
+    .btn-purple:active:not(:disabled){background:#5b21b6;}
+    .btn-purple.selected,.btn-purple[aria-selected="true"]{background:#5b21b6;}
+
     /* Dark */
     .btn-dark{background:#334155;border-color:#1a1a2e;}
     .btn-dark:hover:not(:disabled){background:#1a1a2e;}

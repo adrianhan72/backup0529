@@ -38,6 +38,9 @@ function _renderContractFilesSection(c){
 function openDocsUploadModal(contractId){
   const c = allContracts.find(x => x.id === contractId);
   if(!c) return;
+  // 중복 오버레이 방지: 기존에 열린 모달이 있으면 제거 (이중 생성 시 화면 클릭 차단 버그 예방)
+  const _existingOverlay = document.getElementById('ctf-upload-modal-overlay');
+  if(_existingOverlay) _existingOverlay.remove();
   const isVoided = !!(c.is_voided_by_amend);
   const emp = allEmployees.find(e => e.id === c.employee_id);
   const empName = emp?.name || '';

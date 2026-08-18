@@ -193,6 +193,11 @@ async function loadPITargetList(){
     if(!Array.isArray(reps)) reps = [];
     reps.forEach((r, i) => {
       if(r.name){
+        // 유효 근로계약 보유 직원과 동일인일 경우 중복 등록 방지 (계약 정보 우선)
+        if(targets.some(t => t._type === 'employee' && t.emp.name === r.name)) return;
+        // 퇴사일자 설정 인원 제외
+        const _repEmp = (allEmployees||[]).find(x => x.company_id === coId && x.name === r.name);
+        if(_repEmp && _repEmp.resign_date) return;
         targets.push({
           emp: { id: `rep_${coId}_${i}`, name: r.name, company_id: coId, employment_category: CONTRACT_TYPE.REPRESENTATIVE },
           contract: null, _type: 'representative'
@@ -203,6 +208,11 @@ async function loadPITargetList(){
 
   // 등기임원
   (allExecutives||[]).filter(e => e.company_id === coId).forEach(e => {
+    // 유효 근로계약 보유 직원과 동일인일 경우 중복 등록 방지 (계약 정보 우선)
+    if(targets.some(t => t._type === 'employee' && t.emp.name === e.name)) return;
+    // 퇴사일자 설정 인원 제외
+    const _exEmp = (allEmployees||[]).find(x => x.company_id === coId && (x.name === e.name || (e.employee_number && x.employee_number === e.employee_number)));
+    if(_exEmp && _exEmp.resign_date) return;
     targets.push({
       emp: { id: e.id, name: e.name, company_id: coId, employment_category: CONTRACT_TYPE.EXECUTIVE, position: e.position, created_at: e.created_at },
       contract: null, _type: 'executive'
@@ -211,6 +221,11 @@ async function loadPITargetList(){
 
   // 특수관계인
   (allRelatedParties||[]).filter(r => r.company_id === coId).forEach(r => {
+    // 유효 근로계약 보유 직원과 동일인일 경우 중복 등록 방지 (계약 정보 우선)
+    if(targets.some(t => t._type === 'employee' && t.emp.name === r.name)) return;
+    // 퇴사일자 설정 인원 제외
+    const _relEmp = (allEmployees||[]).find(x => x.company_id === coId && (x.name === r.name || (r.employee_number && x.employee_number === r.employee_number)));
+    if(_relEmp && _relEmp.resign_date) return;
     targets.push({
       emp: { id: r.id, name: r.name, company_id: coId, employment_category: CONTRACT_TYPE.RELATED_PARTY, position: r.relationship, created_at: r.created_at },
       contract: null, _type: 'related_party'
@@ -1217,9 +1232,9 @@ function loadPIContract(contractId){
     _eDate.setDate(_eDate.getDate() - 1);
     document.getElementById('pi-pay-period-start').value = `${_sYr}-${String(_sMo).padStart(2,'0')}-${String(_ppDay).padStart(2,'0')}`;
     document.getElementById('pi-pay-period-end').value = fmtLocalDate(_eDate);
-    // 최저임금 기본값
+    // 최저임금 기본값 (전역 데이터 미로드 시 폴백)
     const _mwYear = parseInt(document.getElementById('pi-year')?.value) || new Date().getFullYear();
-    const _mw = allMinimumWages?.find(m => m.year === _mwYear) || { hourly_wage: 10030 };
+    const _mw = (typeof allMinimumWages !== 'undefined' && Array.isArray(allMinimumWages) && allMinimumWages.find(m => m.year === _mwYear)) || { hourly_wage: 10030 };
     document.getElementById('pi-hourly-wage-input').value = _mw.hourly_wage || 10030;
     document.getElementById('pi-tax-dependents-input').value = 1;
     _piContractLoading = false;

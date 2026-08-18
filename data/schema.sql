@@ -1,7 +1,7 @@
 -- =============================================================================
 -- 인사톡 노무톡 — SQLite Schema (한글 주석 포함)
 -- node dump_schema.js 로 자동 생성 (ALTER TABLE 반영)
--- 최종 갱신: 2026-08-14
+-- 최종 갱신: 2026-08-18
 -- 테이블 수: 27개
 -- =============================================================================
 
@@ -206,7 +206,10 @@ CREATE TABLE IF NOT EXISTS employees (
   special_notes TEXT, --  -- 특이사항
   marital_status TEXT, --  -- 결혼 여부
   emergency_contact TEXT, --  -- 비상연락처
-  emergency_relation TEXT --  -- 비상연락처 관계
+  emergency_relation TEXT, --  -- 비상연락처 관계
+  personnel_type TEXT DEFAULT 'employee', --  -- 인원 구분 (employee/representative/executive/related)
+  relationship TEXT, --  -- 특수관계인 관계 (배우자/자녀/부모 등)
+  hr_edit_history TEXT --  -- 인사카드 수정 이력 (JSON 배열)
 );
 
 CREATE INDEX IF NOT EXISTS idx_employees_company ON employees(company_id);

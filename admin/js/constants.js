@@ -46,6 +46,36 @@ const EMP_STATUS_LEGACY_MAP = {
 const EMP_ACTIVE_STATUSES = Object.freeze([EMP_STATUS.ACTIVE]);
 
 // ═══════════════════════════════════════════
+// 인원 구분 (employees.personnel_type)
+// ═══════════════════════════════════════════
+const PERSONNEL_TYPE = Object.freeze({
+  EMPLOYEE:       'employee',        // 일반 직원
+  REPRESENTATIVE: 'representative',  // 대표자 본인
+  EXECUTIVE:      'executive',       // 등기임원
+  RELATED:        'related',         // 특수관계인
+});
+
+const PERSONNEL_TYPE_LABEL = Object.freeze({
+  [PERSONNEL_TYPE.EMPLOYEE]:       '직원',
+  [PERSONNEL_TYPE.REPRESENTATIVE]: '대표자 본인',
+  [PERSONNEL_TYPE.EXECUTIVE]:      '등기임원',
+  [PERSONNEL_TYPE.RELATED]:        '특수관계인',
+});
+
+/** 인원 유형 표시 헬퍼 (영문 코드 → 한글) */
+function personnelTypeLabel(val) {
+  return PERSONNEL_TYPE_LABEL[val] || val || '-';
+}
+
+/** 직원 객체의 인원 유형 도출 (personnel_type 우선, 레거시 is_representative 보정) */
+function personnelTypeOf(emp) {
+  if (!emp) return PERSONNEL_TYPE.EMPLOYEE;
+  const t = emp.personnel_type;
+  if (t && t !== 'employee') return t;
+  return emp.is_representative ? PERSONNEL_TYPE.REPRESENTATIVE : PERSONNEL_TYPE.EMPLOYEE;
+}
+
+// ═══════════════════════════════════════════
 // 계약 상태 (contracts.status)
 // ═══════════════════════════════════════════
 const CONTRACT_STATUS = Object.freeze({
