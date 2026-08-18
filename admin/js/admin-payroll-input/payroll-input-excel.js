@@ -626,6 +626,10 @@ const _ATT_REASON_TO_DB = {
 const _ATT_REASON_TO_EXCEL = {};
 Object.entries(_ATT_REASON_TO_DB).forEach(([k,v])=>{ _ATT_REASON_TO_EXCEL[v]=k; });
 
+// 외부 엑셀 파일 포맷 리터럴 (헤더·합계행 — 파일 형식 고정값)
+const XL_HDR_NAME = '성명';
+const XL_SUM_ROW_LABELS = new Set(['합 계', '합계']);
+
 function handleExcelUpload(event){
   const file=event.target.files[0];
   if(!file) return;
@@ -838,7 +842,7 @@ function validateAndParseExcel(wb, fileName){
     if(!row) continue;
     // 테이블형 헤더 판단: '성명'이 C2~C5 사이에 위치 (C0=No, C1=사원번호, C2=성명)
     // 카드형이 아닌 경우에만 도달하므로 단순히 '성명' 포함 여부로 판단
-    if(row.some((c,ci) => String(c||'').trim()==='성명' && ci >= 1)){
+    if(row.some((c,ci) => String(c||'').trim()===XL_HDR_NAME && ci >= 1)){
       headerRowIdx = ri;
       break;
     }
@@ -989,7 +993,7 @@ function validateAndParseExcel(wb, fileName){
   // ========================================
   const dataRows = raw.slice(headerRowIdx+1).filter(r => {
     const nm = String(r[CI.NAME]||'').trim();
-    return nm && nm !== '합 계' && nm !== '합계' && nm !== '';
+    return nm && !XL_SUM_ROW_LABELS.has(nm) && nm !== '';
   });
 
   if(!dataRows.length){
@@ -1048,13 +1052,13 @@ function validateAndParseExcel(wb, fileName){
     if (attHeaderRow >= 0) {
       const attDataRows = attRaw.slice(attHeaderRow + 1).filter(r => {
         const nm = String(r[0]||'').trim();
-        return nm && nm !== '합계' && !nm.startsWith('※');
+        return nm && !XL_SUM_ROW_LABELS.has(nm) && !nm.startsWith('※');
       });
       attDataRows.forEach(row => {
         const empName = String(row[0]||'').trim();
         const date    = String(row[1]||'').trim();
-        const type    = String(row[2]||'').trim();
-        const reason  = String(row[3]||'').trim();
+        const type    = _ATT_TYPE_TO_DB[String(row[2]||'').trim()] || '';   // 엑셀 한글 → 영문 코드
+        const reason  = _ATT_REASON_TO_DB[String(row[3]||'').trim()] || '';
         const rate    = parseFloat(row[4]) || 0;
         const time    = String(row[5]||'').trim();
         const dateTo  = String(row[6]||'').trim();
@@ -1102,8 +1106,8 @@ function validateAndParseExcel(wb, fileName){
 
   // ── 차감액 사전 계산 (employee_id 기준) ──
   _setProgress(40, '근태 차감액 계산 중…');
-  const _FULL_DEDUCT = new Set(['무단','병가(무급)','생리휴가','가족돌봄']);
-  const _PROTECTED   = new Set(['산재','육아휴직','출산(유급)','출산(무급)','배우자출산']);
+  const _FULL_DEDUCT = new Set(['unauthorized','sick_unpaid','menstrual','family_care']);
+  const _PROTECTED   = new Set(['industrial','childcare_leave','maternity_paid','maternity_unpaid','paternity_paid']);
   const attDedByEmpId = {}; // { empId: { dedBasePay, dedWeekHol, dedWeekHolRatio, dedFixedOtP, dedFixedNightP, dedFixedHolP } }
   const targetMonthStr = `${targetYear}-${String(targetMonth).padStart(2,'0')}`;
 
@@ -1120,12 +1124,12 @@ function validateAndParseExcel(wb, fileName){
 
     // ① 기본급 차감 (결근 + 지각/조퇴, 보호휴직 제외)
     entries.forEach(e => {
-      if (e.type === '결근') {
+      if (e.type === 'absent') {
         if (_PROTECTED.has(e.reason)) return; // 보호휴직(산재·육아·출산·배우자출산)은 차감 제외
         const days = e.dateTo ? Math.ceil((new Date(e.dateTo) - new Date(e.date)) / 86400000) + 1 : 1;
         dedHours += days * hpd;
         dedBasePay += Math.round(days * hpd * hw);
-      } else if (e.type === '지각' || e.type === '조퇴') {
+      } else if (e.type === 'late' || e.type === 'earlyleave') {
         const [h, m] = (e.time || '0:0').split(':').map(Number);
         const hrs = (h || 0) + (m || 0) / 60;
         dedHours += hrs;
@@ -1136,7 +1140,7 @@ function validateAndParseExcel(wb, fileName){
     // ② 주휴 차감 (주 단위 전일 결근 판정)
     const absentDates = new Set();
     entries.forEach(e => {
-      if (e.type !== '결근') return;
+      if (e.type !== 'absent') return;
       if (_PROTECTED.has(e.reason)) return;
       const start = new Date(e.date);
       const end = e.dateTo ? new Date(e.dateTo) : new Date(e.date);
@@ -1173,7 +1177,7 @@ function validateAndParseExcel(wb, fileName){
       if (Array.isArray(sched)) {
         const allAbsentDates = new Set();
         entries.forEach(e => {
-          if (e.type !== '결근') return;
+          if (e.type !== 'absent') return;
           if (_PROTECTED.has(e.reason)) return;
           const start = new Date(e.date);
           const end = e.dateTo ? new Date(e.dateTo) : new Date(e.date);
@@ -1223,7 +1227,7 @@ function validateAndParseExcel(wb, fileName){
     if (!emp) return;
     let matDays = 0;
     entries.forEach(e => {
-      if (e.type === '결근' && (e.reason === '출산(유급)' || e.reason === '출산(무급)')) {
+      if (e.type === 'absent' && (e.reason === 'maternity_paid' || e.reason === 'maternity_unpaid')) {
         const days = e.dateTo ? Math.ceil((new Date(e.dateTo) - new Date(e.date)) / 86400000) + 1 : 1;
         matDays += days;
       }
@@ -1245,7 +1249,7 @@ function validateAndParseExcel(wb, fileName){
     if (!emp) return;
     let layoffDays = 0;
     entries.forEach(e => {
-      if (e.type === '결근' && e.reason === '휴업휴직') {
+      if (e.type === 'absent' && e.reason === 'layoff_leave') {
         const days = e.dateTo ? Math.ceil((new Date(e.dateTo) - new Date(e.date)) / 86400000) + 1 : 1;
         layoffDays += days;
       }
@@ -1291,7 +1295,7 @@ function validateAndParseExcel(wb, fileName){
     // 보호휴직으로 덮인 근로일 Set
     const protectedDates = new Set();
     entries.forEach(e => {
-      if (e.type !== '결근') return;
+      if (e.type !== 'absent') return;
       if (!_PROTECTED.has(e.reason)) return;
       const start = new Date(e.date);
       const end = e.dateTo ? new Date(e.dateTo) : new Date(e.date);
@@ -2410,7 +2414,7 @@ async function confirmBulkUpload(){
       prevHtml += `<div style="font-weight:700;margin-bottom:4px;">📋 근태관리대장 이전월 차이 (${_attSyncPrev.length}명)</div>`;
       _attSyncPrev.forEach(a => {
         const diffSummary = a.diffs.slice(0, 5).map(d =>
-          `${d.date} ${d.action==='insert'?'➕신규':d.action==='delete'?'➖삭제':'✏️수정'} ${d.type}${d.reason?'('+d.reason+')':''}`
+          `${d.date} ${d.action==='insert'?'➕신규':d.action==='delete'?'➖삭제':'✏️수정'} ${_ATT_TYPE_TO_EXCEL[d.type]||d.type}${d.reason?'('+(_ATT_REASON_TO_EXCEL[d.reason]||d.reason)+')':''}`
         ).join('<br>');
         const more = a.diffs.length > 5 ? `<br>... 외 ${a.diffs.length - 5}건` : '';
         prevHtml += `<div style="padding:4px 0;font-size:11px;"><strong>${a.empName}</strong><div style="padding-left:8px;color:#78350f;">${diffSummary}${more}</div></div>`;
@@ -2513,8 +2517,8 @@ async function confirmBulkUpload(){
         allEntries.push({
           date: e.date,
           dateTo: e.dateTo || '',
-          type: _ATT_TYPE_TO_DB[e.type] || 'absent',
-          absentType: _ATT_REASON_TO_DB[e.reason] || '',
+          type: e.type || 'absent',
+          absentType: e.reason || '',
           rate: parseFloat(e.rate) || 0,
           time: e.time || ''
         });
@@ -2552,13 +2556,13 @@ async function confirmBulkUpload(){
           const yearDiffs = sync.diffs.filter(d => (d.date || '').startsWith(String(year)));
           yearDiffs.forEach(d => {
             // 기존 항목 제거
-            allEntries = allEntries.filter(e => !(e.date === d.date && e.type === _ATT_TYPE_TO_DB[d.type]));
+            allEntries = allEntries.filter(e => !(e.date === d.date && e.type === d.type));
             if (d.action !== 'delete') {
               allEntries.push({
                 date: d.date,
                 dateTo: '',
-                type: _ATT_TYPE_TO_DB[d.type] || 'absent',
-                absentType: _ATT_REASON_TO_DB[d.reason] || '',
+                type: d.type || 'absent',
+                absentType: d.reason || '',
                 rate: 0,
                 time: ''
               });

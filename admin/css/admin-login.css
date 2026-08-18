@@ -1,8 +1,8 @@
-    /* ?�?�??�금?�???�쇄/PDF ?�?�?*/
+    /* 임금대장 인쇄/PDF 공통 스타일 */
     @media print{
       @page{ size:A4 landscape; margin:8mm 10mm; }
 
-      /* ???�상 보존 */
+      /* 색상 보존 */
       body.wl-print-mode{
         -webkit-print-color-adjust:exact;
         print-color-adjust:exact;
@@ -10,7 +10,7 @@
         padding:0 !important;
       }
 
-      /* ???�이?�바/topbar ?�이?�웃 초기????margin-left:240px ?�거 */
+      /* 사이드바/topbar 레이아웃 초기화 — margin-left:240px 제거 */
       body.wl-print-mode .sidebar  { display:none!important; }
       body.wl-print-mode .topbar   { display:none!important; }
       body.wl-print-mode .main     {
@@ -20,7 +20,7 @@
         display:block !important;
       }
 
-      /* ??불필??UI ?��? */
+      /* 인쇄 불필요 UI 숨김 */
       body.wl-print-mode .wl-filter-bar,
       body.wl-print-mode #wl-print-btn,
       body.wl-print-mode #wl-excel-btn,
@@ -29,7 +29,7 @@
       body.wl-print-mode #wl-company-select-card,
       body.wl-print-mode #wl-selected-company-label + button { display:none!important; }
 
-      /* ???�금?�???�이지�??�시, ?�머지 page ?��? */
+      /* 임금대장 페이지만 표시, 나머지 page 숨김 */
       body.wl-print-mode .page             { display:none!important; }
       body.wl-print-mode #page-wage-ledger {
         display:block!important;
@@ -38,13 +38,13 @@
       }
       body.wl-print-mode #wl-main-section  { display:block!important; }
 
-      /* ???�택 고객???�더 �?*/
+      /* 선택 고객사 헤더 카드 */
       body.wl-print-mode #wl-main-section > div:first-child {
         margin-bottom:4px !important;
         padding:4px 8px !important;
       }
 
-      /* ??카드 컨테?�너 */
+      /* 카드 컨테이너 */
       body.wl-print-mode .card {
         box-shadow:none!important;
         border:none!important;
@@ -52,13 +52,13 @@
         margin:0 !important;
       }
 
-      /* ??wl-wrap ?�체 ?�비 */
+      /* wl-wrap 전체 여백 */
       body.wl-print-mode .wl-wrap {
         width:100% !important;
         overflow:visible !important;
       }
 
-      /* ??카드 ?�이지 분리 방�? + ?�비 */
+      /* 카드 페이지 분리 방지 + 여백 */
       body.wl-print-mode .wl-card {
         page-break-inside:avoid;
         break-inside:avoid;
@@ -71,7 +71,7 @@
         width:100% !important;
       }
 
-      /* ??카드 ?�더 flex ???�체 ?�비 */
+      /* 카드 헤더 flex 전체 여백 */
       body.wl-print-mode .wl-card-head {
         width:100% !important;
         flex-wrap:nowrap !important;
@@ -80,7 +80,7 @@
       body.wl-print-mode .wl-head-cell .val { font-size:9px !important; white-space:nowrap; }
       body.wl-print-mode .wl-head-cell .lbl { font-size:7px !important; }
 
-      /* ???�세 ?�이�????�체 ?�비, 글??축소 */
+      /* 표(테이블) 전체 여백, 글자 축소 */
       body.wl-print-mode .wl-tbl {
         width:100% !important;
         table-layout:fixed !important;
@@ -100,7 +100,7 @@
       body.wl-print-mode.wl-report-pdf .wl-th-sign,
       body.wl-print-mode.wl-report-pdf .wl-td-sign { display:none!important; }
     }
-    /* 급여?�력 ?�용 */
+    /* 급여입력 전용 */
     .pi-section-title{font-size:12px;font-weight:700;padding:10px 0 7px;border-bottom:1px dashed #e0e0e0;margin-bottom:10px;display:flex;align-items:center;gap:6px}
     .pi-section-title.blue{color:#3b82f6;border-color:#bfdbfe}
     .pi-section-title.red{color:#e94560;border-color:#ffd0d8}
@@ -123,46 +123,46 @@
     .pi-row label{color:#666}
     .pi-row input{width:130px;border:1px solid #d1d5db;border-radius:6px;padding:6px 9px;font-size:13px;outline:none;font-family:inherit;text-align:right;color:#000}
     .pi-row input:focus:not([readonly]):not(:disabled){border-color:#6366f1;outline:none;box-shadow:0 0 0 2px rgba(99,102,241,.25)}
-    /* 비고: ?�이�???· textarea ?�래 · 카드?�??�일 ?�체 ??*/
+    /* 비고: 입력·textarea 클래스 · 카드와 동일 패턴 정리 */
     .pi-note-wrap{display:block;margin-top:6px;margin-bottom:4px;}
     .pi-note-label{display:block;font-size:12.5px;color:#666;margin-bottom:4px;}
     .pi-note-wrap textarea{display:block;width:100%;min-height:62px;border:1px solid #d1d5db;border-radius:6px;padding:6px 9px;font-size:13px;outline:none;font-family:inherit;resize:vertical;line-height:1.55;color:#000;box-sizing:border-box;}
     .pi-note-wrap textarea:focus:not([readonly]):not(:disabled){border-color:#6366f1;outline:none;box-shadow:0 0 0 2px rgba(99,102,241,.25);}
-/* 계약??고정??�� readonly ?��???*/
+    /* 계약서 고정 필드 readonly 통일 */
 .pi-readonly-field{background:#f1f5f9!important;color:#555!important;cursor:default!important;border-color:#e8eaed!important;user-select:none!important;-webkit-text-fill-color:#555!important}
 .pi-readonly-field:focus,.pi-readonly-field:focus-visible{border-color:#e8eaed!important;outline:none!important;box-shadow:none!important;}
 /* 연차수당 자동계산 등 JS로 readOnly 처리되는 필드 통일 */
 .pi-input-readonly{background:#f1f5f9!important;color:#555!important;cursor:default!important;border-color:#e8eaed!important;-webkit-text-fill-color:#555!important;}
 .pi-pay-type-select.pi-btn-locked{opacity:.45!important;cursor:default!important;pointer-events:none!important;}
     .pi-row .pi-val{font-weight:600;font-size:13px;color:#1a1a2e}
-    /* ?�상?�금 지급유???�?�운 select (기존 버튼 UI ?��? */
+    /* 통상임금 지급유형 선택 select (기존 버튼 UI 대체) */
     .pi-pay-type-select{font-size:12px;padding:0 6px;border-radius:4px;border:1px solid #d1d5db;background:#fff;color:#374151;cursor:pointer;outline:none;height:28px;font-family:inherit;flex-shrink:0;}
     .pi-pay-type-select:focus:not(:disabled){border-color:#6366f1;outline:none;box-shadow:0 0 0 2px rgba(99,102,241,.25)}
     .pi-pay-type-select:disabled { background:#f1f5f9; color:#555; cursor:default; border-color:#e8eaed; -webkit-text-fill-color:#555; }
-    /* 미선???�태(value="") ???�색 ?�레?�스?�???�상 */
+    /* 미선택 상태(value="") 앰버색 경고 표시 */
     .pi-pay-type-select.pi-pt-unset{border-color:#fbbf24;background:#fffbeb;color:#92400e;}
-    /* ?�택 ?�료 ??매월 ?�기지�?fixed) */
+    /* 선택 — 매월 정기지급(fixed) */
     .pi-pay-type-select.pi-pt-fixed{border-color:#3b82f6;background:#eff6ff;color:#1d4ed8;}
-    /* ?�택 ?�료 ??출근?�수???�름(daily) */
+    /* 선택 — 출근일수에 따른 계산(daily) */
     .pi-pay-type-select.pi-pt-daily{border-color:#f59e0b;background:#fef3c7;color:#92400e;}
-    /* 매월 ?�기지�??�기?�용 배�? (select ?�???�시 ???�집 불�?) */
+    /* 매월 정기지급 고정용 배지 (select 대체 표시 불가) */
     .pi-pt-fixed-badge{display:inline-flex;align-items:center;height:28px;padding:0 10px;border-radius:4px;background:#eff6ff;color:#1d4ed8;font-size:12px;font-weight:600;white-space:nowrap;flex-shrink:0;user-select:none;cursor:default;}
-    /* 주휴?�당 ?�동계산 배�? */
+    /* 주휴수당 자동계산 배지 */
 .pi-auto-badge{display:inline-flex;align-items:center;height:17px;padding:0 6px;border-radius:3px;background:#dcfce7;color:#15803d;font-size:10px;font-weight:500;margin-left:4px;vertical-align:middle;user-select:none;}
-    /* 주휴?�당 ?�동계산 ?�기?�용 (readonly 통일: 지급일과 동일) */
+    /* 주휴수당 자동계산 입력용 (readonly 통일: 지급일과 동일) */
     .pi-weekly-hol-input{background:#f1f5f9!important;color:#555!important;cursor:default!important;border-color:#e8eaed!important;font-weight:400!important;}
     .pi-weekly-hol-input:focus{border-color:#e8eaed!important;outline:none!important;box-shadow:none!important;}
-    /* 주휴?�당 ?�출?�역 ?�스??*/
+    /* 주휴수당 산출 영역 스타일 */
     .pi-weekly-hol-desc{font-size:10.5px;color:#6b7280;white-space:nowrap;min-height:14px;}
-    /* �?근로?�간 ?�동계산 ?�기?�용 (readonly 통일: 지급일과 동일) */
+    /* 총 근로시간 자동계산 입력용 (readonly 통일: 지급일과 동일) */
     .pi-total-hours-auto{background:#f1f5f9!important;color:#555!important;cursor:default!important;border-color:#e8eaed!important;font-weight:400!important;}
     .pi-total-hours-auto:focus{border-color:#e8eaed!important;outline:none!important;box-shadow:none!important;}
-    /* .pi-row-amount: 금액 ?�력 ?�드 공통 (inline style ?��? */
+    /* .pi-row-amount: 금액 입력 필드 공통 (inline style 대체) */
     .pi-row-amount{width:120px;border:1px solid #d1d5db;border-radius:6px;padding:6px 9px;font-size:13px;outline:none;font-family:inherit;text-align:right;color:#000}
     .pi-row-amount:focus{border-color:#6366f1;outline:none;box-shadow:0 0 0 2px rgba(99,102,241,.25)}
-    /* pi-row-right: ?�함?��? select + 금액 ?�력 묶음 ?�퍼 */
+    /* pi-row-right: 포함수당 select + 금액 입력 묶음 헬퍼 */
     .pi-row-right{display:flex;align-items:center;gap:4px;}
-    /* pi-dep-wrap/pi-dep-input: 부?��?족수 ?�력 */
+    /* pi-dep-wrap/pi-dep-input: 부양가족수 입력 */
     .pi-dep-wrap{font-size:10.5px;color:#3b4a7a;white-space:nowrap;display:flex;align-items:center;gap:3px;}
     .pi-dep-input{width:38px;border:1px solid #c7d2f0;border-radius:4px;padding:2px 4px;font-size:11px;font-family:inherit;text-align:center;outline:none;}
     .pi-dep-input:focus{border-color:#6366f1;outline:none;box-shadow:0 0 0 2px rgba(99,102,241,.25)}
@@ -214,10 +214,10 @@
     .pi-wap-ded-toggle input[type=checkbox]{width:13px;height:13px;accent-color:#6366f1;cursor:pointer}
     .pi-wap-ded-toggle-hint{font-size:9.5px;color:#9ca3af}
     @media(max-width:1200px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
-    /* ?�괄 발송 버튼 */
+    /* 일괄 발송 버튼 */
     #bulk-send-btn:disabled{background:#cccccc!important;color:#f2f2f2!important;border:1px solid #cccccc!important;cursor:not-allowed!important;box-shadow:none!important;opacity:1}
     #bulk-send-btn:not(:disabled):hover{background:#5b21b6!important;}
-    /* ?�괄 발송 모달 - ?�태 배�? */
+    /* 일괄 발송 모달 - 상태 배지 */
     .bs-status{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11.5px;font-weight:600;white-space:nowrap}
     .bs-status.idle{background:#f3f4f6;color:#6b7280}
     .bs-status.generating{background:#eff6ff;color:#2563eb;animation:bs-pulse .9s ease-in-out infinite}
@@ -236,7 +236,7 @@
     #pss-bulk-send-tbody tr:hover{background:#faf9ff}
     #pss-bulk-send-tbody td{padding:11px 12px;vertical-align:middle}
 
-    /* ?�═ 고객???�택 �??????�이지 공통 ?�═ */
+    /* 고객사 선택 칩·탭 페이지 공통 */
     .co-chip{
       cursor:pointer;
       display:inline-flex;align-items:center;gap:6px;
@@ -253,17 +253,17 @@
       background:#4f46e5;
       color:#fff;
     }
-    /* ?��???고객??�?(?�직급여 ?�용) */
+    /* 해지된 고객사 칩 (퇴직급여 전용) */
     .co-chip.terminated{
       color:#9ca3af;border-color:#e5e7eb;
     }
     .co-chip.terminated:hover{
       border-color:#9ca3af;color:#6b7280;background:#fff;
     }
-    /* ?�림(N 배�?) ?�는 �?*/
+    /* 알림(N 배지) 있는 경우 */
     .co-chip.has-new{ border-color:#e94560; }
     .co-chip.has-new:not(.selected) .co-chip-name{ color:#374151; }
-    /* �???배�? */
+    /* 칩 배지 */
     .co-chip-badge{
       display:inline-flex;align-items:center;justify-content:center;
       font-size:10.5px;font-weight:700;border-radius:10px;
@@ -274,26 +274,26 @@
       border-radius:10px;padding:1px 6px;
     }
     .co-chip.selected .co-chip-badge.new-dot{ background:rgba(255,255,255,.9);color:#e94560; }
-    /* 카드 ?�더 ?�?��? 공통 */
+    /* 카드 제목 레이블 공통 */
     .co-card-title{
       font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;
       display:flex;align-items:center;gap:6px;
     }
     .co-card-title i{ color:#6366f1; }
 
-    /* ?�═ 급여 명세??발송 관�??�═ */
-    /* pss �???공통 .co-chip ?�용 (alias) */
+    /* 급여 명세서 발송 관리 */
+    /* pss 전용 공통 .co-chip 사용 (alias) */
     #pss-company-chips .company-chip{ cursor:pointer;padding:7px 14px;border-radius:20px;border:1.5px solid #e5e7eb;background:#fff;font-size:12.5px;font-weight:600;color:#374151;transition:all .15s;display:inline-flex;align-items:center;gap:6px; }
     #pss-company-chips .company-chip:hover{ border-color:#6366f1;color:#4f46e5;background:#f5f3ff;box-shadow:0 0 0 2px rgba(99,102,241,.25); }
     #pss-company-chips .company-chip.selected{ border-color:#6366f1;background:#4f46e5;color:#fff; }
 
-    /* 미발???�림 배너 */
+    /* 미발송 알림 배너 */
     .pss-alert-banner{ display:flex;align-items:center;gap:10px;padding:12px 18px;background:linear-gradient(90deg,#fff7ed,#fef3c7);border:1.5px solid #f59e0b;border-radius:10px;margin-bottom:14px; }
     .pss-alert-banner .pss-alert-icon{ font-size:20px;color:#d97706;flex-shrink:0; }
     .pss-alert-banner .pss-alert-text{ font-size:13px;font-weight:700;color:#92400e; }
     .pss-alert-banner .pss-alert-sub{ font-size:11.5px;color:#b45309;margin-top:2px; }
     .pss-all-clear{ display:flex;align-items:center;justify-content:center;gap:10px;padding:20px 18px;text-align:center; }
-    /* ???�택 ??*/
+    /* 월 선택 */
     .pss-month-tabs{ display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px; }
     .pss-month-tab{ padding:6px 14px;border-radius:20px;border:1.5px solid #e5e7eb;background:#fff;font-size:12px;font-weight:600;color:#6b7280;cursor:pointer;transition:all .15s; }
     .pss-month-tab:hover{ border-color:#6366f1;color:#4f46e5;box-shadow:0 0 0 2px rgba(99,102,241,.25); }
@@ -301,7 +301,7 @@
 
     /* 미발송·발송이력 테이블 — .tbl-std 글로벌 룰로 통합 관리 */
     .pss-send-btn{ background:#d97706;color:#fff;border:1px solid #cccccc;border-radius:7px;padding:5px 13px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px;white-space:nowrap; }
-/* ?�?�?고객??모달 급여 ??�� ?�정 ?�?�?*/
+    /* 고객사 모달 급여 기준 설정 섹션 */
 .cm-allowance-section { background:#f8faff; border:1.5px solid #e0e7ff; border-radius:10px; padding:14px 16px; }
 .cm-aw-section-title  { grid-column:1/-1; font-size:13px; font-weight:700; color:#3730a3; margin-bottom:8px; }
 .cm-aw-section-group  { display:contents; }

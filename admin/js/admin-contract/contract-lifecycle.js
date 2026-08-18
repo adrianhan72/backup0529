@@ -2068,7 +2068,7 @@ function openRecontractModal(srcContract){
   const rcCtType = (emp && emp.employment_category) || srcContract.contract_type || CONTRACT_TYPE.REGULAR;
   const rcIsFixed = (rcCtType===CONTRACT_TYPE.FIXED||rcCtType===CONTRACT_TYPE.FIXED_PROBATION||rcCtType===CONTRACT_TYPE.DAILY);
   if(emp){
-    document.getElementById('ct-edit-em-gender').value     = emp.gender==='여'?'female':emp.gender==='남'?'male':(emp.gender||'male');
+    document.getElementById('ct-edit-em-gender').value     = (emp.gender==='female'||emp.gender==='male')?emp.gender:'male';
     document.getElementById('ct-edit-em-category').value = emp.employment_category||'';
     document.getElementById('ct-edit-em-job').value        = emp.job_description||'';
     document.getElementById('ct-edit-em-dept').value       = emp.department||'';

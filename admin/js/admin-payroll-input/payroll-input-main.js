@@ -386,7 +386,7 @@ async function loadPITargetList(){
         <td class="pi-target-name">
           ${emp.name}
         </td>
-        <td class="pi-target-gender">${emp.gender==='female'||emp.gender==='여성'||emp.gender==='여'?'여':emp.gender==='male'||emp.gender==='남성'||emp.gender==='남'?'남':'-'}</td>
+        <td class="pi-target-gender">${emp.gender==='female'?'여':emp.gender==='male'?'남':'-'}</td>
         <td>
           <span class="badge ${catBadgeCls}">${cat}</span>
         </td>
@@ -1405,7 +1405,7 @@ function loadPIContract(contractId){
         let _ppVal = piContract.pay_period || '';
 
         // pay_period가 날짜범위 형식(YYYY.MM.DD~YYYY.MM.DD)이 아니면
-        if(!_ppVal || _ppVal === '월급' || _ppVal === '연봉' || !_ppVal.includes('.')){
+        if(!_ppVal || !_ppVal.includes('.')){
           // ① 먼저 개별 계약의 pay_period_month/day 확인
           const _ctMo = piContract.pay_period_month;
           const _ctDay = parseInt(piContract.pay_period_day);

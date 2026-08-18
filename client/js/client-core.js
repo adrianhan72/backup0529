@@ -38,7 +38,6 @@ const _isEmpResigned = (emp) => _normEmpStatus(emp.status) === EMP_STATUS.RESIGN
 const _normContractStatus = (status) => CONTRACT_STATUS_LEGACY_MAP[status] || status;
 const _isContractActive = (c) => {
   const s = _normContractStatus(c.status);
-  if (s === '유효') return true; // client-side legacy value
   return CONTRACT_ACTIVE_STATUSES.includes(s);
 };
 const _normContractType = (cat) => CONTRACT_TYPE_LEGACY_MAP[cat] || cat;

@@ -127,9 +127,12 @@ function openContractModal(empId){
   if(!emp) return;
 
   const isActive   = _isEmpActive(emp);
-  const category   = emp.employment_category || '-';
+  // 고용형태: DB 영문 코드 → 표시 라벨 변환 (로직은 영문 코드로 비교)
+  const catRaw     = emp.employment_category || '';
+  const catNorm    = _normContractType(catRaw) || '';
+  const category   = CONTRACT_TYPE_LABEL[catNorm] || catRaw || '-';
   const cfg        = CAT_CONFIG[category] || { bg:'linear-gradient(135deg,#374151,#6b7280)', icon:'👤', avatarBg:'#6b7280', label:category };
-  const isDaily    = _normContractType(category) === CONTRACT_TYPE.DAILY;
+  const isDaily    = catNorm === CONTRACT_TYPE.DAILY;
 
   // 이 직원의 모든 계약 (유효→최신 순)
   const contracts = allContracts
@@ -201,7 +204,7 @@ function openContractModal(empId){
     let periodTxt = '';
     if(isDaily){
       periodTxt = c.contract_start ? c.contract_start + ' ~ ' + (c.contract_end||'') : '-';
-    } else if(category==='정규직'||category==='정규직 수습'){
+    } else if(catNorm === CONTRACT_TYPE.REGULAR || catNorm === CONTRACT_TYPE.REGULAR_PROBATION){
       periodTxt = (c.contract_start||'-') + ' ~ ' + (_isEmpResigned(emp) && emp.resign_date ? emp.resign_date : '계속근로');
     } else {
       periodTxt = (c.contract_start||'-') + ' ~ ' + (c.contract_end||'미정');

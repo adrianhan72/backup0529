@@ -22,9 +22,9 @@
     .main{margin-left:240px;min-height:100vh;display:flex;flex-direction:column}
     .topbar{background:#fff;padding:0 28px;height:60px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,.06);position:sticky;top:0;z-index:50}
     .topbar-title{font-size:15px;font-weight:700;color:#1a1a2e}
-    /* ?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═
+    /* ════════════════════════════════════════
        버튼 공통 기반
-    ?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═ */
+       ════════════════════════════════════════ */
     .btn{
       display:inline-flex;align-items:center;justify-content:center;gap:6px;
       padding:8px 16px;border-radius:8px;
@@ -43,7 +43,7 @@
     .btn:disabled,.btn[disabled]{background:#cccccc;color:#f2f2f2;border:1px solid #cccccc;cursor:not-allowed;pointer-events:none;opacity:1;}
     .btn:disabled.btn-icon-dark,.btn[disabled].btn-icon-dark{background:transparent;color:rgba(255,255,255,.3);border-color:rgba(255,255,255,.15);}
     .btn:disabled.btn-close,.btn[disabled].btn-close{background:transparent;color:#f2f2f2;border-color:#cccccc;}
-    /* Ripple ?�이????리플???�용?�는 모든 버튼 공통 */
+    /* Ripple 효과 — 리플을 사용하는 모든 버튼 공통 */
     .btn .btn-ripple,
     .btn-sb .btn-ripple,
     .btn-renew .btn-ripple,
@@ -69,7 +69,7 @@
     @keyframes btnRipple{
       to{transform:scale(4);opacity:0;}
     }
-    /* ?�기 변??*/
+    /* 크기 변형 */
     .btn-sm{padding:5px 10px;font-size:11.5px;border-radius:7px;min-height:28px;box-sizing:border-box;}
     .btn-lg{padding:10px 22px;font-size:14px;border-radius:9px;}
     .btn-icon{padding:5px 9px;}
@@ -106,7 +106,7 @@
       height:36px; box-sizing:border-box;
     }
     /* ── 같은 행 내 모든 폼 요소는 동일한 높이 변형(slim/std)을 사용할 것 ── */
-    /* ?�기/?�제 ?�이�??�용 ?????�고 ?�평?�게 */
+    /* 닫기·아이콘 버튼 공통 (정사각 30px, 반투명 배경) */
     .btn-close{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:transparent;color:#64748b;border:1px solid #d1d5db;padding:0;font-size:16px;line-height:1;flex-shrink:0;}
     .btn-close:hover:not(:disabled){background:#d1d5db;color:#334155;border-color:#9ca3af;}
     .btn-close:active:not(:disabled){background:#9ca3af;color:#1e293b;border-color:#6b7280;}
@@ -114,10 +114,10 @@
     .btn-icon-dark:hover:not(:disabled){background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.5);}
     .btn-icon-dark:active:not(:disabled){background:rgba(255,255,255,.25);border-color:rgba(255,255,255,.65);}
 
-    /* ?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═
-       SOLID TYPE ???�상 채운 버튼
-    ?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═ */
-    /* Primary (?�드 ??주요 ?�션) */
+    /* ════════════════════════════════════════
+       SOLID TYPE — 배경 채운 버튼
+       ════════════════════════════════════════ */
+    /* Primary (레드 — 주요 액션) */
     .btn-primary{background:#dc2626;border-color:#b91c1c;}
     .btn-primary:hover:not(:disabled){background:#b91c1c;}
     .btn-primary:active:not(:disabled){background:#991b1b;}
@@ -135,13 +135,13 @@
     .btn-success:active:not(:disabled){background:#047857;}
     .btn-success.selected,.btn-success[aria-selected="true"]{background:#065f46;}
 
-    /* Warning (?�버) */
+    /* Warning (앰버) */
     .btn-warning{background:#f59e0b;border-color:#d97706;}
     .btn-warning:hover:not(:disabled){background:#d97706;}
     .btn-warning:active:not(:disabled){background:#b45309;}
     .btn-warning.selected,.btn-warning[aria-selected="true"]{background:#92400e;}
 
-    /* Danger (?�드 ????��/?��?) */
+    /* Danger (레드 — 삭제·파기) */
     .btn-danger{background:#dc2626;border-color:#b91c1c;}
     .btn-danger:hover:not(:disabled){background:#b91c1c;}
     .btn-danger:active:not(:disabled){background:#991b1b;}
@@ -193,11 +193,11 @@
     .btn-blue:hover:not(:disabled){background:#1d4ed8;}
     .btn-blue:active:not(:disabled){background:#1e40af;}
 
-    /* ?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═
-       ?�?�운 select ??form input�??�이·간격 ?�일
-       좌측 ?�스???�백 = ?�측 ?�살???�백 = 8px
-       ?�외: cm-aw-pt-select, pi-pay-type-select
-    ?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═ */
+    /* ════════════════════════════════════════
+       select와 form input의 높이·간격 통일
+       좌측 텍스트 여백·우측 화살표 여백 일정하게
+       예외: cm-aw-pt-select, pi-pay-type-select
+       ════════════════════════════════════════ */
     select:not(.cm-aw-pt-select):not(.pi-pay-type-select):not(.filt-select) {
       border: 1px solid #d1d5db;
       border-radius: 7px;
@@ -233,7 +233,7 @@
       -webkit-text-fill-color: #555;
     }
 
-    /* ?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═?�═
+    /* ════════════════════════════════════════ */
 /* ── company/contract input state classes ── */
 .cm-input-readonly{background:#f1f5f9;border:1px solid #e8eaed;color:#555;cursor:default;-webkit-text-fill-color:#555}
 .cm-input-active{background:#fff;border-color:#6366f1}

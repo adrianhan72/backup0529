@@ -501,7 +501,7 @@ function renderSevHistoryTab(){
     const pays3 = getPrev3MonthsPayrolls(emp.id, resignationDate || todayStr2);
     const sev = calcSeverancePay(emp.id, hireDate, resignationDate || todayStr2, pays3);
     const tenure = calcTenure(hireDate, resignationDate || todayStr2);
-    const reason = lastContract?.status === CONTRACT_STATUS.TERMINATED ? '해지' : '만료';
+    const reasonCode = lastContract?.status === CONTRACT_STATUS.TERMINATED ? 'terminated' : 'expired';
 
     const contractHistory = conts.map((c,i) => {
       const cStart = fmtDate(c.contract_start);
@@ -517,7 +517,7 @@ function renderSevHistoryTab(){
       <td class="sev-history-tenure">${tenure.text}<br><span class="sev-history-tenure-days">${tenure.totalDays.toLocaleString('ko-KR')}일</span></td>
       <td class="sev-history-wage">${pays3.length ? won(sev.ordinary3/3) : '<span class="sev-nodata">-</span>'}</td>
       <td class="sev-history-amount">${sev.netAmount>0 ? won(sev.netAmount) : won(sev.amount)}${sev.interimCount>0?`<br><span class="sev-history-interim-note">(중간정산 ${won(sev.interimTotal)} 차감)</span>`:''}</td>
-      <td>${reason==='해지'?'<span class="badge badge-red">해지</span>':'<span class="badge badge-amber">만료</span>'}</td>
+      <td>${reasonCode==='terminated'?'<span class="badge badge-red">해지</span>':'<span class="badge badge-amber">만료</span>'}</td>
     </tr>`;
   }).join('');
 }

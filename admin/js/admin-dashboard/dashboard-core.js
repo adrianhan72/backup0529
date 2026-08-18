@@ -69,7 +69,7 @@ function _getProbationNoticeTargets(){
       co,
       empName:   emp?.name || '(직원 미지정)',
       coName:    co?.company_name || '-',
-      probEnd:   probEnd.toISOString().slice(0, 10),
+      probEnd:   fmtLocalDate(probEnd),
       probMonths,
       daysLeft,
     });
@@ -120,7 +120,7 @@ function _getProbationAllTargets(){
       co,
       empName:   emp?.name || '(직원 미지정)',
       coName:    co?.company_name || '-',
-      probEnd:   probEnd.toISOString().slice(0, 10),
+      probEnd:   fmtLocalDate(probEnd),
       probMonths,
       daysLeft,
     });

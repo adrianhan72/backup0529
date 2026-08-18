@@ -171,9 +171,9 @@ function _cmHistToggle(){
 function getCompanySnapshotAt(companyId, contractTimestamp){
   const co = (allCompanies||[]).find(x=>x.id===companyId);
   if(!co) return null;
-  // contractTimestamp → ISO date string (YYYY-MM-DD)
+  // contractTimestamp → 로컬 날짜 문자열 (YYYY-MM-DD) — fmtLocalDate 사용 (UTC 밀림 방지)
   const contractDate = contractTimestamp
-    ? new Date(contractTimestamp).toISOString().slice(0,10)
+    ? fmtLocalDate(new Date(contractTimestamp))
     : '';
   // effective_date <= contractDate 인 이력 중 가장 최신 것을 찾는다 (내림차순 정렬)
   const hist = (allCompanyHistories||[])
@@ -529,7 +529,7 @@ function selectContCompany(companyId, companyName){
   const _ecEl = document.getElementById('cont-filter-empcat'); if(_ecEl) _ecEl.value='';
   // 상태 필터: 유효만 기본 선택, 나머지 해제
   // TODO: C2/C7 calcContractStatusDisplay 영문화 후 CONTRACT_STATUS.ACTIVE로 변경
-  document.querySelectorAll('.cont-filter-status-cb').forEach(cb=>{cb.checked=cb.value==='유효';});
+  document.querySelectorAll('.cont-filter-status-cb').forEach(cb=>{cb.checked=cb.value==='valid';});
   const _docEl = document.getElementById('cont-filter-docs-incomplete'); if(_docEl) _docEl.checked=false;
   pages.cont = 1;
   renderContracts();

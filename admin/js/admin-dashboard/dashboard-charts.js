@@ -637,8 +637,8 @@ function renderBillingTrendChart(){
     const mo = d.getMonth() + 1;
     labels.push(`${yr}.${String(mo).padStart(2,'0')}`);
 
-    // 해당 월 말일 (누적 미납금 기준점)
-    const lastDayOfMonth = new Date(yr, mo, 0).toISOString().slice(0, 10);
+    // 해당 월 말일 (누적 미납금 기준점) — fmtLocalDate 사용 (로컬 생성 Date의 UTC 밀림 방지)
+    const lastDayOfMonth = fmtLocalDate(new Date(yr, mo, 0));
 
     // 해당 월 청구 건
     const monthBillings = allBillings.filter(b =>

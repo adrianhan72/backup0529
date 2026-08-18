@@ -286,12 +286,13 @@ function _doRenderClientAL(){
     return;
   }
 
-  const basis = co.annual_leave_basis || '회계년도 기준';
+  // 연차 산정 기준: DB 저장값은 영문 코드 ('fiscal_year' 회계년도 / 'hire_date' 입사일)
+  const basis = co.annual_leave_basis || 'fiscal_year';
 
   const calcAL = (emp) => {
     const contract = allContracts.filter(c => c.employee_id === emp.id && !c.is_draft)
       .sort((a,b) => (b.contract_start||'').localeCompare(a.contract_start||''))
-      .find(c => c.status === '활성' || c.status === 'active') ||
+      .find(c => _normContractStatus(c.status) === CONTRACT_STATUS.ACTIVE) ||
       allContracts.filter(c => c.employee_id === emp.id && !c.is_draft)
         .sort((a,b) => (b.contract_start||'').localeCompare(a.contract_start||''))[0];
     if(!contract) return null;
@@ -302,7 +303,7 @@ function _doRenderClientAL(){
     if(isNaN(hire)) return null;
 
     let baseDate;
-    if(basis === '입사일 기준'){
+    if(basis === 'hire_date'){
       baseDate = new Date(refYear, hire.getMonth(), hire.getDate());
       const today = new Date(); today.setHours(0,0,0,0);
       if(baseDate > today) baseDate = new Date(refYear - 1, hire.getMonth(), hire.getDate());
@@ -327,7 +328,7 @@ function _doRenderClientAL(){
 
     const usedDays = allPayrolls.filter(p => {
       if(p.employee_id !== emp.id) return false;
-      if(basis === '입사일 기준'){
+      if(basis === 'hire_date'){
         const pDate = new Date(p.pay_year||0, (p.pay_month||1)-1, 1);
         const pStart = new Date(refYear-1, hire.getMonth(), hire.getDate());
         const pEnd   = new Date(refYear,   hire.getMonth(), hire.getDate());

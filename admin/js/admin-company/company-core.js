@@ -324,8 +324,8 @@ function _cmPeriodRestore(val, month, day){
     resolvedMonth = month;
   } else if(val){
     const s = val.replace(/\s/g,'');
-    const m = s.match(/^(전월|당월)(\d+)일/);
-    if(m) resolvedMonth = m[1] === '전월' ? 'prev_month' : 'current_month';
+    const m = s.match(/^(prev_month|current_month)(\d+)일/);
+    if(m) resolvedMonth = m[1];
   }
   if(pmEl) pmEl.value = resolvedMonth; // 값 없으면 '월 선택' 유지
 
@@ -335,7 +335,7 @@ function _cmPeriodRestore(val, month, day){
     resolvedDay = String(day);
   } else if(val){
     const s = val.replace(/\s/g,'');
-    const m = s.match(/^(전월|당월)(\d+)일/);
+    const m = s.match(/^(prev_month|current_month)(\d+)일/);
     if(m) resolvedDay = m[2];
   }
   if(pdEl) pdEl.value = resolvedDay; // 값 없으면 '일 선택' 유지

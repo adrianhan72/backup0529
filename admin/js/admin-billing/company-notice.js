@@ -208,7 +208,7 @@ function _cenGetTargetContracts(){
   limit.setDate(limit.getDate() + CEN_NOTICE_DAYS);
 
   // 이미 통지한 contract_id 집합 (이번 달 통지 기준)
-  const nowYM = new Date().toISOString().slice(0,7); // 'YYYY-MM'
+  const nowYM = fmtLocalDate(new Date()).slice(0,7); // 'YYYY-MM'
   const noticedThisMonth = new Set(
     _cenNoticeList
       .filter(r => {

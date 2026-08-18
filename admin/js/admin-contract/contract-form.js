@@ -485,7 +485,7 @@ function _ctPeriodRestore(payPeriod, month, day){
     resolvedMonth = month;
   } else if(payPeriod){
     const s = payPeriod.replace(/\s/g,'');
-    const m = s.match(/^(전월|당월)(\d+)일/);
+    const m = s.match(/^(prev_month|current_month)(\d+)일/);
     if(m) resolvedMonth = m[1];
   }
   if(pmEl) pmEl.value = resolvedMonth;
@@ -495,7 +495,7 @@ function _ctPeriodRestore(payPeriod, month, day){
     resolvedDay = String(day);
   } else if(payPeriod){
     const s = payPeriod.replace(/\s/g,'');
-    const m = s.match(/^(전월|당월)(\d+)일/);
+    const m = s.match(/^(prev_month|current_month)(\d+)일/);
     if(m) resolvedDay = m[2];
   }
   if(pdEl) pdEl.value = resolvedDay;

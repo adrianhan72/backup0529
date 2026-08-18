@@ -590,8 +590,8 @@ const PAGE_LABELS = Object.freeze({
 function genderLabel(empOrGender) {
   if (!empOrGender) return '-';
   const g = typeof empOrGender === 'string' ? empOrGender : (empOrGender.gender || '');
-  if (g === 'female' || g === '여성' || g === '여') return '여';
-  if (g === 'male'   || g === '남성' || g === '남') return '남';
+  if (g === 'female') return '여';
+  if (g === 'male')   return '남';
   return '-';
 }
 

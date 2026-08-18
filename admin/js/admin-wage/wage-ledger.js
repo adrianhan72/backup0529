@@ -1,4 +1,9 @@
 // ─── WAGE LEDGER (임금대장) ───
+// 임금대장 열 라벨 상수 (헤더 정의·매칭 공용)
+const WL_LBL_GROSS = '지급합계';
+const WL_LBL_DED   = '공제합계';
+const WL_LBL_NET   = '영수액';
+const WL_LBL_NET2  = '차인지급액';
 let _wlCompanyId = null;
 let _wlCompanyName = '';
 
@@ -950,7 +955,7 @@ function renderWageLedger(){
       _hasEtcItems ? '기타수당(커스텀)' : '',
       '',
       hasData('etc_allowance')||hasData('other_pay') ? '기타' : '',
-      '지급합계' ],
+      WL_LBL_GROSS ],
   ];
 
   // 공제항목 th 레이블 정의 (C9~C12, index 0~3) — 데이터 유무 무관 항상 표기
@@ -964,7 +969,7 @@ function renderWageLedger(){
     // 행5: C9=소득세, C10=지방소득세, C11=소득세연말정산, C12=공란
     [ '소득세', '지방소득세', '소득세연말정산', '' ],
     // 행6: C9 공란, C10=기타공제, C11=공제합계(bold), C12=차인지급액(bold)
-    [ '', '기타공제', '공제합계', '차인지급액' ],
+    [ '', '기타공제', WL_LBL_DED, WL_LBL_NET2 ],
   ];
 
   // ── 행 최적화: 어떤 직원도 데이터가 없는 행(PAY+DED 모두 0)은 숨김 ──
@@ -1119,8 +1124,8 @@ function renderWageLedger(){
       const pv = PAY_TH[ri]; const dv = DED_TH[ri];
       rows += `<tr class="wl-th-row wl-th-row-mrg">
         <th colspan="2" class="wl-th-cell wl-th-merged">${mergedLabels[ri-1]}</th>
-        ${pv.map((t,i) => `<th class="wl-th-cell${t==='지급합계'?' wl-th-gross':i===5?' wl-th-pay-last':''}">${t}</th>`).join('')}
-        ${dv.map((t,i) => `<th class="wl-th-cell${t==='공제합계'?' wl-th-ded-sum':t==='차인지급액'?' wl-th-net':(ri===2&&(i===0||i===2))?' wl-th-na':''}">${t}</th>`).join('')}
+        ${pv.map((t,i) => `<th class="wl-th-cell${t===WL_LBL_GROSS?' wl-th-gross':i===5?' wl-th-pay-last':''}">${t}</th>`).join('')}
+        ${dv.map((t,i) => `<th class="wl-th-cell${t===WL_LBL_DED?' wl-th-ded-sum':t===WL_LBL_NET2?' wl-th-net':(ri===2&&(i===0||i===2))?' wl-th-na':''}">${t}</th>`).join('')}
       </tr>`;
     }
 
@@ -1412,7 +1417,7 @@ async function _downloadEditExcel(pays, empMap, yr, mo, moStr) {
   // 나머지 고정 열
   const restCols = [
     ['기타수당',        p => nv(p.etc_allowance)+nv(p.other_pay), 10],
-    ['지급합계',        p => nv(p.gross_pay), 12],
+    [WL_LBL_GROSS,        p => nv(p.gross_pay), 12],
     ['보수월액',        p => nv(p.standard_monthly_pay), 10],
     ['소득세',          p => nv(p.income_tax), 10],
     ['지방소득세',      p => nv(p.local_income_tax), 10],
@@ -1423,8 +1428,8 @@ async function _downloadEditExcel(pays, empMap, yr, mo, moStr) {
     ['연말정산',        p => nv(p.year_end_tax_adjust), 10],
     ['건보정산',        p => nv(p.health_insurance_adjust), 10],
     ['기타공제',        p => nv(p.advance_deduction), 10],
-    ['공제합계',        p => nv(p.total_deduction), 12],
-    ['영수액',          p => nv(p.net_pay), 12],
+    [WL_LBL_DED,        p => nv(p.total_deduction), 12],
+    [WL_LBL_NET,          p => nv(p.net_pay), 12],
     ['지급일',          p => (p.pay_date||'').slice(0,10), 10],
     ['비고',            p => p.note||'', 15],
   ];
@@ -1470,9 +1475,9 @@ async function _downloadEditExcel(pays, empMap, yr, mo, moStr) {
   curRow++;
 
   // ── 직원 데이터 행 ──
-  const grossIdx = COLDEF.findIndex(d => d[0] === '지급합계');
-  const dedIdx = COLDEF.findIndex(d => d[0] === '공제합계');
-  const netIdx = COLDEF.findIndex(d => d[0] === '영수액');
+  const grossIdx = COLDEF.findIndex(d => d[0] === WL_LBL_GROSS);
+  const dedIdx = COLDEF.findIndex(d => d[0] === WL_LBL_DED);
+  const netIdx = COLDEF.findIndex(d => d[0] === WL_LBL_NET);
 
   pays.forEach((p, idx) => {
     const rowStyle = idx % 2 === 0 ? S_VAL : S_VAL_ALT;
@@ -1860,7 +1865,7 @@ function _downloadReportExcel(pays, empMap, yr, mo, moStr) {
     // ── 헤더 B행 (r1) ──
     pushRow(
       ['', `${wd}일 / ${wh}H`, `연장${oh} 야간${nh} 휴일${hh}H`,
-       isSum?'지급총액합계':'지급총액', gv, '공제합계', dv,
+       isSum?'지급총액합계':'지급총액', gv, WL_LBL_DED, dv,
        isSum?'실수령액 합계':`실수령액 / ${pd}`, nev],
       17,
       [

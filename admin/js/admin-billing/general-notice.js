@@ -1,4 +1,4 @@
-﻿//  중요공지 관리 (page-general-notice)
+//  중요공지 관리 (page-general-notice)
 // ======================================================================
 
 // ── 상태 변수 ──
@@ -424,11 +424,11 @@ async function cancelGnScheduled(recordId){
 // ─────────────────────────────────────────────
 // 산정기준 업데이트 시 전체 고객사 중요공지 자동 발송
 // ─────────────────────────────────────────────
-async function _gnSendStandardsUpdateNotice(updateType, detail){
+async function _gnSendStandardsUpdateNotice(updateType, detail, effectiveDate){
   const adminName = _getAdminUsername();
   const targets   = allCompanies.filter(c => !c.is_draft && isCompanyActive(c));
   if(!targets.length) return;
-  const title = `[산정기준 업데이트] ${updateType} 기준이 변경되었습니다`;
+  const title = `[산정기준 업데이트] ${updateType} 기준이 발표되었습니다.`;
   const body  =
 `안녕하세요.
 
@@ -436,7 +436,7 @@ async function _gnSendStandardsUpdateNotice(updateType, detail){
 
 ■ 업데이트 항목: ${updateType}
 ${detail}
-■ 업데이트 일시: ${new Date().toLocaleString('ko-KR')}
+■ 적용일: ${effectiveDate}부터
 
 급여 계산 시 변경된 기준이 자동 반영됩니다.
 상세 내용은 담당 노무사에게 문의하세요.

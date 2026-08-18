@@ -489,7 +489,9 @@ function renderContracts(){
 
   const q=(document.getElementById('cont-search')?.value||'').toLowerCase();
   const filterEmpCat=(document.getElementById('cont-filter-empcat')?.value||'');
-  const filterStatus=Array.from(document.querySelectorAll('.cont-filter-status-cb:checked')).map(cb=>cb.value).filter(v=>v!=='전체');
+  const filterStatus=Array.from(document.querySelectorAll('.cont-filter-status-cb:checked')).map(cb=>cb.value).filter(v=>v!=='all');
+  // 상태 필터: 체크박스 value는 영문 코드 → 표시 라벨 매핑
+  const STATUS_FILTER_LABEL = { valid:'유효', expired:'만료', terminated:'해지', voided:'파기' };
   const filterDocsOnly=document.getElementById('cont-filter-docs-incomplete')?.checked||false;
   const filterById=(document.getElementById('cont-filter-id')?.value||'').trim();
   const today=fmtLocalDate(new Date());
@@ -529,7 +531,7 @@ function renderContracts(){
     // 계약상태 필터 (다중 선택 — 하나라도 일치하면 통과)
     const {label, docsIncomplete} = calcContractStatusDisplay(c,today);
     if(filterStatus.length > 0){
-      if(!filterStatus.includes(label)) return false;
+      if(!filterStatus.map(v => STATUS_FILTER_LABEL[v]).includes(label)) return false;
     } else {
       // 필터 없음(전체): 알림 카드 전용 상태는 메인 테이블에서 제외
       if(ALERT_ONLY_LABELS.has(label)) return false;
@@ -587,7 +589,7 @@ function renderContracts(){
     }
     return `<tr>
       <td style="font-weight:600">${getEmpName(c.employee_id)}</td>
-      <td style="font-size:12px;text-align:center;">${emp?.gender==='female'||emp?.gender==='여성'||emp?.gender==='여'?'여':emp?.gender==='male'||emp?.gender==='남성'||emp?.gender==='남'?'남':'-'}</td>
+      <td style="font-size:12px;text-align:center;">${emp?.gender==='female'?'여':emp?.gender==='male'?'남':'-'}</td>
       <td><span class="badge ${catBadge}">${contractTypeLabel(empCat)}</span>${specialBadge}</td>
       <td style="font-size:11.5px;${(c.status===CONTRACT_STATUS.VOIDED||c.is_voided_by_amend)?'text-decoration:line-through;color:#9ca3af;':''}">${periodTxt}</td>
       <td class="amount">${won(c.hourly_wage)}/h</td>
@@ -663,8 +665,8 @@ function _syncContEmpcatOptions(){
 // 개별 상태 체크박스 변경 시 전체 연동
 function _onStatusFilterChange(){
   const allCbs = document.querySelectorAll('.cont-filter-status-cb');
-  const allChecked = Array.from(allCbs).filter(c=>c.value!=='전체').every(c=>c.checked);
-  const allCb = Array.from(allCbs).find(c=>c.value==='전체');
+  const allChecked = Array.from(allCbs).filter(c=>c.value!=='all').every(c=>c.checked);
+  const allCb = Array.from(allCbs).find(c=>c.value==='all');
   if(allCb) allCb.checked = allChecked;
   filterContracts();
 }
@@ -675,7 +677,7 @@ function _toggleAllStatus(cb){
   if(cb.checked){
     allCbs.forEach(c=>{c.checked=true;});
   } else {
-    allCbs.forEach(c=>{c.checked=c.value==='유효';});
+    allCbs.forEach(c=>{c.checked=c.value==='valid';});
   }
   filterContracts();
 }
@@ -1375,7 +1377,7 @@ function openContractModal(id=null, preCompanyId=null){
       // 수정 모드: 계약 대상 직원 카드 표시 (이름 입력란은 카드와 중복되므로 숨김)
       if(emp) _ctShowViewEmpCard(emp);
       if(emp){
-        document.getElementById('ct-edit-em-gender').value    = emp.gender==='여'?'female':emp.gender==='남'?'male':(emp.gender||'male');
+        document.getElementById('ct-edit-em-gender').value    = (emp.gender==='female'||emp.gender==='male')?emp.gender:'male';
         // 계약예정 상태이면 수습 카테고리 정규화 (예: '계약직 수습' → '계약직')
         const _empCatRaw = emp.employment_category || '';
         const _empCatKorean = contractTypeLabel(_empCatRaw) || '-';
@@ -2386,9 +2388,6 @@ function calcContractStatusDisplay(c, today){
     return {badge:'badge-gray', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.EXPIRED], docsIncomplete};
   if(c.status === CONTRACT_STATUS.TERMINATED)
     return {badge:'badge-red', label:CONTRACT_STATUS_LABEL[CONTRACT_STATUS.TERMINATED], docsIncomplete};
-  // 만료예정·종료예정은 레거시 한글 상태값 → 계약유효로 표시 (CONTRACT_STATUS에 없는 과거 데이터)
-  if(c.status === '만료예정' || c.status === '종료예정')
-    return {badge:'badge-green', label:'유효', docsIncomplete};
   // 서류미비는 독립된 상태가 아님 — 유효/만료/해지 등 실제 상태를 유지하고 docsIncomplete 플래그로만 관리
   if(c.status === CONTRACT_STATUS.DOCS_INCOMPLETE){
     // DB에 남아있는 레거시 값 → 유효로 폴백 (실제 상태는 DB 정리 완료)

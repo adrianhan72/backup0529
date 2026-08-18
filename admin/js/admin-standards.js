@@ -1202,7 +1202,8 @@ async function saveInsuranceRate(){
   const _irTypeLabel = {national_pension:'국민연금 요율',health:'건강보험 요율',long_term_care:'장기요양보험 요율',employment:'고용보험 요율'}[type]||'4대보험 요율';
   await _gnSendStandardsUpdateNotice(
     _irTypeLabel,
-    `■ 적용 연도: ${year}년\n■ 적용 기간: ${start} ~ ${end}\n■ 요율: ${rate}%${cap?'\n■ 상한금액: '+Number(cap).toLocaleString('ko-KR')+'원':''}`
+    `■ 적용 연도: ${year}년\n■ 적용 기간: ${start} ~ ${end}\n■ 요율: ${rate}%${cap?'\n■ 상한금액: '+Number(cap).toLocaleString('ko-KR')+'원':''}`,
+    start
   );
 }
 
@@ -1230,6 +1231,7 @@ async function saveMinimumWage(){
   // 중요공지 자동 발송
   await _gnSendStandardsUpdateNotice(
     `${year}년 최저임금`,
-    `■ 시급: ${Number(hourly).toLocaleString('ko-KR')}원\n■ 일급여: ${Number(daily).toLocaleString('ko-KR')}원\n■ 월급여: ${Number(monthly).toLocaleString('ko-KR')}원`
+    `■ 시급: ${Number(hourly).toLocaleString('ko-KR')}원\n■ 일급여: ${Number(daily).toLocaleString('ko-KR')}원\n■ 월급여: ${Number(monthly).toLocaleString('ko-KR')}원`,
+    `${year}-01-01`
   );
 }
