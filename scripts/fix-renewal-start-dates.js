@@ -7,6 +7,7 @@
 const fs = require('fs');
 const path = require('path');
 const Database = require('better-sqlite3');
+const { fmtLocalDate } = require('../lib/utils');
 
 // ── 대한민국 법정 공휴일 (대체공휴일 포함, 제헌절은 2026년부터) ──
 // 대체공휴일 대상: 설날·추석 연휴, 어린이날, 삼일절, 광복절, 개천절, 한글날
@@ -42,7 +43,7 @@ function nextBusinessDay(dateStr) {
 const DB_PATH = path.join(__dirname, '..', 'data', 'app.db');
 
 // ── 1) 백업 (3종 세트: db + shm + wal) ──
-const ts = new Date().toISOString().slice(0, 10) + '_' + new Date().toTimeString().slice(0, 8).replace(/:/g, '');
+const ts = fmtLocalDate(new Date()) + '_' + new Date().toTimeString().slice(0, 8).replace(/:/g, '');
 const backupDir = path.join(__dirname, '..', 'data', 'backups', `renewal_start_${ts}`);
 fs.mkdirSync(backupDir, { recursive: true });
 for (const ext of ['', '-shm', '-wal']) {

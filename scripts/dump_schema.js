@@ -3,6 +3,7 @@
 // 한글 주석 자동 포함
 const Database = require('better-sqlite3');
 const fs = require('fs');
+const { fmtLocalDate } = require('../lib/utils');
 const db = new Database('./data/app.db');
 
 // ── 한글 주석 맵 (테이블명 → { desc, sections, columns: { 컬럼명: 설명 } }) ──
@@ -1008,7 +1009,7 @@ const tables = db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND
 let schema = '-- =============================================================================\n';
 schema += '-- 인사톡 노무톡 — SQLite Schema (한글 주석 포함)\n';
 schema += '-- node dump_schema.js 로 자동 생성 (ALTER TABLE 반영)\n';
-schema += `-- 최종 갱신: ${new Date().toISOString().slice(0, 10)}\n`;
+schema += `-- 최종 갱신: ${fmtLocalDate(new Date())}\n`;
 schema += `-- 테이블 수: ${tables.length}개\n`;
 schema += '-- =============================================================================\n\n';
 schema += 'PRAGMA journal_mode = WAL;\n\n';
