@@ -1712,8 +1712,21 @@
         <ul id="ct-validation-list"></ul>
       </div>
       <div class="form-grid">
-        <div class="form-group full"><span class="form-section-title">기본 정보</span></div>
+        <div class="form-group full"><span class="form-section-title">소속사</span></div>
         <div class="form-group"><span id="ct-company-name" style="font-size:14px;font-weight:700;color:#1e1b4b;"></span><input type="hidden" id="ct-company" /></div>
+        <!-- ══ 계약 대상 직원 카드 (근로자 선택 카드와 동일한 파란 스타일) ══ -->
+        <div class="form-group full" id="ct-view-emp-card" style="display:none;">
+          <span class="form-section-title">계약 대상 직원</span>
+          <div style="background:#f0f9ff;border:1.5px solid #93c5fd;border-radius:10px;padding:16px 18px;display:flex;align-items:center;gap:14px;">
+            <i class="fas fa-user-circle" style="font-size:36px;color:#6366f1;flex-shrink:0;"></i>
+            <div style="min-width:0;flex:1;">
+              <div id="ct-view-emp-name" style="font-size:16px;font-weight:700;color:#111827;"></div>
+              <div id="ct-view-emp-meta" style="font-size:12px;color:#6b7280;margin-top:3px;"></div>
+            </div>
+            <button type="button" class="btn btn-sm btn-indigo" style="flex-shrink:0;" onclick="_ctOpenEmpCardFromEdit()"><i class="fas fa-id-card"></i> 인사카드</button>
+          </div>
+        </div>
+
         <!-- ══ 수정 모드: 직원 정보 표시·편집 섹션 ══ -->
         <div id="ct-edit-emp-info" class="form-group full" style="display:none;">
           <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;padding:16px 18px;margin-top:4px;">
@@ -1753,37 +1766,23 @@
                   <div id="ct-edit-em-name-dup-suggestions" style="display:flex;flex-direction:column;gap:4px;margin-top:6px;"></div>
                 </div>
               </div>
-              <div class="form-group">
-                <label>고용형태 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
-                <select id="ct-edit-em-category" onchange="_onEditCategoryChange();_checkAmendBtnState();">
-                  <option value="regular">정규직</option>
-                  <option value="regular_probation">정규직 수습</option>
-                  <option value="fixed_term">계약직</option>
-                  <option value="fixed_term_probation">계약직 수습</option>
-                  <option value="daily">일용직</option>
-                </select>
-                <!-- 수정 모드에서 사용 안 함 (고용형태는 항상 편집 가능) -->
-                <span id="ct-edit-category-lock-hint" style="display:none;font-size:11px;color:#9ca3af;margin-top:3px;">고용형태를 변경할 수 없습니다.</span>
-              </div>
-              <div class="form-group"><label>담당업무 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><input type="text" id="ct-edit-em-job" placeholder="담당업무" /></div>
-              <div class="form-group"><label>부서</label><input type="text" id="ct-edit-em-dept" /></div>
-              <div class="form-group"><label>직책</label><input type="text" id="ct-edit-em-position" /></div>
+              <!-- 고용형태·담당업무·부서·직책 → 계약 정보 섹션(ct-edit-emp-fields)으로 이동됨 -->
               <!-- 입사일 → 계약 정보 섹션으로 이동됨 -->
               <div class="form-group" id="ct-edit-row-expire"><label>퇴사예정일</label><input type="date" id="ct-edit-em-expire" class="filt-date" /></div>
 
-              <div class="form-group full"><span class="form-section-title" style="font-size:11px;">개인 정보</span></div>
-              <div class="form-group"><label>주민등록번호 <span class="lbl-desc">(앞7자리)</span> <span class="lbl-req">*</span></label><input type="text" id="ct-edit-em-id" placeholder="YYMMDD-N" maxlength="8" autocomplete="off" oninput="_onIdInput(this, _checkAmendBtnState)" /><span id="ct-edit-id-lock-hint" class="va-hint" style="color:#9ca3af;"></span></div>
-              <div class="form-group"><label>성별 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><select id="ct-edit-em-gender" disabled><option value="male">남</option><option value="female">여</option></select></div>
-              <div class="form-group"><label>휴대전화 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><input type="text" id="ct-edit-em-phone" placeholder="010-0000-0000" maxlength="13" autocomplete="off" oninput="_onPhoneInput(this, _checkAmendBtnState)" /></div>
-              <div class="form-group"><label>이메일 주소</label><input type="email" id="ct-edit-em-email" placeholder="example@email.com" oninput="_onEmailInput(this)" /></div>
-              <div class="form-group full"><label>주소 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><input type="text" id="ct-edit-em-address" oninput="_checkAmendBtnState();" /></div>
+              <div class="form-group full" style="display:none;"><span class="form-section-title" style="font-size:11px;">개인 정보</span></div>
+              <div class="form-group" style="display:none;"><label>주민등록번호 <span class="lbl-desc">(앞7자리)</span> <span class="lbl-req">*</span></label><input type="text" id="ct-edit-em-id" placeholder="YYMMDD-N" maxlength="8" autocomplete="off" oninput="_onIdInput(this, _checkAmendBtnState)" /><span id="ct-edit-id-lock-hint" class="va-hint" style="color:#9ca3af;"></span></div>
+              <div class="form-group" style="display:none;"><label>성별 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><select id="ct-edit-em-gender" disabled><option value="male">남</option><option value="female">여</option></select></div>
+              <div class="form-group" style="display:none;"><label>휴대전화 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><input type="text" id="ct-edit-em-phone" placeholder="010-0000-0000" maxlength="13" autocomplete="off" oninput="_onPhoneInput(this, _checkAmendBtnState)" /></div>
+              <div class="form-group" style="display:none;"><label>이메일 주소</label><input type="email" id="ct-edit-em-email" placeholder="example@email.com" oninput="_onEmailInput(this)" /></div>
+              <div class="form-group full" style="display:none;"><label>주소 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><input type="text" id="ct-edit-em-address" oninput="_checkAmendBtnState();" /></div>
 
-              <div class="form-group full"><span class="form-section-title" style="font-size:11px;">과세 기준</span></div>
-              <div class="form-group"><label>부양가족 수 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span> <span style="font-weight:400;color:#6b7280;">(본인 포함, 소득세 공제용)</span></label><input type="number" id="ct-edit-em-tax-dependents" min="1" value="1" oninput="_checkAmendBtnState();" /></div>
+              <div class="form-group full" style="display:none;"><span class="form-section-title" style="font-size:11px;">과세 기준</span></div>
+              <div class="form-group" style="display:none;"><label>부양가족 수 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span> <span style="font-weight:400;color:#6b7280;">(본인 포함, 소득세 공제용)</span></label><input type="number" id="ct-edit-em-tax-dependents" min="1" value="1" oninput="_checkAmendBtnState();" /></div>
 
-              <div class="form-group full"><span class="form-section-title" style="font-size:11px;">급여 계좌</span></div>
-              <div class="form-group"><label>은행명</label><input type="text" id="ct-edit-em-bank" placeholder="예: 국민은행" /></div>
-              <div class="form-group"><label>계좌번호</label><input type="text" id="ct-edit-em-account" placeholder="000-0000-000000" /></div>
+              <div class="form-group full" style="display:none;"><span class="form-section-title" style="font-size:11px;">급여 계좌</span></div>
+              <div class="form-group" style="display:none;"><label>은행명</label><input type="text" id="ct-edit-em-bank" placeholder="예: 국민은행" /></div>
+              <div class="form-group" style="display:none;"><label>계좌번호</label><input type="text" id="ct-edit-em-account" placeholder="000-0000-000000" /></div>
             
             </div>
           </div>
@@ -1821,38 +1820,50 @@
           </div>
         </div>
 
-        <!-- ══ 신규계약 인사정보 (근로자 선택 후 표시 — 고용형태·담당업무·부서·직책은 근로계약에서 등록) ══ -->
-        <div id="ct-new-emp-fields" class="form-group full" style="display:none;">
-          <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;padding:14px 16px;">
-            <div style="font-size:12px;font-weight:700;color:#334155;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
-              <i class="fas fa-file-signature"></i> 근로계약서에 기재할 인사정보
-              <span style="font-weight:400;color:#94a3b8;">(인사카드에 자동 기재됩니다)</span>
-            </div>
-            <div class="form-grid" style="gap:10px;">
-              <div class="form-group">
-                <label>고용형태 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
-                <select id="ct-new-category" onchange="_ctNewCategoryChange()">
-                  <option value="">-- 선택하세요 --</option>
-                  <option value="regular">정규직</option>
-                  <option value="regular_probation">정규직 수습</option>
-                  <option value="fixed_term">계약직</option>
-                  <option value="fixed_term_probation">계약직 수습</option>
-                  <option value="daily">일용직</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label>담당업무 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
-                <input type="text" id="ct-new-job" placeholder="근로계약서에 기재할 담당업무" />
-              </div>
-              <div class="form-group"><label>부서</label><input type="text" id="ct-new-dept" placeholder="부서" /></div>
-              <div class="form-group"><label>직책</label><input type="text" id="ct-new-position" placeholder="직책" /></div>
-            </div>
-          </div>
-        </div>
-
         <!-- 계약 정보 (직원 카드 바로 아래) -->
         <div class="form-group full" style="margin-bottom:12px;">
           <span class="form-section-title">계약 정보</span>
+        </div>
+        <!-- ══ 신규계약 인사정보 (근로자 선택 전에도 표시 — 선택 전 비활성, 선택 후 활성) ══ -->
+        <div id="ct-new-emp-fields" class="form-group full">
+          <div class="form-grid" style="gap:10px;">
+            <div class="form-group">
+              <label>고용형태 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
+              <select id="ct-new-category" onchange="_ctNewCategoryChange()">
+                <option value="">-- 선택하세요 --</option>
+                <option value="regular">정규직</option>
+                <option value="regular_probation">정규직 수습</option>
+                <option value="fixed_term">계약직</option>
+                <option value="fixed_term_probation">계약직 수습</option>
+                <option value="daily">일용직</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>담당업무 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
+              <input type="text" id="ct-new-job" placeholder="근로계약서에 기재할 담당업무" />
+            </div>
+            <div class="form-group"><label>부서</label><input type="text" id="ct-new-dept" placeholder="부서" /></div>
+            <div class="form-group"><label>직책</label><input type="text" id="ct-new-position" placeholder="직책" /></div>
+          </div>
+        </div>
+        <!-- ══ 수정·재계약·조회 모드: 고용형태·담당업무·부서·직책 (계약 정보 섹션 내 표시) ══ -->
+        <div id="ct-edit-emp-fields" class="form-group full" style="display:none;">
+          <div class="form-grid" style="gap:10px;">
+            <div class="form-group">
+              <label>고용형태 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
+              <select id="ct-edit-em-category" onchange="_onEditCategoryChange();_checkAmendBtnState();">
+                <option value="regular">정규직</option>
+                <option value="regular_probation">정규직 수습</option>
+                <option value="fixed_term">계약직</option>
+                <option value="fixed_term_probation">계약직 수습</option>
+                <option value="daily">일용직</option>
+              </select>
+              <span id="ct-edit-category-lock-hint" style="display:none;font-size:11px;color:#9ca3af;margin-top:3px;">고용형태를 변경할 수 없습니다.</span>
+            </div>
+            <div class="form-group"><label>담당업무 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><input type="text" id="ct-edit-em-job" placeholder="담당업무" /></div>
+            <div class="form-group"><label>부서</label><input type="text" id="ct-edit-em-dept" /></div>
+            <div class="form-group"><label>직책</label><input type="text" id="ct-edit-em-position" /></div>
+          </div>
         </div>
         <!-- 입사일 + 계약 시작일·종료일 — JS로 고용형태별 레이아웃 전환 -->
         <div id="ct-dates-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;grid-column:1/-1;">
@@ -1922,7 +1933,7 @@
         <input type="hidden" id="ct-status" value="active" />
 
         <!-- 계약 시작일·종료일·고용형태·계약상태는 위 수정 모드 섹션 내부로 이동됨 -->
-        <div class="form-group full"><span class="form-section-title">근무 조건 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></span></div>
+        <div class="form-group full"><span class="form-section-title" id="ct-work-section-title">근무 조건 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></span></div>
 
         <div class="form-group full" id="ct-bulk-bar-wrap">
           <!-- ── 일괄 설정 바 ── -->
@@ -2333,18 +2344,18 @@
 
 <style>
 #hr-emp-view-modal .modal,#hr-emp-form-modal .modal{max-height:calc(100vh - 48px);overflow-y:auto;}
-/* 조회 모달 값 필드 — 다른 모달의 readonly 입력필드 스타일과 통일 */
+/* 조회 모달 값 필드 — 폼 표준 높이 36px (input-std) 통일 */
 #hr-emp-view-modal .hr-view-val{
-  width:100%;min-height:38px;box-sizing:border-box;
+  width:100%;min-height:36px;box-sizing:border-box;
   background:#f1f5f9;border:1px solid #e8eaed;border-radius:7px;
-  padding:9px 12px;font-size:13px;color:#555;line-height:1.5;
+  padding:7px 12px;font-size:13px;color:#555;line-height:1.5;
   display:flex;align-items:flex-start;white-space:pre-wrap;word-break:break-word;
 }
-/* 퇴사일자 date input — 높이·테두리 다른 값 필드와 통일, readonly 시 칩 배경 */
+/* 퇴사일자 date input — 표준 36px + 표준 패딩(6px 12px)으로 다른 값 필드와 통일 */
 #hr-emp-view-modal #hr-v-resign{
-  width:100%;height:38px;box-sizing:border-box;
+  width:100%;height:36px;box-sizing:border-box;
   border:1px solid #e8eaed;border-radius:7px;
-  padding:0 12px;font-size:13px;color:#555;background:#fff;outline:none;
+  padding:6px 12px;font-size:13px;color:#555;background:#fff;outline:none;
 }
 #hr-emp-view-modal #hr-v-resign:read-only{background:#f1f5f9;}
 /* 고객사 모달 readonly 인원 정보 값 (대표자·등기임원·특수관계인) */
@@ -2397,7 +2408,7 @@
               <div class="form-group"><label>비상연락처</label><div id="hr-v-emergency" class="hr-view-val"></div></div>
               <div class="form-group"><label>은행명</label><div id="hr-v-bank" class="hr-view-val"></div></div>
               <div class="form-group"><label>계좌번호</label><div id="hr-v-account" class="hr-view-val"></div></div>
-              <div class="form-group"><label>부양가족 수</label><div id="hr-v-dependents" class="hr-view-val"></div></div>
+              <div class="form-group"><label>부양가족 수 (과세 기준)</label><div id="hr-v-dependents" class="hr-view-val"></div></div>
             </div>
 
             <!-- 3. 인적사항 -->
@@ -3288,14 +3299,14 @@
   <script src="js/admin-company.js?v=20260814s"></script>
   <!-- admin-contract 모듈 (기능별 분리) -->
   <script src="js/admin-contract/contract-form.js?v=20260814y"></script>
-  <script src="js/admin-contract/contract-core.js?v=20260814ai"></script>
+  <script src="js/admin-contract/contract-core.js?v=20260814ax"></script>
   <script src="js/admin-contract/contract-docs.js?v=20260814z"></script>
   <script src="js/admin-contract/contract-dispatch.js?v=20260814s"></script>
   <script src="js/admin-contract/consent-dispatch.js?v=20260814s"></script>
-  <script src="js/admin-contract/contract-lifecycle.js?v=20260814aa"></script>
+  <script src="js/admin-contract/contract-lifecycle.js?v=20260814ag"></script>
   <script src="js/admin-contract.js?v=20260814s"></script>
   <!-- admin-hr 모듈 (인사관리대장) -->
-  <script src="js/admin-hr.js?v=20260814at"></script>
+  <script src="js/admin-hr.js?v=20260814av"></script>
   <!-- admin-payroll 모듈 -->
   <script src="js/admin-payroll/payroll-core.js?v=20260814s"></script>
   <script src="js/admin-payroll/payroll-bulk.js?v=20260814s"></script>

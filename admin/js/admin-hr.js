@@ -115,6 +115,12 @@ function renderHrEmployees() {
   if (categoryFilter !== 'all') {
     list = list.filter(e => (e.employment_category || '').toLowerCase() === categoryFilter);
   }
+  // 수습근로자 관리 OFF → 정규직 수습·계약직 수습 고용형태는 목록에서 제외
+  if (window._probationFeatureEnabled !== true) {
+    list = list.filter(e =>
+      ![CONTRACT_TYPE.REGULAR_PROBATION, CONTRACT_TYPE.FIXED_PROBATION].includes(e.employment_category)
+    );
+  }
   if (q) {
     list = list.filter(e => {
       const hay = [e.name, e.employee_number].map(v => String(v || '').toLowerCase()).join(' ');
@@ -378,7 +384,12 @@ function openHrEmployeeView(empId) {
   set('hr-v-emergency', [e.emergency_contact, e.emergency_relation].filter(Boolean).join(' (') + ([e.emergency_contact, e.emergency_relation].filter(Boolean).length ? ')' : ''));
   set('hr-v-bank', e.bank_name);
   set('hr-v-account', e.bank_account);
-  set('hr-v-dependents', e.tax_dependents != null ? e.tax_dependents : e.dependents);
+  // 부양가족 수(과세 기준): 0명도 0으로 표시 (기본값 미설정 시에만 '-')
+  {
+    const _dep = e.tax_dependents != null ? e.tax_dependents : (e.dependents != null ? e.dependents : null);
+    const _dv = document.getElementById('hr-v-dependents');
+    if(_dv) _dv.textContent = _dep != null ? _dep : '-';
+  }
   set('hr-v-education', e.education);
   set('hr-v-major', e.major);
   set('hr-v-career', e.career_history);

@@ -795,14 +795,107 @@ function _ctNewCat(){
   return '';
 }
 
-/** 신규계약 인사정보 고용형태 변경 → ct-type 동기화 + 고용형태별 UI 재적용 */
+let _ctPrevNewCat = ''; // 직전에 확정된 고용형태 (변경 승인 판정용)
+
+/** 근무·임금 조건 영역의 필드 수집 (근무 조건 제목 이후 모달 본문 끝까지) */
+function _ctConditionEls(){
+  const title = document.getElementById('ct-work-section-title');
+  if(!title) return [];
+  const start = title.closest('.form-group')?.nextElementSibling;
+  if(!start) return [];
+  const els = [];
+  let el = start;
+  while(el){
+    els.push(el);
+    el = el.nextElementSibling;
+  }
+  return els.flatMap(node => Array.from(node.querySelectorAll('input,select,textarea,button')));
+}
+
+/** 근무·임금 조건 게이트 (신규 모드 전용 — 수정 모드에서는 미적용) */
+function _ctSetConditionsGate(locked){
+  if(editId && editId.contract) return;
+  _ctConditionEls().forEach(el => { el.disabled = locked; });
+}
+
+/** 근무·임금 조건에 사용자 입력값이 있는지 판별 */
+function _ctHasConditionInputs(){
+  const DEF = { 'ct-probation-pct': '80', 'ct-annual': '15' };
+  return _ctConditionEls().some(el => {
+    if(el.disabled || el.readOnly) return false;
+    if(el.tagName === 'BUTTON') return false;
+    const t = el.type;
+    if(t === 'hidden' || t === 'checkbox' || t === 'radio' || t === 'button' || t === 'submit') return false;
+    if(el.id === 'ct-type' || el.id === 'ct-status') return false;
+    const v = String(el.value ?? '').trim();
+    if(v === '') return false;
+    if(DEF[el.id] !== undefined && v === DEF[el.id]) return false;
+    return true;
+  });
+}
+
+/** 근무·임금 조건 입력값 초기화 (고용형태 변경 승인 시) */
+function _ctClearConditionInputs(){
+  _ctConditionEls().forEach(el => {
+    if(el.tagName === 'BUTTON') return;
+    const t = el.type;
+    if(t === 'hidden') return;
+    if(t === 'checkbox'){
+      const def = ['bulk-chk-weekday','bulk-chk-mon','bulk-chk-tue','bulk-chk-wed','bulk-chk-thu','bulk-chk-fri'];
+      el.checked = def.includes(el.id);
+      return;
+    }
+    if(t === 'radio'){
+      if(el.name === 'ct-probation-basis') el.checked = (el.value === 'salary');
+      return;
+    }
+    if(el.tagName === 'SELECT'){ el.value = ''; return; }
+    if(el.id === 'ct-probation-pct'){ el.value = '80'; return; }
+    if(el.readOnly) return;
+    el.value = '';
+  });
+  try{ if(typeof calcContractSalary === 'function') calcContractSalary(); }catch(e){}
+  try{ if(typeof onProbationBasisChange === 'function') onProbationBasisChange(); }catch(e){}
+}
+
+/** 신규계약 인사정보 고용형태 변경 → 잠금 해제/변경 승인 + ct-type 동기화 */
 function _ctNewCategoryChange(){
-  const v = document.getElementById('ct-new-category')?.value || '';
-  const ctTypeEl = document.getElementById('ct-type');
-  if(ctTypeEl) ctTypeEl.value = v;
-  if(typeof toggleCtEndDate === 'function') toggleCtEndDate(true);
-  if(typeof toggleProbation === 'function') toggleProbation();
-  if(typeof _updateProbationPeriodState === 'function') _updateProbationPeriodState();
+  const sel = document.getElementById('ct-new-category');
+  const v = sel?.value || '';
+  const _sync = () => {
+    const ctTypeEl = document.getElementById('ct-type');
+    if(ctTypeEl) ctTypeEl.value = v;
+    if(typeof toggleCtEndDate === 'function') toggleCtEndDate(true);
+    if(typeof toggleProbation === 'function') toggleProbation();
+    if(typeof _updateProbationPeriodState === 'function') _updateProbationPeriodState();
+  };
+  if(editId && editId.contract){ _sync(); return; } // 수정 모드 미적용
+  if(!v){
+    // 고용형태 미선택 → 근무·임금 조건 잠금
+    _ctSetConditionsGate(true);
+    _sync();
+    return;
+  }
+  if(_ctPrevNewCat && _ctPrevNewCat !== v){
+    // 변경 시도: 입력값 있으면 경고 후 승인
+    if(_ctHasConditionInputs()){
+      (async () => {
+        const ok = await _showConfirm({
+          message: '고용형태를 변경하면 입력한 근무조건·임금조건이 모두 지워집니다.\n변경을 진행하시겠습니까?',
+          okText: '변경', okClass: 'btn-danger', cancelText: '취소',
+        });
+        if(!ok){ sel.value = _ctPrevNewCat; _sync(); return; }
+        _ctClearConditionInputs();
+        _ctPrevNewCat = v;
+        _ctSetConditionsGate(false);
+        _sync();
+      })();
+      return;
+    }
+  }
+  _ctPrevNewCat = v;
+  _ctSetConditionsGate(false);
+  _sync();
 }
 
 function _ctEsc(s){
@@ -833,10 +926,10 @@ function _ctRenderEmpSelect(){
     const pType = personnelTypeOf(e);
     if(nameEl) nameEl.textContent = e.name + (pType !== PERSONNEL_TYPE.EMPLOYEE ? ` (${personnelTypeLabel(pType)})` : '');
     if(metaEl){
+      // 선택된 직원 정보: 사원번호·주민번호(앞7자리)·휴대전화만 표시
       const parts = [
         e.employee_number ? `사번 ${e.employee_number}` : null,
-        contractTypeLabel(e.employment_category),
-        e.department || e.position ? [e.department, e.position].filter(Boolean).join('/') : null,
+        e.id_number ? `주민번호 ${e.id_number}` : null,
         e.phone || null,
       ].filter(Boolean);
       metaEl.textContent = parts.join(' · ');
@@ -849,7 +942,7 @@ function _ctSetSelectedEmp(empId){
   if(!empId) {
     _ctSelectedEmpId = null;
     _ctRenderEmpSelect();
-    const _nF = document.getElementById('ct-new-emp-fields'); if(_nF) _nF.style.display = 'none';
+    const _nF = document.getElementById('ct-new-emp-fields'); if(_nF) _nF.style.display = '';
     _ctSetEmpGate(true);
     return;
   }
@@ -857,7 +950,8 @@ function _ctSetSelectedEmp(empId){
   // 상태 기반 차단: 유효·예정 계약 보유 직원은 신규계약 대상이 아님
   const hasActive = (allContracts||[]).some(c =>
     c.employee_id === empId && !c.is_draft && !c.is_voided_by_amend &&
-    [CONTRACT_STATUS.ACTIVE, CONTRACT_STATUS.PENDING, CONTRACT_STATUS.RENEWAL_PENDING, CONTRACT_STATUS.TERMINATE_PENDING].includes(c.status)
+    [CONTRACT_STATUS.ACTIVE, CONTRACT_STATUS.PENDING, CONTRACT_STATUS.DOCS_INCOMPLETE,
+     CONTRACT_STATUS.RENEWAL_PENDING, CONTRACT_STATUS.TERMINATE_PENDING].includes(c.status)
   );
   if(hasActive){
     toast('이미 유효(예정) 계약이 있는 직원입니다. 계약 조회에서 수정·갱신·재계약을 진행해 주세요.', 'error');
@@ -871,13 +965,16 @@ function _ctSetSelectedEmp(empId){
     const cat = (e && e.employment_category) || CONTRACT_TYPE.REGULAR;
     const ctTypeEl = document.getElementById('ct-type');
     if(ctTypeEl) ctTypeEl.value = cat;
-    // 신규계약 인사정보 필드 표시 + 프리필 (고용형태·담당업무·부서·직책 — 근로계약에서 등록)
+    // 신규계약 인사정보 필드 표시 — 프리필 없음 (계약에서 입력한 값을 인사카드로 내려보내는 단방향)
     const _nF = document.getElementById('ct-new-emp-fields');
     if(_nF) _nF.style.display = '';
-    { const _nc = document.getElementById('ct-new-category'); if(_nc) _nc.value = (e && e.employment_category) || ''; }
-    { const _nj = document.getElementById('ct-new-job'); if(_nj) _nj.value = (e && e.job_description) || ''; }
-    { const _nd = document.getElementById('ct-new-dept'); if(_nd) _nd.value = (e && e.department) || ''; }
-    { const _np = document.getElementById('ct-new-position'); if(_np) _np.value = (e && e.position) || ''; }
+    { const _nc = document.getElementById('ct-new-category'); if(_nc) _nc.value = ''; }
+    { const _nj = document.getElementById('ct-new-job'); if(_nj) _nj.value = ''; }
+    { const _nd = document.getElementById('ct-new-dept'); if(_nd) _nd.value = ''; }
+    { const _np = document.getElementById('ct-new-position'); if(_np) _np.value = ''; }
+    // 고용형태 확정 전까지 근무·임금 조건 잠금
+    _ctPrevNewCat = '';
+    _ctSetConditionsGate(true);
     if(typeof toggleCtEndDate === 'function') toggleCtEndDate(true);
     if(typeof toggleProbation === 'function') toggleProbation();
     // 선행 입력 잠금 재적용: 입사일 미입력 시 계약 시작일 잠금 (기존 프로세스 유지)
@@ -929,6 +1026,12 @@ function renderCtEmpPickerList(){
   const q = (document.getElementById('ct-emp-picker-search')?.value || '').toLowerCase().trim();
   let emps = (allEmployees||[]).filter(e => e.company_id === coId);
   if(typeFilter) emps = emps.filter(e => personnelTypeOf(e) === typeFilter);
+  // 수습근로자 관리 OFF → 정규직 수습·계약직 수습 고용형태는 목록에서 제외
+  if (window._probationFeatureEnabled !== true) {
+    emps = emps.filter(e =>
+      ![CONTRACT_TYPE.REGULAR_PROBATION, CONTRACT_TYPE.FIXED_PROBATION].includes(e.employment_category)
+    );
+  }
   // 근로계약서 내 직원 선택 모드: 현재 유효한 계약이 있는 직원은 제외
   // (계약 없음·만료·해지된 직원만 표시). 수정 모드의 현재 선택 직원은 계속 표시.
   if(!_ctPickerOpts){
@@ -967,11 +1070,18 @@ function renderCtEmpPickerList(){
     return;
   }
   listEl.innerHTML = emps.map(e => {
-    const st = normalizeEmpStatus(e.status);
-    const stLabel = st === EMP_STATUS.RESIGNED ? '퇴직' : '재직';
-    const stCls = st === EMP_STATUS.RESIGNED ? 'badge-gray' : 'badge-green';
-    const deptPos = [e.department, e.position].filter(v=>v&&String(v).trim()).join('/');
-    const meta = [e.employee_number ? '사번 '+e.employee_number : null, contractTypeLabel(e.employment_category), deptPos, e.phone].filter(Boolean).join(' · ');
+    // 계약 기준 상태 뱃지 (이 목록에는 유효계약 보유 직원이 없음)
+    const _real = (allContracts || []).filter(c => c.employee_id === e.id && !c.is_draft && !c.is_voided_by_amend);
+    let stLabel, stCls;
+    if (_real.some(c => c.status === CONTRACT_STATUS.EXPIRED)) { stLabel = '계약 만료'; stCls = 'badge-orange'; }
+    else if (_real.some(c => c.status === CONTRACT_STATUS.TERMINATED)) { stLabel = '계약 해지'; stCls = 'badge-gray'; }
+    else { stLabel = '계약 없음'; stCls = 'badge-indigo'; }
+    // 목록 메타: 고용형태·부서/직책은 표시하지 않음 — 사번·주민번호·휴대전화만
+    const meta = [
+      e.employee_number ? '사번 ' + e.employee_number : null,
+      e.id_number ? '주민번호 ' + e.id_number : null,
+      e.phone || null,
+    ].filter(Boolean).join(' · ');
     const isSel = e.id === _ctSelectedEmpId;
     const pType = personnelTypeOf(e);
     const typeBadge = pType !== PERSONNEL_TYPE.EMPLOYEE
@@ -1032,6 +1142,34 @@ async function _ctOpenEmpCard(empId){
 async function _ctOpenEmpCardFromEdit(){
   const c = editId.contract ? allContracts.find(x=>x.id===editId.contract) : null;
   if(c && c.employee_id) await _ctOpenEmpCard(c.employee_id);
+}
+
+/** 계약 대상 직원 카드 표시 (조회·수정·재계약 공용) — 편집 섹션의 이름 입력란은 중복 방지로 숨김 */
+function _ctShowViewEmpCard(emp){
+  const card = document.getElementById('ct-view-emp-card');
+  if(!card) return;
+  card.style.display = '';
+  const nameEl = document.getElementById('ct-view-emp-name');
+  const metaEl = document.getElementById('ct-view-emp-meta');
+  if(nameEl) nameEl.textContent = (emp && emp.name) || '-';
+  if(metaEl){
+    const parts = [
+      (emp && emp.employee_number) ? '사번 ' + emp.employee_number : null,
+      (emp && emp.id_number) ? '주민번호 ' + emp.id_number : null,
+      (emp && emp.phone) || null,
+    ].filter(Boolean);
+    metaEl.textContent = parts.join(' · ');
+  }
+  const nameField = document.getElementById('ct-edit-emp-name');
+  const nameGroup = nameField ? nameField.closest('.form-group') : null;
+  if(nameGroup) nameGroup.style.display = 'none';
+}
+
+/** 수정·재발행 진입 시: 파란색 카드 유지 + 초록색 직원정보 카드 숨김 + 계약 정보 필드 표시 */
+function _ctRestoreEditEmpInfo(){
+  // 파란색 '계약 대상 직원' 카드는 유지 (조회·수정·재발행 모두 동일)
+  { const _ei = document.getElementById('ct-edit-emp-info'); if(_ei) _ei.style.display = 'none'; }
+  { const _ef = document.getElementById('ct-edit-emp-fields'); if(_ef) _ef.style.display = ''; }
 }
 
 function openContractModal(id=null, preCompanyId=null){
@@ -1179,8 +1317,15 @@ function openContractModal(id=null, preCompanyId=null){
   { const _swrN = document.getElementById('ct-short-term-warning-row'); if(_swrN) _swrN.style.display = 'none'; }
   { const _sh = document.getElementById('ct-start-hint'); if(_sh){ _sh.textContent = '이 계약의 효력 발생일'; _sh.style.color = '#6b7280'; } }
   const _empnoAlertEdit = document.getElementById('ct-edit-em-empno-alert'); if(_empnoAlertEdit) _empnoAlertEdit.style.display='none';
-  // 신규계약 인사정보 필드 (근로자 선택 후 표시) — 신규 모드 오픈 시 숨김
-  { const _nF = document.getElementById('ct-new-emp-fields'); if(_nF) _nF.style.display = 'none'; }
+  // 신규계약 인사정보 필드 — 직원 선택 전에도 표시 (선택 전에는 게이트로 비활성)
+  { const _nF = document.getElementById('ct-new-emp-fields'); if(_nF) _nF.style.display = ''; }
+  // 수정·재계약·조회 모드용 고용형태·담당업무·부서·직책 필드는 기본 숨김 (해당 모드 오픈 시 표시)
+  { const _ef = document.getElementById('ct-edit-emp-fields'); if(_ef) _ef.style.display = 'none'; }
+  // 조회 전용 직원 카드는 기본 숨김 (조회 시에만 표시)
+  { const _vc = document.getElementById('ct-view-emp-card'); if(_vc) _vc.style.display = 'none'; }
+  // 고용형태 확정 전까지 근무·임금 조건 잠금 (수정 모드는 게이트 미적용)
+  _ctPrevNewCat = '';
+  _ctSetConditionsGate(true);
 
   // 계약 시작일·종료일·고용형태·계약상태는 수정 모드 섹션 내부에 있으므로
   // ct-edit-emp-info 섹션의 show/hide로 자동 제어됨
@@ -1212,7 +1357,12 @@ function openContractModal(id=null, preCompanyId=null){
     document.getElementById('ct-title').textContent = '근로계약서 추가';
   } else {
     // 수정: 기존 직원 정보 표시 (draft도 employee_id 있으므로 정상 동작)
-    document.getElementById('ct-edit-emp-info').style.display = 'block';
+    // 초록색 직원정보 카드는 파란색 '계약 대상 직원' 카드와 중복 — 숨김 (값은 hidden으로 유지)
+    document.getElementById('ct-edit-emp-info').style.display = 'none';
+    // 계약 정보 섹션에 고용형태·담당업무·부서·직책 필드 표시 (수정 모드)
+    { const _ef = document.getElementById('ct-edit-emp-fields'); if(_ef) _ef.style.display = ''; }
+    // 신규계약 전용 인사정보 필드는 수정 모드에서 숨김 (중복 표시 방지)
+    { const _nF = document.getElementById('ct-new-emp-fields'); if(_nF) _nF.style.display = 'none'; }
     const _selSecEdit = document.getElementById('ct-emp-select-section');
     if(_selSecEdit) _selSecEdit.style.display = 'none';
     const c = allContracts.find(x => x.id === id);
@@ -1222,6 +1372,8 @@ function openContractModal(id=null, preCompanyId=null){
       // 직원 정보 표시·편집 필드 채우기
       const emp = allEmployees.find(e=>e.id===c.employee_id);
       document.getElementById('ct-edit-emp-name').value = emp ? emp.name : '';
+      // 수정 모드: 계약 대상 직원 카드 표시 (이름 입력란은 카드와 중복되므로 숨김)
+      if(emp) _ctShowViewEmpCard(emp);
       if(emp){
         document.getElementById('ct-edit-em-gender').value    = emp.gender==='여'?'female':emp.gender==='남'?'male':(emp.gender||'male');
         // 계약예정 상태이면 수습 카테고리 정규화 (예: '계약직 수습' → '계약직')
@@ -1611,6 +1763,11 @@ function _onEditCategoryChange() {
   const isRegular = (newCatNorm ===CONTRACT_TYPE.REGULAR || newCatNorm ===CONTRACT_TYPE.REGULAR_PROBATION);
   const expireRowEl = document.getElementById('ct-edit-row-expire');
   if(expireRowEl) expireRowEl.style.display  = (isFixed || isRegular) ? 'none' : '';
+  // 재계약 모드: 계약직→정규직 전환 시 숨겨졌던 입사일 행 복원 (연장이면 입사일 상속 후보 사용)
+  if(_recontractEmpId){
+    const hireRowEl = document.getElementById('ct-contract-hire-row');
+    if(hireRowEl) hireRowEl.style.display = isFixed ? 'none' : '';
+  }
 }
 
 // 임금 조건 입력항목 일괄 초기화 (고용형태 변경 시 호출)
@@ -2270,6 +2427,17 @@ function viewContract(id){
   const today = fmtLocalDate(new Date());
   const {label:stName} = calcContractStatusDisplay(c||{}, today);
 
+  // 조회 모드: 직원 정보를 '계약 대상 직원' 카드로 표시
+  {
+    const _vc = document.getElementById('ct-view-emp-card');
+    const _ei = document.getElementById('ct-edit-emp-info');
+    const _empView = c ? allEmployees.find(e => e.id === c.employee_id) : null;
+    if(_vc && _empView){
+      _ctShowViewEmpCard(_empView);
+      if(_ei) _ei.style.display = 'none';
+    }
+  }
+
   // openContractModal 에서 이미 c.contract_type 우선 기준으로 ctVal이 결정되지만,
   // viewContract 에서도 동일 로직으로 한 번 더 보정한다 (연봉 섹션 표시 최종 확정).
   if(c){
@@ -2796,6 +2964,8 @@ function doContractAmend(){
 
   // readonly 클래스 제거 + 필드 활성화
   modalEl.classList.remove('ct-readonly');
+  // 조회 전용 직원 카드 숨기고 편집용 직원 정보 섹션 복원 (수정 및 재발행 모드)
+  if(typeof _ctRestoreEditEmpInfo === 'function') _ctRestoreEditEmpInfo();
   const bodyEl = modalEl.querySelector('.modal-body');
   if(bodyEl) bodyEl.querySelectorAll('input,select,textarea').forEach(el=>{
     // 개인정보는 인사관리대장에서만 수정 (Q6) — 직원 정보 섹션 전체 잠금 유지
