@@ -1,4 +1,4 @@
-﻿    *{box-sizing:border-box;margin:0;padding:0}
+    *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:'Noto Sans KR',sans-serif;background:#f0f2f5;color:#1a1a2e}
     /* ── placeholder 스타일 전역 통일 ── */
     input:not([readonly]):not(:disabled)::placeholder,
