@@ -432,6 +432,8 @@ async function loadSystemSettings(){
   window._regularConversionNoticeEnabled = (window._systemSettings['regular_conversion_notice_enabled'] === '1');
   window._billingFeatureEnabled = (window._systemSettings['billing_feature_enabled'] === '1');
   window._retirementMgmtEnabled = (window._systemSettings['retirement_mgmt_enabled'] === '1');
+  // 수습 고용형태 옵션 필터 적용 (전체 셀렉트)
+  if (typeof applyProbationOptionFilter === 'function') applyProbationOptionFilter();
 }
 async function loadContracts(){
   const d=await api('../tables/contracts?limit=200');

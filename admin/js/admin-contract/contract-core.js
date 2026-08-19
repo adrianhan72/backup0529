@@ -1414,9 +1414,16 @@ function openContractModal(id=null, preCompanyId=null){
       { const _co = c.company_id ? (allCompanies||[]).find(x=>x.id===c.company_id) : null;
         const _nameEl = document.getElementById('ct-company-name'); if(_nameEl) _nameEl.textContent = _co?.company_name || ''; }
       // 수정 모드: 계약 체결 시점의 고객사 allowance_config 적용 (getCompanySnapshotAt)
-      { const _ctStartTs = c.contract_start ? new Date(c.contract_start).getTime() : 0;
-        const _editCo = getCompanySnapshotAt(c.company_id||'', _ctStartTs);
-        let _editCfg = _editCo?.allowance_config ?? null;
+      // ※ 임시저장(이어쓰기)은 아직 작성 중이므로 과거 스냅샷이 아닌 현재 고객사 설정을 적용
+      { let _editCfg = null;
+        if (c.is_draft) {
+          const _curCo = (allCompanies||[]).find(x=>x.id===c.company_id);
+          _editCfg = _curCo?.allowance_config ?? null;
+        } else {
+          const _ctStartTs = c.contract_start ? new Date(c.contract_start).getTime() : 0;
+          const _editCo = getCompanySnapshotAt(c.company_id||'', _ctStartTs);
+          _editCfg = _editCo?.allowance_config ?? null;
+        }
         if(typeof _editCfg === 'string'){ try{ _editCfg = JSON.parse(_editCfg); }catch(e){ _editCfg = {}; } }
         applyCTAllowanceConfig(_editCfg); }
       document.getElementById('ct-start').value=c.contract_start||'';
@@ -1582,13 +1589,16 @@ function openContractModal(id=null, preCompanyId=null){
         { const _ccDep=document.getElementById('ct-childcare-dependents'); if(_ccDep) _ccDep.value=0; }
       } else {
       // ── 계약 시작일 기준 historical allowance_config로 pay_type 결정 ──
+      // ※ 임시저장(이어쓰기)은 현재 고객사 설정 기준 (과거 스냅샷 미사용)
       const _ctStartForPT = c.contract_start ? new Date(c.contract_start).getTime() : 0;
-      const _histCo = (typeof getCompanySnapshotAt === 'function')
-        ? getCompanySnapshotAt(c.company_id || '', _ctStartForPT)
-        : (allCompanies||[]).find(x => x.id === (c.company_id || ''));
+      const _histCo = (c.is_draft || typeof getCompanySnapshotAt !== 'function')
+        ? (allCompanies||[]).find(x => x.id === (c.company_id || ''))
+        : getCompanySnapshotAt(c.company_id || '', _ctStartForPT);
       let _cfgForPT = _histCo?.allowance_config ?? null;
       if (typeof _cfgForPT === 'string') { try { _cfgForPT = JSON.parse(_cfgForPT); } catch(e) { _cfgForPT = {}; } }
       const _getPTSrc = (key, contractVal) => {
+        // 비활성 수당은 DB에 저장된 pay_type을 무시 (과거 설정 잔재가 이어쓰기에 남지 않도록)
+        if (!_cfgForPT || !_cfgForPT[key]) return '';
         const cfgPT = (_cfgForPT && _cfgForPT[key + '_pay_type']) || '';
         return cfgPT || contractVal || '';
       };

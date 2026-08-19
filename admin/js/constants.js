@@ -627,4 +627,50 @@ const CLOSE_REASON_LABEL = Object.freeze({
   void       : '파기',
 });
 
+// ═══════════════════════════════════════════
+// 수습 고용형태 옵션 필터 (수습근로자 관리 ON/OFF 연동)
+// OFF 시 정규직 수습·계약직 수습 옵션을 셀렉트에서 제거, ON 시 원위치 복원
+// ═══════════════════════════════════════════
+const _PROBATION_OPTION_SELECT_IDS = [
+  'ct-new-category',      // 신규계약 — 고용형태
+  'ct-edit-em-category',  // 계약 수정·재계약 — 고용형태
+  'hr-em-category',       // 인사관리 직원 등록 — 고용형태
+  'cont-filter-empcat',   // 근로계약 현황 — 고용형태 필터
+  'hr-filter-category',   // 인사관리대장 — 고용형태 필터
+];
+const _PROBATION_OPTION_DEFS = [
+  { value: CONTRACT_TYPE.REGULAR_PROBATION, label: CONTRACT_TYPE_LABEL[CONTRACT_TYPE.REGULAR_PROBATION], after: CONTRACT_TYPE.REGULAR },
+  { value: CONTRACT_TYPE.FIXED_PROBATION,   label: CONTRACT_TYPE_LABEL[CONTRACT_TYPE.FIXED_PROBATION],   after: CONTRACT_TYPE.FIXED },
+];
+
+/**
+ * 수습 고용형태(정규직 수습·계약직 수습) 옵션 표시/제거
+ * window._probationFeatureEnabled === true 일 때만 옵션 존재
+ * @param {HTMLElement|Document} [rootEl] — 특정 컨테이너(외부 페이지 삽입 시) 또는 document
+ */
+function applyProbationOptionFilter(rootEl = document) {
+  const show = window._probationFeatureEnabled === true;
+  _PROBATION_OPTION_SELECT_IDS.forEach(id => {
+    const sel = (rootEl === document || !rootEl)
+      ? document.getElementById(id)
+      : (rootEl.querySelector ? rootEl.querySelector('#' + id) : null);
+    if (!sel) return;
+    _PROBATION_OPTION_DEFS.forEach(def => {
+      const existing = sel.querySelector(`option[value="${def.value}"]`);
+      if (show) {
+        if (!existing) {
+          const anchor = sel.querySelector(`option[value="${def.after}"]`);
+          const opt = document.createElement('option');
+          opt.value = def.value;
+          opt.textContent = def.label;
+          if (anchor) anchor.insertAdjacentElement('afterend', opt);
+          else sel.appendChild(opt);
+        }
+      } else {
+        if (existing) existing.remove();
+      }
+    });
+  });
+}
+
 

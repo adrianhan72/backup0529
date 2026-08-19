@@ -809,6 +809,8 @@ async function ssToggleProbation(checked) {
     });
     window._probationFeatureEnabled = checked;
     window._systemSettings['probation_feature_enabled'] = checked ? '1' : '0';
+    // 수습 고용형태 옵션 필터 즉시 반영
+    if (typeof applyProbationOptionFilter === 'function') applyProbationOptionFilter();
     toast(checked ? '수습근로자 관리 기능이 활성화되었습니다.' : '수습근로자 관리 기능이 비활성화되었습니다. 새로고침을 권장합니다.', 'success');
     // 사이드바 메뉴 즉시 반영
     _syncProbationMenuVisibility();

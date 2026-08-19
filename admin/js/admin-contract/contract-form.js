@@ -2379,7 +2379,10 @@ function applyCTAllowanceConfig(cfg, clearValues = false){
   // 모든 수당에 pay_type 적용 (통상임금 여부는 지급방식으로 결정)
   const _PT_FIELDS = ['site','position','skill','license','hazard','remote_area','regular_bonus','car','meal','childcare','research','communication','fitness','self_dev','book','overseas'];
   _PT_FIELDS.forEach(f => {
-    const pt = (cfg && cfg[`${f}_pay_type`]) ? cfg[`${f}_pay_type`] : 'fixed';
+    // 비활성 수당은 pay_type도 ''로 초기화 — 임시저장에 'fixed'가 남아 이어쓰기 시
+    // 비활성 항목이 다시 표시되던 버그 방지
+    const enabled = !!(cfg && cfg[f]);
+    const pt = enabled ? ((cfg && cfg[`${f}_pay_type`]) || 'fixed') : '';
     setCTPayType(f, pt);
   });
   // ── 신규 작성 시 car/meal 초기화 (기본값 없음, 수동 입력) ──
@@ -2592,7 +2595,9 @@ function _getCustomOrdinarySum(){
  */
 function onCtStartChange(){
   // 신규/수정 공통: ct-start 참조
-  const isNewMode = !editId.contract && !_recontractEmpId;
+  // 임시저장(이어쓰기)은 아직 작성 중인 계약이므로 신규 모드처럼 현재 고객사 설정 기준
+  const _draftEdit = !!editId.contract && !!((allContracts||[]).find(x=>x.id===editId.contract)||{}).is_draft;
+  const isNewMode = (!editId.contract || _draftEdit) && !_recontractEmpId;
   // 계약 시작일: 신규/수정 공통으로 ct-start 참조 (구 ct-em-start는 UI 재구성으로 제거됨)
   const startVal  = document.getElementById('ct-start')?.value || '';
   const coId     = document.getElementById('ct-company')?.value;
@@ -2743,7 +2748,10 @@ function onCtCompanyChange(){
   }
 
   let cfg = null;
-  if(!isNewModeForCompany && startVal){
+  // 임시저장(이어쓰기)은 현재 고객사 설정 기준 (과거 스냅샷 미사용)
+  const _draftEditCo = !!editId.contract && !!((allContracts||[]).find(x=>x.id===editId.contract)||{}).is_draft;
+  const _isNewModeCo = !editId.contract || _draftEditCo;
+  if(!_isNewModeCo && startVal){
     // 수정·재계약 모드 + 계약시작일 있음: 스냅샷 기준
     // (신규 모드에서는 스냅샷 미사용 — 현재 설정 직접 참조)
     const ts     = new Date(startVal).getTime();

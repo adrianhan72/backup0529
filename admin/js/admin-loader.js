@@ -69,6 +69,7 @@ async function _loadExternalPage(name) {
   // 이미 캐시된 HTML이 있으면 삽입
   if (_pageCache.has(name)) {
     pageEl.innerHTML = _pageCache.get(name);
+    if (typeof applyProbationOptionFilter === 'function') applyProbationOptionFilter(pageEl);
     return true;
   }
 
@@ -83,6 +84,7 @@ async function _loadExternalPage(name) {
     const innerHtml = _extractPageContent(rawHtml, name);
     _pageCache.set(name, innerHtml);
     pageEl.innerHTML = innerHtml;
+    if (typeof applyProbationOptionFilter === 'function') applyProbationOptionFilter(pageEl);
     return true;
   } catch (err) {
     console.error(`[admin-loader] pages/${name}.html 로드 실패:`, err);
