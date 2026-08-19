@@ -298,11 +298,39 @@ function selectYmMonth(month){
   closeYmPicker();
 }
 
+// ── 모달/오버레이 'open' 전역 스크롤 리셋 ──
+// classList.add('open')로 직접 여는 모달(contract-modal, payslip-modal, code-change-modal 등)의
+// 스크롤 잔재 제거 — 'open' 클래스가 추가된 요소(또는 그 안의 .modal/.modal-sheet)의 스크롤을 최상단으로 되돌린다.
+(function(){
+  if(typeof MutationObserver === 'undefined') return;
+  const _resetScrollOnOpen = (el) => {
+    if(!el || !el.classList || !el.classList.contains('open')) return;
+    const isSelf = el.classList.contains('modal') || el.classList.contains('modal-sheet');
+    const scroller = isSelf ? el : el.querySelector('.modal, .modal-sheet');
+    if(scroller && typeof scroller.scrollTop === 'number') scroller.scrollTop = 0;
+  };
+  const _obs = new MutationObserver((muts) => {
+    for (let i = 0; i < muts.length; i++){
+      const m = muts[i];
+      if(m.type === 'attributes' && m.attributeName === 'class'
+        && m.target && m.target.classList && m.target.classList.contains('open')){
+        _resetScrollOnOpen(m.target);
+      }
+    }
+  });
+  if(document.body) _obs.observe(document.body, { subtree:true, attributes:true, attributeFilter:['class'] });
+})();
+
 function showPage(name, el){
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('page-'+name).classList.add('active');
+  const pageEl = document.getElementById('page-'+name);
+  pageEl.classList.add('active');
   if(el) el.classList.add('active');
+
+  // 페이지 전환 시 스크롤 최상단 리셋 (이전 페이지 스크롤 잔재 제거)
+  window.scrollTo(0, 0);
+  if(pageEl && typeof pageEl.scrollTop === 'number') pageEl.scrollTop = 0;
 
   // 헤더 월 네비 표시 탭 목록 (ct는 월 선택 불필요)
   if(['stats','payslip','billing'].includes(name)){

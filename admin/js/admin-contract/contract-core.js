@@ -1378,8 +1378,8 @@ function openContractModal(id=null, preCompanyId=null){
       if(emp) _ctShowViewEmpCard(emp);
       if(emp){
         document.getElementById('ct-edit-em-gender').value    = (emp.gender==='female'||emp.gender==='male')?emp.gender:'male';
-        // 계약예정 상태이면 수습 카테고리 정규화 (예: '계약직 수습' → '계약직')
-        const _empCatRaw = emp.employment_category || '';
+        // 고용형태: 계약(임시저장 포함)의 contract_type 우선 — 직원 카테고리와 다를 수 있음
+        const _empCatRaw = (c.contract_type || emp.employment_category || '');
         const _empCatKorean = contractTypeLabel(_empCatRaw) || '-';
         const _isPendingDisplay = _isPendingCt;
         document.getElementById('ct-edit-em-category').value = _isPendingDisplay

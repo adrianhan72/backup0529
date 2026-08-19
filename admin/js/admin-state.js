@@ -730,7 +730,37 @@ function toast(msg,type='success'){
   t.className='toast '+type+' show';
   setTimeout(()=>t.className='toast',2600);
 }
-function openModal(id){document.getElementById(id).classList.add('open')}
+function openModal(id){
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.classList.add('open');
+  // 모달 스크롤 최상단 리셋 — 이전에 열었을 때의 스크롤 위치 잔재 제거
+  const _m = el.querySelector('.modal, .modal-sheet');
+  if(_m && typeof _m.scrollTop === 'number') _m.scrollTop = 0;
+}
+
+// ── 모달/오버레이 'open' 전역 스크롤 리셋 ──
+// openModal()을 우회해 classList.add('open')로 직접 여는 모달까지 모두 포괄.
+// 'open' 클래스가 추가된 요소(또는 그 안의 .modal)의 스크롤을 최상단으로 되돌린다.
+(function(){
+  if(typeof MutationObserver === 'undefined') return;
+  const _resetScrollOnOpen = (el) => {
+    if(!el || !el.classList || !el.classList.contains('open')) return;
+    const isSelf = el.classList.contains('modal') || el.classList.contains('modal-sheet');
+    const scroller = isSelf ? el : el.querySelector('.modal, .modal-sheet');
+    if(scroller && typeof scroller.scrollTop === 'number') scroller.scrollTop = 0;
+  };
+  const _obs = new MutationObserver((muts) => {
+    for (let i = 0; i < muts.length; i++){
+      const m = muts[i];
+      if(m.type === 'attributes' && m.attributeName === 'class'
+        && m.target && m.target.classList && m.target.classList.contains('open')){
+        _resetScrollOnOpen(m.target);
+      }
+    }
+  });
+  if(document.body) _obs.observe(document.body, { subtree:true, attributes:true, attributeFilter:['class'] });
+})();
 // ─── 계약 도움말 모달 ───
 function openContractHelp(){
   document.getElementById('contract-help-modal').classList.add('open');

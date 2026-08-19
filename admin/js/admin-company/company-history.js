@@ -167,6 +167,8 @@ function _cmHistToggle(){
 /** 계약 체결 시점에 유효했던 고객사 스냅샷을 반환
  *  contract_start(또는 created_at) 이후의 첫 번째 이력 직전 상태 = 해당 시점의 회사 정보
  *  이력이 없으면 현재 회사 정보 그대로 반환
+ *  ※ snapshot 컬럼은 "변경 직전 상태"를 저장하므로,
+ *    계약일 이후 첫 번째 변경의 snapshot = 계약일에 유효했던 설정 (off-by-one 수정 2026-08-19)
  */
 function getCompanySnapshotAt(companyId, contractTimestamp){
   const co = (allCompanies||[]).find(x=>x.id===companyId);
@@ -175,18 +177,21 @@ function getCompanySnapshotAt(companyId, contractTimestamp){
   const contractDate = contractTimestamp
     ? fmtLocalDate(new Date(contractTimestamp))
     : '';
-  // effective_date <= contractDate 인 이력 중 가장 최신 것을 찾는다 (내림차순 정렬)
+  // 계약 시작일 "이후"의 첫 번째 이력을 찾는다 (과거순 정렬)
+  // 같은 effective_date 다건이면 changed_at 오름차순 → 해당 날짜의 첫 변경
   const hist = (allCompanyHistories||[])
-    .filter(h => h.company_id === companyId && h.effective_date && h.effective_date <= contractDate)
-    .sort((a,b) => (b.effective_date||'').localeCompare(a.effective_date||'')); // 내림차순 (최신순)
+    .filter(h => h.company_id === companyId && h.effective_date && h.effective_date > contractDate)
+    .sort((a,b) =>
+      (a.effective_date||'').localeCompare(b.effective_date||'') ||
+      (Number(a.changed_at)||0) - (Number(b.changed_at)||0)
+    );
   if(hist.length > 0){
-    // 계약 시작일 이전 가장 마지막 변경의 snapshot = 계약 당시 상태
+    // 계약일 이후 첫 번째 변경의 직전 상태(snapshot) = 계약 당시 상태
     let snap = hist[0].snapshot || {};
     if(typeof snap === 'string'){ try{ snap = JSON.parse(snap); }catch(e){ snap = {}; } }
     return _parseCo({ ...co, ...snap });
   }
-  // 계약 시작일 이전 이력 없음 → 가장 오래된 이력이 계약 당시보다 이후이면 현재 설정 사용
-  // (또는 이력 자체가 없는 경우도 현재 설정)
+  // 계약일 이후 이력 없음 → 현재 회사 설정 사용 (모든 변경이 계약일 이전에 반영됨)
   return _parseCo(co);
 }
 

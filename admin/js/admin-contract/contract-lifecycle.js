@@ -3235,6 +3235,37 @@ async function saveDraftContract(reason){
     return;
   }
 
+  // ── 임시저장: 폼의 인사 정보(입사일·고용형태·담당업무·부서·직책)를 직원 기록에 반영 (이어쓰기 복원용) ──
+  // 계약 테이블에 해당 컬럼이 없어 직원 기록에 저장. 규칙은 최종 저장과 동일:
+  //   입사일: 계약직·일용직=계약시작일, 그 외=폼 입력값
+  //   고용형태: 항상 반영 / 담당업무·부서·직책: 직원에 비어 있을 때만 (인사카드 수정값 유지)
+  if(empId){
+    try {
+      const _empDraft = allEmployees.find(x => x.id === empId);
+      if(_empDraft){
+        const _patchEmp = {};
+        // 입사일
+        const _hireDraftVal = document.getElementById('ct-edit-em-hire')?.value || '';
+        const _fixedDraft = [CONTRACT_TYPE.FIXED, CONTRACT_TYPE.FIXED_PROBATION, CONTRACT_TYPE.DAILY].includes(catForDraft);
+        const _hireDraftFinal = _fixedDraft ? (contractStart || '') : _hireDraftVal;
+        if(_hireDraftFinal && (_empDraft.hire_date || '') !== _hireDraftFinal) _patchEmp.hire_date = _hireDraftFinal;
+        // 고용형태 (계약 타입 = 폼 값, 항상 반영)
+        if(catForDraft && (_empDraft.employment_category || '') !== catForDraft) _patchEmp.employment_category = catForDraft;
+        // 담당업무·부서·직책 (신규·수정 필드 모두 고려)
+        const _jobDraft  = document.getElementById('ct-edit-em-job')?.value || document.getElementById('ct-new-job')?.value || '';
+        const _deptDraft = document.getElementById('ct-edit-em-dept')?.value || document.getElementById('ct-new-dept')?.value || '';
+        const _posDraft  = document.getElementById('ct-edit-em-position')?.value || document.getElementById('ct-new-position')?.value || '';
+        if(_jobDraft  && !(_empDraft.job_description ?? '')) _patchEmp.job_description = _jobDraft;
+        if(_deptDraft && !(_empDraft.department ?? ''))      _patchEmp.department = _deptDraft;
+        if(_posDraft  && !(_empDraft.position ?? ''))        _patchEmp.position = _posDraft;
+        if(Object.keys(_patchEmp).length){
+          await api(`../tables/employees/${empId}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify(_patchEmp) });
+          Object.assign(_empDraft, _patchEmp);
+        }
+      }
+    } catch(e){ console.warn('[임시저장 직원 인사정보 반영 실패]', e); }
+  }
+
   await loadContracts();
   // 경량 배너만 갱신 (전체 테이블 재렌더링 X — 폼 깜빡임 방지)
   if(typeof _renderContractsBanners === 'function') _renderContractsBanners();
@@ -3926,6 +3957,8 @@ async function saveContract(){
   const start = (editId.contract||_recontractEmpId) ? document.getElementById('ct-start').value : '';
   const base  = getAmountVal('ct-base');
   const isEditMode = !!editId.contract;
+  // 임시저장 → 최초 등록(이어쓰기에서 등록)은 수정이 아닌 신규 등록으로 처리
+  const _ctIsDraftReg = !!editId.contract && !!((allContracts.find(x=>x.id===editId.contract)||{}).is_draft);
 
   // ── 파기된 계약(수정재발행)은 편집 불가 ──
   if(isEditMode){
@@ -4024,7 +4057,6 @@ async function saveContract(){
     const fixedGroup2 = (_isFixedAllow('car')           ? car2        : 0)
       + (_isFixedAllow('meal')          ? meal2       : 0)
       + (_isFixedAllow('research')      ? research2   : 0)
-      + other2
       + (_isFixedAllow('communication') ? comm2       : 0)
       + (_isFixedAllow('fitness')       ? fit2        : 0)
       + (_isFixedAllow('self_dev')      ? sdev2       : 0)
@@ -4456,7 +4488,7 @@ async function saveContract(){
       return `${parseInt(y)}년 ${parseInt(m)}월 ${parseInt(dd)}일`;
     };
 
-    if(isEditMode){
+    if(isEditMode && !_ctIsDraftReg){
       // ─ 계약 수정 완료 OR 해지 처리
       const _origC = allContracts.find(x => x.id === editId.contract) || {};
       if(contractStatus === CONTRACT_STATUS.TERMINATED){
@@ -4554,7 +4586,7 @@ async function saveContract(){
   _recontractSourceId = null;
   _currentDraftId  = null; // 임시저장 ID 초기화
   closeModal('contract-modal');await loadContracts();await loadEmployees();renderContracts();renderDashboard();
-  const _ctIsEdit = !!editId.contract;
+  const _ctIsEdit = !!editId.contract && !_ctIsDraftReg;
   toast(_ctIsEdit ? '근로계약서가 수정되었습니다. ✔' : '근로계약서가 등록되었습니다. ✔');
   _triggerWageLedgerRegen(coId);
 
@@ -4648,8 +4680,8 @@ async function _syncLeaveLedgerWithContract(empId, coId, contractStart, contract
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(newLedger)
       });
-      // allLeaveLedgers 캐시 즉시 갱신 (응답에서 id를 받아 추가)
-      const created = await res.json();
+      // allLeaveLedgers 캐시 즉시 갱신 (응답에서 id를 받아 추가) — api()는 이미 파싱된 JSON 반환
+      const created = res;
       if(created?.id && typeof allLeaveLedgers !== 'undefined'){
         newLedger.id = created.id;
         allLeaveLedgers.push(newLedger);
