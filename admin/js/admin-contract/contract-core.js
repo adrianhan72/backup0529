@@ -2088,44 +2088,25 @@ function _validateEmpNoUniqueness(empNo, companyId, selfEmpId, newContractStart,
     if(_relHit) return { ok:false, type:'duplicate', msg:`사원번호 "${empNo}"은(는) 특수관계인(${_relHit.name||''})가 사용 중입니다. 다른 번호를 입력하세요.` };
   }
 
-  // 사원번호 일치하는 직원 찾기 (본인 제외)
+  // ── 사번 원장 기준 재사용 금지 (C11): 파기(voided) 번호는 본인 포함 재사용 불가, 타인 used 번호 중복 불가 ──
+  if (typeof _elnReuseInfo === 'function') {
+    const _reuse = _elnReuseInfo(companyId, empNo, selfEmpId);
+    if (_reuse.blocked) {
+      return { ok: false, type: 'duplicate', msg: `사원번호 "${empNo}"은(는) ${_reuse.reason}` };
+    }
+  }
+
+  // ── 동일 사번을 보유한 다른 직원 (본인 제외) — 원장 미반영 구간 안전망 ──
   const sameNoEmps = allEmployees.filter(e =>
     e.company_id === companyId &&
     e.employee_number === empNo &&
     e.id !== selfEmpId
   );
-
   if(sameNoEmps.length) {
     const existEmp = sameNoEmps[0];
-    const empContracts = allContracts.filter(c => c.employee_id === existEmp.id && c.company_id === companyId);
-
-    // 1. 유효 계약(ACTIVE, PENDING, RENEWAL_PENDING, DOCS_INCOMPLETE) 보유 → 사용 중
-    const hasActive = empContracts.some(c => CONTRACT_ACTIVE_STATUSES.includes(c.status));
-    if(hasActive) {
-      return {
-        ok: false, type: 'duplicate',
-        msg: `사원번호 "${empNo}"은(는) 이미 ${existEmp.name} 직원이 사용 중입니다. 다른 번호를 입력하세요.`
-      };
-    }
-
-    // 2. 계약이 전혀 없는 직원 → 고아 레코드, 사원번호 재사용 허용
-    if(empContracts.length === 0) {
-      return { ok: true, type: 'ok', msg: '' };
-    }
-
-    // 3. 모든 계약이 VOIDED + 갱신 이력 없음 → 파기된 번호, 재사용 가능
-    const allVoided = empContracts.every(c => c.status === CONTRACT_STATUS.VOIDED);
-    const anyRenewedFrom = empContracts.some(c => c.renewed_from_id);
-    if(allVoided && !anyRenewedFrom) {
-      // 파기된 계약이며 갱신 승계가 아님 → 사원번호 재사용 허용
-      return { ok: true, type: 'ok', msg: '' };
-    }
-
-    // 4. 그 외 (해지·만료·취소, 또는 갱신 승계된 파기) → 재사용 불가
-    const reason = allVoided ? '갱신 승계되어 파기된' : '퇴사 처리된';
     return {
       ok: false, type: 'duplicate',
-      msg: `사원번호 "${empNo}"은(는) ${reason} ${existEmp.name} 직원이 사용하던 번호입니다. 다른 번호를 입력하세요.`
+      msg: `사원번호 "${empNo}"은(는) 이미 ${existEmp.name} 직원이 사용 중입니다. 다른 번호를 입력하세요.`
     };
   }
 
@@ -2935,14 +2916,21 @@ function cancelTerminateDateChange(){
 function _showConfirm(opts){
   return new Promise(resolve => {
     const msgEl = document.getElementById('ct-confirm-msg');
+    const titleEl = document.getElementById('ct-confirm-title');
     const okBtn = document.getElementById('ct-confirm-ok-btn');
     const cancelBtn = document.getElementById('ct-confirm-cancel-btn');
 
+    if (titleEl) {
+      if (opts.title) { titleEl.style.display = 'block'; titleEl.textContent = opts.title; }
+      else { titleEl.style.display = 'none'; titleEl.textContent = ''; }
+    }
     msgEl.textContent = opts.message;
     okBtn.textContent = opts.okText || '확인';
     okBtn.className = 'btn ' + (opts.okClass || 'btn-primary');
     okBtn.style.background = opts.okClass ? '' : '#d97706';
     cancelBtn.textContent = opts.cancelText || '취소';
+    // 단일 버튼: cancelText='' 이면 취소 버튼 숨김
+    cancelBtn.style.display = (opts.cancelText === '') ? 'none' : '';
 
     // 클릭 핸들러 등록 (살짝 지연시켜 모달 close 애니메이션 완료 후 resolve)
     okBtn.onclick = () => { closeModal('ct-confirm-modal'); setTimeout(() => resolve(true), 100); };

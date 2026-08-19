@@ -612,8 +612,10 @@ function openHrEmployeeForm(empId, presetCompanyId) {
   { const el = document.getElementById('hr-em-tax-dependents'); if (el) el.value = 1; }
   // 담당업무·부서·직책: 기본 해제 (아래에서 계약 보유 여부에 따라 재잠금)
   _hrSetContractFieldsLock(false);
-  // 등록 후 수정 불가 필드 잠금 해제 (신규 모드 대비) — 입사일은 항상 readonly
-  ['hr-em-empno','hr-em-name','hr-em-id'].forEach(id => { const el = document.getElementById(id); if (el) el.readOnly = false; });
+  // 등록 후 수정 불가 필드 잠금 — 사원번호는 항상 readonly (자동부여), 이름·주민번호는 신규 모드에서만 입력
+  ['hr-em-name','hr-em-id'].forEach(id => { const el = document.getElementById(id); if (el) el.readOnly = false; });
+  { const el = document.getElementById('hr-em-empno'); if (el) { el.readOnly = true; el.style.background = '#f1f5f9'; } }
+  { const el = document.getElementById('hr-em-empno-auto-hint'); if (el) { el.style.display = 'none'; el.textContent = ''; } }
 
   { const el = document.getElementById('hr-em-empno-alert'); if (el) { el.className = 'va-hint'; el.innerHTML = ''; } }
   { const el = document.getElementById('hr-em-name-dup-alert'); if (el) { el.className = 'va-hint'; el.innerHTML = ''; } }
@@ -658,6 +660,7 @@ function openHrEmployeeForm(empId, presetCompanyId) {
     document.getElementById('hr-em-special-notes').value = e.special_notes || '';
     // 등록 후 수정 불가 필드 잠금 (사원번호·이름·주민등록번호 앞7자리)
     ['hr-em-empno','hr-em-name','hr-em-id'].forEach(id => { const el = document.getElementById(id); if (el) el.readOnly = true; });
+    { const el = document.getElementById('hr-em-empno-auto-hint'); if (el) { el.style.display = 'block'; el.textContent = '🔒 사원번호는 수정할 수 없습니다.'; } }
     const _ptEl = document.getElementById('hr-em-personnel-type');
     if (_ptEl) _ptEl.value = personnelTypeOf(e);
     document.getElementById('hr-em-relationship').value = e.relationship || '';
@@ -668,6 +671,16 @@ function openHrEmployeeForm(empId, presetCompanyId) {
     if (titleEl) titleEl.innerHTML = `<i class="fas fa-user-plus"></i> 신규 직원 등록`;
     // 신규 직원: 계약 없음 → 담당업무·부서·직책 잠금 (근로계약 등록 후 자동 기재)
     _hrSetContractFieldsLock(true);
+    // 신규 직원: 사번 원장 기준 max+1 자동 부여 (readonly — 수정 불가, append-only 정책)
+    if (typeof _suggestEmpNo === 'function') {
+      const _empNoEl = document.getElementById('hr-em-empno');
+      if (_empNoEl && !_empNoEl.value && coId) {
+        _empNoEl.value = _suggestEmpNo(coId);
+        _empNoEl.readOnly = true;
+        _empNoEl.style.background = '#f1f5f9';
+      }
+    }
+    { const el = document.getElementById('hr-em-empno-auto-hint'); if (el) { el.style.display = 'block'; el.textContent = '🔒 자동으로 부여됩니다.'; } }
   }
 
   _hrOnPersonnelTypeChange();
@@ -709,10 +722,19 @@ function hrCheckEmpNoUniqueness() {
   if (dup) {
     alertEl.className = 'va-hint va-err';
     alertEl.innerHTML = `<span>✗ 동일 고객사에 같은 사원번호(${_hrEsc(dup.name)})가 이미 등록되어 있습니다.</span>`;
-  } else {
-    alertEl.className = 'va-hint va-ok';
-    alertEl.innerHTML = '<span>✓ 사용 가능한 사원번호입니다.</span>';
+    return;
   }
+  // 사번 원장 재사용 금지 (C11)
+  if (typeof _elnReuseInfo === 'function') {
+    const _reuse = _elnReuseInfo(coId, empNo, _hrEditEmpId);
+    if (_reuse.blocked) {
+      alertEl.className = 'va-hint va-err';
+      alertEl.innerHTML = `<span>✗ ${_hrEsc(_reuse.reason)}</span>`;
+      return;
+    }
+  }
+  alertEl.className = 'va-hint va-ok';
+  alertEl.innerHTML = '<span>✓ 사용 가능한 사원번호입니다.</span>';
 }
 
 // ── 동일인 제안 (이름 + 주민번호 앞7자리, 비차단 안내) ──
@@ -815,10 +837,14 @@ async function saveHrEmployee() {
   if (personnelType === PERSONNEL_TYPE.EXECUTIVE && !position) return fail('등기임원 직책을 입력해 주세요.');
   if (personnelType === PERSONNEL_TYPE.RELATED && !relationship) return fail('대표자와의 관계를 입력해 주세요.');
 
-  // 사원번호 중복 (회사 내)
+  // 사원번호 중복 (회사 내) + 사번 원장 재사용 금지 (C11)
   const dup = (allEmployees || []).find(e =>
     e.company_id === coId && String(e.employee_number || '').trim() === empNo && e.id !== _hrEditEmpId);
   if (dup) return fail(`동일 고객사에 같은 사원번호(${dup.name})가 이미 등록되어 있습니다.`);
+  if (typeof _elnReuseInfo === 'function') {
+    const _reuse = _elnReuseInfo(coId, empNo, _hrEditEmpId);
+    if (_reuse.blocked) return fail(_reuse.reason);
+  }
 
   const body = {
     company_id: coId,
@@ -895,6 +921,16 @@ async function saveHrEmployee() {
         body: JSON.stringify({ ...body, status: EMP_STATUS.ACTIVE })
       });
       _hrEditEmpId = saved?.id || null;
+    }
+    // ── 사번 원장 부여/동기화 (재사용 방지 append-only 정책) ──
+    if (typeof _elnAssign === 'function' && _hrEditEmpId) {
+      try {
+        if (!wasEdit) {
+          await _elnAssign(coId, empNo, _hrEditEmpId, personnelType);
+        } else if (_orig && _orig.employee_number) {
+          await _elnAssign(coId, _orig.employee_number, _hrEditEmpId, personnelType);
+        }
+      } catch (e) { console.warn('[HR 사번 원장 동기화 실패]', e); }
     }
     await loadEmployees();
     renderHrEmployees();

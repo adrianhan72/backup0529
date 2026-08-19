@@ -394,6 +394,48 @@ const KO = {
       updated_at: '수정일시',
     }
   },
+  employee_number_ledger: {
+    desc: '사원번호 원장 (부여·파기 이력, 재사용 방지)',
+    columns: {
+      id: '고유식별자',
+      company_id: '회사 ID',
+      employee_number: '사원번호 (숫자, 표준형 앞0 제거)',
+      employee_id: '부여된 인사 대상 ID (건너뜀 gap은 NULL, 파기 후에도 유지)',
+      source_type: '인사 유형 (employee/representative/executive/related_party)',
+      status: '상태 (used:사용중, voided:파기)',
+      voided_reason: '파기 사유 (gap:건너뜀/contract_canceled:계약취소/rehire:재입사/released:해제)',
+      assigned_at: '부여 일시',
+      voided_at: '파기 일시',
+      created_at: '생성일시',
+      updated_at: '수정일시',
+    }
+  },
+  system_settings: {
+    desc: '시스템 설정',
+    columns: {
+      id: '고유식별자',
+      setting_key: '설정 키',
+      setting_value: '설정 값',
+      description: '설명',
+      updated_at: '수정일시',
+    }
+  },
+  severance_interim_settlements: {
+    desc: '퇴직금 중간정산 이력',
+    columns: {
+      id: '고유식별자',
+      employee_id: '직원 ID',
+      company_id: '회사 ID',
+      contract_id: '계약 ID',
+      settlement_date: '정산일',
+      tenure_days: '재직일수',
+      daily_average_wage: '평균임금',
+      settlement_amount: '정산금액',
+      reason: '사유',
+      note: '비고',
+      created_at: '생성일시',
+    }
+  },
   contract_expiry_notice: {
     desc: '계약만료 통지 이력',
     columns: {

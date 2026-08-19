@@ -1146,6 +1146,13 @@ async function cancelPendingContract(){
   await api(`../tables/contracts/${c.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({status: CONTRACT_STATUS.VOIDED, close_reason:'void'})});
 
+  // ── 사번 원장 파기: 신규(계약예정) 취소 시 부여된 사번 파기 (부여 이력 유지) ──
+  //    갱신예정 취소는 기존 계약이 복귀되므로 사번을 유지한다.
+  if(!isRenew && typeof _elnVoidEmpNoForCancel === 'function'){
+    try { await _elnVoidEmpNoForCancel(c.company_id, c.employee_id); }
+    catch(e){ console.warn('[계약취소 사번 파기 실패]', e); }
+  }
+
   closeModal('contract-modal');
   await loadContracts();
   renderContracts(); renderDashboard();
@@ -1169,6 +1176,12 @@ async function doContractVoid(){
 
   await api(`../tables/contracts/${c.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({status: CONTRACT_STATUS.VOIDED, close_reason:'void'})});
+
+  // ── 사번 원장 파기: 신규(계약예정) 파기 시 부여된 사번 파기 (부여 이력 유지) ──
+  if(c.status === CONTRACT_STATUS.PENDING && typeof _elnVoidEmpNoForCancel === 'function'){
+    try { await _elnVoidEmpNoForCancel(c.company_id, c.employee_id); }
+    catch(e){ console.warn('[계약 파기 사번 파기 실패]', e); }
+  }
 
   // ── 고객사 인앱 알림 발송 (계약 파기) ──
   {
@@ -2229,28 +2242,19 @@ function openRecontractModal(srcContract){
   // (저장 시 연속성 판정·renewed_from_id 페어링에 사용)
   _recontractSourceId = srcContract.id;
 
-  // ── 재계약: 사원번호는 이전 계약의 것을 승계하지 않고 새로 추천 ──
+  // ── 재계약: 사원번호는 이전 계약의 것을 승계하지 않고 새로 추천 (사번 원장 max+1 자동 부여) ──
   const _reconEmpNoEl = document.getElementById('ct-edit-em-empno');
   if(_reconEmpNoEl){
-    _reconEmpNoEl.value = '';
-    // 재계약 = 재입사: 새 사원번호 직접 입력 가능 (잠금 해제, 추천번호는 placeholder로 안내)
+    const _coIdRecon = srcContract.company_id;
+    // 재계약 = 재입사: 새 사원번호 자동 부여(수정 가능) + 추천 placeholder
+    const _suggRecon = (typeof _suggestEmpNo === 'function') ? _suggestEmpNo(_coIdRecon) : '';
+    _reconEmpNoEl.value = _suggRecon; // 자동 부여 (사용자 수정 가능)
     _reconEmpNoEl.readOnly = false;
     _reconEmpNoEl.classList.remove('ct-input-locked-dark');
     _reconEmpNoEl.style.background = ''; // 인라인 회색 배경 제거 (잠금 스타일 잔재)
     const _empnoLockHintR = document.getElementById('ct-edit-empno-lock-hint');
     if(_empnoLockHintR) _empnoLockHintR.style.display = 'none';
-    // 해당 고객사 내 사용 중인 사원번호 기준으로 추천 생성
-    const _coId = srcContract.company_id;
-    const _usedNos = new Set();
-    for(const _e of (allEmployees||[])){
-      if(_e.company_id === _coId && _e.employee_number){
-        const _n = parseInt(_e.employee_number);
-        if(!isNaN(_n)) _usedNos.add(_n);
-      }
-    }
-    let _next = 1;
-    while(_usedNos.has(_next)) _next++;
-    _reconEmpNoEl.placeholder = '추천: ' + String(_next).padStart(4, '0');
+    if(_suggRecon) _reconEmpNoEl.placeholder = '추천: ' + _suggRecon;
   }
 }
 let _recontractEmpId = null;
@@ -4174,6 +4178,8 @@ async function saveContract(){
 
   // 신규/재계약 모드: 계약시작일, 종료일, 유형, 상태 결정
   const isRecontract = !!_recontractEmpId && !editId.contract;
+  // ── 재입사 사번 재발급 안내 정보 (저장 성공 후 메시지창 표시용) ──
+  let _reissueInfo = null; // { empId, empName, oldNo, newNo, hireDate }
   const today3 = fmtLocalDate(new Date());
   let contractStart, contractEnd, contractType, contractStatus;
   if(isEditMode){
@@ -4378,6 +4384,17 @@ async function saveContract(){
         }
       })();
       await api(`../tables/employees/${editEmpId}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(empPatch)});
+      // ── 사번 원장 동기화 (수정 모드에서 사번 변경 시: 이전 번호 파기 + 새 번호 부여) ──
+      if(typeof _elnSyncEmpNoChange === 'function'){
+        try {
+          const _oldNoE = _editEmpCur.employee_number || '';
+          const _newNoE = empPatch.employee_number || '';
+          if(_oldNoE !== _newNoE){
+            const _srcTypeE = _editEmpCur.personnel_type === 'representative' ? 'representative' : 'employee';
+            await _elnSyncEmpNoChange(coId, editEmpId, _oldNoE, _newNoE, _srcTypeE);
+          }
+        } catch(e){ console.warn('[사번 원장 동기화 실패(수정)]', e); }
+      }
     }
     } catch(e){
       console.error('[saveContract edit PUT 오류]', e);
@@ -4437,8 +4454,30 @@ async function saveContract(){
         }
         const _rcEmpNoVal = document.getElementById('ct-edit-em-empno')?.value?.trim() || '';
         if(_rcEmpNoVal) _rcPatch.employee_number = _rcEmpNoVal;
+        const _rcSrcEmpNoOld = (allEmployees.find(x=>x.id===empId)||{}).employee_number || '';
+        const _rcHireAfter = _rcPatch.hire_date || '';
         await api(`../tables/employees/${empId}`, { method:'PATCH', headers:{'Content-Type':'application/json'},
           body: JSON.stringify(_rcPatch) });
+        // ── 사번 원장 동기화 (재입사 사번 변경: 이전 번호 파기 + 새 번호 부여) ──
+        if(_rcPatch.employee_number && typeof _elnSyncEmpNoChange === 'function'){
+          try {
+            if(_rcSrcEmpNoOld !== _rcPatch.employee_number){
+              await _elnSyncEmpNoChange(coId, empId, _rcSrcEmpNoOld, _rcPatch.employee_number, 'employee');
+              // ── '사번 재부여' 인사카드 변경이력 ──
+              try {
+                const _rcEmpCur = allEmployees.find(x=>x.id===empId) || {};
+                const _rcHist = (typeof _hrParseHistory === 'function') ? _hrParseHistory(_rcEmpCur.hr_edit_history) : (Array.isArray(_rcEmpCur.hr_edit_history) ? _rcEmpCur.hr_edit_history : []);
+                const _rcFields = [{ label: '사원번호', before: _rcSrcEmpNoOld || '-', after: _rcPatch.employee_number }];
+                if (_rcHireAfter) _rcFields.push({ label: '입사일', before: _rcEmpCur.hire_date || '-', after: _rcHireAfter });
+                _rcHist.push({ at: new Date().toISOString(), kind: 'contract', summary: '사번 재부여', fields: _rcFields });
+                await api(`../tables/employees/${empId}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ hr_edit_history: _rcHist }) });
+                const _eRC = allEmployees.find(x=>x.id===empId);
+                if(_eRC) _eRC.hr_edit_history = _rcHist;
+              } catch(e2){ console.warn('[재계약 사번 재부여 이력 실패]', e2); }
+              _reissueInfo = { empId, empName: (allEmployees.find(x=>x.id===empId)||{}).name || '', oldNo: _rcSrcEmpNoOld || '', newNo: _rcPatch.employee_number, hireDate: _rcHireAfter };
+            }
+          } catch(e){ console.warn('[사번 원장 동기화 실패(재계약)]', e); }
+        }
       } catch(e){ console.warn('[재계약 입사일·사원번호 반영 실패]', e); }
     }
     // ── 신규·재계약: 근로계약 데이터 → 인사카드 최초 기재 ──
@@ -4472,6 +4511,53 @@ async function saveContract(){
           }
         } catch(e){ console.warn('[계약→인사카드 최초 기재 실패]', e); }
       }
+    }
+    // ── 신규계약 + 기존 직원(재입사) 사번 재발급 (사번 원장 기준) ──
+    //    이전 계약이 만료/해지/취소(파기)이고 시작일이 익영업일(연속)이 아니면 = 재입사 갭
+    //    → 기존 사번 파기('rehire') + 원장 max+1 새 사번 자동 부여
+    //    ※ 신규 직원(과거 계약 전무)은 원장 미연동 HR 번호를 그대로 유지
+    if(!isEditMode && !isRecontract && _savedContractId_ && empId && _ctSelectedEmpId === empId
+       && typeof _ctGetPrevContractForContinuity === 'function'
+       && typeof _suggestEmpNo === 'function'
+       && typeof _elnSyncEmpNoChange === 'function'){
+      try {
+        const _prevR  = _ctGetPrevContractForContinuity();
+        const _empR   = allEmployees.find(x => x.id === empId) || {};
+        const _oldNoR = _empR.employee_number || '';
+        const _nextBizR = (_prevR && _prevR.endDate && typeof _nextBusinessDay === 'function')
+          ? _nextBusinessDay(_prevR.endDate) : '';
+        const _contR = !!(_prevR && _prevR.endDate && contractStart && contractStart > _prevR.endDate && _nextBizR && contractStart <= _nextBizR);
+        const _hasPastR = (allContracts||[]).some(c =>
+          c.employee_id === empId && !c.is_draft && !c.is_voided_by_amend &&
+          c.id !== _savedContractId_ &&
+          [CONTRACT_STATUS.TERMINATED, CONTRACT_STATUS.EXPIRED, CONTRACT_STATUS.VOIDED].includes(c.status)
+        );
+        // 재입사(갭) 또는 계약취소(파기) 후 재입사 → 새 사번 부여 (연속이면 기존 번호 유지)
+        if(!_contR && (_prevR || _hasPastR)){
+          const _newNoR = _suggestEmpNo(coId);
+          if(_newNoR && _newNoR !== _oldNoR){
+            if(_oldNoR){
+              await _elnSyncEmpNoChange(coId, empId, _oldNoR, _newNoR, 'employee');
+            } else {
+              await _elnAssign(coId, _newNoR, empId, 'employee');
+            }
+            // ── 새 입사일 (재입사): 계약직/일용직 = 계약시작일, 정규직 계열 = 인사정보 입사일 ──
+            const _rcIsFixedNew = [CONTRACT_TYPE.FIXED, CONTRACT_TYPE.FIXED_PROBATION, CONTRACT_TYPE.DAILY].includes(contractType);
+            const _newHireR = _rcIsFixedNew ? contractStart : (document.getElementById('ct-edit-em-hire')?.value || contractStart || '');
+            // ── '사번 재부여' 인사카드 변경이력 + 사번·입사일 반영 ──
+            const _empPatchR = { employee_number: _newNoR, hire_date: _newHireR };
+            try {
+              const _histR = (typeof _hrParseHistory === 'function') ? _hrParseHistory(_empR.hr_edit_history) : (Array.isArray(_empR.hr_edit_history) ? _empR.hr_edit_history : []);
+              _histR.push({ at: new Date().toISOString(), kind: 'contract', summary: '사번 재부여', fields: [{ label: '사원번호', before: _oldNoR || '-', after: _newNoR }, { label: '입사일', before: _empR.hire_date || '-', after: _newHireR }] });
+              _empPatchR.hr_edit_history = _histR;
+            } catch(e){ console.warn('[사번 재부여 이력 구성 실패]', e); }
+            await api(`../tables/employees/${empId}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify(_empPatchR) });
+            const _eR = allEmployees.find(x=>x.id===empId);
+            if(_eR){ _eR.employee_number = _newNoR; _eR.hire_date = _newHireR; _eR.hr_edit_history = _empPatchR.hr_edit_history || _eR.hr_edit_history; }
+            _reissueInfo = { empId, empName: _empR.name || '', oldNo: _oldNoR || '', newNo: _newNoR, hireDate: _newHireR };
+          }
+        }
+      } catch(e){ console.warn('[재입사 사번 재발급 실패]', e); }
     }
   }
   // ── 고객사 인앱 알림 발송 ──
@@ -4603,6 +4689,34 @@ async function saveContract(){
     if(confirmed){
       openContractPrintModal(_savedContractId);
     }
+  }
+
+  // ── 재입사 사번 재발급 안내 (C6/C13): '재입사에 따른 인사카드 자동 수정 안내' ──
+  if(_reissueInfo && !_ctIsEdit){
+    const _riEmpName = _reissueInfo.empName || '직원';
+    const _riOld = _reissueInfo.oldNo ? ` (기존 ${_reissueInfo.oldNo})` : '';
+    const _fmtRiDate = d => {
+      if(!d) return '-';
+      const [y,m,dd] = String(d).split('-');
+      return `${parseInt(y)}년 ${parseInt(m)}월 ${parseInt(dd)}일`;
+    };
+    const _riMsg =
+`재입사에 따라 인사카드가 자동 수정되었습니다.
+
+■ 직원: ${_riEmpName}
+■ 입사일: ${_fmtRiDate(_reissueInfo.hireDate)}
+■ 사원번호: ${_reissueInfo.newNo}${_riOld}
+
+인사카드를 조회하면 새로 발급된 사원번호가 표시되며,
+변경이력에 '사번 재부여'로 기록됩니다.`;
+    await _showConfirm({
+      title: '재입사에 따른 인사카드 자동 수정 안내',
+      message: _riMsg,
+      okText: '확인',
+      cancelText: '',
+      okClass: 'btn-primary'
+    });
+    _reissueInfo = null;
   }
 
   // ── 연차 관리대장 자동 생성·상태 연동 ──

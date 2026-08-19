@@ -1568,6 +1568,20 @@ async function saveCompany(){
     }
   }
 
+  // ── 사번 원장 기록 (C18/C15): 대표자 부여 (동일 인원이 직원이면 직원 ID 연계) ──
+  {
+    const _repCoId = editId.company || body.id || '';
+    if (_repCoId && typeof _elnAssign === 'function') {
+      try {
+        for (const r of _representatives) {
+          if (!r.employee_number) continue;
+          const _empId = r.emp_id || ((allEmployees || []).find(e => e.company_id === _repCoId && e.name === r.name)?.id || null);
+          await _elnAssign(_repCoId, r.employee_number, _empId, 'representative');
+        }
+      } catch(e) { console.warn('[대표자 사번 원장 동기화 실패]', e); }
+    }
+  }
+
   closeModal('company-modal');await loadCompanies();populateFilters();populatePICompanies();renderCompanies();renderDashboard();
   const _isEdit = !!editId.company;
   toast(_isEdit ? '고객사 정보가 수정되었습니다. ✔' : '고객사가 등록되었습니다. ✔');
@@ -1894,36 +1908,24 @@ function _cmRemoveRelated(idx) {
 // ── 사원번호 추천 헬퍼 (대표자/등기임원/특수관계인 공통) ──
 function _cmSuggestEmpNoFor(inputEl) {
   if (!inputEl) return;
-  const coId = editId.company;
-  const used = new Set();
-  // 1) DB에 저장된 해당 고객사 직원들의 사원번호 수집 (단순: 모든 직원 차단)
-  if (coId) {
-    for (const emp of allEmployees) {
-      if (emp.company_id !== coId) continue;
-      const num = parseInt(emp.employee_number);
-      if (!isNaN(num)) used.add(num);
-    }
-    // 1-1) 등기임원·특수관계인·대표자 사원번호도 수집 (4개 그룹 통합 연번)
-    (allExecutives||[]).forEach(e => { if(e.company_id===coId){ const n=parseInt(e.employee_number); if(!isNaN(n)) used.add(n); } });
-    (allRelatedParties||[]).forEach(r => { if(r.company_id===coId){ const n=parseInt(r.employee_number); if(!isNaN(n)) used.add(n); } });
-    const _co = allCompanies.find(c => c.id === coId);
-    if(_co){
-      let _reps = [];
-      try { _reps = typeof _co.representatives==='string' ? JSON.parse(_co.representatives) : (_co.representatives||[]); } catch(e){ _reps = []; }
-      if(Array.isArray(_reps)) _reps.forEach(r => { const n=parseInt(r.employee_number); if(!isNaN(n)) used.add(n); });
-    }
-  }
-  // 2) 현재 폼에 입력된 대표자/등기임원/특수관계인 사원번호도 수집 (자기 자신 제외)
-  const allEmpNoInputs = document.querySelectorAll('[id^="cm-rep-empno-"],[id^="cm-exec-empno-"],[id^="cm-rel-empno-"]');
-  allEmpNoInputs.forEach(el => {
+  const coId = editId.company || _currentCompanyDraftId;
+  if (!coId) return;
+  // ── 사번 원장 기준 max+1 (C14/C18): 원장 최대값 + 현재 폼에 입력된 다른 번호 고려 ──
+  let maxNum = 0;
+  if (typeof _elnMaxNum === 'function') maxNum = Math.max(maxNum, _elnMaxNum(coId));
+  document.querySelectorAll('[id^="cm-rep-empno-"],[id^="cm-exec-empno-"],[id^="cm-rel-empno-"]').forEach(el => {
     if (el === inputEl) return;
-    const num = parseInt((el.value || '').trim());
-    if (!isNaN(num)) used.add(num);
+    const n = parseInt((el.value || '').trim(), 10);
+    if (!isNaN(n) && n > maxNum) maxNum = n;
   });
-  // 3) 사용되지 않은 가장 작은 번호 찾기 (gap-fill)
-  let next = 1;
-  while (used.has(next)) next++;
-  inputEl.placeholder = `추천: ${String(next).padStart(4, '0')}`;
+  let sugg = maxNum + 1;
+  // 폼 내 동시 신규 행 충돌 방지
+  while (Array.from(document.querySelectorAll('[id^="cm-rep-empno-"],[id^="cm-exec-empno-"],[id^="cm-rel-empno-"]')).some(el =>
+    el !== inputEl && parseInt((el.value || '').trim(), 10) === sugg
+  )) sugg++;
+  const val = String(sugg).padStart(4, '0');
+  inputEl.value = val;
+  inputEl.placeholder = `추천: ${val}`;
 }
 
 function _cmSuggestRepEmpNo(idx) {
@@ -1981,6 +1983,17 @@ function _cmCheckEmpNoDup(el) {
       el.classList.add('va-input-err');
       _cmEmpNoHint(el, 'va-err', `사원번호 "${empNo}"은(는) 이미 대표자(${_repHit.name||''})가 사용 중입니다.`);
       return;
+    }
+    // ── 사번 원장 재사용 금지 (C11): voided 번호 재사용 불가 / 타인 used 번호 중복 불가 ──
+    if (typeof _elnReuseInfo === 'function') {
+      const _rowName = (document.getElementById(el.id.replace(/^cm-(rep|exec|rel)-empno-/, '$1-') + '-name') || {}).value || '';
+      const _selfEmpId = (allEmployees || []).find(e => e.company_id === coId && e.name === _rowName)?.id || null;
+      const _reuse = _elnReuseInfo(coId, empNo, _selfEmpId);
+      if (_reuse.blocked) {
+        el.classList.add('va-input-err');
+        _cmEmpNoHint(el, 'va-err', `사원번호 "${empNo}"은(는) ${_reuse.reason}`);
+        return;
+      }
     }
     el.classList.remove('va-input-err');
     _cmEmpNoHint(el, 'va-ok', '사용 가능한 사원번호입니다.');
@@ -2088,6 +2101,17 @@ function _cmValidateAllEmpNos() {
       const dupEmp = allEmployees.find(e => e.company_id === coId && e.employee_number === val);
       if (dupEmp) {
         errors.push(`사원번호 "${val}"은(는) 이미 ${dupEmp.name} 직원이 사용 중입니다.`);
+        errorEls.push(el);
+      }
+    }
+
+    // 3) 사번 원장 재사용 금지 (C11): voided 번호 재사용 불가 / 타인 used 번호 중복 불가
+    if (typeof _elnReuseInfo === 'function' && coId) {
+      const _rowName = (document.getElementById(el.id.replace(/^cm-(rep|exec|rel)-empno-/, '$1-') + '-name') || {}).value || '';
+      const _selfEmpId = (allEmployees || []).find(e => e.company_id === coId && e.name === _rowName)?.id || null;
+      const _reuse = _elnReuseInfo(coId, val, _selfEmpId);
+      if (_reuse.blocked) {
+        errors.push(`사원번호 "${val}"은(는) ${_reuse.reason}`);
         errorEls.push(el);
       }
     }
@@ -2242,6 +2266,11 @@ async function _cmSaveExecutives(companyId) {
         created_at: Date.now(), updated_at: Date.now()
       };
       await api('../tables/registered_executives', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      // ── 사번 원장 기록 (C18/C15): 등기임원 부여 (동일 인원이 직원이면 직원 ID 연계) ──
+      if (d.employee_number && typeof _elnAssign === 'function') {
+        const _empId = (allEmployees || []).find(e => e.company_id === companyId && e.name === d.name)?.id || null;
+        await _elnAssign(companyId, d.employee_number, _empId, 'executive');
+      }
     }
   } catch(e) {
     console.error('[_cmSaveExecutives]', e);
@@ -2267,6 +2296,11 @@ async function _cmSaveRelated(companyId) {
         created_at: Date.now(), updated_at: Date.now()
       };
       await api('../tables/related_party_workers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      // ── 사번 원장 기록 (C18/C15): 특수관계인 부여 (동일 인원이 직원이면 직원 ID 연계) ──
+      if (d.employee_number && typeof _elnAssign === 'function') {
+        const _empId = (allEmployees || []).find(e => e.company_id === companyId && e.name === d.name)?.id || null;
+        await _elnAssign(companyId, d.employee_number, _empId, 'related_party');
+      }
     }
   } catch(e) {
     console.error('[_cmSaveRelated]', e);

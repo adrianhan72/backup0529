@@ -199,7 +199,7 @@ async function init(){
 
     // ── 1단계: critical path – 화면 표시에 필수인 3개 테이블만 먼저 로드 ──
     showSkeletons();
-    await Promise.all([loadCompanies(), loadEmployees(), loadContracts(), loadAdminAccounts(), loadCompanyHistories(), loadExecutives(), loadRelatedParties(), loadSystemSettings()]);
+    await Promise.all([loadCompanies(), loadEmployees(), loadContracts(), loadAdminAccounts(), loadCompanyHistories(), loadExecutives(), loadRelatedParties(), loadSystemSettings(), loadEmployeeNumberLedger()]);
 
     // 데이터 정규화 (한글 레거시 → 영문)
     _normalizeLoadedData();
@@ -425,8 +425,7 @@ async function loadSystemSettings(){
     });
   } catch(e) {
     console.warn('[system_settings] 로드 실패', e);
-  }
-  // 글로벌 플래그 동기화
+  }  // 글로벌 플래그 동기화
   window._probationFeatureEnabled = (window._systemSettings['probation_feature_enabled'] === '1');
   window._contractExpiryNoticeEnabled = (window._systemSettings['contract_expiry_notice_enabled'] === '1');
   window._regularConversionNoticeEnabled = (window._systemSettings['regular_conversion_notice_enabled'] === '1');
@@ -434,6 +433,17 @@ async function loadSystemSettings(){
   window._retirementMgmtEnabled = (window._systemSettings['retirement_mgmt_enabled'] === '1');
   // 수습 고용형태 옵션 필터 적용 (전체 셀렉트)
   if (typeof applyProbationOptionFilter === 'function') applyProbationOptionFilter();
+}
+
+/** 사번 원장 로드 (employee_number_ledger) — 상수·추천 헬퍼에서 사용 */
+async function loadEmployeeNumberLedger(){
+  try {
+    const d = await api('../tables/employee_number_ledger?limit=5000');
+    allEmpNoLedger = (d && d.data) || [];
+  } catch(e) {
+    console.warn('[employee_number_ledger] 로드 실패', e);
+    allEmpNoLedger = [];
+  }
 }
 async function loadContracts(){
   const d=await api('../tables/contracts?limit=200');

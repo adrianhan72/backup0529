@@ -2,7 +2,7 @@
 -- 인사톡 노무톡 — SQLite Schema (한글 주석 포함)
 -- node dump_schema.js 로 자동 생성 (ALTER TABLE 반영)
 -- 최종 갱신: 2026-08-19
--- 테이블 수: 27개
+-- 테이블 수: 28개
 -- =============================================================================
 
 PRAGMA journal_mode = WAL;
@@ -693,9 +693,24 @@ CREATE TABLE IF NOT EXISTS tax_brackets (
 -- SECTION X: 기타 테이블
 -- =============================================================================
 
--- severance_interim_settlements
+-- employee_number_ledger  -- 사원번호 원장 (부여·파기 이력, 재사용 방지)
+CREATE TABLE IF NOT EXISTS employee_number_ledger (
+  id TEXT PRIMARY KEY, --  -- 고유식별자
+  company_id TEXT NOT NULL, --  -- 회사 ID
+  employee_number TEXT NOT NULL, --  -- 사원번호 (숫자, 표준형 앞0 제거)
+  employee_id TEXT, --  -- 부여된 인사 대상 ID (건너뜀 gap은 NULL, 파기 후에도 유지)
+  source_type TEXT, --  -- 인사 유형 (employee/representative/executive/related_party)
+  status TEXT NOT NULL, --  -- 상태 (used:사용중, voided:파기)
+  voided_reason TEXT, --  -- 파기 사유 (gap:건너뜀/contract_canceled:계약취소/rehire:재입사/released:해제)
+  assigned_at INTEGER, --  -- 부여 일시
+  voided_at INTEGER, --  -- 파기 일시
+  created_at INTEGER, --  -- 생성일시
+  updated_at INTEGER --  -- 수정일시
+);
+
+-- severance_interim_settlements  -- 퇴직금 중간정산 이력
 CREATE TABLE IF NOT EXISTS severance_interim_settlements (
-  id TEXT PRIMARY KEY, --  -- ID
+  id TEXT PRIMARY KEY, --  -- 고유식별자
   employee_id TEXT, --  -- 직원 ID
   company_id TEXT, --  -- 회사 ID
   contract_id TEXT, --  -- 계약 ID
@@ -708,9 +723,9 @@ CREATE TABLE IF NOT EXISTS severance_interim_settlements (
   created_at TEXT --  -- 생성일시
 );
 
--- system_settings
+-- system_settings  -- 시스템 설정
 CREATE TABLE IF NOT EXISTS system_settings (
-  id TEXT PRIMARY KEY, --  -- ID
+  id TEXT PRIMARY KEY, --  -- 고유식별자
   setting_key TEXT NOT NULL, --  -- 설정 키
   setting_value TEXT DEFAULT '0', --  -- 설정 값
   description TEXT, --  -- 설명

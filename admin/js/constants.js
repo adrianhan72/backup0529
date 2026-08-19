@@ -673,4 +673,134 @@ function applyProbationOptionFilter(rootEl = document) {
   });
 }
 
+// ═══════════════════════════════════════════
+// 사번 원장 헬퍼 (employee_number_ledger — 부여·파기 이력, 재사용 방지)
+// 정책: 사번은 숫자만 / 부여는 max+1(append-only) / 중간 공백·재입사·계약취소 시 파기
+// ═══════════════════════════════════════════
+let allEmpNoLedger = []; // admin-state loadEmployeeNumberLedger()에서 채움
+
+function _elnForCompany(companyId){
+  return (allEmpNoLedger || []).filter(r => r && r.company_id === companyId);
+}
+/** 해당 회사 숫자 사번 최대값 (used/voided 모두 포함) */
+function _elnMaxNum(companyId){
+  let m = 0;
+  for (const r of _elnForCompany(companyId)) {
+    if (/^\d+$/.test(String(r.employee_number || ''))) {
+      const n = parseInt(r.employee_number, 10);
+      if (n > m) m = n;
+    }
+  }
+  return m;
+}
+/** 해당 회사 사번 자릿수 (숫자 사번 중 최대 길이, 최소 4) */
+function _elnWidth(companyId){
+  let w = 4;
+  for (const r of _elnForCompany(companyId)) {
+    if (/^\d+$/.test(String(r.employee_number || ''))) {
+      const l = String(r.employee_number).length;
+      if (l > w) w = l;
+    }
+  }
+  return w;
+}
+/** 다음 사번 (append-only = max + 1), 회사 자릿수에 맞춰 0 패딩 */
+function _suggestEmpNo(companyId){
+  const next = _elnMaxNum(companyId) + 1;
+  return String(next).padStart(_elnWidth(companyId), '0');
+}
+/** 표준형: 숫자 사번 → 앞0 제거한 순수 숫자 문자열 (비숫자는 원문) */
+function _elnNorm(empNo){
+  if (empNo === null || empNo === undefined || empNo === '') return '';
+  const s = String(empNo).trim();
+  return /^\d+$/.test(s) ? String(parseInt(s, 10)) : s;
+}
+/** 사번 원장에 used(부여) 기록 */
+async function _elnAssign(companyId, empNo, empId, sourceType){
+  const n = _elnNorm(empNo);
+  if (!companyId || !n) return;
+  try {
+    if ((allEmpNoLedger || []).some(r => r.company_id === companyId && r.employee_number === n && r.status === 'used')) return;
+    await api('../tables/employee_number_ledger', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        company_id: companyId, employee_number: n, employee_id: empId || null,
+        source_type: sourceType || 'employee', status: 'used',
+        assigned_at: Date.now(), created_at: Date.now()
+      })
+    });
+    allEmpNoLedger.push({ id: null, company_id: companyId, employee_number: n, employee_id: empId || null, source_type: sourceType || 'employee', status: 'used', assigned_at: Date.now() });
+  } catch(e){ console.warn('[사번 부여 기록 실패]', e); }
+}
+/** 사번 원장에 voided(파기) 기록 — 부여 이력(employee_id/assigned_at)은 유지 */
+async function _elnVoid(companyId, empNo, reason){
+  const n = _elnNorm(empNo);
+  if (!companyId || !n) return;
+  try {
+    const existing = (allEmpNoLedger || []).find(r => r.company_id === companyId && r.employee_number === n && r.status === 'used');
+    if (!existing) return; // 이미 파기 또는 미기록 — 미기록이면 파기 행 생성(이력 없음)
+    const id = existing.id || null;
+    if (id) {
+      await api('../tables/employee_number_ledger/' + id, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'voided', voided_reason: reason || 'released', voided_at: Date.now() })
+      });
+    } else {
+      await api('../tables/employee_number_ledger', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          company_id: companyId, employee_number: n, employee_id: existing.employee_id || null,
+          source_type: existing.source_type || 'employee', status: 'voided',
+          voided_reason: reason || 'released', assigned_at: existing.assigned_at || null,
+          voided_at: Date.now(), created_at: Date.now()
+        })
+      });
+    }
+    existing.status = 'voided';
+    existing.voided_reason = reason || 'released';
+    existing.voided_at = Date.now();
+  } catch(e){ console.warn('[사번 파기 기록 실패]', e); }
+}
+/** 사번 변경 동기화: 새 번호 부여 + 이전 번호 파기 (재입사) */
+async function _elnSyncEmpNoChange(companyId, empId, oldNo, newNo, sourceType){
+  const oldN = _elnNorm(oldNo);
+  const newN = _elnNorm(newNo);
+  if (newN && newN !== oldN) {
+    if (oldN) await _elnVoid(companyId, oldN, 'rehire');
+    await _elnAssign(companyId, newN, empId, sourceType || 'employee');
+  } else if (newN) {
+    await _elnAssign(companyId, newN, empId, sourceType || 'employee');
+  } else if (oldN) {
+    await _elnVoid(companyId, oldN, 'released');
+  }
+}
+/** 계약취소(파기)로 부여된 사번 파기 — 부여 이력(employee_id/assigned_at) 유지 */
+async function _elnVoidEmpNoForCancel(companyId, empId){
+  if(!companyId || !empId) return;
+  const emp = (typeof allEmployees !== 'undefined' && Array.isArray(allEmployees))
+    ? allEmployees.find(x => x.id === empId) : null;
+  const no = emp ? emp.employee_number : '';
+  if(!no) return;
+  await _elnVoid(companyId, no, 'contract_canceled');
+}
+/** 사번 재사용 가능 여부 판정 (C11) — 원장 기준
+ *  - voided(파기) 번호는 본인 포함 재사용 불가
+ *  - used 번호는 본인(selfEmpId) 외 재사용 불가
+ *  @returns {{ blocked:boolean, reason:string }}
+ */
+function _elnReuseInfo(companyId, empNo, selfEmpId){
+  const n = _elnNorm(empNo);
+  if (!companyId || !n) return { blocked: false, reason: '' };
+  const rows = (allEmpNoLedger || []).filter(r => r.company_id === companyId && r.employee_number === n);
+  if (!rows.length) return { blocked: false, reason: '' };
+  if (rows.some(r => r.status === 'voided')) {
+    return { blocked: true, reason: '이전에 부여되었던 사원번호로 재사용할 수 없습니다. (파기된 번호)' };
+  }
+  const usedByOther = rows.find(r => r.status === 'used' && r.employee_id && r.employee_id !== selfEmpId);
+  if (usedByOther) {
+    return { blocked: true, reason: '이미 다른 인원이 사용 중인 사원번호입니다.' };
+  }
+  return { blocked: false, reason: '' };
+}
+
 
