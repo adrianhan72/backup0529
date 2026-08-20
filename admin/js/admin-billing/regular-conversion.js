@@ -310,7 +310,7 @@ function renderRcTemplate(){
 ■ 고용형태: ${catText}
 ■ 입사일: ${firstStart}
 ■ 누적 근로일수: ${fmtDays(totalDays)}
-■ 2년 도달 예정일: ${new Date(new Date(firstStart).getTime()+730*86400000).toISOString().slice(0,10)} (D-15)
+■ 2년 도달 예정일: ${fmtLocalDate(new Date(new Date(firstStart).getTime()+730*86400000))} (D-15)
 
 ◆ 관련 법령
 「기간제 및 단시간근로자 보호 등에 관한 법률」 제4조:

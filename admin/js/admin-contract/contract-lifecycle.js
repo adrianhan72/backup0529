@@ -308,7 +308,7 @@ function generateContractHTMLFromData(c, emp, co){
     const st = new Date(c.contract_start);
     st.setMonth(st.getMonth() + probMonths);
     st.setDate(st.getDate() - 1);
-    probEndDate = fmtDateKr(st.toISOString().slice(0,10));
+    probEndDate = fmtDateKr(fmtLocalDate(st));
   }
   const probStartKr = fmtDateKr(c.contract_start);
 
@@ -1307,7 +1307,39 @@ function _collectRenewFormFields(){
   const ppDayEl = document.getElementById('ct-pay-period-day-hidden');
   if(ppDayEl) fields.pay_period_day = parseInt(ppDayEl.value) || null;
   const payDayEl = document.getElementById('ct-pay-day');
-  if(payDayEl) fields.pay_day = parseInt(payDayEl.value) || null;
+  const payDateEl = document.getElementById('ct-pay-day-date');
+  // 일용직: 임금 지급 방법(일급/주급/월합산)별 지급일 저장 / 그 외: 매월 n일(숫자)
+  const _rawCatDraft = _ctNewCat()
+    || document.getElementById('ct-edit-em-category')?.value
+    || document.getElementById('ct-type')?.value
+    || '';
+  const _catDraft = CONTRACT_TYPE_LEGACY_MAP[_rawCatDraft] || _rawCatDraft;
+  if(_catDraft === CONTRACT_TYPE.DAILY){
+    const _payMethod = (typeof _ctPayMethodVal === 'function' ? _ctPayMethodVal() : '') || 'monthly';
+    fields.pay_method = _payMethod;
+    if(_payMethod === 'monthly'){
+      // 월합산: 지급일 = 매월 n일(숫자), 산정기준일 = 개별 편집값
+      fields.pay_day = parseInt(payDayEl?.value) || null;
+      fields.pay_period_day_override = parseInt(document.getElementById('ct-pay-period-day-hidden')?.value) || null;
+      fields.pay_condition = null; fields.pay_after_days = null; fields.pay_weekday = null; fields.pay_period_weekday = null;
+    } else if(_payMethod === 'daily'){
+      // 일급: 지급일 = 근무일(당일/n일 후) → 고정 지급일 없음
+      fields.pay_day = null;
+      fields.pay_condition = document.querySelector('input[name="ct-pay-condition"]:checked')?.value || 'same_day';
+      fields.pay_after_days = parseInt(document.getElementById('ct-pay-after-days')?.value) || null;
+      fields.pay_weekday = null; fields.pay_period_day_override = null; fields.pay_period_weekday = null;
+    } else {
+      // 주급: 지급일 = 매주 요일, 산정기간 시작 요일(선택)
+      fields.pay_day = null;
+      fields.pay_weekday = parseInt(document.getElementById('ct-pay-weekday')?.value) || null;
+      fields.pay_period_weekday = parseInt(document.getElementById('ct-pay-period-weekday')?.value) || null;
+      fields.pay_condition = null; fields.pay_after_days = null; fields.pay_period_day_override = null;
+    }
+  } else {
+    if(payDayEl) fields.pay_day = parseInt(payDayEl.value) || null;
+    fields.pay_method = null; fields.pay_condition = null; fields.pay_after_days = null;
+    fields.pay_weekday = null; fields.pay_period_weekday = null; fields.pay_period_day_override = null;
+  }
 
   // 근무시간표
   try {
@@ -1440,7 +1472,7 @@ function _nextBusinessDay(dateStr){
     d.setDate(d.getDate() + 1);
     tries++;
   }
-  return d.toISOString().slice(0,10);
+  return fmtLocalDate(d);
 }
 
 /**
@@ -1457,7 +1489,7 @@ function _prevBusinessDay(dateStr){
     d.setDate(d.getDate() - 1);
     tries++;
   }
-  return d.toISOString().slice(0,10);
+  return fmtLocalDate(d);
 }
 
 function _isHoliday(d){
@@ -2111,7 +2143,7 @@ function openRecontractModal(srcContract){
 
   // 계약 조건 복사
   document.getElementById('ct-start').value   = '';
-  document.getElementById('ct-type').value    = rcCtType; toggleCtEndDate(true); toggleProbation();
+  document.getElementById('ct-type').value    = rcCtType; toggleCtEndDate(true); toggleProbation(); toggleAnnualSal();
   // 재계약 = 새 계약: 종료일은 승계하지 않고 빈 값 (새 기간 직접 입력)
   document.getElementById('ct-end').value     = '';
   document.getElementById('ct-status').value  = CONTRACT_STATUS.ACTIVE;
@@ -2653,7 +2685,11 @@ function _cftValidate(){
  */
 function _calcDismissalNoticePay(contract, termDate){
   if(!contract || !termDate) return { applicable: false, amount: 0, tenureDays: 0, noticeDays: 0, reason: '' };
-  const cStart  = contract.contract_start || '';
+  const emp = (allEmployees||[]).find(e => e.id === contract.employee_id);
+  // 일용직: 연속 계약(갱신) 포함 '계속 근무' 기간은 입사일 기준으로 산정
+  const cStart  = (contract.contract_type === CONTRACT_TYPE.DAILY && emp?.hire_date)
+    ? emp.hire_date
+    : (contract.contract_start || '');
   const today   = fmtLocalDate(new Date());
   if(!cStart) return { applicable: false, amount: 0, tenureDays: 0, noticeDays: 0, reason: '입사일 정보 없음' };
 
@@ -2671,10 +2707,17 @@ function _calcDismissalNoticePay(contract, termDate){
   // 30일 이상 전 예고 → 수당 없음
   if(noticeDays >= 30) return { applicable: false, amount: 0, tenureDays, noticeDays, reason: `${noticeDays}일 전 예고 (30일 이상 → 해고예고수당 면제)` };
 
-  // 해고예고수당 = 통상시급 × 8h × 30일
-  const hw  = parseFloat(contract.hourly_wage) || 0;
-  const hpd = parseFloat(contract.work_hours_per_day) || 8;
-  const amount = Math.round(hw * hpd * 30);
+  // 해고예고수당 = 30일분 통상임금 (근로기준법 제26조)
+  //  - 일용직: 일급여 × 30일 (일급여 기준 — 통상시급 아님)
+  //  - 그 외: 통상시급 × 1일 소정근로시간 × 30일
+  let amount = 0;
+  if(contract.contract_type === CONTRACT_TYPE.DAILY){
+    amount = Math.round((parseFloat(contract.daily_wage) || 0) * 30);
+  } else {
+    const hw  = parseFloat(contract.hourly_wage) || 0;
+    const hpd = parseFloat(contract.work_hours_per_day) || 8;
+    amount = Math.round(hw * hpd * 30);
+  }
 
   return {
     applicable: true,
@@ -2697,11 +2740,17 @@ function _cftSelectReason(el, reason){
   const isDismissal = el.dataset.type === 'dismissal';
   const noticeRow = document.getElementById('cft-notice-pay-row');
   if(noticeRow) noticeRow.style.display = isDismissal ? '' : 'none';
-  if(!isDismissal){
-    const chk = document.getElementById('cft-notice-pay-chk');
+  const chk = document.getElementById('cft-notice-pay-chk');
+  if(isDismissal){
+    // 3개월 이상 계속근무 + 30일 미만 예고 → 해고예고수당 자동 체크
+    const _cD = allContracts.find(x => x.id === editId.contract) || {};
+    const _termD = document.getElementById('ct-fixed-terminate-date')?.value || '';
+    const _resD = _calcDismissalNoticePay(_cD, _termD);
+    if(chk) chk.checked = !!(chk.checked || (_resD && _resD.applicable));
+  } else {
     if(chk) chk.checked = false;
-    _cftRefreshNoticePay();
   }
+  _cftRefreshNoticePay();
 }
 
 /** 해고예고수당 체크박스 변경 시 정보 갱신 */
@@ -2720,11 +2769,14 @@ function _cftRefreshNoticePay(){
   if(amountEl) amountEl.value = result.amount;
   if(infoEl){
     if(result.applicable){
-      const hw = parseFloat(c.hourly_wage) || 0;
+      const _isDly = c.contract_type === CONTRACT_TYPE.DAILY;
+      const _baseTxt = _isDly
+        ? `일급여 ${(parseFloat(c.daily_wage)||0).toLocaleString('ko-KR')}원 × 30일`
+        : `통상시급 ${(parseFloat(c.hourly_wage)||0).toLocaleString('ko-KR')}원 × 8h × 30일`;
       infoEl.innerHTML =
         `<div>· 근속기간: ${result.tenureDays}일 (${Math.floor(result.tenureDays/30)}개월)</div>` +
         `<div>· 해지 예고일: ${result.noticeDays}일 전</div>` +
-        `<div>· 통상시급: ${hw.toLocaleString('ko-KR')}원 × 8h × 30일</div>` +
+        `<div>· ${_baseTxt}</div>` +
         `<div style="margin-top:4px;font-weight:700;">· 해고예고수당: <span style="color:#dc2626;">${result.amount.toLocaleString('ko-KR')}원</span></div>`;
     } else {
       infoEl.innerHTML = `<div>· ${result.reason}</div>`;
@@ -2741,11 +2793,17 @@ function _ctTermSelectReason(el, reason){
   const isDismissal = el.dataset.type === 'dismissal';
   const noticeRow = document.getElementById('ct-term-notice-pay-row');
   if(noticeRow) noticeRow.style.display = isDismissal ? '' : 'none';
-  if(!isDismissal){
-    const chk = document.getElementById('ct-term-notice-pay-chk');
+  const chk = document.getElementById('ct-term-notice-pay-chk');
+  if(isDismissal){
+    // 3개월 이상 계속근무 + 30일 미만 예고 → 해고예고수당 자동 체크 (근로기준법 제26조)
+    const _cD = allContracts.find(x => x.id === editId.contract) || {};
+    const _termD = document.getElementById('ct-terminate-date')?.value || '';
+    const _resD = _calcDismissalNoticePay(_cD, _termD);
+    if(chk) chk.checked = !!(chk.checked || (_resD && _resD.applicable));
+  } else {
     if(chk) chk.checked = false;
-    _ctTermRefreshNoticePay();
   }
+  _ctTermRefreshNoticePay();
 }
 
 /** ct-terminate-panel 해고예고수당 체크박스 변경 */
@@ -2764,11 +2822,14 @@ function _ctTermRefreshNoticePay(){
   if(amountEl) amountEl.value = result.amount;
   if(infoEl){
     if(result.applicable){
-      const hw = parseFloat(c.hourly_wage) || 0;
+      const _isDly = c.contract_type === CONTRACT_TYPE.DAILY;
+      const _baseTxt = _isDly
+        ? `일급여 ${(parseFloat(c.daily_wage)||0).toLocaleString('ko-KR')}원 × 30일`
+        : `통상시급 ${(parseFloat(c.hourly_wage)||0).toLocaleString('ko-KR')}원 × 8h × 30일`;
       infoEl.innerHTML =
         `<div>· 근속기간: ${result.tenureDays}일 (${Math.floor(result.tenureDays/30)}개월)</div>` +
         `<div>· 해지 예고일: ${result.noticeDays}일 전</div>` +
-        `<div>· 통상시급: ${hw.toLocaleString('ko-KR')}원 × 8h × 30일</div>` +
+        `<div>· ${_baseTxt}</div>` +
         `<div style="margin-top:4px;font-weight:700;">· 해고예고수당: <span style="color:#dc2626;">${result.amount.toLocaleString('ko-KR')}원</span></div>`;
     } else {
       infoEl.innerHTML = `<div>· ${result.reason}</div>`;
@@ -3061,7 +3122,7 @@ async function saveDraftContract(reason){
         if(_daysFromHire > 730){
           const _maxEnd = new Date(_hireDt);
           _maxEnd.setDate(_maxEnd.getDate() + 730);
-          const _maxEndStr = _maxEnd.toISOString().slice(0, 10);
+          const _maxEndStr = fmtLocalDate(_maxEnd);
           toast(`입사일로부터 730일을 초과하면 정규직 전환 의무 대상이 됩니다. 계약 종료일을 ${_maxEndStr} 이내로 설정하세요.`, 'error');
           return;
         }
@@ -3195,6 +3256,34 @@ async function saveDraftContract(reason){
     is_draft:             true,
     draft_saved_at:       Date.now(),
   };
+
+  // ── 급여 산정기간·지급일·일용직 임금 지급 방법 필드 (임시저장에도 보존) ──
+  draftBody.pay_period = document.getElementById('ct-pay-period')?.value.trim() || '';
+  draftBody.pay_period_month = document.getElementById('ct-pay-period-month-hidden')?.value || null;
+  draftBody.pay_period_day = parseInt(document.getElementById('ct-pay-period-day-hidden')?.value) || null;
+  if(isDailyDraft){
+    const _pmD = (typeof _ctPayMethodVal === 'function' ? _ctPayMethodVal() : '') || 'monthly';
+    draftBody.pay_method = _pmD;
+    if(_pmD === 'monthly'){
+      draftBody.pay_day = parseInt(document.getElementById('ct-pay-day')?.value) || null;
+      draftBody.pay_period_day_override = parseInt(document.getElementById('ct-pay-period-day-hidden')?.value) || null;
+      draftBody.pay_condition = null; draftBody.pay_after_days = null; draftBody.pay_weekday = null; draftBody.pay_period_weekday = null;
+    } else if(_pmD === 'daily'){
+      draftBody.pay_day = null;
+      draftBody.pay_condition = document.querySelector('input[name="ct-pay-condition"]:checked')?.value || 'same_day';
+      draftBody.pay_after_days = parseInt(document.getElementById('ct-pay-after-days')?.value) || null;
+      draftBody.pay_weekday = null; draftBody.pay_period_weekday = null; draftBody.pay_period_day_override = null;
+    } else {
+      draftBody.pay_day = null;
+      draftBody.pay_weekday = parseInt(document.getElementById('ct-pay-weekday')?.value) || null;
+      draftBody.pay_period_weekday = parseInt(document.getElementById('ct-pay-period-weekday')?.value) || null;
+      draftBody.pay_condition = null; draftBody.pay_after_days = null; draftBody.pay_period_day_override = null;
+    }
+  } else {
+    draftBody.pay_day = parseInt(document.getElementById('ct-pay-day')?.value) || null;
+    draftBody.pay_method = null; draftBody.pay_condition = null; draftBody.pay_after_days = null;
+    draftBody.pay_weekday = null; draftBody.pay_period_weekday = null; draftBody.pay_period_day_override = null;
+  }
 
   // (직원이 이미 생성되었으므로 note에 직원명 별도 보관 불필요)
   let savedId;
@@ -3912,23 +4001,57 @@ function _ctValidate(){
     if(daysFromHire > 730){
       const maxEndDate = new Date(hireDate);
       maxEndDate.setDate(maxEndDate.getDate() + 730);
-      const maxEndStr = maxEndDate.toISOString().slice(0, 10);
+      const maxEndStr = fmtLocalDate(maxEndDate);
       _ctMarkError('ct-end',
         `입사일로부터 730일을 초과하면 정규직 전환 의무 대상이 됩니다. 계약 종료일을 ${maxEndStr} 이내로 설정하세요.`,
         errors);
     }
   })();
 
-  // ── 급여 산정기간 필수 ──
-  if(!document.getElementById('ct-pay-period')?.value.trim()){
-    _ctMarkError('ct-pay-period-month', '급여 산정기간', errors);
+  // ── 급여 산정기간 필수 (일용직 일급/주급은 자동 산정 → 제외) ──
+  {
+    const _rawCatPP = _ctNewCat()
+      || document.getElementById('ct-edit-em-category')?.value
+      || document.getElementById('ct-type')?.value
+      || '';
+    const _catPP = CONTRACT_TYPE_LEGACY_MAP[_rawCatPP] || _rawCatPP;
+    const _pmPP = (typeof _ctPayMethodVal === 'function' ? _ctPayMethodVal() : '') || '';
+    const _isAutoPeriod = _catPP === CONTRACT_TYPE.DAILY && (_pmPP === 'daily' || _pmPP === 'weekly');
+    if(!_isAutoPeriod && !document.getElementById('ct-pay-period')?.value.trim()){
+      _ctMarkError('ct-pay-period-month', '급여 산정기간', errors);
+    }
   }
 
-  // ── 급여지급일 필수 (근로계약 기준, 1~31) ──
+  // ── 급여지급일 필수 (일용직: 지급방법별 / 그 외: 매월 n일 1~31) ──
   {
-    const _payDayVal = parseInt(document.getElementById('ct-pay-day')?.value) || 0;
-    if(_payDayVal < 1 || _payDayVal > 31){
-      _ctMarkError('ct-pay-day', '급여지급일 (1~31)', errors);
+    const _rawCatPay = _ctNewCat()
+      || document.getElementById('ct-edit-em-category')?.value
+      || document.getElementById('ct-type')?.value
+      || '';
+    const _catPay = CONTRACT_TYPE_LEGACY_MAP[_rawCatPay] || _rawCatPay;
+    const _isDailyPay = _catPay === CONTRACT_TYPE.DAILY;
+    if(_isDailyPay){
+      const _payM = (typeof _ctPayMethodVal === 'function' ? _ctPayMethodVal() : '') || 'monthly';
+      if(_payM === 'monthly'){
+        const _payDayVal = parseInt(document.getElementById('ct-pay-day')?.value) || 0;
+        if(_payDayVal < 1 || _payDayVal > 31) _ctMarkError('ct-pay-day', '급여 지급일 (1~31)', errors);
+      } else if(_payM === 'weekly'){
+        const _wd = document.getElementById('ct-pay-weekday')?.value || '';
+        if(!_wd) _ctMarkError('ct-pay-weekday', '주급 지급 요일', errors);
+      } else {
+        // 일급: 지급조건 필수 (당일 / n일 후)
+        const _cond = document.querySelector('input[name="ct-pay-condition"]:checked')?.value || '';
+        if(!_cond) _ctMarkError('ct-pay-condition', '일급 지급 조건', errors);
+        if(_cond === 'after_n_days'){
+          const _n = parseInt(document.getElementById('ct-pay-after-days')?.value) || 0;
+          if(_n < 1 || _n > 30) _ctMarkError('ct-pay-after-days', '지급 n일 (1~30)', errors);
+        }
+      }
+    } else {
+      const _payDayVal = parseInt(document.getElementById('ct-pay-day')?.value) || 0;
+      if(_payDayVal < 1 || _payDayVal > 31){
+        _ctMarkError('ct-pay-day', '급여지급일 (1~31)', errors);
+      }
     }
   }
 
@@ -4021,7 +4144,8 @@ async function saveContract(){
   if(isDailySave){
     dailyWageForSave = getAmountVal('ct-daily-wage');
     baseSalaryForSave = 0;
-    weeklyHol = 0;
+    // ── 주휴수당: 일용직도 1주 15h+ 개근 시 별도 지급 (근로기준법 §55) — 화면 계산값 반영 ──
+    weeklyHol = parseFloat(document.getElementById('ct-weekly-hol-computed')?.textContent?.replace(/[^\d]/g,'') || 0) || 0;
     monthly = 0;
   } else {
     dailyWageForSave = 0;
@@ -4120,10 +4244,16 @@ async function saveContract(){
         _compareMonthly = probAmt;
       } else {
         // 약정 보수 대비 기준 또는 비수습: 비과세 포함 월 환산시급
-        _compareHourly  = hourlyWage;
-        _compareMonthly = isDailySave
-          ? (dailyWageForSave * (hours > 0 ? Math.round(209 / hours) : 1))
-          : monthly;
+        if(isDailySave){
+          // 일용직: 통상시급 우선, 통상시급 미입력 시 일급여÷일소정시간 환산 (최저임금 위반 방지)
+          const _dwH = getAmountVal('ct-daily-wage');
+          const _hrsH = parseFloat(document.getElementById('ct-hours')?.value) || 8;
+          _compareHourly  = hourlyWage > 0 ? hourlyWage : (_dwH > 0 && _hrsH > 0 ? Math.round(_dwH / _hrsH) : 0);
+          _compareMonthly = _dwH * (_hrsH > 0 ? Math.round(209 / _hrsH) : 1);
+        } else {
+          _compareHourly  = hourlyWage;
+          _compareMonthly = monthly;
+        }
       }
 
       if(_compareHourly > 0 && _compareHourly < _effectiveMinWage){
@@ -4307,7 +4437,34 @@ async function saveContract(){
     const _hasBothFilesEdit = !!(signedFileData && consentFileData);
   }
 
-  const body={employee_id:empId,company_id:coId,contract_start:contractStart,contract_end:contractEnd,contract_type:contractType,status:contractStatus,probation_months:probMonths,probation_pct:probPct,probation_amt:probAmt,probation_basis:probBasis,probation_end_date:document.getElementById('ct-probation-end-date')?.value||null,work_hours_per_day:avgDayHours,work_days_per_week:isDailySave?0:workDaysCount,schedule_json:JSON.stringify(scheduleJSON),annual_leave_days:parseFloat(document.getElementById('ct-annual')?.value)||15,pre_used_annual_leave:parseFloat(document.getElementById('ct-pre-used-annual')?.value)||0,annual_salary:annual,monthly_salary_agreed:monthly,base_salary:baseSalaryForSave,daily_wage:dailyWageForSave,weekly_holiday_pay:weeklyHol,fixed_ot_pay:getAmountVal('ct-fixed-ot-pay'),fixed_ot_hours:typeof _weeklyToMonthlyHours==='function'?_weeklyToMonthlyHours('ct-fixed-ot-hours'):(parseFloat(document.getElementById('ct-fixed-ot-hours')?.value)||0),fixed_night_pay:getAmountVal('ct-fixed-night-pay'),fixed_night_hours:typeof _weeklyToMonthlyHours==='function'?_weeklyToMonthlyHours('ct-fixed-night-hours'):(parseFloat(document.getElementById('ct-fixed-night-hours')?.value)||0),fixed_hol_pay:getAmountVal('ct-fixed-hol-pay'),fixed_hol_hours:typeof _weeklyToMonthlyHours==='function'?_weeklyToMonthlyHours('ct-fixed-hol-hours'):(parseFloat(document.getElementById('ct-fixed-hol-hours')?.value)||0),hourly_wage:hourlyWage,position_allowance:getAmountVal('ct-position'),transportation_allowance:getAmountVal('ct-car'),transportation_pay_type:_getCTPayTypeVal('car'),self_driving_allowance:0,self_driving_pay_type:_getCTPayTypeVal('car'),remote_area_allowance:getAmountVal('ct-remote-area'),remote_area_pay_type:'fixed',meal_allowance:getAmountVal('ct-meal'),meal_pay_type:_getCTPayTypeVal('meal'),research_allowance:getAmountVal('ct-research'),research_pay_type:_getCTPayTypeVal('research'),site_allowance:getAmountVal('ct-site'),skill_allowance:getAmountVal('ct-skill'),license_allowance:getAmountVal('ct-license'),hazard_allowance:getAmountVal('ct-hazard'),custom_ordinary_values:JSON.stringify(typeof _getCustomOrdinaryValues==='function'?_getCustomOrdinaryValues():[]),communication_allowance:getAmountVal('ct-communication'),communication_pay_type:_getCTPayTypeVal('communication'),fitness_allowance:getAmountVal('ct-fitness'),fitness_pay_type:_getCTPayTypeVal('fitness'),self_dev_allowance:getAmountVal('ct-self-dev'),self_dev_pay_type:_getCTPayTypeVal('self_dev'),book_allowance:getAmountVal('ct-book'),book_pay_type:_getCTPayTypeVal('book'),overseas_allowance:getAmountVal('ct-overseas'),overseas_pay_type:_getCTPayTypeVal('overseas'),car_maintenance:getAmountVal('ct-car'),regular_bonus:getAmountVal('ct-regular-bonus')||0,childcare_allowance:getAmountVal('ct-childcare')||0,childcare_dependents:parseInt(document.getElementById('ct-childcare-dependents')?.value||0)||0,childcare_pay_type:_getCTPayTypeVal('childcare'),pay_period:document.getElementById('ct-pay-period')?.value.trim()||'',pay_period_month:document.getElementById('ct-pay-period-month-hidden')?.value||null,pay_period_day:parseInt(document.getElementById('ct-pay-period-day-hidden')?.value)||null,pay_day:parseInt(document.getElementById('ct-pay-day')?.value)||null,insurance_employment:true,insurance_industrial:true,insurance_pension:true,insurance_health:true,note:document.getElementById('ct-note').value,salary_start_date:contractStart,salary_end_date:contractEnd,is_draft:false,draft_saved_at:null,signed_file_name:signedFileName,signed_file_data:signedFileData,consent_file_name:consentFileName,consent_file_data:consentFileData};
+  const body={employee_id:empId,company_id:coId,contract_start:contractStart,contract_end:contractEnd,contract_type:contractType,status:contractStatus,probation_months:probMonths,probation_pct:probPct,probation_amt:probAmt,probation_basis:probBasis,probation_end_date:document.getElementById('ct-probation-end-date')?.value||null,work_hours_per_day:avgDayHours,work_days_per_week:isDailySave?0:workDaysCount,schedule_json:JSON.stringify(scheduleJSON),annual_leave_days:parseFloat(document.getElementById('ct-annual')?.value)||15,pre_used_annual_leave:parseFloat(document.getElementById('ct-pre-used-annual')?.value)||0,annual_salary:annual,monthly_salary_agreed:monthly,base_salary:baseSalaryForSave,daily_wage:dailyWageForSave,weekly_holiday_pay:weeklyHol,fixed_ot_pay:getAmountVal('ct-fixed-ot-pay'),fixed_ot_hours:typeof _weeklyToMonthlyHours==='function'?_weeklyToMonthlyHours('ct-fixed-ot-hours'):(parseFloat(document.getElementById('ct-fixed-ot-hours')?.value)||0),fixed_night_pay:getAmountVal('ct-fixed-night-pay'),fixed_night_hours:typeof _weeklyToMonthlyHours==='function'?_weeklyToMonthlyHours('ct-fixed-night-hours'):(parseFloat(document.getElementById('ct-fixed-night-hours')?.value)||0),fixed_hol_pay:getAmountVal('ct-fixed-hol-pay'),fixed_hol_hours:typeof _weeklyToMonthlyHours==='function'?_weeklyToMonthlyHours('ct-fixed-hol-hours'):(parseFloat(document.getElementById('ct-fixed-hol-hours')?.value)||0),hourly_wage:hourlyWage,position_allowance:getAmountVal('ct-position'),transportation_allowance:getAmountVal('ct-car'),transportation_pay_type:_getCTPayTypeVal('car'),self_driving_allowance:0,self_driving_pay_type:_getCTPayTypeVal('car'),remote_area_allowance:getAmountVal('ct-remote-area'),remote_area_pay_type:'fixed',meal_allowance:getAmountVal('ct-meal'),meal_pay_type:_getCTPayTypeVal('meal'),research_allowance:getAmountVal('ct-research'),research_pay_type:_getCTPayTypeVal('research'),site_allowance:getAmountVal('ct-site'),skill_allowance:getAmountVal('ct-skill'),license_allowance:getAmountVal('ct-license'),hazard_allowance:getAmountVal('ct-hazard'),custom_ordinary_values:JSON.stringify(typeof _getCustomOrdinaryValues==='function'?_getCustomOrdinaryValues():[]),communication_allowance:getAmountVal('ct-communication'),communication_pay_type:_getCTPayTypeVal('communication'),fitness_allowance:getAmountVal('ct-fitness'),fitness_pay_type:_getCTPayTypeVal('fitness'),self_dev_allowance:getAmountVal('ct-self-dev'),self_dev_pay_type:_getCTPayTypeVal('self_dev'),book_allowance:getAmountVal('ct-book'),book_pay_type:_getCTPayTypeVal('book'),overseas_allowance:getAmountVal('ct-overseas'),overseas_pay_type:_getCTPayTypeVal('overseas'),car_maintenance:getAmountVal('ct-car'),regular_bonus:getAmountVal('ct-regular-bonus')||0,childcare_allowance:getAmountVal('ct-childcare')||0,childcare_dependents:parseInt(document.getElementById('ct-childcare-dependents')?.value||0)||0,childcare_pay_type:_getCTPayTypeVal('childcare'),pay_period:document.getElementById('ct-pay-period')?.value.trim()||'',pay_period_month:document.getElementById('ct-pay-period-month-hidden')?.value||null,pay_period_day:parseInt(document.getElementById('ct-pay-period-day-hidden')?.value)||null,pay_day:(catForSave === CONTRACT_TYPE.DAILY) ? (document.getElementById('ct-pay-day-date')?.value || null) : (parseInt(document.getElementById('ct-pay-day')?.value)||null),insurance_employment:true,insurance_industrial:true,insurance_pension:true,insurance_health:true,note:document.getElementById('ct-note').value,salary_start_date:contractStart,salary_end_date:contractEnd,is_draft:false,draft_saved_at:null,signed_file_name:signedFileName,signed_file_data:signedFileData,consent_file_name:consentFileName,consent_file_data:consentFileData};
+
+  // ── 일용직 임금 지급 방법 필드 (일급/주급/월합산 + 주급 산정기간 시작 요일) ──
+  if(isDailySave){
+    const _pmS = (typeof _ctPayMethodVal === 'function' ? _ctPayMethodVal() : '') || 'monthly';
+    body.pay_method = _pmS;
+    if(_pmS === 'monthly'){
+      // 월합산: 지급일 = 매월 n일(숫자), 산정기준일 = 개별 편집값
+      body.pay_day = parseInt(document.getElementById('ct-pay-day')?.value) || null;
+      body.pay_period_day_override = parseInt(document.getElementById('ct-pay-period-day-hidden')?.value) || null;
+      body.pay_condition = null; body.pay_after_days = null; body.pay_weekday = null; body.pay_period_weekday = null;
+    } else if(_pmS === 'daily'){
+      // 일급: 지급일 = 근무일(당일/n일 후) → 고정 지급일 없음
+      body.pay_day = null;
+      body.pay_condition = document.querySelector('input[name="ct-pay-condition"]:checked')?.value || 'same_day';
+      body.pay_after_days = parseInt(document.getElementById('ct-pay-after-days')?.value) || null;
+      body.pay_weekday = null; body.pay_period_weekday = null; body.pay_period_day_override = null;
+    } else {
+      // 주급: 지급일 = 매주 요일, 산정기간 시작 요일(선택)
+      body.pay_day = null;
+      body.pay_weekday = parseInt(document.getElementById('ct-pay-weekday')?.value) || null;
+      body.pay_period_weekday = parseInt(document.getElementById('ct-pay-period-weekday')?.value) || null;
+      body.pay_condition = null; body.pay_after_days = null; body.pay_period_day_override = null;
+    }
+  } else {
+    body.pay_method = null; body.pay_condition = null; body.pay_after_days = null;
+    body.pay_weekday = null; body.pay_period_weekday = null; body.pay_period_day_override = null;
+  }
 
   // 재계약 연장 페어: renewed_from_id 추가 (기존 계약과 연속되는 경우)
   if(_recontractSourceId){

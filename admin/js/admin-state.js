@@ -301,6 +301,7 @@ async function loadHeavyData(){
       renderDashProbationBanner();
       renderDashSeveranceBanner();
       renderDashRetirementBanner();
+      renderDashDailyPayBanner(); // 일용직 급여 처리 할일 배너
     }
     // 수습 근로자 관리 페이지 활성화 시 고객사 칩 갱신
     if(document.getElementById('page-probation-mgmt')?.classList.contains('active')){

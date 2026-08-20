@@ -180,10 +180,14 @@ async function _checkWageLedgerComplete(companyId, year, month, changedEmpId = n
       .filter(p => !p.is_draft && p.company_id === companyId && Number(p.pay_year)===year && Number(p.pay_month)===month)
       .map(p => p.employee_id)
   );
+  // ── (신규 원칙) 임금대장은 급여가 입력된 인원만으로 생성/갱신된다. ──
+  // 기존에는 해당 월 유효 계약 전원의 급여 입력이 완료되어야만 임금대장이 생성됐으나,
+  // 이제 급여가 한 명이라도 입력되면 즉시 임금대장(부분)을 생성한다.
+  if(inputtedEmpIds.size === 0) return; // 급여가 입력된 직원이 없으면 생성 안 함
+  // 전원 입력 완료 여부 (고객사 '임금대장 발행/갱신' 안내는 전원 완료 시에만 발송)
   const allInputted = _checkEmpIds.every(id => inputtedEmpIds.has(id));
-  if(!allInputted) return; // 아직 미입력 직원 있음
 
-  // ── 모든 직원 급여 입력 완료! ──
+  // ── 급여가 입력된 인원 기준으로 임금대장 알림 생성/갱신 ──
   // 이미 해당 년월 알림이 존재하는지 확인 (중복 방지)
   const existingNotif = allWLNotifications.find(n =>
     n.company_id === companyId && Number(n.pay_year)===year && Number(n.pay_month)===month
@@ -246,9 +250,11 @@ async function _checkWageLedgerComplete(companyId, year, month, changedEmpId = n
   if(document.getElementById('page-wage-ledger')?.classList.contains('active')){
     renderWLCompanyList();
   }
-  // 완료 토스트
+  // 완료 토스트 (전원 입력 완료 시에만)
   const co = allCompanies.find(x=>x.id===companyId);
-  toast(`📋 ${co?.company_name||''} ${year}년 ${month}월 임금대장이 생성되었습니다!`, 'success');
+  if(allInputted){
+    toast(`📋 ${co?.company_name||''} ${year}년 ${month}월 임금대장이 생성되었습니다!`, 'success');
+  }
 
   // ── 신고용 Excel + HTML(열람용) 자동 생성 및 파일서버 저장 ──
   let _wlFileHtmlPath = '';
@@ -292,7 +298,8 @@ async function _checkWageLedgerComplete(companyId, year, month, changedEmpId = n
   }
 
   // ── 고객사 앱 인앱 알림 발송 (임금대장 발행 + PDF 링크) ──
-  if (typeof _sendCompanyNotice === 'function') {
+  //  부분 생성 중에는 발송하지 않고, 전원 입력 완료(allInputted) 시에만 발행/갱신 안내
+  if (allInputted && typeof _sendCompanyNotice === 'function') {
     try {
       const _wlCo = allCompanies.find(x => x.id === companyId) || {};
       const _coRep = typeof getCompanyRepGreeting === 'function'
@@ -652,8 +659,8 @@ function renderWageLedger(){
   const yr = parseInt(document.getElementById('wl-year-filter')?.value);
   const mo = parseInt(document.getElementById('wl-month-filter')?.value);
 
-  // 해당 월 급여 데이터
-  const pays = allPayrolls.filter(p =>
+  // 해당 월 급여 데이터 (임시저장 포함 — 아래에서 확정분만 필터링)
+  let pays = allPayrolls.filter(p =>
     p.company_id === _wlCompanyId &&
     Number(p.pay_year) === yr &&
     Number(p.pay_month) === mo
@@ -672,10 +679,10 @@ function renderWageLedger(){
   };
 
   // ==========================================================
-  //  선행 조건 검증 — 열람 대상 월(yr/mo)에 유효했던 계약 기준
-  //  ① 해당 월에 유효했던 계약 중 임시저장 계약 없음
-  //  ② 해당 월에 유효했던 계약 중 서류미비 계약 없음
-  //  ③ 해당 월에 유효했던 계약 직원 전원의 급여 입력 완료
+  //  열람 대상 월(yr/mo)에 유효했던 계약 기준의 직원 파악
+  //  (신규 원칙) 임금대장은 급여가 입력된 인원만으로 표시한다.
+  //  → 전원 급여 입력 완료를 요구하지 않으며, 미입력/임시저장은
+  //    정보 배너로만 안내된다.
   //
   //  ★ "해당 월에 유효"의 정의:
   //     contract_start <= 대상월 말일
@@ -725,120 +732,29 @@ function renderWageLedger(){
   // 임시저장만 있는 직원 (확정 저장 없음)
   const draftOnlyPay   = validEmpIds.filter(eid => !confirmedPayEmpIds.has(eid) &&  draftPayEmpIds.has(eid));
 
-  // 하나라도 조건 미충족 → 차단 UI 표시 (서류미비는 차단 사유에서 제외)
-  const hasBlock = draftContracts.length > 0 || missingPay.length > 0 || draftOnlyPay.length > 0;
+  // ══════════════════════════════════════════════════════════════════
+  //  ★ (신규 원칙) 임금대장은 급여가 입력된 인원만으로 표시한다.
+  //    기존: 해당 월 유효 계약 전원의 급여 입력이 완료되어야 열람 가능 (차단).
+  //    변경: 급여가 입력된 직원은 즉시 임금대장에 반영된다.
+  //    미입력/임시저장 직원은 아래 정보 배너로만 안내하고 열람을 차단하지 않는다.
+  // ══════════════════════════════════════════════════════════════════
+  // 임금대장 표시 대상 = 확정 저장된 급여(pays)만 (임시저장 제외)
+  pays = pays.filter(p => !p.is_draft);
 
-  if(hasBlock){
-    _setWLBtns(false);
-
-    // 사유 카드 HTML 생성 헬퍼
-    const _empInitial = name => (name||'?').charAt(0);
-    const _empInfo = id => {
-      const e = allEmployees.find(x => x.id === id);
-      return e ? { name: e.name, dept: e.department||'', pos: e.position||'' } : { name:'(미지정)', dept:'', pos:'' };
-    };
-    const _coName = _wlCompanyName || '';
-
-    // 카드①: 임시저장 계약
-    const draftCard = draftContracts.length === 0 ? '' : `
-    <div class="wl-block-card">
-      <div class="wl-block-card-head">
-        <div class="wl-block-card-icon draft"><i class="fas fa-pencil-alt"></i></div>
-        <div class="wl-block-card-title">${yr}년 ${mo}월 유효 계약 중 임시저장 — 최종 등록 필요</div>
-        <span class="wl-block-card-badge draft">${draftContracts.length}건</span>
-      </div>
-      <div class="wl-block-item-list">
-        ${draftContracts.map(c => {
-          const ei = _empInfo(c.employee_id);
-          return `<div class="wl-block-item">
-            <div class="wl-block-item-left">
-              <div class="wl-block-item-avatar">${_empInitial(ei.name)}</div>
-              <div>
-                <div class="wl-block-item-name">${ei.name}</div>
-                <div class="wl-block-item-sub">${ei.dept}${ei.pos ? ' · '+ei.pos : ''} · 작성일: ${(c.updated_at ? new Date(c.updated_at).toLocaleDateString('ko-KR') : '-')}</div>
-              </div>
-            </div>
-            <button class="wl-block-item-link draft" onclick="goDraftContract('${c.id}')">
-              <i class="fas fa-edit"></i> 계속 작성 →
-            </button>
-          </div>`;
-        }).join('')}
-      </div>
+  // 미입력/임시저장 안내 배너 (비차단)
+  const _pendingParts = [];
+  if(draftContracts.length > 0) _pendingParts.push(`임시저장 계약 ${draftContracts.length}건`);
+  const _pendingNames = [...draftOnlyPay, ...missingPay].map(eid => {
+    const _e = allEmployees.find(x => x.id === eid);
+    const _nm = _e ? _e.name : '(미지정)';
+    return draftPayEmpIds.has(eid) ? `${_nm}(임시저장)` : _nm;
+  });
+  if(_pendingNames.length > 0) _pendingParts.push(`급여 미입력 ${_pendingNames.length}명 (${_pendingNames.join(', ')})`);
+  const _pendingBanner = _pendingParts.length === 0 ? '' : `
+    <div style="display:flex;align-items:flex-start;gap:8px;padding:8px 14px;margin-bottom:12px;background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;font-size:12px;color:#92400e;line-height:1.6;">
+      <span style="font-size:14px;line-height:1.4;">ℹ️</span>
+      <span><strong>${yr}년 ${mo}월</strong> ${_pendingParts.join(' · ')}<br>급여가 입력된 인원만 임금대장에 표시됩니다. 급여 입력 시 자동 반영됩니다.</span>
     </div>`;
-
-    // 카드②: 급여 미입력 + 임시저장 중 직원 통합 표시
-    const allPayPending = [...draftOnlyPay, ...missingPay]; // 임시저장 먼저
-    const payCard = allPayPending.length === 0 ? '' : (() => {
-      const draftSet = new Set(draftOnlyPay);
-      const rows = allPayPending.map(eid => {
-        const ei       = _empInfo(eid);
-        const isDraft  = draftSet.has(eid);
-        const draftRec = isDraft ? pays.find(p => p.employee_id === eid && !!p.is_draft) : null;
-        const savedAt  = draftRec?.draft_saved_at
-          ? new Date(draftRec.draft_saved_at).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})
-          : '';
-        const subText  = isDraft
-          ? `임시저장 중${savedAt ? '  ·  ' + savedAt : ''}`
-          : (ei.dept || ei.pos ? (ei.dept + (ei.pos ? ' · '+ei.pos : '')) : '미입력');
-        const subColor = isDraft ? '#15803d' : '#64748b';
-        const btnCls   = isDraft ? 'btn btn-teal btn-sm' : 'btn btn-danger btn-sm';
-        const btnLabel = isDraft
-          ? `<i class="fas fa-play-circle"></i> 이어 입력`
-          : `<i class="fas fa-calculator"></i> 급여 입력`;
-        const btnStyle = isDraft
-          ? 'padding:5px 12px;font-size:11.5px;'
-          : 'padding:5px 12px;font-size:11.5px;';
-        const badge    = isDraft
-          ? `<span class="wl-block-item-draft-badge"><i class="fas fa-save" style="font-size:9px;"></i> 임시저장</span>`
-          : '';
-        return `<div class="wl-block-item">
-          <div class="wl-block-item-left">
-            <div class="wl-block-item-avatar" style="${isDraft?'background:linear-gradient(135deg,#d1fae5,#a7f3d0);color:#065f46;':''}">${_empInitial(ei.name)}</div>
-            <div>
-              <div class="wl-block-item-name">${ei.name}${badge}</div>
-              <div class="wl-block-item-sub" style="color:${subColor};">${subText}</div>
-            </div>
-          </div>
-          <button class="${btnCls}" style="${btnStyle}" onclick="_wlGoToPayInput('${eid}')">
-            ${btnLabel}
-          </button>
-        </div>`;
-      }).join('');
-
-      const totalCnt  = allPayPending.length;
-      const draftCnt  = draftOnlyPay.length;
-      const missCnt   = missingPay.length;
-      const badgeExtra = draftCnt > 0
-        ? ` <span style="font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:12px;background:#dcfce7;color:#15803d;margin-left:4px;">임시저장 ${draftCnt}명</span>`
-        : '';
-
-      return `<div class="wl-block-card">
-        <div class="wl-block-card-head">
-          <div class="wl-block-card-icon pay"><i class="fas fa-won-sign"></i></div>
-          <div class="wl-block-card-title">${yr}년 ${mo}월 급여 미입력 직원${badgeExtra}</div>
-          <span class="wl-block-card-badge pay">${totalCnt}명</span>
-        </div>
-        <div class="wl-block-item-list">${rows}</div>
-      </div>`;
-    })();
-
-    area.innerHTML = `
-    <div class="wl-block-wrap">
-      <div class="wl-block-header">
-        <div class="wl-block-header-icon">⚠️</div>
-        <div class="wl-block-header-body">
-          <div class="wl-block-header-title">임금대장을 표시할 수 없습니다</div>
-          <div class="wl-block-header-sub">
-            <strong>${yr}년 ${mo}월</strong> 기준으로 유효했던 계약과 급여 데이터가 모두 완비되어야 임금대장을 열람할 수 있습니다.<br>
-            완료되지 않은 선행 작업을 클릭하여 바로 이동하세요.
-          </div>
-        </div>
-      </div>
-      ${draftCard}
-      ${payCard}
-    </div>`;
-    return;
-  }
 
   // 유효 계약이 아예 없는 경우(신규 고객사 등) → 계약 없음 안내
   if(validEmpIds.length === 0 && !pays.length){
@@ -884,6 +800,27 @@ function renderWageLedger(){
 
   const wonNum = v => (!v || v === 0) ? 0 : Number(v);
   const num    = v => { const n = Number(v); return (!v || n === 0) ? '-' : n.toLocaleString('ko-KR'); };
+
+  // ── 월합산 원칙: 같은 직원의 산정기간 내 급여명세서가 여러 건이면 항목별 누적합산 ──
+  //    (일용직 월합산: 급여산정기준 기간 내 발행된 급여명세서 항목을 한 행으로 합산 표시)
+  {
+    const _num = v => { const n = Number(v); return (!v || isNaN(n)) ? 0 : n; };
+    const _MERGE_FIELDS = [...sumFields];
+    const _mergeInto = (acc, b) => {
+      for(const k of _MERGE_FIELDS) acc[k] = _num(acc[k]) + _num(b[k]);
+      acc.pay_count = (Number(acc.pay_count)||1) + 1;
+      return acc;
+    };
+    const _byEmp = new Map();
+    // ── 합산 키: employee_id + 사번 스냅샷 — 재입사(새 사번)는 분리, 연속 계약만 합산 ──
+    const _mergeKey = p => `${p.employee_id}||${p.employee_number || ''}`;
+    pays.forEach(p => {
+      const _k = _mergeKey(p);
+      if(!_byEmp.has(_k)) _byEmp.set(_k, { ...p, pay_count: 1 });
+      else _byEmp.set(_k, _mergeInto(_byEmp.get(_k), p));
+    });
+    pays = Array.from(_byEmp.values());
+  }
 
   // == 6행 헤더 테이블 렌더링 ==
   // 열 구성 (총 13열):
@@ -1015,6 +952,10 @@ function renderWageLedger(){
   const _visRows = _rowVisible.map((v,i)=>v?i:-1).filter(i=>i>=0);
   // 원본 인덱스 → 표시 인덱스 매핑
   const _rowMap = [0,1,2,3,4].map(i => _visRows.indexOf(i)); // -1 = 숨김
+  const fmtV = v => {  // normal (비굵게)
+    const n = Number(v);
+    return (!v || n === 0) ? '' : n.toLocaleString('ko-KR');
+  };
   const fmtB = v => {  // bold
     const n = Number(v);
     return (!v || n === 0) ? '' : `<strong>${n.toLocaleString('ko-KR')}</strong>`;
@@ -1140,7 +1081,7 @@ function renderWageLedger(){
       .sort((a,b)=>(b.contract_start||'').localeCompare(a.contract_start||''))[0]?.contract_end) || '';
 
     const cls = `wl-data-row${isSum?' wl-sum-row':''}`;
-    const empNo   = isSum ? '' : (emp.employee_number||'-');
+    const empNo   = isSum ? '' : (p.employee_number || emp.employee_number || '-');
     const empName = isSum ? `합계 (${pays.length}명)` : (emp.name||'-');
     const dept = isSum ? '' : (emp.department||'');
     const pos  = isSum ? '' : (emp.position||'');
@@ -1237,6 +1178,7 @@ function renderWageLedger(){
     <div style="padding:10px 16px 6px;font-size:12px;color:#6b7280;">
       ${_wlCompanyName} &nbsp;·&nbsp; ${yr}년 ${mo}월 임금대장 &nbsp;·&nbsp; 총 <strong style="color:#1a1a2e;">${pays.length}명</strong>
     </div>
+    ${_pendingBanner}
     ${_wlRenewalBanner(yr, mo)}
     <div class="wl-ledger-wrap">
       <table class="wl-ledger-tbl">${CG}
@@ -1365,7 +1307,7 @@ async function _downloadEditExcel(pays, empMap, yr, mo, moStr) {
   // ── 열 정의: [헤더레이블, 값추출함수(p), 너비(wch)] ──
   const COLDEF = [
     ['No',              (_p,i) => i+1, 5],
-    ['사원번호',        p => (empMap[p.employee_id]||{}).employee_number||'', 10],
+    ['사원번호',        p => (p.employee_number || (empMap[p.employee_id]||{}).employee_number || ''), 10],
     ['성명',            p => (empMap[p.employee_id]||{}).name||'', 10],
     ['부서',            p => (empMap[p.employee_id]||{}).department||'', 8],
     ['직책',            p => (empMap[p.employee_id]||{}).position||'', 8],
@@ -1536,7 +1478,7 @@ async function _downloadEditExcel(pays, empMap, yr, mo, moStr) {
         });
 
         const _attTypeLabel = { absent:'결근', late:'지각', earlyleave:'조퇴' };
-        const _absentLabel = { unauthorized:'무단', sick_unpaid:'병가(무급)', sick_paid:'병가(유급)', industrial:'산재', menstrual:'생리휴가', maternity_paid:'출산(유급)', maternity_unpaid:'출산(무급)', paternity_paid:'배우자출산', childcare_leave:'육아휴직', family_care:'가족돌봄', layoff_leave:'휴업휴직' };
+        const _absentLabel = { unauthorized:'무단', sick_unpaid:'병가(무급)', sick_paid:'병가(유급)', industrial:'산재', menstrual:'생리휴가', maternity_paid:'출산(유급)', maternity_unpaid:'출산(무급)', paternity_paid:'배우자출산', childcare_leave:'육아휴직', family_care:'가족돌봄', approved_unpaid:'사전승인 무급휴가', layoff_leave:'휴업(회사사정)' };
         const ATT_COLS = 8;
         const _attCells = {};
         let _attRow = 0;

@@ -911,7 +911,7 @@ function _buildDocx(){
     const st = new Date(data.contractStart);
     st.setMonth(st.getMonth() + parseInt(data.probationMonths));
     st.setDate(st.getDate()-1);
-    probEndDate = st.toISOString().slice(0,10);
+    probEndDate = fmtLocalDate(st);
   }
 
   // 계약기간 표현
@@ -949,11 +949,50 @@ function _buildDocx(){
     salaryRows.push(infoRow('월 약정임금 합계', won(data.monthlySalary), true));
     salaryRows.push(infoRow('통상시급', won(data.hourlyWage)+'/시간'));
   } else {
-    salaryRows.push(infoRow('일급여', won(data.dailyWage), true));
+    // 일용직: 통상일급(시급×8) + 일 기준 고정수당 → 일급여 합계
+    salaryRows.push(infoRow('통상일급', `${won(Math.round((data.hourlyWage||0)*8))} (시급×8, 일 8시간 기준)`));
+    if(data.positionAllowance>0) salaryRows.push(infoRow('직책수당(일급)', won(data.positionAllowance)));
+    if(data.siteAllowance>0) salaryRows.push(infoRow('현장수당(일급)', won(data.siteAllowance)));
+    if(data.skillAllowance>0) salaryRows.push(infoRow('기술수당(일급)', won(data.skillAllowance)));
+    if(data.licenseAllowance>0) salaryRows.push(infoRow('면허수당(일급)', won(data.licenseAllowance)));
+    if(data.hazardAllowance>0) salaryRows.push(infoRow('위험수당(일급)', won(data.hazardAllowance)));
+    if(data.remoteAreaAllowance>0) salaryRows.push(infoRow('벽지수당(일급)', won(data.remoteAreaAllowance)));
+    if(data.carMaintenance>0) salaryRows.push(infoRow('차량지원비(일급)', won(data.carMaintenance)));
+    if(data.mealAllowance>0) salaryRows.push(infoRow('식대(일급)', won(data.mealAllowance)));
+    if(data.researchAllowance>0) salaryRows.push(infoRow('연구보조비(일급)', won(data.researchAllowance)));
+    if(data.communicationAllowance>0) salaryRows.push(infoRow('통신비(일급)', won(data.communicationAllowance)));
+    if(data.fitnessAllowance>0) salaryRows.push(infoRow('체력증진비(일급)', won(data.fitnessAllowance)));
+    if(data.selfDevAllowance>0) salaryRows.push(infoRow('자기계발비(일급)', won(data.selfDevAllowance)));
+    if(data.bookAllowance>0) salaryRows.push(infoRow('도서지원비(일급)', won(data.bookAllowance)));
+    if(data.overseasAllowance>0) salaryRows.push(infoRow('해외근무수당(일급)', won(data.overseasAllowance)));
+    if(data.childcareAllowance>0) salaryRows.push(infoRow('보육수당', won(data.childcareAllowance)));
+    if(data.weeklyHol>0) salaryRows.push(infoRow('주휴수당', won(data.weeklyHol)));
+    salaryRows.push(infoRow('일급여 합계', won(data.dailyWage), true));
   }
-  salaryRows.push(infoRow('임금 지급일', data.payDay ? `매월 ${data.payDay}일` : '매월 말일'));
+  // 일용직: 지급방법별 임금 지급일 표기
+  let _payDayStr = '';
+  if(data.isDaily){
+    const _PM = data.payMethod || 'monthly';
+    const _WD = ['일','월','화','수','목','금','토'];
+    if(_PM === 'daily'){
+      _payDayStr = data.payCondition === 'after_n_days'
+        ? `근무일로부터 ${data.payAfterDays || 'n'}일 후 지급`
+        : '근무일 당일 지급';
+    } else if(_PM === 'weekly'){
+      const _pws = (data.payPeriodWeekday >= 0 && data.payPeriodWeekday <= 6) ? data.payPeriodWeekday : -1;
+      _payDayStr = (data.payWeekday >= 0 && data.payWeekday <= 6)
+        ? (_pws >= 0 ? `매주 ${_WD[_pws]}요일~${_WD[data.payWeekday]}요일 근무분 · ${_WD[data.payWeekday]}요일 지급` : `매주 ${_WD[data.payWeekday]}요일 지급`)
+        : '매주 지급 요일 미설정';
+    } else {
+      const _payD = data.payDay ? (typeof data.payDay === 'number' ? data.payDay : (parseInt(String(data.payDay).slice(8,10)) || 0)) : 0;
+      _payDayStr = _payD ? `매월 ${_payD}일` : '매월 말일';
+    }
+    salaryRows.push(infoRow('임금 지급일', _payDayStr));
+    salaryRows.push(infoRow('임금 지급 주기', data.payMethodLabel || '월합산'));
+  } else {
+    salaryRows.push(infoRow('임금 지급일', data.payDay ? `매월 ${data.payDay}일` : '매월 말일'));
+  }
   salaryRows.push(infoRow('지급 방법', '근로자 명의 계좌 직접 입금'));
-
   const doc = new Document({
     creator:'대화인사노무파트너스',
     description:'표준 근로계약서',
@@ -1225,7 +1264,13 @@ function _collectContractData(){
     bizNumber:         company.business_number||'',
     companyAddr:       company.address||'',
     representative:    getCompanyRepName(company),
-    payDay:            document.getElementById('ct-pay-day')?.value || '',
+    payDay:            isDaily ? (document.getElementById('ct-pay-day-date')?.value || '') : (document.getElementById('ct-pay-day')?.value || ''),
+    payMethod:         isDaily ? ((typeof _ctPayMethodVal === 'function' ? _ctPayMethodVal() : '') || 'daily') : 'monthly',
+    payMethodLabel:    isDaily ? ({daily:'일급', weekly:'주급', monthly:'월합산'}[(typeof _ctPayMethodVal === 'function' ? _ctPayMethodVal() : '') || 'daily'] || '일급') : '매월',
+    payCondition:      isDaily ? (document.querySelector('input[name="ct-pay-condition"]:checked')?.value || 'same_day') : '',
+    payAfterDays:      isDaily ? (parseInt(document.getElementById('ct-pay-after-days')?.value) || 0) : 0,
+    payWeekday:        isDaily ? (parseInt(document.getElementById('ct-pay-weekday')?.value) || -1) : -1,
+    payPeriodWeekday:  isDaily ? (parseInt(document.getElementById('ct-pay-period-weekday')?.value) || -1) : -1,
     empName, phone, address, idNumber, jobDescription, department, position,
     contractStart:     document.getElementById('ct-start')?.value || '',
     contractEnd:       document.getElementById('ct-end')?.value || '',
@@ -1247,6 +1292,7 @@ function _collectContractData(){
     mealPayType:         _getCTPayTypeVal('meal'),
     researchAllowance:   getAmountVal('ct-research'),
     researchPayType:     _getCTPayTypeVal('research'),
+    childcareAllowance:  getAmountVal('ct-childcare')||0,
     siteAllowance:       getAmountVal('ct-site')||0,
     skillAllowance:      getAmountVal('ct-skill')||0,
     licenseAllowance:    getAmountVal('ct-license')||0,
@@ -1336,7 +1382,28 @@ function generateContractHTML(){
   }
 
   // 임금지급일
-  const payDayStr = d.payDay ? ('매월 ' + d.payDay + '일') : '매월 말일';
+  // 임금지급일 (일용직: 지급방법별 표기)
+  let payDayStr = '';
+  if(d.isDaily){
+    const _PM = d.payMethod || 'monthly';
+    const _WD = ['일','월','화','수','목','금','토'];
+    if(_PM === 'daily'){
+      payDayStr = d.payCondition === 'after_n_days'
+        ? `근무일로부터 ${d.payAfterDays || 'n'}일 후 지급`
+        : '근무일 당일 지급';
+    } else if(_PM === 'weekly'){
+      const _pws = (d.payPeriodWeekday >= 0 && d.payPeriodWeekday <= 6) ? d.payPeriodWeekday : -1;
+      payDayStr = (d.payWeekday >= 0 && d.payWeekday <= 6)
+        ? (_pws >= 0 ? `매주 ${_WD[_pws]}요일~${_WD[d.payWeekday]}요일 근무분 · ${_WD[d.payWeekday]}요일 지급` : `매주 ${_WD[d.payWeekday]}요일 지급`)
+        : '매주 지급 요일 미설정';
+    } else {
+      const _payD = d.payDay ? (typeof d.payDay === 'number' ? d.payDay : (parseInt(String(d.payDay).slice(8,10)) || 0)) : 0;
+      payDayStr = _payD ? `매월 ${_payD}일` : '매월 말일';
+    }
+  } else {
+    payDayStr = d.payDay ? ('매월 ' + d.payDay + '일') : '매월 말일';
+  }
+  const payFreqStr = d.isDaily ? (d.payMethodLabel || '월합산') : '';
 
   // 연봉 표현
   const annualStr = d.annualSalary && d.annualSalary > 0 ? ('연봉 ' + won(d.annualSalary) + '원') : '';
@@ -1424,7 +1491,25 @@ function generateContractHTML(){
     ${d.isDaily ? `
     <table class="info-table">
       <colgroup><col style="width:32%"><col style="width:68%"></colgroup>
-      ${row('일급여', `<strong class="highlight">${won(d.dailyWage)}원</strong>`)}
+      ${row('통상일급', `${won(Math.round((d.hourlyWage||0)*8))}원 (시급×8, 일 8시간 기준)`)}
+      ${d.positionAllowance>0 ? row('직책수당(일급)', `${won(d.positionAllowance)}원`) : ''}
+      ${d.siteAllowance>0 ? row('현장수당(일급)', `${won(d.siteAllowance)}원`) : ''}
+      ${d.skillAllowance>0 ? row('기술수당(일급)', `${won(d.skillAllowance)}원`) : ''}
+      ${d.licenseAllowance>0 ? row('면허수당(일급)', `${won(d.licenseAllowance)}원`) : ''}
+      ${d.hazardAllowance>0 ? row('위험수당(일급)', `${won(d.hazardAllowance)}원`) : ''}
+      ${d.remoteAreaAllowance>0 ? row('벽지수당(일급)', `${won(d.remoteAreaAllowance)}원`) : ''}
+      ${d.carMaintenance>0       ? row('차량지원비(일급)', `${won(d.carMaintenance)}원`)       : ''}
+      ${d.mealAllowance>0        ? row('식대(일급)',      `${won(d.mealAllowance)}원`)        : ''}
+      ${d.researchAllowance>0    ? row('연구보조비(일급)', `${won(d.researchAllowance)}원`)    : ''}
+      ${d.communicationAllowance>0 ? row('통신비(일급)',   `${won(d.communicationAllowance)}원`) : ''}
+      ${d.fitnessAllowance>0     ? row('체력증진비(일급)', `${won(d.fitnessAllowance)}원`)     : ''}
+      ${d.selfDevAllowance>0     ? row('자기계발비(일급)', `${won(d.selfDevAllowance)}원`)     : ''}
+      ${d.bookAllowance>0        ? row('도서지원비(일급)', `${won(d.bookAllowance)}원`)        : ''}
+      ${d.overseasAllowance>0    ? row('해외근무수당(일급)', `${won(d.overseasAllowance)}원`)  : ''}
+      ${d.childcareAllowance>0   ? row('보육수당',        `${won(d.childcareAllowance)}원`)   : ''}
+      ${d.weeklyHol > 0 ? row('주휴수당', `${won(d.weeklyHol)}원`) : ''}
+      <tr class="total-row"><th>일급여 합계</th><td><strong class="highlight">${won(d.dailyWage)}원</strong></td></tr>
+      ${payFreqStr ? row('임금 지급 주기', payFreqStr) : ''}
       ${row('임금 지급일', payDayStr + ' (현금 또는 계좌이체)')}
     </table>
     ` : `

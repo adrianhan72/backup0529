@@ -12,6 +12,7 @@ function _buildPIBody(){
   const c = window._piCalc || {};
   return {
     employee_id:     empId,
+    employee_number: (allEmployees.find(e=>e.id===empId)||{}).employee_number || '',
     company_id:      coId,
     pay_year:        yr,
     pay_month:       mo,
@@ -94,6 +95,114 @@ function _buildPIBody(){
     custom_fixed_values:    JSON.stringify(typeof _getPIFixedCustomValues === 'function' ? _getPIFixedCustomValues() : []),
     etc_allowance_items:    JSON.stringify(typeof _getPIEtcAllowanceItems === 'function' ? _getPIEtcAllowanceItems() : []),
   };
+}
+
+// ==============================================================================
+// _sendDailyPayslipAlerts()
+//   일용직 급여 확정 저장 시 → 급여명세서 즉시 생성 + 고객사 인앱 알림
+//   + 근로자에게 다운로드 경로를 안내하는 메시지(SMS) 발송
+//   ※ 일용직만 대상 (일급여 지급일 기준 즉시 발급)
+// ==============================================================================
+async function _sendDailyPayslipAlerts({ coId, empId, empName, yr, mo, payrollId, netPay = 0 }){
+  // 일용직만 대상
+  const _isDaily = piContract && piContract.contract_type === CONTRACT_TYPE.DAILY;
+  if(!_isDaily || !payrollId || !coId) return;
+
+  // 1) 급여명세서 HTML 즉시 생성 (서버 단건) — 지정된 급여일 기준 즉시 발급
+  let _psUrl = '';
+  try {
+    const _res = await api('../api/generate-payslip-pdfs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ companyId: coId, year: yr, month: mo, payrollId })
+    });
+    if(_res && _res.ok && Array.isArray(_res.files) && _res.files.length > 0){
+      _psUrl = _res.files[0].htmlUrl || '';
+    }
+  } catch(e){ console.warn('[일용직] 급여명세서 즉시 생성 실패:', e.message); }
+
+  const _fullUrl = _psUrl ? (window.location.origin + _psUrl) : '';
+  const _co  = allCompanies.find(x => x.id === coId) || {};
+  const _emp = allEmployees.find(x => x.id === empId) || {};
+  const _coRep = (typeof getCompanyRepGreeting === 'function') ? getCompanyRepGreeting(_co) : '';
+  const _netWon = (Number(netPay)||0).toLocaleString('ko-KR');
+
+  // 2) 고객사 인앱 알림 (급여명세서 발급 + 다운로드/조회 링크)
+  if(coId && typeof _sendCompanyNotice === 'function'){
+    try {
+      await _sendCompanyNotice({
+        companyId  : coId, companyName: _co.company_name || '',
+        noticeType : 'payslip_dispatched',
+        title      : `[일용직 급여명세서 발급] ${empName || ''} — ${yr}년 ${mo}월`,
+        body       :
+`안녕하세요${_coRep}.
+
+일용직 근로자의 급여명세서가 발급되어 즉시 확인하실 수 있습니다.
+
+■ 근로자: ${empName || ''}
+■ 지급 기간: ${yr}년 ${mo}월
+■ 실수령액: ${_netWon}원
+■ 급여명세서: ${_fullUrl || '(링크 생성 실패 — 급여명세서 메뉴에서 확인)'}
+■ 발급 일시: ${new Date().toLocaleString('ko-KR')}
+
+급여명세서 메뉴에서 상세 내역을 확인하실 수 있습니다.`,
+        employeeId : empId, employeeName: empName || '',
+        extraData  : {
+          ruleVars: {
+            '{근로자명}': empName || '',
+            '{급여년도}': String(yr),
+            '{급여월}': String(mo),
+            '{발송방법}': '일용직 자동 발급 (SMS 링크 안내)',
+            '{발송시각}': new Date().toLocaleString('ko-KR'),
+          }
+        },
+      });
+    } catch(e){ console.warn('[일용직] 고객사 인앱 알림 실패:', e.message); }
+  }
+
+  // 3) 근로자 다운로드 경로 안내 메시지 (SMS)
+  const _phone = _emp.phone || _emp.mobile || '';
+  if(_phone && _fullUrl){
+    try {
+      const _text =
+`[${_co.company_name || '회사'}] ${yr}년 ${mo}월 급여명세서가 발급되었습니다.
+
+▶ 급여명세서 다운로드: ${_fullUrl}
+
+※ 모바일에서 링크를 열어 확인하실 수 있습니다.
+※ 급여 관련 문의: ${_co.company_name || ''} 담당자
+
+인사톡 노무톡 · 대화인사노무파트너스`;
+      const _smsRes = await fetch('/api/kakao/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: _phone, type: 'sms', text: _text })
+      });
+      if(_smsRes.ok){
+        // 발송 로그 기록 (payroll_send_logs)
+        try {
+          const _sentBy = sessionStorage.getItem('admin_username') || 'admin';
+          const _log = {
+            id: 'psl_' + Date.now() + '_' + empId,
+            company_id: coId, employee_id: empId, payroll_id: payrollId,
+            pay_year: yr, pay_month: mo,
+            sent_at: new Date().toISOString(), sent_by: _sentBy,
+            send_method: 'sms', note: '일용직 급여명세서 다운로드 경로 안내 (급여 입력 시 자동 발송)'
+          };
+          await api('../tables/payroll_send_logs', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(_log)
+          });
+          if(typeof _pssSendLogs !== 'undefined' && _pssCompanyId === coId) _pssSendLogs.push(_log);
+        } catch(le){ console.warn('[일용직] 발송 로그 저장 실패:', le.message); }
+      } else {
+        console.warn('[일용직] 근로자 SMS 발송 실패 (HTTP ' + _smsRes.status + ')');
+      }
+    } catch(e){ console.warn('[일용직] 근로자 SMS 발송 오류:', e.message); }
+  } else if(!_phone){
+    console.warn('[일용직] 근로자 전화번호 미등록 — 다운로드 경로 메시지 생략:', empName);
+  }
 }
 
 // ==============================================================================
@@ -521,6 +630,8 @@ async function savePI(){
     await _syncPayrollToLedger(empId, yr, mo, body.annual_leave_used || 0);
     // 임금대장 완성 여부 체크
     await _checkWageLedgerComplete(coId, yr, mo, empId);
+    // ── 일용직: 급여명세서 즉시 생성 + 고객사 인앱 알림 + 근로자 다운로드 경로 메시지 ──
+    await _sendDailyPayslipAlerts({ coId, empId, empName: (allEmployees.find(x=>x.id===empId)||{}).name || '', yr, mo, payrollId: piEditPayrollId, netPay: body.net_pay || 0 });
     // 고객사 인앱 알림 발송 (급여 수정 완료)
     {
       const _piCo  = allCompanies.find(x => x.id === coId) || {};
@@ -579,6 +690,8 @@ async function savePI(){
     await _syncPayrollToLedger(empId, yr, mo, body.annual_leave_used || 0);
     // 임금대장 완성 여부 체크
     await _checkWageLedgerComplete(coId, yr, mo, empId);
+    // ── 일용직: 급여명세서 즉시 생성 + 고객사 인앱 알림 + 근로자 다운로드 경로 메시지 ──
+    await _sendDailyPayslipAlerts({ coId, empId, empName: (allEmployees.find(x=>x.id===empId)||{}).name || '', yr, mo, payrollId: _newPayrollId, netPay: body.net_pay || 0 });
     // 고객사 인앱 알림 발송 (급여 입력 완료 — 개별 건)
     {
       const _piCo  = allCompanies.find(x => x.id === coId) || {};
@@ -663,7 +776,7 @@ async function _autoCreateConfirmedContract(probEndDate){
   const probEndObj  = new Date(probEndDate);
   const newStartObj = new Date(probEndObj);
   newStartObj.setDate(newStartObj.getDate() + 1);
-  const newStart = newStartObj.toISOString().slice(0,10);
+  const newStart = fmtLocalDate(newStartObj);
 
   // 계약 종료일:
   //   계약직 → 원본 수습 계약의 contract_end (약정 만료일) 유지
@@ -813,7 +926,7 @@ async function savePISplit(){
   // 채용확정 기간 시작일
   const postStartObj = new Date(probEnd);
   postStartObj.setDate(postStartObj.getDate() + 1);
-  const postStart = postStartObj.toISOString().slice(0, 10);
+  const postStart = fmtLocalDate(postStartObj);
 
   // 해당 월 말일
   const lastDay  = new Date(yr, mo, 0).getDate();
@@ -869,6 +982,7 @@ async function savePISplit(){
   // ── 공통 payroll 필드 헬퍼 ──
   const baseBody = {
     employee_id:     empId,
+    employee_number: (allEmployees.find(e=>e.id===empId)||{}).employee_number || '',
     company_id:      coId,
     pay_year:        yr,
     pay_month:       mo,

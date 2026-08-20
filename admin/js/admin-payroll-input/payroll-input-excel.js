@@ -22,7 +22,7 @@ async function _probAutoCreateAndSave(){
     `채용확정 근로계약서(${confirmedType})를 자동 생성하고\n` +
     `${yr}년 ${mo}월 급여를 저장합니다.\n\n` +
     `· 수습 종료일: ${probEnd}\n` +
-    `· 신규 계약 시작일: ${(()=>{ const d=new Date(probEnd); d.setDate(d.getDate()+1); return d.toISOString().slice(0,10); })()}\n\n` +
+    `· 신규 계약 시작일: ${(()=>{ const d=new Date(probEnd); d.setDate(d.getDate()+1); return fmtLocalDate(d); })()}\n\n` +
     `계속하시겠습니까?`;
   if(!confirm(confirmMsg)) return;
 
@@ -1145,7 +1145,7 @@ function validateAndParseExcel(wb, fileName){
       const start = new Date(e.date);
       const end = e.dateTo ? new Date(e.dateTo) : new Date(e.date);
       for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-        absentDates.add(d.toISOString().slice(0, 10));
+        absentDates.add(fmtLocalDate(d));
       }
     });
     const monthStart = `${targetYear}-${String(targetMonth).padStart(2,'0')}-01`;
@@ -1161,7 +1161,7 @@ function validateAndParseExcel(wb, fileName){
       for (let d = new Date(Math.max(w, new Date(monthStart))); d <= new Date(Math.min(we2, new Date(monthEnd))); d.setDate(d.getDate() + 1)) {
         if (d.getDay() === 0 || d.getDay() === 6) continue;
         wDays++;
-        if (absentDates.has(d.toISOString().slice(0, 10))) wAbsent++;
+        if (absentDates.has(fmtLocalDate(d))) wAbsent++;
       }
       if (wDays > 0) { totalWeeks++; if (wAbsent >= wDays) missedWeeks++; }
     }
@@ -1182,7 +1182,7 @@ function validateAndParseExcel(wb, fileName){
           const start = new Date(e.date);
           const end = e.dateTo ? new Date(e.dateTo) : new Date(e.date);
           for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-            allAbsentDates.add(d.toISOString().slice(0, 10));
+            allAbsentDates.add(fmtLocalDate(d));
           }
         });
         const dayMap = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
@@ -1300,7 +1300,7 @@ function validateAndParseExcel(wb, fileName){
       const start = new Date(e.date);
       const end = e.dateTo ? new Date(e.dateTo) : new Date(e.date);
       for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-        const ds = d.toISOString().slice(0, 10);
+        const ds = fmtLocalDate(d);
         if (ds.startsWith(targetMonthStr)) protectedDates.add(ds);
       }
     });

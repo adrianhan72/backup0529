@@ -1,7 +1,7 @@
 -- =============================================================================
 -- 인사톡 노무톡 — SQLite Schema (한글 주석 포함)
 -- node dump_schema.js 로 자동 생성 (ALTER TABLE 반영)
--- 최종 갱신: 2026-08-19
+-- 최종 갱신: 2026-08-20
 -- 테이블 수: 28개
 -- =============================================================================
 
@@ -163,7 +163,13 @@ CREATE TABLE IF NOT EXISTS contracts (
   custom_fixed_values TEXT DEFAULT NULL, --  -- 사용자정의 고정 값
   created_reason TEXT, --  -- 계약 생성 사유 (new/renewal/recontract/amended_reissue)
   hire_reason TEXT, --  -- 입사 사유 (new_hire/re_hire/contract_renewal/probation_end)
-  close_reason TEXT --  -- 계약 종료 사유 (resignation/dismissal/expiry/renewal/void)
+  close_reason TEXT, --  -- 계약 종료 사유 (resignation/dismissal/expiry/renewal/void)
+  pay_method TEXT, --  -- 임금 지급 방법 (daily=일급/weekly=주급/monthly=월합산)
+  pay_condition TEXT, --  -- 일급 지급 조건 (same_day=당일/after_n_days=n일 후)
+  pay_after_days INTEGER, --  -- 일급 지급 n일 후 (n)
+  pay_weekday INTEGER, --  -- 주급 지급 요일 (0=일~6=토)
+  pay_period_day_override INTEGER, --  -- 월합산 산정기준일 (개별 편집, null=고객사 설정)
+  pay_period_weekday INTEGER --  -- 주급 산정기간 시작 요일 (0=일~6=토, null=자동: 지급일 당일까지 1주)
 );
 
 CREATE INDEX IF NOT EXISTS idx_contracts_employee ON contracts(employee_id);
@@ -459,7 +465,8 @@ CREATE TABLE IF NOT EXISTS payrolls (
   retro_earlyleave_data TEXT DEFAULT '[]', --  -- 소급 조퇴 상세 (JSON)
   custom_ordinary_values TEXT DEFAULT NULL, --  -- 통상임금 포함 사용자정의
   custom_fixed_values TEXT DEFAULT NULL, --  -- 사용자정의 고정 값
-  etc_allowance_items TEXT DEFAULT NULL --  -- 기타 수당 항목
+  etc_allowance_items TEXT DEFAULT NULL, --  -- 기타 수당 항목
+  employee_number TEXT --  -- 사번 스냅샷 (급여 저장 당시)
 );
 
 CREATE INDEX IF NOT EXISTS idx_payrolls_employee ON payrolls(employee_id);

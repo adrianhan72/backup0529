@@ -473,6 +473,7 @@ function _ctPeriodCompose(){
     if(moHidden)  moHidden.value  = '';
     if(dayHidden) dayHidden.value = '';
   }
+  if(typeof _ctPayMethodPeriodInfo === 'function') _ctPayMethodPeriodInfo('monthly', true); // 월합산 자동 안내 갱신
 }
 
 /** 저장된 pay_period 값 → ct-pay-period 셀렉트에 복원 */
@@ -513,6 +514,30 @@ function autoFillAnnualLeave(){
   const basis     = company?.annual_leave_basis || 'fiscal_year';
 
   const contractStart = document.getElementById('ct-start')?.value || '';
+
+  // ── 주 15시간 미만 단시간 근로자: 연차휴가 법적 미적용 (근로기준법 제18조제3항) ──
+  //    일용직도 1주 소정근로시간(15시간) 기준으로 판별 (주 15h 미만 → 연차 0)
+  //    일용직은 주 근무일수 미지정(0) 시 5일로 추정 (급여입력과 동일 기준)
+  const _ctHours = parseFloat(document.getElementById('ct-hours')?.value) || 0;
+  const _ctDaysRaw = parseFloat(document.getElementById('ct-days')?.value) || 0;
+  const _rawCatAL = (editId.contract || _recontractEmpId)
+    ? (document.getElementById('ct-type')?.value || '')
+    : _ctNewCat();
+  const _catAL = CONTRACT_TYPE_LEGACY_MAP[_rawCatAL] || _rawCatAL;
+  const _daysForH = _catAL === CONTRACT_TYPE.DAILY ? (_ctDaysRaw || 5) : _ctDaysRaw;
+  const _weeklyHours = _ctHours * _daysForH;
+  if(_weeklyHours > 0 && _weeklyHours < 15){
+    const annualEl0 = document.getElementById('ct-annual');
+    if(annualEl0) annualEl0.value = 0;
+    const hintEl0 = document.getElementById('ct-annual-hint');
+    if(hintEl0){
+      hintEl0.textContent = `(주 소정 ${_weeklyHours}h < 15h → 연차 미적용 · 근로기준법 제18조제3항)`;
+      hintEl0.style.display = 'inline';
+    }
+    if(typeof _onCTPreUsedAnnualChange === 'function') _onCTPreUsedAnnualChange();
+    return;
+  }
+
   const days = calcAnnualLeaveDays(hireDateStr, basis, contractStart);
   if(days === null) return;
 
@@ -569,6 +594,8 @@ function toggleAnnualSal(){
   const isRegularProb   = cat ===CONTRACT_TYPE.REGULAR_PROBATION;              // 정규직 수습
   const isFixedTerm    = cat ===CONTRACT_TYPE.FIXED || cat ===CONTRACT_TYPE.FIXED_PROBATION;
   const isDaily        = cat ===CONTRACT_TYPE.DAILY;
+  if(isDaily) _dailyWageManual = false; // 일용직 전환 시 일급여는 시급 기준 자동계산 상태로 리셋
+  _ctPayMethodApply(); // 일용직: 임금 지급 방법(일급/주급/월합산) UI / 그 외: 월 합산 산정기간
 
   // ── 상단 섹션 타이틀·라벨 업데이트 ──
   const salaryPeriodTitle = document.getElementById('ct-salary-period-title');
@@ -588,10 +615,10 @@ function toggleAnnualSal(){
     if(wageSectionTitle)  wageSectionTitle.textContent = '임금 조건 (월)';
     if(labelMonthly)      labelMonthly.innerHTML      = '월 약정임금 <span class="lbl-desc">(자동계산)</span>';
   } else if(isDaily){
-    if(salaryPeriodTitle) salaryPeriodTitle.innerHTML = '일 약정일급 <span class="ct-req-star">*</span>';
+    if(salaryPeriodTitle) salaryPeriodTitle.innerHTML = '일급여 <span class="ct-req-star">*</span>';
     if(wageSectionTitle)  wageSectionTitle.textContent = '임금 조건 (일일 기준)';
     if(labelMonthly)      labelMonthly.innerHTML      = '일 약정임금 <span class="lbl-desc">(자동계산)</span>';
-    if(dailyWageLabel)    dailyWageLabel.innerHTML    = '일 약정일급 (통상일급) <span class="ct-req-star">*</span>';
+    if(dailyWageLabel)    dailyWageLabel.innerHTML    = '일급여 <span class="ct-req-star">*</span>';
   }
 
   // ── (일급) suffix 토글 ──
@@ -647,19 +674,21 @@ function toggleAnnualSal(){
   }
   if(isDaily){
     setAmountVal('ct-base', 0);
-    document.getElementById('ct-weekly-hol-computed').textContent = '0원';
     document.getElementById('ct-monthly-computed').textContent = '0원';
-    document.getElementById('ct-days').value = 5;
     document.getElementById('ct-annual').value = 0;
+    // 일급여는 자동계산(readonly) — 통상일급(시급×8) + 일일 수당 합산
+    const dailyWageInput = document.getElementById('ct-daily-wage');
+    if(dailyWageInput) dailyWageInput.readOnly = true;
     // 일용직: 고정 연장/야간/휴일근로수당 숨김
     ['ct-row-fixed-ot','ct-row-fixed-night','ct-row-fixed-hol'].forEach(id => {
       const el = document.getElementById(id); if(el) el.style.display = 'none';
     });
-    // 일용직: 모든 통상임금 및 고정수당 항목 숨김 + 값 초기화
+    // 일용직: 통상임금 포함·제외 고정수당을 모두 일(일급) 기준으로 표시 (월 단위 항목 제외)
     if(typeof _CT_OPT_ROWS !== 'undefined'){
       _CT_OPT_ROWS.forEach(({key, rowId}) => {
-        const el = document.getElementById(rowId); if(el) el.style.display = 'none';
-        // 값 초기화
+        const el = document.getElementById(rowId); if(!el) return;
+        el.style.display = _CT_DAILY_ALLOW_KEYS.has(key) ? '' : 'none';
+        // 값 초기화 (일용직 전환 시 일일 기준 금액 재입력)
         if(key === 'childcare'){
           setAmountVal('ct-childcare', 0);
           const depEl = document.getElementById('ct-childcare-dependents');
@@ -676,7 +705,10 @@ function toggleAnnualSal(){
     });
   } else {
     const dw = document.getElementById('ct-daily-wage');
-    if(dw) dw.value = '';
+    if(dw){ dw.value = ''; dw.readOnly = false; }
+    // 주휴수당 산정 안내 힌트: 비일용직(월급제 등)은 숨김
+    const _holHint = document.getElementById('ct-weekly-hol-hint');
+    if(_holHint) _holHint.style.display = 'none';
     // 일용직 → 타 고용형태 전환 시: 숨겨진 allowance 행 복원
     if(typeof _CT_OPT_ROWS !== 'undefined' && typeof _ctAllowCfgVisible !== 'undefined'){
       _CT_OPT_ROWS.forEach(({key, rowId}) => {
@@ -761,7 +793,7 @@ function _autoCalcProbationEndDate(){
   const startDate = new Date(startVal);
   startDate.setMonth(startDate.getMonth() + months);
   startDate.setDate(startDate.getDate() - 1);
-  const endStr = startDate.toISOString().slice(0,10);
+  const endStr = fmtLocalDate(startDate);
 
   // 수습 종료일 필드에 자동 계산값 표시 (contract_end와 별도)
   const probEndEl = document.getElementById('ct-probation-end-date');
@@ -2000,7 +2032,7 @@ function findPairContract(c){
   if(c.terminate_date){
     const _nextDay = new Date(c.terminate_date);
     _nextDay.setDate(_nextDay.getDate() + 1);
-    const _nextStr = _nextDay.toISOString().slice(0, 10);
+    const _nextStr = fmtLocalDate(_nextDay);
     const datePair = allContracts.find(x =>
       x.company_id === c.company_id &&
       x.employee_id === c.employee_id &&
@@ -2012,7 +2044,7 @@ function findPairContract(c){
   if(c.contract_start){
     const _prevDay = new Date(c.contract_start);
     _prevDay.setDate(_prevDay.getDate() - 1);
-    const _prevStr = _prevDay.toISOString().slice(0, 10);
+    const _prevStr = fmtLocalDate(_prevDay);
     const datePair = allContracts.find(x =>
       x.company_id === c.company_id &&
       x.employee_id === c.employee_id &&
@@ -2066,7 +2098,7 @@ async function syncPairDates(oldContract, newStartDate){
   const newPairEnd = (() => {
     const d = new Date(newStartDate);
     d.setDate(d.getDate() - 1);
-    return d.toISOString().slice(0, 10);
+    return fmtLocalDate(d);
   })();
   
   const currentEnd = oldContract.terminate_date || oldContract.contract_end || '';
@@ -2307,6 +2339,9 @@ function setCTPayType(field, type){
 // 항상 통상임금 포함 (pay_type 선택 불가)
 const _CT_FIXED_ALLOWANCES = new Set(['site','position','skill','license','hazard','remote_area','regular_bonus']);
 
+// 일용직에서 일(일급) 기준으로 표시·합산되는 수당 (통상임금 포함 + 제외, 월 단위 항목 제외)
+const _CT_DAILY_ALLOW_KEYS = new Set(['site','position','skill','license','hazard','remote_area','car','meal','research','communication','fitness','self_dev','book','overseas']);
+
 function _getCTPayTypeVal(field){
   // 항상 포함 항목은 무조건 fixed, 그 외는 사용자 선택 따름 (기본값 ''=미포함)
   if (_CT_FIXED_ALLOWANCES.has(field)) return 'fixed';
@@ -2358,7 +2393,10 @@ function applyCTAllowanceConfig(cfg, clearValues = false){
     const rowEl = document.getElementById(rowId);
     // pay_type이 'fixed'인 항목만 근로계약서에 표시 (daily/receipt 등 비고정 항목은 급여 입력 시 직접 입력)
     const payType = (cfg && cfg[`${key}_pay_type`]) || 'fixed';
-    const visible = isDaily ? false : !!(cfg && cfg[key] && payType === 'fixed');
+    // 일용직: 통상임금 포함·제외 고정수당을 모두 일(일급) 기준으로 표시 (월 단위 항목 제외)
+    const visible = isDaily
+      ? _CT_DAILY_ALLOW_KEYS.has(key)
+      : !!(cfg && cfg[key] && payType === 'fixed');
     if(rowEl) rowEl.style.display = visible ? '' : 'none';
     if(!visible && clearValues){
       if(key === 'childcare'){
@@ -2789,6 +2827,110 @@ function _setCtPayDayDefault(coId){
   }
 }
 
+/** 일용직 임금 지급 방법 값 (daily/weekly/monthly/'' ) */
+function _ctPayMethodVal(){
+  const r = document.querySelector('input[name="ct-pay-method"]:checked');
+  return r ? r.value : '';
+}
+
+/** 일용직 지급 방법 라디오 복원 */
+function _ctPayMethodSetVal(method){
+  const r = document.querySelector(`input[name="ct-pay-method"][value="${method}"]`);
+  if(r) r.checked = true;
+}
+
+/** 일용직 지급 방법 변경 시 UI 갱신 */
+function _ctPayMethodChange(){
+  const isDaily = (function(){
+    const rawCat = (editId.contract || _recontractEmpId)
+      ? (document.getElementById('ct-type')?.value || '')
+      : _ctNewCat();
+    const cat = CONTRACT_TYPE_LEGACY_MAP[rawCat] || rawCat;
+    return cat === CONTRACT_TYPE.DAILY;
+  })();
+  const method = isDaily ? (_ctPayMethodVal() || 'daily') : 'monthly';
+
+  const panelDaily  = document.getElementById('ct-pay-method-daily');
+  const panelWeekly = document.getElementById('ct-pay-method-weekly');
+  const panelMonth  = document.getElementById('ct-pay-method-monthly');
+  if(panelDaily)  panelDaily.style.display  = (method==='daily')   ? '' : 'none';
+  if(panelWeekly) panelWeekly.style.display = (method==='weekly')  ? '' : 'none';
+  if(panelMonth)  panelMonth.style.display  = (method==='monthly') ? '' : 'none';
+
+  // 월 합산 산정기간/급여일 행: 비일용직 또는 월합산일 때만 표시
+  const showMonthlyRows = !isDaily || method==='monthly';
+  const periodRow = document.getElementById('ct-pay-period-row');
+  if(periodRow) periodRow.style.display = showMonthlyRows ? '' : 'none';
+
+  _toggleCtPayDayInput(!showMonthlyRows, method);
+  _ctPayMethodPeriodInfo(method, isDaily);
+  if(typeof _checkRegisterBtnState === 'function') _checkRegisterBtnState();
+  if(typeof _checkAmendBtnState === 'function')    _checkAmendBtnState();
+}
+
+/** 일용직 지급 방법별 자동 산정기간/급여일 안내 */
+function _ctPayMethodPeriodInfo(method, isDaily){
+  const WK = ['일','월','화','수','목','금','토'];
+  const infoDaily  = document.getElementById('ct-pay-method-daily-info');
+  const infoMonth  = document.getElementById('ct-pay-method-monthly-info');
+  if(infoDaily){
+    const cond = document.querySelector('input[name="ct-pay-condition"]:checked')?.value || '';
+    const n = document.getElementById('ct-pay-after-days')?.value || '';
+    const payTxt = cond==='after_n_days' ? `근무일로부터 ${n||'n'}일 후 지급` : '근무일 당일 지급';
+    infoDaily.textContent = `급여 산정기간: 매일 (자동) · 급여일: ${payTxt}`;
+  }
+  if(infoMonth){
+    const daySel = document.getElementById('ct-pay-period-day')?.value || '';
+    const payDay = document.getElementById('ct-pay-day')?.value || '';
+    if(daySel){
+      const n = parseInt(daySel);
+      infoMonth.textContent = `급여 산정기간: 매월 ${n}일 ~ 다음 달 ${n-1}일 (계약기간 확인 자동) · 급여일: 매월 ${payDay||'?'}일`;
+    } else {
+      infoMonth.textContent = '급여 산정기간: 산정기준일(몇일)부터 1개월간 · 아래에서 산정기준월·기준일·지급일을 설정하세요.';
+    }
+  }
+}
+
+/** 일용직 지급 방법 UI 전체 적용 (카테고리 변경/수정 로드 시 호출) */
+function _ctPayMethodApply(){
+  const rawCat = (editId.contract || _recontractEmpId)
+    ? (document.getElementById('ct-type')?.value || '')
+    : _ctNewCat();
+  const cat = CONTRACT_TYPE_LEGACY_MAP[rawCat] || rawCat;
+  const isDaily = cat === CONTRACT_TYPE.DAILY;
+  const wrap = document.getElementById('ct-pay-method-wrap');
+  if(wrap) wrap.style.display = isDaily ? '' : 'none';
+  if(isDaily && !_ctPayMethodVal()) _ctPayMethodSetVal('daily'); // 기본: 일급
+  _ctPayMethodChange();
+}
+
+/** 급여일 입력 토글: 일용직(일급/주급)=자동안내 / 일용직(월합산)·그 외=매월 n일 */
+function _toggleCtPayDayInput(isDaily, method){
+  if(method === undefined) method = _ctPayMethodVal() || 'daily';
+  const monthlyWrap = document.getElementById('ct-pay-day-monthly-wrap');
+  const dateEl      = document.getElementById('ct-pay-day-date');
+  const autoEl      = document.getElementById('ct-pay-day-auto');
+  const suffix      = document.getElementById('ct-pay-day-label-suffix');
+  const showAuto    = !!isDaily && method !== 'monthly';
+  const showMonthly = !isDaily || method === 'monthly';
+  if(monthlyWrap) monthlyWrap.style.display = showMonthly ? '' : 'none';
+  if(dateEl) dateEl.style.display = 'none';
+  if(autoEl){
+    autoEl.style.display = showAuto ? '' : 'none';
+    if(showAuto){
+      if(method === 'daily'){
+        const cond = document.querySelector('input[name="ct-pay-condition"]:checked')?.value || 'same_day';
+        const n = document.getElementById('ct-pay-after-days')?.value || '';
+        autoEl.textContent = cond==='after_n_days' ? `근무일로부터 ${n||'n'}일 후 지급` : '근무일 당일 지급';
+      } else if(method === 'weekly'){
+        const wd = document.getElementById('ct-pay-weekday')?.value;
+        autoEl.textContent = wd ? `매주 ${['일','월','화','수','목','금','토'][parseInt(wd)]}요일 지급` : '매주 지급 요일 선택';
+      }
+    }
+  }
+  if(suffix) suffix.textContent = showAuto ? '(자동)' : '(매월)';
+}
+
 // 수정 모드 하위호환: allowance_config와 무관하게 DB에 저장된 값이 있는 항목 강제 노출
 // ※ 단, 통상임금 불포함(daily/receipt) 수당은 근로계약 임금조건에 노출하지 않으므로
 //    pay_type이 fixed인 항목만 force-show 대상으로 한정
@@ -2863,6 +3005,9 @@ function _calcMonthlyHolHours(hpd){
   return Math.round(hpd * 365 / 12 / 7);
 }
 
+// ── 일용직: 일급여 수동 입력 여부 (통상시급 변경 시 자동계산 일급여 갱신 기준) ──
+let _dailyWageManual = false;
+
 function calcContractSalary(){
   // 수정 모드이면 ct-edit-em-category, 신규이면 선택된 근로자 기준
   const rawCat = (editId.contract || _recontractEmpId)
@@ -2891,27 +3036,43 @@ function calcContractSalary(){
   const regularBonus_ct = getAmountVal('ct-regular-bonus')||0;
 
   if(isDaily){
-    // ── 일용직: 일 약정일급 + 일일 기준 수당 합산 ──
-    const dailyWage  = getAmountVal('ct-daily-wage');
-    const hours      = parseFloat(document.getElementById('ct-hours').value)||8;
+    // ── 일용직: 일급여(통상일급 + 일일 수당 합산) + 주휴수당(계약기간·근무시간표 기준) ──
     const hWage      = getAmountVal('ct-hourly-input') || 0;
 
     // 일용직은 기본급 0 (일급여 기준)
     setAmountVal('ct-base', 0);
 
-    // 통상시급이 입력되어 있고 일급이 0이면 자동계산: 일급 = 시급 × 일소정근로시간
-    if(hWage > 0 && dailyWage <= 0){
-      const autoDaily = Math.round(hWage * hours);
-      setAmountVal('ct-daily-wage', autoDaily);
+    // ── 일급여 = 통상일급(통상시급×8) + 통상임금 포함 수당(일) + 통상임금 제외 고정수당(일) ──
+    //    ※ 통상임금 제외 고정수당이 포함되므로 '통상일급'과는 다른 개념 (일급여 = 실지급 일당)
+    const ordinaryDailyAllow = site_ct + position + skill_ct + license_ct + hazard_ct + remoteArea;
+    const nonOrdinaryDailyAllow = car + meal + research + comm_ct + fitness_ct + selfDev_ct + book_ct + overseas_ct;
+    const autoDaily = Math.round(hWage * 8) + ordinaryDailyAllow + nonOrdinaryDailyAllow;
+    setAmountVal('ct-daily-wage', autoDaily);
+
+    // ── 주휴수당: 계약기간(시작·종료) + 근무시간표(1일시간·주근무일수) 모두 입력된 경우에만 산정 ──
+    //    (근로기준법 제55조 — 1주 15시간 이상 + 개근 시 유급 주휴일, 계약기간 일수 비례)
+    const hours     = parseFloat(document.getElementById('ct-hours').value);
+    const daysDaily = parseFloat(document.getElementById('ct-days').value);
+    const ctStart   = document.getElementById('ct-start')?.value || '';
+    const ctEnd     = document.getElementById('ct-end')?.value || '';
+    const hasSchedule = hours > 0 && daysDaily > 0;
+    const hasPeriod  = !!ctStart && !!ctEnd;
+    const weeklyHDaily = (hours||0) * (daysDaily||0);
+    let weeklyHolDaily = 0;
+    if(hasSchedule && hasPeriod && weeklyHDaily >= 15 && hWage > 0){
+      // 계약기간 일수 반영: 월 주휴시간(1일 시간×365÷12÷7) × (계약일수/30)
+      const _holH = _calcMonthlyHolHours(hours);
+      const _s = new Date(ctStart), _e = new Date(ctEnd);
+      const _contractDays = (!isNaN(_s) && !isNaN(_e) && _e >= _s) ? Math.round((_e - _s)/86400000) + 1 : 30;
+      weeklyHolDaily = Math.round(hWage * _holH * Math.min(1, _contractDays / 30));
     }
-
-    // 일일 수당 합계 (통상임금 포함 항목만)
-    const dailyAllowFixed = position + car + remoteArea + meal
-      + site_ct + skill_ct + license_ct + hazard_ct + research + comm_ct
-      + fitness_ct + selfDev_ct + book_ct + overseas_ct + regularBonus_ct;
-
-    document.getElementById('ct-weekly-hol-computed').textContent = '0원';
+    document.getElementById('ct-weekly-hol-computed').textContent = won(weeklyHolDaily);
     document.getElementById('ct-monthly-computed').textContent    = '0원';
+    // 주휴수당 산정 조건 미충족 안내 (계약기간·근무시간표 미입력 또는 주15h 미만)
+    const _holHint = document.getElementById('ct-weekly-hol-hint');
+    if(_holHint){
+      _holHint.style.display = (!hasSchedule || !hasPeriod || weeklyHDaily < 15) ? '' : 'none';
+    }
     _checkMinWageWarning();
     _checkRegisterBtnState();
     _checkAmendBtnState();

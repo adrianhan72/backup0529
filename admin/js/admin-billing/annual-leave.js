@@ -21,6 +21,98 @@ const LP_PAGE_SIZE   = 30;
 // ─────────────────────────────────────────────────────────────────
 
 /**
+ * 근태 관리대장(attendance_ledger) 기반 출근율 계산 (일용직 연차 개근·80% 판정용)
+ * - 소정근로일: 계약 근무요일(기본 월~금) 중 법정휴일 제외
+ * - 결근: 결근 유형(무단·병가 등) — 단, 회사 귀책(휴업휴직 layoff_leave)은 출근율 불리하게 반영 안 함
+ * - 기간: fromStr ~ toStr (YYYY-MM-DD)
+ * @returns {{ scheduled:number, absent:number, rate:number }}
+ */
+function calcAttendanceRate(empId, fromStr, toStr, contract){
+  const _num = v => { const n = Number(v); return isNaN(n) ? 0 : n; };
+  const dpw = _num(contract?.work_days_per_week) || 5; // 일용직은 미지정 시 5일 추정
+  // 결근 집합 (회사 귀책 layoff_leave 제외)
+  const absentSet = new Set();
+  (window._atlLedgerCache || []).forEach(l => {
+    if(l.employee_id !== empId) return;
+    let md = [];
+    try { md = typeof l.month_data === 'string' ? JSON.parse(l.month_data) : (l.month_data || []); } catch(e){}
+    (Array.isArray(md) ? md : []).forEach(e => {
+      if(e.type !== 'absent') return;
+      if(e.absentType === 'layoff_leave') return; // 회사 귀책 → 출근율 불리하지 않음
+      const exp = (typeof _atlExpandDateRange === 'function') ? _atlExpandDateRange(e.date, e.dateTo || '') : [e.date];
+      (Array.isArray(exp) ? exp : []).forEach(dd => absentSet.add(dd));
+    });
+  });
+  // 법정휴일(공휴일·근로자의 날) → 소정근로일에서 제외
+  const holSet = new Set();
+  try {
+    if(typeof getKoreanHolidays === 'function'){
+      for(let _y = _num(String(fromStr||'').slice(0,4)); _y <= _num(String(toStr||'').slice(0,4)); _y++){
+        (getKoreanHolidays(_y) || []).forEach(d => holSet.add(d));
+      }
+    }
+  } catch(e){}
+  const _d0 = fromStr ? new Date(fromStr) : null;
+  const _d1 = toStr   ? new Date(toStr)   : null;
+  if(!_d0 || !_d1 || isNaN(_d0) || isNaN(_d1)) return { scheduled:0, absent:0, rate:0 };
+  let scheduled = 0, absent = 0;
+  for(let d = new Date(_d0); d <= _d1; d.setDate(d.getDate() + 1)){
+    const dow = d.getDay();
+    const isWD = dpw >= 6 ? (dow !== 0) : (dow !== 0 && dow !== 6);
+    if(!isWD) continue;
+    const ds = fmtLocalDate(d);
+    if(holSet.has(ds)) continue;
+    scheduled++;
+    if(absentSet.has(ds)) absent++;
+  }
+  const rate = scheduled > 0 ? Math.max(0, (scheduled - absent) / scheduled) : 0;
+  return { scheduled, absent, rate };
+}
+
+/**
+ * 일용직(주 15시간 이상) 연차 일수 — 근태(개근·출근율 80%) 연동 계산
+ * - 1년 미만: 완료된 달 중 '개근'(결근 0일)한 달마다 1일 (최대 11일)
+ * - 1년 이상: 지난 1년 출근율 80% 이상 → 15일(+근속 가산), 미만 → 0일
+ */
+function calcDailyAnnualLeaveDays(empId, hireDateStr, contract){
+  const today = new Date(); today.setHours(0,0,0,0);
+  const hire = hireDateStr ? new Date(hireDateStr) : null;
+  if(!hire || isNaN(hire)) return 0;
+  hire.setHours(0,0,0,0);
+  // 만 년수 (오늘 기준)
+  let fullYears = 0;
+  for(let n = 1; n <= 40; n++){
+    const d = new Date(hire); d.setFullYear(hire.getFullYear() + n);
+    if(today >= d) fullYears = n; else break;
+  }
+  if(fullYears >= 1){
+    // 1년 이상: 지난 1년 출근율 80% 이상 → 15일(+가산), 미만 → 0
+    const _yrAgo = new Date(today); _yrAgo.setFullYear(_yrAgo.getFullYear() - 1);
+    const _st = calcAttendanceRate(empId, _fmtDate(_yrAgo), _fmtDate(today), contract);
+    if(_st.scheduled > 0 && _st.rate >= 0.8){
+      const bonus = fullYears >= 3 ? Math.floor((fullYears - 1) / 2) : 0;
+      return Math.min(15 + bonus, 25);
+    }
+    return 0;
+  }
+  // 1년 미만: 완료된 달 중 '개근'(결근 0일)한 달마다 1일 (최대 11일)
+  // - 입사월은 1일 시작이면 포함, 중도 입사면 제외 (완전한 1달 근무 기준)
+  // - 진행 중인 달은 제외 (완료된 달만 개근 판정)
+  let days = 0;
+  const _startMi = hire.getDate() === 1 ? 0 : 1;
+  // 입사월 다음 달(중도 입사)부터 평가 — 법정 최대 11일(1년 미만 월 개근 1일) 충족 위해 12개월 루프
+  for(let _mi = _startMi; _mi < 12; _mi++){
+    const _ms = new Date(hire.getFullYear(), hire.getMonth() + _mi, 1);
+    const _me = new Date(hire.getFullYear(), hire.getMonth() + _mi + 1, 0);
+    if(_ms > today) break;
+    if(_me >= today) break; // 진행 중인 달 제외
+    const _st = calcAttendanceRate(empId, _fmtDate(_ms), _fmtDate(_me), contract);
+    if(_st.scheduled > 0 && _st.absent === 0) days++;
+  }
+  return Math.min(days, 11); // 1년 미만 연차는 최대 11일
+}
+
+/**
  * 특정 직원의 연차 현황 계산
  * @param {object} emp       employees 레코드
  * @param {object} contract  해당 직원의 활성 계약 레코드
@@ -30,10 +122,26 @@ const LP_PAGE_SIZE   = 30;
  */
 function calcEmployeeAnnualLeave(emp, contract, company, refYear){
   if(!emp || !contract) return null;
-  // 일용직 제외
-  if((emp.employment_category||contract.contract_type) ===CONTRACT_TYPE.DAILY) return null;
+  // 일용직: 주 15시간 미만 → 연차 미적용 (근로기준법 제18조제3항)
+  //           주 15시간 이상 → 근태(개근·출근율 80%) 연동 계산 (아래)
+  const _isDailyAL = (emp.employment_category || contract.contract_type) === CONTRACT_TYPE.DAILY;
+  if(_isDailyAL){
+    const _alHpd = parseFloat(contract.work_hours_per_day) || 8;
+    const _alDpw = parseFloat(contract.work_days_per_week) || 5; // 미지정 시 5일 추정 (급여입력과 동일)
+    if(_alHpd * _alDpw < 15) return null;
+  }
 
-  const hireDateStr   = emp.hire_date || contract.contract_start || '';
+  let hireDateStr   = emp.hire_date || '';
+  // 일용직: 계약 연속성 무관 — hire_date가 없으면 이전 계약 포함 최초 계약 시작일 기준
+  if(!hireDateStr){
+    if(_isDailyAL){
+      const _allCts = (allContracts||[]).filter(c => c.employee_id === emp.id && !c.is_draft && c.contract_start);
+      const _earliest = _allCts.sort((a,b)=>(a.contract_start||'').localeCompare(b.contract_start||''))[0];
+      hireDateStr = _earliest?.contract_start || contract.contract_start || '';
+    } else {
+      hireDateStr = contract.contract_start || '';
+    }
+  }
   const basis         = company?.annual_leave_basis || 'fiscal_year';
   const contractStart = contract.contract_start || '';
 
@@ -85,9 +193,11 @@ function calcEmployeeAnnualLeave(emp, contract, company, refYear){
   let periodStart, periodEnd; // 사용 연차 집계 구간
 
   if(isUnder1Year_atBase){
-    // ── 1년 미만 구간: 오늘까지 완성된 개월 수 × 1일 (최대 11일) ──
-    // 실시간(오늘) 기준으로 발생한 연차 표시
-    totalDays = completedMonthsBetween(hire, today, 11);
+    // ── 1년 미만 구간 ──
+    // 일용직: 근태(개근 달) 연동 / 그 외: 오늘까지 완성된 개월 수 × 1일 (최대 11일)
+    totalDays = _isDailyAL
+      ? calcDailyAnnualLeaveDays(emp.id, hireDateStr, contract)
+      : completedMonthsBetween(hire, today, 11);
     // 사용 연차 집계: 입사월 ~ 오늘 달
     periodStart = { y: hire.getFullYear(), m: hire.getMonth() + 1 };
     periodEnd   = { y: today.getFullYear(), m: today.getMonth() + 1 };
@@ -100,7 +210,8 @@ function calcEmployeeAnnualLeave(emp, contract, company, refYear){
       if(baseDate >= nthAnniv(n)) fullYears = n; else break;
     }
     const bonus   = fullYears >= 3 ? Math.floor((fullYears - 1) / 2) : 0;
-    totalDays     = Math.min(15 + bonus, 25);
+    // 일용직: 지난 1년 출근율 80% 이상 → 15일(+가산), 미만 → 0 / 그 외: 15+가산
+    totalDays     = _isDailyAL ? calcDailyAnnualLeaveDays(emp.id, hireDateStr, contract) : Math.min(15 + bonus, 25);
 
     // 사용 연차 집계 구간
     if(basis === 'hire_date'){
@@ -209,7 +320,7 @@ function renderAlCompanyChips(){
 }
 
 /** 고객사 선택 */
-function selectAlCompany(companyId, companyName){
+async function selectAlCompany(companyId, companyName){
   _alCompanyId   = companyId;
   _alCompanyName = companyName;
   _alPage        = 1;
@@ -223,6 +334,13 @@ function selectAlCompany(companyId, companyName){
   const basis = co?.annual_leave_basis || 'fiscal_year';
   const basisEl = document.getElementById('al-basis-label');
   if(basisEl) basisEl.textContent = `연차 산정 기준 : ${basis === 'hire_date' ? '입사일 기준' : '회계년도 기준'}`;
+
+  // ── 근태 데이터 로드 (일용직 연차 개근·출근율 판정용) ──
+  try {
+    const _res = await fetch(`../tables/attendance_ledger?company_id=${companyId}&limit=1000`);
+    const _data = await _res.json();
+    window._atlLedgerCache = (_data.data || _data || []).filter(r => r.company_id === companyId);
+  } catch(e){ if(!window._atlLedgerCache) window._atlLedgerCache = []; }
 
   renderAlTable();
 }
@@ -244,10 +362,9 @@ function renderAlTable(){
   const searchQ = (document.getElementById('al-emp-search')?.value||'').trim().toLowerCase();
   const co      = allCompanies.find(c => c.id === _alCompanyId);
 
-  // ── 직원 필터링 (재직자만, 퇴직자·일용직 제외) ──
+  // ── 직원 필터링 (재직자만 — 일용직 포함, 주 15h 미만은 calcEmployeeAnnualLeave에서 제외) ──
   let emps = allEmployees.filter(e => {
     if(e.company_id !== _alCompanyId) return false;
-    if((e.employment_category||'') ===CONTRACT_TYPE.DAILY) return false;
     if(e.status !== EMP_STATUS.ACTIVE) return false;
     if(searchQ && !(e.name||'').toLowerCase().includes(searchQ)) return false;
     return true;

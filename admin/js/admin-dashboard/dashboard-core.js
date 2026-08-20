@@ -8,13 +8,86 @@ function _updateDashTodoGrid(){
   const todoSec = document.getElementById('dash-todo-section');
   if(!grid || !todoSec) return;
   const ids = ['dash-contract-unsent-section','dash-consent-section','dash-unsent-section',
-               'dash-probation-banner','dash-retirement-banner'];
+               'dash-daily-pay-section','dash-probation-banner','dash-retirement-banner'];
   const anyVisible = ids.some(id => {
     const el = document.getElementById(id);
     return el && el.style.display !== 'none' && el.innerHTML.trim().length > 0;
   });
   grid.style.display = anyVisible ? '' : 'none';
   todoSec.style.display = anyVisible ? '' : 'none';
+}
+
+// ─── 일용직 급여 처리 할일 배너 (지급방법별 지급 예정일 기준) ───
+function renderDashDailyPayBanner(){
+  const section = document.getElementById('dash-daily-pay-section');
+  if(!section) return;
+  if(typeof _heavyDataReady !== 'undefined' && !_heavyDataReady) return;
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const todayStr = fmtLocalDate(today);
+  const todayWk = today.getDay();
+  const todayYr = today.getFullYear();
+  const todayMo = today.getMonth() + 1;
+  const VALID = new Set([CONTRACT_STATUS.ACTIVE, CONTRACT_STATUS.DOCS_INCOMPLETE, CONTRACT_STATUS.PENDING]);
+  const PM_LABEL = {daily:'일급', weekly:'주급', monthly:'월합산'};
+  const _WD = ['일','월','화','수','목','금','토'];
+
+  const list = [];
+  (allContracts || []).forEach(c => {
+    if((c.contract_type||'') !== 'daily') return;
+    if(c.is_draft || c.is_voided_by_amend) return;
+    if(!VALID.has(c.status)) return;
+    const start = c.contract_start||'', end = c.contract_end||'';
+    if(start && start > todayStr) return;
+    if(end && end < todayStr) return;
+    const pm = c.pay_method || 'monthly';
+    let due = false, payTxt = '';
+    if(pm === 'daily'){
+      due = true; payTxt = '근무일 지급';
+    } else if(pm === 'weekly'){
+      const wd = parseInt(c.pay_weekday);
+      if(wd >= 0 && wd <= 6){ due = (wd === todayWk); payTxt = `매주 ${_WD[wd]}요일`; }
+      else { due = true; payTxt = '주급 요일 미설정'; }
+    } else {
+      const pd = parseInt(c.pay_day) || parseInt(c.pay_period_day_override) || parseInt(c.pay_period_day) || 0;
+      if(pd >= 1){ due = (today.getDate() >= pd); payTxt = `매월 ${pd}일`; }
+      else { due = true; payTxt = '월합산 지급일 미설정'; }
+    }
+    if(!due) return;
+    // 이미 이번 달 급여가 확정 저장되어 있으면 제외
+    const hasPay = (allPayrolls||[]).some(p =>
+      p.employee_id === c.employee_id && !p.is_draft &&
+      Number(p.pay_year) === todayYr && Number(p.pay_month) === todayMo
+    );
+    if(hasPay) return;
+    const emp = allEmployees.find(e => e.id === c.employee_id);
+    const co  = allCompanies.find(x => x.id === c.company_id);
+    list.push({ c, emp, co, empName: emp?.name||'(미지정)', coName: co?.company_name||'-', pm, pmLabel: PM_LABEL[pm]||pm, payTxt });
+  });
+
+  const total = list.length;
+  const inactive = total === 0;
+  const _sub = inactive
+    ? '오늘 처리할 일용직 급여가 없습니다'
+    : (list.slice(0,3).map(x => `${x.empName}(${x.pmLabel}·${x.payTxt})`).join(', ') + (total > 3 ? ` 외 ${total-3}건` : ''));
+
+  section.style.display = '';
+  section.innerHTML = `
+    <div class="dash-alert-banner daily-pay flat${inactive ? ' inactive' : ''}"
+         ${inactive ? '' : `onclick="showPage('payroll-input', document.querySelector('.menu-item[data-page=\\'payroll-input\\']'))"`}
+         style="--glow-color:rgba(249,115,22,.25);">
+      <div class="dash-alert-banner-icon">
+        <i class="fas fa-coins"></i>
+      </div>
+      <div class="dash-alert-banner-body">
+        <div class="dash-alert-banner-title">
+          일용직 급여 처리 <span class="dash-alert-banner-count">${total}건</span>
+        </div>
+        <div class="dash-alert-banner-sub">${_sub}</div>
+      </div>
+      ${inactive ? '' : '<div class="dash-alert-banner-arrow"><i class="fas fa-chevron-right"></i></div>'}
+    </div>`;
+  if(typeof _updateDashTodoGrid === 'function') _updateDashTodoGrid();
 }
 
 /* ─────────────────────────────────────────────────────────────────
@@ -713,7 +786,7 @@ function updateProbExtendPreview(){
   const newEnd = new Date(startDate);
   newEnd.setMonth(newEnd.getMonth() + months);
   newEnd.setDate(newEnd.getDate() - 1);
-  const newEndStr = newEnd.toISOString().slice(0, 10);
+  const newEndStr = fmtLocalDate(newEnd);
 
   const today = new Date(); today.setHours(0,0,0,0);
   const daysLeft = Math.round((newEnd - today) / (1000 * 60 * 60 * 24));
@@ -990,7 +1063,7 @@ async function execProbExtend(){
   const newEnd    = new Date(startDate);
   newEnd.setMonth(newEnd.getMonth() + newMonths);
   newEnd.setDate(newEnd.getDate() - 1);
-  const newEndStr = newEnd.toISOString().slice(0, 10);
+  const newEndStr = fmtLocalDate(newEnd);
   const today     = new Date(); today.setHours(0,0,0,0);
   const daysLeft  = Math.round((newEnd - today) / (1000*60*60*24));
 

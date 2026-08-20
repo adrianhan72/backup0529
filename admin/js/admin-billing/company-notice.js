@@ -354,10 +354,12 @@ async function _sendCompanyNotice({
   }
 
   // 변수 치환 (extraData에서 ruleVars 키로 전달된 경우)
+  //   키는 '{급여년도}' 형태 또는 '급여년도' 형태 모두 허용 (중괄호 이중 이스케이프 방지)
   const _vars = extraData?.ruleVars;
   if(_vars && typeof _vars === 'object'){
-    for(const [k, v] of Object.entries(_vars)){
+    for(const [kRaw, v] of Object.entries(_vars)){
       const _val = v != null ? String(v) : '';
+      const k = String(kRaw).replace(/^\{/, '').replace(/\}$/, '');
       title = title.replace(new RegExp('\\{'+k+'\\}', 'g'), _val);
       body  = body.replace(new RegExp('\\{'+k+'\\}', 'g'), _val);
     }

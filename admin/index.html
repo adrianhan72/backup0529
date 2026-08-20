@@ -15,7 +15,7 @@
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     <link rel="stylesheet" href="css/admin-base.css?v=20260818a" />
   <link rel="stylesheet" href="css/admin-modal.css?v=20260813c" />
-  <link rel="stylesheet" href="css/admin-contract.css?v=20260813c" />
+  <link rel="stylesheet" href="css/admin-contract.css?v=20260821i" />
   <link rel="stylesheet" href="css/admin-form.css?v=20260813c" />
   <link rel="stylesheet" href="css/admin-notice.css?v=20260813c" />
   <link rel="stylesheet" href="css/admin-payroll.css?v=20260813c" />
@@ -2033,12 +2033,75 @@
             </div>
           </div>
         </div>
-        <div class="form-group" id="ct-row-daily-wage" style="display:none;"><label>일급여 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><input type="text" inputmode="numeric" id="ct-daily-wage" data-amount placeholder="0" oninput="onAmountInput(this,calcContractSalary);_checkRegisterBtnState();" /></div>
-
-        <!-- salary_start_date = contract_start 로 통합 — 별도 입력 필드 없음 -->
-
         <div class="form-group full"><span class="form-section-title" id="ct-wage-section-title">임금 조건 (월)</span></div>
+
+        <!-- ── 일용직 임금 지급 방법 (일급/주급/월합산) ── -->
+        <div class="form-group full" id="ct-pay-method-wrap" style="display:none;">
+          <label>임금 지급 방법 <span class="lbl-req">*</span> <span class="lbl-desc">(일용직)</span></label>
+          <div class="ct-pay-method-group">
+            <label class="ct-pay-method-option">
+              <input type="radio" name="ct-pay-method" value="daily" onchange="_ctPayMethodChange()" /> 일급
+            </label>
+            <label class="ct-pay-method-option">
+              <input type="radio" name="ct-pay-method" value="weekly" onchange="_ctPayMethodChange()" /> 주급
+            </label>
+            <label class="ct-pay-method-option">
+              <input type="radio" name="ct-pay-method" value="monthly" onchange="_ctPayMethodChange()" /> 월합산
+            </label>
+          </div>
+
+          <!-- 일급 -->
+          <div id="ct-pay-method-daily" class="ct-pay-method-panel" style="display:none;">
+            <div class="ct-pay-method-row">
+              <label class="ct-pay-method-row-label">지급 조건</label>
+              <label class="ct-pay-method-option-sm"><input type="radio" name="ct-pay-condition" value="same_day" onchange="_ctPayMethodChange()" /> 당일 지급</label>
+              <label class="ct-pay-method-option-sm"><input type="radio" name="ct-pay-condition" value="after_n_days" onchange="_ctPayMethodChange()" /> 근무일로부터</label>
+              <input type="number" id="ct-pay-after-days" class="ct-pay-method-after-days" min="1" max="30" placeholder="n" oninput="_ctPayMethodChange()" />
+              <span class="ct-pay-method-muted">일 후 지급</span>
+            </div>
+            <div class="ct-pay-method-info" id="ct-pay-method-daily-info"></div>
+          </div>
+
+          <!-- 주급 -->
+          <div id="ct-pay-method-weekly" class="ct-pay-method-panel" style="display:none;">
+            <div class="ct-pay-method-row">
+              <div class="ct-pay-method-col">
+                <span class="ct-pay-method-row-label">지급 요일</span>
+                <select id="ct-pay-weekday" class="ct-pay-method-select" onchange="_ctPayMethodChange()">
+                  <option value="">요일 선택</option>
+                  <option value="0">일요일</option>
+                  <option value="1">월요일</option>
+                  <option value="2">화요일</option>
+                  <option value="3">수요일</option>
+                  <option value="4">목요일</option>
+                  <option value="5">금요일</option>
+                  <option value="6">토요일</option>
+                </select>
+              </div>
+              <div class="ct-pay-method-col">
+                <span class="ct-pay-method-row-label">급여 산정기간</span>
+                <select id="ct-pay-period-weekday" class="ct-pay-method-select" onchange="_ctPayMethodChange()">
+                  <option value="">요일 선택</option>
+                  <option value="0">일요일부터 1주일간</option>
+                  <option value="1">월요일부터 1주일간</option>
+                  <option value="2">화요일부터 1주일간</option>
+                  <option value="3">수요일부터 1주일간</option>
+                  <option value="4">목요일부터 1주일간</option>
+                  <option value="5">금요일부터 1주일간</option>
+                  <option value="6">토요일부터 1주일간</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- 월합산 -->
+          <div id="ct-pay-method-monthly" class="ct-pay-method-panel" style="display:none;">
+            <div class="ct-pay-method-info" id="ct-pay-method-monthly-info"></div>
+          </div>
+        </div>
+
         <!-- ── 급여산정기간 + 급여일 — 같은 행 ── -->
+        <div id="ct-pay-period-row">
         <div class="form-group">
           <label>급여 산정기간 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span> <span class="lbl-desc" id="ct-pay-period-hint"></span></label>
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
@@ -2088,16 +2151,30 @@
           <input type="hidden" id="ct-pay-period-day-hidden" />
         </div>
         <div class="form-group">
-          <label>급여일 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span> <span style="font-size:11px;font-weight:400;color:#6b7280;">(매월)</span></label>
-          <div style="display:flex;align-items:center;gap:6px;">
-            <input type="number" id="ct-pay-day" min="1" max="31" placeholder="1~31 필수 입력" style="width:80px;" />
-            <span style="font-size:12px;color:#6b7280;">일</span>
+          <label>급여일 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span> <span style="font-size:11px;font-weight:400;color:#6b7280;" id="ct-pay-day-label-suffix">(매월)</span></label>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <span id="ct-pay-day-monthly-wrap" style="display:flex;align-items:center;gap:6px;">
+              <input type="number" id="ct-pay-day" min="1" max="31" placeholder="1~31 필수 입력" style="width:80px;" oninput="_ctPayMethodChange()" />
+              <span style="font-size:12px;color:#6b7280;">일</span>
+            </span>
+            <input type="date" id="ct-pay-day-date" style="display:none;" />
+            <span id="ct-pay-day-auto" class="ct-pay-day-auto" style="display:none;"></span>
             <span id="ct-pay-day-default" class="lbl-desc"></span>
           </div>
         </div>
-        <div class="form-group">
-          <label>통상시급 <span class="lbl-req">*</span> <span class="lbl-desc">(직접 입력)</span></label>
-          <div class="amount-wrap"><input type="text" inputmode="numeric" id="ct-hourly-input" data-amount placeholder="0" oninput="onAmountInput(this,calcContractSalary);_checkRegisterBtnState();_checkAmendBtnState();" /></div>
+        </div><!-- /ct-pay-period-row -->
+        <div class="form-group full">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;">
+            <div class="form-group" style="flex:1;min-width:180px;">
+              <label>통상시급 <span class="lbl-req">*</span> <span class="lbl-desc">(직접 입력)</span></label>
+              <div class="amount-wrap"><input type="text" inputmode="numeric" id="ct-hourly-input" data-amount placeholder="0" oninput="onAmountInput(this,calcContractSalary);_checkRegisterBtnState();_checkAmendBtnState();" /></div>
+            </div>
+            <div class="form-group" id="ct-row-daily-wage" style="display:none;flex:1;min-width:180px;">
+              <label>일급여 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span> <span class="lbl-desc">(일용직 · 자동계산)</span></label>
+              <div class="amount-wrap"><input type="text" inputmode="numeric" id="ct-daily-wage" data-amount placeholder="0" readonly /></div>
+              <div style="font-size:11px;color:#6b7280;margin-top:2px;">통상일급(시급×8) + 수당 합산 · 일 8시간 근무 기준</div>
+            </div>
+          </div>
         </div>
         <!-- ── 월 약정임금 ── -->
         <div class="form-group" id="ct-row-monthly"><label id="ct-label-monthly">월 약정임금 <span class="lbl-desc">(자동계산)</span></label><div class="form-computed" id="ct-monthly-computed">0원</div></div>
@@ -2107,7 +2184,7 @@
           <span>📌 통상임금 포함 수당</span>
         </div>
         <div class="form-group" id="ct-row-base"><label>기본급 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span> <span id="ct-base-auto-mark" class="lbl-desc">(자동계산, 주휴수당을 포함한 금액임)</span><span id="ct-base-required-mark" style="display:none;"></span></label><div class="amount-wrap"><input type="text" inputmode="numeric" id="ct-base" data-amount placeholder="0" oninput="onAmountInput(this,calcContractSalary);_checkRegisterBtnState();" /></div></div>
-        <div class="form-group" id="ct-row-weekly-hol"><label>주휴수당 <span class="lbl-desc">(자동계산, 기본급에 포함)</span></label><div class="form-computed" id="ct-weekly-hol-computed">0원</div></div>
+        <div class="form-group" id="ct-row-weekly-hol"><label>주휴수당 <span class="lbl-desc">(자동계산, 기본급에 포함)</span></label><div class="form-computed" id="ct-weekly-hol-computed">0원</div><div id="ct-weekly-hol-hint" style="display:none;font-size:11px;color:#d97706;margin-top:2px;">계약기간·근무시간표 입력 시 자동 계산됩니다. (1주 15시간 이상 근무 기준)</div></div>
         <div class="form-group" id="ct-row-regular-bonus" style="display:none;">
           <label>정기 상여금 <span class="lbl-desc">(매월 고정 지급)</span></label>
           <div class="amount-wrap"><input type="text" inputmode="numeric" id="ct-regular-bonus" data-amount placeholder="0" oninput="onAmountInput(this,calcContractSalary)" /></div>
@@ -2119,7 +2196,7 @@
         <div class="form-group" id="ct-row-hazard"  style="display:none;"><label>위험수당<span class="daily-suffix lbl-desc" style="display:none;">(일급)</span></label><div class="amount-wrap"><input type="text" inputmode="numeric" id="ct-hazard"  data-amount placeholder="0" oninput="onAmountInput(this,calcContractSalary)" /></div></div>
         <div class="form-group" id="ct-row-remote-area" style="display:none;">
           <label>벽지수당<span class="daily-suffix lbl-desc" style="display:none;">(일급)</span></label>
-          <div class="amount-wrap"><input type="text" inputmode="numeric" id="ct-remote-area" data-amount placeholder="최대 200,000까지 비과세" oninput="onAmountInput(this,calcContractSalary)" /></div>
+          <div class="amount-wrap"><input type="text" inputmode="numeric" id="ct-remote-area" data-amount placeholder="최대 월간 200,000원까지 비과세" oninput="onAmountInput(this,calcContractSalary)" /></div>
         </div>
 
         <!-- ── 통상임금 제외 고정수당 ── -->
@@ -2179,18 +2256,18 @@
         </div>
         <div class="form-group" id="ct-row-meal" style="display:none;">
           <label>식대<span class="daily-suffix lbl-desc" style="display:none;">(일급)</span></label>
-          <div class="amount-wrap"><input type="text" inputmode="numeric" id="ct-meal" data-amount placeholder="최대 200,000까지 비과세" oninput="onAmountInput(this,calcContractSalary)" /></div>
+          <div class="amount-wrap"><input type="text" inputmode="numeric" id="ct-meal" data-amount placeholder="최대 월간 200,000원까지 비과세" oninput="onAmountInput(this,calcContractSalary)" /></div>
         </div>
         <div class="form-group" id="ct-row-car" style="display:none;">
           <label>차량지원비<span class="daily-suffix lbl-desc" style="display:none;">(일급)</span></label>
-          <div class="amount-wrap"><input type="text" inputmode="numeric" id="ct-car" data-amount placeholder="최대 200,000까지 비과세" oninput="onAmountInput(this,calcContractSalary)" /></div>
+          <div class="amount-wrap"><input type="text" inputmode="numeric" id="ct-car" data-amount placeholder="최대 월간 200,000원까지 비과세" oninput="onAmountInput(this,calcContractSalary)" /></div>
         </div>
-        <div class="form-group" id="ct-row-research" style="display:none;"><label>연구활동비</label><div class="amount-wrap"><input type="text" inputmode="numeric" id="ct-research" data-amount placeholder="최대 200,000까지 비과세" oninput="onAmountInput(this,calcContractSalary)" /></div></div>
-        <div class="form-group" id="ct-row-communication" style="display:none;"><label>통신비</label><div class="amount-wrap"><input type="text" inputmode="numeric" id="ct-communication" data-amount placeholder="0" oninput="onAmountInput(this,calcContractSalary)" /></div></div>
-        <div class="form-group" id="ct-row-self-dev" style="display:none;"><label>자기계발비</label><div class="amount-wrap"><input type="text" inputmode="numeric" id="ct-self-dev" data-amount placeholder="0" oninput="onAmountInput(this,calcContractSalary)" /></div></div>
-        <div class="form-group" id="ct-row-book" style="display:none;"><label>도서지원비</label><div class="amount-wrap"><input type="text" inputmode="numeric" id="ct-book" data-amount placeholder="0" oninput="onAmountInput(this,calcContractSalary)" /></div></div>
-        <div class="form-group" id="ct-row-overseas" style="display:none;"><label>해외근무수당</label><div class="amount-wrap"><input type="text" inputmode="numeric" id="ct-overseas" data-amount placeholder="0" oninput="onAmountInput(this,calcContractSalary)" /></div></div>
-        <div class="form-group" id="ct-row-fitness" style="display:none;"><label>체력증진비</label><div class="amount-wrap"><input type="text" inputmode="numeric" id="ct-fitness" data-amount placeholder="0" oninput="onAmountInput(this,calcContractSalary)" /></div></div>
+        <div class="form-group" id="ct-row-research" style="display:none;"><label>연구활동비<span class="daily-suffix lbl-desc" style="display:none;">(일급)</span></label><div class="amount-wrap"><input type="text" inputmode="numeric" id="ct-research" data-amount placeholder="최대 월간 200,000원까지 비과세" oninput="onAmountInput(this,calcContractSalary)" /></div></div>
+        <div class="form-group" id="ct-row-communication" style="display:none;"><label>통신비<span class="daily-suffix lbl-desc" style="display:none;">(일급)</span></label><div class="amount-wrap"><input type="text" inputmode="numeric" id="ct-communication" data-amount placeholder="0" oninput="onAmountInput(this,calcContractSalary)" /></div></div>
+        <div class="form-group" id="ct-row-self-dev" style="display:none;"><label>자기계발비<span class="daily-suffix lbl-desc" style="display:none;">(일급)</span></label><div class="amount-wrap"><input type="text" inputmode="numeric" id="ct-self-dev" data-amount placeholder="0" oninput="onAmountInput(this,calcContractSalary)" /></div></div>
+        <div class="form-group" id="ct-row-book" style="display:none;"><label>도서지원비<span class="daily-suffix lbl-desc" style="display:none;">(일급)</span></label><div class="amount-wrap"><input type="text" inputmode="numeric" id="ct-book" data-amount placeholder="0" oninput="onAmountInput(this,calcContractSalary)" /></div></div>
+        <div class="form-group" id="ct-row-overseas" style="display:none;"><label>해외근무수당<span class="daily-suffix lbl-desc" style="display:none;">(일급)</span></label><div class="amount-wrap"><input type="text" inputmode="numeric" id="ct-overseas" data-amount placeholder="0" oninput="onAmountInput(this,calcContractSalary)" /></div></div>
+        <div class="form-group" id="ct-row-fitness" style="display:none;"><label>체력증진비<span class="daily-suffix lbl-desc" style="display:none;">(일급)</span></label><div class="amount-wrap"><input type="text" inputmode="numeric" id="ct-fitness" data-amount placeholder="0" oninput="onAmountInput(this,calcContractSalary)" /></div></div>
 
         <!-- 연봉 (정규직 전용) -->
         <div class="form-group full" id="ct-row-salary-period" style="display:none;">
@@ -3282,15 +3359,15 @@
       <script src="js/constants.js?v=20260819f"></script>
       <script src="js/message-templates.js?v=20260814s"></script>
       <script src="js/admin-loader.js?v=20260819a"></script>
-<script src="js/admin-state.js?v=20260819d"></script>
+<script src="js/admin-state.js?v=20260821a"></script>
   <script src="js/admin-labor.js?v=20260814s"></script>
   <!-- admin-dashboard 모듈 -->
-  <script src="js/admin-dashboard/dashboard-core.js?v=20260818a"></script>
+  <script src="js/admin-dashboard/dashboard-core.js?v=20260821f"></script>
   <script src="js/admin-dashboard/dashboard-charts.js?v=20260818a"></script>
   <script src="js/admin-dashboard.js?v=20260814s"></script>
   <script src="js/admin-standards.js?v=20260818d"></script>
   <!-- admin-wage 모듈 -->
-  <script src="js/admin-wage/wage-ledger.js?v=20260818b"></script>
+  <script src="js/admin-wage/wage-ledger.js?v=20260821l"></script>
   <script src="js/admin-wage/wage-severance.js?v=20260818b"></script>
   <script src="js/admin-wage/wage-retirement-mgmt.js?v=20260814s"></script>
   <script src="js/admin-wage.js?v=20260814s"></script>
@@ -3299,12 +3376,12 @@
   <script src="js/admin-company/company-history.js?v=20260819a"></script>
   <script src="js/admin-company.js?v=20260814s"></script>
   <!-- admin-contract 모듈 (기능별 분리) -->
-  <script src="js/admin-contract/contract-form.js?v=20260819f"></script>
-  <script src="js/admin-contract/contract-core.js?v=20260819f"></script>
-  <script src="js/admin-contract/contract-docs.js?v=20260814z"></script>
+  <script src="js/admin-contract/contract-form.js?v=20260821j"></script>
+  <script src="js/admin-contract/contract-core.js?v=20260821j"></script>
+  <script src="js/admin-contract/contract-docs.js?v=20260821j"></script>
   <script src="js/admin-contract/contract-dispatch.js?v=20260814s"></script>
   <script src="js/admin-contract/consent-dispatch.js?v=20260814s"></script>
-  <script src="js/admin-contract/contract-lifecycle.js?v=20260819g"></script>
+  <script src="js/admin-contract/contract-lifecycle.js?v=20260821g"></script>
   <script src="js/admin-contract.js?v=20260814s"></script>
   <!-- admin-hr 모듈 (인사관리대장) -->
   <script src="js/admin-hr.js?v=20260819f"></script>
@@ -3314,9 +3391,9 @@
   <script src="js/admin-payroll.js?v=20260814s"></script>
   <!-- admin-payroll-input 모듈 (기능별 분리) -->
   <script src="js/admin-payroll-input/payroll-input-core.js?v=20260814s"></script>
-  <script src="js/admin-payroll-input/payroll-input-main.js?v=20260818d"></script>
-  <script src="js/admin-payroll-input/payroll-input-save.js?v=20260814s"></script>
-  <script src="js/admin-payroll-input/payroll-input-excel.js?v=20260818b"></script>
+  <script src="js/admin-payroll-input/payroll-input-main.js?v=20260821j"></script>
+  <script src="js/admin-payroll-input/payroll-input-save.js?v=20260821k"></script>
+  <script src="js/admin-payroll-input/payroll-input-excel.js?v=20260821g"></script>
   <script src="js/admin-payroll-input.js?v=20260814s"></script>
   <!-- admin-billing 모듈 (기능별 분리) -->
   <script src="js/admin-billing/billing-core.js?v=20260814s"></script>
@@ -3326,11 +3403,11 @@
   <script src="js/admin-billing/system-settings.js?v=20260819a"></script>
   <script src="js/admin-billing/company-notice.js?v=20260818a"></script>
   <script src="js/admin-billing/two-year-exceed.js?v=20260814s"></script>
-  <script src="js/admin-billing/regular-conversion.js?v=20260814s"></script>
-  <script src="js/admin-billing/annual-leave.js?v=20260814s"></script>
+  <script src="js/admin-billing/regular-conversion.js?v=20260821g"></script>
+  <script src="js/admin-billing/annual-leave.js?v=20260821d"></script>
   <script src="js/admin-billing/company-notice-log.js?v=20260814s"></script>
   <script src="js/admin-billing/general-notice.js?v=20260818a"></script>
-  <script src="js/admin-billing/attendance-ledger.js?v=20260818b"></script>
+  <script src="js/admin-billing/attendance-ledger.js?v=20260821b"></script>
   <script src="js/admin-billing.js?v=20260814s"></script>
 
   <!-- ══ 근로자 선택 모달 (신규계약) ══ -->

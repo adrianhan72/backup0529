@@ -6,8 +6,9 @@
  *   → data/generated/wage-ledgers/ 에 Excel(.xlsx) + HTML(.html) 저장
  *
  * 트리거:
- *   - 급여입력 > 당월 임금대장 업로드(일괄 저장) 완료 시
- *   - 급여입력 > 모든 직원 급여 확정 저장 완료 시
+ *   - 급여입력 > 당월 임금대장 업로드(일괄 저장) 시
+ *   - 급여입력 > 직원 급여 확정 저장 시 (급여가 입력된 인원만으로 생성)
+ *   - (일용직) 급여명세서 단건 즉시 생성은 payrollId 지정
  */
 const path = require('path');
 const fs   = require('fs');
@@ -75,17 +76,20 @@ module.exports = function(db, ROOT) {
 
   // ─── POST /api/generate-payslip-pdfs ───
   // 당월 급여 데이터 기준으로 직원별 급여명세서 HTML 생성 및 저장
+  //  - payrollId 를 함께 전달하면 해당 건만 즉시 생성 (일용직 급여일 즉시 발급 등)
   router.post('/generate-payslip-pdfs', (req, res) => {
     try {
-      const { companyId, year, month } = req.body;
+      const { companyId, year, month, payrollId } = req.body;
       if (!companyId || !year || !month) {
         return res.status(400).json({ error: 'companyId, year, month required' });
       }
 
-      const pays = db.all(
+      let pays = db.all(
         'SELECT * FROM payrolls WHERE company_id = ? AND pay_year = ? AND pay_month = ? AND is_draft = 0',
         [companyId, year, month]
       );
+      // 단건 생성 요청이면 해당 payroll 만 대상
+      if (payrollId) pays = pays.filter(p => p.id === payrollId);
       if (!pays.length) return res.status(404).json({ error: 'No payroll data' });
 
       const co = db.companies.findById(companyId);
