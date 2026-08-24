@@ -2624,6 +2624,52 @@
     
 
 <!-- ══ 계약서 출력 전용 모달 ══ -->
+<div class="modal-overlay" id="contract-send-modal" style="z-index:3000;">
+  <div class="modal" style="max-width:520px;width:95%;">
+    <div class="modal-header" style="display:flex;align-items:center;justify-content:space-between;">
+      <span class="modal-title"><i class="fas fa-paper-plane" style="color:#d97706;margin-right:8px;"></i>근로계약서 발송</span>
+      <button onclick="closeContractSendModal()" class="btn-close"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body" style="padding:20px 24px;">
+      <!-- 근로자·파일 정보 -->
+      <div id="cs-employee-info" style="font-size:13px;color:#374151;line-height:1.7;"></div>
+      <div id="cs-file-info" style="margin-top:6px;font-size:12px;color:#065f46;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:8px;padding:8px 12px;word-break:break-all;display:none;"></div>
+
+      <!-- 고객사 발송 -->
+      <div style="margin-top:18px;padding-top:16px;border-top:1px solid #e2e8f0;">
+        <div style="font-size:13px;font-weight:700;color:#374151;"><i class="fas fa-building" style="color:#4f46e5;margin-right:6px;"></i>고객사 발송</div>
+        <div style="font-size:11.5px;color:#6b7280;margin-top:4px;">최종 편집본 파일 주소를 고객사 인앱 알림으로 전송합니다.</div>
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <button class="btn btn-warning" onclick="sendCompanyReviewRequest()" title="최종 편집본 검수 후 승인 요청">
+            <i class="fas fa-search"></i> 검수 요청
+          </button>
+          <button class="btn btn-success" onclick="sendCompanySealRequest()" title="최종 편집본 날인 요청">
+            <i class="fas fa-file-signature"></i> 날인 요청
+          </button>
+        </div>
+      </div>
+
+      <!-- 근로자 발송 -->
+      <div style="margin-top:18px;padding-top:16px;border-top:1px solid #e2e8f0;">
+        <div style="font-size:13px;font-weight:700;color:#374151;"><i class="fas fa-user" style="color:#0891b2;margin-right:6px;"></i>근로자 발송</div>
+        <div style="font-size:12px;color:#6b7280;margin-top:4px;">발송방법을 선택하세요.</div>
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <button class="btn btn-kakao" id="cs-kakao-btn" onclick="dispatchContractKakao()" title="카카오 알림톡으로 최종 편집본 발송">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0;"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg>
+            알림톡
+          </button>
+          <button class="btn btn-sky" id="cs-email-btn" onclick="dispatchContractEmail()" title="이메일로 최종 편집본 발송">
+            <i class="fas fa-envelope"></i> 이메일
+          </button>
+          <button class="btn btn-success" id="cs-manual-btn" onclick="dispatchContractManual()" title="출력물 직접 배부 완료 처리">
+            <i class="fas fa-hand-paper"></i> 수동교부
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="contract-print-modal" style="z-index:3000;">
   <div class="modal" style="max-width:960px;width:96vw;height:92vh;display:flex;flex-direction:column;padding:0;overflow:hidden;">
     <!-- 헤더 -->
@@ -2641,21 +2687,8 @@
         <button onclick="printContractDoc()" class="btn btn-slate">
           <i class="fas fa-print"></i> 인쇄
         </button>
-        <button onclick="downloadContractPdf()" id="cpm-pdf-btn" class="btn btn-success">
-          <i class="fas fa-file-pdf"></i> PDF 저장
-        </button>
-        <!-- 구분선 -->
-        <div style="width:1px;height:28px;background:#d1d5db;margin:0 2px;"></div>
-        <!-- 발송 버튼 그룹 -->
-        <button onclick="dispatchContractKakao()" id="cpm-kakao-btn" title="카카오 알림톡으로 계약서 PDF 발송" class="btn btn-kakao" disabled>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0;"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg>
-          알림톡
-        </button>
-        <button onclick="dispatchContractEmail()" id="cpm-email-btn" title="이메일로 계약서 PDF 발송" class="btn btn-sky" disabled>
-          <i class="fas fa-envelope"></i> 이메일
-        </button>
-        <button onclick="dispatchContractManual()" id="cpm-manual-btn" title="수동교부 완료 처리" class="btn btn-success">
-          <i class="fas fa-hand-paper"></i> 수동교부
+        <button onclick="downloadContractWord()" id="cpm-word-btn" class="btn btn-success" title="재편집 가능한 WORD(.docx) 파일로 다운로드">
+          <i class="fas fa-file-word"></i> Word파일 다운로드
         </button>
       </div>
     </div>
@@ -3377,11 +3410,11 @@
   <script src="js/admin-company.js?v=20260814s"></script>
   <!-- admin-contract 모듈 (기능별 분리) -->
   <script src="js/admin-contract/contract-form.js?v=20260821j"></script>
-  <script src="js/admin-contract/contract-core.js?v=20260821j"></script>
-  <script src="js/admin-contract/contract-docs.js?v=20260821j"></script>
-  <script src="js/admin-contract/contract-dispatch.js?v=20260814s"></script>
+  <script src="js/admin-contract/contract-core.js?v=20260824b"></script>
+  <script src="js/admin-contract/contract-docs.js?v=20260824i"></script>
+  <script src="js/admin-contract/contract-dispatch.js?v=20260824b"></script>
   <script src="js/admin-contract/consent-dispatch.js?v=20260814s"></script>
-  <script src="js/admin-contract/contract-lifecycle.js?v=20260821g"></script>
+  <script src="js/admin-contract/contract-lifecycle.js?v=20260824a"></script>
   <script src="js/admin-contract.js?v=20260814s"></script>
   <!-- admin-hr 모듈 (인사관리대장) -->
   <script src="js/admin-hr.js?v=20260819f"></script>
@@ -3400,7 +3433,7 @@
   <script src="js/admin-billing/auth.js?v=20260814s"></script>
   <script src="js/admin-billing/payslip-send.js?v=20260814s"></script>
   <script src="js/admin-billing/admin-accounts.js?v=20260814s"></script>
-  <script src="js/admin-billing/system-settings.js?v=20260819a"></script>
+  <script src="js/admin-billing/system-settings.js?v=20260824a"></script>
   <script src="js/admin-billing/company-notice.js?v=20260818a"></script>
   <script src="js/admin-billing/two-year-exceed.js?v=20260814s"></script>
   <script src="js/admin-billing/regular-conversion.js?v=20260821g"></script>

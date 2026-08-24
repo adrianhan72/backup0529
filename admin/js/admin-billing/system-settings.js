@@ -568,6 +568,31 @@ const MSG_RULE_DEFAULTS = {
 
 ■ 근로자: {근로자명}
 ■ 처리 일시: {처리일시}`
+  },
+  contract_review_request: {
+    title: `[근로계약서 검수 요청] {근로자명} — 최종 편집본 검수 후 승인해 주세요`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+소속 근로자 {근로자명}님의 근로계약서({계약사유}) 최종 편집본이 등록되었습니다.
+검수 후 승인해 주세요.
+
+■ 근로자: {근로자명}
+■ 계약 사유: {계약사유}
+■ 파일주소: {파일주소}
+
+파일을 열어 확인해 주세요.`
+  },
+  contract_seal_request: {
+    title: `[근로계약서 날인 요청] {근로자명} — 최종 편집본 날인 후 회신해 주세요`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+소속 근로자 {근로자명}님의 근로계약서가 승인되었습니다.
+날인 후 회신해 주세요.
+
+■ 근로자: {근로자명}
+■ 파일주소: {파일주소}
+
+파일을 열어 확인해 주세요.`
   }
 };
 
@@ -586,6 +611,8 @@ const MSG_CHANNEL_TYPES = {
     { value: 'contract_updated', label: '근로계약 수정' },
     { value: 'contract_amended', label: '근로계약 수정재발행' },
     { value: 'contract_dispatched', label: '근로계약서 발송' },
+    { value: 'contract_review_request', label: '근로계약서 검수 요청' },
+    { value: 'contract_seal_request', label: '근로계약서 날인 요청' },
     { value: 'consent_dispatched', label: '정보제공동의서 발송' },
     { value: 'contract_signed_uploaded', label: '근로계약서 날인본 등록' },
     { value: 'contract_consent_uploaded', label: '동의서 날인본 등록' },

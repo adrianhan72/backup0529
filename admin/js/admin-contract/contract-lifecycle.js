@@ -2056,13 +2056,12 @@ async function confirmContractRenew(){
   toast(`연장 처리 완료. 전 계약: 해지 / 새 계약: ${label}`);
   _triggerWageLedgerRegen(c.company_id);
 
-  // ── 갱신 계약: 계약서 확인 및 발송 여부 확인 ──
+  // ── 갱신 계약: 초안 확인 여부 ──
   if(newId){
-    const _newEmpName = _renewEmp?.name || '';
     const confirmed = await _showConfirm({
-      message: `근로계약 갱신이 완료되었습니다.\n\n계약서를 확인하고 ${_newEmpName ? _newEmpName+'님에게 ' : ''}인쇄용 파일 주소를 즉시 발송하시겠습니까?`,
+      message: `근로계약 갱신이 완료되었습니다.\n\n갱신된 계약서 초안을 확인하시겠습니까?`,
       okText: '예',
-      cancelText: '아니오 (나중에 발송)',
+      cancelText: '아니오 (나중에 확인)',
       okClass: 'btn-primary'
     });
     if(confirmed){
@@ -4830,17 +4829,15 @@ async function saveContract(){
   _currentDraftId  = null; // 임시저장 ID 초기화
   closeModal('contract-modal');await loadContracts();await loadEmployees();renderContracts();renderDashboard();
   const _ctIsEdit = !!editId.contract && !_ctIsDraftReg;
-  toast(_ctIsEdit ? '근로계약서가 수정되었습니다. ✔' : '근로계약서가 등록되었습니다. ✔');
+  toast(_ctIsEdit ? '근로계약서가 수정되었습니다. ✔' : '근로계약서 초안이 등록되었습니다. ✔');
   _triggerWageLedgerRegen(coId);
 
-  // ── 신규 계약: 계약서 확인 및 발송 여부 확인 ──
+  // ── 신규 계약: 초안 확인 여부 ──
   if(!_ctIsEdit && !_wasRecontract && _savedContractId){
-    const _newEmp = allEmployees.find(e => e.id === empId);
-    const _newEmpName = _newEmp?.name || '';
     const confirmed = await _showConfirm({
-      message: `근로계약서가 등록되었습니다.\n\n계약서를 확인하고 ${_newEmpName ? _newEmpName+'님에게 ' : ''}인쇄용 파일 주소를 즉시 발송하시겠습니까?`,
+      message: `근로계약서 초안이 등록되었습니다.\n\n초안을 확인하시겠습니까?`,
       okText: '예',
-      cancelText: '아니오 (나중에 발송)',
+      cancelText: '아니오 (나중에 확인)',
       okClass: 'btn-primary'
     });
     if(confirmed){

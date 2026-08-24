@@ -115,6 +115,7 @@ CREATE TABLE IF NOT EXISTS contracts (
   signed_file_data TEXT, --  -- 서명 파일 데이터
   consent_file_name TEXT, --  -- 동의서 파일명
   consent_file_data TEXT, --  -- 동의서 파일 데이터
+  edited_file_url TEXT, --  -- 최종 편집본(워드) 파일 주소 (재편집 업로드 파일서버)
   salary_start_date TEXT, --  -- 급여 산정 시작일
   salary_end_date TEXT, --  -- 급여 산정 종료일
   is_draft INTEGER DEFAULT 0, --  -- 임시저장 여부

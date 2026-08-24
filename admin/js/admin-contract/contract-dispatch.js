@@ -838,23 +838,26 @@ async function _saveDispatchRecord({ method: dispatchMethod, status: dispatchSta
   }
 }
 
-// ── 알림톡 발송 ──────────────────────────────────────
+// ── 알림톡 발송 (발송 모달) ──────────────────────
 async function dispatchContractKakao(){
+  const url = window._printingContractFileUrl;
+  if(!url){ toast('최종 편집본(워드) 파일이 없습니다. 계약서 열에서 편집본을 업로드해 주세요.', 'warning'); return; }
   const phone = window._printingEmpPhone || '';
   const name  = window._printingEmpName  || '근로자';
-  if(!phone){ toast('전화번호가 등록되지 않았습니다.'); return; }
+  if(!phone){ toast('전화번호가 등록되지 않았습니다.', 'error'); return; }
 
-  const btn = document.getElementById('cpm-kakao-btn');
+  const btn = document.getElementById('cs-kakao-btn');
   if(btn){ btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> 발송 중...'; }
 
   try {
+    const _fileUrl = `\n■ 근로계약서 파일: ${(location.origin||'')}${url}`;
     // TODO: 알림톡 API 연동 시 이 위치에 API 호출 코드 삽입
     // API 연동 전까지는 이력 저장만 처리
     await _saveDispatchRecord({
       method    : DISPATCH_METHOD.KAKAO,
       status    : DISPATCH_STATUS.COMPLETED,
       recipient : phone,
-      note      : `수신번호: ${phone}`,
+      note      : `수신번호: ${phone}${_fileUrl}`,
     });
     toast(`✅ ${name} 님 알림톡 발송 완료 (${phone})`, 'success');
   } catch(e){
@@ -868,23 +871,26 @@ async function dispatchContractKakao(){
   }
 }
 
-// ── 이메일 발송 ──────────────────────────────────────
+// ── 이메일 발송 (발송 모달) ──────────────────────
 async function dispatchContractEmail(){
+  const url = window._printingContractFileUrl;
+  if(!url){ toast('최종 편집본(워드) 파일이 없습니다. 계약서 열에서 편집본을 업로드해 주세요.', 'warning'); return; }
   const email = window._printingEmpEmail || '';
   const name  = window._printingEmpName  || '근로자';
-  if(!email){ toast('이메일이 등록되지 않았습니다.'); return; }
+  if(!email){ toast('이메일이 등록되지 않았습니다.', 'error'); return; }
 
-  const btn = document.getElementById('cpm-email-btn');
+  const btn = document.getElementById('cs-email-btn');
   if(btn){ btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> 발송 중...'; }
 
   try {
+    const _fileUrl = `\n■ 근로계약서 파일: ${(location.origin||'')}${url}`;
     // TODO: 이메일 API 연동 시 이 위치에 API 호출 코드 삽입
     // API 연동 전까지는 이력 저장만 처리
     await _saveDispatchRecord({
       method    : DISPATCH_METHOD.EMAIL,
       status    : DISPATCH_STATUS.COMPLETED,
       recipient : email,
-      note      : `수신 이메일: ${email}`,
+      note      : `수신 이메일: ${email}${_fileUrl}`,
     });
     toast(`✅ ${name} 님 이메일 발송 완료 (${email})`, 'success');
   } catch(e){
@@ -898,17 +904,19 @@ async function dispatchContractEmail(){
   }
 }
 
-// ── 수동교부 ────────────────────────────────────
+// ── 수동교부 (발송 모달) ────────────────────
 async function dispatchContractManual(){
+  const url = window._printingContractFileUrl;
+  if(!url){ toast('최종 편집본(워드) 파일이 없습니다. 계약서 열에서 편집본을 업로드해 주세요.', 'warning'); return; }
   const name  = window._printingEmpName || '근로자';
   const confirmed = confirm(
     `[ 수동교부 처리 ]\n\n` +
-    `${name} 님의 근로계약서를 출력하여 직접 배부(교부)하셨습니까?\n\n` +
+    `${name} 님의 근로계약서(최종 편집본)를 출력하여 직접 배부(교부)하셨습니까?\n\n` +
     `확인을 누르면 배부 완료 이력이 등록됩니다.`
   );
   if(!confirmed) return;
 
-  const btn = document.getElementById('cpm-manual-btn');
+  const btn = document.getElementById('cs-manual-btn');
   if(btn){ btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> 처리 중...'; }
 
   try {
@@ -916,7 +924,7 @@ async function dispatchContractManual(){
       method    : DISPATCH_METHOD.MANUAL,
       status    : DISPATCH_STATUS.COMPLETED,
       recipient : '직접배부',
-      note      : '출력물 직접 교부 완료 (관리자 확인)',
+      note      : `출력물 직접 교부 완료 (관리자 확인) — 파일: ${(location.origin||'')}${url}`,
     });
     toast(`✅ ${name} 님 근로계약서 직접 배부 완료`, 'success');
   } catch(e){
@@ -928,5 +936,149 @@ async function dispatchContractManual(){
       btn.innerHTML='<i class="fas fa-hand-paper"></i> 수동교부';
     }
   }
+}
+
+// ════════════════════════════════════════════════════════════
+// 발송 모달 — 고객사 발송(검수/날인 요청) + 근로자 발송
+// (계약 목록 — 발송 열 버튼에서 진입, 최종 편집본 파일이 있을 때만 활성)
+// ════════════════════════════════════════════════════════════
+
+/** 발송 모달 열기 — window._printing* 전역 설정 후 표시 */
+function openContractSendModal(contractId){
+  const c = (allContracts||[]).find(x => x.id === contractId);
+  if(!c){ toast('계약 정보를 찾을 수 없습니다.', 'error'); return; }
+  const emp = (allEmployees||[]).find(e => e.id === c.employee_id);
+  const co  = (allCompanies||[]).find(x => x.id === c.company_id);
+  const empName = emp?.name || '';
+  const url = c.edited_file_url || '';
+  if(!url){ toast('최종 편집본(워드) 파일이 없습니다. 계약서 열에서 편집본을 업로드해 주세요.', 'warning'); return; }
+
+  // 전역 정보 설정 (발송 함수에서 사용)
+  window._printingContractId      = c.id;
+  window._printingEmpName         = empName;
+  window._printingEmpPhone        = emp?.phone || '';
+  window._printingEmpEmail        = emp?.email || '';
+  window._printingContractFileUrl = url;
+
+  // 근로자·파일 정보 표시
+  const empInfo = document.getElementById('cs-employee-info');
+  if(empInfo){
+    empInfo.innerHTML = `<strong>${empName}</strong>${co ? ' (' + (co.company_name||'') + ')' : ''}<br>
+      <span style="font-size:11.5px;color:#6b7280;">근로자 발송 수단 — 알림톡: ${emp?.phone || '미등록'} / 이메일: ${emp?.email || '미등록'}</span>`;
+  }
+  const fileInfo = document.getElementById('cs-file-info');
+  if(fileInfo){
+    fileInfo.style.display = '';
+    fileInfo.innerHTML = `<i class="fas fa-file-word"></i> <strong>최종 편집본</strong> — <a href="${url}" target="_blank">${(location.origin||'')}${url}</a>`;
+  }
+
+  // 근로자 발송 버튼 활성화 상태 (이메일 없으면 비활성)
+  const hasPhone = !!(emp?.phone && emp.phone.trim());
+  const hasEmail = !!(emp?.email && emp.email.trim());
+  const kakaoBtn = document.getElementById('cs-kakao-btn');
+  if(kakaoBtn){
+    kakaoBtn.disabled = !hasPhone;
+    kakaoBtn.title = hasPhone ? `알림톡 발송 (${emp.phone})` : '전화번호 미등록 — 직원 정보에 전화번호를 먼저 등록하세요';
+  }
+  const emailBtn = document.getElementById('cs-email-btn');
+  if(emailBtn){
+    emailBtn.disabled = !hasEmail;
+    emailBtn.title = hasEmail ? `이메일 발송 (${emp.email})` : '이메일 미등록 — 직원 정보에 이메일을 먼저 등록하세요';
+  }
+  const manualBtn = document.getElementById('cs-manual-btn');
+  if(manualBtn) manualBtn.disabled = false;
+
+  const modal = document.getElementById('contract-send-modal');
+  if(modal) modal.classList.add('open');
+}
+
+function closeContractSendModal(){
+  const modal = document.getElementById('contract-send-modal');
+  if(modal) modal.classList.remove('open');
+}
+
+/** 고객사 발송 — 검수 요청 (최종 편집본 파일 주소 전송, 계약 사유 포함) */
+async function sendCompanyReviewRequest(){
+  const c = (allContracts||[]).find(x=>x.id===window._printingContractId);
+  const reason = _getContractReason(c);
+  const greet = _getCompanyGreeting();
+  await _sendEditedFileToCompany('contract_review_request',
+    `[근로계약서 검수 요청] {근로자명} — 최종 편집본 검수 후 승인해 주세요`,
+    `${greet}\n\n소속 근로자 {근로자명}님의 근로계약서({계약사유}) 최종 편집본이 등록되었습니다.\n검수 후 승인해 주세요.\n\n■ 근로자: {근로자명}\n■ 계약 사유: {계약사유}\n■ 파일주소: {파일주소}\n\n파일을 열어 확인해 주세요.`,
+    { 근로자명: window._printingEmpName||'', 계약사유: reason });
+}
+
+/** 고객사 발송 — 날인 요청 (최종 편집본 파일 주소 전송) */
+async function sendCompanySealRequest(){
+  const greet = _getCompanyGreeting();
+  await _sendEditedFileToCompany('contract_seal_request',
+    `[근로계약서 날인 요청] {근로자명} — 최종 편집본 날인 후 회신해 주세요`,
+    `${greet}\n\n소속 근로자 {근로자명}님의 근로계약서가 승인되었습니다.\n날인 후 회신해 주세요.\n\n■ 근로자: {근로자명}\n■ 파일주소: {파일주소}\n\n파일을 열어 확인해 주세요.`,
+    { 근로자명: window._printingEmpName||'' });
+}
+
+/** 고객사 인앱 알림 공통 전송 (검수/날인 요청) — 시스템 설정 메시지 규칙 반영 + 변수 치환 */
+async function _sendEditedFileToCompany(noticeType, title, body, extraVars){
+  const url = window._printingContractFileUrl;
+  if(!url){ toast('최종 편집본(워드) 파일이 없습니다.', 'warning'); return; }
+  const c   = (allContracts||[]).find(x=>x.id===window._printingContractId);
+  const emp = c ? (allEmployees||[]).find(e=>e.id===c.employee_id) : null;
+  const co  = c ? (allCompanies||[]).find(x=>x.id===c.company_id) : null;
+  if(!c || !co){ toast('계약·고객사 정보를 찾을 수 없습니다.', 'error'); return; }
+  const fullUrl = (location.origin||'') + url;
+  // 시스템 설정 규칙의 {회사명}/{근로자명}/{계약사유}/{파일주소} 치환용 변수
+  const vars = {
+    ...(extraVars||{}),
+    근로자명: emp?.name || '',
+    회사명:   co.company_name || '',
+    파일주소: fullUrl,
+  };
+  try {
+    await _sendCompanyNotice({
+      companyId:    c.company_id,
+      companyName:  co.company_name || '',
+      noticeType:   noticeType,
+      title:        title,
+      body:         body,
+      contractId:   c.id,
+      employeeId:   c.employee_id,
+      employeeName: emp?.name || '',
+      contractEnd:  c.contract_end || '',
+      extraData:    { ruleVars: vars },
+    });
+    toast('✅ 고객사 인앱 알림으로 파일 주소가 전송됐습니다.', 'success');
+  } catch(e){
+    console.error('[고객사 발송]', e);
+    toast('인앱 알림 전송 중 오류가 발생했습니다.', 'error');
+  }
+}
+
+/** 계약 사유 도출 (신규계약 / 갱신 / 갱신예정 / 갱신예정 수정 / 재계약) */
+function _getContractReason(c){
+  if(!c) return '신규계약';
+  const today = fmtLocalDate(new Date());
+  // 갱신예정: 갱신 예약 상태이거나, 갱신 계약이지만 시작일 미도래
+  const isRenewPending = (c.status === CONTRACT_STATUS.RENEWAL_PENDING)
+    || (!!c.renewed_from_id && c.status === CONTRACT_STATUS.ACTIVE && c.contract_start && today < c.contract_start);
+  if(isRenewPending){
+    return c.amended_from ? '갱신예정 수정' : '갱신예정';
+  }
+  if(c.renewed_from_id){
+    const orig = (allContracts||[]).find(x => x.id === c.renewed_from_id);
+    const genuine = orig && orig.renewed_to_id === c.id && orig.terminate_date;
+    return genuine ? '갱신' : '재계약';
+  }
+  return '신규계약';
+}
+
+/** 고객사 대표자명 기반 인사말 (없으면 일반 인사) */
+function _getCompanyGreeting(){
+  const c  = (allContracts||[]).find(x=>x.id===window._printingContractId);
+  const co = c ? (allCompanies||[]).find(x=>x.id===c.company_id) : null;
+  if(!co) return '안녕하세요.';
+  let reps = [];
+  try { reps = typeof co.representatives === 'string' ? JSON.parse(co.representatives) : (co.representatives || []); } catch(_){}
+  const repName = (Array.isArray(reps) && reps[0] && reps[0].name) ? reps[0].name : '';
+  return repName ? `안녕하세요, ${repName}님.` : '안녕하세요.';
 }
 

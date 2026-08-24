@@ -542,7 +542,7 @@ function renderContracts(){
   }).sort((a,b)=>getEmpName(a.employee_id).localeCompare(getEmpName(b.employee_id),'ko'));
   const paged=f.slice((pages.cont-1)*ITEMS,pages.cont*ITEMS);
   const tb=document.getElementById('cont-tbody');
-  if(!f.length){tb.innerHTML='<tr><td colspan="12" class="cen-empty"><i class="fas fa-inbox"></i> 계약서가 없습니다</td></tr>';document.getElementById('cont-pagination').innerHTML='';return;}
+  if(!f.length){tb.innerHTML='<tr><td colspan="10" class="cen-empty"><i class="fas fa-inbox"></i> 계약서가 없습니다</td></tr>';document.getElementById('cont-pagination').innerHTML='';return;}
   tb.innerHTML=paged.map(c=>{
     // ── 표시 상태 스마트 계산 ──
     const {badge:stBadge, label:stName, docsIncomplete} = calcContractStatusDisplay(c, today);
@@ -560,11 +560,6 @@ function renderContracts(){
       : (empCat===CONTRACT_TYPE.REGULAR)
         ? (isResigned ? `${c.contract_start||'-'} ~ ${emp.resign_date}` : `${c.contract_start||'-'} ~ 현재`)
         : `${c.contract_start||'-'} ~ ${c.contract_end||'미정'}`;
-    const isContDaily = empCat ===CONTRACT_TYPE.DAILY;
-    const baseSalaryDisplay = isContDaily
-      ? `<span style="font-size:11px;color:#9ca3af;">일급여</span> ${won(c.daily_wage||c.base_salary)}`
-      : won(c.base_salary);
-    // ── 서류미비 배지 (파기된 계약은 서류미비 관리 안 함) ──
     // ── 대표자·등기임원·특수관계인 추가 배지 ──
     const empName = emp?.name || '';
     let specialBadge = '';
@@ -588,34 +583,38 @@ function renderContracts(){
       }
     }
     return `<tr>
+      <td style="text-align:center;font-size:12px;font-weight:600;color:#4b5563;">${emp?.employee_number || ''}</td>
       <td style="font-weight:600">${getEmpName(c.employee_id)}</td>
       <td style="font-size:12px;text-align:center;">${emp?.gender==='female'?'여':emp?.gender==='male'?'남':'-'}</td>
       <td><span class="badge ${catBadge}">${contractTypeLabel(empCat)}</span>${specialBadge}</td>
       <td style="font-size:11.5px;${(c.status===CONTRACT_STATUS.VOIDED||c.is_voided_by_amend)?'text-decoration:line-through;color:#9ca3af;':''}">${periodTxt}</td>
-      <td class="amount">${won(c.hourly_wage)}/h</td>
-      <td class="amount-blue">${(isContDaily || empCat===CONTRACT_TYPE.FIXED || empCat===CONTRACT_TYPE.FIXED_PROBATION) ? '<span style="color:#9ca3af;font-size:11px;">-</span>' : won(c.annual_salary)}</td>
-      <td class="amount">${baseSalaryDisplay}</td>
-      <td style="color:#f59e0b;font-weight:600">${isContDaily ? '<span style="color:#9ca3af;font-size:11px;">-</span>' : won(c.weekly_holiday_pay)}</td>
-      <td class="amount-green">${isContDaily ? '<span style="color:#9ca3af;font-size:11px;">-</span>' : won(c.monthly_salary_agreed)}</td>
-      <td>
-        ${docsIncomplete && !(c.status===CONTRACT_STATUS.VOIDED||c.is_voided_by_amend) ? `<span class="badge badge-orange">서류미비</span>` : `<span style="font-size:11px;color:#9ca3af;">-</span>`}
-      </td>
-      <td>
-        <span class="badge ${stBadge}">${stName}</span>
-      </td>
+      <td><span class="badge ${stBadge}">${stName}</span></td>
       <td style="white-space:nowrap;">
         <button class="btn btn-sm btn-indigo" onclick="viewContract('${c.id}')"><i class="fas fa-search"></i> 조회</button>
+      </td>
+      <td style="white-space:nowrap;">
         ${c.is_draft
-          ? `<button class="btn btn-sm" disabled title="임시저장 상태에서는 출력할 수 없습니다"><i class="fas fa-file-contract"></i> 계약서</button>`
-          : `<button class="btn btn-sm btn-indigo" onclick="openContractPrintModal('${c.id}')"><i class="fas fa-file-contract"></i> 계약서</button>`
+          ? `<button class="btn btn-sm" disabled title="임시저장 상태에서는 초안을 볼 수 없습니다"><i class="fas fa-file-contract"></i> 초안</button>`
+          : `<button class="btn btn-sm btn-warning" onclick="openContractPrintModal('${c.id}')" title="자동생성 초안 확인"><i class="fas fa-file-contract"></i> 초안</button>`
         }
+        ${c.edited_file_url
+          ? `<a class="btn btn-sm btn-danger" style="text-decoration:none;" href="${c.edited_file_url}" target="_blank" title="최종 편집본 다운로드"><i class="fas fa-file-word"></i> 최종본</a>
+             <button class="btn btn-sm btn-success" onclick="uploadEditedContractFile('${c.id}')" title="최종 편집본 다시 업로드"><i class="fas fa-redo-alt"></i> 재등록</button>`
+          : `<button class="btn btn-sm btn-success" onclick="uploadEditedContractFile('${c.id}')" title="편집한 워드 파일 업로드"><i class="fas fa-upload"></i> 편집본 업로드</button>`
+        }
+      </td>
+      <td style="white-space:nowrap;">
         ${docsIncomplete && !(c.status===CONTRACT_STATUS.VOIDED||c.is_voided_by_amend)
           ? `<button class="btn btn-sm btn-success" onclick="openDocsUploadModal('${c.id}')"><i class="fas fa-upload"></i> 날인본</button>`
-          : ''
+          : (c.signed_file_data
+              ? `<button class="btn btn-sm btn-indigo" onclick="viewContractSignedFile('${c.id}')" title="날인본 보기"><i class="fas fa-eye"></i> 보기</button>`
+              : `<span style="font-size:11.5px;color:#9ca3af;">-</span>`)
         }
+      </td>
+      <td style="white-space:nowrap;">
         ${(c.status===CONTRACT_STATUS.VOIDED||c.is_voided_by_amend)
           ? `<button class="btn btn-sm btn-secondary" onclick="deleteContract('${c.id}')"><i class="fas fa-trash-alt"></i> 삭제</button>`
-          : ''
+          : `<button class="btn btn-sm ${c.edited_file_url ? 'btn-sky' : ''}" ${c.edited_file_url ? '' : 'disabled'} onclick="openContractSendModal('${c.id}')" title="${c.edited_file_url ? '최종 편집본을 고객사/근로자에게 발송' : '최종 편집본 업로드 후 발송 가능'}"><i class="fas fa-paper-plane"></i> 발송</button>`
         }
       </td>
     </tr>`;
@@ -3532,11 +3531,10 @@ async function openAmendPreview(){
   window._isAmendMode = false;
   window._amendNewContractId = newContractId;
 
-  const _empName = _emp?.name || '';
   const confirmed = await _showConfirm({
-    message: `기존 계약을 파기하고 새로운 계약을 등록했습니다.\n\n계약서를 확인하고 ${_empName ? _empName+'님에게 ' : ''}인쇄용 파일 주소를 즉시 발송하시겠습니까?`,
+    message: `기존 계약을 파기하고 새로운 계약을 등록했습니다.\n\n새 계약서 초안을 확인하시겠습니까?`,
     okText: '예',
-    cancelText: '아니오 (나중에 발송)',
+    cancelText: '아니오 (나중에 확인)',
     okClass: 'btn-primary'
   });
 

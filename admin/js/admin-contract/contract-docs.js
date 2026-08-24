@@ -815,25 +815,58 @@ function printContract(){
   setTimeout(()=>{ win.focus(); win.print(); }, 800);
 }
 
-// ── WORD(docx) 다운로드 ──
-function downloadContractDocx(){
-  // docx.js 라이브러리 동적 로드 후 생성
-  if(!window.docx){
-    const s = document.createElement('script');
-    s.src = 'https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.js';
-    s.onload = ()=>_buildDocx();
-    document.head.appendChild(s);
-  } else {
-    _buildDocx();
+// ════════════════════════════════════════════════════════════
+// WORD(docx) 다운로드 — 화면에 보이는 계약서 HTML을 서버(docx 라이브러리)가
+// 클래스 기반으로 재구성해 화면과 동일한 디자인을 Word에 재현 (서버 변환)
+// ════════════════════════════════════════════════════════════
+
+/** 계약서 HTML → 서버 docx 변환 → 다운로드 */
+async function _downloadContractDocxFromHtml(sourceEl, filename){
+  if(!sourceEl || !sourceEl.innerHTML.trim()){ toast('계약서 내용이 없습니다.'); return; }
+  // 파기 워터마크(고정 오버레이)는 docx에서 제외
+  const clone = sourceEl.cloneNode(true);
+  clone.querySelectorAll('[style*="position:fixed"], [style*="position: fixed"]').forEach(n=>n.remove());
+  try {
+    const res = await fetch('../api/contract-docx', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ html: clone.outerHTML, filename })
+    });
+    if(!res.ok){
+      const j = await res.json().catch(()=>({}));
+      toast('WORD 생성 실패: ' + (j.error || res.status), 'error');
+      return;
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = (filename || '근로계약서') + '.docx'; a.click();
+    URL.revokeObjectURL(url);
+    toast('WORD 파일이 다운로드됐습니다. (화면 계약서와 동일 내용)');
+  } catch(e){
+    console.error('[계약서 DOCX 다운로드]', e);
+    toast('WORD 생성 중 오류가 발생했습니다.', 'error');
   }
 }
 
-function _buildDocx(){
+/** 계약 조회(print 모달) WORD 저장 — 화면과 동일 */
+async function downloadContractWord(){
+  const el = document.getElementById('cpm-doc-area');
+  const empName = window._printingEmpName || '근로자';
+  await _downloadContractDocxFromHtml(el, '근로계약서_' + empName);
+}
+
+/** 계약 작성(미리보기) WORD 다운로드 — 화면과 동일 */
+async function downloadContractDocx(){
+  const el = document.getElementById('ct-print-area');
+  const empName = document.getElementById('ct-edit-emp-name')?.value || '근로자';
+  await _downloadContractDocxFromHtml(el, '근로계약서_' + empName);
+}
+
+function _buildDocx(data){
   const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
           WidthType, AlignmentType, BorderStyle, ShadingType,
           VerticalAlign, UnderlineType } = docx;
 
-  const data = _collectContractData();
   const won = v => Number(v||0).toLocaleString('ko-KR')+'원';
   const FONT = '맑은 고딕';
 
@@ -1162,6 +1195,138 @@ function _buildDocx(){
     URL.revokeObjectURL(url);
     toast('WORD 파일이 다운로드됐습니다. (고용노동부 표준 양식)');
   });
+}
+
+// ── 계약·직원·고객사 레코드 기반 docx 데이터 수집 (print 모달·조회용) ──
+// generateContractHTMLFromData와 동일한 정규화·스케줄 규칙을 적용해
+// _buildDocx(data)가 필요로 하는 필드를 레코드에서 직접 산출한다.
+function _collectContractDataFromRecord(c, emp, co){
+  const _ctTypeRaw = c.contract_type || emp.employment_category || CONTRACT_TYPE.REGULAR;
+  const _ctTypeNorm = typeof normalizeContractType === 'function'
+    ? normalizeContractType(_ctTypeRaw) : _ctTypeRaw;
+  const _isPendingRec = (c.status===CONTRACT_STATUS.PENDING);
+  const contractType = _isPendingRec
+    ? (_ctTypeNorm === CONTRACT_TYPE.REGULAR_PROBATION ? CONTRACT_TYPE.REGULAR
+      : _ctTypeNorm === CONTRACT_TYPE.FIXED_PROBATION ? CONTRACT_TYPE.FIXED
+      : _ctTypeNorm)
+    : _ctTypeNorm;
+  const isDaily = contractType === CONTRACT_TYPE.DAILY;
+  const isProb  = contractType === CONTRACT_TYPE.REGULAR_PROBATION || contractType === CONTRACT_TYPE.FIXED_PROBATION;
+
+  // ── 근무 스케줄 파싱 (generateContractHTMLFromData와 동일 규칙) ──
+  let schedule = [];
+  if(c.schedule_json){
+    try { const p = JSON.parse(c.schedule_json); schedule = Array.isArray(p) ? p : []; }
+    catch(e){ schedule = []; }
+  }
+  let activeDays = schedule.filter(s => s.active===true || s.active===1 || s.active==='true');
+  if(activeDays.length === 0){
+    const _DAY_KEYS = ['mon','tue','wed','thu','fri','sat','sun'];
+    const _start  = c.start_time || '09:00';
+    const _end    = c.end_time   || '18:00';
+    const _wDays  = parseInt(c.work_days_per_week || c.days_per_week || 5);
+    const _brkMins = parseInt(c.break_mins || 60);
+    const _toM = t => { const p = t.split(':'); return parseInt(p[0])*60+parseInt(p[1]); };
+    const _fmtT = m => `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
+    const _sMins = _toM(_start); let _eMins = _toM(_end);
+    if(_eMins <= _sMins) _eMins += 24*60;
+    const _half = Math.round((_eMins - _sMins - _brkMins)/2);
+    const _bs = _brkMins > 0 ? _fmtT(_sMins + _half) : '';
+    const _be = _brkMins > 0 ? _fmtT(_sMins + _half + _brkMins) : '';
+    activeDays = _DAY_KEYS.map((k,i)=>({
+      day:k, active:i<_wDays,
+      start:i<_wDays?_start:'', end:i<_wDays?_end:'',
+      brk_start:i<_wDays?_bs:'', brk_end:i<_wDays?_be:''
+    }));
+  }
+  activeDays = activeDays.map(s=>{
+    const shift = (Array.isArray(s.shifts)&&s.shifts.length>0) ? s.shifts[0] : {};
+    return {
+      day:s.day, start:shift.start||s.start||'', end:shift.end||s.end||'',
+      breaks:Array.isArray(shift.breaks)?shift.breaks:(Array.isArray(s.breaks)?s.breaks:[]),
+      brk_start:shift.brk_start||s.brk_start||'', brk_end:shift.brk_end||s.brk_end||''
+    };
+  });
+  const dayNamesFull = {mon:'월요일',tue:'화요일',wed:'수요일',thu:'목요일',fri:'금요일',sat:'토요일',sun:'일요일'};
+  const dayNamesK = {mon:'월',tue:'화',wed:'수',thu:'목',fri:'금',sat:'토',sun:'일'};
+  let workDays = '';
+  if(activeDays.length) workDays = activeDays.map(s=>dayNamesFull[s.day]||s.day).join(', ');
+  else if(c.work_days) workDays = c.work_days;
+  else workDays = '월요일 ~ 금요일';
+  const startTime  = activeDays[0]?.start || c.start_time || '09:00';
+  const endTime    = activeDays[activeDays.length-1]?.end || c.end_time || '18:00';
+  const hoursPerDay = parseFloat(c.hours_per_day || c.work_hours_per_day || c.daily_hours || 8);
+  const daysPerWeek = parseInt(c.days_per_week || c.work_days_count || c.work_days_per_week || (activeDays.length||5));
+  const weekHours   = Math.round(hoursPerDay * daysPerWeek * 10)/10;
+  const _normBrk = s => {
+    if(Array.isArray(s.breaks)&&s.breaks.length) return s.breaks;
+    if(s.brk_start||s.brk_end) return [{s:s.brk_start||'',e:s.brk_end||''}];
+    return [];
+  };
+  const uniqBrk = {};
+  activeDays.forEach(day=>{
+    _normBrk(day).forEach(b=>{ if(!b.s||!b.e) return; const k=`${b.s}~${b.e}`; if(!uniqBrk[k]) uniqBrk[k]=new Set(); uniqBrk[k].add(dayNamesK[day.day]||day.day); });
+  });
+  let breakInfo = '';
+  if(Object.keys(uniqBrk).length){
+    breakInfo = Object.entries(uniqBrk).map(([time,set])=>{
+      const [hs,ms]=time.split('~')[0].split(':').map(Number);
+      const [he,me]=time.split('~')[1].split(':').map(Number);
+      let mins=(he*60+me)-(hs*60+ms); if(mins<=0) mins+=24*60;
+      return `[${[...set].join('·')}] ${time} (${mins}분)`;
+    }).join(', ');
+  } else {
+    breakInfo = '1일 근로시간 4시간인 경우 30분, 8시간인 경우 1시간 이상';
+  }
+
+  const payMethodLabel = isDaily ? ({daily:'일급', weekly:'주급', monthly:'월합산'}[c.pay_method]||'월합산') : '매월';
+
+  return {
+    companyName: co.company_name||'', bizNumber: co.business_number||'', companyAddr: co.address||'',
+    representative: (typeof getCompanyRepName === 'function') ? getCompanyRepName(co) : (co.representative||''),
+    empName: emp.name||'', idNumber: emp.id_number||'', address: emp.address||'', phone: emp.phone||'',
+    jobDescription: emp.job_description||'', department: emp.department||'', position: emp.position||'',
+    contractType, contractStart: c.contract_start||'', contractEnd: c.contract_end||'',
+    isDaily,
+    probationMonths: isProb?(parseInt(c.probation_months)||3):0,
+    probationPct:    isProb?(parseFloat(c.probation_pct)||80):0,
+    probationAmt:    isProb?(parseFloat(c.probation_amt)||0):0,
+    probationBasis:  c.probation_basis||'salary',
+    annualLeave:     parseFloat(c.annual_leave_days)||15,
+    workDays, startTime, endTime, hoursPerDay, daysPerWeek, weekHours, breakInfo,
+    annualSalary:  parseFloat(c.annual_salary)||0,
+    baseSalary:    parseFloat(c.base_salary)||0,
+    weeklyHol:     parseFloat(c.weekly_holiday_pay)||0,
+    fixedOtPay:    parseFloat(c.fixed_ot_pay)||0,
+    fixedNightPay: parseFloat(c.fixed_night_pay)||0,
+    fixedHolPay:   parseFloat(c.fixed_hol_pay)||0,
+    positionAllowance: parseFloat(c.position_allowance)||0,
+    carMaintenance: parseFloat(c.car_maintenance||c.transportation_allowance)||0,
+    mealAllowance:  parseFloat(c.meal_allowance)||0,
+    researchAllowance: parseFloat(c.research_allowance)||0,
+    siteAllowance:  parseFloat(c.site_allowance)||0,
+    skillAllowance: parseFloat(c.skill_allowance)||0,
+    licenseAllowance: parseFloat(c.license_allowance)||0,
+    communicationAllowance: parseFloat(c.communication_allowance)||0,
+    fitnessAllowance: parseFloat(c.fitness_allowance)||0,
+    selfDevAllowance: parseFloat(c.self_dev_allowance)||0,
+    bookAllowance:  parseFloat(c.book_allowance)||0,
+    overseasAllowance: parseFloat(c.overseas_allowance)||0,
+    otherAllowance: parseFloat(c.etc_allowance||c.contract_etc_allowance)||0,
+    childcareAllowance: parseFloat(c.childcare_allowance)||0,
+    remoteAreaAllowance: parseFloat(c.remote_area_allowance)||0,
+    hazardAllowance: parseFloat(c.hazard_allowance)||0,
+    monthlySalary:  parseFloat(c.monthly_salary_agreed)||0,
+    hourlyWage:     parseFloat(c.hourly_wage)||0,
+    dailyWage:      parseFloat(c.daily_wage)||0,
+    payMethod:  c.pay_method || (isDaily?'daily':'monthly'),
+    payMethodLabel,
+    payCondition: c.pay_condition||'same_day',
+    payAfterDays: parseInt(c.pay_after_days)||0,
+    payWeekday:   c.pay_weekday!=null?parseInt(c.pay_weekday):-1,
+    payPeriodWeekday: c.pay_period_weekday!=null?parseInt(c.pay_period_weekday):-1,
+    payDay: c.pay_day,
+  };
 }
 
 // ── 폼 데이터 수집 ──
@@ -1656,42 +1821,7 @@ function openContractPrintModal(contractId){
   window._printingContractStart = c.contract_start || '';
   window._printingContractEnd   = c.contract_end   || '';
 
-  // ── 파기된 계약서 여부 확인 (status='파기' 또는 수정재발행으로 파기된 경우) ──
-  const isVoided = (c.status===CONTRACT_STATUS.VOIDED) || !!(c.is_voided_by_amend);
-
-  // ── 이메일 버튼: 이메일 등록 시에만 활성화 (파기 계약이면 비활성) ──
-  const emailBtn = document.getElementById('cpm-email-btn');
-  if(emailBtn){
-    const hasEmail = !isVoided && !!(emp.email && emp.email.trim());
-    emailBtn.disabled    = !hasEmail;
-    emailBtn.style.cursor  = hasEmail ? 'pointer' : 'not-allowed';
-    emailBtn.title = isVoided
-      ? '파기된 계약서는 발송할 수 없습니다'
-      : hasEmail
-        ? `이메일 발송 (${emp.email})`
-        : '이메일 미등록 — 직원 정보에 이메일을 먼저 등록하세요';
-  }
-
-  // ── 알림톡 버튼: 전화번호 등록 시에만 활성화 (파기 계약이면 비활성) ──
-  const kakaoBtn = document.getElementById('cpm-kakao-btn');
-  if(kakaoBtn){
-    const hasPhone = !isVoided && !!(emp.phone && emp.phone.trim());
-    kakaoBtn.disabled    = !hasPhone;
-    kakaoBtn.style.cursor  = hasPhone ? 'pointer' : 'not-allowed';
-    kakaoBtn.title = isVoided
-      ? '파기된 계약서는 발송할 수 없습니다'
-      : hasPhone
-        ? `알림톡 발송 (${emp.phone})`
-        : '전화번호 미등록 — 직원 정보에 전화번호를 먼저 등록하세요';
-  }
-
-  // ── 수동 교부 버튼: 파기 계약이면 비활성화 ──
-  const manualBtn = document.getElementById('cpm-manual-btn');
-  if(manualBtn){
-    manualBtn.disabled   = isVoided;
-    manualBtn.style.cursor  = isVoided ? 'not-allowed' : 'pointer';
-    manualBtn.title = isVoided ? '파기된 계약서는 발송할 수 없습니다' : '출력물 직접 배부 완료 처리';
-  }
+  // ── 파기 계약 여부 (초안 보기·인쇄는 유지, 발송은 목록 '발송' 열에서 처리) ──
 
   // 모달 열기
   document.getElementById('contract-print-modal').classList.add('open');
@@ -1766,57 +1896,65 @@ function printContractDoc(){
   setTimeout(()=>{ win.focus(); win.print(); }, 900);
 }
 
-/** PDF 저장 (html2canvas → jsPDF) */
-async function downloadContractPdf(){
-  const btn = document.getElementById('cpm-pdf-btn');
-  if(btn){ btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> 생성 중...'; }
-  try {
-    const docArea = document.getElementById('cpm-doc-area');
-    // jsPDF / html2canvas는 이미 CDN으로 로드됨
-    const { jsPDF } = window.jspdf;
-    const canvas = await html2canvas(docArea, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: '#ffffff',
-      logging: false,
-    });
-    const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
-    const pageW = pdf.internal.pageSize.getWidth();
-    const pageH = pdf.internal.pageSize.getHeight();
-    const imgW  = pageW;
-    const imgH  = (canvas.height * imgW) / canvas.width;
+// ════════════════════════════════════════════════════════════
+// 최종 편집본(워드) 업로드 → 파일서버 저장 + DB 기록 / 날인본 보기
+// (계약 목록 — 계약서 열 '편집본 업로드'·'재등록', 날인본 열 '보기')
+// ════════════════════════════════════════════════════════════
 
-    let posY = 0;
-    let remainH = imgH;
-    let page = 0;
-    while(remainH > 0){
-      if(page > 0) pdf.addPage();
-      // 현재 페이지에 그릴 높이
-      const drawH = Math.min(pageH, remainH);
-      // 이미지의 y오프셋 (mm단위)
-      pdf.addImage(imgData, 'PNG', 0, -posY, imgW, imgH);
-      posY    += pageH;
-      remainH -= pageH;
-      page++;
+/** 최종 편집본(워드) 업로드 → 파일서버 저장 + contracts.edited_file_url 기록 */
+async function uploadEditedContractFile(contractId){
+  if(!contractId){ toast('계약 정보가 없습니다.'); return; }
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+  input.onchange = async () => {
+    const file = input.files[0];
+    if(!file) return;
+    try {
+      const fd = new FormData();
+      fd.append('contract', file);
+      const res  = await fetch(`../api/upload/${contractId}`, { method: 'POST', body: fd });
+      const json = await res.json();
+      if(!res.ok || !json.ok || !json.files || !json.files.contract){
+        toast('업로드에 실패했습니다.', 'error');
+        return;
+      }
+      const url = json.files.contract;
+      // DB에 최종 편집본 URL 기록 (발송 열 활성화·계약서 열 표시에 사용)
+      await api(`../tables/contracts/${contractId}`, {
+        method: 'PATCH', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ edited_file_url: url })
+      });
+      toast('✅ 최종 편집본이 파일서버에 저장됐습니다.', 'success');
+      await loadContracts();
+      renderContracts();
+    } catch(e){
+      console.error('[편집본 업로드]', e);
+      toast('업로드 중 오류가 발생했습니다.', 'error');
     }
+  };
+  input.click();
+}
 
-    const empName = window._printingEmpName || '근로자';
-    const ctType  = window._printingContractType || '';
-    const today   = fmtLocalDate(new Date()).replace(/-/g,'');
-    pdf.save(`근로계약서_${empName}_${ctType}_${today}.pdf`);
-    toast('PDF가 저장되었습니다.');
-  } catch(e){
-    console.error('[계약서 PDF]', e);
-    toast('PDF 생성 중 오류가 발생했습니다. 인쇄(Ctrl+P)를 이용해 PDF로 저장하세요.');
-  } finally {
-    if(btn){ btn.disabled=false; btn.innerHTML='<i class="fas fa-file-pdf"></i> PDF 저장'; }
+/** 날인본(계약서 서명본) 새 창 미리보기 — 이미지 또는 PDF */
+function viewContractSignedFile(contractId){
+  const c = (allContracts||[]).find(x => x.id === contractId);
+  if(!c || !c.signed_file_data){ toast('날인본 파일이 없습니다.', 'warning'); return; }
+  const base64   = c.signed_file_data;
+  const fileName = c.signed_file_name || '날인본';
+  const isPdf = base64.startsWith('data:application/pdf') || String(fileName).toLowerCase().endsWith('.pdf');
+  const w = window.open('', '_blank');
+  if(!w){ toast('팝업이 차단되었습니다. 브라우저 팝업 허용 후 다시 시도해 주세요.', 'warning'); return; }
+  if(isPdf){
+    w.document.write(`<html><head><title>${fileName}</title></head><body style="margin:0;"><iframe src="${base64}" width="100%" height="100%" style="border:none;position:fixed;inset:0;"></iframe></body></html>`);
+  } else {
+    w.document.write(`<html><head><title>${fileName}</title><style>body{margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#1a1a2e;}img{max-width:100%;max-height:100vh;object-fit:contain;}</style></head><body><img src="${base64}" alt="${fileName}"></body></html>`);
   }
+  w.document.close();
 }
 
 // ======================================================
 // ======================================================
 // 근로계약서 발송 관리 페이지 — 데이터 로드 & 렌더링
 // ======================================================
-
 // 전역 캐시
