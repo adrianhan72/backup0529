@@ -2,6 +2,8 @@
 let currentCompany = null;
 let allEmployees = [], allPayrolls = [], allContracts = [], allBillings = [];
 let _wlNotifications = []; // 임금대장 알림 (파일 경로 포함)
+let allRegisteredExecutives = []; // 등기임원 (직원 현황 역할 카드용)
+let allRelatedParties = [];       // 특수관계인 (직원 현황 역할 카드용)
 let _clientSevTab = 'history'; // severance tab state
 let statsYear    = new Date().getFullYear();
 let statsMonth   = new Date().getMonth() + 1;
@@ -147,6 +149,17 @@ async function loadData(){
   allContracts = (cd.data||[]).filter(c => c.company_id === currentCompany.id);
   allBillings  = (bd.data||[]).filter(b => b.company_id === currentCompany.id);
   _wlNotifications = (wd.data||[]).filter(n => n.company_id === currentCompany.id);
+  // 등기임원 / 특수관계인 로드 (직원 현황 역할 카드용)
+  try {
+    const [er, rr] = await Promise.all([
+      fetch('../tables/registered_executives?limit=500'),
+      fetch('../tables/related_party_workers?limit=500')
+    ]);
+    const erd = await er.json();
+    const rrd = await rr.json();
+    allRegisteredExecutives = (erd.data||[]).filter(r => r.company_id === currentCompany.id);
+    allRelatedParties       = (rrd.data||[]).filter(r => r.company_id === currentCompany.id);
+  } catch(e){ allRegisteredExecutives = []; allRelatedParties = []; }
   // 시스템 설정 로드 (사용료 스위치)
   try {
     const sr = await fetch('../tables/system_settings?setting_key=billing_feature_enabled');
@@ -154,6 +167,13 @@ async function loadData(){
     const row = (sd.data||[]).find(r => r.setting_key === 'billing_feature_enabled');
     _billingFeatureEnabled = row ? row.setting_value === '1' : false;
   } catch(e) { _billingFeatureEnabled = false; }
+  // 시스템 설정 로드 (수습근로자 관리 스위치)
+  try {
+    const pr = await fetch('../tables/system_settings?setting_key=probation_feature_enabled');
+    const pd = await pr.json();
+    const prow = (pd.data||[]).find(r => r.setting_key === 'probation_feature_enabled');
+    window._probationFeatureEnabled = prow ? prow.setting_value === '1' : false;
+  } catch(e) { window._probationFeatureEnabled = false; }
 }
 
 

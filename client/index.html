@@ -125,12 +125,27 @@
           </div>
         </div>
         <div class="cat-grid">
+          <div class="cat-card" style="background:#eef2ff;border-color:#c7d2fe;cursor:pointer;" title="대표자 목록" onclick="showContractsByCategory('대표자')">
+            <div class="cc-label" style="color:#3730a3;">대표자</div>
+            <div class="cc-val" id="s-cat-representative" style="color:#4f46e5;">0</div>
+            <div class="cc-unit" style="color:#a5b4fc;">명</div>
+          </div>
+          <div class="cat-card" style="background:#f5f3ff;border-color:#ddd6fe;cursor:pointer;" title="등기임원 목록" onclick="showContractsByCategory('등기임원')">
+            <div class="cc-label" style="color:#5b21b6;">등기임원</div>
+            <div class="cc-val" id="s-cat-executive" style="color:#7c3aed;">0</div>
+            <div class="cc-unit" style="color:#c4b5fd;">명</div>
+          </div>
+          <div class="cat-card" style="background:#ecfeff;border-color:#a5f3fc;cursor:pointer;" title="특수관계인 목록" onclick="showContractsByCategory('특수관계인')">
+            <div class="cc-label" style="color:#155e75;">특수관계인</div>
+            <div class="cc-val" id="s-cat-related" style="color:#0891b2;">0</div>
+            <div class="cc-unit" style="color:#67e8f9;">명</div>
+          </div>
           <div class="cat-card" style="background:#eff6ff;border-color:#bfdbfe;cursor:pointer;" title="정규직 근로계약 조회" onclick="showContractsByCategory('정규직')">
             <div class="cc-label" style="color:#2563eb;">정규직</div>
             <div class="cc-val" id="s-cat-regular" style="color:#1d4ed8;">0</div>
             <div class="cc-unit" style="color:#93c5fd;">명</div>
           </div>
-          <div class="cat-card" style="background:#f0fdf4;border-color:#bbf7d0;cursor:pointer;" title="정규직(수습) 근로계약 조회" onclick="showContractsByCategory('정규직 수습')">
+          <div class="cat-card" id="s-cat-regular-prob-card" style="background:#f0fdf4;border-color:#bbf7d0;cursor:pointer;" title="정규직(수습) 근로계약 조회" onclick="showContractsByCategory('정규직 수습')">
             <div class="cc-label" style="color:#15803d;">정규(수습)</div>
             <div class="cc-val" id="s-cat-regular-prob" style="color:#16a34a;">0</div>
             <div class="cc-unit" style="color:#86efac;">명</div>
@@ -140,7 +155,7 @@
             <div class="cc-val" id="s-cat-contract" style="color:#d97706;">0</div>
             <div class="cc-unit" style="color:#fcd34d;">명</div>
           </div>
-          <div class="cat-card" style="background:#fff7ed;border-color:#fed7aa;cursor:pointer;" title="계약직(수습) 근로계약 조회" onclick="showContractsByCategory('계약직 수습')">
+          <div class="cat-card" id="s-cat-contract-prob-card" style="background:#fff7ed;border-color:#fed7aa;cursor:pointer;" title="계약직(수습) 근로계약 조회" onclick="showContractsByCategory('계약직 수습')">
             <div class="cc-label" style="color:#c2410c;">계약(수습)</div>
             <div class="cc-val" id="s-cat-contract-prob" style="color:#ea580c;">0</div>
             <div class="cc-unit" style="color:#fdba74;">명</div>
@@ -150,8 +165,13 @@
             <div class="cc-val" id="s-cat-daily" style="color:#9333ea;">0</div>
             <div class="cc-unit" style="color:#d8b4fe;">명</div>
           </div>
+          <div class="cat-card" style="background:#f8fafc;border-color:#e2e8f0;cursor:pointer;" title="기타(미분류) 목록" onclick="showContractsByCategory('기타')">
+            <div class="cc-label" style="color:#475569;">기타</div>
+            <div class="cc-val" id="s-cat-etc" style="color:#64748b;">0</div>
+            <div class="cc-unit" style="color:#cbd5e1;">명</div>
+          </div>
         </div>
-        <div style="margin-top:8px;font-size:10.5px;color:#9ca3af;text-align:center;"><i class="fas fa-hand-pointer" style="margin-right:3px;"></i>고용형태 박스를 탭하면 근로계약을 조회할 수 있습니다</div>
+        <div style="margin-top:8px;font-size:10.5px;color:#9ca3af;text-align:center;"><i class="fas fa-hand-pointer" style="margin-right:3px;"></i>카테고리 박스를 탭하면 목록을 조회할 수 있습니다</div>
       </div>
     </div>
 
@@ -757,7 +777,7 @@
 </div>
 
     <script src="js/client-core.js?v=20260819a"></script>
-  <script src="js/client-payslip.js?v=20260818a"></script>
+  <script src="js/client-payslip.js?v=20260824c"></script>
   <script src="js/client-chart.js"></script>
   <script src="js/client-billing.js"></script>
   <script src="js/client-notice.js"></script>

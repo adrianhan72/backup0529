@@ -10,14 +10,54 @@ function _adjustPsStickyTop(){
 
 // ══ 근로계약 서브페이지 ══
 
-// 카테고리별 설정 (배경색, 아이콘, 텍스트색 등)
+// 카테고리별 설정 (배경색, 아이콘, 텍스트색 등) — 대표자/등기임원/특수관계인/기타 포함
 const CAT_CONFIG = Object.freeze({
+  '대표자':        { bg:'linear-gradient(135deg,#1e40af,#4f46e5)', icon:'🏢', avatarBg:'#4f46e5', label:'대표자' },
+  '등기임원':      { bg:'linear-gradient(135deg,#6d28d9,#8b5cf6)', icon:'💼', avatarBg:'#8b5cf6', label:'등기임원' },
+  '특수관계인':    { bg:'linear-gradient(135deg,#0e7490,#06b6d4)', icon:'🤝', avatarBg:'#06b6d4', label:'특수관계인' },
   [CONTRACT_TYPE_LABEL[CONTRACT_TYPE.REGULAR]]:           { bg:'linear-gradient(135deg,#1d4ed8,#3b82f6)', icon:'👔', avatarBg:'#3b82f6', label:'정규직' },
   [CONTRACT_TYPE_LABEL[CONTRACT_TYPE.REGULAR_PROBATION]]: { bg:'linear-gradient(135deg,#047857,#10b981)', icon:'🌱', avatarBg:'#10b981', label:'정규직 (수습)' },
   [CONTRACT_TYPE_LABEL[CONTRACT_TYPE.FIXED]]:             { bg:'linear-gradient(135deg,#92400e,#f59e0b)', icon:'📋', avatarBg:'#f59e0b', label:'계약직' },
   [CONTRACT_TYPE_LABEL[CONTRACT_TYPE.FIXED_PROBATION]]:   { bg:'linear-gradient(135deg,#c2410c,#f97316)', icon:'📌', avatarBg:'#f97316', label:'계약직 (수습)' },
   [CONTRACT_TYPE_LABEL[CONTRACT_TYPE.DAILY]]:             { bg:'linear-gradient(135deg,#6d28d9,#a855f7)', icon:'🔧', avatarBg:'#a855f7', label:'일용직' },
+  '기타':          { bg:'linear-gradient(135deg,#64748b,#94a3b8)', icon:'👤', avatarBg:'#94a3b8', label:'기타' },
 });
+
+// 직원 역할 판별 (대표자/등기임원/특수관계인) — companies.representatives / registered_executives / related_party_workers
+function _clientEmpRole(emp){
+  if(!emp || !emp.name) return null;
+  const name = String(emp.name).trim();
+  try {
+    const reps = typeof currentCompany?.representatives === 'string'
+      ? JSON.parse(currentCompany.representatives) : (currentCompany?.representatives || []);
+    if(Array.isArray(reps) && reps.some(r => String(r.name||'').trim() === name)) return '대표자';
+  } catch(_){}
+  if((allRegisteredExecutives||[]).some(r => String(r.name||'').trim() === name)) return '등기임원';
+  if((allRelatedParties||[]).some(r => String(r.name||'').trim() === name)) return '특수관계인';
+  return null;
+}
+// 직원 카드 카테고리: 역할 우선 → 고용형태 라벨 → 기타
+function _clientEmpCategory(emp){
+  const role = _clientEmpRole(emp);
+  if(role) return role;
+  const norm = _normContractType(emp?.employment_category);
+  return CONTRACT_TYPE_LABEL[norm] || '기타';
+}
+// 수습 직원 여부 (고용형태 또는 보유 계약이 수습) — 수습 기능 OFF 시 제외 대상
+function _isClientProbationEmp(emp){
+  if(!emp) return false;
+  const cat = _normContractType(emp.employment_category);
+  if(cat === CONTRACT_TYPE.REGULAR_PROBATION || cat === CONTRACT_TYPE.FIXED_PROBATION) return true;
+  return (allContracts||[]).some(c => c.employee_id === emp.id && (
+    _normContractType(c.contract_type) === CONTRACT_TYPE.REGULAR_PROBATION ||
+    _normContractType(c.contract_type) === CONTRACT_TYPE.FIXED_PROBATION
+  ));
+}
+// 수습 기능 OFF 시 수습 직원을 제외한 표시 대상 직원 목록
+function _clientVisibleEmps(){
+  if(window._probationFeatureEnabled === true) return allEmployees;
+  return allEmployees.filter(e => !_isClientProbationEmp(e));
+}
 
 let _contractsBackPage = 'stats'; // 뒤로가기 대상
 
@@ -26,9 +66,11 @@ function showContractsByCategory(category){
 
   const cfg = CAT_CONFIG[category] || { bg:'linear-gradient(135deg,#374151,#6b7280)', icon:'👤', avatarBg:'#6b7280', label:category };
 
-  // 해당 카테고리 직원 필터 (재직 우선, 퇴직은 뒤로)
-  const emps = allEmployees
-    .filter(e => _normContractType(e.employment_category) === _normContractType(category))
+  // 해당 카테고리 직원 필터 (재직 우선, 퇴직은 뒤로) — 역할(대표자/등기임원/특수관계인/기타) 또는 고용형태
+  const emps = _clientVisibleEmps()
+    .filter(e => (category==='대표자'||category==='등기임원'||category==='특수관계인'||category==='기타')
+      ? _clientEmpCategory(e) === category
+      : _normContractType(e.employment_category) === _normContractType(category))
     .sort((a,b) => {
       const aActive = _isEmpActive(a) ? 0 : 1;
       const bActive = _isEmpActive(b) ? 0 : 1;
@@ -324,22 +366,39 @@ function renderStats(){
   if(hmLabel) hmLabel.textContent = `${statsYear}년 ${statsMonth}월`;
 
   const pays = allPayrolls.filter(p => p.pay_year==statsYear && p.pay_month==statsMonth);
-  const activeEmps = allEmployees.filter(e => _isEmpActive(e));
-  const retiredEmps = allEmployees.filter(e => !_isEmpActive(e));
-  const catCount = catLabel => allEmployees.filter(e => {
+  const visEmps = _clientVisibleEmps(); // 수습 기능 OFF 시 수습 직원 제외
+  const activeEmps = visEmps.filter(e => _isEmpActive(e));
+  const retiredEmps = visEmps.filter(e => !_isEmpActive(e));
+  const catCount = catLabel => visEmps.filter(e => {
     const norm = _normContractType(e.employment_category);
     return CONTRACT_TYPE_LABEL[norm] === catLabel;
   }).length;
 
+  // 수습 기능 OFF → 정규(수습)·계약(수습) 카드 숨김
+  const _probOn = window._probationFeatureEnabled === true;
+  const _rpCard = document.getElementById('s-cat-regular-prob-card');
+  const _cpCard = document.getElementById('s-cat-contract-prob-card');
+  if(_rpCard) _rpCard.style.display = _probOn ? '' : 'none';
+  if(_cpCard) _cpCard.style.display = _probOn ? '' : 'none';
+
   // 직원 현황
-  document.getElementById('s-total-emp').textContent   = allEmployees.length;
+  document.getElementById('s-total-emp').textContent   = visEmps.length;
   document.getElementById('s-active-emp').textContent  = activeEmps.length;
   document.getElementById('s-retired-emp').textContent = retiredEmps.length;
+  // 역할 카드 (대표자/등기임원/특수관계인/기타)
+  const _setRole = (id, label) => {
+    const el = document.getElementById(id);
+    if(el) el.textContent = visEmps.filter(e => _clientEmpCategory(e) === label).length;
+  };
+  _setRole('s-cat-representative', '대표자');
+  _setRole('s-cat-executive', '등기임원');
+  _setRole('s-cat-related', '특수관계인');
   document.getElementById('s-cat-regular').textContent      = catCount('정규직');
   document.getElementById('s-cat-regular-prob').textContent = catCount('정규직 수습')||catCount('정규직(수습)');
   document.getElementById('s-cat-contract').textContent     = catCount('계약직');
   document.getElementById('s-cat-contract-prob').textContent= catCount('계약직 수습')||catCount('계약직(수습)');
   document.getElementById('s-cat-daily').textContent        = catCount('일용직');
+  _setRole('s-cat-etc', '기타');
 
   // 급여 집계
   const gross = pays.reduce((a,p) => a+(p.gross_pay||0), 0);

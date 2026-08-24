@@ -101,6 +101,22 @@ function _updateNotifBadge(){
 }
 
 /* ────────────────────────────────────────────────────────────────
+   _notifBodyHtml()
+   본문 HTML 변환 — 이스케이프 후 http(s) URL(파일주소 등)을
+   클릭 시 바로 다운로드되는 링크로 변환
+   ──────────────────────────────────────────────────────────────── */
+function _notifBodyHtml(text){
+  if(!text) return '';
+  const esc = _escHtml(text);
+  return esc.replace(/(https?:\/\/[^\s<>"']+)/g, (url) => {
+    // 문장부호(마침표·쉼표 등)는 URL 밖으로 분리
+    const clean = url.replace(/[.,;:!?)\]\}]+$/, '');
+    const tail  = url.slice(clean.length);
+    return `<a href="${clean}" target="_blank" rel="noopener" download class="notif-link">${clean}</a>${tail}`;
+  });
+}
+
+/* ────────────────────────────────────────────────────────────────
    renderClientNotices()
    모달 바디에 알림 목록 렌더링
    ──────────────────────────────────────────────────────────────── */
@@ -135,7 +151,7 @@ function renderClientNotices(){
         </div>
         <div class="notif-content">
           <div class="notif-title">${_escHtml(n.title||'알림')}</div>
-          <div class="notif-body">${_escHtml(n.body||'')}</div>
+          <div class="notif-body">${_notifBodyHtml(n.body||'')}</div>
           <div class="notif-time">${_notifFmtDate(n.created_at)}</div>
         </div>
         ${isUnread ? '<div class="notif-unread-dot" title="미읽음"></div>' : ''}
@@ -180,14 +196,17 @@ async function openNotifDetail(id){
 
   if(titleEl)   titleEl.textContent  = n.title || '알림';
   if(metaEl)    metaEl.textContent   = _notifFmtDate(n.created_at) + (n.sent_by ? ' · 발송: ' + n.sent_by : '');
-  if(bodyEl)    bodyEl.textContent   = n.body || '';
+  if(bodyEl)    bodyEl.innerHTML     = _notifBodyHtml(n.body || '');
 
-  // 계약 정보 박스 표시 여부 — 가입환영(company_welcome) 타입은 고객사명 표시
+  // 계약 정보 박스 표시 여부 — 검수/날인 요청은 정보 박스 숨김 (본문의 파일주소 안내만 표시)
+  const isNoInfo  = n.notice_type === 'contract_review_request' || n.notice_type === 'contract_seal_request';
   const isWelcome = n.notice_type === 'company_welcome' || n.notice_type === 'welcome';
   const label1El  = document.getElementById('notif-info-label-1');
   const row2El    = document.getElementById('notif-info-row-2');
 
-  if(isWelcome){
+  if(isNoInfo){
+    if(infoBox) infoBox.style.display = 'none';
+  } else if(isWelcome){
     // welcome: 고객사명 표시, 계약종료일 행 숨김
     if(label1El) label1El.textContent = '고객사';
     if(empEl)    empEl.textContent    = n.company_name || '-';
