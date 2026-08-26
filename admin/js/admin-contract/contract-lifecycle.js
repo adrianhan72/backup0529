@@ -535,6 +535,7 @@ function generateContractHTMLFromData(c, emp, co){
           ${row('임금 지급일', payDayStr + ' (현금 또는 계좌이체)')}
           ${row('지급 방법', '현금 지급 또는 근로자 명의 계좌 직접 입금')}
         </table>
+        ${co.premium_mode !== 'always' ? '<div class="doc-note">※ 연장·야간·휴일 근로수당은 법정 가산수당 지급의무가 발생할 경우 가산을 적용한다.</div>' : ''}
         <div class="doc-note">※ 제세공과금(소득세, 4대 보험료 등)은 관계법령에 따라 공제 후 지급한다.</div>
         <div class="doc-daily-note">
           <strong>📌 일용직 임금 안내</strong><br>
@@ -592,6 +593,7 @@ function generateContractHTMLFromData(c, emp, co){
           ${row('임금 지급일', payDayStr)}
           ${row('지급 방법', '근로자 명의 계좌 직접 입금')}
         </table>
+        ${co.premium_mode !== 'always' ? '<div class="doc-note">※ 연장·야간·휴일 근로수당은 법정 가산수당 지급의무가 발생할 경우 가산을 적용한다.</div>' : ''}
         <div class="doc-note">※ 제세공과금(4대 보험료, 소득세 등)은 관계법령에 따라 공제 후 지급한다.</div>
         <p class="doc-text">④ 위 급여는 세전금액으로 법정세금 및 보험료(본인부담금)는 "근로자"가 부담한다.</p>
         <p class="doc-text">⑤ 위 급여는 매월 초일부터 말일까지 기산하여 매월 25일에 본인의 계좌로 입금하며 지급일이 휴일인 경우는 순차적으로 그 전일에 지급함을 원칙으로 한다. 다만, 본인이 원하는 경우 직접 지급할 수 있다.</p>

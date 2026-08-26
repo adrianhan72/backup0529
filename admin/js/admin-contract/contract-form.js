@@ -1,234 +1,29 @@
 // ─── 브랜드 서명 (모든 발송 메시지 하단 공통) ───
 const _BRAND_SIG = '─────────────────────\n인사톡 노무톡 · 대화인사노무파트너스';
 
-// ─── 상시근로자 5인 미만/이상 법정 배율 ───
+// ─── 가산수당 지급 기준(premium_mode) 기반 법정 배율 ───
 const WEEK_TO_MONTH = 365 / 12 / 7; // 4.345주/월 (고용노동부 공식)
 
-/** 상시근로자 수 (대표자·등기임원·특수관계인 제외, 유효 계약 보유 직원만) */
+/** 고객사 가산수당 지급 기준 조회 — premium_mode: 'always'/'none', 미지정(legacy)은 'none' */
+function _getCompanyPremiumMode(companyId){
+  if(!companyId) return 'none';
+  const co = (allCompanies || []).find(c => c.id === companyId);
+  return (co && co.premium_mode === 'always') ? 'always' : 'none';
+}
+
 /**
- * 상시근로자 수 산정 (근로기준법 시행령 제7조의2)
- * - 산정기간 1개월 연인원 ÷ 가동일수
- * - 대표자·등기임원·특수관계인 제외
- * - 50% 초과 예외 법칙 적용
+ * 법정 가산 배율 (계약 작성용)
+ * - 'always': 5인 미만이어도 가산 지급 → 연장×1.5 · 야간×0.5 · 휴일≤8h×1.5 · 휴일>8h×2.0
+ * - 'none':   5인 미만 시 가산 미적용 → ×1.0/×0.0 (계약서는 "법정 가산 의무 발생 시 가산 적용" 문구로 대체,
+ *             급여 단계에서 전월 근로실적으로 자동 판별)
  */
-function _getEmployeeCount(companyId, refYr, refMo){
-  if(!companyId) return 0;
-  const yr = refYr || new Date().getFullYear();
-  const mo = refMo || (new Date().getMonth() + 1);
-
-  // 제외 대상 (대표자, 등기임원, 특수관계인)
-  const excludedNames = new Set();
-  const coData = (allCompanies||[]).find(c => c.id === companyId);
-  if(coData && coData.representatives){
-    try {
-      const reps = typeof coData.representatives === 'string' ? JSON.parse(coData.representatives) : (coData.representatives || []);
-      (Array.isArray(reps)?reps:[]).forEach(r => { if(r.name) excludedNames.add(r.name); });
-    } catch(e){}
-  }
-  for(const ex of (allExecutives||[])){
-    if(ex.company_id === companyId && ex.name) excludedNames.add(ex.name);
-  }
-  for(const rp of (allRelatedParties||[])){
-    if(rp.company_id === companyId && rp.name) excludedNames.add(rp.name);
-  }
-  const repEmpIds = new Set();
-  for(const e of (allEmployees||[])){
-    if(e.company_id === companyId && (e.is_representative || excludedNames.has(e.name))){
-      repEmpIds.add(e.id);
-    }
-  }
-
-  // 유효 상태: active, docs_incomplete, terminate_pending (현재 근로관계 유지)
-  const VALID_ST = new Set(['active', 'docs_incomplete', 'terminate_pending']);
-  const monthStart = new Date(yr, mo-1, 1);
-  const monthEnd   = new Date(yr, mo, 0);
-  const totalDays  = monthEnd.getDate();
-
-  // 직원별 최신 유효 계약 1건
-  const empContractMap = new Map();
-  (allContracts||[])
-    .filter(c =>
-      c.company_id === companyId &&
-      !c.is_draft && !c.is_voided_by_amend &&
-      VALID_ST.has(c.status) &&
-      !repEmpIds.has(c.employee_id)
-    )
-    .sort((a,b) => (b.contract_start||'').localeCompare(a.contract_start||''))
-    .forEach(c => {
-      if(!empContractMap.has(c.employee_id)) empContractMap.set(c.employee_id, c);
-    });
-
-  // 일별 근무 인원 계산
-  const dayWorkers = new Array(totalDays+1).fill(0);
-  empContractMap.forEach(c => {
-    let cs = c.contract_start ? new Date(c.contract_start) : monthStart;
-    if(isNaN(cs.getTime())) cs = monthStart;
-    let ce;
-    if(c.status === 'terminate_pending'){
-      ce = c.terminate_date ? new Date(c.terminate_date) : monthEnd;
-    } else {
-      ce = c.contract_end ? new Date(c.contract_end) : monthEnd;
-    }
-    if(isNaN(ce.getTime())) ce = monthEnd;
-    for(let d = 1; d <= totalDays; d++){
-      const day = new Date(yr, mo-1, d);
-      if(day >= cs && day <= ce) dayWorkers[d]++;
-    }
-  });
-
-  // 가동일수(1명 이상 근무), 연인원, 5인 이상 일수
-  let operDays = 0, totalPersonDays = 0, daysOver5 = 0;
-  for(let d = 1; d <= totalDays; d++){
-    if(dayWorkers[d] > 0){
-      operDays++;
-      totalPersonDays += dayWorkers[d];
-      if(dayWorkers[d] >= 5) daysOver5++;
-    }
-  }
-  if(operDays === 0) return 0;
-
-  const avgHeadcount = totalPersonDays / operDays;
-  return Math.round(avgHeadcount * 10) / 10;
-}
-
-/** 5인 미만 사업장 판별 (근로기준법 시행령 제7조의2 예외 법칙 포함) */
-function _isSmallBiz(companyId, refYr, refMo){
-  if(!companyId) return true;
-  const yr = refYr || new Date().getFullYear();
-  const mo = refMo || (new Date().getMonth() + 1);
-
-  // 제외 대상
-  const excludedNames = new Set();
-  const coData = (allCompanies||[]).find(c => c.id === companyId);
-  if(coData && coData.representatives){
-    try {
-      const reps = typeof coData.representatives === 'string' ? JSON.parse(coData.representatives) : (coData.representatives || []);
-      (Array.isArray(reps)?reps:[]).forEach(r => { if(r.name) excludedNames.add(r.name); });
-    } catch(e){}
-  }
-  for(const ex of (allExecutives||[])){
-    if(ex.company_id === companyId && ex.name) excludedNames.add(ex.name);
-  }
-  for(const rp of (allRelatedParties||[])){
-    if(rp.company_id === companyId && rp.name) excludedNames.add(rp.name);
-  }
-  const repEmpIds = new Set();
-  for(const e of (allEmployees||[])){
-    if(e.company_id === companyId && (e.is_representative || excludedNames.has(e.name))){
-      repEmpIds.add(e.id);
-    }
-  }
-
-  const VALID_ST = new Set(['active', 'docs_incomplete', 'terminate_pending']);
-  const monthStart = new Date(yr, mo-1, 1);
-  const monthEnd   = new Date(yr, mo, 0);
-  const totalDays  = monthEnd.getDate();
-
-  const empContractMap = new Map();
-  (allContracts||[])
-    .filter(c =>
-      c.company_id === companyId &&
-      !c.is_draft && !c.is_voided_by_amend &&
-      VALID_ST.has(c.status) &&
-      !repEmpIds.has(c.employee_id)
-    )
-    .sort((a,b) => (b.contract_start||'').localeCompare(a.contract_start||''))
-    .forEach(c => {
-      if(!empContractMap.has(c.employee_id)) empContractMap.set(c.employee_id, c);
-    });
-
-  const dayWorkers = new Array(totalDays+1).fill(0);
-  empContractMap.forEach(c => {
-    let cs = c.contract_start ? new Date(c.contract_start) : monthStart;
-    if(isNaN(cs.getTime())) cs = monthStart;
-    let ce;
-    if(c.status === 'terminate_pending'){
-      ce = c.terminate_date ? new Date(c.terminate_date) : monthEnd;
-    } else {
-      ce = c.contract_end ? new Date(c.contract_end) : monthEnd;
-    }
-    if(isNaN(ce.getTime())) ce = monthEnd;
-    for(let d = 1; d <= totalDays; d++){
-      const day = new Date(yr, mo-1, d);
-      if(day >= cs && day <= ce) dayWorkers[d]++;
-    }
-  });
-
-  let operDays = 0, daysOver5 = 0, totalPersonDays = 0;
-  for(let d = 1; d <= totalDays; d++){
-    if(dayWorkers[d] > 0){
-      operDays++;
-      totalPersonDays += dayWorkers[d];
-      if(dayWorkers[d] >= 5) daysOver5++;
-    }
-  }
-  if(operDays === 0) return false; // 데이터 없음(신규 첫 계약 등) → 5인 이상(할증 적용) fail-open (급여 _getPISmallFirmInfo와 동일)
-
-  const headcount = totalPersonDays / operDays;
-  const daysUnder5 = operDays - daysOver5;
-
-  // 근로기준법 시행령 제7조의2
-  const specialOver5  = daysOver5 > operDays / 2;   // 평균 5 미만이지만 5인 이상일 > 50%
-  const specialUnder5 = headcount >= 5 && daysUnder5 > operDays / 2; // 평균 5 이상이지만 5인 미만일 > 50%
-
-  return specialUnder5 ? true : (headcount < 5 && !specialOver5);
-}
-
-/** 상시근로자 수 산정 상세 정보 (배지 힌트용) */
-function _getSmallBizInfo(companyId, refYr, refMo){
-  if(!companyId) return { isSmall:true, headcount:0, operDays:0, totalPersonDays:0, daysOver5:0 };
-  const yr = refYr || new Date().getFullYear();
-  const mo = refMo || (new Date().getMonth() + 1);
-
-  const excludedNames = new Set();
-  const coData = (allCompanies||[]).find(c => c.id === companyId);
-  if(coData && coData.representatives){
-    try {
-      const reps = typeof coData.representatives === 'string' ? JSON.parse(coData.representatives) : (coData.representatives || []);
-      (Array.isArray(reps)?reps:[]).forEach(r => { if(r.name) excludedNames.add(r.name); });
-    } catch(e){}
-  }
-  for(const ex of (allExecutives||[])){ if(ex.company_id === companyId && ex.name) excludedNames.add(ex.name); }
-  for(const rp of (allRelatedParties||[])){ if(rp.company_id === companyId && rp.name) excludedNames.add(rp.name); }
-  const repEmpIds = new Set();
-  for(const e of (allEmployees||[])){ if(e.company_id === companyId && (e.is_representative || excludedNames.has(e.name))) repEmpIds.add(e.id); }
-
-  const VALID_ST = new Set(['active', 'docs_incomplete', 'terminate_pending']);
-  const monthStart = new Date(yr, mo-1, 1), monthEnd = new Date(yr, mo, 0);
-  const totalDays = monthEnd.getDate();
-  const empContractMap = new Map();
-  (allContracts||[]).filter(c => c.company_id === companyId && !c.is_draft && !c.is_voided_by_amend && VALID_ST.has(c.status) && !repEmpIds.has(c.employee_id))
-    .sort((a,b) => (b.contract_start||'').localeCompare(a.contract_start||''))
-    .forEach(c => { if(!empContractMap.has(c.employee_id)) empContractMap.set(c.employee_id, c); });
-
-  const dayWorkers = new Array(totalDays+1).fill(0);
-  empContractMap.forEach(c => {
-    let cs = c.contract_start ? new Date(c.contract_start) : monthStart;
-    if(isNaN(cs.getTime())) cs = monthStart;
-    let ce = c.status === 'terminate_pending' ? (c.terminate_date ? new Date(c.terminate_date) : monthEnd) : (c.contract_end ? new Date(c.contract_end) : monthEnd);
-    if(isNaN(ce.getTime())) ce = monthEnd;
-    for(let d=1; d<=totalDays; d++){ const day=new Date(yr,mo-1,d); if(day>=cs && day<=ce) dayWorkers[d]++; }
-  });
-
-  let operDays=0, totalPersonDays=0, daysOver5=0;
-  for(let d=1; d<=totalDays; d++){ if(dayWorkers[d]>0){ operDays++; totalPersonDays+=dayWorkers[d]; if(dayWorkers[d]>=5) daysOver5++; } }
-  if(operDays===0) return { isSmall:false, headcount:0, operDays:0, totalPersonDays:0, daysOver5:0 }; // 데이터 없음 → 5인 이상(할증 적용) fail-open (급여 _getPISmallFirmInfo와 동일)
-
-  const headcount = totalPersonDays / operDays;
-  const specialOver5 = daysOver5 > operDays/2;
-  const specialUnder5 = headcount >= 5 && (operDays-daysOver5) > operDays/2;
-  const isSmall = specialUnder5 ? true : (headcount < 5 && !specialOver5);
-  return { isSmall, headcount, operDays, totalPersonDays, daysOver5 };
-}
-
-/** 법정 가산 배율 (상시근로자 5인 이상=근로기준법 제56조 전면 적용, 5인 미만=가산 없음) */
 function _getLegalMultiplier(companyId){
-  const isSmall = _isSmallBiz(companyId);
+  const always = _getCompanyPremiumMode(companyId) === 'always';
   return {
-    overtime:    isSmall ? 1.0 : 1.5,
-    night:       isSmall ? 0.0 : 0.5,
-    holiday_8h:  isSmall ? 1.0 : 1.5,
-    holiday_8h_over: isSmall ? 1.0 : 2.0,
+    overtime:       always ? 1.5 : 1.0,
+    night:          always ? 0.5 : 0.0,
+    holiday_8h:     always ? 1.5 : 1.0,
+    holiday_8h_over:always ? 2.0 : 1.0,
   };
 }
 
@@ -1950,41 +1745,20 @@ function calcWorkHours(){
   // 휴일야간 hidden (수당 합산용)
   { const _holNightHid = document.getElementById('ct-fixed-hol-night-hours'); if(_holNightHid) _holNightHid.value = weekSunNightH.toFixed(1); }
 
-  // ── 사업장 규모 배지 + 산정 기준 힌트 (신규 계약 시 인원 변동 반영) ──
+  // ── 가산수당 지급 기준 배지 + 힌트 (premium_mode 기반) ──
   const bizBadge = document.getElementById('ct-biz-size-badge');
   const bizHint = document.getElementById('ct-biz-size-hint');
   if (bizBadge || bizHint) {
-    const info = _getSmallBizInfo(coIdForMult);
-    // 신규 직원 추가 시: 현재 직원이 아닌 경우 +1명으로 재산정
-    const isNewEmp = !editId.contract && !_recontractEmpId;
-    const _selEmp = _ctSelectedEmpId ? (allEmployees||[]).find(x=>x.id===_ctSelectedEmpId) : null;
-    const newEmpName = isNewEmp ? (_selEmp?.name || '') : '';
-    const hasNewEmp = isNewEmp && newEmpName.length > 0;
-    
-    let projected = info;
-    if (hasNewEmp && info.operDays > 0) {
-      // 신규 직원 추가: 계약 시작일부터 월말까지 +1명으로 재산정
-      const startStr = document.getElementById('ct-start')?.value || document.getElementById('ct-edit-em-hire')?.value || '';
-      const startDate = startStr ? new Date(startStr) : new Date();
-      const monthEnd = new Date(startDate.getFullYear(), startDate.getMonth()+1, 0);
-      const remainingDays = Math.max(0, monthEnd.getDate() - startDate.getDate() + 1);
-      const newTotalPersonDays = info.totalPersonDays + remainingDays;
-      const newHeadcount = newTotalPersonDays / info.operDays;
-      const newDaysOver5 = info.daysOver5 + (newHeadcount >= 5 ? remainingDays : 0);
-      const newIsSmall = newHeadcount < 5 && newDaysOver5 <= info.operDays / 2;
-      projected = { ...info, headcount: newHeadcount, totalPersonDays: newTotalPersonDays, isSmall: newIsSmall };
-    }
-    
+    const pm = _getCompanyPremiumMode(coIdForMult);
+    const always = pm === 'always';
     if (bizBadge) {
-      bizBadge.textContent = projected.isSmall ? '적용기준: 5인 미만 사업장' : '적용기준: 5인 이상 사업장';
-      bizBadge.className = 'ct-biz-badge ' + (projected.isSmall ? 'small' : 'normal');
+      bizBadge.textContent = always ? '가산 기준: 5인 미만이어도 가산 지급' : '가산 기준: 5인 미만 시 가산 미적용';
+      bizBadge.className = 'ct-biz-badge ' + (always ? 'normal' : 'small');
     }
     if (bizHint) {
-      const hc = info.headcount.toFixed(1);
-      let hintHTML = '<span class="ct-biz-hint">직전: 상시근로자 ' + hc + '명 (연인원 ' + info.totalPersonDays + '명 ÷ 가동 ' + info.operDays + '일, ≥5인 ' + info.daysOver5 + '일)</span>';
-      if (hasNewEmp && info.isSmall && !projected.isSmall) {
-        hintHTML += '<br><span class="ct-biz-transition">이 계약의 체결로 5인 이상 사업장으로 전환됩니다.</span>';
-      }
+      let hintHTML = always
+        ? '<span class="ct-biz-hint">연장×1.5 · 야간×0.5 · 휴일≤8h×1.5 · 휴일>8h×2.0 — 5인 미만이어도 가산 지급 사업장(설정)</span>'
+        : '<span class="ct-biz-hint">연장×1.0 · 야간×0.0 · 휴일×1.0 — 5인 미만 시 가산 미적용 사업장(설정). 계약서에 "법정 가산수당 지급의무 발생 시 가산 적용" 문구가 기재되며, 급여 입력 시 전월 근로실적으로 자동 판별됩니다.</span>';
       bizHint.innerHTML = hintHTML;
       bizHint.style.whiteSpace = 'normal';
     }

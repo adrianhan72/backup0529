@@ -3005,8 +3005,8 @@ function _calcFixedHoursFromSchedule(scheduleJson, hourlyWage, companyId){
   // 수당 계산 (반올림된 시간 × 가산 기준임금 × 법정할증률)
   // 휴일연장·휴일야간 모두 휴일근로수당으로 합산 (2026-08-14 규칙)
   if(hw > 0){
-    const mult = (typeof _getLegalMultiplier === 'function' && companyId)
-      ? _getLegalMultiplier(companyId)
+    const mult = (typeof _piGetMult === 'function' && companyId)
+      ? _piGetMult()
       : { overtime: 1.5, night: 0.5, holiday_8h: 1.5, holiday_8h_over: 2.0 };
     const holBaseH = Math.max(0, result.holHours - result.holOtHours); // ≤8h 부분
     const _otHw = _piOtBaseRate(hw); // 일용직: 가산 기준 = 일급여 ÷ 일소정근로시간
@@ -3373,11 +3373,11 @@ function calcPI(){
   }
   const otH=gv('pi-ot-hours'),nightH=gv('pi-night-hours'),holH=gv('pi-hol-hours');
 
-  // ── 5인 미만 사업장 판정 ─────────────────────────────────────────────────
+  // ── 5인 미만 사업장 판정 (premium_mode + 전월 근로실적) ────────────────
   const _coId = currentGlobalCompanyId;
   const _yr   = parseInt(document.getElementById('pi-year')?.value)  || 0;
   const _mo   = parseInt(document.getElementById('pi-month')?.value) || 0;
-  const _sfInfo = (_coId && _yr && _mo) ? _getPISmallFirmInfo(_coId, _yr, _mo) : { isSmall:false };
+  const _sfInfo = (_coId && _yr && _mo) ? _piGetDecision() : { isSmall:false };
   const _isSmall = _sfInfo.isSmall;
 
   // ── 법정공휴일(관공서 공휴일) 집합 — 유급 처리 (2026-08-14 규칙) ──
@@ -4760,20 +4760,160 @@ function _refreshPIPayPeriodDisplay(){
   }
 }
 
-function _getPISmallFirmInfo(coId, yr, mo){
-  const NONE = { isSmall:false, headcount:0, operDays:0, totalPersonDays:0 };
-  if(!coId || !yr || !mo) return NONE;
+// ─── 5인 미만 사업장 판별 (premium_mode + 전월 근로실적) ───────────────
+// 신규 판별식: 고객사 premium_mode 기준으로
+//   'always' → 항상 법정 가산 (전월 근로실적 조회 생략)
+//   'none'   → 직원의 급여지급일 기준 이전 1개월 근로실적(연인원÷가동일수, 시행령 제7조의2)으로
+//              판별하며, 데이터 불완전/판별 결과에 따라 확인창(예=가산 미적용/아니오=가산 강제) 안내.
+// ※ 이전의 기준월 유효 계약 기반 판별(_getPISmallFirmInfo)은 잘못된 방식이라 제거됨.
 
-  // 상시근로자 산정 대상 상태:
-  //   active, docs_incomplete, terminate_pending → 포함 (현재 근로관계 유지)
-  //   pending, renewal_pending → 제외 (계약 시작일 미도래)
-  const VALID_ST = new Set([CONTRACT_STATUS.ACTIVE, CONTRACT_STATUS.DOCS_INCOMPLETE, CONTRACT_STATUS.TERMINATE_PENDING]);
-  const monthStart = new Date(yr, mo-1, 1);
-  const monthEnd   = new Date(yr, mo, 0);   // 말일
-  const totalDays  = monthEnd.getDate();
+let _piPremiumDecision = null; // 캐시: { coId, empId, yr, mo, isSmall, mode, note, ...근로실적 }
+let _piResolving = false;      // 동시 resolve 방지
 
-  // 이 달에 유효 계약이 걸쳐있는 근로자 목록 (직원별 최신 계약 1건)
-  // ※ 대표자 본인(is_representative=1)·등기임원·특수관계인은 상시근로자 수에서 제외
+/** 고객사 premium_mode 조회 ('always' 또는 'none'). */
+function _piPremiumMode(coId){
+  if(!coId) return 'none';
+  const co = (allCompanies||[]).find(c => c.id === coId);
+  return (co && co.premium_mode === 'always') ? 'always' : 'none';
+}
+
+/** 현재 컨텍스트(고객사·직원·년·월)에 해당하는 기본 판정 (결정 전/없음 폴백). */
+function _piDefaultDecision(coId, empId, yr, mo){
+  const always = _piPremiumMode(coId) === 'always';
+  return {
+    coId, empId, yr, mo,
+    isSmall: !always,            // none(미결정)은 가산 미적용 기본, always는 가산 적용
+    headcount: 0, operDays: 0, totalPersonDays: 0, daysOver5: 0,
+    mode: always ? 'always' : 'none-default',
+    note: always ? '가산 지급 사업장(설정) — 전월 근로실적 조회 생략'
+                 : '가산 미적용(설정 기본값) — 전월 근로실적 확인 대기'
+  };
+}
+
+/**
+ * 현재 컨텍스트의 가산 적용 여부 판정을 반환.
+ * 캐시가 현재 컨텍스트(고객사·직원·년·월)와 일치하면 그대로,
+ * 아니면 기본값을 반환하고 백그라운드에서 _piResolvePremiumDecision() 를 1회 트리거한다.
+ */
+function _piGetDecision(){
+  const coId = currentGlobalCompanyId;
+  const yr   = parseInt(document.getElementById('pi-year')?.value)  || 0;
+  const mo   = parseInt(document.getElementById('pi-month')?.value) || 0;
+  const empId = document.getElementById('pi-employee')?.value || '';
+  if(_piPremiumDecision && _piPremiumDecision.coId===coId
+      && _piPremiumDecision.empId===empId
+      && _piPremiumDecision.yr===yr && _piPremiumDecision.mo===mo){
+    return _piPremiumDecision;
+  }
+  if(coId && empId && yr && mo && !_piResolving){
+    _piResolving = true;
+    _piResolvePremiumDecision(coId, empId, yr, mo)
+      .catch(e => console.error('premium resolve error', e))
+      .finally(() => { _piResolving = false; });
+  }
+  return _piDefaultDecision(coId, empId, yr, mo);
+}
+
+/** 법정 가산 배율 (고정급 산정용, contract-form의 _getLegalMultiplier 동형). */
+function _piGetMult(){
+  const d = _piGetDecision();
+  return {
+    overtime: d.isSmall ? 1.0 : 1.5,
+    night:    d.isSmall ? 0.0 : 0.5,
+    holiday_8h:      d.isSmall ? 1.0 : 1.5,
+    holiday_8h_over: d.isSmall ? 1.0 : 2.0
+  };
+}
+
+/**
+ * 5인 미만 사업장 판별 전용 레이어 팝업 (시스템 메시지 미사용).
+ * - mode 'progress': 스피너 + 프로그레스바 ("확인하는 중입니다...")
+ * - mode 'confirm' : 메시지 + [예 · 가산 미적용] / [아니오 · 가산 적용]
+ * - mode 'info'    : 메시지 + [확인]
+ * 같은 팝업 안에서 프로그레스바가 사라지고 메시지·버튼으로 전환된다.
+ */
+function _piShowDialog(opts){
+  // 공통 스타일 1회 주입
+  if(!document.getElementById('pi-premium-dialog-style')){
+    const st = document.createElement('style');
+    st.id = 'pi-premium-dialog-style';
+    st.textContent =
+      '@keyframes piPremSpin{to{transform:rotate(360deg)}}' +
+      '.pi-premium-btn{font-size:13.5px;font-weight:700;padding:9px 18px;border-radius:9px;border:1.5px solid #d1d5db;background:#fff;color:#374151;cursor:pointer;transition:all .15s;}' +
+      '.pi-premium-btn:hover{background:#f3f4f6;}' +
+      '.pi-premium-btn-primary{background:#4f46e5;border-color:#4f46e5;color:#fff;}' +
+      '.pi-premium-btn-primary:hover{background:#4338ca;}' +
+      '.pi-premium-btn-print{background:#334155;border-color:#1a1a2e;color:#fff;}' +
+      '.pi-premium-btn-print:hover{background:#1a1a2e;border-color:#1a1a2e;}' +
+      '.pi-premium-btn-danger{background:#dc2626;border-color:#dc2626;color:#fff;}' +
+      '.pi-premium-btn-danger:hover{background:#b91c1c;border-color:#b91c1c;}';
+    document.head.appendChild(st);
+  }
+  let wrap = document.getElementById('pi-premium-dialog');
+  if(!opts){ if(wrap) wrap.remove(); return; } // 닫기
+  if(!wrap){
+    wrap = document.createElement('div');
+    wrap.id = 'pi-premium-dialog';
+    wrap.style.cssText = 'position:fixed;inset:0;z-index:12000;display:flex;align-items:center;justify-content:center;background:rgba(15,23,42,.5);';
+    document.body.appendChild(wrap);
+  }
+  const isProgress = opts.mode === 'progress';
+  const isConfirm  = opts.mode === 'confirm';
+  const icon   = opts.icon || (isProgress ? 'fa-hourglass-half' : (isConfirm ? 'fa-triangle-exclamation' : 'fa-circle-check'));
+  const title  = opts.title || '5인 미만 사업장 판별';
+  const bodyHtml = isProgress
+    ? '<div style="display:flex;flex-direction:column;align-items:center;gap:18px;padding:8px 4px;min-width:320px;">' +
+        '<div style="width:56px;height:56px;border-radius:50%;border:4px solid #e2e8f0;border-top-color:#4f46e5;animation:piPremSpin 1s linear infinite;"></div>' +
+        '<div style="width:100%;height:9px;border-radius:999px;background:#eef2f7;overflow:hidden;"><div id="pi-premium-progress-bar" style="height:100%;width:0%;border-radius:999px;background:linear-gradient(90deg,#6366f1,#8b5cf6);transition:width .45s ease;"></div></div>' +
+        '<div style="font-size:13.5px;color:#374151;text-align:center;line-height:1.7;">' + (opts.message || '5인 미만 사업장 해당 여부를 확인하는 중입니다.<br>잠시만 기다려주세요.') + '</div>' +
+      '</div>'
+    : '<div style="font-size:14px;color:#1f2937;line-height:1.85;text-align:left;white-space:pre-line;">' + (opts.message || '') + '</div>';
+  const actionsHtml = isProgress
+    ? ''
+    : (isConfirm
+        ? '<button class="pi-premium-btn pi-premium-btn-print" data-act="no">' + (opts.noText || '아니오 · 가산 적용') + '</button>' +
+          '<button class="pi-premium-btn pi-premium-btn-danger" data-act="yes">' + (opts.yesText || '예 · 가산 미적용') + '</button>'
+        : '<button class="pi-premium-btn pi-premium-btn-primary" data-act="ok">' + (opts.okText || '확인') + '</button>');
+  wrap.innerHTML =
+    '<div style="background:#fff;border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.28);width:460px;max-width:94vw;overflow:hidden;">' +
+      '<div style="padding:18px 22px;background:linear-gradient(135deg,#f8fafc,#eef2ff);border-bottom:1px solid #e2e8f0;font-size:15px;font-weight:800;color:#1e293b;display:flex;align-items:center;gap:9px;">' +
+        '<i class="fas ' + icon + '" style="color:#4f46e5;width:18px;text-align:center;"></i><span>' + title + '</span>' +
+      '</div>' +
+      '<div style="padding:26px 24px;display:flex;flex-direction:column;gap:12px;">' + bodyHtml + '</div>' +
+      (actionsHtml ? '<div style="padding:14px 22px;border-top:1px solid #eef2f7;display:flex;justify-content:flex-end;gap:10px;">' + actionsHtml + '</div>' : '') +
+    '</div>';
+  wrap.querySelector('[data-act="yes"]')?.addEventListener('click', () => { _piShowDialog(null); if(opts.onYes) opts.onYes(); });
+  wrap.querySelector('[data-act="no"]')?.addEventListener('click', () => { _piShowDialog(null); if(opts.onNo) opts.onNo(); });
+  wrap.querySelector('[data-act="ok"]')?.addEventListener('click', () => { _piShowDialog(null); if(opts.onOk) opts.onOk(); });
+  if(isProgress){
+    const bar = document.getElementById('pi-premium-progress-bar');
+    if(bar){ requestAnimationFrame(() => { requestAnimationFrame(() => { bar.style.width = '72%'; }); }); }
+  }
+}
+
+/**
+ * 참조월(직전 1개월)의 근로실적을 산출.
+ * - 대상: 참조월에 유효 계약이 걸쳐있는 비대표 근로자 (인사대장 등록)
+ * - 완전성: 모든 대상자의 확정 급여(is_draft=false) + 근태(month_data.dates) 입력 여부
+ * - 상시근로자 = 연인원 ÷ 가동일수, 시행령 제7조의2 예외 법칙 적용
+ * @returns {{complete,isSmall,headcount,operDays,totalPersonDays,daysOver5,eligibleCount,missingCount,missingNames,noEligible}}
+ */
+function _piComputeWorkRecord(coId, refYr, refMo, attRows){
+  const NONE = { complete:false, isSmall:true, headcount:0, operDays:0, totalPersonDays:0, daysOver5:0, eligibleCount:0, missingCount:0, missingNames:[], noEligible:false };
+  if(!coId || !refYr || !refMo) return NONE;
+
+  const VALID_ST = new Set([
+    CONTRACT_STATUS.ACTIVE,
+    CONTRACT_STATUS.DOCS_INCOMPLETE,
+    CONTRACT_STATUS.TERMINATE_PENDING,
+    CONTRACT_STATUS.PENDING,
+    CONTRACT_STATUS.RENEWAL_PENDING
+  ]);
+  const totalDays = new Date(refYr, refMo, 0).getDate();
+  const refStart = refYr + '-' + String(refMo).padStart(2,'0') + '-01';
+  const refEnd   = refYr + '-' + String(refMo).padStart(2,'0') + '-' + String(totalDays).padStart(2,'0');
+
+  // 제외 대상 (대표자·등기임원·특수관계인)
   const coData = (allCompanies||[]).find(c => c.id === coId);
   let repNames = [];
   if(coData){
@@ -4785,70 +4925,150 @@ function _getPISmallFirmInfo(coId, yr, mo){
   const repEmpIds = new Set(
     (allEmployees||[]).filter(e => e.company_id === coId && (e.is_representative || excludedNames.has(e.name))).map(e => e.id)
   );
+
+  // 참조월에 유효 계약이 걸친 비대표 직원 (직원별 최신 계약 1건)
   const empContractMap = new Map();
   (allContracts||[])
-    .filter(c =>
-      c.company_id === coId &&
-      !c.is_draft && !c.is_voided_by_amend &&
-      VALID_ST.has(c.status) &&
-      !repEmpIds.has(c.employee_id)
-    )
+    .filter(c => c.company_id === coId && !c.is_draft && !c.is_voided_by_amend && VALID_ST.has(c.status) && !repEmpIds.has(c.employee_id))
     .sort((a,b)=>(b.contract_start||'').localeCompare(a.contract_start||''))
     .forEach(c => {
-      if(!empContractMap.has(c.employee_id)) empContractMap.set(c.employee_id, c);
+      if(empContractMap.has(c.employee_id)) return;
+      let cs = c.contract_start || refStart;
+      let ce = (c.status === CONTRACT_STATUS.TERMINATE_PENDING ? c.terminate_date : c.contract_end) || refEnd;
+      if(cs > refEnd) return;
+      if(ce && ce < refStart) return;
+      empContractMap.set(c.employee_id, { contract:c, name:(allEmployees||[]).find(e=>e.id===c.employee_id)?.name || '?' });
     });
 
-  // 각 날짜별 근무 인원 계산
-  // dayWorkers[d] = d번째 날(1-based) 근무 인원 수
-  const dayWorkers = new Array(totalDays+1).fill(0);
-  empContractMap.forEach(c => {
-    let cs = c.contract_start ? new Date(c.contract_start) : monthStart;
-    if(isNaN(cs.getTime())) cs = monthStart;
-    // 해지예정: 근로관계 종료일은 terminate_date 기준
-    let ce;
-    if (c.status === CONTRACT_STATUS.TERMINATE_PENDING) {
-      ce = c.terminate_date ? new Date(c.terminate_date) : monthEnd;
-    } else {
-      ce = c.contract_end ? new Date(c.contract_end) : monthEnd;
-    }
-    if(isNaN(ce.getTime())) ce = monthEnd;
-    for(let d = 1; d <= totalDays; d++){
-      const day = new Date(yr, mo-1, d);
-      if(day >= cs && day <= ce) dayWorkers[d]++;
-    }
+  // 확정 급여 맵 (참조월)
+  const payByEmp = new Map();
+  (allPayrolls||[]).forEach(p => {
+    if(p.company_id === coId && !p.is_draft && p.pay_year === refYr && p.pay_month === refMo) payByEmp.set(p.employee_id, p);
   });
 
-  // 가동 일수: 1명 이상 근무한 날
-  let operDays       = 0;
-  let totalPersonDays= 0;
-  let daysOver5      = 0;   // 5인 이상 근무한 날 수
-  for(let d = 1; d <= totalDays; d++){
-    if(dayWorkers[d] > 0){
-      operDays++;
-      totalPersonDays += dayWorkers[d];
-      if(dayWorkers[d] >= 5) daysOver5++;
+  // 근태 맵 (참조월 month_data)
+  const attByEmp = new Map();
+  (attRows||[]).forEach(a => {
+    if(a.year === refYr) attByEmp.set(a.employee_id, a);
+  });
+
+  const dayWorkers = new Array(totalDays+1).fill(0);
+  let eligibleCount = 0, missingCount = 0;
+  const missingNames = [];
+  empContractMap.forEach((rec) => {
+    eligibleCount++;
+    const hasPay = payByEmp.has(rec.contract.employee_id);
+    let hasAtt = false, datesStr = '';
+    const att = attByEmp.get(rec.contract.employee_id);
+    if(att && att.month_data){
+      try {
+        const md = typeof att.month_data === 'string' ? JSON.parse(att.month_data) : (att.month_data || []);
+        const row = (Array.isArray(md) ? md : []).find(r => Number(r.month) === refMo);
+        if(row && row.dates){ datesStr = String(row.dates); hasAtt = datesStr.split(',').map(s=>s.trim()).filter(Boolean).length > 0; }
+      } catch(e){}
     }
+    if(!hasPay || !hasAtt){ missingCount++; missingNames.push(rec.name); }
+    (datesStr||'').split(',')
+      .map(s => parseInt(s.trim(), 10))
+      .filter(n => !isNaN(n) && n >= 1 && n <= totalDays)
+      .forEach(d => { dayWorkers[d]++; });
+  });
+
+  const noEligible = eligibleCount === 0;
+  const complete = !noEligible && missingCount === 0;
+
+  let operDays = 0, totalPersonDays = 0, daysOver5 = 0;
+  for(let d = 1; d <= totalDays; d++){
+    if(dayWorkers[d] > 0){ operDays++; totalPersonDays += dayWorkers[d]; if(dayWorkers[d] >= 5) daysOver5++; }
   }
 
-  if(operDays === 0) return NONE;
+  let isSmall = false;
+  if(complete && operDays > 0){
+    const headcount = totalPersonDays / operDays;
+    const daysUnder5 = operDays - daysOver5;
+    const specialOver5 = daysOver5 > operDays / 2;
+    const specialUnder5 = headcount >= 5 && daysUnder5 > operDays / 2;
+    isSmall = specialUnder5 ? true : (headcount < 5 && !specialOver5);
+  }
 
-  // 상시근로자 수 = 연인원 ÷ 가동일수
-  const headcount = totalPersonDays / operDays;
-
-  // 근로기준법 시행령 제7조의2 예외 법칙:
-  // ① 평균 5인 미만이지만 5인 이상인 날이 가동일수의 절반 초과 → 5인 이상으로 봄
-  const specialOver5 = daysOver5 > operDays / 2;
-  // ② 평균 5인 이상이지만 5인 미만인 날이 가동일수의 절반 초과 → 5인 미만으로 봄
-  const daysUnder5 = operDays - daysOver5;
-  const specialUnder5 = headcount >= 5 && daysUnder5 > operDays / 2;
-
-  const isSmall = specialUnder5 ? true : (headcount < 5 && !specialOver5);
-  return { isSmall, headcount, operDays, totalPersonDays, daysOver5 };
+  return {
+    complete, isSmall,
+    headcount: operDays > 0 ? (totalPersonDays / operDays) : 0,
+    operDays, totalPersonDays, daysOver5,
+    eligibleCount, missingCount, missingNames: missingNames.slice(0,5), noEligible
+  };
 }
 
-/** 간편 래퍼: true = 5인 미만 */
-function _getPISmallFirm(coId, yr, mo){
-  return _getPISmallFirmInfo(coId, yr, mo).isSmall;
+/**
+ * 직원별 가산 적용 여부를 확인·결정하고 _piPremiumDecision 캐시에 저장.
+ * (고객사 premium_mode='none' 인 경우만 전월 근로실적 조회/확인창 수행)
+ */
+async function _piResolvePremiumDecision(coId, empId, yr, mo){
+  if(!coId || !empId || !yr || !mo) return;
+  if(_piPremiumMode(coId) === 'always'){
+    _piPremiumDecision = { coId, empId, yr, mo, isSmall:false, headcount:0, operDays:0, totalPersonDays:0, daysOver5:0, mode:'always', note:'가산 지급 사업장(설정) — 전월 근로실적 조회 생략' };
+    return;
+  }
+
+  // ① 레이어 팝업에서 프로그레스 표시 (시스템 메시지 미사용)
+  _piShowDialog({ mode:'progress', message:'5인 미만 사업장 해당 여부를 확인하는 중입니다.<br>잠시만 기다려주세요.' });
+
+  // ② 참조월 = 급여지급일 기준 직전 1개월 (급여 산정월의 전월)
+  const refYr = mo === 1 ? yr - 1 : yr;
+  const refMo = mo === 1 ? 12 : mo - 1;
+
+  let attRows = [];
+  try {
+    if(typeof window._atlLedgerCache !== 'undefined' && Array.isArray(window._atlLedgerCache) && window._atlLedgerCache.length > 0){
+      attRows = window._atlLedgerCache;
+    } else {
+      const res = await fetch(`../tables/attendance_ledger?company_id=${coId}&limit=1000`);
+      if(res.ok){ const j = await res.json(); attRows = j.data || j || []; }
+    }
+  } catch(e){ attRows = []; }
+
+  // ③ 판별 계산
+  const wr = _piComputeWorkRecord(coId, refYr, refMo, attRows);
+
+  // ④ 같은 팝업 안에서 프로그레스바 100% → 메시지·버튼으로 전환
+  const bar = document.getElementById('pi-premium-progress-bar');
+  if(bar) bar.style.width = '100%';
+  await new Promise(r => setTimeout(r, 180)); // 완료 상태 잠시 노출 후 전환
+
+  const _finish = (decision) => {
+    _piPremiumDecision = decision;
+    _piShowDialog(null);
+    _updatePISmallFirmBadge(decision, yr, mo);
+    if(typeof calcPI === 'function') calcPI();
+  };
+
+  if(wr.noEligible || !wr.complete){
+    // 데이터 부족 → 확인 (예=가산 미적용 / 아니오=가산 강제)
+    _piShowDialog({
+      mode:'confirm', icon:'fa-circle-info', title:'데이터 부족 안내',
+      message:'전월 근로실적 데이터가 부족하여 5인 미만 사업장 판별이 어렵습니다.\n<strong>5인 미만 사업장</strong><span style="color:#dc2626;">(가산 미적용 대상)</span>이 맞습니까?',
+      yesText:'예 · 가산 미적용', noText:'아니오 · 가산 적용',
+      onYes:()=> _finish({ ...wr, coId, empId, yr, mo, isSmall:true, mode:'data-insufficient-yes', note:'데이터 부족 → 가산 미적용(확인)' }),
+      onNo: ()=> _finish({ ...wr, coId, empId, yr, mo, isSmall:false, mode:'forced', note:'데이터 부족 → 가산 적용(강제)' })
+    });
+  } else if(!wr.isSmall){
+    // 5인 이상 자동 판별 → 가산 적용 안내 (팝업 내 확인)
+    _piShowDialog({
+      mode:'info', icon:'fa-circle-check', title:'5인 미만 사업장 판별',
+      message:'전월 근로실적 기준 5인 이상 사업장으로 판별되어 가산이 적용됩니다.',
+      okText:'확인',
+      onOk:()=> _finish({ ...wr, coId, empId, yr, mo, isSmall:false, mode:'auto5', note:'전월 근로실적 5인 이상 → 가산 적용' })
+    });
+  } else {
+    // 5인 미만 판별 → 확인 (예=가산 미적용 / 아니오=판별 무시·가산 강제)
+    _piShowDialog({
+      mode:'confirm', icon:'fa-triangle-exclamation', title:'5인 미만 사업장 판별',
+      message:'시스템에 등록된 이전 1개월간의 사업장 총 근로실적은 5인 미만 사업장으로 판별됩니다.\n시스템에 등록되지 않은 정보가 있을 경우 오계산이 발생할 수 있습니다.\n<strong>5인 미만 사업장</strong><span style="color:#dc2626;">(가산 미적용)</span> 적용대상이 맞습니까?',
+      yesText:'예 · 가산 미적용', noText:'아니오 · 가산 적용',
+      onYes:()=> _finish({ ...wr, coId, empId, yr, mo, isSmall:true, mode:'small-yes', note:'5인 미만(확인) → 가산 미적용' }),
+      onNo: ()=> _finish({ ...wr, coId, empId, yr, mo, isSmall:false, mode:'forced', note:'5인 미만 판별 무시 → 가산 적용(강제)' })
+    });
+  }
 }
 
 /**
@@ -4865,7 +5085,7 @@ function _updatePISmallFirmBadge(sfInfo, yr, mo){
     badge.style.display = 'none';
     return;
   }
-  const { isSmall, headcount, operDays, totalPersonDays, daysOver5 } = sfInfo;
+  const { isSmall, headcount, operDays, totalPersonDays, daysOver5, note } = sfInfo;
   const hcStr = (typeof headcount === 'number' && !isNaN(headcount))
     ? headcount.toFixed(1) : '-';
   
@@ -4874,11 +5094,14 @@ function _updatePISmallFirmBadge(sfInfo, yr, mo){
   badge.className = 'ct-biz-badge ' + cls;
   badge.style.display = '';
   badge.style.cssText = '';
+  const detailNote = note
+    ? ('<div class="ct-formula-line" style="margin-top:2px;color:#6b7280;">' + note + '</div>')
+    : '';
   badge.innerHTML =
     '<span class="ct-biz-badge ' + cls + '">적용기준: 5인 ' + (isSmall ? '미만' : '이상') + ' 사업장</span>' +
     '<div class="ct-formula-line" style="margin-top:2px;">직전: 상시근로자 ' + hcStr + '명 (연인원 ' + totalPersonDays + '명 ÷ 가동 ' + operDays + '일, ≥5인 ' + daysOver5 + '일)' +
     (isSmall ? ' — 연장·야간·휴일 가산수당 미적용' : ' — 연장×1.5 · 야간×0.5 · 휴일≤8h×1.5 · 휴일>8h×2.0') +
-    '</div>';
+    '</div>' + detailNote;
 }
 
 // ─── 주휴수당 자동계산 ───

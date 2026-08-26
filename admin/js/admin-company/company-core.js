@@ -941,8 +941,9 @@ function openCompanyModal(id=null){
   _validateBizNumber();
   // 병가 급여 지급율 초기화 (기본값 0 = 무급만)
   { const _cmSickEl = document.getElementById('cm-sick-leave-pay-rate'); if(_cmSickEl) _cmSickEl.value = 0; }
-  // 일할 계산 방식 초기화 (기본값 30일 고정)
-  { const _cmProrRadio = document.querySelector('input[name="cm-proration-method"][value="30day_fixed"]'); if(_cmProrRadio) _cmProrRadio.checked = true; }
+  // 일할 계산 방식 초기화 (미선택 — 필수)
+  document.querySelectorAll('input[name="cm-proration-method"]').forEach(r => { r.checked = false; });
+  { const _prHint = document.getElementById('cm-proration-method-hint'); if(_prHint){ _prHint.className = 'va-hint'; _prHint.textContent = ''; } }
   // 가산수당 지급 기준 초기화 (미선택 — 필수)
   document.querySelectorAll('input[name="cm-premium-mode"]').forEach(r => { r.checked = false; });
   { const _pmHint = document.getElementById('cm-premium-mode-hint'); if(_pmHint){ _pmHint.className = 'va-hint'; _pmHint.textContent = ''; } }
@@ -1398,6 +1399,14 @@ async function _saveCompanyImpl(){
     const _pmFirst = document.querySelector('input[name="cm-premium-mode"]');
     if(_pmFirst){ _pmFirst.scrollIntoView({ behavior:'smooth', block:'center' }); _pmFirst.focus(); }
     return toast('연장·야간·휴일 가산수당 지급 기준을 선택하세요.', 'error');
+  }
+  // 일할 계산 방식 필수 선택 (라디오 그룹)
+  if(!document.querySelector('input[name="cm-proration-method"]:checked')){
+    const _prHint = document.getElementById('cm-proration-method-hint');
+    if(_prHint){ _prHint.className = 'va-hint va-err'; _prHint.textContent = '일할 계산 방식을 선택하세요.'; }
+    const _prFirst = document.querySelector('input[name="cm-proration-method"]');
+    if(_prFirst){ _prFirst.scrollIntoView({ behavior:'smooth', block:'center' }); _prFirst.focus(); }
+    return toast('일할 계산 방식을 선택하세요.', 'error');
   }
 
   // ── 대표자 정보 수집: 기존 고객사=인사관리대장 readonly, 신규·임시저장=직접 입력 ──

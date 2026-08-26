@@ -4,6 +4,7 @@ data/db.json
 data/app.db-shm
 data/app.db-wal
 data/backup/
+data/backup_*/
 # 로컬 DB 백업 파일 (대용량, 원격 제외)
 data/app.db.bak_*
 .env
@@ -12,3 +13,4 @@ data/app.db.bak_*
 server_log.txt
 
 data/backups/
+data/uploads/

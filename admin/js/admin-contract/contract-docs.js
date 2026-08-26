@@ -1425,6 +1425,8 @@ function _collectContractData(){
   const probationBasis  = isProbation ? (document.querySelector('input[name="ct-probation-basis"]:checked')?.value || 'salary') : 'salary';
 
   return {
+    companyId:         coId,
+    premiumMode:       company.premium_mode || 'none',
     companyName:       company.company_name||'',
     bizNumber:         company.business_number||'',
     companyAddr:       company.address||'',
@@ -1704,6 +1706,7 @@ function generateContractHTML(){
       ${row('임금 지급일', payDayStr)}
       ${row('지급 방법', '근로자 명의 계좌 직접 입금')}
     </table>
+    ${d.premiumMode !== 'always' ? '<div class="doc-note">※ 연장·야간·휴일 근로수당은 법정 가산수당 지급의무가 발생할 경우 가산을 적용한다.</div>' : ''}
     `}
     <div class="doc-note">※ 제세공과금(4대 보험료, 소득세 등)은 관계법령에 따라 공제 후 지급한다.</div>
   </div>

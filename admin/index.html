@@ -1053,21 +1053,33 @@
           </select>
         </div>
         <div class="form-group">
+          <label>가산수당 지급 기준 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
+          <div style="display:flex;gap:16px;padding:6px 0;">
+            <label class="radio-custom" style="font-weight:400;">
+              <input type="radio" name="cm-premium-mode" value="none" /> 5인 미만 시 가산 미적용
+            </label>
+            <label class="radio-custom" style="font-weight:400;">
+              <input type="radio" name="cm-premium-mode" value="always" /> 5인 미만이어도 수당 가산 지급
+            </label>
+          </div>
+          <span id="cm-premium-mode-hint" class="va-hint va-info" style="font-size:11px;color:#6b7280;">근로기준법 제56조상 5인 미만 사업장은 연장·야간·휴일 가산수당이 미적용될 수 있습니다. 실제 지급 기준에 맞게 필수 선택하세요.</span>
+        </div>
+        <div class="form-group">
           <label>병가 급여 지급율 (%)</label>
           <input type="number" id="cm-sick-leave-pay-rate" class="w-full" min="0" max="100" step="1" placeholder="0 (무급만 해당)" value="0" />
           <span style="font-size:11px;color:#6b7280;">취업규칙상 병가 급여 지급율을 입력하세요. 0%는 무급만 허용, 입력한 비율로 유급 병가 옵션이 활성화됩니다.</span>
         </div>
         <div class="form-group">
-          <label>일할 계산 방식</label>
+          <label>일할 계산 방식 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
           <div style="display:flex;gap:16px;padding:6px 0;">
             <label class="radio-custom" style="font-weight:400;">
-              <input type="radio" name="cm-proration-method" value="30day_fixed" checked /> 30일 고정 기준
+              <input type="radio" name="cm-proration-method" value="30day_fixed" /> 30일 고정 기준
             </label>
             <label class="radio-custom" style="font-weight:400;">
               <input type="radio" name="cm-proration-method" value="working_days" /> 월 소정근로일수 기준
             </label>
           </div>
-          <span style="font-size:11px;color:#6b7280;">급여 일할 계산 시 기준일수를 선택합니다. 월 소정근로일수(평일) 또는 30일 고정 중 선택 가능합니다.</span>
+          <span id="cm-proration-method-hint" class="va-hint va-info" style="font-size:11px;color:#6b7280;">급여 일할 계산 시 기준일수를 선택합니다. (필수)</span>
         </div>
 
             </div>
@@ -3405,16 +3417,16 @@
   <script src="js/admin-wage/wage-retirement-mgmt.js?v=20260814s"></script>
   <script src="js/admin-wage.js?v=20260814s"></script>
   <!-- admin-company 모듈 -->
-  <script src="js/admin-company/company-core.js?v=20260826c"></script>
+  <script src="js/admin-company/company-core.js?v=20260827a"></script>
   <script src="js/admin-company/company-history.js?v=20260819a"></script>
   <script src="js/admin-company.js?v=20260814s"></script>
   <!-- admin-contract 모듈 (기능별 분리) -->
   <script src="js/admin-contract/contract-form.js?v=20260826d"></script>
   <script src="js/admin-contract/contract-core.js?v=20260824b"></script>
-  <script src="js/admin-contract/contract-docs.js?v=20260824i"></script>
+  <script src="js/admin-contract/contract-docs.js?v=20260826f"></script>
   <script src="js/admin-contract/contract-dispatch.js?v=20260824b"></script>
   <script src="js/admin-contract/consent-dispatch.js?v=20260814s"></script>
-  <script src="js/admin-contract/contract-lifecycle.js?v=20260824a"></script>
+  <script src="js/admin-contract/contract-lifecycle.js?v=20260826g"></script>
   <script src="js/admin-contract.js?v=20260814s"></script>
   <!-- admin-hr 모듈 (인사관리대장) -->
   <script src="js/admin-hr.js?v=20260819f"></script>
@@ -3424,7 +3436,7 @@
   <script src="js/admin-payroll.js?v=20260814s"></script>
   <!-- admin-payroll-input 모듈 (기능별 분리) -->
   <script src="js/admin-payroll-input/payroll-input-core.js?v=20260814s"></script>
-  <script src="js/admin-payroll-input/payroll-input-main.js?v=20260821j"></script>
+  <script src="js/admin-payroll-input/payroll-input-main.js?v=20260827g"></script>
   <script src="js/admin-payroll-input/payroll-input-save.js?v=20260821k"></script>
   <script src="js/admin-payroll-input/payroll-input-excel.js?v=20260821g"></script>
   <script src="js/admin-payroll-input.js?v=20260814s"></script>

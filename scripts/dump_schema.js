@@ -39,6 +39,8 @@ const KO = {
       contract_end_date: '자문계약 종료일',
       representatives: '대표자 정보 (JSON, 복수 가능)',
       sick_leave_pay_rate: '병가 유급비율 (%, 0=무급)',
+      proration_method: '일할계산 방식 (30일 고정/월 소정근로일수)',
+      premium_mode: '가산수당 지급 기준 (none=5인 미만 시 가산 미적용, always=5인 미만이어도 가산 지급)',
     }
   },
   employees: {
@@ -1105,7 +1107,7 @@ for (const sec of sectionTables) {
       if (c.dflt_value != null) def += ` DEFAULT ${c.dflt_value}`;
       if (i < cols.length - 1) def += ',';
       const cDesc = koComment(t.name, c.name);
-      if (cDesc) def += ` -- ${cDesc}`;
+      if (cDesc) def += cDesc;
       schema += def + '\n';
     });
     schema += ');\n\n';
@@ -1137,7 +1139,7 @@ if (remaining.length > 0) {
       if (c.dflt_value != null) def += ` DEFAULT ${c.dflt_value}`;
       if (i < cols.length - 1) def += ',';
       const cDesc = koComment(t.name, c.name);
-      if (cDesc) def += ` -- ${cDesc}`;
+      if (cDesc) def += cDesc;
       schema += def + '\n';
     });
     schema += ');\n\n';
