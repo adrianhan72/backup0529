@@ -162,7 +162,7 @@ function _isSmallBiz(companyId, refYr, refMo){
       if(dayWorkers[d] >= 5) daysOver5++;
     }
   }
-  if(operDays === 0) return true;
+  if(operDays === 0) return false; // 데이터 없음(신규 첫 계약 등) → 5인 이상(할증 적용) fail-open (급여 _getPISmallFirmInfo와 동일)
 
   const headcount = totalPersonDays / operDays;
   const daysUnder5 = operDays - daysOver5;
@@ -212,7 +212,7 @@ function _getSmallBizInfo(companyId, refYr, refMo){
 
   let operDays=0, totalPersonDays=0, daysOver5=0;
   for(let d=1; d<=totalDays; d++){ if(dayWorkers[d]>0){ operDays++; totalPersonDays+=dayWorkers[d]; if(dayWorkers[d]>=5) daysOver5++; } }
-  if(operDays===0) return { isSmall:true, headcount:0, operDays:0, totalPersonDays:0, daysOver5:0 };
+  if(operDays===0) return { isSmall:false, headcount:0, operDays:0, totalPersonDays:0, daysOver5:0 }; // 데이터 없음 → 5인 이상(할증 적용) fail-open (급여 _getPISmallFirmInfo와 동일)
 
   const headcount = totalPersonDays / operDays;
   const specialOver5 = daysOver5 > operDays/2;
