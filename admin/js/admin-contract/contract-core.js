@@ -598,9 +598,9 @@ function renderContracts(){
           : `<button class="btn btn-sm btn-warning" onclick="openContractPrintModal('${c.id}')" title="자동생성 초안 확인"><i class="fas fa-file-contract"></i> 초안</button>`
         }
         ${c.edited_file_url
-          ? `<a class="btn btn-sm btn-danger" style="text-decoration:none;" href="${c.edited_file_url}" target="_blank" title="최종 편집본 다운로드"><i class="fas fa-file-word"></i> 최종본</a>
+          ? `<a class="btn btn-sm btn-danger" style="text-decoration:none;" href="${c.edited_file_url}" target="_blank" title="최종 편집본 다운로드"><i class="fas fa-file-pdf"></i> 최종본</a>
              <button class="btn btn-sm btn-success" onclick="uploadEditedContractFile('${c.id}')" title="최종 편집본 다시 업로드"><i class="fas fa-redo-alt"></i> 재등록</button>`
-          : `<button class="btn btn-sm btn-success" onclick="uploadEditedContractFile('${c.id}')" title="편집한 워드 파일 업로드"><i class="fas fa-upload"></i> 편집본 업로드</button>`
+          : `<button class="btn btn-sm btn-success" onclick="uploadEditedContractFile('${c.id}')" title="편집한 PDF 파일 업로드"><i class="fas fa-upload"></i> 편집본 업로드</button>`
         }
       </td>
       <td style="white-space:nowrap;">

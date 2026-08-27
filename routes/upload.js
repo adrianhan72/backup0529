@@ -25,18 +25,32 @@ module.exports = function(ROOT) {
       cb(null, rel);
     }
   });
-  const upload = multer({ storage: uploadStorage, limits: { fileSize: 10 * 1024 * 1024 } });
+  // 근로계약서 편집본(contract) 필드는 PDF 파일만 허용 (2026-08-27)
+  const fileFilter = (req, file, cb) => {
+    if (file.fieldname === 'contract') {
+      const isPdf = (file.mimetype === 'application/pdf') || /\.pdf$/i.test(file.originalname);
+      if (!isPdf) return cb(new Error('최종 편집본은 PDF 파일만 업로드할 수 있습니다.'));
+    }
+    cb(null, true);
+  };
+  const upload = multer({ storage: uploadStorage, limits: { fileSize: 10 * 1024 * 1024 }, fileFilter });
 
-  router.post('/upload/:id', upload.fields([
-    { name: 'signed', maxCount: 1 },
-    { name: 'consent', maxCount: 1 },
-    { name: 'contract', maxCount: 1 }
-  ]), (req, res) => {
-    const files = {};
-    if (req.files['signed']) files.signed = '/uploads/contracts/' + req.files['signed'][0].filename;
-    if (req.files['consent']) files.consent = '/uploads/contracts/' + req.files['consent'][0].filename;
-    if (req.files['contract']) files.contract = '/uploads/contracts/' + req.files['contract'][0].filename;
-    res.json({ ok: true, files });
+  router.post('/upload/:id', (req, res) => {
+    upload.fields([
+      { name: 'signed', maxCount: 1 },
+      { name: 'consent', maxCount: 1 },
+      { name: 'contract', maxCount: 1 }
+    ])(req, res, (err) => {
+      if (err) {
+        // multer/fileFilter 오류 (contract 필드는 PDF만 허용)
+        return res.status(400).json({ ok: false, error: err.message || '업로드 실패' });
+      }
+      const files = {};
+      if (req.files['signed']) files.signed = '/uploads/contracts/' + req.files['signed'][0].filename;
+      if (req.files['consent']) files.consent = '/uploads/contracts/' + req.files['consent'][0].filename;
+      if (req.files['contract']) files.contract = '/uploads/contracts/' + req.files['contract'][0].filename;
+      res.json({ ok: true, files });
+    });
   });
 
   return router;

@@ -1900,26 +1900,29 @@ function printContractDoc(){
 }
 
 // ════════════════════════════════════════════════════════════
-// 최종 편집본(워드) 업로드 → 파일서버 저장 + DB 기록 / 날인본 보기
+// 최종 편집본(PDF) 업로드 → 파일서버 저장 + DB 기록 / 날인본 보기
 // (계약 목록 — 계약서 열 '편집본 업로드'·'재등록', 날인본 열 '보기')
 // ════════════════════════════════════════════════════════════
 
-/** 최종 편집본(워드) 업로드 → 파일서버 저장 + contracts.edited_file_url 기록 */
+/** 최종 편집본(PDF) 업로드 → 파일서버 저장 + contracts.edited_file_url 기록 */
 async function uploadEditedContractFile(contractId){
   if(!contractId){ toast('계약 정보가 없습니다.'); return; }
   const input = document.createElement('input');
   input.type = 'file';
-  input.accept = '.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+  input.accept = '.pdf,application/pdf';
   input.onchange = async () => {
     const file = input.files[0];
     if(!file) return;
+    // 최종 편집본은 PDF 파일만 허용
+    const isPdf = (file.type === 'application/pdf') || /\.pdf$/i.test(file.name);
+    if(!isPdf){ toast('최종 편집본은 PDF 파일만 업로드할 수 있습니다.', 'error'); return; }
     try {
       const fd = new FormData();
       fd.append('contract', file);
       const res  = await fetch(`../api/upload/${contractId}`, { method: 'POST', body: fd });
-      const json = await res.json();
+      const json = await res.json().catch(() => ({}));
       if(!res.ok || !json.ok || !json.files || !json.files.contract){
-        toast('업로드에 실패했습니다.', 'error');
+        toast(json.error || '업로드에 실패했습니다.', 'error');
         return;
       }
       const url = json.files.contract;

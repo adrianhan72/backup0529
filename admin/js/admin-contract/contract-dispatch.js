@@ -841,7 +841,7 @@ async function _saveDispatchRecord({ method: dispatchMethod, status: dispatchSta
 // ── 알림톡 발송 (발송 모달) ──────────────────────
 async function dispatchContractKakao(){
   const url = window._printingContractFileUrl;
-  if(!url){ toast('최종 편집본(워드) 파일이 없습니다. 계약서 열에서 편집본을 업로드해 주세요.', 'warning'); return; }
+  if(!url){ toast('최종 편집본(PDF) 파일이 없습니다. 계약서 열에서 편집본을 업로드해 주세요.', 'warning'); return; }
   const phone = window._printingEmpPhone || '';
   const name  = window._printingEmpName  || '근로자';
   if(!phone){ toast('전화번호가 등록되지 않았습니다.', 'error'); return; }
@@ -874,7 +874,7 @@ async function dispatchContractKakao(){
 // ── 이메일 발송 (발송 모달) ──────────────────────
 async function dispatchContractEmail(){
   const url = window._printingContractFileUrl;
-  if(!url){ toast('최종 편집본(워드) 파일이 없습니다. 계약서 열에서 편집본을 업로드해 주세요.', 'warning'); return; }
+  if(!url){ toast('최종 편집본(PDF) 파일이 없습니다. 계약서 열에서 편집본을 업로드해 주세요.', 'warning'); return; }
   const email = window._printingEmpEmail || '';
   const name  = window._printingEmpName  || '근로자';
   if(!email){ toast('이메일이 등록되지 않았습니다.', 'error'); return; }
@@ -907,7 +907,7 @@ async function dispatchContractEmail(){
 // ── 수동교부 (발송 모달) ────────────────────
 async function dispatchContractManual(){
   const url = window._printingContractFileUrl;
-  if(!url){ toast('최종 편집본(워드) 파일이 없습니다. 계약서 열에서 편집본을 업로드해 주세요.', 'warning'); return; }
+  if(!url){ toast('최종 편집본(PDF) 파일이 없습니다. 계약서 열에서 편집본을 업로드해 주세요.', 'warning'); return; }
   const name  = window._printingEmpName || '근로자';
   const confirmed = confirm(
     `[ 수동교부 처리 ]\n\n` +
@@ -951,7 +951,7 @@ function openContractSendModal(contractId){
   const co  = (allCompanies||[]).find(x => x.id === c.company_id);
   const empName = emp?.name || '';
   const url = c.edited_file_url || '';
-  if(!url){ toast('최종 편집본(워드) 파일이 없습니다. 계약서 열에서 편집본을 업로드해 주세요.', 'warning'); return; }
+  if(!url){ toast('최종 편집본(PDF) 파일이 없습니다. 계약서 열에서 편집본을 업로드해 주세요.', 'warning'); return; }
 
   // 전역 정보 설정 (발송 함수에서 사용)
   window._printingContractId      = c.id;
@@ -1020,7 +1020,7 @@ async function sendCompanySealRequest(){
 /** 고객사 인앱 알림 공통 전송 (검수/날인 요청) — 시스템 설정 메시지 규칙 반영 + 변수 치환 */
 async function _sendEditedFileToCompany(noticeType, title, body, extraVars){
   const url = window._printingContractFileUrl;
-  if(!url){ toast('최종 편집본(워드) 파일이 없습니다.', 'warning'); return; }
+  if(!url){ toast('최종 편집본(PDF) 파일이 없습니다.', 'warning'); return; }
   const c   = (allContracts||[]).find(x=>x.id===window._printingContractId);
   const emp = c ? (allEmployees||[]).find(e=>e.id===c.employee_id) : null;
   const co  = c ? (allCompanies||[]).find(x=>x.id===c.company_id) : null;
