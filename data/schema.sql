@@ -217,7 +217,10 @@ CREATE TABLE IF NOT EXISTS employees (
   emergency_relation TEXT, -- 비상연락처 관계
   personnel_type TEXT DEFAULT 'employee', -- 인원 구분 (employee/representative/executive/related)
   relationship TEXT, -- 특수관계인 관계 (배우자/자녀/부모 등)
-  hr_edit_history TEXT -- 인사카드 수정 이력 (JSON 배열)
+  hr_edit_history TEXT, -- 인사카드 수정 이력 (JSON 배열)
+  nationality TEXT, -- 국적 (외국인 선택입력)
+  residence_status TEXT, -- 체류자격 (외국인 선택입력, 법무부 코드)
+  occupation TEXT -- 직종 (외국인 선택입력, 고용·산재보험 코드)
 );
 
 CREATE INDEX IF NOT EXISTS idx_employees_company ON employees(company_id);

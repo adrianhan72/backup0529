@@ -600,7 +600,8 @@ function openHrEmployeeForm(empId, presetCompanyId) {
 
   // ── 7종 리셋: 값 / 표시 / 체크 / readonly / 힌트 / 상태 / 오류 ──
   const textIds = ['hr-em-empno','hr-em-name','hr-em-job','hr-em-dept','hr-em-position','hr-em-hire',
-    'hr-em-id','hr-em-phone','hr-em-email','hr-em-address','hr-em-bank','hr-em-account',
+    'hr-em-id','hr-em-foreign-id','hr-em-nationality','hr-em-residence-status','hr-em-occupation',
+    'hr-em-phone','hr-em-email','hr-em-address','hr-em-bank','hr-em-account',
     'hr-em-education','hr-em-major','hr-em-language','hr-em-marital','hr-em-military',
     'hr-em-emergency-contact','hr-em-emergency-relation','hr-em-relationship'];
   textIds.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
@@ -608,8 +609,12 @@ function openHrEmployeeForm(empId, presetCompanyId) {
 
   { const el = document.getElementById('hr-em-category'); if (el) { el.value = ''; el.disabled = true; } }
   { const el = document.getElementById('hr-em-personnel-type'); if (el) el.value = PERSONNEL_TYPE.EMPLOYEE; }
-  { const el = document.getElementById('hr-em-gender'); if (el) el.value = 'male'; }
+  { const el = document.getElementById('hr-em-gender'); if (el) el.value = ''; }
   { const el = document.getElementById('hr-em-tax-dependents'); if (el) el.value = 1; }
+  // 내국인/외국인 구분 초기화 (기본: 내국인)
+  { const _rk = document.querySelector('input[name="hr-em-id-type"][value="korean"]'); if (_rk) _rk.checked = true; }
+  document.querySelectorAll('input[name="hr-em-id-type"]').forEach(r => { r.disabled = false; });
+  _hrOnIdTypeChange();
   // 담당업무·부서·직책: 기본 해제 (아래에서 계약 보유 여부에 따라 재잠금)
   _hrSetContractFieldsLock(false);
   // 등록 후 수정 불가 필드 잠금 — 사원번호는 항상 readonly (자동부여), 이름·주민번호는 신규 모드에서만 입력
@@ -642,6 +647,20 @@ function openHrEmployeeForm(empId, presetCompanyId) {
     document.getElementById('hr-em-position').value = e.position || '';
     document.getElementById('hr-em-hire').value = e.hire_date || '';
     document.getElementById('hr-em-id').value = e.id_number || '';
+    // ── 내국인/외국인 구분 복원 (주민번호 7번째 자리 5~8 = 외국인) ──
+    const _idDigits = String(e.id_number || '').replace(/[^0-9]/g, '');
+    const _isForeignEmp = [5,6,7,8].includes(parseInt(_idDigits.charAt(6), 10));
+    { const _tr = document.querySelector(`input[name="hr-em-id-type"][value="${_isForeignEmp ? 'foreign' : 'korean'}"]`); if (_tr) _tr.checked = true; }
+    document.querySelectorAll('input[name="hr-em-id-type"]').forEach(r => { r.disabled = true; });
+    if (_isForeignEmp) {
+      { const el = document.getElementById('hr-em-foreign-id'); if (el) el.value = e.id_number || ''; }
+      { const el = document.getElementById('hr-em-id'); if (el) el.value = ''; }
+      { const el = document.getElementById('hr-em-nationality'); if (el) el.value = e.nationality || ''; }
+      { const el = document.getElementById('hr-em-residence-status'); if (el) el.value = e.residence_status || ''; }
+      { const el = document.getElementById('hr-em-occupation'); if (el) el.value = e.occupation || ''; }
+    }
+    _hrOnIdTypeChange();
+    { const el = document.getElementById('hr-em-gender'); if (el) el.value = e.gender === 'female' ? 'female' : 'male'; }
     document.getElementById('hr-em-phone').value = e.phone || '';
     document.getElementById('hr-em-email').value = e.email || '';
     document.getElementById('hr-em-address').value = e.address || '';
@@ -659,7 +678,7 @@ function openHrEmployeeForm(empId, presetCompanyId) {
     document.getElementById('hr-em-emergency-relation').value = e.emergency_relation || '';
     document.getElementById('hr-em-special-notes').value = e.special_notes || '';
     // 등록 후 수정 불가 필드 잠금 (사원번호·이름·주민등록번호 앞7자리)
-    ['hr-em-empno','hr-em-name','hr-em-id'].forEach(id => { const el = document.getElementById(id); if (el) el.readOnly = true; });
+    ['hr-em-empno','hr-em-name','hr-em-id','hr-em-foreign-id'].forEach(id => { const el = document.getElementById(id); if (el) el.readOnly = true; });
     { const el = document.getElementById('hr-em-empno-auto-hint'); if (el) { el.style.display = 'block'; el.textContent = '🔒 사원번호는 수정할 수 없습니다.'; } }
     const _ptEl = document.getElementById('hr-em-personnel-type');
     if (_ptEl) _ptEl.value = personnelTypeOf(e);
@@ -742,7 +761,7 @@ function _hrCheckDuplicateName() {
   const alertEl = document.getElementById('hr-em-name-dup-alert');
   if (!alertEl) return;
   const name = (document.getElementById('hr-em-name')?.value || '').trim();
-  const idNumber = (document.getElementById('hr-em-id')?.value || '').trim();
+  const idNumber = (typeof _hrActiveIdValue === 'function') ? _hrActiveIdValue() : (document.getElementById('hr-em-id')?.value || '').trim();
   const coId = document.getElementById('hr-em-company')?.value || '';
   const idPre = idNumber.replace(/[^0-9]/g, '').slice(0, 7);
   const nameKey = (typeof _ctNameKey === 'function') ? _ctNameKey(name) : name.replace(/[0-9]+$/, '').trim();
@@ -761,9 +780,10 @@ function _hrCheckDuplicateName() {
       `<span class="badge badge-indigo" style="margin:2px;">${_hrEsc(c.name)} (사번 ${_hrEsc(c.employee_number) || '-'})</span>`).join('')}</div>`;
 }
 
-// ── 주민번호 입력 (포맷 + 성별 자동) ──
+// ── 주민번호/외국인번호 입력 (포맷 + 성별 자동) ──
 function _hrOnIdInput(el) {
-  _formatIdInput(el);
+  const isForeign = (el.id === 'hr-em-foreign-id');
+  if (isForeign) _hrFormatForeignId(el); else _formatIdInput(el);
   const val = el.value;
   let hint = el.parentElement.querySelector('.id-format-hint');
   if (!hint) {
@@ -771,32 +791,129 @@ function _hrOnIdInput(el) {
     hint.className = 'id-format-hint ct-hint-normal';
     el.parentElement.appendChild(hint);
   }
+  const genderEl = document.getElementById('hr-em-gender');
   const genderHint = document.getElementById('hr-em-gender-hint');
   if (!val) {
     hint.textContent = '';
     hint.className = 'id-format-hint ct-hint-normal';
-    if (genderHint) { genderHint.textContent = '주민번호 입력 시 자동 설정됩니다'; genderHint.style.color = '#6b7280'; }
+    if (genderEl) genderEl.value = '';
+    if (genderHint) { genderHint.textContent = (isForeign ? '외국인등록번호' : '주민번호') + ' 입력 시 자동 설정됩니다'; genderHint.style.color = '#6b7280'; }
     return;
   }
-  const { ok, msg } = _validateIdNumber(val);
-  if (ok) {
-    hint.textContent = '✓ 형식 확인';
-    hint.className = 'id-format-hint ct-hint-success';
-    const gCode = val.replace(/-/g, '').slice(6, 7);
-    const g = _inferGender(gCode);
-    if (g) {
-      const genderEl = document.getElementById('hr-em-gender');
-      if (genderEl) genderEl.value = g;
-      if (genderHint) { genderHint.textContent = (g === 'male' ? '남성' : '여성') + ' (자동 설정)'; genderHint.style.color = '#059669'; }
-    }
-  } else if (val.replace(/[^0-9]/g, '').length < 7) {
+  if (isForeign) {
     const digits = val.replace(/[^0-9]/g, '');
-    hint.textContent = digits.length < 6 ? `생년월일 ${6 - digits.length}자리 더 입력` : '하이픈(-) 뒤 성별코드(1~8) 입력';
-    hint.className = 'id-format-hint ct-hint-normal';
+    if (!/^\d{6}-\d{1,7}$/.test(val)) {
+      hint.textContent = digits.length < 6 ? `생년월일 ${6 - digits.length}자리 더 입력` : '하이픈(-) 뒤 번호 입력';
+      hint.className = 'id-format-hint ct-hint-normal';
+    } else if (digits.length < 13) {
+      hint.textContent = `하이픈(-) 뒤 번호 ${13 - digits.length}자리 더 입력`;
+      hint.className = 'id-format-hint ct-hint-normal';
+    } else {
+      const g = _inferForeignGender(digits);
+      if (g) {
+        hint.textContent = '✓ 형식 확인';
+        hint.className = 'id-format-hint ct-hint-success';
+        if (genderEl) genderEl.value = g;
+        if (genderHint) { genderHint.textContent = (g === 'male' ? '남성' : '여성') + ' (자동 설정)'; genderHint.style.color = '#059669'; }
+      } else {
+        hint.textContent = '✗ 외국인등록번호 성별코드는 5·6·7·8 중 하나여야 합니다.';
+        hint.className = 'id-format-hint ct-hint-error';
+      }
+    }
   } else {
-    hint.textContent = '✗ ' + msg;
-    hint.className = 'id-format-hint ct-hint-error';
+    const { ok, msg } = _validateKoreanId(val);
+    if (ok) {
+      hint.textContent = '✓ 형식 확인';
+      hint.className = 'id-format-hint ct-hint-success';
+      const gCode = val.replace(/-/g, '').slice(6, 7);
+      const g = _inferGender(gCode);
+      if (g) {
+        if (genderEl) genderEl.value = g;
+        if (genderHint) { genderHint.textContent = (g === 'male' ? '남성' : '여성') + ' (자동 설정)'; genderHint.style.color = '#059669'; }
+      }
+    } else if (val.replace(/[^0-9]/g, '').length < 7) {
+      const digits = val.replace(/[^0-9]/g, '');
+      hint.textContent = digits.length < 6 ? `생년월일 ${6 - digits.length}자리 더 입력` : '하이픈(-) 뒤 성별코드(1~4) 입력';
+      hint.className = 'id-format-hint ct-hint-normal';
+    } else {
+      hint.textContent = '✗ ' + msg;
+      hint.className = 'id-format-hint ct-hint-error';
+    }
   }
+}
+
+// ── 내국인/외국인 구분 헬퍼 ──
+function _hrIdType() {
+  return document.querySelector('input[name="hr-em-id-type"]:checked')?.value || 'korean';
+}
+function _hrActiveIdValue() {
+  const el = _hrIdType() === 'foreign'
+    ? document.getElementById('hr-em-foreign-id')
+    : document.getElementById('hr-em-id');
+  return (el && el.value ? el.value : '').trim();
+}
+function _hrOnIdTypeChange() {
+  const t = _hrIdType();
+  const kEl = document.getElementById('hr-em-korean-wrap');
+  const fEl = document.getElementById('hr-em-foreign-wrap');
+  const fxEl = document.getElementById('hr-em-foreign-extra-wrap');
+  if (kEl) kEl.style.display = (t === 'korean') ? '' : 'none';
+  if (fEl) fEl.style.display = (t === 'foreign') ? '' : 'none';
+  if (fxEl) fxEl.style.display = (t === 'foreign') ? '' : 'none';
+  document.querySelectorAll('#hr-emp-form-modal .id-format-hint').forEach(el => el.remove());
+  // 활성 id가 비어있을 때만 성별 기본값 리셋 (수정 모드는 값 유지)
+  const idVal = _hrActiveIdValue();
+  const genderEl = document.getElementById('hr-em-gender');
+  const genderHint = document.getElementById('hr-em-gender-hint');
+  if (!idVal) {
+    if (genderEl) genderEl.value = '';
+    if (genderHint) { genderHint.textContent = (t === 'foreign' ? '외국인등록번호' : '주민번호') + ' 입력 시 자동 설정됩니다'; genderHint.style.color = '#6b7280'; }
+  }
+  if (typeof _hrCheckDuplicateName === 'function') _hrCheckDuplicateName();
+}
+function _hrFormatForeignId(el) {
+  const prev = el.value;
+  const digits = prev.replace(/[^0-9]/g, '').slice(0, 13);
+  let next = '';
+  if (digits.length <= 6) next = digits;
+  else next = digits.slice(0, 6) + '-' + digits.slice(6);
+  if (next !== prev) {
+    const sel = el.selectionStart || 0;
+    el.value = next;
+    const newPos = Math.min(sel, next.length);
+    el.setSelectionRange(newPos, newPos);
+  }
+}
+/** 3자리 숫자 코드 전용 입력 (국적·직종코드 — 숫자만, 최대 3자리) */
+function _hrOnNumericCodeInput(el) {
+  const v = (el.value || '').replace(/[^0-9]/g, '').slice(0, 3);
+  if (el.value !== v) el.value = v;
+}
+function _inferForeignGender(digits) {
+  const n = parseInt((digits || '').charAt(6), 10);
+  if (n === 5 || n === 7) return 'male';
+  if (n === 6 || n === 8) return 'female';
+  return null;
+}
+function _validateForeignId(val) {
+  if (!val || !val.trim()) return { ok: false, msg: '외국인등록번호를 입력해 주세요.' };
+  if (!/^\d{6}-\d{7}$/.test(val.trim()))
+    return { ok: false, msg: '외국인등록번호는 6자리-7자리 (총 13자리) 형식으로 입력해 주세요.' };
+  const gd = parseInt(val.replace(/\D/g, '').charAt(6), 10);
+  if (![5, 6, 7, 8].includes(gd))
+    return { ok: false, msg: '외국인등록번호 성별코드는 5·6·7·8 중 하나여야 합니다.' };
+  return { ok: true, msg: '' };
+}
+function _validateKoreanId(val) {
+  const r = _validateIdNumber(val);
+  if (!r.ok) return r;
+  const gd = parseInt(val.replace(/\D/g, '').charAt(6), 10);
+  if (gd >= 5) return { ok: false, msg: '내국인 주민등록번호 성별코드는 1~4여야 합니다. (5~8은 외국인 — 외국인 선택)' };
+  return { ok: true, msg: '' };
+}
+/** 체류자격 코드 조회 페이지 (새 창) */
+function _hrOpenVisaCode() {
+  window.open('pages/visa-code.html', '_blank', 'width=1000,height=780');
 }
 
 // ── 저장 ──
@@ -808,7 +925,8 @@ async function saveHrEmployee() {
   const category = get('hr-em-category');
   const job = get('hr-em-job');
   const hire = get('hr-em-hire');
-  const idNumber = get('hr-em-id');
+  const idType = _hrIdType();
+  const idNumber = _hrActiveIdValue();
   const phone = get('hr-em-phone');
   const address = get('hr-em-address');
   const genderEl = document.getElementById('hr-em-gender');
@@ -829,8 +947,12 @@ async function saveHrEmployee() {
   // 고용형태·담당업무: 근로계약에서 등록 (잠금 해제 상태일 때만 필수)
   const _jobEl = document.getElementById('hr-em-job');
   if (_jobEl && !_jobEl.disabled && !job) return fail('담당업무를 입력해 주세요.');
-  if (!idNumber) return fail('주민등록번호를 입력해 주세요.');
-  if (!_validateIdNumber(idNumber).ok) return fail('주민등록번호 형식이 올바르지 않습니다.');
+  if (!idNumber) return fail(idType === 'foreign' ? '외국인등록번호를 입력해 주세요.' : '주민등록번호를 입력해 주세요.');
+  if (idType === 'foreign') {
+    if (!_validateForeignId(idNumber).ok) return fail(_validateForeignId(idNumber).msg);
+  } else {
+    if (!_validateKoreanId(idNumber).ok) return fail(_validateKoreanId(idNumber).msg);
+  }
   if (!phone) return fail('휴대전화번호를 입력해 주세요.');
   if (!_validatePhoneNumber(phone).ok) return fail('휴대전화번호 형식이 올바르지 않습니다.');
   if (!address) return fail('주소를 입력해 주세요.');
@@ -872,6 +994,9 @@ async function saveHrEmployee() {
     emergency_contact: get('hr-em-emergency-contact'),
     emergency_relation: get('hr-em-emergency-relation'),
     special_notes: get('hr-em-special-notes'),
+    nationality: (idType === 'foreign') ? get('hr-em-nationality') : '',
+    residence_status: (idType === 'foreign') ? get('hr-em-residence-status') : '',
+    occupation: (idType === 'foreign') ? get('hr-em-occupation') : '',
     personnel_type: personnelType,
     relationship,
     is_representative: personnelType === PERSONNEL_TYPE.REPRESENTATIVE ? 1 : 0,
@@ -895,6 +1020,7 @@ async function saveHrEmployee() {
       marital_status: '결혼 여부', military_status: '병역',
       emergency_contact: '비상연락처', emergency_relation: '비상연락처 관계',
       special_notes: '특이사항', personnel_type: '구분', relationship: '관계',
+      nationality: '국적', residence_status: '체류자격', occupation: '직종',
     };
     const _fields = [];
     Object.keys(_lbl).forEach(k => {
