@@ -1007,52 +1007,55 @@ async function savePISplit(){
   };
 
   // ── 수습 기간 payroll ──
-  // 수습 임금: probation_amt 또는 기본급 × probation_pct/100 (계약서 기준)
+  // 수습 임금 비율 (2026-09-01 규칙): 직접액 = probation_amt ÷ 계약서 월 약정임금 / 비율 = pct/100
+  // 수습기간 행은 전 지급 항목에 수습비율을 적용 (기본급·주휴·수당 모두)
   const probAmt  = parseFloat(piContract.probation_amt) || 0;
-  const probBase = probAmt > 0 ? round0(probAmt * ratioProb) : round0((gv('pi-base')) * ratioProb);
-  const probProbRatio = wdProb / (wdProb + wdPost || 1);
+  const _probRatio = (typeof probationRatioOf === 'function') ? probationRatioOf(piContract) : 1;
+  const _probDayScale = ratioProb * _probRatio;
+  const probBase = round0((gv('pi-base') || probAmt) * _probDayScale);
 
   const bodyProb = {
     ...baseBody,
     id:                'pay' + Date.now() + 'p',
-    hourly_wage:       piContract.hourly_wage || 0,
+    hourly_wage:       Math.round((piContract.hourly_wage || 0) * _probRatio),
     work_days:         wdProb,
     total_work_hours:  whProb,
+    standard_monthly_pay: round0((gv('pi-base') + gv('pi-weekly-hol')) * _probDayScale),
     base_salary:       probBase,
-    weekly_holiday_pay: round0(gv('pi-weekly-hol') * ratioProb), // 자동계산 값 비율 분할
-    position_allowance: round0((gv('pi-position')) * ratioProb),
-    remote_area_allowance: round0((gv('pi-remote-area') || 0) * ratioProb),
-    site_allowance:     round0((gv('pi-site') || 0) * ratioProb),
-    skill_allowance:    round0((gv('pi-skill') || 0) * ratioProb),
-    license_allowance:  round0((gv('pi-license') || 0) * ratioProb),
-    hazard_allowance:   round0((gv('pi-hazard') || 0) * ratioProb),
-    ..._getPITransportFields(round0(gv('pi-transport') * ratioProb)),
+    weekly_holiday_pay: round0(gv('pi-weekly-hol') * _probDayScale), // 자동계산 값 비율 분할 + 수습비율
+    position_allowance: round0((gv('pi-position')) * _probDayScale),
+    remote_area_allowance: round0((gv('pi-remote-area') || 0) * _probDayScale),
+    site_allowance:     round0((gv('pi-site') || 0) * _probDayScale),
+    skill_allowance:    round0((gv('pi-skill') || 0) * _probDayScale),
+    license_allowance:  round0((gv('pi-license') || 0) * _probDayScale),
+    hazard_allowance:   round0((gv('pi-hazard') || 0) * _probDayScale),
+    ..._getPITransportFields(round0(gv('pi-transport') * _probDayScale)),
     transport_type:    _piTransportType,
     transport_pay_type:_getPIPayTypeVal('transport'),
-    meal_allowance:    round0((gv('pi-meal')) * ratioProb),
+    meal_allowance:    round0((gv('pi-meal')) * _probDayScale),
     meal_pay_type:     _getPIPayTypeVal('meal'),
-    childcare_allowance: gv('pi-childcare') || 0,  // 보육수당: 비율 적용 안 함, 입력값 그대로
+    childcare_allowance: round0((gv('pi-childcare') || 0) * _probDayScale),  // 보육수당: 수습비율 적용 (전 항목 규칙)
     childcare_pay_type:     _getPIPayTypeVal('childcare'),
-    research_allowance:  round0((gv('pi-research') || 0) * ratioProb),
+    research_allowance:  round0((gv('pi-research') || 0) * _probDayScale),
     research_pay_type:      _getPIPayTypeVal('research'),
     communication_pay_type: _getPIPayTypeVal('communication'),
-    fitness_allowance:   round0((gv('pi-fitness')  || 0) * ratioProb),
+    fitness_allowance:   round0((gv('pi-fitness')  || 0) * _probDayScale),
     fitness_pay_type:    _getPIPayTypeVal('fitness'),
-    self_dev_allowance:  round0((gv('pi-self-dev') || 0) * ratioProb),
+    self_dev_allowance:  round0((gv('pi-self-dev') || 0) * _probDayScale),
     self_dev_pay_type:   _getPIPayTypeVal('self_dev'),
-    book_allowance:      round0((gv('pi-book')     || 0) * ratioProb),
+    book_allowance:      round0((gv('pi-book')     || 0) * _probDayScale),
     book_pay_type:       _getPIPayTypeVal('book'),
-    overseas_allowance:  round0((gv('pi-overseas') || 0) * ratioProb),
+    overseas_allowance:  round0((gv('pi-overseas') || 0) * _probDayScale),
     overseas_pay_type:   _getPIPayTypeVal('overseas'),
-    gross_pay:         round0((c.gross || 0) * ratioProb),
-    income_tax:        round0((c.incomeTax || 0) * ratioProb),
-    local_income_tax:  round0((c.localTax || 0) * ratioProb),
-    health_insurance:  round0((c.health || 0) * ratioProb),
-    long_term_care:    round0((c.ltCare || 0) * ratioProb),
-    national_pension:  round0((c.pension || 0) * ratioProb),
-    employment_insurance: round0((c.empIns || 0) * ratioProb),
-    total_deduction:   round0((c.totalDed || 0) * ratioProb),
-    net_pay:           round0((c.net || 0) * ratioProb),
+    gross_pay:         round0((c.gross || 0) * _probDayScale),
+    income_tax:        round0((c.incomeTax || 0) * _probDayScale),
+    local_income_tax:  round0((c.localTax || 0) * _probDayScale),
+    health_insurance:  round0((c.health || 0) * _probDayScale),
+    long_term_care:    round0((c.ltCare || 0) * _probDayScale),
+    national_pension:  round0((c.pension || 0) * _probDayScale),
+    employment_insurance: round0((c.empIns || 0) * _probDayScale),
+    total_deduction:   round0((c.totalDed || 0) * _probDayScale),
+    net_pay:           round0((c.net || 0) * _probDayScale),
     note: `[수습 기간] ${fmtNote(monthStart)} ~ ${fmtNote(probEnd)} (${wdProb}일 / ${whProb}h)\n` +
           `수습 계약(${contractTypeLabel(piContract.contract_type)}) 기준 — 계약ID: ${piContract.id}`,
   };

@@ -3353,7 +3353,17 @@ async function openAmendPreview(){
   const commonFields = {
     employee_id:'', company_id:coId, contract_start:start, contract_end:end, contract_type:cType,
     probation_months: isProbA?(parseInt(document.getElementById('ct-probation-months').value)||3):0,
-    probation_pct:    isProbA?(parseFloat(document.getElementById('ct-probation-pct').value)||0):0,
+    probation_pct: isProbA ? (() => {
+      // 직접액(direct)이면 계약 조항(월 약정임금) 대비 비율을 pct에 기록 (2026-09-01 규칙)
+      const _pb = document.querySelector('input[name="ct-probation-basis"]:checked')?.value || 'salary';
+      const _pa = parseFloat(document.getElementById('ct-probation-amt').value) || 0;
+      if(_pb === 'direct' && _pa > 0){
+        const _ref = monthly_ > 0 ? monthly_ : base_;
+        if(_ref > 0) return Math.round(_pa / _ref * 1000) / 10;
+        return 0;
+      }
+      return parseFloat(document.getElementById('ct-probation-pct').value) || 0;
+    })() : 0,
     probation_amt:    isProbA?(parseFloat(document.getElementById('ct-probation-amt').value)||0):0,
     probation_basis:  isProbA?(document.querySelector('input[name="ct-probation-basis"]:checked')?.value||'salary'):'salary',
     probation_end_date: document.getElementById('ct-probation-end-date')?.value||null,

@@ -72,6 +72,8 @@ function calcCorrect(c){
     return { base: 0, weeklyHol: num(c.weekly_holiday_pay), monthly: 0, annual: num(c.annual_salary) };
   }
 
+  if (hourly <= 0) return null; // 시급 0/NULL → 재계산 금지 (기존 값 유지 — 2026-09-01 규칙)
+
   const base = Math.round(hourly * MONTHLY_STD_HOURS);
   const weeklyHol = Math.round(hourly * Math.round(hpd * 365 / 12 / 7));
 
@@ -94,6 +96,7 @@ const contracts = db.prepare(`
   SELECT c.*, e.name AS employee_name
   FROM contracts c
   LEFT JOIN employees e ON e.id = c.employee_id
+  WHERE (c.is_draft IS NULL OR c.is_draft != 1)
   ORDER BY c.created_at ASC
 `).all();
 
@@ -103,6 +106,7 @@ const dailyNonZeroMonthly = [];
 
 for (const c of contracts){
   const corr = calcCorrect(c);
+  if (!corr) continue; // 시급 미보유 계약 제외 (2026-09-01 규칙)
   const changed = {};
 
   const mDiff = num(c.monthly_salary_agreed) !== corr.monthly;

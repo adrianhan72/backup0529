@@ -3802,6 +3802,9 @@ function _ctValidate(){
       // 수습기간
       if(!document.getElementById('ct-probation-months')?.value)
         _ctMarkError('ct-probation-months', '수습기간', errors);
+      // 통상시급 필수 (수습기간 급여 비율 산출 기준 — 시급 0/null 수습 계약 금지, 2026-09-01)
+      if(!getAmountVal('ct-hourly-input'))
+        _ctMarkError('ct-hourly-input', '통상시급', errors);
       // 수습 임금 비율 (direct 모드가 아닐 때)
       const _probBasis = document.querySelector('input[name="ct-probation-basis"]:checked')?.value || '';
       if(_probBasis !== 'direct'){

@@ -737,12 +737,19 @@ function calcProbationFromPct(){
 }
 function calcProbationFromAmt(){
   const basis = document.querySelector('input[name="ct-probation-basis"]:checked')?.value || 'salary';
+  const amt = parseFloat(document.getElementById('ct-probation-amt').value);
+  const ref = getProbationBase();
   if(basis !== 'direct'){
     // salary/minwage 모드: % 역산
-    const amt = parseFloat(document.getElementById('ct-probation-amt').value);
-    const ref = getProbationBase();
     if(!isNaN(amt) && ref > 0){
       document.getElementById('ct-probation-pct').value = (amt / ref * 100).toFixed(1);
+    }
+  } else {
+    // direct 모드: 계약 조항(월 약정임금) 대비 직접액 비율 안내 (2026-09-01 규칙)
+    const infoText = document.getElementById('ct-prob-info-text');
+    if(infoText && !isNaN(amt) && ref > 0){
+      const ratioPct = amt / ref * 100;
+      infoText.innerHTML = `수습 기간 중 지급할 월 보수를 직접 입력합니다. — 정상 월 약정임금(${ref.toLocaleString('ko-KR')}원) 대비 <strong>${ratioPct.toFixed(1)}%</strong> (수습기간 급여는 전 지급 항목에 이 비율이 적용됩니다)`;
     }
   }
   // direct 모드 포함 항상 경고 체크
@@ -2932,21 +2939,9 @@ function _weeklyToMonthlyHours(fieldId){
   return Math.round((parseFloat(document.getElementById(fieldId)?.value)||0) * WEEK_TO_MONTH);
 }
 
-/** 통상시급 반환 (수습 중이면 probation_amt ÷ 209h 기준) */
+/** 통상시급 반환 (계약서 정상 시급 — 수습기간 임금은 급여 단계에서 수습비율 적용, 2026-09-01 규칙) */
 function _getContractHourlyWage(){
-  const hw = getAmountVal('ct-hourly-input') || 0;
-  // 수습 기간: probation_amt가 있으면 수습 월급여 ÷ 209h로 실질 시급 계산
-  // (salary/minwage/direct 모든 산정기준에 정확)
-  const probAmt = getAmountVal('ct-probation-amt') || 0;
-  if (probAmt > 0) {
-    const probPct = parseFloat(document.getElementById('ct-probation-pct')?.value) || 0;
-    const basis = document.querySelector('input[name=\"ct-probation-basis\"]:checked')?.value || 'salary';
-    // direct 모드이거나 %가 100 미만이면 수습 시급 적용
-    if (basis === 'direct' || (probPct > 0 && probPct < 100)) {
-      return Math.round(probAmt / 209);
-    }
-  }
-  return hw;
+  return getAmountVal('ct-hourly-input') || 0;
 }
 
 /** 고정 연장근로수당 = (평일연장 h/주 × 연장배율) × 4.345(소수1자리) × 통상시급 (휴일연장은 휴일근로수당으로 합산 — 2026-08-14 규칙) */

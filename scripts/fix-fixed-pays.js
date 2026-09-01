@@ -11,7 +11,7 @@
  *   (기존 scripts/_audit_fix_fixed_formulas.js 는 isSmallBiz(인원수)로 판별하므로
  *    폼 계산과 다를 수 있어 premium_mode 기준으로 새로 작성)
  *
- *   시급: 수습 계약은 probation_amt ÷ 209 (폼 _getContractHourlyWage와 동일)
+ *   시급: 수습 계약은 통상시급 × 수습비율(직접액÷월약정, 2026-09-01 규칙) — effectiveHw 참조
  *
  *   사용법
  *     node scripts/fix-fixed-pays.js           # dry-run
@@ -124,15 +124,18 @@ function calcWeekly(sched){
   };
 }
 
-/** 수습 시급 반영 hw */
+/** 수습 비율 반영 실질 시급 (2026-09-01 규칙: 통상시급 × 수습비율) */
 function effectiveHw(c) {
-  let hw = num(c.hourly_wage);
+  const hw = num(c.hourly_wage);
+  if (hw <= 0) return 0;
   const probAmt = num(c.probation_amt);
-  if (probAmt > 0) {
-    const pct = num(c.probation_pct);
-    const basis = c.probation_basis || 'salary';
-    if (basis === 'direct' || (pct > 0 && pct < 100)) hw = Math.round(probAmt / 209);
+  const basis = c.probation_basis || 'salary';
+  if (probAmt > 0 && basis === 'direct') {
+    const monthly = num(c.monthly_salary_agreed);
+    if (monthly > 0) return Math.round(hw * probAmt / monthly);
   }
+  const pct = num(c.probation_pct);
+  if (pct > 0 && pct < 100) return Math.round(hw * pct / 100);
   return hw;
 }
 
@@ -227,7 +230,9 @@ for (const c of contracts) {
       fNiP = mNi > 0 ? Math.round(hw * mNi) : 0;
       fHoP = mHo > 0 ? Math.round(hw * mHo) : 0;
     } else {
-      fOtH = 0; fNiH = 0; fHoH = 0; fOtP = 0; fNiP = 0; fHoP = 0;
+      // 시급 산출 불가 → 고정수당 기존 값 유지 (0 덮어쓰기 금지 — 2026-09-01 규칙)
+      fOtH = num(c.fixed_ot_hours); fNiH = num(c.fixed_night_hours); fHoH = num(c.fixed_hol_hours);
+      fOtP = num(c.fixed_ot_pay);   fNiP = num(c.fixed_night_pay);   fHoP = num(c.fixed_hol_pay);
     }
   } else {
     // 스케줄 없음 또는 일용직 → 기존 저장값 유지
@@ -246,11 +251,19 @@ for (const c of contracts) {
     annual = num(c.annual_salary);
   } else {
     const hourly = num(c.hourly_wage);
-    const hpd = num(c.work_hours_per_day) || 8;
-    base = Math.round(hourly * MONTHLY_STD_HOURS);
-    weeklyHol = Math.round(hourly * Math.round(hpd * 365 / 12 / 7));
-    monthly = calcMonthly(c, fixedExtra);
-    annual = isRegular ? monthly * 12 : num(c.annual_salary);
+    if (hourly > 0) {
+      const hpd = num(c.work_hours_per_day) || 8;
+      base = Math.round(hourly * MONTHLY_STD_HOURS);
+      weeklyHol = Math.round(hourly * Math.round(hpd * 365 / 12 / 7));
+      monthly = calcMonthly(c, fixedExtra);
+      annual = isRegular ? monthly * 12 : num(c.annual_salary);
+    } else {
+      // 시급 0/NULL → 파생값 재계산 금지 (기존 값 유지 — 2026-09-01 규칙)
+      base = num(c.base_salary);
+      weeklyHol = num(c.weekly_holiday_pay);
+      monthly = num(c.monthly_salary_agreed);
+      annual = num(c.annual_salary);
+    }
   }
 
   const old = { fOtH: num(c.fixed_ot_hours), fNiH: num(c.fixed_night_hours), fHoH: num(c.fixed_hol_hours),

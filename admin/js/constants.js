@@ -24,6 +24,27 @@ function fmtLocalDate(d){
   return `${y}-${m}-${day}`;
 }
 
+/**
+ * probationRatioOf(contract) — 수습기간 임금 비율 (2026-09-01 제정)
+ *   - 직접액(direct): probation_amt ÷ 계약서 월 약정임금(monthly_salary_agreed)
+ *   - 비율(salary)  : probation_pct / 100
+ *   - 수습 아님·100%·월약정 0(비율 산출 불가) → 1 (정상 지급)
+ *   수습기간 급여는 "전 지급 항목 × 이 비율"로 생성한다.
+ */
+function probationRatioOf(c){
+  if(!c) return 1;
+  const probAmt = parseFloat(c.probation_amt) || 0;
+  const basis = c.probation_basis || 'salary';
+  if(probAmt > 0 && basis === 'direct'){
+    const monthly = parseFloat(c.monthly_salary_agreed) || 0;
+    if(monthly > 0) return probAmt / monthly;
+    return 1;
+  }
+  const pct = parseFloat(c.probation_pct) || 0;
+  if(pct > 0 && pct < 100) return pct / 100;
+  return 1;
+}
+
 // ═══════════════════════════════════════════
 // 직원 상태 (employees.status)
 // ═══════════════════════════════════════════

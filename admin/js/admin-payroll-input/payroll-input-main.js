@@ -2433,6 +2433,50 @@ function _calcProbationEndDate(ct){
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
+// _piProbRatio() / _piProbHourly()
+//   수습기간 임금 비율 (2026-09-01 규칙):
+//     직접액(direct) = probation_amt ÷ 계약서 월 약정임금, 비율(salary) = pct/100
+//   수습 실질 시급 = 통상시급 × 수습비율
+//   분리(split) 월·수습 종료 후 월은 1 반환 (폼은 정상값 기준, 비율은 저장 시 수습 행에만 적용)
+// ──────────────────────────────────────────────────────────────────────────────
+function _piProbRatio(){
+  if(!piContract) return 1;
+  const baseRatio = (typeof probationRatioOf === 'function') ? probationRatioOf(piContract) : 1;
+  if(baseRatio >= 1) return 1;
+  const probEnd = (typeof _calcProbationEndDate === 'function') ? _calcProbationEndDate(piContract) : null;
+  if(!probEnd) return baseRatio; // 무기한 수습 → 전체 수습
+  const yr = parseInt(document.getElementById('pi-year')?.value)  || 0;
+  const mo = parseInt(document.getElementById('pi-month')?.value) || 0;
+  if(!yr || !mo) return baseRatio;
+  const monthStart = `${yr}-${String(mo).padStart(2,'0')}-01`;
+  if(monthStart > probEnd) return 1; // 수습 종료 이후 월
+  const monthEnd = `${yr}-${String(mo).padStart(2,'0')}-${String(new Date(yr, mo, 0).getDate()).padStart(2,'0')}`;
+  if(monthEnd <= probEnd) return baseRatio; // 월 전체 수습
+  return 1; // 분리 월 → 폼은 정상값 (저장 시 수습 행에 비율 적용)
+}
+function _piProbHourly(){
+  if(!piContract) return 0;
+  const hw = parseFloat(piContract.hourly_wage) || 0;
+  const r = _piProbRatio();
+  if(r >= 1) return hw;
+  return Math.round(hw * r);
+}
+// 수습기간이면 계약서 정상값 기준 전 지급 항목에 수습비율 적용 (멱등 — calcPI 반복 호출 안전)
+function _piApplyProbScale(){
+  if(!piContract) return;
+  const r = _piProbRatio();
+  if(r >= 1) return;
+  const sc = v => Math.round((parseFloat(v) || 0) * r);
+  setAmountVal('pi-position',      sc(piContract.position_allowance));
+  setAmountVal('pi-remote-area',   sc(piContract.remote_area_allowance));
+  setAmountVal('pi-site',          sc(piContract.site_allowance));
+  setAmountVal('pi-transport',     sc(piContract.self_driving_allowance || piContract.transportation_allowance || piContract.car_maintenance));
+  setAmountVal('pi-meal',          sc(piContract.meal_allowance));
+  setAmountVal('pi-childcare',     sc(piContract.childcare_allowance));
+  setAmountVal('pi-research',      sc(piContract.research_allowance));
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
 // _checkPIProbationOverrun()
 //   현재 선택된 급여 연월이 piContract 의 수습 만료일을 초과하는지 검사한다.
 //
@@ -3085,30 +3129,22 @@ function _getPIFixedHours(){
   if(!piContract) return { otHours:0, nightHours:0, holHours:0, otPay:0, nightPay:0, holPay:0 };
 
   const _sched = piContract.schedule_json || null;
-  // 수습 기간이면 probation_amt ÷ 209h로 실질 시급 계산
-  // (salary/minwage/direct 모든 산정기준에 정확)
-  let _hw = piContract.hourly_wage || 0;
-  const probAmt = parseFloat(piContract.probation_amt) || 0;
-  if (probAmt > 0) {
-    const probPct = parseFloat(piContract.probation_pct) || 0;
-    const basis = piContract.probation_basis || 'salary';
-    if (basis === 'direct' || (probPct > 0 && probPct < 100)) {
-      _hw = Math.round(probAmt / 209);
-    }
-  }
+  // 수습기간이면 실질 시급 = 통상시급 × 수습비율 (2026-09-01 규칙)
+  let _hw = _piProbHourly();
 
   if(_sched){
     return _calcFixedHoursFromSchedule(_sched, _hw, piContract.company_id);
   }
 
-  // fallback: 계약서에 저장된 값
+  // fallback: 계약서에 저장된 값 (수습기간이면 수습비율 적용)
+  const _r = _piProbRatio();
   return {
     otHours:    parseFloat(piContract.fixed_ot_hours)    || 0,
     nightHours: parseFloat(piContract.fixed_night_hours) || 0,
     holHours:   parseFloat(piContract.fixed_hol_hours)   || 0,
-    otPay:      parseFloat(piContract.fixed_ot_pay)      || 0,
-    nightPay:   parseFloat(piContract.fixed_night_pay)   || 0,
-    holPay:     parseFloat(piContract.fixed_hol_pay)     || 0,
+    otPay:      Math.round((parseFloat(piContract.fixed_ot_pay)      || 0) * _r),
+    nightPay:   Math.round((parseFloat(piContract.fixed_night_pay)   || 0) * _r),
+    holPay:     Math.round((parseFloat(piContract.fixed_hol_pay)     || 0) * _r),
   };
 }
 
@@ -3359,18 +3395,8 @@ function calcPI(){
     _retroHolidayOverpay = 0;
   }
 
-  // 수습 시급: probation_amt ÷ 209h (세 가지 산정기준 모두 정확)
-  let hw = piContract ? (piContract.hourly_wage || 0) : 0;
-  if (piContract) {
-    const probAmt = parseFloat(piContract.probation_amt) || 0;
-    if (probAmt > 0) {
-      const probPct = parseFloat(piContract.probation_pct) || 0;
-      const basis = piContract.probation_basis || 'salary';
-      if (basis === 'direct' || (probPct > 0 && probPct < 100)) {
-        hw = Math.round(probAmt / 209);
-      }
-    }
-  }
+  // 수습 시급: 통상시급 × 수습비율 (2026-09-01 규칙)
+  let hw = piContract ? _piProbHourly() : 0;
   const otH=gv('pi-ot-hours'),nightH=gv('pi-night-hours'),holH=gv('pi-hol-hours');
 
   // ── 5인 미만 사업장 판정 (premium_mode + 전월 근로실적) ────────────────
@@ -3413,18 +3439,12 @@ function calcPI(){
 
   // 패널 방식 (piContract 있을 때) vs 단순 표시 (없을 때) 구분
   if(piContract){
-    // ── 만근 기준 정보 (수습 중이면 probation_amt 기준) ──
+    // ── 만근 기준 정보 (수습기간이면 정상 기본급 × 수습비율 — 2026-09-01 규칙) ──
+    const _probRatioBase = _piProbRatio();
     let _cBase = parseFloat(piContract.base_salary) || 0;
-    {
-      const probAmt3 = parseFloat(piContract.probation_amt) || 0;
-      if (probAmt3 > 0) {
-        const probPct3 = parseFloat(piContract.probation_pct) || 0;
-        const basis3 = piContract.probation_basis || 'salary';
-        if (basis3 === 'direct' || (probPct3 > 0 && probPct3 < 100)) {
-          _cBase = probAmt3;
-        }
-      }
-    }
+    if (_probRatioBase < 1) _cBase = Math.round(_cBase * _probRatioBase);
+    // 수습기간 전 지급 항목 비율 적용 (멱등)
+    _piApplyProbScale();
     const _dpw       = parseFloat(piContract.work_days_per_week) || 5;
     const _hpd       = parseFloat(piContract.work_hours_per_day) || 8;
     const _coForProration = allCompanies.find(c => c.id === _coId);
@@ -3586,18 +3606,8 @@ function calcPI(){
 
     // ── 자동산출 패널 내부 disp 요소 업데이트 ──
     const _fixedCalc2 = _getPIFixedHours();
-    // 수습 시급: probation_amt ÷ 209h
-    let _hw2 = piContract ? (piContract.hourly_wage || 0) : 0;
-    if (piContract) {
-      const _probAmt2 = parseFloat(piContract.probation_amt) || 0;
-      if (_probAmt2 > 0) {
-        const _probPct2 = parseFloat(piContract.probation_pct) || 0;
-        const _basis2 = piContract.probation_basis || 'salary';
-        if (_basis2 === 'direct' || (_probPct2 > 0 && _probPct2 < 100)) {
-          _hw2 = Math.round(_probAmt2 / 209);
-        }
-      }
-    }
+    // 수습 시급: 통상시급 × 수습비율 (2026-09-01 규칙)
+    let _hw2 = piContract ? _piProbHourly() : 0;
     const _hpd2 = piContract ? (piContract.work_hours_per_day || 8) : 8;
 
     // ── 토요일 일반전환 (주중 40h 미달 시 — 2026-08-14 규칙) ──
@@ -5136,18 +5146,8 @@ function calcWeeklyHolidayPay(){
   }
 
   const isDaily = piContract.contract_type === CONTRACT_TYPE.DAILY;
-  // 수습 시급: probation_amt ÷ 209h
-  let hw = parseFloat(piContract.hourly_wage) || 0;
-  {
-    const probAmt = parseFloat(piContract.probation_amt) || 0;
-    if (probAmt > 0) {
-      const probPct = parseFloat(piContract.probation_pct) || 0;
-      const basis = piContract.probation_basis || 'salary';
-      if (basis === 'direct' || (probPct > 0 && probPct < 100)) {
-        hw = Math.round(probAmt / 209);
-      }
-    }
-  }
+  // 수습 시급: 통상시급 × 수습비율 (2026-09-01 규칙)
+  let hw = _piProbHourly();
   const hpd       = parseFloat(piContract.work_hours_per_day)|| 8;   // 일 소정근로시간
   // 일용직: work_days_per_week 없으면 실제 근로일 기준으로 추정 (기본 5일)
   const dpw       = isDaily
