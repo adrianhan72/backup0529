@@ -647,9 +647,10 @@ function openHrEmployeeForm(empId, presetCompanyId) {
     document.getElementById('hr-em-position').value = e.position || '';
     document.getElementById('hr-em-hire').value = e.hire_date || '';
     document.getElementById('hr-em-id').value = e.id_number || '';
-    // ── 내국인/외국인 구분 복원 (주민번호 7번째 자리 5~8 = 외국인) ──
+    // ── 내국인/외국인 구분 복원 (2026-09-01 규칙): 저장값 글자 수 기준 ──
+    //   내국인 = 주민등록번호 앞 7자리만 저장, 외국인 = 외국인등록번호 전체 13자리 저장
     const _idDigits = String(e.id_number || '').replace(/[^0-9]/g, '');
-    const _isForeignEmp = [5,6,7,8].includes(parseInt(_idDigits.charAt(6), 10));
+    const _isForeignEmp = _idDigits.length >= 13;
     { const _tr = document.querySelector(`input[name="hr-em-id-type"][value="${_isForeignEmp ? 'foreign' : 'korean'}"]`); if (_tr) _tr.checked = true; }
     document.querySelectorAll('input[name="hr-em-id-type"]').forEach(r => { r.disabled = true; });
     if (_isForeignEmp) {

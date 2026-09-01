@@ -1510,9 +1510,7 @@ function openContractModal(id=null, preCompanyId=null){
       // 월약정임금: 정규직·계약직 모두 표시, 일용직만 숨김
       if(rowM) rowM.style.display=isDailyEdit?'none':'';
       // 연봉 섹션 — 정규직만 (수습 제외)
-      ['ct-row-salary-period','ct-row-annual-sal'].forEach(id=>{
-        const el=document.getElementById(id); if(el) el.style.display=isRegEdit?'':'none';
-      });
+      { const _salRow = document.getElementById('ct-row-annual-sal'); if(_salRow) _salRow.style.display = isRegEdit ? '' : 'none'; }
       // 일용직 조건부 필드
       const rowAnnualE = document.getElementById('ct-row-annual');
       const rowBaseE = document.getElementById('ct-row-base');
@@ -1701,9 +1699,7 @@ function openContractModal(id=null, preCompanyId=null){
       // ── 연봉/월약정급여 섹션 표시 최종 강제 적용 (ctVal 기준 — emp.employment_category 우선) ──
       const isFixedEdit2 = ctVal===CONTRACT_TYPE.FIXED || ctVal===CONTRACT_TYPE.FIXED_PROBATION;
       const showSalRow = isRegEdit || isFixedEdit2;
-      ['ct-row-salary-period','ct-row-annual-sal'].forEach(sid=>{
-        const el=document.getElementById(sid); if(el) el.style.display=showSalRow?'':'none';
-      });
+      { const _salRow2 = document.getElementById('ct-row-annual-sal'); if(_salRow2) _salRow2.style.display = showSalRow ? '' : 'none'; }
       if(isRegEdit){
         setAmountVal('ct-annual-sal', c.annual_salary||0);
       } else if(isFixedEdit2){
@@ -1745,6 +1741,11 @@ function openContractModal(id=null, preCompanyId=null){
   _checkRegisterBtnState();
   // 데이터 복원 완료 후 근무시간표 기준 재계산 (고정 연장/야간/휴일수당·월약정 등 최종 확정)
   if(typeof calcWorkHours === 'function') calcWorkHours();
+  // 레거시(스케줄 미보유) 계약: DB 고정 연장/야간/휴일수당 복원 (0 덮어쓰기 방지, 2026-09-01)
+  if(!isNew && typeof _restoreLegacyFixedPays === 'function'){
+    const _legacyC = allContracts.find(x => x.id === id);
+    if(_legacyC && !_legacyC.schedule_json) _restoreLegacyFixedPays(_legacyC);
+  }
   openModal('contract-modal');
 
   // 입력 수정 시 해당 필드 하이라이트 자동 해제
@@ -2478,10 +2479,7 @@ function viewContract(id){
       ? (_ctVal2Raw ===CONTRACT_TYPE.REGULAR_PROBATION ? CONTRACT_TYPE.REGULAR : _ctVal2Raw ===CONTRACT_TYPE.FIXED_PROBATION ? CONTRACT_TYPE.FIXED : _ctVal2Raw)
       : _ctVal2Raw;
     const isReg = ctVal2 ===CONTRACT_TYPE.REGULAR;  // 정규직 수습 제외 (연봉제 미적용)
-    ['ct-row-salary-period','ct-row-annual-sal'].forEach(sid=>{
-      const el = document.getElementById(sid);
-      if(el) el.style.display = isReg ? '' : 'none';
-    })
+    { const _salRowV = document.getElementById('ct-row-annual-sal'); if(_salRowV) _salRowV.style.display = isReg ? '' : 'none'; }
     // 연봉 값도 다시 채우기 (openContractModal에서 초기화될 수 있으므로)
     if(isReg){
       if(c.annual_salary) setAmountVal('ct-annual-sal', c.annual_salary);

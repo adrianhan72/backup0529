@@ -2012,6 +2012,27 @@ function setScheduleFromLegacy(c){
   if(typeof _syncBulkCheckboxes === 'function') _syncBulkCheckboxes();
 }
 
+/**
+ * 레거시(스케줄 미보유) 계약의 고정 연장/야간/휴일수당 DB 복원 (2026-09-01)
+ * — 근무시간표가 없으면 calcWorkHours가 0으로 계산하므로, 저장 시 DB 값이 0으로
+ *   덮어써지지 않도록 스케줄 생성·계산이 끝난 뒤 호출한다.
+ */
+function _restoreLegacyFixedPays(c){
+  if(!c || c.schedule_json) return;
+  const _ot = parseFloat(c.fixed_ot_pay)||0;
+  const _nt = parseFloat(c.fixed_night_pay)||0;
+  const _ht = parseFloat(c.fixed_hol_pay)||0;
+  if(!(_ot || _nt || _ht)) return;
+  setAmountVal('ct-fixed-ot-pay',    _ot);
+  setAmountVal('ct-fixed-night-pay', _nt);
+  setAmountVal('ct-fixed-hol-pay',   _ht);
+  // 시간 복원: DB는 월간(주간×4.345) 저장 → 주간으로 역산
+  const _wk = v => { const m = parseFloat(v)||0; return m > 0 ? Math.round(m / WEEK_TO_MONTH * 10) / 10 : 0; };
+  const _foh = document.getElementById('ct-fixed-ot-hours');    if(_foh) _foh.value = _wk(c.fixed_ot_hours);
+  const _fnh = document.getElementById('ct-fixed-night-hours'); if(_fnh) _fnh.value = _wk(c.fixed_night_hours);
+  const _fhh = document.getElementById('ct-fixed-hol-hours');   if(_fhh) _fhh.value = _wk(c.fixed_hol_hours);
+}
+
 // initBreakSelects → initScheduleTable로 대체 (하위 호환 stub)
 function initBreakSelects(){ initScheduleTable(); }
 function getBreakMins(hId,mId){ return 0; }

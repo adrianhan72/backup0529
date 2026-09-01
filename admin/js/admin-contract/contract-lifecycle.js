@@ -519,10 +519,10 @@ function generateContractHTMLFromData(c, emp, co){
     if(s.length <= 6) return front;       // 앞 6자리만 있는 경우
     return front + '-' + mid + stars;
   })();
-  // 내국인/외국인 구분: 주민번호(외국인번호) 7번째 자리(성별코드) 5~8 = 외국인
+  // 내국인/외국인 구분 (2026-09-01 규칙): 저장값 글자 수 기준
+  //   내국인 = 주민등록번호 앞 7자리만 저장, 외국인 = 외국인등록번호 전체 13자리 저장
   const _idNumRaw = String(idNum).replace(/-/g,'');
-  const _genderCode = _idNumRaw.length >= 7 ? parseInt(_idNumRaw[6], 10) : NaN;
-  const _isForeignEmp = !isNaN(_genderCode) && _genderCode >= 5;
+  const _isForeignEmp = _idNumRaw.length >= 13;
   const _idLabel = _isForeignEmp ? '외국인번호' : '주민등록번호';
 
   // ── 입사일 포맷 ──
@@ -859,6 +859,8 @@ function editPendingContract(){
   } else if(c && typeof setScheduleFromLegacy === 'function'){
     setScheduleFromLegacy(c);
   }
+  // 레거시(스케줄 미보유) 계약: DB 고정 연장/야간/휴일수당 복원 (0 덮어쓰기 방지, 2026-09-01)
+  if(c && !c.schedule_json && typeof _restoreLegacyFixedPays === 'function') _restoreLegacyFixedPays(c);
   if(c?.status===CONTRACT_STATUS.TERMINATE_PENDING){
     const termPanel = document.getElementById('ct-terminate-panel');
     if(termPanel){
@@ -2150,6 +2152,8 @@ function openRecontractModal(srcContract){
   } else {
     setScheduleFromLegacy(srcContract);
   }
+  // 레거시(스케줄 미보유) 원본 계약: 고정 연장/야간/휴일수당 복원 (재계약 승계, 2026-09-01)
+  if(!srcContract.schedule_json && typeof _restoreLegacyFixedPays === 'function') _restoreLegacyFixedPays(srcContract);
 
   const ct = srcContract.contract_type||CONTRACT_TYPE.REGULAR;
   const isDailySrc    = ct===CONTRACT_TYPE.DAILY;
@@ -3797,6 +3801,16 @@ function _ctValidate(){
       if(!document.getElementById('ct-end')?.value)
         _ctMarkError('ct-end', '계약 종료일', errors);
     }
+    // ── 계약직·계약직 수습: 계약 기간 1개월(30일) 이상 필수 (2026-09-01 제정) ──
+    if(cat ===CONTRACT_TYPE.FIXED || cat ===CONTRACT_TYPE.FIXED_PROBATION){
+      const _sD = document.getElementById('ct-start')?.value || '';
+      const _eD = document.getElementById('ct-end')?.value || '';
+      if(_sD && _eD){
+        const _days = Math.round((new Date(_eD) - new Date(_sD)) / (1000*60*60*24));
+        if(_days < 30)
+          _ctMarkError('ct-end', '계약 기간 (계약직은 1개월 이상이어야 합니다)', errors);
+      }
+    }
     // ── 수습 계약: 수습 조건 전체 필수 ──
     if(cat ===CONTRACT_TYPE.REGULAR_PROBATION || cat ===CONTRACT_TYPE.FIXED_PROBATION){
       // 수습기간
@@ -3918,6 +3932,16 @@ function _ctValidate(){
     if(catForCheck ===CONTRACT_TYPE.FIXED || catForCheck ===CONTRACT_TYPE.FIXED_PROBATION || catForCheck ===CONTRACT_TYPE.DAILY){
       if(!document.getElementById('ct-end')?.value)
         _ctMarkError('ct-end', '계약 종료일', errors);
+    }
+    // ── 계약직·계약직 수습: 계약 기간 1개월(30일) 이상 필수 (2026-09-01 제정) ──
+    if(catForCheck ===CONTRACT_TYPE.FIXED || catForCheck ===CONTRACT_TYPE.FIXED_PROBATION){
+      const _sD2 = document.getElementById('ct-start')?.value || '';
+      const _eD2 = document.getElementById('ct-end')?.value || '';
+      if(_sD2 && _eD2){
+        const _days2 = Math.round((new Date(_eD2) - new Date(_sD2)) / (1000*60*60*24));
+        if(_days2 < 30)
+          _ctMarkError('ct-end', '계약 기간 (계약직은 1개월 이상이어야 합니다)', errors);
+      }
     }
     // ── 수습 계약: 수습 조건 전체 필수 ──
     if(catForCheck ===CONTRACT_TYPE.REGULAR_PROBATION || catForCheck ===CONTRACT_TYPE.FIXED_PROBATION){

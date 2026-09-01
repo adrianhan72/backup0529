@@ -42,6 +42,15 @@ module.exports = function(ROOT) {
       { name: 'contract', maxCount: 1 }
     ])(req, res, (err) => {
       if (err) {
+        // 실패 시 이미 디스크에 기록된 파일 정리 (orphan 방지, 2026-09-01)
+        try {
+          const fields = req.files || {};
+          Object.keys(fields).forEach(k => {
+            (fields[k] || []).forEach(f => {
+              try { fs.unlinkSync(path.join(ROOT, 'data', 'uploads', 'contracts', f.filename)); } catch(_) {}
+            });
+          });
+        } catch(_) {}
         // multer/fileFilter 오류 (contract 필드는 PDF만 허용)
         return res.status(400).json({ ok: false, error: err.message || '업로드 실패' });
       }

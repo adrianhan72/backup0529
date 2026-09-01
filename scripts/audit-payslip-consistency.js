@@ -47,6 +47,57 @@ const payrolls = db.prepare(`
 
 const has = (c) => cols.includes(c);
 
+// 일용직 직원 집합 — 일용직은 주휴수당이 기본급에 포함되지 않으므로(산정식 미업데이트 상태)
+// 지급총액 항목 합산에 weekly_holiday_pay를 별도 가산한다.
+const dailyEmpIds = new Set(
+  db.prepare(`SELECT DISTINCT employee_id FROM contracts WHERE contract_type = 'daily'`).all().map(r => r.employee_id)
+);
+
+// 계약서 고정 연장/야간/휴일수당 — 지급총액은 항목 컬럼에 없고 계약서에서 표시되므로 합산한다 (2026-09-01)
+const ctsByEmp = {};
+for (const c of db.prepare(`SELECT employee_id, contract_start, contract_end, probation_months, probation_amt, probation_pct, probation_basis, monthly_salary_agreed, fixed_ot_pay, fixed_night_pay, fixed_hol_pay FROM contracts WHERE is_draft IS NULL OR is_draft != 1`).all()){
+  (ctsByEmp[c.employee_id]=ctsByEmp[c.employee_id]||[]).push(c);
+}
+function _probRatioOf(c){
+  const amt = num(c.probation_amt); const basis = c.probation_basis||'salary';
+  if(amt>0 && basis==='direct'){ const m=num(c.monthly_salary_agreed); return m>0?amt/m:1; }
+  const pct = num(c.probation_pct); return (pct>0&&pct<100)?pct/100:1;
+}
+function _probEndOf(c){
+  const months=c.probation_months?Number(c.probation_months):0;
+  if(months>0&&c.contract_start){
+    const d=new Date(c.contract_start+'T00:00:00');
+    if(isNaN(d.getTime())) return c.contract_end||null;
+    d.setMonth(d.getMonth()+months); d.setDate(d.getDate()-1);
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+  return c.contract_end||null;
+}
+function fixedPaysFor(p){
+  const list = ctsByEmp[p.employee_id]||[];
+  if(!list.length) return 0;
+  const ym = `${p.pay_year}-${String(p.pay_month).padStart(2,'0')}`;
+  let c = list.filter(x=>{
+    if(x.contract_start && x.contract_start.slice(0,7) > ym) return false;
+    if(x.contract_end && x.contract_end.slice(0,7) < ym) return false;
+    return true;
+  }).sort((a,b)=>(b.contract_start||'').localeCompare(a.contract_start||''))[0] || null;
+  if(!c){
+    const ymNum = p.pay_year*100 + p.pay_month;
+    c = list.map(x=>({x, d:(()=>{ const sm=String(x.contract_start||'').slice(0,7).replace('-',''); return sm?Math.abs(parseInt(sm)-ymNum):999999; })()}))
+      .sort((a,b)=>a.d-b.d)[0]?.x || null;
+    if(!c) return 0;
+  }
+  let r = 1;
+  if (num(c.probation_amt)>0 || num(c.probation_pct)>0){
+    const pe = _probEndOf(c);
+    if (pe && ym <= pe.slice(0,7)) r = _probRatioOf(c);
+    else if (!pe) r = _probRatioOf(c);
+  }
+  if (r>=1) r=1;
+  return Math.round((num(c.fixed_ot_pay)+num(c.fixed_night_pay)+num(c.fixed_hol_pay))*r);
+}
+
 // ═══════════ 집계 ═══════════
 const stat = {
   total: payrolls.length,
@@ -64,8 +115,10 @@ for (const p of payrolls) {
   const period = `${p.pay_year}-${String(p.pay_month).padStart(2, '0')}`;
 
   // ── A. 지급총액 검증 ──
+  // 주휴수당은 기본급(시급×209h, 주휴 35h 포함)에 이미 포함 → 미가산 (2026-09-01 규칙 확정)
+  // 단, 일용직은 기본급에 주휴 미포함(별도 산정, 산정식 미업데이트 상태) → 별도 가산
   const paySum =
-    num(p.base_salary) + num(p.weekly_holiday_pay) +
+    num(p.base_salary) + (dailyEmpIds.has(p.employee_id) ? num(p.weekly_holiday_pay) : 0) +
     num(p.position_allowance) + num(p.site_allowance) +
     num(p.transportation_allowance || p.car_maintenance) + num(p.self_driving_allowance) +
     num(p.remote_area_allowance) + num(p.meal_allowance) + num(p.childcare_allowance) +
@@ -75,7 +128,8 @@ for (const p of payrolls) {
     num(p.communication_pay) + num(p.fitness_allowance) + num(p.self_dev_allowance) +
     num(p.book_allowance) + num(p.overseas_allowance) +
     num(p.severance_interim_pay) + (num(p.etc_allowance) + num(p.other_pay)) +
-    sumJsonAmounts(p.custom_ordinary_values) + sumJsonAmounts(p.custom_fixed_values) + sumJsonAmounts(p.etc_allowance_items);
+    sumJsonAmounts(p.custom_ordinary_values) + sumJsonAmounts(p.custom_fixed_values) + sumJsonAmounts(p.etc_allowance_items)
+    + fixedPaysFor(p);
 
   const gross = num(p.gross_pay);
   const aDelta = gross - paySum;

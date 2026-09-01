@@ -1952,14 +1952,14 @@
           <div class="bulk-schedule-bar">
             <span class="bulk-label">⚡ 일괄 설정</span>
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;width:100%;margin-top:6px;">
-              <span style="font-size:11.5px;color:#475569;white-space:nowrap;">근무</span>
+              <span class="bulk-time-label">근무</span>
               <span class="time-picker" id="tp-bulk-start"></span>
-              <span style="font-size:11.5px;color:#475569;white-space:nowrap;">~</span>
+              <span class="bulk-time-label">~</span>
               <span class="time-picker" id="tp-bulk-end"></span>
               <div class="bulk-divider"></div>
-              <span style="font-size:11.5px;color:#7c3aed;white-space:nowrap;">휴게</span>
+              <span class="bulk-brk-label">휴게</span>
               <span class="time-picker" id="tp-bulk-brks"></span>
-              <span style="font-size:11px;color:#94a3b8;">~</span>
+              <span class="bulk-sep-label">~</span>
               <span class="time-picker" id="tp-bulk-brke"></span>
             </div>
             <div class="bulk-apply-target" style="width:100%;margin-top:8px;">
@@ -2571,7 +2571,7 @@
                   <option value="fixed_term_probation">계약직 수습</option>
                   <option value="daily">일용직</option>
                 </select>
-                <div class="fld-hint" style="margin-top:4px;color:#9ca3af;">근로계약서가 입력되면 자동으로 기재됩니다.</div>
+                <div class="fld-hint">근로계약서가 입력되면 자동으로 기재됩니다.</div>
               </div>
               <div class="form-group"><label>담당업무 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><input type="text" id="hr-em-job" placeholder="담당업무를 입력하세요" />
                 <span id="hr-em-job-hint" class="va-hint" style="display:none;color:#9ca3af;">근로계약서가 입력되면 자동으로 기재됩니다.</span>
@@ -2583,15 +2583,15 @@
                 <input type="text" id="hr-em-relationship" placeholder="예: 배우자, 자녀, 부모" />
               </div>
               <div class="form-group"><label>입사일</label><input type="date" id="hr-em-hire" class="filt-date" readonly />
-                <div class="fld-hint" style="margin-top:4px;">근로계약서가 입력되면 자동으로 기재됩니다.</div>
+                <div class="fld-hint">근로계약서가 입력되면 자동으로 기재됩니다.</div>
               </div>
 
               <div class="form-group full"><span class="form-section-title">개인 정보</span></div>
               <div class="form-group full">
                 <label>내국인·외국인 구분</label>
                 <div style="display:flex;gap:18px;padding:6px 0;">
-                  <label class="radio-custom" style="font-weight:400;"><input type="radio" name="hr-em-id-type" value="korean" checked onchange="_hrOnIdTypeChange()" /> 내국인</label>
-                  <label class="radio-custom" style="font-weight:400;"><input type="radio" name="hr-em-id-type" value="foreign" onchange="_hrOnIdTypeChange()" /> 외국인</label>
+                  <label class="radio-custom"><input type="radio" name="hr-em-id-type" value="korean" checked onchange="_hrOnIdTypeChange()" /> 내국인</label>
+                  <label class="radio-custom"><input type="radio" name="hr-em-id-type" value="foreign" onchange="_hrOnIdTypeChange()" /> 외국인</label>
                 </div>
               </div>
               <!-- 내국인: 주민등록번호 앞7자리 -->
@@ -2601,11 +2601,11 @@
               </div>
               <!-- 외국인: 외국인등록번호 (성별과 같은 행) -->
               <div class="form-group" id="hr-em-foreign-wrap" style="display:none;">
-                <label>외국인등록번호 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
+                <label>외국인등록번호 <span class="lbl-req">*</span></label>
                 <input type="text" id="hr-em-foreign-id" placeholder="000000-0000000" maxlength="14" autocomplete="off" oninput="_hrOnIdInput(this)" />
-                <div class="fld-hint" style="margin-top:4px;color:#9ca3af;">외국인등록증의 13자리 번호 (예: 000000-0000000)</div>
+                <div class="fld-hint">외국인등록증의 13자리 번호 (예: 000000-0000000)</div>
               </div>
-              <div class="form-group"><label>성별 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label>
+              <div class="form-group"><label>성별 <span class="lbl-req">*</span></label>
                 <select id="hr-em-gender" disabled><option value=""></option><option value="male">남</option><option value="female">여</option></select>
                 <span id="hr-em-gender-hint" style="font-size:11px;margin-top:3px;display:block;color:#6b7280;">주민번호 입력 시 자동 설정됩니다</span>
               </div>
@@ -2615,23 +2615,23 @@
                   <div class="form-group">
                     <label>국적 <span class="lbl-desc">(선택)</span></label>
                     <input type="text" id="hr-em-nationality" inputmode="numeric" maxlength="3" autocomplete="off" oninput="_hrOnNumericCodeInput(this)" />
-                    <div class="fld-hint" style="margin-top:4px;"><a href="https://www.4insure.or.kr/pbiz/cmmn/selectComCdList.do?comCdClsfId=A151" target="_blank" rel="noopener">🔎 국민연금외국인국적코드 찾기</a></div>
+                    <div class="fld-hint"><a href="https://www.4insure.or.kr/pbiz/cmmn/selectComCdList.do?comCdClsfId=A151" target="_blank" rel="noopener">🔎 국민연금외국인국적코드 찾기</a></div>
                   </div>
                   <div class="form-group">
                     <label>체류자격 <span class="lbl-desc">(선택)</span></label>
                     <input type="text" id="hr-em-residence-status" placeholder="예: E-9" autocomplete="off" />
-                    <div class="fld-hint" style="margin-top:4px;"><a href="javascript:void(0)" onclick="_hrOpenVisaCode()">🔎 법무부체류자격코드 찾기</a></div>
+                    <div class="fld-hint"><a href="javascript:void(0)" onclick="_hrOpenVisaCode()">🔎 법무부체류자격코드 찾기</a></div>
                   </div>
                   <div class="form-group full">
                     <label>직종 <span class="lbl-desc">(선택)</span></label>
                     <input type="text" id="hr-em-occupation" inputmode="numeric" maxlength="3" autocomplete="off" oninput="_hrOnNumericCodeInput(this)" />
-                    <div class="fld-hint" style="margin-top:4px;"><a href="http://www.4insure.or.kr/pbiz/cmmn/selectComCdList.do?comCdClsfId=D109" target="_blank" rel="noopener">🔎 고용/산재보험 직종코드 찾기</a></div>
+                    <div class="fld-hint"><a href="http://www.4insure.or.kr/pbiz/cmmn/selectComCdList.do?comCdClsfId=D109" target="_blank" rel="noopener">🔎 고용/산재보험 직종코드 찾기</a></div>
                   </div>
                 </div>
               </div>
               <div class="form-group"><label>휴대전화</label><input type="text" id="hr-em-phone" placeholder="010-0000-0000" maxlength="13" autocomplete="off" oninput="_onPhoneInput(this)" /></div>
               <div class="form-group"><label>이메일 주소</label><input type="email" id="hr-em-email" placeholder="example@email.com" oninput="_onEmailInput(this)" /></div>
-              <div class="form-group full"><label>주소 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><input type="text" id="hr-em-address" /></div>
+              <div class="form-group full"><label>주소 <span class="lbl-req">*</span></label><input type="text" id="hr-em-address" /></div>
 
               <div class="form-group full"><span class="form-section-title">과세 기준</span></div>
               <div class="form-group"><label>부양가족 수 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span> <span style="font-weight:400;color:#6b7280;">(본인 포함, 소득세 공제용)</span></label><input type="number" id="hr-em-tax-dependents" min="1" value="1" /></div>
