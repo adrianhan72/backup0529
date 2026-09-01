@@ -493,8 +493,12 @@ function cdpUpdateBatchBtns(){
   const btnKakao = document.getElementById('cdp-batch-kakao-btn');
   const btnEmail = document.getElementById('cdp-batch-email-btn');
   const btnManual= document.getElementById('cdp-batch-manual-btn');
-  if(btnKakao) btnKakao.disabled = sel.length === 0;
-  if(btnEmail) btnEmail.disabled = sel.length === 0;
+  // 선택 항목 중 휴대전화/이메일 미등록이 하나라도 있으면 각각 비활성 (모두 등록일 때만 활성)
+  const _list = _cdpUnsentYM ? _cdpGetUnsentContracts(_cdpUnsentYM.year, _cdpUnsentYM.month).filter(c => sel.includes(c.id)) : [];
+  const _allPhone = _list.length > 0 && _list.every(c => { const e = allEmployees.find(x => x.id === c.employee_id); return e && String(e.phone || '').trim(); });
+  const _allEmail = _list.length > 0 && _list.every(c => { const e = allEmployees.find(x => x.id === c.employee_id); return e && String(e.email || '').trim(); });
+  if(btnKakao) btnKakao.disabled = !_allPhone;
+  if(btnEmail) btnEmail.disabled = !_allEmail;
   if(btnManual)btnManual.disabled= sel.length === 0;
   // 전체 선택 체크박스 동기화
   const allCb = document.getElementById('cdp-chk-all');

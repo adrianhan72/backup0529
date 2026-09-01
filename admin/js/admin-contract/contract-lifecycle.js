@@ -51,12 +51,12 @@ function _getContractPrintCSS(){
     '.work-schedule-table tr:last-child td{border-bottom:none;}',
     '.work-schedule-table .day-label{font-weight:700;font-size:12.5px;}',
     '.work-schedule-table .computed-h{font-size:11.5px;color:#0369a1;font-weight:600;min-width:48px;display:inline-block;}',
-    '.wsh-total{font-size:12px;color:#374151;margin-top:8px;padding:7px 12px;background:#f8fafc;border-radius:7px;border:1px solid #e2e8f0;display:flex;flex-direction:column;gap:4px;}',
+    '.wsh-total{font-size:10pt;color:#1a1a1a;margin-top:8px;padding:7px 12px;background:#f8fafc;border-radius:7px;border:1px solid #e2e8f0;display:flex;flex-direction:column;gap:4px;}',
     '.wsh-total .wsh-row{display:grid;grid-template-columns:repeat(3,1fr);gap:2px 8px;width:100%;}',
     '.wsh-total .wsh-item{text-align:left;}',
-    '.wsh-total span{font-weight:400;color:#374151;}',
-    '.wsh-total .wsh-val{color:#0369a1;}',
-    '.wsh-total .wsh-extra{font-size:11.5px;}',
+    '.wsh-total span{font-weight:400;color:#1a1a1a;}',
+    '.wsh-total .wsh-val{font-weight:700;color:#1a1a1a;}',
+    '.wsh-total .wsh-extra{font-size:10pt;}',
     '@media print{@page{margin:15mm 14mm;}body{padding:0;font-size:11.5px;max-width:100%;}',
     '.doc-section-title{-webkit-print-color-adjust:exact;print-color-adjust:exact;}',
     '.info-table th{-webkit-print-color-adjust:exact;print-color-adjust:exact;}',
@@ -210,7 +210,7 @@ function buildScheduleTableHTML(activeDays){
     var brkCell = brkSlots.length
       ? brkSlots.map(function(b){ return (b.s||'') + (b.s&&b.e?' ~ ':'') + (b.e||''); }).join('<br/>')
       : '-';
-    return '<tr class="'+cls+'">'+'<td style="text-align:center;">'+chk+'</td>'+'<td style="text-align:center;"><span class="day-label" style="color:'+color+';">'+( daysKr[s.day]||s.day)+'</span></td>'+'<td style="text-align:center;">'+(s.start||'')+'</td>'+'<td style="text-align:center;">'+(s.end||'')+'</td>'+'<td class="td-brk" style="text-align:center;line-height:1.6;">'+brkCell+'</td>'+'<td style="text-align:center;"><span class="computed-h">'+hrs+'</span></td>'+'</tr>';
+    return '<tr class="'+cls+'">'+'<td style="text-align:center;">'+chk+'</td>'+'<td style="text-align:center;"><span class="day-label" style="color:'+color+';">'+( daysKr[s.day]||s.day)+'</span></td>'+'<td style="text-align:center;">'+(s.start||'')+'</td>'+'<td style="text-align:center;">'+(s.end||'')+'</td>'+'<td class="td-brk" style="text-align:center;line-height:1.2;">'+brkCell+'</td>'+'<td style="text-align:center;"><span class="computed-h">'+hrs+'</span></td>'+'</tr>';
   }).join('');
 
   // 주 40h 초과 → 연장 이관 (이미 Pass 1 후 처리됨, totalStatMins/totalOtMins는 여기서 재확인용)
@@ -236,8 +236,8 @@ function buildScheduleTableHTML(activeDays){
     +'<thead><tr>'
     +'<th style="width:34px;">근무</th>'
     +'<th style="width:30px;">요일</th>'
-    +'<th style="width:88px;">출근</th>'
-    +'<th style="width:88px;">퇴근</th>'
+    +'<th style="width:88px;">근무</th>'
+    +'<th style="width:88px;">~</th>'
     +'<th class="th-brk">휴게시간</th>'
     +'<th style="width:72px;">소정시간</th>'
     +'</tr></thead>'
@@ -279,6 +279,30 @@ function generateContractHTMLFromData(c, emp, co){
 
   const fmt  = v => Number(v||0).toLocaleString('ko-KR');
   const row  = (label, val, cls='') => `<tr${cls?' class="'+cls+'"':''}><th>${label}</th><td>${val||'—'}</td></tr>`;
+  // 2열(라벨+값) × 2 = 한 행에 2개 항목 배치 (계약서 간결화)
+  const row2 = (l1, v1, l2, v2) => l2
+    ? `<tr><th>${l1}</th><td>${v1||'—'}</td><th>${l2}</th><td>${v2||'—'}</td></tr>`
+    : `<tr><th>${l1}</th><td colspan="3">${v1||'—'}</td></tr>`;
+  // 단일 항목 전폭 행 (데이터 셀 3열 병합 — 표 끝 정렬)
+  const rowFull = (label, val) => `<tr><th>${label}</th><td colspan="3">${val||'—'}</td></tr>`;
+  // 3개 항목 한 행 (6열 배치 — 부서/직책/담당업무)
+  const row3 = (l1, v1, l2, v2, l3, v3) => `<tr><th>${l1}</th><td>${v1||'—'}</td><th>${l2}</th><td>${v2||'—'}</td><th>${l3}</th><td>${v3||'—'}</td></tr>`;
+  // 사업주/근로자 표 — 좌측 라벨(행병합)·우측 서명란(행병합) 6열 구성
+  const sideSignTable = (sideLabel, rows, signLabel) => {
+    const pair = (l1, v1, l2, v2) => `<th>${l1}</th><td>${v1||'—'}</td><th>${l2}</th><td>${v2||'—'}</td>`;
+    const rowHtml = rows.map((r, i) => {
+      const inner = r.length === 2
+        ? `<th>${r[0]}</th><td colspan="3">${r[1]||'—'}</td>`
+        : pair(r[0], r[1], r[2], r[3]);
+      const side = i === 0 ? `<th rowspan="3" class="doc-side-label">${sideLabel}</th>` : '';
+      const sign = i === 0 ? `<td rowspan="3" class="doc-sign-col">${signLabel}</td>` : '';
+      return `<tr>${side}${inner}${sign}</tr>`;
+    }).join('');
+    return `<table class="info-table ct-doc-6eq">
+      <colgroup><col style="width:6%"><col style="width:16.67%"><col style="width:26.83%"><col style="width:16.67%"><col style="width:26.83%"><col style="width:7%"></colgroup>
+      ${rowHtml}
+    </table>`;
+  };
   const wons = v => fmt(v) + '원';
 
   // ── 날짜 포맷 ──
@@ -294,7 +318,7 @@ function generateContractHTMLFromData(c, emp, co){
   if(isDaily){
     contractPeriod = `${c.contract_start||'—'} ~ ${c.contract_end||'별도 지정'}`;
   } else if(isRegular){
-    contractPeriod = `${c.contract_start||'—'}부터 <strong>기간의 정함 없음</strong>`;
+    contractPeriod = `${c.contract_start||'—'}부터 기간의 정함 없음`;
   } else {
     contractPeriod = `${c.contract_start||'—'} ~ ${c.contract_end||'미정'}`;
   }
@@ -477,12 +501,6 @@ function generateContractHTMLFromData(c, emp, co){
   const annualSal         = parseFloat(c.annual_salary||0);
   const hourlyWage        = parseFloat(c.hourly_wage||0);
   const dailyWage         = parseFloat(c.daily_wage||c.base_salary||0);
-  // 통상임금 지급유형 뱃지 생성 헬퍼
-  const payTypeBadge = (type) => type==='fixed'
-    ? '<span style="font-size:10px;color:#1d4ed8;background:#dbeafe;border-radius:4px;padding:1px 6px;margin-left:6px;">매월 정기지급 (통상임금 포함)</span>'
-    : '<span style="font-size:10px;color:#92400e;background:#fef3c7;border-radius:4px;padding:1px 6px;margin-left:6px;">출근일수에 따름 (통상임금 제외)</span>';
-  // 통상임금 포함 여부: fixed = 포함, 그 외(daily/receipt) = 제외
-  const isFixedType = (type) => (type||'fixed') === 'fixed';
 
   // 임금지급일
   const payDayStr = co.pay_day ? `매월 ${co.pay_day}일` : '매월 말일';
@@ -501,6 +519,11 @@ function generateContractHTMLFromData(c, emp, co){
     if(s.length <= 6) return front;       // 앞 6자리만 있는 경우
     return front + '-' + mid + stars;
   })();
+  // 내국인/외국인 구분: 주민번호(외국인번호) 7번째 자리(성별코드) 5~8 = 외국인
+  const _idNumRaw = String(idNum).replace(/-/g,'');
+  const _genderCode = _idNumRaw.length >= 7 ? parseInt(_idNumRaw[6], 10) : NaN;
+  const _isForeignEmp = !isNaN(_genderCode) && _genderCode >= 5;
+  const _idLabel = _isForeignEmp ? '외국인번호' : '주민등록번호';
 
   // ── 입사일 포맷 ──
   const hireDateStr = emp.hire_date || '';
@@ -535,8 +558,6 @@ function generateContractHTMLFromData(c, emp, co){
           ${row('임금 지급일', payDayStr + ' (현금 또는 계좌이체)')}
           ${row('지급 방법', '현금 지급 또는 근로자 명의 계좌 직접 입금')}
         </table>
-        ${co.premium_mode !== 'always' ? '<div class="doc-note">※ 연장·야간·휴일 근로수당은 법정 가산수당 지급의무가 발생할 경우 가산을 적용한다.</div>' : ''}
-        <div class="doc-note">※ 제세공과금(소득세, 4대 보험료 등)은 관계법령에 따라 공제 후 지급한다.</div>
         <div class="doc-daily-note">
           <strong>📌 일용직 임금 안내</strong><br>
           • 일급여는 실제 근로일수에 따라 지급합니다.<br>
@@ -547,54 +568,57 @@ function generateContractHTMLFromData(c, emp, co){
   } else {
     // salary_start_date = contract_start 통합 — contract_start 직접 참조
     const salaryStartDate = c.contract_start || '';
-    const salaryPeriodRow = (isRegular && salaryStartDate)
-      ? row('연봉적용 시작일', salaryStartDate)
-      : '';
+    // ── 급여 구성 항목 수집 (월 약정임금 위 — 한 행에 2개씩 배치로 계약서 간결화) ──
+    const _salItems = [];
+    _salItems.push(['기본급', `${fmt(baseSalary)}원`]);
+    if (weeklyHol > 0)          _salItems.push(['주휴수당', `${fmt(weeklyHol)}원`]);
+    if (fixedOtPay > 0)         _salItems.push(['고정 연장근로수당', `${fmt(fixedOtPay)}원`]);
+    if (fixedNightPay > 0)      _salItems.push(['고정 야간근로수당', `${fmt(fixedNightPay)}원`]);
+    if (fixedHolPay > 0)        _salItems.push(['고정 휴일근로수당', `${fmt(fixedHolPay)}원`]);
+    if (acfgShow('position', posAllow))       _salItems.push(['직책수당', `${fmt(posAllow)}원`]);
+    if (acfgShow('car', carAllow) && acfgIsFixed('car'))                     _salItems.push(['차량지원비', `${fmt(carAllow)}원`]);
+    if (acfgShow('remote_area', remoteAreaAllow))                             _salItems.push(['벽지수당', `${fmt(remoteAreaAllow)}원`]);
+    if (acfgShow('meal', mealAllow) && acfgIsFixed('meal'))                   _salItems.push(['식대', `${fmt(mealAllow)}원`]);
+    if (acfgShow('research', researchAllow) && acfgIsFixed('research'))       _salItems.push(['연구활동비', `${fmt(researchAllow)}원`]);
+    if (acfgShow('site', siteAllow))                                         _salItems.push(['현장수당', `${fmt(siteAllow)}원`]);
+    if (acfgShow('skill', skillAllow))                                       _salItems.push(['기술수당', `${fmt(skillAllow)}원`]);
+    if (acfgShow('license', licenseAllow))                                   _salItems.push(['면허수당', `${fmt(licenseAllow)}원`]);
+    if (acfgShow('hazard', hazardAllow))                                     _salItems.push(['위험수당', `${fmt(hazardAllow)}원`]);
+    customOrdinaryItems.filter(it=>it&&it.amount>0).forEach(it => _salItems.push([String(it.name||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'), `${fmt(it.amount)}원`]));
+    customFixedItems.filter(it=>it&&it.amount>0).forEach(it => _salItems.push([String(it.name||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'), `${fmt(it.amount)}원`]));
+    if (acfgShow('communication', commAllow) && acfgIsFixed('communication')) _salItems.push(['통신비', `${fmt(commAllow)}원`]);
+    if (acfgShow('fitness', fitnessAllow) && acfgIsFixed('fitness'))          _salItems.push(['체력증진비', `${fmt(fitnessAllow)}원`]);
+    if (acfgShow('self_dev', selfDevAllow) && acfgIsFixed('self_dev'))        _salItems.push(['자기계발비', `${fmt(selfDevAllow)}원`]);
+    if (acfgShow('book', bookAllow) && acfgIsFixed('book'))                   _salItems.push(['도서지원비', `${fmt(bookAllow)}원`]);
+    if (acfgShow('overseas', overseasAllow) && acfgIsFixed('overseas'))       _salItems.push(['해외근무수당', `${fmt(overseasAllow)}원`]);
+    if (acfgShow('childcare', childcareAllow) && acfgIsFixed('childcare'))   _salItems.push(['보육수당', `${fmt(childcareAllow)}원`]);
+    if (acfgShow('regular_bonus', regularBonus))                              _salItems.push(['정기상여금', `${fmt(regularBonus)}원`]);
+    // 2개씩 한 행에 배치
+    const _salItemsHtml = _salItems.map((it, i) => {
+      if (i % 2 !== 0) return '';
+      const next = _salItems[i + 1];
+      return next ? row2(it[0], it[1], next[0], next[1]) : row2(it[0], it[1]);
+    }).join('');
     salarySection = `
       <div class="doc-section">
         <div class="doc-section-title">__ART_SALARY__</div>
         ${isRegular && annualSal > 0 ? `
         <p class="doc-text">① "사용자"는 "근로자"의 임금에 관하여 연봉제를 원칙으로 하며, 연봉에 관한 사항의 기간은 다음과 같다.</p>
-        <table class="info-table">
-          <colgroup><col style="width:32%"><col style="width:68%"></colgroup>
-          ${row('연봉', '<strong>' + fmt(annualSal) + '원</strong>')}
-          ${salaryPeriodRow}
+        <table class="info-table ct-doc-4col">
+          <colgroup><col style="width:25%"><col style="width:25%"><col style="width:25%"><col style="width:25%"></colgroup>
+          ${isRegular && salaryStartDate
+            ? row2('연봉', '<strong>' + fmt(annualSal) + '원</strong>', '연봉적용 시작일', salaryStartDate)
+            : rowFull('연봉', '<strong>' + fmt(annualSal) + '원</strong>')}
         </table>
         <p class="doc-text">② 월지급액은 업무의 특성과 계산의 용이성을 감안하여 법정 제수당을 포함한 포괄임금제도에 의해 매월 지급됨을 원칙으로 한다. 단, 수습기간의 급여는 관계법령에 위반되지 않는 한도(정규직은 최저임금의 90%, 계약직은 최저임금액)에서 별도로 정할 수 있다.</p>
         ` : ''}
         <p class="doc-text">③ 제⑤항의 임금지급기에 따른 급여 구성은 다음과 같다.</p>
-        <table class="info-table">
-          <colgroup><col style="width:32%"><col style="width:68%"></colgroup>
-          ${row('기본급', `<strong class="highlight">${fmt(baseSalary)}원</strong>`)}
-          ${weeklyHol > 0      ? row('주휴수당',           `${fmt(weeklyHol)}원`)   : ''}
-          ${fixedOtPay > 0    ? row('고정 연장근로수당', `${fmt(fixedOtPay)}원`)   : ''}
-          ${fixedNightPay > 0 ? row('고정 야간근로수당', `${fmt(fixedNightPay)}원`) : ''}
-          ${fixedHolPay > 0   ? row('고정 휴일근로수당', `${fmt(fixedHolPay)}원`)   : ''}
-          ${acfgShow('position',      posAllow)                                          ? row('직책수당',     `${fmt(posAllow)}원`)          : ''}
-          ${acfgShow('car',           carAllow)      && acfgIsFixed('car')              ? row('차량지원비',   `${fmt(carAllow)}원`)          : ''}
-          ${acfgShow('remote_area',   remoteAreaAllow)                                  ? row('벽지수당',     `${fmt(remoteAreaAllow)}원`)   : ''}
-          ${acfgShow('meal',          mealAllow)     && acfgIsFixed('meal')             ? row('식대',         `${fmt(mealAllow)}원`)         : ''}
-          ${acfgShow('research',      researchAllow) && acfgIsFixed('research')         ? row('연구활동비',   `${fmt(researchAllow)}원`)     : ''}
-          ${acfgShow('site',          siteAllow)                                        ? row('현장수당',     `${fmt(siteAllow)}원`)         : ''}
-          ${acfgShow('skill',         skillAllow)                                       ? row('기술수당',     `${fmt(skillAllow)}원`)        : ''}
-          ${acfgShow('license',       licenseAllow)                                     ? row('면허수당',     `${fmt(licenseAllow)}원`)      : ''}
-          ${acfgShow('hazard',        hazardAllow)                                      ? row('위험수당',     `${fmt(hazardAllow)}원`)       : ''}
-          ${customOrdinaryItems.filter(it=>it&&it.amount>0).map(it=>row((it.name||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'), `${fmt(it.amount)}원`)).join('')}
-          ${customFixedItems.filter(it=>it&&it.amount>0).map(it=>row((it.name||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'), `${fmt(it.amount)}원`)).join('')}
-          ${acfgShow('communication', commAllow)    && acfgIsFixed('communication')     ? row('통신비',       `${fmt(commAllow)}원`)         : ''}
-          ${acfgShow('fitness',       fitnessAllow) && acfgIsFixed('fitness')           ? row('체력증진비',   `${fmt(fitnessAllow)}원`)      : ''}
-          ${acfgShow('self_dev',      selfDevAllow) && acfgIsFixed('self_dev')          ? row('자기계발비',   `${fmt(selfDevAllow)}원`)      : ''}
-          ${acfgShow('book',          bookAllow)    && acfgIsFixed('book')              ? row('도서지원비',   `${fmt(bookAllow)}원`)         : ''}
-          ${acfgShow('overseas',      overseasAllow)&& acfgIsFixed('overseas')          ? row('해외근무수당', `${fmt(overseasAllow)}원`)     : ''}
-          ${acfgShow('childcare',     childcareAllow) && acfgIsFixed('childcare')       ? row('보육수당',     `${fmt(childcareAllow)}원`)     : ''}
-          ${acfgShow('regular_bonus', regularBonus)                                     ? row('정기상여금',   `${fmt(regularBonus)}원`)       : ''}
-          <tr class="total-row"><th>월 약정임금 합계</th><td><strong class="highlight">${fmt(monthlySal)}원</strong></td></tr>
-          ${hourlyWage > 0 ? row('통상시급', `${fmt(hourlyWage)}원/시간`) : ''}
-          ${row('임금 지급일', payDayStr)}
-          ${row('지급 방법', '근로자 명의 계좌 직접 입금')}
+        <table class="info-table ct-doc-4col ct-doc-pay">
+          <colgroup><col style="width:25%"><col style="width:25%"><col style="width:25%"><col style="width:25%"></colgroup>
+          ${hourlyWage > 0 ? `<tr><th>통상시급</th><td colspan="3">${fmt(hourlyWage)}원/시간</td></tr>` : ''}
+          ${_salItemsHtml}
+          <tr class="total-row"><th>월 약정임금 합계</th><td colspan="3"><strong>${fmt(monthlySal)}원</strong></td></tr>
         </table>
-        ${co.premium_mode !== 'always' ? '<div class="doc-note">※ 연장·야간·휴일 근로수당은 법정 가산수당 지급의무가 발생할 경우 가산을 적용한다.</div>' : ''}
-        <div class="doc-note">※ 제세공과금(4대 보험료, 소득세 등)은 관계법령에 따라 공제 후 지급한다.</div>
         <p class="doc-text">④ 위 급여는 세전금액으로 법정세금 및 보험료(본인부담금)는 "근로자"가 부담한다.</p>
         <p class="doc-text">⑤ 위 급여는 매월 초일부터 말일까지 기산하여 매월 25일에 본인의 계좌로 입금하며 지급일이 휴일인 경우는 순차적으로 그 전일에 지급함을 원칙으로 한다. 다만, 본인이 원하는 경우 직접 지급할 수 있다.</p>
         <p class="doc-text">⑥ "사용자"는 "근로자"의 결근, 지각, 휴직, 계약만료전 근로관계종료 기타 사유에 의하여 근무하지 아니한 기간에 대한 임금을 감액하여 지급할 수 있다.</p>
@@ -645,13 +669,9 @@ function generateContractHTMLFromData(c, emp, co){
 
     // ── 기간제 특별 고지 (content만 쿠우고, return 블록에서 art()로 번호 부여) ──
     const fixedTermContent = (!isRegular && !isDaily) ? `
-
-    <div class="doc-probation-box" style="background:#f5f3ff;border-color:#c4b5fd;color:#4c1d95;">
-      <strong>📋 기간제법 적용 안내</strong><br>
-      • 본 계약은 <strong>기간제 및 단시간근로자 보호 등에 관한 법률</strong>의 적용을 받습니다.<br>
-      • 동일 사업장에서 2년을 초과하여 계속 근무 시 기간의 정함이 없는 근로자로 간주될 수 있습니다.<br>
-      • 계약기간 만료 시 근로관계는 자동으로 종료되며, 별도의 해고 절차 없이 종료됩니다.
-    </div>` : '';
+    <p class="doc-text">① 본 계약은 기간제 및 단시간근로자 보호 등에 관한 법률의 적용을 받는다.</p>
+    <p class="doc-text">② 동일 사업장에서 2년을 초과하여 계속 근무 시 기간의 정함이 없는 근로자로 간주될 수 있다.</p>
+    <p class="doc-text">③ 계약기간 만료 시 근로관계는 자동으로 종료되며, 별도의 해고 절차 없이 종료될 수 있다.</p>` : '';
 
   // ── 동적 태그명 사전 계산 (template literal 내 동적 태그명 패턴은 HTML 파서를 오작동시킴) ──
   const _hTag   = isDaily ? 'h2' : 'h1';
@@ -672,72 +692,64 @@ function generateContractHTMLFromData(c, emp, co){
   </div>
 
   <div class="doc-section">
-    <div class="doc-section-title">◼ 사업주 정보</div>
-    <table class="info-table">
-      <colgroup><col style="width:32%"><col style="width:68%"></colgroup>
-      ${row('상호(사업장명)', co.company_name)}
-      ${row('사업자등록번호', co.business_number)}
-      ${row('소재지(주소)',   co.address)}
-      ${row('대표자(사용자)', getCompanyRepName(co))}
-      ${row('대표 연락처',   co.phone)}
-    </table>
+    ${sideSignTable('사업자', [
+      ['상호(사업장명)', co.company_name, '사업자등록번호', co.business_number],
+      ['대표자(사용자)', getCompanyRepName(co), '대표 연락처', co.phone],
+      ['소재지(주소)', co.address],
+    ], '서명 또는 날인')}
   </div>
 
   <div class="doc-section">
-    <div class="doc-section-title">◼ 근로자 정보</div>
-    <table class="info-table">
-      <colgroup><col style="width:32%"><col style="width:68%"></colgroup>
-      ${row('성명', emp.name)}
-      ${row('주민등록번호(외국인번호)', maskedId)}
-      ${row('입사일', hireDateStr)}
-      ${row('주소', emp.address)}
-      ${row('연락처', emp.phone)}
-    </table>
+    ${sideSignTable('근로자', [
+      ['성명', emp.name, _idLabel, maskedId],
+      ['연락처', emp.phone, '입사일', hireDateStr],
+      ['주소', emp.address],
+    ], '서명 또는 날인')}
   </div>
 
   <div class="doc-section">
     <div class="doc-section-title">${art('(의무)')}</div>
-    <p class="doc-text" style="padding:6px 0;">
+    <p class="doc-text">
       "근로자"는 당사에 채용됨에 따라 상호 신뢰를 바탕으로 근로계약을 체결하며 당사의 운영규정을 준수하고 성실히 업무를 수행할 의무를 진다.
     </p>
   </div>
 
   <div class="doc-section">
     <div class="doc-section-title">${art('(근무장소 및 업무내용)')}</div>
-    <p class="doc-text" style="padding:4px 0 4px;">
+    <p class="doc-text">
       ① "근로자"는 아래의 근무장소에서 근무함을 원칙으로 한다. 다만, "사용자"는 업무상 필요한 경우 "근로자"의 근무장소를 변경할 수 있다.
     </p>
-    <p class="doc-text" style="padding:4px 0 8px;">
+    <table class="info-table ct-doc-4col ct-doc-work">
+      <colgroup><col style="width:15%"><col style="width:28.33%"><col style="width:28.33%"><col style="width:28.33%"></colgroup>
+      ${rowFull('근무 장소', co.address || co.company_name)}
+    </table>
+    <p class="doc-text">
       ② "근로자"의 담당업무는 아래와 같으며, 그 외 "사용자"가 지시하는 업무 및 "사용자"가 별도로 부여한 업무를 수행한다. 다만, "사용자"는 업무상 필요한 경우 "근로자"의 담당업무를 변경할 수 있다.
     </p>
-    <table class="info-table">
-      <colgroup><col style="width:32%"><col style="width:68%"></colgroup>
-      ${row('근무 장소', co.address || co.company_name)}
-      ${row('담당 업무', emp.job_description || '회사가 지정하는 업무')}
-      ${emp.department ? row('부서', emp.department) : ''}
-      ${emp.position   ? row('직책/직위', emp.position) : ''}
+    <table class="info-table ct-doc-6col">
+      <colgroup><col style="width:15%"><col style="width:15%"><col style="width:15%"><col style="width:15%"><col style="width:15%"><col style="width:25%"></colgroup>
+      ${row3('부서', emp.department || '—', '직책/직위', emp.position || '—', '담당 업무', emp.job_description || '회사가 지정하는 업무')}
     </table>
   </div>
 
   <div class="doc-section">
     <div class="doc-section-title">${art('(계약기간 및 근무시간)')}</div>
-    <table class="info-table">
-      <colgroup><col style="width:32%"><col style="width:68%"></colgroup>
-      ${row('계약기간', contractPeriod)}
-      ${row('고용형태', `<span class="badge ${empCatBadge(_ctTypeRaw)}">${ctType}</span>`)}
-      ${isProb ? row('수습기간', `${probStartKr} ~ ${probEndDate} (${probMonths}개월)`) : ''}
+    <table class="info-table ct-doc-period">
+      <colgroup><col style="width:15%"><col style="width:45%"><col style="width:15%"><col style="width:25%"></colgroup>
+      ${row2('계약기간', contractPeriod, '고용형태', ctType)}
+      ${isProb ? rowFull('수습기간', `${probStartKr} ~ ${probEndDate} (${probMonths}개월)`) : ''}
     </table>
-    <p class="doc-text" style="padding:8px 0 4px;">
+    <p class="doc-text">
       ① 계약의 갱신은 계약기간 만료 1개월 전 협의하는 것으로 하며, 만료 전까지 당사자간 별도의 의사표시 또는 협의가 없는 경우 고용기간이 종료되는 것으로 한다.
     </p>
-    <p class="doc-text" style="padding:4px 0 4px;">
+    <p class="doc-text">
       ② 정규 근로시간은 주 40시간제를 원칙으로 하며, 근무시간은 다음과 같다.
     </p>
     ${buildScheduleTableHTML(activeDays)}
-    <p class="doc-text" style="padding:8px 0 4px;">
+    <p class="doc-text">
       ③ 제②항에 명시된 시간 외에 "사용자"는 "근로자"에게 업무상의 필요에 의하여 연장근무, 야간근무 및 휴일근무를 명할 수 있으며 "근로자"는 이에 포괄적으로 합의한 것으로 본다.
     </p>
-    <p class="doc-text" style="padding:4px 0 4px;">
+    <p class="doc-text">
       ④ "근로자"는 업무상 연장, 야간 및 휴일 근로가 필요한 경우 "사용자"에게 연장근로신청서 등을 제출하여 사전 승인을 받아야 한다. 사전 승인 없는 임의의 연장 등은 인정하지 아니할 수 있다.
     </p>
   </div>
@@ -749,16 +761,16 @@ function generateContractHTMLFromData(c, emp, co){
   </div>
   <div class="doc-section">
     <div class="doc-section-title">${art('(휴일)')}</div>
-    <p class="doc-text" style="padding:4px 0 4px;">① "사용자"는 1주일에 소정근로일수를 개근한 경우 주휴일을 부여한다.</p>
-    <p class="doc-text" style="padding:4px 0 4px;">② 주휴일(일요일)과 근로자의 날(5월 1일) 및 토요일은 휴일로 한다. 단, 휴일이 중복되는 경우 1일의 휴일로 처리한다.</p>
-    <p class="doc-text" style="padding:4px 0 4px;">③ 기타 휴일에 관한 사항은 "공휴일에 관한 법률"에 따른다.</p>
+    <p class="doc-text">① "사용자"는 1주일에 소정근로일수를 개근한 경우 주휴일을 부여한다.</p>
+    <p class="doc-text">② 주휴일(일요일)과 근로자의 날(5월 1일) 및 토요일은 휴일로 한다. 단, 휴일이 중복되는 경우 1일의 휴일로 처리한다.</p>
+    <p class="doc-text">③ 기타 휴일에 관한 사항은 "공휴일에 관한 법률"에 따른다.</p>
   </div>` : ''}
   ${salarySection.replace('__ART_SALARY__', art('(임금)'))}
   ${retirementSection.replace('__ART_RETIREMENT__', art('(퇴직급여)'))}
   ${dismissalSection.replace('__ART_DISMISSAL__', art('(해고 등)'))}
   ${fixedTermContent ? `
-  <div class="doc-section" style="border-left-color:#7c3aed;">
-    <div class="doc-section-title" style="color:#6d28d9;">${art('(기간제 근로자 고지사항)')}</div>
+  <div class="doc-section">
+    <div class="doc-section-title">${art('(기간제 근로자 고지사항)')}</div>
     ${fixedTermContent}
   </div>` : ''}
 
@@ -788,32 +800,6 @@ function generateContractHTMLFromData(c, emp, co){
     <strong>${contractDateKr}</strong>
   </div>
 
-  <div class="doc-sign">
-    <div class="doc-sign-box">
-      <div class="sign-title">사업주 (사용자)</div>
-      <table class="sign-info-table">
-        <tr><th>상호</th><td>${co.company_name||''}</td></tr>
-        <tr><th>주소</th><td>${co.address||''}</td></tr>
-        <tr><th>대표자</th><td>${getCompanyRepName(co)}</td></tr>
-      </table>
-      <div class="sign-stamp-area">
-        <div class="sign-stamp"></div>
-        <div class="sign-label">(서명 또는 날인)</div>
-      </div>
-    </div>
-    <div class="doc-sign-box">
-      <div class="sign-title">근로자</div>
-      <table class="sign-info-table">
-        <tr><th>성명</th><td>${emp.name||''}</td></tr>
-        <tr><th>주소</th><td>${emp.address||''}</td></tr>
-        <tr><th>연락처</th><td>${emp.phone||''}</td></tr>
-      </table>
-      <div class="sign-stamp-area">
-        <div class="sign-stamp"></div>
-        <div class="sign-label">(서명 또는 날인)</div>
-      </div>
-    </div>
-  </div>
   `;
 }
 
@@ -2240,7 +2226,7 @@ function openRecontractModal(srcContract){
   setCTPayType('car', _getPTSrc('car', srcContract.transportation_pay_type||srcContract.self_driving_pay_type));
   setAmountVal('ct-remote-area', srcContract.remote_area_allowance||0);
   // remote-area는 통상임금 항상 포함 — pay_type 세팅 불필요
-  setAmountVal('ct-meal',        srcContract.meal_allowance != null ? srcContract.meal_allowance : 200000);
+  setAmountVal('ct-meal',        srcContract.meal_allowance || 0);
   setCTPayType('meal',           _getPTSrc('meal', srcContract.meal_pay_type));
   setAmountVal('ct-research',    srcContract.research_allowance||0);
   setCTPayType('research',       _getPTSrc('research', srcContract.research_pay_type));

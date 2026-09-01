@@ -2979,8 +2979,8 @@ function _calcFixedHoursFromSchedule(scheduleJson, hourlyWage, companyId){
     if(fill > 0) _totalStatMins += fill;
     result.satFillHoursW = fill / 60;
     const rem = _satMins - fill;
-    _satHolW    = rem / 60;
-    _satHolOtW  = Math.max(0, _satHolW - 8);
+    _satHolW    = Math.min(rem / 60, 8);      // 토요일 휴일기본(≤8h) — 연장과 이중계산 방지
+    _satHolOtW  = Math.max(0, (rem / 60) - 8); // 토요일 휴일연장(>8h)
   }
   result.weekStatHoursW = _totalStatMins / 60; // 주중+토요일 충당 소정근로 (주간)
   result.satHolHoursW   = _satHolW;             // 토요일 휴일(주간, 잔여)

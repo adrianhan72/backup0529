@@ -203,6 +203,11 @@ function _pssGetMonthPayrolls(year, month){
     if(_pssCompanyId && p.company_id !== _pssCompanyId) return false;
     if(Number(p.pay_year)  !== yr) return false;
     if(Number(p.pay_month) !== mo) return false;
+    // 수습근로자 관리 OFF → 수습(정규직 수습·계약직 수습) 고용형태 제외
+    if (!window._probationFeatureEnabled && typeof isProbationType === 'function') {
+      const _emp = (allEmployees || []).find(e => e.id === p.employee_id);
+      if (_emp && isProbationType(_emp.employment_category)) return false;
+    }
     // 계약이 임시저장 상태인 직원 제외
     const ct = allContracts.find(c => c.employee_id === p.employee_id &&
       (c.status===EMP_STATUS.ACTIVE || c.status===CONTRACT_STATUS.ACTIVE))
@@ -1207,11 +1212,26 @@ function pssToggleAll(el){
 }
 // ─── 배치 버튼 활성/비활성 ───
 function pssUpdateBatchBtns(){
-  const checked = document.querySelectorAll('.pss-row-chk:checked');
-  const hasAny = checked.length > 0;
+  const checked = [...document.querySelectorAll('.pss-row-chk:checked')];
+  // 선택 항목 중 휴대전화/이메일 미등록이 하나라도 있으면 각각 비활성 (모두 등록일 때만 활성)
+  const _allPhone = checked.length > 0 && checked.every(cb => {
+    const pid = cb.dataset.payrollId;
+    const empId = (allPayrolls||[]).find(p => p.id === pid)?.employee_id;
+    const emp = (allEmployees||[]).find(e => e.id === empId);
+    return emp && String(emp.phone || '').trim();
+  });
+  const _allEmail = checked.length > 0 && checked.every(cb => {
+    const pid = cb.dataset.payrollId;
+    const empId = (allPayrolls||[]).find(p => p.id === pid)?.employee_id;
+    const emp = (allEmployees||[]).find(e => e.id === empId);
+    return emp && String(emp.email || '').trim();
+  });
   ['pss-batch-kakao-btn','pss-batch-email-btn','pss-batch-manual-btn'].forEach(id => {
     const btn = document.getElementById(id);
-    if(btn) btn.disabled = !hasAny;
+    if(!btn) return;
+    if(id === 'pss-batch-kakao-btn') btn.disabled = !_allPhone;
+    else if(id === 'pss-batch-email-btn') btn.disabled = !_allEmail;
+    else btn.disabled = checked.length === 0;
   });
 }
 // ─── 배치 알림톡 ───

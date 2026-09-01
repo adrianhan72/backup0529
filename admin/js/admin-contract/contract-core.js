@@ -1617,7 +1617,7 @@ function openContractModal(id=null, preCompanyId=null){
       setCTPayType('car', _getPTSrc('car', c.transportation_pay_type||c.self_driving_pay_type));
       setAmountVal('ct-remote-area', c.remote_area_allowance||0);
       // remote-area는 통상임금 항상 포함 — pay_type 세팅 불필요
-      setAmountVal('ct-meal',        c.meal_allowance != null ? c.meal_allowance : 200000);
+      setAmountVal('ct-meal',        c.meal_allowance || 0);
       setCTPayType('meal',           _getPTSrc('meal', c.meal_pay_type));
       setAmountVal('ct-research',    c.research_allowance||0);
       setCTPayType('research',       _getPTSrc('research', c.research_pay_type));
@@ -1687,28 +1687,16 @@ function openContractModal(id=null, preCompanyId=null){
       // DB에 값이 있는 항목은 allowance_config와 무관하게 강제 노출 (하위호환)
       _forceShowNonZeroCTRows(c);
       document.getElementById('ct-note').value=c.note||'';
-      // 일용직: 주휴·월약정은 별도 없음(일급에 포함) → 0원 표시 (저장값 weekly_holiday_pay 레거시 대비)
-      if(isDailyEdit){
-        document.getElementById('ct-monthly-computed').textContent='0원';
-        document.getElementById('ct-weekly-hol-computed').textContent='0원';
-      } else {
-        document.getElementById('ct-monthly-computed').textContent=won(c.monthly_salary_agreed);
-        document.getElementById('ct-weekly-hol-computed').textContent=won(c.weekly_holiday_pay);
-      }
+      // 일용직·비일용직 공통: 월약정·주휴·고정수당 등 계산값은 calcWorkHours/calcContractSalary가
+      // 근무시간표·통상시급 기준으로 재계산하므로 DB 복원하지 않는다 (스테일 DB 덮어쓰기 방지)
       setAmountVal('ct-hourly-input', c.hourly_wage||0);
-      // 고정 연장/야간/휴일근로수당 복원 (일용직은 0)
+      // 고정 연장/야간/휴일근로수당: 일용직은 0. 비일용직은 근무시간표에서 자동 재계산되므로
+      // 저장값(스테일 가능)을 복원하지 않고 calcWorkHours가 스케줄 기준으로 설정함
       if(isDailyEdit){
         setAmountVal('ct-fixed-ot-pay',    0); setAmountVal('ct-fixed-night-pay', 0); setAmountVal('ct-fixed-hol-pay', 0);
         const _fotH = document.getElementById('ct-fixed-ot-hours');    if(_fotH)    _fotH.value    = '';
         const _fniH = document.getElementById('ct-fixed-night-hours'); if(_fniH)    _fniH.value    = '';
         const _fhoH = document.getElementById('ct-fixed-hol-hours');   if(_fhoH)    _fhoH.value    = '';
-      } else {
-      setAmountVal('ct-fixed-ot-pay',    c.fixed_ot_pay   ||0);
-      setAmountVal('ct-fixed-night-pay', c.fixed_night_pay||0);
-      setAmountVal('ct-fixed-hol-pay',   c.fixed_hol_pay  ||0);
-      const _fotH = document.getElementById('ct-fixed-ot-hours');    if(_fotH)    _fotH.value    = c.fixed_ot_hours   ? (c.fixed_ot_hours / (365/12/7)).toFixed(1) :'';
-      const _fniH = document.getElementById('ct-fixed-night-hours'); if(_fniH)    _fniH.value    = c.fixed_night_hours? (c.fixed_night_hours / (365/12/7)).toFixed(1) :'';
-      const _fhoH = document.getElementById('ct-fixed-hol-hours');   if(_fhoH)    _fhoH.value    = c.fixed_hol_hours  ? (c.fixed_hol_hours / (365/12/7)).toFixed(1) :'';
       }
       // ── 연봉/월약정급여 섹션 표시 최종 강제 적용 (ctVal 기준 — emp.employment_category 우선) ──
       const isFixedEdit2 = ctVal===CONTRACT_TYPE.FIXED || ctVal===CONTRACT_TYPE.FIXED_PROBATION;
@@ -1755,6 +1743,8 @@ function openContractModal(id=null, preCompanyId=null){
   _ctClearErrors();
   // 신규 모드: 등록 버튼 초기 비활성화 상태 세팅
   _checkRegisterBtnState();
+  // 데이터 복원 완료 후 근무시간표 기준 재계산 (고정 연장/야간/휴일수당·월약정 등 최종 확정)
+  if(typeof calcWorkHours === 'function') calcWorkHours();
   openModal('contract-modal');
 
   // 입력 수정 시 해당 필드 하이라이트 자동 해제

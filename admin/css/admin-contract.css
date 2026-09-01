@@ -42,6 +42,13 @@
     #ct-row-salary-period ~ .form-group .amount-wrap input{height:36px;box-sizing:border-box;padding:6px 12px;font-size:13px}
     #ct-wage-section-title ~ .form-group .form-computed,
     #ct-row-salary-period ~ .form-group .form-computed{height:36px;box-sizing:border-box;padding:6px 12px;font-size:13px;display:flex;align-items:center}
+    /* 급여 산정기간 + 급여일 — 폼 그리드 좌·우 열 한 행 (wrapper는 contents로 투과) */
+    #ct-pay-period-row{display:contents}
+    #ct-pay-period-row select,
+    #ct-pay-period-row input[type="number"],
+    #ct-pay-period-row input[type="date"]{height:36px;box-sizing:border-box;padding:6px 12px;font-size:13px;border:1px solid #d1d5db;border-radius:7px;background:#fff;color:#000;font-weight:400}
+    /* 임금조건 3열(통상시급·월약정·연봉) 중첩 필드 높이 통일 */
+    #ct-wage-section-title ~ .form-group .form-group .form-computed{height:36px;box-sizing:border-box;padding:6px 12px;font-size:13px;display:flex;align-items:center;border:1px solid #e2e8f0;border-radius:7px;background:#f8fafc}
     #ct-probation-months,#ct-new-probation-months{box-sizing:border-box;height:36px;padding:5px 12px;font-size:13px;border:1px solid #d1d5db;border-radius:7px;background:#fff;color:#000}
     /* 계약 모달 내 .filt-date 폼 높이 통일 (필터바 32px → 폼 표준 36px) */
     #contract-modal .filt-date{height:36px;padding:6px 12px;font-size:13px;color:#000;font-weight:400;border:1px solid #d1d5db;border-radius:7px;background:#fff}
@@ -296,25 +303,51 @@
     .contract-preview-tab.active{color:#4f46e5;border-bottom-color:#6366f1;background:#fff;}
     .contract-preview-body{flex:1;overflow-y:auto;padding:0;}
     /* 계약서 문서 본문 */
-    .contract-doc{padding:40px 52px;font-family:'Noto Sans KR',sans-serif;font-size:13px;line-height:1.9;color:#1a1a1a;background:#fff;}
+    .contract-doc{padding:40px 52px;font-family:'Noto Sans KR',sans-serif;font-size:10pt;line-height:1.3;color:#1a1a1a;background:#fff;}
     .contract-doc h1{text-align:center;font-size:22px;font-weight:900;letter-spacing:6px;margin-bottom:4px;color:#0f172a;padding-bottom:10px;border-bottom:3px double #0f172a;}
     .contract-doc .doc-subtitle{text-align:center;font-size:12px;color:#64748b;margin-bottom:24px;margin-top:6px;}
-    .contract-doc .doc-parties{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px 16px;margin-bottom:20px;font-size:12.5px;line-height:1.8;}
+    .contract-doc .doc-parties{margin-bottom:20px;font-size:10pt;line-height:1.3;text-align:center;}
     .contract-doc .doc-section{margin-bottom:18px;}
-    .contract-doc .doc-section-title{font-size:13px;font-weight:800;color:#0f172a;background:#f1f5f9;border-left:4px solid #4f46e5;padding:6px 10px;margin-bottom:8px;border-radius:0 4px 4px 0;}
-    .contract-doc .info-table{width:100%;border-collapse:collapse;margin-bottom:4px;font-size:12.5px;}
+    .contract-doc .doc-section-title{font-size:13px;font-weight:800;color:#0f172a;margin-bottom:6px;}
+    .contract-doc .info-table{width:100%;border-collapse:collapse;margin-bottom:4px;font-size:10pt;}
     .contract-doc .info-table th{background:#f8fafc;border:1px solid #cbd5e1;padding:7px 12px;font-weight:700;color:#374151;white-space:nowrap;width:32%;text-align:left;}
     .contract-doc .info-table td{border:1px solid #cbd5e1;padding:7px 12px;color:#1e293b;}
-    .contract-doc .info-table tr.total-row th{background:#eff6ff;color:#1d4ed8;}
-    .contract-doc .info-table tr.total-row td{background:#eff6ff;}
-    .contract-doc .doc-note{font-size:11.5px;color:#64748b;margin-top:4px;padding-left:4px;line-height:1.7;}
-    .contract-doc .doc-text{font-size:12.5px;margin:4px 0;line-height:1.9;}
+    .contract-doc .info-table tr.total-row th{background:#f8fafc;color:#374151;}
+    .contract-doc .info-table tr.total-row td{background:#ffffff;font-weight:700;}
+    .contract-doc .info-table.ct-doc-4col{table-layout:fixed;}
+    .contract-doc .info-table.ct-doc-4col th{width:25%;white-space:normal;word-break:break-word;}
+    .contract-doc .info-table.ct-doc-4col td{width:25%;word-break:break-word;}
+    .contract-doc .info-table.ct-doc-work th:first-child{width:15%;}
+    .contract-doc .info-table.ct-doc-work td:last-child{width:85%;}
+    .contract-doc .info-table.ct-doc-6col{table-layout:fixed;}
+    .contract-doc .info-table.ct-doc-6col th{width:15%;white-space:normal;word-break:break-word;}
+    .contract-doc .info-table.ct-doc-6col td{width:15%;word-break:break-word;}
+    .contract-doc .info-table.ct-doc-6col td:nth-child(6){width:25%;}
+    .contract-doc .info-table.ct-doc-period{table-layout:fixed;}
+    .contract-doc .info-table.ct-doc-period th{width:15%;white-space:normal;word-break:break-word;}
+    .contract-doc .info-table.ct-doc-period td{width:15%;word-break:break-word;}
+    .contract-doc .info-table.ct-doc-period td:nth-child(2){width:45%;}
+    .contract-doc .info-table.ct-doc-period td:nth-child(4){width:25%;}
+    .contract-doc .info-table.ct-doc-6eq{table-layout:fixed;}
+    .contract-doc .info-table.ct-doc-6eq th{width:16.67%;white-space:normal;word-break:break-word;}
+    .contract-doc .info-table.ct-doc-6eq td{width:16.67%;word-break:break-word;}
+    .contract-doc .info-table.ct-doc-6eq th:first-child{width:6%;}
+    .contract-doc .info-table.ct-doc-6eq td:last-child{width:7%;}
+    .contract-doc .info-table .doc-side-label{font-weight:800;text-align:center;vertical-align:middle;}
+    .contract-doc .info-table .doc-sign-col{color:#cbd5e1;text-align:center;vertical-align:middle;font-weight:400;font-size:8pt;}
+    .contract-doc .info-table.ct-doc-pay td{text-align:right;}
+    .contract-doc .doc-note{font-size:11.5px;color:#64748b;margin-top:4px;padding-left:4px;line-height:1.3;}
+    .contract-doc .wsh-total{font-size:10pt;color:#1a1a1a;}
+    .contract-doc .wsh-total span{font-weight:400;color:#1a1a1a;}
+    .contract-doc .wsh-total .wsh-val{font-weight:700;color:#1a1a1a;}
+    .contract-doc .wsh-total .wsh-extra{font-size:10pt;}
+    .contract-doc .doc-text{font-size:10pt;margin:4px 0;line-height:1.3;}
     .contract-doc .doc-divider{border:1px solid #cccccc;border-top:1.5px dashed #cbd5e1;margin:16px 0;}
     .contract-doc .doc-insurance-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:8px;}
     .contract-doc .insurance-item{border:1.5px solid #e2e8f0;border-radius:8px;padding:10px;text-align:center;font-size:12.5px;font-weight:600;color:#94a3b8;background:#f8fafc;}
     .contract-doc .insurance-item.active{border-color:#818cf8;color:#4f46e5;background:#eef2ff;}
     .contract-doc .ins-icon{display:block;font-size:16px;margin-bottom:2px;}
-    .contract-doc .doc-sign-date{text-align:center;font-size:13px;margin:28px 0 20px;padding:12px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;color:#374151;line-height:1.9;}
+    .contract-doc .doc-sign-date{text-align:center;font-size:13px;margin:28px 0 20px;padding:12px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;color:#374151;line-height:1.3;}
     .contract-doc .doc-sign{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:0;}
     .contract-doc .doc-sign-box{border:1.5px solid #cbd5e1;border-radius:10px;padding:14px 16px;}
     .contract-doc .doc-sign-box .sign-title{font-size:12px;font-weight:800;color:#374151;margin-bottom:10px;text-align:center;padding-bottom:6px;border-bottom:1px solid #e2e8f0;}
@@ -322,7 +355,7 @@
     .contract-doc .sign-info-table th{background:#f8fafc;border:1px solid #e2e8f0;padding:5px 8px;font-weight:700;color:#374151;white-space:nowrap;width:35%;}
     .contract-doc .sign-info-table td{border:1px solid #e2e8f0;padding:5px 8px;color:#1e293b;}
     .contract-doc .sign-stamp-area{text-align:center;padding-top:4px;}
-    .contract-doc .sign-stamp{width:64px;height:64px;border:2px dashed #cbd5e1;border-radius:50%;margin:0 auto 4px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#94a3b8;line-height:1.4;}
+    .contract-doc .sign-stamp{width:64px;height:64px;border:2px dashed #cbd5e1;border-radius:50%;margin:0 auto 4px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#94a3b8;line-height:1.3;}
     .contract-doc .sign-label{font-size:11px;color:#94a3b8;}
     .contract-doc .highlight{background:#fef9c3;padding:0 4px;border-radius:3px;font-weight:700;}
     /* 업로드 섹션 */
@@ -383,27 +416,54 @@
     #contract-print-modal.modal-overlay.open{display:flex;}
     #contract-print-modal .modal{border-radius:14px;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.3);}
     /* 출력 전용 모달 내 문서 리스트 */
+    #cpm-doc-area{font-size:10pt;line-height:1.3;color:#1a1a1a;}
     #cpm-doc-area h1,#cpm-doc-area h2{text-align:center;font-size:21px;font-weight:900;letter-spacing:6px;margin-bottom:4px;color:#0f172a;padding-bottom:8px;border-bottom:3px double #0f172a;}
     #cpm-doc-area h2{font-size:20px;letter-spacing:4px;}
     #cpm-doc-area .doc-subtitle{text-align:center;font-size:12px;color:#64748b;margin-bottom:8px;margin-top:4px;}
     #cpm-doc-area .doc-type-banner{text-align:center;margin-bottom:16px;}
     #cpm-doc-area .doc-type-badge{display:inline-block;padding:3px 14px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:1px;}
-    #cpm-doc-area .doc-parties{background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:10px 14px;margin-bottom:18px;font-size:12.5px;line-height:1.8;}
+    #cpm-doc-area .doc-parties{margin-bottom:18px;font-size:10pt;line-height:1.3;text-align:center;}
     #cpm-doc-area .doc-section{margin-bottom:16px;}
-    #cpm-doc-area .doc-section-title{font-size:13px;font-weight:800;color:#0f172a;background:#f1f5f9;border-left:4px solid #4f46e5;padding:5px 10px;margin-bottom:7px;border-radius:0 3px 3px 0;}
-    #cpm-doc-area .info-table{width:100%;border-collapse:collapse;margin-bottom:4px;font-size:12.5px;}
+    #cpm-doc-area .doc-section-title{font-size:13px;font-weight:800;color:#0f172a;margin-bottom:6px;}
+    #cpm-doc-area .info-table{width:100%;border-collapse:collapse;margin-bottom:4px;font-size:10pt;}
     #cpm-doc-area .info-table th{background:#f8fafc;border:1px solid #cbd5e1;padding:6px 10px;font-weight:700;color:#374151;white-space:nowrap;width:32%;text-align:left;}
     #cpm-doc-area .info-table td{border:1px solid #cbd5e1;padding:6px 10px;color:#1e293b;}
-    #cpm-doc-area .info-table tr.total-row th{background:#eff6ff;color:#1d4ed8;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-    #cpm-doc-area .info-table tr.total-row td{background:#eff6ff;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-    #cpm-doc-area .doc-note{font-size:11.5px;color:#64748b;margin-top:4px;padding-left:4px;line-height:1.6;}
-    #cpm-doc-area .doc-text{font-size:12.5px;margin:4px 0;line-height:1.9;}
+    #cpm-doc-area .info-table tr.total-row th{background:#f8fafc;color:#374151;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    #cpm-doc-area .info-table tr.total-row td{background:#ffffff;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    #cpm-doc-area .info-table.ct-doc-4col{table-layout:fixed;}
+    #cpm-doc-area .info-table.ct-doc-4col th{width:25%;white-space:normal;word-break:break-word;}
+    #cpm-doc-area .info-table.ct-doc-4col td{width:25%;word-break:break-word;}
+    #cpm-doc-area .info-table.ct-doc-work th:first-child{width:15%;}
+    #cpm-doc-area .info-table.ct-doc-work td:last-child{width:85%;}
+    #cpm-doc-area .info-table.ct-doc-6col{table-layout:fixed;}
+    #cpm-doc-area .info-table.ct-doc-6col th{width:15%;white-space:normal;word-break:break-word;}
+    #cpm-doc-area .info-table.ct-doc-6col td{width:15%;word-break:break-word;}
+    #cpm-doc-area .info-table.ct-doc-6col td:nth-child(6){width:25%;}
+    #cpm-doc-area .info-table.ct-doc-period{table-layout:fixed;}
+    #cpm-doc-area .info-table.ct-doc-period th{width:15%;white-space:normal;word-break:break-word;}
+    #cpm-doc-area .info-table.ct-doc-period td{width:15%;word-break:break-word;}
+    #cpm-doc-area .info-table.ct-doc-period td:nth-child(2){width:45%;}
+    #cpm-doc-area .info-table.ct-doc-period td:nth-child(4){width:25%;}
+    #cpm-doc-area .info-table.ct-doc-6eq{table-layout:fixed;}
+    #cpm-doc-area .info-table.ct-doc-6eq th{width:16.67%;white-space:normal;word-break:break-word;}
+    #cpm-doc-area .info-table.ct-doc-6eq td{width:16.67%;word-break:break-word;}
+    #cpm-doc-area .info-table.ct-doc-6eq th:first-child{width:6%;}
+    #cpm-doc-area .info-table.ct-doc-6eq td:last-child{width:7%;}
+    #cpm-doc-area .info-table .doc-side-label{font-weight:800;text-align:center;vertical-align:middle;}
+    #cpm-doc-area .info-table .doc-sign-col{color:#cbd5e1;text-align:center;vertical-align:middle;font-weight:400;font-size:8pt;}
+    #cpm-doc-area .info-table.ct-doc-pay td{text-align:right;}
+    #cpm-doc-area .doc-note{font-size:11.5px;color:#64748b;margin-top:4px;padding-left:4px;line-height:1.3;}
+    #cpm-doc-area .wsh-total{font-size:10pt;color:#1a1a1a;}
+    #cpm-doc-area .wsh-total span{font-weight:400;color:#1a1a1a;}
+    #cpm-doc-area .wsh-total .wsh-val{font-weight:700;color:#1a1a1a;}
+    #cpm-doc-area .wsh-total .wsh-extra{font-size:10pt;}
+    #cpm-doc-area .doc-text{font-size:10pt;margin:4px 0;line-height:1.3;}
     #cpm-doc-area .doc-divider{border:1px solid #cccccc;border-top:1.5px dashed #cbd5e1;margin:14px 0;}
     #cpm-doc-area .doc-insurance-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:6px;}
     #cpm-doc-area .insurance-item{border:1.5px solid #e2e8f0;border-radius:6px;padding:8px;text-align:center;font-size:12px;font-weight:600;color:#94a3b8;background:#f8fafc;}
     #cpm-doc-area .insurance-item.active{border-color:#818cf8;color:#4f46e5;background:#eef2ff;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
     #cpm-doc-area .ins-icon{display:block;font-size:14px;margin-bottom:1px;}
-    #cpm-doc-area .doc-sign-date{text-align:center;font-size:13px;margin:24px 0 16px;padding:10px;background:#f8fafc;border-radius:6px;border:1px solid #e2e8f0;color:#374151;line-height:1.9;}
+    #cpm-doc-area .doc-sign-date{text-align:center;font-size:13px;margin:24px 0 16px;padding:10px;background:#f8fafc;border-radius:6px;border:1px solid #e2e8f0;color:#374151;line-height:1.3;}
     #cpm-doc-area .doc-sign{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
     #cpm-doc-area .doc-sign-box{border:1.5px solid #cbd5e1;border-radius:8px;padding:12px 14px;}
     #cpm-doc-area .doc-sign-box .sign-title{font-size:12px;font-weight:800;color:#374151;margin-bottom:8px;text-align:center;padding-bottom:5px;border-bottom:1px solid #e2e8f0;}
@@ -411,12 +471,12 @@
     #cpm-doc-area .sign-info-table th{background:#f8fafc;border:1px solid #e2e8f0;padding:4px 8px;font-weight:700;color:#374151;white-space:nowrap;width:32%;}
     #cpm-doc-area .sign-info-table td{border:1px solid #e2e8f0;padding:4px 8px;color:#1e293b;}
     #cpm-doc-area .sign-stamp-area{text-align:center;padding-top:2px;}
-    #cpm-doc-area .sign-stamp{width:56px;height:56px;border:2px dashed #cbd5e1;border-radius:50%;margin:0 auto 3px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#94a3b8;line-height:1.4;}
+    #cpm-doc-area .sign-stamp{width:56px;height:56px;border:2px dashed #cbd5e1;border-radius:50%;margin:0 auto 3px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#94a3b8;line-height:1.3;}
     #cpm-doc-area .sign-label{font-size:10.5px;color:#94a3b8;}
     #cpm-doc-area .highlight{font-weight:700;color:#1d4ed8;}
     #cpm-doc-area .daily-highlight{font-weight:700;color:#d97706;}
-    #cpm-doc-area .doc-probation-box{background:#fefce8;border:1.5px solid #fde047;border-radius:7px;padding:10px 13px;margin-top:6px;font-size:12px;line-height:1.8;color:#854d0e;}
-    #cpm-doc-area .doc-daily-note{background:#fff7ed;border:1.5px solid #fed7aa;border-radius:7px;padding:10px 13px;margin-top:8px;font-size:12px;line-height:1.8;color:#9a3412;}
+    #cpm-doc-area .doc-probation-box{background:#fefce8;border:1.5px solid #fde047;border-radius:7px;padding:10px 13px;margin-top:6px;font-size:12px;line-height:1.3;color:#854d0e;}
+    #cpm-doc-area .doc-daily-note{background:#fff7ed;border:1.5px solid #fed7aa;border-radius:7px;padding:10px 13px;margin-top:8px;font-size:12px;line-height:1.3;color:#9a3412;}
     @media print{
     /* 계약서 인쇄: wl-print-mode(임금대장)가 아닐 때만 사용 */
       body:not(.wl-print-mode) > *{display:none!important;}
@@ -507,20 +567,14 @@
       align-items:center;
     }
     .amount-wrap input[data-amount] {
-      padding-right:28px;
+      padding-right:8px;
       width:100%;
       box-sizing:border-box;
+      text-align:right;
     }
-    .amount-wrap::after {
-      content:"??;
-      position:absolute;
-      right:10px;
-      font-size:12px;
-      font-weight:600;
-      color:#9ca3af;
-      pointer-events:none;
-      white-space:nowrap;
-    }
+    /* 계약 모달: 금액 표시 항목 우측정렬 (월약정·주휴 등 form-computed 포함, 모든 data-amount 입력) */
+    #contract-modal .form-computed{justify-content:flex-end;text-align:right}
+    #contract-modal input[data-amount]{text-align:right}
 
     /* 통상임금 포함/제외 힌트 아이콘 */
     .pi-pay-type-hint {

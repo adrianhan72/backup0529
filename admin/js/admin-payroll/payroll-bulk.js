@@ -2,32 +2,6 @@
 let _bulkSendList = [];      // [{payrollId, empName, phone, status, file}]
 let _bulkSendRunning = false;
 
-/* 버튼 활성화 여부 판단 */
-function updateBulkSendBtn(){
-  const btn = document.getElementById('bulk-send-btn');
-  if(!btn) return;
-
-  // 고객사 미선택 또는 연도·월 미선택
-  if(!currentPayCompanyId){ btn.disabled=true; return; }
-  const yr = parseInt(document.getElementById('pay-year-filter')?.value)||0;
-  const mo = parseInt(document.getElementById('pay-month-filter')?.value)||0;
-  if(!yr||!mo){ btn.disabled=true; return; }
-
-  // 현재 필터 조건(고객사 + 연도 + 월)에 해당하는 급여 데이터
-  const filtered = allPayrolls.filter(p =>
-    p.company_id === currentPayCompanyId &&
-    p.pay_year   === yr &&
-    p.pay_month  === mo
-  );
-
-  // 데이터가 1건도 없으면 비활성
-  if(!filtered.length){ btn.disabled=true; return; }
-
-  // 임시저장(is_draft) 데이터가 1건이라도 있으면 비활성
-  const hasDraft = filtered.some(p => !!p.is_draft);
-  btn.disabled = hasDraft;
-}
-
 /* 일괄 발송 모달 열기 */
 async function openBulkSendModal(){
   // 직원 데이터(phone 포함)를 항상 최신으로 갱신

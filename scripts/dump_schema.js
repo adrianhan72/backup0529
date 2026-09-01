@@ -127,6 +127,7 @@ const KO = {
       created_reason: '계약 생성 사유 (new/renewal/recontract/amended_reissue)',
       hire_reason: '입사 사유 (new_hire/re_hire/contract_renewal/probation_end)',
       close_reason: '계약 종료 사유 (resignation/dismissal/expiry/renewal/void)',
+      edited_file_url: '최종 편집본(PDF) 파일서버 URL (data/uploads/)',
     }
   },
   payrolls: {

@@ -393,24 +393,20 @@ function toggleAnnualSal(){
   _ctPayMethodApply(); // 일용직: 임금 지급 방법(일급/주급/월합산) UI / 그 외: 월 합산 산정기간
 
   // ── 상단 섹션 타이틀·라벨 업데이트 ──
-  const salaryPeriodTitle = document.getElementById('ct-salary-period-title');
   const labelAnnualSal    = document.getElementById('ct-label-annual-sal');
   const wageSectionTitle  = document.getElementById('ct-wage-section-title');
   const labelMonthly      = document.getElementById('ct-label-monthly');
   const dailyWageLabel    = document.querySelector('#ct-row-daily-wage label');
 
   if(isRegularOnly || isRegularProb){
-    if(salaryPeriodTitle) salaryPeriodTitle.textContent = '연봉';
     if(labelAnnualSal)    labelAnnualSal.innerHTML    = '연봉 <span class="ct-sub-hint">(자동계산)</span>';
     if(wageSectionTitle)  wageSectionTitle.textContent = '임금 조건 (월)';
     if(labelMonthly)      labelMonthly.innerHTML      = '월 약정임금 <span class="lbl-desc">(자동계산)</span>';
   } else if(isFixedTerm){
-    if(salaryPeriodTitle) salaryPeriodTitle.innerHTML = '월 약정급여 <span class="ct-sub-hint">(시급 기준 자동계산)</span>';
     if(labelAnnualSal)    labelAnnualSal.innerHTML    = '월 약정급여 (통상월급) <span class="ct-sub-hint">(직접 입력 시)</span>';
     if(wageSectionTitle)  wageSectionTitle.textContent = '임금 조건 (월)';
     if(labelMonthly)      labelMonthly.innerHTML      = '월 약정임금 <span class="lbl-desc">(자동계산)</span>';
   } else if(isDaily){
-    if(salaryPeriodTitle) salaryPeriodTitle.innerHTML = '일급여 <span class="ct-req-star">*</span>';
     if(wageSectionTitle)  wageSectionTitle.textContent = '임금 조건 (일일 기준)';
     if(labelMonthly)      labelMonthly.innerHTML      = '일 약정임금 <span class="lbl-desc">(자동계산)</span>';
     if(dailyWageLabel)    dailyWageLabel.innerHTML    = '일급여 <span class="ct-req-star">*</span>';
@@ -422,11 +418,9 @@ function toggleAnnualSal(){
   });
 
   // ── 연봉/월약정급여 입력 행 표시 제어 ──
-  const rowSalPeriod = document.getElementById('ct-row-salary-period');
   const rowAnnualSal = document.getElementById('ct-row-annual-sal');
   // 정규직·정규직 수습만 연봉 입력 행 표시 (계약직은 임금조건 섹션의 월 약정임금으로 대체)
   const showAnnualRow = isRegularOnly || isRegularProb;
-  if(rowSalPeriod) rowSalPeriod.style.display = showAnnualRow ? '' : 'none';
   if(rowAnnualSal) rowAnnualSal.style.display  = showAnnualRow ? '' : 'none';
 
   // ── 월 약정임금 표시 행 ──
@@ -1063,7 +1057,7 @@ function applyBulkSchedule(){
   const brks  = document.getElementById('bulk-brks').value;
   const brke  = document.getElementById('bulk-brke').value;
 
-  if(!start || !end){ toast('출근·퇴근 시간을 입력해 주세요.', 'error'); return; }
+  if(!start || !end){ toast('근무 시간을 입력해 주세요.', 'error'); return; }
   if(!timeToMins(start) || !timeToMins(end)){ toast('시간은 HH:MM(24시) 형식으로 입력해 주세요.', 'error'); return; }
   if(brks && brke){ const _bs=timeToMins(brks),_be=timeToMins(brke); if(_bs!==null&&_be!==null&&_bs>=_be){ toast('휴게 종료 시간이 시작 시간보다 늦어야 합니다.', 'error'); return; } }
 
@@ -1282,9 +1276,9 @@ function _shiftGroupHTML(key, idx, enabled, start, end, breaks){
   const brks = (breaks && breaks.length) ? breaks : defBreaks;
   const sid = idx===0 ? '' : '-'+idx;
   return `<div class="shift-group" id="ct-sch-shift-${key}${sid}">
-    <span style="font-size:10.5px;color:#6b7280;white-space:nowrap;">출근</span>
+    <span style="font-size:10.5px;color:#6b7280;white-space:nowrap;">근무</span>
     ${_timePickerHTML(`ct-sch-start-${key}${sid}`, s, !enabled, '09')}
-    <span style="font-size:10.5px;color:#6b7280;white-space:nowrap;">퇴근</span>
+    <span style="font-size:10.5px;color:#6b7280;white-space:nowrap;">~</span>
     ${_timePickerHTML(`ct-sch-end-${key}${sid}`, e, !enabled, '18')}
     <span style="font-size:10.5px;color:#7c3aed;white-space:nowrap;">휴게</span>
     <div class="brk-slots-wrap" id="ct-sch-brkwrap-${key}${sid}">${_brkSlotsHTML2(key, idx, enabled, brks)}</div>
@@ -1696,51 +1690,56 @@ function calcWorkHours(){
   const daysHid = document.getElementById('ct-days');
   if (daysHid) daysHid.value = workDays;
 
-  // ── 고정 연장/야간/휴일/휴일연장 시간 + 월간 힌트 + 계산식 (실제 배율 반영) ──
+  // ── 고정 연장/야간/휴일/휴일연장 시간 + 통상시급에 곱할 값(n.m) + 계산식 (실제 배율 반영) ──
   const elOtH = document.getElementById('ct-fixed-ot-hours');
   const elNiH = document.getElementById('ct-fixed-night-hours');
   const elHoH = document.getElementById('ct-fixed-hol-hours');
   const elHoOtH = document.getElementById('ct-fixed-hol-ot-hours');
-  const elOtHint = document.getElementById('ct-fixed-ot-monthly');
-  const elNiHint = document.getElementById('ct-fixed-night-monthly');
-  const elHoHint = document.getElementById('ct-fixed-hol-monthly');
-  const elHoOtHint = document.getElementById('ct-fixed-hol-ot-monthly');
+  const elOtMult = document.getElementById('ct-fixed-ot-mult');
+  const elNiMult = document.getElementById('ct-fixed-night-mult');
+  const elHoMult = document.getElementById('ct-fixed-hol-mult');
   const elOtFormula = document.getElementById('ct-fixed-ot-formula');
   const elNiFormula = document.getElementById('ct-fixed-night-formula');
   const elHolFormula = document.getElementById('ct-fixed-hol-formula');
   const coIdForMult = document.getElementById('ct-company')?.value || '';
   const mult = _getLegalMultiplier(coIdForMult);
   const fmtMult = v => Number.isInteger(v) ? v : v.toFixed(1);
+  const _round1 = v => Math.round(v * 10) / 10;
   if (elOtH) {
     elOtH.value = weekOtH.toFixed(1); // 평일연장만 (휴일연장은 휴일근로로 합산)
-    if (elOtHint) elOtHint.textContent = weekOtH > 0 ? '(월 약 ' + Math.round(weekOtH * WEEK_TO_MONTH) + 'h)' : '';
+    const mOt = weekOtH > 0 ? _round1(weekOtH * mult.overtime * WEEK_TO_MONTH) : 0; // 통상시급에 곱할 값 (배율 포함, 소수1자리)
+    if (elOtMult) elOtMult.value = mOt.toFixed(1);
     if (elOtFormula) {
-      elOtFormula.textContent = weekOtH > 0 ? '↳ 평일연장 ' + fmtH(weekOtH) + 'h × ' + fmtMult(mult.overtime) + '배' : '';
+      elOtFormula.textContent = weekOtH > 0 ? '(' + fmtH(weekOtH) + 'h × ' + fmtMult(mult.overtime) + '배) × 4.345' : '';
     }
   }
   if (elNiH) {
     elNiH.value = weekWdayNightH.toFixed(1); // 평일야간만 (휴일야간은 휴일근로로 합산)
-    if (elNiHint) elNiHint.textContent = weekWdayNightH > 0 ? '(월 약 ' + Math.round(weekWdayNightH * WEEK_TO_MONTH) + 'h)' : '';
+    const mNi = weekWdayNightH > 0 ? _round1(weekWdayNightH * mult.night * WEEK_TO_MONTH) : 0;
+    if (elNiMult) elNiMult.value = mNi.toFixed(1);
     if (elNiFormula) {
-      elNiFormula.textContent = weekWdayNightH > 0 ? '↳ 평일야간 ' + fmtH(weekWdayNightH) + 'h × ' + fmtMult(mult.night) + '배' : '';
+      elNiFormula.textContent = weekWdayNightH > 0 ? '(' + fmtH(weekWdayNightH) + 'h × ' + fmtMult(mult.night) + '배) × 4.345' : '';
     }
   }
   if (elHoH) {
     // 휴일근로시간 = 토·일 40h 초과분(휴일연장·휴일야간 포함) 합산 표시
     const holTotalH = weekHolH + weekHolOtH;
     elHoH.value = holTotalH.toFixed(1);
-    if (elHoHint) elHoHint.textContent = holTotalH > 0 ? '(월 약 ' + Math.round(holTotalH * WEEK_TO_MONTH) + 'h)' : '';
+    const mHo = holTotalH > 0
+      ? _round1((weekHolH*mult.holiday_8h + weekHolOtH*mult.holiday_8h_over + weekSunNightH*mult.night) * WEEK_TO_MONTH)
+      : 0;
+    if (elHoMult) elHoMult.value = mHo.toFixed(1);
     if (elHolFormula) {
-      let f = '↳ 휴일 ' + fmtH(weekHolH) + 'h × ' + fmtMult(mult.holiday_8h) + '배';
+      let f = '(' + fmtH(weekHolH) + 'h × ' + fmtMult(mult.holiday_8h) + '배';
       if (weekHolOtH > 0) f += ' + 휴일연장 ' + fmtH(weekHolOtH) + 'h × ' + fmtMult(mult.holiday_8h_over) + '배';
       if (weekSunNightH > 0) f += ' + 휴일야간 ' + fmtH(weekSunNightH) + 'h × ' + fmtMult(mult.night) + '배';
       if (satDr && satDr.satFillMins > 0) f += ' · 토요일 ' + fmtH(satDr.satFillMins/60) + 'h 주중40h충당(×1.0)';
+      f += ') × 4.345';
       elHolFormula.textContent = holTotalH > 0 ? f : '';
     }
   }
   if (elHoOtH) {
     elHoOtH.value = weekHolOtH.toFixed(1);
-    if (elHoOtHint) elHoOtHint.style.display = 'none';
   }
   // 휴일야간 hidden (수당 합산용)
   { const _holNightHid = document.getElementById('ct-fixed-hol-night-hours'); if(_holNightHid) _holNightHid.value = weekSunNightH.toFixed(1); }
@@ -1756,10 +1755,7 @@ function calcWorkHours(){
       bizBadge.className = 'ct-biz-badge ' + (always ? 'normal' : 'small');
     }
     if (bizHint) {
-      let hintHTML = always
-        ? '<span class="ct-biz-hint">연장×1.5 · 야간×0.5 · 휴일≤8h×1.5 · 휴일>8h×2.0 — 5인 미만이어도 가산 지급 사업장(설정)</span>'
-        : '<span class="ct-biz-hint">연장×1.0 · 야간×0.0 · 휴일×1.0 — 5인 미만 시 가산 미적용 사업장(설정). 계약서에 "법정 가산수당 지급의무 발생 시 가산 적용" 문구가 기재되며, 급여 입력 시 전월 근로실적으로 자동 판별됩니다.</span>';
-      bizHint.innerHTML = hintHTML;
+      bizHint.innerHTML = '<span class="ct-biz-hint">급여 지급일 이전 1개월간의 회사의 총 근로실적으로 법정 가산수당 적용여부가 자동 판별됩니다.</span>';
       bizHint.style.whiteSpace = 'normal';
     }
   }
@@ -2554,7 +2550,7 @@ function onCtCompanyChange(){
   const startVal = document.getElementById('ct-start')?.value || '';
 
   if(!coId){
-    // 고객사 미선택: 기본값(차량 0, 식대 200,000) 적용
+    // 고객사 미선택: 모든 수당 0으로 초기화 (기본값 없음)
     applyCTAllowanceConfig(null, true);
     return;
   }
@@ -2918,8 +2914,11 @@ function calcContractSalary(){
   document.getElementById('ct-monthly-computed').textContent = won(monthly);
 
   // 정규직·정규직 수습: 연봉 = 월 약정임금 × 12 자동계산 (직접입력 불가)
+  // 계약직·계약직 수습: ct-annual-sal = 월 약정급여 (자동계산) — DB 스테일값 재사용 방지
   if(isRegularGroup){
     setAmountVal('ct-annual-sal', monthly * 12);
+  } else if(isFixedTerm){
+    setAmountVal('ct-annual-sal', monthly);
   }
 
   syncProbation();
@@ -2950,28 +2949,28 @@ function _getContractHourlyWage(){
   return hw;
 }
 
-/** 고정 연장근로수당 = 평일연장 × 4.345 반올림 × 시급 × 1.5 (휴일연장은 휴일근로수당으로 합산 — 2026-08-14 규칙) */
+/** 고정 연장근로수당 = (평일연장 h/주 × 연장배율) × 4.345(소수1자리) × 통상시급 (휴일연장은 휴일근로수당으로 합산 — 2026-08-14 규칙) */
 function _calcFixedOtFromHours(){
   const hw = _getContractHourlyWage();
   const hRegular = parseFloat(document.getElementById('ct-fixed-ot-hours')?.value)||0;
   const coId = document.getElementById('ct-company')?.value || '';
   const mult = _getLegalMultiplier(coId);
-  const mRegular = Math.round(hRegular * WEEK_TO_MONTH * 10) / 10;
-  const otPay    = (hw > 0 && mRegular > 0) ? Math.round(hw * mRegular * mult.overtime) : 0;
+  const mRegular = Math.round(hRegular * mult.overtime * WEEK_TO_MONTH * 10) / 10; // 통상시급에 곱할 값 (배율 포함, 소수1자리)
+  const otPay = (hw > 0 && mRegular > 0) ? Math.round(hw * mRegular) : 0;
   setAmountVal('ct-fixed-ot-pay', otPay);
 }
 
-/** 고정 야간근로수당 = 평일야간 × 4.345 반올림 × 시급 × 법정배율(0.5/0.0) (휴일야간은 휴일근로수당으로 합산 — 2026-08-14 규칙) */
+/** 고정 야간근로수당 = (평일야간 h/주 × 야간배율) × 4.345(소수1자리) × 통상시급 (휴일야간은 휴일근로수당으로 합산 — 2026-08-14 규칙) */
 function _calcFixedNightFromHours(){
   const hw = _getContractHourlyWage();
   const h  = parseFloat(document.getElementById('ct-fixed-night-hours')?.value)||0;
   const coId = document.getElementById('ct-company')?.value || '';
   const mult = _getLegalMultiplier(coId);
-  const mNight = Math.round(h * WEEK_TO_MONTH * 10) / 10;
-  setAmountVal('ct-fixed-night-pay', (hw > 0 && mNight > 0) ? Math.round(hw * mNight * mult.night) : 0);
+  const mNight = Math.round(h * mult.night * WEEK_TO_MONTH * 10) / 10; // 통상시급에 곱할 값 (배율 포함, 소수1자리)
+  setAmountVal('ct-fixed-night-pay', (hw > 0 && mNight > 0) ? Math.round(hw * mNight) : 0);
 }
 
-/** 고정 휴일근로수당 = 휴일≤8h×1.5 + 휴일연장×2.0 + 휴일야간×0.5 (모두 휴일근로수당으로 합산 — 2026-08-14 규칙) */
+/** 고정 휴일근로수당 = (휴일기본×8h배율 + 휴일연장×8h초과배율 + 휴일야간×야간배율, h/주) × 4.345(소수1자리) × 통상시급 (2026-08-14 규칙) */
 function _calcFixedHolFromHours(){
   const hw = _getContractHourlyWage();
   const h      = parseFloat(document.getElementById('ct-fixed-hol-hours')?.value)||0;
@@ -2979,14 +2978,9 @@ function _calcFixedHolFromHours(){
   const hHolNi = parseFloat(document.getElementById('ct-fixed-hol-night-hours')?.value)||0;
   const coId = document.getElementById('ct-company')?.value || '';
   const mult = _getLegalMultiplier(coId);
-  const mHol    = Math.round(h      * WEEK_TO_MONTH * 10) / 10;
-  const mHolOt  = Math.round(hHolOt * WEEK_TO_MONTH * 10) / 10;
-  const mHolNi  = Math.round(hHolNi * WEEK_TO_MONTH * 10) / 10;
-  const mHolBase = Math.max(0, mHol - mHolOt); // ≤8h 부분만 1.5배 (휴일연장은 2.0배 별도)
-  const holPay = (hw > 0)
-    ? Math.round(hw * mHolBase * mult.holiday_8h + hw * mHolOt * mult.holiday_8h_over + hw * mHolNi * mult.night)
-    : 0;
-  setAmountVal('ct-fixed-hol-pay', holPay);
+  const holBaseW = Math.max(0, h - hHolOt); // 주당 휴일기본(≤8h) — 휴일연장은 별도 배율
+  const mHol = Math.round((holBaseW*mult.holiday_8h + hHolOt*mult.holiday_8h_over + hHolNi*mult.night) * WEEK_TO_MONTH * 10) / 10; // 통상시급에 곱할 값 (배율 포함, 소수1자리)
+  setAmountVal('ct-fixed-hol-pay', (hw > 0 && mHol > 0) ? Math.round(hw * mHol) : 0);
 }
 
 /** ── 근로계약 관리 알림 카드 렌더링 ── */

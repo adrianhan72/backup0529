@@ -297,7 +297,7 @@
 .ct-biz-badge.normal { background: #dbeafe; color: #1e40af; }
 .ct-fixed-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; grid-column: 1 / -1; align-items: center; }
 .ct-fixed-grid .form-group { min-width: 0; max-width: none; }
-.ct-biz-badge-cell { display: flex; flex-direction: column; align-items: flex-end; justify-content: center; padding: 4px 0; }
+.ct-biz-badge-cell { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; grid-column: 1 / -1; padding: 4px 0 8px; }
 .ct-biz-hint { font-size: 10.5px; color: #6b7280; }
 .ct-biz-transition { font-size: 10.5px; color: #dc2626; font-weight: 600; }
 

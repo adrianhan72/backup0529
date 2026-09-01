@@ -660,11 +660,16 @@ function renderWageLedger(){
   const mo = parseInt(document.getElementById('wl-month-filter')?.value);
 
   // 해당 월 급여 데이터 (임시저장 포함 — 아래에서 확정분만 필터링)
-  let pays = allPayrolls.filter(p =>
-    p.company_id === _wlCompanyId &&
-    Number(p.pay_year) === yr &&
-    Number(p.pay_month) === mo
-  );
+  let pays = allPayrolls.filter(p => {
+    // 수습근로자 관리 OFF → 수습(정규직 수습·계약직 수습) 고용형태 제외
+    if (!window._probationFeatureEnabled && typeof isProbationType === 'function') {
+      const _emp = (allEmployees || []).find(e => e.id === p.employee_id);
+      if (_emp && isProbationType(_emp.employment_category)) return false;
+    }
+    return p.company_id === _wlCompanyId &&
+      Number(p.pay_year) === yr &&
+      Number(p.pay_month) === mo;
+  });
 
   // 버튼 상태 헬퍼
   const _setWLBtns = enabled => {
@@ -1264,11 +1269,16 @@ function downloadWageLedgerExcel(mode = 'edit', optCompanyId = null, optYear = n
   const mo = optMonth || parseInt(document.getElementById('wl-month-filter')?.value);
   const moStr = String(mo).padStart(2,'0');
 
-  let pays = allPayrolls.filter(p =>
-    p.company_id === _coId &&
-    Number(p.pay_year) === yr &&
-    Number(p.pay_month) === mo
-  );
+  let pays = allPayrolls.filter(p => {
+    // 수습근로자 관리 OFF → 수습(정규직 수습·계약직 수습) 고용형태 제외
+    if (!window._probationFeatureEnabled && typeof isProbationType === 'function') {
+      const _emp = (allEmployees || []).find(e => e.id === p.employee_id);
+      if (_emp && isProbationType(_emp.employment_category)) return false;
+    }
+    return p.company_id === _coId &&
+      Number(p.pay_year) === yr &&
+      Number(p.pay_month) === mo;
+  });
   if(!pays.length){ toast(`${yr}년 ${mo}월 급여 데이터가 없습니다.`,'error'); return; }
 
   const empMap = {};

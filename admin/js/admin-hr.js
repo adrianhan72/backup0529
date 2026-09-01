@@ -953,8 +953,7 @@ async function saveHrEmployee() {
   } else {
     if (!_validateKoreanId(idNumber).ok) return fail(_validateKoreanId(idNumber).msg);
   }
-  if (!phone) return fail('휴대전화번호를 입력해 주세요.');
-  if (!_validatePhoneNumber(phone).ok) return fail('휴대전화번호 형식이 올바르지 않습니다.');
+  if (phone && !_validatePhoneNumber(phone).ok) return fail('휴대전화번호 형식이 올바르지 않습니다.');
   if (!address) return fail('주소를 입력해 주세요.');
   if (personnelType === PERSONNEL_TYPE.EXECUTIVE && !position) return fail('등기임원 직책을 입력해 주세요.');
   if (personnelType === PERSONNEL_TYPE.RELATED && !relationship) return fail('대표자와의 관계를 입력해 주세요.');

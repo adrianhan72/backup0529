@@ -1,7 +1,7 @@
 -- =============================================================================
 -- 인사톡 노무톡 — SQLite Schema (한글 주석 포함)
 -- node dump_schema.js 로 자동 생성 (ALTER TABLE 반영)
--- 최종 갱신: 2026-08-27
+-- 최종 갱신: 2026-09-01
 -- 테이블 수: 28개
 -- =============================================================================
 
@@ -171,7 +171,7 @@ CREATE TABLE IF NOT EXISTS contracts (
   pay_weekday INTEGER, -- 주급 지급 요일 (0=일~6=토)
   pay_period_day_override INTEGER, -- 월합산 산정기준일 (개별 편집, null=고객사 설정)
   pay_period_weekday INTEGER, -- 주급 산정기간 시작 요일 (0=일~6=토, null=자동: 지급일 당일까지 1주)
-  edited_file_url TEXT
+  edited_file_url TEXT -- 최종 편집본(PDF) 파일서버 URL (data/uploads/)
 );
 
 CREATE INDEX IF NOT EXISTS idx_contracts_employee ON contracts(employee_id);

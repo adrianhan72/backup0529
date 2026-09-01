@@ -15,8 +15,8 @@
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     <link rel="stylesheet" href="css/admin-base.css?v=20260818a" />
   <link rel="stylesheet" href="css/admin-modal.css?v=20260813c" />
-  <link rel="stylesheet" href="css/admin-contract.css?v=20260821i" />
-  <link rel="stylesheet" href="css/admin-form.css?v=20260813c" />
+  <link rel="stylesheet" href="css/admin-contract.css?v=20260901c" />
+  <link rel="stylesheet" href="css/admin-form.css?v=20260831u" />
   <link rel="stylesheet" href="css/admin-notice.css?v=20260813c" />
   <link rel="stylesheet" href="css/admin-payroll.css?v=20260813c" />
   <link rel="stylesheet" href="css/admin-wage.css?v=20260818f" />
@@ -1952,9 +1952,9 @@
           <div class="bulk-schedule-bar">
             <span class="bulk-label">⚡ 일괄 설정</span>
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;width:100%;margin-top:6px;">
-              <span style="font-size:11.5px;color:#475569;white-space:nowrap;">출근</span>
+              <span style="font-size:11.5px;color:#475569;white-space:nowrap;">근무</span>
               <span class="time-picker" id="tp-bulk-start"></span>
-              <span style="font-size:11.5px;color:#475569;white-space:nowrap;">퇴근</span>
+              <span style="font-size:11.5px;color:#475569;white-space:nowrap;">~</span>
               <span class="time-picker" id="tp-bulk-end"></span>
               <div class="bulk-divider"></div>
               <span style="font-size:11.5px;color:#7c3aed;white-space:nowrap;">휴게</span>
@@ -1985,7 +1985,7 @@
               <thead>
                 <tr>
                   <th style="width:30px;">요일</th>
-                  <th style="min-width:420px;">근무시간 <span style="font-size:10px;font-weight:400;opacity:.8;">(출근~퇴근·휴게)</span></th>
+                  <th style="min-width:420px;">근무/휴게시간</th>
                   <th style="width:60px;">소정시간</th>
                 </tr>
               </thead>
@@ -2177,19 +2177,25 @@
         </div><!-- /ct-pay-period-row -->
         <div class="form-group full">
           <div style="display:flex;gap:12px;flex-wrap:wrap;">
-            <div class="form-group" style="flex:1;min-width:180px;">
+            <div class="form-group" style="flex:1;min-width:150px;">
               <label>통상시급 <span class="lbl-req">*</span> <span class="lbl-desc">(직접 입력)</span></label>
               <div class="amount-wrap"><input type="text" inputmode="numeric" id="ct-hourly-input" data-amount placeholder="0" oninput="onAmountInput(this,calcContractSalary);_checkRegisterBtnState();_checkAmendBtnState();" /></div>
             </div>
-            <div class="form-group" id="ct-row-daily-wage" style="display:none;flex:1;min-width:180px;">
+            <div class="form-group" id="ct-row-daily-wage" style="display:none;flex:1;min-width:150px;">
               <label>일급여 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span> <span class="lbl-desc">(일용직 · 자동계산)</span></label>
               <div class="amount-wrap"><input type="text" inputmode="numeric" id="ct-daily-wage" data-amount placeholder="0" readonly /></div>
               <div style="font-size:11px;color:#6b7280;margin-top:2px;">통상일급(시급×8) + 수당 합산 · 일 8시간 근무 기준</div>
             </div>
+            <div class="form-group" id="ct-row-monthly" style="flex:1;min-width:150px;">
+              <label id="ct-label-monthly">월 약정임금 <span class="lbl-desc">(자동계산)</span></label>
+              <div class="form-computed" id="ct-monthly-computed">0원</div>
+            </div>
+            <div class="form-group" id="ct-row-annual-sal" style="display:none;flex:1;min-width:150px;">
+              <label id="ct-label-annual-sal">연봉 <span class="lbl-desc">(자동계산)</span></label>
+              <div class="amount-wrap"><input type="text" inputmode="numeric" id="ct-annual-sal" data-amount placeholder="0" readonly /></div>
+            </div>
           </div>
         </div>
-        <!-- ── 월 약정임금 ── -->
-        <div class="form-group" id="ct-row-monthly"><label id="ct-label-monthly">월 약정임금 <span class="lbl-desc">(자동계산)</span></label><div class="form-computed" id="ct-monthly-computed">0원</div></div>
 
         <!-- ── 통상임금 포함 수당 ── -->
         <div class="form-group full ct-allowance-section-header">
@@ -2215,46 +2221,42 @@
         <div class="form-group full ct-allowance-section-header" style="margin-top:14px;">
           <span>📌 통상임금 제외 고정수당</span>
         </div>
+        <div class="ct-biz-badge-cell">
+          <span id="ct-biz-size-badge" class="ct-biz-badge"></span>
+          <div id="ct-biz-size-hint" class="ct-formula-line"></div>
+        </div>
         <div class="ct-fixed-grid">
         <div class="form-group" id="ct-row-fixed-ot">
           <label>고정 연장근로수당 <span class="lbl-desc">(근무시간표 자동계산)</span></label>
+          <input type="hidden" id="ct-fixed-ot-hours" value="0" />
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-            <input type="number" id="ct-fixed-ot-hours" placeholder="0" min="0" step="0.5" readonly />
-            <span class="fld-unit">h/주</span>
-            <span id="ct-fixed-ot-monthly" class="lbl-desc"></span>
-            <span class="fld-hint">,</span>
+            <input type="number" id="ct-fixed-ot-mult" placeholder="0.0" step="0.1" readonly style="width:76px;text-align:right;font-weight:700;" />
+            <span class="fld-unit">× 통상시급 =</span>
             <div class="amount-wrap" style="flex:1;min-width:95px;"><input type="text" inputmode="numeric" id="ct-fixed-ot-pay" data-amount placeholder="0" readonly /></div>
           </div>
           <div id="ct-fixed-ot-formula" class="ct-formula-line"></div>
         </div>
         <div class="form-group" id="ct-row-fixed-hol">
           <label>고정 휴일근로수당 <span class="lbl-desc">(근무시간표 자동계산, 토·일 휴일)</span></label>
+          <input type="hidden" id="ct-fixed-hol-hours" value="0" />
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-            <input type="number" id="ct-fixed-hol-hours" placeholder="0" min="0" step="0.5" readonly />
-            <span class="fld-unit">h/주</span>
-            <span id="ct-fixed-hol-monthly" class="lbl-desc"></span>
-            <span class="fld-hint">,</span>
+            <input type="number" id="ct-fixed-hol-mult" placeholder="0.0" step="0.1" readonly style="width:76px;text-align:right;font-weight:700;" />
+            <span class="fld-unit">× 통상시급 =</span>
             <div class="amount-wrap" style="flex:1;min-width:95px;"><input type="text" inputmode="numeric" id="ct-fixed-hol-pay" data-amount placeholder="0" readonly /></div>
           </div>
           <div id="ct-fixed-hol-formula" class="ct-formula-line"></div>
           <input type="hidden" id="ct-fixed-hol-ot-hours" value="0" />
           <input type="hidden" id="ct-fixed-hol-night-hours" value="0" />
-          <span id="ct-fixed-hol-ot-monthly" class="lbl-desc" style="display:none;"></span>
         </div>
         <div class="form-group" id="ct-row-fixed-night">
           <label>고정 야간근로수당 <span class="lbl-desc">(근무시간표 자동계산)</span></label>
+          <input type="hidden" id="ct-fixed-night-hours" value="0" />
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-            <input type="number" id="ct-fixed-night-hours" placeholder="0" min="0" step="0.5" readonly />
-            <span class="fld-unit">h/주</span>
-            <span id="ct-fixed-night-monthly" class="lbl-desc"></span>
-            <span class="fld-hint">,</span>
+            <input type="number" id="ct-fixed-night-mult" placeholder="0.0" step="0.1" readonly style="width:76px;text-align:right;font-weight:700;" />
+            <span class="fld-unit">× 통상시급 =</span>
             <div class="amount-wrap" style="flex:1;min-width:95px;"><input type="text" inputmode="numeric" id="ct-fixed-night-pay" data-amount placeholder="0" readonly /></div>
           </div>
           <div id="ct-fixed-night-formula" class="ct-formula-line"></div>
-        </div>
-        <div class="ct-biz-badge-cell">
-          <span id="ct-biz-size-badge" class="ct-biz-badge"></span>
-          <div id="ct-biz-size-hint" class="ct-formula-line"></div>
         </div>
         </div>
         <div class="form-group full" id="ct-row-childcare" style="display:none;">
@@ -2281,14 +2283,6 @@
         <div class="form-group" id="ct-row-overseas" style="display:none;"><label>해외근무수당<span class="daily-suffix lbl-desc" style="display:none;">(일급)</span></label><div class="amount-wrap"><input type="text" inputmode="numeric" id="ct-overseas" data-amount placeholder="0" oninput="onAmountInput(this,calcContractSalary)" /></div></div>
         <div class="form-group" id="ct-row-fitness" style="display:none;"><label>체력증진비<span class="daily-suffix lbl-desc" style="display:none;">(일급)</span></label><div class="amount-wrap"><input type="text" inputmode="numeric" id="ct-fitness" data-amount placeholder="0" oninput="onAmountInput(this,calcContractSalary)" /></div></div>
 
-        <!-- 연봉 (정규직 전용) -->
-        <div class="form-group full" id="ct-row-salary-period" style="display:none;">
-          <span class="form-section-title" id="ct-salary-period-title">연봉 <span class="lbl-req">*</span></span>
-        </div>
-        <div class="form-group" id="ct-row-annual-sal" style="display:none;">
-          <label id="ct-label-annual-sal">연봉 <span class="lbl-desc">(자동계산)</span></label>
-          <div class="amount-wrap"><input type="text" inputmode="numeric" id="ct-annual-sal" data-amount placeholder="0" readonly /></div>
-        </div>
         <!-- 공용 최저임금 위반 경고 (정규직·계약직·일용직 공통) -->
         <div class="form-group full" id="ct-general-minwage-warning-row" style="display:none;margin-top:2px;margin-bottom:2px;">
           <div id="ct-general-minwage-warning-box" class="minwage-warning-box"></div>
@@ -2329,7 +2323,6 @@
                 <label id="ct-prob-amt-label">수습 임금 (월 금액) <span class="lbl-desc">(자동 계산)</span></label>
                 <div class="amount-wrap" style="display:flex;align-items:center;gap:6px;">
                   <input type="text" inputmode="numeric" id="ct-probation-amt" data-amount placeholder="0" oninput="calcProbationFromAmt()" style="flex:1;" readonly />
-                  <span style="font-size:13px;color:#374151;font-weight:500;">원</span>
                 </div>
               </div>
               <div class="form-group full" style="margin-top:2px;">
@@ -2636,7 +2629,7 @@
                   </div>
                 </div>
               </div>
-              <div class="form-group"><label>휴대전화 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><input type="text" id="hr-em-phone" placeholder="010-0000-0000" maxlength="13" autocomplete="off" oninput="_onPhoneInput(this)" /></div>
+              <div class="form-group"><label>휴대전화</label><input type="text" id="hr-em-phone" placeholder="010-0000-0000" maxlength="13" autocomplete="off" oninput="_onPhoneInput(this)" /></div>
               <div class="form-group"><label>이메일 주소</label><input type="email" id="hr-em-email" placeholder="example@email.com" oninput="_onEmailInput(this)" /></div>
               <div class="form-group full"><label>주소 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></label><input type="text" id="hr-em-address" /></div>
 
@@ -2740,7 +2733,7 @@
     </div>
     <!-- 계약서 미리보기 영역 -->
     <div style="flex:1;overflow-y:auto;background:#e5e7eb;padding:24px 20px;">
-      <div id="cpm-doc-area" style="background:#fff;max-width:794px;margin:0 auto;padding:40px 50px;box-shadow:0 4px 24px rgba(0,0,0,.15);min-height:1100px;font-family:'Noto Sans KR',sans-serif;font-size:13px;line-height:1.9;color:#1a1a1a;">
+      <div id="cpm-doc-area" style="background:#fff;max-width:794px;margin:0 auto;padding:40px 50px;box-shadow:0 4px 24px rgba(0,0,0,.15);min-height:1100px;font-family:'Noto Sans KR',sans-serif;font-size:10pt;line-height:1.3;color:#1a1a1a;">
         <!-- JS로 채워짐 -->
       </div>
     </div>
@@ -2936,13 +2929,13 @@
         <button onclick="downloadPayslipPDF()" class="btn btn-success">
           <i class="fas fa-file-pdf"></i> PDF 다운로드
         </button>
-        <button onclick="sendPayslipPDF()" id="ps-send-btn-top" class="btn btn-warning">
+        <button onclick="sendPayslipPDF()" id="ps-send-btn-top" class="btn btn-kakao" disabled>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0;"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg> PDF 알림톡 발송
         </button>
         <button onclick="sendPayslipEmail()" class="btn btn-sky ps-email-btn" disabled>
           <i class="fas fa-envelope"></i> 이메일 발송
         </button>
-        <button onclick="closeModal('payslip-modal');editPayroll(window._currentPayslipId);" class="btn btn-indigo">
+        <button onclick="closeModal('payslip-modal');editPayroll(window._currentPayslipId);" class="btn btn-warning">
           <i class="fas fa-edit"></i> 수정
         </button>
         <button onclick="closeModal('payslip-modal')" class="btn btn-close">
@@ -3049,23 +3042,6 @@
         </div>
       </div>
 
-      <!-- 계산 근거 (산출식) -->
-      <div style="padding:14px 30px 0;">
-        <div style="background:linear-gradient(90deg,#475569,#64748b);color:#fff;padding:9px 14px;border-radius:8px 8px 0 0;font-size:12.5px;font-weight:700;text-align:center;letter-spacing:2px;">계 산 근 거</div>
-        <table style="width:100%;border-collapse:collapse;font-size:11.5px;">
-          <thead>
-            <tr style="background:#f1f5f9;color:#334155;">
-              <th style="padding:6px 12px;border:1px solid #e2e8f0;width:130px;text-align:left;">항 목</th>
-              <th style="padding:6px 12px;border:1px solid #e2e8f0;text-align:left;">산 출 식</th>
-              <th style="padding:6px 12px;border:1px solid #e2e8f0;width:110px;text-align:right;">금 액</th>
-            </tr>
-          </thead>
-          <tbody id="ps-calc-tbody">
-            <!-- JS로 채움: 수당·공제 산출식 -->
-          </tbody>
-        </table>
-      </div>
-
       <!-- 지급·공제·실수령 레이아웃 -->
       <div style="padding:16px 30px 0;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
 
@@ -3115,24 +3091,42 @@
             </div>
             <div id="ps-net" style="font-size:24px;font-weight:800;color:#065f46;"></div>
           </div>
-          <!-- 안내 문구 -->
-          <div style="margin-top:6px;font-size:10.5px;color:#9ca3af;text-align:center;">귀하의 노고에 감사드립니다.</div>
         </div>
 
       </div>
+
+      <!-- 계산 근거 (산출식) — 페이지 하단 -->
+      <div style="padding:16px 30px 0;">
+        <div style="background:linear-gradient(90deg,#475569,#64748b);color:#fff;padding:9px 14px;border-radius:8px 8px 0 0;font-size:12.5px;font-weight:700;text-align:center;letter-spacing:2px;">계 산 근 거</div>
+        <table style="width:100%;border-collapse:collapse;font-size:11.5px;">
+          <thead>
+            <tr style="background:#f1f5f9;color:#334155;">
+              <th style="padding:6px 12px;border:1px solid #e2e8f0;width:130px;text-align:left;">항 목</th>
+              <th style="padding:6px 12px;border:1px solid #e2e8f0;text-align:left;">산 출 식</th>
+              <th style="padding:6px 12px;border:1px solid #e2e8f0;width:110px;text-align:right;">금 액</th>
+            </tr>
+          </thead>
+          <tbody id="ps-calc-tbody">
+            <!-- JS로 채움: 수당·공제 산출식 -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 안내 문구 -->
+      <div style="padding:14px 30px 6px;font-size:11px;color:#9ca3af;text-align:center;letter-spacing:1px;">귀하의 노고에 감사드립니다.</div>
 
       <!-- 하단 버튼 -->
       <div style="padding:16px 30px 22px;display:flex;justify-content:flex-end;gap:10px;">
         <button onclick="downloadPayslipPDF()" class="btn btn-success">
           <i class="fas fa-file-pdf"></i> PDF 다운로드
         </button>
-        <button onclick="sendPayslipPDF()" id="ps-send-btn-bottom" class="btn btn-warning">
+        <button onclick="sendPayslipPDF()" id="ps-send-btn-bottom" class="btn btn-kakao" disabled>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0;"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg> PDF 알림톡 발송
         </button>
         <button onclick="sendPayslipEmail()" class="btn btn-sky ps-email-btn" disabled>
           <i class="fas fa-envelope"></i> 이메일 발송
         </button>
-        <button onclick="closeModal('payslip-modal');editPayroll(window._currentPayslipId);" class="btn btn-indigo">
+        <button onclick="closeModal('payslip-modal');editPayroll(window._currentPayslipId);" class="btn btn-warning">
           <i class="fas fa-edit"></i> 수정
         </button>
       </div>
@@ -3435,7 +3429,7 @@
   </div>
 </div>
 
-      <script src="js/constants.js?v=20260819f"></script>
+      <script src="js/constants.js?v=20260901e"></script>
       <script src="js/message-templates.js?v=20260814s"></script>
       <script src="js/admin-loader.js?v=20260819a"></script>
 <script src="js/admin-state.js?v=20260821a"></script>
@@ -3446,7 +3440,7 @@
   <script src="js/admin-dashboard.js?v=20260814s"></script>
   <script src="js/admin-standards.js?v=20260818d"></script>
   <!-- admin-wage 모듈 -->
-  <script src="js/admin-wage/wage-ledger.js?v=20260821l"></script>
+  <script src="js/admin-wage/wage-ledger.js?v=20260828c"></script>
   <script src="js/admin-wage/wage-severance.js?v=20260818b"></script>
   <script src="js/admin-wage/wage-retirement-mgmt.js?v=20260814s"></script>
   <script src="js/admin-wage.js?v=20260814s"></script>
@@ -3455,29 +3449,29 @@
   <script src="js/admin-company/company-history.js?v=20260819a"></script>
   <script src="js/admin-company.js?v=20260814s"></script>
   <!-- admin-contract 모듈 (기능별 분리) -->
-  <script src="js/admin-contract/contract-form.js?v=20260826d"></script>
-  <script src="js/admin-contract/contract-core.js?v=20260827h"></script>
-  <script src="js/admin-contract/contract-docs.js?v=20260827i"></script>
-  <script src="js/admin-contract/contract-dispatch.js?v=20260827j"></script>
-  <script src="js/admin-contract/consent-dispatch.js?v=20260814s"></script>
-  <script src="js/admin-contract/contract-lifecycle.js?v=20260826g"></script>
+  <script src="js/admin-contract/contract-form.js?v=20260901f"></script>
+  <script src="js/admin-contract/contract-core.js?v=20260901e"></script>
+  <script src="js/admin-contract/contract-docs.js?v=20260831s"></script>
+  <script src="js/admin-contract/contract-dispatch.js?v=20260827p"></script>
+  <script src="js/admin-contract/consent-dispatch.js?v=20260827q"></script>
+  <script src="js/admin-contract/contract-lifecycle.js?v=20260901f"></script>
   <script src="js/admin-contract.js?v=20260814s"></script>
   <!-- admin-hr 모듈 (인사관리대장) -->
-  <script src="js/admin-hr.js?v=20260827n"></script>
+  <script src="js/admin-hr.js?v=20260827o"></script>
   <!-- admin-payroll 모듈 -->
-  <script src="js/admin-payroll/payroll-core.js?v=20260814s"></script>
-  <script src="js/admin-payroll/payroll-bulk.js?v=20260814s"></script>
+  <script src="js/admin-payroll/payroll-core.js?v=20260828k"></script>
+  <script src="js/admin-payroll/payroll-bulk.js?v=20260828e"></script>
   <script src="js/admin-payroll.js?v=20260814s"></script>
   <!-- admin-payroll-input 모듈 (기능별 분리) -->
   <script src="js/admin-payroll-input/payroll-input-core.js?v=20260814s"></script>
-  <script src="js/admin-payroll-input/payroll-input-main.js?v=20260827g"></script>
+  <script src="js/admin-payroll-input/payroll-input-main.js?v=20260901d"></script>
   <script src="js/admin-payroll-input/payroll-input-save.js?v=20260821k"></script>
   <script src="js/admin-payroll-input/payroll-input-excel.js?v=20260821g"></script>
   <script src="js/admin-payroll-input.js?v=20260814s"></script>
   <!-- admin-billing 모듈 (기능별 분리) -->
   <script src="js/admin-billing/billing-core.js?v=20260814s"></script>
   <script src="js/admin-billing/auth.js?v=20260814s"></script>
-  <script src="js/admin-billing/payslip-send.js?v=20260814s"></script>
+  <script src="js/admin-billing/payslip-send.js?v=20260828a"></script>
   <script src="js/admin-billing/admin-accounts.js?v=20260814s"></script>
   <script src="js/admin-billing/system-settings.js?v=20260824a"></script>
   <script src="js/admin-billing/company-notice.js?v=20260818a"></script>
