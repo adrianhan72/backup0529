@@ -82,6 +82,7 @@ async function adminLogin(){
     const data = await res.json();
 
     // 인증 성공 — 계정 정보 세션에 저장
+    sessionStorage.setItem('admin_token', data.token);   // JWT — /tables 쓰기 인증에 사용
     sessionStorage.setItem('admin_auth', 'ok');
     sessionStorage.setItem('admin_username', idVal);
     sessionStorage.setItem('admin_display_name', data.display_name || idVal);
@@ -113,6 +114,7 @@ function _alnUpdateTopbar(){
 /* ── 로그아웃 ── */
 function adminLogout(){
   if(!confirm('로그아웃 하시겠습니까?')) return;
+  sessionStorage.removeItem('admin_token');
   sessionStorage.removeItem('admin_auth');
   sessionStorage.removeItem('admin_username');
   sessionStorage.removeItem('admin_display_name');
