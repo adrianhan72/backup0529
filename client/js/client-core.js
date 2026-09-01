@@ -1,3 +1,34 @@
+// ── 인증 인터셉터 (전역 fetch 래퍼) ─────────────────────────────────────────
+// /tables 쓰기 요청에 고객사 JWT를 자동 첨부하고, 401 시 로그인 화면 복귀.
+// client-core.js는 client 스크립트 중 가장 먼저 로드됨 (index.html 스크립트 순서)
+(function(){
+  if (window.__nomusaFetchPatched) return;
+  window.__nomusaFetchPatched = true;
+  const _orig = window.fetch;
+  const WRITE_METHODS = ['POST','PUT','PATCH','DELETE'];
+  window.fetch = async function(url, opt = {}){
+    const method = (opt.method || 'GET').toUpperCase();
+    const u = (typeof url === 'string') ? url : (url.url || '');
+    const isTablesWrite = /\/tables\//.test(u) && WRITE_METHODS.includes(method);
+    if (isTablesWrite){
+      const t = sessionStorage.getItem('client_token');
+      if (t){
+        opt.headers = Object.assign({}, opt.headers || {}, { 'Authorization': 'Bearer ' + t });
+      }
+    }
+    const res = await _orig(url, opt);
+    if (isTablesWrite && res.status === 401){
+      sessionStorage.removeItem('client_token');
+      if (!window.__clientAuthRedirecting && typeof logout === 'function'){
+        window.__clientAuthRedirecting = true;
+        alert('세션이 만료되었습니다. 다시 로그인해 주세요.');
+        logout();
+      }
+    }
+    return res;
+  };
+})();
+
 // ══ STATE ══
 let currentCompany = null;
 let allEmployees = [], allPayrolls = [], allContracts = [], allBillings = [];
@@ -86,6 +117,29 @@ async function tryLogin(){
   } else {
     localStorage.removeItem(LS_CODE_KEY);
   }
+
+  // JWT 발급 (서버 검증 — /tables 쓰기 인증용)
+  try {
+    const authRes = await fetch('/api/auth/client-login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ access_code: code })
+    });
+    if (authRes.ok){
+      const authData = await authRes.json();
+      sessionStorage.setItem('client_token', authData.token);
+      window.__clientAuthRedirecting = false;   // 재로그인 완료 → 만료 플래그 재무장
+    } else if (authRes.status === 403){
+      const errData = await authRes.json().catch(() => null);
+      showTermModal(errData?.endDate ? `${errData.endDate}부로 해지된 고객사입니다.` : '해지된 고객사입니다.');
+      return;
+    } else {
+      sessionStorage.removeItem('client_token');
+    }
+  } catch(e){
+    sessionStorage.removeItem('client_token');
+  }
+
   currentCompany = found;
   // loadData + 알림 동시 로드
   await Promise.all([ loadData(), loadClientNotices() ]);
@@ -122,6 +176,7 @@ function closeHamburgerMenu(){
 }
 
 function logout(){
+  sessionStorage.removeItem('client_token');
   currentCompany=null; allEmployees=[]; allPayrolls=[]; allContracts=[]; allBillings=[];
   psEmpId=null; psCatFilter='all'; psGroup='all'; psSubVal='__all__'; [distChart,distDonutChart,trendChart].forEach(c=>{if(c)c.destroy()}); distChart=distDonutChart=trendChart=null;
   // 알림 상태 초기화

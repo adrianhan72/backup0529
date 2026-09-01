@@ -1,3 +1,36 @@
+// ─── 인증 인터셉터 (전역 fetch 래퍼) ─────────────────────────────────────────
+// /tables 쓰기 요청에 관리자 JWT를 자동 첨부하고, 401 시 재로그인 유도.
+// - 헤더 추가·401 처리는 /tables 쓰기로 한정 (로그인 실패 401 오탐 방지)
+// - 본 파일은 auth.js 등 다른 스크립트보다 먼저 로드됨 (index.html 스크립트 순서)
+(function(){
+  if (window.__nomusaFetchPatched) return;
+  window.__nomusaFetchPatched = true;
+  const _orig = window.fetch;
+  const WRITE_METHODS = ['POST','PUT','PATCH','DELETE'];
+  window.fetch = async function(url, opt = {}){
+    const method = (opt.method || 'GET').toUpperCase();
+    const u = (typeof url === 'string') ? url : (url.url || '');
+    const isTablesWrite = /\/tables\//.test(u) && WRITE_METHODS.includes(method);
+    if (isTablesWrite){
+      const t = sessionStorage.getItem('admin_token');
+      if (t){
+        opt.headers = Object.assign({}, opt.headers || {}, { 'Authorization': 'Bearer ' + t });
+      }
+    }
+    const res = await _orig(url, opt);
+    if (isTablesWrite && res.status === 401){
+      sessionStorage.removeItem('admin_token');
+      sessionStorage.removeItem('admin_auth');
+      if (!window.__authRedirecting){
+        window.__authRedirecting = true;
+        alert('세션이 만료되었습니다. 다시 로그인해 주세요.');
+        location.reload();
+      }
+    }
+    return res;
+  };
+})();
+
 // ─── STATE ───
 let allCompanies=[], allEmployees=[], allContracts=[], allPayrolls=[], allBillings=[];
 let allExecutives=[], allRelatedParties=[];   // 등기임원 / 특수관계인 급여대상자
