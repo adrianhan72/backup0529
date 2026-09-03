@@ -36,6 +36,9 @@ async function renderSystemSettings() {
     // 메시지 규칙 로드
     ssLoadMessageRule();
 
+    // 인앱 알림 발송항목 체크리스트 렌더
+    _ssRenderInappChecklist();
+
     // 시스템 스위치 초기화
     _ssInitProbationToggle();
     _ssInitContractExpiryToggle();
@@ -641,6 +644,93 @@ const MSG_CHANNEL_TYPES = {
   ],
 };
 
+// ═══════════════════════════════════════════
+// 인앱 알림 발송항목 설정 (체크된 항목만 발송)
+// ═══════════════════════════════════════════
+
+/** 체크 해제(비활성)된 인앱 알림 유형 Set 조회 */
+function _ssGetDisabledInappTypes(){
+  try {
+    const raw = window._systemSettings && window._systemSettings['inapp_notice_types_disabled'];
+    if (!raw) return new Set();
+    const arr = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    return new Set(Array.isArray(arr) ? arr : []);
+  } catch(_) { return new Set(); }
+}
+
+/** 발송항목 체크리스트 렌더 */
+function _ssRenderInappChecklist(){
+  const wrap = document.getElementById('ss-inapp-checklist');
+  if (!wrap) return;
+  const disabled = _ssGetDisabledInappTypes();
+  const types = MSG_CHANNEL_TYPES.inapp || [];
+  wrap.innerHTML = types.map(t => {
+    const checked = !disabled.has(t.value) ? ' checked' : '';
+    return `<label style="display:flex;align-items:center;gap:7px;font-size:12.5px;color:#374151;cursor:pointer;padding:2px 0;">
+      <input type="checkbox" class="ss-inapp-type-chk" value="${t.value}"${checked} style="width:15px;height:15px;accent-color:#4f46e5;flex-shrink:0;" />
+      ${t.label}
+    </label>`;
+  }).join('');
+}
+
+/** 발송항목 설정 저장 — 즉시 시스템 반영 */
+async function ssSaveInappNoticeTypes(){
+  const saveBtn = document.getElementById('ss-inapp-save-btn');
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 저장 중...'; }
+  try {
+    const allTypes = (MSG_CHANNEL_TYPES.inapp || []).map(t => t.value);
+    const checked = new Set(
+      Array.from(document.querySelectorAll('.ss-inapp-type-chk:checked')).map(c => c.value)
+    );
+    const disabled = allTypes.filter(t => !checked.has(t));
+    await api('../tables/system_settings/set_inapp_types', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        setting_key: 'inapp_notice_types_disabled',
+        setting_value: JSON.stringify(disabled),
+        description: '고객사 인앱 알림 발송항목 (체크 해제 = 발송 제외)',
+        updated_at: Date.now()
+      })
+    });
+    window._systemSettings['inapp_notice_types_disabled'] = JSON.stringify(disabled);
+    // 메시지 유형 select 즉시 갱신 (인앱 채널에서 체크 해제 항목 제외)
+    ssOnChannelChange();
+    const msg = document.getElementById('ss-inapp-saved-msg');
+    if (msg) { msg.style.display = ''; setTimeout(() => { msg.style.display = 'none'; }, 2000); }
+    toast('인앱 알림 발송항목 설정이 저장되었습니다.', 'success');
+  } catch (e) {
+    console.error('[인앱 발송항목 저장 오류]', e);
+    toast('설정 저장에 실패했습니다.', 'error');
+  } finally {
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = '<i class="fas fa-save"></i> 설정 저장'; }
+  }
+}
+
+/** 기본값(스냅샷) — 체크 해제된 유형 Set 조회 (미설정 시 현재값 폴백) */
+function _ssGetDefaultDisabledInappTypes(){
+  try {
+    const raw = window._systemSettings && window._systemSettings['inapp_notice_types_default'];
+    if (!raw) return _ssGetDisabledInappTypes();
+    const arr = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    return new Set(Array.isArray(arr) ? arr : []);
+  } catch(_) { return _ssGetDisabledInappTypes(); }
+}
+
+/** 체크리스트 체크 상태를 기본값으로 되돌림 */
+function _ssApplyDefaultToChecklist(){
+  const defDisabled = _ssGetDefaultDisabledInappTypes();
+  document.querySelectorAll('.ss-inapp-type-chk').forEach(c => {
+    c.checked = !defDisabled.has(c.value);
+  });
+}
+
+/** 기본값으로 초기화 — 체크리스트 되돌리고 즉시 저장(시스템 반영) */
+async function ssResetInappNoticeTypes(){
+  _ssApplyDefaultToChecklist();
+  await ssSaveInappNoticeTypes();
+}
+
 /** 발송 수단 변경 → 메시지 유형 목록 활성화 */
 function ssOnChannelChange() {
   const channelEl = document.getElementById('ss-rule-channel');
@@ -650,7 +740,10 @@ function ssOnChannelChange() {
   if (!channelEl || !typeEl) return;
 
   const channel = channelEl.value;
-  const types   = MSG_CHANNEL_TYPES[channel] || [];
+  // 인앱 채널: 발송항목 설정에서 체크 해제된 유형 제외
+  const disabledInapp = channel === 'inapp' ? _ssGetDisabledInappTypes() : null;
+  const types = (MSG_CHANNEL_TYPES[channel] || [])
+    .filter(t => !disabledInapp || !disabledInapp.has(t.value));
 
   // 메시지 유형 select 재구성
   typeEl.innerHTML = '';

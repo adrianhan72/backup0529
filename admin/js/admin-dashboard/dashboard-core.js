@@ -2,19 +2,31 @@
 
 
 // ── 대시보드 임시저장 알림 카드 ──
-/* ── 대시보드 할일 그리드 표시/숨김 ── */
+/* ── 대시보드 할일 그리드 표시/숨김 + 레이아웃 ── */
 function _updateDashTodoGrid(){
   const grid = document.querySelector('.dash-todo-grid');
   const todoSec = document.getElementById('dash-todo-section');
   if(!grid || !todoSec) return;
-  const ids = ['dash-contract-unsent-section','dash-consent-section','dash-unsent-section',
-               'dash-daily-pay-section','dash-probation-banner','dash-retirement-banner'];
-  const anyVisible = ids.some(id => {
+  // 할일 배너 순서 (2026-09-03 재배치):
+  //   1.급여명세서 미발송 2.일용직 급여 처리 3.근로계약서 미발송
+  //   4.정보제공동의서 미발송 5.퇴직금 미정산 6.수습 근로자 관리
+  const ids = ['dash-unsent-section','dash-daily-pay-section',
+               'dash-contract-unsent-section','dash-consent-section',
+               'dash-retirement-banner','dash-probation-banner'];
+  const visibleIds = ids.filter(id => {
     const el = document.getElementById(id);
     return el && el.style.display !== 'none' && el.innerHTML.trim().length > 0;
   });
-  grid.style.display = anyVisible ? '' : 'none';
-  todoSec.style.display = anyVisible ? '' : 'none';
+  grid.style.display = visibleIds.length ? '' : 'none';
+  todoSec.style.display = visibleIds.length ? '' : 'none';
+  // 레이아웃 (2026-09-03):
+  //   보이는 배너 ≤4개 → 한 행, 모두 같은 너비
+  //   보이는 배너 5~6개 → 3열 × 2행, 모두 같은 너비
+  if(visibleIds.length <= 4){
+    grid.style.gridTemplateColumns = `repeat(${Math.max(1, visibleIds.length)}, 1fr)`;
+  } else {
+    grid.style.gridTemplateColumns = 'repeat(3, 1fr)';
+  }
 }
 
 // ─── 일용직 급여 처리 할일 배너 (지급방법별 지급 예정일 기준) ───
@@ -246,8 +258,9 @@ function renderDashProbationBanner(){
 
 /* ─────────────────────────────────────────────────────────────────
    renderDashRetirementBanner()
-   대시보드 퇴직관리 배너 — 4대보험·원천징수·퇴직정산·해고예고수당
-   ───────────────────────────────────────────────────────────────── */
+   [구버전] 대시보드 퇴직관리 배너 — 4대보험·원천징수·퇴직정산·해고예고수당
+   → 2026-09-01 '퇴직금 미정산' 배너로 대체되어 주석 처리
+   ─────────────────────────────────────────────────────────────────
 function renderDashRetirementBanner(){
   // 퇴직 관리 OFF → 배너 숨김
   if (!window._retirementMgmtEnabled) {
@@ -321,6 +334,73 @@ function renderDashRetirementBanner(){
   </div>`;
   _updateDashTodoGrid();
 
+  const _rmBadge = document.getElementById('badge-retirement-mgmt');
+  if(_rmBadge){
+    _rmBadge.textContent = total > 0 ? total : '';
+    _rmBadge.style.display = total > 0 ? '' : 'none';
+  }
+}
+   ───────────────────────────────────────────────────────────────── */
+
+/* ─────────────────────────────────────────────────────────────────
+   renderDashRetirementBanner() [신규 2026-09-01]
+   대시보드 퇴직금 미정산 배너 — 근로계약서 미발송 배너와 동일 형태(보라색)
+   퇴직정산 대상(근속 1년 이상 해지 계약) 중 미정산 건수 표시
+   ───────────────────────────────────────────────────────────────── */
+function renderDashRetirementBanner(){
+  // 퇴직금 산정 기능 OFF → 배너 숨김
+  if (!window._retirementMgmtEnabled) {
+    const secOff = document.getElementById('dash-retirement-banner');
+    if (secOff) { secOff.style.display = 'none'; secOff.innerHTML = ''; }
+    return;
+  }
+  const sec = document.getElementById('dash-retirement-banner');
+  if(!sec) return;
+  const today = fmtLocalDate(new Date());
+
+  // ── 해지/해지예정 계약 수집 ──
+  const terminatedContracts = (allContracts||[]).filter(c => {
+    if(c.is_draft || c.is_voided_by_amend) return false;
+    return c.status === CONTRACT_STATUS.TERMINATED || c.status === CONTRACT_STATUS.TERMINATE_PENDING;
+  });
+
+  // ── 퇴직금 미정산 대상: 근속 1년 이상 해지 계약 (퇴직정산 탭과 동일 기준) ──
+  const severanceCount = terminatedContracts.filter(c => {
+    if(!c.contract_start) return false;
+    const endDate = c.terminate_date || today;
+    const tenureDays = Math.ceil((new Date(endDate) - new Date(c.contract_start)) / (1000*60*60*24));
+    return tenureDays >= 365;
+  }).length;
+
+  const inactive = severanceCount === 0;
+  sec.style.display = '';
+  sec.innerHTML = `<div class="dash-alert-banner severance-unsettled${inactive ? ' inactive' : ''}"
+       ${inactive ? '' : `onclick="showPage('retirement-mgmt',document.querySelector('.menu-item[data-page=\\'retirement-mgmt\\']'));setTimeout(()=>{if(typeof switchRetirementTab==='function')switchRetirementTab('severance');},120);"`}
+       style="cursor:${inactive ? 'default' : 'pointer'}">
+      <div class="dash-alert-banner-head">
+        <div class="dash-alert-banner-icon" style="background:${inactive ? '#d1d5db' : ''};"><i class="fas fa-user-times"></i></div>
+        <div class="dash-alert-banner-body">
+          <div class="dash-alert-banner-title${inactive ? ' inactive' : ''}">퇴직금 미정산 <span class="dash-alert-banner-count" style="color:${inactive ? '#9ca3af' : ''};">${severanceCount}건</span></div>
+          <div class="dash-alert-banner-sub" style="color:${inactive ? '#9ca3af' : ''};">${inactive ? '미정산 대상자가 없습니다' : `${PAGE_LABELS['retirement-mgmt']} 페이지로 이동`}</div>
+        </div>
+        ${inactive ? '' : '<div class="dash-alert-banner-arrow"><i class="fas fa-chevron-right"></i></div>'}
+      </div>
+    </div>`;
+  _updateDashTodoGrid();
+
+  // 사이드바 뱃지 — 4개 탭 합산(기존 동작 유지)
+  const insuranceCount = terminatedContracts.filter(c => {
+    const emp = allEmployees.find(e => e.id === c.employee_id);
+    return emp && emp.status === EMP_STATUS.RESIGNED && !c.insurance_reported_at;
+  }).length;
+  const taxCount = terminatedContracts.filter(c => {
+    const emp = allEmployees.find(e => e.id === c.employee_id);
+    return emp && emp.status === EMP_STATUS.RESIGNED && !c.tax_reported_at;
+  }).length;
+  const noticePayCount = terminatedContracts.filter(c =>
+    (parseFloat(c.dismissal_notice_pay)||0) > 0
+  ).length;
+  const total = insuranceCount + taxCount + severanceCount + noticePayCount;
   const _rmBadge = document.getElementById('badge-retirement-mgmt');
   if(_rmBadge){
     _rmBadge.textContent = total > 0 ? total : '';
@@ -1122,8 +1202,8 @@ async function execProbExtend(){
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   퇴직금 지급 이력 배너
-   severance_paid 미읽음 공지를 모아 배너로 표시
+   퇴직금 지급 이력 캐시 (severance_paid 미읽음 — 메뉴 뱃지용)
+   ※ 대시보드 "퇴직금 지급이력 확인" 배너는 2026-09-03 제거됨
    ───────────────────────────────────────────────────────────────── */
 let allSeveranceNotices = [];   // severance_paid 미읽음 캐시
 
@@ -1139,57 +1219,6 @@ async function loadSeveranceNotices(){
     console.warn('[퇴직금 알림 로드 오류]', e);
     allSeveranceNotices = [];
   }
-}
-
-function renderDashSeveranceBanner(){
-  const sec = document.getElementById('dash-severance-banner');
-  if(!sec) return;
-  if(!allSeveranceNotices.length){ sec.style.display = 'none'; sec.innerHTML = ''; return; }
-
-  // 고객사별 집계
-  const byCoMap = {};
-  allSeveranceNotices.forEach(n => {
-    const id = n.company_id;
-    if(!byCoMap[id]) byCoMap[id] = { coName: n.company_name || '-', count: 0, latest: '' };
-    byCoMap[id].count++;
-    if(!byCoMap[id].latest || (n.sent_at || '') > byCoMap[id].latest)
-      byCoMap[id].latest = n.sent_at || '';
-  });
-
-  const total = allSeveranceNotices.length;
-  const coEntries = Object.values(byCoMap).sort((a, b) => b.count - a.count);
-
-  const chips = coEntries.slice(0, 8).map(co => {
-    const fmtDate = co.latest
-      ? new Date(co.latest).toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' })
-      : '';
-    return `<span class="dash-alert-banner-chip unread">
-      <i class="fas fa-hand-holding-usd" style="font-size:10px;"></i>
-      ${co.coName} <strong>${co.count}건</strong>${fmtDate ? ' · ' + fmtDate : ''}
-    </span>`;
-  }).join('');
-
-  const moreLabel = coEntries.length > 8
-    ? `<span class="dash-alert-banner-chip" style="opacity:.65;">외 ${coEntries.length - 8}개 고객사</span>`
-    : '';
-
-  sec.style.display = '';
-  sec.innerHTML = `
-  <div class="dash-alert-banner severance"
-       onclick="showPage('severance', document.querySelector('.menu-item[data-page=\\'severance\\']'))">
-    <div class="dash-alert-banner-head">
-      <div class="dash-alert-banner-icon"><i class="fas fa-hand-holding-usd"></i></div>
-      <div class="dash-alert-banner-body">
-        <div class="dash-alert-banner-title">
-          확인되지 않은 퇴직금 지급 이력
-          <span class="dash-alert-banner-count">${total}건</span>
-        </div>
-        <div class="dash-alert-banner-sub">퇴직금 정산내역서 발송 완료 — 클릭하여 ${PAGE_LABELS['severance']} 페이지로 이동</div>
-      </div>
-      <div class="dash-alert-banner-arrow"><i class="fas fa-chevron-right"></i></div>
-    </div>
-    ${chips || moreLabel ? `<div class="dash-alert-banner-list">${chips}${moreLabel}</div>` : ''}
-  </div>`;
 }
 
 function renderDraftAlerts(){
@@ -1471,7 +1500,7 @@ function _renderContractsBanners(){
           <div class="dash-alert-banner-icon" style="background:${inactive ? '#d1d5db' : ''};"><i class="fas fa-file-contract"></i></div>
           <div class="dash-alert-banner-body">
             <div class="dash-alert-banner-title${inactive ? ' inactive' : ''}">근로계약서 미발송 <span class="dash-alert-banner-count" style="color:${inactive ? '#9ca3af' : ''};">${cnt}건</span></div>
-            <div class="dash-alert-banner-sub" style="color:${inactive ? '#9ca3af' : ''};">${inactive ? '미발송 계약서가 없습니다' : `클릭하여 ${PAGE_LABELS['contract-dispatch']} 페이지로 이동`}</div>
+            <div class="dash-alert-banner-sub" style="color:${inactive ? '#9ca3af' : ''};">${inactive ? '미발송 계약서가 없습니다' : `${PAGE_LABELS['contract-dispatch']} 페이지로 이동`}</div>
           </div>
           ${inactive ? '' : '<div class="dash-alert-banner-arrow"><i class="fas fa-chevron-right"></i></div>'}
         </div>
@@ -1500,7 +1529,7 @@ function _renderContractsBanners(){
           <div class="dash-alert-banner-icon" style="background:${inactive2 ? '#d1d5db' : ''};"><i class="fas fa-file-shield"></i></div>
           <div class="dash-alert-banner-body">
             <div class="dash-alert-banner-title${inactive2 ? ' inactive' : ''}">정보제공동의서 미발송 <span class="dash-alert-banner-count" style="color:${inactive2 ? '#9ca3af' : ''};">${cnt2}건</span></div>
-            <div class="dash-alert-banner-sub" style="color:${inactive2 ? '#9ca3af' : ''};">${inactive2 ? '미발송 동의서가 없습니다' : `클릭하여 ${PAGE_LABELS['consent-dispatch']} 페이지로 이동`}</div>
+            <div class="dash-alert-banner-sub" style="color:${inactive2 ? '#9ca3af' : ''};">${inactive2 ? '미발송 동의서가 없습니다' : `${PAGE_LABELS['consent-dispatch']} 페이지로 이동`}</div>
           </div>
           ${inactive2 ? '' : '<div class="dash-alert-banner-arrow"><i class="fas fa-chevron-right"></i></div>'}
         </div>

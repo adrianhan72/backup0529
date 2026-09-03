@@ -102,18 +102,54 @@ function _updateNotifBadge(){
 
 /* ────────────────────────────────────────────────────────────────
    _notifBodyHtml()
-   본문 HTML 변환 — 이스케이프 후 http(s) URL(파일주소 등)을
-   클릭 시 바로 다운로드되는 링크로 변환
+   본문 HTML 변환 — 이스케이프 후 URL 처리
+   - '파일주소: <url>' → 다운로드 버튼(링크) + 주소복사 버튼
+   - 그 외 http(s) URL → 클릭 시 바로 다운로드되는 링크
    ──────────────────────────────────────────────────────────────── */
 function _notifBodyHtml(text){
   if(!text) return '';
   const esc = _escHtml(text);
-  return esc.replace(/(https?:\/\/[^\s<>"']+)/g, (url) => {
+  return esc.replace(/(파일주소\s*:\s*)(https?:\/\/[^\s<>"']+)|(https?:\/\/[^\s<>"']+)/g, (m, label, fileUrl, plainUrl) => {
     // 문장부호(마침표·쉼표 등)는 URL 밖으로 분리
-    const clean = url.replace(/[.,;:!?)\]\}]+$/, '');
-    const tail  = url.slice(clean.length);
-    return `<a href="${clean}" target="_blank" rel="noopener" download class="notif-link">${clean}</a>${tail}`;
+    const _clean = (u) => {
+      const c = u.replace(/[.,;:!?)\]\}]+$/, '');
+      return { clean: c, tail: u.slice(c.length) };
+    };
+    if(label && fileUrl){
+      const { clean, tail } = _clean(fileUrl);
+      return `${label}<span class="notif-file-actions">`
+        + `<a href="${clean}" target="_blank" rel="noopener" download onclick="event.stopPropagation()" class="notif-file-btn notif-download-btn"><i class="fas fa-download"></i> 다운로드</a>`
+        + `<button type="button" class="notif-file-btn notif-copy-btn" onclick="event.stopPropagation();copyNotifFileUrl(this,'${clean}')"><i class="fas fa-copy"></i> 주소복사</button>`
+        + `</span>${tail}`;
+    }
+    const raw = plainUrl || m;
+    const { clean, tail } = _clean(raw);
+    return `<a href="${clean}" target="_blank" rel="noopener" download onclick="event.stopPropagation()" class="notif-link">${clean}</a>${tail}`;
   });
+}
+
+/* ── 파일주소 복사 (클립보드 API + 폴백) ── */
+function copyNotifFileUrl(btn, url){
+  if(!url) return;
+  const done = () => {
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-check"></i> 복사됨';
+    setTimeout(() => { btn.innerHTML = orig; }, 1500);
+  };
+  const fallback = () => {
+    const ta = document.createElement('textarea');
+    ta.value = url;
+    ta.style.cssText = 'position:fixed;top:-100px;left:0;opacity:0;';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); done(); } catch(e){}
+    document.body.removeChild(ta);
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(done).catch(fallback);
+  } else {
+    fallback();
+  }
 }
 
 /* ────────────────────────────────────────────────────────────────

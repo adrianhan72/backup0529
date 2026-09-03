@@ -236,13 +236,17 @@ function openRetirementSettlement(contractId){
   console.log('[퇴직정산] contractId:', contractId);
 }
 
-/** showPage 후크 — 페이지 진입 시 초기화 (OFF 시 후크 무력화) */
+/** showPage 후크 — 페이지 진입 시 초기화 (OFF 시 후크 무력화)
+ *  ★ 원본 showPage의 Promise를 그대로 반환해야 함 (2026-09-03 수정)
+ *    — 반환하지 않으면 openPayrollInputModal 등에서 `await showPage(...)`가
+ *      외부 페이지 로드 완료를 기다리지 못해 DOM 미준비 null 에러 발생 */
 (function(){
   const _orig = window.showPage;
   if(typeof _orig === 'function'){
     window.showPage = function(name, el){
-      _orig(name, el);
+      const _p = _orig(name, el);
       if(name === 'retirement-mgmt' && window._retirementMgmtEnabled) setTimeout(initRetirementMgmtPage, 50);
+      return _p;
     };
   }
 })();

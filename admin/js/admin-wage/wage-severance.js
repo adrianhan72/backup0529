@@ -562,9 +562,13 @@ function openSevContractModal(contractId, empName, idx){
       ['근무시간',     `${parseFloat(c.work_hours_per_day)||8}시간/일 × ${parseFloat(c.work_days_per_week)||5}일`],
       ['통상시급',     Math.round(parseFloat(c.hourly_wage)||0).toLocaleString('ko-KR') + '원'],
       ['기본급 (월)',   Math.round(parseFloat(c.base_salary)||0).toLocaleString('ko-KR') + '원'],
-      ['월 약정임금',  Math.round(parseFloat(c.monthly_salary_agreed)||0).toLocaleString('ko-KR') + '원'],
-      ['연봉',         Math.round(parseFloat(c.annual_salary)||0).toLocaleString('ko-KR') + '원']
+      ['월 약정임금',  Math.round(parseFloat(c.monthly_salary_agreed)||0).toLocaleString('ko-KR') + '원']
     ];
+    // 연봉 행: 정규직(수습 포함)만 표시 (계약직은 월 약정임금 사용 — 연봉 필드 제거, 2026-09-03)
+    const _sevType = c.contract_type || emp.employment_category || '';
+    if(_sevType === CONTRACT_TYPE.REGULAR || _sevType === CONTRACT_TYPE.REGULAR_PROBATION){
+      rows.push(['연봉', Math.round(parseFloat(c.annual_salary)||0).toLocaleString('ko-KR') + '원']);
+    }
     body.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:13px;">`
       + rows.map(([k,v]) => `<tr style="border-bottom:1px solid #f1f5f9;">
           <td style="padding:10px 12px;width:140px;color:#64748b;font-weight:600;background:#f8fafc;white-space:nowrap;">${k}</td>

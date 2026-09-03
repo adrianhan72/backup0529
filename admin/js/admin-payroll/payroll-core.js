@@ -379,8 +379,8 @@ function openPayslipModal(payrollId){
   // ── 계약상 임금 정보 행 (인적사항 그리드) ──
   // 고용형태별 표시 규칙:
   //   정규직/수습   : 계약연봉(값 없으면 공란) + 월기본급(값 없으면 공란) + 일급/시급
-  //   계약직/수습   : 계약연봉(값 없으면 공란) + 월기본급(값 없으면 공란) + 일급/시급
-  //   일용직        : 계약연봉·월기본급 행 제외, 일급/시급만 표시
+  //   계약직/수습   : 월기본급(값 없으면 공란) + 일급/시급 (연봉 행 없음 — 월 약정임금 필드, 2026-09-03)
+  //   일용직        : 연봉·월기본급 행 제외, 일급/시급만 표시
   //   기타          : 보유한 임금 항목만 표시
   (function _renderPsContractWage(){
     const fmtW  = v => v ? Number(v).toLocaleString('ko-KR') + '원' : '';
@@ -391,14 +391,17 @@ function openPayslipModal(payrollId){
     const isRegOrCont = isReg || isCont;
 
     // 항목 목록 구성 — 고용형태 기준
-    // · 정규직/계약직: 연봉·월기본급은 항상 행 포함(값 없으면 빈 문자열 → 공란 표시)
+    // · 정규직: 연봉·월기본급 항상 행 포함(값 없으면 빈 문자열 → 공란 표시)
+    // · 계약직: 월기본급 항상 행 포함 (연봉 행 없음)
     // · 일용직: 연봉·월기본급 행 자체 제외
     const wageItems = [];
 
     if(isRegOrCont){
-      // 계약연봉: 수습 종료 후 적용 기준 — 수습 중이면 레이블로 명시 (계산 기준 아님)
-      wageItems.push({ lbl: _inProbation ? '정규 연봉' : '계약연봉',
-                       val: fmtW(ct ? ct.annual_salary : 0) });
+      // 계약연봉: 정규직만 표시 (계약직은 연봉 필드 없음 — 월 약정임금 사용, 2026-09-03)
+      if(isReg){
+        wageItems.push({ lbl: _inProbation ? '정규 연봉' : '계약연봉',
+                         val: fmtW(ct ? ct.annual_salary : 0) });
+      }
       // 월 기본급: 수습 중이면 수습 기본급(_probBaseSal) 사용
       wageItems.push({ lbl: _inProbation ? '수습 기본급' : '월 기본급',
                        val: fmtW(_inProbation ? _probBaseSal : (ct ? ct.base_salary : 0)) });

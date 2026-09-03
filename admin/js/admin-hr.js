@@ -223,121 +223,8 @@ async function _hrDeleteEmployee(empId) {
   }
 }
 
-// ── 상태 기반 계약 작업 액션 (Phase 3) ──
-// 계약 상태 매트릭스에 따라 현재 가능한 작업만 노출
-function _hrRenderActions(e){
-  const wrap = document.getElementById('hr-view-actions-wrap');
-  const box  = document.getElementById('hr-view-actions');
-  if(!wrap || !box || !e) return;
-
-  const cts = (allContracts||[]).filter(c => c.employee_id === e.id);
-  const today = fmtLocalDate(new Date());
-  const live  = cts.filter(c => !c.is_draft && !c.is_voided_by_amend);
-  const drafts = cts.filter(c => c.is_draft);
-  const active = live.filter(c => c.status === CONTRACT_STATUS.ACTIVE);
-  const pending = live.filter(c => c.status === CONTRACT_STATUS.PENDING);
-  const termPending = live.filter(c => c.status === CONTRACT_STATUS.TERMINATE_PENDING);
-  const renewalPending = live.filter(c =>
-    c.status === CONTRACT_STATUS.RENEWAL_PENDING ||
-    (c.status === CONTRACT_STATUS.ACTIVE && c.contract_start && c.contract_start > today)
-  );
-  const ended = live.filter(c => [CONTRACT_STATUS.TERMINATED, CONTRACT_STATUS.EXPIRED].includes(c.status));
-  const latestEnded = ended.length
-    ? ended.slice().sort((a,b) => (b.terminate_date||b.contract_end||'').localeCompare(a.terminate_date||a.contract_end||''))[0]
-    : null;
-
-  const left  = [];
-  const right = [];
-  const B = (label, cls, fn, icon) =>
-    `<button type="button" class="btn btn-sm ${cls}" onclick="${fn}"><i class="fas ${icon}"></i> ${label}</button>`;
-
-  // 임시저장 (오른쪽 그룹)
-  drafts.forEach(d => {
-    right.push(B('임시저장 이어작성', 'btn-indigo', `_hrActDraftEdit('${d.id}')`, 'fa-pencil-alt'));
-    right.push(B('임시저장 삭제', 'btn-secondary', `_hrActDraftDelete('${d.id}')`, 'fa-trash-alt'));
-  });
-
-  // 유효 계약
-  active.forEach(c => {
-    const ct = c.contract_type || '';
-    const isReg = ct === CONTRACT_TYPE.REGULAR || ct === CONTRACT_TYPE.REGULAR_PROBATION;
-    const isFixed = ct === CONTRACT_TYPE.FIXED || ct === CONTRACT_TYPE.FIXED_PROBATION || ct === CONTRACT_TYPE.DAILY;
-    const startFuture = c.contract_start && c.contract_start > today;
-    if(!startFuture){
-      // 왼쪽 그룹: 계약 조회 → 계약서 발송 → 날인본 업로드
-      left.push(B('계약 조회', 'btn-indigo', `_hrActView('${c.id}')`, 'fa-search'));
-      // 오른쪽 그룹: 수정 및 재발행 → 갱신 → 퇴사/해지 설정
-      right.push(B('수정 및 재발행', 'btn-warning', `_hrActAmend('${c.id}')`, 'fa-edit'));
-      right.push(B('갱신', 'btn-warning', `_hrActRenew('${c.id}')`, 'fa-sync-alt'));
-      if(isReg)   right.push(B('퇴사 설정', 'btn-secondary', `_hrActTerminate('${c.id}')`, 'fa-user-clock'));
-      if(isFixed) right.push(B('해지 설정', 'btn-secondary', `_hrActFixedTerminate('${c.id}')`, 'fa-scissors'));
-      // 서류미비: 계약서 발송 → 날인본 업로드 (왼쪽 그룹)
-      if(!c.signed_file_data || !c.consent_file_data){
-        left.push(B('계약서 발송', 'btn-purple', `_hrActPrint('${c.id}')`, 'fa-file-contract'));
-        left.push(B('날인본 업로드', 'btn-success', `_hrActDocsUpload('${c.id}')`, 'fa-upload'));
-      }
-    }
-  });
-
-  // 계약예정 (오른쪽 그룹)
-  pending.forEach(c => {
-    right.push(B('예정계약 수정', 'btn-warning', `_hrActPendingEdit('${c.id}')`, 'fa-calendar-alt'));
-    right.push(B('계약 취소(파기)', 'btn-secondary', `_hrActVoidCancel('${c.id}')`, 'fa-times-circle'));
-  });
-
-  // 해지예정 (오른쪽 그룹)
-  termPending.forEach(c => {
-    right.push(B('해지일 변경', 'btn-warning', `_hrActView('${c.id}')`, 'fa-calendar-check'));
-    right.push(B('해지 철회', 'btn-secondary', `_hrActPreTermCancel('${c.id}')`, 'fa-undo-alt'));
-  });
-
-  // 갱신예정 (오른쪽 그룹)
-  renewalPending.forEach(c => {
-    right.push(B('갱신 취소', 'btn-secondary', `_hrActRenewalCancel('${c.id}')`, 'fa-times-circle'));
-  });
-
-  // 재계약 (유효·예정 계약 없음 + 만료·해지 이력 있음) (오른쪽 그룹)
-  if(!active.length && !pending.length && !termPending.length && !renewalPending.length && latestEnded){
-    right.push(B('재계약', 'btn-warning', `_hrActRecontract('${latestEnded.id}')`, 'fa-file-signature'));
-  }
-
-  // 신규계약 (계약 이력 없음) (왼쪽 그룹)
-  if(!live.length && !drafts.length){
-    left.push(B('신규계약 작성', 'btn-primary', `_hrActNewContract('${e.id}')`, 'fa-file-signature'));
-  }
-
-  wrap.style.display = (left.length || right.length) ? '' : 'none';
-  box.innerHTML =
-    (left.length ? `<div style="display:flex;flex-wrap:wrap;gap:6px;">${left.join('')}</div>` : '') +
-    (right.length ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-left:auto;justify-content:flex-end;">${right.join('')}</div>` : '');
-}
-
-// ── 액션 핸들러: 계약 조회 모달을 열고 해당 액션 실행 ──
+// ── 계약 조회 (근로계약 이력의 조회 버튼에서 사용) ──
 function _hrActView(cid){ closeHrEmployeeView(); viewContract(cid); }
-function _hrActAmend(cid){ closeHrEmployeeView(); viewContract(cid); setTimeout(() => { if(typeof doContractAmend === 'function') doContractAmend(); }, 120); }
-function _hrActRenew(cid){ closeHrEmployeeView(); viewContract(cid); setTimeout(() => { if(typeof doContractRenew === 'function') doContractRenew(); }, 120); }
-function _hrActRecontract(cid){ closeHrEmployeeView(); viewContract(cid); setTimeout(() => { if(typeof doContractRecontract === 'function') doContractRecontract(); }, 120); }
-function _hrActTerminate(cid){ closeHrEmployeeView(); viewContract(cid); setTimeout(() => { if(typeof doContractTerminate === 'function') doContractTerminate(); }, 120); }
-function _hrActFixedTerminate(cid){ closeHrEmployeeView(); viewContract(cid); setTimeout(() => { if(typeof doFixedTerminate === 'function') doFixedTerminate(); }, 120); }
-function _hrActPendingEdit(cid){ closeHrEmployeeView(); viewContract(cid); setTimeout(() => { if(typeof editPendingContract === 'function') editPendingContract(); }, 120); }
-function _hrActVoidCancel(cid){ closeHrEmployeeView(); viewContract(cid); setTimeout(() => { if(typeof doContractVoidOrCancel === 'function') doContractVoidOrCancel(); }, 120); }
-function _hrActPreTermCancel(cid){ closeHrEmployeeView(); viewContract(cid); setTimeout(() => { if(typeof cancelPreTerminate === 'function') cancelPreTerminate(); }, 120); }
-function _hrActRenewalCancel(cid){ closeHrEmployeeView(); viewContract(cid); setTimeout(() => { if(typeof cancelContractRenew === 'function') cancelContractRenew(); }, 120); }
-function _hrActDraftEdit(cid){ closeHrEmployeeView(); if(typeof continueDraftContract === 'function') continueDraftContract(cid); }
-function _hrActDraftDelete(cid){
-  closeHrEmployeeView();
-  openContractModal(cid);
-  setTimeout(() => { if(typeof deleteDraftContract === 'function') deleteDraftContract(); }, 120);
-}
-function _hrActDocsUpload(cid){ closeHrEmployeeView(); if(typeof openDocsUploadModal === 'function') openDocsUploadModal(cid); }
-function _hrActPrint(cid){ closeHrEmployeeView(); if(typeof openContractPrintModal === 'function') openContractPrintModal(cid); }
-function _hrActNewContract(empId){
-  const e = (allEmployees||[]).find(x => x.id === empId);
-  if(!e) return;
-  closeHrEmployeeView();
-  openContractModal(null, e.company_id);
-  setTimeout(() => { if(typeof _ctSetSelectedEmp === 'function') _ctSetSelectedEmp(empId); }, 120);
-}
 
 // ── 상세 조회 모달 ──
 function openHrEmployeeView(empId) {
@@ -399,9 +286,6 @@ function openHrEmployeeView(empId) {
   set('hr-v-military', e.military_status);
   set('hr-v-special', e.special_notes);
 
-  // 상태 기반 계약 작업 액션 (Phase 3)
-  _hrRenderActions(e);
-
   // 인사카드 수정 이력 아코디언
   _hrRenderHistory(e);
 
@@ -424,7 +308,9 @@ function openHrEmployeeView(empId) {
           <td><span class="badge ${stBadge}">${stName}</span></td>
           <td style="white-space:nowrap;">
             <button class="btn btn-sm btn-indigo" onclick="_hrActView('${c.id}')"><i class="fas fa-search"></i> 조회</button>
-            <button class="btn btn-sm btn-indigo" onclick="openContractPrintModal('${c.id}')"><i class="fas fa-file-contract"></i> 계약서</button>
+            ${c.edited_file_url
+              ? `<a class="btn btn-sm btn-danger" style="text-decoration:none;" href="${c.edited_file_url}" target="_blank" title="관리자가 업로드한 최종 PDF 보기"><i class="fas fa-file-pdf"></i> 계약서</a>`
+              : `<button class="btn btn-sm btn-indigo" disabled title="업로드된 PDF 파일이 없습니다"><i class="fas fa-file-contract"></i> 계약서</button>`}
           </td>
         </tr>`;
       }).join('');

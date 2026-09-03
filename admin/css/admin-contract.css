@@ -335,6 +335,16 @@
     .contract-doc .wsh-total span{font-weight:400;color:#1a1a1a;}
     .contract-doc .wsh-total .wsh-val{font-weight:700;color:#1a1a1a;}
     .contract-doc .wsh-total .wsh-extra{font-size:10pt;}
+    /* 근무시간표 (전치형: 요일/월~일 헤더 + 근무·휴게·소정시간 행) — 계약기간 테이블과 동일 스타일 */
+    .contract-doc .work-schedule-table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:11.5px;}
+    .contract-doc .work-schedule-table th{background:#f8fafc;border:1px solid #cbd5e1;padding:5px 4px;text-align:center;font-weight:700;font-size:11.5px;color:#374151;white-space:nowrap;}
+    .contract-doc .work-schedule-table td{border:1px solid #cbd5e1;padding:4px 4px;text-align:center;vertical-align:middle;word-break:break-word;line-height:1.35;color:#1e293b;}
+    .contract-doc .work-schedule-table .row-label{font-weight:700;background:#f8fafc;color:#374151;width:60px;white-space:nowrap;}
+    /* 근무시간표 — 초안 미리보기 모달(#cpm-doc-area) 전용 */
+    #cpm-doc-area .work-schedule-table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:11.5px;}
+    #cpm-doc-area .work-schedule-table th{background:#f8fafc;border:1px solid #cbd5e1;padding:5px 4px;text-align:center;font-weight:700;font-size:11.5px;color:#374151;white-space:nowrap;}
+    #cpm-doc-area .work-schedule-table td{border:1px solid #cbd5e1;padding:4px 4px;text-align:center;vertical-align:middle;word-break:break-word;line-height:1.35;color:#1e293b;}
+    #cpm-doc-area .work-schedule-table .row-label{font-weight:700;background:#f8fafc;color:#374151;width:60px;white-space:nowrap;}
     .contract-doc .doc-text{font-size:10pt;margin:4px 0;line-height:1.3;}
     .contract-doc .doc-divider{border:1px solid #cccccc;border-top:1.5px dashed #cbd5e1;margin:16px 0;}
     .contract-doc .doc-insurance-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:8px;}
@@ -468,9 +478,6 @@
     #cpm-doc-area .sign-stamp{width:56px;height:56px;border:2px dashed #cbd5e1;border-radius:50%;margin:0 auto 3px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#94a3b8;line-height:1.3;}
     #cpm-doc-area .sign-label{font-size:10.5px;color:#94a3b8;}
     #cpm-doc-area .highlight{font-weight:700;color:#1d4ed8;}
-    #cpm-doc-area .daily-highlight{font-weight:700;color:#d97706;}
-    #cpm-doc-area .doc-probation-box{background:#fefce8;border:1.5px solid #fde047;border-radius:7px;padding:10px 13px;margin-top:6px;font-size:12px;line-height:1.3;color:#854d0e;}
-    #cpm-doc-area .doc-daily-note{background:#fff7ed;border:1.5px solid #fed7aa;border-radius:7px;padding:10px 13px;margin-top:8px;font-size:12px;line-height:1.3;color:#9a3412;}
     @media print{
     /* 계약서 인쇄: wl-print-mode(임금대장)가 아닐 때만 사용 */
       body:not(.wl-print-mode) > *{display:none!important;}
@@ -598,6 +605,9 @@
 .va-hint.va-info{color:#6b7280}
 .va-hint.va-ok{color:#059669}
 .va-hint.va-err{color:#dc2626}
+/* 고객사 모달: 가산수당·일할계산 선택항목 하단 공간 제거 (에러 시에만 여백) */
+#cm-premium-mode-hint,#cm-proration-method-hint{margin-top:0;min-height:0}
+#cm-premium-mode-hint.va-err,#cm-proration-method-hint.va-err{margin-top:4px}
 .va-input-err{border-color:#dc2626!important;box-shadow:0 0 0 2px rgba(220,38,38,.15)!important}
 .va-banner-hide{display:none!important}
 /* ── 인라인 포맷 힌트 (id/phone/email) ── */
@@ -646,4 +656,10 @@ input[type="date"][readonly],input[type="date"][disabled]{cursor:default;opacity
 #ct-pay-method-wrap .ct-pay-method-info{margin-top:6px;font-size:11.5px;color:#6b7280;line-height:1.6;}
 #ct-pay-method-wrap .ct-pay-method-after-days{width:56px;flex:0 0 auto;}
 #ct-pay-method-wrap .ct-pay-method-select{flex:0 0 auto;}
+
+/* ════════════════════════════════════════════════════════════════
+   고정 기준 선택 라디오 (임금조건) — 2026-09-03
+   ════════════════════════════════════════════════════════════════ */
+#ct-row-fix-basis .ct-fix-basis-group{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:6px;}
+#ct-row-fix-basis .ct-fix-basis-option{display:flex;align-items:center;gap:4px;cursor:pointer;font-size:13px;font-weight:500;}
 #ct-pay-day-auto{font-size:12px;color:#6b7280;font-weight:500;}

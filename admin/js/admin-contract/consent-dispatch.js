@@ -686,7 +686,7 @@ function _updateDashConsentBanner() {
         <div class="dash-alert-banner-title">
           정보제공동의서 미발송 <span class="dash-alert-banner-count">${totalUnsent}건</span>
         </div>
-        <div class="dash-alert-banner-sub">${consentInactive ? '미발송 동의서가 없습니다' : `클릭하여 ${PAGE_LABELS['consent-dispatch']} 페이지로 이동`}</div>
+        <div class="dash-alert-banner-sub">${consentInactive ? '미발송 동의서가 없습니다' : `${PAGE_LABELS['consent-dispatch']} 페이지로 이동`}</div>
       </div>
       ${consentInactive ? '' : '<div class="dash-alert-banner-arrow"><i class="fas fa-chevron-right"></i></div>'}
     </div>`;

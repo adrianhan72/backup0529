@@ -51,7 +51,7 @@ async function _probAutoCreateAndSave(){
       if(infoEl){
         infoEl.innerHTML =
           `<b>고용형태 변경:</b> <span style="color:#7c3aed;font-weight:700;">${confirmedType}</span> (자동 생성)<br>` +
-          `<b>연봉:</b> ${(piContract.annual_salary||0).toLocaleString('ko-KR')}원<br>` +
+          (confirmedType === CONTRACT_TYPE.REGULAR ? `<b>연봉:</b> ${(piContract.annual_salary||0).toLocaleString('ko-KR')}원<br>` : '') +
           `<b>월 약정임금:</b> ${(piContract.monthly_salary_agreed||0).toLocaleString('ko-KR')}원<br>` +
           `<b>계약 시작일:</b> ${piContract.contract_start}<br>` +
           `<span style="color:#16a34a;font-size:11px;">✔ 채용확정 계약서가 생성되었습니다 (서류미비 상태 — 날인본 별도 첨부 필요)</span>`;

@@ -2809,7 +2809,7 @@ function _showPIStandardsWarn(yr, mo, missing){
   if(msgEl){
     msgEl.innerHTML =
       `<span style="color:#d97706;">${yr}년 ${moStr}월</span> 급여 입력을 위한<br>` +
-      `년도별 산정기준을 먼저 업데이트하셔야 입력할 수 있습니다.<br>` +
+      `연도별 산정기준을 먼저 업데이트하셔야 입력할 수 있습니다.<br>` +
       `<span style="font-size:12px;color:#9ca3af;font-weight:400;">미등록: ${missing.join(', ')}</span>`;
   }
   openModal('pi-standards-warn-modal');

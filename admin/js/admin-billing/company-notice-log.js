@@ -23,7 +23,7 @@ const CNL_TYPE_OPTION_GROUPS = [
   ['general'],
   ['company_welcome','company_updated','company_terminate_scheduled','company_terminate_changed','company_terminate_cancelled'],
   ['contract_created','contract_renewed','contract_renewal_scheduled','contract_renewed_new','contract_updated','contract_amended'],
-  ['contract_dispatched','consent_dispatched','contract_signed_uploaded','contract_consent_uploaded','contract_fully_documented'],
+  ['contract_dispatched','consent_dispatched','contract_signed_uploaded','contract_consent_uploaded','contract_fully_documented','contract_review_request','contract_seal_request'],
   ['contract_terminated','contract_terminate_scheduled','contract_termination_cancelled','contract_voided'],
   ['probation_expiry','contract_expiry','regular_conversion'],
   ['payroll_input_complete','payslip_dispatched','wage_ledger_generated','wage_ledger_renewed'],
@@ -150,6 +150,8 @@ const CNL_TYPE_LABEL = {
   contract_renewal_scheduled    : '근로계약 갱신 예약',
   contract_renewed_new          : '근로계약 재계약',
   contract_dispatched           : '근로계약서 발송',
+  contract_review_request       : '근로계약서 검수 요청',
+  contract_seal_request         : '근로계약서 날인 요청',
   contract_signed_uploaded      : '근로계약서 날인본 등록',
   contract_consent_uploaded     : '동의서 날인본 등록',
   contract_fully_documented     : '서류 완비',
@@ -186,6 +188,8 @@ const CNL_TYPE_BADGE = {
   contract_updated              : 'badge-orange',
   contract_amended              : 'badge-orange',
   contract_dispatched           : 'badge-green',
+  contract_review_request       : 'badge-red',
+  contract_seal_request         : 'badge-purple',
   consent_dispatched            : 'badge-green',
   contract_signed_uploaded      : 'badge-green',
   contract_consent_uploaded     : 'badge-green',
@@ -362,6 +366,47 @@ function renderCnlReserveCard(){
   }).join('');
 }
 
+/** 알림 본문 → HTML (파일주소 URL → 다운로드/주소복사 버튼) */
+function _cnlBodyHtml(text){
+  if(!text) return '(내용 없음)';
+  const esc = String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return esc.replace(/(파일주소\s*:\s*)(https?:\/\/[^\s<>"']+)/g, (m, label, url) => {
+    // 문장부호는 URL 밖으로 분리
+    const clean = url.replace(/[.,;:!?)\]\}]+$/, '');
+    const tail  = url.slice(clean.length);
+    const safeJs = clean.replace(/'/g, "\\'");
+    return `${label}<span style="display:inline-flex;gap:6px;margin:2px 0;flex-wrap:wrap;vertical-align:middle;">`
+      + `<a href="${clean}" target="_blank" rel="noopener" download onclick="event.stopPropagation()" class="btn btn-sm btn-indigo" style="text-decoration:none;"><i class="fas fa-download"></i> 다운로드</a>`
+      + `<button type="button" class="btn btn-sm btn-secondary" onclick="_cnlCopyFileUrl(this,'${safeJs}')"><i class="fas fa-copy"></i> 주소복사</button>`
+      + `</span>${tail}`;
+  });
+}
+
+/** 파일주소 클립보드 복사 (클립보드 API + 폴백) */
+function _cnlCopyFileUrl(btn, url){
+  if(!url) return;
+  const done = () => {
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-check"></i> 복사됨';
+    setTimeout(() => { btn.innerHTML = orig; }, 1500);
+    if(typeof toast === 'function') toast('파일주소가 복사되었습니다.', 'success');
+  };
+  const fallback = () => {
+    const ta = document.createElement('textarea');
+    ta.value = url;
+    ta.style.cssText = 'position:fixed;top:-100px;left:0;opacity:0;';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); done(); } catch(e){ if(typeof toast === 'function') toast('복사에 실패했습니다.', 'error'); }
+    document.body.removeChild(ta);
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(done).catch(fallback);
+  } else {
+    fallback();
+  }
+}
+
 /** 예약 현황 상세 보기 (id로 직접 조회) */
 function openCnlDetailById(recordId){
   const n = _cnlList.find(x => x.id === recordId);
@@ -404,7 +449,7 @@ function openCnlDetailById(recordId){
     </div>
     <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px 18px;
                 font-size:13px;line-height:1.9;color:#334155;white-space:pre-wrap;word-break:break-all;">
-${(n.body||'(내용 없음)').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+${_cnlBodyHtml(n.body)}
     </div>`;
   modal.style.display = 'flex';
 }
@@ -613,7 +658,7 @@ function openCnlDetail(listIdx){
     <!-- 본문 -->
     <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px 18px;
                 font-size:13px;line-height:1.9;color:#334155;white-space:pre-wrap;word-break:break-all;">
-${(n.body||'(내용 없음)').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+${_cnlBodyHtml(n.body)}
     </div>`;
 
   modal.style.display = 'flex';

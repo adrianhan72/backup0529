@@ -107,8 +107,9 @@ module.exports = function(db, ROOT) {
 
   // ── 계약서 HTML → DOCX 변환 (재편집용 워드) ──
   // body: { html, filename } — 화면에 보이는 계약서 HTML을 docx로 변환해 다운로드
-  // html-to-docx(1.8)는 인라인 CSS의 폰트/색/배경을 변환하지 못하므로
-  // docx 라이브러리 기반 매핑 변환기(lib/contract-docx.js)로 화면 디자인을 재현한다.
+  // 클라이언트(contract-docs.js _inlineDocStylesForWord)가 getComputedStyle 기반으로
+  // 전 요소를 인라인 스타일화한 HTML을 보내면, lib/contract-docx.js가 이를 파싱해
+  // 화면 디자인 그대로 Word에 재현한다 (2026-09-02 전면 개편).
   router.post('/contract-docx', async (req, res) => {
     try {
       const { html, filename } = req.body || {};

@@ -501,7 +501,7 @@ function _updateDashUnsentContractBanner(){
         <div class="dash-alert-banner-title">
           근로계약서 미발송 <span class="dash-alert-banner-count">${totalUnsent}건</span>
         </div>
-        <div class="dash-alert-banner-sub">${ctrUnsentInactive ? '미발송 계약서가 없습니다' : `클릭하여 ${PAGE_LABELS['contract-dispatch']} 페이지로 이동`}</div>
+        <div class="dash-alert-banner-sub">${ctrUnsentInactive ? '미발송 계약서가 없습니다' : `${PAGE_LABELS['contract-dispatch']} 페이지로 이동`}</div>
       </div>
       ${ctrUnsentInactive ? '' : '<div class="dash-alert-banner-arrow"><i class="fas fa-chevron-right"></i></div>'}
     </div>`;
@@ -541,7 +541,7 @@ function _updateDashUnsentBanner(){
         <div class="dash-alert-banner-title">
           급여명세서 미발송 <span class="dash-alert-banner-count">${totalUnsent}건</span>
         </div>
-        <div class="dash-alert-banner-sub">${piUnsentInactive ? '미발송 급여명세서가 없습니다' : `클릭하여 ${PAGE_LABELS['payslip-send']} 페이지로 이동`}</div>
+        <div class="dash-alert-banner-sub">${piUnsentInactive ? '미발송 급여명세서가 없습니다' : `${PAGE_LABELS['payslip-send']} 페이지로 이동`}</div>
       </div>
       ${piUnsentInactive ? '' : '<div class="dash-alert-banner-arrow"><i class="fas fa-chevron-right"></i></div>'}
     </div>`;

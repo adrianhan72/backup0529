@@ -164,8 +164,6 @@ function renderDashboard(){
   renderDraftAlerts();
   // 수습 만료 통지 대상 배너
   renderDashProbationBanner();
-  // 퇴직금 지급 이력 배너 (임시저장 위)
-  renderDashSeveranceBanner();
   // 퇴직관리 배너 (4대보험·원천징수·퇴직정산·해고예고수당)
   if(typeof renderDashRetirementBanner === 'function') renderDashRetirementBanner();
 

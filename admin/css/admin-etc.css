@@ -59,7 +59,9 @@
     }
     .radio-custom input[type="radio"] {
       appearance:none; -webkit-appearance:none; -moz-appearance:none;
-      width:16px; height:16px; min-width:16px; min-height:16px;
+      width:16px !important; height:16px !important;
+      min-width:16px !important; min-height:16px !important;
+      max-width:16px !important; max-height:16px !important;
       border:1.5px solid #d1d5db;
       border-radius:50% !important;
       background:#fff;
@@ -68,6 +70,16 @@
       padding:0 !important;
       box-sizing:border-box;
       transition:border-color .15s, background .15s;
+    }
+    /* 잠금(disabled/readonly) 상태에서도 원형 유지 — 폼 공통 input 규칙의 height:36px 간섭 방지 */
+    .radio-custom input[type="radio"]:disabled,
+    .radio-custom input[type="radio"][readonly] {
+      width:16px !important; height:16px !important;
+      min-width:16px !important; min-height:16px !important;
+      max-width:16px !important; max-height:16px !important;
+      padding:0 !important;
+      opacity:1 !important;
+      cursor:default;
     }
     .radio-custom input[type="radio"]:checked {
       border-color:#6366f1;
@@ -129,13 +141,13 @@
     .btn-refresh:hover:not(:disabled), .btn-secondary.btn-refresh:hover:not(:disabled){ background:#4b5563;border-color:#374151; }
 
     /* ── 근로계약 관리 / 대시보드 공통: 할일 목록 그리드 ── */
-    .cont-todo-grid, .dash-todo-grid{ display:flex;flex-wrap:wrap;gap:10px;margin-bottom:4px; }
+    .cont-todo-grid{ display:flex;flex-wrap:wrap;gap:10px;margin-bottom:4px; }
+    /* 대시보드: CSS Grid — 배너 수에 따라 열 수를 JS(_updateDashTodoGrid)가 조정 (2026-09-03) */
+    .dash-todo-grid{ display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:4px; }
     /* 근로계약 관리: 4열 고정 + 최소폭 */
     .cont-todo-grid > div{ flex:1 1 calc(25% - 8px);min-width:220px; }
-    /* 대시보드: 4열 → 2열 → 1열, 셀 내 배너가 높이를 꽉 채우도록 column flex */
-    .dash-todo-grid > div{ flex:1 1 calc(25% - 8px);display:flex;flex-direction:column; }
-    /* 퇴직관리 배너: 항상 한 행 전체 사용 */
-    #dash-retirement-banner{ flex:1 1 100%; }
+    /* 대시보드: 셀 내 배너가 높이를 꽉 채우도록 column flex */
+    .dash-todo-grid > div{ min-width:0;display:flex;flex-direction:column; }
 
     .cont-todo-grid .dash-alert-banner{ height:100%; }
     .dash-todo-grid .dash-alert-banner{ flex:1; }
@@ -153,11 +165,13 @@
 
     /* 대시보드 할일 그리드: 960px 이하 → 2열 */
     @media (max-width:960px){
-      .dash-todo-grid > div:not(#dash-retirement-banner){ flex:1 1 calc(50% - 6px); }
+      .cont-todo-grid > div{ flex:1 1 calc(50% - 6px); }
+      .dash-todo-grid{ grid-template-columns:repeat(2,1fr)!important; }
     }
     /* 대시보드 할일 그리드: 520px 이하 → 1열 */
     @media (max-width:520px){
-      .dash-todo-grid > div{ flex:1 1 100%; }
+      .cont-todo-grid > div{ flex:1 1 100%; }
+      .dash-todo-grid{ grid-template-columns:1fr!important; }
     }
 
     .pss-send-btn:hover{ opacity:.88; }

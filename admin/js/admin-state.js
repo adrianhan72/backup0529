@@ -136,29 +136,25 @@ let currentGlobalCompanyName = '';
 
 
 // ─── PAYROLL INPUT MODAL ───
-function openPayrollInputModal(companyId){
+async function openPayrollInputModal(companyId){
   const co = allCompanies.find(c=>c.id===companyId);
   if(co && !isCompanyActive(co)){
     toast('"' + co.company_name + '"은 이용중이 아닌 고객사입니다. 급여 입력이 불가합니다.', 'error');
     return;
   }
-  // 급여 입력 페이지로 이동
-  showPage('payroll-input',document.querySelector('[data-page="payroll-input"]'));
+  // 급여 입력 페이지로 이동 (외부 페이지 fetch 완료 대기 — DOM 준비 보장, 2026-09-03)
+  await showPage('payroll-input', document.querySelector('[data-page="payroll-input"]'));
+  if(!co) return;
 
-  // 페이지 렌더 후 고객사 바로 선택
-  setTimeout(()=>{
-    if(!co) return;
+  // 이번 달로 먼저 설정
+  const now = new Date();
+  const yr = document.getElementById('pi-year');
+  const mo = document.getElementById('pi-month');
+  if(yr) yr.value = now.getFullYear();
+  if(mo) mo.value = now.getMonth()+1;
 
-    // 이번 달로 먼저 설정
-    const now = new Date();
-    const yr = document.getElementById('pi-year');
-    const mo = document.getElementById('pi-month');
-    if(yr) yr.value = now.getFullYear();
-    if(mo) mo.value = now.getMonth()+1;
-
-    // selectPICompany 호출 → 카드 전환 + 직원 목록 로드까지 한번에 처리
-    selectPICompany(companyId, co.company_name);
-  }, 100);
+  // selectPICompany 호출 → 카드 전환 + 직원 목록 로드까지 한번에 처리
+  selectPICompany(companyId, co.company_name);
 }
 
 // ─── 관리자 계정 캐시 ───
@@ -326,13 +322,12 @@ async function loadHeavyData(){
     _updateDashConsentBanner();
     // 임금대장 메뉴 뱃지 갱신
     _updateWLMenuBadge();
-    // 대시보드 계약만료 통지 / 정규직 전환 / 퇴직금 지급 이력 배너 갱신 (heavy 로드 완료 후)
+    // 대시보드 계약만료 통지 / 정규직 전환 배너 갱신 (heavy 로드 완료 후)
     // 급여 입력 전체 임시저장 배너 갱신 (활성 여부 무관 — 다음 진입 시 즉시 표시)
     renderPIAllDraftBanner();
     if(document.getElementById('page-dashboard')?.classList.contains('active')){
       renderDraftAlerts();      // 급여 임시저장 포함 전체 임시저장 카드 갱신 (allPayrolls 로드 완료 후)
       renderDashProbationBanner();
-      renderDashSeveranceBanner();
       renderDashRetirementBanner();
       renderDashDailyPayBanner(); // 일용직 급여 처리 할일 배너
     }
@@ -1407,12 +1402,15 @@ function selectPICompany(companyId, companyName){
   currentGlobalCompanyId = companyId;
   currentGlobalCompanyName = companyName;
 
-  // 헤더 레이블
-  document.getElementById('pi-selected-company-label').textContent=companyName+' 급여 입력';
+  // 헤더 레이블 (페이지 부분 로드 전 호출 대비 null 가드)
+  const _piLbl = document.getElementById('pi-selected-company-label');
+  if(_piLbl) _piLbl.textContent = companyName+' 급여 입력';
 
   // 카드 전환 — 년월 선택 UI 표시
-  document.getElementById('pi-company-select-card').style.display='none';
-  document.getElementById('pi-input-section').style.display='';
+  const _piCsCard = document.getElementById('pi-company-select-card');
+  if(_piCsCard) _piCsCard.style.display = 'none';
+  const _piInSec = document.getElementById('pi-input-section');
+  if(_piInSec) _piInSec.style.display = '';
 
   // ★ 수정 모드 진입(piEditPayrollId 설정됨) 중에는
   //   폼 섹션 숨김·년월 초기화를 건너뜀 — editPayroll()이 직접 처리
@@ -1465,8 +1463,10 @@ function clearPICompanySelect(){
   // 글로벌 공유 변수 초기화
   currentGlobalCompanyId = null;
   currentGlobalCompanyName = '';
-  document.getElementById('pi-company-select-card').style.display='';
-  document.getElementById('pi-input-section').style.display='none';
+  const _piCsCard0 = document.getElementById('pi-company-select-card');
+  if(_piCsCard0) _piCsCard0.style.display='';
+  const _piInSec0 = document.getElementById('pi-input-section');
+  if(_piInSec0) _piInSec0.style.display='none';
   const searchEl = document.getElementById('pi-company-search');
   if(searchEl) searchEl.value='';
   renderPICompanyList();

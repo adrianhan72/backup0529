@@ -1,7 +1,7 @@
 -- =============================================================================
 -- 인사톡 노무톡 — SQLite Schema (한글 주석 포함)
 -- node dump_schema.js 로 자동 생성 (ALTER TABLE 반영)
--- 최종 갱신: 2026-09-01
+-- 최종 갱신: 2026-09-03
 -- 테이블 수: 28개
 -- =============================================================================
 
@@ -743,4 +743,24 @@ CREATE TABLE IF NOT EXISTS system_settings (
   description TEXT, -- 설명
   updated_at INTEGER -- 수정일시
 );
+
+-- =============================================================================
+-- SECTION T: 트리거 (DB 무결성 가드)
+-- =============================================================================
+
+CREATE TRIGGER trg_contracts_annual_insert
+    BEFORE INSERT ON contracts
+    WHEN NEW.contract_type NOT IN ('regular','regular_probation')
+      AND COALESCE(NEW.annual_salary, 0) <> 0
+    BEGIN
+      SELECT RAISE(ABORT, 'annual_salary는 정규직·정규직 수습 계약에만 허용됩니다');
+    END;
+
+CREATE TRIGGER trg_contracts_annual_update
+    BEFORE UPDATE OF annual_salary, contract_type ON contracts
+    WHEN NEW.contract_type NOT IN ('regular','regular_probation')
+      AND COALESCE(NEW.annual_salary, 0) <> 0
+    BEGIN
+      SELECT RAISE(ABORT, 'annual_salary는 정규직·정규직 수습 계약에만 허용됩니다');
+    END;
 

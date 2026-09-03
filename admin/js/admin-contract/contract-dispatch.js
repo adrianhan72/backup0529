@@ -947,6 +947,26 @@ async function dispatchContractManual(){
 // (계약 목록 — 발송 열 버튼에서 진입, 최종 편집본 파일이 있을 때만 활성)
 // ════════════════════════════════════════════════════════════
 
+/** 발송 모달 — 인앱 알림 발송항목 설정 반영 (검수/날인 요청 버튼 표시 제어) */
+function _csApplyInappTypeGates(){
+  let disabled = new Set();
+  try {
+    const raw = window._systemSettings && window._systemSettings['inapp_notice_types_disabled'];
+    if (raw) {
+      const arr = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      if (Array.isArray(arr)) disabled = new Set(arr);
+    }
+  } catch(_) {}
+  const reviewBtn = document.getElementById('cs-review-btn');
+  const sealBtn   = document.getElementById('cs-seal-btn');
+  const section   = document.getElementById('cs-company-section');
+  const reviewOff = disabled.has('contract_review_request');
+  const sealOff   = disabled.has('contract_seal_request');
+  if (reviewBtn) reviewBtn.style.display = reviewOff ? 'none' : '';
+  if (sealBtn)   sealBtn.style.display   = sealOff   ? 'none' : '';
+  if (section)   section.style.display   = (reviewOff && sealOff) ? 'none' : '';
+}
+
 /** 발송 모달 열기 — window._printing* 전역 설정 후 표시 */
 function openContractSendModal(contractId){
   const c = (allContracts||[]).find(x => x.id === contractId);
@@ -991,6 +1011,9 @@ function openContractSendModal(contractId){
   }
   const manualBtn = document.getElementById('cs-manual-btn');
   if(manualBtn) manualBtn.disabled = false;
+
+  // 인앱 알림 발송항목 설정 반영 — 체크 해제된 검수/날인 요청 버튼 숨김
+  _csApplyInappTypeGates();
 
   const modal = document.getElementById('contract-send-modal');
   if(modal) modal.classList.add('open');

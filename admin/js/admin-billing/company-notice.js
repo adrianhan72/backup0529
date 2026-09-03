@@ -346,6 +346,15 @@ async function _sendCompanyNotice({
     if (_ct && typeof isProbationType === 'function' && isProbationType(_ct)) return;
   }
 
+  // 인앱 알림 발송항목 설정 — 체크 해제된 유형은 발송 차단
+  try {
+    const _rawDisabled = window._systemSettings && window._systemSettings['inapp_notice_types_disabled'];
+    if (_rawDisabled) {
+      const _arr = typeof _rawDisabled === 'string' ? JSON.parse(_rawDisabled) : _rawDisabled;
+      if (Array.isArray(_arr) && _arr.includes(noticeType)) return;
+    }
+  } catch(_) {}
+
   // 시스템 설정 메시지 규칙 적용 (커스텀 규칙 있으면 덮어씀)
   const _rule = await _getCompanyMsgRule(noticeType);
   if(_rule){

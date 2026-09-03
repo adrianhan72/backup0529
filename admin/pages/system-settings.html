@@ -43,6 +43,29 @@
         </div>
       </div>
 
+      <!-- 인앱 알림 발송항목 설정 -->
+      <div class="section-title" style="margin-top:24px;">
+        <i class="fas fa-bell"></i>
+        <span>인앱 알림 발송항목 설정</span>
+        <span style="font-size:12px;color:#9ca3af;font-weight:400;">체크된 항목만 고객사 인앱 알림으로 발송됩니다 (크론 자동발송 포함)</span>
+      </div>
+      <div class="card" style="overflow:hidden;padding:20px;">
+        <div id="ss-inapp-checklist" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px 16px;margin-bottom:16px;">
+          <div style="font-size:12px;color:#9ca3af;">로딩 중...</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <button id="ss-inapp-save-btn" class="btn btn-primary input-std" onclick="ssSaveInappNoticeTypes()">
+            <i class="fas fa-save"></i> 설정 저장
+          </button>
+          <button id="ss-inapp-reset-btn" class="btn input-std" onclick="ssResetInappNoticeTypes()" style="padding:8px 16px;background:#f3f4f6;border:1px solid #d1d5db;border-radius:6px;font-size:13px;color:#374151;">
+            <i class="fas fa-undo"></i> 기본값으로 초기화
+          </button>
+          <span id="ss-inapp-saved-msg" style="font-size:12px;color:#059669;display:none;">
+            <i class="fas fa-check-circle"></i> 설정이 저장되었습니다.
+          </span>
+        </div>
+      </div>
+
       <!-- 메시지 본문 규칙 관리 -->
       <div class="section-title" style="margin-top:24px;">
         <i class="fas fa-file-alt"></i>

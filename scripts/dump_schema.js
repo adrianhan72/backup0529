@@ -1150,7 +1150,18 @@ if (remaining.length > 0) {
   }
 }
 
+// ── 트리거 덤프 (2026-09-03 추가 — contracts 연봉 가드 등) ──
+const triggers = db.prepare(`SELECT sql FROM sqlite_master WHERE type='trigger' AND sql IS NOT NULL ORDER BY name`).all();
+if (triggers.length > 0) {
+  schema += `-- =============================================================================\n`;
+  schema += `-- SECTION T: 트리거 (DB 무결성 가드)\n`;
+  schema += '-- =============================================================================\n\n';
+  for (const trg of triggers) {
+    schema += trg.sql + ';\n\n';
+  }
+}
+
 fs.writeFileSync('./data/schema.sql', schema, 'utf8');
-console.log(`schema.sql updated (${tables.length} tables, ${tables.reduce((s, t) => s + db.prepare('PRAGMA table_info(' + t.name + ')').all().length, 0)} columns)`);
+console.log(`schema.sql updated (${tables.length} tables, ${tables.reduce((s, t) => s + db.prepare('PRAGMA table_info(' + t.name + ')').all().length, 0)} columns, ${triggers.length} triggers)`);
 console.log('한글 주석 포함됨');
 db.close();

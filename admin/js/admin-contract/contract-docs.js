@@ -295,7 +295,15 @@ async function _ctfUpload(type, contractId, inputEl){
 // ── 파일 삭제 ──
 async function _ctfDelete(type, contractId){
   const label = type === 'signed' ? '계약서 날인본' : '제3자 개인정보 제공 동의서 날인본';
-  if(!confirm(`[${label} 삭제]\n\n삭제된 데이터는 복구할 수 없습니다.\n정말 삭제하시겠습니까?`)) return;
+  const confirmed = (typeof _showConfirm === 'function')
+    ? await _showConfirm({
+        title   : `${label} 삭제`,
+        message : '삭제된 데이터는 복구할 수 없습니다.\n정말 삭제하시겠습니까?',
+        okText  : '삭제',
+        okClass : 'btn-danger',
+      })
+    : confirm(`[${label} 삭제]\n\n삭제된 데이터는 복구할 수 없습니다.\n정말 삭제하시겠습니까?`);
+  if(!confirmed) return;
 
   const nameField = type === 'signed' ? 'signed_file_name'  : 'consent_file_name';
   const dataField = type === 'signed' ? 'signed_file_data'  : 'consent_file_data';
@@ -817,8 +825,62 @@ function printContract(){
 
 // ════════════════════════════════════════════════════════════
 // WORD(docx) 다운로드 — 화면에 보이는 계약서 HTML을 서버(docx 라이브러리)가
-// 클래스 기반으로 재구성해 화면과 동일한 디자인을 Word에 재현 (서버 변환)
+// 인라인 스타일 기반으로 재구성해 화면과 동일한 디자인을 Word에 재현
+// (2026-09-02: 클래스 매핑 → getComputedStyle 인라인화 방식으로 전면 개편)
 // ════════════════════════════════════════════════════════════
+
+// ── WORD 생성용 인라인 스타일 변환 (2026-09-02, 룰 예외: 워드 생성 경로 한정 인라인 허용) ──
+//   조회 모달(#cpm-doc-area)/미리보기(#ct-print-area)에서 현재 보여지는 디자인 그대로
+//   Word에 재현하기 위해, 브라우저가 계산한 최종 스타일(getComputedStyle)을
+//   모든 요소에 인라인으로 심어 전송한다.
+//   ※ 인쇄 CSS(_getContractPrintCSS)는 미적용 — 인쇄 전용 구규칙이 섞여
+//     화면과 다른(구버전) 디자인이 워드에 입혀지는 문제 방지.
+const _DOCX_INLINE_PROPS = [
+  'font-family','font-size','font-weight','font-style','color','letter-spacing','line-height','text-align',
+  'background-color',
+  'border-top-width','border-top-style','border-top-color',
+  'border-right-width','border-right-style','border-right-color',
+  'border-bottom-width','border-bottom-style','border-bottom-color',
+  'border-left-width','border-left-style','border-left-color',
+  'padding-top','padding-right','padding-bottom','padding-left',
+  'margin-top','margin-bottom',
+  'text-decoration-line','white-space','width','height','display','vertical-align','column-gap','row-gap',
+];
+
+function _inlineDocStylesForWord(sourceEl){
+  if(!sourceEl) return '';
+  const root = document.createElement('div');
+  root.id = '_docx_inline_root';
+  root.style.cssText = 'position:absolute;left:-99999px;top:0;width:794px;visibility:hidden;';
+  // 화면과 동일한 조상 문맥을 유지하도록 원본의 부모(모달 내부)에 부착 —
+  // absolute 배치라 화면 레이아웃에는 영향 없음. 원본 id/class가 그대로
+  // 복제되므로 화면용 CSS(#cpm-doc-area 등)가 복제본에도 동일하게 적용된다.
+  const host = sourceEl.parentElement || document.body;
+  root.appendChild(sourceEl.cloneNode(true));
+  host.appendChild(root);
+  try {
+    // 깊은 요소부터 역순으로 인라인화 — 조상에 먼저 px 행간 등이 심기면
+    // 자식의 상속 계산이 오염되므로(예: h1 행간이 27.3px→17.33px로 잘못 계산)
+    const els = Array.from(root.querySelectorAll('*')).reverse();
+    els.forEach(el => {
+      const cs = getComputedStyle(el);
+      if(cs.display === 'none'){ el.setAttribute('data-docx-skip', '1'); return; }
+      const out = [];
+      for(const p of _DOCX_INLINE_PROPS){
+        let v = cs.getPropertyValue(p);
+        if(v == null || v === '') continue;
+        if((p === 'width' || p === 'height') && !/px$/.test(v)) continue; // px 크기만 반영
+        // 투명 배경(rgba 알파0)은 제외 — Word에서 검정 배경으로 오염되는 것 방지
+        if(p === 'background-color' && (/rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*0(?:\.\d*)?\s*\)/i.test(v) || /^transparent$/i.test(v))) continue;
+        out.push(p + ':' + v);
+      }
+      el.setAttribute('style', out.join(';'));
+    });
+    return root.innerHTML;
+  } finally {
+    if(root.parentNode) root.parentNode.removeChild(root);
+  }
+}
 
 /** 계약서 HTML → 서버 docx 변환 → 다운로드 */
 async function _downloadContractDocxFromHtml(sourceEl, filename){
@@ -826,10 +888,12 @@ async function _downloadContractDocxFromHtml(sourceEl, filename){
   // 파기 워터마크(고정 오버레이)는 docx에서 제외
   const clone = sourceEl.cloneNode(true);
   clone.querySelectorAll('[style*="position:fixed"], [style*="position: fixed"]').forEach(n=>n.remove());
+  // 화면 디자인 그대로 Word에 재현하도록 전 요소 인라인 스타일화
+  const html = _inlineDocStylesForWord(clone);
   try {
     const res = await fetch('../api/contract-docx', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ html: clone.outerHTML, filename })
+      body: JSON.stringify({ html, filename })
     });
     if(!res.ok){
       const j = await res.json().catch(()=>({}));
@@ -1211,6 +1275,7 @@ function _collectContractDataFromRecord(c, emp, co){
     : _ctTypeNorm;
   const isDaily = contractType === CONTRACT_TYPE.DAILY;
   const isProb  = contractType === CONTRACT_TYPE.REGULAR_PROBATION || contractType === CONTRACT_TYPE.FIXED_PROBATION;
+  const isRegularGroupRec = contractType === CONTRACT_TYPE.REGULAR || contractType === CONTRACT_TYPE.REGULAR_PROBATION;
 
   // ── 근무 스케줄 파싱 (generateContractHTMLFromData와 동일 규칙) ──
   let schedule = [];
@@ -1293,7 +1358,7 @@ function _collectContractDataFromRecord(c, emp, co){
     probationBasis:  c.probation_basis||'salary',
     annualLeave:     parseFloat(c.annual_leave_days)||15,
     workDays, startTime, endTime, hoursPerDay, daysPerWeek, weekHours, breakInfo,
-    annualSalary:  parseFloat(c.annual_salary)||0,
+    annualSalary:  isRegularGroupRec ? (parseFloat(c.annual_salary)||0) : 0, // 계약직은 연봉 없음 (2026-09-03)
     baseSalary:    parseFloat(c.base_salary)||0,
     weeklyHol:     parseFloat(c.weekly_holiday_pay)||0,
     fixedOtPay:    parseFloat(c.fixed_ot_pay)||0,
@@ -1345,6 +1410,7 @@ function _collectContractData(){
   const isEdit = !!editId.contract;
   const isDaily = ctType===CONTRACT_TYPE.DAILY;
   const isProbation = ctType===CONTRACT_TYPE.REGULAR_PROBATION || ctType===CONTRACT_TYPE.FIXED_PROBATION;
+  const isRegularGroupCD = ctType===CONTRACT_TYPE.REGULAR || ctType===CONTRACT_TYPE.REGULAR_PROBATION;
 
   // 직원 정보 (신규 vs 수정)
   let empName='', phone='', address='', idNumber='', jobDescription='', department='', position='';
@@ -1473,7 +1539,7 @@ function _collectContractData(){
     overseasAllowance:   getAmountVal('ct-overseas')||0,
     overseasPayType:     _getCTPayTypeVal('overseas'),
     monthlySalary,
-    annualSalary:      getAmountVal('ct-annual-sal'),
+    annualSalary:      isRegularGroupCD ? getAmountVal('ct-annual-sal') : 0, // 계약직은 연봉 없음 (월 약정임금만, 2026-09-03)
     hourlyWage:        parseFloat(hourlyText.replace(/[^\d.]/g,''))||0,
     annualLeave:       document.getElementById('ct-annual')?.value||15,
     note:              document.getElementById('ct-note')?.value||'',
