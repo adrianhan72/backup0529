@@ -410,6 +410,24 @@
               </div>
               <!-- ══ 근로 실적 ══ -->
               <div class="pi-section-title green" style="margin-top:14px;"><i class="fas fa-clipboard-list"></i> 근로 실적</div>
+              <!-- ══ 상용직 아님 일용직: 일별 근로실적(공수) — 노무비지급명세서 형식 (2026-09-03) ══ -->
+              <div id="pi-daily-worklog-section" style="display:none;">
+                <div class="pi-row">
+                  <label>일별 근로실적 (공수) <span class="pi-auto-badge" style="background:#f59e0b;color:#fff;">일용직</span></label>
+                  <span id="pi-daily-worklog-unit" style="font-size:11px;color:#888;">단가 0원</span>
+                </div>
+                <div id="pi-daily-worklog-summary" style="font-size:11px;color:#2563eb;margin:0 0 6px;"></div>
+                <div style="overflow-x:auto;border:1px solid #e5e7eb;border-radius:8px;max-height:300px;overflow-y:auto;margin-bottom:10px;">
+                  <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                    <thead><tr style="background:#f8fafc;position:sticky;top:0;">
+                      <th style="padding:6px 8px;text-align:left;color:#64748b;border-bottom:1px solid #e5e7eb;">날짜</th>
+                      <th style="padding:6px 8px;text-align:left;color:#64748b;border-bottom:1px solid #e5e7eb;width:90px;">공수 (0.5 단위)</th>
+                      <th style="padding:6px 8px;text-align:left;color:#64748b;border-bottom:1px solid #e5e7eb;">노무비</th>
+                    </tr></thead>
+                    <tbody id="pi-daily-worklog-tbody"></tbody>
+                  </table>
+                </div>
+              </div>
               <div class="pi-row">
                 <label>근로일수 <span style="font-size:10px;font-weight:400;color:#888;">(만근 기준 소정근로일수가 상한)</span></label>
                 <div style="display:flex;align-items:center;gap:3px;"><input type="number" id="pi-work-days" placeholder="0" min="0" step="0.5" oninput="calcPIWorkActual()" class="pi-num-input" /><span style="font-size:11px;color:#888;">일</span></div>

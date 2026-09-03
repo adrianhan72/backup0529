@@ -38,7 +38,11 @@ function updateMenuBadges(){
   // 1) 근로계약서 미발송 → contract-dispatch
   // _contractDispatchList(발송 이력)가 heavy 데이터 → 로드 전에는 sentIds=Set([])이 되어 과다 집계
   if(_heavyReady){
+    // 전체 고객사 기준 미발송 건수 (페이지 고객사 스코프와 무관하게) — 2026-09-03
+    const _savedCo = (typeof _cdpUnsentCoId !== 'undefined') ? _cdpUnsentCoId : '';
+    if (typeof _cdpUnsentCoId !== 'undefined') _cdpUnsentCoId = '';
     const unsentList = typeof _cdpGetUnsentContracts === 'function' ? _cdpGetUnsentContracts() : [];
+    if (typeof _cdpUnsentCoId !== 'undefined') _cdpUnsentCoId = _savedCo;
     _setBadge('badge-contract-dispatch', unsentList.length);
   }
 
@@ -398,7 +402,7 @@ function selectWLCompany(id, name){
   document.getElementById('wl-company-select-card').style.display = 'none';
   document.getElementById('wl-main-section').style.display = '';
   document.getElementById('wl-selected-company-label').innerHTML =
-    `<i class="fas fa-building" style="margin-right:6px;"></i>${name}`;
+    `<i class="fas fa-table" style="margin-right:6px;"></i>${name}`;
   _initWLFilters();
   // 급여 데이터 로드 완료 여부에 따라 필터 활성/비활성화
   _setWLFilterReady(_heavyDataReady);

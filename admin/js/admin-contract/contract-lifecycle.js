@@ -1255,6 +1255,9 @@ function _collectRenewFormFields(){
   fields.base_salary   = getAmountVal('ct-base');
   fields.annual_salary = isRegGroup2 ? getAmountVal('ct-annual-sal') : 0;
   fields.daily_wage    = getAmountVal('ct-daily-wage');
+  fields.daily_worker_type = (ctNorm2 === CONTRACT_TYPE.DAILY)
+    ? ((typeof _ctDailyEmpTypeVal === 'function' ? _ctDailyEmpTypeVal() : '') || 'daily')
+    : null;
 
   // 월약정급여: 정규직이면 연봉/12, 그 외는 폼 계산값에서 읽기
   if (isRegGroup2 && fields.annual_salary > 0) {
@@ -3214,6 +3217,7 @@ async function saveDraftContract(reason){
     pre_used_annual_leave:parseFloat(document.getElementById('ct-pre-used-annual')?.value)||0,
     annual_salary:        isRegDraft ? annualDraft : 0, // 계약직: 연봉 없음 (월 약정임금 필드 사용, 2026-09-03)
     monthly_salary_agreed:monthlyDraft,
+    daily_worker_type:    isDailyDraft ? ((typeof _ctDailyEmpTypeVal === 'function' ? _ctDailyEmpTypeVal() : '') || 'daily') : null,
     base_salary:          isDailyDraft ? 0 : baseDraft,
     daily_wage:           isDailyDraft ? dailyDraft : 0,
     weekly_holiday_pay:   0,
@@ -3737,9 +3741,16 @@ function _ctValidate(){
   const isNew     = !editId.contract && !_recontractEmpId;
   const isEditOrRecontract = !isNew;
   // ── 공통: 근무시간표 (일괄적용 또는 개별 입력 필수) ──
+  //   단, 일용직 + '상용직 아님'은 근무시간표 작성 안 함 — 근로실적은 급여입력에서 처리 (2026-09-03)
+  const _dailyNonFulltime = (() => {
+    const _rawCatSch = isNew ? _ctNewCat() : (document.getElementById('ct-type')?.value || '');
+    const _catSch = CONTRACT_TYPE_LEGACY_MAP[_rawCatSch] || _rawCatSch;
+    if(_catSch !== CONTRACT_TYPE.DAILY) return false;
+    return (typeof _ctDailyEmpTypeVal === 'function' ? _ctDailyEmpTypeVal() : 'daily') !== 'fulltime';
+  })();
   const _schDays  = parseInt(document.getElementById('ct-days')?.value) || 0;
   const _schHours = parseFloat(document.getElementById('ct-hours')?.value) || 0;
-  if(_schDays <= 0 || _schHours <= 0){
+  if(!_dailyNonFulltime && (_schDays <= 0 || _schHours <= 0)){
     _ctMarkError('ct-schedule-table', '근무시간표 (일괄적용 또는 요일별 입력)', errors);
   }
 
@@ -4500,6 +4511,7 @@ async function saveContract(){
 
   // ── 일용직 임금 지급 방법 필드 (일급/주급/월합산 + 주급 산정기간 시작 요일) ──
   if(isDailySave){
+    body.daily_worker_type = (typeof _ctDailyEmpTypeVal === 'function' ? _ctDailyEmpTypeVal() : '') || 'daily';
     const _pmS = (typeof _ctPayMethodVal === 'function' ? _ctPayMethodVal() : '') || 'monthly';
     body.pay_method = _pmS;
     if(_pmS === 'monthly'){

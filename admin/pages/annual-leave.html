@@ -32,20 +32,34 @@
           <button onclick="alBackToCompanyList()" class="btn btn-icon-dark" title="고객사 선택 해제"><i class="fas fa-times"></i></button>
         </div>
 
-        <div class="card" style="margin-bottom:16px;overflow:hidden;">
-          <!-- 필터 바 -->
-          <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;padding:12px 18px;background:#fff;border-bottom:1px solid #f3f4f6;">
+        <!-- 탭 메뉴 (2026-09-03 — 연차사용촉진 발송 페이지 통합) -->
+        <div class="std-tab-bar" style="margin-top:0;">
+          <button class="std-tab active" id="al-tab-ledger" onclick="switchAlTab('ledger')">연차관리대장</button>
+          <button class="std-tab" id="al-tab-promotion" onclick="switchAlTab('promotion')">사용촉진 발송 이력</button>
+          <button class="std-tab" id="al-tab-preview" onclick="switchAlTab('preview')">메시지 예시</button>
+        </div>
+
+        <!-- 연차관리대장 섹션 -->
+        <div id="al-ledger-section">
+        <div class="std-tab-panel">
+
+        <!-- 필터 바 (다른 페이지와 동일 형태 — 2026-09-03) -->
+        <div class="card" style="margin-bottom:12px;overflow:hidden;">
+          <div class="filt-bar">
             <!-- 기준 연도 선택 -->
-            <div style="display:flex;align-items:center;gap:6px;">
-              <label style="font-size:12px;color:#6b7280;font-weight:600;">기준년도</label>
-              <select id="al-year-sel" onchange="_alPage=1;renderAlTable()" class="filt-select"></select>
+            <div style="display:flex;align-items:center;gap:5px;">
+              <span class="filt-label">기준년도</span>
+              <select id="al-year-sel" onchange="_alPage=1;renderAlTable()" class="filt-select" style="max-width:150px;"></select>
             </div>
-            <!-- 직원 검색 -->
-            <div class="filt-search-wrap" style="margin:0;">
+            <!-- 직원 검색 (우측) -->
+            <div class="filt-search-wrap" style="margin-left:auto;">
               <i class="fas fa-search"></i>
               <input type="text" id="al-emp-search" class="filt-search" placeholder="직원명 검색" oninput="renderAlTable()" style="width:140px;" />
             </div>
           </div>
+        </div>
+
+        <div class="card" style="margin-bottom:16px;overflow:hidden;">
 
           <!-- 요약 통계 카드 4개 -->
           <div class="al-stat-grid" style="padding:16px 18px;background:#fff;border-bottom:1px solid #f3f4f6;margin:0;">
@@ -108,5 +122,91 @@
           • <strong>잔여 수당 추계</strong>: 통상시급 × 8시간 × 잔여 연차일수 (계약서 기본급 기준, 참고용 수치)<br>
           • 일용직은 연차 산정 대상에서 제외됩니다.
         </div>
+
+        </div><!-- /std-tab-panel -->
+        </div><!-- /al-ledger-section -->
+
+        <!-- 사용촉진 발송 이력 섹션 (기존 연차사용촉진 발송 페이지 통합) -->
+        <div id="al-promotion-section" style="display:none;">
+        <div class="std-tab-panel">
+
+        <!-- 필터 바 -->
+        <div class="card" style="margin-bottom:16px;overflow:hidden;">
+          <div class="filt-bar">
+            <!-- 발송 방식 -->
+            <div style="display:flex;align-items:center;gap:5px;">
+              <span class="filt-label">방식</span>
+              <select id="lp-filter-method" onchange="_lpPage=1;renderLpTable()" class="filt-select">
+                <option value="">전체</option>
+                <option value="kakao">카카오 알림톡</option>
+                <option value="email">이메일</option>
+                <option value="phone">유선 직접 안내</option>
+              </select>
+            </div>
+            <!-- 기간 -->
+            <div style="display:flex;align-items:center;gap:5px;">
+              <span class="filt-label">기간</span>
+              <input type="date" id="lp-filter-date-from" class="filt-date" />
+              <span style="font-size:11px;color:#9ca3af;">~</span>
+              <input type="date" id="lp-filter-date-to" class="filt-date" />
+              <button onclick="_lpDoSearch()" class="filt-btn-search">조회</button>
+              <span id="lp-date-notice" style="font-size:10.5px;color:#9ca3af;white-space:nowrap;">(최대 3개월)</span>
+            </div>
+            <!-- 검색 + 새로고침 (우측) -->
+            <div style="display:flex;align-items:center;gap:6px;margin-left:auto;">
+              <div class="filt-search-wrap">
+                <i class="fas fa-search"></i>
+                <input type="text" id="lp-search" class="filt-search" style="width:140px;" placeholder="직원명 검색" oninput="renderLpTable()" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 요약 통계 -->
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:12px;padding:0 2px;">
+          <div style="font-size:12.5px;color:#374151;">
+            전체 <strong id="lp-total-count" style="color:#6366f1;">0</strong>건
+          </div>
+          <div style="font-size:12.5px;color:#374151;">
+            이번달 <strong id="lp-month-count" style="color:#059669;">0</strong>건
+          </div>
+        </div>
+
+        <!-- 발송 이력 테이블 -->
+        <div class="card" style="overflow:hidden;padding:0;">
+          <div style="overflow-x:auto;">
+            <table class="al-table">
+              <thead>
+                <tr>
+                  <th>발송 일시</th>
+                  <th>고객사</th>
+                  <th>직원명</th>
+                  <th>고용형태</th>
+                  <th class="right">총 발생</th>
+                  <th class="right">사용</th>
+                  <th class="right">잔여</th>
+                  <th>발송 방식</th>
+                  <th>고객사 알림</th>
+                  <th>발송자</th>
+                  <th>연차 산정 기준</th>
+                </tr>
+              </thead>
+              <tbody id="lp-tbody">
+                <tr><td colspan="11" class="cen-empty"><i class="fas fa-spinner fa-spin"></i> 불러오는 중...</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="pagination" id="lp-pagination"></div>
+        </div>
+
+        </div><!-- /std-tab-panel -->
+        </div><!-- /al-promotion-section -->
+
+        <!-- 메시지 예시 섹션 -->
+        <div id="al-preview-section" style="display:none;">
+        <div class="std-tab-panel">
+          <div id="al-preview-content"></div>
+        </div><!-- /std-tab-panel -->
+        </div><!-- /al-preview-section -->
       </div>
     </div><!-- /page-annual-leave -->

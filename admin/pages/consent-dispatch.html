@@ -1,26 +1,40 @@
     <div id="page-consent-dispatch" class="page">
 
+      <!-- 고객사 선택 -->
+      <div id="cns-company-select-card">
+        <div class="section-title">
+          <i class="fas fa-building" style="font-size:13px;"></i>
+          <span>고객사별 정보제공동의서 발송 관리</span>
+          <div class="filt-search-wrap" style="margin-left:auto;">
+            <i class="fas fa-search"></i>
+            <input type="text" id="cns-company-search" class="filt-search" placeholder="고객사명 검색" oninput="renderCnsCompanyList()" />
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:16px;overflow:hidden;">
+          <div id="cns-company-chips" style="padding:20px;display:flex;flex-wrap:wrap;gap:8px;"></div>
+        </div>
+      </div>
+
+      <!-- 선택 고객사 콘텐츠 -->
+      <div id="cns-content-section" style="display:none;">
+
+      <!-- 선택 고객사 헤더 -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:12px 18px;background:linear-gradient(90deg,#1e1b4b,#312e81);border-radius:10px;">
+        <span id="cns-selected-company-label" style="font-size:14px;font-weight:700;color:#fff;"></span>
+        <button onclick="clearCnsCompanySelect()" class="btn btn-icon-dark" title="고객사 선택 해제"><i class="fas fa-times"></i></button>
+      </div>
+
       <!-- 탭 메뉴 -->
       <div class="std-tab-bar" style="margin-top:0;">
         <button class="std-tab active" id="cns-tab-unsent" onclick="_cnsSwitchTab('unsent')">미발송 동의서</button>
         <button class="std-tab" id="cns-tab-history" onclick="_cnsSwitchTab('history')">발송 이력</button>
         <button class="std-tab" id="cns-tab-preview" onclick="_cnsSwitchTab('preview')">메시지 예시</button>
+        <button class="btn btn-indigo btn-sm" style="margin-left:auto;align-self:center;" onclick="cnsOpenConsentFormPreview()" title="제3자 정보제공 동의서 양식(PDF) 미리보기"><i class="fas fa-file-shield"></i> 동의서양식 PDF 보기</button>
       </div>
 
       <!-- 미발송 동의서 섹션 -->
       <div id="cns-unsent-section">
       <div class="std-tab-panel">
-      <!-- 고객사 선택 -->
-      <div style="margin-bottom:12px;">
-        <div class="cust-dropdown" id="cns-unsent-co-dropdown" style="position:relative;">
-          <div id="cns-unsent-co-btn" class="cust-dropdown-btn" onclick="_cnsToggleCoDropdown()">
-            <span id="cns-unsent-co-label" class="cust-co-label">전체 고객사</span>
-            <span id="cns-unsent-co-badge" class="count-badge cust-co-count">0</span>
-            <i class="fas fa-chevron-down cust-co-arrow"></i>
-          </div>
-          <div id="cns-unsent-co-list" class="cust-dropdown-list" style="display:none;"></div>
-        </div>
-      </div>
       <!-- 입사 년월 선택 카드 -->
       <div class="card" id="cns-unsent-month-card" style="margin-bottom:12px;overflow:hidden;">
         <div style="padding:14px 20px;">
@@ -41,14 +55,13 @@
             <thead>
               <tr>
                 <th class="ctr" style="width:36px;"><input type="checkbox" id="cns-chk-all" onchange="cnsToggleAll(this)" title="전체 선택" /></th>
-                <th>고객사</th><th>직원명</th><th>고용구분</th><th>입사일</th>
+                <th>직원명</th><th>고용구분</th><th>입사일</th>
                 <th>연락처</th><th>이메일</th>
-                <th class="ctr">계약서</th>
                 <th class="ctr">개별 관리</th>
               </tr>
             </thead>
             <tbody id="cns-unsent-tbody">
-              <tr><td colspan="9" class="pss-loading"><i class="fas fa-spinner fa-spin"></i> 로딩 중...</td></tr>
+              <tr><td colspan="7" class="pss-loading"><i class="fas fa-spinner fa-spin"></i> 로딩 중...</td></tr>
             </tbody>
           </table>
         </div>
@@ -78,13 +91,6 @@
       <!-- ── 필터 바 ── -->
       <div class="card" style="margin-bottom:12px;overflow:hidden;">
         <div class="filt-bar">
-          <!-- 고객사 -->
-          <div style="display:flex;align-items:center;gap:5px;">
-            <span class="filt-label">고객사</span>
-            <select id="cns-filter-company" onchange="_cnsPage=1;renderConsentDispatchPage()" class="filt-select" style="max-width:240px;">
-              <option value="">전체</option>
-            </select>
-          </div>
           <!-- 발송 방식 -->
           <div style="display:flex;align-items:center;gap:5px;">
             <span class="filt-label">발송 방식</span>
@@ -125,18 +131,16 @@
             <thead>
               <tr>
                 <th>발송 일시</th>
-                <th>고객사</th>
                 <th>직원명</th>
                 <th>계약 유형</th>
                 <th class="ctr" style="text-align:center;">발송 방식</th>
                 <th>수신처</th>
                 <th class="ctr" style="text-align:center;">결과</th>
                 <th>처리자</th>
-                <th class="ctr">계약서</th>
               </tr>
             </thead>
             <tbody id="cns-tbody">
-              <tr><td colspan="9" class="cen-empty"><i class="fas fa-spinner fa-spin"></i> 데이터 로딩 중...</td></tr>
+              <tr><td colspan="7" class="cen-empty"><i class="fas fa-spinner fa-spin"></i> 데이터 로딩 중...</td></tr>
             </tbody>
           </table>
         </div>
@@ -153,4 +157,6 @@
         <div id="cns-preview-content"></div>
       </div>
       </div><!-- /cns-preview-section -->
+
+      </div><!-- /cns-content-section -->
     </div><!-- /page-consent-dispatch -->

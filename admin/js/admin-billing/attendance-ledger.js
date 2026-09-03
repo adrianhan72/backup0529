@@ -54,7 +54,8 @@ async function atlSelectCompany(companyId, companyName) {
   _atlCompanyName = companyName;
   document.getElementById('atl-company-select-card').style.display = 'none';
   document.getElementById('atl-main-section').style.display = '';
-  document.getElementById('atl-company-name-title').textContent = companyName;
+  document.getElementById('atl-company-name-title').innerHTML =
+    `<i class="fas fa-clipboard-check" style="margin-right:6px;"></i>${companyName}`;
   _atlRefYear = parseInt(document.getElementById('atl-year-sel')?.value) || new Date().getFullYear();
 
   try {
@@ -80,11 +81,20 @@ function atlRenderTable() {
   const tbody = document.getElementById('atl-tbody');
   if (!tbody || !_atlCompanyId) return;
 
-  const _ATL_EXCLUDED_TYPES = new Set(['daily', CONTRACT_TYPE.EXECUTIVE, CONTRACT_TYPE.REPRESENTATIVE, CONTRACT_TYPE.RELATED_PARTY]);
+  const _ATL_EXCLUDED_TYPES = new Set([CONTRACT_TYPE.EXECUTIVE, CONTRACT_TYPE.REPRESENTATIVE, CONTRACT_TYPE.RELATED_PARTY]);
+  // 일용직은 '상용직 취급(fulltime)'만 근태관리대장 대상 (상용직 아님은 급여입력 공수 그리드로 처리 — 2026-09-03)
+  const _atlDailyIsFulltime = empId => {
+    const _c = (allContracts||[]).find(c => c.employee_id === empId && !c.is_draft && !c.is_voided_by_amend);
+    return !!_c && (_c.daily_worker_type || 'daily') === 'fulltime';
+  };
   const emps = (allEmployees || []).filter(e =>
     e.company_id === _atlCompanyId &&
     e.status === 'active' &&
-    !_ATL_EXCLUDED_TYPES.has(e.employment_category)
+    // 수습근로자 관리 OFF → 정규직 수습·계약직 수습 고용형태는 목록에서 제외 (2026-09-03)
+    !(!window._probationFeatureEnabled && typeof isProbationType === 'function' && isProbationType(e.employment_category)) &&
+    (e.employment_category !== CONTRACT_TYPE.DAILY
+      ? !_ATL_EXCLUDED_TYPES.has(e.employment_category)
+      : _atlDailyIsFulltime(e.id))
   ).sort((a,b) => (a.name||'').localeCompare(b.name||'', 'ko'));
 
   const filtered = searchQ ? emps.filter(e => (e.name||'').toLowerCase().includes(searchQ)) : emps;

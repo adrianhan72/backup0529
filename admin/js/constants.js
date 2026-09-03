@@ -370,7 +370,6 @@ const PAGE = Object.freeze({
   REGULAR_CONVERSION:     'regular-conversion',
   PROBATION_MGMT:         'probation-mgmt',
   ANNUAL_LEAVE:           'annual-leave',
-  LEAVE_PROMOTION:        'leave-promotion',
   COMPANY_NOTICE_LOG:     'company-notice-log',
   GENERAL_NOTICE:         'general-notice',
 });
@@ -600,7 +599,6 @@ const PAGE_LABELS = Object.freeze({
   standards:              '연도별 산정기준',
   severance:              '퇴직급여 관리',
   'annual-leave':         '연차관리대장',
-  'leave-promotion':      '연차사용촉진 발송',
   'retirement-mgmt':      '퇴직금 산정',
   'attendance-ledger':    '근태관리대장',
   'system-settings':      '시스템 설정',

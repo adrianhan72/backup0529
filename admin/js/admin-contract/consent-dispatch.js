@@ -7,6 +7,17 @@ let _cnsPage = 1;
 const _cnsPageSize = 10;
 let _cnsUnsentCoId = '';
 
+// ── 제3자 정보제공 동의서 표준 양식 (파일서버 등록본) ──
+const _CNS_FORM_FILE_PATH = '/uploads/consent/제3자정보제공동의서양식.pdf';
+/** 동의서 양식 파일 절대 URL (근로자 발송 메시지·미리보기 공용) */
+function _cnsFormFileUrl(){
+  return (location.origin || '') + _CNS_FORM_FILE_PATH;
+}
+/** 동의서 양식 미리보기 — 새 탭에서 PDF 열기 */
+function cnsOpenConsentFormPreview(){
+  window.open(encodeURI(_CNS_FORM_FILE_PATH), '_blank');
+}
+
 // ── 탭 전환 ──
 function _cnsSwitchTab(tab){
   const unsentEl = document.getElementById('cns-unsent-section');
@@ -41,69 +52,62 @@ function _cnsRenderPreview(){
   }
 }
 
-// ── 커스텀 고객사 드롭다운 토글 ──
-function _cnsToggleCoDropdown(){
-  const list = document.getElementById('cns-unsent-co-list');
-  const btn = document.getElementById('cns-unsent-co-btn');
-  if(!list || !btn) return;
-  const isOpen = list.style.display === 'block';
-  if(isOpen){ list.style.display = 'none'; return; }
-  const rect = btn.getBoundingClientRect();
-  list.style.top = (rect.bottom + 4) + 'px';
-  list.style.left = rect.left + 'px';
-  list.style.width = Math.min(window.innerWidth - rect.left - 20, 800) + 'px';
-  list.style.display = 'block';
-  setTimeout(() => {
-    const handler = e => {
-      const dd = document.getElementById('cns-unsent-co-dropdown');
-      if(dd && !dd.contains(e.target)){ list.style.display = 'none'; document.removeEventListener('click', handler); }
-    };
-    document.addEventListener('click', handler);
-  }, 0);
+// ── 고객사 선택 칩 렌더 ──
+function renderCnsCompanyList(){
+  const q = (document.getElementById('cns-company-search')?.value || '').toLowerCase().trim();
+  const container = document.getElementById('cns-company-chips');
+  if(!container) return;
+  const companies = allCompanies.filter(c =>
+    isCompanyActive(c) && (!q || (c.company_name||'').toLowerCase().includes(q))
+  ).sort((a,b) => (a.company_name||'').localeCompare(b.company_name||'', 'ko'));
+  if(!companies.length){
+    container.innerHTML = `<div style="color:#9ca3af;font-size:13px;padding:8px 0;">${q ? `"${q}" 검색 결과 없음` : '이용 중인 고객사가 없습니다'}</div>`;
+    return;
+  }
+  container.innerHTML = companies.map(c => {
+    const isSelected = c.id === currentGlobalCompanyId;
+    return `<button onclick="selectCnsCompany('${c.id}','${(c.company_name||'').replace(/'/g,"\\'")}')"
+      class="co-chip${isSelected?' selected':''}">
+      <i class="fas fa-building" style="font-size:11px;"></i>
+      ${c.company_name}
+    </button>`;
+  }).join('');
 }
 
-function _cnsSelectCo(coId, coName){
-  _cnsUnsentCoId = coId;
-  document.getElementById('cns-unsent-co-label').textContent = coName || '전체 고객사';
-  const unsent = _cnsGetUnsentContracts();
-  const cnt = coId ? unsent.filter(c => c.company_id === coId).length : unsent.length;
-  document.getElementById('cns-unsent-co-badge').textContent = cnt;
-  document.getElementById('cns-unsent-co-list').style.display = 'none';
+// ── 고객사 선택 ──
+async function selectCnsCompany(companyId, companyName){
+  _cnsUnsentCoId = companyId;
+  currentGlobalCompanyId = companyId;
+  currentGlobalCompanyName = companyName;
+
+  // 선택 카드 숨김 + 콘텐츠 표시 (2026-09-03 — 고객사 우선 선택 구조)
+  const selCard = document.getElementById('cns-company-select-card');
+  const content = document.getElementById('cns-content-section');
+  if(selCard) selCard.style.display = 'none';
+  if(content) content.style.display = '';
+  const labelEl = document.getElementById('cns-selected-company-label');
+  if(labelEl) labelEl.innerHTML = `<i class="fas fa-file-shield" style="margin-right:6px;"></i>${companyName} 정보제공동의서 발송 관리`;
+
+  _cnsSwitchTab('unsent');
+  await loadConsentDispatchList(true);
+  _setDefaultDateRange('cns-filter-date-from', 'cns-filter-date-to');
   renderCnsUnsentMonthTabs();
   renderCnsUnsentList();
+  await renderConsentDispatchPage();
 }
 
-function _cnsPopulateUnsentCompanySelect(){
-  const btn = document.getElementById('cns-unsent-co-btn');
-  const list = document.getElementById('cns-unsent-co-list');
-  if(!btn || !list) return;
-  const activeCos = allCompanies.filter(c => isCompanyActive(c));
-  const unsent = _cnsGetUnsentContracts();
-  const totalCount = unsent.length;
-  const countByCo = {};
-  unsent.forEach(c => { countByCo[c.company_id] = (countByCo[c.company_id]||0) + 1; });
-  const label = document.getElementById('cns-unsent-co-label');
-  const badgeEl = document.getElementById('cns-unsent-co-badge');
-  if(currentGlobalCompanyId){
-    _cnsUnsentCoId = currentGlobalCompanyId;
-    const co = allCompanies.find(c => c.id === currentGlobalCompanyId);
-    if(label) label.textContent = co ? co.company_name : '전체 고객사';
-    const selCnt = currentGlobalCompanyId ? (countByCo[currentGlobalCompanyId]||0) : totalCount;
-    if(badgeEl) badgeEl.textContent = selCnt;
-  } else {
-    if(label) label.textContent = '전체 고객사';
-    if(badgeEl) badgeEl.textContent = totalCount;
-  }
-  list.innerHTML =
-    `<div class="cust-dropdown-item${!_cnsUnsentCoId?' selected':''}" onclick="_cnsSelectCo('','전체 고객사')">
-      <span>전체 고객사</span><span class="count-badge">${totalCount}</span>
-    </div>` +
-    activeCos.map(c => {
-      const cnt = countByCo[c.id] || 0;
-      return `<div class="cust-dropdown-item${_cnsUnsentCoId===c.id?' selected':''}" onclick="_cnsSelectCo('${c.id}','${c.company_name.replace(/'/g,"\\'")}')">
-        <span>${c.company_name}</span><span class="count-badge">${cnt}</span>
-      </div>`;
-    }).join('');
+// ── 고객사 선택 해제 ──
+function clearCnsCompanySelect(){
+  _cnsUnsentCoId = '';
+  currentGlobalCompanyId = null;
+  currentGlobalCompanyName = '';
+  const selCard = document.getElementById('cns-company-select-card');
+  const content = document.getElementById('cns-content-section');
+  if(selCard) selCard.style.display = '';
+  if(content) content.style.display = 'none';
+  const searchEl = document.getElementById('cns-company-search');
+  if(searchEl) searchEl.value = '';
+  renderCnsCompanyList();
 }
 
 // ── 기간 검증: 최대 3개월 제한 (조회 버튼 클릭 시) ──
@@ -159,7 +163,10 @@ async function loadConsentDispatchList(forceReload = false) {
 function _updateCnsMenuBadge() {
   const badge = document.getElementById('badge-consent-dispatch');
   if (!badge) return;
+  // 전체 고객사 기준 미발송 건수 (페이지 고객사 스코프와 무관하게) — 2026-09-03
+  const _saved = _cnsUnsentCoId; _cnsUnsentCoId = '';
   const unsent = _cnsGetUnsentContracts();
+  _cnsUnsentCoId = _saved;
   if (unsent.length > 0) {
     badge.textContent = unsent.length;
     badge.style.display = '';
@@ -174,23 +181,10 @@ async function renderConsentDispatchPage() {
 
   const filterMethod = document.getElementById('cns-filter-method')?.value || '';
   const filterStatus = document.getElementById('cns-filter-status')?.value || '';
-  const filterCompany = document.getElementById('cns-filter-company')?.value || '';
+  const filterCompany = _cnsUnsentCoId; // 페이지 선택 고객사 고정 (2026-09-03)
   const filterDateFrom = document.getElementById('cns-filter-date-from')?.value || '';
   const filterDateTo = document.getElementById('cns-filter-date-to')?.value || '';
   const searchKw = (document.getElementById('cns-search')?.value || '').trim().toLowerCase();
-
-  // 고객사 필터 옵션
-  const coSel = document.getElementById('cns-filter-company');
-  if (coSel && coSel.options.length <= 1) {
-    const uniqueCompanies = [...new Map(
-      window._consentDispatchList.map(r => [r.company_id, r.company_name])
-    ).entries()].sort((a, b) => (a[1] || '').localeCompare(b[1] || '', 'ko'));
-    uniqueCompanies.forEach(([id, name]) => {
-      const opt = document.createElement('option');
-      opt.value = id; opt.textContent = name || id;
-      coSel.appendChild(opt);
-    });
-  }
 
   const filtered = window._consentDispatchList.filter(r => {
     if (filterMethod && r.dispatch_method !== filterMethod) return false;
@@ -219,7 +213,7 @@ async function renderConsentDispatchPage() {
   if (!tbody) return;
 
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="9" class="cen-empty"><i class="fas fa-inbox"></i> 발송 이력이 없습니다.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" class="cen-empty"><i class="fas fa-inbox"></i> 발송 이력이 없습니다.</td></tr>`;
     document.getElementById('cns-pagination').innerHTML = '';
     return;
   }
@@ -260,28 +254,15 @@ async function renderConsentDispatchPage() {
     return `<span class="badge ${badgeCls}">${label}</span>`;
   };
 
-  const attachBtn = contractId => {
-    if (!contractId) return `<span style="font-size:11.5px;color:#d1d5db;">-</span>`;
-    const c = (allContracts || []).find(x => x.id === contractId);
-    if (!c) return `<span style="font-size:11.5px;color:#d1d5db;">-</span>`;
-    return `<button onclick="event.stopPropagation();openContractPrintModal('${contractId}')"
-      class="btn btn-indigo btn-sm"
-      title="근로계약 조건에 따라 자동완성된 계약서 미리보기">
-      <i class="fas fa-file-contract" style="font-size:10px;"></i>미리보기
-    </button>`;
-  };
-
   tbody.innerHTML = pageData.map((r, idx) => {
     return `<tr>
       <td style="color:#374151;white-space:nowrap;">${fmtDt(r.dispatched_at)}</td>
-      <td style="font-weight:600;color:#111827;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.company_name||''}">${r.company_name||'-'}</td>
       <td style="font-weight:700;color:#111827;">${r.employee_name||'-'}</td>
       <td>${typeBadge(r.contract_type)}</td>
       <td class="ctr">${methodBadge(r.dispatch_method)}</td>
       <td style="font-size:12px;color:#374151;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.recipient||''}">${r.recipient||'-'}</td>
       <td class="ctr">${statusBadge(r.dispatch_status)}</td>
       <td style="font-size:12px;color:#6b7280;">${r.dispatched_by||'-'}</td>
-      <td class="ctr" style="white-space:nowrap;">${attachBtn(r.contract_id)}</td>
     </tr>`;
   }).join('');
 
@@ -421,7 +402,7 @@ function renderCnsUnsentList() {
     const emp = (allEmployees || []).find(e => e.id === c.employee_id);
     const co = (allCompanies || []).find(x => x.id === c.company_id);
     const empName = emp ? emp.name : '-';
-    const coName = co ? co.company_name : '-';
+    const coName = co ? co.company_name : '-'; // 발송 버튼 파라미터용 (테이블 열은 제거됨 — 2026-09-03)
     const phone = emp ? (emp.phone || '-') : '-';
     const email = emp ? (emp.email || '-') : '-';
     const cat = c.contract_type || (emp ? emp.employment_category : '') || '-';
@@ -433,13 +414,11 @@ function renderCnsUnsentList() {
 
     return `<tr style="border-bottom:1px solid #f3f4f6;">
       <td class="ctr"><input type="checkbox" class="cns-row-chk" data-contract-id="${c.id}" onchange="cnsUpdateBatchBtns()" /></td>
-      <td style="font-size:12px;color:#111827;font-weight:700;">${coName}</td>
       <td style="font-weight:700;color:#111827;">${empName}</td>
       <td><span class="badge ${typeof empCatBadge === 'function' ? empCatBadge(cat) : 'badge-gray'}">${typeof contractTypeLabel === 'function' ? contractTypeLabel(cat) : cat}</span></td>
       <td style="font-size:12px;color:#6b7280;">${c.contract_start || '-'}</td>
       <td style="font-size:12px;color:#6b7280;">${hasPhone ? phone : '<span style="color:#d1d5db;">미등록</span>'}</td>
       <td style="font-size:12px;">${hasEmail ? `<span style="color:#374151;">${email}</span>` : '<span style="color:#d1d5db;">미등록</span>'}</td>
-      <td style="text-align:center;white-space:nowrap;">${c.id ? `<button onclick="event.stopPropagation();openContractPrintModal('${c.id}')" class="btn btn-indigo btn-sm" title="자동완성 근로계약서 미리보기"><i class="fas fa-file-contract" style="font-size:10px;"></i>미리보기</button>` : '<span style="color:#d1d5db;">-</span>'}</td>
       <td style="text-align:center;white-space:nowrap;">
         <button onclick="cnsUnsentKakao('${c.id}','${empName}','${phone}','${coName}')" ${hasPhone ? '' : 'disabled'}
           class="${kakaoClass}" style="margin-right:3px;">
@@ -461,20 +440,20 @@ function renderCnsUnsentList() {
 
 // ── 개별 발송 ──
 async function cnsUnsentKakao(contractId, empName, phone, coName) {
-  if (!confirm(`'${empName}'님에게 제3자 정보제공 동의서를 알림톡으로 발송하시겠습니까?\n수신번호: ${phone}`)) return;
-  await _cnsSaveDispatchRecord({ method: 'kakao', status: 'completed', recipient: phone, note: '알림톡 발송', contractId, empName, coName });
+  if (!confirm(`'${empName}'님에게 제3자 정보제공 동의서를 알림톡으로 발송하시겠습니까?\n수신번호: ${phone}\n\n■ 동의서 파일: ${_cnsFormFileUrl()}`)) return;
+  await _cnsSaveDispatchRecord({ method: 'kakao', status: 'completed', recipient: phone, note: `수신번호: ${phone}\n■ 동의서 파일: ${_cnsFormFileUrl()}`, contractId, empName, coName });
   _cnsRefreshUnsent();
 }
 
 async function cnsUnsentEmail(contractId, empName, email, coName) {
-  if (!confirm(`'${empName}'님에게 제3자 정보제공 동의서를 이메일로 발송하시겠습니까?\n수신주소: ${email}`)) return;
-  await _cnsSaveDispatchRecord({ method: 'email', status: 'completed', recipient: email, note: '이메일 발송', contractId, empName, coName });
+  if (!confirm(`'${empName}'님에게 제3자 정보제공 동의서를 이메일로 발송하시겠습니까?\n수신주소: ${email}\n\n■ 동의서 파일: ${_cnsFormFileUrl()}`)) return;
+  await _cnsSaveDispatchRecord({ method: 'email', status: 'completed', recipient: email, note: `수신 이메일: ${email}\n■ 동의서 파일: ${_cnsFormFileUrl()}`, contractId, empName, coName });
   _cnsRefreshUnsent();
 }
 
 async function cnsUnsentManual(contractId, empName, coName) {
-  if (!confirm(`'${empName}'님에게 제3자 정보제공 동의서를 수동교부 처리하시겠습니까?`)) return;
-  await _cnsSaveDispatchRecord({ method: 'manual', status: 'completed', recipient: '수동교부', note: '수동교부', contractId, empName, coName });
+  if (!confirm(`'${empName}'님에게 제3자 정보제공 동의서를 수동교부 처리하시겠습니까?\n\n■ 동의서 파일: ${_cnsFormFileUrl()}`)) return;
+  await _cnsSaveDispatchRecord({ method: 'manual', status: 'completed', recipient: '수동교부', note: `수동교부 — 동의서 파일: ${_cnsFormFileUrl()}`, contractId, empName, coName });
   _cnsRefreshUnsent();
 }
 
@@ -578,7 +557,7 @@ async function cnsBatchKakao(){
     for(const c of valid){
       const emp = allEmployees.find(e => e.id === c.employee_id) || {};
       try{
-        await _cnsSaveDispatchRecord({ method: 'kakao', status: 'completed', recipient: emp.phone || '', note:`선택 일괄 알림톡 — ${emp.name}`, contractId: c.id, empName: emp.name, coName: (allCompanies.find(x=>x.id===c.company_id)||{}).company_name||'' });
+        await _cnsSaveDispatchRecord({ method: 'kakao', status: 'completed', recipient: emp.phone || '', note:`선택 일괄 알림톡 — ${emp.name}\n■ 동의서 파일: ${_cnsFormFileUrl()}`, contractId: c.id, empName: emp.name, coName: (allCompanies.find(x=>x.id===c.company_id)||{}).company_name||'' });
         ok++;
       } catch(e){}
     }
@@ -616,7 +595,7 @@ async function cnsBatchEmail(){
     for(const c of valid){
       const emp = allEmployees.find(e => e.id === c.employee_id) || {};
       try{
-        await _cnsSaveDispatchRecord({ method: 'email', status: 'completed', recipient: emp.email || '', note:`선택 일괄 이메일 — ${emp.name}`, contractId: c.id, empName: emp.name, coName: (allCompanies.find(x=>x.id===c.company_id)||{}).company_name||'' });
+        await _cnsSaveDispatchRecord({ method: 'email', status: 'completed', recipient: emp.email || '', note:`선택 일괄 이메일 — ${emp.name}\n■ 동의서 파일: ${_cnsFormFileUrl()}`, contractId: c.id, empName: emp.name, coName: (allCompanies.find(x=>x.id===c.company_id)||{}).company_name||'' });
         ok++;
       } catch(e){}
     }
@@ -641,7 +620,7 @@ async function cnsBatchManual(){
     for(const c of _cnsGetUnsentContracts(_cnsSelectedYM.year, _cnsSelectedYM.month).filter(c => ids.includes(c.id))){
       const emp = allEmployees.find(e => e.id === c.employee_id) || {};
       try{
-        await _cnsSaveDispatchRecord({ method: 'manual', status: 'completed', recipient:'직접배부', note:`선택 일괄 수동교부 — ${emp.name}`, contractId: c.id, empName: emp.name, coName: (allCompanies.find(x=>x.id===c.company_id)||{}).company_name||'' });
+        await _cnsSaveDispatchRecord({ method: 'manual', status: 'completed', recipient:'직접배부', note:`선택 일괄 수동교부 — ${emp.name}\n■ 동의서 파일: ${_cnsFormFileUrl()}`, contractId: c.id, empName: emp.name, coName: (allCompanies.find(x=>x.id===c.company_id)||{}).company_name||'' });
         ok++;
       } catch(e){}
     }
@@ -660,7 +639,10 @@ function _updateDashConsentBanner() {
 
   if (typeof _heavyDataReady !== 'undefined' && !_heavyDataReady) return;
 
+  // 전체 고객사 기준 미발송 건수 (페이지 고객사 스코프와 무관하게) — 2026-09-03
+  const _saved = _cnsUnsentCoId; _cnsUnsentCoId = '';
   const unsentList = _cnsGetUnsentContracts();
+  _cnsUnsentCoId = _saved;
   const totalUnsent = unsentList.length;
 
   const consentInactive = totalUnsent === 0;

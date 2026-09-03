@@ -1,8 +1,43 @@
 <!-- ==========================================
    퇴직 관리 페이지 (retirement-mgmt)
    ========================================== -->
-<div class="retirement-mgmt-wrap" style="padding:24px 28px;">
 
+  <!-- 고객사 선택 -->
+  <div id="ret-company-select-card">
+    <div class="section-title">
+      <i class="fas fa-building"></i>
+      <span>고객사를 선택하세요</span>
+      <div class="filt-search-wrap" style="margin-left:auto;">
+        <i class="fas fa-search"></i>
+        <input type="text" id="ret-company-search" class="filt-search" placeholder="고객사명 검색" oninput="renderRetCompanyList()" />
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:16px;overflow:hidden;">
+      <div id="ret-company-chips" style="padding:20px;display:flex;flex-wrap:wrap;gap:8px;"></div>
+    </div>
+  </div>
+
+  <!-- 선택 고객사 콘텐츠 -->
+  <div id="ret-content-section" style="display:none;">
+
+  <!-- 선택 고객사 헤더 -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:12px 18px;background:linear-gradient(90deg,#1e1b4b,#312e81);border-radius:10px;">
+    <span id="ret-selected-company-label" style="font-size:14px;font-weight:700;color:#fff;"></span>
+    <button onclick="clearRetCompanySelect()" class="btn btn-icon-dark" title="고객사 선택 해제"><i class="fas fa-times"></i></button>
+  </div>
+
+  <!-- 탭 메뉴 (2026-09-03 — 근로계약서 관리/발송·동의서 발송과 동일 구조) -->
+  <div class="std-tab-bar" style="margin-top:0;">
+    <button class="std-tab active" id="ret-tab-unsent" onclick="switchRetTab('unsent')">미발송 명세서</button>
+    <button class="std-tab" id="ret-tab-history" onclick="switchRetTab('history')">발송 이력</button>
+    <button class="std-tab" id="ret-tab-preview" onclick="switchRetTab('preview')">메시지 예시</button>
+  </div>
+
+  <!-- 미발송 명세서 섹션 -->
+  <div id="ret-unsent-section">
+  <div class="std-tab-panel">
+
+  <!-- ══ 기존 탭 구조 (2026-09-03 주석처리 — 퇴직정산 목록만 바디에 표시) ══
   <div class="std-tab-bar" style="margin-top:0;">
     <button class="std-tab active" data-tab="insurance" onclick="switchRetirementTab('insurance')">
       <i class="fas fa-shield-alt"></i> 4대보험 상실신고 <span id="retirement-tab-count-insurance"></span>
@@ -18,7 +53,7 @@
     </button>
   </div>
 
-  <!-- 탭 1: 4대보험 상실신고 -->
+  ── 탭 1: 4대보험 상실신고 (주석 처리됨) ──
   <div id="retirement-tab-insurance" class="std-tab-panel">
     <div style="font-size:12px;color:#6b7280;margin-bottom:12px;padding:8px 12px;background:#f8fafc;border-radius:6px;">
       <i class="fas fa-info-circle" style="margin-right:4px;"></i>4대보험 상실신고는 근로복지공단·국민건강보험공단 EDI에서 직접 처리합니다. 신고 완료 후 아래 버튼을 눌러주세요.
@@ -43,7 +78,7 @@
 
   <div id="retirement-tab-severance" class="std-tab-panel" style="display:none;">
     <div style="background:#fff;border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:hidden;">
-      <table class="retirement-table" id="retirement-table-severance">
+      <table class="retirement-table" id="retirement-table-severance-legacy">
         <thead><tr><th>직원명</th><th>고객사</th><th>계약시작일</th><th>해지일</th><th>재직기간</th><th>관리</th></tr></thead>
         <tbody></tbody>
       </table></div>
@@ -56,4 +91,63 @@
         <tbody></tbody>
       </table></div>
   </div>
-</div>
+  ══ /기존 탭 구조 -->
+
+  <!-- 퇴직정산(퇴직금 산정) 대상자 목록 -->
+  <div style="background:#fff;border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:hidden;">
+    <table class="retirement-table" id="retirement-table-severance">
+      <thead><tr><th>직원명</th><th>고객사</th><th>입사일</th><th>해지일(퇴사일)</th><th>재직기간</th><th class="right">퇴직급여</th><th>퇴직금명세서</th><th>발송</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  </div><!-- /std-tab-panel -->
+  </div><!-- /ret-unsent-section -->
+
+  <!-- 발송 이력 섹션 -->
+  <div id="ret-history-section" style="display:none;">
+  <div class="std-tab-panel">
+  <div class="card" style="padding:0;overflow:hidden;">
+    <div style="overflow-x:auto;">
+      <table class="tbl-std">
+        <thead>
+          <tr>
+            <th>발송 일시</th>
+            <th>직원명</th>
+            <th>발송 방식</th>
+            <th>수신처</th>
+            <th class="ctr">결과</th>
+            <th>처리자</th>
+            <th class="ctr">명세서</th>
+          </tr>
+        </thead>
+        <tbody id="ret-history-tbody">
+          <tr><td colspan="7" class="cen-empty"><i class="fas fa-inbox"></i> 발송 이력이 없습니다.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  </div><!-- /std-tab-panel -->
+  </div><!-- /ret-history-section -->
+
+  <!-- 메시지 예시 섹션 -->
+  <div id="ret-preview-section" style="display:none;">
+  <div class="std-tab-panel">
+    <div id="ret-preview-content"></div>
+  </div><!-- /std-tab-panel -->
+  </div><!-- /ret-preview-section -->
+
+  </div><!-- /ret-content-section -->
+
+  <!-- 퇴직급여 산출 내역 레이어 팝업 (2026-09-04) -->
+  <div class="modal-overlay" id="sev-calc-modal" onclick="if(event.target===this)closeSeveranceCalcPopup()">
+    <div class="modal" style="max-width:560px;">
+      <div class="modal-header">
+        <div class="modal-title"><i class="fas fa-calculator" style="color:#2563eb;margin-right:6px;"></i>퇴직급여 산출 내역</div>
+        <button class="modal-close" onclick="closeSeveranceCalcPopup()">✕</button>
+      </div>
+      <div class="modal-body" id="sev-calc-modal-body" style="padding:20px 24px;"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary btn-sm" onclick="closeSeveranceCalcPopup()">닫기</button>
+      </div>
+    </div>
+  </div>

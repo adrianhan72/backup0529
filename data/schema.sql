@@ -116,6 +116,7 @@ CREATE TABLE IF NOT EXISTS contracts (
   signed_file_data TEXT, -- 서명 파일 데이터
   consent_file_name TEXT, -- 동의서 파일명
   consent_file_data TEXT, -- 동의서 파일 데이터
+  severance_file_url TEXT, -- 퇴직금 명세서 PDF 파일서버 URL (2026-09-03)
   salary_start_date TEXT, -- 급여 산정 시작일
   salary_end_date TEXT, -- 급여 산정 종료일
   is_draft INTEGER DEFAULT 0, -- 임시저장 여부
@@ -171,7 +172,8 @@ CREATE TABLE IF NOT EXISTS contracts (
   pay_weekday INTEGER, -- 주급 지급 요일 (0=일~6=토)
   pay_period_day_override INTEGER, -- 월합산 산정기준일 (개별 편집, null=고객사 설정)
   pay_period_weekday INTEGER, -- 주급 산정기간 시작 요일 (0=일~6=토, null=자동: 지급일 당일까지 1주)
-  edited_file_url TEXT -- 최종 편집본(PDF) 파일서버 URL (data/uploads/)
+  edited_file_url TEXT, -- 최종 편집본(PDF) 파일서버 URL (data/uploads/)
+  daily_worker_type TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_contracts_employee ON contracts(employee_id);
@@ -471,7 +473,8 @@ CREATE TABLE IF NOT EXISTS payrolls (
   custom_ordinary_values TEXT DEFAULT NULL, -- 통상임금 포함 사용자정의
   custom_fixed_values TEXT DEFAULT NULL, -- 사용자정의 고정 값
   etc_allowance_items TEXT DEFAULT NULL, -- 기타 수당 항목
-  employee_number TEXT -- 사번 스냅샷 (급여 저장 당시)
+  employee_number TEXT, -- 사번 스냅샷 (급여 저장 당시)
+  daily_work_log TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_payrolls_employee ON payrolls(employee_id);
@@ -577,6 +580,28 @@ CREATE TABLE IF NOT EXISTS contract_dispatch (
   updated_at INTEGER, -- 수정일시
   dispatch_reason TEXT -- 교부사유 (new/renewal/recontract/amended_reissue)
 );
+
+-- severance_dispatch  -- 퇴직금 명세서 발송 이력 (2026-09-03)
+CREATE TABLE IF NOT EXISTS severance_dispatch (
+  id TEXT PRIMARY KEY, -- 고유식별자
+  contract_id TEXT, -- 계약 ID
+  employee_id TEXT, -- 직원 ID
+  employee_name TEXT, -- 직원명
+  company_id TEXT, -- 회사 ID
+  company_name TEXT, -- 회사명
+  dispatch_method TEXT, -- 발송 방식 (kakao/email/manual)
+  dispatch_status TEXT, -- 발송 상태
+  recipient TEXT, -- 수신처
+  file_url TEXT, -- 퇴직금 명세서 PDF 파일 주소
+  dispatched_at TEXT, -- 발송 일시
+  dispatched_by TEXT, -- 발송 처리자
+  note TEXT, -- 비고
+  created_at INTEGER, -- 생성일시
+  updated_at INTEGER -- 수정일시
+);
+
+CREATE INDEX IF NOT EXISTS idx_severance_dispatch_contract ON severance_dispatch(contract_id);
+CREATE INDEX IF NOT EXISTS idx_severance_dispatch_company ON severance_dispatch(company_id);
 
 -- contract_expiry_notice  -- 계약만료 통지 이력
 CREATE TABLE IF NOT EXISTS contract_expiry_notice (

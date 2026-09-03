@@ -19,9 +19,9 @@
   <link rel="stylesheet" href="css/admin-form.css?v=20260831u" />
   <link rel="stylesheet" href="css/admin-notice.css?v=20260813c" />
   <link rel="stylesheet" href="css/admin-payroll.css?v=20260813c" />
-  <link rel="stylesheet" href="css/admin-wage.css?v=20260818f" />
+  <link rel="stylesheet" href="css/admin-wage.css?v=20260903d" />
   <link rel="stylesheet" href="css/admin-login.css?v=20260813c" />
-  <link rel="stylesheet" href="css/admin-etc.css?v=20260903a" />
+  <link rel="stylesheet" href="css/admin-etc.css?v=20260903c" />
 </head>
 <body>
 
@@ -98,7 +98,6 @@
     <div class="menu-item" data-page="probation-mgmt" onclick="showPage('probation-mgmt',this)" style="display:none;"><i class="fas fa-user-clock"></i> 수습 근로자 관리<span class="count-badge menu-todo-badge" id="badge-probation-mgmt" style="display:none;"></span></div>
     <div class="menu-item" data-page="attendance-ledger" onclick="showPage('attendance-ledger',this)"><i class="fas fa-clipboard-check"></i> 근태관리대장</div>
     <div class="menu-item" data-page="annual-leave" onclick="showPage('annual-leave',this)"><i class="fas fa-umbrella-beach"></i> 연차관리대장</div>
-    <div class="menu-item" data-page="leave-promotion" onclick="showPage('leave-promotion',this)"><i class="fas fa-bullhorn"></i> 연차사용촉진 발송</div>
     <div class="menu-item" data-page="retirement-mgmt" onclick="showPage('retirement-mgmt',this)" style="display:none;"><i class="fas fa-hand-holding-usd"></i> 퇴직금 산정<span class="count-badge menu-todo-badge" id="badge-retirement-mgmt" style="display:none;"></span></div>
     <div class="menu-item" data-page="labor-status" onclick="showPage('labor-status',this)"><i class="fas fa-chart-bar"></i> 급여 통계 조회</div>
     <div class="menu-item" data-page="standards" onclick="showPage('standards',this)"><i class="fas fa-percent"></i> 연도별 산정기준</div>
@@ -525,9 +524,8 @@
     <div id="page-annual-leave" class="page"></div><!-- /page-annual-leave -->
 
     <!-- ══════════════════════════════════════════════════════════ -->
-    <!--  사용촉진  (page-leave-promotion)                          -->
+    <!--  사용촉진 (page-leave-promotion — 삭제됨, 연차관리대장 '사용촉진 발송 이력' 탭으로 통합, 2026-09-03)  -->
     <!-- ══════════════════════════════════════════════════════════ -->
-    <div id="page-leave-promotion" class="page"></div><!-- /page-leave-promotion -->
 
   </div>
 </div>
@@ -770,10 +768,10 @@
       </div>
 
       <!-- 구분선 -->
-      <div style="border-top:2px dashed #e5e7eb;margin-bottom:18px;"></div>
+      <div id="al-promo-divider" style="border-top:2px dashed #e5e7eb;margin-bottom:18px;"></div>
 
       <!-- ── 고객사 알림 섹션 ── -->
-      <div>
+      <div id="al-promo-company-section">
         <div style="font-size:12.5px;font-weight:700;color:#374151;margin-bottom:10px;display:flex;align-items:center;gap:7px;">
           <span style="display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1.5px solid #86efac;border-radius:20px;padding:3px 12px;font-size:12px;color:#166534;">
             <i class="fas fa-building"></i> 고객사 알림 (자동)
@@ -1940,6 +1938,16 @@
         <!-- 계약 시작일·종료일·고용형태·계약상태는 위 수정 모드 섹션 내부로 이동됨 -->
         <div class="form-group full"><span class="form-section-title" id="ct-work-section-title">근무 조건 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span></span></div>
 
+        <!-- 일용직 구분 (상용직/상용직 아님) — 2026-09-03 -->
+        <div class="form-group full" id="ct-row-daily-emp-type" style="display:none;">
+          <label>일용직 구분 <span class="lbl-req">*</span> <span class="lbl-desc">(상용직: 근무시간표 입력 / 상용직 아님: 근로실적을 급여입력에서 처리)</span></label>
+          <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:6px;">
+            <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:13px;font-weight:500;"><input type="radio" name="ct-daily-emp-type" value="daily" onchange="_ctDailyEmpTypeChange()" checked /> 상용직 아님 (급여입력에서 근로실적 처리)</label>
+            <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:13px;font-weight:500;"><input type="radio" name="ct-daily-emp-type" value="fulltime" onchange="_ctDailyEmpTypeChange()" /> 상용직 (근무시간표 입력)</label>
+          </div>
+          <div id="ct-daily-emp-type-hint" style="display:none;font-size:11.5px;color:#d97706;margin-top:6px;line-height:1.6;">⚡ <strong>상용직 아님:</strong> 근무시간표를 작성하지 않습니다. 임금지급 주기(일급/주급/월합산)에 따라 해당 기간의 매일 근로실적(공수)을 급여입력에서 처리합니다.</div>
+        </div>
+
         <div class="form-group full" id="ct-bulk-bar-wrap">
           <!-- ── 일괄 설정 바 ── -->
           <div class="bulk-schedule-bar">
@@ -1971,7 +1979,7 @@
             </div>
           </div>
         </div>
-        <div class="form-group full">
+        <div class="form-group full" id="ct-row-schedule">
           <div style="overflow-x:auto;">
             <div class="work-schedule-wrap">
             <table class="work-schedule-table" id="ct-schedule-table">
@@ -2031,11 +2039,14 @@
             제1항 — 1년간 80% 이상 출근 → <strong>15일</strong><br>
             제2항 — 1년 미만 → 1개월 개근 시 <strong>1일</strong><br>
             제4항 — 3년 이상 → 2년마다 1일 가산 (최대 25일)
-            <div id="ct-annual-daily-note" style="display:none;margin-top:6px;padding:5px 8px;background:#fffbeb;border-radius:5px;color:#92400e;">
-              ⚡ <strong>일용직 연차:</strong> 원칙 대상 아님.<br>
-              단, 중단 없이 반복 계약 → 상용직 인정 시 적용<br>
-              <span style="color:#a16207;">(주 15h↑·5인↑ / 1년 미만: 최대 11일)</span>
-            </div>
+          </div>
+        </div>
+        <!-- 일용직 연차 안내: 연차산정기준 오른쪽 빈 열에 표시 (2026-09-03 이동) -->
+        <div class="form-group" id="ct-annual-daily-note" style="display:none;">
+          <div style="padding:8px 10px;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;color:#92400e;font-size:11.5px;line-height:1.7;">
+            ⚡ <strong>일용직 연차:</strong> 원칙 대상 아님.<br>
+            단, 중단 없이 반복 계약 → 상용직 인정 시 적용<br>
+            <span style="color:#a16207;">(주 15h↑·5인↑ / 1년 미만: 최대 11일)</span>
           </div>
         </div>
         <div class="form-group full"><span class="form-section-title" id="ct-wage-section-title">임금 조건 (월)</span></div>
@@ -2179,7 +2190,7 @@
         <div class="form-group full">
           <div style="display:flex;gap:12px;flex-wrap:wrap;">
             <div class="form-group" style="flex:1;min-width:150px;">
-              <label>통상시급 <span class="lbl-req" id="ct-hourly-req">*</span> <span class="lbl-desc" id="ct-hourly-desc">(직접 입력)</span></label>
+              <label><span id="ct-hourly-label">통상시급</span> <span class="lbl-req" id="ct-hourly-req">*</span> <span class="lbl-desc" id="ct-hourly-desc">(직접 입력)</span></label>
               <div class="amount-wrap"><input type="text" inputmode="numeric" id="ct-hourly-input" data-amount placeholder="0" oninput="onAmountInput(this,calcContractSalary);_checkRegisterBtnState();_checkAmendBtnState();" /></div>
             </div>
             <div class="form-group" id="ct-row-daily-wage" style="display:none;flex:1;min-width:150px;">
@@ -3426,32 +3437,32 @@
   </div>
 </div>
 
-      <script src="js/constants.js?v=20260901e"></script>
-      <script src="js/message-templates.js?v=20260814s"></script>
-      <script src="js/admin-loader.js?v=20260819a"></script>
-<script src="js/admin-state.js?v=20260903b"></script>
+      <script src="js/constants.js?v=20260903a"></script>
+      <script src="js/message-templates.js?v=20260903c"></script>
+      <script src="js/admin-loader.js?v=20260903a"></script>
+<script src="js/admin-state.js?v=20260903h"></script>
   <script src="js/admin-labor.js?v=20260814s"></script>
   <!-- admin-dashboard 모듈 -->
-  <script src="js/admin-dashboard/dashboard-core.js?v=20260903b"></script>
+  <script src="js/admin-dashboard/dashboard-core.js?v=20260903c"></script>
   <script src="js/admin-dashboard/dashboard-charts.js?v=20260903a"></script>
   <script src="js/admin-dashboard.js?v=20260814s"></script>
   <script src="js/admin-standards.js?v=20260818d"></script>
   <!-- admin-wage 모듈 -->
-  <script src="js/admin-wage/wage-ledger.js?v=20260828c"></script>
+  <script src="js/admin-wage/wage-ledger.js?v=20260903b"></script>
   <script src="js/admin-wage/wage-severance.js?v=20260903a"></script>
-  <script src="js/admin-wage/wage-retirement-mgmt.js?v=20260903a"></script>
+  <script src="js/admin-wage/wage-retirement-mgmt.js?v=20260903j"></script>
   <script src="js/admin-wage.js?v=20260814s"></script>
   <!-- admin-company 모듈 -->
   <script src="js/admin-company/company-core.js?v=20260827a"></script>
-  <script src="js/admin-company/company-history.js?v=20260819a"></script>
+  <script src="js/admin-company/company-history.js?v=20260903a"></script>
   <script src="js/admin-company.js?v=20260814s"></script>
   <!-- admin-contract 모듈 (기능별 분리) -->
-  <script src="js/admin-contract/contract-form.js?v=20260903h"></script>
-  <script src="js/admin-contract/contract-core.js?v=20260903b"></script>
+  <script src="js/admin-contract/contract-form.js?v=20260903l"></script>
+  <script src="js/admin-contract/contract-core.js?v=20260903d"></script>
   <script src="js/admin-contract/contract-docs.js?v=20260903c"></script>
-  <script src="js/admin-contract/contract-dispatch.js?v=20260902a"></script>
-  <script src="js/admin-contract/consent-dispatch.js?v=20260827q"></script>
-  <script src="js/admin-contract/contract-lifecycle.js?v=20260903e"></script>
+  <script src="js/admin-contract/contract-dispatch.js?v=20260903c"></script>
+  <script src="js/admin-contract/consent-dispatch.js?v=20260903c"></script>
+  <script src="js/admin-contract/contract-lifecycle.js?v=20260903f"></script>
   <script src="js/admin-contract.js?v=20260814s"></script>
   <!-- admin-hr 모듈 (인사관리대장) -->
   <script src="js/admin-hr.js?v=20260827o"></script>
@@ -3461,23 +3472,23 @@
   <script src="js/admin-payroll.js?v=20260814s"></script>
   <!-- admin-payroll-input 모듈 (기능별 분리) -->
   <script src="js/admin-payroll-input/payroll-input-core.js?v=20260814s"></script>
-  <script src="js/admin-payroll-input/payroll-input-main.js?v=20260901d"></script>
-  <script src="js/admin-payroll-input/payroll-input-save.js?v=20260821k"></script>
-  <script src="js/admin-payroll-input/payroll-input-excel.js?v=20260903a"></script>
+  <script src="js/admin-payroll-input/payroll-input-main.js?v=20260903c"></script>
+  <script src="js/admin-payroll-input/payroll-input-save.js?v=20260903a"></script>
+  <script src="js/admin-payroll-input/payroll-input-excel.js?v=20260903b"></script>
   <script src="js/admin-payroll-input.js?v=20260814s"></script>
   <!-- admin-billing 모듈 (기능별 분리) -->
   <script src="js/admin-billing/billing-core.js?v=20260814s"></script>
   <script src="js/admin-billing/auth.js?v=20260814s"></script>
-  <script src="js/admin-billing/payslip-send.js?v=20260828a"></script>
+  <script src="js/admin-billing/payslip-send.js?v=20260903b"></script>
   <script src="js/admin-billing/admin-accounts.js?v=20260814s"></script>
-  <script src="js/admin-billing/system-settings.js?v=20260902b"></script>
+  <script src="js/admin-billing/system-settings.js?v=20260903c"></script>
   <script src="js/admin-billing/company-notice.js?v=20260818a"></script>
   <script src="js/admin-billing/two-year-exceed.js?v=20260814s"></script>
   <script src="js/admin-billing/regular-conversion.js?v=20260821g"></script>
-  <script src="js/admin-billing/annual-leave.js?v=20260821d"></script>
-  <script src="js/admin-billing/company-notice-log.js?v=20260901a"></script>
+  <script src="js/admin-billing/annual-leave.js?v=20260903e"></script>
+  <script src="js/admin-billing/company-notice-log.js?v=20260903a"></script>
   <script src="js/admin-billing/general-notice.js?v=20260818a"></script>
-  <script src="js/admin-billing/attendance-ledger.js?v=20260821b"></script>
+  <script src="js/admin-billing/attendance-ledger.js?v=20260903c"></script>
   <script src="js/admin-billing.js?v=20260814s"></script>
 
   <!-- ══ 근로자 선택 모달 (신규계약) ══ -->

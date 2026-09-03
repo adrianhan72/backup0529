@@ -16,9 +16,10 @@ module.exports = function(ROOT) {
       const dir = path.join(ROOT, 'data', 'uploads', 'contracts', contractId);
       fs.mkdirSync(dir, { recursive: true });
       const ext = path.extname(file.originalname);
-      // field별 접두사: signed=날인본 / consent=동의서 / contract=계약서(워드·재편집본)
+      // field별 접두사: signed=날인본 / consent=동의서 / contract=계약서(워드·재편집본) / severance=퇴직금 명세서
       const prefix = file.fieldname === 'signed' ? 'signed'
         : file.fieldname === 'contract' ? 'contract'
+        : file.fieldname === 'severance' ? 'severance'
         : 'consent';
       // Windows 경로구분자(\\)를 URL 호환 슬래시(/)로 변환해 저장·URL 모두 정상화
       const rel = path.join(contractId, prefix + ext).replace(/\\/g, '/');
@@ -39,7 +40,8 @@ module.exports = function(ROOT) {
     upload.fields([
       { name: 'signed', maxCount: 1 },
       { name: 'consent', maxCount: 1 },
-      { name: 'contract', maxCount: 1 }
+      { name: 'contract', maxCount: 1 },
+      { name: 'severance', maxCount: 1 }
     ])(req, res, (err) => {
       if (err) {
         // 실패 시 이미 디스크에 기록된 파일 정리 (orphan 방지, 2026-09-01)
@@ -58,6 +60,7 @@ module.exports = function(ROOT) {
       if (req.files['signed']) files.signed = '/uploads/contracts/' + req.files['signed'][0].filename;
       if (req.files['consent']) files.consent = '/uploads/contracts/' + req.files['consent'][0].filename;
       if (req.files['contract']) files.contract = '/uploads/contracts/' + req.files['contract'][0].filename;
+      if (req.files['severance']) files.severance = '/uploads/contracts/' + req.files['severance'][0].filename;
       res.json({ ok: true, files });
     });
   });

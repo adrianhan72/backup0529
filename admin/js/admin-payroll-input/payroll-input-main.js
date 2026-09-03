@@ -1830,6 +1830,7 @@ function loadPIContract(contractId){
 
   // ── 근로일수 · 총 근로시간 자동 입력 (직원 선택 시 항상 새로 계산) ──
   _applyPIDefaultWorkDays(true);
+  _piDailyWorkLogApply(); // 상용직 아님 일용직: 일별 공수 그리드 (2026-09-03)
 
   // ── 지급일 자동 입력 + readonly 제어 ──
   _applyPIPayDate(true);
@@ -2645,6 +2646,7 @@ function onPIYearMonthChange(){
     const autoLbl = document.getElementById('pi-workdays-auto-label');
     if(autoLbl) autoLbl.style.display = 'none';
     _applyPIDefaultWorkDays(true);
+    _piDailyWorkLogApply(); // 상용직 아님 일용직: 일별 공수 그리드 (2026-09-03)
   }
 
   // ── 연월 변경 시 연차 현황 재계산 ──
@@ -3313,6 +3315,102 @@ function calcPITotalHours(){
 // ── 근로 실적 자동 산출 ──
 // 근로일수 / OT·야간·휴일 시간 입력 시 계약서 기반 금액 자동 산출 후 표시
 // 실제 기본급·수당 입력 필드는 직접 건드리지 않음 (사용자 수정 우선)
+/* ── 상용직 아님 일용직: 일별 근로실적(공수) 그리드 (2026-09-03) ──
+   노무비지급명세서 형식 — 매일 공수(0.5 단위) 입력 → 노무비 = 공수×단가
+   합계 공수 → pi-work-days 반영 → 기존 calcPI 파이프라인으로 지급액 계산 */
+function _piDailyWorkLogActive(){
+  return !!(piContract && piContract.contract_type === CONTRACT_TYPE.DAILY
+    && (piContract.daily_worker_type || 'daily') !== 'fulltime');
+}
+/** 단가: 계약의 일급여(daily_wage) — pi-base는 calcPI가 월 실제지급액으로 덮어쓰므로 사용 금지 */
+function _piDailyWorkLogUnit(){
+  return parseFloat(piContract?.daily_wage) || 0;
+}
+function _piDailyWorkLogPayload(){
+  const days = [];
+  document.querySelectorAll('input[data-pi-dwl]').forEach(el => {
+    const q = parseFloat(el.value) || 0;
+    if(q > 0) days.push({ d: parseInt(el.getAttribute('data-pi-dwl'), 10), q });
+  });
+  return JSON.stringify({ days, unit: _piDailyWorkLogUnit() });
+}
+function _piDailyWorkLogInput(){
+  let sum = 0;
+  const unit = _piDailyWorkLogUnit();
+  document.querySelectorAll('input[data-pi-dwl]').forEach(el => {
+    const q = parseFloat(el.value) || 0;
+    sum += q;
+    const d = parseInt(el.getAttribute('data-pi-dwl'), 10);
+    const payEl = document.getElementById('pi-dwl-pay-' + d);
+    if(payEl) payEl.textContent = (q > 0) ? (Math.round(q * unit)).toLocaleString('ko-KR') + '원' : '';
+  });
+  sum = Math.round(sum * 10) / 10;
+  const sumEl = document.getElementById('pi-daily-worklog-summary');
+  if(sumEl) sumEl.textContent = `공수 합계 ${sum} · 노무비 ${Math.round(sum * unit).toLocaleString('ko-KR')}원`;
+  const wd = document.getElementById('pi-work-days');
+  if(wd) wd.value = sum;
+  if(typeof calcPIWorkActual === 'function') calcPIWorkActual();
+  // calcPI가 자동산출 패널을 다시 표시하므로 공수 그리드 모드에서는 재숨김
+  const panel = document.getElementById('pi-work-auto-panel');
+  if(panel) panel.style.display = 'none';
+}
+function _piDailyWorkLogRender(){
+  const sec = document.getElementById('pi-daily-worklog-section');
+  const tbody = document.getElementById('pi-daily-worklog-tbody');
+  if(!sec || !tbody) return;
+  if(!_piDailyWorkLogActive()){ sec.style.display = 'none'; return; }
+  const yr = parseInt(document.getElementById('pi-year')?.value) || new Date().getFullYear();
+  const mo = parseInt(document.getElementById('pi-month')?.value) || (new Date().getMonth() + 1);
+  const lastDay = new Date(yr, mo, 0).getDate();
+  const unit = _piDailyWorkLogUnit();
+  const unitEl = document.getElementById('pi-daily-worklog-unit');
+  if(unitEl) unitEl.textContent = '단가 ' + unit.toLocaleString('ko-KR') + '원';
+  // 기존 저장 로그 복원 (수정 모드)
+  const logDays = {};
+  if(typeof piEditPayrollId !== 'undefined' && piEditPayrollId){
+    const p = (allPayrolls || []).find(x => x.id === piEditPayrollId);
+    if(p && p.daily_work_log){
+      try { const j = JSON.parse(p.daily_work_log); (j.days || []).forEach(x => { logDays[x.d] = x.q; }); } catch(e){}
+    }
+  }
+  const WK = ['일','월','화','수','목','금','토'];
+  let html = '';
+  for(let d = 1; d <= lastDay; d++){
+    const wk = WK[new Date(yr, mo - 1, d).getDay()];
+    const q = logDays[d] ?? '';
+    html += `<tr>
+      <td style="padding:4px 8px;border-bottom:1px solid #f1f5f9;color:#374151;white-space:nowrap;">${d}일 (${wk})</td>
+      <td style="padding:4px 8px;border-bottom:1px solid #f1f5f9;"><input type="number" data-pi-dwl="${d}" value="${q}" min="0" max="2" step="0.5" placeholder="0" oninput="_piDailyWorkLogInput()" style="width:64px;padding:4px 6px;border:1px solid #d1d5db;border-radius:5px;font-size:12px;" /></td>
+      <td style="padding:4px 8px;border-bottom:1px solid #f1f5f9;color:#2563eb;white-space:nowrap;" id="pi-dwl-pay-${d}">${q ? Math.round(q * unit).toLocaleString('ko-KR') + '원' : ''}</td>
+    </tr>`;
+  }
+  tbody.innerHTML = html;
+  sec.style.display = '';
+  _piDailyWorkLogInput();
+}
+function _piDailyWorkLogApply(){
+  const active = _piDailyWorkLogActive();
+  const sec = document.getElementById('pi-daily-worklog-section');
+  if(active){
+    // 근로일수 수동 행 · 연장/야간/휴일 행 · 자동산출 패널 숨김 (공수 그리드로 대체)
+    const _wdRow = document.getElementById('pi-work-days')?.closest('.pi-row');
+    if(_wdRow) _wdRow.style.display = 'none';
+    ['pi-ot-hours','pi-night-hours','pi-hol-hours'].forEach(id => {
+      const r = document.getElementById(id)?.closest('.pi-row'); if(r) r.style.display = 'none';
+    });
+    const panel = document.getElementById('pi-work-auto-panel');
+    if(panel) panel.style.display = 'none';
+    _piDailyWorkLogRender();
+  } else if(sec){
+    sec.style.display = 'none';
+    const _wdRow = document.getElementById('pi-work-days')?.closest('.pi-row');
+    if(_wdRow) _wdRow.style.display = '';
+    ['pi-ot-hours','pi-night-hours','pi-hol-hours'].forEach(id => {
+      const r = document.getElementById(id)?.closest('.pi-row'); if(r) r.style.display = '';
+    });
+  }
+}
+
 function calcPIWorkActual(){
   const workAutoPanel = document.getElementById('pi-work-auto-panel');
   const simpleWrap    = document.getElementById('pi-ot-pay-simple-wrap');
@@ -4181,8 +4279,9 @@ function calcPI(){
       const sw = document.getElementById('pi-ot-pay-simple-wrap');
       if(sw) sw.style.display = 'none';
       // 패널: 계약이 있으면 항상 표시 (기본급·주휴수당도 패널에 포함)
+      // ※ CSS 기본값 display:none이므로 'block' 명시 (''는 무효 — 2026-09-03 수정)
       const wp = document.getElementById('pi-work-auto-panel');
-      if(wp) wp.style.display = '';
+      if(wp) wp.style.display = 'block';
     }
   } else {
     // 계약 없을 때 simple disp 사용
@@ -6155,6 +6254,7 @@ function _resetPIInputsOnly(){
   const _swR=document.getElementById('pi-ot-pay-simple-wrap'); if(_swR) _swR.style.display='none';
   ['pi-work-days','pi-total-hours'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   _applyPIDefaultWorkDays(true);  // 만근 기준 근로일수 재입력
+  _piDailyWorkLogApply(); // 상용직 아님 일용직: 일별 공수 그리드 (2026-09-03)
 
   // 8) 연차 현황 재계산
   calcAnnualLeaveTable();

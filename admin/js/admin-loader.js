@@ -38,7 +38,7 @@ const PAGE_REGISTRY = {
   'probation-mgmt':       { external: true },
   'attendance-ledger':    { external: true },
   'annual-leave':         { external: true },
-  'leave-promotion':      { external: true },
+  // 'leave-promotion' 페이지 삭제됨 — 연차관리대장 '사용촉진 발송 이력' 탭으로 통합 (2026-09-03)
   'system-settings':      { external: true },
   'retirement-mgmt':      { external: true },
 };

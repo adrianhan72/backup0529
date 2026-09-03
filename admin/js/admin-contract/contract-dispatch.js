@@ -37,71 +37,62 @@ function _cdpRenderPreview(){
   }
 }
 
-// ── 커스텀 고객사 드롭다운 토글 ──
-function _cdpToggleCoDropdown(){
-  const list = document.getElementById('cdp-unsent-co-list');
-  const btn = document.getElementById('cdp-unsent-co-btn');
-  if(!list || !btn) return;
-  const isOpen = list.style.display === 'block';
-  if(isOpen){ list.style.display = 'none'; return; }
-  const rect = btn.getBoundingClientRect();
-  list.style.top = (rect.bottom + 4) + 'px';
-  list.style.left = rect.left + 'px';
-  list.style.width = Math.min(window.innerWidth - rect.left - 20, 800) + 'px';
-  list.style.display = 'block';
-  setTimeout(() => {
-    const handler = e => {
-      const dd = document.getElementById('cdp-unsent-co-dropdown');
-      if(dd && !dd.contains(e.target)){ list.style.display = 'none'; document.removeEventListener('click', handler); }
-    };
-    document.addEventListener('click', handler);
-  }, 0);
+// ── 고객사 선택 칩 렌더 ──
+function renderCdpCompanyList(){
+  const q = (document.getElementById('cdp-company-search')?.value || '').toLowerCase().trim();
+  const container = document.getElementById('cdp-company-chips');
+  if(!container) return;
+  const companies = allCompanies.filter(c =>
+    isCompanyActive(c) && (!q || (c.company_name||'').toLowerCase().includes(q))
+  ).sort((a,b) => (a.company_name||'').localeCompare(b.company_name||'', 'ko'));
+  if(!companies.length){
+    container.innerHTML = `<div style="color:#9ca3af;font-size:13px;padding:8px 0;">${q ? `"${q}" 검색 결과 없음` : '이용 중인 고객사가 없습니다'}</div>`;
+    return;
+  }
+  container.innerHTML = companies.map(c => {
+    const isSelected = c.id === currentGlobalCompanyId;
+    return `<button onclick="selectCdpCompany('${c.id}','${(c.company_name||'').replace(/'/g,"\\'")}')"
+      class="co-chip${isSelected?' selected':''}">
+      <i class="fas fa-building" style="font-size:11px;"></i>
+      ${c.company_name}
+    </button>`;
+  }).join('');
 }
 
 // ── 고객사 선택 ──
-function _cdpSelectCo(coId, coName){
-  _cdpUnsentCoId = coId;
-  document.getElementById('cdp-unsent-co-label').textContent = coName || '전체 고객사';
-  const unsent = _cdpGetUnsentContracts();
-  const cnt = coId ? unsent.filter(c => c.company_id === coId).length : unsent.length;
-  document.getElementById('cdp-unsent-co-badge').textContent = cnt;
-  document.getElementById('cdp-unsent-co-list').style.display = 'none';
+async function selectCdpCompany(companyId, companyName){
+  _cdpUnsentCoId = companyId;
+  currentGlobalCompanyId = companyId;
+  currentGlobalCompanyName = companyName;
+
+  // 선택 카드 숨김 + 콘텐츠 표시 (2026-09-03 — 고객사 우선 선택 구조)
+  const selCard = document.getElementById('cdp-company-select-card');
+  const content = document.getElementById('cdp-content-section');
+  if(selCard) selCard.style.display = 'none';
+  if(content) content.style.display = '';
+  const labelEl = document.getElementById('cdp-selected-company-label');
+  if(labelEl) labelEl.innerHTML = `<i class="fas fa-paper-plane" style="margin-right:6px;"></i>${companyName} 계약서 발송 관리`;
+
+  _cdpSwitchTab('unsent');
+  await loadContractDispatchList(true);
+  _setDefaultDateRange('cdp-filter-date-from', 'cdp-filter-date-to');
   renderCdpUnsentMonthTabs();
   renderCdpUnsentList();
+  await renderContractDispatchPage();
 }
 
-// ── 고객사 드롭다운 채우기 ──
-function _cdpPopulateUnsentCompanySelect(){
-  const btn = document.getElementById('cdp-unsent-co-btn');
-  const list = document.getElementById('cdp-unsent-co-list');
-  if(!btn || !list) return;
-  const activeCos = allCompanies.filter(c => isCompanyActive(c));
-  const unsent = _cdpGetUnsentContracts();
-  const totalCount = unsent.length;
-  const countByCo = {};
-  unsent.forEach(c => { countByCo[c.company_id] = (countByCo[c.company_id]||0) + 1; });
-  const label = document.getElementById('cdp-unsent-co-label');
-  const badgeEl = document.getElementById('cdp-unsent-co-badge');
-  if(currentGlobalCompanyId){
-    _cdpUnsentCoId = currentGlobalCompanyId;
-    const co = allCompanies.find(c => c.id === currentGlobalCompanyId);
-    if(label) label.textContent = co ? co.company_name : '전체 고객사';
-    const selCnt = currentGlobalCompanyId ? (countByCo[currentGlobalCompanyId]||0) : totalCount;
-    if(badgeEl) badgeEl.textContent = selCnt;
-  } else {
-    if(label) label.textContent = '전체 고객사';
-    if(badgeEl) badgeEl.textContent = totalCount;
-  }
-  list.innerHTML =
-    `<div class="cust-dropdown-item${!_cdpUnsentCoId?' selected':''}" onclick="_cdpSelectCo('','전체 고객사')">
-      <span>전체 고객사</span><span class="count-badge">${totalCount}</span>
-    </div>` +
-    activeCos.map(c => {
-      const cnt = countByCo[c.id] || 0;
-      return `<div class="cust-dropdown-item${_cdpUnsentCoId===c.id?' selected':''}" onclick="_cdpSelectCo('${c.id}','${c.company_name.replace(/'/g,"\\'")}')">
-        <span>${c.company_name}</span><span class="count-badge">${cnt}</span>
-      </div>`;
-    }).join('');
+// ── 고객사 선택 해제 ──
+function clearCdpCompanySelect(){
+  _cdpUnsentCoId = '';
+  currentGlobalCompanyId = null;
+  currentGlobalCompanyName = '';
+  const selCard = document.getElementById('cdp-company-select-card');
+  const content = document.getElementById('cdp-content-section');
+  if(selCard) selCard.style.display = '';
+  if(content) content.style.display = 'none';
+  const searchEl = document.getElementById('cdp-company-search');
+  if(searchEl) searchEl.value = '';
+  renderCdpCompanyList();
 }
 
 // ── 기간 검증: 최대 3개월 제한 (조회 버튼 클릭 시) ──
@@ -195,23 +186,10 @@ async function renderContractDispatchPage(){
   const filterMethod  = document.getElementById('cdp-filter-method')?.value  || '';
   const filterReason  = document.getElementById('cdp-filter-reason')?.value  || '';
   const filterStatus  = document.getElementById('cdp-filter-status')?.value  || '';
-  const filterCompany = document.getElementById('cdp-filter-company')?.value || '';
+  const filterCompany = _cdpUnsentCoId; // 페이지 선택 고객사 고정 (2026-09-03)
   const filterDateFrom= document.getElementById('cdp-filter-date-from')?.value || '';  // 'YYYY-MM-DD'
   const filterDateTo  = document.getElementById('cdp-filter-date-to')?.value   || '';  // 'YYYY-MM-DD'
   const searchKw      = (document.getElementById('cdp-search')?.value || '').trim().toLowerCase();
-
-  // 고객사 필터 옵션 동적 생성 (최초 렌더링 시)
-  const coSel = document.getElementById('cdp-filter-company');
-  if(coSel && coSel.options.length <= 1){
-    const uniqueCompanies = [...new Map(
-      window._contractDispatchList.map(r=>[r.company_id, r.company_name])
-    ).entries()].sort((a,b)=>(a[1]||'').localeCompare(b[1]||'','ko'));
-    uniqueCompanies.forEach(([id, name])=>{
-      const opt = document.createElement('option');
-      opt.value = id; opt.textContent = name || id;
-      coSel.appendChild(opt);
-    });
-  }
 
   // 필터링
   const filtered = window._contractDispatchList.filter(r => {
@@ -245,7 +223,7 @@ async function renderContractDispatchPage(){
   if(!tbody) return;
 
   if(filtered.length === 0){
-    tbody.innerHTML = `<tr><td colspan="10" class="cen-empty"><i class="fas fa-inbox"></i> 발송 이력이 없습니다.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" class="cen-empty"><i class="fas fa-inbox"></i> 발송 이력이 없습니다.</td></tr>`;
     document.getElementById('cdp-pagination').innerHTML = '';
     return;
   }
@@ -306,7 +284,6 @@ async function renderContractDispatchPage(){
   tbody.innerHTML = pageData.map((r, idx) => {
     return `<tr>
       <td style="color:#374151;white-space:nowrap;">${fmtDt(r.dispatched_at)}</td>
-      <td style="font-weight:600;color:#111827;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.company_name||''}">${r.company_name||'-'}</td>
       <td style="font-weight:700;color:#111827;">${r.employee_name||'-'}</td>
       <td>${typeBadge(r.contract_type)}</td>
       <td class="ctr">${r.dispatch_method === DISPATCH_METHOD.REISSUE
@@ -625,7 +602,6 @@ function renderCdpUnsentList(){
 
   tbody.innerHTML = list.map((c, idx) => {
     const emp = allEmployees.find(e => e.id === c.employee_id) || {};
-    const co  = allCompanies.find(x => x.id === c.company_id)  || {};
     const cat = c.contract_type || emp.employment_category || '-';
     const phone    = emp.phone || '';
     const email    = emp.email || '';
@@ -635,7 +611,6 @@ function renderCdpUnsentList(){
     const emailClass = hasEmail ? 'btn btn-sky btn-sm' : 'btn btn-sm';
     return `<tr id="cdp-urow-${idx}">
       <td class="ctr"><input type="checkbox" class="cdp-row-chk" data-contract-id="${c.id}" onchange="cdpUpdateBatchBtns()" /></td>
-      <td style="font-size:12px;color:#111827;font-weight:700;">${co.company_name || '-'}</td>
       <td style="font-weight:700;color:#111827;">${emp.name || '-'}</td>
       <td style="text-align:center;font-size:12px;">${typeof genderLabel==='function' ? genderLabel(emp) : '-'}</td>
       <td><span class="badge ${empCatBadge(cat)}">${contractTypeLabel(cat)}</span></td>

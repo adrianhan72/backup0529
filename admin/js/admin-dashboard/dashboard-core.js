@@ -484,7 +484,7 @@ async function selectProbMgmtCompany(coId, coName){
   currentGlobalCompanyName = coName;
   // 헤더 레이블
   const lbl = document.getElementById('probmgmt-selected-label');
-  if(lbl) lbl.textContent = coName + ' — 수습 근로자 관리';
+  if(lbl) lbl.innerHTML = '<i class="fas fa-user-clock" style="margin-right:6px;"></i>' + coName + ' — 수습 근로자 관리';
   // 카드 전환
   document.getElementById('probmgmt-company-select-card').style.display = 'none';
   document.getElementById('probmgmt-content-section').style.display     = '';

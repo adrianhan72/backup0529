@@ -1264,6 +1264,8 @@ function openContractModal(id=null, preCompanyId=null){
   // ── 일용직 임금 지급 방법 리셋 (이전 계약 잔재 방지) ──
   document.querySelectorAll('input[name="ct-pay-method"]').forEach(r => r.checked = false);
   document.querySelectorAll('input[name="ct-pay-condition"]').forEach(r => r.checked = false);
+  // ── 일용직 상용직 여부 리셋 (기본: 상용직 아님 — 편집 로드는 이후 _ctDailyEmpTypeSetVal로 복원) ──
+  { const _dwt = document.querySelector('input[name="ct-daily-emp-type"][value="daily"]'); if(_dwt) _dwt.checked = true; }
   { const _ad = document.getElementById('ct-pay-after-days'); if(_ad) _ad.value=''; }
   { const _wd = document.getElementById('ct-pay-weekday');   if(_wd) _wd.value=''; }
   { const _pwd = document.getElementById('ct-pay-period-weekday'); if(_pwd) _pwd.value=''; }
@@ -1447,6 +1449,10 @@ function openContractModal(id=null, preCompanyId=null){
         ? (_ctValRaw ===CONTRACT_TYPE.REGULAR_PROBATION ? CONTRACT_TYPE.REGULAR : _ctValRaw ===CONTRACT_TYPE.FIXED_PROBATION ? CONTRACT_TYPE.FIXED : _ctValRaw)
         : _ctValRaw;
       document.getElementById('ct-type').value=ctVal; toggleCtEndDate(true); toggleProbation(); toggleAnnualSal();
+      // 일용직 상용직 여부 복원 (기본: 상용직 아님 — 2026-09-03)
+      { const _dwt = c.daily_worker_type || 'daily';
+        if(typeof _ctDailyEmpTypeSetVal === 'function') _ctDailyEmpTypeSetVal(_dwt);
+        if(typeof _applyDailyEmpTypeUI === 'function') _applyDailyEmpTypeUI(); }
       document.getElementById('ct-status').value=c.status||CONTRACT_STATUS.ACTIVE;
       // 계약직/일용직: 입사일·퇴사예정일 행 숨김 (계약 시작일·종료일과 동일하므로 중복)
       // 정규직/정규직 수습: 무기한 계약이므로 퇴사예정일 행 숨김
@@ -3405,6 +3411,7 @@ async function openAmendPreview(){
     })(),
     annual_leave_days: (parseFloat(document.getElementById('ct-annual')?.value)||15),
     annual_salary: annual_, monthly_salary_agreed: monthly_, base_salary: base_,
+    daily_worker_type: isDailyA ? ((typeof _ctDailyEmpTypeVal === 'function' ? _ctDailyEmpTypeVal() : '') || 'daily') : null,
     daily_wage: dWage_, weekly_holiday_pay: wkHol_, hourly_wage: hWage_,
     position_allowance: pos_,
     transportation_allowance: car_, transportation_pay_type: _getCTPayTypeVal('car'),

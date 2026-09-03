@@ -611,7 +611,7 @@ function selectPayCompany(companyId, companyName){
   currentGlobalCompanyName = companyName;
   pages.pay = 1;
   document.getElementById('pay-selected-company-label').innerHTML =
-    `<i class="fas fa-money-bill-wave" style="margin-right:6px;"></i>${companyName} 급여 명세서`;
+    `<i class="fas fa-list-alt" style="margin-right:6px;"></i>${companyName} 급여 명세서`;
   document.getElementById('pay-company-select-card').style.display = 'none';
   document.getElementById('pay-list-section').style.display = 'block';
   document.getElementById('pay-excel-btn').style.display = '';

@@ -391,6 +391,7 @@ function toggleAnnualSal(){
   const isDaily        = cat ===CONTRACT_TYPE.DAILY;
   if(isDaily) _dailyWageManual = false; // 일용직 전환 시 일급여는 시급 기준 자동계산 상태로 리셋
   _ctPayMethodApply(); // 일용직: 임금 지급 방법(일급/주급/월합산) UI / 그 외: 월 합산 산정기간
+  _applyDailyEmpTypeUI(); // 일용직: 상용직 여부에 따라 근무시간표 표시/숨김 (2026-09-03)
   _ctFixBasisTouched = false; // 고용형태/모달 컨텍스트 변경 시 고정 기준 기본값 재적용 (정규직: 연봉 / 계약직: 월약정)
   _ctMonthlySeeded = false;   // 월약정 고정 기준: 모달 오픈 시 계산값 1회 시드
 
@@ -399,6 +400,10 @@ function toggleAnnualSal(){
   const wageSectionTitle  = document.getElementById('ct-wage-section-title');
   const labelMonthly      = document.getElementById('ct-label-monthly');
   const dailyWageLabel    = document.querySelector('#ct-row-daily-wage label');
+
+  // 시급 라벨: 일용직은 '기본시급' (주휴수당 미포함), 그 외 '통상시급' (2026-09-03)
+  const labelHourly = document.getElementById('ct-hourly-label');
+  if(labelHourly) labelHourly.textContent = isDaily ? '기본시급' : '통상시급';
 
   if(isRegularOnly || isRegularProb){
     if(labelAnnualSal)    labelAnnualSal.innerHTML    = '연봉 <span class="lbl-req" id="ct-annual-req" style="display:none;">*</span> <span class="ct-sub-hint" id="ct-annual-desc">(자동계산)</span>';
@@ -470,9 +475,10 @@ function toggleAnnualSal(){
     // 일급여는 자동계산(readonly) — 통상일급(시급×8) + 일일 수당 합산
     const dailyWageInput = document.getElementById('ct-daily-wage');
     if(dailyWageInput) dailyWageInput.readOnly = true;
-    // 일용직: 고정 연장/야간/휴일근로수당 숨김
+    // 일용직: 고정 연장/야간/휴일근로수당 — '상용직 취급(fulltime)'만 표시 (근무시간표 자동계산, 2026-09-03)
+    const _dwtFulltime = (typeof _ctDailyEmpTypeVal === 'function' && _ctDailyEmpTypeVal() === 'fulltime');
     ['ct-row-fixed-ot','ct-row-fixed-night','ct-row-fixed-hol'].forEach(id => {
-      const el = document.getElementById(id); if(el) el.style.display = 'none';
+      const el = document.getElementById(id); if(el) el.style.display = _dwtFulltime ? '' : 'none';
     });
     // 일용직: 통상임금 포함·제외 고정수당을 모두 일(일급) 기준으로 표시 (월 단위 항목 제외)
     if(typeof _CT_OPT_ROWS !== 'undefined'){
@@ -911,12 +917,12 @@ function _checkMinWageWarning(){
   let compareLabel   = '';
 
   if(isDaily){
-    const dw   = getAmountVal('ct-daily-wage');
-    const hrs  = parseFloat(document.getElementById('ct-hours')?.value) || 8;
-    if(dw <= 0){ wRow.style.display='none'; _checkRegisterBtnState(); return; }
-    compareHourly  = Math.round(dw / hrs);
-    compareMonthly = dw * Math.round(209 / hrs); // 월 환산 (209÷일소정시간)
-    compareLabel   = `일급여 ${fmt(dw)}원 (일 ${hrs}시간 기준 시급 ${fmt(compareHourly)}원)`;
+    // 일용직: 기본시급(주휴수당 미포함)만으로 최저임금 위반 판별 (2026-09-03)
+    const _directHW = getAmountVal('ct-hourly-input');
+    if(_directHW <= 0){ wRow.style.display='none'; _checkRegisterBtnState(); return; }
+    compareHourly  = _directHW;
+    compareMonthly = Math.round(_directHW * 209); // 월 환산 (209h 기준)
+    compareLabel   = `기본시급 ${fmt(_directHW)}원 → 월 환산 ${fmt(compareMonthly)}원 (209h 기준)`;
   } else {
     // 정규직·계약직: 통상시급 직접 입력값을 기준으로 비교 (입력된 시급이 곧 기준)
     const _directHW = getAmountVal('ct-hourly-input');
@@ -1287,11 +1293,11 @@ function _shiftGroupHTML(key, idx, enabled, start, end, breaks){
   const brks = (breaks && breaks.length) ? breaks : defBreaks;
   const sid = idx===0 ? '' : '-'+idx;
   return `<div class="shift-group" id="ct-sch-shift-${key}${sid}">
-    <span style="font-size:10.5px;color:#6b7280;white-space:nowrap;">근무</span>
+    <span style="font-size:10.5px;color:#6b7280;font-weight:700;white-space:nowrap;">근무</span>
     ${_timePickerHTML(`ct-sch-start-${key}${sid}`, s, !enabled, '09')}
     <span style="font-size:10.5px;color:#6b7280;white-space:nowrap;">~</span>
     ${_timePickerHTML(`ct-sch-end-${key}${sid}`, e, !enabled, '18')}
-    <span style="font-size:10.5px;color:#7c3aed;white-space:nowrap;">휴게</span>
+    <span style="font-size:10.5px;color:#6b7280;white-space:nowrap;margin-left:20px;">휴게</span>
     <div class="brk-slots-wrap" id="ct-sch-brkwrap-${key}${sid}">${_brkSlotsHTML2(key, idx, enabled, brks)}</div>
     ${idx===0
       ? `<button type="button" class="btn-brk-add shift-add" onclick="_addShift('${key}')" title="시프트 추가">+</button><button type="button" class="btn-brk-del shift-del" onclick="_deactivateShift('${key}')" ${dis} title="비활성화">−</button>`
@@ -2852,6 +2858,48 @@ function _updateWeeklyHolLabel(isDaily){
   const desc = document.getElementById('ct-weekly-hol-desc');
   if(lbl) lbl.textContent = isDaily ? '주휴수당' : '※참고: 주휴수당';
   if(desc) desc.textContent = '(자동계산)';
+}
+
+// ── 일용직 상용직 여부 (2026-09-03) ──
+//   fulltime: 상용직 취급 — 근무시간표 입력
+//   daily   : 상용직 아님 — 근무시간표 없음, 매일 근로실적(공수)은 급여입력에서 처리
+function _ctDailyEmpTypeVal(){
+  const r = document.querySelector('input[name="ct-daily-emp-type"]:checked');
+  return r ? r.value : 'daily';
+}
+function _ctDailyEmpTypeSetVal(v){
+  const r = document.querySelector(`input[name="ct-daily-emp-type"][value="${v}"]`);
+  if(r) r.checked = true;
+}
+/** 일용직 상용직 여부 UI 적용 — 상용직 아님은 근무시간표(일괄설정·시간표) 숨김 */
+function _applyDailyEmpTypeUI(){
+  const row = document.getElementById('ct-row-daily-emp-type');
+  if(!row) return;
+  const rawCat = (editId.contract || _recontractEmpId)
+    ? (document.getElementById('ct-type')?.value || '')
+    : _ctNewCat();
+  const cat = CONTRACT_TYPE_LEGACY_MAP[rawCat] || rawCat;
+  const isDaily = cat === CONTRACT_TYPE.DAILY;
+  row.style.display = isDaily ? '' : 'none';
+  if(!isDaily) return;
+  const isFulltime = _ctDailyEmpTypeVal() === 'fulltime';
+  const bulkBar = document.getElementById('ct-bulk-bar-wrap');
+  const schedRow = document.getElementById('ct-row-schedule');
+  const hint = document.getElementById('ct-daily-emp-type-hint');
+  if(bulkBar) bulkBar.style.display = isFulltime ? '' : 'none';
+  if(schedRow) schedRow.style.display = isFulltime ? '' : 'none';
+  if(hint) hint.style.display = isFulltime ? 'none' : '';
+  // 고정 연장/야간/휴일근로수당: '상용직 취급(fulltime)'만 표시 (근무시간표 자동계산, 2026-09-03)
+  ['ct-row-fixed-ot','ct-row-fixed-night','ct-row-fixed-hol'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.style.display = isFulltime ? '' : 'none';
+  });
+}
+function _ctDailyEmpTypeChange(){
+  _applyDailyEmpTypeUI();
+  calcContractSalary();
+  _checkRegisterBtnState();
+  _checkAmendBtnState();
 }
 
 // ── 일용직: 일급여 수동 입력 여부 (통상시급 변경 시 자동계산 일급여 갱신 기준) ──

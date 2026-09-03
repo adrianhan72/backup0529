@@ -91,7 +91,7 @@ function selectCnlCompany(id, name){
   document.getElementById('cnl-company-select-card').style.display = 'none';
   document.getElementById('cnl-main-section').style.display = '';
   document.getElementById('cnl-selected-company-label').innerHTML =
-    `<i class="fas fa-building" style="margin-right:6px;"></i>${name}`;
+    `<i class="fas fa-bell" style="margin-right:6px;"></i>${name}`;
   _cnlLoaded = false;
   cnlLoadData();
 }
@@ -223,7 +223,7 @@ async function initCnlPage(){
   document.getElementById('cnl-company-select-card').style.display = 'none';
   document.getElementById('cnl-main-section').style.display = '';
   document.getElementById('cnl-selected-company-label').innerHTML =
-    `<i class="fas fa-building" style="margin-right:6px;"></i>${_cnlCompanyName}`;
+    `<i class="fas fa-bell" style="margin-right:6px;"></i>${_cnlCompanyName}`;
   if(!_cnlLoaded){
     await cnlLoadData();
   } else {

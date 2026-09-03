@@ -408,6 +408,72 @@ const MSG_RULE_DEFAULTS = {
 ● 이메일: {대표이메일}
 ● 팩스: {대표팩스}`
   },
+  severance_dispatch_kakao: {
+    title: ``,
+    body: `안녕하세요, {근로자명}님.
+
+{회사명}에서 퇴직금 명세서를 보내드립니다.
+아래 링크를 클릭하여 명세서를 확인해 주세요.
+
+▶ 명세서 확인: {문서링크}
+
+인사톡 노무톡 · 대화인사노무파트너스 담당자
+● 전화: {대표전화}
+● 이메일: {대표이메일}
+● 팩스: {대표팩스}`
+  },
+  severance_dispatch_email: {
+    title: `[{회사명}] 퇴직금 명세서 확인 요청`,
+    body: `안녕하세요, {근로자명}님.
+
+{회사명}에서 퇴직금 명세서를 송부드립니다.
+아래 링크를 클릭하여 명세서를 확인해 주세요.
+
+▶ 명세서 확인: {문서링크}
+
+인사톡 노무톡 · 대화인사노무파트너스 담당자
+● 전화: {대표전화}
+● 이메일: {대표이메일}
+● 팩스: {대표팩스}`
+  },
+  leave_promotion_kakao: {
+    title: ``,
+    body: `안녕하세요, {근로자명} 님.
+
+{회사명}에서 근로기준법 제61조에 따른 연차 사용촉진 통지를 보내드립니다.
+
+■ 잔여 연차: {잔여연차}일 (사용기한: {사용기한})
+
+기한 내 미사용 시 미사용 연차수당 청구권이 소멸될 수 있습니다.
+연차 사용 시 소속 사업장에 사전 신청하여 주시기 바랍니다.
+
+담당 노무사: {발신자명}
+※ 본 통지는 근로기준법 제61조에 따른 공식 연차 사용촉진 통지서입니다.
+
+인사톡 노무톡 · 대화인사노무파트너스 담당자
+● 전화: {대표전화}
+● 이메일: {대표이메일}
+● 팩스: {대표팩스}`
+  },
+  leave_promotion_email: {
+    title: `[{회사명}] 연차 사용촉진 통지 — {근로자명}`,
+    body: `안녕하세요, {근로자명} 님.
+
+{회사명}에서 근로기준법 제61조에 따른 연차 사용촉진 통지를 송부드립니다.
+
+■ 잔여 연차: {잔여연차}일 (사용기한: {사용기한})
+
+기한 내 미사용 시 미사용 연차수당 청구권이 소멸될 수 있습니다.
+연차 사용 시 소속 사업장에 사전 신청하여 주시기 바랍니다.
+
+담당 노무사: {발신자명}
+※ 본 통지는 근로기준법 제61조에 따른 공식 연차 사용촉진 통지서입니다.
+
+인사톡 노무톡 · 대화인사노무파트너스 담당자
+● 전화: {대표전화}
+● 이메일: {대표이메일}
+● 팩스: {대표팩스}`
+  },
   consent_dispatched: {
     title: `[정보제공동의서 발송] {근로자명} — 동의서가 발송되었습니다`,
     body: `안녕하세요, {회사명} 대표자님.
@@ -524,6 +590,14 @@ const MSG_RULE_DEFAULTS = {
 ■ 지급 금액: {지급금액}
 ■ 처리 일시: {처리일시}`
   },
+  severance_dispatched: {
+    title: `[퇴직금 명세서 발송] {근로자명} — 퇴직금 명세서가 발송되었습니다`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+소속 근로자 {근로자명}에게 퇴직금 명세서가 {발송방법}(으)로 발송 완료되었음을 알려드립니다.
+
+■ 발송 시각: {발송시각}`
+  },
   contract_expiry: {
     title: `[계약만료 예정] {근로자명} — {D-day}`,
     body: `안녕하세요, {회사명} 대표자님.
@@ -632,15 +706,20 @@ const MSG_CHANNEL_TYPES = {
     { value: 'wage_ledger_generated', label: '임금대장 발행' },
     { value: 'wage_ledger_renewed', label: '임금대장 갱신' },
     { value: 'severance_paid', label: '퇴직급여 지급' },
+    { value: 'severance_dispatched', label: '퇴직금 명세서 발송' },
     { value: 'leave_promotion', label: '연차 사용촉진' },
   ],
   kakao: [
     { value: 'contract_dispatch_kakao', label: '근로계약서 발송 (알림톡)' },
     { value: 'consent_dispatch_kakao', label: '정보제공동의서 발송 (알림톡)' },
+    { value: 'severance_dispatch_kakao', label: '퇴직금 명세서 발송 (알림톡)' },
+    { value: 'leave_promotion_kakao', label: '연차 사용촉진 (알림톡)' },
   ],
   email: [
     { value: 'contract_dispatch_email', label: '근로계약서 발송 (이메일)' },
     { value: 'consent_dispatch_email', label: '정보제공동의서 발송 (이메일)' },
+    { value: 'severance_dispatch_email', label: '퇴직금 명세서 발송 (이메일)' },
+    { value: 'leave_promotion_email', label: '연차 사용촉진 (이메일)' },
   ],
 };
 

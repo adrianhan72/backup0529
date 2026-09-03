@@ -12,6 +12,8 @@ let _alPromoData   = null;  // 사용촉진 발송 데이터 (모달용)
 
 // ─── LP 페이지 전용 상태 ─────────────────────────────────────────
 let _lpHistoryList   = [];
+let _lpCompanyId     = '';   // 연차사용촉진 페이지 선택 고객사 (2026-09-03)
+let _lpCompanyName   = '';
 let _lpHistoryLoaded = false;
 let _lpPage          = 1;
 const LP_PAGE_SIZE   = 30;
@@ -122,9 +124,10 @@ function calcDailyAnnualLeaveDays(empId, hireDateStr, contract){
  */
 function calcEmployeeAnnualLeave(emp, contract, company, refYear){
   if(!emp || !contract) return null;
-  // 일용직: 주 15시간 미만 → 연차 미적용 (근로기준법 제18조제3항)
-  //           주 15시간 이상 → 근태(개근·출근율 80%) 연동 계산 (아래)
-  const _isDailyAL = (emp.employment_category || contract.contract_type) === CONTRACT_TYPE.DAILY;
+  // 일용직: '상용직 아님'만 일용직 특례(주15h↑·반복계약·출근율) 적용.
+  //         '상용직 취급(fulltime)'은 정규직·계약직과 동일한 일반 산식 적용 (2026-09-03)
+  const _isDailyAL = ((emp.employment_category || contract.contract_type) === CONTRACT_TYPE.DAILY)
+    && ((contract.daily_worker_type || 'daily') !== 'fulltime');
   if(_isDailyAL){
     const _alHpd = parseFloat(contract.work_hours_per_day) || 8;
     const _alDpw = parseFloat(contract.work_days_per_week) || 5; // 미지정 시 5일 추정 (급여입력과 동일)
@@ -324,10 +327,13 @@ async function selectAlCompany(companyId, companyName){
   _alCompanyId   = companyId;
   _alCompanyName = companyName;
   _alPage        = 1;
+  _lpCompanyId   = companyId;  // 사용촉진 발송 이력 탭 고객사 동기화 (2026-09-03)
   currentGlobalCompanyId = companyId;  // 글로벌 공유 동기화
   document.getElementById('al-company-select-card').style.display = 'none';
   document.getElementById('al-main-section').style.display        = '';
-  document.getElementById('al-company-name-title').textContent    = companyName;
+  document.getElementById('al-company-name-title').innerHTML =
+    `<i class="fas fa-umbrella-beach" style="margin-right:6px;"></i>${companyName}`;
+  if(typeof switchAlTab === 'function') switchAlTab('ledger'); // 기본 탭: 연차관리대장
 
   // 연차 산정 기준 표시
   const co    = allCompanies.find(c => c.id === companyId);
@@ -343,6 +349,38 @@ async function selectAlCompany(companyId, companyName){
   } catch(e){ if(!window._atlLedgerCache) window._atlLedgerCache = []; }
 
   renderAlTable();
+}
+
+// ═══════════════════════════════════════════
+// 탭 전환 — 연차관리대장 / 사용촉진 발송 이력 / 메시지 예시 (2026-09-03)
+// ═══════════════════════════════════════════
+function switchAlTab(tab){
+  const sections = { ledger: 'al-ledger-section', promotion: 'al-promotion-section', preview: 'al-preview-section' };
+  ['ledger', 'promotion', 'preview'].forEach(t => {
+    const btn = document.getElementById('al-tab-' + t);
+    const sec = document.getElementById(sections[t]);
+    if(btn) btn.classList.toggle('active', t === tab);
+    if(sec) sec.style.display = (t === tab) ? '' : 'none';
+  });
+  if(tab === 'promotion'){
+    (async()=>{
+      if(!_lpHistoryLoaded) await loadLeavePromotionHistory(true);
+      if(typeof _setDefaultDateRange === 'function') _setDefaultDateRange('lp-filter-date-from', 'lp-filter-date-to');
+      renderLpTable();
+    })();
+  }
+  if(tab === 'preview') renderAlPreview();
+}
+
+/** 메시지 예시 렌더 */
+function renderAlPreview(){
+  const container = document.getElementById('al-preview-content');
+  if(!container) return;
+  if(typeof msgRenderAllPreviews === 'function'){
+    container.innerHTML = msgRenderAllPreviews('leave_promotion');
+  } else {
+    container.innerHTML = '<p style="padding:20px;color:#9ca3af;">메시지 템플릿을 불러올 수 없습니다.</p>';
+  }
 }
 
 /** 고객사 선택 화면으로 돌아가기 */
@@ -1153,15 +1191,24 @@ function openAlPromoModal(empId){
            <span style="color:#111827;font-weight:700;font-size:13px;">${v}</span></div>`).join('');
   }
 
-  // ── 근로자용 메시지 미리보기 ──
-  const workerBody = _buildLeavePromoWorkerBody(emp, co, al, refYear, adminNm);
+  // ── 근로자용 메시지 미리보기 (시스템 설정 메시지 규칙 적용 — 알림톡 기준, 2026-09-03) ──
+  const workerBody = _buildLeavePromoWorkerBody(emp, co, al, refYear, adminNm, DISPATCH_METHOD.KAKAO);
   const wPrev = document.getElementById('al-promo-worker-preview');
   if(wPrev) wPrev.textContent = workerBody;
 
-  // ── 고객사 알림 미리보기 ──
-  const coBody = _buildLeavePromoCompanyBody(emp, co, al, refYear, adminNm, '?');
-  const cPrev  = document.getElementById('al-promo-company-preview');
-  if(cPrev) cPrev.textContent = coBody;
+  // ── 고객사 알림 섹션: 인앱 체크리스트에서 해제된 경우 숨김 (2026-09-03) ──
+  const inappEnabled = _alLeavePromotionInappEnabled();
+  const coSection = document.getElementById('al-promo-company-section');
+  const coDivider = document.getElementById('al-promo-divider');
+  if(coSection) coSection.style.display = inappEnabled ? '' : 'none';
+  if(coDivider) coDivider.style.display = inappEnabled ? '' : 'none';
+
+  // ── 고객사 알림 미리보기 (시스템 설정 메시지 규칙 적용) ──
+  if(inappEnabled){
+    const coBody = _buildLeavePromoCompanyBody(emp, co, al, refYear, adminNm, '?');
+    const cPrev  = document.getElementById('al-promo-company-preview');
+    if(cPrev) cPrev.textContent = coBody;
+  }
 
   // ── 연락처 상태 표시 ──
   const contactEl = document.getElementById('al-promo-contact-status');
@@ -1190,10 +1237,47 @@ function openAlPromoModal(empId){
 }
 
 /**
- * 근로자용 사용촉진 메시지 본문 (알림톡·이메일 직접 수신)
+ * 연차 사용촉진 인앱 알림 발송 여부 — 인앱 체크리스트에서 해제 시 false (2026-09-03)
  */
-function _buildLeavePromoWorkerBody(emp, co, al, refYear, adminName){
+function _alLeavePromotionInappEnabled(){
+  try {
+    const raw = window._systemSettings && window._systemSettings['inapp_notice_types_disabled'];
+    if(!raw) return true;
+    const arr = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    return !(Array.isArray(arr) && arr.includes('leave_promotion'));
+  } catch(_){ return true; }
+}
+
+/** 메시지 규칙 치환 헬퍼 — {키} 플레이스홀더 치환 */
+function _alApplyRuleVars(text, vars){
+  let out = text || '';
+  for(const [k, v] of Object.entries(vars)){
+    out = out.split('{' + k + '}').join(v != null ? String(v) : '');
+  }
+  return out;
+}
+
+/**
+ * 근로자용 사용촉진 메시지 본문 (알림톡·이메일 직접 수신)
+ * 시스템 설정 메시지 규칙(leave_promotion_kakao/email) 적용 — 없으면 기본 문구 (2026-09-03)
+ */
+function _buildLeavePromoWorkerBody(emp, co, al, refYear, adminName, method){
   const endDate = _calcLeaveEndDate(emp, al, refYear);
+  const ruleType = method === DISPATCH_METHOD.EMAIL ? 'leave_promotion_email' : 'leave_promotion_kakao';
+  const rule = (typeof getMsgBodyRule === 'function') ? getMsgBodyRule(ruleType) : null;
+  if(rule && rule.body){
+    const vars = {
+      '근로자명': emp.name || '',
+      '회사명': co?.company_name || '',
+      '잔여연차': al.remainDays,
+      '사용기한': endDate,
+      '발신자명': adminName,
+      '대표전화': '02)3487-8841',
+      '대표이메일': 'eunyangpark@naver.com',
+      '대표팩스': '02)3487-8882',
+    };
+    return _alApplyRuleVars(rule.body, vars);
+  }
   return `안녕하세요, ${emp.name||''} 님.
 
 ${refYear}년도 미사용 연차 유급휴가가 남아 있어 사용을 촉진합니다.
@@ -1216,6 +1300,7 @@ ${_BRAND_SIG}`;
 
 /**
  * 고객사(고용주)용 앱 알림 본문 — 사용촉진 발송 사실 통보
+ * 시스템 설정 메시지 규칙(leave_promotion) 적용 — 없으면 기본 문구 (2026-09-03)
  */
 function _buildLeavePromoCompanyBody(emp, co, al, refYear, adminName, workerMethod){
   const coRep   = getCompanyRepName(co);
@@ -1224,6 +1309,17 @@ function _buildLeavePromoCompanyBody(emp, co, al, refYear, adminName, workerMeth
     ? '유선(전화) 직접 안내'
     : DISPATCH_METHOD_LABEL[workerMethod] || workerMethod;
   const today = new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'});
+
+  const rule = (typeof getMsgBodyRule === 'function') ? getMsgBodyRule('leave_promotion') : null;
+  if(rule && rule.body){
+    const vars = {
+      '회사명': co?.company_name || '',
+      '근로자명': emp.name || '',
+      '발송방법': methodLabel,
+      '발송시각': new Date().toLocaleString('ko-KR', { year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }),
+    };
+    return _alApplyRuleVars(rule.body, vars);
+  }
   return `안녕하세요${coRep ? `, ${coRep} 사장님` : ''}.
 
 소속 직원에게 연차 사용촉진 통지를 발송하였음을 안내드립니다.
@@ -1292,7 +1388,7 @@ async function confirmSendLeavePromotion(method){
     }
     // 유선직접안내는 별도 발송 없음 — 이력만 기록
 
-    // ── ② 고객사 앱 알림 (항상 발송) ──
+    // ── ② 고객사 앱 알림 (인앱 체크 해제 시 _sendCompanyNotice에서 차단) ──
     const coTitle = `[연차 사용촉진 통보] ${emp.name} — ${refYear}년 잔여 ${al.remainDays}일`;
     await _sendCompanyNotice({
       companyId  : co?.id||'', companyName: co?.company_name||'',
@@ -1301,6 +1397,12 @@ async function confirmSendLeavePromotion(method){
       body       : _buildLeavePromoCompanyBody(emp, co, al, refYear, adminName, method),
       contractId : contract?.id||'',
       employeeId : emp.id, employeeName: emp.name,
+      extraData  : { ruleVars: {
+        '회사명': co?.company_name || '',
+        '근로자명': emp.name || '',
+        '발송방법': methodLabel,
+        '발송시각': new Date().toLocaleString('ko-KR', { year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }),
+      } },
     });
 
     // ── ③ 발송 이력 저장 ──
@@ -1373,34 +1475,9 @@ async function loadLeavePromotionHistory(force=false){
     }
     _lpHistoryList   = all.sort((a,b)=>(b.sent_at||'').localeCompare(a.sent_at||''));
     _lpHistoryLoaded = true;
-    // 고객사 필터 채우기
-    _lpFillCompanyFilter();
   } catch(e){
     console.error('[사용촉진 이력 조회 오류]', e);
   }
-}
-
-/** LP 페이지 초기화 */
-async function initLpPage(){
-  _lpPage = 1;
-  if(!_lpHistoryLoaded) await loadLeavePromotionHistory(true);
-  renderLpTable();
-}
-
-/** LP 고객사 필터 옵션 채우기 */
-function _lpFillCompanyFilter(){
-  const sel = document.getElementById('lp-filter-company');
-  if(!sel) return;
-  while(sel.options.length > 1) sel.remove(1);
-  const seen = new Set();
-  _lpHistoryList.forEach(r => {
-    if(!seen.has(r.company_id)){
-      seen.add(r.company_id);
-      const opt = document.createElement('option');
-      opt.value = r.company_id; opt.textContent = r.company_name||r.company_id;
-      sel.appendChild(opt);
-    }
-  });
 }
 
 /** LP 테이블 렌더링 */
@@ -1436,7 +1513,7 @@ function renderLpTable(){
   const tbody = document.getElementById('lp-tbody');
   if(!tbody) return;
 
-  const filterCo     = document.getElementById('lp-filter-company')?.value  || '';
+  const filterCo     = _lpCompanyId; // 페이지 선택 고객사 고정 (2026-09-03)
   const filterMethod = document.getElementById('lp-filter-method')?.value   || '';
   const fromVal      = document.getElementById('lp-filter-date-from')?.value || '';
   const toVal        = document.getElementById('lp-filter-date-to')?.value   || '';

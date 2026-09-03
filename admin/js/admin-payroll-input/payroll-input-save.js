@@ -17,6 +17,7 @@ function _buildPIBody(){
     pay_year:        yr,
     pay_month:       mo,
     work_days:       gv('pi-work-days'),
+    daily_work_log:  (typeof _piDailyWorkLogPayload === 'function' && typeof _piDailyWorkLogActive === 'function' && _piDailyWorkLogActive()) ? _piDailyWorkLogPayload() : null, // 상용직 아님 일용직 공수 그리드 (2026-09-03)
     total_work_hours:gv('pi-total-hours'),
     overtime_hours:  gv('pi-ot-hours'),
     night_hours:     gv('pi-night-hours'),
@@ -814,6 +815,7 @@ async function _autoCreateConfirmedContract(probEndDate){
     monthly_salary_agreed:   piContract.monthly_salary_agreed   || 0,
     base_salary:             piContract.base_salary             || 0,
     daily_wage:              piContract.daily_wage              || 0,
+    daily_worker_type:       piContract.daily_worker_type       || 'daily',
     weekly_holiday_pay:      piContract.weekly_holiday_pay      || 0,
     position_allowance:      piContract.position_allowance      || 0,
     site_allowance:          piContract.site_allowance          || 0,

@@ -304,10 +304,31 @@
     .btn-retire-pending:hover{background:#fde68a;}
     .btn-retire-undo{background:#f1f5f9;color:#64748b;border-color:#e2e8f0;padding:5px 7px;margin-left:4px;}
     .btn-retire-undo:hover{background:#e2e8f0;}
+    .btn-retire-preview{background:#eef2ff;color:#4f46e5;border-color:#c7d2fe;padding:5px 9px;}
+    .btn-retire-preview:hover{background:#e0e7ff;}
     /* 퇴직관리 셀 스타일 */
 
     .retirement-td-action{white-space:nowrap;}
-    .retirement-td-amount{color:#dc2626;font-weight:700;}
+    .retirement-table td.retirement-td-amount{color:#2563eb;font-weight:700;}
+    .retirement-table td.retirement-td-unavailable{color:#dc2626;font-weight:700;font-size:11.5px;white-space:nowrap;}
+    .retirement-table td.retirement-td-click{cursor:pointer;}
+    .retirement-table td.retirement-td-click:hover{text-decoration:underline;}
+    /* 퇴직급여 산출 내역 팝업 */
+    .sev-calc-info{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+    .sev-calc-info-row{background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:6px 12px;font-size:12px;display:flex;gap:6px;align-items:center;}
+    .sev-calc-info-row .l{color:#6b7280;font-weight:600;}
+    .sev-calc-info-row .v{color:#111827;font-weight:700;}
+    .sev-calc-formula{background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:10px;padding:12px 14px;font-size:12px;color:#1e3a8a;line-height:1.9;margin-bottom:14px;}
+    .sev-calc-table{width:100%;border-collapse:collapse;font-size:12px;}
+    .sev-calc-table th{background:#f1f5f9;color:#475569;font-size:11px;font-weight:700;padding:8px 10px;border:1px solid #e5e7eb;text-align:left;}
+    .sev-calc-table th:last-child{text-align:right;}
+    .sev-calc-table td{padding:7px 10px;border:1px solid #e5e7eb;color:#374151;}
+    .sev-calc-table td.sev-r{text-align:right;font-weight:600;white-space:nowrap;}
+    .sev-calc-table tr.month td{background:#fbfdff;color:#6b7280;font-size:11.5px;padding-left:24px;}
+    .sev-calc-table tr.sum td{background:#f5f3ff;font-weight:700;}
+    .sev-calc-table tr.sum2 td{background:#eef2ff;font-weight:700;color:#3730a3;}
+    .sev-calc-table tr.total td{background:#eff6ff;font-weight:800;color:#1d4ed8;font-size:13px;}
+    .sev-calc-table .sev-sub{display:block;font-size:10.5px;color:#9ca3af;font-weight:400;margin-top:2px;}
     .retirement-badge-pending{font-size:10px;background:#fef3c7;color:#92400e;padding:1px 5px;border-radius:8px;}
     .std-table{width:100%;border-collapse:collapse;font-size:13px;}
     .std-table th{background:#f8f9fb;font-size:11.5px;font-weight:700;color:#374151;padding:10px 14px;border:1px solid #e5e7eb;white-space:nowrap;text-align:center;}

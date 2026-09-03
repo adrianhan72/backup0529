@@ -152,6 +152,78 @@ const CONSENT_MSG_TEMPLATES = {
   },
 };
 
+// ═══════════════════════════════════════
+// 연차 사용촉진 발송 템플릿
+// ═══════════════════════════════════════
+const LEAVE_PROMOTION_MSG_TEMPLATES = {
+  kakao: {
+    subject: null,
+    body: [
+      `안녕하세요, {근로자명}님.`,
+      ``,
+      `{회사명}에서 연차휴가 사용촉진 안내를 보내드립니다.`,
+      `미사용 연차휴가가 소멸되기 전에 사용해 주시기 바랍니다.`,
+      ``,
+      `인사톡 노무톡 · 대화인사노무파트너스 담당자`,
+      `● 전화: {대표전화}`,
+      `● 이메일: {대표이메일}`,
+      `● 팩스: {대표팩스}`,
+    ].join('\n'),
+  },
+  email: {
+    subject: `[{회사명}] 연차휴가 사용촉진 안내`,
+    body: [
+      `안녕하세요, {근로자명}님.`,
+      ``,
+      `{회사명}에서 연차휴가 사용촉진 안내를 송부드립니다.`,
+      `미사용 연차휴가가 소멸되기 전에 사용해 주시기 바랍니다.`,
+      ``,
+      `인사톡 노무톡 · 대화인사노무파트너스 담당자`,
+      `● 전화: {대표전화}`,
+      `● 이메일: {대표이메일}`,
+      `● 팩스: {대표팩스}`,
+    ].join('\n'),
+  },
+};
+
+// ═══════════════════════════════════════════
+// 퇴직금 명세서 발송 템플릿
+// ═══════════════════════════════════════════
+const SEVERANCE_MSG_TEMPLATES = {
+  kakao: {
+    subject: null,
+    body: [
+      `안녕하세요, {근로자명}님.`,
+      ``,
+      `{회사명}에서 퇴직금 명세서를 보내드립니다.`,
+      `아래 링크를 클릭하여 명세서를 확인해 주세요.`,
+      ``,
+      `▶ 명세서 확인: {문서링크}`,
+      ``,
+      `인사톡 노무톡 · 대화인사노무파트너스 담당자`,
+      `● 전화: {대표전화}`,
+      `● 이메일: {대표이메일}`,
+      `● 팩스: {대표팩스}`,
+    ].join('\n'),
+  },
+  email: {
+    subject: `[{회사명}] 퇴직금 명세서 확인 요청`,
+    body: [
+      `안녕하세요, {근로자명}님.`,
+      ``,
+      `{회사명}에서 퇴직금 명세서를 송부드립니다.`,
+      `아래 링크를 클릭하여 명세서를 확인해 주세요.`,
+      ``,
+      `▶ 명세서 확인: {문서링크}`,
+      ``,
+      `인사톡 노무톡 · 대화인사노무파트너스 담당자`,
+      `● 전화: {대표전화}`,
+      `● 이메일: {대표이메일}`,
+      `● 팩스: {대표팩스}`,
+    ].join('\n'),
+  },
+};
+
 // ═══════════════════════════════════════════
 // 샘플 데이터 (메시지 예시 미리보기용)
 // ═══════════════════════════════════════════
@@ -246,7 +318,7 @@ function msgRenderPreview(template, sampleData, type) {
 
 /**
  * 특정 발송 유형의 메시지 예시 HTML 전체를 생성
- * @param {'contract'|'payslip'|'consent'} docType
+ * @param {'contract'|'payslip'|'consent'|'severance'} docType
  * @returns {string} HTML
  */
 function msgRenderAllPreviews(docType) {
@@ -255,11 +327,35 @@ function msgRenderAllPreviews(docType) {
     case 'contract': templates = CONTRACT_MSG_TEMPLATES; break;
     case 'payslip':  templates = PAYSLIP_MSG_TEMPLATES; break;
     case 'consent':  templates = CONSENT_MSG_TEMPLATES; break;
+    case 'severance': templates = SEVERANCE_MSG_TEMPLATES; break;
+    case 'leave_promotion': templates = LEAVE_PROMOTION_MSG_TEMPLATES; break;
     default: return '<p>알 수 없는 문서 유형입니다.</p>';
   }
 
   const kakaoPreview = msgRenderPreview(templates.kakao, MSG_SAMPLE_DATA, 'kakao');
   const emailPreview = msgRenderPreview(templates.email, MSG_SAMPLE_DATA, 'email');
+
+  // 고객사 인앱 알림: 시스템 설정 체크리스트에서 해제된 유형은 예시 숨김 (2026-09-03)
+  const inappEnabled = _msgInappPreviewEnabled(docType);
+  const inappSection = inappEnabled
+    ? [
+      // ── 고객사 인앱 알림 예시 ──
+      `<div class="msg-preview-grid" style="margin-top:16px;">`,
+      `  <div class="msg-preview-col" style="grid-column:1/-1;">`,
+      `    <div class="msg-preview-label"><i class="fas fa-bell"></i> 고객사 앱 인앱 알림 예시</div>`,
+      `    <div class="msg-preview msg-preview-inapp">`,
+      `      <div class="msg-preview-header" style="background:linear-gradient(135deg,#6366f1,#4f46e5);">`,
+      `        <i class="fas fa-bell"></i>`,
+      `        <span>${_msgInAppTitle(docType)}</span>`,
+      `      </div>`,
+      `      <div class="msg-preview-body">`,
+      `${_msgRenderInAppPreview(docType)}`,
+      `      </div>`,
+      `    </div>`,
+      `  </div>`,
+      `</div>`,
+    ].join('\n')
+    : '';
 
   return [
     `<div class="msg-preview-grid">`,
@@ -272,26 +368,32 @@ function msgRenderAllPreviews(docType) {
     `    ${emailPreview}`,
     `  </div>`,
     `</div>`,
-    // ── 고객사 인앱 알림 예시 ──
-    `<div class="msg-preview-grid" style="margin-top:16px;">`,
-    `  <div class="msg-preview-col" style="grid-column:1/-1;">`,
-    `    <div class="msg-preview-label"><i class="fas fa-bell"></i> 고객사 앱 인앱 알림 예시</div>`,
-    `    <div class="msg-preview msg-preview-inapp">`,
-    `      <div class="msg-preview-header" style="background:linear-gradient(135deg,#6366f1,#4f46e5);">`,
-    `        <i class="fas fa-bell"></i>`,
-    `        <span>${_msgInAppTitle(docType)}</span>`,
-    `      </div>`,
-    `      <div class="msg-preview-body">`,
-    `${_msgRenderInAppPreview(docType)}`,
-    `      </div>`,
-    `    </div>`,
-    `  </div>`,
-    `</div>`,
+    inappSection,
     `<div class="msg-info-box">`,
     `  <i class="fas fa-info-circle"></i>`,
-    `  <span>위 예시는 샘플 데이터로 작성되었습니다. 실제 발송 시 근로자명, 회사명, 문서 링크 등이 실제 데이터로 대체되어 전송됩니다.<br>인앱 알림은 발송 완료 후 고객사 앱에 자동으로 표시됩니다.</span>`,
+    `  <span>위 예시는 샘플 데이터로 작성되었습니다. 실제 발송 시 근로자명, 회사명, 문서 링크 등이 실제 데이터로 대체되어 전송됩니다.<br>${inappEnabled
+      ? '인앱 알림은 발송 완료 후 고객사 앱에 자동으로 표시됩니다.'
+      : '고객사 인앱 알림은 시스템 설정 > 인앱 알림 발송항목에서 체크 해제되어 발송되지 않습니다.'}</span>`,
     `</div>`,
   ].join('\n');
+}
+
+/** 해당 문서 유형의 고객사 인앱 알림이 체크 해제 상태인지 (해제 시 예시 숨김) */
+function _msgInappPreviewEnabled(docType) {
+  const MAP = {
+    contract:  'contract_dispatched',
+    consent:   'consent_dispatched',
+    severance: 'severance_dispatched',
+    leave_promotion: 'leave_promotion',
+  };
+  const type = MAP[docType];
+  if (!type) return true; // payslip 등 기존 동작 유지
+  try {
+    const raw = window._systemSettings && window._systemSettings['inapp_notice_types_disabled'];
+    if (!raw) return true;
+    const arr = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    return !(Array.isArray(arr) && arr.includes(type));
+  } catch (_) { return true; }
 }
 
 // ── 인앱 알림 미리보기 ──
@@ -312,6 +414,12 @@ function _msgInAppTitle(docType) {
   }
   if (docType === 'payslip') {
     return `[급여명세서 발송] ${MSG_SAMPLE_DATA.employeeName} — ${MSG_SAMPLE_DATA.payYear}년 ${MSG_SAMPLE_DATA.payMonth}월 급여명세서`;
+  }
+  if (docType === 'severance') {
+    return `[퇴직금 명세서 발송] ${MSG_SAMPLE_DATA.employeeName} — 퇴직금 명세서가 발송되었습니다`;
+  }
+  if (docType === 'leave_promotion') {
+    return `[연차 사용촉진] ${MSG_SAMPLE_DATA.employeeName} — 연차휴가 사용을 촉진합니다`;
   }
   return '인앱 알림';
 }
@@ -345,6 +453,25 @@ function _msgRenderInAppPreview(docType) {
 ● 전화: 02)3487-8841
 ● 이메일: eunyangpark@naver.com
 ● 팩스: 02)3487-8882`;
+    return sample.split('\n').map(l => l ? l.replace(/&/g,'&amp;').replace(/</g,'&lt;') : '<br>').join('\n');
+  } else if (docType === 'severance') {
+    const sample = `근로자퇴직급여 보장법 제9조(퇴직금의 지급)에 따라 소속 근로자 홍길동에게 퇴직금 명세서가 카카오 알림톡(으)로 발송 완료되었음을 알려드립니다.
+
+■ 근로자: 홍길동
+■ 발송 방법: 카카오 알림톡
+■ 발송 시각: 2026. 7. 24. 오후 3:30:00
+
+─────────────────────
+인사톡 노무톡 · 대화인사노무파트너스 담당자
+● 전화: 02)3487-8841
+● 이메일: eunyangpark@naver.com
+● 팩스: 02)3487-8882`;
+    return sample.split('\n').map(l => l ? l.replace(/&/g,'&amp;').replace(/</g,'&lt;') : '<br>').join('\n');
+  } else if (docType === 'leave_promotion') {
+    const sample = `근로기준법 제61조에 따라 소속 근로자 홍길동에게 연차휴가 사용촉진 조치가 진행되었습니다.
+
+■ 근로자: 홍길동
+■ 처리 일시: 2026. 7. 24. 오후 3:30:00`;
     return sample.split('\n').map(l => l ? l.replace(/&/g,'&amp;').replace(/</g,'&lt;') : '<br>').join('\n');
   }
   return '(해당 문서 유형의 인앱 알림 예시가 없습니다)';

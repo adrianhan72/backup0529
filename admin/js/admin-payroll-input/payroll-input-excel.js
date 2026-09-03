@@ -187,7 +187,7 @@ function goPayrollInputNew(companyId, employeeId, year, month){
   if(co){
     document.getElementById('pi-company-select-card').style.display='none';
     document.getElementById('pi-input-section').style.display='';
-    document.getElementById('pi-selected-company-label').textContent=co.company_name+' 급여 입력';
+    document.getElementById('pi-selected-company-label').innerHTML='<i class="fas fa-calculator" style="margin-right:6px;"></i>'+co.company_name+' 급여 입력';
   }
   // 숨김 select 동기화
   const coSel = document.getElementById('pi-company');
@@ -253,7 +253,7 @@ function editPayroll(payrollId){
   if(coEdit){
     document.getElementById('pi-company-select-card').style.display='none';
     document.getElementById('pi-input-section').style.display='';
-    document.getElementById('pi-selected-company-label').textContent=coEdit.company_name+' 급여 입력';
+    document.getElementById('pi-selected-company-label').innerHTML='<i class="fas fa-calculator" style="margin-right:6px;"></i>'+coEdit.company_name+' 급여 입력';
     // 대상자 목록 숨기고 폼 섹션 표시 + 년월 카드 숨김
     const _tSec = document.getElementById('pi-target-list-section');
     if(_tSec) _tSec.style.display='none';

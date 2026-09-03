@@ -43,8 +43,24 @@ let _pssBulkSendRunning   = false;  // 일괄 카카오 발송 중 플래그
 
 // ─── 고객사 선택 칩 렌더 ───
 function renderPssCompanyList(){
-  // 드롭다운 기반으로 전환: 미발송 섹션의 고객사 드롭다운 갱신
-  _pssPopulateUnsentCoDropdown();
+  const q = (document.getElementById('pss-company-search')?.value || '').toLowerCase().trim();
+  const container = document.getElementById('pss-company-chips');
+  if(!container) return;
+  const companies = allCompanies.filter(c =>
+    isCompanyActive(c) && (!q || (c.company_name||'').toLowerCase().includes(q))
+  ).sort((a,b) => (a.company_name||'').localeCompare(b.company_name||'', 'ko'));
+  if(!companies.length){
+    container.innerHTML = `<div style="color:#9ca3af;font-size:13px;padding:8px 0;">${q ? `"${q}" 검색 결과 없음` : '이용 중인 고객사가 없습니다'}</div>`;
+    return;
+  }
+  container.innerHTML = companies.map(c => {
+    const isSelected = c.id === currentGlobalCompanyId;
+    return `<button onclick="selectPssCompany('${c.id}','${(c.company_name||'').replace(/'/g,"\\'")}')"
+      class="co-chip${isSelected?' selected':''}">
+      <i class="fas fa-building" style="font-size:11px;"></i>
+      ${c.company_name}
+    </button>`;
+  }).join('');
 }
 
 // ─── 고객사 선택 ───
@@ -54,12 +70,19 @@ async function selectPssCompany(id, name){
   currentGlobalCompanyId   = id;
   currentGlobalCompanyName = name;
 
+  // 선택 카드 숨김 + 콘텐츠 표시 (2026-09-03 — 고객사 우선 선택 구조)
+  const selCard = document.getElementById('pss-company-select-card');
+  const content = document.getElementById('pss-content-section');
+  if(selCard) selCard.style.display = 'none';
+  if(content) content.style.display = '';
+  const labelEl = document.getElementById('pss-selected-company-label');
+  if(labelEl) labelEl.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="#fff" style="margin-right:6px;flex-shrink:0;"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg>${name} 급여명세서 발송 관리`;
+
   // 탭 초기화: 미발송 탭으로
   _pssSwitchTab('unsent');
 
   // 발송 이력 로드 → 년월 탭 → 목록 렌더
   await _pssLoadLogs();
-  _pssPopulateUnsentCoDropdown();
   renderPssMonthTabs();
   renderPssUnsentList();
   renderPssLogs();
@@ -74,7 +97,7 @@ function _pssSwitchTab(tab){
   document.getElementById('pss-history-section').style.display = tab==='history' ? '' : 'none';
   const previewEl = document.getElementById('pss-preview-section');
   if(previewEl) previewEl.style.display = tab==='preview' ? '' : 'none';
-  if(tab === 'history'){ _pssPopulateHistoryCoFilter(); renderPssLogs(); }
+  if(tab === 'history'){ renderPssLogs(); }
   if(tab === 'unsent'){ renderPssUnsentList(); }
   if(tab === 'preview'){ _pssRenderPreview(); }
 }
@@ -90,54 +113,19 @@ function _pssRenderPreview(){
   }
 }
 
-// ─── 고객사 드롭다운 (미발송 섹션) ───
-function _pssToggleCoDropdown(){
-  const list = document.getElementById('pss-unsent-co-list');
-  if(!list) return;
-  list.style.display = list.style.display === 'none' ? '' : 'none';
-}
-function _pssSelectCo(coId){
-  _pssCompanyId = coId || null;
-  _pssCompanyName = coId ? (allCompanies.find(c=>c.id===coId)||{}).company_name || '' : '';
-  document.getElementById('pss-unsent-co-label').textContent = coId ? _pssCompanyName : '전체 고객사';
-  document.getElementById('pss-unsent-co-list').style.display = 'none';
-  currentGlobalCompanyId = coId || null;
-  currentGlobalCompanyName = coId ? _pssCompanyName : '';
-  _pssLoadLogs().then(()=>{ renderPssMonthTabs(); renderPssUnsentList(); _pssUpdateStats(); });
-}
-function _pssPopulateUnsentCoDropdown(){
-  const list = document.getElementById('pss-unsent-co-list');
-  const badge = document.getElementById('pss-unsent-co-badge');
-  if(!list) return;
-  const unsentByCo = {}; let totalUnsent = 0;
-  (allPayrolls||[]).forEach(p=>{
-    if(_pssGetSentPayrollIds(_pssYM.year, _pssYM.month).has(p.id)) return;
-    unsentByCo[p.company_id] = (unsentByCo[p.company_id]||0)+1;
-    totalUnsent++;
-  });
-  if(badge) badge.textContent = totalUnsent;
-  const allLabel = `전체 고객사 (${allCompanies.length})`;
-  list.innerHTML = `<div class="cust-dropdown-item" onclick="_pssSelectCo(null)">${allLabel}</div>`
-    + allCompanies.map(c=>{
-      const cnt = unsentByCo[c.id]||0;
-      return `<div class="cust-dropdown-item" onclick="_pssSelectCo('${c.id}')">${c.company_name}${cnt>0?`<span class="count-badge" style="margin-left:auto;">${cnt}</span>`:''}</div>`;
-    }).join('');
-  // 초기 데이터 로드 (전체 고객사 기준)
-  if(!_pssSendLogs.length){
-    _pssLoadLogs().then(()=>{ renderPssMonthTabs(); renderPssUnsentList(); });
-  }
-}
-function _pssPopulateHistoryCoFilter(){
-  const sel = document.getElementById('pss-filter-company');
-  if(!sel || sel.options.length > 1) return;
-  sel.innerHTML = '<option value="">전체</option>'
-    + allCompanies.map(c=>`<option value="${c.id}">${c.company_name}</option>`).join('');
-}
-
 // ─── 고객사 선택 해제 ───
 function clearPssCompanySelect(){
   _pssCompanyId = null;
-  _pssSelectCo(null);
+  _pssCompanyName = '';
+  currentGlobalCompanyId = null;
+  currentGlobalCompanyName = '';
+  const selCard = document.getElementById('pss-company-select-card');
+  const content = document.getElementById('pss-content-section');
+  if(selCard) selCard.style.display = '';
+  if(content) content.style.display = 'none';
+  const searchEl = document.getElementById('pss-company-search');
+  if(searchEl) searchEl.value = '';
+  renderPssCompanyList();
 }
 
 // ─── 발송 이력 로드 (전체, 이 고객사) ───
@@ -475,7 +463,11 @@ function _updateDashUnsentContractBanner(){
   if(typeof _heavyDataReady !== 'undefined' && !_heavyDataReady) return;
 
   // _cdpGetUnsentContracts()로 미발송 계약서 전체 건수 산출
+  // (페이지 고객사 스코프와 무관한 전체 기준 — 2026-09-03)
+  const _savedCo = (typeof _cdpUnsentCoId !== 'undefined') ? _cdpUnsentCoId : '';
+  if (typeof _cdpUnsentCoId !== 'undefined') _cdpUnsentCoId = '';
   const unsentList = _cdpGetUnsentContracts();
+  if (typeof _cdpUnsentCoId !== 'undefined') _cdpUnsentCoId = _savedCo;
   const totalUnsent = unsentList.length;
 
   const ctrUnsentInactive = totalUnsent === 0;
@@ -555,15 +547,6 @@ function renderPssLogs(){
   if(!tbody) return;
 
   let logs = [..._pssSendLogs];
-
-  // 고객사 필터
-  const coFilter = document.getElementById('pss-filter-company')?.value || '';
-  if(coFilter){
-    logs = logs.filter(l => {
-      const p = allPayrolls.find(x => x.id === l.payroll_id);
-      return p && p.company_id === coFilter;
-    });
-  }
 
   // 발송 방식 필터
   const methodFilter = document.getElementById('pss-filter-method')?.value || '';

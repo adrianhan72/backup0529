@@ -351,10 +351,10 @@
     .pss-loading{ text-align:center;padding:20px;color:#9ca3af;font-size:13px; }
 
     /* ── 발송관리 필터: select 높이·chevron 통일 ── */
-    #cdp-filter-method, #cdp-filter-status, #cdp-filter-company,
-    #cns-filter-method, #cns-filter-status, #cns-filter-company,
+    #cdp-filter-method, #cdp-filter-status,
+    #cns-filter-method, #cns-filter-status,
     #cnl-filter-company, #cnl-filter-type,
-    #lp-filter-company, #lp-filter-method,
+    #lp-filter-method,
     #cen-log-filter-method, #cen-log-filter-company,
     #rc-log-filter-company {
       height: 32px !important;
