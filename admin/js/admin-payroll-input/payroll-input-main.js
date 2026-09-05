@@ -168,6 +168,8 @@ async function loadPITargetList(){
       : (c.contract_end || '');
     if(cStart && cStart > _salEnd)   return false; // 계약 시작 전
     if(cEnd   && cEnd   < _salStart) return false; // 계약 종료 후
+    // 갱신예정 잔재 방어: 갱신 시작일이 이미 지난 renewal_pending 계약 제외 (2026-09-06)
+    if(c.status === CONTRACT_STATUS.RENEWAL_PENDING && cStart && cStart <= fmtLocalDate(new Date())) return false;
     return true;
   });
 

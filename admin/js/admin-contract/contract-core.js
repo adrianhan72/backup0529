@@ -99,9 +99,12 @@ function _renderContCoSummaryCards(){
 
     let targetDate, reason;
     if (c.status === CONTRACT_STATUS.RENEWAL_PENDING) {
-      const paired = c.renewal_pair_id ? allContracts.find(x => x.id === c.renewal_pair_id) : null;
-      targetDate = paired?.contract_start || c.renewal_date;
+      // 갱신예정 계약의 대상일 = 자체 contract_start (2026-09-06 수정:
+      // 기존 renewal_pair_id/renewal_date 컬럼은 DB에 없어 targetDate가 항상 null로 early-return되던 버그 수정)
+      targetDate = c.contract_start;
       if (!targetDate) return;
+      // 갱신 시작일이 이미 지난 잔재 갱신예정 계약은 예정사항 카드에서 제외 (고아 데이터)
+      if (targetDate <= today) return;
       reason = isProbationType ? SCHEDULED_REASON.PROBATION_END : SCHEDULED_REASON.CONTRACT_RENEWAL;
     } else {
       targetDate = c.contract_start;
