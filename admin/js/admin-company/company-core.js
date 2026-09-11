@@ -1882,7 +1882,8 @@ async function _cmCreateRepEmployees(coId, reps) {
       gender: '',
       phone: r.phone || '',
       email: r.email || '',
-      hire_date: document.getElementById('cm-contract-start').value || fmtLocalDate(new Date()),
+      // 입사일: 자문계약일을 자동 기재하지 않음 — 인사카드에서 직접 입력 (2026-09-11 수정)
+      hire_date: '',
       department: '',
       position: '대표이사',
       personnel_type: PERSONNEL_TYPE.REPRESENTATIVE,

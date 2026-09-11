@@ -19,12 +19,31 @@ const path = require('path');
 const DB_PATH = path.join(__dirname, '..', 'data', 'app.db');
 const db = new Database(DB_PATH, { readonly: true });
 
-// ── 요율 (payroll-input-main.js _getPIRates) ──
-const PENSION_RATE = 0.045;
-const PENSION_CAP = 6370000;
-const HEALTH_RATE = 0.03545;
-const LTCARE_RATE = 0.1295;
-const EMPLOY_RATE = 0.009;
+// ── 요율 (insurance_rates 테이블 — 기간별 매칭, 없으면 2026 폴백) ──
+const RATE_FALLBACK = {
+  national_pension: { rate: 0.0475, cap: 6590000 },
+  health:           { rate: 0.03595, cap: 0 },
+  long_term_care:   { rate: 0.1314,  cap: 0 },
+  employment:       { rate: 0.009,   cap: 0 },
+};
+const rateRows = db.prepare(`SELECT insurance_type, rate, cap_amount, period_start, period_end FROM insurance_rates`).all();
+function rateFor(type, period){ // period = 'YYYY-MM'
+  const pStart = period + '-01';
+  const pEnd = period + '-31';
+  let row = rateRows.filter(r => r.insurance_type === type
+    && (!r.period_start || r.period_start <= pEnd)
+    && (!r.period_end   || r.period_end   >= pStart)
+  ).sort((a,b)=>(b.period_start||'').localeCompare(a.period_start||''))[0];
+  if(!row){ // 해당 기간 없으면 기간 시작 이전 최신 폴백
+    row = rateRows.filter(r => r.insurance_type === type && (!r.period_start || r.period_start <= pStart))
+      .sort((a,b)=>(b.period_start||'').localeCompare(a.period_start||''))[0];
+  }
+  return row ? { rate: num(row.rate)/100, cap: num(row.cap_amount) } : RATE_FALLBACK[type];
+}
+// 확정액 기준(fixed_amount) 고객사 — 4대보험은 직접 입력이므로 D 검사 제외
+const fixedBasisCoIds = new Set(
+  db.prepare(`SELECT id FROM companies WHERE insurance_basis = 'fixed_amount'`).all().map(r => r.id)
+);
 const TOL = 50; // 모달이 사용하는 정합화 허용오차
 
 function num(v) { const n = parseFloat(v); return isNaN(n) ? 0 : n; }
@@ -47,11 +66,8 @@ const payrolls = db.prepare(`
 
 const has = (c) => cols.includes(c);
 
-// 일용직 직원 집합 — 일용직은 주휴수당이 기본급에 포함되지 않으므로(산정식 미업데이트 상태)
-// 지급총액 항목 합산에 weekly_holiday_pay를 별도 가산한다.
-const dailyEmpIds = new Set(
-  db.prepare(`SELECT DISTINCT employee_id FROM contracts WHERE contract_type = 'daily'`).all().map(r => r.employee_id)
-);
+// 일용직 직원 집합 — 사용 안 함 (주휴수당은 전 고용형태에서 참고값, gross 미가산 — 2026-09-11 확정)
+const dailyEmpIds = new Set();
 
 // 계약서 고정 연장/야간/휴일수당 — 지급총액은 항목 컬럼에 없고 계약서에서 표시되므로 합산한다 (2026-09-01)
 const ctsByEmp = {};
@@ -115,10 +131,10 @@ for (const p of payrolls) {
   const period = `${p.pay_year}-${String(p.pay_month).padStart(2, '0')}`;
 
   // ── A. 지급총액 검증 ──
-  // 주휴수당은 기본급(시급×209h, 주휴 35h 포함)에 이미 포함 → 미가산 (2026-09-01 규칙 확정)
-  // 단, 일용직은 기본급에 주휴 미포함(별도 산정, 산정식 미업데이트 상태) → 별도 가산
+  // 주휴수당은 기본급(시급×209h, 주휴 포함)에 이미 포함 → 참고값으로 미가산 (2026-09-11 규칙 확정)
+  // 일용직도 기본급=일급여×근로일수, 주휴수당은 참고값 → 미가산
   const paySum =
-    num(p.base_salary) + (dailyEmpIds.has(p.employee_id) ? num(p.weekly_holiday_pay) : 0) +
+    num(p.base_salary) +
     num(p.position_allowance) + num(p.site_allowance) +
     num(p.transportation_allowance || p.car_maintenance) + num(p.self_driving_allowance) +
     num(p.remote_area_allowance) + num(p.meal_allowance) + num(p.childcare_allowance) +
@@ -171,23 +187,28 @@ for (const p of payrolls) {
     samples.push({ check: 'C-실수령액', period, name, storedNet, expectedNet, delta: cDelta });
   }
 
-  // ── D. 4대보험 개별 공식 (std 기준, 단순 비교 — 적용제외로 인한 차이는 보고에서 설명) ──
+  // ── D. 4대보험 개별 공식 (std 기준, 적용제외 고려) ──
+  // 확정액 기준(fixed_amount) 고객사는 직접 입력 방식 → 공식 검사 제외
   const std = num(p.standard_monthly_pay) || gross;
-  if (std > 0 && has('health_insurance')) {
+  if (std > 0 && has('health_insurance') && !fixedBasisCoIds.has(p.company_id)) {
+    const R_p = rateFor('national_pension', period);
+    const R_h = rateFor('health', period);
+    const R_l = rateFor('long_term_care', period);
+    const R_e = rateFor('employment', period);
     const h = num(p.health_insurance);
-    const hExp = Math.round(std * HEALTH_RATE);
+    const hExp = Math.round(std * R_h.rate);
     stat.D.health++;
     if (h > 0 && Math.abs(h - hExp) > TOL) { stat.D.healthBad++; if (samples.length < 25) samples.push({ check: 'D-건강보험', period, name, std, stored: h, expected: hExp }); }
     const pen = num(p.national_pension);
-    const penExp = Math.round(Math.min(std, PENSION_CAP) * PENSION_RATE);
+    const penExp = Math.round(Math.min(std, R_p.cap || 1e12) * R_p.rate);
     stat.D.pension++;
     if (pen > 0 && Math.abs(pen - penExp) > TOL) { stat.D.pensionBad++; if (samples.length < 25) samples.push({ check: 'D-국민연금', period, name, std, stored: pen, expected: penExp }); }
     const lt = num(p.long_term_care);
-    const ltExp = Math.round(h * LTCARE_RATE);
+    const ltExp = Math.round(h * R_l.rate);
     stat.D.ltcare++;
     if (lt > 0 && h > 0 && Math.abs(lt - ltExp) > TOL) { stat.D.ltcareBad++; if (samples.length < 25) samples.push({ check: 'D-장기요양', period, name, stored: lt, expected: ltExp }); }
     const emp = num(p.employment_insurance);
-    const empExp = Math.round(std * EMPLOY_RATE);
+    const empExp = Math.round(std * R_e.rate);
     stat.D.employ++;
     if (emp > 0 && Math.abs(emp - empExp) > TOL) { stat.D.employBad++; if (samples.length < 25) samples.push({ check: 'D-고용보험', period, name, std, stored: emp, expected: empExp }); }
   }

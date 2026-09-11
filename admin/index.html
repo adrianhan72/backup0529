@@ -19,7 +19,7 @@
   <link rel="stylesheet" href="css/admin-form.css?v=20260831u" />
   <link rel="stylesheet" href="css/admin-notice.css?v=20260813c" />
   <link rel="stylesheet" href="css/admin-payroll.css?v=20260813c" />
-  <link rel="stylesheet" href="css/admin-wage.css?v=20260903d" />
+  <link rel="stylesheet" href="css/admin-wage.css?v=20260911a" />
   <link rel="stylesheet" href="css/admin-login.css?v=20260813c" />
   <link rel="stylesheet" href="css/admin-etc.css?v=20260903c" />
 </head>
@@ -2191,7 +2191,7 @@
           <div style="display:flex;gap:12px;flex-wrap:wrap;">
             <div class="form-group" style="flex:1;min-width:150px;">
               <label><span id="ct-hourly-label">통상시급</span> <span class="lbl-req" id="ct-hourly-req">*</span> <span class="lbl-desc" id="ct-hourly-desc">(직접 입력)</span></label>
-              <div class="amount-wrap"><input type="text" inputmode="numeric" id="ct-hourly-input" data-amount placeholder="0" oninput="onAmountInput(this,calcContractSalary);_checkRegisterBtnState();_checkAmendBtnState();" /></div>
+              <div class="amount-wrap"><input type="text" inputmode="numeric" id="ct-hourly-input" data-amount placeholder="0" oninput="onAmountInput(this,calcContractSalary);_ctOnHourlyInput(this);_checkRegisterBtnState();_checkAmendBtnState();" /></div>
             </div>
             <div class="form-group" id="ct-row-daily-wage" style="display:none;flex:1;min-width:150px;">
               <label>일급여 <span style="color:#c00;font-weight:900;font-size:13px;margin-left:1px;">*</span> <span class="lbl-desc">(일용직 · 자동계산)</span></label>
@@ -2591,7 +2591,7 @@
                 <input type="text" id="hr-em-relationship" placeholder="예: 배우자, 자녀, 부모" />
               </div>
               <div class="form-group"><label>입사일</label><input type="date" id="hr-em-hire" class="filt-date" readonly />
-                <div class="fld-hint">근로계약서가 입력되면 자동으로 기재됩니다.</div>
+                <div class="fld-hint" id="hr-em-hire-hint">근로계약서가 입력되면 자동으로 기재됩니다.</div>
               </div>
 
               <div class="form-group full"><span class="form-section-title">개인 정보</span></div>
@@ -3440,7 +3440,7 @@
       <script src="js/constants.js?v=20260903a"></script>
       <script src="js/message-templates.js?v=20260903c"></script>
       <script src="js/admin-loader.js?v=20260903a"></script>
-<script src="js/admin-state.js?v=20260903h"></script>
+<script src="js/admin-state.js?v=20260911a"></script>
   <script src="js/admin-labor.js?v=20260906a"></script>
   <!-- admin-dashboard 모듈 -->
   <script src="js/admin-dashboard/dashboard-core.js?v=20260903c"></script>
@@ -3453,26 +3453,26 @@
   <script src="js/admin-wage/wage-retirement-mgmt.js?v=20260903j"></script>
   <script src="js/admin-wage.js?v=20260814s"></script>
   <!-- admin-company 모듈 -->
-  <script src="js/admin-company/company-core.js?v=20260827a"></script>
+  <script src="js/admin-company/company-core.js?v=20260911a"></script>
   <script src="js/admin-company/company-history.js?v=20260903a"></script>
   <script src="js/admin-company.js?v=20260814s"></script>
   <!-- admin-contract 모듈 (기능별 분리) -->
-  <script src="js/admin-contract/contract-form.js?v=20260903l"></script>
-  <script src="js/admin-contract/contract-core.js?v=20260906a"></script>
-  <script src="js/admin-contract/contract-docs.js?v=20260903c"></script>
+  <script src="js/admin-contract/contract-form.js?v=20260911c"></script>
+  <script src="js/admin-contract/contract-core.js?v=20260911a"></script>
+  <script src="js/admin-contract/contract-docs.js?v=20260911a"></script>
   <script src="js/admin-contract/contract-dispatch.js?v=20260903c"></script>
   <script src="js/admin-contract/consent-dispatch.js?v=20260903c"></script>
-  <script src="js/admin-contract/contract-lifecycle.js?v=20260911a"></script>
+  <script src="js/admin-contract/contract-lifecycle.js?v=20260911c"></script>
   <script src="js/admin-contract.js?v=20260814s"></script>
   <!-- admin-hr 모듈 (인사관리대장) -->
-  <script src="js/admin-hr.js?v=20260827o"></script>
+  <script src="js/admin-hr.js?v=20260911b"></script>
   <!-- admin-payroll 모듈 -->
-  <script src="js/admin-payroll/payroll-core.js?v=20260903a"></script>
+  <script src="js/admin-payroll/payroll-core.js?v=20260911b"></script>
   <script src="js/admin-payroll/payroll-bulk.js?v=20260828e"></script>
   <script src="js/admin-payroll.js?v=20260814s"></script>
   <!-- admin-payroll-input 모듈 (기능별 분리) -->
   <script src="js/admin-payroll-input/payroll-input-core.js?v=20260814s"></script>
-  <script src="js/admin-payroll-input/payroll-input-main.js?v=20260906a"></script>
+  <script src="js/admin-payroll-input/payroll-input-main.js?v=20260911a"></script>
   <script src="js/admin-payroll-input/payroll-input-save.js?v=20260903a"></script>
   <script src="js/admin-payroll-input/payroll-input-excel.js?v=20260903b"></script>
   <script src="js/admin-payroll-input.js?v=20260814s"></script>

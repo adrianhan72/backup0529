@@ -636,7 +636,7 @@ function generateContractHTMLFromData(c, emp, co){
         <p class="doc-text">③ 제⑤항의 임금지급기에 따른 급여 구성은 다음과 같다.</p>
         <table class="info-table ct-doc-4col ct-doc-pay">
           <colgroup><col style="width:25%"><col style="width:25%"><col style="width:25%"><col style="width:25%"></colgroup>
-          ${hourlyWage > 0 ? `<tr><th>통상시급</th><td colspan="3">${fmt(hourlyWage)}원/시간</td></tr>` : ''}
+          ${hourlyWage > 0 ? `<tr><th>통상시급</th><td colspan="3">${fmt(Math.round(hourlyWage))}원/시간</td></tr>` : ''}
           ${_salItemsHtml}
           <tr class="total-row"><th>월 약정임금 합계</th><td colspan="3"><strong>${fmt(monthlySal)}원</strong></td></tr>
         </table>
@@ -1398,8 +1398,8 @@ function _collectRenewFormFields(){
   const dy = fields.work_days_per_week || 5;
   const _renewMonthlyHolH = typeof _calcMonthlyHolHours === 'function'
     ? _calcMonthlyHolHours(ht) : Math.round(ht * 365 / 12 / 7);
-  // 통상시급: 폼에서 입력된 값 읽기 (필수값 — 갱신 시 원본 덮어쓰기 방지)
-  fields.hourly_wage = getAmountVal('ct-hourly-input') || 0;
+  // 통상시급: 정밀값 읽기 (폼 필수값 — 갱신 시 원본 덮어쓰기 방지, 2026-09-11)
+  fields.hourly_wage = (typeof _getContractHourlyWage === 'function' ? _getContractHourlyWage() : (getAmountVal('ct-hourly-input')||0)) || 0;
   // 주휴수당: 통상시급 × 월주휴시간(35h) [근로기준법 제55조]
   fields.weekly_holiday_pay = fields.hourly_wage > 0
     ? Math.round(fields.hourly_wage * _renewMonthlyHolH) : 0;
@@ -1447,7 +1447,7 @@ function _validateRenewFields(){
     _ctMarkError('ct-hourly-input', '통상시급', errors);
   } else if(_hwEl){
     // 통상시급 최저임금 하한 (계약시작연도 법정 최저시급 기준)
-    const _hwValRenew = parseFloat(_hwEl.value) || 0;
+    const _hwValRenew = (typeof _getContractHourlyWage === 'function' ? _getContractHourlyWage() : (parseFloat(_hwEl.value)||0)) || 0;
     const _startRawR = document.getElementById('ct-start')?.value || '';
     const _yrR = _startRawR ? parseInt(_startRawR.slice(0,4)) : new Date().getFullYear();
     const _minR = _getCTLegalMinWage(_yrR);
@@ -3099,7 +3099,7 @@ async function saveDraftContract(reason){
 
   // ── 통상시급 최저임금 하한 차단 (값이 입력된 경우만) ──
   (function(){
-    const _hwDraft = getAmountVal('ct-hourly-input') || 0;
+    const _hwDraft = (typeof _getContractHourlyWage === 'function' ? _getContractHourlyWage() : 0) || 0;
     if(_hwDraft <= 0) return;
     const _startRawD = document.getElementById('ct-start')?.value || '';
     const _yrD = _startRawD ? parseInt(_startRawD.slice(0,4)) : new Date().getFullYear();
@@ -3166,7 +3166,7 @@ async function saveDraftContract(reason){
     + (_isFixedAllow('hazard')? getAmountVal('ct-hazard') : 0)
     + (_isFixedAllow('remote_area')? getAmountVal('ct-remote-area') : 0)
     + (typeof _getCustomOrdinarySum==='function' ? _getCustomOrdinarySum() : 0);
-  const hourlyDraft     = getAmountVal('ct-hourly-input') || 0;
+  const hourlyDraft     = (typeof _getContractHourlyWage === 'function' ? _getContractHourlyWage() : 0) || 0;
   const wkHolDraft      = (() => {
     if(isDailyDraft) return 0;
     if(hourlyDraft > 0){
@@ -3725,17 +3725,18 @@ function _getCTLegalMinWage(year){
  */
 function _ctWageRequiredError(errors){
   const _basis = (typeof _ctFixBasis !== 'undefined' && _ctFixBasis) ? _ctFixBasis : 'hourly';
+  const _hwReq  = typeof _getContractHourlyWage === 'function' ? _getContractHourlyWage() : getAmountVal('ct-hourly-input');
   if(_basis === 'monthly'){
     if(getAmountVal('ct-monthly-input') <= 0)
       _ctMarkError('ct-monthly-input', '월 약정임금', errors);
-    else if(getAmountVal('ct-hourly-input') <= 0)
+    else if(_hwReq <= 0)
       _ctMarkError('ct-monthly-input', '월 약정임금은 수당 합계보다 커야 합니다', errors);
   } else if(_basis === 'annual'){
     if(getAmountVal('ct-annual-sal') <= 0)
       _ctMarkError('ct-annual-sal', '연봉', errors);
-    else if(getAmountVal('ct-hourly-input') <= 0)
+    else if(_hwReq <= 0)
       _ctMarkError('ct-annual-sal', '연봉이 수당 합계(×12)보다 커야 합니다', errors);
-  } else if(getAmountVal('ct-hourly-input') <= 0){
+  } else if(_hwReq <= 0){
     _ctMarkError('ct-hourly-input', '통상시급', errors);
   }
 }
@@ -3848,7 +3849,7 @@ function _ctValidate(){
       }
       if(cat === CONTRACT_TYPE.REGULAR){
         // 정규직: 시급 입력 시 연봉 자동계산, 시급 미입력 시 연봉 필수
-        const _hwReg = getAmountVal('ct-hourly-input') || 0;
+        const _hwReg = (typeof _getContractHourlyWage === 'function' ? _getContractHourlyWage() : 0) || 0;
         if(_hwReg <= 0 && !getAmountVal('ct-annual-sal'))
           _ctMarkError('ct-annual-sal', '연봉 (또는 통상시급 입력)', errors);
       } else if(cat === CONTRACT_TYPE.REGULAR_PROBATION){
@@ -3878,7 +3879,7 @@ function _ctValidate(){
       if(!document.getElementById('ct-probation-months')?.value)
         _ctMarkError('ct-probation-months', '수습기간', errors);
       // 통상시급 필수 (수습기간 급여 비율 산출 기준 — 시급 0/null 수습 계약 금지, 2026-09-01)
-      if(!getAmountVal('ct-hourly-input'))
+      if(!(typeof _getContractHourlyWage === 'function' ? _getContractHourlyWage() : getAmountVal('ct-hourly-input')))
         _ctMarkError('ct-hourly-input', '통상시급', errors);
       // 수습 임금 비율 (direct 모드가 아닐 때)
       const _probBasis = document.querySelector('input[name="ct-probation-basis"]:checked')?.value || '';
@@ -3979,7 +3980,7 @@ function _ctValidate(){
       }
       if(catForCheck === CONTRACT_TYPE.REGULAR){
         // 정규직: 시급 입력 시 연봉 자동계산, 시급 미입력 시 연봉 필수
-        const _hwReg2 = getAmountVal('ct-hourly-input') || 0;
+        const _hwReg2 = (typeof _getContractHourlyWage === 'function' ? _getContractHourlyWage() : 0) || 0;
         if(_hwReg2 <= 0 && !getAmountVal('ct-annual-sal'))
           _ctMarkError('ct-annual-sal', '연봉 (또는 통상시급 입력)', errors);
       } else if(catForCheck === CONTRACT_TYPE.REGULAR_PROBATION){
@@ -4029,7 +4030,7 @@ function _ctValidate(){
 
   // ── 통상시급 최저임금 하한 (계약시작연도 법정 최저시급 기준) ──
   (function(){
-    const _hwVal = getAmountVal('ct-hourly-input') || 0;
+    const _hwVal = (typeof _getContractHourlyWage === 'function' ? _getContractHourlyWage() : 0) || 0;
     if(_hwVal <= 0) return; // 미입력은 위에서 필수 검증
     const _startRaw = document.getElementById('ct-start')?.value || '';
     const _yr = _startRaw ? parseInt(_startRaw.slice(0,4)) : new Date().getFullYear();
@@ -4213,8 +4214,8 @@ async function saveContract(){
 
   // ── 임금 계산 (일용직 vs 계약직 vs 정규직) ──
   let weeklyHol, monthly, baseSalaryForSave, dailyWageForSave;
-  // 통상시급: 직접 입력값(ct-hourly-input)을 그대로 사용
-  const hourlyWage = getAmountVal('ct-hourly-input') || 0;
+  // 통상시급: 정밀값 사용 (2026-09-11 — 표시는 1원 반올림)
+  const hourlyWage = (typeof _getContractHourlyWage === 'function' ? _getContractHourlyWage() : 0) || 0;
   if(isDailySave){
     dailyWageForSave = getAmountVal('ct-daily-wage');
     baseSalaryForSave = 0;
@@ -4594,6 +4595,14 @@ async function saveContract(){
         dependents:          parseInt(document.getElementById('ct-childcare-dependents')?.value)||0,
         is_representative:   document.getElementById('ct-edit-em-is-rep')?.checked ? 1 : 0,
       };
+      // 등기임원·특수관계인: 근로계약서의 계약 시작일 기준으로 인사카드 입사일 자동 변경 (2026-09-11)
+      {
+        const _editPtHire = personnelTypeOf(_editEmpCur);
+        if(_editPtHire === PERSONNEL_TYPE.EXECUTIVE || _editPtHire === PERSONNEL_TYPE.RELATED){
+          const _ctStartEdit = document.getElementById('ct-start')?.value || '';
+          if(_ctStartEdit) empPatch.hire_date = _ctStartEdit;
+        }
+      }
       // 담당업무·부서·직책: 인사카드에 비어 있을 때만 최초 저장 (이후 인사카드 수정값 유지)
       if(!(_editEmpCur.job_description ?? '')) empPatch.job_description = document.getElementById('ct-edit-em-job').value;
       if(!(_editEmpCur.department ?? ''))     empPatch.department      = document.getElementById('ct-edit-em-dept').value;
@@ -4685,6 +4694,13 @@ async function saveContract(){
           const _rcHireVal = document.getElementById('ct-edit-em-hire')?.value || '';
           if(_rcHireVal) _rcPatch.hire_date = _rcHireVal; // 재입사·정규직 계열: 새로 입력한 입사일
         }
+        // 등기임원·특수관계인: 근로계약서 계약 시작일 기준으로 입사일 자동 변경 (2026-09-11)
+        {
+          const _rcPt = personnelTypeOf(allEmployees.find(x => x.id === empId));
+          if(!_rcIsContinuity && (_rcPt === PERSONNEL_TYPE.EXECUTIVE || _rcPt === PERSONNEL_TYPE.RELATED) && contractStart){
+            _rcPatch.hire_date = contractStart;
+          }
+        }
         const _rcEmpNoVal = document.getElementById('ct-edit-em-empno')?.value?.trim() || '';
         if(_rcEmpNoVal) _rcPatch.employee_number = _rcEmpNoVal;
         const _rcSrcEmpNoOld = (allEmployees.find(x=>x.id===empId)||{}).employee_number || '';
@@ -4731,7 +4747,17 @@ async function saveContract(){
           const _setIfEmpty = (k, v, label) => {
             if(v && !(_syncEmp[k] ?? '')){ _patch[k] = v; _auto.push(`${label} '${v}'`); }
           };
-          _setIfEmpty('hire_date', _nHire, '입사일');
+          // 등기임원·특수관계인: 근로계약서 계약 시작일 기준으로 인사카드 입사일 자동 변경 (덮어쓰기) (2026-09-11)
+          const _syncPt = personnelTypeOf(_syncEmp);
+          if(_syncPt === PERSONNEL_TYPE.EXECUTIVE || _syncPt === PERSONNEL_TYPE.RELATED){
+            const _nHireForced = _nHire || contractStart;
+            if(_nHireForced && (_syncEmp.hire_date || '') !== _nHireForced){
+              _patch.hire_date = _nHireForced;
+              _auto.push(`입사일 '${_nHireForced}'`);
+            }
+          } else {
+            _setIfEmpty('hire_date', _nHire, '입사일');
+          }
           _setIfEmpty('job_description', _nJob, '담당업무');
           _setIfEmpty('department', _nDept, '부서');
           _setIfEmpty('position', _nPos, '직책');

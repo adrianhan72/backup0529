@@ -1044,7 +1044,7 @@ function _buildDocx(data){
     if(data.overseasAllowance>0) salaryRows.push(infoRow('해외근무수당', won(data.overseasAllowance)));
     if(data.otherAllowance>0) salaryRows.push(infoRow('기타수당', won(data.otherAllowance)));
     salaryRows.push(infoRow('월 약정임금 합계', won(data.monthlySalary), true));
-    salaryRows.push(infoRow('통상시급', won(data.hourlyWage)+'/시간'));
+    salaryRows.push(infoRow('통상시급', won(Math.round(data.hourlyWage))+'/시간'));
   } else {
     // 일용직: 통상일급(시급×8) + 일 기준 고정수당 → 일급여 합계
     salaryRows.push(infoRow('통상일급', `${won(Math.round((data.hourlyWage||0)*8))} (시급×8, 일 8시간 기준)`));
@@ -1767,7 +1767,7 @@ function generateContractHTML(){
       ${d.bookAllowance > 0       && isFixedType(d.bookPayType)              ? row('도서지원비',   `${won(d.bookAllowance)}원`)          : ''}
       ${d.overseasAllowance > 0   && isFixedType(d.overseasPayType)          ? row('해외근무수당', `${won(d.overseasAllowance)}원`)      : ''}
       <tr class="total-row"><th>월 약정임금 합계</th><td><strong class="highlight">${won(d.monthlySalary)}원</strong></td></tr>
-      ${row('통상시급', `${won(d.hourlyWage)}원/시간`)}
+      ${row('통상시급', `${won(Math.round(d.hourlyWage))}원/시간`)}
       ${row('임금 지급일', payDayStr)}
       ${row('지급 방법', '근로자 명의 계좌 직접 입금')}
     </table>

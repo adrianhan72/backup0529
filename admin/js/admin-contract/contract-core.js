@@ -1291,7 +1291,7 @@ function openContractModal(id=null, preCompanyId=null){
   setAmountVal('ct-self-dev',0); setAmountVal('ct-book',0); setAmountVal('ct-overseas',0);
   setAmountVal('ct-regular-bonus',0);
   setAmountVal('ct-childcare',0); { const _ccDep=document.getElementById('ct-childcare-dependents'); if(_ccDep) _ccDep.value=0; }
-  setAmountVal('ct-hourly-input',0);
+  if(typeof _ctHourlyReset === 'function') _ctHourlyReset(); else setAmountVal('ct-hourly-input',0);
   // 기본급·고정수당금액 초기화 (새 모달 열 때 이전 세션 잔재 제거)
   setAmountVal('ct-base', 0);
   setAmountVal('ct-fixed-ot-pay', 0);
@@ -1701,7 +1701,9 @@ function openContractModal(id=null, preCompanyId=null){
       document.getElementById('ct-note').value=c.note||'';
       // 일용직·비일용직 공통: 월약정·주휴·고정수당 등 계산값은 calcWorkHours/calcContractSalary가
       // 근무시간표·통상시급 기준으로 재계산하므로 DB 복원하지 않는다 (스테일 DB 덮어쓰기 방지)
-      setAmountVal('ct-hourly-input', c.hourly_wage||0);
+      // 통상시급: 정밀값 복원 + 표시는 1원 반올림 (2026-09-11)
+      if(typeof _ctHourlySetExact === 'function') _ctHourlySetExact(parseFloat(c.hourly_wage)||0);
+      else setAmountVal('ct-hourly-input', c.hourly_wage||0);
       // 고정 연장/야간/휴일근로수당: 일용직은 0. 비일용직은 근무시간표에서 자동 재계산되므로
       // 저장값(스테일 가능)을 복원하지 않고 calcWorkHours가 스케줄 기준으로 설정함
       if(isDailyEdit){
@@ -1856,7 +1858,7 @@ function _resetWageInputs(){
     const el = document.getElementById(id);
     if(el) el.textContent = '0원';
   });
-  setAmountVal('ct-hourly-input', 0);
+  if(typeof _ctHourlyReset === 'function') _ctHourlyReset(); else setAmountVal('ct-hourly-input', 0);
 }
 
 // lock     : 이름·주민번호·성별·사원번호 잠금 여부 (수정=false, 갱신·재계약=true)
@@ -3343,8 +3345,8 @@ async function openAmendPreview(){
     }
   };
 
-  // 통상시급: 사용자가 직접 입력한 값(ct-hourly-input) 사용 (필수값)
-  const _directHW = getAmountVal('ct-hourly-input');
+  // 통상시급: 정밀값 사용 (2026-09-11 — 내부 계산은 소수점 전체 정밀도)
+  const _directHW = (typeof _getContractHourlyWage === 'function') ? _getContractHourlyWage() : getAmountVal('ct-hourly-input');
   const hWage_  = _directHW > 0 ? _directHW : 0;
   // 주휴수당 = 통상시급 × 35h (참고용, 기본급에 포함) [근로기준법 제55조]
   const _monthlyHolH = typeof _calcMonthlyHolHours === 'function'

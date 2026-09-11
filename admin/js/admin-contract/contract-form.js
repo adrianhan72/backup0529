@@ -394,6 +394,7 @@ function toggleAnnualSal(){
   _applyDailyEmpTypeUI(); // 일용직: 상용직 여부에 따라 근무시간표 표시/숨김 (2026-09-03)
   _ctFixBasisTouched = false; // 고용형태/모달 컨텍스트 변경 시 고정 기준 기본값 재적용 (정규직: 연봉 / 계약직: 월약정)
   _ctMonthlySeeded = false;   // 월약정 고정 기준: 모달 오픈 시 계산값 1회 시드
+  _ctBasisJustSwitched = false; // 기준 전환 플래그 리셋
 
   // ── 상단 섹션 타이틀·라벨 업데이트 ──
   const labelAnnualSal    = document.getElementById('ct-label-annual-sal');
@@ -918,14 +919,14 @@ function _checkMinWageWarning(){
 
   if(isDaily){
     // 일용직: 기본시급(주휴수당 미포함)만으로 최저임금 위반 판별 (2026-09-03)
-    const _directHW = getAmountVal('ct-hourly-input');
+    const _directHW = _getContractHourlyWage();
     if(_directHW <= 0){ wRow.style.display='none'; _checkRegisterBtnState(); return; }
     compareHourly  = _directHW;
     compareMonthly = Math.round(_directHW * 209); // 월 환산 (209h 기준)
     compareLabel   = `기본시급 ${fmt(_directHW)}원 → 월 환산 ${fmt(compareMonthly)}원 (209h 기준)`;
   } else {
     // 정규직·계약직: 통상시급 직접 입력값을 기준으로 비교 (입력된 시급이 곧 기준)
-    const _directHW = getAmountVal('ct-hourly-input');
+    const _directHW = _getContractHourlyWage();
     if(_directHW <= 0){ wRow.style.display='none'; _checkRegisterBtnState(); return; }
     compareHourly  = _directHW;
     compareMonthly = Math.round(_directHW * MAGIC.MONTHLY_STD_HOURS);
@@ -2911,11 +2912,46 @@ let _ctFixBasis = 'hourly';
 let _ctFixBasisTouched = false;
 // 월약정 고정 기준에서 입력값이 비어 있을 때 현재 계산값을 1회 시드했는지 여부 (모달 오픈 편의용)
 let _ctMonthlySeeded = false;
+// 기준 라디오 전환 직후 여부 — 전환 시 이전 기준 입력값을 비우고 새 기준을 계산값에서 시드 (2026-09-11)
+let _ctBasisJustSwitched = false;
+
+// ── 통상시급 정밀값 (2026-09-11) ──
+//  - 내부 계산·저장은 소수점 전체 정밀도, 입력란 표시는 1원 반올림
+//  - 연봉/월약정 고정: 정밀값 = (연봉÷12 − 수당) ÷ 209 또는 (월약정 − 수당) ÷ 209 (반올림 없음)
+//  - 시급 고정: 사용자가 직접 입력한 정수가 정밀값
+let _ctHourlyExact = 0;      // 내부 계산·저장용 정밀 통상시급
+let _ctHourlyManual = false; // 시급 고정 basis에서 사용자가 직접 입력했는지 여부
+
+/** 통상시급 정밀값 초기화 (신규 모달·임금 초기화 시) */
+function _ctHourlyReset(){
+  _ctHourlyExact = 0;
+  _ctHourlyManual = false;
+  setAmountVal('ct-hourly-input', 0);
+}
+/** 통상시급 정밀값 설정 + 입력란에 1원 반올림 표시 (수정 모달 복원 등) */
+function _ctHourlySetExact(v){
+  _ctHourlyExact = v || 0;
+  _ctHourlyManual = false;
+  setAmountVal('ct-hourly-input', _ctHourlyExact > 0 ? Math.round(_ctHourlyExact) : 0);
+}
+/** 통상시급 입력란 표시값 갱신 (항상 1원 단위 반올림) */
+function _ctHourlySetDisplay(v){
+  setAmountVal('ct-hourly-input', v > 0 ? Math.round(v) : 0);
+}
+/** 시급 입력란 사용자 직접 입력 — 시급 고정 basis에서만 정밀값 갱신 후 재계산 */
+function _ctOnHourlyInput(){
+  if((typeof _ctFixBasis === 'undefined' ? 'hourly' : _ctFixBasis) === 'hourly'){
+    _ctHourlyManual = true;
+    _ctHourlyExact  = getAmountVal('ct-hourly-input') || 0;
+  }
+  if(typeof calcContractSalary === 'function') calcContractSalary();
+}
 
 /** 고정 기준 라디오 선택 변경 */
 function _onFixBasisChange(){
   const checked = document.querySelector('input[name="ct-fix-basis"]:checked');
   if(!checked) return;
+  _ctBasisJustSwitched = (checked.value !== _ctFixBasis); // 기준 전환 감지 — 이전 입력값 캐시 제거용
   _ctFixBasis = checked.value;
   _ctFixBasisTouched = true;
   _applyFixBasisUI();
@@ -3028,7 +3064,7 @@ function calcContractSalary(){
 
   if(isDaily){
     // ── 일용직: 일급여(통상일급 + 일일 수당 합산) + 주휴수당(계약기간·근무시간표 기준) ──
-    const hWage      = getAmountVal('ct-hourly-input') || 0;
+    const hWage      = _getContractHourlyWage() || 0;
 
     // 일용직은 기본급 0 (일급여 기준)
     setAmountVal('ct-base', 0);
@@ -3119,17 +3155,47 @@ function calcContractSalary(){
   const isHourlyBased = isRegularGroup || isFixedTerm;
   const _basis = (typeof _ctFixBasis !== 'undefined' ? _ctFixBasis : 'hourly');
   const _allowTotal = _allAllowTotal + fixedExtraAll;
+  // ── 기준 전환 직후: 새 기준 입력란을 현재 계산값(기본급+수당)에서 시드하고
+  //    이전 기준 입력란은 비움 — 이전 입력값 캐시 재사용으로 금액이 바뀌는 것 방지 (2026-09-11) ──
+  if(_ctBasisJustSwitched){
+    _ctBasisJustSwitched = false;
+    const _baseCur = getAmountVal('ct-base') || 0;
+    const _monthlyCur = _baseCur + _allowTotal;
+    if(_basis === 'monthly'){
+      setAmountVal('ct-monthly-input', _monthlyCur > 0 ? _monthlyCur : 0);
+      { const el = document.getElementById('ct-annual-sal'); if(el) el.value = ''; }
+    } else if(_basis === 'annual'){
+      setAmountVal('ct-annual-sal', _monthlyCur > 0 ? _monthlyCur * 12 : 0);
+      setAmountVal('ct-monthly-input', 0);
+    } else {
+      // 시급 고정: 비활성 기준 입력란 비움
+      { const el = document.getElementById('ct-annual-sal'); if(el) el.value = ''; }
+      setAmountVal('ct-monthly-input', 0);
+    }
+  }
   if(isHourlyBased){
     if(_basis === 'monthly'){
       const _mInput = getAmountVal('ct-monthly-input');
       if(_mInput > 0){
         const autoBase = Math.max(0, Math.round(_mInput - _allowTotal));
         setAmountVal('ct-base', autoBase);
-        setAmountVal('ct-hourly-input', autoBase > 0 ? Math.round(autoBase / MAGIC.MONTHLY_STD_HOURS) : 0);
+        // 통상시급 정밀값: (월약정 − 수당) ÷ 209 — 반올림 없이 소수점 전체 정밀도 유지 (2026-09-11)
+        _ctHourlyExact = autoBase > 0 ? autoBase / MAGIC.MONTHLY_STD_HOURS : 0;
+        _ctHourlySetDisplay(_ctHourlyExact);
       } else {
-        // 월 약정임금 미입력(모달 오픈 직후 등): 기존 시급 기준 값 유지
-        const _hw0 = getAmountVal('ct-hourly-input') || 0;
-        if(_hw0 > 0) setAmountVal('ct-base', Math.round(_hw0 * MAGIC.MONTHLY_STD_HOURS));
+        // 월 약정임금 미입력: 연봉 고정에서 전환된 경우 연봉÷12를 그대로 승계
+        const _aPrev = isRegularGroup ? getAmountVal('ct-annual-sal') : 0;
+        if(_aPrev > 0){
+          const autoMonthly = Math.round(_aPrev / 12);
+          const autoBase = Math.max(0, Math.round(autoMonthly - _allowTotal));
+          setAmountVal('ct-monthly-input', autoMonthly);
+          setAmountVal('ct-base', autoBase);
+          _ctHourlyExact = autoBase > 0 ? autoBase / MAGIC.MONTHLY_STD_HOURS : 0;
+          _ctHourlySetDisplay(_ctHourlyExact);
+        } else if(_ctHourlyExact > 0){
+          // 기존 정밀 시급 기준 값 유지 (계약직 등 연봉이 없는 유형)
+          setAmountVal('ct-base', Math.round(_ctHourlyExact * MAGIC.MONTHLY_STD_HOURS));
+        }
       }
     } else if(_basis === 'annual'){
       const _aInput = getAmountVal('ct-annual-sal');
@@ -3137,19 +3203,23 @@ function calcContractSalary(){
         const autoMonthly = Math.round(_aInput / 12);
         const autoBase = Math.max(0, Math.round(autoMonthly - _allowTotal));
         setAmountVal('ct-base', autoBase);
-        setAmountVal('ct-hourly-input', autoBase > 0 ? Math.round(autoBase / MAGIC.MONTHLY_STD_HOURS) : 0);
-      } else {
-        // 연봉 미입력(모달 오픈 직후 등): 기존 시급 기준 값 유지
-        const _hw0 = getAmountVal('ct-hourly-input') || 0;
-        if(_hw0 > 0) setAmountVal('ct-base', Math.round(_hw0 * MAGIC.MONTHLY_STD_HOURS));
+        // 통상시급 정밀값: (연봉÷12 − 수당) ÷ 209 — 반올림 없음
+        _ctHourlyExact = autoBase > 0 ? autoBase / MAGIC.MONTHLY_STD_HOURS : 0;
+        _ctHourlySetDisplay(_ctHourlyExact);
+      } else if(_ctHourlyExact > 0){
+        // 연봉 미입력: 기존 정밀 시급 기준 값 유지
+        setAmountVal('ct-base', Math.round(_ctHourlyExact * MAGIC.MONTHLY_STD_HOURS));
       }
     } else {
       // 시급 고정: 기본급 = 통상시급 × 209h (한국 표준)
-      const _hw = getAmountVal('ct-hourly-input') || 0;
-      if(_hw > 0) setAmountVal('ct-base', Math.round(_hw * MAGIC.MONTHLY_STD_HOURS));
+      //  - 사용자가 직접 입력한 정수가 기준 (기준 전환 직후에는 정밀값 유지)
+      if(_ctHourlyManual || !_ctHourlyExact){
+        _ctHourlyExact = getAmountVal('ct-hourly-input') || 0;
+      }
+      if(_ctHourlyExact > 0) setAmountVal('ct-base', Math.round(_ctHourlyExact * MAGIC.MONTHLY_STD_HOURS));
     }
   }
-  const hourlyWage = getAmountVal('ct-hourly-input') || 0;
+  const hourlyWage = _ctHourlyExact || 0;
 
   const base      = getAmountVal('ct-base');
   const weeklyHol = (isHourlyBased && hourlyWage > 0)
@@ -3186,7 +3256,7 @@ function _weeklyToMonthlyHours(fieldId){
 
 /** 통상시급 반환 (계약서 정상 시급 — 수습기간 임금은 급여 단계에서 수습비율 적용, 2026-09-01 규칙) */
 function _getContractHourlyWage(){
-  return getAmountVal('ct-hourly-input') || 0;
+  return _ctHourlyExact || 0;
 }
 
 /** 고정 연장근로수당 = (평일연장 h/주 × 연장배율) × 4.345(소수1자리) × 통상시급 (휴일연장은 휴일근로수당으로 합산 — 2026-08-14 규칙) */

@@ -1,4 +1,32 @@
 // ─── PAYROLLS ───
+/**
+ * 주휴수당이 지급총액(gross)에 실제 포함되어 있는지 판정 (2026-09-11)
+ *  - 현행 산식(시급×209 기본급): 주휴는 기본급에 이미 포함 → weekly_holiday_pay는 참고값
+ *  - 레거시(174h 분할 저장) 행: 주휴가 gross의 일부로 별도 지급 → 포함
+ * 판정: 전체 지급 항목 합(주휴 포함)이 gross와 ±50원 이내면 주휴가 gross에 포함된 것으로 본다.
+ */
+function _payWeeklyInGross(p){
+  const _sumCustom = (json) => {
+    let v = [];
+    try { v = typeof json === 'string' ? JSON.parse(json) : (json || []); } catch(e){ v = []; }
+    if(!Array.isArray(v)) v = [];
+    return v.reduce((s,x)=>s+(Number(x&&x.amount)||0),0);
+  };
+  const sumWith = (p.base_salary||0)+(p.weekly_holiday_pay||0)
+    +(p.position_allowance||0)+(p.site_allowance||0)+(p.skill_allowance||0)+(p.license_allowance||0)
+    +(p.hazard_allowance||0)+(p.remote_area_allowance||0)
+    +(p.transportation_allowance||p.car_maintenance||0)+(p.self_driving_allowance||0)
+    +(p.meal_allowance||0)+(p.regular_bonus||0)+(p.childcare_allowance||0)+(p.research_allowance||0)
+    +(p.contract_etc_allowance||0)+(p.etc_allowance||0)+(p.other_pay||0)
+    +(p.overtime_pay||0)+(p.night_pay||0)+(p.holiday_pay||0)
+    +(p.annual_leave_pay||0)+(p.bonus_pay||0)+(p.performance_pay||0)
+    +(p.actual_expense_pay||0)+(p.communication_pay||0)+(p.communication_allowance||0)
+    +(p.fitness_allowance||0)+(p.self_dev_allowance||0)+(p.book_allowance||0)+(p.overseas_allowance||0)
+    +(p.severance_interim_pay||0)
+    +_sumCustom(p.custom_ordinary_values)+_sumCustom(p.custom_fixed_values)+_sumCustom(p.etc_allowance_items);
+  return Math.abs(sumWith - (Number(p.gross_pay)||0)) <= 50;
+}
+
 function renderPayrolls(){
   if(!currentPayCompanyId) return;
   const yr=parseInt(document.getElementById('pay-year-filter')?.value)||0;
@@ -33,13 +61,14 @@ function renderPayrolls(){
     const _sumCustomOrd = (() => { try { const v=typeof p.custom_ordinary_values==='string'?JSON.parse(p.custom_ordinary_values):(p.custom_ordinary_values||[]); return (Array.isArray(v)?v:[]).reduce((s,x)=>s+(x.amount||0),0); } catch(e) { return 0; } })();
     const _sumCustomFixed = (() => { try { const v=typeof p.custom_fixed_values==='string'?JSON.parse(p.custom_fixed_values):(p.custom_fixed_values||[]); return (Array.isArray(v)?v:[]).reduce((s,x)=>s+(x.amount||0),0); } catch(e) { return 0; } })();
     const _sumEtcItems = (() => { try { const v=typeof p.etc_allowance_items==='string'?JSON.parse(p.etc_allowance_items):(p.etc_allowance_items||[]); return (Array.isArray(v)?v:[]).reduce((s,x)=>s+(x.amount||0),0); } catch(e) { return 0; } })();
-    // 매월지급 소계: 기본급(주휴포함) + 각종 수당
+    // 매월지급 소계: 기본급(주휴포함) + 각종 수당 (주휴는 gross에 포함된 경우에만 가산 — 2026-09-11)
     const monthlyTotal = (p.base_salary||0)+(p.position_allowance||0)
       +(p.site_allowance||0)+(p.skill_allowance||0)+(p.license_allowance||0)
       +(p.hazard_allowance||0)+(p.remote_area_allowance||0)
       +(p.transportation_allowance||p.car_maintenance||0)+(p.meal_allowance||0)
       +(p.regular_bonus||0)+(p.childcare_allowance||0)+(p.research_allowance||0)
-      +(_sumCustomOrd||0);
+      +(_sumCustomOrd||0)
+      +(_payWeeklyInGross(p) ? (p.weekly_holiday_pay||0) : 0);
     // 추가근로수당 소계
     const extraTotal = (p.overtime_pay||0)+(p.night_pay||0)+(p.holiday_pay||0);
     // 비정기지급 소계
@@ -330,9 +359,12 @@ function openPayslipModal(payrollId){
   };
 
   // ── 매월 지급 본문 (null/0 항목 제외) ──
+  // 주휴수당: 기본급(시급×209h)에 이미 포함된 정규직·계약직 및 참고값인 일용직은 지급 항목에서 제외.
+  // gross에 실제 포함된 레거시(174h 분할) 행만 지급 항목으로 표시 (2026-09-11)
+  const _weeklyCounted = _payWeeklyInGross(p);
   const _monthlyBody =
     payRowIf(_baseSalLabel,      _baseSalAmt) +
-    payRowIf('주휴수당',          p.weekly_holiday_pay) +
+    (_weeklyCounted ? payRowIf('주휴수당', p.weekly_holiday_pay) : '') +
     payRowIf('직책수당',          p.position_allowance) +
     payRowIf('현장수당',          p.site_allowance) +
     payRowIf('교통비',        p.transportation_allowance||p.car_maintenance, p.transportation_pay_type||'fixed') +
@@ -427,9 +459,9 @@ function openPayslipModal(payrollId){
     if(effHourlyWage > 0)
       wageItems.push({ lbl: '통상일급', val: fmtW(Math.round(effHourlyWage * hpd)) });
 
-    // 통상시급
+    // 통상시급 (표시 1원 반올림 — 저장값은 정밀도 유지, 2026-09-11)
     if(effHourlyWage > 0)
-      wageItems.push({ lbl: '통상시급', val: fmtW(effHourlyWage) });
+      wageItems.push({ lbl: '통상시급', val: fmtW(Math.round(effHourlyWage)) });
 
     // 슬롯 전체 쒈기화 (이전 명세서 잔류 방지)
     for(let i = 1; i <= 6; i++){
@@ -563,6 +595,35 @@ function openPayslipModal(payrollId){
   })();
 
   // 산출식 계산 (엑셀 양식의 계산 방법 표와 동일 구조)
+  // ── 급여년월 기준 보험 요율·상한 매칭 (insurance_rates 테이블, 없으면 폴백) ──
+  const _psStd = (p.standard_monthly_pay && Number(p.standard_monthly_pay) > 0)
+    ? Number(p.standard_monthly_pay) : gross;
+  const _psPeriod = `${p.pay_year}-${String(p.pay_month).padStart(2,'0')}`;
+  const _psRateFor = (type, fb) => {
+    const list = ((typeof _allInsuranceRates !== 'undefined') ? _allInsuranceRates : [])
+      .filter(r => r.insurance_type === type);
+    let r = list.find(r =>
+      (!r.period_start || r.period_start <= _psPeriod + '-31') &&
+      (!r.period_end   || r.period_end   >= _psPeriod + '-01')
+    );
+    if(!r){
+      r = list.filter(r => !r.period_start || r.period_start <= _psPeriod + '-01')
+        .sort((a,b)=>(b.period_start||'').localeCompare(a.period_start||''))[0];
+    }
+    return r
+      ? { rate: (Number(r.rate)||0)/100, cap: Number(r.cap_amount)||0, label: `${Number(r.rate)}%` }
+      : fb;
+  };
+  const _psPension = _psRateFor('national_pension', { rate: 0.045, cap: 6370000, label: '4.5%' });
+  const _psHealth  = _psRateFor('health',           { rate: 0.03545, cap: 0, label: '3.545%' });
+  const _psLtcare  = _psRateFor('long_term_care',   { rate: 0.1295,  cap: 0, label: '12.95%' });
+  const _psEmploy  = _psRateFor('employment',       { rate: 0.009,   cap: 0, label: '0.9%' });
+  const _psTaxYear = (() => {
+    const keys = (typeof _TAX_BRACKET_DATA !== 'undefined')
+      ? Object.keys(_TAX_BRACKET_DATA).map(Number).sort((a,b)=>b-a) : [];
+    return keys.length ? keys[0] : new Date().getFullYear();
+  })();
+  const _psStdFmt = Math.round(_psStd).toLocaleString('ko-KR');
   const calcRows = [
     {
       label:'연장근로수당',
@@ -590,7 +651,7 @@ function openPayslipModal(payrollId){
     },
     {
       label:'소득세',
-      formula:'2023년 근로소득 간이세액표 적용',
+      formula:`${_psTaxYear}년 근로소득 간이세액표 적용`,
       value: incTax,
       color:'#7f1d1d', bg:'#fff5f5'
     },
@@ -602,31 +663,27 @@ function openPayslipModal(payrollId){
     },
     {
       label:'건강보험',
-      formula: monthlySal
-        ? `보수월액 ${Math.round(monthlySal).toLocaleString('ko-KR')}원 × 3.595%`
-        : '보수월액 × 3.595%',
+      formula: `보수월액 ${_psStdFmt}원 × ${_psHealth.label}`,
       value: health,
       color:'#065f46', bg:'#f0fdf4'
     },
     {
       label:'장기요양보험',
-      formula:'건강보험료 × 13.14%',
+      formula:`건강보험료 × ${_psLtcare.label}`,
       value: ltCare,
       color:'#065f46', bg:'#f0fdf4'
     },
     {
       label:'국민연금',
-      formula: monthlySal
-        ? `보수월액(최대 6,370,000원) ${Math.round(Math.min(monthlySal,6370000)).toLocaleString('ko-KR')}원 × 4.75%`
-        : '보수월액(최대 6,370,000원) × 4.75%',
+      formula: _psPension.cap > 0
+        ? `보수월액(최대 ${_psPension.cap.toLocaleString('ko-KR')}원) ${Math.round(Math.min(_psStd, _psPension.cap)).toLocaleString('ko-KR')}원 × ${_psPension.label}`
+        : `보수월액 ${_psStdFmt}원 × ${_psPension.label}`,
       value: pension,
       color:'#92400e', bg:'#fffbeb'
     },
     {
       label:'고용보험',
-      formula: monthlySal
-        ? `보수월액 ${Math.round(monthlySal).toLocaleString('ko-KR')}원 × 0.9%`
-        : '보수월액 × 0.9%',
+      formula: `보수월액 ${_psStdFmt}원 × ${_psEmploy.label}`,
       value: empIns,
       color:'#1e40af', bg:'#eff6ff'
     },

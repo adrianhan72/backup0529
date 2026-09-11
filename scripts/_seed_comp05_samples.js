@@ -2,8 +2,11 @@
  * 그린에너지(comp05) 샘플 데이터 생성 (2026-09-11)
  *  - 계약직 1명 / 일용직(상용직 취급 fulltime) 1명 / 일용직(상용직 아님 daily) 1명
  *  - 인사카드(employees) + 근로계약(contracts) + 급여(payrolls) + 근태(attendance_ledger) + 연차(annual_leave_ledger)
- *  - 산식 일관성: 기본급=시급×209(주휴 35h 포함), 주휴수당=시급×35, 월약정=기본급+고정수당,
- *                  보수월액=지급총액-비과세식대, 4대보험=보수월액×요율, 소득세=2025 간이세액표(1인)
+ *  - 산식 일관성(앱 calcPI 기준):
+ *      계약직: 기본급=시급×209(주휴 포함), 주휴수당=8h×시급×주수(참고), 지급총액=기본급+식대+교통비,
+ *              보수월액=지급총액(식대 비과세 미설정), 4대보험=보수월액×2026년 요율, 소득세=간이세액표
+ *      일용직: 기본급=일급여×근로일수, 수당 전부 0, 주휴수당=일급여×주수(참고),
+ *              소득세=일용 원천징수 특례(일당≤15만 → 0), 4대보험=보수월액×요율(월 8일↑)
  */
 const { DB } = require('../lib/database');
 const crypto = require('crypto');
@@ -82,12 +85,12 @@ function taxLookup(std) {
   return { incomeTax, localTax };
 }
 
-// ── 월급 계산 (계약직·일용직 fulltime 공용) ──
+// ── 월급 계산 (계약직 공용) — 주휴수당은 기본급(시급×209)에 이미 포함 (참고값만 저장) ──
 function calcMonthly(hourlyWage, meal, transport, workDays) {
   const base = Math.round(hourlyWage * 209);          // 통상시급 × 209 (주휴 35h 포함)
-  const weeklyHol = Math.round(hourlyWage * 35);      // 주휴수당 (표시용)
+  const weeklyHol = Math.round(hourlyWage * 8 * Math.floor(workDays / 5)); // 참고: 8h×시급×주수
   const gross = base + meal + transport;
-  const std = base + transport;                        // 보수월액 = 지급총액 - 비과세 식대
+  const std = base + meal + transport;                // comp05: 식대 비과세 미설정 → std 전액 포함
   const pension = Math.round(std * R.pension);
   const health = Math.round(std * R.health);
   const ltcare = Math.round(health * R.ltcare);
@@ -105,18 +108,22 @@ function calcMonthly(hourlyWage, meal, transport, workDays) {
   };
 }
 
-// ── 일급 계산 (일용직 상용직 아님) ──
+// ── 일용직 계산 (상용직 취급·상용직 아님 공용) ──
+// 앱 산식: 기본급 = 일급여×근로일수, 수당은 전부 0, 주휴수당 = 일급여×주수(참고),
+//          소득세 = 일용 원천징수 특례 (일당 ≤ 15만 → 0), 4대보험 = 보수월액×요율 (월 8일↑)
 function calcDailyMonth(dailyWage, days) {
   const gross = Math.round(dailyWage * days);
+  const weeklyHol = Math.round(dailyWage * Math.floor(days / 5));
   const std = gross;
   const pension = Math.round(std * R.pension);
   const health = Math.round(std * R.health);
   const ltcare = Math.round(health * R.ltcare);
   const employ = Math.round(std * R.employ);
-  const { incomeTax, localTax } = taxLookup(std);
+  const incomeTax = 0;   // 일당 = dailyWage ≤ 150,000 → 0
+  const localTax = 0;
   const totalDed = pension + health + ltcare + employ + incomeTax + localTax;
   return {
-    base_salary: gross, weekly_holiday_pay: 0, meal_allowance: 0,
+    base_salary: gross, weekly_holiday_pay: weeklyHol, meal_allowance: 0,
     transportation_allowance: 0, standard_monthly_pay: std, gross_pay: gross,
     national_pension: pension, health_insurance: health, long_term_care: ltcare,
     employment_insurance: employ, income_tax: incomeTax, local_income_tax: localTax,
@@ -253,9 +260,9 @@ const PAY_SPECS = [
   { pid: 'sample-pay-fixed-08', emp: 'sample-emp-fixed-01', empNo: '0041', y: 2026, m: 8, alUsed: 0,
     calc: calcMonthly(HW, 200000, 100000, 22) },
   { pid: 'sample-pay-ft-07', emp: 'sample-emp-daily-ft-01', empNo: '0042', y: 2026, m: 7, alUsed: 2,
-    calc: calcMonthly(HW, 100000, 0, 22) },
+    calc: calcDailyMonth(HW * 8, 22) },
   { pid: 'sample-pay-ft-08', emp: 'sample-emp-daily-ft-01', empNo: '0042', y: 2026, m: 8, alUsed: 0,
-    calc: calcMonthly(HW, 100000, 0, 22) },
+    calc: calcDailyMonth(HW * 8, 22) },
   { pid: 'sample-pay-daily-07', emp: 'sample-emp-daily-01', empNo: '0043', y: 2026, m: 7, alUsed: 2,
     calc: calcDailyMonth(HW * 8, 15) },
   { pid: 'sample-pay-daily-08', emp: 'sample-emp-daily-01', empNo: '0043', y: 2026, m: 8, alUsed: 0,

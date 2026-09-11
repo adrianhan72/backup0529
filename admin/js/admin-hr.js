@@ -475,6 +475,10 @@ function _hrOnPersonnelTypeChange() {
   } else {
     _hrSetContractFieldsLock(false);
   }
+  // 입사일: 직원은 계약 기준 readonly / 대표자·등기임원·특수관계인은 근로계약 없으면 직접 입력 (2026-09-11)
+  const _empH = _hrEditEmpId ? (allEmployees || []).find(x => x.id === _hrEditEmpId) : null;
+  const _hasCtH = _empH ? (allContracts || []).some(c => c.employee_id === _empH.id && !c.is_draft) : false;
+  _hrSetHireLock(type, _hasCtH);
 }
 
 // ── 신규/편집 폼 모달 ──
@@ -564,8 +568,10 @@ function openHrEmployeeForm(empId, presetCompanyId) {
     document.getElementById('hr-em-emergency-contact').value = e.emergency_contact || '';
     document.getElementById('hr-em-emergency-relation').value = e.emergency_relation || '';
     document.getElementById('hr-em-special-notes').value = e.special_notes || '';
-    // 등록 후 수정 불가 필드 잠금 (사원번호·이름·주민등록번호 앞7자리)
-    ['hr-em-empno','hr-em-name','hr-em-id','hr-em-foreign-id'].forEach(id => { const el = document.getElementById(id); if (el) el.readOnly = true; });
+    // 등록 후 수정 불가 필드 잠금 (사원번호·이름·외국인번호)
+    ['hr-em-empno','hr-em-name','hr-em-foreign-id'].forEach(id => { const el = document.getElementById(id); if (el) el.readOnly = true; });
+    // 주민번호: 값이 비어 있는 경우(대표자 등 자동 생성 카드) 최초 수정 시 입력 허용 (2026-09-11)
+    { const _idEl = document.getElementById('hr-em-id'); if (_idEl) _idEl.readOnly = !!(String(e.id_number || '').trim()); }
     { const el = document.getElementById('hr-em-empno-auto-hint'); if (el) { el.style.display = 'block'; el.textContent = '🔒 사원번호는 수정할 수 없습니다.'; } }
     const _ptEl = document.getElementById('hr-em-personnel-type');
     if (_ptEl) _ptEl.value = personnelTypeOf(e);
@@ -612,6 +618,20 @@ function _hrSetContractFieldsLock(locked) {
     hint.style.display = locked ? '' : 'none';
     hint.textContent = '근로계약서가 입력되면 자동으로 기재됩니다.';
   }
+}
+
+/** 입사일 잠금 토글 (2026-09-11)
+ *  - 일반 직원: 항상 잠금 (근로계약서 기준 자동 기재)
+ *  - 대표자·등기임원·특수관계인: 근로계약 없으면 직접 입력 / 계약 있으면 계약 기준 readonly
+ */
+function _hrSetHireLock(pType, hasContract) {
+  const el = document.getElementById('hr-em-hire');
+  if (!el) return;
+  el.readOnly = (pType === PERSONNEL_TYPE.EMPLOYEE) || !!hasContract;
+  const hint = document.getElementById('hr-em-hire-hint');
+  if (hint) hint.textContent = el.readOnly
+    ? '근로계약서가 입력되면 자동으로 기재됩니다.'
+    : '근로계약서가 없으므로 직접 입력할 수 있습니다.';
 }
 
 // ── 사원번호 중복 검사 (회사 내 unique) ──
