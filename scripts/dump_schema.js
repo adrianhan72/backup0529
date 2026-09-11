@@ -128,6 +128,8 @@ const KO = {
       hire_reason: '입사 사유 (new_hire/re_hire/contract_renewal/probation_end)',
       close_reason: '계약 종료 사유 (resignation/dismissal/expiry/renewal/void)',
       edited_file_url: '최종 편집본(PDF) 파일서버 URL (data/uploads/)',
+      daily_worker_type: '일용직 상용 여부 (fulltime=상용직/daily=비상용)',
+      severance_file_url: '퇴직금 명세서 PDF 파일서버 URL',
     }
   },
   payrolls: {
@@ -598,6 +600,26 @@ const KO = {
       is_expired: '만료 여부 (0:진행중, 1:만료)',
     }
   },
+  severance_dispatch: {
+    desc: '퇴직금 명세서 발송 이력',
+    columns: {
+      id: '고유식별자',
+      contract_id: '계약 ID',
+      employee_id: '직원 ID',
+      employee_name: '직원명',
+      company_id: '회사 ID',
+      company_name: '회사명',
+      dispatch_method: '발송 방식 (kakao/email/manual)',
+      dispatch_status: '발송 상태',
+      recipient: '수신처',
+      file_url: '퇴직금 명세서 PDF 파일 주소',
+      dispatched_at: '발송 일시',
+      dispatched_by: '발송 처리자',
+      note: '비고',
+      created_at: '생성일시',
+      updated_at: '수정일시',
+    }
+  },
 };
 
 function koComment(tableName, colName) {
@@ -1044,6 +1066,7 @@ function autoTableComment(name) {
     consent_dispatch: '정보제공동의서 발송 이력',
     contract_expiry_notice: '계약만료 통지 이력',
     company_notices: '고객사 알림',
+    severance_dispatch: '퇴직금 명세서 발송 이력',
     company_history: '고객사 변경이력',
     insurance_rates: '4대보험 요율',
     minimum_wages: '최저임금',
@@ -1073,7 +1096,7 @@ let sectionIdx = 0;
 const sections = [
   { title: 'SECTION 1: 기본정보 (회사, 직원, 관리자, 계약)', tables: ['companies','employees','admin_accounts','contracts','registered_executives','related_party_workers','representative_contact'] },
   { title: 'SECTION 2: 급여 및 근태', tables: ['payrolls','payroll_items','payroll_send_logs','attendance_ledger','annual_leave_ledger','annual_leave_promotions','wage_ledger_notifications'] },
-  { title: 'SECTION 3: 발송 및 알림', tables: ['contract_dispatch','consent_dispatch','contract_expiry_notice','kakao_send_logs','company_notices','company_history'] },
+  { title: 'SECTION 3: 발송 및 알림', tables: ['contract_dispatch','consent_dispatch','contract_expiry_notice','kakao_send_logs','company_notices','company_history','severance_dispatch'] },
   { title: 'SECTION 4: 청구 및 기준정보', tables: ['billing','insurance_rates','minimum_wages','tax_brackets','tax_bracket_rows'] },
 ];
 
@@ -1147,6 +1170,13 @@ if (remaining.length > 0) {
       schema += def + '\n';
     });
     schema += ');\n\n';
+
+    // 기타 테이블도 인덱스 덤프 (섹션 테이블과 동일 처리 — 2026-09-11)
+    const indexes = db.prepare(`SELECT sql FROM sqlite_master WHERE type='index' AND tbl_name=? AND sql IS NOT NULL`).all(t.name);
+    for (const idx of indexes) {
+      schema += idx.sql.replace(/^CREATE INDEX /, 'CREATE INDEX IF NOT EXISTS ') + ';\n';
+    }
+    if (indexes.length) schema += '\n';
   }
 }
 

@@ -1,8 +1,8 @@
 -- =============================================================================
 -- 인사톡 노무톡 — SQLite Schema (한글 주석 포함)
 -- node dump_schema.js 로 자동 생성 (ALTER TABLE 반영)
--- 최종 갱신: 2026-09-03
--- 테이블 수: 28개
+-- 최종 갱신: 2026-09-11
+-- 테이블 수: 29개
 -- =============================================================================
 
 PRAGMA journal_mode = WAL;
@@ -116,7 +116,6 @@ CREATE TABLE IF NOT EXISTS contracts (
   signed_file_data TEXT, -- 서명 파일 데이터
   consent_file_name TEXT, -- 동의서 파일명
   consent_file_data TEXT, -- 동의서 파일 데이터
-  severance_file_url TEXT, -- 퇴직금 명세서 PDF 파일서버 URL (2026-09-03)
   salary_start_date TEXT, -- 급여 산정 시작일
   salary_end_date TEXT, -- 급여 산정 종료일
   is_draft INTEGER DEFAULT 0, -- 임시저장 여부
@@ -173,7 +172,8 @@ CREATE TABLE IF NOT EXISTS contracts (
   pay_period_day_override INTEGER, -- 월합산 산정기준일 (개별 편집, null=고객사 설정)
   pay_period_weekday INTEGER, -- 주급 산정기간 시작 요일 (0=일~6=토, null=자동: 지급일 당일까지 1주)
   edited_file_url TEXT, -- 최종 편집본(PDF) 파일서버 URL (data/uploads/)
-  daily_worker_type TEXT
+  daily_worker_type TEXT, -- 일용직 상용 여부 (fulltime=상용직/daily=비상용)
+  severance_file_url TEXT -- 퇴직금 명세서 PDF 파일서버 URL
 );
 
 CREATE INDEX IF NOT EXISTS idx_contracts_employee ON contracts(employee_id);
@@ -581,28 +581,6 @@ CREATE TABLE IF NOT EXISTS contract_dispatch (
   dispatch_reason TEXT -- 교부사유 (new/renewal/recontract/amended_reissue)
 );
 
--- severance_dispatch  -- 퇴직금 명세서 발송 이력 (2026-09-03)
-CREATE TABLE IF NOT EXISTS severance_dispatch (
-  id TEXT PRIMARY KEY, -- 고유식별자
-  contract_id TEXT, -- 계약 ID
-  employee_id TEXT, -- 직원 ID
-  employee_name TEXT, -- 직원명
-  company_id TEXT, -- 회사 ID
-  company_name TEXT, -- 회사명
-  dispatch_method TEXT, -- 발송 방식 (kakao/email/manual)
-  dispatch_status TEXT, -- 발송 상태
-  recipient TEXT, -- 수신처
-  file_url TEXT, -- 퇴직금 명세서 PDF 파일 주소
-  dispatched_at TEXT, -- 발송 일시
-  dispatched_by TEXT, -- 발송 처리자
-  note TEXT, -- 비고
-  created_at INTEGER, -- 생성일시
-  updated_at INTEGER -- 수정일시
-);
-
-CREATE INDEX IF NOT EXISTS idx_severance_dispatch_contract ON severance_dispatch(contract_id);
-CREATE INDEX IF NOT EXISTS idx_severance_dispatch_company ON severance_dispatch(company_id);
-
 -- contract_expiry_notice  -- 계약만료 통지 이력
 CREATE TABLE IF NOT EXISTS contract_expiry_notice (
   id TEXT PRIMARY KEY, -- 고유식별자
@@ -642,6 +620,28 @@ CREATE TABLE IF NOT EXISTS kakao_send_logs (
   created_at INTEGER, -- 발송일시
   sent_at TEXT -- 발송 일시
 );
+
+-- severance_dispatch  -- 퇴직금 명세서 발송 이력
+CREATE TABLE IF NOT EXISTS severance_dispatch (
+  id TEXT PRIMARY KEY, -- 고유식별자
+  contract_id TEXT, -- 계약 ID
+  employee_id TEXT, -- 직원 ID
+  employee_name TEXT, -- 직원명
+  company_id TEXT, -- 회사 ID
+  company_name TEXT, -- 회사명
+  dispatch_method TEXT, -- 발송 방식 (kakao/email/manual)
+  dispatch_status TEXT, -- 발송 상태
+  recipient TEXT, -- 수신처
+  file_url TEXT, -- 퇴직금 명세서 PDF 파일 주소
+  dispatched_at TEXT, -- 발송 일시
+  dispatched_by TEXT, -- 발송 처리자
+  note TEXT, -- 비고
+  created_at INTEGER, -- 생성일시
+  updated_at INTEGER -- 수정일시
+);
+
+CREATE INDEX IF NOT EXISTS idx_severance_dispatch_contract ON severance_dispatch(contract_id);
+CREATE INDEX IF NOT EXISTS idx_severance_dispatch_company ON severance_dispatch(company_id);
 
 -- =============================================================================
 -- SECTION 4: 청구 및 기준정보
@@ -744,6 +744,9 @@ CREATE TABLE IF NOT EXISTS employee_number_ledger (
   created_at INTEGER, -- 생성일시
   updated_at INTEGER -- 수정일시
 );
+
+CREATE INDEX IF NOT EXISTS idx_eln_company       ON employee_number_ledger(company_id);
+CREATE INDEX IF NOT EXISTS idx_eln_company_status ON employee_number_ledger(company_id, status);
 
 -- severance_interim_settlements  -- 퇴직금 중간정산 이력
 CREATE TABLE IF NOT EXISTS severance_interim_settlements (
