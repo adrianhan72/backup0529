@@ -46,6 +46,8 @@ app.use('/client',  express.static(path.join(ROOT, 'client'), staticOpts));
 app.use('/scripts', express.static(path.join(ROOT, 'scripts'), staticOpts));
 app.use('/docs',    express.static(path.join(ROOT, 'docs'), staticOpts));
 app.use('/uploads', express.static(path.join(ROOT, 'data', 'uploads'), staticOpts));
+// /data/uploads 별칭 — security.js의 /data 차단보다 먼저 등록되어 파일이 있으면 서빙됨
+app.use('/data/uploads', express.static(path.join(ROOT, 'data', 'uploads'), staticOpts));
 app.use('/generated', express.static(path.join(ROOT, 'data', 'generated'), staticOpts));
 
 // ── 보안 ──
