@@ -1,0 +1,29 @@
+    <div id="page-admin-accounts" class="page">
+
+      <div class="section-title" style="margin-top:0;">
+        <i class="fas fa-user-cog"></i>
+        <span>관리자 계정 목록</span>
+        <button id="aa-add-btn" class="btn btn-primary" onclick="openAdminAccountModal()" style="margin-left:auto;">
+          <i class="fas fa-plus"></i> 신규 계정 등록
+        </button>
+      </div>
+
+      <div class="card" style="overflow:hidden;padding:0;">
+        <table class="tbl-std" id="aa-table">
+          <thead>
+            <tr>
+              <th style="width:36px;">#</th>
+              <th>아이디</th>
+              <th>표시 이름</th>
+              <th>등록일</th>
+              <th style="width:80px;text-align:center;">관리</th>
+            </tr>
+          </thead>
+          <tbody id="aa-tbody">
+            <tr><td colspan="5" class="cen-empty"><i class="fas fa-spinner fa-spin"></i> 불러오는 중...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div><!-- /page-admin-accounts -->
+

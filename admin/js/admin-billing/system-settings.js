@@ -1,0 +1,1413 @@
+// ==========================================
+//   시스템 설정 페이지 (대표 연락처 + 발신 이메일)
+// ==========================================
+
+let _ssContactData = null;
+
+// ── 페이지 진입 시 데이터 로드 ──
+async function renderSystemSettings() {
+  try {
+    const res = await fetch('../tables/representative_contact/default');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    _ssContactData = data;
+
+    // 대표 연락처
+    const phoneEl = document.getElementById('ss-rc-phone');
+    const emailEl = document.getElementById('ss-rc-email');
+    const faxEl   = document.getElementById('ss-rc-fax');
+    if (phoneEl) phoneEl.value = data.phone || '';
+    if (emailEl) emailEl.value = data.email || '';
+    if (faxEl)   faxEl.value   = data.fax   || '';
+
+    // 발신전용 이메일
+    const oeEmailEl = document.getElementById('ss-oe-email');
+    const oePwEl    = document.getElementById('ss-oe-password');
+    const oeHostEl  = document.getElementById('ss-oe-smtp-host');
+    const oePortEl  = document.getElementById('ss-oe-smtp-port');
+    if (oeEmailEl) oeEmailEl.value = data.outbound_email     || '';
+    if (oePwEl)    oePwEl.value    = data.outbound_password  || '';
+    if (oeHostEl)  oeHostEl.value  = data.outbound_smtp_host || '';
+    if (oePortEl)  oePortEl.value  = data.outbound_smtp_port || '';
+    // 푸터 미리보기 갱신 + 실시간 연동
+    ssUpdateFooterPreview();
+    _ssBindFooterPreviewInputs();
+
+    // 메시지 규칙 로드
+    ssLoadMessageRule();
+
+    // 인앱 알림 발송항목 체크리스트 렌더
+    _ssRenderInappChecklist();
+
+    // 시스템 스위치 초기화
+    _ssInitProbationToggle();
+    _ssInitContractExpiryToggle();
+    _ssInitRegularConversionToggle();
+    _ssInitBillingToggle();
+    _ssInitRetirementToggle();
+  } catch (e) {
+    console.warn('[시스템 설정 로드 오류]', e);
+    toast('설정 정보를 불러오지 못했습니다.', 'error');
+  }
+}
+
+// ── 대표 연락처 저장 ──
+async function ssSaveRepresentativeContact() {
+  const phone = document.getElementById('ss-rc-phone')?.value.trim() || '';
+  const email = document.getElementById('ss-rc-email')?.value.trim() || '';
+  const fax   = document.getElementById('ss-rc-fax')?.value.trim()   || '';
+
+  const saveBtn = document.getElementById('ss-rc-save-btn');
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 저장 중...'; }
+
+  try {
+    await fetch('../tables/representative_contact/default', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, email, fax, updated_at: Date.now() })
+    });
+    _ssContactData = { ...(_ssContactData || {}), phone, email, fax };
+    // 다른 페이지에서 사용하는 글로벌 캐시도 갱신
+    if (typeof _rcContactData !== 'undefined') {
+      _rcContactData = _ssContactData;
+    }
+    const msg = document.getElementById('ss-rc-saved-msg');
+    if (msg) { msg.style.display = ''; setTimeout(() => { msg.style.display = 'none'; }, 2000); }
+    toast('대표 연락처가 저장되었습니다.', 'success');
+  } catch (e) {
+    console.error('[대표 연락처 저장 오류]', e);
+    toast('저장에 실패했습니다.', 'error');
+  } finally {
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = '<i class="fas fa-save"></i> 저장'; }
+  }
+}
+
+// ── 발신전용 이메일 저장 ──
+async function ssSaveOutboundEmail() {
+  const outbound_email     = document.getElementById('ss-oe-email')?.value.trim()     || '';
+  const outbound_password  = document.getElementById('ss-oe-password')?.value.trim()  || '';
+  const outbound_smtp_host = document.getElementById('ss-oe-smtp-host')?.value.trim() || '';
+  const outbound_smtp_port = document.getElementById('ss-oe-smtp-port')?.value.trim() || '';
+
+  const saveBtn = document.getElementById('ss-oe-save-btn');
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 저장 중...'; }
+
+  try {
+    await fetch('../tables/representative_contact/default', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ outbound_email, outbound_password, outbound_smtp_host, outbound_smtp_port, updated_at: Date.now() })
+    });
+    if (_ssContactData) {
+      Object.assign(_ssContactData, { outbound_email, outbound_password, outbound_smtp_host, outbound_smtp_port });
+    }
+    // 다른 페이지에서 사용하는 글로벌 캐시도 갱신
+    if (typeof _rcContactData !== 'undefined' && _rcContactData) {
+      Object.assign(_rcContactData, { outbound_email, outbound_password, outbound_smtp_host, outbound_smtp_port });
+    }
+    const msg = document.getElementById('ss-oe-saved-msg');
+    if (msg) { msg.style.display = ''; setTimeout(() => { msg.style.display = 'none'; }, 2000); }
+    toast('발신전용 이메일 계정이 저장되었습니다.', 'success');
+  } catch (e) {
+    console.error('[발신전용 이메일 저장 오류]', e);
+    toast('저장에 실패했습니다.', 'error');
+  } finally {
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = '<i class="fas fa-save"></i> 저장'; }
+  }
+  // 저장 후 푸터 미리보기 갱신
+  ssUpdateFooterPreview();
+}
+
+// ═══════════════════════════════════════════
+// 인앱 알림 공통 푸터 미리보기 (실시간)
+// ═══════════════════════════════════════════
+
+function _ssBindFooterPreviewInputs() {
+  ['ss-rc-phone', 'ss-rc-email', 'ss-rc-fax'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', ssUpdateFooterPreview);
+  });
+}
+
+function ssUpdateFooterPreview() {
+  const preview = document.getElementById('ss-footer-preview');
+  if (!preview) return;
+  const phone = document.getElementById('ss-rc-phone')?.value.trim() || '02)3487-8841';
+  const email = document.getElementById('ss-rc-email')?.value.trim() || 'eunyangpark@naver.com';
+  const fax   = document.getElementById('ss-rc-fax')?.value.trim()   || '02)3487-8882';
+  preview.textContent = 
+`─────────────────────
+인사톡 노무톡 · 대화인사노무파트너스 담당자
+● 전화: ${phone}
+● 이메일: ${email}
+● 팩스: ${fax}`;
+}
+
+// ═══════════════════════════════════════════
+// 메시지 본문 규칙 관리
+// ═══════════════════════════════════════════
+
+const MSG_RULE_DEFAULTS = {
+  contract_dispatched: {
+    title: `[근로계약서 발송] {근로자명} — 근로계약서가 발송되었습니다`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+근로기준법 제17조(근로조건의 명시)에 따라 소속 근로자 {근로자명}에게 {고용형태} 근로계약서가 {발송방법}(으)로 발송 완료되었음을 알려드립니다.
+
+■ 발송 시각: {발송시각}
+
+* 근로계약서 날인본 사진은 계약 종료일로부터 5년간 보관됩니다.`
+  },
+  company_welcome: {
+    title: `[환영] {회사명} — 인사톡 노무톡 가입을 환영합니다`,
+    body: `안녕하세요, {대표자명} 사장님.
+
+{회사명}의 인사톡 노무톡 가입이 완료되었습니다.
+지금부터 근로계약 관리, 급여 명세서 발행, 4대보험 산정, 연차 관리 등
+다양한 인사노무 업무를 인사톡 노무톡이 대행해드립니다.
+
+■ 가입정보
+· 회사명: {회사명}
+· 사업자번호: {사업자번호}
+· 대표자: {대표자명}
+· 앱 접근코드: {접근코드}
+· 자문계약 시작일: {계약시작일}
+
+※ 근로계약 등록 후 계약서 PDF를 근로자에게 발송하시면
+   앱에서 바로 확인하실 수 있습니다.
+※ 급여가 입력되면 급여명세서가 즉시 발급되어 해당 직원에게
+   자동 발송되며, 앱에서도 바로 확인하실 수 있습니다.
+※ 임금대장과 급여 통계는 급여가 입력된 직원부터 고객사 앱을
+   통해 즉시 확인하실 수 있습니다.
+※ 4대보험 요율과 최저임금 기준, 관련 법령의 변경 사항 등을
+   고지해드립니다.
+※ 관련 법령 위반의 위험이 감지되면 예방할 수 있게
+   사전에 미리 알려드립니다.
+※ 문의사항은 아래 담당자 연락처로 연락 주시기 바랍니다.`
+  },
+  company_terminate_scheduled: {
+    title: `[서비스 해지 예정 안내] {회사명}`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+{회사명}의 자문계약 해지가 예정되어 안내드립니다.
+
+■ 해지 예정일: {해지예정일}
+
+해지 예정일까지는 서비스를 정상 이용하실 수 있으며,
+해지 예정일 이후에는 서비스 이용이 제한됩니다.
+
+※ 해지 예정을 취소하시려면 담당자에게 연락해 주시기 바랍니다.`
+  },
+  company_terminate_changed: {
+    title: `[서비스 해지 예정일 변경 안내] {회사명}`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+{회사명}의 자문계약 해지 예정일이 변경되었습니다.
+
+■ 변경 전 해지 예정일: {이전해지일}
+■ 변경 후 해지 예정일: {해지예정일}
+
+※ 해지 예정을 취소하시려면 담당자에게 연락해 주시기 바랍니다.`
+  },
+  company_terminate_cancelled: {
+    title: `[서비스 해지 취소 안내] {회사명}`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+{회사명}의 자문계약 해지 예정이 취소되었습니다.
+서비스를 계속 정상 이용하실 수 있습니다.
+
+감사합니다.`
+  },
+  company_updated: {
+    title: `[고객사 정보 변경 안내] {회사명}`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+{회사명}의 정보가 다음과 같이 변경되었습니다.
+
+■ 변경사항
+{변경내역}
+
+■ 적용일: {적용일}
+
+※ 변경 사항은 적용일부터 이루어지는 모든 근로계약에 반영됩니다.
+※ 변경사항은 이미 체결한 근로계약 및 그에 종속된 급여조건에는
+   어떠한 영향도 미치지 않습니다.
+   기존에 체결하셨던 근로계약에도 변경이 필요한 경우에는
+   근로계약을 갱신해야 합니다.
+※ 기타 문의사항이 있으시면 담당자에게 연락해 주시기 바랍니다.`
+  },
+  contract_created: {
+    title: `[근로계약 등록] {근로자명} — 근로계약이 등록되었습니다`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+소속 근로자의 근로계약이 등록되었습니다.
+
+■ 근로자: {근로자명}
+■ 사원번호: {사원번호}
+■ 고용형태: {고용형태}
+■ 계약 기간: {계약기간}
+■ 계약 상태: {계약상태}
+■ 처리 일시: {처리일시}`
+  },
+  contract_renewed_new: {
+    title: `[근로계약 재계약] {근로자명} — 재계약이 등록되었습니다`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+소속 근로자의 재계약(재입사)이 등록되었습니다.
+
+■ 근로자: {근로자명}
+■ 신규발급 사원번호: {사원번호}
+■ 고용형태: {고용형태}
+■ 계약 기간: {계약기간}
+■ 계약 상태: {계약상태}
+■ 처리 일시: {처리일시}`
+  },
+  contract_terminated: {
+    title: `[근로계약 해지] {근로자명} — 계약이 해지되었습니다`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+소속 근로자의 근로계약이 해지 처리되었습니다.
+
+■ 근로자: {근로자명}
+■ 고용형태: {고용형태}
+■ 해지 사유: {해지사유}
+■ 퇴사일: {해지일}
+■ 처리 일시: {처리일시}
+
+{해고예고수당안내}
+※ 퇴직금 정산, 4대보험 상실신고 등 후속 조치를 진행해 주시기 바랍니다.
+※ 해고의 경우 해고사유서면통지서를 근로자에게 직접 교부하셔야 합니다 (근로기준법 제27조).`
+  },
+  contract_terminate_scheduled: {
+    title: `[근로계약 해지 예정] {근로자명} — 해지가 예정되었습니다`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+소속 근로자의 근로계약 해지가 예정되었습니다.
+
+■ 근로자: {근로자명}
+■ 고용형태: {고용형태}
+■ 해지 사유: {해지사유}
+■ 해지 예정일: {해지일}
+■ 처리 일시: {처리일시}
+
+{해고예고수당안내}
+※ 해지예정일 전까지 해지를 철회하실 수 있습니다.
+※ 해지예정일이 도래하면 계약 상태가 '해지'로 자동 전환됩니다.
+※ 해고의 경우 해고사유서면통지서를 근로자에게 직접 교부하셔야 합니다 (근로기준법 제27조).`
+  },
+  contract_termination_cancelled: {
+    title: `[근로계약 해지 철회] {근로자명} — 해지 예정이 취소되었습니다`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+소속 근로자의 계약 해지 예정이 취소되어 기존 계약이 정상 유효 상태로 복귀되었습니다.
+
+■ 근로자: {근로자명}
+■ 고용형태: {고용형태}
+■ 취소된 해지일: {해지일}
+■ 현재 계약 상태: 계약유효 (활성) 복귀
+■ 처리 일시: {처리일시}
+
+※ 계약 조건(임금·근로시간 등)에는 변동이 없습니다.
+※ 퇴직 예정이었던 경우, 해당 직원의 근속기간과 퇴직금 산정에 유의해 주시기 바랍니다.`
+  },
+  contract_voided: {
+    title: `[계약 파기] {근로자명} — 근로계약이 파기되었습니다`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+소속 근로자의 근로계약이 파기 처리되었습니다.
+
+■ 근로자: {근로자명}
+■ 고용형태: {고용형태}
+■ 계약 기간: {계약기간}
+■ 파기 사유: {파기사유}
+■ 처리 일시: {처리일시}`
+  },
+  contract_renewal_scheduled: {
+    title: `[갱신 예약] {근로자명} — 계약 갱신이 예약되었습니다`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+소속 근로자의 계약 갱신이 예약되었습니다.
+
+■ 근로자: {근로자명}
+■ 사원번호: {사원번호}
+■ 새 계약 시작일: {시작일}
+■ 갱신 전 계약 해지일: {해지일}
+■ 처리 일시: {처리일시}`
+  },
+  contract_renewed: {
+    title: `[계약 갱신] {근로자명} — 계약이 갱신되었습니다`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+소속 근로자의 계약이 갱신되었습니다.
+
+■ 근로자: {근로자명}
+■ 사원번호: {사원번호}
+■ 고용형태: {고용형태}
+■ 갱신 전 계약 해지일: {해지일}
+■ 새 계약 시작일: {시작일}
+■ 계약 상태: {계약상태}
+■ 처리 일시: {처리일시}`
+  },
+  contract_dispatch_kakao: {
+    title: ``,
+    body: `안녕하세요, {근로자명}님.
+
+{회사명}에서 {계약형태} 근로계약서를 보내드립니다.
+아래 링크를 클릭하여 계약서를 다운로드 받으셔서 인쇄하신 다음,
+날인본 사진을 아래의 이메일 또는 팩스로 회신해 주시기 바랍니다.
+
+▶ 계약서 확인: {문서링크}
+
+인사톡 노무톡 · 대화인사노무파트너스 담당자
+● 전화: {대표전화}
+● 이메일: {대표이메일}
+● 팩스: {대표팩스}`
+  },
+  contract_dispatch_email: {
+    title: `[{회사명}] {계약형태} 근로계약서 확인 요청`,
+    body: `안녕하세요, {근로자명}님.
+
+{회사명}에서 {계약형태} 근로계약서를 송부드립니다.
+아래 링크를 클릭하여 계약서를 다운로드 받으셔서 인쇄하신 다음,
+날인본 사진을 아래의 이메일 또는 팩스로 회신해 주시기 바랍니다.
+
+▶ 계약서 확인: {문서링크}
+
+인사톡 노무톡 · 대화인사노무파트너스 담당자
+● 전화: {대표전화}
+● 이메일: {대표이메일}
+● 팩스: {대표팩스}`
+  },
+  consent_dispatch_kakao: {
+    title: ``,
+    body: `안녕하세요, {근로자명}님.
+
+{회사명}에서 정보제공동의서를 보내드립니다.
+아래 링크를 클릭하여 동의서 내용을 확인하시고,
+동의 절차를 진행해 주시기 바랍니다.
+
+▶ 동의서 확인: {문서링크}
+
+인사톡 노무톡 · 대화인사노무파트너스 담당자
+● 전화: {대표전화}
+● 이메일: {대표이메일}
+● 팩스: {대표팩스}`
+  },
+  consent_dispatch_email: {
+    title: `[{회사명}] 정보제공동의서 확인 요청`,
+    body: `안녕하세요, {근로자명}님.
+
+{회사명}에서 정보제공동의서를 송부드립니다.
+아래 링크를 클릭하여 동의서 내용을 확인하시고,
+동의 절차를 진행해 주시기 바랍니다.
+
+▶ 동의서 확인: {문서링크}
+
+인사톡 노무톡 · 대화인사노무파트너스 담당자
+● 전화: {대표전화}
+● 이메일: {대표이메일}
+● 팩스: {대표팩스}`
+  },
+  severance_dispatch_kakao: {
+    title: ``,
+    body: `안녕하세요, {근로자명}님.
+
+{회사명}에서 퇴직금 명세서를 보내드립니다.
+아래 링크를 클릭하여 명세서를 확인해 주세요.
+
+▶ 명세서 확인: {문서링크}
+
+인사톡 노무톡 · 대화인사노무파트너스 담당자
+● 전화: {대표전화}
+● 이메일: {대표이메일}
+● 팩스: {대표팩스}`
+  },
+  severance_dispatch_email: {
+    title: `[{회사명}] 퇴직금 명세서 확인 요청`,
+    body: `안녕하세요, {근로자명}님.
+
+{회사명}에서 퇴직금 명세서를 송부드립니다.
+아래 링크를 클릭하여 명세서를 확인해 주세요.
+
+▶ 명세서 확인: {문서링크}
+
+인사톡 노무톡 · 대화인사노무파트너스 담당자
+● 전화: {대표전화}
+● 이메일: {대표이메일}
+● 팩스: {대표팩스}`
+  },
+  leave_promotion_kakao: {
+    title: ``,
+    body: `안녕하세요, {근로자명} 님.
+
+{회사명}에서 근로기준법 제61조에 따른 연차 사용촉진 통지를 보내드립니다.
+
+■ 잔여 연차: {잔여연차}일 (사용기한: {사용기한})
+
+기한 내 미사용 시 미사용 연차수당 청구권이 소멸될 수 있습니다.
+연차 사용 시 소속 사업장에 사전 신청하여 주시기 바랍니다.
+
+담당 노무사: {발신자명}
+※ 본 통지는 근로기준법 제61조에 따른 공식 연차 사용촉진 통지서입니다.
+
+인사톡 노무톡 · 대화인사노무파트너스 담당자
+● 전화: {대표전화}
+● 이메일: {대표이메일}
+● 팩스: {대표팩스}`
+  },
+  leave_promotion_email: {
+    title: `[{회사명}] 연차 사용촉진 통지 — {근로자명}`,
+    body: `안녕하세요, {근로자명} 님.
+
+{회사명}에서 근로기준법 제61조에 따른 연차 사용촉진 통지를 송부드립니다.
+
+■ 잔여 연차: {잔여연차}일 (사용기한: {사용기한})
+
+기한 내 미사용 시 미사용 연차수당 청구권이 소멸될 수 있습니다.
+연차 사용 시 소속 사업장에 사전 신청하여 주시기 바랍니다.
+
+담당 노무사: {발신자명}
+※ 본 통지는 근로기준법 제61조에 따른 공식 연차 사용촉진 통지서입니다.
+
+인사톡 노무톡 · 대화인사노무파트너스 담당자
+● 전화: {대표전화}
+● 이메일: {대표이메일}
+● 팩스: {대표팩스}`
+  },
+  consent_dispatched: {
+    title: `[정보제공동의서 발송] {근로자명} — 동의서가 발송되었습니다`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+소속 근로자에게 정보제공동의서가 발송되었습니다.
+
+■ 근로자: {근로자명}
+■ 발송 방법: {발송방법}
+■ 발송 시각: {발송시각}
+
+※ 근로자가 동의서를 확인하고 회신하면 앱에서 확인하실 수 있습니다.
+※ 정보제공동의서는 근로계약 종료일로부터 5년간 보관됩니다.`
+  },
+  wage_ledger_generated: {
+    title: `[임금대장 발행] {회사명} — {급여년도}년 {급여월}월 임금대장이 발행되었습니다`,
+    body: `안녕하세요{발신자명}.
+
+{급여년도}년 {급여월}월 임금대장이 발행되었습니다.
+아래 링크에서 신고용 임금대장 PDF를 확인하실 수 있습니다.
+
+📎 임금대장 보기: {임금대장링크}
+
+⚠️ 아직 근로계약이 등록되지 않은 직원의 급여 명세서는 별도로 발행되어 해당 근로자에게 개별 발송되며, 이 임금대장에서는 제외되어 있습니다. 누락된 근로계약과 급여정보가 시스템에 정상 반영되면 임금대장은 업데이트되어 발행됩니다.
+
+{발신자연락처}`
+  },
+  wage_ledger_renewed: {
+    title: `[임금대장 갱신] {회사명} — {급여년도}년 {급여월}월 임금대장이 갱신되었습니다`,
+    body: `안녕하세요{발신자명}.
+
+{급여년도}년 {급여월}월 임금대장이 급여 정정으로 인해 갱신되었습니다.
+갱신된 임금대장 PDF를 아래 링크에서 확인하실 수 있습니다.
+
+📎 갱신된 임금대장 보기: {임금대장링크}
+
+⚠️ 아직 근로계약이 등록되지 않은 직원의 급여 명세서는 별도로 발행되어 해당 근로자에게 개별 발송되며, 이 임금대장에서는 제외되어 있습니다.
+
+{발신자연락처}`
+  },
+  contract_updated: {
+    title: `[계약 수정] {근로자명} — 근로계약이 수정되었습니다`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+소속 근로자의 근로계약 내용이 수정되었습니다.
+
+■ 근로자: {근로자명}
+■ 고용형태: {고용형태}
+■ 계약 기간: {계약기간}
+■ 처리 일시: {처리일시}`
+  },
+  contract_amended: {
+    title: `[계약 수정재발행] {근로자명} — 수정된 새 계약이 발행되었습니다`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+소속 근로자의 수정재발행 근로계약이 완료되었습니다.
+
+■ 근로자: {근로자명}
+■ 고용형태: {고용형태}
+■ 새 계약 기간: {계약기간}
+■ 처리 일시: {처리일시}`
+  },
+  contract_signed_uploaded: {
+    title: `[날인본 등록] {근로자명} — 근로계약서 날인본이 등록되었습니다`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+소속 근로자의 근로계약서 날인본이 등록되었습니다.
+
+■ 근로자: {근로자명}
+■ 처리 일시: {처리일시}`
+  },
+  contract_consent_uploaded: {
+    title: `[동의서 등록] {근로자명} — 정보제공동의서 날인본이 등록되었습니다`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+소속 근로자의 정보제공동의서 날인본이 등록되었습니다.
+
+■ 근로자: {근로자명}
+■ 처리 일시: {처리일시}`
+  },
+  contract_fully_documented: {
+    title: `[서류 완비] {근로자명} — 계약 서류가 모두 등록되었습니다`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+소속 근로자의 근로계약 서류가 모두 등록되었습니다.
+
+■ 근로자: {근로자명}
+■ 처리 일시: {처리일시}`
+  },
+  payroll_input_complete: {
+    title: `[급여 입력] {근로자명} — {급여년도}년 {급여월}월 급여가 저장되었습니다`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+소속 근로자의 {급여년도}년 {급여월}월 급여가 입력되었습니다.
+
+■ 근로자: {근로자명}
+■ 처리 일시: {처리일시}`
+  },
+  payslip_dispatched: {
+    title: `[급여명세서 발송] {근로자명} — {급여년도}년 {급여월}월 급여명세서가 발송되었습니다`,
+    body: `근로기준법 제48조(임금대장 및 급여명세서)에 따라 소속 근로자 {근로자명}에게 {급여년도}년 {급여월}월분 급여명세서가 {발송방법}(으)로 발송 완료되었음을 알려드립니다.
+
+■ 근로자: {근로자명}
+■ 대상 년월: {급여년도}년 {급여월}월
+■ 발송 방법: {발송방법}
+■ 발송 시각: {발송시각}`
+  },
+  severance_paid: {
+    title: `[퇴직급여 지급] {근로자명} — 퇴직급여가 지급되었습니다`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+소속 근로자의 퇴직급여 지급이 완료되었습니다.
+
+■ 근로자: {근로자명}
+■ 지급 금액: {지급금액}
+■ 처리 일시: {처리일시}`
+  },
+  severance_dispatched: {
+    title: `[퇴직금 명세서 발송] {근로자명} — 퇴직금 명세서가 발송되었습니다`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+소속 근로자 {근로자명}에게 퇴직금 명세서가 {발송방법}(으)로 발송 완료되었음을 알려드립니다.
+
+■ 발송 시각: {발송시각}`
+  },
+  contract_expiry: {
+    title: `[계약만료 예정] {근로자명} — {D-day}`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+소속 직원의 근로계약 만료일이 다가와 안내드립니다.
+
+■ 직원명: {근로자명}
+■ 고용형태: {고용형태}
+■ 계약 만료일: {계약만료일} ({D-day})
+
+담당 노무사에게 갱신 여부를 확인해 주세요.
+
+※ 「기간제 및 단시간근로자 보호 등에 관한 법률」에 따른 사전 통지`
+  },
+  regular_conversion: {
+    title: `[정규직 전환 의무] {근로자명} — 기간제 2년 초과`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+소속 직원의 기간제 근로 누적 기간이 2년을 초과하여 법률에 따른 정규직 전환 의무가 발생하였음을 안내드립니다.
+
+■ 직원명: {근로자명}
+■ 고용형태: {고용형태}
+■ 입사일: {입사일}
+■ 누적 근로일수: {근속일수}
+
+◆ 관련 법령
+「기간제 및 단시간근로자 보호 등에 관한 법률」 제4조`
+  },
+  probation_expiry: {
+    title: `[수습만료 통지] {근로자명} — 수습 기간이 만료됩니다`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+소속 근로자의 수습 기간이 곧 만료됩니다.
+
+■ 근로자: {근로자명}
+■ 수습 만료일: {수습만료일}
+
+수습 만료 후 채용확정 여부를 결정해 주세요.`
+  },
+  leave_promotion: {
+    title: `[연차 사용촉진] {근로자명} — 연차휴가 사용을 촉진합니다`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+근로기준법 제61조에 따라 연차휴가 사용촉진 조치가 진행되었습니다.
+
+■ 근로자: {근로자명}
+■ 처리 일시: {처리일시}`
+  },
+  contract_review_request: {
+    title: `[근로계약서 검수 요청] {근로자명} — 최종 편집본 검수 후 승인해 주세요`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+소속 근로자 {근로자명}님의 근로계약서({계약사유}) 최종 편집본이 등록되었습니다.
+검수 후 승인해 주세요.
+
+■ 근로자: {근로자명}
+■ 계약 사유: {계약사유}
+■ 파일주소: {파일주소}
+
+파일을 열어 확인해 주세요.`
+  },
+  contract_seal_request: {
+    title: `[근로계약서 날인 요청] {근로자명} — 최종 편집본 날인 후 회신해 주세요`,
+    body: `안녕하세요, {회사명} 대표자님.
+
+소속 근로자 {근로자명}님의 근로계약서가 승인되었습니다.
+날인 후 회신해 주세요.
+
+■ 근로자: {근로자명}
+■ 파일주소: {파일주소}
+
+파일을 열어 확인해 주세요.`
+  }
+};
+
+// ── 발송 수단별 메시지 유형 매핑 ──
+const MSG_CHANNEL_TYPES = {
+  inapp: [
+    { value: 'company_welcome', label: '고객사 가입환영' },
+    { value: 'company_updated', label: '고객사 정보 수정' },
+    { value: 'company_terminate_scheduled', label: '서비스 해지 예정' },
+    { value: 'company_terminate_changed', label: '서비스 해지 예정일 변경' },
+    { value: 'company_terminate_cancelled', label: '서비스 해지 취소' },
+    { value: 'contract_created', label: '신규 근로계약' },
+    { value: 'contract_renewed', label: '근로계약 갱신' },
+    { value: 'contract_renewal_scheduled', label: '근로계약 갱신 예약' },
+    { value: 'contract_renewed_new', label: '근로계약 재계약' },
+    { value: 'contract_updated', label: '근로계약 수정' },
+    { value: 'contract_amended', label: '근로계약 수정재발행' },
+    { value: 'contract_dispatched', label: '근로계약서 발송' },
+    { value: 'contract_review_request', label: '근로계약서 검수 요청' },
+    { value: 'contract_seal_request', label: '근로계약서 날인 요청' },
+    { value: 'consent_dispatched', label: '정보제공동의서 발송' },
+    { value: 'contract_signed_uploaded', label: '근로계약서 날인본 등록' },
+    { value: 'contract_consent_uploaded', label: '동의서 날인본 등록' },
+    { value: 'contract_fully_documented', label: '서류 완비' },
+    { value: 'contract_terminated', label: '근로계약 해지' },
+    { value: 'contract_terminate_scheduled', label: '근로계약 해지 예정' },
+    { value: 'contract_termination_cancelled', label: '근로계약 해지 취소' },
+    { value: 'contract_voided', label: '근로계약 파기' },
+    { value: 'probation_expiry', label: '수습만료 통지' },
+    { value: 'contract_expiry', label: '근로계약 만료 통지' },
+    { value: 'regular_conversion', label: '정규직 전환' },
+    { value: 'payroll_input_complete', label: '급여 입력/수정' },
+    { value: 'payslip_dispatched', label: '급여명세서 발송' },
+    { value: 'wage_ledger_generated', label: '임금대장 발행' },
+    { value: 'wage_ledger_renewed', label: '임금대장 갱신' },
+    { value: 'severance_paid', label: '퇴직급여 지급' },
+    { value: 'severance_dispatched', label: '퇴직금 명세서 발송' },
+    { value: 'leave_promotion', label: '연차 사용촉진' },
+  ],
+  kakao: [
+    { value: 'contract_dispatch_kakao', label: '근로계약서 발송 (알림톡)' },
+    { value: 'consent_dispatch_kakao', label: '정보제공동의서 발송 (알림톡)' },
+    { value: 'severance_dispatch_kakao', label: '퇴직금 명세서 발송 (알림톡)' },
+    { value: 'leave_promotion_kakao', label: '연차 사용촉진 (알림톡)' },
+  ],
+  email: [
+    { value: 'contract_dispatch_email', label: '근로계약서 발송 (이메일)' },
+    { value: 'consent_dispatch_email', label: '정보제공동의서 발송 (이메일)' },
+    { value: 'severance_dispatch_email', label: '퇴직금 명세서 발송 (이메일)' },
+    { value: 'leave_promotion_email', label: '연차 사용촉진 (이메일)' },
+  ],
+};
+
+// ═══════════════════════════════════════════
+// 인앱 알림 발송항목 설정 (체크된 항목만 발송)
+// ═══════════════════════════════════════════
+
+/** 체크 해제(비활성)된 인앱 알림 유형 Set 조회 */
+function _ssGetDisabledInappTypes(){
+  try {
+    const raw = window._systemSettings && window._systemSettings['inapp_notice_types_disabled'];
+    if (!raw) return new Set();
+    const arr = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    return new Set(Array.isArray(arr) ? arr : []);
+  } catch(_) { return new Set(); }
+}
+
+/** 발송항목 체크리스트 렌더 */
+function _ssRenderInappChecklist(){
+  const wrap = document.getElementById('ss-inapp-checklist');
+  if (!wrap) return;
+  const disabled = _ssGetDisabledInappTypes();
+  const types = MSG_CHANNEL_TYPES.inapp || [];
+  wrap.innerHTML = types.map(t => {
+    const checked = !disabled.has(t.value) ? ' checked' : '';
+    return `<label style="display:flex;align-items:center;gap:7px;font-size:12.5px;color:#374151;cursor:pointer;padding:2px 0;">
+      <input type="checkbox" class="ss-inapp-type-chk" value="${t.value}"${checked} style="width:15px;height:15px;accent-color:#4f46e5;flex-shrink:0;" />
+      ${t.label}
+    </label>`;
+  }).join('');
+}
+
+/** 발송항목 설정 저장 — 즉시 시스템 반영 */
+async function ssSaveInappNoticeTypes(){
+  const saveBtn = document.getElementById('ss-inapp-save-btn');
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 저장 중...'; }
+  try {
+    const allTypes = (MSG_CHANNEL_TYPES.inapp || []).map(t => t.value);
+    const checked = new Set(
+      Array.from(document.querySelectorAll('.ss-inapp-type-chk:checked')).map(c => c.value)
+    );
+    const disabled = allTypes.filter(t => !checked.has(t));
+    await api('../tables/system_settings/set_inapp_types', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        setting_key: 'inapp_notice_types_disabled',
+        setting_value: JSON.stringify(disabled),
+        description: '고객사 인앱 알림 발송항목 (체크 해제 = 발송 제외)',
+        updated_at: Date.now()
+      })
+    });
+    window._systemSettings['inapp_notice_types_disabled'] = JSON.stringify(disabled);
+    // 메시지 유형 select 즉시 갱신 (인앱 채널에서 체크 해제 항목 제외)
+    ssOnChannelChange();
+    const msg = document.getElementById('ss-inapp-saved-msg');
+    if (msg) { msg.style.display = ''; setTimeout(() => { msg.style.display = 'none'; }, 2000); }
+    toast('인앱 알림 발송항목 설정이 저장되었습니다.', 'success');
+  } catch (e) {
+    console.error('[인앱 발송항목 저장 오류]', e);
+    toast('설정 저장에 실패했습니다.', 'error');
+  } finally {
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = '<i class="fas fa-save"></i> 설정 저장'; }
+  }
+}
+
+/** 기본값(스냅샷) — 체크 해제된 유형 Set 조회 (미설정 시 현재값 폴백) */
+function _ssGetDefaultDisabledInappTypes(){
+  try {
+    const raw = window._systemSettings && window._systemSettings['inapp_notice_types_default'];
+    if (!raw) return _ssGetDisabledInappTypes();
+    const arr = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    return new Set(Array.isArray(arr) ? arr : []);
+  } catch(_) { return _ssGetDisabledInappTypes(); }
+}
+
+/** 체크리스트 체크 상태를 기본값으로 되돌림 */
+function _ssApplyDefaultToChecklist(){
+  const defDisabled = _ssGetDefaultDisabledInappTypes();
+  document.querySelectorAll('.ss-inapp-type-chk').forEach(c => {
+    c.checked = !defDisabled.has(c.value);
+  });
+}
+
+/** 기본값으로 초기화 — 체크리스트 되돌리고 즉시 저장(시스템 반영) */
+async function ssResetInappNoticeTypes(){
+  _ssApplyDefaultToChecklist();
+  await ssSaveInappNoticeTypes();
+}
+
+/** 발송 수단 변경 → 메시지 유형 목록 활성화 */
+function ssOnChannelChange() {
+  const channelEl = document.getElementById('ss-rule-channel');
+  const typeEl    = document.getElementById('ss-rule-type');
+  const titleEl   = document.getElementById('ss-rule-title');
+  const bodyEl    = document.getElementById('ss-rule-body');
+  if (!channelEl || !typeEl) return;
+
+  const channel = channelEl.value;
+  // 인앱 채널: 발송항목 설정에서 체크 해제된 유형 제외
+  const disabledInapp = channel === 'inapp' ? _ssGetDisabledInappTypes() : null;
+  const types = (MSG_CHANNEL_TYPES[channel] || [])
+    .filter(t => !disabledInapp || !disabledInapp.has(t.value));
+
+  // 메시지 유형 select 재구성
+  typeEl.innerHTML = '';
+  if (types.length === 0) {
+    typeEl.innerHTML = '<option value="">발송 수단을 먼저 선택하세요</option>';
+    typeEl.disabled = true;
+  } else {
+    types.forEach(t => {
+      const opt = document.createElement('option');
+      opt.value = t.value;
+      opt.textContent = t.label;
+      if (t.disabled) opt.disabled = true;
+      typeEl.appendChild(opt);
+    });
+    typeEl.disabled = false;
+  }
+
+  // 제목/본문 초기화
+  if (titleEl) titleEl.value = '';
+  if (bodyEl)  bodyEl.value  = '';
+
+  // 첫 번째 활성 타입 자동 선택
+  const firstActive = types.find(t => !t.disabled);
+  if (firstActive) {
+    typeEl.value = firstActive.value;
+    ssLoadMessageRule();
+  }
+}
+
+function _ssGetRulesData() {
+  try {
+    const raw = _ssContactData?.msg_body_rules;
+    if (!raw) return {};
+    return typeof raw === 'string' ? JSON.parse(raw) : raw;
+  } catch(e) { return {}; }
+}
+
+async function ssLoadMessageRule() {
+  const typeEl = document.getElementById('ss-rule-type');
+  const titleEl = document.getElementById('ss-rule-title');
+  const bodyEl  = document.getElementById('ss-rule-body');
+  if (!typeEl || !titleEl || !bodyEl) return;
+
+  const ruleType = typeEl.value;
+  if (!ruleType) {
+    titleEl.value = '';
+    bodyEl.value  = '';
+    _ssSetRuleInputsDisabled(true);
+    return;
+  }
+  _ssSetRuleInputsDisabled(false);
+
+  const rules = _ssGetRulesData();
+  const rule = rules[ruleType] || MSG_RULE_DEFAULTS[ruleType] || { title: '', body: '' };
+
+  titleEl.value = rule.title || '';
+  bodyEl.value  = rule.body  || '';
+}
+
+function ssResetMessageRule() {
+  const typeEl = document.getElementById('ss-rule-type');
+  const titleEl = document.getElementById('ss-rule-title');
+  const bodyEl  = document.getElementById('ss-rule-body');
+  if (!typeEl || !titleEl || !bodyEl) return;
+
+  const ruleType = typeEl.value;
+  if (!ruleType) return;
+  const def = MSG_RULE_DEFAULTS[ruleType];
+  if (!def) return;
+
+  titleEl.value = def.title || '';
+  bodyEl.value  = def.body  || '';
+  toast('기본값으로 초기화되었습니다. 저장 버튼을 눌러 적용하세요.', 'info');
+}
+
+function _ssSetRuleInputsDisabled(disabled) {
+  const titleEl = document.getElementById('ss-rule-title');
+  const bodyEl  = document.getElementById('ss-rule-body');
+  const saveBtn = document.getElementById('ss-rule-save-btn');
+  const resetBtn = document.getElementById('ss-rule-reset-btn');
+  if (titleEl) { titleEl.disabled = disabled; titleEl.style.opacity = disabled ? '0.5' : ''; }
+  if (bodyEl)  { bodyEl.disabled  = disabled; bodyEl.style.opacity  = disabled ? '0.5' : ''; }
+  if (saveBtn) { saveBtn.disabled = disabled; saveBtn.style.opacity = disabled ? '0.5' : ''; }
+  if (resetBtn) { resetBtn.disabled = disabled; resetBtn.style.opacity = disabled ? '0.5' : ''; }
+}
+
+async function ssSaveMessageRule() {
+  const typeEl = document.getElementById('ss-rule-type');
+  const titleEl = document.getElementById('ss-rule-title');
+  const bodyEl  = document.getElementById('ss-rule-body');
+  if (!typeEl || !titleEl || !bodyEl) return;
+
+  const ruleType = typeEl.value;
+  if (!ruleType) { toast('메시지 유형을 선택하세요.', 'error'); return; }
+  const title = titleEl.value.trim();
+  const body  = bodyEl.value.trim();
+  if (!title || !body) { toast('제목과 본문을 모두 입력하세요.', 'error'); return; }
+
+  const saveBtn = document.getElementById('ss-rule-save-btn');
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 저장 중...'; }
+
+  try {
+    const rules = _ssGetRulesData();
+    rules[ruleType] = { title, body };
+    await fetch('../tables/representative_contact/default', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ msg_body_rules: JSON.stringify(rules), updated_at: Date.now() })
+    });
+    if (_ssContactData) _ssContactData.msg_body_rules = JSON.stringify(rules);
+    // 글로벌 캐시 갱신
+    if (typeof _rcContactData !== 'undefined' && _rcContactData) {
+      _rcContactData.msg_body_rules = JSON.stringify(rules);
+    }
+    const msg = document.getElementById('ss-rule-saved-msg');
+    if (msg) { msg.style.display = ''; setTimeout(() => { msg.style.display = 'none'; }, 2000); }
+    toast('메시지 규칙이 저장되었습니다.', 'success');
+  } catch (e) {
+    console.error('[메시지 규칙 저장 오류]', e);
+    toast('저장에 실패했습니다.', 'error');
+  } finally {
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = '<i class="fas fa-save"></i> 규칙 저장'; }
+  }
+}
+
+/**
+ * 메시지 본문 규칙 조회 (발송 코드에서 호출)
+ * @param {string} ruleType - 'contract_dispatched' 등
+ * @returns {{title: string, body: string}|null}
+ */
+function getMsgBodyRule(ruleType) {
+  // 캐시된 연락처 데이터에서 규칙 조회
+  const contactData = (typeof _rcContactData !== 'undefined' && _rcContactData) 
+    || (typeof _ssContactData !== 'undefined' && _ssContactData);
+  if (!contactData) return MSG_RULE_DEFAULTS[ruleType] || null;
+
+  try {
+    const raw = contactData.msg_body_rules;
+    if (!raw) return MSG_RULE_DEFAULTS[ruleType] || null;
+    const rules = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    return rules[ruleType] || MSG_RULE_DEFAULTS[ruleType] || null;
+  } catch(e) {
+    return MSG_RULE_DEFAULTS[ruleType] || null;
+  }
+}
+
+// ═══════════════════════════════════════════
+// 시스템 기능 스위치 — 수습근로자 관리
+// ═══════════════════════════════════════════
+
+/** 페이지 로드 시 스위치 초기화 */
+function _ssInitProbationToggle() {
+  const chk = document.getElementById('ss-toggle-probation');
+  if (!chk) return;
+  chk.checked = window._probationFeatureEnabled === true;
+  _ssUpdateProbationToggleUI(chk.checked);
+}
+
+function _ssUpdateProbationToggleUI(on) {
+  const slider = document.getElementById('ss-toggle-probation-slider');
+  const knob = document.getElementById('ss-toggle-probation-knob');
+  const label = document.getElementById('ss-toggle-probation-label');
+  if (slider) slider.style.background = on ? '#4f46e5' : '#cbd5e1';
+  if (knob) knob.style.left = on ? '23px' : '3px';
+  if (label) {
+    label.textContent = on ? 'ON' : 'OFF';
+    label.style.color = on ? '#4f46e5' : '#9ca3af';
+  }
+}
+
+async function ssToggleProbation(checked) {
+  _ssUpdateProbationToggleUI(checked);
+  try {
+    await api('../tables/system_settings/set_probation', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        setting_key: 'probation_feature_enabled',
+        setting_value: checked ? '1' : '0',
+        description: '수습근로자 관리 기능 ON/OFF',
+        updated_at: Date.now()
+      })
+    });
+    window._probationFeatureEnabled = checked;
+    window._systemSettings['probation_feature_enabled'] = checked ? '1' : '0';
+    // 수습 고용형태 옵션 필터 즉시 반영
+    if (typeof applyProbationOptionFilter === 'function') applyProbationOptionFilter();
+    toast(checked ? '수습근로자 관리 기능이 활성화되었습니다.' : '수습근로자 관리 기능이 비활성화되었습니다. 새로고침을 권장합니다.', 'success');
+    // 사이드바 메뉴 즉시 반영
+    _syncProbationMenuVisibility();
+  } catch (e) {
+    console.error('[ssToggleProbation]', e);
+    toast('설정 저장에 실패했습니다.', 'error');
+    // 롤백
+    const chk = document.getElementById('ss-toggle-probation');
+    if (chk) chk.checked = !checked;
+    _ssUpdateProbationToggleUI(!checked);
+  }
+}
+
+/** 사이드바 수습근로자 관리 메뉴 표시/숨김 */
+function _syncProbationMenuVisibility() {
+  const menuItem = document.querySelector('.menu-item[data-page="probation-mgmt"]');
+  if (menuItem) {
+    menuItem.style.display = window._probationFeatureEnabled ? '' : 'none';
+  }
+}
+
+// ═══════════════════════════════════════════
+// 시스템 기능 스위치 — 계약만료 통지 발송
+// ═══════════════════════════════════════════
+
+function _ssInitContractExpiryToggle() {
+  const chk = document.getElementById('ss-toggle-ce');
+  if (!chk) return;
+  chk.checked = window._contractExpiryNoticeEnabled === true;
+  _ssUpdateContractExpiryToggleUI(chk.checked);
+}
+
+function _ssUpdateContractExpiryToggleUI(on) {
+  const slider = document.getElementById('ss-toggle-ce-slider');
+  const knob = document.getElementById('ss-toggle-ce-knob');
+  const label = document.getElementById('ss-toggle-ce-label');
+  if (slider) slider.style.background = on ? '#4f46e5' : '#cbd5e1';
+  if (knob) knob.style.left = on ? '23px' : '3px';
+  if (label) {
+    label.textContent = on ? 'ON' : 'OFF';
+    label.style.color = on ? '#4f46e5' : '#9ca3af';
+  }
+}
+
+async function ssToggleContractExpiry(checked) {
+  _ssUpdateContractExpiryToggleUI(checked);
+  try {
+    await api('../tables/system_settings/set_ce_notice', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        setting_key: 'contract_expiry_notice_enabled',
+        setting_value: checked ? '1' : '0',
+        description: '계약만료 통지 발송 ON/OFF',
+        updated_at: Date.now()
+      })
+    });
+    window._contractExpiryNoticeEnabled = checked;
+    window._systemSettings['contract_expiry_notice_enabled'] = checked ? '1' : '0';
+    toast(checked ? '계약만료 통지 발송이 활성화되었습니다.' : '계약만료 통지 발송이 비활성화되었습니다.', 'success');
+    _syncContractExpiryMenuVisibility();
+  } catch (e) {
+    console.error('[ssToggleContractExpiry]', e);
+    toast('설정 저장에 실패했습니다.', 'error');
+    const chk = document.getElementById('ss-toggle-ce');
+    if (chk) chk.checked = !checked;
+    _ssUpdateContractExpiryToggleUI(!checked);
+  }
+}
+
+function _syncContractExpiryMenuVisibility() {
+  const menuItem = document.querySelector('.menu-item[data-page="contract-expiry-notice"]');
+  if (menuItem) {
+    menuItem.style.display = window._contractExpiryNoticeEnabled ? '' : 'none';
+  }
+}
+
+// ═══════════════════════════════════════════
+// 시스템 기능 스위치 — 정규직 전환 고지 발송
+// ═══════════════════════════════════════════
+
+function _ssInitRegularConversionToggle() {
+  const chk = document.getElementById('ss-toggle-rc');
+  if (!chk) return;
+  chk.checked = window._regularConversionNoticeEnabled === true;
+  _ssUpdateRegularConversionToggleUI(chk.checked);
+}
+
+function _ssUpdateRegularConversionToggleUI(on) {
+  const slider = document.getElementById('ss-toggle-rc-slider');
+  const knob = document.getElementById('ss-toggle-rc-knob');
+  const label = document.getElementById('ss-toggle-rc-label');
+  if (slider) slider.style.background = on ? '#4f46e5' : '#cbd5e1';
+  if (knob) knob.style.left = on ? '23px' : '3px';
+  if (label) {
+    label.textContent = on ? 'ON' : 'OFF';
+    label.style.color = on ? '#4f46e5' : '#9ca3af';
+  }
+}
+
+async function ssToggleRegularConversion(checked) {
+  _ssUpdateRegularConversionToggleUI(checked);
+  try {
+    await api('../tables/system_settings/set_rc_notice', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        setting_key: 'regular_conversion_notice_enabled',
+        setting_value: checked ? '1' : '0',
+        description: '정규직 전환 고지 발송 ON/OFF',
+        updated_at: Date.now()
+      })
+    });
+    window._regularConversionNoticeEnabled = checked;
+    window._systemSettings['regular_conversion_notice_enabled'] = checked ? '1' : '0';
+    toast(checked ? '정규직 전환 고지 발송이 활성화되었습니다.' : '정규직 전환 고지 발송이 비활성화되었습니다.', 'success');
+    _syncRegularConversionVisibility();
+  } catch (e) {
+    console.error('[ssToggleRegularConversion]', e);
+    toast('설정 저장에 실패했습니다.', 'error');
+    const chk = document.getElementById('ss-toggle-rc');
+    if (chk) chk.checked = !checked;
+    _ssUpdateRegularConversionToggleUI(!checked);
+  }
+}
+
+function _syncRegularConversionMenuVisibility() {
+  const menuItem = document.querySelector('.menu-item[data-page="regular-conversion"]');
+  if (menuItem) {
+    menuItem.style.display = window._regularConversionNoticeEnabled ? '' : 'none';
+  }
+}
+
+function _syncRegularConversionVisibility() {
+  _syncRegularConversionMenuVisibility();
+  // 페이지 컨테이너 표시/숨김
+  const pageEl = document.getElementById('page-regular-conversion');
+  if (pageEl) {
+    pageEl.style.display = window._regularConversionNoticeEnabled ? '' : 'none';
+  }
+  // OFF 시 정규직전환 페이지에 있다면 대시보드로 리다이렉트
+  if (!window._regularConversionNoticeEnabled && document.getElementById('page-regular-conversion')?.classList.contains('active')) {
+    if (typeof showPage === 'function') showPage('dashboard');
+  }
+}
+
+// ═══════════════════════════════════════════
+// 시스템 기능 스위치 — 고객사 사용료 수납관리
+// ═══════════════════════════════════════════
+
+function _ssInitBillingToggle() {
+  const chk = document.getElementById('ss-toggle-billing');
+  if (!chk) return;
+  chk.checked = window._billingFeatureEnabled === true;
+  _ssUpdateBillingToggleUI(chk.checked);
+  _syncBillingVisibility(); // 페이지 로드 시 초기 표시 상태 적용
+}
+
+function _ssUpdateBillingToggleUI(on) {
+  const slider = document.getElementById('ss-toggle-billing-slider');
+  const knob = document.getElementById('ss-toggle-billing-knob');
+  const label = document.getElementById('ss-toggle-billing-label');
+  if (slider) slider.style.background = on ? '#4f46e5' : '#cbd5e1';
+  if (knob) knob.style.left = on ? '23px' : '3px';
+  if (label) {
+    label.textContent = on ? 'ON' : 'OFF';
+    label.style.color = on ? '#4f46e5' : '#9ca3af';
+  }
+}
+
+async function ssToggleBilling(checked) {
+  _ssUpdateBillingToggleUI(checked);
+  try {
+    await api('../tables/system_settings/set_billing', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        setting_key: 'billing_feature_enabled',
+        setting_value: checked ? '1' : '0',
+        description: '고객사 사용료 수납관리 ON/OFF',
+        updated_at: Date.now()
+      })
+    });
+    window._billingFeatureEnabled = checked;
+    window._systemSettings['billing_feature_enabled'] = checked ? '1' : '0';
+    _syncBillingVisibility();
+    toast(checked ? '사용료 관리 기능이 활성화되었습니다.' : '사용료 관리 기능이 비활성화되었습니다.', 'success');
+  } catch (e) {
+    console.error('[ssToggleBilling]', e);
+    toast('설정 저장에 실패했습니다.', 'error');
+    const chk = document.getElementById('ss-toggle-billing');
+    if (chk) chk.checked = !checked;
+    _ssUpdateBillingToggleUI(!checked);
+  }
+}
+
+function _syncBillingMenuVisibility() {
+  const menuItem = document.querySelector('.menu-item[data-page="billing"]');
+  if (menuItem) {
+    menuItem.style.display = window._billingFeatureEnabled ? '' : 'none';
+  }
+}
+
+function _syncBillingVisibility() {
+  _syncBillingMenuVisibility();
+  // 페이지 컨테이너 표시/숨김
+  const pageEl = document.getElementById('page-billing');
+  if (pageEl) {
+    pageEl.style.display = window._billingFeatureEnabled ? '' : 'none';
+  }
+  // 대시보드 사용료 섹션 표시/숨김
+  const dashSec = document.getElementById('dash-billing-section');
+  if (dashSec) {
+    dashSec.style.display = window._billingFeatureEnabled ? '' : 'none';
+  }
+  // 대시보드 차트 재렌더링 (ON 시에만)
+  if (window._billingFeatureEnabled) {
+    if (typeof renderDashBillingCards === 'function') renderDashBillingCards();
+    if (typeof renderBillingTrendChart === 'function') renderBillingTrendChart();
+  }
+  // 고객사 카드 재렌더링 (사용료 배지 표시/숨김)
+  if (typeof renderCompanies === 'function') renderCompanies();
+  if (typeof renderDashboard === 'function') renderDashboard();
+}
+
+// ═══════════════════════════════════════════
+// 시스템 기능 스위치 — 퇴직 관리
+// ═══════════════════════════════════════════
+
+function _ssInitRetirementToggle() {
+  const chk = document.getElementById('ss-toggle-retirement');
+  if (!chk) return;
+  chk.checked = window._retirementMgmtEnabled === true;
+  _ssUpdateRetirementToggleUI(chk.checked);
+}
+
+function _ssUpdateRetirementToggleUI(on) {
+  const slider = document.getElementById('ss-toggle-retirement-slider');
+  const knob = document.getElementById('ss-toggle-retirement-knob');
+  const label = document.getElementById('ss-toggle-retirement-label');
+  if (slider) slider.style.background = on ? '#4f46e5' : '#cbd5e1';
+  if (knob) knob.style.left = on ? '23px' : '3px';
+  if (label) {
+    label.textContent = on ? 'ON' : 'OFF';
+    label.style.color = on ? '#4f46e5' : '#9ca3af';
+  }
+}
+
+async function ssToggleRetirement(checked) {
+  _ssUpdateRetirementToggleUI(checked);
+  try {
+    await api('../tables/system_settings/set_retirement', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        setting_key: 'retirement_mgmt_enabled',
+        setting_value: checked ? '1' : '0',
+        description: '퇴직 관리 기능 ON/OFF',
+        updated_at: Date.now()
+      })
+    });
+    window._retirementMgmtEnabled = checked;
+    window._systemSettings['retirement_mgmt_enabled'] = checked ? '1' : '0';
+    _syncRetirementVisibility();
+    toast(checked ? '퇴직 관리 기능이 활성화되었습니다.' : '퇴직 관리 기능이 비활성화되었습니다.', 'success');
+  } catch (e) {
+    console.error('[ssToggleRetirement]', e);
+    toast('설정 저장에 실패했습니다.', 'error');
+    const chk = document.getElementById('ss-toggle-retirement');
+    if (chk) chk.checked = !checked;
+    _ssUpdateRetirementToggleUI(!checked);
+  }
+}
+
+function _syncRetirementMenuVisibility() {
+  const menuItem = document.querySelector('.menu-item[data-page="retirement-mgmt"]');
+  if (menuItem) {
+    menuItem.style.display = window._retirementMgmtEnabled ? '' : 'none';
+  }
+}
+
+function _syncRetirementVisibility() {
+  _syncRetirementMenuVisibility();
+  // 페이지 컨테이너 표시/숨김
+  const pageEl = document.getElementById('page-retirement-mgmt');
+  if (pageEl) {
+    pageEl.style.display = window._retirementMgmtEnabled ? '' : 'none';
+  }
+  // OFF 시 퇴직관리 페이지에 있다면 대시보드로 리다이렉트
+  if (!window._retirementMgmtEnabled && document.getElementById('page-retirement-mgmt')?.classList.contains('active')) {
+    if (typeof showPage === 'function') showPage('dashboard');
+  }
+  // 대시보드 퇴직 배너 재렌더링
+  if (typeof renderDashRetirementBanner === 'function') renderDashRetirementBanner();
+  if (typeof renderDashboard === 'function') renderDashboard();
+}
+
+// ═══════════════════════════════════════════
+// 시스템 설정 재인증 가드 (마스터 관리자 전용)
+// ═══════════════════════════════════════════
+
+let _ssPendingMenuEl = null;
+
+/**
+ * 시스템 설정 메뉴 표시 여부 제어 (마스터 관리자만 접근)
+ * 로그인 직후 호출됨
+ */
+function _ssInitMenuVisibility() {
+  const menuItem = document.querySelector('[data-page="system-settings"]');
+  if (!menuItem) return;
+  const username = sessionStorage.getItem('admin_username') || '';
+  if (username === 'admin') {
+    menuItem.style.display = '';
+  } else {
+    menuItem.style.display = 'none';
+  }
+}
+
+// 페이지 로드 시 메뉴 표시 여부 초기화 (DOM ready 후 실행)
+(function() {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _ssInitMenuVisibility);
+  } else {
+    _ssInitMenuVisibility();
+  }
+  // auth.js의 _alnShowApp 호출 후에도 갱신되도록 오버라이드
+  var _origShowApp = window._alnShowApp;
+  window._alnShowApp = function() {
+    if (_origShowApp) _origShowApp();
+    _ssInitMenuVisibility();
+  };
+})();
+
+/**
+ * 시스템 설정 메뉴 클릭 → 항상 비밀번호 재인증
+ */
+function ssGuardSystemSettings(menuEl) {
+  _ssPendingMenuEl = menuEl;
+  const username = sessionStorage.getItem('admin_username') || 'admin';
+  const displayEl = document.getElementById('ss-reauth-username');
+  if (displayEl) displayEl.textContent = username;
+  const pwEl = document.getElementById('ss-reauth-password');
+  const errEl = document.getElementById('ss-reauth-error');
+  const eyeIcon = document.getElementById('ss-reauth-eye-icon');
+  if (pwEl) { pwEl.value = ''; pwEl.type = 'password'; }
+  if (errEl) { errEl.classList.remove('va-err'); errEl.style.display = 'none'; }
+  if (eyeIcon) eyeIcon.className = 'fas fa-eye';
+  const modal = document.getElementById('ss-reauth-modal');
+  if (modal) { modal.classList.add('open'); setTimeout(() => pwEl?.focus(), 150); }
+}
+
+function closeSSReauth() {
+  const modal = document.getElementById('ss-reauth-modal');
+  if (modal) modal.classList.remove('open');
+  _ssPendingMenuEl = null;
+}
+
+function ssToggleReauthEye() {
+  const pwEl = document.getElementById('ss-reauth-password');
+  const icon = document.getElementById('ss-reauth-eye-icon');
+  if (!pwEl || !icon) return;
+  if (pwEl.type === 'password') { pwEl.type = 'text'; icon.className = 'fas fa-eye-slash'; }
+  else { pwEl.type = 'password'; icon.className = 'fas fa-eye'; }
+}
+
+async function ssConfirmReauth() {
+  const username = sessionStorage.getItem('admin_username') || 'admin';
+  const password = document.getElementById('ss-reauth-password')?.value || '';
+  const btn = document.getElementById('ss-reauth-btn');
+  const errEl = document.getElementById('ss-reauth-error');
+  const errText = document.getElementById('ss-reauth-error-text');
+
+  if (!password) {
+    if (errEl) { errEl.classList.add('va-err'); errEl.style.display = 'block'; if (errText) errText.textContent = '비밀번호를 입력하세요.'; }
+    return;
+  }
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 확인 중...'; }
+
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    if (!res.ok) {
+      if (errEl) { errEl.classList.add('va-err'); errEl.style.display = 'block'; if (errText) errText.textContent = '비밀번호가 올바르지 않습니다.'; }
+      const pwEl = document.getElementById('ss-reauth-password');
+      if (pwEl) { pwEl.value = ''; pwEl.focus(); }
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-check"></i> 확인'; }
+      return;
+    }
+    // 인증 성공 → 바로 시스템 설정 페이지로 진입 (세션 플래그 저장 안 함: 매번 재인증)
+    const menuEl = _ssPendingMenuEl;
+    closeSSReauth();
+    if (menuEl) showPage('system-settings', menuEl);
+  } catch (e) {
+    console.error('[재인증 오류]', e);
+    if (errEl) { errEl.classList.add('va-err'); errEl.style.display = 'block'; if (errText) errText.textContent = '서버 연결에 실패했습니다.'; }
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-check"></i> 확인'; }
+  }
+}

@@ -1,0 +1,27 @@
+    <div id="page-companies" class="page">
+      <!-- 임시저장 배너 (고객사 임시저장 건이 있을 때만 표시) -->
+      <div id="companies-draft-banner" style="display:none;margin-bottom:14px;"></div>
+      <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
+        <button class="btn btn-primary" onclick="openCompanyModal()"><i class="fas fa-plus"></i> 고객사 추가</button>
+      </div>
+      <div class="card">
+        <div class="filt-bar" style="border-bottom:1px solid #e5e7eb;">
+          <div style="display:flex;align-items:center;gap:5px;">
+            <span class="filt-label">상태</span>
+            <select id="company-status-filter" onchange="renderCompanies()" class="filt-select">
+              <option value="">전체 상태</option>
+              <option value="active" selected>이용중</option>
+              <option value="inactive">해지</option>
+            </select>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;margin-left:auto;">
+            <div class="filt-search-wrap">
+              <i class="fas fa-search"></i>
+              <input type="text" id="company-search" class="filt-search" style="width:150px;" placeholder="회사명 검색" oninput="renderCompanies()" />
+            </div>
+          </div>
+        </div>
+        <div class="company-grid" id="company-list"></div>
+      </div>
+    </div>
+

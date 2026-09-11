@@ -1,0 +1,78 @@
+<div id="page-employees" class="page">
+
+      <!-- 고객사 선택 -->
+      <div id="hr-company-select-card">
+        <div class="section-title">
+          <i class="fas fa-building" style="font-size:13px;"></i>
+          <span>고객사별 인사관리대장 조회</span>
+          <div class="filt-search-wrap" style="margin-left:auto;">
+            <i class="fas fa-search"></i>
+            <input type="text" id="hr-company-search" class="filt-search w-160" placeholder="고객사명 검색" oninput="renderHrCompanyList()" />
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:16px;overflow:hidden;">
+          <div id="hr-company-chips" style="padding:20px;display:flex;flex-wrap:wrap;gap:8px;"></div>
+        </div>
+      </div>
+
+      <!-- 선택된 고객사 직원 목록 -->
+      <div id="hr-list-section" style="display:none;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:12px 18px;background:linear-gradient(90deg,#1e1b4b,#312e81);border-radius:10px;">
+          <span id="hr-selected-company-label" style="font-size:14px;font-weight:700;color:#fff;"></span>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <button class="btn btn-primary" id="hr-add-btn" onclick="openHrEmployeeForm(null)"><i class="fas fa-user-plus"></i> 신규 직원 등록</button>
+            <button onclick="clearHrCompanySelect()" class="btn btn-icon-dark" title="고객사 선택 해제"><i class="fas fa-times"></i></button>
+          </div>
+        </div>
+
+        <div class="section-title">
+          <i class="fas fa-id-card"></i>
+          <span>직원 목록</span>
+          <span id="hr-emp-count" style="font-size:11.5px;color:#6b7280;margin-left:8px;font-weight:400;"></span>
+        </div>
+
+        <!-- 필터 바 -->
+        <div class="card" style="margin-bottom:12px;overflow:hidden;">
+          <div class="filt-bar">
+            <select id="hr-filter-status" onchange="renderHrEmployees()" class="filt-select">
+              <option value="all">상태 전체</option>
+              <option value="active" selected>재직</option>
+              <option value="resigned">퇴직</option>
+            </select>
+            <select id="hr-filter-type" onchange="renderHrEmployees()" class="filt-select">
+              <option value="all">구분 전체</option>
+              <option value="employee">직원</option>
+              <option value="representative">대표자 본인</option>
+              <option value="executive">등기임원</option>
+              <option value="related">특수관계인</option>
+            </select>
+            <select id="hr-filter-category" onchange="renderHrEmployees()" class="filt-select">
+              <option value="all">고용형태 전체</option>
+              <option value="regular">정규직</option>
+              <option value="regular_probation">정규직 수습</option>
+              <option value="fixed_term">계약직</option>
+              <option value="fixed_term_probation">계약직 수습</option>
+              <option value="daily">일용직</option>
+              <option value="executive">등기임원</option>
+              <option value="related_party">특수관계인</option>
+              <option value="representative">대표자</option>
+            </select>
+            <div class="filt-search-wrap">
+              <i class="fas fa-search"></i>
+              <input type="text" id="hr-search" class="filt-search" style="width:180px;" placeholder="이름·사번 검색" oninput="renderHrEmployees()" />
+            </div>
+          </div>
+        </div>
+
+        <!-- 직원 목록 테이블 -->
+        <div class="card" style="padding:0;overflow:hidden;">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>이름</th><th>고용형태</th><th>성별</th><th>사원번호</th><th>부서 / 직책</th><th>입사일</th><th>퇴사일</th><th>휴대전화</th><th>상태</th><th>관리</th></tr></thead>
+              <tbody id="hr-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>

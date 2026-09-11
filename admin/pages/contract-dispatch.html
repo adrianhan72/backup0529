@@ -1,0 +1,188 @@
+    <div id="page-contract-dispatch" class="page">
+
+      <!-- 고객사 선택 -->
+      <div id="cdp-company-select-card">
+        <div class="section-title">
+          <i class="fas fa-building" style="font-size:13px;"></i>
+          <span>고객사별 근로계약서 발송 관리</span>
+          <div class="filt-search-wrap" style="margin-left:auto;">
+            <i class="fas fa-search"></i>
+            <input type="text" id="cdp-company-search" class="filt-search" placeholder="고객사명 검색" oninput="renderCdpCompanyList()" />
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:16px;overflow:hidden;">
+          <div id="cdp-company-chips" style="padding:20px;display:flex;flex-wrap:wrap;gap:8px;"></div>
+        </div>
+      </div>
+
+      <!-- 선택 고객사 콘텐츠 -->
+      <div id="cdp-content-section" style="display:none;">
+
+      <!-- 선택 고객사 헤더 -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:12px 18px;background:linear-gradient(90deg,#1e1b4b,#312e81);border-radius:10px;">
+        <span id="cdp-selected-company-label" style="font-size:14px;font-weight:700;color:#fff;"></span>
+        <button onclick="clearCdpCompanySelect()" class="btn btn-icon-dark" title="고객사 선택 해제"><i class="fas fa-times"></i></button>
+      </div>
+
+      <!-- 탭 메뉴 -->
+      <div class="std-tab-bar" style="margin-top:0;">
+        <button class="std-tab active" id="cdp-tab-unsent" onclick="_cdpSwitchTab('unsent')">미발송 계약서</button>
+        <button class="std-tab" id="cdp-tab-history" onclick="_cdpSwitchTab('history')">발송 이력</button>
+        <button class="std-tab" id="cdp-tab-preview" onclick="_cdpSwitchTab('preview')">메시지 예시</button>
+      </div>
+
+      <!-- 미발송 계약서 섹션 -->
+      <div id="cdp-unsent-section">
+      <div class="std-tab-panel">
+      <!-- 입사 년월 선택 카드 -->
+      <div class="card" id="cdp-unsent-month-card" style="margin-bottom:12px;overflow:hidden;">
+        <div style="padding:14px 20px;">
+          <div class="cdp-month-tabs" id="cdp-unsent-month-tabs">
+            <div class="pss-loading"><i class="fas fa-spinner fa-spin"></i> 로딩 중...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 미발송 목록 카드 -->
+      <div class="card" style="margin-bottom:16px;padding:0;overflow:hidden;">
+        <!-- 전원 발송 완료 메시지 -->
+        <div id="cdp-unsent-all-clear" class="pss-all-clear" style="display:none;margin:16px 0;padding:0 20px;">
+          <i class="fas fa-check-circle" style="font-size:20px;color:#16a34a;flex-shrink:0;"></i>
+          <span style="font-size:13px;color:#166534;">미발송 계약서 없음. (신규 등록된 모든 근로계약서가 발송 처리되었습니다.)</span>
+        </div>
+
+        <!-- 미발송 테이블 -->
+        <div id="cdp-unsent-table-wrap" class="table-wrap" style="padding:0 0 16px;">
+          <table id="cdp-unsent-table" class="tbl-std">
+            <thead>
+              <tr>
+                <th class="ctr" style="width:36px;"><input type="checkbox" id="cdp-chk-all" onchange="cdpToggleAll(this)" title="전체 선택" /></th>
+                <th>직원명</th>
+                <th>성별</th>
+                <th>고용구분</th>
+                <th>입사일</th>
+                <th>연락처</th>
+                <th>이메일</th>
+                <th class="ctr">계약서</th>
+                <th class="ctr">개별 관리</th>
+              </tr>
+            </thead>
+            <tbody id="cdp-unsent-tbody">
+              <tr><td colspan="8" class="pss-loading"><i class="fas fa-spinner fa-spin"></i> 로딩 중...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 일괄 발송 버튼 -->
+      <div style="display:flex;justify-content:center;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+        <button class="cdp-send-btn-all" id="cdp-batch-kakao-btn" onclick="cdpBatchKakao()" disabled>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.527 1.523 4.75 3.838 6.105l-.98 3.607a.375.375 0 0 0 .544.424L9.928 18.4A11.4 11.4 0 0 0 12 18.6c5.523 0 10-3.806 10-8.1S17.523 3 12 3z"/></svg>
+          선택 일괄 알림톡 발송
+        </button>
+        <button class="cdp-send-btn-all" id="cdp-batch-email-btn" onclick="cdpBatchEmail()" disabled style="background:#2563eb;border-color:#1d4ed8;color:#fff;">
+          <i class="fas fa-envelope"></i> 선택 일괄 이메일 발송
+        </button>
+        <button class="cdp-send-btn-all" id="cdp-batch-manual-btn" onclick="cdpBatchManual()" disabled style="background:#10b981;border-color:#059669;color:#fff;">
+          <i class="fas fa-hand-paper"></i> 선택 일괄 수동교부 처리
+        </button>
+      </div>
+
+      </div><!-- /std-tab-panel -->
+      </div><!-- /cdp-unsent-section -->
+
+      <!-- 발송 이력 섹션 -->
+      <div id="cdp-history-section" style="display:none;">
+      <div class="std-tab-panel">
+
+      <!-- ── 필터 바 ── -->
+      <div class="card" style="margin-bottom:12px;overflow:hidden;">
+        <div class="filt-bar">
+          <!-- 발송 방식 -->
+          <div style="display:flex;align-items:center;gap:5px;">
+            <span class="filt-label">발송 방식</span>
+            <select id="cdp-filter-method" onchange="_cdpPage=1;renderContractDispatchPage()" class="filt-select">
+              <option value="">전체</option>
+              <option value="kakao">알림톡</option>
+              <option value="email">이메일</option>
+              <option value="manual">수동교부</option>
+            </select>
+          </div>
+          <!-- 교부사유 -->
+          <div style="display:flex;align-items:center;gap:5px;">
+            <span class="filt-label">교부사유</span>
+            <select id="cdp-filter-reason" onchange="_cdpPage=1;renderContractDispatchPage()" class="filt-select">
+              <option value="">전체</option>
+              <option value="new">신규계약</option>
+              <option value="renewal">계약갱신</option>
+              <option value="recontract">재계약</option>
+              <option value="reissue">수정재발행</option>
+            </select>
+          </div>
+          <!-- 발송 상태 -->
+          <div style="display:flex;align-items:center;gap:5px;">
+            <span class="filt-label">발송 상태</span>
+            <select id="cdp-filter-status" onchange="_cdpPage=1;renderContractDispatchPage()" class="filt-select">
+              <option value="">전체</option>
+              <option value="completed">완료</option>
+              <option value="failed">실패</option>
+              <option value="pending">대기</option>
+            </select>
+          </div>
+          <!-- 기간 -->
+          <div style="display:flex;align-items:center;gap:5px;">
+            <span class="filt-label">기간</span>
+            <input type="date" id="cdp-filter-date-from" class="filt-date" />
+            <span style="font-size:11px;color:#9ca3af;">~</span>
+            <input type="date" id="cdp-filter-date-to" class="filt-date" />
+            <button onclick="_cdpDoSearch()" class="filt-btn-search">조회</button>
+            <span id="cdp-date-notice" style="font-size:10.5px;color:#9ca3af;white-space:nowrap;">(최대 3개월)</span>
+          </div>
+          <!-- 검색 (우측) -->
+          <div style="display:flex;align-items:center;gap:6px;margin-left:auto;">
+            <div class="filt-search-wrap">
+              <i class="fas fa-search"></i>
+              <input type="text" id="cdp-search" class="filt-search" style="width:150px;" placeholder="직원명·수신처 검색" oninput="renderContractDispatchPage()" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── 발송 이력 테이블 ── -->
+      <div class="card" style="padding:0;overflow:hidden;">
+        <div style="overflow-x:auto;">
+          <table class="tbl-std">
+            <thead>
+              <tr>
+                <th>발송 일시</th>
+                <th>직원명</th>
+                <th>계약 유형</th>
+                <th class="ctr">발송 방식</th>
+                <th class="ctr">교부사유</th>
+                <th>수신처</th>
+                <th class="ctr">결과</th>
+                <th>처리자</th>
+                <th class="ctr">계약서</th>
+              </tr>
+            </thead>
+            <tbody id="cdp-tbody">
+              <tr><td colspan="9" class="cen-empty"><i class="fas fa-spinner fa-spin"></i> 데이터 로딩 중...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <!-- 페이지네이션 -->
+        <div id="cdp-pagination" style="padding:8px 16px;"></div>
+      </div>
+
+      </div><!-- /std-tab-panel -->
+      </div><!-- /cdp-history-section -->
+
+      <!-- 메시지 예시 섹션 -->
+      <div id="cdp-preview-section" style="display:none;">
+      <div class="std-tab-panel">
+        <div id="cdp-preview-content"></div>
+      </div>
+      </div><!-- /cdp-preview-section -->
+
+      </div><!-- /cdp-content-section -->
+    </div><!-- /page-contract-dispatch -->

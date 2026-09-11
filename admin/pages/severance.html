@@ -1,0 +1,138 @@
+    <div id="page-severance" class="page">
+      <!-- 고객사 선택 -->
+      <div id="sev-company-select-card">
+        <div class="section-title">
+          <i class="fas fa-building"></i>
+          <span>고객사를 선택하세요</span>
+          <div class="filt-search-wrap" style="margin-left:auto;">
+            <i class="fas fa-search"></i>
+            <input type="text" id="sev-company-search" class="filt-search" class="w-160" placeholder="고객사명 검색" oninput="renderSevCompanyList()" />
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:16px;overflow:hidden;">
+          <div id="sev-company-chips" style="padding:20px;display:flex;flex-wrap:wrap;gap:8px;"></div>
+        </div>
+      </div>
+
+      <!-- 메인 섹션 -->
+      <div id="sev-main-section" style="display:none;">
+
+        <!-- 선택 고객사 헤더 -->
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:linear-gradient(90deg,#1e1b4b,#312e81);border-radius:10px;margin-bottom:12px;">
+            <span id="sev-selected-company-label" style="font-size:14px;font-weight:700;color:#fff;"></span>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span id="sev-as-of-date" style="font-size:12px;color:rgba(255,255,255,.75);background:rgba(255,255,255,.12);padding:3px 10px;border-radius:6px;border:1px solid rgba(255,255,255,.2);"></span>
+              <button onclick="clearSevCompanySelect()" class="btn btn-icon-dark" title="고객사 선택 해제"><i class="fas fa-times"></i></button>
+            </div>
+          </div>
+
+          <!-- 탭 메뉴 -->
+          <div class="std-tab-bar" style="margin-top:0;">
+            <button class="std-tab active" id="sev-tab-status-btn" onclick="switchSevTab('status')">
+              <i class="fas fa-users" style="margin-right:5px;"></i>근로자별 퇴직급여 추계
+            </button>
+            <button class="std-tab" id="sev-tab-history-btn" onclick="switchSevTab('history')">
+              <i class="fas fa-history" style="margin-right:5px;"></i>지급 발생 이력
+            </button>
+          </div>
+
+          <!-- 탭1: 근로자별 퇴직급여 추계 -->
+          <div id="sev-tab-status">
+          <div class="std-tab-panel">
+            <div style="font-size:12px;color:#6b7280;margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+              <i class="fas fa-info-circle" style="color:#f59e0b;"></i>
+              1년 미만 재직자와 일용직을 제외한 모든 근로자의 퇴직급여 추계액과 현황을 확인할 수 있습니다.
+            </div>
+              <div id="sev-status-table-wrap" style="overflow-x:auto;">
+                <table class="tbl-std">
+                  <thead>
+                    <tr>
+                      <th>성명</th>
+                      <th>부서/직책</th>
+                      <th>고용형태</th>
+                      <th>계약 이력<br><span style="font-weight:400;font-size:11px;">(시작일 ~ 종료일)</span></th>
+                      <th class="ctr">계약별<br>재직기간</th>
+                      <th class="ctr">평균 월<br>통상임금</th>
+                      <th class="ctr">퇴직금 추계액</th>
+                      <th class="ctr">최종 계약 상태</th>
+                    </tr>
+                  </thead>
+                  <tbody id="sev-status-tbody">
+                    <tr><td colspan="8" class="cen-empty"><i class="fas fa-inbox"></i> 고객사를 선택하면 현황이 표시됩니다.</td></tr>
+                  </tbody>
+                  <tfoot id="sev-status-tfoot" style="display:none;">
+                    <tr>
+                      <td colspan="8"></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+              <!-- 합계 요약 카드 -->
+              <div id="sev-summary-card" style="display:none;margin-top:14px;background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1.5px solid #fcd34d;border-radius:12px;padding:16px 20px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+                  <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap;">
+                    <div style="display:flex;align-items:center;gap:7px;">
+                      <i class="fas fa-users" style="color:#d97706;font-size:14px;"></i>
+                      <span style="font-size:12.5px;color:#78350f;font-weight:600;">추계 대상</span>
+                      <span id="sev-summary-count" style="font-size:14px;font-weight:800;color:#92400e;">-</span>
+                      <span style="font-size:12px;color:#92400e;">명</span>
+                    </div>
+                    <div style="width:1px;height:20px;background:#fcd34d;"></div>
+                    <div style="display:flex;align-items:center;gap:7px;">
+                      <i class="fas fa-user-minus" style="color:#9ca3af;font-size:13px;"></i>
+                      <span style="font-size:12px;color:#78716c;">급여 미입력</span>
+                      <span id="sev-summary-nodata" style="font-size:13px;font-weight:700;color:#9ca3af;">-</span>
+                      <span style="font-size:12px;color:#9ca3af;">명</span>
+                    </div>
+                    <div style="width:1px;height:20px;background:#fcd34d;"></div>
+                    <div style="display:flex;align-items:center;gap:7px;">
+                      <i class="fas fa-user-clock" style="color:#a78bfa;font-size:13px;"></i>
+                      <span style="font-size:12px;color:#78716c;">1년 미만 제외</span>
+                      <span id="sev-summary-under1yr" style="font-size:13px;font-weight:700;color:#a78bfa;">-</span>
+                      <span style="font-size:12px;color:#9ca3af;">명</span>
+                    </div>
+                  </div>
+                  <div style="text-align:right;">
+                    <div style="font-size:11.5px;color:#92400e;font-weight:600;margin-bottom:3px;">퇴직금 추계 합계액</div>
+                    <div style="display:flex;align-items:baseline;gap:5px;justify-content:flex-end;">
+                      <span id="sev-total-amount" style="font-size:22px;font-weight:800;color:#b45309;letter-spacing:-0.5px;"></span>
+                      <span style="font-size:13px;color:#92400e;font-weight:600;">원</span>
+                    </div>
+                    <div id="sev-summary-note" style="font-size:10.5px;color:#a16207;margin-top:2px;"></div>
+                  </div>
+                </div>
+              </div>
+          </div><!-- /std-tab-panel -->
+          </div><!-- /sev-tab-status -->
+
+          <!-- 탭2: 지급 발생 이력 -->
+          <div id="sev-tab-history" style="display:none;">
+          <div class="std-tab-panel">
+            <div style="font-size:12px;color:#6b7280;margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+              <i class="fas fa-info-circle" style="color:#6366f1;"></i>
+              퇴사(계약 만료·해지) 처리된 근로자의 퇴직금 발생 이력입니다. 행을 클릭하면 정산내역표를 확인할 수 있습니다.
+              </div>
+              <div id="sev-history-table-wrap" style="overflow-x:auto;">
+                <table class="tbl-std">
+                  <thead>
+                    <tr>
+                      <th>발생일 (퇴사일)</th>
+                      <th>성명</th>
+                      <th>부서/직책</th>
+                      <th>계약 이력<br><span style="font-weight:400;font-size:11px;">(시작일 ~ 종료일)</span></th>
+                      <th class="ctr">계약별/<br>총 재직기간</th>
+                      <th class="ctr">평균 월<br>통상임금</th>
+                      <th class="ctr">퇴직금 지급액</th>
+                      <th>퇴사 사유</th>
+                    </tr>
+                  </thead>
+                  <tbody id="sev-history-tbody">
+                    <tr><td colspan="8" class="cen-empty"><i class="fas fa-inbox"></i> 퇴직금 발생 이력이 없습니다.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+          </div><!-- /std-tab-panel -->
+          </div><!-- /sev-tab-history -->
+
+      </div><!-- /sev-main-section -->
+    </div><!-- /page-severance -->

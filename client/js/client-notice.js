@@ -21,10 +21,14 @@ function _notifDday(dateStr){
 /* ── 알림 아이콘 타입별 ── */
 function _notifIcon(type){
   const map = {
-    'contract_expiry':  { icon:'fas fa-file-contract', bg:'linear-gradient(135deg,#f59e0b,#d97706)' },
-    'contract_renewal': { icon:'fas fa-sync-alt',       bg:'linear-gradient(135deg,#10b981,#059669)' },
-    'payment':          { icon:'fas fa-won-sign',        bg:'linear-gradient(135deg,#3b82f6,#2563eb)' },
-    'notice':           { icon:'fas fa-bullhorn',        bg:'linear-gradient(135deg,#8b5cf6,#7c3aed)' },
+    'contract_expiry':     { icon:'fas fa-file-contract', bg:'linear-gradient(135deg,#f59e0b,#d97706)' },
+    'contract_renewal':    { icon:'fas fa-sync-alt',       bg:'linear-gradient(135deg,#10b981,#059669)' },
+    'contract_dispatched': { icon:'fas fa-paper-plane',    bg:'linear-gradient(135deg,#3b82f6,#2563eb)' },
+    'payslip_dispatched':  { icon:'fas fa-file-invoice',   bg:'linear-gradient(135deg,#8b5cf6,#7c3aed)' },
+    'payment':             { icon:'fas fa-won-sign',        bg:'linear-gradient(135deg,#3b82f6,#2563eb)' },
+    'notice':              { icon:'fas fa-bullhorn',        bg:'linear-gradient(135deg,#8b5cf6,#7c3aed)' },
+    'welcome':             { icon:'fas fa-handshake',       bg:'linear-gradient(135deg,#06b6d4,#0891b2)' },
+    'company_welcome':     { icon:'fas fa-handshake',       bg:'linear-gradient(135deg,#06b6d4,#0891b2)' },
   };
   return map[type] || { icon:'fas fa-bell', bg:'linear-gradient(135deg,#4f46e5,#6366f1)' };
 }
@@ -97,6 +101,58 @@ function _updateNotifBadge(){
 }
 
 /* ────────────────────────────────────────────────────────────────
+   _notifBodyHtml()
+   본문 HTML 변환 — 이스케이프 후 URL 처리
+   - '파일주소: <url>' → 다운로드 버튼(링크) + 주소복사 버튼
+   - 그 외 http(s) URL → 클릭 시 바로 다운로드되는 링크
+   ──────────────────────────────────────────────────────────────── */
+function _notifBodyHtml(text){
+  if(!text) return '';
+  const esc = _escHtml(text);
+  return esc.replace(/(파일주소\s*:\s*)(https?:\/\/[^\s<>"']+)|(https?:\/\/[^\s<>"']+)/g, (m, label, fileUrl, plainUrl) => {
+    // 문장부호(마침표·쉼표 등)는 URL 밖으로 분리
+    const _clean = (u) => {
+      const c = u.replace(/[.,;:!?)\]\}]+$/, '');
+      return { clean: c, tail: u.slice(c.length) };
+    };
+    if(label && fileUrl){
+      const { clean, tail } = _clean(fileUrl);
+      return `${label}<span class="notif-file-actions">`
+        + `<a href="${clean}" target="_blank" rel="noopener" download onclick="event.stopPropagation()" class="notif-file-btn notif-download-btn"><i class="fas fa-download"></i> 다운로드</a>`
+        + `<button type="button" class="notif-file-btn notif-copy-btn" onclick="event.stopPropagation();copyNotifFileUrl(this,'${clean}')"><i class="fas fa-copy"></i> 주소복사</button>`
+        + `</span>${tail}`;
+    }
+    const raw = plainUrl || m;
+    const { clean, tail } = _clean(raw);
+    return `<a href="${clean}" target="_blank" rel="noopener" download onclick="event.stopPropagation()" class="notif-link">${clean}</a>${tail}`;
+  });
+}
+
+/* ── 파일주소 복사 (클립보드 API + 폴백) ── */
+function copyNotifFileUrl(btn, url){
+  if(!url) return;
+  const done = () => {
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-check"></i> 복사됨';
+    setTimeout(() => { btn.innerHTML = orig; }, 1500);
+  };
+  const fallback = () => {
+    const ta = document.createElement('textarea');
+    ta.value = url;
+    ta.style.cssText = 'position:fixed;top:-100px;left:0;opacity:0;';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); done(); } catch(e){}
+    document.body.removeChild(ta);
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(done).catch(fallback);
+  } else {
+    fallback();
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────
    renderClientNotices()
    모달 바디에 알림 목록 렌더링
    ──────────────────────────────────────────────────────────────── */
@@ -131,7 +187,7 @@ function renderClientNotices(){
         </div>
         <div class="notif-content">
           <div class="notif-title">${_escHtml(n.title||'알림')}</div>
-          <div class="notif-body">${_escHtml(n.body||'')}</div>
+          <div class="notif-body">${_notifBodyHtml(n.body||'')}</div>
           <div class="notif-time">${_notifFmtDate(n.created_at)}</div>
         </div>
         ${isUnread ? '<div class="notif-unread-dot" title="미읽음"></div>' : ''}
@@ -176,12 +232,30 @@ async function openNotifDetail(id){
 
   if(titleEl)   titleEl.textContent  = n.title || '알림';
   if(metaEl)    metaEl.textContent   = _notifFmtDate(n.created_at) + (n.sent_by ? ' · 발송: ' + n.sent_by : '');
-  if(bodyEl)    bodyEl.textContent   = n.body || '';
+  if(bodyEl)    bodyEl.innerHTML     = _notifBodyHtml(n.body || '');
 
-  // 계약 정보 박스 표시 여부
-  const hasInfo = n.employee_name || n.contract_end;
-  if(infoBox) infoBox.style.display = hasInfo ? '' : 'none';
-  if(empEl)   empEl.textContent     = n.employee_name || '-';
+  // 계약 정보 박스 표시 여부 — 검수/날인 요청은 정보 박스 숨김 (본문의 파일주소 안내만 표시)
+  const isNoInfo  = n.notice_type === 'contract_review_request' || n.notice_type === 'contract_seal_request';
+  const isWelcome = n.notice_type === 'company_welcome' || n.notice_type === 'welcome';
+  const label1El  = document.getElementById('notif-info-label-1');
+  const row2El    = document.getElementById('notif-info-row-2');
+
+  if(isNoInfo){
+    if(infoBox) infoBox.style.display = 'none';
+  } else if(isWelcome){
+    // welcome: 고객사명 표시, 계약종료일 행 숨김
+    if(label1El) label1El.textContent = '고객사';
+    if(empEl)    empEl.textContent    = n.company_name || '-';
+    if(row2El)   row2El.style.display = 'none';
+    if(infoBox)  infoBox.style.display = '';  // 항상 표시
+  } else {
+    // 일반 알림: 근로자명 + 계약종료일
+    if(label1El) label1El.textContent = '근로자';
+    if(row2El)   row2El.style.display = '';
+    const hasInfo = n.employee_name || n.contract_end;
+    if(infoBox) infoBox.style.display = hasInfo ? '' : 'none';
+    if(empEl)   empEl.textContent     = n.employee_name || '-';
+  }
   if(endDateEl) endDateEl.textContent = n.contract_end || '-';
 
   // D-day 표시

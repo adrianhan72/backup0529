@@ -1,0 +1,115 @@
+    <div id="page-contracts" class="page">
+      <!-- ══ 진행 중인 업무 섹션 ══ -->
+      <div id="cont-progress-section" style="display:none;">
+        <div class="section-title">
+          <i class="fas fa-spinner"></i>
+          <span>진행 중인 업무</span>
+        </div>
+        <div id="contracts-draft-banner" style="display:none;margin-bottom:10px;"></div>
+      </div>
+
+      <!-- ══ 할일 목록 섹션 (고객사 선택 전 글로벌 배너) ══ -->
+      <div id="cont-todo-section" style="display:none;">
+        <div class="section-title" style="margin-top:30px;">
+          <i class="fas fa-clipboard-list"></i>
+          <span>할일 목록</span>
+        </div>
+        <div class="cont-todo-grid" style="display:none;">
+          <div id="contracts-signed-banner"   style="display:none;"></div>
+          <div id="contracts-consent-banner"  style="display:none;"></div>
+          <div id="contracts-probation-banner" style="display:none;"></div>
+        </div>
+      </div>
+
+      <!-- 고객사 선택 -->
+      <div id="cont-company-select-card">
+        <div class="section-title" style="margin-top:40px;">
+          <i class="fas fa-building" style="font-size:13px;"></i>
+          <span>고객사별 근로계약 현황 조회</span>
+          <div class="filt-search-wrap" style="margin-left:auto;">
+            <i class="fas fa-search"></i>
+            <input type="text" id="cont-company-search" class="filt-search" class="w-160" placeholder="고객사명 검색" oninput="renderContCompanyList()" />
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:16px;overflow:hidden;">
+          <div id="cont-company-chips" style="padding:20px;display:flex;flex-wrap:wrap;gap:8px;"></div>
+        </div>
+      </div>
+
+      <!-- 선택된 고객사 목록 섹션 -->
+      <div id="cont-list-section" style="display:none;">
+
+        <!-- 선택 고객사 헤더 (최상단) -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:12px 18px;background:linear-gradient(90deg,#1e1b4b,#312e81);border-radius:10px;">
+          <span id="cont-selected-company-label" style="font-size:14px;font-weight:700;color:#fff;"></span>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <button class="btn btn-primary" id="cont-add-btn" onclick="openContractModal(null, currentContCompanyId)"><i class="fas fa-plus"></i> 신규계약 작성</button>
+            <button onclick="clearContCompanySelect()" class="btn btn-icon-dark" title="고객사 선택 해제"><i class="fas fa-times"></i></button>
+          </div>
+        </div>
+
+        <!-- ── 계약예정 / 임시저장 / 계약서미발송 / 동의서미발송 (wrapper 바깥 분리) ── -->
+        <div id="cont-co-cards-outer" style="margin-bottom:8px;"></div>
+
+        <!-- ── 만료통지 / 정규직전환 / 수습 ── -->
+        <div id="cont-co-cards-wrap" style="margin-bottom:0;"></div>
+
+        <!-- 숨겨진 필터 (goContractsByCompany 호환용) -->
+        <select id="cont-company-filter" style="display:none;"></select>
+
+        <!-- ── 근로계약 목록 ── -->
+        <div class="section-title">
+          <i class="fas fa-list"></i>
+          <span>근로계약 목록</span>
+        </div>
+
+        <!-- 필터 바 -->
+        <div class="card" style="margin-bottom:12px;overflow:hidden;">
+          <div class="filt-bar">
+            <select id="cont-filter-empcat" onchange="filterContracts()" class="filt-select">
+              <option value="">고용형태 전체</option>
+              <option value="regular">정규직</option>
+              <option value="regular_probation">정규직 수습</option>
+              <option value="fixed_term">계약직</option>
+              <option value="fixed_term_probation">계약직 수습</option>
+              <option value="daily">일용직</option>
+              <option value="executive">등기임원</option>
+              <option value="related_party">특수관계인</option>
+              <option value="representative">대표자</option>
+            </select>
+            <div class="filt-search-wrap">
+              <i class="fas fa-search"></i>
+              <input type="text" id="cont-search" class="filt-search" style="width:140px;" placeholder="직원명 검색" oninput="renderContracts()" />
+            </div>
+            <div id="cont-filter-status-group" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+              <span class="filt-label">상태:</span>
+              <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;color:#374151;user-select:none;"><input type="checkbox" class="cont-filter-status-cb" value="all" onchange="_toggleAllStatus(this)" style="accent-color:#6366f1;" />전체</label>
+              <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;color:#374151;user-select:none;"><input type="checkbox" class="cont-filter-status-cb" value="valid" checked onchange="_onStatusFilterChange()" style="accent-color:#6366f1;" />유효</label>
+              <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;color:#374151;user-select:none;"><input type="checkbox" class="cont-filter-status-cb" value="expired" onchange="_onStatusFilterChange()" style="accent-color:#6366f1;" />만료</label>
+              <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;color:#374151;user-select:none;"><input type="checkbox" class="cont-filter-status-cb" value="terminated" onchange="_onStatusFilterChange()" style="accent-color:#6366f1;" />해지</label>
+              <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;color:#374151;user-select:none;"><input type="checkbox" class="cont-filter-status-cb" value="voided" onchange="_onStatusFilterChange()" style="accent-color:#6366f1;" />파기</label>
+            </div>
+            <label id="cont-filter-docs-incomplete-label" style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-weight:600;color:#ea580c;background:rgba(234,88,12,.1);border:1.5px solid #fdba74;border-radius:20px;padding:6px 14px;user-select:none;">
+              <input type="checkbox" id="cont-filter-docs-incomplete" onchange="filterContracts()" style="accent-color:#ea580c;width:15px;height:15px;" />
+              서류미비 상태만 보기
+            </label>
+            <div class="filt-search-wrap" style="margin-left:auto;">
+              <i class="fas fa-hashtag"></i>
+              <input type="text" id="cont-filter-id" class="filt-search" style="width:180px;" placeholder="계약서 고유 ID" oninput="filterContracts()" />
+            </div>
+          </div>
+        </div>
+
+        <!-- 근로계약 목록 테이블 카드 -->
+        <div class="card" style="padding:0;overflow:hidden;">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>사번</th><th>직원명</th><th>성별</th><th>고용형태</th><th>계약기간</th><th>상태</th><th>계약정보</th><th>계약서</th><th>발송</th><th>날인본</th></tr></thead>
+              <tbody id="cont-tbody"></tbody>
+            </table>
+          </div>
+          <div class="pagination" id="cont-pagination"></div>
+        </div>
+      </div>
+    </div>
+

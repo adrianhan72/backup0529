@@ -1,0 +1,59 @@
+    <div id="page-payrolls" class="page">
+      <!-- 고객사 선택 -->
+      <div id="pay-company-select-card">
+        <div class="section-title">
+          <i class="fas fa-building"></i>
+          <span>고객사를 선택하세요</span>
+          <div class="filt-search-wrap" style="margin-left:auto;">
+            <i class="fas fa-search"></i>
+            <input type="text" id="pay-company-search" class="filt-search" class="w-160" placeholder="고객사명 검색" oninput="renderPayCompanyList()" />
+          </div>
+          <button class="btn btn-success" id="pay-excel-btn" style="display:none;" onclick="openExcelModal()"><i class="fas fa-file-excel"></i> 엑셀 양식 다운로드</button>
+        </div>
+        <div class="card" style="margin-bottom:16px;overflow:hidden;">
+          <div id="pay-company-chips" style="padding:20px;display:flex;flex-wrap:wrap;gap:8px;"></div>
+        </div>
+      </div>
+
+      <!-- 선택된 고객사 임금대장 섹션 -->
+      <div id="pay-list-section" style="display:none;">
+        <!-- 숨김 호환용 select -->
+        <select id="pay-company-filter" style="display:none;"></select>
+        <!-- 선택 고객사 헤더 -->
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:linear-gradient(90deg,#1e1b4b,#312e81);border-radius:10px;margin-bottom:12px;">
+          <span id="pay-selected-company-label" style="font-size:14px;font-weight:700;color:#fff;"></span>
+          <button onclick="clearPayCompanySelect()" class="btn btn-icon-dark" title="고객사 선택 해제"><i class="fas fa-times"></i></button>
+        </div>
+
+        <!-- ── 필터 바 ── -->
+        <div class="filt-bar" style="justify-content:flex-start;background:#fff;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.06);margin-bottom:12px;">
+          <select id="pay-year-filter" onchange="pages.pay=1;renderPayrolls()" class="filt-select"></select>
+          <select id="pay-month-filter" onchange="pages.pay=1;renderPayrolls()" class="filt-select"></select>
+          <div class="filt-search-wrap" style="margin-left:auto;">
+            <i class="fas fa-search"></i>
+            <input type="text" id="pay-search" class="filt-search" style="width:140px;" placeholder="직원명 검색" oninput="renderPayrolls()" />
+          </div>
+        </div>
+
+        <!-- ── 급여명세서 목록 카드 ── -->
+        <div class="card" style="overflow:hidden;padding:0;">
+          <div class="table-wrap">
+            <table class="tbl-std">
+              <thead>
+                <tr>
+                  <th>직원명</th><th>성별</th><th>고용구분</th><th>근로일수</th><th>연장H</th>
+                  <th>지급총액</th>
+                  <th>매월지급</th>
+                  <th>추가근로수당</th>
+                  <th>부정기지급</th>
+                  <th>공제합계</th><th>영수액</th><th style="width:190px;">관리</th>
+                </tr>
+              </thead>
+              <tbody id="pay-tbody"></tbody>
+            </table>
+          </div>
+          <div class="pagination" id="pay-pagination"></div>
+        </div>
+      </div>
+    </div><!-- /page-payrolls -->
+
