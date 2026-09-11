@@ -293,6 +293,8 @@ function generateContractHTMLFromData(c, emp, co){
   const ctType = typeof contractTypeLabel === 'function'
     ? contractTypeLabel(_ctTypeFinal) : _ctTypeFinal;
   const isDaily  = _ctTypeFinal ===CONTRACT_TYPE.DAILY;
+  // 일용직(상용직 아님): 근무시간표 없음 → 계약서 제3조 ②항(근무시간표) 생략 (2026-09-11)
+  const isDailyNonFT = isDaily && (c.daily_worker_type || 'daily') !== 'fulltime';
   const isProb   = _ctTypeFinal ===CONTRACT_TYPE.REGULAR_PROBATION || _ctTypeFinal ===CONTRACT_TYPE.FIXED_PROBATION;
   const isRegular= _ctTypeFinal ===CONTRACT_TYPE.REGULAR || _ctTypeFinal ===CONTRACT_TYPE.REGULAR_PROBATION;
 
@@ -758,15 +760,18 @@ function generateContractHTMLFromData(c, emp, co){
     <p class="doc-text">
       ① 계약의 갱신은 계약기간 만료 1개월 전 협의하는 것으로 하며, 만료 전까지 당사자간 별도의 의사표시 또는 협의가 없는 경우 고용기간이 종료되는 것으로 한다.
     </p>
+    ${isDailyNonFT ? '' : `
     <p class="doc-text">
       ② 정규 근로시간은 주 40시간제를 원칙으로 하며, 근무시간은 다음과 같다.
     </p>
-    ${buildScheduleTableHTML(activeDays)}
+    ${buildScheduleTableHTML(activeDays)}`}
     <p class="doc-text">
-      ③ 제②항에 명시된 시간 외에 "사용자"는 "근로자"에게 업무상의 필요에 의하여 연장근무, 야간근무 및 휴일근무를 명할 수 있으며 "근로자"는 이에 포괄적으로 합의한 것으로 본다.
+      ${isDailyNonFT ? '②' : '③'} ${isDailyNonFT
+        ? '"사용자"는 "근로자"에게 업무상의 필요에 의하여 연장근무, 야간근무 및 휴일근무를 명할 수 있으며 "근로자"는 이에 포괄적으로 합의한 것으로 본다.'
+        : '제②항에 명시된 시간 외에 "사용자"는 "근로자"에게 업무상의 필요에 의하여 연장근무, 야간근무 및 휴일근무를 명할 수 있으며 "근로자"는 이에 포괄적으로 합의한 것으로 본다.'}
     </p>
     <p class="doc-text">
-      ④ "근로자"는 업무상 연장, 야간 및 휴일 근로가 필요한 경우 "사용자"에게 연장근로신청서 등을 제출하여 사전 승인을 받아야 한다. 사전 승인 없는 임의의 연장 등은 인정하지 아니할 수 있다.
+      ${isDailyNonFT ? '③' : '④'} "근로자"는 업무상 연장, 야간 및 휴일 근로가 필요한 경우 "사용자"에게 연장근로신청서 등을 제출하여 사전 승인을 받아야 한다. 사전 승인 없는 임의의 연장 등은 인정하지 아니할 수 있다.
     </p>
   </div>
 

@@ -648,6 +648,15 @@ function renderLaborStatus(){
   const mo = parseInt(document.getElementById('ls-month')?.value) || (new Date().getMonth() + 1);
   const monthLabel = `${yr}년 ${mo}월`;
 
+  // 수습근로자 관리 OFF → 정규직(수습)·계약직(수습) 카드 숨김 + 그리드 3열 전환 (2026-09-06)
+  const _lsProbOn = !!window._probationFeatureEnabled;
+  const _lsRpbCard = document.getElementById('ls-card-regular-prob');
+  const _lsCpbCard = document.getElementById('ls-card-contract-prob');
+  if(_lsRpbCard) _lsRpbCard.style.display = _lsProbOn ? '' : 'none';
+  if(_lsCpbCard) _lsCpbCard.style.display = _lsProbOn ? '' : 'none';
+  const _lsGrid = document.getElementById('ls-cat-grid');
+  if(_lsGrid) _lsGrid.style.gridTemplateColumns = _lsProbOn ? 'repeat(5,1fr)' : 'repeat(3,1fr)';
+
   const selCo = currentLsCompanyId || currentGlobalCompanyId;
   if(!selCo) return; // 미선택 시 렌더 안 함
 
