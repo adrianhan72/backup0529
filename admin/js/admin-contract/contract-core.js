@@ -1292,6 +1292,7 @@ function openContractModal(id=null, preCompanyId=null){
   setAmountVal('ct-regular-bonus',0);
   setAmountVal('ct-childcare',0); { const _ccDep=document.getElementById('ct-childcare-dependents'); if(_ccDep) _ccDep.value=0; }
   if(typeof _ctHourlyReset === 'function') _ctHourlyReset(); else setAmountVal('ct-hourly-input',0);
+  if(typeof _ctPremiumReset === 'function') _ctPremiumReset();
   // 기본급·고정수당금액 초기화 (새 모달 열 때 이전 세션 잔재 제거)
   setAmountVal('ct-base', 0);
   setAmountVal('ct-fixed-ot-pay', 0);
@@ -1704,6 +1705,7 @@ function openContractModal(id=null, preCompanyId=null){
       // 통상시급: 정밀값 복원 + 표시는 1원 반올림 (2026-09-11)
       if(typeof _ctHourlySetExact === 'function') _ctHourlySetExact(parseFloat(c.hourly_wage)||0);
       else setAmountVal('ct-hourly-input', c.hourly_wage||0);
+      if(typeof _ctPremiumReset === 'function') _ctPremiumReset();
       // 고정 연장/야간/휴일근로수당: 일용직은 0. 비일용직은 근무시간표에서 자동 재계산되므로
       // 저장값(스테일 가능)을 복원하지 않고 calcWorkHours가 스케줄 기준으로 설정함
       if(isDailyEdit){

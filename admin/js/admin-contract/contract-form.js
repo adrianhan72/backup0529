@@ -12,19 +12,174 @@ function _getCompanyPremiumMode(companyId){
 }
 
 /**
- * 법정 가산 배율 (계약 작성용)
- * - 'always': 5인 미만이어도 가산 지급 → 연장×1.5 · 야간×0.5 · 휴일≤8h×1.5 · 휴일>8h×2.0
- * - 'none':   5인 미만 시 가산 미적용 → ×1.0/×0.0 (계약서는 "법정 가산 의무 발생 시 가산 적용" 문구로 대체,
- *             급여 단계에서 전월 근로실적으로 자동 판별)
+ * 법정 가산 배율 (계약 작성용) — premium_mode 'always'이거나 5인 이상으로 판별된 경우 법정 배율,
+ * 5인 미만이면 ×1.0/×0.0 (판별 전에는 premium_mode 기본값)
  */
 function _getLegalMultiplier(companyId){
-  const always = _getCompanyPremiumMode(companyId) === 'always';
+  const coId = companyId || _ctPremiumCoId();
+  const d = _ctPremiumDecisionFor(coId);
   return {
-    overtime:       always ? 1.5 : 1.0,
-    night:          always ? 0.5 : 0.0,
-    holiday_8h:     always ? 1.5 : 1.0,
-    holiday_8h_over:always ? 2.0 : 1.0,
+    overtime:       d.isSmall ? 1.0 : 1.5,
+    night:          d.isSmall ? 0.0 : 0.5,
+    holiday_8h:     d.isSmall ? 1.0 : 1.5,
+    holiday_8h_over:d.isSmall ? 1.0 : 2.0,
   };
+}
+
+// ── 5인 미만 사업장 판별 (근로계약 작성용 — 급여입력과 동일 판별식 공유, 2026-09-11) ──
+let _ctPremiumDecision = null;    // { coId, isSmall, mode, note, headcount, operDays, totalPersonDays, daysOver5 }
+let _ctPremiumResolving = false;
+
+function _ctPremiumCoId(){
+  return document.getElementById('ct-company')?.value || '';
+}
+
+/** 판별 전 기본 결정 (premium_mode 기준) */
+function _ctPremiumDefault(coId){
+  const always = _getCompanyPremiumMode(coId) === 'always';
+  return {
+    coId, isSmall: !always,
+    mode: always ? 'always' : 'none-default',
+    note: always ? '가산 지급 사업장(설정) — 판별 생략' : '가산 미적용(설정 기본값) — 5인 미만 판별 대기',
+    headcount: 0, operDays: 0, totalPersonDays: 0, daysOver5: 0,
+  };
+}
+
+function _ctPremiumDecisionFor(coId){
+  if(_ctPremiumDecision && _ctPremiumDecision.coId === coId) return _ctPremiumDecision;
+  return _ctPremiumDefault(coId);
+}
+
+function _ctPremiumReset(){
+  _ctPremiumDecision = null;
+  _ctPremiumResolving = false;
+}
+
+/** 판별 참조월: 계약 시작일 기준 직전 1개월 */
+function _ctPremiumRefMonth(){
+  const start = document.getElementById('ct-start')?.value || '';
+  const base = start ? new Date(start + 'T00:00:00') : new Date();
+  if(isNaN(base.getTime())){
+    const n = new Date();
+    return { refYr: n.getFullYear(), refMo: n.getMonth() === 0 ? 12 : n.getMonth() };
+  }
+  const ref = new Date(base.getFullYear(), base.getMonth() - 1, 1);
+  return { refYr: ref.getFullYear(), refMo: ref.getMonth() + 1 };
+}
+
+/** 가산 기준 배지 + 힌트 렌더 (premium_mode + 5인 미만 판별 결과) */
+function _ctRenderPremiumBadge(coId){
+  const bizBadge = document.getElementById('ct-biz-size-badge');
+  const bizHint = document.getElementById('ct-biz-size-hint');
+  if(!bizBadge && !bizHint) return;
+  const always = _getCompanyPremiumMode(coId) === 'always';
+  const resolved = !!(_ctPremiumDecision && _ctPremiumDecision.coId === coId);
+  const d = _ctPremiumDecisionFor(coId);
+  if(bizBadge){
+    if(always){
+      bizBadge.textContent = '가산 기준: 5인 미만이어도 가산 지급';
+      bizBadge.className = 'ct-biz-badge normal';
+    } else if(resolved){
+      bizBadge.textContent = '적용기준: 5인 ' + (d.isSmall ? '미만' : '이상') + ' 사업장';
+      bizBadge.className = 'ct-biz-badge ' + (d.isSmall ? 'small' : 'normal');
+    } else {
+      bizBadge.textContent = '가산 기준: 5인 미만 시 가산 미적용 (판별 대기)';
+      bizBadge.className = 'ct-biz-badge small';
+    }
+  }
+  if(bizHint){
+    if(always){
+      bizHint.innerHTML = '<span class="ct-biz-hint">가산 지급 설정 사업장 — 연장×1.5 · 야간×0.5 · 휴일≤8h×1.5 · 휴일>8h×2.0</span>';
+    } else if(resolved){
+      const hcStr = (typeof d.headcount === 'number' && !isNaN(d.headcount)) ? d.headcount.toFixed(1) : '-';
+      bizHint.innerHTML = '<span class="ct-biz-hint">직전: 상시근로자 ' + hcStr + '명 (연인원 ' + (d.totalPersonDays||0) + '명 ÷ 가동 ' + (d.operDays||0) + '일, ≥5인 ' + (d.daysOver5||0) + '일) — ' + (d.isSmall ? '연장·야간·휴일 가산수당 미적용' : '연장×1.5 · 야간×0.5 · 휴일≤8h×1.5 · 휴일>8h×2.0') + '</span>';
+    } else {
+      bizHint.innerHTML = '<span class="ct-biz-hint">고정 연장/야간/휴일 수당 입력 시 5인 미만 사업장 여부가 자동 판별됩니다.</span>';
+    }
+    bizHint.style.whiteSpace = 'normal';
+  }
+}
+
+/** 판별 완료 후 UI 반영: 근무시간표 산식·고정수당 금액 재계산 */
+function _ctApplyPremiumUI(){
+  if(typeof calcWorkHours === 'function') calcWorkHours();
+}
+
+/**
+ * 5인 미만 사업장 판별 (근로계약 작성용) — 급여입력과 동일한 전월 근로실적 판별식 공유
+ *  - premium_mode 'always' → 판별 생략 (가산 적용)
+ *  - 'none' → 판별: 5인 이상(자동)→안내 확인 / 5인 미만·데이터 부족→확인 팝업(예=미적용/아니오=강제 적용)
+ */
+async function _ctResolvePremium(coId){
+  if(!coId || _ctPremiumResolving) return;
+  if(_ctPremiumDecision && _ctPremiumDecision.coId === coId) return;
+  if(_getCompanyPremiumMode(coId) === 'always'){
+    _ctPremiumDecision = { coId, isSmall:false, mode:'always', note:'가산 지급 사업장(설정) — 판별 생략', headcount:0, operDays:0, totalPersonDays:0, daysOver5:0 };
+    _ctApplyPremiumUI();
+    return;
+  }
+  _ctPremiumResolving = true;
+  try {
+    if(typeof _piShowDialog === 'function'){
+      _piShowDialog({ mode:'progress', message:'5인 미만 사업장 해당 여부를 확인하는 중입니다.<br>잠시만 기다려주세요.' });
+    }
+    const { refYr, refMo } = _ctPremiumRefMonth();
+    let attRows = [];
+    try {
+      if(typeof window._atlLedgerCache !== 'undefined' && Array.isArray(window._atlLedgerCache) && window._atlLedgerCache.length > 0){
+        attRows = window._atlLedgerCache;
+      } else {
+        const res = await fetch(`../tables/attendance_ledger?company_id=${coId}&limit=1000`);
+        if(res.ok){ const j = await res.json(); attRows = j.data || j || []; }
+      }
+    } catch(e){ attRows = []; }
+
+    const wr = (typeof _piComputeWorkRecord === 'function')
+      ? _piComputeWorkRecord(coId, refYr, refMo, attRows)
+      : { complete:false, isSmall:true, headcount:0, operDays:0, totalPersonDays:0, daysOver5:0, eligibleCount:0, missingCount:0, missingNames:[], noEligible:true };
+
+    const _finish = (decision) => {
+      _ctPremiumDecision = decision;
+      if(typeof _piShowDialog === 'function') _piShowDialog(null);
+      _ctApplyPremiumUI();
+    };
+
+    if(typeof _piShowDialog !== 'function'){
+      _finish({ ...wr, coId, isSmall: !(!wr.noEligible && wr.complete && !wr.isSmall), mode:'no-dialog', note:'판별 팝업 미지원 — 자동 판별값 적용' });
+      return;
+    }
+
+    const bar = document.getElementById('pi-premium-progress-bar');
+    if(bar) bar.style.width = '100%';
+    await new Promise(r => setTimeout(r, 180));
+
+    if(wr.noEligible || !wr.complete){
+      _piShowDialog({
+        mode:'confirm', icon:'fa-circle-info', title:'데이터 부족 안내',
+        message:'전월 근로실적 데이터가 부족하여 5인 미만 사업장 판별이 어렵습니다.\n<strong>5인 미만 사업장</strong><span style="color:#dc2626;">(가산 미적용 대상)</span>이 맞습니까?',
+        yesText:'예 · 가산 미적용', noText:'아니오 · 가산 적용',
+        onYes:()=> _finish({ ...wr, coId, isSmall:true, mode:'data-insufficient-yes', note:'데이터 부족 → 가산 미적용(확인)' }),
+        onNo: ()=> _finish({ ...wr, coId, isSmall:false, mode:'forced', note:'데이터 부족 → 가산 적용(강제)' })
+      });
+    } else if(!wr.isSmall){
+      _piShowDialog({
+        mode:'info', icon:'fa-circle-check', title:'5인 미만 사업장 판별',
+        message:'전월 근로실적 기준 5인 이상 사업장으로 판별되어 가산이 적용됩니다.',
+        okText:'확인',
+        onOk:()=> _finish({ ...wr, coId, isSmall:false, mode:'auto5', note:'전월 근로실적 5인 이상 → 가산 적용' })
+      });
+    } else {
+      _piShowDialog({
+        mode:'confirm', icon:'fa-triangle-exclamation', title:'5인 미만 사업장 판별',
+        message:'시스템에 등록된 이전 1개월간의 사업장 총 근로실적은 5인 미만 사업장으로 판별됩니다.\n시스템에 등록되지 않은 정보가 있을 경우 오계산이 발생할 수 있습니다.\n<strong>5인 미만 사업장</strong><span style="color:#dc2626;">(가산 미적용)</span> 적용대상이 맞습니까?',
+        yesText:'예 · 가산 미적용', noText:'아니오 · 가산 적용',
+        onYes:()=> _finish({ ...wr, coId, isSmall:true, mode:'small-yes', note:'5인 미만(확인) → 가산 미적용' }),
+        onNo: ()=> _finish({ ...wr, coId, isSmall:false, mode:'forced', note:'5인 미만 판별 무시 → 가산 적용(강제)' })
+      });
+    }
+  } finally {
+    _ctPremiumResolving = false;
+  }
 }
 
 /** 공휴일·근로자의날 등 법정휴일 판정 (YYYY-MM-DD) */
@@ -1762,21 +1917,13 @@ function calcWorkHours(){
   // 휴일야간 hidden (수당 합산용)
   { const _holNightHid = document.getElementById('ct-fixed-hol-night-hours'); if(_holNightHid) _holNightHid.value = weekSunNightH.toFixed(1); }
 
-  // ── 가산수당 지급 기준 배지 + 힌트 (premium_mode 기반) ──
-  const bizBadge = document.getElementById('ct-biz-size-badge');
-  const bizHint = document.getElementById('ct-biz-size-hint');
-  if (bizBadge || bizHint) {
-    const pm = _getCompanyPremiumMode(coIdForMult);
-    const always = pm === 'always';
-    if (bizBadge) {
-      bizBadge.textContent = always ? '가산 기준: 5인 미만이어도 가산 지급' : '가산 기준: 5인 미만 시 가산 미적용';
-      bizBadge.className = 'ct-biz-badge ' + (always ? 'normal' : 'small');
-    }
-    if (bizHint) {
-      bizHint.innerHTML = '<span class="ct-biz-hint">급여 지급일 이전 1개월간의 회사의 총 근로실적으로 법정 가산수당 적용여부가 자동 판별됩니다.</span>';
-      bizHint.style.whiteSpace = 'normal';
-    }
+  // ── 5인 미만 사업장 판별 트리거 (고정 연장/야간/휴일 수당 존재 시 — 2026-09-11) ──
+  const _hasFixedExtra = (weekOtH > 0 || weekWdayNightH > 0 || weekHolH > 0 || weekHolOtH > 0 || weekSunNightH > 0);
+  if(_hasFixedExtra && _getCompanyPremiumMode(coIdForMult) === 'none'
+     && !(_ctPremiumDecision && _ctPremiumDecision.coId === coIdForMult)){
+    _ctResolvePremium(coIdForMult);
   }
+  _ctRenderPremiumBadge(coIdForMult);
 
   // ── 급여 계산: calcContractSalary() 내에서 _calcFixed*FromHours() 일괄 호출 ──
   calcContractSalary();
