@@ -1935,32 +1935,26 @@ function loadPIContract(contractId){
         }
       }
 
-      // 공통 하단 행
-      // 휴게시간: schedule_json에서 추출, 없으면 break_time fallback
-      let _breakDisplay = '-';
-      try {
-        const _sched = piContract.schedule_json ? JSON.parse(piContract.schedule_json) : null;
-        if(Array.isArray(_sched) && _sched.length){
-          const _breaks = new Set();
-          _sched.forEach(d => {
-            if(!d.active) return;
-            (d.shifts||[]).forEach(sh => {
-              (sh.breaks||[]).forEach(b => { if(b.s && b.e) _breaks.add(`${b.s}~${b.e}`); });
-              if(sh.brk_start && sh.brk_end) _breaks.add(`${sh.brk_start}~${sh.brk_end}`);
-            });
-          });
-          if(_breaks.size > 0) _breakDisplay = [..._breaks].join(', ');
-        }
-      } catch(e){}
-      if(_breakDisplay === '-' && piContract.break_time != null && piContract.break_time !== ''){
-        _breakDisplay = piContract.break_time + '시간';
-      }
-
+      // 정기 지급항목 (근로계약에서 정한 항목 모두 표시 — 2026-09-18)
+      const _allowItems = [
+        ['정기 상여금', parseFloat(piContract.regular_bonus) || 0],
+        ['현장수당',   parseFloat(piContract.site_allowance) || 0],
+        ['직책수당',   parseFloat(piContract.position_allowance) || 0],
+        ['기술수당',   parseFloat(piContract.skill_allowance) || 0],
+        ['면허수당',   parseFloat(piContract.license_allowance) || 0],
+        ['위험수당',   parseFloat(piContract.hazard_allowance) || 0],
+        ['벽지수당',   parseFloat(piContract.remote_area_allowance) || 0],
+        ['차량유지비', parseFloat(piContract.self_driving_allowance || piContract.transportation_allowance || piContract.car_maintenance) || 0],
+        ['식대',       parseFloat(piContract.meal_allowance) || 0],
+        ['보육수당',   parseFloat(piContract.childcare_allowance) || 0],
+        ['연구활동비', parseFloat(piContract.research_allowance) || 0],
+      ].filter(([, amt]) => amt > 0);
+      const _allowLines = _allowItems
+        .map(([label, amt]) => `<b>${label}:</b> ${won(amt)}`)
+        .join('<br>');
       const _bottomLine = isPI_Daily
-        ? `<b>기본근로:</b> 일${piContract.work_hours_per_day}h<br>` +
-          `<b>식대:</b> ${won(piContract.meal_allowance)} · 휴게: ${_breakDisplay}`
-        : `<b>기본근로:</b> 일${piContract.work_hours_per_day}h · 주${piContract.work_days_per_week}일<br>` +
-          `<b>식대:</b> ${won(piContract.meal_allowance)} · 휴게: ${_breakDisplay}`;
+        ? `<b>기본근로:</b> 일${piContract.work_hours_per_day}h`
+        : `<b>기본근로:</b> 일${piContract.work_hours_per_day}h · 주${piContract.work_days_per_week}일`;
 
       document.getElementById('pi-contract-info').innerHTML =
         _piContractStatusBanner +
@@ -1971,7 +1965,9 @@ function loadPIContract(contractId){
         _salaryLine +
         _payMethodLine +
         `<b>통상시급:</b> ${won(piContract.hourly_wage)}/h<br>` +
-        _bottomLine;
+        _bottomLine + '<br>' +
+        `<div id="pi-contract-fixed-info"></div>` + // 고정 연장/야간/휴일 근로 (기본근로 바로 아래, calcPI에서 갱신)
+        _allowLines;
     }
     card.style.display='block';
     // 계약서 고정 항목 잠금
@@ -3554,6 +3550,15 @@ function _updatePIFixedTopRows(){
   if(_fotRow)  _fotRow.style.display  = _fixed.otPay > 0 ? '' : 'none';
   if(_fniRow)  _fniRow.style.display  = _fixed.nightPay > 0 ? '' : 'none';
   if(_fhoRow)  _fhoRow.style.display  = _fixed.holPay > 0 ? '' : 'none';
+  // 계약정보 카드: 고정 연장/야간/휴일 근로 시간·금액 (0이 아니면 표시 — 2026-09-18)
+  const _cfi = document.getElementById('pi-contract-fixed-info');
+  if(_cfi){
+    const _cfParts = [];
+    if(_fixed.otHours > 0 || _fixed.otPay > 0)    _cfParts.push(`<b>고정 연장근로:</b> ${_fixed.otHours}h/월 · ${won(_fixed.otPay)}`);
+    if(_fixed.nightHours > 0 || _fixed.nightPay > 0) _cfParts.push(`<b>고정 야간근로:</b> ${_fixed.nightHours}h/월 · ${won(_fixed.nightPay)}`);
+    if(_fixed.holHours > 0 || _fixed.holPay > 0)   _cfParts.push(`<b>고정 휴일근로:</b> ${_fixed.holHours}h/월 · ${won(_fixed.holPay)}`);
+    _cfi.innerHTML = _cfParts.length ? _cfParts.join('<br>') : '';
+  }
 }
 
 function calcPITotalHours(){
@@ -4973,7 +4978,6 @@ function calcPIFixed(gross){
 
 function _piFinalize(gross,std,incomeTax,localTax,health,ltCare,pension,empIns,totalDed,net,yearEnd,healthAdj,healthAdjRetro,healthAdjYearend,ltcareAdjYearend,advance){
   const updateAmounts=(g,d,n)=>{ document.getElementById(g).textContent=won(gross); document.getElementById(d).textContent=won(totalDed); document.getElementById(n).textContent=won(net); };
-  updateAmounts('pi-gross-disp','pi-ded-disp','pi-net-disp');
   updateAmounts('pi-gross-disp2','pi-ded-disp2','pi-net-disp2');
   // ── 총 보수월액(과세기준) 표시 ──
   const _stdDisp = document.getElementById('pi-std-monthly-disp');
@@ -6515,7 +6519,7 @@ function clearPIFields(){
   if(_autoChkReset){ _autoChkReset.checked=false; }
   const _annPayReset=document.getElementById('pi-annual-pay');
   if(_annPayReset){ _annPayReset.readOnly=false; _annPayReset.classList.remove('pi-input-readonly'); }
-  ['pi-gross-disp','pi-ded-disp','pi-net-disp','pi-gross-disp2','pi-ded-disp2','pi-net-disp2'].forEach(id=>document.getElementById(id).textContent='0원');
+  ['pi-gross-disp2','pi-ded-disp2','pi-net-disp2'].forEach(id=>document.getElementById(id).textContent='0원');
   const d1=document.getElementById('pi-ded-detail'); if(d1) d1.innerHTML='';
   const d2=document.getElementById('pi-ded-detail-fixed'); if(d2) d2.innerHTML='';
   // 결근·조퇴·지각 초기화

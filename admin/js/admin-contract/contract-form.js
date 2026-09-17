@@ -72,6 +72,42 @@ function _ctRenderPremiumBadge(coId){
   const bizBadge = document.getElementById('ct-biz-size-badge');
   const bizHint = document.getElementById('ct-biz-size-hint');
   if(!bizBadge && !bizHint) return;
+
+  // ── 조회 모드: 판별 팝업 없이 계약서에 이미 반영된 가산 기준 표시 (2026-09-18) ──
+  const _viewModal = document.querySelector('#contract-modal .modal');
+  const _isView = !!(_viewModal && _viewModal.classList.contains('ct-readonly'));
+  if(_isView){
+    const _viewCt = (allContracts||[]).find(c => c.id === editId?.contract);
+    const _hwV = _viewCt ? (parseFloat(_viewCt.hourly_wage) || 0) : 0;
+    const _otHV = _viewCt ? (parseFloat(_viewCt.fixed_ot_hours) || 0) : 0;
+    const _otPV = _viewCt ? (parseFloat(_viewCt.fixed_ot_pay) || 0) : 0;
+    const _ntHV = _viewCt ? (parseFloat(_viewCt.fixed_night_hours) || 0) : 0;
+    const _ntPV = _viewCt ? (parseFloat(_viewCt.fixed_night_pay) || 0) : 0;
+    const _alwaysV = _getCompanyPremiumMode(coId) === 'always';
+    let _smallV = false, _derivable = false;
+    if(_otHV > 0 && _hwV > 0){ _smallV = (_otPV / (_otHV * _hwV)) < 1.2; _derivable = true; }
+    else if(_ntHV > 0 && _hwV > 0){ _smallV = (_ntPV / (_ntHV * _hwV)) < 0.3; _derivable = true; }
+    if(_alwaysV){
+      if(bizBadge){ bizBadge.textContent = '가산 기준: 가산 항시 적용'; bizBadge.className = 'ct-biz-badge normal'; }
+      if(bizHint){ bizHint.innerHTML = '<span class="ct-biz-hint">연장×1.5 · 야간×0.5 · 휴일≤8h×1.5 · 휴일>8h×2.0</span>'; }
+    } else if(_derivable){
+      if(bizBadge){
+        bizBadge.textContent = _smallV ? '가산 기준: 5인 미만 (가산 미적용)' : '가산 기준: 5인 이상 (가산 적용)';
+        bizBadge.className = 'ct-biz-badge ' + (_smallV ? 'small' : 'normal');
+      }
+      if(bizHint){
+        bizHint.innerHTML = '<span class="ct-biz-hint">' + (_smallV
+          ? '연장×1.0 · 야간×0.0 · 휴일×1.0'
+          : '연장×1.5 · 야간×0.5 · 휴일≤8h×1.5 · 휴일>8h×2.0') + '</span>';
+      }
+    } else {
+      if(bizBadge){ bizBadge.textContent = ''; }
+      if(bizHint){ bizHint.innerHTML = ''; }
+    }
+    if(bizHint) bizHint.style.whiteSpace = 'normal';
+    return;
+  }
+
   const always = _getCompanyPremiumMode(coId) === 'always';
   const resolved = !!(_ctPremiumDecision && _ctPremiumDecision.coId === coId);
   const d = _ctPremiumDecisionFor(coId);
@@ -1918,9 +1954,12 @@ function calcWorkHours(){
   { const _holNightHid = document.getElementById('ct-fixed-hol-night-hours'); if(_holNightHid) _holNightHid.value = weekSunNightH.toFixed(1); }
 
   // ── 5인 미만 사업장 판별 트리거 (고정 연장/야간/휴일 수당 존재 시 — 2026-09-11) ──
+  // 조회 모드(ct-readonly)에서는 단순 조회이므로 판별 팝업 생략 (2026-09-18)
   const _hasFixedExtra = (weekOtH > 0 || weekWdayNightH > 0 || weekHolH > 0 || weekHolOtH > 0 || weekSunNightH > 0);
+  const _isCtViewOnly = !!document.querySelector('#contract-modal .modal')?.classList.contains('ct-readonly');
   if(_hasFixedExtra && _getCompanyPremiumMode(coIdForMult) === 'none'
-     && !(_ctPremiumDecision && _ctPremiumDecision.coId === coIdForMult)){
+     && !(_ctPremiumDecision && _ctPremiumDecision.coId === coIdForMult)
+     && !_isCtViewOnly){
     _ctResolvePremium(coIdForMult);
   }
   _ctRenderPremiumBadge(coIdForMult);
