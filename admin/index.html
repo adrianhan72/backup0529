@@ -20,7 +20,7 @@
   <link rel="stylesheet" href="css/admin-notice.css?v=20260813c" />
   <link rel="stylesheet" href="css/admin-payroll.css?v=20260813c" />
   <link rel="stylesheet" href="css/admin-wage.css?v=20260911a" />
-  <link rel="stylesheet" href="css/admin-login.css?v=20260917b" />
+  <link rel="stylesheet" href="css/admin-login.css?v=20260918a" />
   <link rel="stylesheet" href="css/admin-etc.css?v=20260903c" />
 </head>
 <body>
@@ -3123,8 +3123,8 @@
       <!-- 안내 문구 -->
       <div style="padding:14px 30px 6px;font-size:11px;color:#9ca3af;text-align:center;letter-spacing:1px;">귀하의 노고에 감사드립니다.</div>
 
-      <!-- 하단 버튼 -->
-      <div style="padding:16px 30px 22px;display:flex;justify-content:flex-end;gap:10px;">
+      <!-- 하단 버튼 (PDF·발송 시 제외 대상 — 2026-09-18) -->
+      <div id="ps-bottom-btns" style="padding:16px 30px 22px;display:flex;justify-content:flex-end;gap:10px;">
         <button onclick="downloadPayslipPDF()" class="btn btn-success">
           <i class="fas fa-file-pdf"></i> PDF 다운로드
         </button>
@@ -3467,12 +3467,12 @@
   <!-- admin-hr 모듈 (인사관리대장) -->
   <script src="js/admin-hr.js?v=20260911b"></script>
   <!-- admin-payroll 모듈 -->
-  <script src="js/admin-payroll/payroll-core.js?v=20260911b"></script>
+  <script src="js/admin-payroll/payroll-core.js?v=20260918a"></script>
   <script src="js/admin-payroll/payroll-bulk.js?v=20260828e"></script>
   <script src="js/admin-payroll.js?v=20260814s"></script>
   <!-- admin-payroll-input 모듈 (기능별 분리) -->
   <script src="js/admin-payroll-input/payroll-input-core.js?v=20260814s"></script>
-  <script src="js/admin-payroll-input/payroll-input-main.js?v=20260918d"></script>
+  <script src="js/admin-payroll-input/payroll-input-main.js?v=20260918e"></script>
   <script src="js/admin-payroll-input/payroll-input-save.js?v=20260903a"></script>
   <script src="js/admin-payroll-input/payroll-input-excel.js?v=20260903b"></script>
   <script src="js/admin-payroll-input.js?v=20260814s"></script>

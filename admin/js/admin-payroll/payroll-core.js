@@ -704,6 +704,26 @@ function openPayslipModal(payrollId){
   openModal('payslip-modal');
 }
 
+/**
+ * 급여명세서 캔버스 생성 — PDF·발송용 캡처 시 하단 버튼셋은 숨김 처리 (2026-09-18)
+ */
+async function _renderPayslipCanvas(){
+  const content = document.getElementById('payslip-content');
+  const bottomBtns = document.getElementById('ps-bottom-btns');
+  const prevDisplay = bottomBtns ? bottomBtns.style.display : null;
+  if(bottomBtns) bottomBtns.style.display = 'none';
+  try{
+    return await html2canvas(content, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      logging: false
+    });
+  } finally {
+    if(bottomBtns) bottomBtns.style.display = prevDisplay;
+  }
+}
+
 async function downloadPayslipPDF(){
   const btn1 = document.querySelector('#payslip-modal button[onclick="downloadPayslipPDF()"]');
   const btn2 = document.querySelectorAll('#payslip-modal button[onclick="downloadPayslipPDF()"]');
@@ -711,13 +731,7 @@ async function downloadPayslipPDF(){
   btn2.forEach(b=>{ b.disabled=true; b.innerHTML='<i class="fas fa-spinner fa-spin"></i> 생성 중...'; });
 
   try{
-    const el = document.getElementById('payslip-content');
-    const canvas = await html2canvas(el, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: '#ffffff',
-      logging: false
-    });
+    const canvas = await _renderPayslipCanvas();
 
     const imgData = canvas.toDataURL('image/png');
     const { jsPDF } = window.jspdf;
@@ -783,14 +797,8 @@ async function sendPayslipPDF(){
       .replace('분 급여','').replace('년 ','년').replace('월','월').trim();
     const fileName = `${empName}_${periodTxt}_급여명세서.pdf`;
 
-    // html2canvas로 명세서 캔버스 생성
-    const el = document.getElementById('payslip-content');
-    const canvas = await html2canvas(el, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: '#ffffff',
-      logging: false
-    });
+    // html2canvas로 명세서 캔버스 생성 (하단 버튼셋 제외)
+    const canvas = await _renderPayslipCanvas();
 
     const imgData = canvas.toDataURL('image/png');
     const { jsPDF } = window.jspdf;

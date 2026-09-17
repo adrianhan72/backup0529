@@ -109,6 +109,19 @@
     .pi-proration-badge{display:inline-flex;align-items:center;height:19px;padding:0 8px;border-radius:10px;background:#dbeafe;color:#1d4ed8;border:1px solid #bfdbfe;font-size:10.5px;font-weight:600;white-space:nowrap;margin-left:auto;user-select:none;}
     /* 근로 실적 기반 자동 산출 패널: 화면에서 제거 (계산용 요소는 내부 유지 — 2026-09-17) */
     #pi-work-auto-panel{display:none !important;}
+    /* 연장/야간/휴일 합산 힌트 (레이블 아래 — 2026-09-17) */
+    .pi-total-hint{font-size:10.5px;color:#6b7280;margin:-2px 0 6px 4px;}
+    /* 기본급 차감 산식 힌트 (근태 차감 내역 — 2026-09-17) */
+    .pi-att-ded-hint{font-size:10.5px;color:#6b7280;margin:1px 0 2px 4px;line-height:1.5;}
+    /* 지급 열 하단 합계 블록 (2026-09-17) */
+    #pi-gross-total-block{margin-top:16px;border-top:2px solid #e5e7eb;padding-top:10px;}
+    .pi-gross-total-label{font-weight:700;}
+    .pi-gross-total-label small{font-size:10px;font-weight:400;color:#9ca3af;}
+    .pi-gross-total-val{font-size:14px;font-weight:800;color:#2563eb;}
+    .pi-std-total-val{font-size:14px;font-weight:800;color:#374151;}
+    /* 적용기준 컬러 pill (카드 타이틀 우측 — 2026-09-17) */
+    .pi-premium-pill{display:inline-flex;align-items:center;height:18px;padding:0 7px;border-radius:9px;font-size:10.5px;font-weight:700;white-space:nowrap;user-select:none;background:#dbeafe;color:#1d4ed8;border:1px solid #bfdbfe;}
+    .pi-premium-pill.small{background:#fee2e2;color:#b91c1c;border:1px solid #fecaca;}
     .pi-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:12.5px}
 /* ── 행 높이 유틸리티: 어떤 전역 규칙보다 우선 ── */
 .pi-row-h-32 > input,

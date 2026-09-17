@@ -459,25 +459,23 @@
                   <label>연장근로수당</label>
                   <input type="text" id="pi-ot-total-disp" readonly tabindex="-1" value="0원" class="pi-num-input pi-total-hours-auto" />
                 </div>
-                <div id="pi-ot-total-hint" style="display:none;font-size:10.5px;color:#6b7280;margin:-2px 0 6px 4px;"></div>
+                <div id="pi-ot-total-hint" class="pi-total-hint d-none"></div>
               </div>
               <div id="pi-row-night-total">
                 <div class="pi-row" style="padding-bottom:0;">
                   <label>야간근로수당</label>
                   <input type="text" id="pi-night-total-disp" readonly tabindex="-1" value="0원" class="pi-num-input pi-total-hours-auto" />
                 </div>
-                <div id="pi-night-total-hint" style="display:none;font-size:10.5px;color:#6b7280;margin:-2px 0 6px 4px;"></div>
+                <div id="pi-night-total-hint" class="pi-total-hint d-none"></div>
               </div>
               <div id="pi-row-hol-total">
                 <div class="pi-row" style="padding-bottom:0;">
                   <label>휴일근로수당</label>
                   <input type="text" id="pi-hol-total-disp" readonly tabindex="-1" value="0원" class="pi-num-input pi-total-hours-auto" />
                 </div>
-                <div id="pi-hol-total-hint" style="display:none;font-size:10.5px;color:#6b7280;margin:-2px 0 6px 4px;"></div>
+                <div id="pi-hol-total-hint" class="pi-total-hint d-none"></div>
               </div>
               <!-- 5인 미만/이상 사업장 판정 안내 배지 -->
-              <style>.pi-wap-inline{display:flex;align-items:center;gap:6px}</style>
-              <style>.pi-wap-inline{display:flex;align-items:center;gap:6px}</style>
               <style>.pi-wap-inline{display:flex;align-items:center;gap:6px}</style>
               <!-- 근로 실적 자동 산출 결과 패널 -->
               <div id="pi-work-auto-panel">
@@ -770,14 +768,14 @@
                 </button>
               </div>
               <!-- ══ 합계 (지급 열 하단 — 2026-09-17) ══ -->
-              <div id="pi-gross-total-block" style="margin-top:16px;border-top:2px solid #e5e7eb;padding-top:10px;">
+              <div id="pi-gross-total-block">
                 <div class="pi-row">
-                  <label style="font-weight:700;">총 지급액 <span style="font-size:10px;font-weight:400;color:#9ca3af;">(정기+비정기 지급항목 합산)</span></label>
-                  <span id="pi-gross-total-disp" style="font-size:14px;font-weight:800;color:#2563eb;">0원</span>
+                  <label class="pi-gross-total-label">총 지급액 <small>(정기+비정기 지급항목 합산)</small></label>
+                  <span id="pi-gross-total-disp" class="pi-gross-total-val">0원</span>
                 </div>
                 <div class="pi-row">
                   <label>총 보수월액 (과세기준)</label>
-                  <span id="pi-std-monthly-total-disp" style="font-size:14px;font-weight:800;color:#374151;">0원</span>
+                  <span id="pi-std-monthly-total-disp" class="pi-std-total-val">0원</span>
                 </div>
               </div>
             </div>

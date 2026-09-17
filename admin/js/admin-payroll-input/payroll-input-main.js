@@ -9,7 +9,6 @@ let _retroOverpaymentTotal = 0;
 let _retroHolidayOverpay = 0; // 소급 결근으로 과지급된 주휴수당
 let _fullWeekOtP = 0, _fullWeekNightP = 0, _fullWeekHolP = 0; // 전체주 결근 고정OT 차감
 let _partialOtP = 0, _partialNightP = 0, _partialHolP = 0;   // 부분주 결근 고정OT 차감
-let _applyAttDed = true; // 근태차감 항상 적용 (체크박스 제거 — 2026-09-17)
 let _piNetNormalDedP = 0; // 평일 기본급 차감 (결근·지각·조퇴 − 토요일 충당) — gross 차감액 (2026-09-15)
 let _piSatConvertH = 0, _piAttLossWeekdayH = 0;              // 토요일 일반전환 (주중 40h 미달)
 let _piSatConvertPayOffset = 0, _piSatPremiumLoss = 0;        // ×1.0 충당 / 휴일 가산분 제거
@@ -971,7 +970,7 @@ function _updatePIAttDeductionSummary(){
     // 차감 일반근로 산식 힌트 (자동산출 패널에서 이동 — 2026-09-17)
     const _fEl = document.getElementById('pi-ded-normal-formula');
     const _hint = (_fEl && String(_fEl.textContent || '').trim())
-      ? `<div style="font-size:10.5px;color:#6b7280;margin:1px 0 2px 4px;line-height:1.5;">${_fEl.textContent.trim()}</div>` : '';
+      ? `<div class="pi-att-ded-hint">${_fEl.textContent.trim()}</div>` : '';
     rows.push({ label:'기본급 차감 (결근·지각·조퇴)', h:_n.h, p:_n.p, hint:_hint });
   }
   const _lh = read('pi-ded-legalhol-hours-disp','pi-ded-legalhol-pay-disp');
@@ -3819,7 +3818,6 @@ function calcPI(){
   _retroOverpaymentTotal = 0; // 과지급 환수액
   _fullWeekOtP = 0; _fullWeekNightP = 0; _fullWeekHolP = 0;   // 전체주 결근 고정OT 차감
   _partialOtP = 0; _partialNightP = 0; _partialHolP = 0;       // 부분주 결근 고정OT 차감
-  _applyAttDed = true;                                         // 근태차감 항상 적용 (2026-09-17)
   _piNetNormalDedP = 0;                                         // 평일 기본급 차감 (2026-09-15)
   _piSatConvertH = 0; _piAttLossWeekdayH = 0;                   // 토요일 일반전환
   _piSatConvertPayOffset = 0; _piSatPremiumLoss = 0;
@@ -4008,40 +4006,41 @@ function calcPI(){
     let _hw2 = piContract ? _piProbHourly() : 0;
     const _hpd2 = piContract ? (piContract.work_hours_per_day || 8) : 8;
 
-    // ── 토요일 일반전환 (주중 40h 미달 시 — 2026-08-14 규칙) ──
-    // 결근·조퇴·지각으로 주중 실제 근로가 줄면, 토요일 고정휴일근로를
-    // (주중 실제 근로 + 토요일) ≤ 40h 범위까지 ×1.0으로 재조정하고
-    // 40h 초과분만 휴일수당(×1.5)으로 인정.
+    // ── 주중(평일) 미근로 시간 누적: 결근·지각·조퇴 — 토요일 스케줄 유무와 무관하게 집계 (2026-09-18) ──
     _piSatConvertH = 0; _piAttLossWeekdayH = 0;
-    if (_fixedCalc2 && (_fixedCalc2.satHolHoursW || 0) > 0 && piContract?.schedule_json) {
-      const _satHolWk = _fixedCalc2.satHolHoursW;
-      const _elH0 = (typeof _getPIEarlyLeaveHours === 'function') ? _getPIEarlyLeaveHours() : 0;
-      const _lateH0 = (typeof _getPILateHours === 'function') ? _getPILateHours() : 0;
-      const _ppStart2 = document.getElementById('pi-pay-period-start')?.value
-        || `${_yr}-${String(_mo).padStart(2,'0')}-01`;
-      const _ppEnd2 = document.getElementById('pi-pay-period-end')?.value
-        || `${_yr}-${String(_mo).padStart(2,'0')}-${String(new Date(_yr,_mo,0).getDate()).padStart(2,'0')}`;
-      const _wStart2 = new Date(_ppStart2); _wStart2.setDate(_wStart2.getDate() - ((_wStart2.getDay()+6)%7));
-      const _endD2 = new Date(_ppEnd2);
-      for (let _ws2 = new Date(_wStart2); _ws2 <= _endD2; _ws2.setDate(_ws2.getDate() + 7)) {
-        const _we2 = new Date(_ws2); _we2.setDate(_we2.getDate() + 6);
-        let _wLoss = 0;
-        for (let _d2 = new Date(Math.max(_ws2, new Date(_ppStart2))); _d2 <= new Date(Math.min(_we2, _endD2)); _d2.setDate(_d2.getDate() + 1)) {
-          const _dow2 = _d2.getDay();
-          if (_dow2 === 0 || _dow2 === 6) continue;
-          if (_absentDatesSet.has(fmtLocalDate(_d2))) _wLoss += _hpd2;
-        }
-        _piAttLossWeekdayH += _wLoss;
-        // 해당 주 토요일이 급여기간 내이고, 그 토요일에 결근이 없어야 전환 인정
+    const _elH0 = (typeof _getPIEarlyLeaveHours === 'function') ? _getPIEarlyLeaveHours() : 0;
+    const _lateH0 = (typeof _getPILateHours === 'function') ? _getPILateHours() : 0;
+    const _ppStart2 = document.getElementById('pi-pay-period-start')?.value
+      || `${_yr}-${String(_mo).padStart(2,'0')}-01`;
+    const _ppEnd2 = document.getElementById('pi-pay-period-end')?.value
+      || `${_yr}-${String(_mo).padStart(2,'0')}-${String(new Date(_yr,_mo,0).getDate()).padStart(2,'0')}`;
+    const _wStart2 = new Date(_ppStart2); _wStart2.setDate(_wStart2.getDate() - ((_wStart2.getDay()+6)%7));
+    const _endD2 = new Date(_ppEnd2);
+    // 토요일 일반전환 (주중 40h 미달 시 — 2026-08-14 규칙): 토요일 고정휴일근로가 있는 스케줄에서만
+    const _hasSatHol = !!(_fixedCalc2 && (_fixedCalc2.satHolHoursW || 0) > 0 && piContract?.schedule_json);
+    const _satHolWk = _hasSatHol ? _fixedCalc2.satHolHoursW : 0;
+    for (let _ws2 = new Date(_wStart2); _ws2 <= _endD2; _ws2.setDate(_ws2.getDate() + 7)) {
+      const _we2 = new Date(_ws2); _we2.setDate(_we2.getDate() + 6);
+      let _wLoss = 0;
+      for (let _d2 = new Date(Math.max(_ws2, new Date(_ppStart2))); _d2 <= new Date(Math.min(_we2, _endD2)); _d2.setDate(_d2.getDate() + 1)) {
+        const _dow2 = _d2.getDay();
+        if (_dow2 === 0 || _dow2 === 6) continue;
+        if (_absentDatesSet.has(fmtLocalDate(_d2))) _wLoss += _hpd2;
+      }
+      _piAttLossWeekdayH += _wLoss;
+      // 해당 주 토요일이 급여기간 내이고, 그 토요일에 결근이 없어야 전환 인정
+      if(_hasSatHol){
         const _satD = new Date(_ws2); _satD.setDate(_ws2.getDate() + 5);
         const _satStr = fmtLocalDate(_satD);
         if (_satStr >= _ppStart2 && _satStr <= _ppEnd2 && !_allAbsentDatesSet.has(_satStr)) {
           _piSatConvertH += Math.min(_satHolWk, _wLoss);
         }
       }
-      // 조퇴·지각 시간도 전환 대상 (날짜 미배정 → 총량 기준, min 캡)
-      const _elLateTotal = _elH0 + _lateH0;
-      _piAttLossWeekdayH += _elLateTotal;
+    }
+    // 조퇴·지각 시간도 주중 미근로로 집계 (전환 대상은 토요일 스케줄 있을 때만)
+    const _elLateTotal = _elH0 + _lateH0;
+    _piAttLossWeekdayH += _elLateTotal;
+    if(_hasSatHol){
       _piSatConvertH += Math.min(_satHolWk, _elLateTotal);
       _piSatConvertH = Math.round(_piSatConvertH * 10) / 10;
     }
@@ -4112,7 +4111,6 @@ function calcPI(){
     let _partialOtH = 0, _partialNightH = 0, _partialHolH = 0;
     // 휴일(주말) 결근 차감 — 항상 적용
     let _dedHol8H = 0, _dedHolOvrH = 0, _dedHolNightH = 0;
-    _applyAttDed = true; // 근태차감 항상 적용 (체크박스 제거 — 2026-09-17)
     const _hpdForDed = parseFloat(piContract?.work_hours_per_day) || 8;
     if (_fixedCalc2.otHours > 0 || _fixedCalc2.nightHours > 0 || _fixedCalc2.holHours > 0) {
       if (_allAbsentDatesSet.size > 0 && piContract?.schedule_json) {
@@ -4590,10 +4588,7 @@ function calcPI(){
       // simple wrap 숨기기 + 고정수당·차감도 숨김
       const sw = document.getElementById('pi-ot-pay-simple-wrap');
       if(sw) sw.style.display = 'none';
-      // 패널: 계약이 있으면 항상 표시 (기본급·주휴수당도 패널에 포함)
-      // ※ CSS 기본값 display:none이므로 'block' 명시 (''는 무효 — 2026-09-03 수정)
-      const wp = document.getElementById('pi-work-auto-panel');
-      if(wp) wp.style.display = 'block';
+      // 자동산출 패널은 CSS(#pi-work-auto-panel display:none !important)로 항상 숨김 (2026-09-18)
       // 실제 지급 기본급 행 표시 (계약 있을 때 — 2026-09-17)
       const _baseInlineRow = document.getElementById('pi-row-base-actual-inline');
       if(_baseInlineRow) _baseInlineRow.style.display = '';
@@ -4616,6 +4611,13 @@ function calcPI(){
     // 차감 행 숨김
     const _dedRow2 = document.getElementById('pi-deduction-row');
     if(_dedRow2) _dedRow2.style.display = 'none';
+    // 합산 행 잔재값 방지: 고정·차감 표시 필드 초기화 (이전 계약 값이 남지 않도록 — 2026-09-18)
+    ['pi-fixed-ot-hours-disp','pi-fixed-ot-pay-disp','pi-fixed-night-hours-disp','pi-fixed-night-pay-disp',
+     'pi-fixed-hol-hours-disp','pi-fixed-hol-pay-disp',
+     'pi-ot-pay-disp','pi-night-pay-disp','pi-hol-pay-disp',
+     'pi-ded-ot-hours-disp','pi-ded-ot-pay-disp','pi-ded-night-hours-disp','pi-ded-night-pay-disp',
+     'pi-ded-hol-hours-disp','pi-ded-hol-pay-disp','pi-ded-normal-hours-disp','pi-ded-normal-pay-disp']
+      .forEach(id => { const _el = document.getElementById(id); if(_el) _el.value = id.endsWith('hours-disp') ? '0h' : '0원'; });
   }
 
   // 고정 연장/야간/휴일근로수당: 근무시간표 기준 자동계산
@@ -5001,7 +5003,7 @@ function _piFinalize(gross,std,incomeTax,localTax,health,ltCare,pension,empIns,t
   // ── 합산 시간 · 가산율 힌트 (레이블 아래 — 2026-09-17) ──
   const _combH = (fh, ah, dh) => Math.round((_amt(fh) * _fxK + _amt(ah) + _amt(dh)) * 10) / 10;
   const _isSmallH = (typeof _piGetDecision === 'function') ? (_piGetDecision().isSmall) : false;
-  const _setHint = (id, text, h) => { const el = document.getElementById(id); if(!el) return; el.textContent = text; el.style.display = (h > 0) ? '' : 'none'; };
+  const _setHint = (id, text, h) => { const el = document.getElementById(id); if(!el) return; el.textContent = text; el.classList.toggle('d-none', !(h > 0)); };
   const _hOt = _combH('pi-fixed-ot-hours-disp', 'pi-ot-hours', 'pi-ded-ot-hours-disp');
   _setHint('pi-ot-total-hint', `합산 ${_hOt.toFixed(1)}h · 가산 ×${_isSmallH ? '1.0' : '1.5'}`, _hOt);
   const _hNt = _combH('pi-fixed-night-hours-disp', 'pi-night-hours', 'pi-ded-night-hours-disp');
@@ -5549,12 +5551,12 @@ function _updatePISmallFirmBadge(sfInfo, yr, mo){
 
   // 적용기준 3분류 표기 (직전 상시근로자 수 미표시 — 2026-09-17)
   let criteria = '5인 이상 가산 적용';
-  let pillCss  = 'background:#dbeafe;color:#1d4ed8;border:1px solid #bfdbfe;';
+  let pillCls = 'pi-premium-pill';
   if(mode === 'always'){
     criteria = '가산 항시 적용';
   } else if(isSmall){
     criteria = '5인 미만 가산 미적용';
-    pillCss  = 'background:#fee2e2;color:#b91c1c;border:1px solid #fecaca;';
+    pillCls  = 'pi-premium-pill small';
   }
 
   // 가산식 (간결 표기)
@@ -5568,7 +5570,7 @@ function _updatePISmallFirmBadge(sfInfo, yr, mo){
   badge.innerHTML =
     '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">' +
       '<span style="font-weight:600;color:#374151;">적용기준</span>' +
-      '<span style="display:inline-flex;align-items:center;height:18px;padding:0 7px;border-radius:9px;font-size:10.5px;font-weight:700;white-space:nowrap;user-select:none;' + pillCss + '">' + criteria + '</span>' +
+      '<span class="' + pillCls + '">' + criteria + '</span>' +
       '<span style="color:#6b7280;">가산식:</span>' +
       '<span style="color:#374151;font-size:10.5px;">' + formula + '</span>' +
     '</div>';
