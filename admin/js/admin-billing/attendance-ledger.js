@@ -75,6 +75,14 @@ function atlBackToCompanyList() {
   _atlLedgerCache = [];
 }
 
+/** 추가근무 항목의 순근무시간(휴게 제외) 반환 */
+function _atlOtNetHours(e){
+  const _toMin = t => { const m = String(t||'').match(/^(\d{1,2}):(\d{2})/); return m ? (+m[1])*60 + (+m[2]) : 0; };
+  const total = _toMin(e.otEnd) - _toMin(e.otStart);
+  if (total <= 0) return 0;
+  return Math.max(0, (total - Math.max(0, _toMin(e.otBreakEnd) - _toMin(e.otBreakStart))) / 60);
+}
+
 function atlRenderTable() {
   _atlRefYear = parseInt(document.getElementById('atl-year-sel')?.value) || new Date().getFullYear();
   const searchQ = (document.getElementById('atl-emp-search')?.value || '').trim().toLowerCase();
@@ -101,7 +109,7 @@ function atlRenderTable() {
 
   const empStats = filtered.map(emp => {
     const ledger = _atlLedgerCache.find(l => l.employee_id === emp.id && l.year === _atlRefYear);
-    let absentDays = 0, lateCount = 0, earlyCount = 0;
+    let absentDays = 0, lateCount = 0, earlyCount = 0, otHours = 0;
     if (ledger) {
       let entries = [];
       try { entries = JSON.parse(ledger.month_data || '[]'); } catch(e) {}
@@ -113,27 +121,32 @@ function atlRenderTable() {
           lateCount++;
         } else if (e.type === 'earlyleave') {
           earlyCount++;
+        } else if (e.type === 'overtime') {
+          otHours += _atlOtNetHours(e);
         }
       });
     }
-    return { emp, absentDays, lateCount, earlyCount };
+    return { emp, absentDays, lateCount, earlyCount, otHours };
   });
 
   document.getElementById('atl-stat-emp').textContent = empStats.length;
   document.getElementById('atl-stat-absent').textContent = empStats.reduce((s,x) => s + x.absentDays, 0);
   document.getElementById('atl-stat-late').textContent = empStats.reduce((s,x) => s + x.lateCount, 0);
   document.getElementById('atl-stat-early').textContent = empStats.reduce((s,x) => s + x.earlyCount, 0);
+  const _otStatEl = document.getElementById('atl-stat-ot');
+  if(_otStatEl) _otStatEl.textContent = (Math.round(empStats.reduce((s,x) => s + x.otHours, 0) * 10) / 10) + 'h';
 
   if (!empStats.length) {
-    tbody.innerHTML = '<tr><td colspan="7" class="cen-empty"><i class="fas fa-inbox"></i> 대상 직원이 없습니다.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="cen-empty"><i class="fas fa-inbox"></i> 대상 직원이 없습니다.</td></tr>';
     return;
   }
 
-  tbody.innerHTML = empStats.map(({emp, absentDays, lateCount, earlyCount}) => {
+  tbody.innerHTML = empStats.map(({emp, absentDays, lateCount, earlyCount, otHours}) => {
     const catLabel = (typeof contractTypeLabel === 'function' ? contractTypeLabel(emp.employment_category) : null) || emp.employment_category || '-';
     const catBadge = (typeof CAT_BADGE_CLS !== 'undefined' ? CAT_BADGE_CLS[emp.employment_category] : null) || 'badge-gray';
     const escName = (emp.name||'').replace(/'/g, "\'");
-    return '<tr><td>' + (emp.name||'-') + '</td><td style="text-align:center;font-size:12px;">' + (typeof genderLabel==='function'?genderLabel(emp):'-') + '</td><td><span class="badge ' + catBadge + '">' + catLabel + '</span></td><td>' + (emp.department||'-') + '</td><td class="right" style="font-weight:600;color:' + (absentDays>0?'#dc2626':'#9ca3af') + ';">' + absentDays + '일</td><td class="right" style="font-weight:600;color:' + (lateCount>0?'#d97706':'#9ca3af') + ';">' + lateCount + '회</td><td class="right" style="font-weight:600;color:' + (earlyCount>0?'#4f46e5':'#9ca3af') + ';">' + earlyCount + '회</td><td style="text-align:center;"><button class="btn btn-sm btn-indigo" onclick="atlOpenLedger(\x27' + emp.id + '\x27,\x27' + escName + '\x27)"><i class="fas fa-clipboard-check"></i> 근태관리</button></td></tr>';
+    const _otDisp = otHours > 0 ? (Math.round(otHours * 10) / 10) + 'h' : '-';
+    return '<tr><td>' + (emp.name||'-') + '</td><td style="text-align:center;font-size:12px;">' + (typeof genderLabel==='function'?genderLabel(emp):'-') + '</td><td><span class="badge ' + catBadge + '">' + catLabel + '</span></td><td>' + (emp.department||'-') + '</td><td class="right" style="font-weight:600;color:' + (absentDays>0?'#dc2626':'#9ca3af') + ';">' + absentDays + '일</td><td class="right" style="font-weight:600;color:' + (lateCount>0?'#d97706':'#9ca3af') + ';">' + lateCount + '회</td><td class="right" style="font-weight:600;color:' + (earlyCount>0?'#4f46e5':'#9ca3af') + ';">' + earlyCount + '회</td><td class="right" style="font-weight:600;color:' + (otHours>0?'#059669':'#9ca3af') + ';">' + _otDisp + '</td><td style="text-align:center;"><button class="btn btn-sm btn-indigo" onclick="atlOpenLedger(\x27' + emp.id + '\x27,\x27' + escName + '\x27)"><i class="fas fa-clipboard-check"></i> 근태관리</button></td></tr>';
   }).join('');
 }
 
@@ -149,7 +162,7 @@ function atlOpenLedger(empId, empName) {
   const isFemale = emp.gender === 'female';
   const isMale   = emp.gender === 'male';
 
-  body.innerHTML = '<div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:16px;flex-wrap:wrap;padding:12px;background:#f9fafb;border-radius:8px;"><div style="display:flex;flex-direction:column;gap:4px;"><label style="font-size:11px;color:#6b7280;font-weight:600;">시작일</label><input type="date" id="atl-new-date" class="form-input input-slim" style="padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" /></div><div style="display:flex;flex-direction:column;gap:4px;"><label style="font-size:11px;color:#6b7280;font-weight:600;">종료일</label><input type="date" id="atl-new-date-to" class="form-input input-slim" style="padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" placeholder="단일일은 비워둠" /></div><div style="display:flex;flex-direction:column;gap:4px;"><label style="font-size:11px;color:#6b7280;font-weight:600;">유형</label><select id="atl-new-type" class="filt-select input-slim" onchange="atlToggleTimeInput()"><option value="absent">결근</option><option value="late">지각</option><option value="earlyleave">조퇴</option></select></div><div id="atl-absent-type-wrap" style="display:flex;flex-direction:column;gap:4px;"><label style="font-size:11px;color:#6b7280;font-weight:600;">결근 사유</label><select id="atl-absent-type" class="filt-select input-slim"><option value="unauthorized">무단 (무급)</option><option value="sick_unpaid">병가 (무급)</option>' + (sickRate > 0 ? '<option value="sick_paid">병가 (유급 ' + sickRate + '%)</option>' : '') + '<option value="industrial">산재 (근로복지공단 지급)</option>' + (isFemale ? '<option value="menstrual">생리휴가 (무급)</option><option value="maternity_paid">본인 출산휴가 (유급)</option><option value="maternity_unpaid">본인 출산휴가 (무급)</option>' : '') + (isMale ? '<option value="paternity_paid">배우자 출산휴가 (유급)</option>' : '') + '<option value="childcare_leave">육아휴직 (고용보험지급)</option><option value="family_care">가족돌봄휴직 (무급)</option><option value="approved_unpaid">사전승인 무급휴가 (무급·비례 주휴)</option><option value="layoff_leave">휴업휴직·회사사정 (평균임금의 70%)</option></select></div><div id="atl-time-input-wrap" style="display:none;flex-direction:column;gap:4px;"><label style="font-size:11px;color:#6b7280;font-weight:600;" id="atl-time-label">출근 시각</label><input type="time" id="atl-new-time" class="form-input input-slim" style="padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" /></div><button class="btn btn-sm btn-primary input-slim" onclick="atlAddEntry(\x27' + empId + '\x27)"><i class="fas fa-plus"></i> 추가</button></div><div id="atl-ledger-entries" style="max-height:400px;overflow-y:auto;">로딩 중...</div><div style="display:flex;justify-content:flex-end;gap:8px;padding-top:16px;border-top:1px solid #e5e7eb;margin-top:16px;"><button class="btn btn-secondary btn-sm" onclick="atlCloseLedgerModal()"><i class="fas fa-times"></i> 취소</button><button class="btn btn-indigo btn-sm" onclick="atlSaveAndClose()"><i class="fas fa-check"></i> 저장</button></div>';
+  body.innerHTML = '<div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:16px;flex-wrap:wrap;padding:12px;background:#f9fafb;border-radius:8px;"><div style="display:flex;flex-direction:column;gap:4px;"><label style="font-size:11px;color:#6b7280;font-weight:600;">유형</label><select id="atl-new-type" class="filt-select input-slim" onchange="atlToggleTimeInput()"><option value="absent">결근</option><option value="late">지각</option><option value="earlyleave">조퇴</option><option value="overtime">추가근무</option></select></div><div style="display:flex;flex-direction:column;gap:4px;"><label style="font-size:11px;color:#6b7280;font-weight:600;" id="atl-date-label">시작일</label><input type="date" id="atl-new-date" class="form-input input-slim" style="padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" /></div><div id="atl-date-to-wrap" style="display:flex;flex-direction:column;gap:4px;"><label style="font-size:11px;color:#6b7280;font-weight:600;">종료일</label><input type="date" id="atl-new-date-to" class="form-input input-slim" style="padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" placeholder="단일일은 비워둠" /></div><div id="atl-absent-type-wrap" style="display:flex;flex-direction:column;gap:4px;"><label style="font-size:11px;color:#6b7280;font-weight:600;">결근 사유</label><select id="atl-absent-type" class="filt-select input-slim"><option value="unauthorized">무단 (무급)</option><option value="sick_unpaid">병가 (무급)</option>' + (sickRate > 0 ? '<option value="sick_paid">병가 (유급 ' + sickRate + '%)</option>' : '') + '<option value="industrial">산재 (근로복지공단 지급)</option>' + (isFemale ? '<option value="menstrual">생리휴가 (무급)</option><option value="maternity_paid">본인 출산휴가 (유급)</option><option value="maternity_unpaid">본인 출산휴가 (무급)</option>' : '') + (isMale ? '<option value="paternity_paid">배우자 출산휴가 (유급)</option>' : '') + '<option value="childcare_leave">육아휴직 (고용보험지급)</option><option value="family_care">가족돌봄휴직 (무급)</option><option value="approved_unpaid">사전승인 무급휴가 (무급·비례 주휴)</option><option value="layoff_leave">휴업휴직·회사사정 (평균임금의 70%)</option></select></div><div id="atl-time-input-wrap" style="display:none;flex-direction:column;gap:4px;"><label style="font-size:11px;color:#6b7280;font-weight:600;" id="atl-time-label">출근 시각</label><input type="time" id="atl-new-time" class="form-input input-slim" style="padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" /></div><div id="atl-ot-input-wrap" style="display:none;flex-wrap:wrap;gap:8px;"><div style="display:flex;flex-direction:column;gap:4px;"><label style="font-size:11px;color:#6b7280;font-weight:600;">추가근무 시작</label><input type="time" id="atl-ot-start" class="form-input input-slim" style="padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" /></div><div style="display:flex;flex-direction:column;gap:4px;"><label style="font-size:11px;color:#6b7280;font-weight:600;">추가근무 종료</label><input type="time" id="atl-ot-end" class="form-input input-slim" style="padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" /></div><div style="display:flex;flex-direction:column;gap:4px;"><label style="font-size:11px;color:#6b7280;font-weight:600;">추가 휴게 시작</label><input type="time" id="atl-ot-break-start" class="form-input input-slim" style="padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" /></div><div style="display:flex;flex-direction:column;gap:4px;"><label style="font-size:11px;color:#6b7280;font-weight:600;">추가 휴게 종료</label><input type="time" id="atl-ot-break-end" class="form-input input-slim" style="padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" /></div></div><button class="btn btn-sm btn-primary input-slim" onclick="atlAddEntry(\x27' + empId + '\x27)"><i class="fas fa-plus"></i> 추가</button></div><div id="atl-ledger-entries" style="max-height:400px;overflow-y:auto;">로딩 중...</div><div style="display:flex;justify-content:flex-end;gap:8px;padding-top:16px;border-top:1px solid #e5e7eb;margin-top:16px;"><button class="btn btn-secondary btn-sm" onclick="atlCloseLedgerModal()"><i class="fas fa-times"></i> 취소</button><button class="btn btn-indigo btn-sm" onclick="atlSaveAndClose()"><i class="fas fa-check"></i> 저장</button></div>';
 
   modal.style.display = '';
   modal.classList.add('open');
@@ -168,10 +181,16 @@ function atlToggleTimeInput() {
   const type = document.getElementById('atl-new-type')?.value || 'absent';
   const timeWrap = document.getElementById('atl-time-input-wrap');
   const absentTypeWrap = document.getElementById('atl-absent-type-wrap');
+  const otWrap = document.getElementById('atl-ot-input-wrap');
+  const dateToWrap = document.getElementById('atl-date-to-wrap');
+  const dateLabel = document.getElementById('atl-date-label');
   const label = document.getElementById('atl-time-label');
   if (absentTypeWrap) absentTypeWrap.style.display = type === 'absent' ? 'flex' : 'none';
+  if (otWrap) otWrap.style.display = type === 'overtime' ? 'flex' : 'none';
+  if (dateToWrap) dateToWrap.style.display = type === 'absent' ? 'flex' : 'none';
+  if (dateLabel) dateLabel.textContent = type === 'overtime' ? '추가근무일' : '시작일';
   if (!timeWrap || !label) return;
-  if (type === 'absent') { timeWrap.style.display = 'none'; }
+  if (type === 'absent' || type === 'overtime') { timeWrap.style.display = 'none'; }
   else { timeWrap.style.display = 'flex'; label.textContent = type === 'late' ? '출근 시각' : '조퇴 시각'; }
 }
 
@@ -191,9 +210,9 @@ function atlRenderLedgerEntries(empId) {
 
   if (!entries.length) { container.innerHTML = '<div style="text-align:center;padding:30px;color:#9ca3af;">기록된 근태 내역이 없습니다.</div>'; return; }
 
-  const typeLabel = { absent: '결근', late: '지각', earlyleave: '조퇴' };
-  const typeColor = { absent: '#dc2626', late: '#d97706', earlyleave: '#4f46e5' };
-  const typeBg    = { absent: '#fef2f2', late: '#fff7ed', earlyleave: '#eef2ff' };
+  const typeLabel = { absent: '결근', late: '지각', earlyleave: '조퇴', overtime: '추가근무' };
+  const typeColor = { absent: '#dc2626', late: '#d97706', earlyleave: '#4f46e5', overtime: '#059669' };
+  const typeBg    = { absent: '#fef2f2', late: '#fff7ed', earlyleave: '#eef2ff', overtime: '#ecfdf5' };
   const absentLabels = { unauthorized: '무단(무급)', sick_unpaid: '병가(무급)', sick_paid: '병가(유급)', industrial: '산재', menstrual: '생리휴가(무급)', maternity_paid: '출산(유급)', maternity_unpaid: '출산(무급)', paternity_paid: '배우자출산(유급)', childcare_leave: '육아휴직', family_care: '가족돌봄휴직', approved_unpaid: '사전승인 무급휴가', layoff_leave: '휴업(회사사정)' };
   const absentBg   = { unauthorized: '#f3f4f6', sick_unpaid: '#fff7ed', sick_paid: '#dcfce7', industrial: '#dbeafe', menstrual: '#f5f3ff', maternity_paid: '#fdf2f8', maternity_unpaid: '#fef2f2', paternity_paid: '#ecfeff', childcare_leave: '#f0fdfa', family_care: '#f5f3ff', approved_unpaid: '#e0f2fe', layoff_leave: '#fef2f2' };
   const absentFg   = { unauthorized: '#374151', sick_unpaid: '#c2410c', sick_paid: '#166534', industrial: '#1e40af', menstrual: '#7c3aed', maternity_paid: '#be185d', maternity_unpaid: '#dc2626', paternity_paid: '#0e7490', childcare_leave: '#0f766e', family_care: '#6d28d9', approved_unpaid: '#0369a1', layoff_leave: '#b91c1c' };
@@ -206,6 +225,9 @@ function atlRenderLedgerEntries(empId) {
       const fg = absentFg[e.absentType] || '#374151';
       const rateText = (e.absentType === 'sick_paid' && e.rate > 0) ? ' ' + e.rate + '%' : '';
       extraInfo = '<span style="display:inline-block;background:' + bg + ';color:' + fg + ';padding:2px 8px;border-radius:12px;font-size:10px;font-weight:700;margin-left:4px;">' + al + rateText + '</span>';
+    } else if (e.type === 'overtime') {
+      const brkTxt = (e.otBreakStart && e.otBreakEnd) ? ' · 휴게 ' + e.otBreakStart + '~' + e.otBreakEnd : '';
+      extraInfo = '<span style="color:#374151;font-size:12px;margin-left:4px;">' + (e.otStart||'-') + '~' + (e.otEnd||'-') + brkTxt + '</span>';
     }
     return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;margin-bottom:6px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;"><div style="display:flex;align-items:center;gap:10px;"><span style="font-weight:600;">' + (e.date||'-') + '</span><span style="display:inline-block;background:' + (typeBg[e.type]||'#f3f4f6') + ';color:' + (typeColor[e.type]||'#374151') + ';padding:2px 10px;border-radius:12px;font-size:11px;font-weight:700;">' + (typeLabel[e.type]||e.type) + '</span>' + extraInfo + (e.time ? '<span style="color:#6b7280;font-size:12px;">' + e.time + '</span>' : '') + '</div><button class="btn btn-sm" onclick="atlDeleteEntry(\x27' + empId + '\x27,' + i + ',\x27' + e.date + '\x27,\x27' + e.type + '\x27)"><i class="fas fa-trash"></i></button></div>';
   }).join('');
@@ -307,6 +329,15 @@ async function atlAddEntry(empId) {
     if (dateTo && dateTo !== dateFrom) newEntry.dateTo = dateTo;
   } else if (type === 'late' || type === 'earlyleave') {
     newEntry.time = time;
+  } else if (type === 'overtime') {
+    const otStart = document.getElementById('atl-ot-start')?.value || '';
+    const otEnd   = document.getElementById('atl-ot-end')?.value || '';
+    if (!otStart || !otEnd) { if(typeof toast==='function') toast('추가근무 시작·종료 시간을 입력하세요.', 'error'); return; }
+    if (otEnd <= otStart) { if(typeof toast==='function') toast('추가근무 종료 시간은 시작 시간보다 늦어야 합니다.', 'error'); return; }
+    newEntry.otStart = otStart;
+    newEntry.otEnd = otEnd;
+    newEntry.otBreakStart = document.getElementById('atl-ot-break-start')?.value || '';
+    newEntry.otBreakEnd   = document.getElementById('atl-ot-break-end')?.value || '';
   }
   entries.push(newEntry);
   entries.sort((a,b) => (a.date||'').localeCompare(b.date||''));
@@ -363,6 +394,9 @@ async function atlAddEntry(empId) {
 
   // UI 초기화 및 갱신
   dateFromEl.value = ''; if (dateToEl) dateToEl.value = ''; if (timeEl) timeEl.value = '';
+  ['atl-ot-start','atl-ot-end','atl-ot-break-start','atl-ot-break-end'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.value = '';
+  });
   atlRenderLedgerEntries(empId); atlRenderTable();
 }
 
@@ -407,7 +441,8 @@ function _atlGetPayPeriod(dateStr, company) {
 }
 
 async function atlDeleteEntry(empId, idx, date, type) {
-  if (!confirm(date + ' ' + (type==='absent'?'결근':type==='late'?'지각':'조퇴') + ' 기록을 삭제하시겠습니까?')) return;
+  const _tl = { absent:'결근', late:'지각', earlyleave:'조퇴', overtime:'추가근무' }[type] || type;
+  if (!confirm(date + ' ' + _tl + ' 기록을 삭제하시겠습니까?')) return;
 
   const year = parseInt((date || '').split('-')[0]) || _atlRefYear;
   const ledger = _atlLedgerCache.find(l => l.employee_id === empId && l.year === year);

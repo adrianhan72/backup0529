@@ -428,7 +428,6 @@ function _fillPayrollFields(p, cfgCo){
   // 총 근로시간: 저장값 우선 복원 (원상복구 시 자동계산으로 값이 달라지는 것 방지)
   { const _thEl = document.getElementById('pi-total-hours');
     if(_thEl && p.total_work_hours !== null && p.total_work_hours !== undefined && p.total_work_hours !== '') _thEl.value = p.total_work_hours; }
-  { const autoLbl = document.getElementById('pi-workdays-auto-label'); if(autoLbl) autoLbl.style.display='none'; }
   document.getElementById('pi-paydate').value=p.pay_date||'';
   // 수정 모드: 기존 지급일 유지 + readonly 제어만 적용 (값은 덮어쓰지 않음)
   _applyPIPayDate(false);

@@ -105,6 +105,10 @@
     .pi-section-title.blue{color:#3b82f6;border-color:#bfdbfe}
     .pi-section-title.red{color:#e94560;border-color:#ffd0d8}
     .pi-section-title.green{color:#10b981;border-color:#a7f3d0}
+    /* 일할계산 방식 뱃지 (근로 실적 타이틀 우측 — 2026-09-17) */
+    .pi-proration-badge{display:inline-flex;align-items:center;height:19px;padding:0 8px;border-radius:10px;background:#dbeafe;color:#1d4ed8;border:1px solid #bfdbfe;font-size:10.5px;font-weight:600;white-space:nowrap;margin-left:auto;user-select:none;}
+    /* 근로 실적 기반 자동 산출 패널: 화면에서 제거 (계산용 요소는 내부 유지 — 2026-09-17) */
+    #pi-work-auto-panel{display:none !important;}
     .pi-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:12.5px}
 /* ── 행 높이 유틸리티: 어떤 전역 규칙보다 우선 ── */
 .pi-row-h-32 > input,
@@ -121,6 +125,9 @@
 .pi-etc-row .pi-etc-pt-select{width:auto;flex:0 0 auto}
 .pi-etc-row .btn-sm{flex:0 0 auto}
     .pi-row label{color:#666}
+    /* 지급일 날짜 필드 우측 정렬 */
+    #pi-paydate{text-align:right}
+    #pi-paydate::-webkit-datetime-edit{text-align:right}
     .pi-row input{width:130px;border:1px solid #d1d5db;border-radius:6px;padding:6px 9px;font-size:13px;outline:none;font-family:inherit;text-align:right;color:#000}
     .pi-row input:focus:not([readonly]):not(:disabled){border-color:#6366f1;outline:none;box-shadow:0 0 0 2px rgba(99,102,241,.25)}
     /* 비고: 입력·textarea 클래스 · 카드와 동일 패턴 정리 */
@@ -169,8 +176,39 @@
     .summary-box{background:linear-gradient(135deg,#fff9fa,#fff);border:1px solid #ffd0d8;border-radius:10px;padding:14px 16px;margin-top:14px}
     .summary-row-item{display:flex;justify-content:space-between;font-size:12.5px;padding:4px 0}
     .summary-row-item.total{font-size:15px;font-weight:800;padding-top:10px;border-top:2px solid #e94560;margin-top:6px}
+    /* ── 연차 사용내역 표 (label 아래줄 테이블) ── */
+    .pi-al-detail-box{margin:2px 0 4px;font-size:12px;color:#374151;}
+    .pi-al-detail-table{width:100%;border-collapse:collapse;font-size:11.5px;table-layout:fixed;}
+    .pi-al-detail-table th,.pi-al-detail-table td{border:1px solid #e5e7eb;padding:3px 8px;text-align:left;overflow:hidden;text-overflow:ellipsis;}
+    .pi-al-detail-table th{background:#f8fafc;color:#64748b;font-weight:600;font-size:10.5px;}
+    .pi-al-detail-table td.al-d{white-space:nowrap;}
+    .pi-al-detail-table td.al-n{text-align:right;white-space:nowrap;}
+    .pi-al-detail-table td.al-note{color:#6b7280;font-size:11px;word-break:break-all;}
+    .pi-al-detail-table tr.al-total td{background:#f1f5f9;font-weight:700;color:#374151;}
+    .pi-al-empty{font-size:11.5px;color:#9ca3af;padding:3px 2px;}
+    /* 연차 요약 표 (사용내역 표 위, 3열) */
+    .pi-al-summary-table{margin-bottom:6px;}
+    .pi-al-summary-table th{background:#f8fafc;color:#64748b;font-weight:600;font-size:10.5px;text-align:center;}
+    .pi-al-summary-table td{font-size:11.5px;font-weight:600;color:#374151;text-align:center;white-space:nowrap;}
+    .pi-al-summary-table td.al-neg{color:#dc2626;}
+    /* 근태 관리 표 (label 아래줄, 3열2행) */
+    .pi-att-box{margin:2px 0 4px;font-size:12px;color:#374151;}
+    .pi-att-table{width:100%;border-collapse:collapse;font-size:11.5px;table-layout:fixed;}
+    .pi-att-table th,.pi-att-table td{border:1px solid #e5e7eb;padding:3px 8px;text-align:center;overflow:hidden;text-overflow:ellipsis;}
+    .pi-att-table th{background:#f8fafc;color:#64748b;font-weight:600;font-size:10.5px;}
+    .pi-att-table td{vertical-align:top;}
+    .pi-att-main{font-weight:600;line-height:1.6;}
+    .pi-att-detail{font-size:10.5px;color:#6b7280;line-height:1.5;}
+    /* 근태 차감 내역 (근태 관리 표 아래 — 항목별 행) */
+    .pi-att-ded-summary{margin-top:6px;}
+    .pi-att-ded-row{padding:2px 0;}
+    .pi-att-ded-row label{font-size:12.5px;color:#666;}
+    .pi-att-ded-val{font-size:13px;font-weight:600;color:#374151;text-align:right;white-space:nowrap;}
     /* ── 근로실적 자동산출 패널 (pi-work-auto-panel) ── */
     #pi-work-auto-panel{display:none;margin-top:8px;margin-bottom:4px;background:#f8faff;border:1px solid #c7d2f0;border-radius:8px;padding:10px 12px}
+    /* 패널 행: 산식 힌트(.pi-formula-line)는 필드 아래줄로 내려가도록 wrap */
+    #pi-work-auto-panel .pi-row{flex-wrap:wrap}
+    #pi-work-auto-panel .pi-formula-line{flex-basis:100%;width:100%;text-align:left;padding-left:0;margin-top:1px}
     .pi-wap-header{font-size:11.5px;font-weight:700;color:#4f46e5;margin-bottom:7px;display:flex;align-items:center;gap:5px}
     .pi-wap-header i{font-size:11px}
     .pi-wap-header span{font-size:10px;font-weight:400;color:#818cf8}
@@ -192,11 +230,11 @@
     .pi-wap-row.ded{background:#fff5f5}
     .pi-wap-row.green-bg{background:#f0fdf4}
     .pi-wap-row.indigo-bg{background:#f0f4ff}
-    /* readonly 입력값 표시 */
+    /* readonly 입력값 표시 — 숫자 필드는 전부 우측 정렬 */
     .pi-wap-val{text-align:right;background:transparent;border:none;padding:0;font-family:inherit;color:#555!important}
-    .pi-wap-val.hours{width:50px;font-size:11px;font-weight:600}
-    .pi-wap-val.pay{width:90px;font-size:11px}
-    .pi-wap-val.wide{width:100px;font-size:11px;font-weight:600}
+    .pi-wap-val.hours{width:70px;font-size:11px;font-weight:600}
+    .pi-wap-val.pay{width:115px;font-size:11px}
+    .pi-wap-val.wide{width:126px;font-size:11px;font-weight:600}
     .pi-wap-val.purple{font-weight:400}.pi-wap-val.purple-bold{font-weight:600}
     .pi-wap-val.indigo{font-weight:400}.pi-wap-val.indigo-bold{font-weight:600}
     .pi-wap-val.red{font-weight:400}.pi-wap-val.red-bold{font-weight:600}

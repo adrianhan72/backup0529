@@ -421,7 +421,6 @@ function loadPIDraft(){
   { const _el = document.getElementById('pi-retro-earlyleave-data'); if(_el) _el.value = draft.retro_earlyleave_data || '[]'; }
   // 총 근로시간은 자동계산 (pi-total-hours 직접 세팅 제거)
   if(typeof calcPITotalHours === 'function') calcPITotalHours();
-  { const autoLbl = document.getElementById('pi-workdays-auto-label'); if(autoLbl) autoLbl.style.display='none'; }
   document.getElementById('pi-paydate').value      = draft.pay_date || '';
   // 임시저장 복원: 저장된 지급일 유지 + readonly 제어만 적용
   _applyPIPayDate(false);

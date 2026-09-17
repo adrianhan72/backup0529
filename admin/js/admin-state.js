@@ -928,6 +928,8 @@ async function showPage(name,el){
     // ※ initPIYears/initPIMonths 내부에서 기존 선택값을 보존하므로
     //   수정 모드 또는 목록 복귀 시 이전에 선택한 년월이 유지됨
     initPIYears(); initPIMonths();
+    // 근로일수·총근로시간 단위를 값에 붙여 표시 (페이지 HTML 재삽입 시 재훅 — 2026-09-17)
+    if(typeof _piUnitInputInit === 'function') _piUnitInputInit();
 
     // 데이터 미준비 — 칩 영역 스피너
     if(!_dataReady){
