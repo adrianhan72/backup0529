@@ -474,7 +474,7 @@ CREATE TABLE IF NOT EXISTS payrolls (
   custom_fixed_values TEXT DEFAULT NULL, -- 사용자정의 고정 값
   etc_allowance_items TEXT DEFAULT NULL, -- 기타 수당 항목
   employee_number TEXT, -- 사번 스냅샷 (급여 저장 당시)
-  daily_work_log TEXT
+  daily_work_log TEXT -- 일별 근로실적(공수) 내역 (JSON)
 );
 
 CREATE INDEX IF NOT EXISTS idx_payrolls_employee ON payrolls(employee_id);

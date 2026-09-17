@@ -155,6 +155,7 @@ const KO = {
       retro_absent_data: '소급 결근 상세 (JSON)',
       retro_late_data: '소급 지각 상세 (JSON)',
       retro_earlyleave_data: '소급 조퇴 상세 (JSON)',
+      daily_work_log: '일별 근로실적(공수) 내역 (JSON)',
       is_draft: '임시저장 여부',
       status: '상태',
       created_at: '생성일시',
