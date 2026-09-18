@@ -639,7 +639,8 @@ function renderCdpUnsentList(){
 
 // ── 근로계약서 알림톡 실제 발송 (Solapi) ──────────────────────────
 const _CONTRACT_ALIMTALK = {
-  templateId: 'KA01TP2609110757021541GZoBRd7M1e', // 근로계약서 템플릿 ID (Solapi 콘솔 등록값)
+  // ⚠️ 실제 템플릿 ID는 서버(lib/alimtalk-template-ids.js)에서 매핑 — 프론트에는 미노출
+  templateKey: 'CONTRACT',
   phone: '02-3487-8841',                          // 대표 전화
   email: 'labourlawyer@naver.com',                // 대표 이메일
   fax:   '02-3487-8882',                          // 대표 팩스
@@ -665,7 +666,7 @@ async function _sendContractAlimtalk(contract){
     body: JSON.stringify({
       to: emp.phone || '',
       type: 'alimtalk',
-      templateId: _CONTRACT_ALIMTALK.templateId,
+      templateKey: _CONTRACT_ALIMTALK.templateKey,
       variables: {
         '#{근로자명}':   emp.name || '',
         '#{회사명}':     co.company_name || '',

@@ -1,6 +1,6 @@
 // ─── 인증 인터셉터 (전역 fetch 래퍼) ─────────────────────────────────────────
-// /tables 쓰기 요청에 관리자 JWT를 자동 첨부하고, 401 시 재로그인 유도.
-// - 헤더 추가·401 처리는 /tables 쓰기로 한정 (로그인 실패 401 오탐 방지)
+// 쓰기 요청에 관리자 JWT를 자동 첨부하고, 401 시 재로그인 유도.
+// - 대상: /tables 쓰기 + /api 쓰기 (단, /api/auth/ 로그인 경로 제외 — 로그인 실패 401 오탐 방지)
 // - 본 파일은 auth.js 등 다른 스크립트보다 먼저 로드됨 (index.html 스크립트 순서)
 (function(){
   if (window.__nomusaFetchPatched) return;
@@ -11,14 +11,17 @@
     const method = (opt.method || 'GET').toUpperCase();
     const u = (typeof url === 'string') ? url : (url.url || '');
     const isTablesWrite = /\/tables\//.test(u) && WRITE_METHODS.includes(method);
-    if (isTablesWrite){
+    // authMiddleware가 보호하는 /api 쓰기(예: /api/kakao/send)에도 JWT 첨부
+    const isAuthedApiWrite = /\/api\/(?!auth\/)/.test(u) && WRITE_METHODS.includes(method);
+    const needsAuth = isTablesWrite || isAuthedApiWrite;
+    if (needsAuth){
       const t = sessionStorage.getItem('admin_token');
       if (t){
         opt.headers = Object.assign({}, opt.headers || {}, { 'Authorization': 'Bearer ' + t });
       }
     }
     const res = await _orig(url, opt);
-    if (isTablesWrite && res.status === 401){
+    if (needsAuth && res.status === 401){
       sessionStorage.removeItem('admin_token');
       sessionStorage.removeItem('admin_auth');
       if (!window.__authRedirecting){
