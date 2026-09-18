@@ -20,7 +20,7 @@ function _payWeeklyInGross(p){
     +(p.contract_etc_allowance||0)+(p.etc_allowance||0)+(p.other_pay||0)
     +(p.overtime_pay||0)+(p.night_pay||0)+(p.holiday_pay||0)
     +(p.annual_leave_pay||0)+(p.bonus_pay||0)+(p.performance_pay||0)
-    +(p.actual_expense_pay||0)+(p.communication_pay||0)+(p.communication_allowance||0)
+    +(p.communication_pay||0)+(p.communication_allowance||0)
     +(p.fitness_allowance||0)+(p.self_dev_allowance||0)+(p.book_allowance||0)+(p.overseas_allowance||0)
     +(p.severance_interim_pay||0)
     +_sumCustom(p.custom_ordinary_values)+_sumCustom(p.custom_fixed_values)+_sumCustom(p.etc_allowance_items);
@@ -73,7 +73,7 @@ function renderPayrolls(){
     const extraTotal = (p.overtime_pay||0)+(p.night_pay||0)+(p.holiday_pay||0);
     // 비정기지급 소계
     const irregularTotal = (p.annual_leave_pay||0)+(p.bonus_pay||0)+(p.performance_pay||0)
-      +(p.actual_expense_pay||0)+(p.communication_pay||0)+(p.fitness_allowance||0)
+      +(p.communication_pay||0)+(p.fitness_allowance||0)
       +(p.self_dev_allowance||0)+(p.book_allowance||0)+(p.overseas_allowance||0)
       +(p.severance_interim_pay||0)+(p.etc_allowance||0)+(p.other_pay||0)
       +(_sumCustomFixed||0)+(_sumEtcItems||0);
@@ -383,7 +383,6 @@ function openPayslipModal(payrollId){
     payRowIf('연차수당',          p.annual_leave_pay) +
     payRowIf('정기 상여금',       p.bonus_pay) +
     payRowIf('비정기 성과급',     p.performance_pay) +
-    payRowIf('실비변상적급여',    p.actual_expense_pay) +
     payRowIf('통신비',        p.communication_pay, p.communication_pay_type||'fixed') +
     payRowIf('체력증진비',    p.fitness_allowance, p.fitness_pay_type||'fixed') +
     payRowIf('자기계발비',    p.self_dev_allowance, p.self_dev_pay_type||'fixed') +

@@ -795,7 +795,7 @@ function renderWageLedger(){
     'remote_area_allowance','research_allowance','childcare_allowance',
     'overtime_pay','night_pay','holiday_pay','annual_leave_pay',
     'license_allowance','skill_allowance','communication_pay','performance_pay',
-    'actual_expense_pay','position_allowance','site_allowance',
+    'position_allowance','site_allowance',
     'hazard_allowance','fitness_allowance','self_dev_allowance','book_allowance','overseas_allowance',
     'etc_allowance','other_pay',
     'gross_pay',
@@ -887,7 +887,7 @@ function renderWageLedger(){
       hasData('skill_allowance') ? '기술수당' : '',
       hasData('communication_pay') ? '통신비' : '',
       hasData('performance_pay') ? '성과급' : '',
-      hasData('actual_expense_pay') ? '실비변상적급여' : '' ],
+      '' ],
     // 행5 (index 3): 위험~해외
     [ hasData('hazard_allowance') ? '위험수당' : '',
       hasData('remote_area_allowance') ? '벽지수당' : '',
@@ -923,7 +923,7 @@ function renderWageLedger(){
   const _payRowFields = [
     ['base_salary','bonus_pay','meal_allowance','transport','position_allowance','site_allowance'],
     ['research_allowance','childcare_allowance','overtime_pay','night_pay','holiday_pay','weekly_holiday_pay'],
-    ['annual_leave_pay','license_allowance','skill_allowance','communication_pay','performance_pay','actual_expense_pay'],
+    ['annual_leave_pay','license_allowance','skill_allowance','communication_pay','performance_pay','_empty'],
     ['hazard_allowance','remote_area_allowance','fitness_allowance','self_dev_allowance','book_allowance','overseas_allowance'],
     ['_customOrd','_customFixed','_etcItems','_empty','_etcOther','gross_pay']  // row4 항상 표시 (gross 존재)
   ];
@@ -982,7 +982,7 @@ function renderWageLedger(){
                        fmtV(p.holiday_pay), fmtV(p.weekly_holiday_pay) ];
       case 2: return [ fmtV(p.annual_leave_pay), fmtV(p.license_allowance),
                        fmtV(p.skill_allowance), fmtV(p.communication_pay),
-                       fmtV(p.performance_pay), fmtV(p.actual_expense_pay) ];
+                       fmtV(p.performance_pay), '' ];
       case 3: return [ fmtV(p.hazard_allowance), fmtV(p.remote_area_allowance),
                        fmtV(p.fitness_allowance), fmtV(p.self_dev_allowance),
                        fmtV(p.book_allowance), fmtV(p.overseas_allowance) ];
@@ -1018,7 +1018,7 @@ function renderWageLedger(){
                        fmtV(sums.holiday_pay), fmtV(sums.weekly_holiday_pay) ];
       case 2: return [ fmtV(sums.annual_leave_pay), fmtV(sums.license_allowance),
                        fmtV(sums.skill_allowance), fmtV(sums.communication_pay),
-                       fmtV(sums.performance_pay), fmtV(sums.actual_expense_pay) ];
+                       fmtV(sums.performance_pay), '' ];
       case 3: return [ fmtV(sums.hazard_allowance), fmtV(sums.remote_area_allowance),
                        fmtV(sums.fitness_allowance), fmtV(sums.self_dev_allowance),
                        fmtV(sums.book_allowance), fmtV(sums.overseas_allowance) ];
@@ -1342,7 +1342,6 @@ async function _downloadEditExcel(pays, empMap, yr, mo, moStr) {
     ['연차수당',        p => nv(p.annual_leave_pay), 10],
     ['정기상여금',      p => nv(p.bonus_pay), 10],
     ['성과급',          p => nv(p.performance_pay), 10],
-    ['실비변상적급여',  p => nv(p.actual_expense_pay), 10],
     ['연구활동비',      p => nv(p.research_allowance), 10],
     ['보육수당',        p => nv(p.childcare_allowance), 10],
     ['통신비',          p => nv(p.communication_pay), 10],
@@ -1767,7 +1766,7 @@ function _downloadReportExcel(pays, empMap, yr, mo, moStr) {
     'overtime_pay','night_pay','holiday_pay',
     'transportation_allowance','self_driving_allowance','remote_area_allowance',
     'meal_allowance','childcare_allowance','research_allowance',
-    'annual_leave_pay','bonus_pay','performance_pay','actual_expense_pay','communication_pay',
+    'annual_leave_pay','bonus_pay','performance_pay','communication_pay',
     'skill_allowance','license_allowance','etc_allowance','other_pay',
     'gross_pay','standard_monthly_pay',
     'income_tax','local_income_tax',
@@ -1858,7 +1857,7 @@ function _downloadReportExcel(pays, empMap, yr, mo, moStr) {
       [{lbl:'연차수당',      val:isSum?sums.annual_leave_pay       :nv(p.annual_leave_pay)},
        {lbl:'정기상여금',    val:isSum?sums.bonus_pay              :nv(p.bonus_pay)},
        {lbl:'성과급',        val:isSum?sums.performance_pay        :nv(p.performance_pay)},
-       {lbl:'실비변상적급여',val:isSum?sums.actual_expense_pay     :nv(p.actual_expense_pay)}],
+       {lbl:'',              val:0}],
       [{lbl:'통신비',        val:isSum?sums.communication_pay      :nv(p.communication_pay)},
        {lbl:'기술수당',      val:isSum?sums.skill_allowance        :nv(p.skill_allowance)},
        {lbl:'면허수당',      val:isSum?sums.license_allowance      :nv(p.license_allowance)},

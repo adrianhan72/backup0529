@@ -208,7 +208,7 @@ function _parseCo(co){
 // == 급여 항목 설정(allowance_config) 헬퍼 ==
 // 모든 항목에 pay_type select 적용 (통상임금 여부는 지급방식으로 결정)
 const _CM_AW_PT_FIELDS = ['site','position','skill','license','hazard','remote_area','regular_bonus','childcare','car','meal','research','communication','fitness','self_dev','book','overseas'];
-const _CM_AW_TAX_EXEMPT = ['childcare','car','meal','research'];
+const _CM_AW_TAX_EXEMPT = ['childcare','car','meal','research','remote_area'];
 
 /** 체크박스 체크 시 pay_type select 활성/비활성 토글 */
 function cmAwTogglePayType(field, checked){
@@ -280,6 +280,9 @@ function cmAwAddFixedCustomItem(name = '', payType = ''){
   const addRow = document.getElementById('cm-aw-fixed-add-row');
   if(!addRow) return;
   const idx = _cmAwFixedCustomIdx++;
+  // 커스텀 추가 항목은 비과세 대상이 아니므로 '출근일수에 따름(daily)' 옵션 없음 —
+  // 기존 daily 저장값은 '매월 정기지급(fixed)'으로 폴백 (2026-09-19)
+  const _pt = (payType === 'daily') ? 'fixed' : (payType || '');
   const div = document.createElement('div');
   div.className = 'cm-aw-row cm-aw-custom-row cm-aw-fixed-custom-row';
   div.id = `cm-aw-fixed-custom-row-${idx}`;
@@ -291,9 +294,8 @@ function cmAwAddFixedCustomItem(name = '', payType = ''){
     </label>
     <select id="cm-aw-fixed-custom-pt-${idx}" class="cm-aw-pt-select">
       <option value="">고정수당 포함여부</option>
-      <option value="fixed" ${payType==='fixed'?'selected':''}>매월 정기지급</option>
-      <option value="daily" ${payType==='daily'?'selected':''}>출근일수에 따름</option>
-      <option value="receipt" ${payType==='receipt'?'selected':''}>영수증 청구</option>
+      <option value="fixed" ${_pt==='fixed'?'selected':''}>매월 정기지급</option>
+      <option value="receipt" ${_pt==='receipt'?'selected':''}>영수증 청구</option>
     </select>
     <button type="button" class="cm-aw-custom-del" onclick="cmAwRemoveFixedCustomItem(${idx})" title="삭제"><i class="fas fa-trash-alt"></i> 삭제</button>
   `;
@@ -373,9 +375,11 @@ function _cmSetAllowanceConfig(cfg){
     // car / meal: cfg에 명시적 값이 없으면 기본값(체크 + fixed) 적용
     const useDefault = (f in _CM_AW_DEFAULT_CHECKED) && cfg[f] === undefined;
     const checked  = useDefault ? true  : !!cfg[f];
-    const payType  = useDefault
+    let payType    = useDefault
       ? (_CM_AW_DEFAULT_CHECKED[f])
       : (cfg[`${f}_pay_type`] || (cfg[f] ? 'fixed' : ''));
+    // '출근일수에 따름' 옵션 제거된 비과세 외 항목(통신비 등): 기존 daily 저장값 → fixed 폴백 (2026-09-19)
+    if(payType === 'daily' && !_CM_AW_TAX_EXEMPT.includes(f)) payType = 'fixed';
     if(cb)  cb.checked = checked;
     if(sel){ sel.disabled = !checked; sel.value = payType; }
   });

@@ -209,7 +209,6 @@ module.exports = function(db, ROOT) {
     ${makeRow('통신비', p.communication_pay)}
     ${makeRow('정기상여금', p.bonus_pay)}
     ${makeRow('성과급', p.performance_pay)}
-    ${makeRow('실비변상적급여', p.actual_expense_pay)}
     ${makeRow('현장수당', p.site_allowance)}
     ${makeRow('위험수당', p.hazard_allowance)}
     ${makeRow('벽지수당', p.remote_area_allowance)}
@@ -278,7 +277,7 @@ module.exports = function(db, ROOT) {
       'position_allowance','site_allowance','research_allowance','childcare_allowance',
       'overtime_pay','night_pay','holiday_pay','weekly_holiday_pay','annual_leave_pay',
       'license_allowance','skill_allowance','communication_pay','performance_pay',
-      'actual_expense_pay','hazard_allowance','remote_area_allowance','fitness_allowance',
+      'hazard_allowance','remote_area_allowance','fitness_allowance',
       'self_dev_allowance','book_allowance','overseas_allowance',
       'etc_allowance','other_pay','gross_pay',
       'national_pension','health_insurance','employment_insurance','long_term_care',
@@ -321,7 +320,7 @@ module.exports = function(db, ROOT) {
         [{lbl:'연차수당',      val:nv(p.annual_leave_pay)},
          {lbl:'정기상여금',    val:nv(p.bonus_pay)},
          {lbl:'성과급',        val:nv(p.performance_pay)},
-         {lbl:'실비변상적급여',val:nv(p.actual_expense_pay)}],
+         null],
         [{lbl:'통신비',        val:nv(p.communication_pay)},
          {lbl:'기술수당',      val:nv(p.skill_allowance)},
          {lbl:'면허수당',      val:nv(p.license_allowance)},
@@ -419,7 +418,7 @@ module.exports = function(db, ROOT) {
       'position_allowance','site_allowance','research_allowance','childcare_allowance',
       'overtime_pay','night_pay','holiday_pay','weekly_holiday_pay','annual_leave_pay',
       'license_allowance','skill_allowance','communication_pay','performance_pay',
-      'actual_expense_pay','hazard_allowance','remote_area_allowance','fitness_allowance',
+      'hazard_allowance','remote_area_allowance','fitness_allowance',
       'self_dev_allowance','book_allowance','overseas_allowance',
       'etc_allowance','other_pay','gross_pay',
       'national_pension','health_insurance','employment_insurance','long_term_care',
@@ -448,7 +447,7 @@ module.exports = function(db, ROOT) {
         [{l:'기본급',v:nv(p.base_salary)},{l:'주휴수당',v:nv(p.weekly_holiday_pay)},{l:'직책수당',v:nv(p.position_allowance)},{l:'연장근로수당',v:nv(p.overtime_pay)}],
         [{l:'야간근로수당',v:nv(p.night_pay)},{l:'휴일근로수당',v:nv(p.holiday_pay)},{l:'교통비',v:nv(p.transportation_allowance)},{l:'자가운전보조금',v:nv(p.self_driving_allowance)}],
         [{l:'벽지수당',v:nv(p.remote_area_allowance)},{l:'식대',v:nv(p.meal_allowance)},{l:'보육수당',v:nv(p.childcare_allowance)},{l:'연구활동비',v:nv(p.research_allowance)}],
-        [{l:'연차수당',v:nv(p.annual_leave_pay)},{l:'정기상여금',v:nv(p.bonus_pay)},{l:'성과급',v:nv(p.performance_pay)},{l:'실비변상적급여',v:nv(p.actual_expense_pay)}],
+        [{l:'연차수당',v:nv(p.annual_leave_pay)},{l:'정기상여금',v:nv(p.bonus_pay)},{l:'성과급',v:nv(p.performance_pay)}],
         [{l:'통신비',v:nv(p.communication_pay)},{l:'기술수당',v:nv(p.skill_allowance)},{l:'면허수당',v:nv(p.license_allowance)},{l:'현장수당',v:nv(p.site_allowance)}],
         [{l:'위험수당',v:nv(p.hazard_allowance)},{l:'체력증진비',v:nv(p.fitness_allowance)},{l:'자기계발비',v:nv(p.self_dev_allowance)},{l:'도서지원비',v:nv(p.book_allowance)}],
         [{l:'해외근무수당',v:nv(p.overseas_allowance)},{l:'기타수당',v:nv(p.etc_allowance)+nv(p.other_pay)}],

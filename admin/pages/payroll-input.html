@@ -333,21 +333,19 @@
                 <label>월 약정임금 <span style="font-size:10px;font-weight:400;color:#888;">(만근기준)</span></label>
                 <span id="pi-monthly-agreed-disp" style="font-size:13px;font-weight:600;color:#374151;">-</span>
               </div>
+              <!-- 월 약정임금 수동 입력 (계약 없는 대표자/등기임원/특수관계인 전용 — 무계약은 '월 기본보수' 용어 사용) -->
+              <div class="pi-row" id="pi-row-monthly-agreed-input" style="display:none;">
+                <label>월 기본보수(수당제외) <span style="font-size:10px;font-weight:400;color:#f59e0b;">(직접 입력)</span></label>
+                <input type="text" inputmode="numeric" id="pi-monthly-agreed-input" data-amount
+                  oninput="onAmountInput(this,calcPI)" placeholder="0"
+                  style="width:140px;padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" />
+              </div>
               <!-- 통상시급: 계약서 hourly_wage readonly 표시 -->
               <div class="pi-row" id="pi-row-hourly-wage-disp">
                 <label>통상시급</label>
                 <div style="display:flex;align-items:center;gap:4px;">
                   <span id="pi-hourly-wage-disp"
                     style="font-size:13px;font-weight:600;color:#374151;">-</span>
-                </div>
-              </div>
-              <!-- 통상시급 수동 입력 (계약 없는 대표자/등기임원/특수관계인 전용) -->
-              <div class="pi-row" id="pi-row-hourly-wage-input" style="display:none;">
-                <label>통상시급 <span style="font-size:10px;font-weight:400;color:#f59e0b;">(직접 입력)</span></label>
-                <div style="display:flex;align-items:center;gap:4px;">
-                  <input type="number" id="pi-hourly-wage-input" min="0" step="1" value="0"
-                    style="width:120px;padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;font-weight:600;"
-                    oninput="calcPI()" placeholder="시급 입력" />
                 </div>
               </div>
               <!-- 고정 연장/야간/휴일근로수당: 계약서에서 자동 표시 (readonly) -->
@@ -372,10 +370,9 @@
               <div class="pi-row" id="pi-row-tax-dependents-input" style="display:none;">
                 <label>과세 기준 부양가족 수 <span style="font-size:10px;font-weight:400;color:#f59e0b;">(직접 입력)</span> <span style="font-size:10px;font-weight:400;color:#9ca3af;">(본인 포함)</span></label>
                 <div style="display:flex;align-items:center;gap:4px;">
-                  <input type="number" id="pi-tax-dependents-input" min="1" max="11" step="1" value="1"
-                    style="width:80px;padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;font-weight:600;"
+                  <input type="text" inputmode="numeric" id="pi-tax-dependents-input" value="1"
+                    style="width:80px;padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;"
                     oninput="_onPITaxDependentsChange()" />
-                  <span style="font-size:11px;color:#9ca3af;">인</span>
                 </div>
               </div>
               <!-- 근태 관리 (결근·지각·조퇴) — label 아래줄에 3열 표로 렌더링 -->
@@ -412,7 +409,8 @@
                 <input type="hidden" id="pi-retro-late-data" value="[]" />
                 <input type="hidden" id="pi-retro-earlyleave-data" value="[]" />
               </div>
-              <!-- ══ 근로 실적 ══ -->
+              <!-- ══ 근로 실적 ══ (무계약 인원은 전체 숨김 — 2026-09-18) -->
+              <div id="pi-work-perf-section">
               <div class="pi-section-title green" style="margin-top:14px;">
                 <i class="fas fa-clipboard-list"></i> 근로 실적
                 <!-- 일할계산 방식 배지 (고객사 proration_method 기준 — 타이틀 우측) -->
@@ -630,6 +628,7 @@
                   </div>
                 </div>
               </div>
+              </div><!-- /pi-work-perf-section -->
               <!-- 비고 -->
               <div class="pi-note-wrap">
                 <label class="pi-note-label">비고</label>
@@ -654,7 +653,7 @@
               <div class="pi-row" id="pi-row-childcare" style="display:none;">
                 <label>보육수당</label>
                 <div class="pi-row-right">
-                  <span class="pi-dep-wrap">만 6세 이하 자녀 <input type="number" id="pi-dependents" min="0" value="0" oninput="calcPI()" class="pi-dep-input" /> 인</span>
+                  <span class="pi-dep-wrap">만 6세 이하 자녀 <input type="text" inputmode="numeric" id="pi-dependents" value="0" oninput="calcPI()" class="pi-dep-input" /></span>
                   <input type="text" inputmode="numeric" id="pi-childcare" data-amount oninput="onAmountInput(this,calcPI)" class="pi-row-amount" />
                 </div>
               </div>
@@ -730,6 +729,8 @@
               </div>
               <div class="pi-section-title blue" style="margin-top:14px;"><i class="fas fa-calendar-minus"></i> 비정기 지급항목</div>
 
+              <!-- 연차 사용내역·연차수당 (무계약 인원은 전체 숨김 — 2026-09-18) -->
+              <div id="pi-annual-section">
               <!-- 연차 사용내역 (이번달) — label 아래줄에 표로 렌더링 -->
               <div id="pi-row-annual-detail">
                 <div class="pi-row" style="padding-bottom:0;">
@@ -754,8 +755,8 @@
                   <input type="text" inputmode="numeric" id="pi-annual-pay" data-amount oninput="onAmountInput(this,calcPI)" />
                 </div>
               </div>
+              </div><!-- /pi-annual-section -->
               <div class="pi-row"><label>비정기 성과급</label><input type="text" inputmode="numeric" id="pi-performance" data-amount oninput="onAmountInput(this,calcPI)" /></div>
-              <div class="pi-row"><label>실비변상적급여</label><input type="text" inputmode="numeric" id="pi-actual-expense" data-amount oninput="onAmountInput(this,calcPI)" /></div>
               <!-- ── 비정기 지급: daily/receipt 항목 동적 삽입 영역 ── -->
               <div id="pi-irregular-dynamic-rows"></div>
               <!-- ── 기타수당 (동적 항목 추가/삭제) ── -->
@@ -802,7 +803,7 @@
                   <div class="pi-row"><label class="pi-ded-label">국민연금</label><input type="text" inputmode="numeric" id="pi-pension-fixed" data-amount placeholder="0" oninput="onAmountInput(this,calcPIFixed)" /></div>
                   <div class="pi-row"><label class="pi-ded-label">건강보험</label><input type="text" inputmode="numeric" id="pi-health-fixed" data-amount placeholder="0" oninput="onAmountInput(this,calcPIFixed)" /></div>
                   <div class="pi-row"><label class="pi-ded-label">장기요양보험</label><input type="text" inputmode="numeric" id="pi-ltcare-fixed" data-amount placeholder="0" oninput="onAmountInput(this,calcPIFixed)" /></div>
-                  <div class="pi-row"><label class="pi-ded-label">고용보험</label><input type="text" inputmode="numeric" id="pi-employ-fixed" data-amount placeholder="0" oninput="onAmountInput(this,calcPIFixed)" /></div>
+                  <div class="pi-row" id="pi-row-employ-fixed"><label class="pi-ded-label">고용보험</label><input type="text" inputmode="numeric" id="pi-employ-fixed" data-amount placeholder="0" oninput="onAmountInput(this,calcPIFixed)" /></div>
                   <div id="pi-ded-detail-fixed" style="margin-top:8px;font-size:12px;line-height:2.2;color:#666;"></div>
                 </div>
               </div>
@@ -827,8 +828,8 @@
                 <input type="text" inputmode="numeric" id="pi-ltcare-adj" data-amount placeholder="0" oninput="onAmountInput(this,calcPI)" />
               </div>
 
-              <!-- 고용보험정산 -->
-              <div class="pi-row">
+              <!-- 고용보험정산 (무계약 인원은 숨김 — 2026-09-18) -->
+              <div class="pi-row" id="pi-row-empins-adj">
                 <label>고용보험정산</label>
                 <input type="text" inputmode="numeric" id="pi-empins-adj" data-amount placeholder="0" oninput="onAmountInput(this,calcPI)" />
               </div>

@@ -104,7 +104,7 @@ async function _probAutoCreateAndSave(){
       annual_leave_pay:   gv('pi-annual-pay'),
       bonus_pay:          gv('pi-bonus'),
       performance_pay:    gv('pi-performance'),
-      actual_expense_pay: gv('pi-actual-expense'),
+      actual_expense_pay: 0, // 실비변상적급여 항목 삭제 (2026-09-18)
       communication_pay:  gv('pi-communication'),
       fitness_allowance:   gv('pi-fitness')  || 0,
       fitness_pay_type:    _getPIPayTypeVal('fitness'),
@@ -219,6 +219,9 @@ function editPayroll(payrollId){
   const p=allPayrolls.find(x=>x.id===payrollId);
   if(!p){toast('급여 데이터를 찾을 수 없습니다.','error');return;}
   const emp=allEmployees.find(x=>x.id===p.employee_id)||{};
+  // 무계약 인원(대표자/등기임원/특수관계인): 가상 emp 객체로 헤더 표시 (2026-09-18)
+  const _virtEmp = (!emp.id && typeof _piVirtualEmpById === 'function') ? _piVirtualEmpById(p.employee_id) : null;
+  const _empForHeader = emp.id ? emp : (_virtEmp || {});
   const co=allCompanies.find(x=>x.id===p.company_id)||{};
   // ★ 수정 모드 ID를 showPage 이전에 먼저 설정
   //   → selectPICompany()가 수정 모드 진입임을 감지해
@@ -263,9 +266,9 @@ function editPayroll(payrollId){
     // 직원 헤더 업데이트
     const _nameEl  = document.getElementById('pi-form-emp-name');
     const _badgeEl = document.getElementById('pi-form-emp-badge');
-    const _cat = emp.employment_category || '';
-    if(_nameEl)  _nameEl.textContent  = `${emp.name||''} (${p.pay_year}년 ${p.pay_month}월) — 수정 모드`;
-    if(_badgeEl){ _badgeEl.textContent=_cat; }
+    const _cat = _empForHeader.employment_category || '';
+    if(_nameEl)  _nameEl.textContent  = `${_empForHeader.name||''} (${p.pay_year}년 ${p.pay_month}월) — 수정 모드`;
+    if(_badgeEl){ _badgeEl.textContent = typeof CONTRACT_TYPE_LABEL !== 'undefined' ? (CONTRACT_TYPE_LABEL[_cat] || _cat) : _cat; }
     currentGlobalCompanyId   = p.company_id;
     currentGlobalCompanyName = coEdit.company_name;
   }
@@ -370,6 +373,11 @@ function _fillPayrollFields(p, cfgCo){
   _piContractLoading = true;
   // 지급 항목 채우기 (금액 필드는 setAmountVal로 쉼표 포맷 적용)
   setAmountVal('pi-base',       p.base_salary);
+  // 무계약 인원: 월 약정임금 직접 입력 필드 복원 (기본급 = 월 약정임금 — 2026-09-18)
+  if(piContract?.is_virtual){
+    const _maEdit = document.getElementById('pi-monthly-agreed-input');
+    if(_maEdit) _maEdit.value = p.base_salary || '';
+  }
   // 주휴수당은 출근일수 기반 자동계산 — DB 저장값 복원 안 함 (calcPI에서 재계산)
   setAmountVal('pi-position',   p.position_allowance);
   setAmountVal('pi-remote-area', p.remote_area_allowance||0);
@@ -404,7 +412,9 @@ function _fillPayrollFields(p, cfgCo){
   // ★ pay_type 복원이 모두 끝난 뒤 계약 고정 항목 잠금 재적용
   //   (loadPIContract 내 _setPIContractReadonly(true) 이후 setPIPayType이 다시 호출되므로
   //    fixed 항목의 select 숨김 상태가 깨질 수 있어 명시적으로 재호출)
-  _setPIContractReadonly(true);
+  //   무계약 인원은 계약 고정 항목이 없으므로 잠금 해제 유지 (2026-09-18)
+  if(piContract?.is_virtual) _setPIContractReadonly(false);
+  else _setPIContractReadonly(true);
   setAmountVal('pi-fitness',    p.fitness_allowance      || 0);
   setAmountVal('pi-self-dev',   p.self_dev_allowance     || 0);
   setAmountVal('pi-book',       p.book_allowance         || 0);
@@ -419,7 +429,6 @@ function _fillPayrollFields(p, cfgCo){
     setAmountVal('pi-bonus', _contractBonus > 0 ? _contractBonus : (p.bonus_pay||0));
   }
   setAmountVal('pi-performance',   p.performance_pay||0);
-  setAmountVal('pi-actual-expense',p.actual_expense_pay||0);
   setAmountVal('pi-communication',  p.communication_pay||0);
   // 근로 실적 (수정 모드: 기존 저장값 복원 → 자동입력 배지 숨김)
   document.getElementById('pi-work-days').value=p.work_days||0;
@@ -461,6 +470,7 @@ function _fillPayrollFields(p, cfgCo){
   // ── 커스텀 항목 값 복원 ──
   _restorePICustomValues(p);
   // 근로 실적 자동산출 패널 (수정 모드: 기존 근로일수가 있을 때 패널 표시)
+  // 무계약 인원은 근로 실적 섹션 자체를 숨김 유지 (2026-09-18)
   (function(){
     const wp = document.getElementById('pi-work-auto-panel');
     const sw = document.getElementById('pi-ot-pay-simple-wrap');
@@ -471,6 +481,8 @@ function _fillPayrollFields(p, cfgCo){
   _piContractLoading = false;
   // 값 있는 옵셔널 행(보육수당 등) 강제 노출 재확인 후 비정기 섹션 이동 처리
   _forceShowNonZeroPIRows(p);
+  // 영수증 청구 항목 완전 제외 재적용 (저장값이 복원되어도 숨김·제로 유지 — 2026-09-18)
+  if(typeof _hideReceiptPIRows === 'function') _hideReceiptPIRows();
   _renderPIIrregularRows();
   // 계약서 NULL 항목 숨김 (수정 모드: 이미 값 있는 행은 보존)
   if(typeof _hideZeroContractPIRows === 'function') _hideZeroContractPIRows();
@@ -900,7 +912,6 @@ function validateAndParseExcel(wb, fileName){
       '휴일시간':       ['휴일시간','휴일근로시간'],
       '정기상여금':     ['정기상여금'],
       '성과급':         ['성과급'],
-      '실비변상적급여': ['실비변상적급여'],
       '보수월액':       ['보수월액'],
     };
     const targets = aliases[name] || [name];
@@ -974,7 +985,6 @@ function validateAndParseExcel(wb, fileName){
     HOL_HOURS:    colIdx('휴일시간'),
     BONUS:        colIdx('정기상여금'),
     PERFORMANCE:  colIdx('성과급'),
-    ACTUAL_EXPENSE: colIdx('실비변상적급여'),
     STD_MONTHLY:  colIdx('보수월액'),
   };
 
@@ -1708,10 +1718,10 @@ function validateAndParseExcel(wb, fileName){
       return typeof cfg === 'string' ? (() => { try { return JSON.parse(cfg); } catch(e) { return {}; } })() : cfg;
     })();
     const _teVal = (field, excelVal) => {
-      // 비과세 미설정 → 전액 과세 (std에 포함)
-      if (!_piTaxCfg[`${field}_tax_exempt`]) return excelVal;
-      // 비과세 설정 → 20만원 한도 적용
-      return Math.min(excelVal, TAX_EXEMPT_CAP);
+      // 비과세 명시 해제(false) → 전액 과세 (std에 포함)
+      if (_piTaxCfg[`${field}_tax_exempt`] === false) return excelVal;
+      // 비과세 기본 적용 → 20만원 한도 초과분만 과세 (2026-09-18)
+      return Math.max(0, excelVal - TAX_EXEMPT_CAP);
     };
     // 개별 수당 항목 (pay_type receipt 여부는 allowance_config로 판단)
     const _allowItem = (field, excelVal) => {
@@ -1720,7 +1730,8 @@ function validateAndParseExcel(wb, fileName){
       return excelVal;
     };
     const calcStd = base + weekHol + posAlw
-      + n(CI.SITE) + n(CI.SKILL) + n(CI.LICENSE) + n(CI.HAZARD) + n(CI.REMOTE_AREA)
+      + n(CI.SITE) + n(CI.SKILL) + n(CI.LICENSE) + n(CI.HAZARD)
+      + _teVal('remote_area', n(CI.REMOTE_AREA))
       + _teVal('car', car)
       + _teVal('meal', meal)
       + _teVal('research', n(CI.RESEARCH))

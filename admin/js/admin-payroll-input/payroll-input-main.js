@@ -1067,6 +1067,11 @@ function _setPIOtAutoDisp(info){
  */
 async function _applyPIOvertimeAutoFill(){
   const empId = document.getElementById('pi-employee')?.value || '';
+  // 무계약 인원(대표자·등기임원·특수관계인): 근태 연동 없음 (2026-09-18)
+  if(piContract && piContract.is_virtual){
+    _setPIOtAutoDisp(null);
+    return;
+  }
   if(!empId || !piContract){
     _setPIOtAutoDisp(null);
     return;
@@ -1451,9 +1456,21 @@ function loadPIContract(contractId){
       remote_area_allowance: 0, site_allowance: 0, skill_allowance: 0, license_allowance: 0,
       is_virtual: true, _personType: personType
     };
-    card.style.display = 'none';
+    // 계약정보 카드: 카드 자체는 유지, 계약정보 버튼 비활성화 + 무계약 안내 문구 (2026-09-18)
+    card.style.display = '';
+    const _ciBtn = card ? card.querySelector('button') : null;
+    if(_ciBtn) _ciBtn.disabled = true;
+    const _ci = document.getElementById('pi-contract-info');
+    if(_ci){
+      _ci.innerHTML = '<span style="color:#9a3412;font-weight:600;">체결된 근로계약이 없습니다.</span>' +
+        '<br><span style="color:#6b7280;">근로자성을 인정받기 위해서는 근로계약을 별도로 작성해야 합니다.</span>';
+    }
     // 수동 입력 필드 표시
     _setupManualFields(true);
+    // 정기 지급항목 잠금 해제 (직전 계약 직원의 readonly 잔재 제거 — 2026-09-18)
+    if(typeof _setPIContractReadonly === 'function') _setPIContractReadonly(false);
+    // 비과세 항목 한도 힌트 갱신 (회사 선택 시점에는 폼이 숨겨져 offsetParent 판정 불가 → 여기서 재실행)
+    if(typeof _updatePITaxExemptHints === 'function') _updatePITaxExemptHints();
     // 근로계약서의 급여일 우선, 없으면 회사 설정
     const _co = allCompanies.find(c => c.id === _coId);
     const _ppMo = piContract?.pay_period_month || _co?.pay_period_month || 'current_month';
@@ -1468,13 +1485,26 @@ function loadPIContract(contractId){
     _eDate.setDate(_eDate.getDate() - 1);
     document.getElementById('pi-pay-period-start').value = `${_sYr}-${String(_sMo).padStart(2,'0')}-${String(_ppDay).padStart(2,'0')}`;
     document.getElementById('pi-pay-period-end').value = fmtLocalDate(_eDate);
-    // 최저임금 기본값 (전역 데이터 미로드 시 폴백)
-    const _mwYear = parseInt(document.getElementById('pi-year')?.value) || new Date().getFullYear();
-    const _mw = (typeof allMinimumWages !== 'undefined' && Array.isArray(allMinimumWages) && allMinimumWages.find(m => m.year === _mwYear)) || { hourly_wage: 10030 };
-    document.getElementById('pi-hourly-wage-input').value = _mw.hourly_wage || 10030;
+    // ── 무계약 전용: 월 약정임금 직접 입력, 근태·근로실적·연차·고용보험 제외 (2026-09-18) ──
+    _applyPIPayDate(true); // 지급일 직접 입력 (readonly 해제 + 계약 배지 숨김)
+    { const _pdEl = document.getElementById('pi-paydate'); if(_pdEl) _pdEl.value = ''; }
+    { const _maEl = document.getElementById('pi-monthly-agreed-input'); if(_maEl) _maEl.value = ''; }
     document.getElementById('pi-tax-dependents-input').value = 1;
+    // 근로실적·근태 관련 값 초기화 (무계약: 미사용)
+    ['pi-work-days','pi-total-hours','pi-ot-hours','pi-night-hours','pi-hol-hours',
+     'pi-absent-dates','pi-retro-absent-dates','pi-base','pi-weekly-hol'
+    ].forEach(id=>{ const el = document.getElementById(id); if(el) el.value = ''; });
+    ['pi-absent-data','pi-earlyleave-data','pi-late-data',
+     'pi-retro-absent-data','pi-retro-late-data','pi-retro-earlyleave-data'
+    ].forEach(id=>{ const el = document.getElementById(id); if(el) el.value = '[]'; });
+    // 연차수당 자동계산 체크 해제 + 값 초기화 (무계약: 연차 미적용)
+    { const _chk = document.getElementById('pi-annual-auto-chk'); if(_chk) _chk.checked = false; }
+    { const _ap = document.getElementById('pi-annual-pay');
+      if(_ap){ _ap.readOnly = false; _ap.classList.remove('pi-input-readonly'); _ap.value = ''; } }
+    // 확정액 기준 4대보험 입력값 초기화 (고용보험은 가입대상 아님)
+    ['pi-pension-fixed','pi-health-fixed','pi-ltcare-fixed','pi-employ-fixed'].forEach(id=>{ const el = document.getElementById(id); if(el) el.value = ''; });
     _piContractLoading = false;
-    _applyPIDefaultWorkDays(false);
+    calcPI();
     return;
   }
 
@@ -1528,6 +1558,8 @@ function loadPIContract(contractId){
       _piCandidates.sort((a,b)=>(b.contract_start||'').localeCompare(a.contract_start||''));
     }
     piContract = _piCandidates[0] || null;
+    // ── 무계약 전용 필드 복원 해제: 일반 계약 직원 UI로 전환 (2026-09-18) ──
+    if(piContract && !piContract.is_virtual) _setupManualFields(false);
     // 근로계약서의 급여 산정기간 설정 (필수)
     if(piContract && !piContract.is_virtual){
       const _yrW = parseInt(document.getElementById('pi-year')?.value) || new Date().getFullYear();
@@ -1822,7 +1854,6 @@ function loadPIContract(contractId){
     // 정기 상여금: 계약서에 명시된 경우 자동 세팅 (없으면 0 초기화)
     setAmountVal('pi-bonus', parseFloat(piContract.regular_bonus||0)||0);
     setAmountVal('pi-performance',   0);
-    setAmountVal('pi-actual-expense',0);
     setAmountVal('pi-communication',  0);
     // 기타수당 동적 항목 초기화 (이전 직원 잔류 방지)
     if(typeof _restorePIEtcAllowanceItems === 'function') _restorePIEtcAllowanceItems([]);
@@ -2118,7 +2149,8 @@ const gv=id=>{const el=document.getElementById(id);return el?parseFloat((el.valu
  * - getter: 단위를 떼고 숫자 문자열만 반환 → 기존 parseFloat/gv 로직 그대로 동작
  */
 function _piUnitInputInit(){
-  [['pi-work-days','일'],['pi-total-hours','h']].forEach(([id,unit]) => {
+  // 단위를 필드 내부(숫자 다음)에 표기 — 근로일수 '일', 총근로시간 'h', 부양가족·자녀 수 '인' (2026-09-18)
+  [['pi-work-days','일'],['pi-total-hours','h'],['pi-tax-dependents-input','인'],['pi-dependents','인']].forEach(([id,unit]) => {
     const el = document.getElementById(id);
     if(!el || el.__piUnitHooked) return;
     el.__piUnitHooked = true;
@@ -2135,6 +2167,9 @@ function _piUnitInputInit(){
         d.set.call(this, String(v) + unit);
       }
     });
+    // 초기값(HTML 기본값)에 단위가 없으면 붙임
+    const _raw = d.get.call(el);
+    if(_raw !== '' && _raw != null && !String(_raw).endsWith(unit)) d.set.call(el, String(_raw) + unit);
   });
 }
 // ── 현재 선택된 고객사의 4대보험 적용 기준 반환 ──
@@ -2143,6 +2178,59 @@ function _getPIInsuranceBasis(){
   const coId = currentGlobalCompanyId || document.getElementById('pi-company')?.value;
   const co = allCompanies.find(c=>c.id===coId);
   return co?.insurance_basis || 'rate_based';
+}
+
+// ── 고객사 allowance_config 파싱 (문자열 JSON 또는 객체) ──
+function _getPITaxCfg(){
+  const co = allCompanies.find(c => c.id === currentGlobalCompanyId);
+  if(!co?.allowance_config) return {};
+  const cfg = co.allowance_config;
+  return typeof cfg === 'string' ? (() => { try { return JSON.parse(cfg); } catch(e){ return {}; } })() : cfg;
+}
+
+// ── 비과세 항목 한도 힌트 (소득세법 제12조 — 월 20만원 한도) ──
+// 비과세 설정(car/meal/research/childcare)된 정기지급 항목 행 아래에 힌트를 렌더링한다.
+// daily(출근일수에 따름) 항목은 '출근일수에 따름' 뱃지 옆(라벨 내부 인라인)에 함께 표시 (2026-09-19)
+function _updatePITaxExemptHints(){
+  const _cfg = _getPITaxCfg();
+  const _rows = [
+    { key:'car',         rowId:'pi-transport-row',  ptField:'transport' },
+    { key:'meal',        rowId:'pi-row-meal',       ptField:'meal' },
+    { key:'research',    rowId:'pi-row-research',   ptField:'research' },
+    { key:'childcare',   rowId:'pi-row-childcare',  ptField:'childcare' },
+    { key:'remote_area', rowId:'pi-row-remote-area' },
+  ];
+  _rows.forEach(({ key, rowId, ptField }) => {
+    const row = document.getElementById(rowId);
+    if(!row) return;
+    // 기존 힌트(라벨 내부·행 아래 모두) 제거 후 재생성 (2026-09-19)
+    const oldHint = document.getElementById(`pi-te-hint-${key}`);
+    if(oldHint) oldHint.remove();
+    const isVisible = row.style.display !== 'none' && row.offsetParent !== null;
+    // 표준 비과세 항목(보육·차량·식대·연구·벽지)은 전 고용형태 공통으로 기본 비과세
+    // → config에 flag가 없어도(false 명시가 아닌 이상) 비과세로 간주 (2026-09-18)
+    const isExempt = _cfg[`${key}_tax_exempt`] !== false;
+    if(!(isVisible && isExempt)) return;
+    // 보육수당은 자녀 1인당 월 20만원, 그 외 항목은 월 20만원 한도 (2026-09-18)
+    const text = (key === 'childcare') ? '비과세 · 자녀 1인당 월 20만원 한도' : '비과세 · 월 20만원 한도';
+    const isDaily = ptField ? (_piPayTypes[ptField] === 'daily') : false;
+    if(isDaily){
+      // 출근일수에 따름: 힌트를 뱃지 옆(라벨 내부 인라인)에 함께 표시 — 행 이동 시 함께 따라감 (2026-09-19)
+      const label = row.querySelector('label');
+      if(!label) return;
+      const hint = document.createElement('span');
+      hint.id = `pi-te-hint-${key}`;
+      hint.style.cssText = 'font-size:10.5px;color:#6b7280;font-weight:400;margin-left:4px;white-space:nowrap;';
+      hint.textContent = `(${text})`;
+      label.appendChild(hint);
+    } else {
+      const hint = document.createElement('div');
+      hint.id = `pi-te-hint-${key}`;
+      hint.className = 'pi-total-hint'; // 일반 힌트와 동일 스타일
+      row.insertAdjacentElement('afterend', hint); // 레이블 아래 행
+      hint.textContent = text;
+    }
+  });
 }
 
 // ── 특정 년월의 4대보험 산정기준 등록 여부 확인 ──
@@ -2351,22 +2439,88 @@ function _updatePIProrationHint(){
 // _applyPIDefaultWorkDays(forceOverwrite)
 //   현재 선택된 계약·연·월 기준으로 근로일수·총 근로시간을 자동 입력한다.
 // ── 가상 직원(대표자/등기임원/특수관계인) 수동 입력 필드 전환 ──
+// ── 가상 직원(대표자/등기임원/특수관계인) ID → 가상 emp 객체 조회 (2026-09-18) ──
+// allEmployees에 없는 무계약 인원을 id로 찾는다 (rep_{coId}_{idx} / 등기임원 id / 특수관계인 id)
+function _piVirtualEmpById(empId){
+  if(!empId) return null;
+  if(empId.startsWith('rep_')){
+    const rest = empId.slice(4);
+    const lastU = rest.lastIndexOf('_');
+    const idx = parseInt(rest.slice(lastU + 1));
+    const coId2 = rest.slice(0, lastU);
+    const co2 = (allCompanies||[]).find(c => c.id === coId2);
+    if(co2){
+      let reps = [];
+      try { reps = typeof co2.representatives === 'string' ? JSON.parse(co2.representatives) : (co2.representatives || []); } catch(e){ reps = []; }
+      const rep = reps[idx];
+      if(rep && rep.name) return { id: empId, name: rep.name, company_id: coId2, employment_category: CONTRACT_TYPE.REPRESENTATIVE };
+    }
+    return null;
+  }
+  const exec = (allExecutives||[]).find(e => e.id === empId);
+  if(exec) return { id: exec.id, name: exec.name, company_id: exec.company_id, employment_category: CONTRACT_TYPE.EXECUTIVE, position: exec.position };
+  const rel = (allRelatedParties||[]).find(r => r.id === empId);
+  if(rel) return { id: rel.id, name: rel.name, company_id: rel.company_id, employment_category: CONTRACT_TYPE.RELATED_PARTY, position: rel.relationship };
+  return null;
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// 무계약 인원(대표자/등기임원/특수관계인) 전용 폼 전환 (2026-09-18)
+//   show=true : 산정기간·월약정임금·부양가족 직접 입력 표시,
+//               근태·근로실적·연차·고용보험 관련 항목 전부 숨김
+//   show=false: 계약 직원 기본 UI 복원
+// ──────────────────────────────────────────────────────────────────────────────
 function _setupManualFields(show){
+  // 계약정보 카드 버튼: 무계약 시 비활성, 계약 직원 복귀 시 재활성 (2026-09-18)
+  if(!show){
+    const _ciBtn2 = document.getElementById('pi-contract-card')?.querySelector('button');
+    if(_ciBtn2) _ciBtn2.disabled = false;
+  }
   // 급여 산정기간
   const _ppDisp = document.getElementById('pi-row-pay-period-disp');
   const _ppInput = document.getElementById('pi-row-pay-period-input');
   if(_ppDisp) _ppDisp.style.display = show ? 'none' : '';
   if(_ppInput) _ppInput.style.display = show ? '' : 'none';
-  // 통상시급
+  // 월 약정임금 (직접 입력)
+  const _maDisp = document.getElementById('pi-row-monthly-agreed');
+  const _maInput = document.getElementById('pi-row-monthly-agreed-input');
+  if(_maDisp) _maDisp.style.display = show ? 'none' : '';
+  if(_maInput) _maInput.style.display = show ? '' : 'none';
+  // 통상시급 표시 (무계약: 숨김)
   const _hwDisp = document.getElementById('pi-row-hourly-wage-disp');
-  const _hwInput = document.getElementById('pi-row-hourly-wage-input');
   if(_hwDisp) _hwDisp.style.display = show ? 'none' : '';
-  if(_hwInput) _hwInput.style.display = show ? '' : 'none';
+  // 고정 연장/야간/휴일근로수당 (산정기준 상단 — 계약서 파생이므로 무계약: 숨김)
+  if(show){
+    ['pi-row-fixed-ot-disp','pi-row-fixed-night-disp','pi-row-fixed-hol-disp'].forEach(id=>{
+      const el = document.getElementById(id); if(el) el.style.display = 'none';
+    });
+  }
   // 과세 기준 부양가족 수
   const _tdDisp = document.getElementById('pi-row-tax-dependents-disp');
   const _tdInput = document.getElementById('pi-row-tax-dependents-input');
   if(_tdDisp) _tdDisp.style.display = show ? 'none' : '';
   if(_tdInput) _tdInput.style.display = show ? '' : 'none';
+  // 근태 관리 (무계약: 숨김)
+  const _attRow = document.getElementById('pi-row-attendance');
+  if(_attRow) _attRow.style.display = show ? 'none' : '';
+  if(show){
+    const _retroAtt = document.getElementById('pi-retro-attendance-row');
+    if(_retroAtt) _retroAtt.style.display = 'none';
+  }
+  // 근로 실적 섹션 전체 (무계약: 숨김)
+  const _wpSec = document.getElementById('pi-work-perf-section');
+  if(_wpSec) _wpSec.style.display = show ? 'none' : '';
+  // 계약 없을 때 수당 표시 wrap (항상 숨김 — 무계약은 연장·야간·휴일 미사용)
+  const _simpWrap = document.getElementById('pi-ot-pay-simple-wrap');
+  if(_simpWrap) _simpWrap.style.display = 'none';
+  // 연차 사용내역·연차수당 (무계약: 숨김)
+  const _annualSec = document.getElementById('pi-annual-section');
+  if(_annualSec) _annualSec.style.display = show ? 'none' : '';
+  // 고용보험 (공제) · 고용보험정산 (무계약: 가입대상 아님 → 숨김)
+  const _empRow = document.getElementById('pi-row-employ-fixed');
+  if(_empRow) _empRow.style.display = show ? 'none' : '';
+  const _empAdjRow = document.getElementById('pi-row-empins-adj');
+  if(_empAdjRow) _empAdjRow.style.display = show ? 'none' : '';
 }
 
 // ── 과세 기준 부양가족 수 변경 콜백 ──
@@ -2380,6 +2534,8 @@ function _onPITaxDependentsChange(){
 // ──────────────────────────────────────────────────────────────────────────────
 function _applyPIDefaultWorkDays(forceOverwrite){
   if(!piContract) return;
+  // 무계약 인원(대표자·등기임원·특수관계인): 근로일수 자동입력 없음 (2026-09-18)
+  if(piContract.is_virtual) return;
   _updatePIProrationHint(); // 일할계산 방식 안내 (2026-09-17)
   // 수정 모드: 저장된 근로일수·총근로시간 보존 (자동입력 덮어쓰기 금지, max·배지만 갱신)
   if(typeof piEditPayrollId !== 'undefined' && piEditPayrollId) forceOverwrite = false;
@@ -3702,6 +3858,9 @@ function calcPIWorkActual(){
   const workAutoPanel = document.getElementById('pi-work-auto-panel');
   const simpleWrap    = document.getElementById('pi-ot-pay-simple-wrap');
 
+  // 무계약 인원(대표자·등기임원·특수관계인): 근로실적 미사용 — 단순 재계산만 (2026-09-18)
+  if(piContract && piContract.is_virtual){ calcPI(); return; }
+
   if(!piContract){
     if(workAutoPanel) workAutoPanel.style.display = 'none';
     if(simpleWrap)    simpleWrap.style.display     = '';
@@ -3774,6 +3933,64 @@ function _calcDailyAverageWage(empId, baseYr, baseMo){
 }
 
 function calcPI(){
+  // ── daily(출근일수에 따름) 항목: 근로일수×일일수당 지급액 동기화 (2026-09-18) ──
+  _syncPIDailyAmounts();
+  // ── 무계약 인원(대표자·등기임원·특수관계인) 전용 단순 계산 (2026-09-18) ──
+  // 근로계약이 없으므로 근로실적·근태·주휴수당·연장/야간/휴일 가산을 계산하지 않고,
+  // 월 약정임금(직접 입력) + 정기/비정기 지급항목만으로 지급총액·공제를 계산한다.
+  if(piContract && piContract.is_virtual){
+    _retroHolidayOverpay = 0; _layoffPay = 0; _maternityPay = 0;
+    _retroOverpaymentTotal = 0;
+    _fullWeekOtP = 0; _fullWeekNightP = 0; _fullWeekHolP = 0;
+    _partialOtP = 0; _partialNightP = 0; _partialHolP = 0;
+    _piNetNormalDedP = 0;
+    _piSatConvertH = 0; _piAttLossWeekdayH = 0;
+    _piSatConvertPayOffset = 0; _piSatPremiumLoss = 0;
+    _piLegalHolOtP = 0; _piLegalHolNightP = 0;
+    // 가산 적용 대상 아님 → 적용기준 배지 숨김 (5인 미만 판별 과정 생략 — 2026-09-18)
+    { const _sfBadge = document.getElementById('pi-small-firm-badge'); if(_sfBadge) _sfBadge.style.display = 'none'; }
+    const _vBase = gv('pi-monthly-agreed-input');
+    setAmountVal('pi-base', _vBase);
+    setAmountVal('pi-weekly-hol', 0);
+    const _vBaseEl = document.getElementById('pi-base-actual-inline');
+    if(_vBaseEl) _vBaseEl.value = won(_vBase);
+    // ── 지급총액 자체 합산 (월 약정임금 + 정기/비정기 수당 + 커스텀·기타수당) ──
+    const _vCustomOrd = () => { let s = 0; for(let i = 0; i < _piCustomOrdCount; i++) s += gv(`pi-custom-ord-${i}`); return s; };
+    const _vCustomFixed = () => { let s = 0; for(let i = 0; i < _piCustomFixedCount; i++){ const el = document.getElementById(`pi-custom-fixed-${i}`); const pt = el?.dataset?.paytype || 'fixed'; if(pt === 'fixed' || pt === 'daily') s += gv(`pi-custom-fixed-${i}`); } return s; };
+    const _vEtc = (typeof _sumPIEtcAllowance === 'function') ? _sumPIEtcAllowance('all') : 0;
+    const _vGross = gv('pi-base') + gv('pi-site') + gv('pi-remote-area') + gv('pi-position')
+      + gv('pi-skill') + gv('pi-license') + gv('pi-transport') + gv('pi-meal') + gv('pi-childcare')
+      + gv('pi-research') + gv('pi-fitness') + gv('pi-self-dev') + gv('pi-book') + gv('pi-overseas')
+      + gv('pi-annual-pay') + gv('pi-bonus') + gv('pi-performance')
+      + gv('pi-communication') + _vCustomOrd() + _vCustomFixed() + _vEtc;
+    // ── 보수월액(과세기준) = 지급총액 − 비과세 제외분 (2026-09-18 전면 정리) ──
+    const _vTaxCfg = _getPITaxCfg();
+    const _vExempt = (id, key) => {
+      const amt = gv(id);
+      if (_vTaxCfg[`${key}_tax_exempt`] === false) return 0; // 명시적 비과세 해제
+      if (key === 'childcare'){
+        const _chCnt = Math.max(0, parseInt(document.getElementById('pi-dependents')?.value || '0') || 0);
+        return Math.min(amt, 200000 * _chCnt);
+      }
+      return Math.min(amt, 200000);
+    };
+    const _vEtcTaxable = (typeof _sumPIEtcAllowance === 'function') ? _sumPIEtcAllowance('taxable') : 0;
+    const _vStd = _vGross
+      - _vExempt('pi-transport','car')
+      - _vExempt('pi-meal','meal')
+      - _vExempt('pi-research','research')
+      - _vExempt('pi-childcare','childcare')
+      - _vExempt('pi-remote-area','remote_area')
+      - (_vEtc - _vEtcTaxable); // 기타수당: receipt 제외
+    // 확정액 기준: 보수월액 입력란 자체가 없으므로 매번 자동 갱신.
+    // 요율 기준: 보수월액 직접 수정 가능 → 사용자 입력값이 있으면 보존 (빈 값일 때만 자동 갱신).
+    if(_getPIInsuranceBasis() === 'fixed_amount') setAmountVal('pi-std-pay', _vStd);
+    else { const _curStd = gv('pi-std-pay'); if(!_curStd || _curStd === 0) setAmountVal('pi-std-pay', _vStd); }
+    if(_getPIInsuranceBasis() === 'fixed_amount') calcPIFixed(_vGross);
+    else calcPIDeductions(_vGross);
+    return;
+  }
+
   // 주휴수당 자동계산 — 매번 recalc (출근일수·계약 변경 시 반영)
   // ※ calcWeeklyHolidayPay 내부에서 setAmountVal만 호출, calcPI 재진입 없음
   // ※ 근로기준법 제55조: 모든 근로자(일용직 포함) 주 15시간 이상 개근 시 주휴수당 발생
@@ -4654,21 +4871,14 @@ function calcPI(){
 
   // ── 지급총액: 주휴수당은 기본급(시급×209h, 주휴 35h 포함)에 이미 포함 → 미가산 ──
   //    평일 기본급 차감(_piNetNormalDedP) 반영 (2026-09-15)
-  const gross=gv('pi-base')+gv('pi-site')+gv('pi-remote-area')+gv('pi-position')+gv('pi-skill')+gv('pi-license')+gv('pi-transport')+gv('pi-meal')+gv('pi-childcare')+gv('pi-research')+otPay+nightPay+holPay+_fixedOtPay+_fixedNightPay+_fixedHolPay+gv('pi-annual-pay')+gv('pi-bonus')+gv('pi-performance')+gv('pi-actual-expense')+gv('pi-communication')+gv('pi-fitness')+gv('pi-self-dev')+gv('pi-book')+gv('pi-overseas')+_layoffPay+_maternityPay - _retroOverpaymentTotal - _retroHolidayOverpay + _customOrdSum + _customFixedGross + _etcGross - _fullWeekOtP - _fullWeekNightP - _fullWeekHolP - _piLegalHolOtP - _piLegalHolNightP - _partialOtP - _partialNightP - _partialHolP - _piNetNormalDedP;
+  const gross=gv('pi-base')+gv('pi-site')+gv('pi-remote-area')+gv('pi-position')+gv('pi-skill')+gv('pi-license')+gv('pi-transport')+gv('pi-meal')+gv('pi-childcare')+gv('pi-research')+otPay+nightPay+holPay+_fixedOtPay+_fixedNightPay+_fixedHolPay+gv('pi-annual-pay')+gv('pi-bonus')+gv('pi-performance')+gv('pi-communication')+gv('pi-fitness')+gv('pi-self-dev')+gv('pi-book')+gv('pi-overseas')+_layoffPay+_maternityPay - _retroOverpaymentTotal - _retroHolidayOverpay + _customOrdSum + _customFixedGross + _etcGross - _fullWeekOtP - _fullWeekNightP - _fullWeekHolP - _piLegalHolOtP - _piLegalHolNightP - _partialOtP - _partialNightP - _partialHolP - _piNetNormalDedP;
   // ── 통상임금(보수월액) 계산 ──────────────────────────────────────────
   // · receipt(영수증 청구): 실비변상적 급여 → 전액 비과세 → std 제외
   // · daily(출근일수에 따름): 근로의 대가 → 과세 → std 포함
   // · fixed(매월 정기지급): 근로의 대가 → 과세 → std 포함
   // · 비과세 항목(car/meal/research/childcare): fixed/daily 여부 관계없이 월 20만원 한도
   const _TAX_EXEMPT_CAP = 200000;
-  const _piTaxCfg = (() => {
-    const co = allCompanies.find(c => c.id === currentGlobalCompanyId);
-    if (!co?.allowance_config) return {};
-    const cfg = co.allowance_config;
-    return typeof cfg === 'string' ? (() => { try { return JSON.parse(cfg); } catch(e) { return {}; } })() : cfg;
-  })();
-  // pay_type map: field name → piPayTypes key
-  const _ptMap = { car:'transport', meal:'meal', research:'research', childcare:'childcare' };
+  const _piTaxCfg = _getPITaxCfg();
   // 비과세 수당의 월 누적 합산 (일급제·주급제·이전 계약 포함)
   // → 같은 직원·같은 달(매월 1일부터)의 다른 확정 급여에서 이미 비과세 처리된 금액을 제외한 잔여 한도 적용
   // 근거: 소득세법 제12조 — 비과세는 월 20만원 한도 (지급주기와 무관하게 월 단위 누적)
@@ -4700,45 +4910,46 @@ function calcPI(){
     });
     return _used;
   };
-  const _teVal = (field) => {
-    const _idMap = { car:'transport', remote_area:'remote-area' };
-    const amt = gv(`pi-${_idMap[field] || field}`);
-    // receipt(영수증 청구) → 실비변상 전액 비과세 → std 0
-    const ptKey = _ptMap[field];
-    if (ptKey && _getPIPayTypeVal(ptKey) === 'receipt') return 0;
-    // 비과세 항목: 월 20만원 한도 — 같은 달 다른 급여(이전 계약 포함) 사용분 제외한 잔여 한도 적용
-    if (_piTaxCfg[`${field}_tax_exempt`]) {
-      const _remain = Math.max(0, _TAX_EXEMPT_CAP - _piUsedTaxExempt(field));
-      return Math.min(amt, _remain);
+  // ── 보수월액 = 지급총액 − 비과세 제외분 (2026-09-18 전면 정리) ──
+  // · 비과세 한도 항목(car/meal/research/childcare/remote_area): 한도 내 금액만 제외
+  //   (보육수당은 자녀 1인당 월 20만원 한도) — 고객사 설정에 명시적 false가 없으면 기본 비과세
+  // · 영수증 청구(receipt)·미선택('') 지급유형 항목: 전액 제외
+  const _stdExempt = (field, id, ptKey) => {
+    const amt = gv(id);
+    // receipt(영수증 청구) → 전액 비과세 / 미선택('') → 통상임금 미포함(전액 제외)
+    if (ptKey){
+      const _pt = _getPIPayTypeVal(ptKey);
+      if (_pt === 'receipt' || _pt === '') return amt;
     }
-    return amt; // 비과세 미설정 시 전액 포함 (통상임금이므로)
+    // 비과세 한도 항목만 한도 적용 (field null이면 과세 — 제외 0)
+    if (!field) return 0;
+    if (_piTaxCfg[`${field}_tax_exempt`] === false) return 0; // 명시적 비과세 해제
+    if (field === 'childcare'){
+      const _chCnt = Math.max(0, parseInt(document.getElementById('pi-dependents')?.value || '0') || 0);
+      return Math.min(amt, _TAX_EXEMPT_CAP * _chCnt);
+    }
+    // 같은 달 다른 급여(이전 계약 포함)에서 이미 비과세 처리된 금액을 제외한 잔여 한도
+    const _remain = Math.max(0, _TAX_EXEMPT_CAP - _piUsedTaxExempt(field));
+    return Math.min(amt, _remain);
   };
-  // receipt 제외(daily 포함) 여부 체크 헬퍼
-  const _notReceipt = (ptKey) => {
-    const pt = _getPIPayTypeVal(ptKey);
-    return pt !== 'receipt' && pt !== ''; // receipt는 제외, 미선택도 제외
-  };
-  // ── 보수월액: 주휴수당은 기본급(시급×209h)에 이미 포함 → 미가산 ──
-  const std=gv('pi-base')+gv('pi-site')+gv('pi-position')
-    + _teVal('car')
-    + _teVal('meal')
-    + _teVal('research')
-    + _teVal('childcare')
-    + _teVal('remote_area')
-    +(_notReceipt('communication') ? gv('pi-communication') : 0)
-    +(_notReceipt('fitness')       ? gv('pi-fitness')       : 0)
-    +(_notReceipt('self_dev')      ? gv('pi-self-dev')      : 0)
-    +(_notReceipt('book')          ? gv('pi-book')          : 0)
-    +(_notReceipt('overseas')      ? gv('pi-overseas')      : 0)
-    +gv('pi-skill')
-    +gv('pi-license')
-    +otPay+nightPay+holPay+gv('pi-annual-pay')
-    + _customOrdSum        // 통상임금 커스텀: 항상 과세 → std 포함
-    + _customFixedStd       // 고정수당 커스텀: receipt 제외, daily+fixed 포함
-    + _etcStd;              // 기타수당: receipt 제외, daily 포함
+  const std = gross
+    - _stdExempt('car',         'pi-transport',     'transport')
+    - _stdExempt('meal',        'pi-meal',          'meal')
+    - _stdExempt('research',    'pi-research',      'research')
+    - _stdExempt('childcare',   'pi-childcare',     'childcare')
+    - _stdExempt('remote_area', 'pi-remote-area',   null)
+    - _stdExempt(null,          'pi-communication', 'communication')
+    - _stdExempt(null,          'pi-fitness',       'fitness')
+    - _stdExempt(null,          'pi-self_dev',      'self_dev')
+    - _stdExempt(null,          'pi-book',          'book')
+    - _stdExempt(null,          'pi-overseas',      'overseas')
+    - (_customFixedGross - _customFixedStd)   // 고정수당 커스텀: receipt 제외
+    - (_etcGross - _etcStd);                  // 기타수당: receipt 제외
   const curStd=gv('pi-std-pay');
-  if(!curStd||curStd===0) setAmountVal('pi-std-pay', std);
+  // 확정액 기준: 보수월액 입력란이 없으므로 항상 자동 갱신.
+  // 요율 기준: 직접 수정 가능 → 사용자 입력값 보존 (빈 값일 때만 자동 갱신). (2026-09-18)
   const isFixed = _getPIInsuranceBasis() === 'fixed_amount';
+  if(isFixed || !curStd || curStd === 0) setAmountVal('pi-std-pay', std);
   if(isFixed) calcPIFixed(gross);
   else calcPIDeductions(gross);
   // ── 근태 차감 내역 요약 갱신 (근태 관리 표 아래) ──
@@ -4759,10 +4970,22 @@ function calcPIManual(){
   const otPay    = _parsePay('pi-ot-pay-disp')    || _parsePay('pi-ot-pay-disp-simple');
   const nightPay = _parsePay('pi-night-pay-disp') || _parsePay('pi-night-pay-disp-simple');
   const holPay   = _parsePay('pi-hol-pay-disp')   || _parsePay('pi-hol-pay-disp-simple');
+  // 커스텀 항목 합산 헬퍼 (calcPI 본문 스코프와 분리 — 외부 호출 시 ReferenceError 방지, 2026-09-18)
+  const _sumCustomOrd = () => { let sum = 0; for(let i = 0; i < _piCustomOrdCount; i++) sum += gv(`pi-custom-ord-${i}`); return sum; };
+  const _sumCustomFixed = (payTypeFilter) => {
+    let sum = 0;
+    for(let i = 0; i < _piCustomFixedCount; i++){
+      const amt = gv(`pi-custom-fixed-${i}`);
+      const el = document.getElementById(`pi-custom-fixed-${i}`);
+      const pt = el?.dataset?.paytype || 'fixed';
+      if(payTypeFilter === 'all' || pt === payTypeFilter) sum += amt;
+    }
+    return sum;
+  };
   const gross=gv('pi-base')+gv('pi-site')+gv('pi-remote-area')+gv('pi-position')+gv('pi-skill')+gv('pi-license')
              +gv('pi-transport')+gv('pi-meal')+gv('pi-childcare')+gv('pi-research')+gv('pi-fitness')+gv('pi-self-dev')+gv('pi-book')+gv('pi-overseas')
              +otPay+nightPay+holPay
-             +gv('pi-annual-pay')+gv('pi-bonus')+gv('pi-performance')+gv('pi-actual-expense')+gv('pi-communication')+_layoffPay+_maternityPay - _retroOverpaymentTotal - _retroHolidayOverpay + _sumCustomOrd() + _sumCustomFixed('all');
+             +gv('pi-annual-pay')+gv('pi-bonus')+gv('pi-performance')+gv('pi-communication')+_layoffPay+_maternityPay - _retroOverpaymentTotal - _retroHolidayOverpay + _sumCustomOrd() + _sumCustomFixed('all');
   const isFixed = _getPIInsuranceBasis() === 'fixed_amount';
   if(isFixed) calcPIFixed(gross);
   else calcPIDeductions(gross);
@@ -4778,6 +5001,13 @@ function _calcDailyIncomeTax(dailyWage){
   const localTax  = Math.floor(incomeTax * 0.1 / 10) * 10;
   if(incomeTax + localTax < 1000) return { incomeTax: 0, localTax: 0 }; // 소액부징수
   return { incomeTax, localTax };
+}
+
+// ── 소득세 계산용 부양가족 수 (무계약은 직접 입력 필드, 계약 직원은 직원정보 필드) ──
+function _getPITaxDependents(){
+  const id = (piContract && piContract.is_virtual) ? 'pi-tax-dependents-input' : 'pi-dependents';
+  const el = document.getElementById(id);
+  return Math.max(1, parseInt(el?.value || '1') || 1);
 }
 
 // ── 소득세 계산: 간이세액표 기반 (데이터 없으면 하드코딩 근사식 폴백) ──
@@ -4839,7 +5069,7 @@ function _calcIncomeTax(std, dependents){
 // ── 요율 기준 자동 계산 ──
 function calcPIDeductions(gross){
   const std=gv('pi-std-pay')||gross;
-  const dependents=Math.max(1,parseInt(document.getElementById('pi-dependents')?.value||'1')||1);
+  const dependents=_getPITaxDependents();
   const R = _getPIRates();
 
   // ── 4대보험 적용 제외 판정 ──
@@ -4906,7 +5136,7 @@ function calcPIDeductions(gross){
     <div style="display:flex;justify-content:space-between"><span style="color:#888">국민연금 (보수월액×${R.pensionLabel})${_isSocialInsExempt||_isDailyUnder8?'<span style=\"font-size:10px;color:#9ca3af;\"> 적용제외</span>':''}</span><span>${won(pension)}</span></div>
     <div style="display:flex;justify-content:space-between"><span style="color:#888">건강보험 (보수월액×${R.healthLabel})${_isSocialInsExempt||_isShortHourWorker||_isDailyUnder8?'<span style=\"font-size:10px;color:#9ca3af;\"> 적용제외</span>':''}</span><span>${won(health)}</span></div>
     <div style="display:flex;justify-content:space-between"><span style="color:#888">장기요양보험 (건강보험×${R.ltcareLabel})${_isSocialInsExempt||_isShortHourWorker||_isDailyUnder8?'<span style=\"font-size:10px;color:#9ca3af;\"> 적용제외</span>':''}</span><span>${won(ltCare)}</span></div>
-    <div style="display:flex;justify-content:space-between"><span style="color:#888">고용보험 (보수월액×${R.employLabel})${_isSocialInsExempt?'<span style=\"font-size:10px;color:#9ca3af;\"> 적용제외</span>':''}</span><span>${won(empIns)}</span></div>`;
+    ${_isSocialInsExempt ? '' : `<div style="display:flex;justify-content:space-between"><span style="color:#888">고용보험 (보수월액×${R.employLabel})</span><span>${won(empIns)}</span></div>`}`;
   _piFinalize(gross,std,incomeTax,localTax,health,ltCare,pension,empIns,totalDed,net,yearEnd,healthAdj,healthAdjRetro,healthAdjYearend,ltcareAdjYearend,advance);
 }
 
@@ -4922,7 +5152,7 @@ function calcPIFixed(gross){
     const otPay=   _pf('pi-ot-pay-disp')    || _pf('pi-ot-pay-disp-simple');
     const nightPay=_pf('pi-night-pay-disp') || _pf('pi-night-pay-disp-simple');
     const holPay=  _pf('pi-hol-pay-disp')   || _pf('pi-hol-pay-disp-simple');
-    gross=gv('pi-base')+gv('pi-site')+gv('pi-remote-area')+gv('pi-position')+gv('pi-skill')+gv('pi-license')+gv('pi-transport')+gv('pi-meal')+gv('pi-childcare')+gv('pi-research')+otPay+nightPay+holPay+gv('pi-annual-pay')+gv('pi-bonus')+gv('pi-performance')+gv('pi-actual-expense')+gv('pi-communication')+gv('pi-fitness')+gv('pi-self-dev')+gv('pi-book')+gv('pi-overseas')+_layoffPay+_maternityPay - _retroOverpaymentTotal - _retroHolidayOverpay;
+    gross=gv('pi-base')+gv('pi-site')+gv('pi-remote-area')+gv('pi-position')+gv('pi-skill')+gv('pi-license')+gv('pi-transport')+gv('pi-meal')+gv('pi-childcare')+gv('pi-research')+otPay+nightPay+holPay+gv('pi-annual-pay')+gv('pi-bonus')+gv('pi-performance')+gv('pi-communication')+gv('pi-fitness')+gv('pi-self-dev')+gv('pi-book')+gv('pi-overseas')+_layoffPay+_maternityPay - _retroOverpaymentTotal - _retroHolidayOverpay;
   }
   const std=gv('pi-std-pay')||gross;
 
@@ -4947,11 +5177,13 @@ function calcPIFixed(gross){
   const _piMonthlyWDF = _piMonthlyWorkTotals().days; // 월 합산 근로일수
   const _isDailyUnder8F = piContract?.contract_type === CONTRACT_TYPE.DAILY && _piMonthlyWDF > 0 && _piMonthlyWDF < 8;
 
-  const pension = (_isSocialInsExemptFixed || _insPensionOffF || _isDailyUnder8F) ? 0 : gv('pi-pension-fixed');
-  const health  = (_isSocialInsExemptFixed || _isShortHourFixed || _insHealthOffF || _isDailyUnder8F) ? 0 : gv('pi-health-fixed');
-  const ltCare  = (_isSocialInsExemptFixed || _isShortHourFixed || _insHealthOffF || _isDailyUnder8F) ? 0 : gv('pi-ltcare-fixed');
+  // ── 무계약 인원(대표자·등기임원·특수관계인): 고용보험만 가입대상 아님 —
+  //    국민연금·건강보험·장기요양은 직접 입력값 그대로 사용 (2026-09-18) ──
+  const pension = (_isSocialInsExemptFixed && !piContract?.is_virtual || _insPensionOffF || _isDailyUnder8F) ? 0 : gv('pi-pension-fixed');
+  const health  = (_isSocialInsExemptFixed && !piContract?.is_virtual || _isShortHourFixed || _insHealthOffF || _isDailyUnder8F) ? 0 : gv('pi-health-fixed');
+  const ltCare  = (_isSocialInsExemptFixed && !piContract?.is_virtual || _isShortHourFixed || _insHealthOffF || _isDailyUnder8F) ? 0 : gv('pi-ltcare-fixed');
   const empIns  = (_isSocialInsExemptFixed || _insEmployOffF) ? 0 : gv('pi-employ-fixed');
-  const dependents=Math.max(1,parseInt(document.getElementById('pi-dependents')?.value||'1')||1);
+  const dependents=_getPITaxDependents();
   // 소득세: 일용직=원천징수 특례(일당-15만)×6%·소액부징수, 그 외=간이세액표
   const _isDailyTaxF = piContract?.contract_type === CONTRACT_TYPE.DAILY;
   let taxResult;
@@ -5002,7 +5234,10 @@ function _piFinalize(gross,std,incomeTax,localTax,health,ltCare,pension,empIns,t
   if(_cHoEl) _cHoEl.value = _fmtComb(_comb('pi-fixed-hol-pay-disp', 'pi-hol-pay-disp', 'pi-hol-pay-disp-simple', 'pi-ded-hol-pay-disp'));
   // ── 합산 시간 · 가산율 힌트 (레이블 아래 — 2026-09-17) ──
   const _combH = (fh, ah, dh) => Math.round((_amt(fh) * _fxK + _amt(ah) + _amt(dh)) * 10) / 10;
-  const _isSmallH = (typeof _piGetDecision === 'function') ? (_piGetDecision().isSmall) : false;
+  // 무계약 인원: 가산 판별 생략 (2026-09-18)
+  const _isSmallH = (piContract && piContract.is_virtual)
+    ? false
+    : ((typeof _piGetDecision === 'function') ? (_piGetDecision().isSmall) : false);
   const _setHint = (id, text, h) => { const el = document.getElementById(id); if(!el) return; el.textContent = text; el.classList.toggle('d-none', !(h > 0)); };
   const _hOt = _combH('pi-fixed-ot-hours-disp', 'pi-ot-hours', 'pi-ded-ot-hours-disp');
   _setHint('pi-ot-total-hint', `합산 ${_hOt.toFixed(1)}h · 가산 ×${_isSmallH ? '1.0' : '1.5'}`, _hOt);
@@ -5543,6 +5778,11 @@ async function _piResolvePremiumDecision(coId, empId, yr, mo){
 function _updatePISmallFirmBadge(sfInfo, yr, mo){
   const badge = document.getElementById('pi-small-firm-badge');
   if(!badge) return;
+  // 무계약 인원(대표자·등기임원·특수관계인): 가산 적용 대상 아님 → 배지 숨김 (2026-09-18)
+  if(piContract && piContract.is_virtual){
+    badge.style.display = 'none';
+    return;
+  }
   if(!yr || !mo || !sfInfo){
     badge.style.display = 'none';
     return;
@@ -5603,6 +5843,11 @@ function calcWeeklyHolidayPay(){
   };
 
   if(!piContract){
+    _setAll(0, '');
+    return { pay: 0, desc: '', retroBrokenWeeks: 0, retroHolidayOverpay: 0 };
+  }
+  // 무계약 인원(대표자·등기임원·특수관계인): 주휴수당 미발생 (2026-09-18)
+  if(piContract.is_virtual){
     _setAll(0, '');
     return { pay: 0, desc: '', retroBrokenWeeks: 0, retroHolidayOverpay: 0 };
   }
@@ -5978,21 +6223,28 @@ function _renderPIIrregularRows(){
     // 뱃지 제거
     const oldBadge = row.querySelector('.pi-irreg-pt-badge');
     if(oldBadge) oldBadge.remove();
+    // 일일수당 입력 UI 원상복구 (총액 input 다시 노출 — 2026-09-18)
+    _removePIDailyRateUI(row);
 
     const originId = row.dataset.irregularOrigin;
     const anchor   = originId && document.getElementById(originId);
     if(anchor && anchor.parentNode){
+      // 비과세 힌트 형제 요소가 함께 이동했다면 원위치로 복원 (2026-09-18)
+      const _teHint = row.nextElementSibling;
       anchor.parentNode.insertBefore(row, anchor.nextSibling);
+      if(_teHint && _teHint.id && _teHint.id.startsWith('pi-te-hint-'))
+        anchor.parentNode.insertBefore(_teHint, row.nextSibling);
     }
     row.removeAttribute('data-irregular-moved');
     row.removeAttribute('data-irregular-origin');
   });
 
-  // _piPayTypes 기준: daily/receipt 인 체크(노출) 항목을 비정기 섹션으로 이동
+  // _piPayTypes 기준: daily(출근일수에 따름) 체크(노출) 항목을 비정기 섹션으로 이동
+  // receipt(영수증 청구)는 급여 입력 제외 대상 → 이동·노출 없음 (2026-09-18)
   _PI_OPT_ROWS.forEach(({ rowId, ptField }) => {
     if(!ptField) return;                    // pay_type 없는 항목(site 등) 제외
     const pt = _piPayTypes[ptField] || '';
-    if(pt !== 'daily' && pt !== 'receipt') return;  // fixed/미선택은 정기 섹션 유지
+    if(pt !== 'daily') return;              // fixed/미선택은 정기 섹션 유지, receipt는 제외
 
     const row = document.getElementById(rowId);
     if(!row || row.style.display === 'none') return;  // 미체크(숨김) 항목 제외
@@ -6015,14 +6267,20 @@ function _renderPIIrregularRows(){
 
     // 비정기 지급 섹션으로 이동
     container.appendChild(row);
+    // 비과세 힌트 형제 요소도 함께 이동 (2026-09-18)
+    const _teHint2 = row.nextElementSibling;
+    if(_teHint2 && _teHint2.id && _teHint2.id.startsWith('pi-te-hint-')) container.appendChild(_teHint2);
     row.style.display = '';  // 반드시 노출
+    // 일일수당 입력 UI 적용 (근로일수 × 일일수당 = 지급액 자동계산 — 2026-09-18)
+    const _amtEl2 = row.querySelector('input[data-amount]');
+    if(_amtEl2) _applyPIDailyRateUI(row, _amtEl2.id);
   });
 
-  // ── 커스텀 고정수당 항목: daily/receipt → 비정기 섹션으로 이동 ──
+  // ── 커스텀 고정수당 항목: daily만 비정기 섹션으로 이동 (receipt는 급여 입력 제외 — 2026-09-18) ──
   document.querySelectorAll('.pi-custom-fixed-row').forEach(row => {
     const input = row.querySelector('input[data-paytype]');
     const pt = input?.dataset?.paytype || '';
-    if(pt !== 'daily' && pt !== 'receipt') return;
+    if(pt !== 'daily') return;
     if(row.style.display === 'none') return;
 
     const prevSib = row.previousElementSibling;
@@ -6041,7 +6299,140 @@ function _renderPIIrregularRows(){
 
     container.appendChild(row);
     row.style.display = '';
+    // 일일수당 입력 UI 적용 (근로일수 × 일일수당 = 지급액 자동계산 — 2026-09-18)
+    const _amtEl3 = row.querySelector('input[data-amount]');
+    if(_amtEl3) _applyPIDailyRateUI(row, _amtEl3.id);
   });
+}
+
+// ── 출근일수에 따름(daily) 항목: 일일수당 입력 → 근로일수×일일수당 지급액 자동계산 (2026-09-18) ──
+/**
+ * daily 행에 일일수당 입력 UI를 적용한다. (2026-09-19 레이아웃 개편)
+ * - 1줄: 항목명 + "출근일수에 따름" 뱃지 (기존 label 그대로 유지)
+ * - 2줄: 일일수당[입력] × 근로일수[readonly] = 지급액[readonly 자동계산]
+ * - 기존 총액 input은 display:none 처리하고 계산·저장용으로 유지 (calcPI·save 경로 불변)
+ * - .pi-row-right 내부에 자녀수(dep-wrap) 등 다른 컨트롤이 있으면 남겨두고 금액 input만 숨김
+ */
+function _applyPIDailyRateUI(row, targetId){
+  if(!row || !targetId) return;
+  if(row.querySelector(`input[data-daily-rate][data-daily-target="${targetId}"]`)) return; // 이미 적용됨
+  const amtEl = document.getElementById(targetId);
+  if(!amtEl) return;
+  amtEl.style.display = 'none'; // 총액 input은 hidden 유지
+  // 금액 input만 있는 .pi-row-right는 통째로 숨김 (자녀수 등 다른 컨트롤이 있으면 유지)
+  const wrap = amtEl.closest('.pi-row-right');
+  if(wrap && wrap.children.length === 1) wrap.style.display = 'none';
+  const label = row.querySelector('label');
+  const ui = document.createElement('div');
+  ui.className = 'pi-daily-ui';
+  const rateId = `pi-daily-rate-${targetId}`;
+  const daysId = `pi-daily-days-${targetId}`;
+  const dispId = `pi-daily-amount-${targetId}`;
+  const _lblStyle  = 'font-size:11px;color:#6b7280;white-space:nowrap;';
+  const _roStyle   = 'width:64px;border:1px solid #d1d5db;border-radius:6px;padding:4px 8px;font-size:12.5px;font-family:inherit;text-align:right;background:#f1f5f9;color:#555;';
+  const _amtRoStyle= 'width:120px;border:1px solid #d1d5db;border-radius:6px;padding:4px 8px;font-size:12.5px;font-family:inherit;text-align:right;background:#f1f5f9;color:#555;font-weight:600;';
+  ui.innerHTML = `
+    <span style="${_lblStyle}">일일수당</span>
+    <input type="text" inputmode="numeric" id="${rateId}" placeholder="일당 금액"
+      data-daily-rate data-daily-target="${targetId}" data-daily-days="${daysId}" data-daily-amount="${dispId}"
+      style="width:110px;border:1px solid #d1d5db;border-radius:6px;padding:4px 8px;font-size:12.5px;font-family:inherit;text-align:right;color:#000;outline:none;"
+      oninput="onPIDailyRateInput(this)" />
+    <span style="font-size:12px;color:#9ca3af;">×</span>
+    <span style="${_lblStyle}">근로일수</span>
+    <input type="text" id="${daysId}" readonly tabindex="-1" style="${_roStyle}" />
+    <span style="font-size:12px;color:#9ca3af;">=</span>
+    <span style="${_lblStyle}">지급액</span>
+    <input type="text" id="${dispId}" readonly tabindex="-1" style="${_amtRoStyle}" />
+  `;
+  // 한 줄 내려서 표시: 부모 행은 flex-wrap, UI는 폭 100%로 다음 줄 차지 + 우측 정렬 (2026-09-19)
+  row.style.flexWrap = 'wrap';
+  ui.style.cssText = 'display:flex;align-items:center;justify-content:flex-end;gap:5px;flex:1 1 100%;padding:2px 0 4px;';
+  if(label && label.nextSibling) row.insertBefore(ui, label.nextSibling);
+  else if(amtEl && amtEl.nextSibling) row.insertBefore(ui, amtEl.nextSibling); // 라벨 없는 행(기타수당)은 금액 input 옆
+  else row.appendChild(ui);
+  _syncPIDailyAmounts(); // 근로일수·지급액 readonly 필드 즉시 반영
+}
+
+/** daily 행의 일일수당 UI 제거 (총액 input 다시 노출) */
+function _removePIDailyRateUI(row){
+  if(!row) return;
+  const ui = row.querySelector('.pi-daily-ui');
+  if(ui){
+    const rateEl = ui.querySelector('input[data-daily-rate]');
+    if(rateEl){
+      const targetId = rateEl.dataset.dailyTarget;
+      const amtEl = targetId && document.getElementById(targetId);
+      if(amtEl) amtEl.style.display = '';
+      const wrap = amtEl && amtEl.closest('.pi-row-right');
+      if(wrap && wrap.style.display === 'none' && wrap.children.length === 1) wrap.style.display = '';
+    }
+    ui.remove();
+  }
+  if(row.style.flexWrap === 'wrap') row.style.flexWrap = '';
+}
+
+/** 일일수당 입력 시: 숫자·원(원은 필드 내부 표기 — 2026-09-19) 포맷 후 지급액 갱신·재계산 */
+function onPIDailyRateInput(el){
+  const raw = (el.value || '').replace(/,/g,'').replace(/원$/,'').replace(/[^0-9.]/g,'');
+  const num = parseFloat(raw) || 0;
+  if(num > 0){
+    const v = Math.round(num * 100) / 100;
+    const formatted = v.toLocaleString('ko-KR', { maximumFractionDigits: 2 }) + '원';
+    const selEnd = el.selectionEnd ?? formatted.length;
+    const oldLen = el.value.length;
+    el.value = formatted;
+    const diff = formatted.length - oldLen;
+    const cursorPos = Math.max(0, Math.min(selEnd + diff, formatted.length - 1));
+    try{ el.setSelectionRange(cursorPos, cursorPos); }catch(e){}
+  } else {
+    el.value = '';
+  }
+  _syncPIDailyAmounts();
+  calcPI();
+}
+
+/**
+ * 근로일수(pi-work-days — 근태 자동계산) 기준으로 모든 daily 항목의 지급액 동기화.
+ * - 일일수당 입력값 있으면: 지급액 = round(일일수당 × 근로일수)
+ * - 일일수당 비어있고 저장 복원된 총액이 있으면: 일일수당 = 총액 ÷ 근로일수로 역산 초기화
+ * - 근로일수·지급액 readonly 표시 필드 동시 갱신 (2026-09-19)
+ */
+function _syncPIDailyAmounts(){
+  const _days = parseFloat(document.getElementById('pi-work-days')?.value || '0') || 0;
+  document.querySelectorAll('input[data-daily-rate]').forEach(rateEl => {
+    const amtEl  = document.getElementById(rateEl.dataset.dailyTarget);
+    const daysEl = document.getElementById(rateEl.dataset.dailyDays);
+    const dispEl = document.getElementById(rateEl.dataset.dailyAmount);
+    if(!amtEl) return;
+    const rateRaw = (rateEl.value || '').replace(/,/g,'').replace(/원$/,'').replace(/[^0-9.]/g,'');
+    let rate = parseFloat(rateRaw) || 0;
+    const amtSaved = parseInt((amtEl.value || '').replace(/[^0-9]/g,''), 10) || 0;
+    if(daysEl) daysEl.value = _days > 0 ? _days + '일' : '';
+    if(_days <= 0){
+      // 근로일수 미확정: 저장값 보존 (초기화·무계약 대응)
+      if(dispEl) dispEl.value = amtSaved > 0 ? won(amtSaved) : '';
+      return;
+    }
+    // 저장값 복원 직후(rate 미입력): rate = 총액 ÷ 근로일수 역산 초기화 (원 단위 필드 내부 표기 — 2026-09-19)
+    if(!(rate > 0) && amtSaved > 0){
+      rate = parseFloat((amtSaved / _days).toFixed(2));
+      if(rate > 0) rateEl.value = rate.toLocaleString('ko-KR', { maximumFractionDigits: 2 }) + '원';
+    }
+    const amt = rate > 0 ? Math.round(rate * _days) : 0;
+    amtEl.value = amt > 0 ? String(amt) : '';
+    if(dispEl) dispEl.value = amt > 0 ? won(amt) : '';
+  });
+}
+
+/** 기타수당 항목 지급유형 변경: daily 전환 시 일일수당 UI 적용/해제 */
+function onPIEtcPtChange(sel){
+  const row = sel && sel.closest('.pi-etc-row');
+  const amtEl = row ? row.querySelector('input[data-amount]') : null;
+  if(amtEl){
+    if(sel.value === 'daily') _applyPIDailyRateUI(row, amtEl.id);
+    else _removePIDailyRateUI(row);
+  }
+  calcPI();
 }
 
 /**
@@ -6063,14 +6454,20 @@ function applyPIAllowanceConfig(cfg){
     const row = document.getElementById(rowId);
     // car, meal은 항상 노출 (기본값 checked)
     const isAlwaysVisible = (key === 'car' || key === 'meal');
-    const visible = isPI_Daily ? false : (isAlwaysVisible || !!(cfg && cfg[key]));
-    if(row) row.style.display = visible ? '' : 'none';
+    let visible = isPI_Daily ? false : (isAlwaysVisible || !!(cfg && cfg[key]));
     if(ptField){
       const defaultPt = (visible && !isPI_Daily)
         ? ((cfg && cfg[`${key}_pay_type`]) || 'fixed')
         : '';
+      // 영수증 청구: 회사 복리후생비 처리 항목 → 급여 입력에서 제외 (2026-09-18)
+      if(defaultPt === 'receipt') visible = false;
       setPIPayType(ptField, defaultPt);
+      if(!visible && _piPayTypes[ptField] === 'receipt'){
+        // 숨김 receipt 행의 잔재 금액 초기화 (지급총액 미반영)
+        if(row) row.querySelectorAll('input[data-amount]').forEach(inp => { inp.value = ''; });
+      }
     }
+    if(row) row.style.display = visible ? '' : 'none';
   });
   // ② 사용자 정의 통상임금 항목 렌더링 (일용직 제외)
   if(!isPI_Daily) _renderPICustomOrdinaryRows(cfg);
@@ -6084,6 +6481,32 @@ function applyPIAllowanceConfig(cfg){
     const container = document.getElementById(_PI_CUSTOM_FIXED_CONTAINER);
     if(container){ container.style.display = 'none'; container.querySelectorAll('.pi-custom-fixed-row').forEach(r => r.remove()); }
   }
+  // ④ 영수증 청구 항목 완전 제외 재적용 (커스텀 고정수당 포함 — 2026-09-18)
+  _hideReceiptPIRows();
+  // ⑤ 비과세 항목 한도 힌트 갱신 (2026-09-18)
+  _updatePITaxExemptHints();
+}
+
+// ── 영수증 청구(receipt) 항목: 회사 복리후생비 처리 → 급여 입력에서 완전 제외 (2026-09-18) ──
+function _hideReceiptPIRows(cfg){
+  _PI_OPT_ROWS.forEach(({ key, rowId, ptField }) => {
+    if(!ptField) return;
+    const isReceipt = _piPayTypes[ptField] === 'receipt'
+      || (cfg && cfg[`${key}_pay_type`] === 'receipt');
+    if(!isReceipt) return;
+    const row = document.getElementById(rowId);
+    if(!row) return;
+    row.style.display = 'none';
+    row.querySelectorAll('input[data-amount]').forEach(inp => { inp.value = ''; });
+  });
+  document.querySelectorAll('.pi-custom-fixed-row').forEach(row => {
+    const ptInput = row.querySelector('input[data-paytype]');
+    if((ptInput?.dataset?.paytype || '') !== 'receipt') return;
+    row.style.display = 'none';
+    const amtInput = row.querySelector('input[data-amount]');
+    if(amtInput) amtInput.value = '';
+  });
+  _updatePITaxExemptHints(); // 숨김 행의 비과세 힌트 제거
 }
 
 // ── 급여 입력: 사용자 정의 통상임금 항목 ──
@@ -6201,7 +6624,7 @@ function piAddEtcAllowanceItem(name = '', amount = '', payType = ''){
       placeholder="항목명" value="${name.replace(/"/g,'&quot;')}" maxlength="50" />
     <input type="text" inputmode="numeric" id="pi-etc-amount-${idx}" data-amount
       oninput="onAmountInput(this,calcPI)" placeholder="금액" value="${amount}" />
-    <select id="pi-etc-pt-${idx}" class="pi-etc-pt-select" onchange="calcPI()">
+    <select id="pi-etc-pt-${idx}" class="pi-etc-pt-select" onchange="onPIEtcPtChange(this)">
       <option value="" ${!payType?'selected':''}>선택</option>
       <option value="daily" ${payType==='daily'?'selected':''}>출근일수에 따름</option>
       <option value="receipt" ${payType==='receipt'?'selected':''}>영수증 청구</option>
@@ -6211,6 +6634,8 @@ function piAddEtcAllowanceItem(name = '', amount = '', payType = ''){
     </button>
   `;
   container.appendChild(div);
+  // daily(출근일수에 따름)면 일일수당 입력 UI 적용 (근로일수×일일수당 — 2026-09-18)
+  if(payType === 'daily') _applyPIDailyRateUI(div, `pi-etc-amount-${idx}`);
 }
 
 function piRemoveEtcAllowanceItem(idx){
@@ -6313,7 +6738,9 @@ function _forceShowNonZeroPIRows(p){
     overseas    : ['overseas_allowance'],
     childcare   : ['childcare_allowance'],
   };
-  _PI_OPT_ROWS.forEach(({ key, rowId }) => {
+  _PI_OPT_ROWS.forEach(({ key, rowId, ptField }) => {
+    // 영수증 청구(receipt) 항목은 급여 입력 제외 → 저장값이 있어도 노출 금지 (2026-09-18)
+    if(ptField && _piPayTypes[ptField] === 'receipt') return;
     const fields = _fieldMap[key] || [];
     const hasValue = fields.some(f => Number(p[f] || 0) > 0);
     if(hasValue){
@@ -6416,11 +6843,20 @@ function _setPIContractReadonly(on){
   _PI_CONTRACT_FIXED_IDS.forEach(id=>{
     const el = document.getElementById(id);
     if(!el) return;
-    // daily/receipt 항목은 계약서 고정값이 없으므로 잠금 제외 (비정기 섹션에서 직접 입력)
+    // daily/receipt 항목은 계약서 고정값이 없으므로 잠금 제외
     if(on){
       const ptField = _PI_ID_TO_PT_FIELD[id];
       const pt = ptField ? (_piPayTypes[ptField] || '') : '';
-      if(pt === 'daily' || pt === 'receipt') return;
+      if(pt === 'daily' || pt === 'receipt'){
+        // daily: 비정기 섹션에서 직접 입력 → 잠금 해제 보장
+        // receipt: 급여 입력 제외 대상 → 숨김 처리(값도 초기화)되어 입력 불가
+        el.readOnly = false;
+        el.classList.remove('pi-readonly-field');
+        el.classList.remove('pi-input-locked');
+        const _saved2 = el._savedOninput || 'onAmountInput(this,calcPI)';
+        el.setAttribute('oninput', _saved2);
+        return;
+      }
     }
     if(on){
       el.readOnly = true;
@@ -6499,9 +6935,10 @@ function clearPIFields(){
   if(typeof _restorePIEtcAllowanceItems === 'function') _restorePIEtcAllowanceItems([]);
   ['pi-base','pi-weekly-hol','pi-site','pi-remote-area','pi-position','pi-skill','pi-license','pi-transport','pi-meal','pi-childcare','pi-research','pi-fitness','pi-self-dev','pi-book','pi-overseas',
    'pi-ot-hours','pi-night-hours','pi-hol-hours',
-   'pi-annual-pay','pi-bonus','pi-performance','pi-actual-expense','pi-communication',
+   'pi-annual-pay','pi-bonus','pi-performance','pi-communication',
    'pi-std-pay','pi-yearend','pi-yearend-memo','pi-health-adj-retro','pi-advance','pi-work-days','pi-total-hours',
-   'pi-pension-fixed','pi-health-fixed','pi-ltcare-fixed','pi-employ-fixed'
+   'pi-pension-fixed','pi-health-fixed','pi-ltcare-fixed','pi-employ-fixed',
+   'pi-monthly-agreed-input'
   ].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   ['pi-ot-pay-disp','pi-night-pay-disp','pi-hol-pay-disp',
    'pi-ot-pay-disp-simple','pi-night-pay-disp-simple','pi-hol-pay-disp-simple'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='0원';});
@@ -6576,7 +7013,7 @@ function _resetPIInputsOnly(){
   // 1) 비정기 지급항목 금액 초기화
   [
     'pi-annual-pay',
-    'pi-bonus','pi-performance','pi-actual-expense',
+    'pi-bonus','pi-performance',
     'pi-communication',
   ].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
 
@@ -6646,7 +7083,7 @@ const _PI_SNAP_FIELDS = [
   'pi-transport','pi-meal','pi-childcare','pi-research',
   'pi-fitness','pi-self-dev','pi-book','pi-overseas',
   'pi-annual-pay','pi-bonus','pi-performance',
-  'pi-actual-expense','pi-communication',
+  'pi-communication',
   'pi-ot-hours','pi-night-hours','pi-hol-hours','pi-work-days',
   'pi-yearend','pi-yearend-memo',
   'pi-health-adj-yearend','pi-health-adj-yearend-memo',
@@ -6654,6 +7091,7 @@ const _PI_SNAP_FIELDS = [
   'pi-advance','pi-advance-memo',
   'pi-std-pay','pi-paydate','pi-note','pi-dependents',
   'pi-pension-fixed','pi-health-fixed','pi-ltcare-fixed','pi-employ-fixed',
+  'pi-monthly-agreed-input',
 ];
 
 /** 현재 폼 상태를 JSON 문자열로 반환 (스냅샷 저장·비교용) */

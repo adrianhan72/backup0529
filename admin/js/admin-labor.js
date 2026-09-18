@@ -132,7 +132,6 @@ function renderLsPieChart(){
     { label:'연차수당',       val: s('annual_leave_pay'),         color:'#c084fc' },
     { label:'정기 상여금',    val: s('bonus_pay'),                color:'#e879f9' },
     { label:'비정기 성과급',  val: s('performance_pay'),          color:'#d946ef' },
-    { label:'실비변상적급여', val: s('actual_expense_pay'),       color:'#f472b6' },
     { label:'통신비',         val: s('communication_pay'),        color:'#fb7185' },
     { label:'기술수당',       val: s('skill_allowance'),          color:'#a5b4fc' },
     { label:'면허수당',       val: s('license_allowance'),        color:'#818cf8' },
@@ -550,7 +549,7 @@ function renderLsYearTrendChart(){
     const net    = sum(pays,'net_pay');
     const deduct = gross - net;
     const extra  = sum(pays,'overtime_pay') + sum(pays,'night_pay') + sum(pays,'holiday_pay');
-    const irreg  = sum(pays,'annual_leave_pay') + sum(pays,'bonus_pay') + sum(pays,'actual_expense_pay') + sum(pays,'communication_pay') + sum(pays,'etc_allowance');
+    const irreg  = sum(pays,'annual_leave_pay') + sum(pays,'bonus_pay') + sum(pays,'communication_pay') + sum(pays,'etc_allowance');
     const tax    = sum(pays,'income_tax') + sum(pays,'local_income_tax');
     const ins    = sum(pays,'health_insurance') + sum(pays,'long_term_care') + sum(pays,'national_pension') + sum(pays,'employment_insurance');
     const adj    = sum(pays,'year_end_tax_adjust') + sum(pays,'health_insurance_adjust') + sum(pays,'advance_deduction');

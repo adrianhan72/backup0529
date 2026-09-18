@@ -82,7 +82,7 @@ for (const p of payrolls) {
     + num(p.remote_area_allowance) + num(p.meal_allowance) + num(p.childcare_allowance)
     + num(p.research_allowance) + num(p.skill_allowance) + num(p.license_allowance) + num(p.hazard_allowance)
     + num(p.overtime_pay) + num(p.night_pay) + num(p.holiday_pay)
-    + num(p.annual_leave_pay) + num(p.bonus_pay) + num(p.performance_pay) + num(p.actual_expense_pay)
+    + num(p.annual_leave_pay) + num(p.bonus_pay) + num(p.performance_pay)
     + num(p.communication_pay) + num(p.fitness_allowance) + num(p.self_dev_allowance)
     + num(p.book_allowance) + num(p.overseas_allowance)
     + num(p.severance_interim_pay) + (num(p.etc_allowance) + num(p.other_pay))
