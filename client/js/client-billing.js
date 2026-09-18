@@ -16,10 +16,10 @@ function renderBilling(){
     return;
   }
 
-  // 상태 정규화 헬퍼
-  const isPaid     = b => b.payment_status==='완납'||b.payment_status==='paid';
-  const isPartial  = b => b.payment_status==='일부납';
-  const isWait     = b => b.payment_status==='납부대기';
+  // 상태 정규화 헬퍼 (constants.js 상수 사용)
+  const isPaid     = b => _normPaymentStatus(b.payment_status) === PAYMENT_STATUS.PAID;
+  const isPartial  = b => _normPaymentStatus(b.payment_status) === PAYMENT_STATUS.PARTIAL;
+  const isWait     = b => _normPaymentStatus(b.payment_status) === PAYMENT_STATUS.PENDING;
   const isLoss     = b => !!(b.loss_amount && b.loss_amount > 0);
   const getAmt     = b => b.total_amount||b.amount||0;
   const getPaid    = b => isPaid(b) ? getAmt(b) : (isPartial(b) ? (b.partial_paid_amount||0) : 0);
@@ -194,8 +194,8 @@ function renderBilling(){
 function renderMyco(){
   const el = document.getElementById('myco-content');
   const co = currentCompany;
-  const activeEmps = allEmployees.filter(e=>e.status==='재직'||e.status==='active');
-  const activeContracts = allContracts.filter(c=>c.status==='active'||c.status==='활성'||c.status==='유효');
+  const activeEmps = allEmployees.filter(e=>_isEmpActive(e));
+  const activeContracts = allContracts.filter(c=>_isContractActive(c));
 
   el.innerHTML = `
     <!-- 회사 헤더 -->
@@ -250,7 +250,10 @@ function renderMyco(){
     <div class="info-card">
       <div class="info-card-title"><i class="fas fa-users" style="color:#8b5cf6;"></i> 고용형태별 인원</div>
       ${['정규직','정규직 수습','계약직','계약직 수습','일용직'].map(cat=>{
-        const cnt = allEmployees.filter(e=>e.employment_category===cat||e.employment_category===cat.replace(' ','(')+')').length;
+        const cnt = allEmployees.filter(e=>{
+          const empCat = _normContractType(e.employment_category);
+          return CONTRACT_TYPE_LABEL[empCat] === cat;
+        }).length;
         return `<div class="info-row"><span class="il"><span class="badge ${empCatBadge(cat)}">${cat}</span></span><span class="iv">${cnt}명</span></div>`;
       }).join('')}
     </div>
@@ -258,20 +261,16 @@ function renderMyco(){
     <!-- 앱 접근코드 카드 -->
     <div class="info-card" style="border:1.5px solid #e0e7ff;background:#fafbff;">
       <div class="info-card-title"><i class="fas fa-key" style="color:#6366f1;"></i> 앱 접근코드</div>
-      <div class="info-row" style="align-items:center;">
-        <span class="il">현재 코드</span>
-        <span class="iv" style="font-size:18px;font-weight:800;color:#4f46e5;letter-spacing:3px;">${co.access_code||'-'}</span>
-      </div>
-      <div style="padding:0 0 4px;">
-        <button onclick="openChangeCodeModal()"
-          style="width:100%;margin-top:6px;padding:11px;border:none;border-radius:10px;
-                 background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;
-                 font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;
-                 display:flex;align-items:center;justify-content:center;gap:7px;
-                 box-shadow:0 4px 14px rgba(99,102,241,.3);transition:opacity .15s;">
-          <i class="fas fa-edit"></i> 접근코드 변경
+      <div style="position:relative;display:flex;align-items:center;margin-top:6px;">
+        <input type="text" id="myco-code-input" value="${co.access_code||''}" readonly
+          style="flex:1;padding:10px 56px 10px 14px;background:#f5f3ff;border:1.5px solid #ddd6fe;border-radius:10px;font-size:14px;font-weight:700;color:#4f46e5;letter-spacing:2px;font-family:inherit;outline:none;"
+          oninput="var m=document.getElementById('myco-code-msg');if(m){m.style.color='#9ca3af';m.innerHTML='<i class=\\'fas fa-info-circle\\'></i> 숫자+영문 대문자 혼합 6~8자리';}" />
+        <button id="myco-code-action-btn" onclick="_toggleMycoCodeEdit()"
+          style="position:absolute;right:4px;top:50%;transform:translateY(-50%);padding:6px 10px;border:none;border-radius:8px;background:#4f46e5;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">
+          <i class="fas fa-pen"></i> 변경
         </button>
       </div>
+      <div id="myco-code-msg" style="font-size:10.5px;color:#9ca3af;margin-top:4px;"><i class="fas fa-info-circle"></i> 숫자+영문 대문자 혼합 6~8자리</div>
     </div>
 
     <!-- 계약현황 바로가기 -->
@@ -288,7 +287,60 @@ function renderMyco(){
     </div>`;
 }
 
-// ══ 접근코드 변경 ══════════════════════════════════════════════════════════════
+function _toggleMycoCodeEdit(){
+  const inputEl = document.getElementById('myco-code-input');
+  const btnEl = document.getElementById('myco-code-action-btn');
+  if(!inputEl || !btnEl) return;
+  if(inputEl.readOnly){
+    inputEl.readOnly = false;
+    inputEl.style.background = '#fff';
+    inputEl.style.borderColor = '#6366f1';
+    inputEl.focus();
+    btnEl.innerHTML = '<i class="fas fa-check-circle"></i> 중복체크';
+    btnEl.onclick = checkMycoCodeDuplicate;
+  }
+}
+function checkMycoCodeDuplicate(){
+  const inputEl = document.getElementById('myco-code-input');
+  const code = inputEl?.value?.trim();
+  const msgEl = document.getElementById('myco-code-msg');
+  if(!code){ return; }
+  // 형식 검증
+  if(code.length < 6 || code.length > 8 || !/[A-Z]/.test(code) || !/[0-9]/.test(code) || !/^[A-Z0-9]+$/.test(code)){
+    if(msgEl){ msgEl.style.color = '#dc2626'; msgEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 숫자+영문 대문자 혼합 6~8자리'; }
+    if(inputEl){ inputEl.style.borderColor = '#dc2626'; inputEl.style.background = '#fef2f2'; inputEl.focus(); }
+    return;
+  }
+  if(inputEl){ inputEl.style.borderColor = ''; inputEl.style.background = ''; }
+  // 서버에서 중복 검사
+  fetch(`/api/companies/check-code?code=${encodeURIComponent(code)}&exclude=${currentCompany?.id||''}`)
+    .then(r => r.json())
+    .then(data => {
+      if(data.duplicate){
+        if(msgEl){ msgEl.style.color = '#dc2626'; msgEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 사용할 수 없는 코드입니다. 다른 코드를 입력하세요.'; }
+        if(inputEl){ inputEl.style.borderColor = '#dc2626'; inputEl.style.background = '#fef2f2'; }
+      } else {
+        // 중복 없으면 바로 저장
+        fetch(`/api/companies/${currentCompany.id}`, {
+          method: 'PATCH',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ access_code: code })
+        }).then(r => {
+          if(!r.ok) throw new Error('저장 실패');
+          if(msgEl){ msgEl.style.color = '#16a34a'; msgEl.innerHTML = '<i class="fas fa-check-circle"></i> 앱접근코드가 변경되었습니다.<br>코드를 잊는 경우 서비스 담당자에게 문의하세요.'; }
+          if(inputEl){ inputEl.style.borderColor = '#16a34a'; inputEl.style.background = '#f0fdf4'; inputEl.readOnly = true; }
+          const btnEl = document.getElementById('myco-code-action-btn');
+          if(btnEl){ btnEl.innerHTML = '<i class="fas fa-pen"></i> 변경'; btnEl.onclick = _toggleMycoCodeEdit; }
+          currentCompany.access_code = code;
+        }).catch(() => {
+          if(msgEl){ msgEl.style.color = '#dc2626'; msgEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 저장에 실패했습니다.'; }
+        });
+      }
+    }).catch(() => {
+      if(msgEl){ msgEl.style.color = '#dc2626'; msgEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 확인 중 오류가 발생했습니다.'; }
+    });
+}
+// ══ 기존 접근코드 변경 (하위호환) ══════════════════════════════════════════════
 let _ccStep = 1; // 1: 현재코드 확인, 2: 새코드 입력
 
 function openChangeCodeModal(){
@@ -391,6 +443,13 @@ function ccNewInputCheck(){
     // 두 값 모두 조건 충족 시에만 버튼 활성
     btn.disabled = !(newVal.length >= 6 && confVal.length >= 6 && newVal === confVal);
   }
+}
+
+// STEP 2 새 코드 입력란 Enter: 강도 검증 통과 시 확인란으로 이동
+function ccNew1Confirm(){
+  ccNewInputCheck();
+  const newVal = document.getElementById('cc-new-input').value.trim();
+  if(!_ccValidateStrength(newVal)) document.getElementById('cc-confirm-input').focus();
 }
 
 // STEP 2: 새 코드 최종 저장

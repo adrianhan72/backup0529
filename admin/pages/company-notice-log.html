@@ -1,0 +1,144 @@
+    <div id="page-company-notice-log" class="page">
+
+      <!-- 고객사 선택 -->
+      <div id="cnl-company-select-card">
+        <div class="section-title">
+          <i class="fas fa-building"></i>
+          <span>고객사를 선택하세요</span>
+        </div>
+
+        <!-- 필터 바 (근로계약 현황 필터바와 동일 스타일) -->
+        <div class="card" style="margin-bottom:12px;overflow:hidden;">
+          <div class="filt-bar">
+            <div style="display:flex;align-items:center;gap:5px;">
+              <span class="filt-label">상태</span>
+              <select id="cnl-company-status-filter" onchange="renderCnlCompanyList()" class="filt-select" style="max-width:110px;">
+                <option value="active" selected>이용중</option>
+                <option value="inactive">해지</option>
+                <option value="all">전체상태</option>
+              </select>
+            </div>
+            <div class="filt-search-wrap" style="margin-left:auto;">
+              <i class="fas fa-search"></i>
+              <input type="text" id="cnl-company-search" class="filt-search" style="width:180px;" placeholder="고객사명 검색" oninput="renderCnlCompanyList()" />
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:16px;overflow:hidden;">
+          <div id="cnl-company-chips" style="padding:20px;display:flex;flex-wrap:wrap;gap:8px;"></div>
+        </div>
+      </div>
+
+      <!-- 메인 섹션 (고객사 선택 후 표시) -->
+      <div id="cnl-main-section" style="display:none;">
+        <!-- 선택 고객사 헤더 -->
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:linear-gradient(90deg,#1e1b4b,#312e81);border-radius:10px;margin-bottom:12px;">
+          <span id="cnl-selected-company-label" style="font-size:14px;font-weight:700;color:#fff;"></span>
+          <button onclick="clearCnlCompanySelect()" class="btn btn-icon-dark" title="고객사 선택 해제"><i class="fas fa-times"></i></button>
+        </div>
+
+      <!-- ① 예약 현황 카드 (scheduled 건만) -->
+      <div id="cnl-reserve-card" style="display:none;margin-bottom:14px;">
+        <div class="section-title">
+          <i class="fas fa-clock" style="color:#f59e0b;"></i>
+          <span>예약 현황</span>
+          <span id="cnl-reserve-badge" style="background:#fef3c7;color:#b45309;font-size:12px;padding:2px 10px;border-radius:20px;"></span>
+        </div>
+        <div class="card" style="padding:0;overflow:hidden;">
+          <div class="table-wrap" style="overflow-x:auto;">
+            <table class="tbl-std" style="table-layout:fixed;">
+              <thead>
+                <tr>
+                  <th style="width:155px;">예약 일시</th>
+                  <th style="width:145px;">알림 유형</th>
+                  <th style="width:100px;">발송방식</th>
+                  <th style="width:25%;min-width:180px;">제목</th>
+                  <th style="width:80px;">발송자</th>
+                  <th class="ctr" style="width:175px;">작업</th>
+                </tr>
+              </thead>
+              <tbody id="cnl-reserve-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ② 발송 이력 테이블 영역 (sent / cancelled만) -->
+
+        <div class="section-title">
+          <i class="fas fa-paper-plane"></i>
+          <span>발송 이력</span>
+          <span id="cnl-total-badge" style="font-size:12px;color:#64748b;"></span>
+        </div>
+
+        <!-- 필터 바 -->
+        <div class="card" style="margin-bottom:12px;overflow:hidden;">
+          <div class="filt-bar" style="border-bottom:1px solid #f3f4f6;">
+            <!-- 알림 유형 -->
+            <div style="display:flex;align-items:center;gap:5px;">
+              <span class="filt-label">유형</span>
+              <select id="cnl-filter-type" onchange="_cnlPage=1;renderCnlReserveCard();renderCnlTable();" class="filt-select" style="max-width:130px;">
+                <!-- 옵션은 _cnlSyncTypeOptions()가 기능 스위치에 따라 동적 생성 -->
+              </select>
+            </div>
+            <!-- 기간 -->
+            <div style="display:flex;align-items:center;gap:5px;">
+              <span class="filt-label">기간</span>
+              <input type="date" id="cnl-filter-date-from" class="filt-date" />
+              <span style="font-size:11px;color:#9ca3af;">~</span>
+              <input type="date" id="cnl-filter-date-to" class="filt-date" />
+              <button onclick="_cnlDoSearch()" class="filt-btn-search">조회</button>
+              <span id="cnl-date-notice" style="font-size:10.5px;color:#9ca3af;white-space:nowrap;">(최대 3개월)</span>
+            </div>
+            <!-- 검색 (우측) -->
+            <div style="display:flex;align-items:center;gap:6px;margin-left:auto;">
+              <div class="filt-search-wrap">
+                <i class="fas fa-search"></i>
+                <input type="text" id="cnl-search" class="filt-search" style="width:150px;" placeholder="제목 검색" oninput="renderCnlReserveCard();renderCnlTable();" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 이력 테이블 -->
+        <div class="card tbl-loading-wrap" id="cnl-table-card" style="padding:0;overflow:hidden;">
+          <div style="overflow-x:auto;">
+            <table class="tbl-std" style="table-layout:fixed;">
+              <thead>
+                <tr>
+                  <th style="width:140px;">발송 일시</th>
+                  <th style="width:155px;">알림 유형</th>
+                  <th style="width:100px;">발송방식</th>
+                  <th style="width:25%;min-width:180px;">제목</th>
+                  <th class="ctr" style="width:90px;">확인</th>
+                  <th style="width:75px;">발송자</th>
+                  <th class="ctr" style="width:75px;">상세</th>
+                </tr>
+              </thead>
+              <tbody id="cnl-tbody"></tbody>
+            </table>
+          </div>
+          <!-- 페이지네이션 -->
+          <div id="cnl-pagination" style="padding:8px 16px;"></div>
+        </div>
+
+      </div><!-- /cnl-main-section -->
+
+      <!-- 메시지 본문 상세 모달 -->
+      <div id="cnl-detail-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:3000;align-items:center;justify-content:center;">
+        <div style="background:#fff;border-radius:16px;width:min(600px,92vw);max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25);display:flex;flex-direction:column;">
+          <!-- 모달 헤더 -->
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 22px 14px;border-bottom:1px solid #f1f5f9;position:sticky;top:0;background:#fff;z-index:1;">
+            <div class="section-title">
+              <i class="fas fa-bell"></i>
+              <span>알림 상세 보기</span>
+            </div>
+            <button onclick="closeCnlDetailModal()" class="btn btn-close">✕</button>
+          </div>
+          <!-- 모달 본문 -->
+          <div id="cnl-detail-body" style="padding:20px 22px;"></div>
+        </div>
+      </div>
+
+    </div><!-- /page-company-notice-log -->

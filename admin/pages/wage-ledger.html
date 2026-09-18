@@ -1,0 +1,71 @@
+    <div id="page-wage-ledger" class="page">
+
+      <!-- 임시저장 급여 이어서 작성 확인 모달 -->
+      <div id="wl-resume-modal" class="wl-resume-modal-overlay" style="display:none;"
+           onclick="if(event.target===this)closeWLResumeModal()">
+        <div class="wl-resume-modal">
+          <div class="wl-resume-modal-header">
+            <div class="wl-resume-modal-icon"><i class="fas fa-save"></i></div>
+            <div class="wl-resume-modal-title">임시저장 급여 데이터 있음</div>
+            <button class="wl-resume-modal-close" onclick="closeWLResumeModal()"><i class="fas fa-times"></i></button>
+          </div>
+          <div class="wl-resume-modal-body">
+            <p>선택한 직원의 임시저장 중인 급여 데이터가 있습니다.<br>이어서 작성하시겠습니까?</p>
+            <div class="wl-resume-modal-info" id="wl-resume-modal-info">
+              <!-- 직원명·월 정보 동적 삽입 -->
+            </div>
+          </div>
+          <div class="wl-resume-modal-footer">
+            <button class="wl-resume-btn-fresh" onclick="_wlFreshInput()">
+              <i class="fas fa-redo" style="font-size:11px;margin-right:4px;"></i>초기화 후 새로 작성
+            </button>
+            <button class="wl-resume-btn-resume" onclick="_wlResumeDraft()">
+              <i class="fas fa-play" style="font-size:11px;margin-right:4px;"></i>이어서 작성
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 고객사 선택 -->
+      <div id="wl-company-select-card">
+        <div class="section-title">
+          <i class="fas fa-building"></i>
+          <span>고객사를 선택하세요</span>
+          <div class="filt-search-wrap" style="margin-left:auto;">
+            <i class="fas fa-search"></i>
+            <input type="text" id="wl-company-search" class="filt-search" class="w-160" placeholder="고객사명 검색" oninput="renderWLCompanyList()" />
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:16px;overflow:hidden;">
+          <div id="wl-company-chips" style="padding:20px;display:flex;flex-wrap:wrap;gap:8px;"></div>
+        </div>
+      </div>
+
+      <!-- 임금대장 메인 섹션 -->
+      <div id="wl-main-section" style="display:none;">
+        <!-- 선택 고객사 헤더 + 목록 카드 세트 -->
+        <!-- 선택 고객사 헤더 -->
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:linear-gradient(90deg,#1e1b4b,#312e81);border-radius:10px;margin-bottom:12px;">
+          <span id="wl-selected-company-label" style="font-size:14px;font-weight:700;color:#fff;"></span>
+          <button onclick="clearWLCompanySelect()" class="btn btn-icon-dark" title="고객사 선택 해제"><i class="fas fa-times"></i></button>
+        </div>
+
+        <!-- ── 필터 바 ── -->
+        <div class="filt-bar wl-filter-bar" style="justify-content:space-between;background:#fff;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.06);margin-bottom:12px;">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <select id="wl-year-filter" onchange="renderWageLedger()" class="filt-select"></select>
+            <select id="wl-month-filter" onchange="renderWageLedger()" class="filt-select"></select>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button id="wl-excel-btn" class="btn btn-warning btn-sm" onclick="downloadWageLedgerExcel()" disabled><i class="fas fa-file-excel"></i> 편집용 엑셀 다운로드</button>
+            <button id="wl-excel-report-btn" class="btn btn-success btn-sm" onclick="downloadWageLedgerExcel('report')" disabled><i class="fas fa-file-excel"></i> 신고용 엑셀 다운로드</button>
+            <button id="wl-pdf-btn" class="btn btn-success btn-sm" onclick="downloadWageLedgerPdf()" disabled><i class="fas fa-file-pdf"></i> 신고용 PDF 다운로드</button>
+            <button id="wl-print-btn" class="btn btn-dark btn-sm" onclick="printWageLedger()" disabled><i class="fas fa-print"></i> 인쇄</button>
+          </div>
+        </div>
+
+        <!-- ── 임금대장 테이블 영역 ── -->
+        <div id="wl-table-area" style="min-height:200px;"></div>
+      </div>
+    </div>
+

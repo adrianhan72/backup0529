@@ -1,0 +1,186 @@
+    <div id="page-dashboard" class="page active">
+      <!-- ══ 진행 중인 업무 ══ -->
+      <div id="dash-progress-section" style="display:none;">
+        <div class="section-title">
+          <i class="fas fa-spinner"></i>
+          <span>진행 중인 업무</span>
+        </div>
+        <div id="dash-draft-section" style="display:none;margin-bottom:18px;"></div>
+      </div>
+
+      <!-- ══ 할일 목록 ══ -->
+      <div id="dash-todo-section" style="display:none;">
+        <div class="section-title" style="margin-top:30px;">
+          <i class="fas fa-clipboard-list"></i>
+          <span>할일 목록</span>
+        </div>
+        <div class="dash-todo-grid" style="display:none;">
+          <div id="dash-unsent-section" style="display:none;"></div>
+          <div id="dash-daily-pay-section" style="display:none;"></div>
+          <div id="dash-contract-unsent-section" style="display:none;"></div>
+          <div id="dash-consent-section" style="display:none;"></div>
+          <div id="dash-retirement-banner" style="display:none;"></div>
+          <div id="dash-probation-banner" style="display:none;"></div>
+        </div>
+      </div>
+
+      <!-- 급여 입력 카드 -->
+      <div class="section-title">
+        <i class="fas fa-coins"></i>
+        <span>이번 달 급여 미입력</span>
+        <span id="active-count" style="font-size:12px;color:#64748b;font-weight:600;"></span>
+        <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+          <div class="filt-search-wrap">
+            <i class="fas fa-search"></i>
+            <input type="text" id="dash-company-search" class="filt-search" class="w-160" placeholder="고객사명 검색" oninput="renderDashboardCompanies()" />
+          </div>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:18px;overflow:hidden;">
+        <div id="dash-companies" style="padding:0;"></div>
+      </div>
+      
+      <!-- 사용료 징수현황 — 시스템 설정 스위치로 제어 -->
+      <div id="dash-billing-section" style="display:none;">
+      이번달 사용료 요약 카드 4종
+      사용료 징수현황 섹션 타이틀
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <span style="display:inline-block;width:4px;height:20px;background:linear-gradient(180deg,#3b82f6,#6366f1);border-radius:2px;"></span>
+        <h3 id="dash-billing-section-title" style="margin:0;font-size:15px;font-weight:700;color:#1e293b;">사용료 징수현황</h3>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:18px;" id="dash-billing-cards">
+        청구 총액
+        <div class="stat-card vertical" style="border-left:4px solid #3b82f6;">
+          <div style="display:flex;align-items:flex-start;gap:12px;flex:1;">
+            <div class="stat-icon blue"><i class="fas fa-file-invoice-dollar"></i></div>
+            <div class="stat-info">
+              <div class="stat-label">이번달 청구 총액</div>
+              <div class="stat-value" id="dash-bill-total" style="font-size:17px;">-</div>
+              <div class="stat-sub" id="dash-bill-count">청구 0건</div>
+            </div>
+          </div>
+          <div style="padding:10px 0 2px 0;border-top:1px solid #e8edf3;margin-top:10px;">
+            <button onclick="goBillingWithFilter('virtual')" class="btn btn-primary btn-sm" class="w-full">
+              <i class="fas fa-plus-circle" style="margin-right:4px;"></i>청구 생성
+            </button>
+          </div>
+        </div>
+        납부 총액
+        <div class="stat-card vertical" style="border-left:4px solid #10b981;">
+          <div style="display:flex;align-items:flex-start;gap:12px;flex:1;">
+            <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
+            <div class="stat-info">
+              <div class="stat-label">이번달 납부 총액</div>
+              <div class="stat-value" id="dash-bill-paid" style="font-size:17px;">-</div>
+              <div class="stat-sub" id="dash-bill-paid-count">완납 0건</div>
+            </div>
+          </div>
+          <div style="padding:10px 0 2px 0;border-top:1px solid #e8edf3;margin-top:10px;">
+            <button onclick="goBillingWithFilter('paid')" class="btn btn-success btn-sm" class="w-full">
+              <i class="fas fa-search" style="margin-right:4px;"></i>납부현황 조회
+            </button>
+          </div>
+        </div>
+        납부 대기 총액
+        <div class="stat-card vertical" style="border-left:4px solid #f59e0b;">
+          <div style="display:flex;align-items:flex-start;gap:12px;flex:1;">
+            <div class="stat-icon orange"><i class="fas fa-clock"></i></div>
+            <div class="stat-info">
+              <div class="stat-label">이번달 납부대기 총액</div>
+              <div class="stat-value" id="dash-bill-pending" style="font-size:17px;">-</div>
+              <div class="stat-sub" id="dash-bill-pending-count">대기 0건</div>
+            </div>
+          </div>
+          <div style="padding:10px 0 2px 0;border-top:1px solid #e8edf3;margin-top:10px;">
+            <button onclick="goBillingWithFilter('pending')" class="btn btn-warning btn-sm" class="w-full">
+              <i class="fas fa-hourglass-half" style="margin-right:4px;"></i>납부대기현황 조회
+            </button>
+          </div>
+        </div>
+        누적 미납금 (마감일 경과)
+        <div class="stat-card vertical" style="border-left:4px solid #ef4444;">
+          <div style="display:flex;align-items:flex-start;gap:12px;flex:1;">
+            <div class="stat-icon red"><i class="fas fa-exclamation-circle"></i></div>
+            <div class="stat-info">
+              <div class="stat-label">누적 미납금 (전체)</div>
+              <div class="stat-value" id="dash-bill-unpaid" style="font-size:17px;">-</div>
+              <div class="stat-sub" id="dash-bill-unpaid-count">미결제 0건</div>
+            </div>
+          </div>
+          <div style="padding:10px 0 2px 0;border-top:1px solid #e8edf3;margin-top:10px;">
+            <button onclick="goBillingWithFilter('unpaid')" class="btn btn-danger btn-sm" class="w-full">
+              <i class="fas fa-exclamation-triangle" style="margin-right:4px;"></i>미납현황 조회
+            </button>
+          </div>
+        </div>
+      </div>
+
+      사용료 매출 추이 카드
+      <div class="card" style="margin-bottom:18px;">
+        <div class="card-header">
+          <span class="card-title">💰 사용료 매출 추이</span>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:11px;color:#aaa;">월별 청구·납부·미납금 추이</span>
+            <select id="billing-trend-range" onchange="renderBillingTrendChart();"
+              style="border:1px solid #e0e0e0;border-radius:8px;padding:4px 10px;font-size:12px;color:#333;background:#fff;outline:none;cursor:pointer;font-family:inherit;box-shadow:0 1px 4px rgba(0,0,0,.05);">
+              <option value="6">최근 6개월</option>
+              <option value="12" selected>최근 12개월</option>
+              <option value="24">최근 24개월</option>
+            </select>
+          </div>
+        </div>
+        <div style="padding:20px 24px;height:300px;">
+          <canvas id="billing-trend-chart"></canvas>
+        </div>
+      </div>
+      </div><!-- /dash-billing-section -->
+
+      <!-- 월별 추이 차트 공통 기간 선택 -->
+      <div class="section-title" style="margin-top:40px;margin-bottom:10px;">
+        <i class="fas fa-chart-line"></i>
+        <span>서비스 운영 현황</span>
+        <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+          <span style="font-size:12px;color:#888;font-weight:500;">조회 기간</span>
+          <select id="dash-chart-range" onchange="renderCompanyTrendChart();renderEmployeeTrendChart();"
+          style="border:1px solid #e0e0e0;border-radius:8px;padding:5px 28px 5px 12px;font-size:12px;color:#333;background:#fff url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='none' stroke='%236b7280' stroke-width='1.5' stroke-linecap='round' d='M3 4.5l3 3 3-3'/%3E%3C/svg%3E&quot;) no-repeat right 8px center;outline:none;cursor:pointer;font-family:inherit;box-shadow:0 1px 4px rgba(0,0,0,.05);appearance:none;-webkit-appearance:none;-moz-appearance:none;">
+          <option value="6">최근 6개월</option>
+          <option value="12" selected>최근 12개월</option>
+          <option value="24">최근 24개월</option>
+        </select>
+      </div>
+      </div>
+
+      <!-- 두 차트 나란히 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px;">
+
+        <!-- 월별 고객사 수 변동 추이 -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">📈 고객사 수</span>
+            <div style="display:flex;gap:30px;">
+              <label class="radio-custom" style="font-size:11.5px;color:#555;">
+                <input type="radio" name="dash-company-filter" value="contract" checked onchange="renderCompanyTrendChart()" /> 계약 기준
+              </label>
+              <label class="radio-custom" style="font-size:11.5px;color:#555;">
+                <input type="radio" name="dash-company-filter" value="employee" onchange="renderCompanyTrendChart()" /> 근로자 수 기준
+              </label>
+            </div>
+          </div>
+          <div style="padding:20px 24px;height:260px;">
+            <canvas id="company-trend-chart"></canvas>
+          </div>
+        </div>
+
+        <!-- 월별 관리대상 직원 수 변동 추이 -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">👥 관리 근로자 수</span>
+          </div>
+          <div style="padding:20px 24px;height:260px;">
+            <canvas id="employee-trend-chart"></canvas>
+          </div>
+        </div>
+
+      </div>
+    </div>
+

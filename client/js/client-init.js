@@ -1,6 +1,3 @@
-// period-nav 없음 처리
-document.getElementById('period-nav') && (document.getElementById('period-nav').style.display='none');
-
 // ══════════════════════════════════════════════════════════════
 // 퇴직금 관리 (고객사 앱)
 // ══════════════════════════════════════════════════════════════
@@ -84,22 +81,20 @@ function renderClientSevHistory(){
   const list = document.getElementById('sev-history-list');
   if(!list || !currentCompany) return;
   const coId = currentCompany.id;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = fmtLocalDate(new Date());
 
   const resignedEmps = allEmployees.filter(e => {
     if(e.company_id !== coId) return false;
-    if(e.employment_category === '일용직') return false;
-    // 직원 status 우선: 퇴직/resigned
-    if(e.status === '퇴직' || e.status === 'resigned') return true;
-    // 직원 status가 재직이면 제외 (퇴직급여 미발생)
-    if(e.status === '재직' || e.status === 'active') return false;
+    if(e.employment_category === 'daily') return false;
+    if(e.status === 'resigned') return true;
+    if(e.status === 'active') return false;
     // status 없는 경우: 마지막 계약으로 판단
     const conts = allContracts.filter(c => c.employee_id === e.id && !c.is_draft)
       .sort((a,b) => (a.contract_start||'').localeCompare(b.contract_start||''));
     const last = conts[conts.length - 1];
     if(!last) return false;
-    return last.status === '해지' || last.status === '만료' ||
-           last.status === 'expired' || last.status === 'terminated';
+    const lastStatus = _normContractStatus(last.status);
+    return lastStatus === CONTRACT_STATUS.TERMINATED || lastStatus === CONTRACT_STATUS.EXPIRED;
   });
 
   if(!resignedEmps.length){
@@ -120,7 +115,7 @@ function renderClientSevHistory(){
     const resignDate = lastC?.contract_end || emp.resign_date || today;
     const pays3 = _clientGetPrev3(emp.id, resignDate);
     const sev = _clientCalcSev(emp.id, hireDate, resignDate, pays3);
-    const statusBadge = lastC?.status === '해지'
+    const statusBadge = _normContractStatus(lastC?.status) === CONTRACT_STATUS.TERMINATED
       ? `<span style="background:#fee2e2;color:#dc2626;padding:2px 7px;border-radius:12px;font-size:10px;font-weight:700;">해지</span>`
       : `<span style="background:#fef3c7;color:#b45309;padding:2px 7px;border-radius:12px;font-size:10px;font-weight:700;">만료</span>`;
 
@@ -131,7 +126,7 @@ function renderClientSevHistory(){
             <div style="width:34px;height:34px;background:linear-gradient(135deg,#fef3c7,#fde68a);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#92400e;">${(emp.name||'?').charAt(0)}</div>
             <div>
               <div style="font-size:14px;font-weight:800;color:#1a1a2e;">${emp.name||'-'}</div>
-              <div style="font-size:11px;color:#6b7280;">${emp.department||''} ${emp.position||''} · ${emp.employment_category||'-'}</div>
+              <div style="font-size:11px;color:#6b7280;">${emp.department||''} ${emp.position||''} · ${contractTypeLabel_c(emp.employment_category)}</div>
             </div>
           </div>
           ${statusBadge}
@@ -176,12 +171,12 @@ function renderClientSevStatus(){
   const summaryCard = document.getElementById('sev-client-summary');
   if(!list || !currentCompany) return;
   const coId = currentCompany.id;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = fmtLocalDate(new Date());
 
   const activeEmps = allEmployees.filter(e => {
     if(e.company_id !== coId) return false;
-    if(e.employment_category === '일용직') return false;
-    return e.status === 'active' || e.status === '재직' || !e.status || e.status === '';
+    if(e.employment_category === 'daily') return false;
+    return e.status === 'active' || !e.status || e.status === '';
   });
 
   if(!activeEmps.length){
@@ -282,8 +277,8 @@ function _doRenderClientAL(){
 
   const emps = allEmployees.filter(e =>
     e.company_id === coId &&
-    e.employment_category !== '일용직' &&
-    (e.status === 'active' || e.status === '재직' || !e.status || e.status === '')
+    e.employment_category !== 'daily' &&
+    (e.status === 'active' || !e.status || e.status === '')
   ).sort((a,b) => (a.name||'').localeCompare(b.name||'','ko'));
 
   if(!emps.length){
@@ -291,12 +286,13 @@ function _doRenderClientAL(){
     return;
   }
 
-  const basis = co.annual_leave_basis || '회계년도 기준';
+  // 연차 산정 기준: DB 저장값은 영문 코드 ('fiscal_year' 회계년도 / 'hire_date' 입사일)
+  const basis = co.annual_leave_basis || 'fiscal_year';
 
   const calcAL = (emp) => {
     const contract = allContracts.filter(c => c.employee_id === emp.id && !c.is_draft)
       .sort((a,b) => (b.contract_start||'').localeCompare(a.contract_start||''))
-      .find(c => c.status === '활성' || c.status === 'active') ||
+      .find(c => _normContractStatus(c.status) === CONTRACT_STATUS.ACTIVE) ||
       allContracts.filter(c => c.employee_id === emp.id && !c.is_draft)
         .sort((a,b) => (b.contract_start||'').localeCompare(a.contract_start||''))[0];
     if(!contract) return null;
@@ -307,7 +303,7 @@ function _doRenderClientAL(){
     if(isNaN(hire)) return null;
 
     let baseDate;
-    if(basis === '입사일 기준'){
+    if(basis === 'hire_date'){
       baseDate = new Date(refYear, hire.getMonth(), hire.getDate());
       const today = new Date(); today.setHours(0,0,0,0);
       if(baseDate > today) baseDate = new Date(refYear - 1, hire.getMonth(), hire.getDate());
@@ -332,7 +328,7 @@ function _doRenderClientAL(){
 
     const usedDays = allPayrolls.filter(p => {
       if(p.employee_id !== emp.id) return false;
-      if(basis === '입사일 기준'){
+      if(basis === 'hire_date'){
         const pDate = new Date(p.pay_year||0, (p.pay_month||1)-1, 1);
         const pStart = new Date(refYear-1, hire.getMonth(), hire.getDate());
         const pEnd   = new Date(refYear,   hire.getMonth(), hire.getDate());
@@ -371,7 +367,7 @@ function _doRenderClientAL(){
         <div style="width:34px;height:34px;background:linear-gradient(135deg,#ecfdf5,#d1fae5);border:1.5px solid #a7f3d0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#065f46;">${(emp.name||'?').charAt(0)}</div>
         <div style="flex:1;">
           <div style="font-size:14px;font-weight:800;color:#1a1a2e;">${emp.name||'-'}</div>
-          <div style="font-size:11px;color:#6b7280;">${emp.department||''} ${emp.position||''} · ${emp.employment_category||'-'}</div>
+          <div style="font-size:11px;color:#6b7280;">${emp.department||''} ${emp.position||''} · ${contractTypeLabel_c(emp.employment_category)}</div>
         </div>
         <div style="text-align:right;">
           <div style="font-size:10px;color:#9ca3af;">${al.basis}</div>
@@ -415,5 +411,3 @@ function _doRenderClientAL(){
 // ═══════════════════════════════════════════════════════════════════════════════
 
 // ── INIT ──
-// period-nav 없음 처리
-// (위에서 이미 처리됨)

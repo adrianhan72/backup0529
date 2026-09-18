@@ -9,7 +9,7 @@ function renderLsCompanyList(){
   if(!container) return;
 
   const companies = allCompanies.filter(c =>
-    c.status === '이용중' && (!q || c.company_name.toLowerCase().includes(q))
+    isCompanyActive(c) && (!q || c.company_name.toLowerCase().includes(q))
   ).sort((a,b) => (a.company_name||'').localeCompare(b.company_name||'', 'ko'));
 
   if(!companies.length){
@@ -19,14 +19,17 @@ function renderLsCompanyList(){
 
   container.innerHTML = companies.map(c => {
     const isSelected = c.id === currentGlobalCompanyId;
-    const empCnt = allEmployees.filter(e => e.company_id === c.id && (e.status==='재직'||e.status==='active')).length;
-    const contractCnt = allContracts.filter(ct => ct.company_id === c.id && (ct.status==='active'||ct.status==='활성'||ct.status==='유효')).length;
+    // 유효 계약(active, docs_incomplete) 보유 직원 수
+    const activeCtEmpIds = new Set(
+      allContracts.filter(ct => ct.company_id === c.id && (ct.status === CONTRACT_STATUS.ACTIVE || ct.status === CONTRACT_STATUS.DOCS_INCOMPLETE)).map(ct => ct.employee_id)
+    );
+    const empCnt = activeCtEmpIds.size;
+    const contractCnt = allContracts.filter(ct => ct.company_id === c.id && (ct.status === CONTRACT_STATUS.ACTIVE || ct.status === CONTRACT_STATUS.DOCS_INCOMPLETE)).length;
     return `<button onclick="selectLsCompany('${c.id}','${c.company_name.replace(/'/g,"\\'")}')"
       class="co-chip${isSelected?' selected':''}">
       <i class="fas fa-building" style="font-size:11px;"></i>
       ${c.company_name}
-      <span class="co-chip-badge count">${empCnt}명</span>
-      <span class="co-chip-badge count">계약 ${contractCnt}</span>
+      ${contractCnt > 0 ? `<span class="count-badge">${contractCnt}</span>` : ''}
     </button>`;
   }).join('');
 }
@@ -113,16 +116,15 @@ function renderLsPieChart(){
   // 항목별 합산 헬퍼
   const s = f => pays.reduce((a,p)=>a+(p[f]||0),0);
 
-  // ── 지급 항목 ──
+  // ── 지급 항목 (기본급에 주휴수당 포함되어 있으므로 주휴수당 별도 표시 안 함) ──
   const payItems = [
     { label:'기본급',         val: s('base_salary'),              color:'#3b82f6' },
-    { label:'주휴수당',       val: s('weekly_holiday_pay'),       color:'#60a5fa' },
     { label:'직책수당',       val: s('position_allowance'),       color:'#93c5fd' },
     { label:'교통비',         val: s('transportation_allowance')||s('car_maintenance'), color:'#6366f1' },
     { label:'자가운전보조금', val: s('self_driving_allowance'),   color:'#7c3aed' },
     { label:'벽지수당',       val: s('remote_area_allowance'),    color:'#8b5cf6' },
     { label:'식대',           val: s('meal_allowance'),           color:'#6ee7b7' },
-    { label:'출산·보육수당',  val: s('childcare_allowance'),      color:'#34d399' },
+    { label:'보육수당',  val: s('childcare_allowance'),      color:'#34d399' },
     { label:'연구활동비',     val: s('research_allowance'),       color:'#10b981' },
     { label:'연장근로수당',   val: s('overtime_pay'),             color:'#fbbf24' },
     { label:'야간근로수당',   val: s('night_pay'),                color:'#f97316' },
@@ -238,13 +240,9 @@ function switchLsDistTab(tab){
     const btn = document.getElementById('ls-dist-tab-'+t);
     if(!btn) return;
     if(t === tab){
-      btn.style.background = '#3b82f6';
-      btn.style.color = '#fff';
-      btn.style.fontWeight = '700';
+      btn.classList.add('ct-tab-active');
     } else {
-      btn.style.background = 'transparent';
-      btn.style.color = '#6b7280';
-      btn.style.fontWeight = '600';
+      btn.classList.remove('ct-tab-active');
     }
   });
   renderLsDistChart();
@@ -259,10 +257,6 @@ function renderLsDistChart(){
   const yr = parseInt(document.getElementById('ls-year')?.value) || new Date().getFullYear();
   const mo = parseInt(document.getElementById('ls-month')?.value) || new Date().getMonth()+1;
   const pays = allPayrolls.filter(p => !p.is_draft && p.company_id===selCo && p.pay_year==yr && p.pay_month==mo);
-
-  // 뱃지
-  const badge = document.getElementById('ls-dist-month-badge');
-  if(badge) badge.textContent = `${yr}년 ${mo}월 기준`;
 
   const grossTotal = pays.reduce((a,p)=>a+(p.gross_pay||0),0);
   const netTotal   = pays.reduce((a,p)=>a+(p.net_pay||0),0);
@@ -654,28 +648,42 @@ function renderLaborStatus(){
   const mo = parseInt(document.getElementById('ls-month')?.value) || (new Date().getMonth() + 1);
   const monthLabel = `${yr}년 ${mo}월`;
 
+  // 수습근로자 관리 OFF → 정규직(수습)·계약직(수습) 카드 숨김 + 그리드 3열 전환 (2026-09-06)
+  const _lsProbOn = !!window._probationFeatureEnabled;
+  const _lsRpbCard = document.getElementById('ls-card-regular-prob');
+  const _lsCpbCard = document.getElementById('ls-card-contract-prob');
+  if(_lsRpbCard) _lsRpbCard.style.display = _lsProbOn ? '' : 'none';
+  if(_lsCpbCard) _lsCpbCard.style.display = _lsProbOn ? '' : 'none';
+  const _lsGrid = document.getElementById('ls-cat-grid');
+  if(_lsGrid) _lsGrid.style.gridTemplateColumns = _lsProbOn ? 'repeat(5,1fr)' : 'repeat(3,1fr)';
+
   const selCo = currentLsCompanyId || currentGlobalCompanyId;
   if(!selCo) return; // 미선택 시 렌더 안 함
 
   const contractFilter = document.querySelector('input[name="ls-contract-filter"]:checked')?.value || 'all';
 
   // ── 통계 계산 ──
-  const targetEmps = allEmployees.filter(e => e.company_id === selCo);
-  const activeEmps = targetEmps.filter(e => e.status === '재직' || e.status === 'active');
-  const retiredEmps = targetEmps.filter(e => e.status !== '재직' && e.status !== 'active');
+  const targetContracts = allContracts.filter(c => c.company_id === selCo);
+  const activeContracts = targetContracts.filter(c => c.status === CONTRACT_STATUS.ACTIVE || c.status === CONTRACT_STATUS.DOCS_INCOMPLETE);
+  
+  // 유효 계약이 있는 직원만 대상
+  const activeEmpIds = new Set(activeContracts.map(c => c.employee_id));
+  const targetEmps = allEmployees.filter(e => e.company_id === selCo && activeEmpIds.has(e.id));
+  const activeEmps = targetEmps.filter(e => e.status === EMP_STATUS.ACTIVE);
+  const retiredEmps = targetEmps.filter(e => e.status !== EMP_STATUS.ACTIVE);
   const totalEmps = targetEmps.length;
 
-  // 고용형태별 카운트 (전체 직원 기준)
-  const catCount = cat => targetEmps.filter(e => e.employment_category === cat).length;
-  const cntRegular     = catCount('정규직');
-  const cntRegularProb = catCount('정규직(수습)');
-  const cntContract    = catCount('계약직');
-  const cntContractProb= catCount('계약직(수습)');
-  const cntDaily       = catCount('일용직');
+  // 고용형태별 카운트 (전체 직원 기준) — 영문 DB 값으로 비교
+  const catCount = cat => targetEmps.filter(e => normalizeContractType(e.employment_category) === cat).length;
+  const cntRegular     = catCount(CONTRACT_TYPE.REGULAR);
+  // 수습 기능 OFF → 수습 인원수 0으로 집계
+  const cntRegularProb = window._probationFeatureEnabled ? catCount(CONTRACT_TYPE.REGULAR_PROBATION) : 0;
+  const cntContract    = catCount(CONTRACT_TYPE.FIXED);
+  // 수습 기능 OFF → 수습 인원수 0으로 집계
+  const cntContractProb= window._probationFeatureEnabled ? catCount(CONTRACT_TYPE.FIXED_PROBATION) : 0;
+  const cntDaily       = catCount(CONTRACT_TYPE.DAILY);
 
-  const targetContracts = allContracts.filter(c => c.company_id === selCo);
-  const activeContracts = targetContracts.filter(c => c.status === 'active' || c.status === '활성' || c.status === '유효');
-  const expiredContracts = targetContracts.filter(c => c.status === 'expired' || c.status === '만료');
+  const expiredContracts = targetContracts.filter(c => c.status === CONTRACT_STATUS.EXPIRED);
 
   const thisPays = allPayrolls.filter(p => !p.is_draft && p.company_id === selCo && p.pay_year == yr && p.pay_month == mo);
   const totalNet = thisPays.reduce((s,p) => s + (p.net_pay||0), 0);
@@ -707,10 +715,9 @@ function renderLaborStatus(){
   // 기준: 이달 급여 데이터가 있는 직원의 계약 OR 유효한 계약 (계약 상태 무관)
   const thisPayEmpIds = new Set(thisPays.map(p => p.employee_id));
   // 이달 급여가 입력된 직원의 계약 + 유효 계약을 합산 (중복 제거)
-  const billingContracts = targetContracts.filter(c => {
+  const billingContracts = activeContracts.filter(c => {
     const hasPayThisMonth = thisPayEmpIds.has(c.employee_id);
-    const isActive = c.status === 'active' || c.status === '활성' || c.status === '유효';
-    return hasPayThisMonth || isActive;
+    return hasPayThisMonth || true;  // 유효 계약은 항상 포함
   });
 
   let filteredContracts;
@@ -728,14 +735,14 @@ function renderLaborStatus(){
 
   const ctTbody = document.getElementById('ls-contract-tbody');
   if(filteredContracts.length === 0){
-    ctTbody.innerHTML = '<tr><td colspan="7" class="empty-state">해당하는 계약 내역이 없습니다</td></tr>';
+    ctTbody.innerHTML = '<tr><td colspan="8" class="cen-empty"><i class="fas fa-inbox"></i> 해당하는 계약 내역이 없습니다</td></tr>';
   } else {
     ctTbody.innerHTML = filteredContracts.map(c => {
       const emp = allEmployees.find(e => e.id === c.employee_id);
       const empCat = emp?.employment_category || '-';
       const catBadge = empCatBadge(empCat);
-      const isResigned = emp?.status === '퇴직' && emp?.resign_date;
-      const periodTxt = empCat === '정규직'
+      const isResigned = emp?.status===EMP_STATUS.RESIGNED && emp?.resign_date;
+      const periodTxt = empCat ===CONTRACT_TYPE.REGULAR
         ? (isResigned ? `${c.contract_start||'-'} ~ ${emp.resign_date}` : `${c.contract_start||'-'} ~ 현재`)
         : `${c.contract_start||'-'} ~ ${c.contract_end||'미정'}`;
       const workInfo = (c.work_hours_per_day && c.work_days_per_week)
@@ -743,21 +750,22 @@ function renderLaborStatus(){
       // 이달 급여 입력 여부
       const hasPay = thisPayEmpIds.has(c.employee_id);
       const payBadge = hasPay
-        ? `<span class="badge badge-green" style="font-size:10.5px;">급여입력됨</span>`
+        ? `<span class="badge badge-green">급여입력됨</span>`
         : `<button onclick="goPayrollInputNew('${c.company_id}','${c.employee_id}',${yr},${mo})"
-            style="padding:3px 10px;font-size:11px;font-weight:600;border:none;border-radius:6px;background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:4px;">
+            class="btn btn-blue btn-sm" style="padding:3px 10px;font-size:11px;">
             <i class="fas fa-plus"></i> 입력
           </button>`;
       // 계약 상태 뱃지
-      const {badge:stBadge2, label:stName2} = calcContractStatusDisplay(c, new Date().toISOString().slice(0,10));
+      const {badge:stBadge2, label:stName2} = calcContractStatusDisplay(c, fmtLocalDate(new Date()));
       const stBadge = stBadge2; const stLabel2 = stName2;
       return `<tr>
         <td style="font-weight:600;">${getEmpName(c.employee_id)}</td>
-        <td><span class="badge ${catBadge}" style="font-size:10.5px;">${empCat}</span></td>
+        <td style="text-align:center;font-size:12px;">${(()=>{const e=(allEmployees||[]).find(x=>x.id===c.employee_id);return genderLabel(e);})()}</td>
+        <td><span class="badge ${catBadge}">${contractTypeLabel(empCat)}</span></td>
         <td style="font-size:11px;color:#555;">${periodTxt}</td>
         <td style="font-size:11.5px;color:#666;">${workInfo}</td>
         <td class="amount-green" style="font-weight:600;">${won(c.monthly_salary_agreed)}</td>
-        <td><span class="badge ${stBadge}" style="font-size:10.5px;">${stLabel2}</span></td>
+        <td><span class="badge ${stBadge}">${stLabel2}</span></td>
         <td>${payBadge}</td>
       </tr>`;
     }).join('');
@@ -767,7 +775,7 @@ function renderLaborStatus(){
   const payTbody = document.getElementById('ls-pay-tbody');
   document.getElementById('ls-pay-count').textContent = `${thisPays.length}명`;
   if(thisPays.length === 0){
-    payTbody.innerHTML = '<tr><td colspan="5" class="empty-state">해당 월 급여 내역이 없습니다</td></tr>';
+    payTbody.innerHTML = '<tr><td colspan="6" class="cen-empty"><i class="fas fa-inbox"></i> 해당 월 급여 내역이 없습니다</td></tr>';
   } else {
     const sortedPays = [...thisPays].sort((a,b) => getEmpName(a.employee_id).localeCompare(getEmpName(b.employee_id),'ko'));
     payTbody.innerHTML = sortedPays.map(p => {
@@ -775,6 +783,7 @@ function renderLaborStatus(){
       const deduct = (p.gross_pay||0) - (p.net_pay||0);
       return `<tr>
         <td style="font-weight:600;">${getEmpName(p.employee_id)}</td>
+        <td style="text-align:center;font-size:12px;">${(()=>{const e=(allEmployees||[]).find(x=>x.id===p.employee_id);return genderLabel(e);})()}</td>
         <td style="font-size:11.5px;color:#666;">${emp?.department||'-'}</td>
         <td class="amount-blue">${won(p.gross_pay)}</td>
         <td style="color:#ef4444;font-size:12px;">${won(deduct)}</td>

@@ -23,7 +23,7 @@
     .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
     .stat-grid.three{grid-template-columns:repeat(3,1fr)}
     .stat-card{background:#fff;border-radius:14px;padding:14px 10px;box-shadow:0 2px 10px rgba(0,0,0,.06);text-align:center;transition:transform .15s,box-shadow .15s}
-    .stat-card:active{transform:scale(.97);box-shadow:0 1px 6px rgba(0,0,0,.06)}
+    .stat-card:active{}
     .stat-card .sc-label{font-size:10.5px;color:#9ca3af;font-weight:500;margin-bottom:5px}
     .stat-card .sc-val{font-size:19px;font-weight:800;line-height:1.1;letter-spacing:-0.3px}
     .stat-card .sc-sub{font-size:10.5px;margin-top:4px;font-weight:500}
@@ -69,7 +69,7 @@
     .ps-sub-chips{display:flex;gap:7px;min-width:max-content}
     .ps-sub-chip{flex-shrink:0;padding:6px 16px;border-radius:20px;font-size:12px;font-weight:600;border:1.5px solid #e5e7eb;background:#fff;color:#6b7280;cursor:pointer;font-family:inherit;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:all .15s;box-shadow:0 1px 3px rgba(0,0,0,.05)}
     .ps-sub-chip.active{background:#6366f1;border-color:#6366f1;color:#fff;box-shadow:0 2px 8px rgba(99,102,241,.3)}
-    .ps-sub-chip:active{transform:scale(.96)}
+    .ps-sub-chip:active{}
 
     /* ─ 명세서 탭: 구분선 ─ */
     .ps-filter-divider{height:1px;background:rgba(0,0,0,.06);margin:0 -14px 12px;}
@@ -79,7 +79,7 @@
     .ps-filter-bar::-webkit-scrollbar{display:none}
     .ps-filter-btn{flex-shrink:0;padding:6px 13px;border-radius:20px;font-size:12px;font-weight:600;border:1.5px solid #e5e7eb;background:#fff;color:#6b7280;cursor:pointer;font-family:inherit;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:all .15s}
     .ps-filter-btn.active{background:#6366f1;border-color:#6366f1;color:#fff;box-shadow:0 2px 8px rgba(99,102,241,.3)}
-    .ps-filter-btn:active{transform:scale(.96)}
+    .ps-filter-btn:active{}
 
     /* ─ 명세서 탭: 목록 요약 헤더 ─ */
     .ps-list-summary{display:flex;align-items:center;justify-content:space-between;padding:4px 0 12px;}
@@ -96,7 +96,7 @@
 
     /* ─ 명세서 탭: 직원 카드 목록 ─ */
     .ps-emp-card{background:#fff;border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,.06);margin:0 0 10px 0;overflow:hidden;cursor:pointer;transition:box-shadow .15s,transform .15s}
-    .ps-emp-card:active{transform:scale(.985);box-shadow:0 1px 4px rgba(0,0,0,.08)}
+    .ps-emp-card:active{}
     .ps-emp-card-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #f5f5f5}
     .ps-emp-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;flex-shrink:0;margin-right:10px}
     .ps-emp-info{flex:1;min-width:0}
@@ -118,7 +118,7 @@
     /* ─ 직원 칩 (명세서 탭, 하위 호환) ─ */
     .emp-chip{display:inline-flex;align-items:center;white-space:nowrap;padding:7px 13px;border-radius:20px;font-size:12.5px;font-weight:600;border:1.5px solid #e5e7eb;background:#fff;color:#6b7280;cursor:pointer;font-family:inherit;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:all .15s;scroll-snap-align:start;flex-shrink:0}
     .emp-chip.selected{background:#6366f1;border-color:#6366f1;color:#fff;box-shadow:0 2px 8px rgba(99,102,241,.35)}
-    .emp-chip:active{transform:scale(.96)}
+    .emp-chip:active{}
 
     /* ─ 급여 지급액 박스 ─ */
     .pay-box-grid{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid #f0f2f5;border-radius:12px;overflow:hidden;margin-bottom:0}
@@ -135,7 +135,7 @@
     /* ─ 고용형태별 카드 ─ */
     .cat-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:0}
     .cat-card{border-radius:10px;padding:9px 4px;text-align:center;border:1px solid;transition:transform .15s,box-shadow .15s;position:relative}
-    .cat-card:active{transform:scale(.93);box-shadow:0 2px 10px rgba(0,0,0,.12)}
+    .cat-card:active{}
     .cat-card::after{content:'\f054';font-family:'Font Awesome 6 Free';font-weight:900;font-size:7px;color:rgba(0,0,0,.2);position:absolute;bottom:4px;right:5px}
     .cat-card .cc-label{font-size:8.5px;font-weight:600;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .cat-card .cc-val{font-size:18px;font-weight:800;line-height:1.1}
@@ -147,6 +147,12 @@
     .chart-sub{font-size:11px;color:#aaa;margin-bottom:10px}
     .chart-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;gap:8px}
     .chart-badge{font-size:10.5px;padding:3px 8px;border-radius:20px;font-weight:600;white-space:nowrap;flex-shrink:0}
+
+    /* ─ 임금대장 보기 버튼 ─ */
+    .wl-view-btn{padding:6px 14px;border:1.5px solid #3b82f6;border-radius:20px;background:#fff;color:#3b82f6;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .15s}
+    .wl-view-btn:hover:not(:disabled){background:#3b82f6;color:#fff}
+    .wl-view-btn:disabled{background:#f3f4f6;color:#d1d5db;border-color:#e5e7eb;cursor:not-allowed}
+    .wl-renewed-badge{position:absolute;top:-6px;right:-6px;background:#ef4444;color:#fff;font-size:9px;font-weight:700;padding:1px 7px;border-radius:10px;white-space:nowrap}
 
     /* ─ Dist tab ─ */
     .dist-tab-row{display:flex;gap:0;background:#f3f4f6;border-radius:8px;padding:3px;margin-bottom:10px}
@@ -172,7 +178,7 @@
     .tgl-chip{display:inline-flex;align-items:center;gap:3px;padding:5px 10px;border-radius:20px;font-size:10.5px;font-weight:600;border:1.5px solid;cursor:pointer;font-family:inherit;transition:all .15s;touch-action:manipulation;-webkit-tap-highlight-color:transparent;min-height:32px}
     .tgl-chip input{display:none}
     .tgl-chip.on{color:#fff}
-    .tgl-chip:active{transform:scale(.95)}
+    .tgl-chip:active{}
 
     /* ─ Pay list table ─ */
     .pay-table{width:100%;border-collapse:collapse;font-size:12px}

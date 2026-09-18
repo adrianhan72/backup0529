@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>근로계약·급여입력 종합 테스트 시나리오 v1.0</title>
+<style>
+body{font-family:'Malgun Gothic','맑은 고딕',sans-serif;font-size:11pt;line-height:1.6;color:#1e293b;max-width:210mm;margin:20px auto;padding:0 20px}
+h1{font-size:18pt;border-bottom:3px solid #2563eb;padding-bottom:8px;color:#1e3a5f}
+h2{font-size:14pt;color:#2563eb;margin-top:24px;border-left:4px solid #2563eb;padding-left:10px}
+h3{font-size:12pt;color:#374151;margin-top:18px}
+table{width:100%;border-collapse:collapse;margin:10px 0;font-size:10pt}
+th{background:#2563eb;color:#fff;padding:6px 8px;text-align:left;font-weight:600}
+td{padding:6px 8px;border:1px solid #e2e8f0}
+tr:nth-child(even){background:#f8fafc}
+.info-box{background:#eff6ff;border:1px solid #93c5fd;border-radius:6px;padding:10px 14px;margin:10px 0}
+.warn-box{background:#fef3c7;border:1px solid #f59e0b;border-radius:6px;padding:10px 14px;margin:10px 0}
+.check{color:#059669;font-weight:bold}
+.cross{color:#dc2626}
+.step{background:#f1f5f9;border-radius:4px;padding:2px 6px;font-family:monospace;font-size:9pt}
+code{background:#f1f5f9;padding:1px 4px;border-radius:3px;font-size:9.5pt}
+.page-break{page-break-before:always}
+</style>
+</head>
+<body>
+
+<h1>🧪 근로계약·급여입력 종합 테스트 시나리오 v1.0</h1>
+
+<div class="info-box">
+<strong>문서 정보</strong><br>
+작성일: 2026-08-12 | 버전: 1.0 | 환경: http://localhost:3000/admin/<br>
+브랜치: refactoring_ai | DB: data/app.db (WAL 모드)
+</div>
+
+<!-- ====== TEST DATA SUMMARY ====== -->
+<h2>📦 테스트 데이터 요약</h2>
+
+<table>
+<tr><th>구분</th><th>직원명</th><th>고객사</th><th>사원번호</th><th>고용형태</th><th>시급</th><th>사업장규모</th><th>용도</th></tr>
+<tr><td>기본</td><td>고정오</td><td>한빛노무법인</td><td>FIXED-OV</td><td>정규직</td><td>10,000원</td><td>5인 이상(11명)</td><td>Part A/B/D 주테스트</td></tr>
+<tr><td>기본</td><td>고정미</td><td>환영테스트(주)</td><td>FIXED-UN</td><td>정규직</td><td>10,000원</td><td>확인필요(6명)</td><td>Part F 전환테스트</td></tr>
+<tr><td>임시저장</td><td>고정업</td><td>환영테스트(주)</td><td>FIXED-UP</td><td>정규직</td><td>10,000원</td><td>- (draft)</td><td>Part C2 임시저장이어쓰기</td></tr>
+<tr><td>임시저장</td><td>이신규</td><td>(확인)</td><td>-</td><td>정규직</td><td>-</td><td>- (draft)</td><td>Part C1 신규임시저장</td></tr>
+<tr><td>일용직</td><td>이덕수</td><td>(확인)</td><td>-</td><td>일용직</td><td>10,030원</td><td>5인 이상</td><td>Part F3</td></tr>
+<tr><td>수습</td><td>박수습</td><td>(확인)</td><td>-</td><td>계약직수습</td><td>12,000원</td><td>5인 이상</td><td>Part B3, F4</td></tr>
+<tr><td>대표이사</td><td>대표이사</td><td>한빛노무법인</td><td>REP-001</td><td>정규직</td><td>23,923원</td><td>5인 이상</td><td>Part F 대표이사</td></tr>
+<tr><td>해지예정</td><td>한솔라</td><td>(확인)</td><td>-</td><td>정규직</td><td>-</td><td>-</td><td>Part E2</td></tr>
+<tr><td>갱신예정</td><td>한솔라</td><td>(확인)</td><td>-</td><td>정규직</td><td>-</td><td>-</td><td>Part E4</td></tr>
+<tr><td>계약예정</td><td>강예정1</td><td>(확인)</td><td>-</td><td>정규직</td><td>-</td><td>-</td><td>Part E1</td></tr>
+<tr><td>5인미만</td><td>소규모OT</td><td>소규모테스트</td><td>SM-OT-01</td><td>정규직</td><td>9,570원</td><td>5인 미만(4명)</td><td>Part F1</td></tr>
+<tr><td>만료</td><td>박일용</td><td>(확인)</td><td>-</td><td>일용직</td><td>16,250원</td><td>-</td><td>Part B2, E3</td></tr>
+<tr><td>해지</td><td>정무급여</td><td>(확인)</td><td>-</td><td>-</td><td>-</td><td>-</td><td>Part B5 해지취소</td></tr>
+</table>
+
+<div class="warn-box">
+<strong>⚠️ 테스트 전 확인사항</strong><br>
+1. 서버 실행: <code>node server.js</code> → http://localhost:3000/admin/<br>
+2. 브라우저 캐시 비우기 (Ctrl+Shift+R) 하여 최신 JS 로드<br>
+3. 각 시나리오 시작 전 해당 직원의 계약 모달을 열어 초기 상태 확인
+</div>
+
+<!-- ====== CONSTANTS ====== -->
+<h2>🔢 계산 상수 (참고용)</h2>
+<table>
+<tr><th>상수</th><th>값</th><th>설명</th></tr>
+<tr><td>WEEK_TO_MONTH</td><td>365÷12÷7 ≈ 4.345주</td><td>주간→월간 변환</td></tr>
+<tr><td>MONTHLY_STD_HOURS</td><td>209h</td><td>월 소정근로시간 (174h 기본+35h 주휴)</td></tr>
+<tr><td>STATUTORY_DAILY</td><td>8h (480분)</td><td>1일 법정 소정근로시간</td></tr>
+<tr><td>STATUTORY_WEEKLY</td><td>40h (2,400분)</td><td>1주 법정 소정근로시간</td></tr>
+<tr><td>NIGHT_START/END</td><td>22:00~06:00</td><td>야간근로 시간대</td></tr>
+</table>
+
+<table>
+<tr><th>구분</th><th>5인 이상 할증률</th><th>5인 미만 할증률</th></tr>
+<tr><td>연장 (overtime)</td><td>×1.5</td><td>×1.0 (할증 없음)</td></tr>
+<tr><td>야간 (night)</td><td>×0.5 (가산)</td><td>×0.0 (가산 없음)</td></tr>
+<tr><td>휴일 ≤8h (holiday_8h)</td><td>×1.5</td><td>×1.0 (할증 없음)</td></tr>
+<tr><td>휴일 ＞8h (holiday_8h_over)</td><td>×2.0</td><td>×1.0 (할증 없음)</td></tr>
+</table>
+
+<!-- ====== PART A ====== -->
+<div class="page-break"></div>
+<h2>Part A: 근로계약 정보 — 고정OT/야간/휴일 계산 (6건)</h2>
+<p><strong>대상:</strong> 고정오 (한빛노무법인, 5인 이상, 시급 10,000원)<br>
+<strong>화면:</strong> 관리자 → 근로계약 → 고정오 계약 수정 모달 → 근무시간표</p>
+
+<h3>A1. 기본 40h (연장·야간·휴일 없음)</h3>
+<table>
+<tr><th>단계</th><th>액션</th><th>기대 결과</th></tr>
+<tr><td>1</td><td>고정오 계약 수정 모달 열기</td><td>월~금 09:00~18:00 (주5일, 40h)</td></tr>
+<tr><td>2</td><td>근무시간표 확인</td><td>월~금 각 <code>8h</code>, 토·일 <code>-</code></td></tr>
+<tr><td>3</td><td>고정수당 영역 확인</td><td>고정연장 <code>0h/주, 0원</code><br>고정야간 <code>0h/주, 0원</code><br>고정휴일 <code>0h/주, 0원</code></td></tr>
+<tr><td>4</td><td>수식 힌트 확인</td><td>연장: <code>0원 = 0h × 4.345 × 10,000원 × 1.5</code></td></tr>
+<tr><td>5</td><td>사업장 규모 뱃지</td><td>"5인 이상 사업장" (파란색)</td></tr>
+</table>
+
+<h3>A2. 토요일 8h 근무 (주 48h, 40h 초과 → 연장)</h3>
+<table>
+<tr><th>단계</th><th>액션</th><th>기대 결과</th></tr>
+<tr><td>1</td><td>A1 상태에서 토요일 09:00~18:00 추가</td><td>토요일 행 표시</td></tr>
+<tr><td>2</td><td>토요일 셀 라벨 확인</td><td><code>8h</code> + <code class="check">연장 +8h</code> (주40h 초과분)</td></tr>
+<tr><td>3</td><td>고정연장 확인</td><td><code class="check">8h/주</code> → 월 <code>34.8h</code><br>금액: <code class="check">34.8 × 10,000 × 1.5 = 522,000원</code></td></tr>
+<tr><td>4</td><td>고정야간/휴일</td><td>0h, 0원 (변화 없음)</td></tr>
+<tr><td>5</td><td>요약박스</td><td>"고정연장근로시간: 8h/주" 표시</td></tr>
+</table>
+
+<h3>A3. 야간 근무 (금요일 18~23h, 야간 1h)</h3>
+<table>
+<tr><th>단계</th><th>액션</th><th>기대 결과</th></tr>
+<tr><td>1</td><td>A1 상태에서 금요일 퇴근 23:00 변경</td><td>금요일 행: <code>8h</code> + <code class="check">연장 +5h</code> + <code class="check">야간 +1h</code></td></tr>
+<tr><td>2</td><td>고정연장 확인</td><td>5h/주 (18~23h 중 18~22h=4h 연장, 22~23h=1h 야간/연장중첩)</td></tr>
+<tr><td>3</td><td>고정야간 확인</td><td><code class="check">1h/주</code> → 월 <code>4.3h</code><br>금액: <code class="check">4.3 × 10,000 × 0.5 = 21,725원</code></td></tr>
+<tr><td>4</td><td>야간 휴게시간</td><td>22~23시 사이 휴게 있으면 차감 확인</td></tr>
+</table>
+
+<h3>A4. 일요일 8h (휴일근로)</h3>
+<table>
+<tr><th>단계</th><th>액션</th><th>기대 결과</th></tr>
+<tr><td>1</td><td>A1 상태에서 일요일 09:00~18:00 추가</td><td>일요일 행: <code class="check">휴일 8h</code> (빨간색)</td></tr>
+<tr><td>2</td><td>고정휴일 확인</td><td><code class="check">8h/주</code> → 월 <code>34.8h</code><br>금액: <code class="check">34.8 × 10,000 × 1.5 = 522,000원</code></td></tr>
+<tr><td>3</td><td>고정연장/야간</td><td>0h, 0원</td></tr>
+</table>
+
+<h3>A5. 일요일 14h (휴일 8h + 휴일연장 6h + 야간 1h)</h3>
+<table>
+<tr><th>단계</th><th>액션</th><th>기대 결과</th></tr>
+<tr><td>1</td><td>A1 상태에서 일요일 09:00~23:00 추가</td><td>일요일: <code class="check">휴일 8h</code> + <code class="check">휴일연장 +6h</code> + <code class="check">휴일야간 +1h</code></td></tr>
+<tr><td>2</td><td>고정휴일</td><td>8h/주 → 34.8h/월, ×1.5 = 522,000원</td></tr>
+<tr><td>3</td><td>고정휴일연장</td><td>6h/주 → 26.1h/월, ×2.0 = 522,000원</td></tr>
+<tr><td>4</td><td>고정휴일 총액</td><td><code class="check">1,044,000원</code> (522,000 + 522,000)</td></tr>
+<tr><td>5</td><td>고정야간</td><td>1h/주 휴일야간 → 4.3h/월 ×0.5</td></tr>
+</table>
+
+<h3>A6. 월~목 32h + 토 8h (주 40h = 연장 없음)</h3>
+<table>
+<tr><th>단계</th><th>액션</th><th>기대 결과</th></tr>
+<tr><td>1</td><td>월~목 09~18h, 금요일 근무해제, 토요일 09~18h</td><td>주 40h 정확히 소정근로</td></tr>
+<tr><td>2</td><td>토요일 셀 라벨</td><td><code>8h</code> (연장 라벨 없음, 40h 미초과)</td></tr>
+<tr><td>3</td><td>고정연장</td><td><code class="check">0h, 0원</code></td></tr>
+</table>
+
+<!-- ====== PART B ====== -->
+<div class="page-break"></div>
+<h2>Part B: 근로계약 생애주기 (5건)</h2>
+
+<h3>B1. 수정재발행 — 시급 변경 + 토요일 추가</h3>
+<table>
+<tr><th>단계</th><th>액션</th><th>기대 결과</th></tr>
+<tr><td>1</td><td>고정오 계약 → "수정" 버튼 클릭</td><td>수정 모달, 기존 계약 데이터 로드</td></tr>
+<tr><td>2</td><td>통상시급 10,000 → 12,000 변경</td><td>기본급 자동 재계산 (12,000×209=2,508,000원)</td></tr>
+<tr><td>3</td><td>토요일 09~18h 추가</td><td>토요일 연장 8h, 고정OT 자동계산</td></tr>
+<tr><td>4</td><td>"수정계약 체결" 클릭</td><td>기존 계약 → voided, 신규 계약 → active<br>고정OT: 34.8h×12,000×1.5=<code class="check">626,400원</code></td></tr>
+<tr><td>5</td><td>계약 목록 확인</td><td>기존 계약 상태 "파기", 신규 계약 "활성"</td></tr>
+</table>
+
+<h3>B2. 재계약 — 만료된 일용직 → 새 계약</h3>
+<table>
+<tr><th>단계</th><th>액션</th><th>기대 결과</th></tr>
+<tr><td>1</td><td>박일용 직원 선택 → "재계약"</td><td>이전 만료 계약 데이터 로드 (시급 16,250원)</td></tr>
+<tr><td>2</td><td>계약기간, 근무조건 확인 후 등록</td><td>신규 계약 생성, 이전 계약 만료 상태 유지</td></tr>
+<tr><td>3</td><td>급여입력 진입</td><td>신규 계약 기준 급여만 표시, 만료 계약 분리</td></tr>
+</table>
+
+<h3>B3. 갱신 — 수습→본계약 전환</h3>
+<table>
+<tr><th>단계</th><th>액션</th><th>기대 결과</th></tr>
+<tr><td>1</td><td>박수습 계약 → "갱신" 버튼</td><td>갱신 모달, 수습 조건(90%, 3개월) 표시</td></tr>
+<tr><td>2</td><td>본계약 조건으로 갱신 확정</td><td>수습 90% → 100% 전환, 기본급 인상</td></tr>
+<tr><td>3</td><td>갱신 전후 급여 비교</td><td>갱신 전: 12,000×0.9=10,800원 기준, 갱신 후: 12,000원 기준</td></tr>
+</table>
+
+<h3>B4. 해지 — 계약 해지 처리</h3>
+<table>
+<tr><th>단계</th><th>액션</th><th>기대 결과</th></tr>
+<tr><td>1</td><td>고정오 계약 → "해지" 버튼</td><td>해지 사유 입력 모달</td></tr>
+<tr><td>2</td><td>해지예정일 2026-08-20, 사유 입력 후 확정</td><td>계약 상태 → terminate_pending<br>해지예정일까지 급여산정기간 자동설정</td></tr>
+<tr><td>3</td><td>급여입력 진입</td><td>급여산정기간 종료일 = 2026-08-20</td></tr>
+</table>
+
+<h3>B5. 해지취소 — 원상복귀</h3>
+<table>
+<tr><th>단계</th><th>액션</th><th>기대 결과</th></tr>
+<tr><td>1</td><td>정무급여(terminated) 계약 → 해지취소</td><td>해지 상태 해제, 원래 계약조건 복원</td></tr>
+<tr><td>2</td><td>급여산정기간 확인</td><td>종료일 제한 해제, 정상 급여입력 가능</td></tr>
+</table>
+
+<!-- ====== PART C ====== -->
+<div class="page-break"></div>
+<h2>Part C: 임시저장 + 유효성 검증 (3건)</h2>
+
+<h3>C1. 신규직원 임시저장 → 이어쓰기 → 등록</h3>
+<table>
+<tr><th>단계</th><th>액션</th><th>기대 결과</th></tr>
+<tr><td>1</td><td>고객사 선택 → "신규 등록"</td><td>신규 직원 입력 폼</td></tr>
+<tr><td>2</td><td>이름만 "테스트임시" 입력 → "임시저장"</td><td>✅ 저장 성공 (이름만으로 임시저장 가능)</td></tr>
+<tr><td>3</td><td>임시저장 목록 → "이어서 작성"</td><td>이전 입력값 복원</td></tr>
+<tr><td>4</td><td>필수 필드 채우지 않고 "등록" 시도</td><td>❌ 유효성 오류: 사원번호, 주민번호, 입사일, 휴대전화 등 하이라이트</td></tr>
+<tr><td>5</td><td>모든 필수 필드 입력 → "등록"</td><td>✅ 계약 생성, status=active</td></tr>
+</table>
+
+<h3>C2. 고정업 임시저장 이어쓰기</h3>
+<table>
+<tr><th>단계</th><th>액션</th><th>기대 결과</th></tr>
+<tr><td>1</td><td>임시저장 목록 → 고정업 "이어서 작성"</td><td>draft 계약 데이터 로드 (is_draft=1)</td></tr>
+<tr><td>2</td><td>시급, 근무시간표 등 확인 후 "등록"</td><td>✅ draft→active 전환, 직원 정보 승계</td></tr>
+<tr><td>3</td><td>급여입력 진입</td><td>정상 급여 계산 가능</td></tr>
+</table>
+
+<h3>C3. 필수 필드 누락 검증</h3>
+<table>
+<tr><th>단계</th><th>액션</th><th>기대 결과</th></tr>
+<tr><td>1</td><td>신규 등록 → 시급 미입력 → "등록"</td><td>❌ "통상시급" 하이라이트 + 배너</td></tr>
+<tr><td>2</td><td>근무시간표 미설정 → "등록"</td><td>❌ "근무시간표" 하이라이트</td></tr>
+<tr><td>3</td><td>사원번호 중복 입력 → "등록"</td><td>❌ "사원번호 중복" 오류</td></tr>
+<tr><td>4</td><td>계약직+종료일 800일 후 설정</td><td>❌ "730일 초과" 경고 (신규직원도 적용)</td></tr>
+<tr><td>5</td><td>휴대전화 중복 + 형식 오류</td><td>❌ 각각 오류 메시지</td></tr>
+</table>
+
+<!-- ====== PART D ====== -->
+<div class="page-break"></div>
+<h2>Part D: 급여입력 — 근태차감 + 추가근로 통합 (5건)</h2>
+<p><strong>대상:</strong> 고정오 (한빛노무법인, 5인 이상, 시급 10,000원)<br>
+<strong>기본:</strong> 월~금 09~18h, 월 소정 174h, 주휴 35h, 합계 209h<br>
+<strong>화면:</strong> 급여입력 → 고정오 선택</p>
+
+<h3>D1. 결근 1일 (화요일)</h3>
+<table>
+<tr><th>단계</th><th>액션</th><th>기대 결과</th></tr>
+<tr><td>1</td><td>고정오 급여입력 페이지 진입</td><td>기본 근무실적: 소정 174h</td></tr>
+<tr><td>2</td><td>결근: 2026-08-12(화) 1일 등록</td><td>소정근로 8h 차감 → <code class="check">166h</code></td></tr>
+<tr><td>3</td><td>기본급 확인</td><td>10,000원 × 166h = <code class="check">1,660,000원</code></td></tr>
+<tr><td>4</td><td>고정OT/야간/휴일</td><td>0h, 0원 (변화 없음)</td></tr>
+</table>
+
+<h3>D2. 지각 2h + 조퇴 2h + 추가연장 3h</h3>
+<table>
+<tr><th>단계</th><th>액션</th><th>기대 결과</th></tr>
+<tr><td>1</td><td>지각: 월 2h, 조퇴: 수 2h 등록</td><td>소정근로 4h 차감 → <code class="check">170h</code></td></tr>
+<tr><td>2</td><td>추가연장: 금 18~21h (3h) 등록</td><td>연장 +3h → 3h×10,000×1.5=<code class="check">45,000원</code></td></tr>
+<tr><td>3</td><td>총 근로시간</td><td>소정 170h + 연장 3h = 173h</td></tr>
+</table>
+
+<h3>D3. 추가야간 2h + 추가휴일 8h</h3>
+<table>
+<tr><th>단계</th><th>액션</th><th>기대 결과</th></tr>
+<tr><td>1</td><td>추가야간: 화 18~22h (야간 2h) 등록</td><td>18~20h 연장2h + 20~22h 야간2h → 야간 2h×0.5</td></tr>
+<tr><td>2</td><td>추가휴일: 일 09~18h (8h) 등록</td><td>휴일 8h × 1.5</td></tr>
+<tr><td>3</td><td>급여 합계 확인</td><td>소정174h + 연장2h + 야간2h + 휴일8h</td></tr>
+</table>
+
+<h3>D4. 결근1일+지각1h + 추가연장8h(토)+야간2h (복합)</h3>
+<table>
+<tr><th>단계</th><th>액션</th><th>기대 결과</th></tr>
+<tr><td>1</td><td>결근 1일(화) + 지각 1h(수) 등록</td><td>소정 9h 차감 → 165h</td></tr>
+<tr><td>2</td><td>추가연장: 토 09~18h (8h) 등록</td><td>연장 8h × 1.5</td></tr>
+<tr><td>3</td><td>추가야간: 목 22~24h (2h) 등록</td><td>야간 2h × 0.5</td></tr>
+<tr><td>4</td><td>최종 급여</td><td>소정 165h + 연장 8h ×1.5 + 야간 2h ×0.5</td></tr>
+</table>
+
+<h3>D5. 복합: 연장6h+야간4h+휴일8h (차감 없음)</h3>
+<table>
+<tr><th>단계</th><th>액션</th><th>기대 결과</th></tr>
+<tr><td>1</td><td>차감 없음 (소정 174h 유지)</td><td>-</td></tr>
+<tr><td>2</td><td>연장6h+야간4h+휴일8h 등록</td><td>연장6h×1.5=90,000원, 야간4h×0.5=20,000원, 휴일8h×1.5=120,000원</td></tr>
+<tr><td>3</td><td>고정수당과 합산</td><td>고정OT 0원 + 추가 90,000원 = 총 90,000원</td></tr>
+</table>
+
+<!-- ====== PART E ====== -->
+<div class="page-break"></div>
+<h2>Part E: 계약예정/해지예정/만료 방어로직 (4건)</h2>
+
+<h3>E1. 계약예정 (미래 시작일) → 급여입력 차단</h3>
+<table>
+<tr><th>단계</th><th>액션</th><th>기대 결과</th></tr>
+<tr><td>1</td><td>강예정1 선택 → 급여입력 페이지</td><td>계약 시작일 2026-08-15 (현재 8/12, 미래)</td></tr>
+<tr><td>2</td><td>급여입력 화면</td><td>❌ "계약 시작 전입니다" 메시지, 입력 불가</td></tr>
+</table>
+
+<h3>E2. 해지예정 → 급여산정기간 자동제한</h3>
+<table>
+<tr><th>단계</th><th>액션</th><th>기대 결과</th></tr>
+<tr><td>1</td><td>한솔라(terminate_pending) 급여입력</td><td>급여산정기간 종료일 = 해지예정일(2026-08-31)</td></tr>
+<tr><td>2</td><td>종료일 이후 날짜 선택 시도</td><td>❌ 제한됨</td></tr>
+</table>
+
+<h3>E3. 만료된 계약 → 급여입력 차단</h3>
+<table>
+<tr><th>단계</th><th>액션</th><th>기대 결과</th></tr>
+<tr><td>1</td><td>박일용(expired) 급여입력 시도</td><td>❌ "만료된 계약입니다" 또는 급여입력 불가</td></tr>
+</table>
+
+<h3>E4. 갱신예정 → 갱신취소</h3>
+<table>
+<tr><th>단계</th><th>액션</th><th>기대 결과</th></tr>
+<tr><td>1</td><td>한솔라(renew_pending) → 갱신취소</td><td>renew_pending 상태 해제</td></tr>
+<tr><td>2</td><td>이전 계약 조건 확인</td><td>원래 active 계약으로 복귀, 급여 조건 원상복귀</td></tr>
+</table>
+
+<!-- ====== PART F ====== -->
+<div class="page-break"></div>
+<h2>Part F: 5인 미만/이상 + 고용형태별 (4건)</h2>
+
+<h3>F1. 5인 미만 — 연장×1.0, 야간×0.0, 휴일×1.0</h3>
+<table>
+<tr><th>단계</th><th>액션</th><th>기대 결과</th></tr>
+<tr><td>1</td><td>소규모OT (소규모테스트, 4명, 5인 미만) 계약 수정</td><td>사업장 뱃지: "5인 미만 사업장" (amber)</td></tr>
+<tr><td>2</td><td>토요일 09~18h 추가</td><td>연장 8h/주, 단가: <code class="check">×1.0</code><br>금액: 34.8h × 9,570원 × 1.0 = <code class="check">333,036원</code></td></tr>
+<tr><td>3</td><td>일요일 09~18h 추가</td><td>휴일 8h/주, 단가: <code class="check">×1.0</code> (할증 없음)</td></tr>
+<tr><td>4</td><td>야간 추가</td><td>야간 <code class="check">×0.0</code> = 0원 (야간가산 없음)</td></tr>
+</table>
+
+<h3>F2. 5인 미만→이상 전환 (고정업 draft→active)</h3>
+<table>
+<tr><th>단계</th><th>액션</th><th>기대 결과</th></tr>
+<tr><td>1</td><td>고정업(환영테스트, draft) → 등록</td><td>comp-welcome-test 6명 → 7명</td></tr>
+<tr><td>2</td><td>전환 경고 확인</td><td>"이 계약의 체결로 5인 이상 사업장으로 전환됩니다" (빨간색)</td></tr>
+<tr><td>3</td><td>등록 후 고정OT 재확인</td><td>할증률 ×1.5로 변경 적용</td></tr>
+</table>
+
+<h3>F3. 일용직 (이덕수)</h3>
+<table>
+<tr><th>단계</th><th>액션</th><th>기대 결과</th></tr>
+<tr><td>1</td><td>이덕수 계약 수정 모달</td><td>일급여 95,285원 (시급 10,030원)</td></tr>
+<tr><td>2</td><td>근무시간표에 토요일 추가</td><td>고정OT 계산 (일급 기준)</td></tr>
+</table>
+
+<h3>F4. 계약직 수습 (박수습, 90%)</h3>
+<table>
+<tr><th>단계</th><th>액션</th><th>기대 결과</th></tr>
+<tr><td>1</td><td>박수습 계약 수정 모달</td><td>수습 3개월, 90%, 시급 12,000원</td></tr>
+<tr><td>2</td><td>기본급 확인</td><td>12,000×209×0.9 = <code class="check">2,257,200원</code></td></tr>
+<tr><td>3</td><td>토요일 근무 추가</td><td>고정OT = 8h/주×4.345×12,000×1.5 = <code class="check">625,680원</code></td></tr>
+<tr><td>4</td><td>수습 종료 후 갱신</td><td>100% 전환, 기본급 2,508,000원</td></tr>
+</table>
+
+<!-- ====== FOOTER ====== -->
+<div class="page-break"></div>
+<h2>📝 테스트 결과 기록</h2>
+<table>
+<tr><th>시나리오</th><th>테스터</th><th>일자</th><th>결과 (PASS/FAIL)</th><th>비고</th></tr>
+<tr><td>A1</td><td></td><td></td><td></td><td></td></tr>
+<tr><td>A2</td><td></td><td></td><td></td><td></td></tr>
+<tr><td>A3</td><td></td><td></td><td></td><td></td></tr>
+<tr><td>A4</td><td></td><td></td><td></td><td></td></tr>
+<tr><td>A5</td><td></td><td></td><td></td><td></td></tr>
+<tr><td>A6</td><td></td><td></td><td></td><td></td></tr>
+<tr><td>B1</td><td></td><td></td><td></td><td></td></tr>
+<tr><td>B2</td><td></td><td></td><td></td><td></td></tr>
+<tr><td>B3</td><td></td><td></td><td></td><td></td></tr>
+<tr><td>B4</td><td></td><td></td><td></td><td></td></tr>
+<tr><td>B5</td><td></td><td></td><td></td><td></td></tr>
+<tr><td>C1</td><td></td><td></td><td></td><td></td></tr>
+<tr><td>C2</td><td></td><td></td><td></td><td></td></tr>
+<tr><td>C3</td><td></td><td></td><td></td><td></td></tr>
+<tr><td>D1</td><td></td><td></td><td></td><td></td></tr>
+<tr><td>D2</td><td></td><td></td><td></td><td></td></tr>
+<tr><td>D3</td><td></td><td></td><td></td><td></td></tr>
+<tr><td>D4</td><td></td><td></td><td></td><td></td></tr>
+<tr><td>D5</td><td></td><td></td><td></td><td></td></tr>
+<tr><td>E1</td><td></td><td></td><td></td><td></td></tr>
+<tr><td>E2</td><td></td><td></td><td></td><td></td></tr>
+<tr><td>E3</td><td></td><td></td><td></td><td></td></tr>
+<tr><td>E4</td><td></td><td></td><td></td><td></td></tr>
+<tr><td>F1</td><td></td><td></td><td></td><td></td></tr>
+<tr><td>F2</td><td></td><td></td><td></td><td></td></tr>
+<tr><td>F3</td><td></td><td></td><td></td><td></td></tr>
+<tr><td>F4</td><td></td><td></td><td></td><td></td></tr>
+</table>
+
+<p style="text-align:center;color:#9ca3af;margin-top:40px">- 문서 끝 -</p>
+
+</body>
+</html>
