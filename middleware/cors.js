@@ -6,6 +6,9 @@ module.exports = function() {
   const ALLOWED_ORIGINS = [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
+    'http://43.201.90.207',    // Elastic IP 직접 접속용 (테스트)
+    'http://insanomutok.com',  // certbot 적용 전 HTTP 테스트용 (HTTPS 전환 후엔 불필요)
+    'https://insanomutok.com', // 운영 도메인 (후이즈 DNS)
   ];
   return cors({
     origin: (origin, callback) => {
