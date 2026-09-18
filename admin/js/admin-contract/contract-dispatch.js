@@ -637,6 +637,52 @@ function renderCdpUnsentList(){
   cdpUpdateBatchBtns();
 }
 
+// ── 근로계약서 알림톡 실제 발송 (Solapi) ──────────────────────────
+const _CONTRACT_ALIMTALK = {
+  templateId: 'KA01TP2609110757021541GZoBRd7M1e', // 근로계약서 템플릿 ID (Solapi 콘솔 등록값)
+  phone: '02-3487-8841',                          // 대표 전화
+  email: 'labourlawyer@naver.com',                // 대표 이메일
+  fax:   '02-3487-8882',                          // 대표 팩스
+};
+
+/** 계약서 열람 URL 생성 (편집본 URL 우선, 없으면 PDF 열람 게이트웨이) */
+function _contractViewUrl(contract){
+  if(contract && contract.edited_file_url){
+    const u = String(contract.edited_file_url);
+    if(u.startsWith('http')) return u;
+    if(u.startsWith('/'))    return location.origin + u;
+  }
+  return `${location.origin}/view/contracts/${contract.id}`;
+}
+
+/** 근로계약서 알림톡 실제 발송 (성공 시 응답 반환, 실패 시 throw) */
+async function _sendContractAlimtalk(contract){
+  const emp = allEmployees.find(e => e.id === contract.employee_id) || {};
+  const co  = allCompanies.find(x => x.id === contract.company_id)  || {};
+  const res = await fetch('/api/kakao/send', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      to: emp.phone || '',
+      type: 'alimtalk',
+      templateId: _CONTRACT_ALIMTALK.templateId,
+      variables: {
+        '#{근로자명}':   emp.name || '',
+        '#{회사명}':     co.company_name || '',
+        '#{URL}':        _contractViewUrl(contract),
+        '#{대표전화}':   _CONTRACT_ALIMTALK.phone,
+        '#{대표이메일}': _CONTRACT_ALIMTALK.email,
+        '#{대표팩스}':   _CONTRACT_ALIMTALK.fax,
+      },
+    }),
+  });
+  if(!res.ok){
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.error || `알림톡 발송 실패 (HTTP ${res.status})`);
+  }
+  return res.json();
+}
+
 /** 개별 알림톡 발송 */
 async function cdpUnsentKakao(contractId){
   const c   = allContracts.find(x => x.id === contractId);
@@ -646,11 +692,19 @@ async function cdpUnsentKakao(contractId){
   if(!emp.phone){ toast(`${emp.name} — 전화번호가 등록되어 있지 않습니다.`, 'error'); return; }
   if(!confirm(`[알림톡 발송]\n\n${emp.name} (${co.company_name}) 님의 근로계약서를\n알림톡으로 발송하시겠습니까?\n\n수신 번호: ${emp.phone}`)) return;
   try{
+    await _sendContractAlimtalk(c); // ← 실제 Solapi 발송
     await _saveDispatchRecord({ method: DISPATCH_METHOD.KAKAO, status: DISPATCH_STATUS.COMPLETED, recipient: emp.phone,
       note:`미발송 목록 알림톡 — ${emp.name}`, contractId });
     toast(`✅ ${emp.name} 알림톡 발송 완료`, 'success');
     await _cdpRefreshUnsent();
-  } catch(e){ toast('발송 중 오류가 발생했습니다.', 'error'); }
+  } catch(e){
+    console.error('[알림톡 발송 오류]', e);
+    try {
+      await _saveDispatchRecord({ method: DISPATCH_METHOD.KAKAO, status: DISPATCH_STATUS.FAILED, recipient: emp.phone || '',
+        note:`미발송 목록 알림톡 실패 — ${emp.name} (${e.message})`, contractId });
+    } catch(_){ /* 이력 저장 실패는 무시 */ }
+    toast(`❌ ${emp.name} 알림톡 발송 실패: ${e.message}`, 'error');
+  }
 }
 
 /** 개별 이메일 발송 */
@@ -829,10 +883,13 @@ async function dispatchContractKakao(){
   if(btn){ btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> 발송 중...'; }
 
   try {
+    const c = (allContracts||[]).find(x => x.id === window._printingContractId);
+    if(!c) throw new Error('계약 정보를 찾을 수 없습니다.');
+
+    await _sendContractAlimtalk(c); // ① 실제 Solapi 발송 (실패 시 throw)
+
     const _fileUrl = `\n■ 근로계약서 파일: ${(location.origin||'')}${url}`;
-    // TODO: 알림톡 API 연동 시 이 위치에 API 호출 코드 삽입
-    // API 연동 전까지는 이력 저장만 처리
-    await _saveDispatchRecord({
+    await _saveDispatchRecord({   // ② 성공 시 이력 저장
       method    : DISPATCH_METHOD.KAKAO,
       status    : DISPATCH_STATUS.COMPLETED,
       recipient : phone,
@@ -841,7 +898,13 @@ async function dispatchContractKakao(){
     toast(`✅ ${name} 님 알림톡 발송 완료 (${phone})`, 'success');
   } catch(e){
     console.error('[알림톡 발송]', e);
-    toast('알림톡 발송 중 오류가 발생했습니다.', 'error');
+    await _saveDispatchRecord({   // ③ 실패 시 이력 저장 (FAILED)
+      method    : DISPATCH_METHOD.KAKAO,
+      status    : DISPATCH_STATUS.FAILED,
+      recipient : phone,
+      note      : `수신번호: ${phone} — 발송 실패: ${e.message}`,
+    }).catch(()=>{ /* 실패 이력 저장 실패는 무시 */ });
+    toast(`❌ 알림톡 발송 실패: ${e.message}`, 'error');
   } finally {
     if(btn){
       btn.disabled=false;
@@ -955,8 +1018,14 @@ function openContractSendModal(contractId){
   // 전역 정보 설정 (발송 함수에서 사용)
   window._printingContractId      = c.id;
   window._printingEmpName         = empName;
+  window._printingEmpId           = emp?.id || '';          // FK(employees)용 — 누락 시 저장 500
   window._printingEmpPhone        = emp?.phone || '';
   window._printingEmpEmail        = emp?.email || '';
+  window._printingCompanyId       = c.company_id || '';     // FK(companies)용 — 누락 시 저장 500
+  window._printingCompanyName     = co?.company_name || '';
+  window._printingContractType    = c.contract_type || '';
+  window._printingContractStart   = c.contract_start || '';
+  window._printingContractEnd     = c.contract_end || '';
   window._printingContractFileUrl = url;
 
   // 근로자·파일 정보 표시
