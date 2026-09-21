@@ -299,7 +299,8 @@ function _doRenderClientAL(){
 
     const hireDateStr = emp.hire_date || contract.contract_start || '';
     if(!hireDateStr) return null;
-    const hire = new Date(hireDateStr);
+    // 로컬 자정 파싱 (YYYY-MM-DD는 UTC로 해석돼 09:00 밀림 방지 — 2026-09-21)
+    const hire = new Date(hireDateStr + 'T00:00:00');
     if(isNaN(hire)) return null;
 
     let baseDate;
@@ -393,6 +394,9 @@ function _doRenderClientAL(){
           <div style="font-size:11px;color:#7c3aed;">잔여 연차 수당 추계</div>
           <div style="font-size:14px;font-weight:800;color:#5b21b6;">${al.leavePay.toLocaleString()}원</div>
         </div>` : ''}
+        <button class="btn btn-sm btn-danger" onclick="openClientLeaveEditor('${emp.id}')" style="width:100%;margin-top:8px;">
+          <i class="fas fa-pen"></i> 연차 사용 기록
+        </button>
       </div>
     </div>`;
   }).join('');

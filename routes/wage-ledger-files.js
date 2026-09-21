@@ -36,8 +36,9 @@ module.exports = function(db, ROOT) {
       const co = db.companies.findById(companyId);
       if (!co) return res.status(404).json({ error: 'Company not found' });
 
+      // 화면 임금대장은 !is_draft(0 또는 NULL)만 표시 → 동일 기준 적용 (2026-09-22)
       const pays = db.all(
-        'SELECT * FROM payrolls WHERE company_id = ? AND pay_year = ? AND pay_month = ? AND is_draft = 0',
+        'SELECT * FROM payrolls WHERE company_id = ? AND pay_year = ? AND pay_month = ? AND (is_draft IS NULL OR is_draft = 0)',
         [companyId, year, month]
       );
       if (!pays.length) return res.status(404).json({ error: 'No payroll data for this period' });
@@ -45,6 +46,11 @@ module.exports = function(db, ROOT) {
       const empMap = {};
       db.all('SELECT * FROM employees WHERE company_id = ?', [companyId])
         .forEach(e => { empMap[e.id] = e; });
+
+      // 퇴사일(최신 계약 종료일)·근태·연차 대장 데이터 조회 (2026-09-21 화면 동일 레이아웃)
+      const contracts = db.all("SELECT * FROM contracts WHERE company_id = ? AND is_draft = 0", [companyId]);
+      const attLedgers = db.all('SELECT * FROM attendance_ledger WHERE company_id = ?', [companyId]);
+      const lvLedgers  = db.all('SELECT * FROM annual_leave_ledger WHERE company_id = ?', [companyId]);
 
       pays.sort((a, b) => (empMap[a.employee_id]?.name || '').localeCompare(empMap[b.employee_id]?.name || '', 'ko'));
 
@@ -57,11 +63,11 @@ module.exports = function(db, ROOT) {
 
       // 3. Excel (신고용) 생성
       const excelPath = path.join(GENERATED_DIR, `${baseName}_신고용.xlsx`);
-      _generateExcel(pays, empMap, co, year, month, excelPath);
+      _generateExcel(pays, empMap, co, year, month, excelPath, contracts, attLedgers, lvLedgers);
 
       // 4. HTML (신고용, PDF 열람용) 생성
       const htmlPath = path.join(GENERATED_DIR, `${baseName}_신고용.html`);
-      _generateHtml(pays, empMap, co, year, month, htmlPath);
+      _generateHtml(pays, empMap, co, year, month, htmlPath, contracts);
 
       const excelUrl = `/generated/wage-ledgers/${encodeURIComponent(path.basename(excelPath))}`;
       const htmlUrl  = `/generated/wage-ledgers/${encodeURIComponent(path.basename(htmlPath))}`;
@@ -244,285 +250,320 @@ module.exports = function(db, ROOT) {
   }
 
   // ═══════════════════════════════════════════════════════════════
-  // Excel 생성 (신고용: 값 0인 항목 공란)
+  // 화면(관리자 임금대장)과 동일한 레이아웃·데이터 구조 생성 공용 (2026-09-21)
   // ═══════════════════════════════════════════════════════════════
-  function _generateExcel(pays, empMap, co, year, month, filePath) {
-    const wb = XLSX.utils.book_new();
+  function _buildLedgerData(pays, empMap, contracts, cfg) {
+    const nv = v => (v === null || v === undefined || v === '') ? 0 : Number(v);
+    const _sumCustomOrd = p => { try { const v = typeof p.custom_ordinary_values==='string' ? JSON.parse(p.custom_ordinary_values) : (p.custom_ordinary_values||[]); return (Array.isArray(v)?v:[]).reduce((s,x)=>s+(Number(x.amount)||0),0); } catch(e){ return 0; } };
+    const _sumCustomFixed = p => { try { const v = typeof p.custom_fixed_values==='string' ? JSON.parse(p.custom_fixed_values) : (p.custom_fixed_values||[]); return (Array.isArray(v)?v:[]).reduce((s,x)=>s+(Number(x.amount)||0),0); } catch(e){ return 0; } };
+    const _sumEtcItems = p => { try { const v = typeof p.etc_allowance_items==='string' ? JSON.parse(p.etc_allowance_items) : (p.etc_allowance_items||[]); return (Array.isArray(v)?v:[]).reduce((s,x)=>s+(Number(x.amount)||0),0); } catch(e){ return 0; } };
 
-    // ── 스타일 상수 (xlsx-js-style 대신 xlsx 사용, 스타일은 제한적) ──
-    // xlsx 라이브러리는 기본 스타일만 지원. 셀 스타일은 워크시트별로 적용.
-    const wsData = [];
-
-    // ── 컬럼 너비 ──
-    const colWidths = [
-      { wch: 12 }, // C0: 구분
-      { wch: 16 }, // C1: 항목1
-      { wch: 14 }, // C2: 금액1
-      { wch: 16 }, // C3: 항목2
-      { wch: 14 }, // C4: 금액2
-      { wch: 16 }, // C5: 항목3
-      { wch: 14 }, // C6: 금액3
-      { wch: 16 }, // C7: 항목4
-      { wch: 14 }, // C8: 금액4
-    ];
-
-    // ── 타이틀 행 ──
-    const moStr = String(month).padStart(2, '0');
-    wsData.push([`[${co.company_name}] 임금대장 (신고용) — ${year}년 ${moStr}월`]);
-    wsData.push([]);
-
-    // ── 합계 계산 ──
+    // ── 월합산 병합 (화면과 동일 규칙: 직원+사번 스냅샷 기준) ──
     const sumFields = [
       'base_salary','bonus_pay','meal_allowance','self_driving_allowance','transportation_allowance',
-      'position_allowance','site_allowance','research_allowance','childcare_allowance',
-      'overtime_pay','night_pay','holiday_pay','weekly_holiday_pay','annual_leave_pay',
+      'remote_area_allowance','research_allowance','childcare_allowance',
+      'overtime_pay','night_pay','holiday_pay','annual_leave_pay',
       'license_allowance','skill_allowance','communication_pay','performance_pay',
-      'hazard_allowance','remote_area_allowance','fitness_allowance',
-      'self_dev_allowance','book_allowance','overseas_allowance',
+      'position_allowance','site_allowance',
+      'hazard_allowance','fitness_allowance','self_dev_allowance','book_allowance','overseas_allowance',
       'etc_allowance','other_pay','gross_pay',
       'national_pension','health_insurance','employment_insurance','long_term_care',
       'income_tax','local_income_tax','year_end_tax_adjust','health_insurance_adjust',
-      'advance_deduction','total_deduction','net_pay','standard_monthly_pay'
+      'advance_deduction','total_deduction','net_pay'
     ];
-    const sums = {};
-    sumFields.forEach(f => sums[f] = 0);
-    pays.forEach(p => sumFields.forEach(f => sums[f] += nv(p[f])));
+    const byKey = new Map();
+    pays.forEach(p => {
+      const k = `${p.employee_id}||${p.employee_number || ''}`;
+      if(byKey.has(k)){
+        const acc = byKey.get(k);
+        for(const f of sumFields) acc[f] = nv(acc[f]) + nv(p[f]);
+        acc.pay_count = (Number(acc.pay_count)||1) + 1;
+      } else {
+        byKey.set(k, { ...p, pay_count: 1 });
+      }
+    });
+    const merged = Array.from(byKey.values());
+    merged.sort((a,b) => (empMap[a.employee_id]?.name||'').localeCompare(empMap[b.employee_id]?.name||'','ko'));
 
-    // ── 각 직원별 데이터 행 생성 ──
-    pays.forEach((p, idx) => {
+    const hasData = f => merged.some(p => p[f] && Number(p[f]) !== 0);
+    const transportVal = p => nv(p.self_driving_allowance) || nv(p.transportation_allowance) || 0;
+    const hasCustomOrd = !!(cfg && Array.isArray(cfg._custom_ordinary) && cfg._custom_ordinary.length > 0);
+    const hasCustomFixed = !!(cfg && Array.isArray(cfg._custom_fixed) && cfg._custom_fixed.length > 0);
+    const hasEtcItems = merged.some(p => _sumEtcItems(p) > 0);
+
+    const PAY_TH = [
+      ['기본급','정기상여금','식대','차량유지비', hasData('position_allowance')?'직책수당':'', hasData('site_allowance')?'현장수당':''],
+      [hasData('research_allowance')?'연구활동비':'', hasData('childcare_allowance')?'보육수당':'', '연장근로수당','야간근로수당','휴일근로수당','주휴수당'],
+      ['연차수당', hasData('license_allowance')?'면허수당':'', hasData('skill_allowance')?'기술수당':'', hasData('communication_pay')?'통신비':'', hasData('performance_pay')?'성과급':'', ''],
+      [hasData('hazard_allowance')?'위험수당':'', hasData('remote_area_allowance')?'벽지수당':'', hasData('fitness_allowance')?'체력증진비':'', hasData('self_dev_allowance')?'자기계발비':'', hasData('book_allowance')?'도서지원비':'', hasData('overseas_allowance')?'해외근무수당':''],
+      [hasCustomOrd?'커스텀통상임금':'', hasCustomFixed?'커스텀고정수당':'', hasEtcItems?'기타수당(커스텀)':'', '', (hasData('etc_allowance')||hasData('other_pay'))?'기타':'', '지급합계'],
+    ];
+    const DED_TH = [
+      ['국민연금','건강보험','고용보험','장기요양보험료'],
+      ['','건강보험연말정산','','장기요양보험연말정산'],
+      ['','','',''],
+      ['소득세','지방소득세','소득세연말정산',''],
+      ['','기타공제','공제합계','차인지급액'],
+    ];
+
+    const payRowFields = [
+      ['base_salary','bonus_pay','meal_allowance','transport','position_allowance','site_allowance'],
+      ['research_allowance','childcare_allowance','overtime_pay','night_pay','holiday_pay','weekly_holiday_pay'],
+      ['annual_leave_pay','license_allowance','skill_allowance','communication_pay','performance_pay','_empty'],
+      ['hazard_allowance','remote_area_allowance','fitness_allowance','self_dev_allowance','book_allowance','overseas_allowance'],
+      ['_customOrd','_customFixed','_etcItems','_empty','_etcOther','gross_pay']
+    ];
+    const dedRowFields = [
+      ['national_pension','health_insurance','employment_insurance','long_term_care'],
+      ['_empty','health_insurance_adjust','_empty','_empty2'],
+      ['_empty','_empty','_empty','_empty'],
+      ['income_tax','local_income_tax','year_end_tax_adjust','_empty'],
+      ['_empty','advance_deduction','total_deduction','net_pay']
+    ];
+    const rowHasData = rowIdx => {
+      if(rowIdx === 4) return true;
+      const payFields = payRowFields[rowIdx];
+      const hasPay = payFields.some(f => {
+        if(f==='transport') return merged.some(p => (p.self_driving_allowance||p.transportation_allowance||0) !== 0);
+        if(f==='_customOrd') return merged.some(p => _sumCustomOrd(p) > 0);
+        if(f==='_customFixed') return merged.some(p => _sumCustomFixed(p) > 0);
+        if(f==='_etcItems') return merged.some(p => _sumEtcItems(p) > 0);
+        if(f==='_etcOther') return merged.some(p => (p.etc_allowance||0)+(p.other_pay||0) !== 0);
+        if(f==='_empty') return false;
+        return merged.some(p => p[f] && Number(p[f]) !== 0);
+      });
+      if(hasPay) return true;
+      const dedFields = dedRowFields[rowIdx];
+      return dedFields.some(f => {
+        if(f==='_empty'||f==='_empty2') return false;
+        return merged.some(p => p[f] && Number(p[f]) !== 0);
+      });
+    };
+    const rowVisible = [0,1,2,3,4].map(i => rowHasData(i));
+    const visRows = rowVisible.map((v,i)=>v?i:-1).filter(i=>i>=0);
+
+    const payVals = (p, rowIdx) => {
+      switch(rowIdx){
+        case 0: return [nv(p.base_salary), nv(p.bonus_pay), nv(p.meal_allowance), transportVal(p), nv(p.position_allowance), nv(p.site_allowance)];
+        case 1: return [nv(p.research_allowance), nv(p.childcare_allowance), nv(p.overtime_pay), nv(p.night_pay), nv(p.holiday_pay), nv(p.weekly_holiday_pay)];
+        case 2: return [nv(p.annual_leave_pay), nv(p.license_allowance), nv(p.skill_allowance), nv(p.communication_pay), nv(p.performance_pay), 0];
+        case 3: return [nv(p.hazard_allowance), nv(p.remote_area_allowance), nv(p.fitness_allowance), nv(p.self_dev_allowance), nv(p.book_allowance), nv(p.overseas_allowance)];
+        case 4: return [_sumCustomOrd(p), _sumCustomFixed(p), _sumEtcItems(p), 0, nv(p.etc_allowance)+nv(p.other_pay), nv(p.gross_pay)];
+        default: return [0,0,0,0,0,0];
+      }
+    };
+    const dedVals = (p, rowIdx) => {
+      switch(rowIdx){
+        case 0: return [nv(p.national_pension), nv(p.health_insurance), nv(p.employment_insurance), nv(p.long_term_care)];
+        case 1: return [0, nv(p.health_insurance_adjust), 0, 0];
+        case 2: return [0,0,0,0];
+        case 3: return [nv(p.income_tax), nv(p.local_income_tax), nv(p.year_end_tax_adjust), 0];
+        case 4: return [0, nv(p.advance_deduction), nv(p.total_deduction), nv(p.net_pay)];
+        default: return [0,0,0,0];
+      }
+    };
+
+    const empInfo = p => {
       const emp = empMap[p.employee_id] || {};
-      const empNo = emp.employee_number || '-';
-      const empName = emp.name || '-';
-      const dept = emp.department || '';
-      const pos = emp.position || '';
-      const hire = emp.hire_date || '';
+      const resign = (contracts||[])
+        .filter(c => c.employee_id === p.employee_id && !c.is_draft)
+        .sort((a,b)=>(b.contract_start||'').localeCompare(a.contract_start||''))[0]?.contract_end || '';
+      return {
+        empNo: p.employee_number || emp.employee_number || '-',
+        name: emp.name || '-',
+        dept: emp.department || '',
+        pos: emp.position || '',
+        hire: emp.hire_date || '',
+        resign,
+      };
+    };
 
-      // 헤더 행 (직원 정보)
-      wsData.push([`${idx + 1}. ${empName} (${empNo})${dept ? ' / ' + dept : ''}${pos ? ' / ' + pos : ''}${hire ? ' / 입사: ' + hire : ''}`]);
+    return { merged, PAY_TH, DED_TH, rowVisible, visRows, payVals, dedVals, empInfo };
+  }
 
-      // ── 지급내역 (신고용: 값 없는 항목 공란) ──
-      const _show = (v) => v === 0 ? 0 : v;
-      const _showLbl = (lbl, v) => v === 0 ? '' : lbl;
+  // ═══════════════════════════════════════════════════════════════
+  // Excel 생성 (신고용 — 화면 임금대장과 동일 레이아웃: 2026-09-21)
+  // ═══════════════════════════════════════════════════════════════
+  function _generateExcel(pays, empMap, co, year, month, filePath, contracts, attLedgers, lvLedgers) {
+    const wb = XLSX.utils.book_new();
+    const cfg = co?.allowance_config ? (typeof co.allowance_config === 'string' ? JSON.parse(co.allowance_config) : co.allowance_config) : {};
+    const L = _buildLedgerData(pays, empMap, contracts, cfg);
+    const moStr = String(month).padStart(2, '0');
+    const numCell = v => { const n = Number(v); return (!v || n === 0) ? '' : n; };
 
-      const payData = [
-        [{lbl:'기본급',        val:nv(p.base_salary)},
-         {lbl:'주휴수당',      val:nv(p.weekly_holiday_pay)},
-         {lbl:'직책수당',      val:nv(p.position_allowance)},
-         {lbl:'연장근로수당',  val:nv(p.overtime_pay)}],
-        [{lbl:'야간근로수당',  val:nv(p.night_pay)},
-         {lbl:'휴일근로수당',  val:nv(p.holiday_pay)},
-         {lbl:'교통비',        val:nv(p.transportation_allowance)},
-         {lbl:'자가운전보조금',val:nv(p.self_driving_allowance)}],
-        [{lbl:'벽지수당',      val:nv(p.remote_area_allowance)},
-         {lbl:'식대',          val:nv(p.meal_allowance)},
-         {lbl:'보육수당',      val:nv(p.childcare_allowance)},
-         {lbl:'연구활동비',    val:nv(p.research_allowance)}],
-        [{lbl:'연차수당',      val:nv(p.annual_leave_pay)},
-         {lbl:'정기상여금',    val:nv(p.bonus_pay)},
-         {lbl:'성과급',        val:nv(p.performance_pay)},
-         null],
-        [{lbl:'통신비',        val:nv(p.communication_pay)},
-         {lbl:'기술수당',      val:nv(p.skill_allowance)},
-         {lbl:'면허수당',      val:nv(p.license_allowance)},
-         {lbl:'현장수당',      val:nv(p.site_allowance)}],
-        [{lbl:'위험수당',      val:nv(p.hazard_allowance)},
-         {lbl:'체력증진비',    val:nv(p.fitness_allowance)},
-         {lbl:'자기계발비',    val:nv(p.self_dev_allowance)},
-         {lbl:'도서지원비',    val:nv(p.book_allowance)}],
-        [{lbl:'해외근무수당',  val:nv(p.overseas_allowance)},
-         {lbl:'기타수당',      val:nv(p.etc_allowance) + nv(p.other_pay)},
-         null, null],
-      ];
-
-      wsData.push(['지급내역', '', '', '', '', '', '', '', '']);
-      for (const row of payData) {
-        if (!row[0] && !row[1] && !row[2] && !row[3]) continue;
-        wsData.push([
-          '', // 구분열 병합
-          _showLbl(row[0]?.lbl, row[0]?.val), _show(row[0]?.val || 0),
-          _showLbl(row[1]?.lbl, row[1]?.val), _show(row[1]?.val || 0),
-          _showLbl(row[2]?.lbl, row[2]?.val), _show(row[2]?.val || 0),
-          _showLbl(row[3]?.lbl, row[3]?.val), _show(row[3]?.val || 0),
-        ]);
+    const wsData = [];
+    // 타이틀 (기존 업로드 파서와 호환되는 파이프 형식, 2026-09-22)
+    wsData.push([`${co.company_name} | ${year}년 ${moStr}월 임금대장`]);
+    wsData.push([]);
+    // 그룹 헤더 (화면 1행)
+    wsData.push(['인적사항','','기본급여 및 제수당','','','','','','공제 및 차인지급액','','','','영수인']);
+    // 항목 헤더 행 (화면 thead와 동일 순서·라벨)
+    const mergedLabels = ['부서','직급','입사일','퇴사일'];
+    L.visRows.forEach(ri => {
+      const pay = L.PAY_TH[ri];
+      const ded = L.DED_TH[ri];
+      if(ri === 0){
+        wsData.push(['사원번호','성명', ...pay, ...ded, '영수인']);
+      } else {
+        wsData.push([mergedLabels[ri-1], '', ...pay, ...ded, '']);
       }
-      // 지급합계
-      wsData.push(['', '지급합계', nv(p.gross_pay), '', '', '', '', '', '']);
-
-      // ── 공제내역 ──
-      const dedData = [
-        [{lbl:'보수월액',       val:nv(p.standard_monthly_pay)},
-         {lbl:'소득세',         val:nv(p.income_tax)},
-         {lbl:'주민세',         val:nv(p.local_income_tax)},
-         {lbl:'건강보험',       val:nv(p.health_insurance)}],
-        [{lbl:'장기요양보험료', val:nv(p.long_term_care)},
-         {lbl:'국민연금',       val:nv(p.national_pension)},
-         {lbl:'고용보험',       val:nv(p.employment_insurance)},
-         {lbl:'연말정산',       val:nv(p.year_end_tax_adjust)}],
-        [{lbl:'건강보험정산',   val:nv(p.health_insurance_adjust)},
-         {lbl:'기타공제',       val:nv(p.advance_deduction)},
-         null, null],
-      ];
-
-      wsData.push(['공제내역', '', '', '', '', '', '', '', '']);
-      const _showDedLbl = (it, v) => (!it || v === 0) ? '' : (it.lbl || '');
-      const _showDedVal = (it, v) => (!it || v === 0) ? 0 : (it.val || 0);
-      for (const row of dedData) {
-        if (!row[0] && !row[1] && !row[2] && !row[3]) continue;
-        wsData.push([
-          '',
-          _showDedLbl(row[0], row[0]?.val), _showDedVal(row[0], row[0]?.val),
-          _showDedLbl(row[1], row[1]?.val), _showDedVal(row[1], row[1]?.val),
-          _showDedLbl(row[2], row[2]?.val), _showDedVal(row[2], row[2]?.val),
-          _showDedLbl(row[3], row[3]?.val), _showDedVal(row[3], row[3]?.val),
-        ]);
-      }
-      // 공제합계 + 차인지급액
-      wsData.push(['', '공제합계', nv(p.total_deduction), '차인지급액', nv(p.net_pay), '', '', '', '']);
-
-      wsData.push([]); // 직원 간 구분 공란
+    });
+    // 직원 데이터 블록 (화면 tbody와 동일 구조, 합계 행 없음)
+    L.merged.forEach(p => {
+      const info = L.empInfo(p);
+      L.visRows.forEach(ri => {
+        const pay = L.payVals(p, ri).map(numCell);
+        const ded = L.dedVals(p, ri).map(numCell);
+        if(ri === 0){
+          wsData.push([info.empNo, info.name, ...pay, ...ded, '']);
+        } else {
+          const left = [info.dept, info.pos, info.hire, info.resign][ri-1] || '';
+          wsData.push([left, '', ...pay, ...ded, '']);
+        }
+      });
     });
 
-    // ── 합계 행 ──
-    wsData.push(['']);
-    wsData.push([`합계 (${pays.length}명)`, '', '', '', '', '', '', '', '']);
-    wsData.push(['지급내역', '지급합계', nv(sums.gross_pay), '', '', '', '', '', '']);
-    wsData.push(['공제내역', '공제합계', nv(sums.total_deduction), '차인지급액', nv(sums.net_pay), '', '', '', '']);
-
-    // ── 워크시트 생성 ──
     const ws = XLSX.utils.aoa_to_sheet(wsData);
-    ws['!cols'] = colWidths;
-
-    // 병합: 타이틀 행
-    ws['!merges'] = [
-      { s: { r: 0, c: 0 }, e: { r: 0, c: 8 } },
+    ws['!cols'] = [
+      {wch:10},{wch:12},{wch:12},{wch:12},{wch:10},{wch:12},{wch:10},{wch:10},
+      {wch:12},{wch:12},{wch:10},{wch:14},{wch:10},
     ];
+    ws['!merges'] = [
+      { s:{r:0,c:0}, e:{r:0,c:12} },
+      { s:{r:2,c:0}, e:{r:2,c:1} },
+      { s:{r:2,c:2}, e:{r:2,c:7} },
+      { s:{r:2,c:8}, e:{r:2,c:11} },
+    ];
+    XLSX.utils.book_append_sheet(wb, ws, '임금대장');
 
-    XLSX.utils.book_append_sheet(wb, ws, '임금대장(신고용)');
-    const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'buffer' });
+    // ── 근태 관리대장 시트 (기존 편집용과 동일 포맷) ──
+    if(Array.isArray(attLedgers) && attLedgers.length > 0){
+      const attByEmp = {};
+      attLedgers.forEach(led => {
+        const eid = led.employee_id;
+        if(!attByEmp[eid]) attByEmp[eid] = [];
+        try {
+          const md = typeof led.month_data === 'string' ? JSON.parse(led.month_data) : (led.month_data || []);
+          md.forEach(e => attByEmp[eid].push({
+            date: e.date||'', dateTo: e.dateTo||'', type: e.type||'absent',
+            absentType: e.absentType||'', rate: e.rate||0, time: e.time||''
+          }));
+        } catch(e){}
+      });
+      const typeLabel = { absent:'결근', late:'지각', earlyleave:'조퇴' };
+      const absentLabel = { unauthorized:'무단', sick_unpaid:'병가(무급)', sick_paid:'병가(유급)', industrial:'산재', menstrual:'생리휴가', maternity_paid:'출산(유급)', maternity_unpaid:'출산(무급)', paternity_paid:'배우자출산', childcare_leave:'육아휴직', family_care:'가족돌봄', approved_unpaid:'사전승인 무급휴가', layoff_leave:'휴업(회사사정)' };
+      const attData = [[`[${co.company_name}] 근태 관리대장 — ${year}년 ${moStr}월`]];
+      attData.push(['직원명','날짜','유형','결근사유','지급율(%)','시간','종료일','비고']);
+      Object.entries(attByEmp).forEach(([eid, entries]) => {
+        const empName = (empMap[eid]||{}).name || '';
+        entries.forEach(e => {
+          attData.push([
+            empName, e.date, typeLabel[e.type]||e.type,
+            e.type==='absent' ? (absentLabel[e.absentType]||'결근') : '',
+            e.rate||0, e.time||'', e.dateTo||'', ''
+          ]);
+        });
+      });
+      const attWs = XLSX.utils.aoa_to_sheet(attData);
+      attWs['!cols'] = [{wch:10},{wch:12},{wch:8},{wch:14},{wch:10},{wch:8},{wch:12},{wch:15}];
+      XLSX.utils.book_append_sheet(wb, attWs, '근태관리대장');
+    }
+
+    // ── 연차 관리대장 시트 ──
+    if(Array.isArray(lvLedgers) && lvLedgers.length > 0){
+      const lvData = [[`[${co.company_name}] 연차 관리대장`]];
+      lvData.push(['직원명','기준년도','발생일수','사용일수','잔여일수','이월일수','비고']);
+      lvLedgers.forEach(l => {
+        lvData.push([
+          (empMap[l.employee_id]||{}).name || '',
+          l.year || '',
+          numCell(l.total_days), numCell(l.total_used), numCell(l.remain_days), numCell(l.carryover_days), ''
+        ]);
+      });
+      const lvWs = XLSX.utils.aoa_to_sheet(lvData);
+      lvWs['!cols'] = [{wch:10},{wch:10},{wch:10},{wch:10},{wch:10},{wch:10},{wch:20}];
+      XLSX.utils.book_append_sheet(wb, lvWs, '연차관리대장');
+    }
+
+    const buf = XLSX.write(wb, { bookType:'xlsx', type:'buffer' });
     fs.writeFileSync(filePath, buf);
   }
 
   // ═══════════════════════════════════════════════════════════════
-  // HTML 생성 (PDF 열람/인쇄용, 신고용 포맷)
+  // HTML 생성 (PDF 열람/인쇄용 — 화면 임금대장과 동일 레이아웃: 2026-09-21)
   // ═══════════════════════════════════════════════════════════════
-  function _generateHtml(pays, empMap, co, year, month, filePath) {
+  function _generateHtml(pays, empMap, co, year, month, filePath, contracts) {
+    const cfg = co?.allowance_config ? (typeof co.allowance_config === 'string' ? JSON.parse(co.allowance_config) : co.allowance_config) : {};
+    const L = _buildLedgerData(pays, empMap, contracts, cfg);
     const moStr = String(month).padStart(2, '0');
-    const fmt = v => {
-      const n = Number(v);
-      return (!v || n === 0) ? '' : n.toLocaleString('ko-KR');
-    };
+    const fmt  = v => (!v || Number(v) === 0) ? '' : Number(v).toLocaleString('ko-KR');
+    const fmtB = v => (!v || Number(v) === 0) ? '' : `<strong>${Number(v).toLocaleString('ko-KR')}</strong>`;
+    const mergedLabels = ['부서','직급','입사일','퇴사일'];
 
-    // ── 합계 계산 ──
-    const sumFields = [
-      'base_salary','bonus_pay','meal_allowance','self_driving_allowance','transportation_allowance',
-      'position_allowance','site_allowance','research_allowance','childcare_allowance',
-      'overtime_pay','night_pay','holiday_pay','weekly_holiday_pay','annual_leave_pay',
-      'license_allowance','skill_allowance','communication_pay','performance_pay',
-      'hazard_allowance','remote_area_allowance','fitness_allowance',
-      'self_dev_allowance','book_allowance','overseas_allowance',
-      'etc_allowance','other_pay','gross_pay',
-      'national_pension','health_insurance','employment_insurance','long_term_care',
-      'income_tax','local_income_tax','year_end_tax_adjust','health_insurance_adjust',
-      'advance_deduction','total_deduction','net_pay','standard_monthly_pay'
-    ];
-    const sums = {};
-    sumFields.forEach(f => sums[f] = 0);
-    pays.forEach(p => sumFields.forEach(f => sums[f] += nv(p[f])));
-
-    // ── 직원 행 HTML 생성 ──
-    const _show = (v) => v === 0 ? 0 : v;
-    const _showLbl = (lbl, v) => v === 0 ? '' : lbl;
-    const _showDedLbl = (it, v) => (!it || v === 0) ? '' : (it.lbl || '');
-    const _showDedVal = (it, v) => (!it || v === 0) ? 0 : (it.val || 0);
-
-    let rowsHtml = '';
-    pays.forEach((p, idx) => {
-      const emp = empMap[p.employee_id] || {};
-      const name = emp.name || '-';
-      const empNo = emp.employee_number || '';
-      const dept = emp.department || '';
-      const pos = emp.position || '';
-
-      const payItems = [
-        [{l:'기본급',v:nv(p.base_salary)},{l:'주휴수당',v:nv(p.weekly_holiday_pay)},{l:'직책수당',v:nv(p.position_allowance)},{l:'연장근로수당',v:nv(p.overtime_pay)}],
-        [{l:'야간근로수당',v:nv(p.night_pay)},{l:'휴일근로수당',v:nv(p.holiday_pay)},{l:'교통비',v:nv(p.transportation_allowance)},{l:'자가운전보조금',v:nv(p.self_driving_allowance)}],
-        [{l:'벽지수당',v:nv(p.remote_area_allowance)},{l:'식대',v:nv(p.meal_allowance)},{l:'보육수당',v:nv(p.childcare_allowance)},{l:'연구활동비',v:nv(p.research_allowance)}],
-        [{l:'연차수당',v:nv(p.annual_leave_pay)},{l:'정기상여금',v:nv(p.bonus_pay)},{l:'성과급',v:nv(p.performance_pay)}],
-        [{l:'통신비',v:nv(p.communication_pay)},{l:'기술수당',v:nv(p.skill_allowance)},{l:'면허수당',v:nv(p.license_allowance)},{l:'현장수당',v:nv(p.site_allowance)}],
-        [{l:'위험수당',v:nv(p.hazard_allowance)},{l:'체력증진비',v:nv(p.fitness_allowance)},{l:'자기계발비',v:nv(p.self_dev_allowance)},{l:'도서지원비',v:nv(p.book_allowance)}],
-        [{l:'해외근무수당',v:nv(p.overseas_allowance)},{l:'기타수당',v:nv(p.etc_allowance)+nv(p.other_pay)}],
-      ];
-      const dedItems = [
-        [{l:'보수월액',v:nv(p.standard_monthly_pay)},{l:'소득세',v:nv(p.income_tax)},{l:'주민세',v:nv(p.local_income_tax)},{l:'건강보험',v:nv(p.health_insurance)}],
-        [{l:'장기요양보험료',v:nv(p.long_term_care)},{l:'국민연금',v:nv(p.national_pension)},{l:'고용보험',v:nv(p.employment_insurance)},{l:'연말정산',v:nv(p.year_end_tax_adjust)}],
-        [{l:'건강보험정산',v:nv(p.health_insurance_adjust)},{l:'기타공제',v:nv(p.advance_deduction)}],
-      ];
-
-      // 지급내역 행
-      let payRows = '';
-      for (const row of payItems) {
-        const hasAny = row.some(it => it.v !== 0);
-        if (!hasAny) continue;
-        payRows += `<tr>`;
-        row.forEach(it => {
-          const lbl = _showLbl(it.l, it.v);
-          const val = _show(it.v);
-          payRows += `<td class="lbl">${lbl}</td><td class="val">${val === 0 ? '' : val.toLocaleString('ko-KR')}</td>`;
-        });
-        payRows += `</tr>`;
+    const signRowspan = L.visRows.length + 1;
+    let thead = `<tr class="wl-th-group">
+        <th colspan="2" class="wl-th-personal">인적사항</th>
+        <th colspan="6" class="wl-th-pay">기본급여 및 제수당</th>
+        <th colspan="4" class="wl-th-ded">공제 및 차인지급액</th>
+        <th rowspan="${signRowspan}" class="wl-th-sign">영수인</th>
+      </tr>`;
+    L.visRows.forEach(ri => {
+      const pay = L.PAY_TH[ri];
+      const ded = L.DED_TH[ri];
+      if(ri === 0){
+        thead += `<tr class="wl-th-row wl-th-row-ind">
+          <th class="wl-th-cell">사원번호</th><th class="wl-th-cell">성명</th>
+          ${pay.map(t=>`<th class="wl-th-cell">${t}</th>`).join('')}${ded.map(t=>`<th class="wl-th-cell">${t}</th>`).join('')}
+        </tr>`;
+      } else {
+        thead += `<tr class="wl-th-row wl-th-row-mrg">
+          <th colspan="2" class="wl-th-cell wl-th-merged">${mergedLabels[ri-1]}</th>
+          ${pay.map((t,i)=>`<th class="wl-th-cell${t==='지급합계'?' wl-th-gross':i===5?' wl-th-pay-last':''}">${t}</th>`).join('')}
+          ${ded.map((t,i)=>`<th class="wl-th-cell${t==='공제합계'?' wl-th-ded-sum':t==='차인지급액'?' wl-th-net':(ri===2&&(i===0||i===2))?' wl-th-na':''}">${t}</th>`).join('')}
+        </tr>`;
       }
-
-      // 공제내역 행
-      let dedRows = '';
-      for (const row of dedItems) {
-        const hasAny = row.some(it => it && it.v !== 0);
-        if (!hasAny) continue;
-        dedRows += `<tr>`;
-        row.forEach(it => {
-          if (!it) { dedRows += `<td class="lbl"></td><td class="val"></td>`; return; }
-          const lbl = _showDedLbl(it, it.v);
-          const val = _showDedVal(it, it.v);
-          dedRows += `<td class="lbl">${lbl}</td><td class="val">${val === 0 ? '' : val.toLocaleString('ko-KR')}</td>`;
-        });
-        dedRows += `</tr>`;
-      }
-
-      rowsHtml += `
-      <div class="emp-card">
-        <div class="emp-header">
-          <span class="emp-name">${idx + 1}. ${name}</span>
-          <span class="emp-info">${empNo}${dept ? ' / ' + dept : ''}${pos ? ' / ' + pos : ''}</span>
-        </div>
-        <table class="pay-table">
-          <thead><tr><th colspan="8" class="sec pay">지급내역</th></tr></thead>
-          <tbody>${payRows}
-            <tr class="total"><td class="lbl">지급합계</td><td class="val gross">${fmt(p.gross_pay)}</td><td colspan="6"></td></tr>
-          </tbody>
-        </table>
-        <table class="ded-table">
-          <thead><tr><th colspan="8" class="sec ded">공제내역</th></tr></thead>
-          <tbody>${dedRows}
-            <tr class="total"><td class="lbl">공제합계</td><td class="val ded">${fmt(p.total_deduction)}</td><td class="lbl">차인지급액</td><td class="val net">${fmt(p.net_pay)}</td><td colspan="4"></td></tr>
-          </tbody>
-        </table>
-      </div>`;
     });
 
-    // ── 합계 ──
-    rowsHtml += `
-      <div class="emp-card sum">
-        <div class="emp-header"><span class="emp-name">합계 (${pays.length}명)</span></div>
-        <table class="pay-table">
-          <tbody>
-            <tr class="total"><td class="lbl">지급합계</td><td class="val gross">${fmt(sums.gross_pay)}</td><td colspan="6"></td></tr>
-          </tbody>
-        </table>
-        <table class="ded-table">
-          <tbody>
-            <tr class="total"><td class="lbl">공제합계</td><td class="val ded">${fmt(sums.total_deduction)}</td><td class="lbl">차인지급액</td><td class="val net">${fmt(sums.net_pay)}</td><td colspan="4"></td></tr>
-          </tbody>
-        </table>
-      </div>`;
+    let tbody = '';
+    L.merged.forEach(p => {
+      const info = L.empInfo(p);
+      L.visRows.forEach((ri, vi) => {
+        const pay = L.payVals(p, ri);
+        const ded = L.dedVals(p, ri);
+        const signCell = vi === 0 ? `<td rowspan="${L.visRows.length}" class="wl-td-sign"></td>` : '';
+        let left;
+        if(ri === 0){
+          left = `<td class="wl-td-center wl-td-empno">${info.empNo}</td><td class="wl-td-center wl-td-name">${info.name}</td>`;
+        } else {
+          left = `<td colspan="2" class="wl-td-center wl-td-dept">${[info.dept, info.pos, info.hire, info.resign][ri-1] || ''}</td>`;
+        }
+        let payCells;
+        if(ri === 4){
+          payCells = pay.map((v, i) =>
+            i === 5 ? `<td class="wl-td-gross">${fmtB(v)}</td>` : `<td class="wl-td-num">${fmt(v)}</td>`
+          ).join('');
+        } else {
+          payCells = pay.map((v, i) =>
+            i === 5 ? `<td class="wl-td-num wl-td-pay-last">${fmt(v)}</td>` : `<td class="wl-td-num">${fmt(v)}</td>`
+          ).join('');
+        }
+        let dedCells;
+        if(ri === 4){
+          dedCells = ded.map((v, i) =>
+            i === 2 ? `<td class="wl-td-ded-sum">${fmtB(v)}</td>` :
+            i === 3 ? `<td class="wl-td-net">${fmtB(v)}</td>` :
+            `<td class="wl-td-num">${fmt(v)}</td>`
+          ).join('');
+        } else if(ri === 2){
+          dedCells = ded.map((v, i) =>
+            (i === 0 || i === 2) ? `<td class="wl-td-num wl-td-na">${fmt(v)}</td>` : `<td class="wl-td-num">${fmt(v)}</td>`
+          ).join('');
+        } else {
+          dedCells = ded.map(v => `<td class="wl-td-num">${fmt(v)}</td>`).join('');
+        }
+        tbody += `<tr class="wl-data-row${vi===0?' wl-data-row-top':''}">${left}${payCells}${dedCells}${signCell}</tr>`;
+      });
+    });
 
     const html = `<!DOCTYPE html>
 <html lang="ko">
@@ -532,32 +573,55 @@ module.exports = function(db, ROOT) {
 <title>[${co.company_name}] 임금대장 (신고용) — ${year}년 ${moStr}월</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:'Malgun Gothic','Noto Sans KR',sans-serif;background:#f8fafc;padding:20px;color:#1e293b}
-  h1{font-size:18px;text-align:center;margin-bottom:20px;color:#1a1a2e}
-  .emp-card{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:16px;margin-bottom:14px;page-break-inside:avoid}
-  .emp-card.sum{background:#f1f5f9;border-color:#94a3b8}
-  .emp-header{display:flex;align-items:center;gap:12px;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #e5e7eb}
-  .emp-name{font-weight:700;font-size:14px;color:#1a1a2e}
-  .emp-info{font-size:12px;color:#64748b}
-  table{width:100%;border-collapse:collapse;margin-bottom:8px}
-  th.sec{padding:6px 10px;font-size:11px;text-align:left;border-radius:4px}
-  th.sec.pay{background:#dbeafe;color:#1d4ed8}
-  th.sec.ded{background:#fee2e2;color:#b91c1c}
-  td.lbl{padding:4px 8px;font-size:11px;color:#64748b;text-align:right;width:18%;background:#f8fafc;border-bottom:1px solid #f1f5f9}
-  td.val{padding:4px 8px;font-size:11px;text-align:right;width:14%;border-bottom:1px solid #f1f5f9}
-  tr.total td{border-top:1.5px solid #94a3b8;font-weight:700;font-size:12px}
-  td.gross{color:#2563eb}
-  td.ded{color:#dc2626}
-  td.net{color:#059669}
-  @media print{
-    body{background:#fff;padding:0}
-    .emp-card{box-shadow:none;border:1px solid #d1d5db}
-  }
+  body{font-family:'Malgun Gothic','Noto Sans KR',sans-serif;background:#fff;padding:24px;color:#1e293b}
+  h1{font-size:18px;text-align:center;margin-bottom:18px;color:#1a1a2e}
+  .wl-ledger-wrap{overflow-x:auto}
+  table.wl-ledger-tbl{width:100%;border-collapse:collapse;font-size:11px;min-width:900px;table-layout:fixed}
+  table.wl-ledger-tbl thead tr th{border:1px solid #94a3b8;text-align:center;vertical-align:middle;white-space:nowrap;padding:4px 5px;font-weight:700;font-size:10.5px}
+  .wl-th-group th{background:#1e293b;color:#f1f5f9;font-size:11px;padding:6px 5px;border-color:#334155}
+  .wl-th-personal{background:#1e3a5f !important;color:#93c5fd !important}
+  .wl-th-pay{background:#14532d !important;color:#86efac !important}
+  .wl-th-ded{background:#3b0f0f !important;color:#fca5a5 !important}
+  .wl-th-sign{background:#1e293b !important;color:#cbd5e1 !important;border-color:#334155 !important}
+  .wl-th-row th.wl-th-cell{background:#f1f5f9;color:#374151;font-size:10px;padding:4px;white-space:normal;word-break:keep-all;line-height:1.3}
+  .wl-th-cell.wl-th-merged{background:#e8f0fe;color:#1e3a8a}
+  .wl-th-na{background:#e2e8f0 !important}
+  .wl-td-na{background:#e2e8f0 !important}
+  .wl-th-gross{background:#dcfce7 !important;color:#14532d !important;font-weight:800 !important;border:2px solid #15803d !important}
+  .wl-th-ded-sum{background:#fee2e2 !important;color:#b91c1c !important;font-weight:800 !important;border:2px solid #b91c1c !important}
+  .wl-th-net{background:#dbeafe !important;color:#1e40af !important;font-weight:800 !important;border:2px solid #1d4ed8 !important}
+  .wl-ledger-tbl tbody td{border:1px solid #cbd5e1;vertical-align:middle;padding:3px 5px;font-size:11px;color:#1e293b;height:26px}
+  .wl-td-num{text-align:right;white-space:nowrap;background:#f8fbff}
+  .wl-td-num strong{color:#1d4ed8}
+  .wl-td-gross{text-align:right;white-space:nowrap;background:#dcfce7 !important;color:#14532d !important;font-weight:700;border:2px solid #15803d !important}
+  .wl-td-gross strong{color:#14532d !important}
+  .wl-td-ded-sum{text-align:right;white-space:nowrap;background:#fee2e2 !important;color:#b91c1c !important;font-weight:700;border:2px solid #b91c1c !important}
+  .wl-td-ded-sum strong{color:#b91c1c !important}
+  .wl-td-net{text-align:right;white-space:nowrap;background:#dbeafe !important;color:#1e40af !important;font-weight:700;border:2px solid #1d4ed8 !important}
+  .wl-td-net strong{color:#1e40af !important}
+  .wl-td-center{text-align:center;background:#f8fafc}
+  .wl-td-empno{font-size:10px;color:#475569;background:#f1f5f9}
+  .wl-td-name{font-weight:700;font-size:12px;color:#0f172a;background:#f0f4ff}
+  .wl-td-dept{font-size:10.5px;color:#374151;background:#f8f9fb}
+  .wl-td-sign{background:#fff;min-width:50px;vertical-align:middle;text-align:center;border-bottom:2px solid #475569 !important}
+  tr.wl-data-row-top td{border-top:2px solid #64748b}
+  thead tr.wl-th-group th.wl-th-personal,thead tr.wl-th-group th.wl-th-pay{border-right:2px solid #475569 !important}
+  thead tr.wl-th-row-ind th:nth-child(2),thead tr.wl-th-row-ind th:nth-child(8){border-right:2px solid #475569 !important}
+  thead tr.wl-th-row-mrg th:nth-child(1),thead th.wl-th-gross,thead th.wl-th-pay-last{border-right:2px solid #475569 !important}
+  tbody td.wl-td-name,tbody td.wl-td-gross{border-right:2px solid #475569 !important}
+  tbody td[colspan="2"],tbody td.wl-td-pay-last{border-right:2px solid #475569 !important}
+  thead th.wl-th-sign,tbody td.wl-td-sign{border-left:2px solid #475569 !important}
+  @media print{body{padding:0}}
 </style>
 </head>
 <body>
 <h1>[${co.company_name}] 임금대장 (신고용) — ${year}년 ${moStr}월</h1>
-${rowsHtml}
+<div class="wl-ledger-wrap">
+<table class="wl-ledger-tbl">
+<thead>${thead}</thead>
+<tbody>${tbody}</tbody>
+</table>
+</div>
 </body>
 </html>`;
 

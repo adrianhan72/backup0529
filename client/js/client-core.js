@@ -420,6 +420,7 @@ function showPage(name, el){
   if(name === 'myco') renderMyco();
   if(name === 'severance') renderClientSeverance();
   if(name === 'annual-leave') renderClientAnnualLeave();
+  if(name === 'attendance' && typeof renderClientAttendance === 'function') renderClientAttendance();
   if(name === 'min-wage' && !_allClientMinWages.length) loadClientMinWages();
   if(name === 'insurance-rates' && !_allClientInsRates.length) loadClientInsRates();
 }

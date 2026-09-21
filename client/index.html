@@ -358,8 +358,28 @@
       <div style="font-size:13px;font-weight:700;color:#1a1a2e;"><i class="fas fa-calendar-alt" style="color:#059669;margin-right:5px;"></i>직원별 연차 현황</div>
       <select id="al-client-year" onchange="renderClientAnnualLeave()" style="border:1px solid #d1d5db;border-radius:8px;padding:5px 10px;font-size:12px;background:#fff;font-family:inherit;color:#374151;cursor:pointer;"></select>
     </div>
-    <!-- 직원 카드 목록 -->
+    <!-- 직원 카드 목록 (카드 내 연차 사용 기록 버튼) -->
     <div id="al-client-list" style="padding:8px 12px 80px;display:grid;gap:8px;"></div>
+  </div>
+
+  <!-- ⑧-1 근태 관리 (고객사 담당자 직접 기록 — 어드민 근태관리대장과 동일 데이터) -->
+  <div class="page" id="page-attendance">
+    <div class="sub-page-header" style="background:linear-gradient(135deg,#0ea5e9,#0284c7);">
+      <button class="back-btn" style="color:#fff;" onclick="showPage('stats',document.getElementById('nav-stats'))">
+        <i class="fas fa-chevron-left"></i>홈
+      </button>
+      <span class="sub-page-badge" style="background:rgba(255,255,255,.2);color:#fff;"><i class="fas fa-clipboard-list" style="margin-right:4px;"></i>근태 관리</span>
+    </div>
+    <div style="padding:10px 12px 4px;">
+      <div style="font-size:10.5px;color:#6b7280;padding:9px 11px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;line-height:1.6;">
+        <i class="fas fa-info-circle" style="color:#0284c7;margin-right:5px;"></i>결근·지각·조퇴·추가근무를 직접 기록하세요. 기록 내용은 어드민 근태관리대장과 동일하게 공유되며 급여 계산에 반영됩니다.
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px 4px;">
+      <div style="font-size:13px;font-weight:700;color:#1a1a2e;"><i class="fas fa-users" style="color:#0ea5e9;margin-right:5px;"></i>직원별 근태 기록</div>
+      <select id="att-client-year" onchange="renderClientAttendance()" style="border:1px solid #d1d5db;border-radius:8px;padding:5px 10px;font-size:12px;background:#fff;font-family:inherit;color:#374151;cursor:pointer;"></select>
+    </div>
+    <div id="att-client-list" style="padding:8px 12px 80px;display:grid;gap:8px;"></div>
   </div>
 
   <!-- ⑨ 4대보험 요율표 -->
@@ -599,6 +619,30 @@
   </div>
 </div>
 
+<!-- ── 근태 기록 모달 (고객사 앱) ── -->
+<div class="modal-overlay" id="att-modal" onclick="if(event.target===this)closeClientAttEditor()">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-header-bar">
+      <span id="att-modal-title" style="font-size:14px;font-weight:700;"><i class="fas fa-clipboard-list" style="color:#0ea5e9;margin-right:6px;"></i>근태 기록</span>
+      <button class="modal-close-btn" onclick="closeClientAttEditor()"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="att-modal-content" style="padding:6px 18px 10px;"></div>
+  </div>
+</div>
+
+<!-- ── 연차 사용 기록 모달 (고객사 앱) ── -->
+<div class="modal-overlay" id="alc-modal" onclick="if(event.target===this)closeClientLeaveEditor()">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-header-bar">
+      <span id="alc-modal-title" style="font-size:14px;font-weight:700;"><i class="fas fa-pen" style="color:#059669;margin-right:6px;"></i>연차 사용 기록</span>
+      <button class="modal-close-btn" onclick="closeClientLeaveEditor()"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="alc-modal-content" style="padding:6px 18px 10px;"></div>
+  </div>
+</div>
+
 <!-- ── 접근코드 변경 모달 ── -->
 <div class="modal-overlay" id="code-change-modal" onclick="if(event.target===this)closeChangeCodeModal()">
   <div class="modal-sheet">
@@ -676,6 +720,9 @@
   </button>
   <button class="nav-item" id="nav-annual-leave" onclick="showPage('annual-leave',this)">
     <i class="fas fa-umbrella-beach"></i>연차
+  </button>
+  <button class="nav-item" id="nav-attendance" onclick="showPage('attendance',this)">
+    <i class="fas fa-clipboard-list"></i>근태
   </button>
   <!-- 사용료 탭 메뉴 (시스템 설정 스위치로 제어) -->
   <button class="nav-item" id="nav-billing" onclick="showPage('billing',this)" style="display:none;">
@@ -776,11 +823,12 @@
   </div>
 </div>
 
-    <script src="js/client-core.js?v=20260819a"></script>
+    <script src="js/client-core.js?v=20260922a"></script>
   <script src="js/client-payslip.js?v=20260824c"></script>
   <script src="js/client-chart.js"></script>
   <script src="js/client-billing.js"></script>
   <script src="js/client-notice.js?v=20260901a"></script>
-  <script src="js/client-init.js?v=20260818b"></script>
+  <script src="js/client-init.js?v=20260921a"></script>
+  <script src="js/client-attendance.js?v=20260921b"></script>
 </body>
 </html>

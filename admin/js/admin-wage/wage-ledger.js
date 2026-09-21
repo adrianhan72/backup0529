@@ -544,7 +544,7 @@ function clearWLCompanySelect(){
   document.getElementById('wl-company-search').value = '';
   renderWLCompanyList();
   // 고객사 선택 해제 시 버튼 비활성화
-  ['#wl-excel-btn','#wl-excel-report-btn','#wl-pdf-btn','#wl-print-btn'].forEach(id=>{
+  ['#wl-excel-btn','#wl-pdf-btn','#wl-print-btn'].forEach(id=>{
     const btn=document.getElementById(id);
     if(!btn) return;
     btn.disabled=true;
@@ -675,13 +675,14 @@ function renderWageLedger(){
       Number(p.pay_month) === mo;
   });
 
+
+
   // 버튼 상태 헬퍼
   const _setWLBtns = enabled => {
     const excelBtn = document.getElementById('wl-excel-btn');
-    const excelReportBtn = document.getElementById('wl-excel-report-btn');
     const pdfBtn   = document.getElementById('wl-pdf-btn');
     const printBtn = document.getElementById('wl-print-btn');
-    [excelBtn, excelReportBtn, pdfBtn, printBtn].forEach(btn => {
+    [excelBtn, pdfBtn, printBtn].forEach(btn => {
       if(!btn) return;
       btn.disabled = !enabled;
     });
@@ -1213,8 +1214,7 @@ function renderWageLedger(){
 
 // ─── 임금대장 인쇄/PDF 공통 실행 함수 ───
 // body에 .wl-print-mode 클래스를 추가 → @media print CSS가 임금대장만 표시
-// isPdf=true → 신고용(report) 모드: 영수인 컬럼 숨김, 빈 셀 공란 (fmtV가 이미 처리)
-// afterprint 이벤트에서 클래스·title 복원 및 편집용 모드로 복구
+// isPdf=true → 신고용 PDF 다운로드 — 화면 임금대장과 동일 레이아웃(영수인 포함, 2026-09-21)
 function _wlDoPrint(isPdf){
   const yr    = Number(document.getElementById('wl-year-filter').value);
   const mo    = Number(document.getElementById('wl-month-filter').value);
@@ -1224,17 +1224,11 @@ function _wlDoPrint(isPdf){
   const suffix = isPdf ? '_신고용' : '';
   document.title  = `[${_wlCompanyName}]_임금대장_${yr}년${moStr}월${suffix}`;
 
-  // PDF(신고용): 영수인 컬럼 숨김 클래스 추가
-  if(isPdf){
-    document.body.classList.add('wl-report-pdf');
-  }
-
   // body에 wl-print-mode 클래스 추가 → 임금대장 print CSS 활성화
   document.body.classList.add('wl-print-mode');
 
   const cleanup = () => {
     document.body.classList.remove('wl-print-mode');
-    document.body.classList.remove('wl-report-pdf');
     document.title = origTitle;
     window.removeEventListener('afterprint', cleanup);
   };
@@ -1281,7 +1275,8 @@ function downloadWageLedgerExcel(mode = 'edit', optCompanyId = null, optYear = n
     }
     return p.company_id === _coId &&
       Number(p.pay_year) === yr &&
-      Number(p.pay_month) === mo;
+      Number(p.pay_month) === mo &&
+      !p.is_draft; // 화면 임금대장과 동일하게 확정 저장분만 대상 (2026-09-22)
   });
   if(!pays.length){ toast(`${yr}년 ${mo}월 급여 데이터가 없습니다.`,'error'); return; }
 
@@ -1294,16 +1289,46 @@ function downloadWageLedgerExcel(mode = 'edit', optCompanyId = null, optYear = n
   const numFmt = '#,##0';
 
   // ========================================================
-  //  편집용: 고정 열 테이블 형식 (업로드·검증 최적화)
-  //  신고용: 카드 레이아웃 (값 없는 항목 공란)
+  //  편집용·신고용 모두 서버 생성 파일(화면과 동일 레이아웃) 사용 (2026-09-21)
+  //  → 두 파일의 형식·레이아웃이 항상 동일
   // ========================================================
-  if (mode === 'edit') {
-    _downloadEditExcel(pays, empMap, yr, mo, moStr).catch(e => {
-      console.error('편집용 엑셀 생성 오류:', e);
-      toast('엑셀 생성 중 오류가 발생했습니다.', 'error');
+  _downloadServerLedgerExcel(pays, yr, mo, moStr, mode).catch(e => {
+    console.error('임금대장 엑셀 다운로드 오류:', e);
+    toast('엑셀 다운로드 중 오류가 발생했습니다.', 'error');
+  });
+}
+
+/** 서버 생성 파일 다운로드 (2026-09-22: 편집용·신고용 통합 → 접미사 없음) */
+async function _downloadServerLedgerExcel(pays, yr, mo, moStr, mode){
+  // 급여입력 화면 등에서도 호출되므로 _wlCompanyName 대신 allCompanies에서 조회
+  const _co = allCompanies.find(c => c.id === pays[0].company_id);
+  const coName = (_co?.company_name || _wlCompanyName || '').trim();
+  try{
+    const res = await fetch('/api/generate-wage-ledger-files', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ companyId: pays[0].company_id, year: yr, month: mo }),
     });
-  } else {
-    _downloadReportExcel(pays, empMap, yr, mo, moStr);
+    if(!res.ok){
+      const jd = await res.json().catch(() => null);
+      throw new Error(jd?.error || ('HTTP ' + res.status));
+    }
+    const jd = await res.json();
+    if(!jd.ok || !jd.excel) throw new Error(jd.error || '파일 경로가 없습니다.');
+    const blobRes = await fetch(jd.excel);
+    if(!blobRes.ok) throw new Error('파일 다운로드 실패: HTTP ' + blobRes.status);
+    const blob = await blobRes.blob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `[${coName}]_임금대장_${yr}년${moStr}월.xlsx`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast(`📥 ${yr}년 ${mo}월 임금대장 엑셀 다운로드 완료`, 'success');
+  }catch(e){
+    toast('엑셀 다운로드 실패: ' + e.message, 'error');
   }
 }
 

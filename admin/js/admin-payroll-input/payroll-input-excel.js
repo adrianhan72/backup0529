@@ -846,6 +846,118 @@ function validateAndParseExcel(wb, fileName){
   //  ★ 테이블형 파싱 (편집용 엑셀 업로드)
   // ────────────────────────────────────────────────────────────
 
+  // ★ 신규 임금대장 레이아웃(화면과 동일: 그룹헤더+5행 구조, 2026-09-21) →
+  //   구형 테이블형으로 전치 변환 (기존 파서·검증 로직 재사용)
+  function _transposeNewLedgerLayout(raw){
+    const groupIdx = raw.findIndex(r => r && r.some(c => String(c||'').includes('기본급여 및 제수당')));
+    if(groupIdx < 0) return null;
+
+    // 헤더 행 수집 (그룹헤더 아래: 사원번호/부서/직급/입사일/퇴사일)
+    const hRows = [];
+    for(let ri = groupIdx+1; ri < Math.min(raw.length, groupIdx+6); ri++){
+      const row = raw[ri] || [];
+      const c0 = String(row[0]||'').trim();
+      if(c0==='사원번호' || c0==='부서' || c0==='직급' || c0==='입사일' || c0==='퇴사일'){
+        hRows.push({ hIdx: hRows.length, ri, c0, row });
+      }
+    }
+    if(!hRows.length) return null;
+
+    // 라벨 → 키 매핑 (지급·공제)
+    const LABEL_MAP = {
+      '기본급':'base','정기상여금':'bonus','식대':'meal','차량유지비':'car',
+      '직책수당':'posAlw','현장수당':'site','연구활동비':'research','보육수당':'childcare',
+      '연장근로수당':'otPay','야간근로수당':'nightPay','휴일근로수당':'holPay','주휴수당':'weekHol',
+      '연차수당':'annlPay','면허수당':'license','기술수당':'skill','통신비':'communication','성과급':'performance',
+      '위험수당':'hazard','벽지수당':'remoteArea','체력증진비':'fitness','자기계발비':'selfDev',
+      '도서지원비':'book','해외근무수당':'overseas','기타':'otherPay','지급합계':'gross',
+      '국민연금':'pension','건강보험':'health','고용보험':'employ','장기요양보험료':'ltCare',
+      '건강보험연말정산':'healthAdj','소득세':'incTax','지방소득세':'localTax',
+      '소득세연말정산':'yearEnd','기타공제':'advance','공제합계':'totalDed','차인지급액':'netPay',
+    };
+    const isCustomLbl = l => l==='커스텀통상임금' || l==='커스텀고정수당' || l==='기타수당(커스텀)';
+
+    // 각 헤더행의 지급(C2~C7)·공제(C8~C11) 슬롯 수집
+    const paySlots = [];
+    const dedSlots = [];
+    hRows.forEach(h => {
+      for(let ci=2; ci<=7; ci++){
+        const lbl = String(h.row[ci]||'').trim();
+        if(!lbl) continue;
+        const key = isCustomLbl(lbl) ? lbl : (LABEL_MAP[lbl] || '');
+        if(key && !paySlots.some(s=>s.label===lbl)) paySlots.push({label:lbl, key, hIdx:h.hIdx, ci});
+      }
+      for(let ci=8; ci<=11; ci++){
+        const lbl = String(h.row[ci]||'').trim();
+        if(!lbl) continue;
+        const key = LABEL_MAP[lbl] || '';
+        if(key && !dedSlots.some(s=>s.label===lbl)) dedSlots.push({label:lbl, key, hIdx:h.hIdx, ci});
+      }
+    });
+
+    // 키 → 구형 테이블형 헤더 라벨 매핑
+    const KEY_HEADER = {
+      base:'기본급', bonus:'정기상여금', meal:'식대', car:'차량유지비', posAlw:'직책수당', site:'현장수당',
+      research:'연구활동비', childcare:'보육수당', otPay:'연장수당', nightPay:'야간수당', holPay:'휴일수당', weekHol:'주휴수당',
+      annlPay:'연차수당', license:'면허수당', skill:'기술수당', communication:'통신비', performance:'성과급',
+      hazard:'위험수당', remoteArea:'벽지수당', fitness:'체력증진비', selfDev:'자기계발비', book:'도서지원비', overseas:'해외근무수당',
+      otherPay:'기타수당', gross:'지급총액',
+      pension:'국민연금', health:'건강보험', employ:'고용보험', ltCare:'장기요양', healthAdj:'건보정산',
+      incTax:'소득세', localTax:'지방소득세', yearEnd:'연말정산', advance:'기타공제', totalDed:'공제합계', netPay:'영수액(실수령)',
+    };
+    const slotHeader = s => isCustomLbl(s.label) ? s.label : (KEY_HEADER[s.key] || '');
+
+    // 구형 테이블형 헤더 (기존 파서 colIdx가 인식하는 라벨)
+    const header = ['사원번호','성명','부서','직책','고용형태','근로일수','총근로시간','연장시간','야간시간','휴일시간',
+      '기본급','주휴수당','직책수당','차량유지비','식대','연장수당','야간수당','휴일수당','연차수당','정기상여금',
+      '성과급','연구활동비','보육수당','통신비','기술수당','면허수당','현장수당','위험수당','벽지수당','체력증진비',
+      '자기계발비','도서지원비','해외근무수당'];
+    paySlots.filter(s => isCustomLbl(s.label)).forEach(s => header.push(s.label));
+    header.push('기타수당','지급총액','보수월액','소득세','지방소득세','건강보험','장기요양','국민연금','고용보험',
+      '연말정산','건보정산','기타공제','공제합계','영수액(실수령)','지급일','비고');
+
+    const toNum = v => { const s = String(v||'').replace(/[^0-9.\-]/g,''); const n = Number(s); return (s==='' || isNaN(n)) ? '' : n; };
+
+    // ── 직원 데이터 블록 전치 (블록 높이 = 헤더 행 수) ──
+    const H = hRows.length;
+    const dataStart = hRows[H-1].ri + 1;
+    const empRowIdx = { dept: -1, pos: -1, hire: -1, resign: -1 };
+    hRows.forEach(h => {
+      if(h.c0==='부서') empRowIdx.dept=h.hIdx;
+      if(h.c0==='직급') empRowIdx.pos=h.hIdx;
+      if(h.c0==='입사일') empRowIdx.hire=h.hIdx;
+      if(h.c0==='퇴사일') empRowIdx.resign=h.hIdx;
+    });
+
+    const outRows = [];
+    for(let i=dataStart; i < raw.length; i++){
+      const first = raw[i] || [];
+      const name = String(first[1]||'').trim();
+      if(!name){ continue; }
+      const block = [];
+      for(let k=0;k<H;k++) block.push(raw[i+k] || []);
+
+      const pick = (hIdx, ci) => (hIdx>=0 && ci>=0) ? toNum(block[hIdx][ci]) : '';
+      const empNo = String(first[0]||'').trim();
+      const empPick = key => empRowIdx[key]>=0 ? String(block[empRowIdx[key]][0]||'').trim() : '';
+
+      const row = new Array(header.length).fill('');
+      const set = (hdr, v) => { const idx = header.indexOf(hdr); if(idx>=0) row[idx]=v; };
+      set('사원번호', empNo);
+      set('성명', name);
+      set('부서', empPick('dept'));
+      set('직책', empPick('pos'));
+      set('입사일', empPick('hire'));
+      set('퇴사일', empPick('resign'));
+      paySlots.forEach(s => set(slotHeader(s), pick(s.hIdx, s.ci)));
+      dedSlots.forEach(s => set(slotHeader(s), pick(s.hIdx, s.ci)));
+      outRows.push(row);
+      i += H - 1;
+    }
+    if(!outRows.length) return null;
+    return { header, rows: outRows };
+  }
+
   // 헤더 행 위치 자동 탐지 (테이블형: raw[4]에 '성명' 포함)
   let headerRowIdx = 4; // 기본값 (0-based)
   for(let ri=2; ri<Math.min(raw.length,8); ri++){
@@ -858,7 +970,9 @@ function validateAndParseExcel(wb, fileName){
       break;
     }
   }
-  const headerRow = raw[headerRowIdx] || [];
+  // 신규 레이아웃(화면과 동일)이면 구형 테이블형으로 전치 변환 (2026-09-21)
+  const _synth = _transposeNewLedgerLayout(raw);
+  const headerRow = _synth ? _synth.header : (raw[headerRowIdx] || []);
 
   // 동적으로 열 인덱스 매핑 (헤더 행 기준)
   function colIdx(name){
@@ -1000,7 +1114,7 @@ function validateAndParseExcel(wb, fileName){
   // ========================================
   //  7. 데이터 행 파싱 (테이블형)
   // ========================================
-  const dataRows = raw.slice(headerRowIdx+1).filter(r => {
+  const dataRows = _synth ? _synth.rows : raw.slice(headerRowIdx+1).filter(r => {
     const nm = String(r[CI.NAME]||'').trim();
     return nm && !XL_SUM_ROW_LABELS.has(nm) && nm !== '';
   });
