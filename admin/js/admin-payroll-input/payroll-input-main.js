@@ -5098,18 +5098,20 @@ function calcPIDeductions(gross){
   const _insEmployOff  = piContract?.insurance_employment === false || piContract?.insurance_employment === 'false';
 
   // 국민연금: 하한(월 37만원 이하 면제) 없음, 상한 적용
+  // ── 4대보험: 계산 결과 10원 미만 절사 (2026-09-21) ──
+  const _trunc10 = v => (v > 0 ? Math.floor(v / 10) * 10 : v);
   const pension = (_isSocialInsExempt || _insPensionOff || _isDailyUnder8)
     ? 0
-    : Math.round(Math.min(std, R.pensionCap) * R.pensionRate);
+    : _trunc10(Math.round(Math.min(std, R.pensionCap) * R.pensionRate));
   const health  = (_isSocialInsExempt || _isShortHourWorker || _insHealthOff || _isDailyUnder8)
     ? 0
-    : Math.round(std * R.healthRate);
+    : _trunc10(Math.round(std * R.healthRate));
   const ltCare  = (_isSocialInsExempt || _isShortHourWorker || _insHealthOff || _isDailyUnder8)
     ? 0
-    : Math.round(health * R.ltcareRate);
+    : _trunc10(Math.round(health * R.ltcareRate));
   const empIns  = (_isSocialInsExempt || _insEmployOff)
     ? 0
-    : Math.round(std * R.employRate);
+    : _trunc10(Math.round(std * R.employRate));
   // 소득세: 일용직=원천징수 특례(일당-15만)×6%·소액부징수, 그 외=간이세액표
   const _isDailyTax = piContract?.contract_type === CONTRACT_TYPE.DAILY;
   let taxResult;

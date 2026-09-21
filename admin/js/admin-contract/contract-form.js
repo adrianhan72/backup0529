@@ -3103,7 +3103,7 @@ let _ctBasisJustSwitched = false;
 
 // ── 통상시급 정밀값 (2026-09-11) ──
 //  - 내부 계산·저장은 소수점 전체 정밀도, 입력란 표시는 1원 반올림
-//  - 연봉/월약정 고정: 정밀값 = (연봉÷12 − 수당) ÷ 209 또는 (월약정 − 수당) ÷ 209 (반올림 없음)
+//  - 연봉/월약정 고정: 정밀값 = 올림((연봉÷12 − 수당) ÷ 209) 또는 올림((월약정 − 수당) ÷ 209) — 1원 올림 (2026-09-21 변경)
 //  - 시급 고정: 사용자가 직접 입력한 정수가 정밀값
 let _ctHourlyExact = 0;      // 내부 계산·저장용 정밀 통상시급
 let _ctHourlyManual = false; // 시급 고정 basis에서 사용자가 직접 입력했는지 여부
@@ -3120,7 +3120,7 @@ function _ctHourlySetExact(v){
   _ctHourlyManual = false;
   setAmountVal('ct-hourly-input', _ctHourlyExact > 0 ? Math.round(_ctHourlyExact) : 0);
 }
-/** 통상시급 입력란 표시값 갱신 (항상 1원 단위 반올림) */
+/** 통상시급 입력란 표시값 갱신 (연봉·월약정 산출 시급은 올림 정수 — 2026-09-21, 복원 시 1원 반올림) */
 function _ctHourlySetDisplay(v){
   setAmountVal('ct-hourly-input', v > 0 ? Math.round(v) : 0);
 }
@@ -3365,8 +3365,8 @@ function calcContractSalary(){
       if(_mInput > 0){
         const autoBase = Math.max(0, Math.round(_mInput - _allowTotal));
         setAmountVal('ct-base', autoBase);
-        // 통상시급 정밀값: (월약정 − 수당) ÷ 209 — 반올림 없이 소수점 전체 정밀도 유지 (2026-09-11)
-        _ctHourlyExact = autoBase > 0 ? autoBase / MAGIC.MONTHLY_STD_HOURS : 0;
+        // 통상시급: (월약정 − 수당) ÷ 209 — 소숮점 이하 올림(1원) (2026-09-21 반올림→올림 변경)
+        _ctHourlyExact = autoBase > 0 ? Math.ceil(autoBase / MAGIC.MONTHLY_STD_HOURS) : 0;
         _ctHourlySetDisplay(_ctHourlyExact);
       } else {
         // 월 약정임금 미입력: 연봉 고정에서 전환된 경우 연봉÷12를 그대로 승계
@@ -3376,7 +3376,7 @@ function calcContractSalary(){
           const autoBase = Math.max(0, Math.round(autoMonthly - _allowTotal));
           setAmountVal('ct-monthly-input', autoMonthly);
           setAmountVal('ct-base', autoBase);
-          _ctHourlyExact = autoBase > 0 ? autoBase / MAGIC.MONTHLY_STD_HOURS : 0;
+          _ctHourlyExact = autoBase > 0 ? Math.ceil(autoBase / MAGIC.MONTHLY_STD_HOURS) : 0;
           _ctHourlySetDisplay(_ctHourlyExact);
         } else if(_ctHourlyExact > 0){
           // 기존 정밀 시급 기준 값 유지 (계약직 등 연봉이 없는 유형)
@@ -3389,8 +3389,8 @@ function calcContractSalary(){
         const autoMonthly = Math.round(_aInput / 12);
         const autoBase = Math.max(0, Math.round(autoMonthly - _allowTotal));
         setAmountVal('ct-base', autoBase);
-        // 통상시급 정밀값: (연봉÷12 − 수당) ÷ 209 — 반올림 없음
-        _ctHourlyExact = autoBase > 0 ? autoBase / MAGIC.MONTHLY_STD_HOURS : 0;
+        // 통상시급: (연봉÷12 − 수당) ÷ 209 — 소숮점 이하 올림(1원) (2026-09-21 반올림→올림 변경)
+        _ctHourlyExact = autoBase > 0 ? Math.ceil(autoBase / MAGIC.MONTHLY_STD_HOURS) : 0;
         _ctHourlySetDisplay(_ctHourlyExact);
       } else if(_ctHourlyExact > 0){
         // 연봉 미입력: 기존 정밀 시급 기준 값 유지
