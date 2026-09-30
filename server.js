@@ -49,6 +49,8 @@ app.use('/uploads', express.static(path.join(ROOT, 'data', 'uploads'), staticOpt
 // /data/uploads 별칭 — security.js의 /data 차단보다 먼저 등록되어 파일이 있으면 서빙됨
 app.use('/data/uploads', express.static(path.join(ROOT, 'data', 'uploads'), staticOpts));
 app.use('/generated', express.static(path.join(ROOT, 'data', 'generated'), staticOpts));
+// TWA(Trusted Web Activity) 디지털 자산 링크 검증용 (assetlinks.json)
+app.use('/.well-known', express.static(path.join(ROOT, '.well-known'), staticOpts));
 
 // ── 보안 ──
 require('./middleware/security')(app);

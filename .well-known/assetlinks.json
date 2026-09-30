@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.daehwa.insanomutok",
+      "sha256_cert_fingerprints": [
+        "E462DE2C6A53606DC8E564F80CAFBC6E6142A67A71474C4F5C5FE57F9E69E624"
+      ]
+    }
+  }
+]
