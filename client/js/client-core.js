@@ -186,7 +186,7 @@ function logout(){
   document.getElementById('login-screen').style.display='flex';
   document.getElementById('app').classList.remove('visible');
   document.getElementById('login-code').value='';
-  showPage('stats', document.getElementById('nav-stats'));
+  showPage('employees', document.getElementById('nav-employees'));
 }
 
 // ══ DATA ══
@@ -243,9 +243,8 @@ function startApp(){
   // 햄버거 메뉴 회사 정보
   document.getElementById('hmenu-company-name').textContent = currentCompany.company_name;
   document.getElementById('hmenu-company-sub').textContent  = subTxt;
-  // 초기 탭(급여현황)에 맞게 헤더 월 네비 설정
-  _configHeaderMonth('stats');
-  renderStats();
+  // 초기 탭(임직원 현황) + 조회 시점 날짜바 (client-v2.js)
+  if (typeof initClientV2 === 'function') initClientV2();
   // 사용료 수납관리 ON → 사용료 탭/페이지 활성화
   if (_billingFeatureEnabled) {
     const navBilling = document.getElementById('nav-billing');
@@ -286,9 +285,6 @@ function _configHeaderMonth(tab){
   if(!row) return;
 
   const TAB_META = {
-    stats:   { sub:'급여현황',  getY:()=>statsYear,   getM:()=>statsMonth,
-      fn: d => { statsMonth+=d; if(statsMonth>12){statsMonth=1;statsYear++;}if(statsMonth<1){statsMonth=12;statsYear--;} label.textContent=`${statsYear}년 ${statsMonth}월`; renderStats(); } },
-
     payslip: { sub:'급여명세서', getY:()=>psYear,      getM:()=>psMonth,
       fn: d => { psMonth+=d; if(psMonth>12){psMonth=1;psYear++;}if(psMonth<1){psMonth=12;psYear--;} label.textContent=`${psYear}년 ${psMonth}월`; renderPayslipList(); } },
     billing: { sub:'사용료',    getY:()=>billingYear, getM:()=>billingMonth,
@@ -326,7 +322,6 @@ let _ymPickerYear  = new Date().getFullYear(); // 피커 내 탐색 년도
 function openYmPicker(tab){
   _ymCurrentTab = tab;
   // 현재 탭 상태 년도를 초기값으로
-  if(tab==='stats') _ymPickerYear = statsYear;
   if(tab==='payslip') _ymPickerYear = psYear;
   if(tab==='billing') _ymPickerYear = billingYear;
   _renderYmGrid();
@@ -341,8 +336,8 @@ function _renderYmGrid(){
   const now = new Date();
   const todayY = now.getFullYear(), todayM = now.getMonth()+1;
   // 탭별 현재 선택된 년/월
-  const curY = _ymCurrentTab==='stats' ? statsYear : _ymCurrentTab==='payslip' ? psYear : billingYear;
-  const curM = _ymCurrentTab==='stats' ? statsMonth: _ymCurrentTab==='payslip' ? psMonth: billingMonth;
+  const curY = _ymCurrentTab==='payslip' ? psYear : billingYear;
+  const curM = _ymCurrentTab==='payslip' ? psMonth: billingMonth;
 
   document.getElementById('ym-year-val').textContent = _ymPickerYear + '년';
 
@@ -366,8 +361,6 @@ function _renderYmGrid(){
 
 function selectYmMonth(month){
   const label = document.getElementById('hm-month-label');
-  if(_ymCurrentTab==='stats')  { statsYear=_ymPickerYear;   statsMonth=month;   if(label) label.textContent=`${statsYear}년 ${statsMonth}월`;   renderStats(); }
-  
   if(_ymCurrentTab==='payslip'){ psYear=_ymPickerYear;      psMonth=month;      if(label) label.textContent=`${psYear}년 ${psMonth}월`;         renderPayslipList(); }
   if(_ymCurrentTab==='billing'){ billingYear=_ymPickerYear; billingMonth=month; if(label) label.textContent=`${billingYear}년 ${billingMonth}월`; renderBilling(); }
   closeYmPicker();
@@ -407,8 +400,8 @@ function showPage(name, el){
   window.scrollTo(0, 0);
   if(pageEl && typeof pageEl.scrollTop === 'number') pageEl.scrollTop = 0;
 
-  // 헤더 월 네비 표시 탭 목록 (ct는 월 선택 불필요)
-  if(['stats','payslip','billing'].includes(name)){
+  // 헤더 월 네비 표시 탭 목록 (명세서·사용료만 월 선택)
+  if(['payslip','billing'].includes(name)){
     _configHeaderMonth(name);
     if(name === 'billing') renderBilling();
     if(name === 'payslip') { renderPayslipList(); _adjustPsStickyTop(); }
@@ -416,6 +409,17 @@ function showPage(name, el){
     const row = document.getElementById('header-month-row');
     if(row) row.classList.add('hidden');
   }
+
+  // 조회 시점 날짜바 (임직원 현황 · 급여통계)
+  if(['employees','paystats'].includes(name)){
+    if(typeof _configHeaderDate === 'function') _configHeaderDate(name);
+    if(name === 'employees' && typeof renderClientEmployees === 'function') renderClientEmployees();
+    if(name === 'paystats'  && typeof renderClientPayStats  === 'function') renderClientPayStats();
+  } else {
+    const drow = document.getElementById('header-date-row');
+    if(drow) drow.classList.add('hidden');
+  }
+
   if(name === 'ct') renderCtContracts();
   if(name === 'myco') renderMyco();
   if(name === 'severance') renderClientSeverance();
@@ -423,6 +427,9 @@ function showPage(name, el){
   if(name === 'attendance' && typeof renderClientAttendance === 'function') renderClientAttendance();
   if(name === 'min-wage' && !_allClientMinWages.length) loadClientMinWages();
   if(name === 'insurance-rates' && !_allClientInsRates.length) loadClientInsRates();
+  if(name === 'daily-insurance' && typeof renderClientDailyInsurance === 'function') renderClientDailyInsurance();
+  if(name === 'terms' && typeof renderClientTerms === 'function') renderClientTerms();
+  if(name === 'privacy' && typeof renderClientPrivacy === 'function') renderClientPrivacy();
 }
 
 // ══ 연도별 최저임금 (어드민 년도별 산정기준표 DB 연동) ══

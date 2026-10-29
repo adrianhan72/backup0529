@@ -1,0 +1,255 @@
+/* ═══════════════════════════════════════════════════════════
+   고객사 앱 v2 — 모바일 중심 UI (2026-10-29 전면 개편)
+   - 조회 시점 날짜바 / 임직원 현황 / 급여통계 / 햄버거 슬라이드 / 4탭
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── 조회 시점 날짜바 (상단 헤더 아래) ── */
+.header-date-row{
+  display:flex;align-items:center;gap:8px;
+  margin-top:10px;padding:7px 4px 6px;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:12px;
+}
+.header-date-row.hidden{display:none}
+.hd-btn{
+  width:36px;height:36px;flex-shrink:0;
+  background:rgba(255,255,255,.12);border:none;border-radius:10px;
+  color:#fff;font-size:12px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .15s;-webkit-tap-highlight-color:transparent;touch-action:manipulation;
+}
+.hd-btn:active{background:rgba(255,255,255,.28)}
+.hd-label-wrap{
+  flex:1;display:flex;align-items:center;justify-content:center;gap:7px;
+  background:none;border:none;cursor:pointer;font-family:inherit;
+  padding:2px 6px;min-width:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation;
+}
+.hd-cal{color:rgba(255,255,255,.65);font-size:13px;flex-shrink:0}
+.hd-label{color:#fff;font-size:14px;font-weight:800;letter-spacing:-.2px;white-space:nowrap}
+.hd-sub{color:rgba(255,255,255,.55);font-size:10px;font-weight:600;margin-left:2px;white-space:nowrap}
+.hd-today-btn{
+  height:32px;flex-shrink:0;padding:0 10px;
+  background:rgba(99,102,241,.9);border:none;border-radius:10px;
+  color:#fff;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;
+  transition:background .15s;-webkit-tap-highlight-color:transparent;touch-action:manipulation;
+}
+.hd-today-btn:active{background:#6366f1}
+.hd-date-input{position:absolute;right:0;bottom:0;width:1px;height:1px;opacity:0;border:0;padding:0;pointer-events:none}
+
+/* ── 페이지 공통 ── */
+.v2-page{padding:14px 12px 24px}
+.v2-section{background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.06);padding:14px 14px 12px;margin-bottom:12px}
+.v2-section-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.v2-section-title{font-size:13.5px;font-weight:800;color:#1a1a2e}
+.v2-section-title i{margin-right:6px}
+.v2-asof{font-size:11px;color:#6b7280;font-weight:600}
+.v2-asof strong{color:#6366f1}
+.v2-hint{font-size:11px;color:#9ca3af;margin:0 0 8px;line-height:1.6}
+.v2-hint i{margin-right:4px}
+.v2-footnote{font-size:10.5px;color:#9ca3af;line-height:1.7;padding:4px 6px 20px;text-align:center}
+
+/* ── 임직원 현황: 고용형태 칩 ── */
+.emp-cat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.emp-cat-chip{
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:12px 4px 9px;border-radius:12px;cursor:pointer;
+  background:#f8fafc;border:1.5px solid #eef1f5;font-family:inherit;
+  transition:transform .12s,border-color .12s,box-shadow .12s;
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation;
+}
+.emp-cat-chip:active{transform:scale(.96)}
+.emp-cat-chip.on{border-color:#6366f1;box-shadow:0 3px 10px rgba(99,102,241,.18);background:#f5f6ff}
+.emp-cat-chip:disabled{opacity:.38;cursor:default;pointer-events:none}
+.emp-cat-icon{font-size:17px;line-height:1}
+.emp-cat-name{font-size:11.5px;font-weight:700;color:#374151;display:flex;align-items:center;gap:2px}
+.emp-cat-chip.on .emp-cat-name{color:#3730a3}
+.emp-cat-name small{font-size:9px;color:#9ca3af;font-weight:600}
+.emp-cat-count{font-size:10.5px;font-weight:800;color:#9ca3af}
+.emp-cat-chip.on .emp-cat-count{color:#6366f1}
+
+/* ── 임직원 현황: 검색 ── */
+.emp-search-wrap{
+  display:flex;align-items:center;gap:8px;
+  background:#fff;border-radius:12px;box-shadow:0 1px 8px rgba(0,0,0,.06);
+  padding:0 12px;margin-bottom:12px;border:1.5px solid transparent;
+}
+.emp-search-wrap:focus-within{border-color:#9080e4}
+.emp-search-wrap > i{color:#9ca3af;font-size:13px;flex-shrink:0}
+.emp-search-wrap input{
+  flex:1;border:none;background:none;padding:12px 0;font-size:13px;
+  color:#1a1a2e;font-family:inherit;outline:none;min-width:0;
+}
+.emp-search-wrap input::placeholder{color:#b0b7c3}
+.emp-search-wrap button{
+  background:none;border:none;color:#9ca3af;cursor:pointer;font-size:12px;
+  padding:6px;flex-shrink:0;-webkit-tap-highlight-color:transparent;
+}
+
+/* ── 임직원 현황: 근로자 목록 ── */
+.emp-list{display:grid;gap:8px}
+.emp-row{
+  display:flex;align-items:center;gap:11px;
+  background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.06);
+  padding:12px 14px;cursor:pointer;border:1.5px solid transparent;
+  transition:border-color .12s,transform .12s;-webkit-tap-highlight-color:transparent;touch-action:manipulation;
+}
+.emp-row:active{transform:scale(.985);border-color:#c7d2fe}
+.emp-row-avatar{
+  width:40px;height:40px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:15px;font-weight:800;
+}
+.emp-row-info{flex:1;min-width:0}
+.emp-row-name{font-size:14px;font-weight:800;color:#1a1a2e;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.emp-row-meta{font-size:11px;color:#6b7280;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.emp-row-badge{
+  font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;flex-shrink:0;
+}
+.emp-row-arrow{color:#d1d5db;font-size:12px;flex-shrink:0}
+.emp-empty{
+  text-align:center;padding:44px 20px;color:#9ca3af;background:#fff;
+  border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.06);
+}
+.emp-empty i{font-size:34px;display:block;margin-bottom:10px;color:#d1d5db}
+.emp-empty div{font-size:13.5px;font-weight:700;color:#6b7280}
+.emp-empty p{font-size:12px;margin-top:4px}
+
+/* ── 급여통계: 빠른 이동 ── */
+.v2-quick-row{display:flex;gap:8px;margin-bottom:12px;align-items:center}
+.v2-quick-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:9px 13px;border-radius:12px;border:none;cursor:pointer;
+  background:#eef2ff;color:#3730a3;font-size:12px;font-weight:700;font-family:inherit;
+  box-shadow:0 1px 6px rgba(0,0,0,.05);
+  transition:transform .12s,background .12s;-webkit-tap-highlight-color:transparent;touch-action:manipulation;
+}
+.v2-quick-btn:active{transform:scale(.96);background:#e0e7ff}
+.v2-quick-btn:disabled{background:#f3f4f6;color:#d1d5db;cursor:not-allowed;box-shadow:none}
+.v2-quick-btn i{font-size:12px}
+
+/* ── 급여통계: 요약 카드 ── */
+.v2-sum-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.v2-sum-card{
+  border:none;border-radius:14px;padding:14px 14px 12px;cursor:pointer;
+  text-align:left;font-family:inherit;box-shadow:0 3px 12px rgba(0,0,0,.09);
+  transition:transform .12s;-webkit-tap-highlight-color:transparent;touch-action:manipulation;
+}
+.v2-sum-card:active{transform:scale(.97)}
+.v2-sum-prev{background:linear-gradient(135deg,#eef2ff,#e0e7ff)}
+.v2-sum-next{background:linear-gradient(135deg,#ecfdf5,#d1fae5)}
+.v2-sum-label{font-size:11px;font-weight:700;color:#4b5563;display:flex;align-items:center;gap:5px}
+.v2-sum-label i{font-size:11px;color:#6366f1}
+.v2-sum-next .v2-sum-label i{color:#059669}
+.v2-sum-val{font-size:18px;font-weight:900;color:#1f2937;margin-top:7px;letter-spacing:-.5px;word-break:break-all}
+.v2-sum-prev .v2-sum-val{color:#3730a3}
+.v2-sum-next .v2-sum-val{color:#065f46}
+.v2-sum-sub{font-size:10.5px;color:#6b7280;margin-top:4px;line-height:1.5}
+
+/* ── 급여통계: 고용형태별 ── */
+.v2-type-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.v2-type-card{border-radius:12px;padding:10px 8px;text-align:center}
+.v2-type-card .vt-name{font-size:10.5px;font-weight:700;margin-top:4px}
+.v2-type-card .vt-amount{font-size:12.5px;font-weight:800;margin-top:5px;letter-spacing:-.3px;word-break:break-all}
+.v2-type-card .vt-count{font-size:10px;color:#6b7280;margin-top:3px}
+
+/* ── 급여통계: 차트 카드 ── */
+.v2-chart-card{background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.06);padding:14px;margin-bottom:12px}
+.v2-chart-card .toggle-row{margin-bottom:8px}
+
+/* ── 근로자 액션 시트 ── */
+.ea-head{
+  border-radius:16px 16px 0 0;margin:-1px -1px 0;padding:18px 18px 16px;
+  display:flex;align-items:center;gap:12px;
+}
+.ea-avatar{
+  width:46px;height:46px;border-radius:50%;flex-shrink:0;
+  background:rgba(255,255,255,.2);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:800;
+}
+.ea-name{color:#fff;font-size:16px;font-weight:800}
+.ea-meta{color:rgba(255,255,255,.8);font-size:11px;margin-top:3px;line-height:1.5}
+.ea-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:14px 16px 6px}
+.ea-btn{
+  display:flex;flex-direction:column;align-items:flex-start;gap:5px;
+  background:#f8fafc;border:1.5px solid #eef1f5;border-radius:12px;
+  padding:12px 13px;cursor:pointer;font-family:inherit;text-align:left;
+  transition:border-color .12s,transform .12s;-webkit-tap-highlight-color:transparent;touch-action:manipulation;
+}
+.ea-btn:active{transform:scale(.97);border-color:#c7d2fe}
+.ea-btn i{font-size:16px;color:#6366f1}
+.ea-btn span{font-size:13px;font-weight:800;color:#1f2937}
+.ea-btn small{font-size:10px;color:#9ca3af;line-height:1.4}
+.ea-btn-wide{grid-column:1 / -1}
+.ea-foot{padding:8px 16px 18px}
+.ea-foot button{
+  width:100%;background:#f3f4f6;border:none;border-radius:12px;padding:13px;
+  font-size:13.5px;font-weight:700;color:#6b7280;cursor:pointer;font-family:inherit;
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation;
+}
+
+/* ── 일용직 4대보험 신고 (빈 상태) ── */
+.di-empty{
+  background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.06);
+  text-align:center;padding:40px 22px;
+}
+.di-empty i{font-size:38px;color:#cbd5e1;display:block;margin-bottom:12px}
+.di-empty .di-title{font-size:14px;font-weight:800;color:#1a1a2e;margin-bottom:5px}
+.di-empty .di-sub{font-size:12px;color:#6b7280;line-height:1.7}
+.di-worker{
+  margin-top:14px;padding:11px 14px;background:#f0f9ff;border:1px solid #bae6fd;
+  border-radius:10px;font-size:12.5px;color:#075985;font-weight:700;
+  display:flex;align-items:center;gap:7px;justify-content:center;
+}
+
+/* ── 약관·개인정보처리방침 ── */
+.v2-legal{padding:4px 14px 90px}
+.v2-legal .legal-card{background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.06);padding:20px 18px}
+.v2-legal .legal-date{font-size:11px;color:#9ca3af;margin-bottom:12px;line-height:1.7}
+.v2-legal h3{font-size:15px;font-weight:800;color:#1a1a2e;margin:18px 0 8px;padding-top:14px;border-top:1px solid #f3f4f6}
+.v2-legal h3:first-child{margin-top:0;padding-top:0;border-top:none}
+.v2-legal p{font-size:12.5px;color:#4b5563;line-height:1.9;margin:6px 0;word-break:keep-all}
+.v2-legal li{font-size:12.5px;color:#4b5563;line-height:1.9;margin:3px 0;word-break:keep-all}
+.v2-legal ul{padding-left:18px;margin:4px 0}
+.v2-legal .legal-title{font-size:18px;font-weight:900;color:#1a1a2e;margin-bottom:4px}
+
+/* ── 햄버거 슬라이드 메뉴 (오른쪽에서 슬라이드) ── */
+.hmenu-backdrop{background:rgba(10,15,35,.45);opacity:0;pointer-events:none;transition:opacity .2s}
+.hmenu-backdrop.open{display:block;opacity:1;pointer-events:auto}
+.hmenu-panel{
+  position:fixed;top:0;right:0;bottom:0;left:auto;
+  width:min(300px,84vw);height:100%;border-radius:0;
+  background:#fff;z-index:500;overflow-y:auto;
+  transform:translateX(105%);opacity:1;pointer-events:auto;
+  transition:transform .28s cubic-bezier(.32,.72,.32,1);
+  box-shadow:-14px 0 44px rgba(0,0,0,.28);
+  display:flex;flex-direction:column;
+}
+.hmenu-panel.open{transform:translateX(0)}
+.hmenu-head{
+  background:linear-gradient(135deg,#1a1a2e 0%,#0f3460 100%);
+  padding:18px 16px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding-top:calc(18px + env(safe-area-inset-top));
+}
+.hmenu-company{border-bottom:none;padding:0;min-width:0}
+.hmenu-company-name{color:#fff;font-size:14px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hmenu-company-sub{color:rgba(255,255,255,.55);font-size:11px;margin-top:2px}
+.hmenu-close{
+  background:rgba(255,255,255,.15);border:none;color:#fff;width:30px;height:30px;
+  border-radius:9px;cursor:pointer;font-size:13px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+}
+.hmenu-section-title{
+  padding:14px 18px 5px;font-size:10.5px;font-weight:800;color:#9ca3af;letter-spacing:.6px;
+}
+.hmenu-panel .hmenu-item{padding:12.5px 18px}
+
+/* ── 하단 4탭 ── */
+.bottom-nav .nav-item{font-size:10.5px;font-weight:600}
+
+/* ── 데스크톱(넓은 화면) 대응 ── */
+@media (min-width: 700px){
+  .v2-page, #page-employees, #page-paystats{max-width:640px;margin:0 auto}
+  .v2-page{padding-left:0;padding-right:0}
+  .emp-list{grid-template-columns:1fr 1fr}
+}

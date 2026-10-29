@@ -59,10 +59,10 @@ function _clientVisibleEmps(){
   return allEmployees.filter(e => !_isClientProbationEmp(e));
 }
 
-let _contractsBackPage = 'stats'; // 뒤로가기 대상
+let _contractsBackPage = 'employees'; // 뒤로가기 대상
 
 function showContractsByCategory(category){
-  _contractsBackPage = 'stats';
+  _contractsBackPage = 'employees';
 
   const cfg = CAT_CONFIG[category] || { bg:'linear-gradient(135deg,#374151,#6b7280)', icon:'👤', avatarBg:'#6b7280', label:category };
 
@@ -152,15 +152,15 @@ function showContractsByCategory(category){
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-contracts').classList.add('active');
+  // 헤더 월바·날짜바 숨김
+  const mrow = document.getElementById('header-month-row'); if(mrow) mrow.classList.add('hidden');
+  const drow = document.getElementById('header-date-row');  if(drow) drow.classList.add('hidden');
   // 스크롤 최상단으로
   document.getElementById('page-contracts').scrollTop = 0;
 }
 
-function goBackToStats(){
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById('page-stats').classList.add('active');
-  document.getElementById('nav-stats').classList.add('active');
-  _configHeaderMonth('stats');
+function goBackToEmployees(){
+  showPage('employees', document.getElementById('nav-employees'));
 }
 
 // 근로계약 상세 모달 열기
@@ -382,22 +382,22 @@ function renderStats(){
   if(_cpCard) _cpCard.style.display = _probOn ? '' : 'none';
 
   // 직원 현황
-  document.getElementById('s-total-emp').textContent   = visEmps.length;
-  document.getElementById('s-active-emp').textContent  = activeEmps.length;
-  document.getElementById('s-retired-emp').textContent = retiredEmps.length;
+  document.getElementById('s-total-emp').textContent   = visEmps.length + '명';
+  document.getElementById('s-active-emp').textContent  = activeEmps.length + '명';
+  document.getElementById('s-retired-emp').textContent = retiredEmps.length + '명';
   // 역할 카드 (대표자/등기임원/특수관계인/기타)
   const _setRole = (id, label) => {
     const el = document.getElementById(id);
-    if(el) el.textContent = visEmps.filter(e => _clientEmpCategory(e) === label).length;
+    if(el) el.textContent = visEmps.filter(e => _clientEmpCategory(e) === label).length + '명';
   };
   _setRole('s-cat-representative', '대표자');
   _setRole('s-cat-executive', '등기임원');
   _setRole('s-cat-related', '특수관계인');
-  document.getElementById('s-cat-regular').textContent      = catCount('정규직');
-  document.getElementById('s-cat-regular-prob').textContent = catCount('정규직 수습')||catCount('정규직(수습)');
-  document.getElementById('s-cat-contract').textContent     = catCount('계약직');
-  document.getElementById('s-cat-contract-prob').textContent= catCount('계약직 수습')||catCount('계약직(수습)');
-  document.getElementById('s-cat-daily').textContent        = catCount('일용직');
+  document.getElementById('s-cat-regular').textContent      = catCount('정규직') + '명';
+  document.getElementById('s-cat-regular-prob').textContent = (catCount('정규직 수습')||catCount('정규직(수습)')) + '명';
+  document.getElementById('s-cat-contract').textContent     = catCount('계약직') + '명';
+  document.getElementById('s-cat-contract-prob').textContent= (catCount('계약직 수습')||catCount('계약직(수습)')) + '명';
+  document.getElementById('s-cat-daily').textContent        = catCount('일용직') + '명';
   _setRole('s-cat-etc', '기타');
 
   // 급여 집계
@@ -615,12 +615,13 @@ function renderTrendChart(){
     months.push({y,m});
   }
   const startM = months[0], endM = months[11];
-  document.getElementById('trend-period-badge').textContent =
+  const badgeEl = document.getElementById('trend-period-badge');
+  if(badgeEl) badgeEl.textContent =
     `${startM.y}.${String(startM.m).padStart(2,'0')} ~ ${endM.y}.${String(endM.m).padStart(2,'0')}`;
 
   // 토글 버튼 초기화 (한 번만)
   const togglesEl = document.getElementById('trend-toggles');
-  if(!togglesEl.children.length){
+  if(togglesEl && !togglesEl.children.length){
     togglesEl.innerHTML = TREND_ITEMS.map(t =>
       `<label class="tgl-chip ${trendOn[t.key]?'on':''}" style="border-color:${t.borderColor};${trendOn[t.key]?'background:'+t.color+';':'background:'+t.bgColor+';color:'+t.textColor+';'}"
         onclick="trendOn['${t.key}']=!trendOn['${t.key}'];this.classList.toggle('on');this.style.background=trendOn['${t.key}']?'${t.color}':'${t.bgColor}';this.style.color=trendOn['${t.key}']?'#fff':'${t.textColor}';renderTrendChart()">
