@@ -11,6 +11,9 @@ let _clientAttYear    = new Date().getFullYear();
 let _clientAttEmpId   = '';                 // 편집 중 직원
 let _clientAttRecordId= '';
 let _clientAttEntries = [];                 // 작업 중 엔트리 (month_data 배열)
+let _clientAttCalYear  = new Date().getFullYear(); // 달력 표시 연도
+let _clientAttCalMonth = new Date().getMonth();    // 달력 표시 월 (0-based)
+let _clientAttSelectedDate = '';                   // 선택 날짜 YYYY-MM-DD
 
 // ── 연차 상태 ──
 let _clientLeaveLedgers  = [];              // annual_leave_ledger 캐시
@@ -104,7 +107,6 @@ async function renderClientAttendance(){
   }catch(e){ console.error('[근태] 조회 실패', e); }
 
   _renderClientAttList();
-  _renderClientAttEditor();
 }
 
 function _renderClientAttList(){
@@ -148,10 +150,157 @@ function openClientAttEditor(empId){
   _clientAttRecordId = led ? led.id : '';
   try{ _clientAttEntries = led ? JSON.parse(led.month_data || '[]') : []; }catch(e){ _clientAttEntries = []; }
   _clientAttEntries.sort((a,b) => (a.date||'').localeCompare(b.date||''));
-  const title = document.getElementById('att-modal-title');
-  if(title) title.innerHTML = `<i class="fas fa-clipboard-list" style="color:#0ea5e9;margin-right:6px;"></i>${emp?.name||''} · ${_clientAttYear}년 근태 기록`;
-  document.getElementById('att-modal').classList.add('open');
-  _renderClientAttEditor();
+  _clientAttCalYear  = _clientAttYear;
+  _clientAttCalMonth = (_clientAttYear === new Date().getFullYear()) ? new Date().getMonth() : 0;
+  _clientAttSelectedDate = '';
+  const title = document.getElementById('att-cal-title');
+  if(title) title.textContent = `${emp?.name||''} · ${_clientAttYear}년 근태`;
+  document.getElementById('att-cal-overlay').classList.add('open');
+  _renderClientAttCalendar();
+  _renderClientAttDayPanel();
+}
+
+/** 전체화면 근태 달력 렌더 */
+function _renderClientAttCalendar(){
+  const grid = document.getElementById('att-cal-grid');
+  if(!grid) return;
+  const label = document.getElementById('att-cal-month-label');
+  if(label) label.textContent = `${_clientAttCalYear}년 ${_clientAttCalMonth + 1}월`;
+  const prev = document.getElementById('att-cal-prev');
+  const next = document.getElementById('att-cal-next');
+  if(prev) prev.disabled = _clientAttCalMonth <= 0;
+  if(next) next.disabled = _clientAttCalMonth >= 11;
+
+  const firstDow = new Date(_clientAttCalYear, _clientAttCalMonth, 1).getDay();
+  const daysInMonth = new Date(_clientAttCalYear, _clientAttCalMonth + 1, 0).getDate();
+  const today = fmtLocalDate(new Date());
+  const byDate = {};
+  _clientAttEntries.forEach(e => { if(e.date){ (byDate[e.date] = byDate[e.date] || []).push(e); } });
+
+  let html = '';
+  for(let i = 0; i < firstDow; i++) html += `<div class="att-cal-cell empty"></div>`;
+  for(let d = 1; d <= daysInMonth; d++){
+    const dateStr = `${_clientAttCalYear}-${String(_clientAttCalMonth + 1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const entries = byDate[dateStr] || [];
+    const dots = entries.slice(0,3).map(e => `<span class="att-cal-dot" style="background:${_cAttTypeColor[e.type]||'#94a3b8'}"></span>`).join('');
+    const cls = ['att-cal-cell'];
+    if(dateStr === today) cls.push('today');
+    if(dateStr === _clientAttSelectedDate) cls.push('selected');
+    html += `<div class="${cls.join(' ')}" onclick="_clientAttSelectDate('${dateStr}')">
+      <span class="att-cal-daynum">${d}</span>
+      <span class="att-cal-dots">${dots}</span>
+    </div>`;
+  }
+  grid.innerHTML = html;
+}
+
+function _clientAttCalShift(delta){
+  const m = _clientAttCalMonth + delta;
+  if(m < 0 || m > 11) return;
+  _clientAttCalMonth = m;
+  _renderClientAttCalendar();
+}
+
+function _clientAttSelectDate(dateStr){
+  _clientAttSelectedDate = (_clientAttSelectedDate === dateStr) ? '' : dateStr;
+  _renderClientAttCalendar();
+  _renderClientAttDayPanel();
+}
+
+/** 선택 날짜 근태 입력 패널 렌더 */
+function _renderClientAttDayPanel(){
+  const panel = document.getElementById('att-cal-day-panel');
+  if(!panel) return;
+  const date = _clientAttSelectedDate;
+  if(!date){
+    panel.innerHTML = `<div style="text-align:center;padding:18px;color:#9ca3af;font-size:12.5px;"><i class="fas fa-calendar-day" style="font-size:22px;display:block;margin-bottom:8px;color:#cbd5e1;"></i>날짜를 선택하면 해당 날짜의 근태를 입력할 수 있습니다.</div>`;
+    return;
+  }
+
+  const dateEntries = _clientAttEntries.filter(e => e.date === date);
+  const entriesHtml = dateEntries.length
+    ? dateEntries.map(e => {
+        const globalIdx = _clientAttEntries.indexOf(e);
+        let extra = '';
+        if(e.type === 'absent'){
+          const al = _cAttAbsentLabels[e.absentType] || e.absentType || '';
+          const rateTxt = (e.absentType === 'sick_paid' && e.rate > 0) ? ' ' + e.rate + '%' : '';
+          extra = `<span style="font-size:10px;color:#6b7280;">${al}${rateTxt}</span>`;
+        } else if(e.type === 'overtime'){
+          extra = `<span style="font-size:10px;color:#6b7280;">${e.otStart||'-'}~${e.otEnd||'-'}</span>`;
+        } else if(e.time){
+          extra = `<span style="font-size:10px;color:#6b7280;">${e.time}</span>`;
+        }
+        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;margin-bottom:5px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;font-size:12px;">
+          <span style="display:inline-block;background:${_cAttTypeBg[e.type]||'#f3f4f6'};color:${_cAttTypeColor[e.type]||'#374151'};padding:1px 8px;border-radius:10px;font-size:10.5px;font-weight:700;">${_cAttTypeLabel[e.type]||e.type}</span>
+          ${extra}
+          <button class="btn btn-sm" onclick="removeClientAttEntry(${globalIdx})" title="삭제"><i class="fas fa-times"></i></button>
+        </div>`;
+      }).join('')
+    : `<div style="text-align:center;padding:12px;color:#9ca3af;font-size:12px;">이 날짜에 등록된 내역이 없습니다</div>`;
+
+  panel.innerHTML = `
+    <div style="font-size:13px;font-weight:800;color:#1a1a2e;margin-bottom:10px;"><i class="fas fa-calendar-day" style="color:#0284c7;margin-right:6px;"></i>${date}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
+      <label style="font-size:11px;color:#6b7280;">유형
+        <select id="catt-new-type" onchange="_cAttTypeChanged()" style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:7px 8px;font-size:12.5px;font-family:inherit;color:#1a1a2e;background:#fff;margin-top:3px;">
+          <option value="absent">결근</option>
+          <option value="late">지각</option>
+          <option value="earlyleave">조퇴</option>
+          <option value="overtime">추가근무</option>
+        </select>
+      </label>
+      <label id="catt-absent-wrap" style="font-size:11px;color:#6b7280;">결근 사유
+        <select id="catt-absent-type" style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:7px 8px;font-size:12.5px;font-family:inherit;color:#1a1a2e;background:#fff;margin-top:3px;">
+          ${Object.entries(_cAttAbsentLabels).map(([k,v]) => `<option value="${k}" ${k==='unauthorized'?'selected':''}>${v}</option>`).join('')}
+        </select>
+      </label>
+    </div>
+    <div id="catt-time-wrap" style="display:none;grid-template-columns:1fr;gap:6px;margin-bottom:6px;">
+      <label style="font-size:11px;color:#6b7280;">시간
+        <input type="time" id="catt-new-time" style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:7px 8px;font-size:12.5px;font-family:inherit;color:#1a1a2e;background:#fff;box-sizing:border-box;margin-top:3px;" />
+      </label>
+    </div>
+    <div id="catt-ot-wrap" style="display:none;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
+      <label style="font-size:11px;color:#6b7280;">시작
+        <input type="time" id="catt-ot-start" style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:7px 8px;font-size:12.5px;font-family:inherit;color:#1a1a2e;background:#fff;box-sizing:border-box;margin-top:3px;" />
+      </label>
+      <label style="font-size:11px;color:#6b7280;">종료
+        <input type="time" id="catt-ot-end" style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:7px 8px;font-size:12.5px;font-family:inherit;color:#1a1a2e;background:#fff;box-sizing:border-box;margin-top:3px;" />
+      </label>
+    </div>
+    <button class="btn btn-warning" onclick="_clientAttAddForDate()" style="width:100%;"><i class="fas fa-plus"></i> 이 날짜에 추가</button>
+    <div style="margin-top:10px;">${entriesHtml}</div>
+  `;
+  _cAttTypeChanged();
+}
+
+/** 선택 날짜에 근태 내역 추가 */
+function _clientAttAddForDate(){
+  const date = _clientAttSelectedDate;
+  if(!date){ _clientToast('날짜를 선택하세요.', 'error'); return; }
+  const type = document.getElementById('catt-new-type')?.value || 'absent';
+  const earliest = _cEarliestContractStart(_clientAttEmpId);
+  if(earliest && date < earliest){ _clientToast(`근로계약 시작일(${earliest}) 이전 날짜는 등록할 수 없습니다.`, 'error'); return; }
+  if(_clientAttEntries.some(e => e.date === date)){ _clientToast('이미 등록된 날짜입니다.', 'error'); return; }
+
+  const entry = { date, type };
+  if(type === 'absent'){
+    entry.absentType = document.getElementById('catt-absent-type')?.value || 'unauthorized';
+    entry.rate = entry.absentType === 'sick_paid' ? 70 : 0;
+  } else if(type === 'late' || type === 'earlyleave'){
+    entry.time = document.getElementById('catt-new-time')?.value || '';
+  } else if(type === 'overtime'){
+    const s = document.getElementById('catt-ot-start')?.value || '';
+    const e = document.getElementById('catt-ot-end')?.value || '';
+    if(!s || !e){ _clientToast('추가근무 시작·종료 시간을 입력하세요.', 'error'); return; }
+    if(e <= s){ _clientToast('종료 시간은 시작 시간보다 늦어야 합니다.', 'error'); return; }
+    entry.otStart = s; entry.otEnd = e;
+  }
+  _clientAttEntries.push(entry);
+  _clientAttEntries.sort((a,b) => (a.date||'').localeCompare(b.date||''));
+  _renderClientAttCalendar();
+  _renderClientAttDayPanel();
 }
 
 function _renderClientAttEditor(){
@@ -242,10 +391,12 @@ function _cAttTypeChanged(){
 
 function closeClientAttEditor(){
   document.getElementById('att-modal')?.classList.remove('open');
+  document.getElementById('att-cal-overlay')?.classList.remove('open');
   const box = document.getElementById('att-modal-content'); if(box) box.innerHTML = '';
   _clientAttEmpId = '';
   _clientAttEntries = [];
   _clientAttRecordId = '';
+  _clientAttSelectedDate = '';
   // 닫기 시 목록 새로고침 → 저장 내용 즉시 반영 (2026-09-21)
   renderClientAttendance();
 }
@@ -289,7 +440,8 @@ function addClientAttEntry(){
 
 function removeClientAttEntry(idx){
   _clientAttEntries.splice(idx, 1);
-  _renderClientAttEditor();
+  _renderClientAttCalendar();
+  _renderClientAttDayPanel();
 }
 
 async function saveClientAttendance(){
@@ -343,7 +495,8 @@ async function saveClientAttendance(){
     _clientAttLedgers = jd.data || [];
     _clientAttRecordId = _clientAttLedgers.find(l => l.employee_id === _clientAttEmpId && Number(l.year) === _clientAttYear)?.id || '';
     _renderClientAttList();
-    _renderClientAttEditor();
+    _renderClientAttCalendar();
+    _renderClientAttDayPanel();
     _clientToast('근태 기록이 저장되었습니다.', 'success');
   }catch(e){
     console.error('[근태저장]', e);

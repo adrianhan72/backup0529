@@ -119,7 +119,7 @@ function renderClientSevHistory(){
       ? `<span style="background:#fee2e2;color:#dc2626;padding:2px 7px;border-radius:12px;font-size:10px;font-weight:700;">해지</span>`
       : `<span style="background:#fef3c7;color:#b45309;padding:2px 7px;border-radius:12px;font-size:10px;font-weight:700;">만료</span>`;
 
-    return `<div style="background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.07);margin-bottom:10px;overflow:hidden;">
+    return `<div id="sev-emp-${emp.id}" style="background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.07);margin-bottom:10px;overflow:hidden;">
       <div style="padding:14px 16px;border-bottom:1px solid #f3f4f6;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
           <div style="display:flex;align-items:center;gap:8px;">
@@ -201,7 +201,7 @@ function renderClientSevStatus(){
     const amtColor = sev.under1yr ? '#9ca3af' : '#b45309';
     const bgGradient = sev.under1yr ? '#f9fafb' : 'linear-gradient(135deg,#fffbeb,#fef3c7)';
 
-    return `<div style="background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.07);overflow:hidden;">
+    return `<div id="sev-emp-${emp.id}" style="background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.07);overflow:hidden;">
       <div style="padding:12px 14px;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;justify-content:space-between;">
         <div style="display:flex;align-items:center;gap:8px;">
           <div style="width:32px;height:32px;background:linear-gradient(135deg,#fef3c7,#fde68a);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#92400e;">${(emp.name||'?').charAt(0)}</div>

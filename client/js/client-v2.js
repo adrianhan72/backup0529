@@ -21,6 +21,21 @@ const _V2_WEEKDAYS = ['일','월','화','수','목','금','토'];
 const _V2_CAT_ORDER = ['대표자','등기임원','특수관계인','정규직','정규직 수습','계약직','계약직 수습','일용직','기타'];
 const _v2Pad2 = n => String(n).padStart(2,'0');
 
+// 임직원 현황 카테고리 아이콘 (솔리드 컬러 배경 + 흰색 픽토그램)
+const _V2_EMP_ICONS = {
+  'all':         { fa:'fa-users',            bg:'#22c55e' },
+  '정규직':      { fa:'fa-user-tie',         bg:'#3b82f6' },
+  '정규직 수습': { fa:'fa-seedling',         bg:'#3b82f6' },
+  '계약직':      { fa:'fa-file-contract',    bg:'#3b82f6' },
+  '계약직 수습': { fa:'fa-file-signature',   bg:'#3b82f6' },
+  '일용직':      { fa:'fa-tools',            bg:'#3b82f6' },
+  '특수관계인':  { fa:'fa-handshake',        bg:'#a855f7' },
+  '등기임원':    { fa:'fa-briefcase',        bg:'#a855f7' },
+  '대표자':      { fa:'fa-building',         bg:'#a855f7' },
+  '기타':        { fa:'fa-user-clock',       bg:'#f59e0b' },
+  'retired':     { fa:'fa-door-open',        bg:'#64748b' },
+};
+
 // ══════════════════════════════════════════════════════════════
 // ① 조회 시점 날짜바
 // ══════════════════════════════════════════════════════════════
@@ -36,8 +51,6 @@ function _configHeaderDate(page){
   row.classList.remove('hidden');
   const label = document.getElementById('hd-date-label');
   if(label) label.textContent = _v2FormatDateLabel(_v2ViewDate);
-  const sub = document.getElementById('hd-sub-label');
-  if(sub) sub.textContent = page === 'paystats' ? '급여통계' : '임직원 현황';
   const input = document.getElementById('hd-date-input');
   if(input) input.value = _v2ViewDate;
 
@@ -101,9 +114,6 @@ function renderClientEmployees(){
   const listEl  = document.getElementById('emp-list');
   if(!catWrap || !listEl || !currentCompany) return;
 
-  const asof = document.getElementById('emp-asof-label');
-  if(asof) asof.textContent = _v2FormatDateLabel(_v2ViewDate);
-
   const base = _clientVisibleEmps().filter(e => _v2EmployedAt(e, _v2ViewDate));
 
   // 카테고리 집계
@@ -113,17 +123,47 @@ function renderClientEmployees(){
     countByCat[c] = (countByCat[c] || 0) + 1;
   });
 
-  // 카테고리 칩
-  catWrap.innerHTML = _V2_CAT_ORDER.map(cat => {
-    const cnt = countByCat[cat] || 0;
-    const cfg = CAT_CONFIG[cat] || {};
-    const sel = _v2EmpFilter === cat;
-    return `<button class="emp-cat-chip${sel?' on':''}" onclick="setV2EmpFilter('${cat}')" ${cnt ? '' : 'disabled'}>
-      <span class="emp-cat-icon">${cfg.icon || '👤'}</span>
-      <span class="emp-cat-name">${cat.includes('수습') ? cat.replace(' 수습','<small> 수습</small>') : cat}</span>
-      <span class="emp-cat-count">${cnt}명</span>
+  // 퇴직자/퇴사 예정자 집계
+  const coEmps = allEmployees.filter(e => e.company_id === currentCompany.id && _normContractType(e.employment_category) !== CONTRACT_TYPE.DAILY);
+  const today = fmtLocalDate(new Date());
+  const upcomingResign = coEmps.filter(e => _isEmpActive(e) && e.resign_date && e.resign_date >= today);
+  const retiredResign = coEmps.filter(e => _isEmpResigned(e) || (e.resign_date && e.resign_date < today));
+  const retiredCount = upcomingResign.length + retiredResign.length;
+
+  // 카테고리 버튼 순서 (기타 = 입사대기자, 수습 OFF 시 수습 버튼 숨김)
+  const order = ['정규직','계약직','일용직','특수관계인','등기임원','대표자','기타'];
+  const catKeys = [];
+  order.forEach(c => {
+    catKeys.push(c);
+    if(window._probationFeatureEnabled !== false){
+      if(c === '정규직') catKeys.push('정규직 수습');
+      if(c === '계약직') catKeys.push('계약직 수습');
+    }
+  });
+
+  const chips = [
+    { key:'all', label:'전체', cnt: base.length },
+    ...catKeys
+      .filter(key => (countByCat[key] || 0) > 0)
+      .map(key => ({ key, label: key === '기타' ? '입사대기' : key, cnt: countByCat[key] || 0 })),
+    { key:'retired', label:'퇴직자', cnt: retiredCount },
+  ];
+
+  catWrap.innerHTML = chips.map(chip => {
+    const sel = _v2EmpFilter === chip.key;
+    const ic = _V2_EMP_ICONS[chip.key] || { fa:'fa-user', bg:'#94a3b8' };
+    return `<button class="emp-cat-chip${sel?' on':''}" onclick="setV2EmpFilter('${chip.key}')" ${chip.key !== 'all' && !chip.cnt ? 'disabled' : ''}>
+      <span class="emp-cat-icon" style="background:${ic.bg}"><i class="fas ${ic.fa}"></i></span>
+      <span class="emp-cat-name">${chip.label.includes('수습') ? chip.label.replace(' 수습','<small> 수습</small>') : chip.label}</span>
+      <span class="emp-cat-count">${chip.cnt}명</span>
     </button>`;
   }).join('');
+
+  // 퇴직자 화면 (퇴사 예정자 / 퇴직자 구분 표시)
+  if(_v2EmpFilter === 'retired'){
+    _renderClientRetired(listEl, upcomingResign, retiredResign);
+    return;
+  }
 
   // 목록 필터·정렬
   let emps = base;
@@ -152,6 +192,70 @@ function renderClientEmployees(){
       <i class="fas fa-chevron-right emp-row-arrow"></i>
     </div>`;
   }).join('');
+}
+
+/** 퇴직자 화면 — 퇴사 예정자 / 이미 퇴직한 퇴직자를 구분해서 표시 */
+function _renderClientRetired(listEl, upcomingResign, retiredResign){
+  const search = _v2EmpSearch;
+  const filterByName = arr => search
+    ? arr.filter(e => ((e.name||'') + (e.department||'') + (e.position||'')).includes(search))
+    : arr;
+
+  const upcoming = filterByName(upcomingResign).sort((a,b) => (a.resign_date||'').localeCompare(b.resign_date||''));
+  const retired = filterByName(retiredResign).sort((a,b) => (b.resign_date||'').localeCompare(a.resign_date||''));
+
+  if(!upcoming.length && !retired.length){
+    listEl.innerHTML = `<div class="emp-empty"><i class="fas fa-users-slash"></i><div>퇴직자·퇴사 예정자가 없습니다</div><p>퇴사일이 등록된 근로자가 없습니다.</p></div>`;
+    return;
+  }
+
+  const row = emp => {
+    const cat = _clientEmpCategory(emp);
+    const cfg = CAT_CONFIG[cat] || {};
+    const avatarBg = cfg.avatarBg || '#94a3b8';
+    const meta = [emp.department, emp.position].filter(Boolean).join(' · ') || '부서 미지정';
+    return `<div class="emp-row" onclick="openClientSevForEmp('${emp.id}')">
+      <div class="emp-row-avatar" style="background:${avatarBg};">${(emp.name||'?').charAt(0)}</div>
+      <div class="emp-row-info">
+        <div class="emp-row-name">${emp.name||'이름없음'}<span class="emp-row-badge" style="background:${cfg.avatarBg}22;color:${cfg.avatarBg};border:1px solid ${cfg.avatarBg}55;">${cat}</span></div>
+        <div class="emp-row-meta">${meta} · 입사 ${emp.hire_date||'-'}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0;">
+        <div style="font-size:10px;color:#9ca3af;">퇴사(예정)일</div>
+        <div style="font-size:12px;font-weight:800;color:#dc2626;">${emp.resign_date||'-'}</div>
+      </div>
+      <i class="fas fa-chevron-right emp-row-arrow"></i>
+    </div>`;
+  };
+
+  let html = '';
+  if(upcoming.length){
+    html += `<div class="emp-retired-section-title"><i class="fas fa-calendar-check" style="color:#f59e0b;"></i>퇴사 예정자<span class="count">${upcoming.length}명</span></div>`;
+    html += upcoming.map(row).join('');
+  }
+  if(retired.length){
+    html += `<div class="emp-retired-section-title"><i class="fas fa-user-times" style="color:#6b7280;"></i>퇴직자<span class="count">${retired.length}명</span></div>`;
+    html += retired.map(row).join('');
+  }
+  listEl.innerHTML = html;
+}
+
+/** 퇴직자/퇴사 예정자 선택 → 퇴직금 페이지로 이동 (퇴직자: 지급이력, 예정자: 추계 탭) */
+function openClientSevForEmp(empId){
+  const emp = allEmployees.find(e => e.id === empId);
+  if(!emp) return;
+  const isResigned = _isEmpResigned(emp) || (emp.resign_date && emp.resign_date < fmtLocalDate(new Date()));
+  _clientSevTab = isResigned ? 'history' : 'status';
+  showPage('severance', null);
+  setTimeout(() => {
+    const card = document.getElementById('sev-emp-' + emp.id);
+    if(card){
+      card.scrollIntoView({ behavior:'smooth', block:'center' });
+      card.style.outline = '2px solid #f59e0b';
+      card.style.outlineOffset = '2px';
+      setTimeout(() => { card.style.outline = ''; card.style.outlineOffset = ''; }, 2200);
+    }
+  }, 200);
 }
 
 function setV2EmpFilter(cat){

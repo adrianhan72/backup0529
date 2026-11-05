@@ -239,7 +239,6 @@ function startApp(){
   document.getElementById('app').classList.add('visible');
   const subTxt = (currentCompany.industry||'') + ' · 급여일: ' + (currentCompany.pay_day||'-');
   document.getElementById('app-company-name').textContent = currentCompany.company_name;
-  document.getElementById('app-company-sub').textContent  = subTxt;
   // 햄버거 메뉴 회사 정보
   document.getElementById('hmenu-company-name').textContent = currentCompany.company_name;
   document.getElementById('hmenu-company-sub').textContent  = subTxt;
