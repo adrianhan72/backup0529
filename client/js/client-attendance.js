@@ -40,7 +40,7 @@ function _clientToast(msg, type){
   if(!el){
     el = document.createElement('div');
     el.id = 'client-toast';
-    el.style.cssText = 'position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:#111827;color:#fff;padding:10px 18px;border-radius:24px;font-size:12.5px;z-index:99999;box-shadow:0 4px 16px rgba(0,0,0,.3);max-width:86%;text-align:center;transition:opacity .25s;pointer-events:none;';
+    el.style.cssText = 'position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:#111827;color:#fff;padding:10px 18px;border-radius:24px;font-size:14px;z-index:99999;box-shadow:0 4px 16px rgba(0,0,0,.3);max-width:86%;text-align:center;transition:opacity .25s;pointer-events:none;';
     document.body.appendChild(el);
   }
   el.textContent = (type === 'error' ? '⚠️ ' : '✅ ') + msg;
@@ -128,8 +128,8 @@ function _renderClientAttList(){
       <div style="padding:12px 14px;display:flex;align-items:center;gap:10px;">
         <div style="width:34px;height:34px;background:linear-gradient(135deg,#e0f2fe,#bae6fd);border:1.5px solid #7dd3fc;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#075985;">${(emp.name||'?').charAt(0)}</div>
         <div style="flex:1;">
-          <div style="font-size:14px;font-weight:800;color:#1a1a2e;">${emp.name||'-'}</div>
-          <div style="font-size:11px;color:#6b7280;">${emp.department||''} ${emp.position||''} · ${contractTypeLabel_c(emp.employment_category)}</div>
+          <div style="font-size:16px;font-weight:800;color:#1a1a2e;">${emp.name||'-'}</div>
+          <div style="font-size:14px;color:#6b7280;">${emp.department||''} ${emp.position||''} · ${contractTypeLabel_c(emp.employment_category)}</div>
         </div>
         <button class="btn btn-sm btn-danger" onclick="openClientAttEditor('${emp.id}')">근태 기록</button>
       </div>
@@ -213,7 +213,7 @@ function _renderClientAttDayPanel(){
   if(!panel) return;
   const date = _clientAttSelectedDate;
   if(!date){
-    panel.innerHTML = `<div style="text-align:center;padding:18px;color:#9ca3af;font-size:12.5px;"><i class="fas fa-calendar-day" style="font-size:22px;display:block;margin-bottom:8px;color:#cbd5e1;"></i>날짜를 선택하면 해당 날짜의 근태를 입력할 수 있습니다.</div>`;
+    panel.innerHTML = `<div style="text-align:center;padding:18px;color:#9ca3af;font-size:14px;"><i class="fas fa-calendar-day" style="font-size:22px;display:block;margin-bottom:8px;color:#cbd5e1;"></i>날짜를 선택하면 해당 날짜의 근태를 입력할 수 있습니다.</div>`;
     return;
   }
 
@@ -225,48 +225,48 @@ function _renderClientAttDayPanel(){
         if(e.type === 'absent'){
           const al = _cAttAbsentLabels[e.absentType] || e.absentType || '';
           const rateTxt = (e.absentType === 'sick_paid' && e.rate > 0) ? ' ' + e.rate + '%' : '';
-          extra = `<span style="font-size:10px;color:#6b7280;">${al}${rateTxt}</span>`;
+          extra = `<span style="font-size:13px;color:#6b7280;">${al}${rateTxt}</span>`;
         } else if(e.type === 'overtime'){
-          extra = `<span style="font-size:10px;color:#6b7280;">${e.otStart||'-'}~${e.otEnd||'-'}</span>`;
+          extra = `<span style="font-size:13px;color:#6b7280;">${e.otStart||'-'}~${e.otEnd||'-'}</span>`;
         } else if(e.time){
-          extra = `<span style="font-size:10px;color:#6b7280;">${e.time}</span>`;
+          extra = `<span style="font-size:13px;color:#6b7280;">${e.time}</span>`;
         }
-        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;margin-bottom:5px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;font-size:12px;">
+        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;margin-bottom:5px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;">
           <span style="display:inline-block;background:${_cAttTypeBg[e.type]||'#f3f4f6'};color:${_cAttTypeColor[e.type]||'#374151'};padding:1px 8px;border-radius:10px;font-size:10.5px;font-weight:700;">${_cAttTypeLabel[e.type]||e.type}</span>
           ${extra}
           <button class="btn btn-sm" onclick="removeClientAttEntry(${globalIdx})" title="삭제"><i class="fas fa-times"></i></button>
         </div>`;
       }).join('')
-    : `<div style="text-align:center;padding:12px;color:#9ca3af;font-size:12px;">이 날짜에 등록된 내역이 없습니다</div>`;
+    : `<div style="text-align:center;padding:12px;color:#9ca3af;font-size:14px;">이 날짜에 등록된 내역이 없습니다</div>`;
 
   panel.innerHTML = `
-    <div style="font-size:13px;font-weight:800;color:#1a1a2e;margin-bottom:10px;"><i class="fas fa-calendar-day" style="color:#0284c7;margin-right:6px;"></i>${date}</div>
+    <div style="font-size:16px;font-weight:800;color:#1a1a2e;margin-bottom:10px;"><i class="fas fa-calendar-day" style="color:#0284c7;margin-right:6px;"></i>${date}</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
-      <label style="font-size:11px;color:#6b7280;">유형
-        <select id="catt-new-type" onchange="_cAttTypeChanged()" style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:7px 8px;font-size:12.5px;font-family:inherit;color:#1a1a2e;background:#fff;margin-top:3px;">
+      <label style="font-size:14px;color:#6b7280;">유형
+        <select id="catt-new-type" onchange="_cAttTypeChanged()" style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:7px 8px;font-size:16px;font-family:inherit;color:#1a1a2e;background:#fff;margin-top:3px;">
           <option value="absent">결근</option>
           <option value="late">지각</option>
           <option value="earlyleave">조퇴</option>
           <option value="overtime">추가근무</option>
         </select>
       </label>
-      <label id="catt-absent-wrap" style="font-size:11px;color:#6b7280;">결근 사유
-        <select id="catt-absent-type" style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:7px 8px;font-size:12.5px;font-family:inherit;color:#1a1a2e;background:#fff;margin-top:3px;">
+      <label id="catt-absent-wrap" style="font-size:14px;color:#6b7280;">결근 사유
+        <select id="catt-absent-type" style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:7px 8px;font-size:16px;font-family:inherit;color:#1a1a2e;background:#fff;margin-top:3px;">
           ${Object.entries(_cAttAbsentLabels).map(([k,v]) => `<option value="${k}" ${k==='unauthorized'?'selected':''}>${v}</option>`).join('')}
         </select>
       </label>
     </div>
     <div id="catt-time-wrap" style="display:none;grid-template-columns:1fr;gap:6px;margin-bottom:6px;">
-      <label style="font-size:11px;color:#6b7280;">시간
-        <input type="time" id="catt-new-time" style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:7px 8px;font-size:12.5px;font-family:inherit;color:#1a1a2e;background:#fff;box-sizing:border-box;margin-top:3px;" />
+      <label style="font-size:14px;color:#6b7280;">시간
+        <input type="time" id="catt-new-time" style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:7px 8px;font-size:16px;font-family:inherit;color:#1a1a2e;background:#fff;box-sizing:border-box;margin-top:3px;" />
       </label>
     </div>
     <div id="catt-ot-wrap" style="display:none;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
-      <label style="font-size:11px;color:#6b7280;">시작
-        <input type="time" id="catt-ot-start" style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:7px 8px;font-size:12.5px;font-family:inherit;color:#1a1a2e;background:#fff;box-sizing:border-box;margin-top:3px;" />
+      <label style="font-size:14px;color:#6b7280;">시작
+        <input type="time" id="catt-ot-start" style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:7px 8px;font-size:16px;font-family:inherit;color:#1a1a2e;background:#fff;box-sizing:border-box;margin-top:3px;" />
       </label>
-      <label style="font-size:11px;color:#6b7280;">종료
-        <input type="time" id="catt-ot-end" style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:7px 8px;font-size:12.5px;font-family:inherit;color:#1a1a2e;background:#fff;box-sizing:border-box;margin-top:3px;" />
+      <label style="font-size:14px;color:#6b7280;">종료
+        <input type="time" id="catt-ot-end" style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:7px 8px;font-size:16px;font-family:inherit;color:#1a1a2e;background:#fff;box-sizing:border-box;margin-top:3px;" />
       </label>
     </div>
     <button class="btn btn-warning" onclick="_clientAttAddForDate()" style="width:100%;"><i class="fas fa-plus"></i> 이 날짜에 추가</button>
@@ -314,14 +314,14 @@ function _renderClientAttEditor(){
         if(e.type === 'absent'){
           const al = _cAttAbsentLabels[e.absentType] || e.absentType || '';
           const rateTxt = (e.absentType === 'sick_paid' && e.rate > 0) ? ' ' + e.rate + '%' : '';
-          extra = `<span style="font-size:10px;color:#6b7280;background:#f3f4f6;padding:1px 6px;border-radius:10px;">${al}${rateTxt}</span>`;
+          extra = `<span style="font-size:13px;color:#6b7280;background:#f3f4f6;padding:1px 6px;border-radius:10px;">${al}${rateTxt}</span>`;
         } else if(e.type === 'overtime'){
-          extra = `<span style="font-size:10px;color:#6b7280;">${e.otStart||'-'}~${e.otEnd||'-'}</span>`;
+          extra = `<span style="font-size:13px;color:#6b7280;">${e.otStart||'-'}~${e.otEnd||'-'}</span>`;
         } else if(e.time){
-          extra = `<span style="font-size:10px;color:#6b7280;">${e.time}</span>`;
+          extra = `<span style="font-size:13px;color:#6b7280;">${e.time}</span>`;
         }
         const dTo = e.dateTo ? ` ~ ${e.dateTo}` : '';
-        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;margin-bottom:5px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;font-size:12px;">
+        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;margin-bottom:5px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;">
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
             <span style="font-weight:700;">${e.date||'-'}${dTo}</span>
             <span style="display:inline-block;background:${_cAttTypeBg[e.type]||'#f3f4f6'};color:${_cAttTypeColor[e.type]||'#374151'};padding:1px 8px;border-radius:10px;font-size:10.5px;font-weight:700;">${_cAttTypeLabel[e.type]||e.type}</span>
@@ -330,43 +330,43 @@ function _renderClientAttEditor(){
           <button class="btn btn-sm" onclick="removeClientAttEntry(${i})" title="삭제"><i class="fas fa-times"></i></button>
         </div>`;
       }).join('')
-    : `<div style="text-align:center;padding:16px;color:#9ca3af;font-size:12px;">등록된 근태 내역이 없습니다</div>`;
+    : `<div style="text-align:center;padding:16px;color:#9ca3af;font-size:14px;">등록된 근태 내역이 없습니다</div>`;
 
   box.innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
-      <label style="font-size:11px;color:#6b7280;">시작일
-        <input type="date" id="catt-new-date" style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:7px 8px;font-size:12.5px;font-family:inherit;color:#1a1a2e;background:#fff;box-sizing:border-box;margin-top:3px;" />
+      <label style="font-size:14px;color:#6b7280;">시작일
+        <input type="date" id="catt-new-date" style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:7px 8px;font-size:16px;font-family:inherit;color:#1a1a2e;background:#fff;box-sizing:border-box;margin-top:3px;" />
       </label>
-      <label style="font-size:11px;color:#6b7280;">종료일 (1일이면 비움)
-        <input type="date" id="catt-new-date-to" style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:7px 8px;font-size:12.5px;font-family:inherit;color:#1a1a2e;background:#fff;box-sizing:border-box;margin-top:3px;" />
+      <label style="font-size:14px;color:#6b7280;">종료일 (1일이면 비움)
+        <input type="date" id="catt-new-date-to" style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:7px 8px;font-size:16px;font-family:inherit;color:#1a1a2e;background:#fff;box-sizing:border-box;margin-top:3px;" />
       </label>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
-      <label style="font-size:11px;color:#6b7280;">유형
-        <select id="catt-new-type" onchange="_cAttTypeChanged()" style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:7px 8px;font-size:12.5px;font-family:inherit;color:#1a1a2e;background:#fff;margin-top:3px;">
+      <label style="font-size:14px;color:#6b7280;">유형
+        <select id="catt-new-type" onchange="_cAttTypeChanged()" style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:7px 8px;font-size:16px;font-family:inherit;color:#1a1a2e;background:#fff;margin-top:3px;">
           <option value="absent">결근</option>
           <option value="late">지각</option>
           <option value="earlyleave">조퇴</option>
           <option value="overtime">추가근무</option>
         </select>
       </label>
-      <label id="catt-absent-wrap" style="font-size:11px;color:#6b7280;">결근 사유
-        <select id="catt-absent-type" style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:7px 8px;font-size:12.5px;font-family:inherit;color:#1a1a2e;background:#fff;margin-top:3px;">
+      <label id="catt-absent-wrap" style="font-size:14px;color:#6b7280;">결근 사유
+        <select id="catt-absent-type" style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:7px 8px;font-size:16px;font-family:inherit;color:#1a1a2e;background:#fff;margin-top:3px;">
           ${Object.entries(_cAttAbsentLabels).map(([k,v]) => `<option value="${k}" ${k==='unauthorized'?'selected':''}>${v}</option>`).join('')}
         </select>
       </label>
     </div>
     <div id="catt-time-wrap" style="display:none;grid-template-columns:1fr;gap:6px;margin-bottom:6px;">
-      <label style="font-size:11px;color:#6b7280;">시간
-        <input type="time" id="catt-new-time" style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:7px 8px;font-size:12.5px;font-family:inherit;color:#1a1a2e;background:#fff;box-sizing:border-box;margin-top:3px;" />
+      <label style="font-size:14px;color:#6b7280;">시간
+        <input type="time" id="catt-new-time" style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:7px 8px;font-size:16px;font-family:inherit;color:#1a1a2e;background:#fff;box-sizing:border-box;margin-top:3px;" />
       </label>
     </div>
     <div id="catt-ot-wrap" style="display:none;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
-      <label style="font-size:11px;color:#6b7280;">시작
-        <input type="time" id="catt-ot-start" style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:7px 8px;font-size:12.5px;font-family:inherit;color:#1a1a2e;background:#fff;box-sizing:border-box;margin-top:3px;" />
+      <label style="font-size:14px;color:#6b7280;">시작
+        <input type="time" id="catt-ot-start" style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:7px 8px;font-size:16px;font-family:inherit;color:#1a1a2e;background:#fff;box-sizing:border-box;margin-top:3px;" />
       </label>
-      <label style="font-size:11px;color:#6b7280;">종료
-        <input type="time" id="catt-ot-end" style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:7px 8px;font-size:12.5px;font-family:inherit;color:#1a1a2e;background:#fff;box-sizing:border-box;margin-top:3px;" />
+      <label style="font-size:14px;color:#6b7280;">종료
+        <input type="time" id="catt-ot-end" style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:7px 8px;font-size:16px;font-family:inherit;color:#1a1a2e;background:#fff;box-sizing:border-box;margin-top:3px;" />
       </label>
     </div>
     <div style="display:flex;gap:6px;margin-bottom:12px;">
@@ -586,13 +586,13 @@ function _renderClientLeaveModal(){
   const box = document.getElementById('alc-modal-content');
   if(!box) return;
   box.innerHTML = `
-    <div id="alc-info" style="margin:4px 0 10px;font-size:11px;color:#6b7280;background:#f9fafb;border-radius:8px;padding:8px 10px;line-height:1.7;"></div>
+    <div id="alc-info" style="margin:4px 0 10px;font-size:14px;color:#6b7280;background:#f9fafb;border-radius:8px;padding:8px 10px;line-height:1.7;"></div>
     <div style="display:grid;grid-template-columns:1fr 90px 1fr;gap:6px;margin-bottom:8px;align-items:end;">
-      <label style="font-size:11px;color:#6b7280;">사용일
-        <input type="date" id="alc-new-date" style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:7px 8px;font-size:12.5px;font-family:inherit;color:#1a1a2e;background:#fff;box-sizing:border-box;margin-top:3px;" />
+      <label style="font-size:14px;color:#6b7280;">사용일
+        <input type="date" id="alc-new-date" style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:7px 8px;font-size:16px;font-family:inherit;color:#1a1a2e;background:#fff;box-sizing:border-box;margin-top:3px;" />
       </label>
-      <label style="font-size:11px;color:#6b7280;">일수
-        <select id="alc-new-days" style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:7px 6px;font-size:12.5px;font-family:inherit;color:#1a1a2e;background:#fff;margin-top:3px;">
+      <label style="font-size:14px;color:#6b7280;">일수
+        <select id="alc-new-days" style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:7px 6px;font-size:16px;font-family:inherit;color:#1a1a2e;background:#fff;margin-top:3px;">
           <option value="1">1일</option>
           <option value="0.5">0.5일</option>
         </select>
@@ -600,8 +600,8 @@ function _renderClientLeaveModal(){
       <button class="btn btn-warning" onclick="addClientLeaveEntry()" style="height:34px;"><i class="fas fa-plus"></i> 추가</button>
     </div>
     <div id="alc-entries" style="max-height:220px;overflow-y:auto;margin-bottom:10px;"></div>
-    <label style="font-size:11px;color:#6b7280;">이월 연차 (일)
-      <input type="number" id="alc-carryover" step="0.5" min="0" style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:7px 8px;font-size:12.5px;font-family:inherit;color:#1a1a2e;background:#fff;box-sizing:border-box;margin-top:3px;" />
+    <label style="font-size:14px;color:#6b7280;">이월 연차 (일)
+      <input type="number" id="alc-carryover" step="0.5" min="0" style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:7px 8px;font-size:16px;font-family:inherit;color:#1a1a2e;background:#fff;box-sizing:border-box;margin-top:3px;" />
     </label>
     <button class="btn btn-primary" id="alc-save-btn" onclick="saveClientLeaveLedger()" style="width:100%;margin-top:10px;"><i class="fas fa-save"></i> 연차 기록 저장</button>
     <div style="margin-top:8px;font-size:10.5px;color:#9ca3af;text-align:center;">저장 시 해당 월 급여의 연차수당(사용일수)에도 자동 반영됩니다.</div>
@@ -677,7 +677,7 @@ function _renderClientLeaveEntries(){
     return;
   }
   box.innerHTML = _clientLeaveEntries.map((e, i) => `
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;margin-bottom:4px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:12px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;margin-bottom:4px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:14px;">
       <span style="font-weight:700;color:#374151;">${e.date}${e.days !== 1 ? ` <span style="color:#059669;">(${e.days}일)</span>` : ''}</span>
       <button class="btn btn-sm" onclick="removeClientLeaveEntry(${i})" title="삭제"><i class="fas fa-times"></i></button>
     </div>`).join('');

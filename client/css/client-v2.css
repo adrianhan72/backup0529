@@ -40,13 +40,13 @@
 .v2-page{padding:14px 12px 24px}
 .v2-section{background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.06);padding:14px 14px 12px;margin-bottom:12px}
 .v2-section-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
-.v2-section-title{font-size:13.5px;font-weight:800;color:#1a1a2e}
+.v2-section-title{font-size:18px;font-weight:800;color:#1a1a2e;letter-spacing:-.3px}
 .v2-section-title i{margin-right:6px}
-.v2-asof{font-size:11px;color:#6b7280;font-weight:600}
+.v2-asof{font-size:14px;color:#6b7280;font-weight:600}
 .v2-asof strong{color:#6366f1}
-.v2-hint{font-size:11px;color:#9ca3af;margin:0 0 8px;line-height:1.6}
+.v2-hint{font-size:14px;color:#9ca3af;margin:0 0 8px;line-height:1.6}
 .v2-hint i{margin-right:4px}
-.v2-footnote{font-size:10.5px;color:#9ca3af;line-height:1.7;padding:4px 6px 20px;text-align:center}
+.v2-footnote{font-size:14px;color:#9ca3af;line-height:1.7;padding:4px 6px 20px;text-align:center}
 
 /* ── 임직원 현황: 고용형태 칩 ── */
 .emp-cat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
@@ -66,10 +66,10 @@
   display:flex;align-items:center;justify-content:center;
   color:#fff;font-size:17px;line-height:1;
 }
-.emp-cat-name{font-size:14px;font-weight:700;color:#374151;display:flex;align-items:center;justify-content:center;gap:3px;text-align:center;line-height:1.25}
+.emp-cat-name{font-size:16px;font-weight:700;color:#374151;display:flex;align-items:center;justify-content:center;gap:3px;text-align:center;line-height:1.25}
 .emp-cat-chip.on .emp-cat-name{color:#3730a3}
-.emp-cat-name small{font-size:10px;color:#9ca3af;font-weight:600}
-.emp-cat-count{font-size:12px;font-weight:700;color:#9ca3af}
+.emp-cat-name small{font-size:12px;color:#9ca3af;font-weight:600}
+.emp-cat-count{font-size:14px;font-weight:700;color:#9ca3af}
 .emp-cat-chip.on .emp-cat-count{color:#6366f1}
 
 /* ── 임직원 현황: 검색 ── */
@@ -81,7 +81,7 @@
 .emp-search-wrap:focus-within{border-color:#9080e4}
 .emp-search-wrap > i{color:#9ca3af;font-size:13px;flex-shrink:0}
 .emp-search-wrap input{
-  flex:1;border:none;background:none;padding:12px 0;font-size:13px;
+  flex:1;border:none;background:none;padding:12px 0;font-size:16px;
   color:#1a1a2e;font-family:inherit;outline:none;min-width:0;
 }
 .emp-search-wrap input::placeholder{color:#b0b7c3}
@@ -105,10 +105,10 @@
   color:#fff;font-size:16px;font-weight:800;
 }
 .emp-row-info{flex:1;min-width:0}
-.emp-row-name{font-size:15px;font-weight:800;color:#1a1a2e;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.emp-row-meta{font-size:12.5px;color:#6b7280;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.emp-row-name{font-size:16px;font-weight:800;color:#1a1a2e;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.emp-row-meta{font-size:14px;color:#6b7280;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .emp-row-badge{
-  font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;flex-shrink:0;
+  font-size:13px;font-weight:700;padding:3px 9px;border-radius:20px;flex-shrink:0;
 }
 .emp-row-arrow{color:#d1d5db;font-size:12px;flex-shrink:0}
 .emp-empty{
@@ -116,54 +116,91 @@
   border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.06);
 }
 .emp-empty i{font-size:34px;display:block;margin-bottom:10px;color:#d1d5db}
-.emp-empty div{font-size:13.5px;font-weight:700;color:#6b7280}
-.emp-empty p{font-size:12px;margin-top:4px}
+.emp-empty div{font-size:16px;font-weight:700;color:#6b7280}
+.emp-empty p{font-size:14px;margin-top:4px}
 
 /* ── 임직원 현황: 퇴직자 화면 섹션 ── */
 .emp-retired-section-title{
   display:flex;align-items:center;gap:6px;
-  font-size:12.5px;font-weight:800;color:#374151;
-  margin:12px 2px 8px;padding-left:2px;
+  font-size:16px;font-weight:800;color:#374151;
+  margin:16px 2px 8px;padding-left:2px;
 }
-.emp-retired-section-title .count{font-size:11px;font-weight:700;color:#9ca3af;margin-left:2px}
+.emp-retired-section-title .count{font-size:14px;font-weight:700;color:#9ca3af;margin-left:2px}
 
 /* ── 급여통계: 빠른 이동 ── */
 .v2-quick-row{display:flex;gap:8px;margin-bottom:12px;align-items:center}
 .v2-quick-btn{
   display:inline-flex;align-items:center;gap:6px;
   padding:9px 13px;border-radius:12px;border:none;cursor:pointer;
-  background:#eef2ff;color:#3730a3;font-size:12px;font-weight:700;font-family:inherit;
+  background:#eef2ff;color:#3730a3;font-size:16px;font-weight:700;font-family:inherit;
   box-shadow:0 1px 6px rgba(0,0,0,.05);
   transition:transform .12s,background .12s;-webkit-tap-highlight-color:transparent;touch-action:manipulation;
 }
 .v2-quick-btn:active{transform:scale(.96);background:#e0e7ff}
 .v2-quick-btn:disabled{background:#f3f4f6;color:#d1d5db;cursor:not-allowed;box-shadow:none}
-.v2-quick-btn i{font-size:12px}
+.v2-quick-btn i{font-size:15px}
 
 /* ── 급여통계: 요약 카드 ── */
-.v2-sum-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.v2-sum-grid{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:12px}
 .v2-sum-card{
   border:none;border-radius:14px;padding:14px 14px 12px;cursor:pointer;
   text-align:left;font-family:inherit;box-shadow:0 3px 12px rgba(0,0,0,.09);
   transition:transform .12s;-webkit-tap-highlight-color:transparent;touch-action:manipulation;
 }
 .v2-sum-card:active{transform:scale(.97)}
-.v2-sum-prev{background:linear-gradient(135deg,#eef2ff,#e0e7ff)}
+.v2-sum-prev{background:#fff;border:1px solid #e8ecf2;box-shadow:0 2px 10px rgba(17,24,39,.06)}
 .v2-sum-next{background:linear-gradient(135deg,#ecfdf5,#d1fae5)}
-.v2-sum-label{font-size:11px;font-weight:700;color:#4b5563;display:flex;align-items:center;gap:5px}
-.v2-sum-label i{font-size:11px;color:#6366f1}
+.v2-sum-label{font-size:16px;font-weight:700;color:#4b5563;display:flex;align-items:center;gap:5px}
+.v2-sum-label i{font-size:15px;color:#6366f1}
 .v2-sum-next .v2-sum-label i{color:#059669}
-.v2-sum-val{font-size:18px;font-weight:900;color:#1f2937;margin-top:7px;letter-spacing:-.5px;word-break:break-all}
+.v2-sum-row{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.v2-sum-val{font-size:22px;font-weight:900;color:#1f2937;letter-spacing:-.5px;word-break:break-all;text-align:right;margin-left:auto}
 .v2-sum-prev .v2-sum-val{color:#3730a3}
 .v2-sum-next .v2-sum-val{color:#065f46}
-.v2-sum-sub{font-size:10.5px;color:#6b7280;margin-top:4px;line-height:1.5}
+.v2-sum-sub{font-size:14px;color:#6b7280;margin-top:6px;line-height:1.5;text-align:right}
 
-/* ── 급여통계: 고용형태별 ── */
-.v2-type-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.v2-type-card{border-radius:12px;padding:10px 8px;text-align:center}
-.v2-type-card .vt-name{font-size:10.5px;font-weight:700;margin-top:4px}
-.v2-type-card .vt-amount{font-size:12.5px;font-weight:800;margin-top:5px;letter-spacing:-.3px;word-break:break-all}
-.v2-type-card .vt-count{font-size:10px;color:#6b7280;margin-top:3px}
+/* ── 직전월 임금내역 상세 ── */
+.pay-breakdown{margin-top:14px;border-top:1px solid rgba(15,23,42,.08);padding-top:4px}
+.pb-group-head{
+  display:flex;align-items:baseline;justify-content:space-between;gap:10px;
+  margin:14px 0 4px;font-size:16px;font-weight:800;color:#1f2937;
+}
+.pb-group-head:first-child{margin-top:0}
+.pb-group-head.pb-ded{color:#b91c1c}
+.pb-item{
+  display:flex;align-items:baseline;justify-content:space-between;gap:10px;
+  padding:5px 0 5px 12px;font-size:14px;color:#6b7280;
+}
+.pb-item .pb-amt,.pb-group-head .pb-amt{
+  text-align:right;font-variant-numeric:tabular-nums;flex-shrink:0;
+}
+.pb-item .pb-amt{font-size:16px;font-weight:700;color:#374151}
+.pb-total{
+  display:flex;align-items:baseline;justify-content:space-between;gap:10px;
+  margin-top:14px;padding-top:12px;border-top:1px dashed rgba(15,23,42,.16);
+  font-size:16px;font-weight:800;color:#0f172a;
+}
+.pb-total .pb-amt{font-size:20px;font-weight:900;color:#3730a3;text-align:right;font-variant-numeric:tabular-nums}
+.pb-empty{font-size:14px;color:#9ca3af;text-align:center;padding:14px 0}
+
+/* ── 급여통계: 고용형태별 (파이) ── */
+.v2-type-pie{display:block}
+.v2-pie-canvas{position:relative;width:100%;max-width:220px;height:200px;margin:6px auto 2px}
+.v2-pie-legend{margin-top:6px}
+.v2-pie-row{
+  display:flex;align-items:center;gap:8px;padding:9px 0;
+  border-top:1px solid #f1f5f9;
+}
+.v2-pie-row:first-child{border-top:none}
+.v2-pie-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+.v2-pie-name{flex:1;min-width:0;font-size:16px;font-weight:700;color:#374151;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.v2-pie-name em{font-style:normal;font-size:14px;font-weight:600;color:#9ca3af;margin-left:4px}
+.v2-pie-pct{font-size:14px;font-weight:700;color:#6b7280;min-width:48px;text-align:right;font-variant-numeric:tabular-nums}
+.v2-pie-amt{font-size:16px;font-weight:800;color:#1f2937;min-width:104px;text-align:right;letter-spacing:-.3px;font-variant-numeric:tabular-nums}
+.v2-pie-row.is-zero .v2-pie-name{color:#9ca3af;font-weight:600}
+.v2-pie-row.is-zero .v2-pie-amt{color:#9ca3af;font-weight:700}
+.v2-pie-row.is-zero .v2-pie-pct{color:#cbd5e1}
+.v2-pie-row.is-zero .v2-pie-dot{opacity:.35}
 
 /* ── 급여통계: 차트 카드 ── */
 .v2-chart-card{background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.06);padding:14px;margin-bottom:12px}
@@ -179,8 +216,8 @@
   background:rgba(255,255,255,.2);color:#fff;
   display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:800;
 }
-.ea-name{color:#fff;font-size:16px;font-weight:800}
-.ea-meta{color:rgba(255,255,255,.8);font-size:11px;margin-top:3px;line-height:1.5}
+.ea-name{color:#fff;font-size:18px;font-weight:800}
+.ea-meta{color:rgba(255,255,255,.8);font-size:14px;margin-top:3px;line-height:1.5}
 .ea-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:14px 16px 6px}
 .ea-btn{
   display:flex;flex-direction:column;align-items:flex-start;gap:5px;
@@ -189,14 +226,14 @@
   transition:border-color .12s,transform .12s;-webkit-tap-highlight-color:transparent;touch-action:manipulation;
 }
 .ea-btn:active{transform:scale(.97);border-color:#c7d2fe}
-.ea-btn i{font-size:16px;color:#6366f1}
-.ea-btn span{font-size:13px;font-weight:800;color:#1f2937}
-.ea-btn small{font-size:10px;color:#9ca3af;line-height:1.4}
+.ea-btn i{font-size:18px;color:#6366f1}
+.ea-btn span{font-size:16px;font-weight:800;color:#1f2937}
+.ea-btn small{font-size:14px;color:#9ca3af;line-height:1.4}
 .ea-btn-wide{grid-column:1 / -1}
 .ea-foot{padding:8px 16px 18px}
 .ea-foot button{
   width:100%;background:#f3f4f6;border:none;border-radius:12px;padding:13px;
-  font-size:13.5px;font-weight:700;color:#6b7280;cursor:pointer;font-family:inherit;
+  font-size:16px;font-weight:700;color:#6b7280;cursor:pointer;font-family:inherit;
   -webkit-tap-highlight-color:transparent;touch-action:manipulation;
 }
 
@@ -206,24 +243,94 @@
   text-align:center;padding:40px 22px;
 }
 .di-empty i{font-size:38px;color:#cbd5e1;display:block;margin-bottom:12px}
-.di-empty .di-title{font-size:14px;font-weight:800;color:#1a1a2e;margin-bottom:5px}
-.di-empty .di-sub{font-size:12px;color:#6b7280;line-height:1.7}
+.di-empty .di-title{font-size:18px;font-weight:800;color:#1a1a2e;margin-bottom:5px}
+.di-empty .di-sub{font-size:14px;color:#6b7280;line-height:1.7}
 .di-worker{
   margin-top:14px;padding:11px 14px;background:#f0f9ff;border:1px solid #bae6fd;
-  border-radius:10px;font-size:12.5px;color:#075985;font-weight:700;
+  border-radius:10px;font-size:14px;color:#075985;font-weight:700;
   display:flex;align-items:center;gap:7px;justify-content:center;
 }
 
 /* ── 약관·개인정보처리방침 ── */
 .v2-legal{padding:4px 14px 90px}
-.v2-legal .legal-card{background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.06);padding:20px 18px}
-.v2-legal .legal-date{font-size:11px;color:#9ca3af;margin-bottom:12px;line-height:1.7}
-.v2-legal h3{font-size:15px;font-weight:800;color:#1a1a2e;margin:18px 0 8px;padding-top:14px;border-top:1px solid #f3f4f6}
-.v2-legal h3:first-child{margin-top:0;padding-top:0;border-top:none}
-.v2-legal p{font-size:12.5px;color:#4b5563;line-height:1.9;margin:6px 0;word-break:keep-all}
-.v2-legal li{font-size:12.5px;color:#4b5563;line-height:1.9;margin:3px 0;word-break:keep-all}
-.v2-legal ul{padding-left:18px;margin:4px 0}
-.v2-legal .legal-title{font-size:18px;font-weight:900;color:#1a1a2e;margin-bottom:4px}
+
+/* 법률 문서 공통 (앱 내 페이지 · 로그인 오버레이) */
+.legal-doc .legal-card{
+  background:#fff;border-radius:16px;border:1px solid #edf0f4;
+  box-shadow:0 2px 12px rgba(17,24,39,.05);
+  padding:26px 22px 30px;
+}
+.legal-doc .legal-title{
+  font-size:21px;font-weight:800;color:#0f172a;line-height:1.35;letter-spacing:-.4px;
+}
+.legal-doc .legal-date{
+  font-size:14px;color:#94a3b8;line-height:1.75;margin-top:8px;word-break:keep-all;
+}
+.legal-doc .legal-date + .legal-date{margin-top:4px}
+
+/* 조항(제N조) — 상위 레벨 */
+.legal-doc h3{
+  font-size:18px;font-weight:800;color:#0f172a;line-height:1.5;letter-spacing:-.2px;
+  margin:34px 0 12px;padding-top:22px;border-top:1px solid #eef1f5;
+  word-break:keep-all;
+}
+.legal-doc h3:first-of-type{margin-top:26px;padding-top:0;border-top:none}
+
+/* 본문 */
+.legal-doc p{
+  font-size:16px;color:#475569;line-height:1.9;margin:0 0 10px;word-break:keep-all;
+}
+.legal-doc p:last-child{margin-bottom:0}
+
+/* 1단계 들여쓰기 — ①②③ 항 */
+.legal-doc p.legal-lv1{padding-left:14px}
+/* 2단계 들여쓰기 — a. b. 등 세부 항목 */
+.legal-doc p.legal-lv2{
+  padding-left:32px;font-size:16px;color:#5b6675;line-height:1.85;margin-bottom:8px;
+}
+
+/* 2단계 들여쓰기 — 각 호 번호 목록 */
+.legal-doc ol{list-style:none;counter-reset:legal-ol;margin:2px 0 14px;padding:0}
+.legal-doc ol > li{
+  counter-increment:legal-ol;position:relative;
+  padding-left:32px;font-size:16px;color:#5b6675;line-height:1.85;margin:0 0 8px;
+  word-break:keep-all;
+}
+.legal-doc ol > li::before{
+  content:counter(legal-ol) ".";
+  position:absolute;left:16px;top:0;
+  font-weight:700;color:#94a3b8;font-variant-numeric:tabular-nums;
+}
+
+/* 불릿 목록 */
+.legal-doc ul{list-style:none;margin:2px 0 14px;padding:0}
+.legal-doc ul > li{
+  position:relative;padding-left:32px;
+  font-size:16px;color:#5b6675;line-height:1.85;margin:0 0 8px;word-break:keep-all;
+}
+.legal-doc ul > li::before{
+  content:"";position:absolute;left:20px;top:.75em;
+  width:5px;height:5px;border-radius:50%;background:#cbd5e1;
+}
+
+/* 표 — 테두리 표시 */
+.legal-doc table{
+  width:100%;border-collapse:collapse;
+  font-size:14px;margin:6px 0 18px;
+  border:1px solid #cfd6df;
+}
+.legal-doc thead th{
+  background:#f4f6f9;color:#1e293b;
+  font-weight:800;font-size:14px;
+  border:1px solid #cfd6df;padding:10px 11px;
+  text-align:left;line-height:1.55;word-break:keep-all;
+}
+.legal-doc tbody td{
+  border:1px solid #dde3ea;padding:10px 11px;
+  text-align:left;vertical-align:top;
+  line-height:1.75;color:#475569;word-break:keep-all;
+}
+.legal-doc tbody tr:nth-child(even) td{background:#fafbfc}
 
 /* ── 햄버거 슬라이드 메뉴 (오른쪽에서 슬라이드) ── */
 .hmenu-backdrop{background:rgba(10,15,35,.45);opacity:0;pointer-events:none;transition:opacity .2s}
@@ -326,4 +433,51 @@
   margin:0 12px calc(20px + env(safe-area-inset-bottom));
   background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(17,24,39,.06);
   padding:14px;
+}
+
+/* ── 약관 · 개인정보처리방침 레이어 팝업 ── */
+.legal-overlay{
+  position:fixed;inset:0;z-index:650;
+  display:none;align-items:center;justify-content:center;
+  background:rgba(15,23,42,.58);
+  -webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);
+  padding:calc(20px + env(safe-area-inset-top)) 14px calc(20px + env(safe-area-inset-bottom));
+}
+.legal-overlay.open{display:flex;animation:legalOverlayIn .18s ease}
+@keyframes legalOverlayIn{from{opacity:0}to{opacity:1}}
+
+.legal-overlay-panel{
+  background:#fff;border-radius:18px;width:100%;max-width:720px;max-height:100%;
+  display:flex;flex-direction:column;overflow:hidden;
+  box-shadow:0 24px 60px rgba(2,6,23,.38);
+  animation:legalPanelIn .22s cubic-bezier(.32,.72,0,1);
+}
+@keyframes legalPanelIn{
+  from{transform:translateY(16px) scale(.985);opacity:0}
+  to{transform:none;opacity:1}
+}
+
+.legal-overlay-head{
+  display:flex;align-items:center;gap:10px;flex-shrink:0;
+  background:linear-gradient(135deg,#334155,#475569);
+  color:#fff;padding:14px 16px;
+}
+.legal-overlay-title{
+  flex:1;min-width:0;font-size:15px;font-weight:800;letter-spacing:-.2px;
+  display:flex;align-items:center;gap:7px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.legal-overlay-close{
+  display:inline-flex;align-items:center;gap:6px;flex-shrink:0;
+  background:rgba(255,255,255,.16);border:none;color:#fff;
+  padding:9px 14px;border-radius:10px;font-size:12.5px;font-weight:700;
+  cursor:pointer;font-family:inherit;
+  transition:background .15s;-webkit-tap-highlight-color:transparent;touch-action:manipulation;
+}
+.legal-overlay-close:active{background:rgba(255,255,255,.3)}
+
+.legal-overlay-body{
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:18px 14px calc(22px + env(safe-area-inset-bottom));
+  background:#f4f6f9;
 }

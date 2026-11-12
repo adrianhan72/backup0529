@@ -80,6 +80,7 @@ const empCatBadge = (cat) => CAT_BADGE_CLS[_normContractType(cat)] || 'badge-gra
 
 // ══ LOGIN ══
 const LS_CODE_KEY = 'gs_saved_access_code';
+const LS_AGREE_KEY = 'gs_terms_agreed';
 
 // 페이지 로드 시 저장된 코드 자동 복원
 (function(){
@@ -88,11 +89,17 @@ const LS_CODE_KEY = 'gs_saved_access_code';
     document.getElementById('login-code').value = saved;
     document.getElementById('login-remember').checked = true;
   }
+  const agreed = document.getElementById('login-agree');
+  if(agreed && localStorage.getItem(LS_AGREE_KEY) === '1') agreed.checked = true;
 })();
 
 async function tryLogin(){
   const code = document.getElementById('login-code').value.trim();
   if(!code){ showErr('코드를 입력하세요.'); return; }
+  if(!document.getElementById('login-agree')?.checked){
+    showErr('서비스 이용약관에 동의해 주세요.');
+    return;
+  }
   const res = await fetch('../tables/companies?limit=100');
   const data = await res.json();
   const found = (data.data||[]).find(c => c.access_code === code);
@@ -117,6 +124,7 @@ async function tryLogin(){
   } else {
     localStorage.removeItem(LS_CODE_KEY);
   }
+  if(document.getElementById('login-agree')?.checked) localStorage.setItem(LS_AGREE_KEY, '1');
 
   // JWT 발급 (서버 검증 — /tables 쓰기 인증용)
   try {
@@ -186,7 +194,7 @@ function logout(){
   document.getElementById('login-screen').style.display='flex';
   document.getElementById('app').classList.remove('visible');
   document.getElementById('login-code').value='';
-  showPage('employees', document.getElementById('nav-employees'));
+  showPage('paystats', document.getElementById('nav-paystats'));
 }
 
 // ══ DATA ══
@@ -427,8 +435,6 @@ function showPage(name, el){
   if(name === 'min-wage' && !_allClientMinWages.length) loadClientMinWages();
   if(name === 'insurance-rates' && !_allClientInsRates.length) loadClientInsRates();
   if(name === 'daily-insurance' && typeof renderClientDailyInsurance === 'function') renderClientDailyInsurance();
-  if(name === 'terms' && typeof renderClientTerms === 'function') renderClientTerms();
-  if(name === 'privacy' && typeof renderClientPrivacy === 'function') renderClientPrivacy();
 }
 
 // ══ 연도별 최저임금 (어드민 년도별 산정기준표 DB 연동) ══

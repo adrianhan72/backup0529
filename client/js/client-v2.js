@@ -384,19 +384,298 @@ function _v2ExpectedNextPayroll(emps){
   return sum;
 }
 
+const _V2_ATT_FULL_DEDUCT = new Set(['unauthorized', 'sick_unpaid', 'menstrual', 'family_care']);
+
+function _v2JsonArr(val){
+  try {
+    const v = typeof val === 'string' ? JSON.parse(val || '[]') : val;
+    return Array.isArray(v) ? v : [];
+  } catch(e){ return []; }
+}
+
+function _v2ExpandDates(from, to){
+  const out = [];
+  if(!from) return out;
+  const f = new Date(from + 'T00:00:00');
+  const t = to ? new Date(to + 'T00:00:00') : new Date(from + 'T00:00:00');
+  if(isNaN(f) || isNaN(t)) return out;
+  const cur = new Date(f);
+  while(cur <= t && out.length < 62){ out.push(fmtLocalDate(cur)); cur.setDate(cur.getDate() + 1); }
+  return out;
+}
+
+/** 해당 날짜의 정상 출근/퇴근 시각(분) — 근로계약 근무스케줄 기준 */
+function _v2SchedMinute(dateStr, scheduleJson, field, fallback){
+  const [fh, fm] = fallback.split(':').map(Number);
+  const fb = (fh || 0) * 60 + (fm || 0);
+  if(!dateStr || !scheduleJson) return fb;
+  let sched;
+  try { sched = typeof scheduleJson === 'string' ? JSON.parse(scheduleJson) : scheduleJson; } catch(e){ return fb; }
+  if(!Array.isArray(sched) || !sched.length) return fb;
+  const dayKey = ['sun','mon','tue','wed','thu','fri','sat'][new Date(dateStr + 'T00:00:00').getDay()];
+  const daySched = sched.find(s => s.day === dayKey && (s.active === true || s.active === 1 || s.active === 'true'));
+  if(!daySched) return fb;
+  const raw = (Array.isArray(daySched.shifts) && daySched.shifts.length) ? daySched.shifts[0] : daySched;
+  const timeStr = raw[field] || '';
+  if(!timeStr) return fb;
+  const [h, m] = timeStr.split(':').map(Number);
+  return (h || 0) * 60 + (m || 0);
+}
+
+/** 근태(무급 결근·지각·조퇴)에 따른 고정임금 차감액 */
+function _v2AttendanceDeduction(p, contract){
+  const hourly = Number(p.hourly_wage) || 0;
+  if(hourly <= 0) return 0;
+  const hpd = Number(contract?.work_hours_per_day) || 8;
+  let hours = 0;
+
+  // 무급 결근 (주말 제외 — 휴일수당에서 별도 처리)
+  _v2JsonArr(p.absent_data).concat(_v2JsonArr(p.retro_absent_data)).forEach(d => {
+    if(!_V2_ATT_FULL_DEDUCT.has(d.type || 'unauthorized')) return;
+    _v2ExpandDates(d.date, d.dateTo)
+      .filter(dt => { const dow = new Date(dt + 'T00:00:00').getDay(); return dow !== 0 && dow !== 6; })
+      .forEach(() => { hours += hpd; });
+  });
+
+  const sched = contract?.schedule_json || null;
+  _v2JsonArr(p.late_data).concat(_v2JsonArr(p.retro_late_data)).forEach(d => {
+    if(!d.time) return;
+    const [h, m] = d.time.split(':').map(Number);
+    const arrive = (h || 0) * 60 + (m || 0);
+    const start = _v2SchedMinute(d.date, sched, 'start', '09:00');
+    if(arrive > start) hours += (arrive - start) / 60;
+  });
+  _v2JsonArr(p.earlyleave_data).concat(_v2JsonArr(p.retro_earlyleave_data)).forEach(d => {
+    if(!d.time) return;
+    const [h, m] = d.time.split(':').map(Number);
+    const leave = (h || 0) * 60 + (m || 0);
+    const end = _v2SchedMinute(d.date, sched, 'end', '18:00');
+    if(leave < end) hours += (end - leave) / 60;
+  });
+
+  return Math.round(hours * hourly);
+}
+
+/** 직전월 임금내역(지급/공제 세부항목) 렌더 — 값이 없는 항목은 생략 */
+function _v2RenderPrevPayBreakdown(pays){
+  const box = document.getElementById('ps-prev-breakdown');
+  if(!box) return;
+
+  if(!pays.length){
+    box.innerHTML = `<div class="pb-empty">임금 내역이 없습니다</div>`;
+    return;
+  }
+
+  const sum = key => pays.reduce((s,p) => s + (Number(p[key])||0), 0);
+  const gross     = sum('gross_pay');
+  const deduction = sum('total_deduction');
+  const net       = sum('net_pay');
+
+  // 지급 항목
+  const extraWork = sum('overtime_pay') + sum('night_pay') + sum('holiday_pay');
+  const annualPay = sum('annual_leave_pay');
+  // 조정액이 음수면 환급액으로 표시
+  const insRefund = Math.abs(Math.min(0, sum('health_insurance_adjust') + sum('ltcare_adjust_yearend') + sum('health_insurance_adjust_yearend')));
+  const taxRefund = Math.abs(Math.min(0, sum('year_end_tax_adjust')));
+
+  // 근태차감 (무급 결근·지각·조퇴) — 명목 고정임금에서 차감되므로 지급/공제 양쪽에 반영해 합계를 맞춘다
+  const attDed = pays.reduce((s,p) => {
+    const c = allContracts
+      .filter(x => x.employee_id === p.employee_id && !x.is_draft)
+      .sort((a,b) => (b.contract_start||'').localeCompare(a.contract_start||''))[0];
+    return s + _v2AttendanceDeduction(p, c);
+  }, 0);
+
+  const grossNominal = gross + attDed;
+  const dedTotal     = deduction + attDed;
+  const fixedWage    = grossNominal - extraWork - annualPay - insRefund - taxRefund;
+
+  // 공제 항목 (산재보험은 근로자 부담이 없어 제외)
+  const health    = sum('health_insurance');
+  const ltcare    = sum('long_term_care');
+  const employ    = sum('employment_insurance');
+  const pension   = sum('national_pension');
+  const incomeTax = sum('income_tax');
+  const localTax  = sum('local_income_tax');
+  const otherDed  = dedTotal - (attDed + health + ltcare + employ + pension + incomeTax + localTax);
+
+  const won = v => Math.round(Number(v)||0).toLocaleString() + '원';
+  const rows = (label, val) => `<div class="pb-item"><span>${label}</span><span class="pb-amt">${won(val)}</span></div>`;
+  const head = (label, val, cls = '') => `<div class="pb-group-head ${cls}"><span>${label}</span><span class="pb-amt">${won(val)}</span></div>`;
+
+  let html = '';
+  html += head('지급총액', grossNominal);
+  if(fixedWage > 0) html += rows('고정임금', fixedWage);
+  if(extraWork > 0) html += rows('추가근로수당', extraWork);
+  if(insRefund > 0) html += rows('4대보험환급금', insRefund);
+  if(taxRefund > 0) html += rows('세금환급금', taxRefund);
+  if(annualPay > 0) html += rows('연차수당', annualPay);
+
+  html += head('공제총액', dedTotal, 'pb-ded');
+  if(attDed > 0)    html += rows('근태차감', attDed);
+  if(pension > 0)   html += rows('국민연금', pension);
+  if(health > 0)    html += rows('건강보험', health);
+  if(ltcare > 0)    html += rows('장기요양보험', ltcare);
+  if(employ > 0)    html += rows('고용보험', employ);
+  if(incomeTax > 0) html += rows('소득세', incomeTax);
+  if(localTax > 0)  html += rows('지방세', localTax);
+  if(otherDed > 0)  html += rows('기타 공제', otherDed);
+
+  html += `<div class="pb-total"><span>실지급액</span><span class="pb-amt">${won(net)}</span></div>`;
+  box.innerHTML = html;
+}
+
+/** 고용형태별 임금 비율 파이
+ *  - 근로계약을 맺은 인원은 계약의 고용형태(정규직/계약직/일용직)로 분류
+ *  - 정규직·계약직·일용직·대표자는 지급 데이터가 없어도 0으로 표시
+ *  - 등기임원·특수관계인은 근로계약 없이 급여가 지급된 경우에만 표시
+ *  - 입사대기(기타)는 급여 지급 대상이 아니므로 제외 */
+const _V2_TYPE_PIE_GROUPS = [
+  { key:'정규직',     cats:['정규직','정규직 수습'], color:'#3b82f6', always:true },
+  { key:'계약직',     cats:['계약직','계약직 수습'], color:'#f59e0b', always:true },
+  { key:'일용직',     cats:['일용직'],               color:'#10b981', always:true },
+  { key:'대표자',     cats:['대표자'],               color:'#6366f1', always:true },
+  { key:'등기임원',   cats:['등기임원'],             color:'#a855f7', always:false },
+  { key:'특수관계인', cats:['특수관계인'],           color:'#ec4899', always:false },
+];
+const _V2_EMP_TYPE_LABELS = ['정규직','정규직 수습','계약직','계약직 수습','일용직'];
+let _v2TypePie = null;
+
+/** 지급월 기준 근로계약의 고용형태 라벨 (근로계약이 없으면 null) */
+function _v2EmpContractTypeLabel(emp, y, m){
+  if(!emp) return null;
+  const list = allContracts.filter(c =>
+    c.employee_id === emp.id && !c.is_draft && _normContractStatus(c.status) !== CONTRACT_STATUS.VOIDED);
+  if(!list.length) return null;
+
+  const ymd = `${y}-${_v2Pad2(m)}-01`;
+  const covering = list.filter(c =>
+    (!c.contract_start || c.contract_start <= ymd) &&
+    (!c.contract_end   || c.contract_end   >= ymd));
+  const pick = (covering.length ? covering : list.slice())
+    .sort((a,b) => String(b.contract_start||'').localeCompare(String(a.contract_start||'')))[0];
+  return CONTRACT_TYPE_LABEL[_normContractType(pick.contract_type)] || null;
+}
+
+/** 파이 집계용 고용형태 분류 — 근로계약 우선, 계약이 없을 때만 대표자/등기임원/특수관계인 */
+function _v2EmpPayTypeCategory(emp, y, m){
+  if(!emp) return null;
+  const role = _clientEmpRole(emp);
+  if(role === '대표자') return '대표자';   // 대표자는 근로계약 여부와 무관하게 대표자로 표시
+
+  const cLabel = _v2EmpContractTypeLabel(emp, y, m);
+  if(_V2_EMP_TYPE_LABELS.includes(cLabel)) return cLabel;
+
+  if(role === '등기임원' || role === '특수관계인') return role;
+
+  const eLabel = CONTRACT_TYPE_LABEL[_normContractType(emp.employment_category)];
+  return _V2_EMP_TYPE_LABELS.includes(eLabel) ? eLabel : null;
+}
+
+function _v2RenderPayStatsTypePie(prevPays, pm){
+  const legendEl = document.getElementById('ps-type-legend');
+  const canvas   = document.getElementById('ps-type-pie');
+  if(!legendEl || !canvas) return;
+
+  const rows = _V2_TYPE_PIE_GROUPS.map(g => ({ key:g.key, color:g.color, always:g.always, gross:0, cnt:0 }));
+  const groupIdx = {};
+  _V2_TYPE_PIE_GROUPS.forEach((g, i) => g.cats.forEach(c => { groupIdx[c] = i; }));
+
+  prevPays.forEach(p => {
+    const emp = allEmployees.find(e => e.id === p.employee_id);
+    const i = groupIdx[_v2EmpPayTypeCategory(emp, Number(p.pay_year), Number(p.pay_month))];
+    if(i === undefined) return;
+    rows[i].gross += (Number(p.gross_pay)||0);
+    rows[i].cnt++;
+  });
+
+  const items = rows.filter(r => r.always || r.cnt > 0);
+  const total = items.reduce((s,r) => s + r.gross, 0);
+
+  if(_v2TypePie){ _v2TypePie.destroy(); _v2TypePie = null; }
+
+  if(!prevPays.length){
+    canvas.parentElement.style.display = 'none';
+    legendEl.innerHTML = `<div class="emp-empty"><i class="fas fa-inbox"></i><div>데이터 없음</div><p>${pm ? `${pm.y}년 ${pm.m}월` : '해당 월'} 급여가 아직 없습니다.</p></div>`;
+    return;
+  }
+
+  const pctOf = r => total > 0 ? (r.gross / total * 100) : 0;
+
+  legendEl.innerHTML = items.map(r => `
+    <div class="v2-pie-row${r.cnt ? '' : ' is-zero'}">
+      <span class="v2-pie-dot" style="background:${r.color};"></span>
+      <span class="v2-pie-name">${r.key}<em>${r.cnt}명</em></span>
+      <span class="v2-pie-pct">${pctOf(r).toFixed(1)}%</span>
+      <span class="v2-pie-amt">${fmt(r.gross)}원</span>
+    </div>`).join('');
+
+  if(total <= 0 || typeof Chart === 'undefined'){
+    canvas.parentElement.style.display = 'none';
+    return;
+  }
+  canvas.parentElement.style.display = '';
+
+  const pcts = items.map(pctOf);
+  _v2TypePie = new Chart(canvas, {
+    type: 'pie',
+    data: {
+      labels: items.map(r => r.key),
+      datasets: [{
+        data: items.map(r => r.gross),
+        backgroundColor: items.map(r => r.color),
+        borderColor: '#fff',
+        borderWidth: 2,
+        hoverOffset: 6,
+      }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      animation: { duration: 400 },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: c => {
+              const r = items[c.dataIndex];
+              return `${r.key} ${r.cnt}명 · ${fmt(r.gross)}원 (${pcts[c.dataIndex].toFixed(1)}%)`;
+            },
+          },
+        },
+      },
+    },
+    plugins: [{
+      id: 'v2PiePct',
+      afterDatasetsDraw(chart){
+        const { ctx } = chart;
+        ctx.save();
+        ctx.font = '700 13px system-ui,-apple-system,"Malgun Gothic",sans-serif';
+        ctx.fillStyle = '#fff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        chart.getDatasetMeta(0).data.forEach((arc, i) => {
+          if((pcts[i] || 0) < 6) return;   // 작은 조각은 라벨이 겹치므로 생략
+          const p = arc.tooltipPosition();
+          ctx.fillText(`${Math.round(pcts[i])}%`, p.x, p.y);
+        });
+        ctx.restore();
+      },
+    }],
+  });
+}
+
+
 function renderClientPayStats(){
-  const grid = document.getElementById('ps-type-grid');
-  if(!grid || !currentCompany) return;
+  if(!currentCompany) return;
 
   const pm = _v2PrevMonth(_v2ViewDate);
   const prevPays = allPayrolls.filter(p => Number(p.pay_year) === pm.y && Number(p.pay_month) === pm.m);
-  const prevGross = prevPays.reduce((s,p) => s + (Number(p.gross_pay)||0), 0);
 
   const setT = (id, txt) => { const el = document.getElementById(id); if(el) el.textContent = txt; };
 
-  // ── 직전월 총액 ──
-  setT('ps-prev-gross', fmt(prevGross) + '원');
-  setT('ps-prev-meta', `${pm.y}년 ${pm.m}월 · 지급인원 ${prevPays.length}명 · 탭하면 항목별 비율 보기`);
+  // ── 직전월 임금내역 ──
+  setT('ps-prev-meta', `${pm.y}년 ${pm.m}월 · ${prevPays.length}명`);
+  _v2RenderPrevPayBreakdown(prevPays);
 
   // ── 다음 급여일 예상 총액 ──
   const nextDate = _v2NextPayday(_v2ViewDate);
@@ -406,28 +685,9 @@ function renderClientPayStats(){
     ? `${nextDate.replace(/-/g,'.')} 지급 예정 · 유효 계약 기준 추정`
     : '급여 지급일이 설정되지 않았습니다');
 
-  // ── 고용형태별 통계 (직전월) ──
+  // ── 고용형태별 통계 (직전월, 파이) ──
   setT('ps-type-period', `${pm.y}년 ${pm.m}월 기준`);
-  const typeMap = {};
-  prevPays.forEach(p => {
-    const emp = allEmployees.find(e => e.id === p.employee_id);
-    const cat = _clientEmpCategory(emp);
-    if(!typeMap[cat]) typeMap[cat] = { gross: 0, cnt: 0 };
-    typeMap[cat].gross += (Number(p.gross_pay)||0);
-    typeMap[cat].cnt++;
-  });
-  const typeItems = _V2_CAT_ORDER.filter(c => typeMap[c]);
-  grid.innerHTML = typeItems.length
-    ? typeItems.map(cat => {
-        const cfg = CAT_CONFIG[cat] || {};
-        const t = typeMap[cat];
-        return `<div class="v2-type-card" style="background:${cfg.bg || '#f1f5f9'};">
-          <div class="vt-name" style="color:rgba(255,255,255,.92);">${cat.replace(' 수습','<br>수습')}</div>
-          <div class="vt-amount" style="color:#fff;">${fmt(t.gross)}원</div>
-          <div class="vt-count" style="color:rgba(255,255,255,.8);">${t.cnt}명</div>
-        </div>`;
-      }).join('')
-    : `<div class="emp-empty" style="grid-column:1/-1;"><i class="fas fa-inbox"></i><div>데이터 없음</div><p>${pm.y}년 ${pm.m}월 급여가 아직 없습니다.</p></div>`;
+  _v2RenderPayStatsTypePie(prevPays, pm);
 
   // ── 12개월 추이 (항목 선택 그래프) ──
   const months = [];
@@ -555,63 +815,301 @@ function renderClientDailyInsurance(){
 // ══════════════════════════════════════════════════════════════
 // ⑤ 서비스 이용약관 · 개인정보처리방침 (기본 표준 문안)
 // ══════════════════════════════════════════════════════════════
-function renderClientTerms(){
-  const box = document.getElementById('terms-content');
-  if(!box) return;
-  box.innerHTML = `
+/** 법률 문서 계층 들여쓰기용 클래스 부여 (①②③ → 1단계, a./b. → 2단계) */
+function _legalFormat(html){
+  return html
+    .replace(/<p>(①|②|③|④|⑤|⑥|⑦|⑧|⑨|⑩)/g, '<p class="legal-lv1">$1')
+    .replace(/<p>(a|b|c|d|e)\. /g, '<p class="legal-lv2">$1. ');
+}
+
+/** 서비스 이용약관 본문 HTML (공용) */
+function _legalTermsHTML(){
+  return `
     <div class="legal-card">
-      <div class="legal-title">서비스 이용약관</div>
-      <div class="legal-date">제1조 목적<br>본 약관은 대화인사노무파트너스(이하 "회사")가 제공하는 인사톡 노무톡 급여·인사 관리 서비스(이하 "서비스")의 이용 조건 및 절차를 규정함을 목적으로 합니다.</div>
-      <h3>제1조 (약관의 효력)</h3>
-      <p>1. 본 약관은 서비스를 이용하는 고객사(이하 "이용자")에게 그 효력이 발생합니다.</p>
-      <p>2. 회사는 관련 법령을 위배하지 않는 범위에서 본 약관을 개정할 수 있으며, 개정 시 적용일자와 사유를 서비스 내에 공지합니다.</p>
-      <h3>제2조 (서비스의 제공)</h3>
-      <p>1. 회사는 이용자에게 급여·근로계약·근태·연차 관리 등 노무 관련 기능을 제공합니다.</p>
-      <p>2. 서비스는 연중무휴 제공을 원칙으로 하되, 시스템 점검·장애 등 부득이한 사유로 일시 중단될 수 있습니다.</p>
-      <h3>제3조 (이용자의 의무)</h3>
-      <p>1. 이용자는 접근코드 등 계정 정보를 제3자에게 공유하지 않아야 합니다.</p>
-      <p>2. 이용자는 서비스에 허위 정보를 입력하거나 법령을 위반하는 목적으로 서비스를 이용할 수 없습니다.</p>
-      <h3>제4조 (책임의 한계)</h3>
-      <p>1. 회사는 서비스 내에서 제공하는 계산 결과가 참고용임을 안내하며, 법적 효력이 있는 확정 수치는 전문가(노무사)의 최종 검토를 거쳐야 합니다.</p>
-      <p>2. 이용자의 부주의로 인한 정보 유출 등에 대해 회사는 책임을 지지 않습니다.</p>
-      <h3>제5조 (기타)</h3>
-      <p>본 약관에 명시되지 않은 사항은 관련 법령 및 상관례에 따릅니다.</p>
-      <div class="legal-date">시행일: 2026년 10월 29일</div>
+      <div class="legal-title">쇼핑몰 이용약관</div>
+      <div class="legal-date">대화인사노무파트너스</div>
+
+      <h3>제1조 (목적)</h3>
+      <p>이 약관은 대화인사노무파트너스(전자상거래 사업자)이 운영하는 인터넷 쇼핑몰(이하 “몰”이라 한다)에서 제공하는 인터넷 관련 서비스(이하 “서비스”라 한다)를 이용함에 있어 몰과 이용자의 권리·의무 및 책임사항을 규정함을 목적으로 합니다.</p>
+
+      <h3>제2조 (정의)</h3>
+      <p>① “몰”이란 대화인사노무파트너스가 재화 또는 용역(이하 “재화 등”)을 이용자에게 제공하기 위하여 컴퓨터 등 정보통신설비를 이용하여 재화 등을 거래할 수 있도록 설정한 가상의 영업장을 말하며, 아울러 사이버몰을 운영하는 사업자의 의미로도 사용합니다.</p>
+      <p>② “이용자”란 “몰”에 접속하여 이 약관에 따라 “몰”이 제공하는 서비스를 받는 회원 및 비회원을 말합니다.</p>
+      <p>③ “회원”이란 “몰”에 회원등록을 한 자로서, 계속적으로 “몰”이 제공하는 서비스를 이용할 수 있는 자를 말합니다.</p>
+      <p>④ “비회원”이란 회원에 가입하지 않고 “몰”이 제공하는 서비스를 이용하는 자를 말합니다.</p>
+
+      <h3>제3조 (약관 등의 명시와 설명 및 개정)</h3>
+      <p>① “몰”은 이 약관의 내용과 상호 및 대표자 성명, 영업소 소재지 주소(소비자의 불만을 처리할 수 있는 곳의 주소를 포함), 전화번호·모사전송번호·전자우편주소, 사업자등록번호, 통신판매업 신고번호, 개인정보관리책임자 등을 이용자가 쉽게 알 수 있도록 사이버몰의 초기 서비스화면(전면)에 게시합니다.</p>
+      <p>② “몰”은 「전자상거래 등에서의 소비자보호에 관한 법률」, 「약관의 규제에 관한 법률」 등 관련 법을 위배하지 않는 범위에서 이 약관을 개정할 수 있습니다.</p>
+      <p>③ “몰”이 약관을 개정할 경우에는 적용일자 및 개정사유를 명시하여 현행약관과 함께 몰의 초기화면에 그 적용일자 7일 이전부터 적용일자 전일까지 공지합니다.</p>
+      <p>④ 이 약관에서 정하지 아니한 사항과 이 약관의 해석에 관하여는 전자상거래 등에서의 소비자보호에 관한 법률, 약관의 규제에 관한 법률, 공정거래위원회가 정하는 전자상거래 등에서의 소비자 보호지침 및 관계법령 또는 상관례에 따릅니다.</p>
+
+      <h3>제4조 (서비스의 제공 및 변경)</h3>
+      <p>① “몰”은 다음과 같은 업무를 수행합니다.</p>
+      <ol>
+        <li>재화 또는 용역에 대한 정보 제공 및 구매계약의 체결</li>
+        <li>구매계약이 체결된 재화 또는 용역의 배송</li>
+        <li>기타 “몰”이 정하는 업무</li>
+      </ol>
+      <p>② “몰”은 재화 또는 용역의 품절 또는 기술적 사양의 변경 등의 경우에는 장차 체결되는 계약에 의해 제공할 재화 또는 용역의 내용을 변경할 수 있습니다.</p>
+
+      <h3>제5조 (서비스의 중단)</h3>
+      <p>① “몰”은 컴퓨터 등 정보통신설비의 보수점검·교체 및 고장, 통신의 두절 등의 사유가 발생한 경우에는 서비스의 제공을 일시적으로 중단할 수 있습니다.</p>
+      <p>② “몰”은 제1항의 사유로 서비스의 제공이 일시적으로 중단됨으로 인하여 이용자 또는 제3자가 입은 손해에 대하여 배상합니다. 단, “몰”이 고의 또는 과실이 없음을 입증하는 경우에는 그러하지 아니합니다.</p>
+
+      <h3>제6조 (회원가입)</h3>
+      <p>① 이용자는 “몰”이 정한 가입 양식에 따라 회원정보를 기입한 후 이 약관에 동의한다는 의사표시를 함으로서 회원가입을 신청합니다.</p>
+      <p>② “몰”은 제1항과 같이 회원으로 가입할 것을 신청한 이용자 중 다음 각 호에 해당하지 않는 한 회원으로 등록합니다.</p>
+      <ol>
+        <li>가입신청자가 이 약관 제7조 제3항에 의하여 이전에 회원자격을 상실한 적이 있는 경우</li>
+        <li>등록 내용에 허위, 기재누락, 오기가 있는 경우</li>
+        <li>기타 회원으로 등록하는 것이 “몰”의 기술상 현저히 지장이 있다고 판단되는 경우</li>
+      </ol>
+
+      <h3>제7조 (회원 탈퇴 및 자격 상실 등)</h3>
+      <p>① 회원은 “몰”에 언제든지 탈퇴를 요청할 수 있으며 “몰”은 즉시 회원탈퇴를 처리합니다.</p>
+      <p>② 회원이 다음 각 호의 사유에 해당하는 경우, “몰”은 회원자격을 제한 및 정지시킬 수 있습니다.</p>
+      <ol>
+        <li>가입 신청 시에 허위 내용을 등록한 경우</li>
+        <li>“몰”을 이용하여 구입한 재화 등의 대금, 기타 “몰” 이용에 관련하여 회원이 부담하는 채무를 기일에 지급하지 않는 경우</li>
+        <li>다른 사람의 “몰” 이용을 방해하거나 그 정보를 도용하는 등 전자상거래 질서를 위협하는 경우</li>
+        <li>“몰”을 이용하여 법령 또는 이 약관이 금지하거나 공서양속에 반하는 행위를 하는 경우</li>
+      </ol>
+
+      <h3>제8조 (회원에 대한 통지)</h3>
+      <p>① “몰”이 회원에 대한 통지를 하는 경우, 회원이 “몰”과 미리 약정하여 지정한 전자우편 주소로 할 수 있습니다.</p>
+      <p>② “몰”은 불특정다수 회원에 대한 통지의 경우 1주일 이상 “몰” 게시판에 게시함으로서 개별 통지에 갈음할 수 있습니다.</p>
+
+      <h3>제9조 (구매신청 및 개인정보 제공 동의 등)</h3>
+      <p>① “몰” 이용자는 “몰” 상에서 다음 또는 이와 유사한 방법에 의하여 구매를 신청하며, “몰”은 이용자가 구매신청을 함에 있어서 다음의 각 내용을 알기 쉽게 제공하여야 합니다.</p>
+      <ol>
+        <li>재화 등의 검색 및 선택</li>
+        <li>받는 사람의 성명, 주소, 전화번호, 전자우편주소(또는 이동전화번호) 등의 입력</li>
+        <li>약관내용, 청약철회권이 제한되는 서비스, 배송료·설치비 등의 비용부담과 관련한 내용에 대한 확인</li>
+        <li>이 약관에 동의하고 위 3.호의 사항을 확인하거나 거부하는 표시</li>
+        <li>재화 등의 구매신청 및 이에 관한 확인 또는 “몰”의 확인에 대한 동의</li>
+        <li>결제방법의 선택</li>
+      </ol>
+
+      <h3>제10조 (계약의 성립)</h3>
+      <p>① “몰”은 제9조와 같은 구매신청에 대하여 다음 각 호에 해당하면 승낙하지 않을 수 있습니다.</p>
+      <ol>
+        <li>신청 내용에 허위, 기재누락, 오기가 있는 경우</li>
+        <li>미성년자가 담배, 주류 등 청소년보호법에서 금지하는 재화 및 용역을 구매하는 경우</li>
+        <li>기타 구매신청에 승낙하는 것이 “몰” 기술상 현저히 지장이 있다고 판단하는 경우</li>
+      </ol>
+      <p>② “몰”의 승낙이 제12조 제1항의 수신확인통지형태로 이용자에게 도달한 시점에 계약이 성립한 것으로 봅니다.</p>
+
+      <h3>제11조 (지급방법)</h3>
+      <p>“몰”에서 구매한 재화 또는 용역에 대한 대금지급방법은 다음 각 호의 방법 중 가용한 방법으로 할 수 있습니다.</p>
+      <ol>
+        <li>폰뱅킹, 인터넷뱅킹, 메일 뱅킹 등의 각종 계좌이체</li>
+        <li>선불카드, 직불카드, 신용카드 등의 각종 카드 결제</li>
+        <li>온라인무통장입금</li>
+        <li>전자화폐에 의한 결제</li>
+        <li>수령 시 대금지급</li>
+        <li>마일리지 등 “몰”이 지급한 포인트에 의한 결제</li>
+        <li>“몰”과 계약을 맺었거나 “몰”이 인정한 상품권에 의한 결제</li>
+        <li>기타 전자적 지급 방법에 의한 대금 지급 등</li>
+      </ol>
+
+      <h3>제12조 (수신확인통지·구매신청 변경 및 취소)</h3>
+      <p>① “몰”은 이용자의 구매신청이 있는 경우 이용자에게 수신확인통지를 합니다.</p>
+      <p>② 수신확인통지를 받은 이용자는 의사표시의 불일치 등이 있는 경우에는 수신확인통지를 받은 후 즉시 구매신청 변경 및 취소를 요청할 수 있고 “몰”은 배송 전에 이용자의 요청이 있는 경우에는 지체 없이 그 요청에 따라 처리하여야 합니다.</p>
+
+      <h3>제13조 (재화 등의 공급)</h3>
+      <p>① “몰”은 이용자와 재화 등의 공급시기에 관하여 별도의 약정이 없는 이상, 이용자가 청약을 한 날부터 7일 이내에 재화 등을 배송할 수 있도록 주문제작, 포장 등 기타의 필요한 조치를 취합니다.</p>
+      <p>② “몰”은 이용자가 구매한 재화에 대해 배송수단, 수단별 배송비용 부담자, 수단별 배송기간 등을 명시합니다.</p>
+
+      <h3>제14조 (환급)</h3>
+      <p>“몰”은 이용자가 구매신청한 재화 등이 품절 등의 사유로 인도 또는 제공을 할 수 없을 때에는 지체 없이 그 사유를 이용자에게 통지하고 사전에 재화 등의 대금을 받은 경우에는 대금을 받은 날부터 3영업일 이내에 환급하거나 환급에 필요한 조치를 취합니다.</p>
+
+      <h3>제15조 (청약철회 등)</h3>
+      <p>① “몰”과 재화 등의 구매에 관한 계약을 체결한 이용자는 「전자상거래 등에서의 소비자보호에 관한 법률」 제13조 제2항에 따른 계약내용에 관한 서면을 받은 날(그 서면을 받은 때보다 재화 등의 공급이 늦게 이루어진 경우에는 재화 등을 공급받거나 재화 등의 공급이 시작된 날을 말합니다)부터 7일 이내에는 청약의 철회를 할 수 있습니다.</p>
+      <p>② 이용자는 재화 등을 배송 받은 경우 다음 각 호의 1에 해당하는 경우에는 반품 및 교환을 할 수 없습니다.</p>
+      <ol>
+        <li>이용자에게 책임 있는 사유로 재화 등이 멸실 또는 훼손된 경우</li>
+        <li>이용자의 사용 또는 일부 소비에 의하여 재화 등의 가치가 현저히 감소한 경우</li>
+        <li>시간의 경과에 의하여 재판매가 곤란할 정도로 재화 등의 가치가 현저히 감소한 경우</li>
+        <li>같은 성능을 지닌 재화 등으로 복제가 가능한 경우 그 원본인 재화 등의 포장을 훼손한 경우</li>
+      </ol>
+      <p>③ 제2항 제2호 내지 제4호의 경우에 “몰”이 사전에 청약철회 등이 제한되는 사실을 소비자가 쉽게 알 수 있는 곳에 명기하거나 시용상품을 제공하는 등의 조치를 하지 않았다면 이용자의 청약철회 등이 제한되지 않습니다.</p>
+
+      <h3>제16조 (청약철회 등의 효과)</h3>
+      <p>① “몰”은 이용자로부터 재화 등을 반환 받은 경우 3영업일 이내에 이미 지급받은 재화 등의 대금을 환급합니다.</p>
+      <p>② “몰”은 위 대금을 환급함에 있어서 이용자가 신용카드 또는 전자화폐 등의 결제수단으로 재화 등의 대금을 지급한 때에는 지체 없이 당해 결제수단을 제공한 사업자로 하여금 재화 등의 대금의 청구를 정지 또는 취소하도록 요청합니다.</p>
+
+      <h3>제17조 (개인정보보호)</h3>
+      <p>“몰”은 이용자의 개인정보 수집 시 서비스 제공을 위하여 필요한 범위에서 최소한의 개인정보를 수집합니다. (자세한 내용은 별도의 「개인정보 처리방침」을 따릅니다.)</p>
+
+      <h3>제18조 (몰의 의무)</h3>
+      <p>① “몰”은 법령과 이 약관이 금지하거나 공서양속에 반하는 행위를 하지 않으며 이 약관이 정하는 바에 따라 지속적이고, 안정적으로 재화·용역을 제공하는데 최선을 다하여야 합니다.</p>
+      <p>② “몰”은 이용자가 안전하게 인터넷 서비스를 이용할 수 있도록 이용자의 개인정보(신용정보 포함)보호를 위한 보안 시스템을 갖추어야 합니다.</p>
+
+      <h3>제19조 (회원의 ID 및 비밀번호에 대한 의무)</h3>
+      <p>① 제17조의 경우를 제외한 ID와 비밀번호에 관한 관리책임은 회원에게 있습니다.</p>
+      <p>② 회원은 자신의 ID 및 비밀번호를 제3자에게 이용하게 해서는 안 됩니다.</p>
+      <p>③ 회원이 자신의 ID 및 비밀번호를 도난당하거나 제3자가 사용하고 있음을 인지한 경우에는 바로 “몰”에 통보하고 “몰”의 안내가 있는 경우에는 그에 따라야 합니다.</p>
+
+      <h3>제20조 (이용자의 의무)</h3>
+      <p>이용자는 다음 행위를 하여서는 안 됩니다.</p>
+      <ol>
+        <li>신청 또는 변경 시 허위 내용의 등록</li>
+        <li>타인의 정보 도용</li>
+        <li>“몰”에 게시된 정보의 변경</li>
+        <li>“몰”이 정한 정보 이외의 정보(컴퓨터 프로그램 등) 등의 송신 또는 게시</li>
+        <li>“몰” 기타 제3자의 저작권 등 지적재산권에 대한 침해</li>
+        <li>“몰” 기타 제3자의 명예를 손상시키거나 업무를 방해하는 행위</li>
+        <li>외설 또는 폭력적인 메시지, 화상, 음성, 기타 공서양속에 반하는 정보를 몰에 공개 또는 게시하는 행위</li>
+      </ol>
+
+      <h3>제21조 (저작권의 귀속 및 이용제한)</h3>
+      <p>① “몰”이 작성한 저작물에 대한 저작권 기타 지적재산권은 “몰”에 귀속합니다.</p>
+      <p>② 이용자는 “몰”을 이용함으로써 얻은 정보 중 “몰”에게 지적재산권이 귀속된 정보를 “몰”의 사전 승낙 없이 복제, 송신, 출판, 배포, 방송 기타 방법에 의하여 영리목적으로 이용하거나 제3자에게 이용하게 하여서는 안 됩니다.</p>
+
+      <h3>제22조 (분쟁해결)</h3>
+      <p>① “몰”은 이용자가 제기하는 정당한 의견이나 불만을 반영하고 그 피해를 보상처리하기 위하여 피해보상처리기구를 설치·운영합니다.</p>
+      <p>② “몰”은 이용자로부터 제출되는 불만사항 및 의견은 우선적으로 그 사항을 처리합니다.</p>
+      <p>③ “몰”과 이용자 간에 발생한 전자상거래 분쟁과 관련하여 이용자의 피해구제신청이 있는 경우에는 공정거래위원회 또는 시·도지사가 의뢰하는 분쟁조정기관의 조정에 따를 수 있습니다.</p>
+
+      <h3>제23조 (재판권 및 준거법)</h3>
+      <p>① “몰”과 이용자 간에 발생한 전자상거래 분쟁에 관한 소송은 제소 당시의 이용자의 주소에 의하고, 주소가 없는 경우에는 거소를 관할하는 지방법원의 전속관할로 합니다.</p>
+      <p>② “몰”과 이용자 간에 제기된 전자상거래 소송에는 한국법을 적용합니다.</p>
+
+      <h3>부칙</h3>
+      <p>이 약관은 2026년 12월 01일부터 시행합니다.</p>
+      <div class="legal-date">시행일: 2026년 12월 1일</div>
     </div>`;
 }
 
-function renderClientPrivacy(){
-  const box = document.getElementById('privacy-content');
-  if(!box) return;
-  box.innerHTML = `
+/** 개인정보처리방침 본문 HTML (공용) */function _legalPrivacyHTML(){
+  return `
     <div class="legal-card">
       <div class="legal-title">개인정보처리방침</div>
-      <div class="legal-date">대화인사노무파트너스(이하 "회사")는 개인정보보호법 등 관련 법령을 준수하며, 이용자의 개인정보를 소중히 보호합니다.</div>
-      <h3>1. 수집하는 개인정보 항목</h3>
-      <ul>
-        <li>회사 정보: 회사명, 사업자등록번호, 대표자명, 주소, 연락처</li>
-        <li>근로자 정보: 성명, 연락처, 입사일, 퇴사일, 부서·직급 등 인사 정보</li>
-        <li>급여 정보: 급여 산정 및 지급 내역</li>
-      </ul>
-      <h3>2. 개인정보의 수집·이용 목적</h3>
-      <ul>
-        <li>급여·근로계약·근태·연차 등 노무 관리 서비스 제공</li>
-        <li>법령상 의무 이행(4대보험, 원천징수 등)</li>
-        <li>서비스 개선 및 고객 문의 대응</li>
-      </ul>
-      <h3>3. 개인정보의 보유·이용 기간</h3>
-      <p>개인정보는 수집 목적 달성 후 또는 관련 법령상 보존 기간 종료 후 지체 없이 파기합니다.</p>
-      <h3>4. 개인정보의 제3자 제공</h3>
-      <p>회사는 이용자의 동의 없이 개인정보를 제3자에게 제공하지 않습니다. 다만, 법령에 의한 경우는 예외로 합니다.</p>
-      <h3>5. 개인정보의 파기</h3>
-      <p>보유 기간 경과 또는 처리 목적 달성 시 개인정보를 복구·재생할 수 없는 방법으로 안전하게 파기합니다.</p>
-      <h3>6. 이용자의 권리</h3>
-      <p>이용자는 자신의 개인정보 열람·정정·삭제를 요청할 수 있으며, 담당 노무사에게 문의하시면 신속히 처리해 드립니다.</p>
-      <h3>7. 개인정보 보호책임자</h3>
-      <p>개인정보 관련 문의는 담당 노무사 또는 회사 대표 연락처로 문의하시기 바랍니다.</p>
-      <div class="legal-date">시행일: 2026년 10월 29일</div>
+      <div class="legal-date">대화인사노무파트너스(이하 ‘회사’)는 개인정보 보호법 등 관련 법령에 따라 이용자의 개인정보를 보호하고, 이와 관련한 고충을 신속하고 원활하게 처리할 수 있도록 다음과 같이 개인정보 처리방침을 수립·공개합니다.</div>
+
+      <h3>1. 개인정보의 처리 목적</h3>
+      <p>회사는 다음의 목적을 위하여 개인정보를 처리합니다.</p>
+      <p>처리한 개인정보는 다음의 목적 이외의 용도로는 이용되지 않으며, 이용 목적이 변경되는 경우에는 별도의 동의를 받는 등 필요한 조치를 이행할 예정입니다.</p>
+      <ol>
+        <li>회원 가입 및 관리</li>
+        <li>서비스 제공 및 계약 이행</li>
+        <li>고객 문의 응대 및 민원 처리</li>
+        <li>(선택) 마케팅 및 광고 활용 (동의 시에만)</li>
+      </ol>
+
+      <h3>2. 처리하는 개인정보 항목</h3>
+      <p>회사는 다음의 개인정보 항목을 처리하고 있습니다.</p>
+      <table>
+        <thead><tr><th>구분</th><th>수집항목</th><th>수집방법</th></tr></thead>
+        <tbody>
+          <tr><td>필수</td><td>이름, 휴대전화번호, 이메일, 아이디, 비밀번호</td><td>회원가입, 서비스 이용</td></tr>
+          <tr><td>선택</td><td>생년월일, 성별, 주소</td><td>회원가입 시 선택 입력</td></tr>
+          <tr><td>자동 수집</td><td>IP주소, 쿠키, 서비스 이용기록, 접속 로그</td><td>서비스 이용 과정에서 자동 생성</td></tr>
+        </tbody>
+      </table>
+
+      <h3>3. 개인정보의 처리 및 보유 기간</h3>
+      <p>① 회사는 법령에 따른 개인정보 보유·이용 기간 또는 정보주체로부터 개인정보를 수집 시에 동의 받은 개인정보 보유·이용 기간 내에서 개인정보를 처리·보유합니다.</p>
+      <p>② 각각의 개인정보 처리 및 보유 기간은 다음과 같습니다.</p>
+      <table>
+        <thead><tr><th>구분</th><th>수집항목</th><th>기타</th></tr></thead>
+        <tbody>
+          <tr><td>회원가입 및 관리</td><td>회원 탈퇴 시까지</td><td>관계 법령 위반에 따른 수사·조사 등이 진행 중인 경우에는 해당 수사·조사 종료 시까지</td></tr>
+          <tr><td>서비스 제공</td><td>서비스 공급 완료 및 요금 결제·정산 완료 시까지</td><td></td></tr>
+          <tr><td>관련 법령에 따른 보존</td><td>계약 또는 청약철회 등에 관한 기록 : 5년</td><td>전자상거래 등에서의 소비자보호에 관한 법률 등 관련 법령에서 정한 기간</td></tr>
+          <tr><td></td><td>대금결제 및 재화 등의 공급에 관한 기록 : 5년</td><td></td></tr>
+          <tr><td></td><td>소비자의 불만 또는 분쟁처리에 관한 기록 : 3년</td><td></td></tr>
+        </tbody>
+      </table>
+
+      <h3>4. 개인정보의 제3자 제공 (해당 시에만)</h3>
+      <p>회사는 정보주체의 개인정보를 제1조에서 명시한 범위 내에서만 처리하며, 정보주체의 동의, 법률의 특별한 규정 등 개인정보 보호법 제17조 및 제18조에 해당하는 경우에만 개인정보를 제3자에게 제공합니다.</p>
+      <table>
+        <thead><tr><th>구분</th><th>수집항목</th><th>기타</th></tr></thead>
+        <tbody>
+          <tr><td>제공받는 자</td><td>카카오</td><td></td></tr>
+          <tr><td>제공 목적</td><td>문자메시지 발송</td><td></td></tr>
+          <tr><td>제공 항목</td><td>이름, 연락처, 생년월일</td><td></td></tr>
+          <tr><td>보유 및 이용 기간</td><td>3년</td><td>근로기준법</td></tr>
+        </tbody>
+      </table>
+
+      <h3>5. 개인정보 처리의 위탁 (해당 시에만)</h3>
+      <p>회사는 원활한 개인정보 업무처리를 위하여 다음과 같이 개인정보 처리업무를 위탁하고 있습니다.</p>
+      <table>
+        <thead><tr><th>구분</th><th>위탁업무내용</th><th>위탁기간</th></tr></thead>
+        <tbody>
+          <tr><td>**호스팅</td><td>서버 운영 및 관리</td><td>위탁 계약 종료 시까지</td></tr>
+          <tr><td>**결재</td><td>결제 대행</td><td>위탁 계약 종료 시까지</td></tr>
+        </tbody>
+      </table>
+
+      <h3>6. 개인정보의 파기 절차 및 방법</h3>
+      <p>① 회사는 개인정보 보유 기간의 경과, 처리 목적 달성 등 개인정보가 불필요하게 되었을 때에는 지체 없이 해당 개인정보를 파기합니다.</p>
+      <p>② 파기 절차 및 방법은 다음과 같습니다.</p>
+      <p>a. 파기 절차 : 불필요한 개인정보 및 개인정보파일은 개인정보 보호책임자의 책임 하에 내부 방침에 따라 파기합니다.</p>
+      <p>b. 파기 방법 : 전자적 파일 형태는 기록을 재생할 수 없는 기술적 방법을 사용하며, 종이에 출력된 개인정보는 분쇄기로 분쇄하거나 소각합니다.</p>
+
+      <h3>7. 정보주체와 법정대리인의 권리·의무 및 행사방법</h3>
+      <p>정보주체는 회사에 대해 언제든지 다음 각 호의 개인정보 보호 관련 권리를 행사할 수 있습니다.</p>
+      <ol>
+        <li>개인정보 열람 요구</li>
+        <li>오류 등이 있을 경우 정정 요구</li>
+        <li>삭제 요구</li>
+        <li>처리정지 요구</li>
+      </ol>
+      <p>권리 행사는 서면, 전자우편, 모사전송(FAX) 등을 통하여 하실 수 있으며, 회사는 이에 대해 지체 없이 조치하겠습니다.</p>
+
+      <h3>8. 개인정보 보호책임자</h3>
+      <p>회사는 개인정보 처리에 관한 업무를 총괄해서 책임지고, 개인정보 처리와 관련한 정보주체의 불만 처리 및 피해 구제 등을 위하여 아래와 같이 개인정보 보호책임자를 지정하고 있습니다.</p>
+      <table>
+        <thead><tr><th>구분</th><th>성명</th><th>직책</th><th>연락처</th></tr></thead>
+        <tbody>
+          <tr><td>개인정보보호책임자</td><td>김 영진</td><td>대표이사</td><td>02-3487-8841, labourlawyer@naver.com</td></tr>
+        </tbody>
+      </table>
+
+      <h3>9. 개인정보의 안전성 확보조치</h3>
+      <p>회사는 개인정보의 안전성 확보를 위해 다음과 같은 조치를 취하고 있습니다.</p>
+      <ol>
+        <li>관리적 조치 : 내부관리계획 수립·시행, 정기적 직원 교육</li>
+        <li>기술적 조치 : 개인정보처리시스템 등의 접근권한 관리, 접근통제시스템 설치, 고유식별정보 등의 암호화, 보안프로그램 설치</li>
+        <li>물리적 조치 : 전산실, 자료보관실 등의 접근통제</li>
+      </ol>
+
+      <h3>10. 개인정보 처리방침의 변경</h3>
+      <p>이 개인정보 처리방침은 2026년 12월 01일부터 적용되며, 법령 및 방침에 따른 변경 내용의 추가, 삭제 및 정정이 있는 경우에는 변경사항의 시행 7일 전부터 공지사항을 통하여 고지할 것입니다.</p>
     </div>`;
 }
+
+/** 법률 문서 레이어 팝업 열기 ('terms' | 'privacy') */
+function openLegalModal(type, e){
+  if(e) e.preventDefault();
+  const isTerms = type === 'terms';
+  const title = document.getElementById('legal-overlay-title');
+  if(title) title.innerHTML = isTerms
+    ? '<i class="fas fa-file-contract"></i>서비스 이용약관'
+    : '<i class="fas fa-shield-alt"></i>개인정보처리방침';
+  const box = document.getElementById('legal-overlay-content');
+  if(box){
+    box.innerHTML = _legalFormat(isTerms ? _legalTermsHTML() : _legalPrivacyHTML());
+    box.scrollTop = 0;
+  }
+  document.getElementById('legal-overlay')?.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+/** 법률 문서 레이어 팝업 닫기 */
+function closeLegalModal(){
+  document.getElementById('legal-overlay')?.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// ESC 키로 닫기
+document.addEventListener('keydown', ev => {
+  if(ev.key === 'Escape') closeLegalModal();
+});
 
 // ══════════════════════════════════════════════════════════════
 // ⑥ 초기화
@@ -626,6 +1124,6 @@ function initClientV2(){
   const clr = document.getElementById('emp-search-clear');
   if(clr) clr.style.visibility = 'hidden';
 
-  showPage('employees', document.getElementById('nav-employees'));
+  showPage('paystats', document.getElementById('nav-paystats'));
   if(typeof _updateWageLedgerButton === 'function') _updateWageLedgerButton();
 }

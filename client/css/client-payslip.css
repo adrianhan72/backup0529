@@ -12,7 +12,7 @@
 
     /* ─ Section header ─ */
     .sec-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
-    .sec-title{font-size:16px;font-weight:800;color:#1a1a2e}
+    .sec-title{font-size:18px;font-weight:800;color:#1a1a2e}
     .sec-badge{font-size:11px;background:#ede9fe;color:#4c1d95;padding:4px 10px;border-radius:20px;font-weight:600}
 
     /* ─ Cards ─ */
@@ -37,7 +37,7 @@
     .month-nav{display:flex;align-items:center;justify-content:space-between;background:#fff;padding:4px 8px;border-radius:12px;box-shadow:0 1px 8px rgba(0,0,0,.07);margin-bottom:10px}
     .month-nav button{background:none;border:none;color:#9ca3af;font-size:20px;cursor:pointer;padding:4px 8px;min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center;touch-action:manipulation;-webkit-tap-highlight-color:transparent;border-radius:8px;transition:background .15s}
     .month-nav button:active{color:#6366f1;background:#f5f3ff}
-    .month-label{font-size:14px;font-weight:700;color:#1a1a2e;letter-spacing:-0.3px}
+    .month-label{font-size:16px;font-weight:700;color:#1a1a2e;letter-spacing:-0.3px}
 
     /* ─ Emp type grid ─ */
     .emp-type-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
@@ -67,7 +67,7 @@
     .ps-sub-bar{overflow-x:auto;padding:10px 0 8px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
     .ps-sub-bar::-webkit-scrollbar{display:none}
     .ps-sub-chips{display:flex;gap:7px;min-width:max-content}
-    .ps-sub-chip{flex-shrink:0;padding:6px 16px;border-radius:20px;font-size:12px;font-weight:600;border:1.5px solid #e5e7eb;background:#fff;color:#6b7280;cursor:pointer;font-family:inherit;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:all .15s;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+    .ps-sub-chip{flex-shrink:0;padding:6px 16px;border-radius:20px;font-size:14px;font-weight:600;border:1.5px solid #e5e7eb;background:#fff;color:#6b7280;cursor:pointer;font-family:inherit;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:all .15s;box-shadow:0 1px 3px rgba(0,0,0,.05)}
     .ps-sub-chip.active{background:#6366f1;border-color:#6366f1;color:#fff;box-shadow:0 2px 8px rgba(99,102,241,.3)}
     .ps-sub-chip:active{}
 
@@ -77,14 +77,14 @@
     /* ─ 명세서 탭: 직원 카드 목록 ─ (하위호환용 ps-filter-* 유지) */
     .ps-filter-bar{display:flex;gap:6px;padding:10px 0 10px;overflow-x:auto;background:transparent;margin-bottom:4px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
     .ps-filter-bar::-webkit-scrollbar{display:none}
-    .ps-filter-btn{flex-shrink:0;padding:6px 13px;border-radius:20px;font-size:12px;font-weight:600;border:1.5px solid #e5e7eb;background:#fff;color:#6b7280;cursor:pointer;font-family:inherit;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:all .15s}
+    .ps-filter-btn{flex-shrink:0;padding:6px 13px;border-radius:20px;font-size:14px;font-weight:600;border:1.5px solid #e5e7eb;background:#fff;color:#6b7280;cursor:pointer;font-family:inherit;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:all .15s}
     .ps-filter-btn.active{background:#6366f1;border-color:#6366f1;color:#fff;box-shadow:0 2px 8px rgba(99,102,241,.3)}
     .ps-filter-btn:active{}
 
     /* ─ 명세서 탭: 목록 요약 헤더 ─ */
     .ps-list-summary{display:flex;align-items:center;justify-content:space-between;padding:4px 0 12px;}
-    .ps-list-title{font-size:13px;font-weight:700;color:#1a1a2e}
-    .ps-list-count{font-size:12px;color:#6b7280}
+    .ps-list-title{font-size:18px;font-weight:700;color:#1a1a2e}
+    .ps-list-count{font-size:14px;color:#6b7280}
     .ps-list-count strong{color:#6366f1;font-weight:700}
 
     /* ─ 명세서 탭: 그룹 헤더 ─ */
@@ -100,10 +100,10 @@
     .ps-emp-card-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #f5f5f5}
     .ps-emp-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;flex-shrink:0;margin-right:10px}
     .ps-emp-info{flex:1;min-width:0}
-    .ps-emp-name{font-size:14px;font-weight:700;color:#1a1a2e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .ps-emp-meta{font-size:11px;color:#9ca3af;margin-top:1px}
+    .ps-emp-name{font-size:16px;font-weight:700;color:#1a1a2e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .ps-emp-meta{font-size:14px;color:#9ca3af;margin-top:1px}
     .ps-emp-pay{text-align:right;flex-shrink:0}
-    .ps-emp-net{font-size:14px;font-weight:800;color:#059669}
+    .ps-emp-net{font-size:16px;font-weight:800;color:#059669}
     .ps-emp-gross{font-size:10.5px;color:#9ca3af;margin-top:1px}
     .ps-emp-rows{padding:0 16px 8px}
     .ps-emp-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #f9f9f9;font-size:12px}
@@ -142,8 +142,8 @@
 
     /* ─ Chart card ─ */
     .chart-card{background:#fff;border-radius:16px;padding:14px 16px;box-shadow:0 2px 12px rgba(0,0,0,.07);margin-bottom:12px}
-    .chart-title{font-size:13px;font-weight:700;margin-bottom:3px;color:#1a1a2e}
-    .chart-sub{font-size:11px;color:#aaa;margin-bottom:10px}
+    .chart-title{font-size:18px;font-weight:700;margin-bottom:3px;color:#1a1a2e}
+    .chart-sub{font-size:14px;color:#aaa;margin-bottom:10px}
     .chart-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;gap:8px}
     .chart-badge{font-size:10.5px;padding:3px 8px;border-radius:20px;font-weight:600;white-space:nowrap;flex-shrink:0}
 

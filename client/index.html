@@ -14,7 +14,7 @@
   <link rel="stylesheet" href="css/client-modal.css" />
   <link rel="stylesheet" href="css/client-billing.css" />
   <link rel="stylesheet" href="css/client-responsive.css" />
-  <link rel="stylesheet" href="css/client-v2.css" />
+  <link rel="stylesheet" href="css/client-v2.css?v=20261113a" />
 </head>
 <body>
 
@@ -33,7 +33,7 @@
 <div class="login-screen" id="login-screen">
   <div class="login-box">
     <div class="login-logo">
-      <div class="icon">💼</div>
+      <div class="icon"><img src="img/app-icon.png" alt="인사톡 노무톡" /></div>
       <h1>인사톡 노무톡</h1>
       <p>대화인사노무파트너스</p>
     </div>
@@ -41,14 +41,19 @@
       <label>회사 접근 코드</label>
       <input type="text" id="login-code" placeholder="" maxlength="8"
         onkeydown="if(event.key==='Enter') tryLogin()" />
+      <div class="login-hint"><i class="fas fa-circle-info"></i>코드를 모르시면 담당 노무사에게 문의하세요</div>
     </div>
     <label class="login-remember">
       <input type="checkbox" id="login-remember" checked />
       <span>접근 코드 자동 입력</span>
     </label>
+    <label class="login-agree">
+      <input type="checkbox" id="login-agree" />
+      <span><a href="javascript:void(0)" onclick="openLegalModal('terms', event)">서비스 이용약관</a>에 동의합니다.</span>
+    </label>
     <button class="login-btn" onclick="tryLogin()"><i class="fas fa-sign-in-alt"></i> 조회 시작</button>
     <p class="login-error" id="login-error"></p>
-    <div class="login-footer">코드를 모르시면 담당 노무사에게 문의하세요</div>
+    <button type="button" class="login-legal-link" onclick="openLegalModal('privacy')"><i class="fas fa-shield-alt"></i> 개인정보처리방침</button>
   </div>
 </div>
 
@@ -84,7 +89,7 @@
             <i class="fas fa-users"></i>임직원 현황
           </button>
           <button class="hmenu-item" onclick="closeHamburgerMenu();showPage('paystats',document.getElementById('nav-paystats'))">
-            <i class="fas fa-chart-pie"></i>급여통계
+            <i class="fas fa-chart-pie"></i>임금통계
           </button>
           <button class="hmenu-item" onclick="closeHamburgerMenu();showPage('attendance',document.getElementById('nav-attendance'))">
             <i class="fas fa-clipboard-list"></i>근태관리
@@ -103,10 +108,10 @@
           <button class="hmenu-item" onclick="closeHamburgerMenu();showPage('min-wage',null)">
             <i class="fas fa-won-sign"></i>연도별 최저임금
           </button>
-          <button class="hmenu-item" onclick="closeHamburgerMenu();showPage('terms',null)">
+          <button class="hmenu-item" onclick="closeHamburgerMenu();openLegalModal('terms')">
             <i class="fas fa-file-contract"></i>서비스 이용약관
           </button>
-          <button class="hmenu-item" onclick="closeHamburgerMenu();showPage('privacy',null)">
+          <button class="hmenu-item" onclick="closeHamburgerMenu();openLegalModal('privacy')">
             <i class="fas fa-shield-alt"></i>개인정보처리방침
           </button>
           <div class="hmenu-divider"></div>
@@ -150,7 +155,7 @@
       <div class="card-body" style="padding-bottom:12px;">
         <div style="margin-bottom:10px;">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-            <div style="font-size:13px;font-weight:700;color:#1a1a2e;"><i class="fas fa-users" style="color:#3b82f6;margin-right:5px;"></i>직원 현황 (고용형태별)</div>
+            <div style="font-size:18px;font-weight:700;color:#1a1a2e;"><i class="fas fa-users" style="color:#3b82f6;margin-right:5px;"></i>직원 현황 (고용형태별)</div>
           </div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;">
             <span style="font-size:11px;color:#6b7280;background:#fef3c7;border:1px solid #fde68a;padding:3px 9px;border-radius:20px;">전체 <strong id="s-total-emp" style="color:#92400e;">0명</strong></span>
@@ -205,7 +210,7 @@
       <div class="card-body">
         <div style="margin-bottom:10px;">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">
-            <div style="font-size:13px;font-weight:700;color:#1a1a2e;"><i class="fas fa-won-sign" style="color:#ef4444;margin-right:5px;"></i>당월 급여 지급액</div>
+            <div style="font-size:18px;font-weight:700;color:#1a1a2e;"><i class="fas fa-won-sign" style="color:#ef4444;margin-right:5px;"></i>당월 급여 지급액</div>
             <div style="display:flex;align-items:center;gap:6px;">
               <span id="s-pay-month-badge" style="font-size:11px;background:#f3f4f6;color:#6b7280;padding:3px 8px;border-radius:20px;"></span>
               <span style="font-size:10.5px;color:#a5b4fc;font-weight:600;"><i class="fas fa-chart-pie" style="margin-right:2px;"></i>비율보기</span>
@@ -308,23 +313,30 @@
         <button class="v2-quick-btn" id="ps-billing-btn" onclick="showPage('billing',null)" style="display:none;"><i class="fas fa-credit-card"></i>사용료</button>
       </div>
       <div class="v2-sum-grid">
-        <button class="v2-sum-card v2-sum-prev" onclick="openPayStatsRatio()">
-          <div class="v2-sum-label"><i class="fas fa-won-sign"></i>직전월 지급 총액</div>
-          <div class="v2-sum-val" id="ps-prev-gross">-</div>
-          <div class="v2-sum-sub" id="ps-prev-meta">-</div>
-        </button>
         <button class="v2-sum-card v2-sum-next">
-          <div class="v2-sum-label"><i class="fas fa-calendar-day"></i>다음 급여일 예상 총액</div>
-          <div class="v2-sum-val" id="ps-next-gross">-</div>
+          <div class="v2-sum-row">
+            <span class="v2-sum-label"><i class="fas fa-calendar-day"></i>다음 급여일 예상 총액</span>
+            <span class="v2-sum-val" id="ps-next-gross">-</span>
+          </div>
           <div class="v2-sum-sub" id="ps-next-meta">-</div>
         </button>
+        <div class="v2-sum-card v2-sum-prev">
+          <div class="v2-sum-row">
+            <span class="v2-sum-label"><i class="fas fa-won-sign"></i>직전월 임금내역</span>
+            <span class="v2-sum-sub" id="ps-prev-meta" style="margin-top:0">-</span>
+          </div>
+          <div class="pay-breakdown" id="ps-prev-breakdown"></div>
+        </div>
       </div>
       <div class="v2-section">
         <div class="v2-section-head">
           <span class="v2-section-title"><i class="fas fa-layer-group"></i>고용형태별 통계</span>
           <span class="v2-asof" id="ps-type-period"></span>
         </div>
-        <div class="v2-type-grid" id="ps-type-grid"></div>
+        <div class="v2-type-pie">
+          <div class="v2-pie-canvas" id="ps-type-pie-wrap"><canvas id="ps-type-pie"></canvas></div>
+          <div class="v2-pie-legend" id="ps-type-legend"></div>
+        </div>
       </div>
       <div class="v2-chart-card">
         <div class="v2-section-head">
@@ -343,7 +355,7 @@
   <div class="page" id="page-payslip">
     <div class="sub-page-header" style="background:linear-gradient(135deg,#4f46e5,#6366f1);">
       <button class="back-btn" style="color:#fff;" onclick="showPage('paystats',document.getElementById('nav-paystats'))">
-        <i class="fas fa-chevron-left"></i>급여통계
+        <i class="fas fa-chevron-left"></i>임금통계
       </button>
       <span class="sub-page-badge" style="background:rgba(255,255,255,.2);color:#fff;"><i class="fas fa-receipt" style="margin-right:4px;"></i>급여 명세서</span>
     </div>
@@ -370,7 +382,7 @@
   <div class="page" id="page-billing" style="display:none;">
     <div class="sub-page-header" style="background:linear-gradient(135deg,#6366f1,#4f46e5);">
       <button class="back-btn" style="color:#fff;" onclick="showPage('paystats',document.getElementById('nav-paystats'))">
-        <i class="fas fa-chevron-left"></i>급여통계
+        <i class="fas fa-chevron-left"></i>임금통계
       </button>
       <span class="sub-page-badge" style="background:rgba(255,255,255,.2);color:#fff;"><i class="fas fa-credit-card" style="margin-right:4px;"></i>사용료</span>
     </div>
@@ -426,29 +438,29 @@
     <!-- 요약 카드 -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px 12px 0;">
       <div style="background:linear-gradient(135deg,#ecfdf5,#d1fae5);border:1px solid #a7f3d0;border-radius:12px;padding:12px;text-align:center;">
-        <div style="font-size:11px;color:#065f46;margin-bottom:2px;">총 발생 연차</div>
+        <div style="font-size:14px;color:#065f46;margin-bottom:4px;">총 발생 연차</div>
         <div id="al-client-total" style="font-size:22px;font-weight:800;color:#059669;">-</div>
-        <div style="font-size:10px;color:#6b7280;">일</div>
+        <div style="font-size:14px;color:#6b7280;">일</div>
       </div>
       <div style="background:linear-gradient(135deg,#fff7ed,#fed7aa);border:1px solid #fdba74;border-radius:12px;padding:12px;text-align:center;">
-        <div style="font-size:11px;color:#9a3412;margin-bottom:2px;">사용 연차</div>
+        <div style="font-size:14px;color:#9a3412;margin-bottom:4px;">사용 연차</div>
         <div id="al-client-used" style="font-size:22px;font-weight:800;color:#ea580c;">-</div>
-        <div style="font-size:10px;color:#6b7280;">일</div>
+        <div style="font-size:14px;color:#6b7280;">일</div>
       </div>
       <div style="background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #bfdbfe;border-radius:12px;padding:12px;text-align:center;">
-        <div style="font-size:11px;color:#1e40af;margin-bottom:2px;">잔여 연차</div>
+        <div style="font-size:14px;color:#1e40af;margin-bottom:4px;">잔여 연차</div>
         <div id="al-client-remain" style="font-size:22px;font-weight:800;color:#2563eb;">-</div>
-        <div style="font-size:10px;color:#6b7280;">일</div>
+        <div style="font-size:14px;color:#6b7280;">일</div>
       </div>
       <div style="background:linear-gradient(135deg,#faf5ff,#ede9fe);border:1px solid #ddd6fe;border-radius:12px;padding:12px;text-align:center;">
-        <div style="font-size:11px;color:#4c1d95;margin-bottom:2px;">잔여 수당 추계</div>
-        <div id="al-client-pay" style="font-size:16px;font-weight:800;color:#7c3aed;">-</div>
+        <div style="font-size:14px;color:#4c1d95;margin-bottom:4px;">잔여 수당 추계</div>
+        <div id="al-client-pay" style="font-size:18px;font-weight:800;color:#7c3aed;">-</div>
       </div>
     </div>
     <!-- 기준 연도 선택 -->
     <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px 4px;">
-      <div style="font-size:13px;font-weight:700;color:#1a1a2e;"><i class="fas fa-calendar-alt" style="color:#059669;margin-right:5px;"></i>직원별 연차 현황</div>
-      <select id="al-client-year" onchange="renderClientAnnualLeave()" style="border:1px solid #d1d5db;border-radius:8px;padding:5px 10px;font-size:12px;background:#fff;font-family:inherit;color:#374151;cursor:pointer;"></select>
+      <div style="font-size:18px;font-weight:700;color:#1a1a2e;"><i class="fas fa-calendar-alt" style="color:#059669;margin-right:5px;"></i>직원별 연차 현황</div>
+      <select id="al-client-year" onchange="renderClientAnnualLeave()" style="border:1px solid #d1d5db;border-radius:8px;padding:5px 10px;font-size:14px;background:#fff;font-family:inherit;color:#374151;cursor:pointer;"></select>
     </div>
     <!-- 직원 카드 목록 (카드 내 연차 사용 기록 버튼) -->
     <div id="al-client-list" style="padding:8px 12px 80px;display:grid;gap:8px;"></div>
@@ -468,8 +480,8 @@
       </div>
     </div>
     <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px 4px;">
-      <div style="font-size:13px;font-weight:700;color:#1a1a2e;"><i class="fas fa-users" style="color:#0ea5e9;margin-right:5px;"></i>직원별 근태 기록</div>
-      <select id="att-client-year" onchange="renderClientAttendance()" style="border:1px solid #d1d5db;border-radius:8px;padding:5px 10px;font-size:12px;background:#fff;font-family:inherit;color:#374151;cursor:pointer;"></select>
+      <div style="font-size:18px;font-weight:700;color:#1a1a2e;"><i class="fas fa-users" style="color:#0ea5e9;margin-right:5px;"></i>직원별 근태 기록</div>
+      <select id="att-client-year" onchange="renderClientAttendance()" style="border:1px solid #d1d5db;border-radius:8px;padding:5px 10px;font-size:14px;background:#fff;font-family:inherit;color:#374151;cursor:pointer;"></select>
     </div>
     <div id="att-client-list" style="padding:8px 12px 80px;display:grid;gap:8px;"></div>
   </div>
@@ -492,7 +504,7 @@
       <div style="background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.07);padding:16px;margin-bottom:12px;">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
           <div style="width:36px;height:36px;background:linear-gradient(135deg,#ef4444,#dc2626);border-radius:10px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-hard-hat" style="color:#fff;font-size:16px;"></i></div>
-          <div><div style="font-size:14px;font-weight:800;color:#1a1a2e;">산재보험</div><div style="font-size:11px;color:#6b7280;">Industrial Accident Compensation Insurance</div></div>
+          <div><div style="font-size:18px;font-weight:800;color:#1a1a2e;">산재보험</div><div style="font-size:14px;color:#6b7280;">Industrial Accident Compensation Insurance</div></div>
         </div>
         <div style="background:#fef2f2;border-radius:10px;padding:12px;margin-bottom:8px;">
           <div style="font-size:12px;color:#991b1b;font-weight:700;margin-bottom:4px;">전액 사업주 부담</div>
@@ -545,7 +557,7 @@
       </div>
       <!-- 연도별 표 -->
       <div style="background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.07);overflow:hidden;">
-        <div style="padding:14px 16px;border-bottom:1px solid #f3f4f6;font-size:13px;font-weight:800;color:#1a1a2e;"><i class="fas fa-table" style="color:#8b5cf6;margin-right:6px;"></i>연도별 현황</div>
+        <div style="padding:14px 16px;border-bottom:1px solid #f3f4f6;font-size:18px;font-weight:800;color:#1a1a2e;"><i class="fas fa-table" style="color:#8b5cf6;margin-right:6px;"></i>연도별 현황</div>
         <div style="overflow-x:auto;">
           <table style="width:100%;border-collapse:collapse;font-size:12.5px;">
             <thead><tr style="background:#faf5ff;">
@@ -623,28 +635,6 @@
       <span class="sub-page-badge" style="background:rgba(255,255,255,.2);color:#fff;"><i class="fas fa-shield-alt" style="margin-right:4px;"></i>일용직 4대보험 신고</span>
     </div>
     <div id="daily-insurance-content" style="padding:12px 12px 80px;"></div>
-  </div>
-
-  <!-- ⑫ 서비스 이용약관 -->
-  <div class="page" id="page-terms">
-    <div class="sub-page-header" style="background:linear-gradient(135deg,#334155,#475569);">
-      <button class="back-btn" style="color:#fff;" onclick="showPage('employees',document.getElementById('nav-employees'))">
-        <i class="fas fa-chevron-left"></i>임직원 현황
-      </button>
-      <span class="sub-page-badge" style="background:rgba(255,255,255,.2);color:#fff;"><i class="fas fa-file-contract" style="margin-right:4px;"></i>서비스 이용약관</span>
-    </div>
-    <div id="terms-content" class="v2-legal"></div>
-  </div>
-
-  <!-- ⑬ 개인정보처리방침 -->
-  <div class="page" id="page-privacy">
-    <div class="sub-page-header" style="background:linear-gradient(135deg,#334155,#475569);">
-      <button class="back-btn" style="color:#fff;" onclick="showPage('employees',document.getElementById('nav-employees'))">
-        <i class="fas fa-chevron-left"></i>임직원 현황
-      </button>
-      <span class="sub-page-badge" style="background:rgba(255,255,255,.2);color:#fff;"><i class="fas fa-shield-alt" style="margin-right:4px;"></i>개인정보처리방침</span>
-    </div>
-    <div id="privacy-content" class="v2-legal"></div>
   </div>
 
 </div><!-- /app -->
@@ -775,6 +765,19 @@
   <div class="att-cal-day-panel" id="att-cal-day-panel"></div>
 </div>
 
+<!-- ── 개인정보처리방침 전체화면 (로그인 화면에서 진입) ── -->
+<div class="legal-overlay" id="legal-overlay" onclick="if(event.target===this)closeLegalModal()">
+  <div class="legal-overlay-panel" role="dialog" aria-modal="true" aria-labelledby="legal-overlay-title">
+    <div class="legal-overlay-head">
+      <div class="legal-overlay-title" id="legal-overlay-title"><i class="fas fa-shield-alt"></i>개인정보처리방침</div>
+      <button type="button" class="legal-overlay-close" onclick="closeLegalModal()" aria-label="닫기">
+        <i class="fas fa-times"></i><span>닫기</span>
+      </button>
+    </div>
+    <div class="legal-overlay-body legal-doc" id="legal-overlay-content"></div>
+  </div>
+</div>
+
 <!-- ── 연차 사용 기록 모달 (고객사 앱) ── -->
 <div class="modal-overlay" id="alc-modal" onclick="if(event.target===this)closeClientLeaveEditor()">
   <div class="modal-sheet">
@@ -858,17 +861,17 @@
 
 <!-- ── Bottom Navigation (4개 탭) ── -->
 <nav class="bottom-nav">
-  <button class="nav-item active" id="nav-employees" onclick="showPage('employees',this)">
-    <i class="fas fa-users"></i>임직원 현황
-  </button>
-  <button class="nav-item" id="nav-paystats" onclick="showPage('paystats',this)">
-    <i class="fas fa-chart-pie"></i>급여통계
+  <button class="nav-item active" id="nav-paystats" onclick="showPage('paystats',this)">
+    <i class="fas fa-chart-pie"></i>임금통계
   </button>
   <button class="nav-item" id="nav-attendance" onclick="showPage('attendance',this)">
     <i class="fas fa-clipboard-list"></i>근태관리
   </button>
   <button class="nav-item" id="nav-annual-leave" onclick="showPage('annual-leave',this)">
     <i class="fas fa-umbrella-beach"></i>연차관리
+  </button>
+  <button class="nav-item" id="nav-employees" onclick="showPage('employees',this)">
+    <i class="fas fa-users"></i>임직원 현황
   </button>
 </nav>
 
@@ -971,5 +974,5 @@
   <script src="js/client-billing.js"></script>
   <script src="js/client-notice.js?v=20260901a"></script>
   <script src="js/client-init.js?v=20260921a"></script>
-  <script src="js/client-attendance.js?v=20260921b"></script>    <script src="js/client-v2.js?v=20261029a"></script></body>
+  <script src="js/client-attendance.js?v=20260921b"></script>    <script src="js/client-v2.js?v=20261113a"></script></body>
 </html>
