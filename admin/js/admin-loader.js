@@ -79,6 +79,12 @@ async function _loadExternalPage(name) {
     const resp = await fetch(`pages/${name}.html`);
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const rawHtml = await resp.text();
+    // 서버 catch-all(server.js app.get('*'))은 없는 경로에도 200 + 루트 index.html 을 돌려준다.
+    //  → 파일이 빠진 배포본에서는 랜딩/로그인 화면이 페이지 컨테이너에 주입되어
+    //    getElementById(...).innerHTML 같은 코드가 null 오류를 내고 원인을 찾기 어려워진다.
+    if (_isAppShellResponse(rawHtml)) {
+      throw new Error(`pages/${name}.html 대신 앱 셸 응답이 반환되었습니다 (배포본 파일 누락 의심)`);
+    }
     // 외부 HTML은 <div id="page-xxx" class="page">...</div> 로 래핑되어 있으므로
     // _ensurePageContainer가 생성한 컨테이너와 중첩되지 않도록 래퍼를 제거하고 내부 HTML만 추출
     const innerHtml = _extractPageContent(rawHtml, name);
@@ -97,6 +103,16 @@ async function _loadExternalPage(name) {
   } finally {
     _pageLoading.delete(name);
   }
+}
+
+/**
+ * 서버 catch-all 이 반환하는 앱 셸(랜딩·관리자 로그인 화면) 응답인지 판별.
+ * pages/*.html 은 화면 조각이라 이 마커들을 포함하지 않는다.
+ */
+function _isAppShellResponse(html) {
+  if (!html) return false;
+  if (/id="admin-login-screen"/.test(html)) return true;               // admin/index.html
+  return /class="hero"/.test(html) || /class="features"/.test(html);   // 루트 index.html
 }
 
 /**

@@ -530,7 +530,11 @@ function selectContCompany(companyId, companyName){
   // 글로벌 공유 변수만 업데이트 (다른 페이지 변수는 showPage()에서 처리)
   currentGlobalCompanyId = companyId;
   currentGlobalCompanyName = companyName;
-  document.getElementById('cont-selected-company-label').innerHTML =
+  // 페이지 HTML이 아직 주입되지 않은 경우(비동기 로드 중) — 상태만 저장하고 종료.
+  //  showPage()가 currentGlobalCompanyId 를 보고 복원하므로 유실되지 않는다.
+  const labelEl = document.getElementById('cont-selected-company-label');
+  if(!labelEl) return;
+  labelEl.innerHTML =
     `<i class="fas fa-file-signature" style="margin-right:6px;"></i>${companyName} 근로계약 현황`;
   document.getElementById('cont-company-select-card').style.display = 'none';
   document.getElementById('cont-list-section').style.display = 'block';
@@ -549,6 +553,7 @@ function clearContCompanySelect(){
   currentContCompanyId = null;
   currentGlobalCompanyId = null;
   currentGlobalCompanyName = '';
+  if(!document.getElementById('cont-company-select-card')) return;  // 페이지 미주입 상태
   document.getElementById('cont-company-select-card').style.display = '';
   document.getElementById('cont-list-section').style.display = 'none';
   document.getElementById('cont-company-search').value = '';
@@ -558,21 +563,23 @@ function clearContCompanySelect(){
 }
 
 // 고객사 관리 카드 → 근로계약서 관리 바로가기
-function goContractsByCompany(companyId, companyName){
+//  showPage()는 외부 페이지 HTML을 fetch 로 주입하는 async 함수 →
+//  await 없이 selectContCompany()를 호출하면 DOM이 비어 있어 null 오류가 난다. (2026-11-13)
+async function goContractsByCompany(companyId, companyName){
   const co = allCompanies.find(c => c.id === companyId);
   if(co && !isCompanyActive(co)){
     toast('"' + companyName + '"은 이용중이 아닌 고객사입니다. 근로계약 관리가 불가합니다.', 'error');
     return;
   }
   const menuEl = document.querySelector('.menu-item[data-page="contracts"]');
-  showPage('contracts', menuEl);
+  await showPage('contracts', menuEl);
   selectContCompany(companyId, companyName);
 }
 
 // 대시보드 고객사 카드 → 급여 통계 조회 바로가기
-function goLaborStatusByCompany(companyId, companyName){
+async function goLaborStatusByCompany(companyId, companyName){
   const menuEl = document.querySelector('.menu-item[data-page="labor-status"]');
-  showPage('labor-status', menuEl);
+  await showPage('labor-status', menuEl);
   selectLsCompany(companyId, companyName);
 }
 

@@ -277,12 +277,10 @@ function renderCompanies(){
 }
 
 // ── 고객사 카드에서 임금대장 페이지로 이동 ──
-function goWageLedgerByCompany(companyId, companyName){
+async function goWageLedgerByCompany(companyId, companyName){
   const menuEl = document.querySelector('.menu-item[data-page="wage-ledger"]');
-  showPage('wage-ledger', menuEl);
-  setTimeout(() => {
-    if(typeof selectWLCompany === 'function') selectWLCompany(companyId, companyName);
-  }, 100);
+  await showPage('wage-ledger', menuEl);
+  if(typeof selectWLCompany === 'function') selectWLCompany(companyId, companyName);
 }
 
 // ── 급여 산정기간 UI ──────────────────────────────────────────────────────────
