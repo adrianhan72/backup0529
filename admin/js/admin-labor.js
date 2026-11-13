@@ -146,13 +146,18 @@ function renderLsPieChart(){
     { label:'장기요양',     val: s('long_term_care'),          color:'#22d3ee' },
     { label:'국민연금',     val: s('national_pension'),        color:'#3b82f6' },
     { label:'고용보험',     val: s('employment_insurance'),    color:'#60a5fa' },
+    { label:'국민연금 소급분', val: s('national_pension_retro'), color:'#2563eb' },
     { label:'연말정산',     val: s('year_end_tax_adjust'),     color:'#f59e0b' },
     { label:'건보정산',     val: s('health_insurance_adjust'), color:'#fbbf24' },
-    { label:'선지급공제',   val: s('advance_deduction'),       color:'#a78bfa' },
+    { label:'건보연말정산', val: s('health_insurance_adjust_yearend'), color:'#fcd34d' },
+    { label:'장기요양정산', val: s('ltcare_adjust'),           color:'#22d3ee' },
+    { label:'장기요양연말정산', val: s('ltcare_adjust_yearend'), color:'#67e8f9' },
+    { label:'고용보험정산', val: s('employment_insurance_adjust'), color:'#93c5fd' },
   ].filter(i => i.val > 0);
 
   const grossTotal = pays.reduce((a,p)=>a+(p.gross_pay||0),0);
-  const dedTotal   = pays.reduce((a,p)=>a+(p.gross_pay||0)-(p.net_pay||0),0);
+  // 가불금 상환은 임금이 아니므로 공제 합계에서 제외 (임금통계 기준)
+  const dedTotal   = pays.reduce((a,p)=>a+(p.gross_pay||0)-(p.net_pay||0)-(p.advance_deduction||0),0);
 
   // 총액 뱃지
   const totalBadge = document.getElementById('ls-pie-total-badge');
@@ -546,14 +551,16 @@ function renderLsYearTrendChart(){
   const monthData = months.map(({y,m}) => {
     const pays = allPayrolls.filter(p => !p.is_draft && p.company_id === selCo && p.pay_year == y && p.pay_month == m);
     const gross  = sum(pays,'gross_pay');
-    const net    = sum(pays,'net_pay');
+    const net    = sum(pays,'net_pay') + sum(pays,'advance_deduction'); // 가불금 상환분 제외(임금 기준)
     const deduct = gross - net;
     const extra  = sum(pays,'overtime_pay') + sum(pays,'night_pay') + sum(pays,'holiday_pay');
     const irreg  = sum(pays,'annual_leave_pay') + sum(pays,'bonus_pay') + sum(pays,'communication_pay') + sum(pays,'etc_allowance');
     const tax    = sum(pays,'income_tax') + sum(pays,'local_income_tax');
     const ins    = sum(pays,'health_insurance') + sum(pays,'long_term_care') + sum(pays,'national_pension') + sum(pays,'employment_insurance');
-    const adj    = sum(pays,'year_end_tax_adjust') + sum(pays,'health_insurance_adjust') + sum(pays,'advance_deduction');
-    return { gross, deduct, net, extra, irreg, tax, ins, adj };
+    const settle = sum(pays,'year_end_tax_adjust') + sum(pays,'health_insurance_adjust')
+      + sum(pays,'health_insurance_adjust_yearend') + sum(pays,'ltcare_adjust_yearend')
+      + sum(pays,'national_pension_retro') + sum(pays,'ltcare_adjust') + sum(pays,'employment_insurance_adjust');
+    return { gross, deduct, net, extra, irreg, tax, ins, settle };
   });
 
   // 체크박스 상태
@@ -568,7 +575,7 @@ function renderLsYearTrendChart(){
     { id:'ltt-irreg',  label:'부정기지급',   field:'irreg',  color:'#8b5cf6', dash:[5,3] },
     { id:'ltt-tax',    label:'세금',         field:'tax',    color:'#ec4899', dash:[4,2] },
     { id:'ltt-ins',    label:'4대보험',      field:'ins',    color:'#06b6d4', dash:[4,2] },
-    { id:'ltt-adj',    label:'정산/추가공제',field:'adj',    color:'#6b7280', dash:[3,3] },
+    { id:'ltt-adj',    label:'정산',         field:'settle', color:'#6b7280', dash:[3,3] },
   ];
 
   const activeDatasets = DATASETS.filter(d => chk(d.id)).map(d => ({

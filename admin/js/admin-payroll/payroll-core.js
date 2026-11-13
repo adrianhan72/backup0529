@@ -71,11 +71,11 @@ function renderPayrolls(){
       +(_payWeeklyInGross(p) ? (p.weekly_holiday_pay||0) : 0);
     // 추가근로수당 소계
     const extraTotal = (p.overtime_pay||0)+(p.night_pay||0)+(p.holiday_pay||0);
-    // 비정기지급 소계
+    // 비정기지급 소계 — 퇴직금 중간정산은 임금이 아니므로 제외
     const irregularTotal = (p.annual_leave_pay||0)+(p.bonus_pay||0)+(p.performance_pay||0)
       +(p.communication_pay||0)+(p.fitness_allowance||0)
       +(p.self_dev_allowance||0)+(p.book_allowance||0)+(p.overseas_allowance||0)
-      +(p.severance_interim_pay||0)+(p.etc_allowance||0)+(p.other_pay||0)
+      +(p.etc_allowance||0)+(p.other_pay||0)
       +(_sumCustomFixed||0)+(_sumEtcItems||0);
     const payEmp = allEmployees.find(x=>x.id===p.employee_id)||{};
     const payCat = payEmp.employment_category||'-';
@@ -116,8 +116,14 @@ function openPayslipModal(payrollId){
   const empIns  = p.employment_insurance||0;
   const yearEnd = p.year_end_tax_adjust||0;
   const hlAdj   = p.health_insurance_adjust||0;
+  const hlAdjYe = p.health_insurance_adjust_yearend||0;
+  const ltAdjYe = p.ltcare_adjust_yearend||0;
+  const penRetro= p.national_pension_retro||0;
+  const ltAdj   = p.ltcare_adjust||0;
+  const empAdj  = p.employment_insurance_adjust||0;
   const advance = p.advance_deduction||0;
-  const calcDed = incTax+locTax+health+ltCare+pension+empIns+yearEnd+hlAdj+advance;
+  const calcDed = incTax+locTax+health+ltCare+pension+empIns+yearEnd+hlAdj+hlAdjYe+ltAdjYe
+    +penRetro+ltAdj+empAdj+advance;
   const rawDed  = p.total_deduction||calcDed;
   const totalDed= Math.abs(rawDed-calcDed)>50?calcDed:rawDed;
   const rawNet  = p.net_pay||(gross-totalDed);
@@ -216,11 +222,16 @@ function openPayslipModal(payrollId){
     </tr>`;
   };
   // ── 정산 / 추가공제 본문 (전부 0이면 섹션 전체 숨김) ──
-  const _hasSettlement = !!(yearEnd || hlAdj || advance);
+  const _hasSettlement = !!(yearEnd || hlAdj || hlAdjYe || ltAdjYe || penRetro || ltAdj || empAdj || advance);
   const _settleBody = _hasSettlement
     ? makeGroupRow('▸ 정산 / 추가공제', true) +
+      makeDedRow('국민연금 소급분',      penRetro) +
       makeDedRow('연말정산',             yearEnd) +
       makeDedRow('건강보험 정산',        hlAdj) +
+      makeDedRow('건강보험 연말정산',    hlAdjYe) +
+      makeDedRow('장기요양보험 정산',    ltAdj) +
+      makeDedRow('장기요양 연말정산',    ltAdjYe) +
+      makeDedRow('고용보험 정산',        empAdj) +
       makeDedRow('기타(선지급) 공제',    advance)
     : '';
 

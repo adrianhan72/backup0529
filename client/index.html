@@ -14,7 +14,7 @@
   <link rel="stylesheet" href="css/client-modal.css" />
   <link rel="stylesheet" href="css/client-billing.css" />
   <link rel="stylesheet" href="css/client-responsive.css" />
-  <link rel="stylesheet" href="css/client-v2.css?v=20261113a" />
+  <link rel="stylesheet" href="css/client-v2.css?v=20261114z" />
 </head>
 <body>
 
@@ -123,14 +123,14 @@
       <!-- 햄버거 메뉴 닫기용 백드롭 -->
       <div class="hmenu-backdrop" id="hmenu-backdrop" onclick="closeHamburgerMenu()"></div>
     </div>
-    <!-- 조회 시점(날짜) 바 — 임직원 현황 · 급여통계 공용 (상단 고정) -->
+    <!-- 조회 시점 바 — 임직원 현황(일 단위) / 임금통계(월 단위) 공용 (상단 고정) -->
     <div class="header-date-row hidden" id="header-date-row">
-      <button class="hd-btn" id="hd-prev-btn" aria-label="이전 날짜"><i class="fas fa-chevron-left"></i></button>
+      <button class="hd-btn" id="hd-prev-btn" aria-label="이전"><i class="fas fa-chevron-left"></i></button>
       <button class="hd-label-wrap" id="hd-label-wrap" onclick="openDatePicker()">
         <span class="hd-cal"><i class="fas fa-calendar-alt"></i></span>
         <span class="hd-label" id="hd-date-label"></span>
       </button>
-      <button class="hd-btn" id="hd-next-btn" aria-label="다음 날짜"><i class="fas fa-chevron-right"></i></button>
+      <button class="hd-btn" id="hd-next-btn" aria-label="다음"><i class="fas fa-chevron-right"></i></button>
       <button class="hd-today-btn" id="hd-today-btn" onclick="resetViewDate()">오늘</button>
       <input type="date" id="hd-date-input" class="hd-date-input" onchange="setViewDateFromInput(this.value)" tabindex="-1" aria-hidden="true" />
     </div>
@@ -301,81 +301,200 @@
     </div>
   </div>
 
-  <!-- ⓪-2 급여통계 (하단 탭 2) -->
+  <!-- ⓪-2 임금통계 (하단 탭 2) — 상단 4탭: 지급내역·임금대장·급여명세서·지급예정 -->
   <div class="page" id="page-paystats">
     <div class="v2-page">
-      <div class="v2-quick-row">
-        <button class="v2-quick-btn" onclick="showPage('payslip',null)"><i class="fas fa-receipt"></i>명세서 조회</button>
-        <div style="position:relative;">
-          <button class="v2-quick-btn" id="wl-view-btn" disabled onclick="openWageLedgerFromClient()" title="아직 임금대장이 생성되지 않았습니다"><i class="fas fa-file-lines"></i>임금대장</button>
-          <span id="wl-renewed-badge" class="wl-renewed-badge" style="display:none;">갱신됨</span>
-        </div>
-        <button class="v2-quick-btn" id="ps-billing-btn" onclick="showPage('billing',null)" style="display:none;"><i class="fas fa-credit-card"></i>사용료</button>
-      </div>
-      <div class="v2-sum-grid">
-        <button class="v2-sum-card v2-sum-next">
-          <div class="v2-sum-row">
-            <span class="v2-sum-label"><i class="fas fa-calendar-day"></i>다음 급여일 예상 총액</span>
-            <span class="v2-sum-val" id="ps-next-gross">-</span>
-          </div>
-          <div class="v2-sum-sub" id="ps-next-meta">-</div>
+      <!-- 조회 월 선택기 (본문 상단) -->
+      <div class="ps-month-row" id="ps-month-row">
+        <button class="ps-month-btn" id="ps-month-prev" aria-label="이전 달" onclick="_v2ShiftViewMonth(-1)"><i class="fas fa-chevron-left"></i></button>
+        <button class="ps-month-label-wrap" id="ps-month-label-wrap" onclick="openPsMonthPicker()">
+          <span class="ps-month-cal"><i class="fas fa-calendar-alt"></i></span>
+          <span class="ps-month-label" id="ps-month-label"></span>
         </button>
-        <div class="v2-sum-card v2-sum-prev">
-          <div class="v2-sum-row">
-            <span class="v2-sum-label"><i class="fas fa-won-sign"></i>직전월 임금내역</span>
-            <span class="v2-sum-sub" id="ps-prev-meta" style="margin-top:0">-</span>
-          </div>
-          <div class="pay-breakdown" id="ps-prev-breakdown"></div>
-        </div>
+        <button class="ps-month-btn" id="ps-month-next" aria-label="다음 달" onclick="_v2ShiftViewMonth(1)"><i class="fas fa-chevron-right"></i></button>
+        <button class="ps-month-today" id="ps-month-today" onclick="resetViewMonth()">이번 달</button>
+        <input type="month" id="ps-month-input" class="ps-month-input" onchange="setPsMonthFromInput(this.value)" tabindex="-1" aria-hidden="true" />
       </div>
-      <div class="v2-section">
-        <div class="v2-section-head">
-          <span class="v2-section-title"><i class="fas fa-layer-group"></i>고용형태별 통계</span>
-          <span class="v2-asof" id="ps-type-period"></span>
-        </div>
-        <div class="v2-type-pie">
-          <div class="v2-pie-canvas" id="ps-type-pie-wrap"><canvas id="ps-type-pie"></canvas></div>
-          <div class="v2-pie-legend" id="ps-type-legend"></div>
-        </div>
+      <div class="v2-quick-row" id="ps-billing-row" style="display:none;">
+        <button class="v2-quick-btn" id="ps-billing-btn" onclick="showPage('billing',null)"><i class="fas fa-credit-card"></i>사용료 조회</button>
       </div>
-      <div class="v2-chart-card">
-        <div class="v2-section-head">
-          <span class="v2-section-title"><i class="fas fa-chart-line"></i>12개월 급여 추이</span>
-          <span class="v2-asof" id="ps-trend-period"></span>
-        </div>
-        <div class="v2-hint">보고 싶은 항목만 선택하세요</div>
-        <div class="toggle-row" id="paystats-toggles"></div>
-        <div style="height:230px;"><canvas id="paystats-trend-chart"></canvas></div>
+      <div class="v2-ps-tabs" id="ps-tabs">
+        <button class="v2-ps-tab active" data-tab="paid"    onclick="setPsTab('paid')">지급내역</button>
+        <button class="v2-ps-tab"        data-tab="ledger"  onclick="setPsTab('ledger')">임금대장</button>
+        <button class="v2-ps-tab"        data-tab="payslip" onclick="setPsTab('payslip')">급여명세서</button>
+        <button class="v2-ps-tab"        data-tab="next"    onclick="setPsTab('next')">지급예정</button>
       </div>
-      <div class="v2-footnote">※ 다음 급여일 예상 총액은 유효 근로계약 기준 추정치이며, 실제 급여와 다를 수 있습니다.</div>
-    </div>
-  </div>
 
-  <!-- ② 급여 명세서 조회 -->
-  <div class="page" id="page-payslip">
-    <div class="sub-page-header" style="background:linear-gradient(135deg,#4f46e5,#6366f1);">
-      <button class="back-btn" style="color:#fff;" onclick="showPage('paystats',document.getElementById('nav-paystats'))">
-        <i class="fas fa-chevron-left"></i>임금통계
-      </button>
-      <span class="sub-page-badge" style="background:rgba(255,255,255,.2);color:#fff;"><i class="fas fa-receipt" style="margin-right:4px;"></i>급여 명세서</span>
-    </div>
-    <!-- sticky 필터 영역 -->
-    <div class="ps-sticky-filters">
-      <!-- 1단계: 대분류 탭 -->
-      <div class="ps-group-bar">
-        <button class="ps-group-btn active" data-group="all"  onclick="setPsGroup('all',this)">전체</button>
-        <button class="ps-group-btn"        data-group="cat"  onclick="setPsGroup('cat',this)">고용형태별</button>
-        <button class="ps-group-btn"        data-group="dept" onclick="setPsGroup('dept',this)">부서별</button>
-        <button class="ps-group-btn"        data-group="rank" onclick="setPsGroup('rank',this)">직급별</button>
+      <!-- ── 탭 ①: 지급내역 (선택 월) ── -->
+      <div class="v2-ps-panel active" id="ps-panel-paid">
+        <!-- 선택 월 임금내역 헤더 -->
+        <div class="ps-sum-head">
+          <span class="ps-sum-title"><i class="fas fa-won-sign"></i><span id="ps-prev-title">임금내역</span></span>
+          <span class="ps-sum-meta" id="ps-prev-meta">-</span>
+        </div>
+        <!-- 요약 카드: 지급총액·공제총액·실지급액 -->
+        <div class="v2-sum-card v2-sum-prev ps-sumbar" id="ps-summary-paid">
+          <div class="v2-sum-row ps-sumbar-row">
+            <span class="v2-sum-label">지급총액</span>
+            <span class="v2-sum-val" id="ps-sum-paid-gross">-</span>
+          </div>
+          <div class="v2-sum-row ps-sumbar-row ps-sumbar-row--ded">
+            <span class="v2-sum-label">공제총액</span>
+            <span class="v2-sum-val" id="ps-sum-paid-ded">-</span>
+          </div>
+          <div class="v2-sum-row ps-sumbar-row ps-sumbar-row--net">
+            <span class="v2-sum-label">실지급액</span>
+            <span class="v2-sum-val" id="ps-sum-paid-net">-</span>
+          </div>
+        </div>
+        <!-- 지급 세부항목: 3개 아코디언 (펼치면 항목별 파이 + 표) -->
+        <div class="ps-acc" id="ps-acc-fixed">
+          <button type="button" class="ps-acc-head" onclick="togglePsAcc('fixed')" aria-expanded="false">
+            <span class="ps-acc-name">약정임금</span>
+            <span class="ps-acc-amt" id="ps-acc-fixed-amt">-</span>
+            <i class="fas fa-chevron-down ps-acc-chev"></i>
+          </button>
+          <div class="ps-acc-body">
+            <div class="v2-pie-canvas ps-acc-pie"><canvas id="ps-acc-fixed-pie"></canvas></div>
+            <div class="ps-paymix-table" id="ps-acc-fixed-table"></div>
+          </div>
+        </div>
+        <div class="ps-acc" id="ps-acc-extra">
+          <button type="button" class="ps-acc-head" onclick="togglePsAcc('extra')" aria-expanded="false">
+            <span class="ps-acc-name">추가근로수당</span>
+            <span class="ps-acc-amt" id="ps-acc-extra-amt">-</span>
+            <i class="fas fa-chevron-down ps-acc-chev"></i>
+          </button>
+          <div class="ps-acc-body">
+            <div class="v2-pie-canvas ps-acc-pie"><canvas id="ps-acc-extra-pie"></canvas></div>
+            <div class="ps-paymix-table" id="ps-acc-extra-table"></div>
+          </div>
+        </div>
+        <div class="ps-acc" id="ps-acc-irreg">
+          <button type="button" class="ps-acc-head" onclick="togglePsAcc('irreg')" aria-expanded="false">
+            <span class="ps-acc-name">비정기지급수당</span>
+            <span class="ps-acc-amt" id="ps-acc-irreg-amt">-</span>
+            <i class="fas fa-chevron-down ps-acc-chev"></i>
+          </button>
+          <div class="ps-acc-body">
+            <div class="v2-pie-canvas ps-acc-pie"><canvas id="ps-acc-irreg-pie"></canvas></div>
+            <div class="ps-paymix-table" id="ps-acc-irreg-table"></div>
+          </div>
+        </div>
+        <div class="ps-card-group">
+          <div class="v2-sum-card v2-sum-prev">
+            <div class="pay-breakdown" id="ps-prev-deduction-breakdown"></div>
+          </div>
+        </div>
+        <div class="ps-card-group">
+          <div class="ps-card-head">
+            <span class="ps-card-title"><i class="fas fa-layer-group"></i>고용형태별 통계</span>
+            <span class="ps-card-meta" id="ps-type-period"></span>
+          </div>
+          <div class="v2-section ps-card-plain">
+            <div class="v2-type-pie">
+              <div class="v2-pie-canvas" id="ps-type-pie-wrap"><canvas id="ps-type-pie"></canvas></div>
+              <div class="v2-pie-legend" id="ps-type-legend"></div>
+            </div>
+          </div>
+        </div>
+        <div class="ps-card-group">
+          <div class="ps-card-head">
+            <span class="ps-card-title"><i class="fas fa-calendar-check"></i>일자별 급여 내역</span>
+            <span class="ps-card-meta" id="ps-daily-period"></span>
+          </div>
+          <div class="v2-section ps-card-plain">
+            <div id="ps-daily-list"></div>
+          </div>
+        </div>
+        <div class="ps-card-group">
+          <div class="ps-card-head">
+            <span class="ps-card-title"><i class="fas fa-shield-halved"></i>4대보험 및 산재보험 회사 부담금</span>
+            <span class="ps-card-meta" id="ps-emp-period"></span>
+          </div>
+          <div class="v2-section ps-card-plain">
+            <div id="ps-employer-list"></div>
+          </div>
+        </div>
+        <div class="ps-card-group">
+          <div class="ps-card-head">
+            <span class="ps-card-title"><i class="fas fa-chart-line"></i>12개월 급여 추이</span>
+            <span class="ps-card-meta" id="ps-trend-period"></span>
+          </div>
+          <div class="v2-chart-card ps-card-plain">
+            <div class="toggle-row ps-trend-tabs" id="paystats-toggles"></div>
+            <div style="height:230px;"><canvas id="paystats-trend-chart"></canvas></div>
+            <div class="ps-trend-table" id="ps-trend-table"></div>
+          </div>
+        </div>
       </div>
-      <!-- 2단계: 세부 칩 (대분류가 '전체'이면 숨김) -->
-      <div class="ps-sub-bar" id="ps-sub-bar" style="display:none;">
-        <div class="ps-sub-chips" id="ps-sub-chips"></div>
+
+      <!-- ── 탭 ②: 임금대장 ── -->
+      <div class="v2-ps-panel" id="ps-panel-ledger">
+        <div id="ps-ledger-wrap"></div>
       </div>
-      <div class="ps-filter-divider"></div>
+
+      <!-- ── 탭 ③: 급여명세서 ── -->
+      <div class="v2-ps-panel" id="ps-panel-payslip">
+        <!-- 조회 월은 임금통계 본문 상단 월 선택기에서 지정 -->
+        <!-- sticky 필터 영역 -->
+        <div class="ps-sticky-filters">
+          <!-- 1단계: 대분류 탭 -->
+          <div class="ps-group-bar">
+            <button class="ps-group-btn active" data-group="all"  onclick="setPsGroup('all',this)">전체</button>
+            <button class="ps-group-btn"        data-group="cat"  onclick="setPsGroup('cat',this)">고용형태별</button>
+            <button class="ps-group-btn"        data-group="dept" onclick="setPsGroup('dept',this)">부서별</button>
+            <button class="ps-group-btn"        data-group="rank" onclick="setPsGroup('rank',this)">직급별</button>
+          </div>
+          <!-- 2단계: 세부 칩 (대분류가 '전체'이면 숨김) -->
+          <div class="ps-sub-bar" id="ps-sub-bar" style="display:none;">
+            <div class="ps-sub-chips" id="ps-sub-chips"></div>
+          </div>
+          <div class="ps-filter-divider"></div>
+        </div>
+        <!-- 직원 목록 -->
+        <div id="payslip-list-content"></div>
+      </div>
+
+      <!-- ── 탭 ④: 지급예정 ── -->
+      <div class="v2-ps-panel" id="ps-panel-next">
+        <!-- 요약 카드: 지급총액·공제총액·실지급액 -->
+        <div class="v2-sum-card v2-sum-prev ps-sumbar" id="ps-summary-next">
+          <div class="v2-sum-row ps-sumbar-row">
+            <span class="v2-sum-label">지급총액</span>
+            <span class="v2-sum-val" id="ps-sum-next-gross">-</span>
+          </div>
+          <div class="v2-sum-row ps-sumbar-row ps-sumbar-row--ded">
+            <span class="v2-sum-label">공제총액</span>
+            <span class="v2-sum-val" id="ps-sum-next-ded">-</span>
+          </div>
+          <div class="v2-sum-row ps-sumbar-row ps-sumbar-row--net">
+            <span class="v2-sum-label">실지급액</span>
+            <span class="v2-sum-val" id="ps-sum-next-net">-</span>
+          </div>
+        </div>
+        <div class="v2-sum-grid">
+          <div class="v2-sum-card v2-sum-prev">
+            <div class="v2-sum-row">
+              <span class="v2-sum-label"><i class="fas fa-calculator"></i>예상 세부내역</span>
+            </div>
+            <div class="v2-sum-period" id="ps-next-meta" style="margin-top:2px">-</div>
+            <div class="pay-breakdown" id="ps-next-breakdown"></div>
+          </div>
+        </div>
+        <div class="v2-section">
+          <div class="v2-section-head">
+            <span class="v2-section-title"><i class="fas fa-layer-group"></i>고용형태별 통계</span>
+            <span class="v2-asof" id="ps-next-type-period"></span>
+          </div>
+          <div class="v2-type-pie">
+            <div class="v2-pie-canvas" id="ps-next-pie-wrap"><canvas id="ps-next-pie"></canvas></div>
+            <div class="v2-pie-legend" id="ps-next-type-legend"></div>
+          </div>
+        </div>
+        <div class="v2-footnote">※ 선택한 월 1일부터 조회일(지난 달은 월말)까지 기록된 근태(결근·지각·조퇴·추가근무)를 반영한 추정치이며, 4대보험·세금은 최근 지급 실적 기준으로 추정합니다. 실제 급여와 다를 수 있습니다.</div>
+      </div>
     </div>
-    <!-- 직원 목록 -->
-    <div id="payslip-list-content"></div>
   </div>
 
   <!-- ③ 사용료 조회 페이지 (시스템 설정 스위치로 제어) -->
@@ -968,11 +1087,11 @@
   </div>
 </div>
 
-    <script src="js/client-core.js?v=20260922a"></script>
-  <script src="js/client-payslip.js?v=20260922a"></script>
-  <script src="js/client-chart.js"></script>
+    <script src="js/client-core.js?v=20261114c"></script>
+  <script src="js/client-payslip.js?v=20261114c"></script>
+  <script src="js/client-chart.js?v=20261114b"></script>
   <script src="js/client-billing.js"></script>
   <script src="js/client-notice.js?v=20260901a"></script>
   <script src="js/client-init.js?v=20260921a"></script>
-  <script src="js/client-attendance.js?v=20260921b"></script>    <script src="js/client-v2.js?v=20261113a"></script></body>
+  <script src="js/client-attendance.js?v=20260921b"></script>    <script src="js/client-v2.js?v=20261114v"></script></body>
 </html>

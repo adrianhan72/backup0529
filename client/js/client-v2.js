@@ -9,13 +9,13 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 
 // ── 상태 ──
-let _v2ViewDate    = fmtLocalDate(new Date()); // 조회 시점 (기본: 오늘)
+let _v2ViewDate    = fmtLocalDate(new Date()); // 조회 시점 (임직원 현황 — 일 단위)
+let _v2ViewMonth   = { y: new Date().getFullYear(), m: new Date().getMonth() + 1 }; // 임금통계 조회 월 (월 단위)
 let _v2EmpFilter   = 'all';                     // 임직원 현황 카테고리 필터
 let _v2EmpSearch   = '';                        // 이름 검색어
 let _v2DailyInsEmpId = '';                      // 일용직 4대보험 신고 조회 대상
 let _v2TrendChart  = null;                      // 급여통계 12개월 추이 차트
-const _v2TrendOn = {};
-(TREND_ITEMS || []).forEach(t => { _v2TrendOn[t.key] = t.def !== false; });
+let _v2TrendKey    = 'gross';                   // 12개월 추이 선택 항목 (탭 형식 — 단일 선택)
 
 const _V2_WEEKDAYS = ['일','월','화','수','목','금','토'];
 const _V2_CAT_ORDER = ['대표자','등기임원','특수관계인','정규직','정규직 수습','계약직','계약직 수습','일용직','기타'];
@@ -45,14 +45,26 @@ function _v2FormatDateLabel(dStr){
   return `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 (${_V2_WEEKDAYS[d.getDay()]})`;
 }
 
+function _v2FormatMonthLabel(ym){
+  return `${ym.y}년 ${ym.m}월`;
+}
+
+/** 임금통계: 월 단위 조회 — 헤더 날짜바 대신 본문 상단 월 선택기를 사용 */
 function _configHeaderDate(page){
   const row = document.getElementById('header-date-row');
   if(!row) return;
-  row.classList.remove('hidden');
+
+  const monthMode = page === 'paystats';
+
+  // 임금통계는 본문 상단(#ps-month-row)에서 월을 선택하므로 헤더 날짜바를 숨긴다
+  row.classList.toggle('hidden', monthMode);
+  if(monthMode){ _v2SyncPsMonthUI(); return; }
+
   const label = document.getElementById('hd-date-label');
   if(label) label.textContent = _v2FormatDateLabel(_v2ViewDate);
-  const input = document.getElementById('hd-date-input');
-  if(input) input.value = _v2ViewDate;
+
+  const dateInput = document.getElementById('hd-date-input');
+  if(dateInput) dateInput.value = _v2ViewDate;
 
   // 이전/다음/오늘 버튼 리스너 재등록 (중복 방지 cloneNode)
   ['hd-prev-btn','hd-next-btn','hd-today-btn'].forEach(id => {
@@ -63,7 +75,24 @@ function _configHeaderDate(page){
   });
   document.getElementById('hd-prev-btn').addEventListener('click', () => _v2ShiftViewDate(-1));
   document.getElementById('hd-next-btn').addEventListener('click', () => _v2ShiftViewDate(1));
-  document.getElementById('hd-today-btn').addEventListener('click', () => _v2SetViewDate(fmtLocalDate(new Date())));
+  const todayBtn = document.getElementById('hd-today-btn');
+  todayBtn.textContent = '오늘';
+  todayBtn.addEventListener('click', () => resetViewDate());
+}
+
+/** 본문 상단 월 선택기 표시 동기화 */
+function _v2SyncPsMonthUI(){
+  const label = document.getElementById('ps-month-label');
+  if(label) label.textContent = _v2FormatMonthLabel(_v2ViewMonth);
+  const input = document.getElementById('ps-month-input');
+  if(input) input.value = `${_v2ViewMonth.y}-${_v2Pad2(_v2ViewMonth.m)}`;
+}
+
+function openPsMonthPicker(){
+  const input = document.getElementById('ps-month-input');
+  if(!input) return;
+  try { if(typeof input.showPicker === 'function') input.showPicker(); else input.click(); }
+  catch(e){ try{ input.click(); }catch(_){} }
 }
 
 function _v2ShiftViewDate(delta){
@@ -82,7 +111,23 @@ function _v2SetViewDate(dStr){
   const active = document.querySelector('.page.active');
   const id = active ? active.id : '';
   if(id === 'page-employees') renderClientEmployees();
-  if(id === 'page-paystats')  renderClientPayStats();
+}
+
+/** 임금통계: 이전/다음 달 */
+function _v2ShiftViewMonth(delta){
+  let y = _v2ViewMonth.y, m = _v2ViewMonth.m + delta;
+  while(m < 1){ m += 12; y--; }
+  while(m > 12){ m -= 12; y++; }
+  _v2SetViewMonth(`${y}-${_v2Pad2(m)}`);
+}
+
+function _v2SetViewMonth(str){
+  if(!/^\d{4}-\d{2}$/.test(str || '')) return;
+  const [y, m] = str.split('-').map(Number);
+  _v2ViewMonth = { y, m };
+  _v2SyncPsMonthUI();
+  const active = document.querySelector('.page.active');
+  if(active && active.id === 'page-paystats') renderClientPayStats();
 }
 
 function openDatePicker(){
@@ -92,7 +137,9 @@ function openDatePicker(){
   catch(e){ try{ input.click(); }catch(_){} }
 }
 function setViewDateFromInput(v){ if(v) _v2SetViewDate(v); }
+function setPsMonthFromInput(v){ if(v) _v2SetViewMonth(v); }
 function resetViewDate(){ _v2SetViewDate(fmtLocalDate(new Date())); }
+function resetViewMonth(){ const n = new Date(); _v2SetViewMonth(`${n.getFullYear()}-${_v2Pad2(n.getMonth()+1)}`); }
 
 // ══════════════════════════════════════════════════════════════
 // ② 임직원 현황
@@ -349,6 +396,12 @@ function _v2PrevMonth(viewDate){
   return { y: vy, m: vm-1 };
 }
 
+/** {y,m} 기준 직전 월 */
+function _v2PrevMonthOf(ym){
+  if(!ym || !ym.y || !ym.m) return { y: new Date().getFullYear(), m: new Date().getMonth()+1 };
+  return ym.m === 1 ? { y: ym.y - 1, m: 12 } : { y: ym.y, m: ym.m - 1 };
+}
+
 /** 다음 급여일 (조회 시점 다음 날부터 pay_day 일자 탐색) */
 function _v2NextPayday(fromDate){
   const payDay = parseInt(currentCompany?.pay_day, 10);
@@ -422,7 +475,7 @@ function _v2SchedMinute(dateStr, scheduleJson, field, fallback){
   return (h || 0) * 60 + (m || 0);
 }
 
-/** 근태(무급 결근·지각·조퇴)에 따른 고정임금 차감액 */
+/** 근태(무급 결근·지각·조퇴)에 따른 약정임금 차감액 */
 function _v2AttendanceDeduction(p, contract){
   const hourly = Number(p.hourly_wage) || 0;
   if(hourly <= 0) return 0;
@@ -456,29 +509,38 @@ function _v2AttendanceDeduction(p, contract){
   return Math.round(hours * hourly);
 }
 
-/** 직전월 임금내역(지급/공제 세부항목) 렌더 — 값이 없는 항목은 생략 */
-function _v2RenderPrevPayBreakdown(pays){
-  const box = document.getElementById('ps-prev-breakdown');
-  if(!box) return;
+/** 선택 월 임금내역(공제 세부항목) 렌더 — 값이 없는 항목은 생략
+ *  지급 세부항목은 3개 아코디언(_v2RenderPayAccordions)에서 표시 */
+function _v2RenderPayBreakdown(pays, ym){
+  const dedBox = document.getElementById('ps-prev-deduction-breakdown');
+
+  const setAmt = (id, txt) => { const el = document.getElementById(id); if(el) el.textContent = txt; };
+  const setGroupVisible = (el, on) => { const g = el && el.closest ? el.closest('.ps-card-group') : null; if(g) g.style.display = on ? '' : 'none'; };
 
   if(!pays.length){
-    box.innerHTML = `<div class="pb-empty">임금 내역이 없습니다</div>`;
+    if(dedBox) dedBox.innerHTML = `<div class="pb-empty">${ym ? `${ym.y}년 ${ym.m}월 ` : ''}임금 내역이 없습니다</div>`;
+    setAmt('ps-sum-paid-gross', '-');
+    setAmt('ps-sum-paid-ded', '-');
+    setAmt('ps-sum-paid-net', '-');
+    setGroupVisible(dedBox, true);
     return;
   }
+  setGroupVisible(dedBox, true);
 
   const sum = key => pays.reduce((s,p) => s + (Number(p[key])||0), 0);
   const gross     = sum('gross_pay');
   const deduction = sum('total_deduction');
-  const net       = sum('net_pay');
+  // 가불금 상환은 임금이 아니므로 임금통계 지급/공제 양쪽에서 제외한다
+  const advance   = sum('advance_deduction');
+  // 퇴직금 중간정산도 임금이 아니므로 지급총액에서 제외
+  const sevInterim = sum('severance_interim_pay');
 
   // 지급 항목
   const extraWork = sum('overtime_pay') + sum('night_pay') + sum('holiday_pay');
-  const annualPay = sum('annual_leave_pay');
-  // 조정액이 음수면 환급액으로 표시
-  const insRefund = Math.abs(Math.min(0, sum('health_insurance_adjust') + sum('ltcare_adjust_yearend') + sum('health_insurance_adjust_yearend')));
-  const taxRefund = Math.abs(Math.min(0, sum('year_end_tax_adjust')));
+  const irregItems = _v2IrregularBreakdown(pays);           // 부정기지급 (항목별)
+  const irregTotal = irregItems.reduce((s, x) => s + x.amount, 0);
 
-  // 근태차감 (무급 결근·지각·조퇴) — 명목 고정임금에서 차감되므로 지급/공제 양쪽에 반영해 합계를 맞춘다
+  // 근태차감 (무급 결근·지각·조퇴) — 명목 약정임금에서 차감되므로 지급/공제 양쪽에 반영해 합계를 맞춘다
   const attDed = pays.reduce((s,p) => {
     const c = allContracts
       .filter(x => x.employee_id === p.employee_id && !x.is_draft)
@@ -486,9 +548,10 @@ function _v2RenderPrevPayBreakdown(pays){
     return s + _v2AttendanceDeduction(p, c);
   }, 0);
 
-  const grossNominal = gross + attDed;
-  const dedTotal     = deduction + attDed;
-  const fixedWage    = grossNominal - extraWork - annualPay - insRefund - taxRefund;
+  const grossNominal = gross + attDed - sevInterim;
+  const dedTotal     = deduction + attDed - advance;
+  const net          = grossNominal - dedTotal;
+  const fixedWage    = grossNominal - extraWork - irregTotal;
 
   // 공제 항목 (산재보험은 근로자 부담이 없어 제외)
   const health    = sum('health_insurance');
@@ -497,32 +560,280 @@ function _v2RenderPrevPayBreakdown(pays){
   const pension   = sum('national_pension');
   const incomeTax = sum('income_tax');
   const localTax  = sum('local_income_tax');
-  const otherDed  = dedTotal - (attDed + health + ltcare + employ + pension + incomeTax + localTax);
+  // 정산 항목 — 음수는 환급(공제 감소)이므로 부호 그대로 표시
+  const yeTax      = sum('year_end_tax_adjust');            // 연말정산
+  const hAdj       = sum('health_insurance_adjust');        // 건강보험 정산
+  const hAdjYe     = sum('health_insurance_adjust_yearend');// 건강보험 연말정산
+  const ltAdj      = sum('ltcare_adjust');                  // 장기요양보험 정산
+  const ltAdjYe    = sum('ltcare_adjust_yearend');          // 장기요양 연말정산
+  const empAdj     = sum('employment_insurance_adjust');    // 고용보험 정산
+  const penRetro   = sum('national_pension_retro');         // 국민연금 소급분
+  const otherDed = dedTotal - (attDed + health + ltcare + employ + pension + incomeTax + localTax
+    + yeTax + hAdj + hAdjYe + ltAdj + ltAdjYe + empAdj + penRetro);
 
   const won = v => Math.round(Number(v)||0).toLocaleString() + '원';
   const rows = (label, val) => `<div class="pb-item"><span>${label}</span><span class="pb-amt">${won(val)}</span></div>`;
-  const head = (label, val, cls = '') => `<div class="pb-group-head ${cls}"><span>${label}</span><span class="pb-amt">${won(val)}</span></div>`;
 
-  let html = '';
-  html += head('지급총액', grossNominal);
-  if(fixedWage > 0) html += rows('고정임금', fixedWage);
-  if(extraWork > 0) html += rows('추가근로수당', extraWork);
-  if(insRefund > 0) html += rows('4대보험환급금', insRefund);
-  if(taxRefund > 0) html += rows('세금환급금', taxRefund);
-  if(annualPay > 0) html += rows('연차수당', annualPay);
+  let dedHtml = '';
+  if(attDed !== 0)    dedHtml += rows('근태차감', attDed);
+  if(pension !== 0)   dedHtml += rows('국민연금', pension);
+  if(health !== 0)    dedHtml += rows('건강보험', health);
+  if(ltcare !== 0)    dedHtml += rows('장기요양보험', ltcare);
+  if(employ !== 0)    dedHtml += rows('고용보험', employ);
+  if(incomeTax !== 0) dedHtml += rows('소득세', incomeTax);
+  if(localTax !== 0)  dedHtml += rows('지방세', localTax);
+  if(penRetro !== 0)  dedHtml += rows('국민연금 소급분', penRetro);
+  if(yeTax !== 0)     dedHtml += rows('연말정산', yeTax);
+  if(hAdj !== 0)      dedHtml += rows('건강보험 정산', hAdj);
+  if(hAdjYe !== 0)    dedHtml += rows('건강보험 연말정산', hAdjYe);
+  if(ltAdj !== 0)     dedHtml += rows('장기요양보험 정산', ltAdj);
+  if(ltAdjYe !== 0)   dedHtml += rows('장기요양 연말정산', ltAdjYe);
+  if(empAdj !== 0)    dedHtml += rows('고용보험 정산', empAdj);
+  if(otherDed !== 0)  dedHtml += rows('기타 공제', otherDed);
+  dedBox.innerHTML = dedHtml || '<div class="pb-empty">공제 항목이 없습니다</div>';
 
-  html += head('공제총액', dedTotal, 'pb-ded');
-  if(attDed > 0)    html += rows('근태차감', attDed);
-  if(pension > 0)   html += rows('국민연금', pension);
-  if(health > 0)    html += rows('건강보험', health);
-  if(ltcare > 0)    html += rows('장기요양보험', ltcare);
-  if(employ > 0)    html += rows('고용보험', employ);
-  if(incomeTax > 0) html += rows('소득세', incomeTax);
-  if(localTax > 0)  html += rows('지방세', localTax);
-  if(otherDed > 0)  html += rows('기타 공제', otherDed);
+  setAmt('ps-sum-paid-gross', won(grossNominal));
+  setAmt('ps-sum-paid-ded', won(dedTotal));
+  setAmt('ps-sum-paid-net', won(net));
+  // 지급 세부항목 3개 아코디언 (약정임금·추가근로수당·비정기지급수당)
+  _v2RenderPayAccordions(pays, { fixedWage, extraWork, irregItems }, ym);
+}
 
-  html += `<div class="pb-total"><span>실지급액</span><span class="pb-amt">${won(net)}</span></div>`;
-  box.innerHTML = html;
+/* ── 지급 세부항목 아코디언 (약정임금 · 추가근로수당 · 비정기지급수당) ── */
+const _V2_ACC_FIXED_FIELDS = [
+  ['base_salary',             '기본급'],
+  ['weekly_holiday_pay',      '주휴수당'],
+  ['position_allowance',      '직책수당'],
+  ['skill_allowance',         '기술수당'],
+  ['license_allowance',       '자격수당'],
+  ['site_allowance',          '현장수당'],
+  ['remote_area_allowance',   '벽지수당'],
+  ['hazard_allowance',        '위험수당'],
+  ['transportation_allowance','차량지원비'],
+  ['self_driving_allowance',  '차량지원비'],
+  ['meal_allowance',          '식대'],
+  ['research_allowance',      '연구활동비'],
+  ['communication_allowance', '통신비'],
+  ['childcare_allowance',     '보육수당'],
+  ['regular_bonus',           '정기상여'],
+  ['contract_etc_allowance',  '기타 계약수당'],
+];
+const _V2_ACC_EXTRA_FIELDS = [
+  ['overtime_pay', '연장근로수당'],
+  ['night_pay',    '야간근로수당'],
+  ['holiday_pay',  '휴일근로수당'],
+];
+const _V2_ACC_KEYS = ['fixed', 'extra', 'irreg'];
+const _v2AccData = { fixed: { total: 0, items: [] }, extra: { total: 0, items: [] }, irreg: { total: 0, items: [] } };
+const _v2AccOpen = { fixed: false, extra: false, irreg: false };
+
+/** 항목 맵 → 비율 표시용 목록 (합계와 차이나는 금액은 '기타'로 보정) */
+function _v2AccItemList(map, total){
+  const clean = new Map();
+  map.forEach((v, k) => { const r = Math.round(v); if(r !== 0) clean.set(k, (clean.get(k) || 0) + r); });
+  const sumOf = m => [...m.values()].reduce((s, v) => s + v, 0);
+  const residual = Math.round((Number(total) || 0) - sumOf(clean));
+  if(Math.abs(residual) > 0) clean.set(residual > 0 ? '기타' : '기타(차감)', (clean.get(residual > 0 ? '기타' : '기타(차감)') || 0) + residual);
+  return [...clean.entries()]
+    .filter(([, v]) => v !== 0)
+    .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
+    .map(([label, val], i) => ({ label, val, color: _V2_PAYMIX_COLORS[i % _V2_PAYMIX_COLORS.length] }));
+}
+
+/** 지급월을 포함하는 근로계약 (없으면 최근 계약) */
+function _v2ContractForMonth(empId, y, m){
+  const list = (allContracts || []).filter(c => c.employee_id === empId && !c.is_draft
+    && (typeof _normContractStatus !== 'function' || _normContractStatus(c.status) !== CONTRACT_STATUS.VOIDED));
+  if(!list.length) return null;
+  const ymd = `${y}-${_v2Pad2(m)}-01`;
+  const covering = list.filter(c => (!c.contract_start || c.contract_start <= ymd)
+    && (!c.contract_end || c.contract_end >= ymd));
+  return (covering.length ? covering : list.slice())
+    .sort((a, b) => String(b.contract_start || '').localeCompare(String(a.contract_start || '')))[0] || null;
+}
+
+/** 지급월의 수습 임금 비율 — 수습이 아니거나 이미 종료된 월은 1 */
+function _v2ProbRatioForMonth(c, y, m){
+  if(!c) return 1;
+  const probAmt = Number(c.probation_amt) || 0;
+  let ratio = 1;
+  if(probAmt > 0 && (c.probation_basis || 'salary') === 'direct'){
+    const monthly = Number(c.monthly_salary_agreed) || 0;
+    ratio = monthly > 0 ? probAmt / monthly : 1;
+  } else {
+    const pct = Number(c.probation_pct) || 0;
+    ratio = (pct > 0 && pct < 100) ? pct / 100 : 1;
+  }
+  if(ratio >= 1) return 1;
+
+  const type = _normContractType(c.contract_type);
+  if(type !== CONTRACT_TYPE.REGULAR_PROBATION && type !== CONTRACT_TYPE.FIXED_PROBATION) return 1;
+
+  let probEnd = c.probation_end_date || '';
+  if(!probEnd){
+    const months = Number(c.probation_months) || 0;
+    const start = c.contract_start ? new Date(c.contract_start) : null;
+    if(months > 0 && start && !isNaN(start.getTime())){
+      start.setMonth(start.getMonth() + months);
+      start.setDate(start.getDate() - 1);
+      probEnd = fmtLocalDate(start);
+    } else {
+      probEnd = c.contract_end || '';   // 종료일 미입력 → 무기한 수습
+    }
+  }
+  if(!probEnd) return ratio;
+
+  const monthStart = `${y}-${_v2Pad2(m)}-01`;
+  if(monthStart > probEnd) return 1;    // 수습 종료 이후 월
+  const monthEnd = `${y}-${_v2Pad2(m)}-${_v2Pad2(new Date(y, m, 0).getDate())}`;
+  if(monthEnd <= probEnd) return ratio; // 월 전체가 수습
+  return 1;                             // 수습 종료가 월 중간 → 정상값 기준
+}
+
+/** 계약서에 명시된 고정 연장·야간·휴일근로수당 (수습비율 반영) — 약정임금의 일부 */
+function _v2ContractFixedExtras(c, y, m){
+  const empty = { ot: 0, night: 0, hol: 0, total: 0 };
+  if(!c) return empty;
+  const r = _v2ProbRatioForMonth(c, y, m);
+  const ot    = Math.round((Number(c.fixed_ot_pay)    || 0) * r);
+  const night = Math.round((Number(c.fixed_night_pay) || 0) * r);
+  const hol   = Math.round((Number(c.fixed_hol_pay)   || 0) * r);
+  if(!ot && !night && !hol) return empty;
+  return { ot, night, hol, total: ot + night + hol };
+}
+
+/** 탭 ① 지급 세부항목 — 3개 아코디언 데이터 구성 및 금액 표시 */
+function _v2RenderPayAccordions(pays, calc, ym){
+  const list = (pays || []).filter(Boolean);
+  const fixedMap = new Map(), extraMap = new Map(), irregMap = new Map();
+  const addTo = (map, label, v) => { if(!v) return; map.set(label, (map.get(label) || 0) + v); };
+
+  list.forEach(p => {
+    _V2_ACC_FIXED_FIELDS.forEach(([key, label]) => addTo(fixedMap, label, Number(p[key]) || 0));
+    _v2JsonItems(p.custom_ordinary_values).forEach(x => {
+      addTo(fixedMap, String((x && x.name) || '기타 통상수당').trim() || '기타 통상수당', Number(x && x.amount) || 0);
+    });
+    _V2_ACC_EXTRA_FIELDS.forEach(([key, label]) => addTo(extraMap, label, Number(p[key]) || 0));
+  });
+  ((calc && calc.irregItems) || []).forEach(it => addTo(irregMap, it.label, it.amount));
+
+  const fixedTotal = calc ? (Number(calc.fixedWage) || 0) : 0;
+  const extraTotal = calc ? (Number(calc.extraWork) || 0) : 0;
+  const irregTotal = [...irregMap.values()].reduce((s, v) => s + v, 0);
+
+  // 계약서상 고정 연장·야간·휴일근로수당 — 약정임금에 포함되므로 별도 항목으로 표시
+  const fixedExtras = { ot: 0, night: 0, hol: 0, total: 0 };
+  if(ym && ym.y && ym.m){
+    list.forEach(p => {
+      const f = _v2ContractFixedExtras(_v2ContractForMonth(p.employee_id, ym.y, ym.m), ym.y, ym.m);
+      fixedExtras.ot += f.ot; fixedExtras.night += f.night; fixedExtras.hol += f.hol;
+    });
+    fixedExtras.total = fixedExtras.ot + fixedExtras.night + fixedExtras.hol;
+  }
+
+  // 주휴수당이 이미 기본급에 포함된 데이터는 총액과 어긋나므로 제외 (지급총액 ±50원 허용)
+  const sumOfMap = m => [...m.values()].reduce((s, v) => s + v, 0);
+  const weekTargets = fixedExtras.total > 0 ? [fixedTotal, fixedTotal - fixedExtras.total] : [fixedTotal];
+  if(!weekTargets.some(t => Math.abs(sumOfMap(fixedMap) - t) <= 50)){
+    const weekly = fixedMap.get('주휴수당') || 0;
+    if(weekly && weekTargets.some(t => Math.abs(sumOfMap(fixedMap) - weekly - t) <= 50)) fixedMap.delete('주휴수당');
+  }
+
+  // 고정 연장·야간·휴일근로수당 — 약정임금 합계 안에서 실제로 지급된 만큼만 반영
+  if(fixedExtras.total > 0){
+    const room = Math.max(0, fixedTotal - sumOfMap(fixedMap));
+    const apply = Math.min(fixedExtras.total, room);
+    const parts = [['고정 연장근로수당', fixedExtras.ot], ['고정 야간근로수당', fixedExtras.night], ['고정 휴일근로수당', fixedExtras.hol]]
+      .filter(([, v]) => v > 0);
+    if(apply > 0 && parts.length){
+      const scale = apply / fixedExtras.total;
+      let assigned = 0;
+      parts.forEach(([label, v], i) => {
+        const amt = (i === parts.length - 1) ? apply - assigned : Math.round(v * scale);
+        assigned += amt;
+        addTo(fixedMap, label, amt);
+      });
+    }
+  }
+
+  _v2AccData.fixed = { total: fixedTotal, items: _v2AccItemList(fixedMap, fixedTotal) };
+  _v2AccData.extra = { total: extraTotal, items: _v2AccItemList(extraMap, extraTotal) };
+  _v2AccData.irreg = { total: irregTotal, items: _v2AccItemList(irregMap, irregTotal) };
+
+  const wonFmt = v => Math.round(Number(v) || 0).toLocaleString() + '원';
+  _V2_ACC_KEYS.forEach(key => {
+    const d = _v2AccData[key];
+    const amtEl = document.getElementById(`ps-acc-${key}-amt`);
+    if(amtEl) amtEl.textContent = d.total > 0 ? wonFmt(d.total) : '-';
+    const card = document.getElementById(`ps-acc-${key}`);
+    if(card) card.classList.toggle('open', !!_v2AccOpen[key]);
+    const btn = card && card.querySelector('.ps-acc-head');
+    if(btn) btn.setAttribute('aria-expanded', _v2AccOpen[key] ? 'true' : 'false');
+    const chartKey = `ps-acc-${key}-pie`;
+    if(_v2PieCharts[chartKey]){ try { _v2PieCharts[chartKey].destroy(); } catch(e){} delete _v2PieCharts[chartKey]; }
+    const tableEl = document.getElementById(`ps-acc-${key}-table`);
+    if(tableEl) tableEl.innerHTML = '';
+  });
+
+  _v2ReopenPayAccordions();
+}
+
+/** 아코디언 접기/펼치기 */
+function togglePsAcc(key){
+  if(_V2_ACC_KEYS.indexOf(key) < 0) return;
+  _v2AccOpen[key] = !_v2AccOpen[key];
+  const card = document.getElementById(`ps-acc-${key}`);
+  if(card) card.classList.toggle('open', _v2AccOpen[key]);
+  const btn = card && card.querySelector('.ps-acc-head');
+  if(btn) btn.setAttribute('aria-expanded', _v2AccOpen[key] ? 'true' : 'false');
+  if(_v2AccOpen[key]) _v2RenderAccBody(key);
+}
+
+/** 열려 있는 아코디언 본문(파이 + 표) 다시 그리기 — 화면 표시 후 호출 */
+function _v2ReopenPayAccordions(){
+  _V2_ACC_KEYS.forEach(key => { if(_v2AccOpen[key]) _v2RenderAccBody(key); });
+}
+
+function _v2RenderAccBody(key){
+  const d = _v2AccData[key];
+  const canvas = document.getElementById(`ps-acc-${key}-pie`);
+  const tableEl = document.getElementById(`ps-acc-${key}-table`);
+  if(!canvas || !tableEl) return;
+  const items = (d && d.items) || [];
+  const total = d ? (Number(d.total) || 0) : 0;
+
+  if(_v2PieCharts[canvas.id]){ try { _v2PieCharts[canvas.id].destroy(); } catch(e){} delete _v2PieCharts[canvas.id]; }
+  if(!items.length){
+    tableEl.innerHTML = '<div class="pb-empty">세부 항목이 없습니다</div>';
+    return;
+  }
+
+  const wonFmt = v => Math.round(Number(v) || 0).toLocaleString() + '원';
+  const pct = v => (total > 0 ? (v / total * 100) : 0).toFixed(1);
+
+  _v2PieCharts[canvas.id] = new Chart(canvas, {
+    type: 'doughnut',
+    data: {
+      labels: items.map(i => i.label),
+      datasets: [{ data: items.map(i => i.val), backgroundColor: items.map(i => i.color), borderColor: '#fff', borderWidth: 2, hoverOffset: 6 }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '58%',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          titleFont: { size: 13 }, bodyFont: { size: 14 },
+          callbacks: { label: c => ` ${c.label}: ${wonFmt(c.parsed)} (${pct(c.parsed)}%)` },
+        },
+      },
+    },
+  });
+
+  tableEl.innerHTML = items.map(i => `<div class="ps-paymix-row">
+        <span class="ps-paymix-name"><i class="ps-paymix-dot" style="background:${i.color}"></i>${i.label}</span>
+        <span class="ps-paymix-pct">${pct(i.val)}%</span>
+        <span class="ps-paymix-amt">${wonFmt(i.val)}</span>
+      </div>`).join('');
 }
 
 /** 고용형태별 임금 비율 파이
@@ -539,7 +850,7 @@ const _V2_TYPE_PIE_GROUPS = [
   { key:'특수관계인', cats:['특수관계인'],           color:'#ec4899', always:false },
 ];
 const _V2_EMP_TYPE_LABELS = ['정규직','정규직 수습','계약직','계약직 수습','일용직'];
-let _v2TypePie = null;
+const _v2PieCharts = {};   // canvas.id → Chart 인스턴스 (파이 2개: 전월/익월)
 
 /** 지급월 기준 근로계약의 고용형태 라벨 (근로계약이 없으면 null) */
 function _v2EmpContractTypeLabel(emp, y, m){
@@ -572,31 +883,144 @@ function _v2EmpPayTypeCategory(emp, y, m){
   return _V2_EMP_TYPE_LABELS.includes(eLabel) ? eLabel : null;
 }
 
-function _v2RenderPayStatsTypePie(prevPays, pm){
-  const legendEl = document.getElementById('ps-type-legend');
-  const canvas   = document.getElementById('ps-type-pie');
+/** 선택 월 실제 지급일 기준 일자별 급여 내역 (날짜 · 지급대상자 · 금액) */
+function _v2RenderPaidByDate(pays, ym){
+  const box = document.getElementById('ps-daily-list');
+  if(!box || !ym) return;
+
+  const periodEl = document.getElementById('ps-daily-period');
+  if(periodEl) periodEl.textContent = `${ym.y}년 ${ym.m}월 지급일 기준`;
+
+  if(!pays.length){
+    box.innerHTML = '<div class="pb-empty">해당 월 지급 내역이 없습니다</div>';
+    return;
+  }
+
+  const nameOf = id => {
+    const emp = allEmployees.find(e => e.id === id);
+    return emp ? (emp.name || '-') : '-';
+  };
+
+  const groups = new Map();
+  pays.forEach(p => {
+    const date = String(p.pay_date || '').slice(0,10) || `${p.pay_year}-${_v2Pad2(p.pay_month)}-00`;
+    if(!groups.has(date)) groups.set(date, { amount: 0, names: [] });
+    const g = groups.get(date);
+    g.amount += (Number(p.gross_pay) || 0) - (Number(p.severance_interim_pay) || 0); // 퇴직금 중간정산 제외(임금 기준)
+    g.names.push(nameOf(p.employee_id));
+  });
+
+  const won = v => Math.round(Number(v)||0).toLocaleString() + '원';
+  const dateText = d => {
+    const s = String(d || '');
+    const mt = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    return mt ? `${mt[1]}.${mt[2]}.${mt[3]}` : s;
+  };
+
+  const rows = [...groups.entries()]
+    .sort((a, b) => String(a[0]).localeCompare(String(b[0])))
+    .map(([date, g]) => {
+      const who = g.names.length > 1 ? `${g.names[0]} 외 ${g.names.length - 1}명` : (g.names[0] || '-');
+      return `<div class="ps-daily-row">
+        <span class="ps-daily-date">${dateText(date)}</span>
+        <span class="ps-daily-who">${who}</span>
+        <span class="ps-daily-amt">${won(g.amount)}</span>
+      </div>`;
+    }).join('');
+
+  box.innerHTML = `<div class="ps-daily-head"><span>지급일</span><span>지급대상자</span><span>지급총액</span></div>${rows}`;
+}
+
+/** 산재보험료율 — 관리자 요율표(industrial_accident) 우선, 없으면 업종 참고 요율 */
+const _V2_IND_RATE_MAP = [
+  { kw:['건설','토목','건축'],                              rate:3.5 },
+  { kw:['물류','운송','창고','택배','배송'],                 rate:1.2 },
+  { kw:['제조','식품','화학','금속','기계','자동차','조선'],  rate:0.9 },
+  { kw:['에너지','환경','전기','가스','수도','폐기물'],       rate:0.9 },
+  { kw:['IT','소프트웨어','정보통신','서비스','금융','보험','도소매','유통','교육','의료','숙박','음식','부동산'], rate:0.7 },
+];
+function _v2IndustrialRate(){
+  const row = (typeof _pickInsRate === 'function') ? _pickInsRate('industrial_accident') : null;
+  if(row && Number(row.rate) > 0) return { rate: Number(row.rate), label: '보험요율표 적용' };
+
+  const industry = String((currentCompany && currentCompany.industry) || '');
+  const hit = _V2_IND_RATE_MAP.find(g => g.kw.some(k => industry.includes(k)));
+  if(hit) return { rate: hit.rate, label: `${industry} 업종 참고 요율` };
+  return { rate: 0.7, label: '업종 평균 참고 요율' };
+}
+
+/** 선택 월 4대보험·산재보험 회사(사업주) 부담금 */
+function _v2RenderEmployerBurden(pays, ym){
+  const box = document.getElementById('ps-employer-list');
+  if(!box || !ym) return;
+
+  const periodEl = document.getElementById('ps-emp-period');
+  if(periodEl) periodEl.textContent = `${ym.y}년 ${ym.m}월 기준`;
+
+  if(!pays.length){
+    box.innerHTML = '<div class="pb-empty">해당 월 지급 내역이 없습니다</div>';
+    return;
+  }
+
+  let pension = 0, health = 0, ltcare = 0, employ = 0, base = 0;
+  pays.forEach(p => {
+    pension += Number(p.national_pension) || 0;
+    health  += Number(p.health_insurance) || 0;
+    ltcare  += Number(p.long_term_care) || 0;
+    employ  += Number(p.employment_insurance) || 0;
+    base    += Number(p.standard_monthly_pay) || Number(p.gross_pay) || 0;
+  });
+
+  const ind    = _v2IndustrialRate();
+  const indAmt = Math.round(base * ind.rate / 100);
+  const total  = pension + health + ltcare + employ + indAmt;
+
+  const won = v => Math.round(Number(v)||0).toLocaleString() + '원';
+  const row = (label, val, sub) => `<div class="pb-item"><span>${label}${sub ? `<span class="ps-emp-rate">${sub}</span>` : ''}</span><span class="pb-amt">${won(val)}</span></div>`;
+
+  box.innerHTML =
+    row('국민연금', pension) +
+    row('건강보험', health) +
+    row('장기요양보험', ltcare) +
+    row('고용보험', employ, '(실업급여분)') +
+    row('산재보험', indAmt, `(${ind.rate}%)`) +
+    `<div class="ps-emp-total"><span>회사 부담금 합계</span><span class="ps-emp-total-amt">${won(total)}</span></div>
+     <div class="ps-emp-note">※ 국민연금·건강보험·장기요양·고용보험(실업급여)은 법정 사업주 부담분을 근로자 부담액과 동일하게 반영하고,
+     산재보험은 보수월액 × ${ind.rate}%(${ind.label})로 산정했습니다. 고용안정·직업능력개발 부담금은 제외된 참고 금액입니다.</div>`;
+}
+
+/** 아코디언 세부항목 색상 팔레트 */
+const _V2_PAYMIX_COLORS = ['#2563eb','#0ea5e9','#14b8a6','#22c55e','#84cc16','#eab308','#f97316',
+  '#ef4444','#ec4899','#a855f7','#8b5cf6','#64748b','#0f766e','#b45309','#7c3aed'];
+
+/** 고용형태별 임금 비율 파이 — opts.canvasId/legendId 로 대상 컨테이너 지정 */
+function _v2RenderPayStatsTypePie(pays, pm, opts){
+  const o = opts || {};
+  const legendEl = document.getElementById(o.legendId || 'ps-type-legend');
+  const canvas   = document.getElementById(o.canvasId || 'ps-type-pie');
   if(!legendEl || !canvas) return;
 
   const rows = _V2_TYPE_PIE_GROUPS.map(g => ({ key:g.key, color:g.color, always:g.always, gross:0, cnt:0 }));
   const groupIdx = {};
   _V2_TYPE_PIE_GROUPS.forEach((g, i) => g.cats.forEach(c => { groupIdx[c] = i; }));
 
-  prevPays.forEach(p => {
+  pays.forEach(p => {
     const emp = allEmployees.find(e => e.id === p.employee_id);
     const i = groupIdx[_v2EmpPayTypeCategory(emp, Number(p.pay_year), Number(p.pay_month))];
     if(i === undefined) return;
-    rows[i].gross += (Number(p.gross_pay)||0);
+    rows[i].gross += (Number(p.gross_pay)||0) - (Number(p.severance_interim_pay)||0); // 퇴직금 중간정산 제외(임금 기준)
     rows[i].cnt++;
   });
 
   const items = rows.filter(r => r.always || r.cnt > 0);
   const total = items.reduce((s,r) => s + r.gross, 0);
 
-  if(_v2TypePie){ _v2TypePie.destroy(); _v2TypePie = null; }
+  const chartKey = canvas.id;
+  if(_v2PieCharts[chartKey]){ _v2PieCharts[chartKey].destroy(); delete _v2PieCharts[chartKey]; }
 
-  if(!prevPays.length){
+  if(!pays.length){
     canvas.parentElement.style.display = 'none';
-    legendEl.innerHTML = `<div class="emp-empty"><i class="fas fa-inbox"></i><div>데이터 없음</div><p>${pm ? `${pm.y}년 ${pm.m}월` : '해당 월'} 급여가 아직 없습니다.</p></div>`;
+    legendEl.innerHTML = `<div class="emp-empty"><i class="fas fa-inbox"></i><div>데이터 없음</div><p>${pm ? `${pm.y}년 ${pm.m}월` : '해당 월'} ${o.emptyText || '급여가 아직 없습니다.'}</p></div>`;
     return;
   }
 
@@ -617,7 +1041,7 @@ function _v2RenderPayStatsTypePie(prevPays, pm){
   canvas.parentElement.style.display = '';
 
   const pcts = items.map(pctOf);
-  _v2TypePie = new Chart(canvas, {
+  _v2PieCharts[chartKey] = new Chart(canvas, {
     type: 'pie',
     data: {
       labels: items.map(r => r.key),
@@ -665,71 +1089,494 @@ function _v2RenderPayStatsTypePie(prevPays, pm){
 }
 
 
+// ══════════════════════════════════════════════════════════════
+// 임금통계 — 상단 4탭 (지급내역 · 임금대장 · 급여명세서 · 지급예정)
+// ══════════════════════════════════════════════════════════════
+const _V2_PS_TABS = ['paid', 'ledger', 'payslip', 'next'];
+let _v2PsTab = 'paid';
+let _v2PsTabPicked = false;      // 사용자가 탭을 직접 선택했는지 (월 이동 시 자동 전환 허용 여부)
+
+/** 선택 월의 급여 기준일 (회사 pay_day, 월말 초과 시 월말) */
+function _v2PaydayOfMonth(ym){
+  const payDay = parseInt(currentCompany?.pay_day, 10);
+  if(!(payDay > 0)) return null;
+  const lastDay = new Date(ym.y, ym.m, 0).getDate();
+  return `${ym.y}-${_v2Pad2(ym.m)}-${_v2Pad2(Math.min(payDay, lastDay))}`;
+}
+
+/** 선택 월이 급여 기준일에 도달했는지 (기준일 미설정 시 도달로 간주) */
+function _v2IsPaydayReached(ym){
+  const payday = _v2PaydayOfMonth(ym || _v2ViewMonth);
+  if(!payday) return true;
+  return fmtLocalDate(new Date()) >= payday;
+}
+
+function setPsTab(tab, silent){
+  if(!_V2_PS_TABS.includes(tab)) tab = 'paid';
+
+  // 급여 기준일 전이면 지급 내역이 없으므로 지급예정으로 자동 이동
+  let redirected = false;
+  if(tab === 'paid' && !_v2IsPaydayReached(_v2ViewMonth)){
+    tab = 'next';
+    redirected = true;
+  }
+
+  _v2PsTab = tab;
+  if(!silent && !redirected) _v2PsTabPicked = true;
+  document.querySelectorAll('.v2-ps-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  _V2_PS_TABS.forEach(t => {
+    const p = document.getElementById('ps-panel-' + t);
+    if(p) p.classList.toggle('active', t === tab);
+  });
+  window.scrollTo(0, 0);
+
+  if(tab === 'paid')    { renderV2TrendChart(); _v2ReopenPayAccordions(); }
+  if(tab === 'ledger')  { _v2RenderPayStatsLedger(); }
+  if(tab === 'payslip') {
+    _v2SyncPsMonthToView();
+    if(typeof _adjustPsStickyTop === 'function') _adjustPsStickyTop();
+  }
+  if(tab === 'next')    { _v2RenderNextMonthTab(); }
+
+  if(redirected && !silent && typeof _clientToast === 'function'){
+    _clientToast('급여 기준일 전이라 지급예정으로 이동했습니다.');
+  }
+
+  // 숨김 상태에서 생성된 차트는 크기가 0이므로 표시 후 재측정
+  _v2ResizeCharts();
+  requestAnimationFrame(_v2ResizeCharts);
+}
+
+function _v2ResizeCharts(){
+  Object.keys(_v2PieCharts).forEach(k => { try { _v2PieCharts[k].resize(); } catch(e){} });
+  if(typeof _v2TrendChart !== 'undefined' && _v2TrendChart){ try { _v2TrendChart.resize(); } catch(e){} }
+}
+
+/** 회사 전환 시 임금통계 탭/조회월 상태 초기화 */
+function _v2ResetPsTab(){
+  _v2PsTabPicked = false;
+  setPsTab('paid', true);
+}
+
+/** 급여명세서 탭: 조회월(본문 월 선택기)로 동기화 */
+function _v2SyncPsMonthToView(){
+  psYear  = _v2ViewMonth.y || psYear;
+  psMonth = _v2ViewMonth.m || psMonth;
+  if(typeof renderPayslipList === 'function') renderPayslipList();
+}
+
+/** 임금대장 탭 — 조회월 임금대장(없으면 최근 생성본)을 임베드 */
+function _v2RenderPayStatsLedger(){
+  const host = document.getElementById('ps-ledger-wrap');
+  if(!host || !currentCompany) return;
+
+  const vy = _v2ViewMonth.y;
+  const vm = _v2ViewMonth.m;
+  const list = (_wlNotifications || []).filter(n => n.file_html_path);
+  const keyOf = n => (Number(n.year) || Number(n.pay_year) || 0) * 12 + (Number(n.month) || Number(n.pay_month) || 0);
+
+  let target = list.find(n => (Number(n.year) || Number(n.pay_year)) === vy && (Number(n.month) || Number(n.pay_month)) === vm);
+  let isLatest = false;
+  if(!target && list.length){
+    target = list.slice().sort((a,b) => keyOf(b) - keyOf(a))[0];
+    isLatest = true;
+  }
+
+  if(!target){
+    host.innerHTML = `<div class="emp-empty"><i class="fas fa-file-lines"></i><div>임금대장이 아직 없습니다</div><p>${vy}년 ${vm}월 임금대장이 생성되면 이곳에서 확인할 수 있습니다.</p></div>`;
+    return;
+  }
+
+  const y = Number(target.year) || Number(target.pay_year);
+  const m = Number(target.month) || Number(target.pay_month);
+  const url = `${location.origin}/view-wage-ledger/${currentCompany.id}/${y}/${m}?code=${encodeURIComponent(currentCompany.access_code || '')}`;
+  const renewed = Number(target.is_renewed) === 1;
+
+  host.innerHTML = `
+    <div class="ps-ledger-head">
+      <span class="ps-ledger-title"><i class="fas fa-file-lines" style="color:#6366f1;"></i>${y}년 ${m}월 임금대장
+        ${renewed ? '<span class="ps-ledger-badge">갱신됨</span>' : ''}
+        ${isLatest ? '<span class="ps-ledger-badge">최근 생성본</span>' : ''}
+      </span>
+      <a class="ps-ledger-open" href="${url}" target="_blank" rel="noopener"><i class="fas fa-up-right-from-square"></i>새 창으로 열기</a>
+    </div>
+    <iframe class="ps-ledger-frame" src="${url}" title="${y}년 ${m}월 임금대장"></iframe>`;
+}
+
+/** 지급예정 탭 — 조회일까지의 근태를 반영한 추정 */
+function _v2RenderNextMonthTab(){
+  const host = document.getElementById('ps-next-breakdown');
+  if(!host || !currentCompany) return;
+
+  const ym = _v2NextPayrollMonth();
+  const period = _v2EstimatePeriod(ym);
+  const setT = (id, txt) => { const el = document.getElementById(id); if(el) el.textContent = txt; };
+  setT('ps-next-period', _v2PeriodLabel(period));
+  setT('ps-next-type-period', `${ym.y}년 ${ym.m}월 추정`);
+
+  host.innerHTML = `<div class="pb-empty">근태 기록 불러오는 중…</div>`;
+  _v2LoadAttendanceLedgers()
+    .then(() => _v2PaintNextMonth())
+    .catch(err => {
+      console.error('[익월예상] 근태 조회 실패', err);
+      _v2PaintNextMonth();
+    });
+}
+
+let _v2AttLedgers = null;          // attendance_ledger 캐시
+let _v2AttLoadedAt = 0;
+
+function _v2LoadAttendanceLedgers(force){
+  if(!force && _v2AttLedgers && Date.now() - _v2AttLoadedAt < 60000) return Promise.resolve(_v2AttLedgers);
+  return fetch(`../tables/attendance_ledger?company_id=${encodeURIComponent(currentCompany.id)}&limit=500`)
+    .then(r => r.json())
+    .then(jd => {
+      _v2AttLedgers = jd.data || [];
+      _v2AttLoadedAt = Date.now();
+      return _v2AttLedgers;
+    });
+}
+
+/** 조회 월의 지급 정보 — 귀속 월 = 조회 월, 지급일 = 회사 급여 기준일 */
+function _v2NextPayrollMonth(){
+  const y = _v2ViewMonth.y, m = _v2ViewMonth.m;
+  const payDay = parseInt(currentCompany?.pay_day, 10);
+  const lastDay = new Date(y, m, 0).getDate();
+  const payday = (payDay > 0)
+    ? `${y}-${_v2Pad2(m)}-${_v2Pad2(Math.min(payDay, lastDay))}`
+    : null;
+  return { y, m, payday };
+}
+
+/** 근태 반영 구간 — 조회월 1일 ~ min(오늘, 월말). 조회월이 미래면 active=false */
+function _v2EstimatePeriod(ym){
+  const from = `${ym.y}-${_v2Pad2(ym.m)}-01`;
+  const lastDay = new Date(ym.y, ym.m, 0).getDate();
+  const monthEnd = `${ym.y}-${_v2Pad2(ym.m)}-${_v2Pad2(lastDay)}`;
+  const today = fmtLocalDate(new Date());
+  const to = today < monthEnd ? today : monthEnd;
+  return { from, to, active: from <= to };
+}
+
+/** 익월예상 탭 기간 문구 */
+function _v2PeriodLabel(period){
+  return period.active
+    ? `${period.from.replace(/-/g,'.')} ~ ${period.to.replace(/-/g,'.')} 근태 반영`
+    : `산정 기간(${period.from.replace(/-/g,'.')}~) 시작 전 · 근태 미반영`;
+}
+
+/** 직원 1명의 익월 예상 급여 */
+function _v2EstimateEmployee(emp, ym, period){
+  const cat = _v2EmpPayTypeCategory(emp, ym.y, ym.m);
+  if(!cat) return null;
+
+  const contract = (allContracts || [])
+    .filter(c => c.employee_id === emp.id && !c.is_draft && _normContractStatus(c.status) !== CONTRACT_STATUS.VOIDED)
+    .sort((a,b) => String(b.contract_start||'').localeCompare(String(a.contract_start||'')))[0];
+
+  const lastPay = (allPayrolls || [])
+    .filter(p => p.employee_id === emp.id)
+    .sort((a,b) => ((Number(b.pay_year)||0)*12 + (Number(b.pay_month)||0)) - ((Number(a.pay_year)||0)*12 + (Number(a.pay_month)||0)))[0];
+
+  const isDaily = _normContractType(emp.employment_category) === CONTRACT_TYPE.DAILY;
+  const hpd = Number(contract?.work_hours_per_day) || 8;
+  const hourly = Number(contract?.hourly_wage)
+    || (Number(contract?.monthly_salary_agreed) > 0 ? Math.round(Number(contract.monthly_salary_agreed) / 209) : 0)
+    || Number(lastPay?.hourly_wage) || 0;
+
+  // 약정임금 — 상용직: 계약 고정항목 합계 / 일용직: 최근 지급 실적
+  let fixed = 0;
+  if(isDaily){
+    fixed = Number(lastPay?.gross_pay) || 0;
+  } else if(contract){
+    fixed = ['base_salary','weekly_holiday_pay','position_allowance','fixed_ot_pay','fixed_night_pay','fixed_hol_pay',
+             'meal_allowance','transportation_allowance','research_allowance','communication_allowance',
+             'fitness_allowance','self_dev_allowance','book_allowance','overseas_allowance']
+      .reduce((s,k) => s + (Number(contract[k]) || 0), 0);
+  }
+
+  // 근태 반영 (일용직은 근무일수 기반이라 시급 조정을 적용하지 않음)
+  let overtime = 0, attDed = 0;
+  if(!isDaily && period.from && period.to && period.from <= period.to){
+    const entries = _v2AttendanceEntries(emp.id, ym.y).filter(e =>
+      e.date >= period.from && e.date <= period.to);
+    const otHours = entries.filter(e => e.type === 'overtime' && e.otStart && e.otEnd)
+      .reduce((s,e) => s + _v2MinutesBetween(e.otStart, e.otEnd), 0) / 60;
+    if(hourly > 0) overtime = Math.round(otHours * hourly * 1.5);
+    attDed = _v2AttendanceHours(entries, contract, hpd) * hourly;
+    attDed = Math.round(attDed);
+  }
+
+  // 4대보험·세금 — 최근 지급 실적 기준 추정
+  const ins = {
+    pension:     Number(lastPay?.national_pension) || 0,
+    health:      Number(lastPay?.health_insurance) || 0,
+    ltcare:      Number(lastPay?.long_term_care) || 0,
+    employment:  Number(lastPay?.employment_insurance) || 0,
+    incomeTax:   Number(lastPay?.income_tax) || 0,
+    localTax:    Number(lastPay?.local_income_tax) || 0,
+  };
+
+  return { empId: emp.id, cat, isDaily, fixed, overtime, attDed, ins };
+}
+
+/** 근태 엔트리 (연 단위 month_data → 평탄화) */
+function _v2AttendanceEntries(empId, year){
+  const row = (_v2AttLedgers || []).find(l => l.employee_id === empId && Number(l.year) === Number(year))
+    || (_v2AttLedgers || []).find(l => l.employee_id === empId);
+  return row ? _v2JsonArr(row.month_data) : [];
+}
+
+function _v2MinutesBetween(from, to){
+  const [fh, fm] = String(from).split(':').map(Number);
+  const [th, tm] = String(to).split(':').map(Number);
+  const d = (th * 60 + tm) - (fh * 60 + fm);
+  return d > 0 ? d : 0;
+}
+
+/** 무급 결근·지각·조퇴 시간 합계 (주말 결근 제외) */
+function _v2AttendanceHours(entries, contract, hpd){
+  const sched = contract?.schedule_json || null;
+  let hours = 0;
+
+  entries.filter(e => e.type === 'absent').forEach(e => {
+    if(!_V2_ATT_FULL_DEDUCT.has(e.absentType || 'unauthorized')) return;
+    _v2ExpandDates(e.date, e.dateTo)
+      .filter(dt => { const dow = new Date(dt + 'T00:00:00').getDay(); return dow !== 0 && dow !== 6; })
+      .forEach(() => { hours += hpd; });
+  });
+
+  entries.filter(e => e.type === 'late' && e.time).forEach(e => {
+    const [h, m] = String(e.time).split(':').map(Number);
+    const start = _v2SchedMinute(e.date, sched, 'start', '09:00');
+    const arrive = (h || 0) * 60 + (m || 0);
+    if(arrive > start) hours += (arrive - start) / 60;
+  });
+
+  entries.filter(e => e.type === 'earlyleave' && e.time).forEach(e => {
+    const [h, m] = String(e.time).split(':').map(Number);
+    const end = _v2SchedMinute(e.date, sched, 'end', '18:00');
+    const leave = (h || 0) * 60 + (m || 0);
+    if(leave < end) hours += (end - leave) / 60;
+  });
+
+  return hours;
+}
+
+function _v2PaintNextMonth(){
+  const host = document.getElementById('ps-next-breakdown');
+  if(!host || !currentCompany) return;
+
+  const setT = (id, txt) => { const el = document.getElementById(id); if(el) el.textContent = txt; };
+  const ym = _v2NextPayrollMonth();
+  const period = _v2EstimatePeriod(ym);
+  const monthEnd = `${ym.y}-${_v2Pad2(ym.m)}-${_v2Pad2(new Date(ym.y, ym.m, 0).getDate())}`;
+  const emps = _clientVisibleEmps().filter(e => _v2EmployedAt(e, monthEnd));
+  const ests = emps.map(e => _v2EstimateEmployee(e, ym, period)).filter(Boolean);
+
+  const sum = fn => ests.reduce((s, x) => s + fn(x), 0);
+  const fixed    = sum(x => x.fixed);
+  const overtime = sum(x => x.overtime);
+  const attDed   = sum(x => x.attDed);
+  const pension  = sum(x => x.ins.pension);
+  const health   = sum(x => x.ins.health);
+  const ltcare   = sum(x => x.ins.ltcare);
+  const employ   = sum(x => x.ins.employment);
+  const incomeTax= sum(x => x.ins.incomeTax);
+  const localTax = sum(x => x.ins.localTax);
+
+  const gross = fixed + overtime;
+  const ded   = attDed + pension + health + ltcare + employ + incomeTax + localTax;
+  const net   = gross - ded;
+
+  const today = fmtLocalDate(new Date());
+  const now = new Date();
+  const isThisMonth = (ym.y === now.getFullYear() && ym.m === (now.getMonth() + 1));
+  setT('ps-next-card-label', isThisMonth ? '익월 예상 실지급액' : `${ym.m}월 예상 실지급액`);
+  setT('ps-next-gross', gross > 0 ? fmt(net) + '원' : '-');
+  // 탭 하단 요약 카드 (지급총액·공제총액·실지급액)
+  setT('ps-sum-next-gross', gross > 0 ? fmt(gross) + '원' : '-');
+  setT('ps-sum-next-ded',   gross > 0 ? fmt(ded) + '원' : '-');
+  setT('ps-sum-next-net',   gross > 0 ? fmt(net) + '원' : '-');
+  setT('ps-next-meta', (ym.payday ? `${ym.payday.replace(/-/g,'.')} ${ym.payday < today ? '지급 기준' : '지급 예정'} · ` : '')
+    + _v2PeriodLabel(period)
+    + ' 추정');
+
+  const won = v => `${Math.round(Number(v)||0).toLocaleString('ko-KR')}원`;
+  const row  = (label, val) => `<div class="pb-item"><span>${label}</span><span class="pb-amt">${won(val)}</span></div>`;
+
+  if(!ests.length){
+    host.innerHTML = `<div class="pb-empty">예상 급여 산정 대상자가 없습니다</div>`;
+  } else {
+    let html = '';
+    let payHtml = '';
+    let dedHtml = '';
+    if(fixed > 0)    payHtml += row('약정임금', fixed);
+    if(overtime > 0) payHtml += row('추가근로수당', overtime);
+
+    if(attDed > 0)    dedHtml += row('근태차감', attDed);
+    if(pension > 0)   dedHtml += row('국민연금', pension);
+    if(health > 0)    dedHtml += row('건강보험', health);
+    if(ltcare > 0)    dedHtml += row('장기요양보험', ltcare);
+    if(employ > 0)    dedHtml += row('고용보험', employ);
+    if(incomeTax > 0) dedHtml += row('소득세', incomeTax);
+    if(localTax > 0)  dedHtml += row('지방세', localTax);
+
+    html = payHtml + (payHtml && dedHtml ? '<div class="pb-divider"></div>' : '') + dedHtml;
+    host.innerHTML = html || '<div class="pb-empty">표시할 항목이 없습니다</div>';
+  }
+
+  _v2RenderPayStatsTypePie(
+    ests.filter(x => (x.fixed + x.overtime) > 0)
+        .map(x => ({ employee_id: x.empId, gross_pay: x.fixed + x.overtime, pay_year: ym.y, pay_month: ym.m })),
+    { y: ym.y, m: ym.m },
+    { canvasId: 'ps-next-pie', legendId: 'ps-next-type-legend', emptyText: '예상 급여 산정 대상자가 없습니다.' }
+  );
+}
+
 function renderClientPayStats(){
   if(!currentCompany) return;
 
-  const pm = _v2PrevMonth(_v2ViewDate);
-  const prevPays = allPayrolls.filter(p => Number(p.pay_year) === pm.y && Number(p.pay_month) === pm.m);
+  const ym = _v2ViewMonth;
+  const monthPays = allPayrolls.filter(p => Number(p.pay_year) === ym.y && Number(p.pay_month) === ym.m);
 
   const setT = (id, txt) => { const el = document.getElementById(id); if(el) el.textContent = txt; };
 
-  // ── 직전월 임금내역 ──
-  setT('ps-prev-meta', `${pm.y}년 ${pm.m}월 · ${prevPays.length}명`);
-  _v2RenderPrevPayBreakdown(prevPays);
+  // ── 탭 ①: 지급내역 (선택 월) ──
+  const payDay = parseInt(currentCompany?.pay_day, 10);
+  setT('ps-prev-title', `${ym.y}년 ${ym.m}월 임금내역`);
+  setT('ps-prev-meta', (payDay > 0 ? `기준일: ${payDay}일 · ` : '') + `${monthPays.length}명`);
+  _v2RenderPayBreakdown(monthPays, ym);
+  _v2RenderPayStatsTypePie(monthPays, ym);
+  _v2RenderPaidByDate(monthPays, ym);
+  _v2RenderEmployerBurden(monthPays, ym);
 
-  // ── 다음 급여일 예상 총액 ──
-  const nextDate = _v2NextPayday(_v2ViewDate);
-  const expected = _v2ExpectedNextPayroll(_clientVisibleEmps().filter(e => _v2EmployedAt(e, _v2ViewDate)));
-  setT('ps-next-gross', expected > 0 ? fmt(expected) + '원' : '-');
-  setT('ps-next-meta', nextDate
-    ? `${nextDate.replace(/-/g,'.')} 지급 예정 · 유효 계약 기준 추정`
-    : '급여 지급일이 설정되지 않았습니다');
+  // ── 탭 ②: 임금대장 ──
+  _v2RenderPayStatsLedger();
 
-  // ── 고용형태별 통계 (직전월, 파이) ──
-  setT('ps-type-period', `${pm.y}년 ${pm.m}월 기준`);
-  _v2RenderPayStatsTypePie(prevPays, pm);
+  // ── 탭 ③: 급여명세서 (조회월 동기화) ──
+  psYear  = _v2ViewMonth.y || psYear;
+  psMonth = _v2ViewMonth.m || psMonth;
 
-  // ── 12개월 추이 (항목 선택 그래프) ──
+  // ── 탭 ④: 지급예정 ──
+  _v2RenderNextMonthTab();
+
+  // ── 고용형태별 통계 (선택 월, 파이) ──
+  setT('ps-type-period', `${ym.y}년 ${ym.m}월 기준`);
+
+  // ── 12개월 추이 (선택 월까지) ──
   const months = [];
   for(let i = 11; i >= 0; i--){
-    let m = pm.m - i, y = pm.y;
+    let m = ym.m - i, y = ym.y;
     while(m < 1){ m += 12; y--; } while(m > 12){ m -= 12; y++; }
     months.push({ y, m });
   }
   setT('ps-trend-period', `${months[0].y}.${_v2Pad2(months[0].m)} ~ ${months[11].y}.${_v2Pad2(months[11].m)}`);
 
-  const togglesEl = document.getElementById('paystats-toggles');
-  if(togglesEl && !togglesEl.dataset.built){
-    togglesEl.dataset.built = '1';
-    togglesEl.innerHTML = (TREND_ITEMS || []).map(t => `
-      <label class="tgl-chip ${_v2TrendOn[t.key]?'on':''}"
-        style="border-color:${t.borderColor};${_v2TrendOn[t.key] ? 'background:'+t.color+';color:#fff;' : 'background:'+t.bgColor+';color:'+t.textColor+';'}"
-        onclick="_v2TrendOn['${t.key}']=!_v2TrendOn['${t.key}'];this.classList.toggle('on');if(_v2TrendOn['${t.key}']){this.style.background='${t.color}';this.style.color='#fff';}else{this.style.background='${t.bgColor}';this.style.color='${t.textColor}';}renderV2TrendChart()">
-        ${t.label}
-      </label>`).join('');
-  }
+  _v2RenderTrendTabs();
 
   requestAnimationFrame(() => renderV2TrendChart());
 
-  // 임금대장 버튼 상태
-  if(typeof _updateWageLedgerButton === 'function') _updateWageLedgerButton();
+  // 급여 기준일 전이면 지급내역 대신 지급예정으로 자동 이동
+  // (사용자가 탭을 직접 고르지 않은 상태에서 기준일이 지난 월로 오면 지급내역으로 복귀)
+  if(_v2PsTab === 'next' && !_v2PsTabPicked && _v2IsPaydayReached(ym)) setPsTab('paid', true);
+  else if(_v2PsTab === 'paid' && !_v2IsPaydayReached(ym)) setPsTab('next', true);
+
   // 사용료 스위치
-  const bb = document.getElementById('ps-billing-btn');
-  if(bb) bb.style.display = _billingFeatureEnabled ? '' : 'none';
+  const bbRow = document.getElementById('ps-billing-row');
+  if(bbRow) bbRow.style.display = _billingFeatureEnabled ? '' : 'none';
 }
 
 /** 직전월 항목별 비율 모달 (기존 pay-ratio 모달 재사용) */
 function openPayStatsRatio(){
-  const pm = _v2PrevMonth(_v2ViewDate);
+  const pm = _v2PrevMonthOf(_v2ViewMonth);
   statsYear = pm.y; statsMonth = pm.m;
   if(typeof openPayRatioModal === 'function') openPayRatioModal();
 }
 
+/** 부정기지급 항목 정의 — 어드민 급여 목록(payroll-core.js)과 동일한 정의 */
+const _V2_IRREG_FIELDS = [
+  ['annual_leave_pay',      '연차수당'],
+  ['bonus_pay',             '상여'],
+  ['performance_pay',       '성과급'],
+  ['communication_pay',     '통신비'],
+  ['fitness_allowance',     '피트니스'],
+  ['self_dev_allowance',    '자기개발비'],
+  ['book_allowance',        '도서구입비'],
+  ['overseas_allowance',    '해외근무수당'],
+  ['etc_allowance',         '기타수당'],
+  ['other_pay',             '기타 지급'],
+];
+
+function _v2JsonItems(v){
+  try{
+    const arr = typeof v === 'string' ? JSON.parse(v) : (v || []);
+    return Array.isArray(arr) ? arr : [];
+  }catch(e){ return []; }
+}
+
+/** 부정기지급 합계 — 어드민 급여 목록과 동일한 정의
+ *  연차수당 + 상여 + 성과급 + 통신비 + 피트니스 + 자기개발 + 도서 + 해외 + 퇴직금중간정산 + 기타수당
+ *  + 사용자정의 고정수당(custom_fixed_values) + 기타수당 항목(etc_allowance_items) */
+function _v2IrregularPay(p){
+  if(!p) return 0;
+  let sum = 0;
+  _V2_IRREG_FIELDS.forEach(([key]) => { sum += Number(p[key]) || 0; });
+  _v2JsonItems(p.custom_fixed_values).forEach(x => { sum += Number(x && x.amount) || 0; });
+  _v2JsonItems(p.etc_allowance_items).forEach(x => { sum += Number(x && x.amount) || 0; });
+  return sum;
+}
+
+/** 부정기지급 항목별 집계 (정의된 순서 유지, 0원 제외) */
+function _v2IrregularBreakdown(pays){
+  const map = new Map();
+  const add = (label, amt) => {
+    if(!amt) return;
+    map.set(label, (map.get(label) || 0) + amt);
+  };
+  (pays || []).forEach(p => {
+    _V2_IRREG_FIELDS.forEach(([key, label]) => add(label, Number(p[key]) || 0));
+    _v2JsonItems(p.custom_fixed_values).forEach(x => {
+      add(String((x && x.name) || '기타 고정수당').trim() || '기타 고정수당', Number(x && x.amount) || 0);
+    });
+    _v2JsonItems(p.etc_allowance_items).forEach(x => {
+      add(String((x && x.name) || '기타수당').trim() || '기타수당', Number(x && x.amount) || 0);
+    });
+  });
+  const order = _V2_IRREG_FIELDS.map(([, label]) => label);
+  return [...map.entries()]
+    .sort((a, b) => {
+      const ia = order.indexOf(a[0]), ib = order.indexOf(b[0]);
+      return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib);
+    })
+    .map(([label, amount]) => ({ label, amount }));
+}
+
+/** 12개월 추이 항목 탭 (단일 선택) */
+function _v2RenderTrendTabs(){
+  const el = document.getElementById('paystats-toggles');
+  if(!el) return;
+  el.innerHTML = (TREND_ITEMS || []).map(t => {
+    const on = t.key === _v2TrendKey;
+    const style = on
+      ? `background:${t.color};border-color:${t.color};color:#fff;`
+      : `background:#fff;border-color:#e2e8f0;color:${t.textColor};`;
+    return `<button type="button" class="ps-trend-tab${on ? ' active' : ''}" data-key="${t.key}"
+      style="${style}" onclick="_v2SetTrendKey('${t.key}')">${t.label}</button>`;
+  }).join('');
+}
+
+function _v2SetTrendKey(key){
+  _v2TrendKey = key;
+  _v2RenderTrendTabs();
+  renderV2TrendChart();
+}
+
 function renderV2TrendChart(){
-  const pm = _v2PrevMonth(_v2ViewDate);
+  const end = _v2ViewMonth;
   const months = [];
   for(let i = 11; i >= 0; i--){
-    let m = pm.m - i, y = pm.y;
+    let m = end.m - i, y = end.y;
     while(m < 1){ m += 12; y--; } while(m > 12){ m -= 12; y++; }
     months.push({ y, m });
   }
@@ -742,25 +1589,43 @@ function renderV2TrendChart(){
       gross, net,
       ded:   gross - net,
       extra: ps.reduce((a,p)=>a+(Number(p.overtime_pay)||0)+(Number(p.night_pay)||0)+(Number(p.holiday_pay)||0),0),
-      irreg: ps.reduce((a,p)=>a+(Number(p.annual_leave_pay)||0)+(Number(p.other_pay)||0),0),
+      irreg: ps.reduce((a,p)=>a+_v2IrregularPay(p),0),
       tax:   ps.reduce((a,p)=>a+(Number(p.income_tax)||0)+(Number(p.local_income_tax)||0),0),
       ins:   ps.reduce((a,p)=>a+(Number(p.health_insurance)||0)+(Number(p.long_term_care)||0)+(Number(p.national_pension)||0)+(Number(p.employment_insurance)||0),0),
-      adj:   ps.reduce((a,p)=>a+(Number(p.year_end_tax_adjust)||0)+(Number(p.health_insurance_adjust)||0)+(Number(p.advance_deduction)||0),0),
+      // 정산: 국민연금 소급분 + 연말정산 + 건강보험 정산 + 건강보험 연말정산분 + 장기요양보험 정산 + 장기요양 연말정산분 + 고용보험 정산
+      settle: ps.reduce((a,p)=>a+(Number(p.national_pension_retro)||0)+(Number(p.year_end_tax_adjust)||0)
+        +(Number(p.health_insurance_adjust)||0)+(Number(p.health_insurance_adjust_yearend)||0)
+        +(Number(p.ltcare_adjust)||0)+(Number(p.ltcare_adjust_yearend)||0)
+        +(Number(p.employment_insurance_adjust)||0),0),
     };
   });
 
-  const datasets = (TREND_ITEMS || []).filter(t => _v2TrendOn[t.key]).map(t => ({
+  const datasets = (TREND_ITEMS || []).filter(t => t.key === _v2TrendKey).map(t => ({
     label: t.label,
     data: agg.map(a => a[t.key]),
     borderColor: t.color,
     backgroundColor: t.color + '18',
     borderWidth: 2.5,
-    pointRadius: 3,
-    pointHoverRadius: 6,
-    pointBackgroundColor: t.color,
-    fill: false,
+    borderDash: t.dash || [],
+    pointRadius: 4,
+    pointHoverRadius: 7,
+    pointStyle: t.pointStyle || 'circle',
+    pointBackgroundColor: '#fff',
+    pointBorderColor: t.color,
+    pointBorderWidth: 2,
+    fill: true,
     tension: .35,
   }));
+
+  // 그래프 하단 월별 금액 표 (최근월 → 과거월)
+  const tableEl = document.getElementById('ps-trend-table');
+  if(tableEl){
+    const won = v => Math.round(Number(v) || 0).toLocaleString() + '원';
+    tableEl.innerHTML = months.map((mo, i) => ({ label: labels[i], val: agg[i][_v2TrendKey] }))
+      .reverse()
+      .map(r => `<div class="ps-trend-trow"><span class="ps-trend-month">${r.label}</span><span class="ps-trend-amt">${won(r.val)}</span></div>`)
+      .join('');
+  }
 
   const ctx = document.getElementById('paystats-trend-chart');
   if(!ctx) return;
@@ -777,15 +1642,15 @@ function renderV2TrendChart(){
       responsive: true, maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
       plugins: {
-        legend: { position: 'top', align: 'end', labels: { font: { size: 10 }, usePointStyle: true, boxWidth: 8 } },
-        tooltip: { callbacks: {
+        legend: { display: false },
+        tooltip: { titleFont: { size: 13 }, bodyFont: { size: 14 }, callbacks: {
           title: items => `📅 ${items[0].label}`,
           label: c => ` ${c.dataset.label}: ${Math.round(c.parsed.y).toLocaleString('ko-KR')}원`
         } }
       },
       scales: {
-        x: { grid: { display: false }, ticks: { font: { size: 9 }, maxRotation: 0, color: '#9ca3af' } },
-        y: { grid: { color: 'rgba(0,0,0,.04)' }, beginAtZero: true, ticks: { font: { size: 9 }, color: '#9ca3af', callback: v => (v>=1000000 ? (v/10000).toFixed(0)+'만' : v.toLocaleString()) } }
+        x: { grid: { display: false }, ticks: { font: { size: 11, weight: '600' }, maxRotation: 0, color: '#6b7280' } },
+        y: { grid: { color: 'rgba(0,0,0,.05)' }, beginAtZero: true, ticks: { font: { size: 11, weight: '600' }, color: '#6b7280', callback: v => (v>=1000000 ? (v/10000).toFixed(0)+'만' : v.toLocaleString()) } }
       }
     }
   });
@@ -1115,8 +1980,10 @@ document.addEventListener('keydown', ev => {
 // ⑥ 초기화
 // ══════════════════════════════════════════════════════════════
 function initClientV2(){
-  // 로그인 시 조회 상태 초기화 (기본: 오늘, 전체 카테고리)
-  _v2ViewDate  = fmtLocalDate(new Date());
+  // 로그인 시 조회 상태 초기화 (기본: 오늘/이번 달, 전체 카테고리)
+  const now = new Date();
+  _v2ViewDate  = fmtLocalDate(now);
+  _v2ViewMonth = { y: now.getFullYear(), m: now.getMonth() + 1 };
   _v2EmpFilter = 'all';
   _v2EmpSearch = '';
   const searchInput = document.getElementById('emp-search-input');

@@ -3217,6 +3217,7 @@ async function saveDraftContract(reason){
     status:               CONTRACT_STATUS.PENDING,  // is_draft:true 가 임시저장 식별자, status는 PENDING
     work_hours_per_day:   avgHours,
     work_days_per_week:   workDays,
+    work_days_per_month:  isDailyDraft ? 0 : Math.round((parseFloat(workDays)||5)*4.345),
     schedule_json:        JSON.stringify(scheduleJSON),
     annual_leave_days:    parseInt(document.getElementById('ct-annual').value)||15,
     pre_used_annual_leave:parseFloat(document.getElementById('ct-pre-used-annual')?.value)||0,
@@ -4513,7 +4514,7 @@ async function saveContract(){
     const _hasBothFilesEdit = !!(signedFileData && consentFileData);
   }
 
-  const body={employee_id:empId,company_id:coId,contract_start:contractStart,contract_end:contractEnd,contract_type:contractType,status:contractStatus,probation_months:probMonths,probation_pct:probPct,probation_amt:probAmt,probation_basis:probBasis,probation_end_date:document.getElementById('ct-probation-end-date')?.value||null,work_hours_per_day:avgDayHours,work_days_per_week:isDailySave?0:workDaysCount,schedule_json:JSON.stringify(scheduleJSON),annual_leave_days:parseFloat(document.getElementById('ct-annual')?.value)||15,pre_used_annual_leave:parseFloat(document.getElementById('ct-pre-used-annual')?.value)||0,annual_salary:annual,monthly_salary_agreed:monthly,base_salary:baseSalaryForSave,daily_wage:dailyWageForSave,weekly_holiday_pay:weeklyHol,fixed_ot_pay:getAmountVal('ct-fixed-ot-pay'),fixed_ot_hours:typeof _weeklyToMonthlyHours==='function'?_weeklyToMonthlyHours('ct-fixed-ot-hours'):(parseFloat(document.getElementById('ct-fixed-ot-hours')?.value)||0),fixed_night_pay:getAmountVal('ct-fixed-night-pay'),fixed_night_hours:typeof _weeklyToMonthlyHours==='function'?_weeklyToMonthlyHours('ct-fixed-night-hours'):(parseFloat(document.getElementById('ct-fixed-night-hours')?.value)||0),fixed_hol_pay:getAmountVal('ct-fixed-hol-pay'),fixed_hol_hours:typeof _weeklyToMonthlyHours==='function'?_weeklyToMonthlyHours('ct-fixed-hol-hours'):(parseFloat(document.getElementById('ct-fixed-hol-hours')?.value)||0),hourly_wage:hourlyWage,position_allowance:getAmountVal('ct-position'),transportation_allowance:getAmountVal('ct-car'),transportation_pay_type:_getCTPayTypeVal('car'),self_driving_allowance:0,self_driving_pay_type:_getCTPayTypeVal('car'),remote_area_allowance:getAmountVal('ct-remote-area'),remote_area_pay_type:'fixed',meal_allowance:getAmountVal('ct-meal'),meal_pay_type:_getCTPayTypeVal('meal'),research_allowance:getAmountVal('ct-research'),research_pay_type:_getCTPayTypeVal('research'),site_allowance:getAmountVal('ct-site'),skill_allowance:getAmountVal('ct-skill'),license_allowance:getAmountVal('ct-license'),hazard_allowance:getAmountVal('ct-hazard'),custom_ordinary_values:JSON.stringify(typeof _getCustomOrdinaryValues==='function'?_getCustomOrdinaryValues():[]),communication_allowance:getAmountVal('ct-communication'),communication_pay_type:_getCTPayTypeVal('communication'),fitness_allowance:getAmountVal('ct-fitness'),fitness_pay_type:_getCTPayTypeVal('fitness'),self_dev_allowance:getAmountVal('ct-self-dev'),self_dev_pay_type:_getCTPayTypeVal('self_dev'),book_allowance:getAmountVal('ct-book'),book_pay_type:_getCTPayTypeVal('book'),overseas_allowance:getAmountVal('ct-overseas'),overseas_pay_type:_getCTPayTypeVal('overseas'),car_maintenance:getAmountVal('ct-car'),regular_bonus:getAmountVal('ct-regular-bonus')||0,childcare_allowance:getAmountVal('ct-childcare')||0,childcare_dependents:parseInt(document.getElementById('ct-childcare-dependents')?.value||0)||0,childcare_pay_type:_getCTPayTypeVal('childcare'),pay_period:document.getElementById('ct-pay-period')?.value.trim()||'',pay_period_month:document.getElementById('ct-pay-period-month-hidden')?.value||null,pay_period_day:parseInt(document.getElementById('ct-pay-period-day-hidden')?.value)||null,pay_day:(catForSave === CONTRACT_TYPE.DAILY) ? (document.getElementById('ct-pay-day-date')?.value || null) : (parseInt(document.getElementById('ct-pay-day')?.value)||null),insurance_employment:true,insurance_industrial:true,insurance_pension:true,insurance_health:true,note:document.getElementById('ct-note').value,salary_start_date:contractStart,salary_end_date:contractEnd,is_draft:false,draft_saved_at:null,signed_file_name:signedFileName,signed_file_data:signedFileData,consent_file_name:consentFileName,consent_file_data:consentFileData};
+  const body={employee_id:empId,company_id:coId,contract_start:contractStart,contract_end:contractEnd,contract_type:contractType,status:contractStatus,probation_months:probMonths,probation_pct:probPct,probation_amt:probAmt,probation_basis:probBasis,probation_end_date:document.getElementById('ct-probation-end-date')?.value||null,work_hours_per_day:avgDayHours,work_days_per_week:isDailySave?0:workDaysCount,work_days_per_month:isDailySave?0:Math.round((parseFloat(workDaysCount)||5)*4.345),schedule_json:JSON.stringify(scheduleJSON),annual_leave_days:parseFloat(document.getElementById('ct-annual')?.value)||15,pre_used_annual_leave:parseFloat(document.getElementById('ct-pre-used-annual')?.value)||0,annual_salary:annual,monthly_salary_agreed:monthly,base_salary:baseSalaryForSave,daily_wage:dailyWageForSave,weekly_holiday_pay:weeklyHol,fixed_ot_pay:getAmountVal('ct-fixed-ot-pay'),fixed_ot_hours:typeof _weeklyToMonthlyHours==='function'?_weeklyToMonthlyHours('ct-fixed-ot-hours'):(parseFloat(document.getElementById('ct-fixed-ot-hours')?.value)||0),fixed_night_pay:getAmountVal('ct-fixed-night-pay'),fixed_night_hours:typeof _weeklyToMonthlyHours==='function'?_weeklyToMonthlyHours('ct-fixed-night-hours'):(parseFloat(document.getElementById('ct-fixed-night-hours')?.value)||0),fixed_hol_pay:getAmountVal('ct-fixed-hol-pay'),fixed_hol_hours:typeof _weeklyToMonthlyHours==='function'?_weeklyToMonthlyHours('ct-fixed-hol-hours'):(parseFloat(document.getElementById('ct-fixed-hol-hours')?.value)||0),hourly_wage:hourlyWage,position_allowance:getAmountVal('ct-position'),transportation_allowance:getAmountVal('ct-car'),transportation_pay_type:_getCTPayTypeVal('car'),self_driving_allowance:0,self_driving_pay_type:_getCTPayTypeVal('car'),remote_area_allowance:getAmountVal('ct-remote-area'),remote_area_pay_type:'fixed',meal_allowance:getAmountVal('ct-meal'),meal_pay_type:_getCTPayTypeVal('meal'),research_allowance:getAmountVal('ct-research'),research_pay_type:_getCTPayTypeVal('research'),site_allowance:getAmountVal('ct-site'),skill_allowance:getAmountVal('ct-skill'),license_allowance:getAmountVal('ct-license'),hazard_allowance:getAmountVal('ct-hazard'),custom_ordinary_values:JSON.stringify(typeof _getCustomOrdinaryValues==='function'?_getCustomOrdinaryValues():[]),communication_allowance:getAmountVal('ct-communication'),communication_pay_type:_getCTPayTypeVal('communication'),fitness_allowance:getAmountVal('ct-fitness'),fitness_pay_type:_getCTPayTypeVal('fitness'),self_dev_allowance:getAmountVal('ct-self-dev'),self_dev_pay_type:_getCTPayTypeVal('self_dev'),book_allowance:getAmountVal('ct-book'),book_pay_type:_getCTPayTypeVal('book'),overseas_allowance:getAmountVal('ct-overseas'),overseas_pay_type:_getCTPayTypeVal('overseas'),car_maintenance:getAmountVal('ct-car'),regular_bonus:getAmountVal('ct-regular-bonus')||0,childcare_allowance:getAmountVal('ct-childcare')||0,childcare_dependents:parseInt(document.getElementById('ct-childcare-dependents')?.value||0)||0,childcare_pay_type:_getCTPayTypeVal('childcare'),pay_period:document.getElementById('ct-pay-period')?.value.trim()||'',pay_period_month:document.getElementById('ct-pay-period-month-hidden')?.value||null,pay_period_day:parseInt(document.getElementById('ct-pay-period-day-hidden')?.value)||null,pay_day:(catForSave === CONTRACT_TYPE.DAILY) ? (document.getElementById('ct-pay-day-date')?.value || null) : (parseInt(document.getElementById('ct-pay-day')?.value)||null),insurance_employment:true,insurance_industrial:true,insurance_pension:true,insurance_health:true,note:document.getElementById('ct-note').value,salary_start_date:contractStart,salary_end_date:contractEnd,is_draft:false,draft_saved_at:null,signed_file_name:signedFileName,signed_file_data:signedFileData,consent_file_name:consentFileName,consent_file_data:consentFileData};
 
   // ── 일용직 임금 지급 방법 필드 (일급/주급/월합산 + 주급 산정기간 시작 요일) ──
   if(isDailySave){
@@ -4935,6 +4936,9 @@ async function saveContract(){
   toast(_ctIsEdit ? '근로계약서가 수정되었습니다. ✔' : '근로계약서 초안이 등록되었습니다. ✔');
   _triggerWageLedgerRegen(coId);
 
+  // ── 급여 재산정 필요 안내 (계약 개정·임금 변경 반영 후, 2026-11-14) ──
+  try { await _ctNotifyPayrollRecalc(empId, contractStart); } catch(e){ console.warn('[급여 재산정 안내 실패]', e); }
+
   // ── 신규 계약: 초안 확인 여부 ──
   if(!_ctIsEdit && !_wasRecontract && _savedContractId){
     const confirmed = await _showConfirm({
@@ -4986,6 +4990,75 @@ async function saveContract(){
     if(_editContract && (contractStatus === CONTRACT_STATUS.TERMINATED || contractStatus === CONTRACT_STATUS.EXPIRED || contractStatus === CONTRACT_STATUS.RENEWED)){
       _syncLeaveLedgerWithContract(_editContract.employee_id, _editContract.company_id, _editContract.contract_start, contractStatus);
     }
+  }
+}
+
+/**
+ * 급여 재산정 필요 안내 (2026-11-14)
+ *   계약 저장(신규·개정·재계약) 직후, 계약서 기본급과 금액이 다른 기존 급여를 찾아 안내한다.
+ *   · 일용직(일급) 계약은 제외
+ *   · 근로일수가 소정근로일수보다 적은 월(일할 계산)은 정상 범위이므로 제외
+ */
+async function _ctNotifyPayrollRecalc(empId, contractStart){
+  if(!empId) return;
+  try {
+    const res  = await api(`../tables/payrolls?employee_id=${empId}&limit=500`);
+    const rawPays = ((res && res.data) || []).filter(p => !p.is_draft);
+    if(!rawPays.length) return;
+    // 같은 년월 중복 레코드는 최신 1건만 사용
+    const byYm = new Map();
+    rawPays.forEach(p => {
+      const key = `${p.pay_year}-${p.pay_month}`;
+      const prev = byYm.get(key);
+      if(!prev || (p.updated_at || 0) > (prev.updated_at || 0)) byYm.set(key, p);
+    });
+    const pays = [...byYm.values()];
+
+    const c = (allContracts || [])
+      .filter(x => x.employee_id === empId && !x.is_draft && !x.is_voided_by_amend)
+      .sort((a, b) => (b.contract_start || '').localeCompare(a.contract_start || ''))[0];
+    if(!c) return;
+    if((c.employment_category || '') === 'daily' || (parseFloat(c.daily_wage) || 0) > 0) return;
+
+    const contractBase = parseFloat(c.base_salary) || 0;
+    if(!contractBase) return;
+    const cDays = parseFloat(c.work_days_per_month) || Math.round((parseFloat(c.work_days_per_week) || 5) * 4.345);
+    const fromYm = String(contractStart || c.contract_start || '').slice(0, 7);
+    const fmtWon = v => Math.round(Number(v) || 0).toLocaleString('ko-KR') + '원';
+
+    const list = pays
+      .filter(p => {
+        const ym = `${p.pay_year}-${String(p.pay_month).padStart(2, '0')}`;
+        if(fromYm && ym < fromYm) return false;
+        const wd = parseFloat(p.work_days) || 0;
+        if(cDays && wd && wd < cDays) return false;      // 일할 계산 월은 제외
+        return Math.abs((parseFloat(p.base_salary) || 0) - contractBase) > 1;
+      })
+      .sort((a, b) => (a.pay_year - b.pay_year) || (a.pay_month - b.pay_month));
+
+    if(!list.length) return;
+
+    const rows = list.slice(0, 8).map(p => {
+      const stored = parseFloat(p.base_salary) || 0;
+      const diff = stored - contractBase;
+      return `· ${p.pay_year}년 ${p.pay_month}월 — 급여 ${fmtWon(stored)} (차액 ${diff > 0 ? '+' : '-'}${fmtWon(Math.abs(diff))})`;
+    }).join('\n');
+    const more = list.length > 8 ? `\n· 외 ${list.length - 8}개월` : '';
+
+    await _showConfirm({
+      title: '급여 재산정 필요',
+      message:
+`계약서 기본급(${fmtWon(contractBase)})과 금액이 다른 급여가 ${list.length}건 있습니다.
+
+${rows}${more}
+
+급여 입력 화면에서 해당 월을 열어 저장하면 계약서 기준으로 재계산됩니다.`,
+      okText: '확인',
+      cancelText: '',
+      okClass: 'btn-primary'
+    });
+  } catch(e) {
+    console.warn('[급여 재산정 안내]', e);
   }
 }
 

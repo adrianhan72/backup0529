@@ -52,14 +52,9 @@ let _allClientMinWages = []; // 연도별 최저임금 (어드민 산정기준�
 let _allClientInsRates = []; // 4대보험 요율 (어드민 산정기준표 DB 연동)
 
 const TREND_ITEMS = [
-  {key:'gross',  label:'총 지급액',    color:'#3b82f6', borderColor:'#3b82f6', bgColor:'#eff6ff', textColor:'#1d4ed8', def:true},
-  {key:'ded',    label:'공제 총액',    color:'#ef4444', borderColor:'#ef4444', bgColor:'#fef2f2', textColor:'#b91c1c', def:true},
-  {key:'net',    label:'실지급액',     color:'#10b981', borderColor:'#10b981', bgColor:'#f0fdf4', textColor:'#065f46', def:true},
-  {key:'extra',  label:'추가근로수당', color:'#f59e0b', borderColor:'#f59e0b', bgColor:'#fffbeb', textColor:'#92400e', def:false},
-  {key:'irreg',  label:'부정기지급',   color:'#8b5cf6', borderColor:'#8b5cf6', bgColor:'#f5f3ff', textColor:'#5b21b6', def:false},
-  {key:'tax',    label:'세금',         color:'#ec4899', borderColor:'#ec4899', bgColor:'#fdf2f8', textColor:'#9d174d', def:false},
-  {key:'ins',    label:'4대보험',      color:'#06b6d4', borderColor:'#06b6d4', bgColor:'#ecfeff', textColor:'#155e75', def:false},
-  {key:'adj',    label:'정산/추가공제',color:'#6b7280', borderColor:'#6b7280', bgColor:'#f9fafb', textColor:'#374151', def:false},
+  {key:'gross',  label:'총 지급액',    color:'#1d4ed8', borderColor:'#1d4ed8', bgColor:'#eff6ff', textColor:'#1d4ed8', dash:[],    pointStyle:'circle',   def:true},
+  {key:'extra',  label:'추가근로수당', color:'#ea580c', borderColor:'#ea580c', bgColor:'#fff7ed', textColor:'#c2410c', dash:[7,3], pointStyle:'rect',     def:false},
+  {key:'irreg',  label:'부정기지급',   color:'#059669', borderColor:'#059669', bgColor:'#ecfdf5', textColor:'#047857', dash:[2,3], pointStyle:'triangle', def:false},
 ];
 const trendOn = {};
 TREND_ITEMS.forEach(t => trendOn[t.key] = t.def);
@@ -149,6 +144,8 @@ async function tryLogin(){
   }
 
   currentCompany = found;
+  // 회사 전환 시 임금통계 탭/조회월 상태 초기화
+  if(typeof _v2ResetPsTab === 'function') _v2ResetPsTab();
   // loadData + 알림 동시 로드
   await Promise.all([ loadData(), loadClientNotices() ]);
   startApp();
@@ -407,11 +404,10 @@ function showPage(name, el){
   window.scrollTo(0, 0);
   if(pageEl && typeof pageEl.scrollTop === 'number') pageEl.scrollTop = 0;
 
-  // 헤더 월 네비 표시 탭 목록 (명세서·사용료만 월 선택)
-  if(['payslip','billing'].includes(name)){
+  // 헤더 월 네비 표시 탭 목록 (사용료만 월 선택 — 명세서는 임금통계 내부 탭으로 이동)
+  if(name === 'billing'){
     _configHeaderMonth(name);
-    if(name === 'billing') renderBilling();
-    if(name === 'payslip') { renderPayslipList(); _adjustPsStickyTop(); }
+    renderBilling();
   } else {
     const row = document.getElementById('header-month-row');
     if(row) row.classList.add('hidden');

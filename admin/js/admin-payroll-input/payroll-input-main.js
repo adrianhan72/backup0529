@@ -2069,6 +2069,111 @@ function loadPIContract(contractId){
 
   // ── 직전월 메모 인계 (직원 선택 시) ──
   _loadPrevMonthMemos();
+
+  // ── 계약서 기본급 ↔ 기존 급여 기본급 불일치 경고 ──
+  _piCheckWageGapBanner();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// 계약서 ↔ 급여 기본급 불일치 점검 (2026-11-14)
+//   · 계약 개정·임금 인상 후 급여가 갱신되지 않은 케이스를 저장 전에 경고
+//   · 일할 계산된 월(근로일수 < 소정근로일수)은 정상 범위이므로 제외
+// ══════════════════════════════════════════════════════════════════
+/** 계약서 기준 월 기본급(수습 반영, 만근 기준) */
+function _piContractFullBase(){
+  if(!piContract || piContract.is_virtual) return 0;
+  if(piContract.contract_type === CONTRACT_TYPE.DAILY) return parseFloat(piContract.daily_wage) || 0;
+  let base = parseFloat(piContract.base_salary) || 0;
+  if(typeof _piProbRatio === 'function'){
+    const r = _piProbRatio();
+    if(r > 0 && r < 1) base = Math.round(base * r);
+  }
+  return base;
+}
+
+/** 계약서 기준 월 소정근로일수 (미저장 계약은 주 근로일수로 산정) */
+function _piContractMonthDays(){
+  if(!piContract) return 0;
+  const saved = parseFloat(piContract.work_days_per_month) || 0;
+  if(saved > 0) return saved;
+  const dpw = parseFloat(piContract.work_days_per_week) || 5;
+  return Math.round(dpw * 4.345);
+}
+
+/** 급여 1건과 계약 기준 기본급의 차이 (만근 월만) */
+function _piWageGapOf(payroll){
+  if(!payroll || !piContract || piContract.is_virtual) return null;
+  if(piContract.contract_type === CONTRACT_TYPE.DAILY) return null;
+  const contractBase = _piContractFullBase();
+  if(!contractBase) return null;
+  const storedBase = parseFloat(payroll.base_salary) || 0;
+  const workDays = parseFloat(payroll.work_days) || 0;
+  const contractDays = _piContractMonthDays();
+  if(contractDays && workDays && workDays < contractDays) return null;
+  const diff = storedBase - contractBase;
+  if(Math.abs(diff) <= 1) return null;
+  return { contractBase, storedBase, diff, workDays, contractDays };
+}
+
+/** 선택된 직원·년월의 기존 급여와 계약 기본급을 비교해 배너 표시 */
+function _piCheckWageGapBanner(){
+  const banner = document.getElementById('pi-wage-gap-banner');
+  if(!banner) return;
+  const empId = document.getElementById('pi-employee')?.value;
+  const yr = parseInt(document.getElementById('pi-year')?.value);
+  const mo = parseInt(document.getElementById('pi-month')?.value);
+  if(!empId || !yr || !mo || !piContract){ banner.style.display = 'none'; window._piWageGap = null; return; }
+  // 수정 중인 급여가 있으면 그것을, 없으면 해당 월 최신 급여를 기준으로 비교 (중복 레코드 대비)
+  const _monthPays = (allPayrolls || []).filter(p => p.employee_id === empId && Number(p.pay_year) === yr && Number(p.pay_month) === mo && !p.is_draft);
+  const payroll = (typeof piEditPayrollId !== 'undefined' && piEditPayrollId && _monthPays.find(p => p.id === piEditPayrollId))
+    || _monthPays.slice().sort((a, b) => (b.updated_at || 0) - (a.updated_at || 0))[0];
+  const gap = _piWageGapOf(payroll);
+  window._piWageGap = gap;
+  if(!gap){ banner.style.display = 'none'; return; }
+  const textEl = document.getElementById('pi-wage-gap-text');
+  if(textEl){
+    const sign = gap.diff > 0 ? '+' : '-';
+    textEl.innerHTML =
+      `<b>${yr}년 ${mo}월</b> 급여의 기본급이 계약서와 다릅니다. ` +
+      `계약서 <b>${won(gap.contractBase)}</b> · 저장된 급여 <b>${won(gap.storedBase)}</b> ` +
+      `(차액 ${sign}${won(Math.abs(gap.diff))})<br>` +
+      `계약 개정·임금 인상 후 급여가 갱신되지 않았을 수 있습니다. 아래 버튼으로 계약서 금액을 적용하거나, 급여를 다시 저장하면 계약 기준으로 재계산됩니다.`;
+  }
+  banner.style.display = '';
+}
+
+function hidePIWageGapBanner(){
+  const banner = document.getElementById('pi-wage-gap-banner');
+  if(banner) banner.style.display = 'none';
+}
+
+/** 배너에서 '계약서 금액 적용' — 기본급을 계약 금액으로 맞추고 재계산 */
+function _piApplyContractBase(){
+  const base = _piContractFullBase();
+  if(!base){ toast('적용할 계약 금액이 없습니다.', 'error'); return; }
+  setAmountVal('pi-base', base);
+  calcPI();
+  hidePIWageGapBanner();
+  toast(`계약서 기본급 ${won(base)}을 적용했습니다. 저장하면 반영됩니다.`);
+}
+
+/** 저장 직전 확인 — 계약서 기본급과 입력 기본급이 다르면 사용자 확인 */
+async function _piConfirmWageGapBeforeSave(){
+  if(!piContract || piContract.is_virtual) return true;
+  if(piContract.contract_type === CONTRACT_TYPE.DAILY) return true;
+  const contractBase = _piContractFullBase();
+  if(!contractBase) return true;
+  const workDays = parseFloat(document.getElementById('pi-work-days')?.value) || 0;
+  const contractDays = _piContractMonthDays();
+  if(contractDays && workDays && workDays < contractDays) return true; // 일할 계산 월
+  const formBase = gv('pi-base');
+  const diff = formBase - contractBase;
+  if(Math.abs(diff) <= 1) return true;
+  const sign = diff > 0 ? '+' : '-';
+  return confirm(
+    `계약서 기본급(${won(contractBase)})과 이번 달 기본급(${won(formBase)})이 다릅니다.\n` +
+    `차액: ${sign}${won(Math.abs(diff))}\n\n그래도 저장하시겠습니까?`
+  );
 }
 
 // ── 직전월 급여 메모 인계 ──────────────────────────────────────────────────────
@@ -3065,6 +3170,9 @@ function onPIYearMonthChange(){
     piDraftId = null; // 연월 변경 시 초기화
     _checkAndShowPIDraftBanner(_empId2, yr, mo);
   }
+
+  // ── 연월 변경 시 계약서 ↔ 급여 기본급 불일치 경고 갱신 ──
+  _piCheckWageGapBanner();
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -5129,8 +5237,10 @@ function calcPIDeductions(gross){
   const localTax = taxResult.localTax;
   const yearEnd=gv('pi-yearend'), healthAdj=0, healthAdjRetro=gv('pi-health-adj-retro');
   const healthAdjYearend=gv('pi-health-adj-yearend'), ltcareAdjYearend=gv('pi-ltcare-adj-yearend');
+  const pensionRetro=gv('pi-national-pension-retro'), ltcareAdj=gv('pi-ltcare-adj'), empinsAdj=gv('pi-empins-adj');
   const advance=gv('pi-advance');
-  const totalDed=pension+health+ltCare+empIns+incomeTax+localTax+yearEnd+healthAdj+healthAdjRetro+healthAdjYearend+ltcareAdjYearend+advance;
+  const totalDed=pension+health+ltCare+empIns+incomeTax+localTax+yearEnd+healthAdj+healthAdjRetro+healthAdjYearend+ltcareAdjYearend
+    +pensionRetro+ltcareAdj+empinsAdj+advance;
   const net=gross-totalDed;
   document.getElementById('pi-ded-detail').innerHTML=`
     <div style="display:flex;justify-content:space-between"><span style="color:#888">소득세 (부양가족 ${dependents}인${taxResult.fromTable?' · '+taxResult.usedYear+'년 간이세액표':(_isDailyTax?' · 일용 원천징수 (일당-15만)×6%':'')})</span><span>${won(incomeTax)}</span></div>
@@ -5138,7 +5248,10 @@ function calcPIDeductions(gross){
     <div style="display:flex;justify-content:space-between"><span style="color:#888">국민연금 (보수월액×${R.pensionLabel})${_isSocialInsExempt||_isDailyUnder8?'<span style=\"font-size:10px;color:#9ca3af;\"> 적용제외</span>':''}</span><span>${won(pension)}</span></div>
     <div style="display:flex;justify-content:space-between"><span style="color:#888">건강보험 (보수월액×${R.healthLabel})${_isSocialInsExempt||_isShortHourWorker||_isDailyUnder8?'<span style=\"font-size:10px;color:#9ca3af;\"> 적용제외</span>':''}</span><span>${won(health)}</span></div>
     <div style="display:flex;justify-content:space-between"><span style="color:#888">장기요양보험 (건강보험×${R.ltcareLabel})${_isSocialInsExempt||_isShortHourWorker||_isDailyUnder8?'<span style=\"font-size:10px;color:#9ca3af;\"> 적용제외</span>':''}</span><span>${won(ltCare)}</span></div>
-    ${_isSocialInsExempt ? '' : `<div style="display:flex;justify-content:space-between"><span style="color:#888">고용보험 (보수월액×${R.employLabel})</span><span>${won(empIns)}</span></div>`}`;
+    ${_isSocialInsExempt ? '' : `<div style="display:flex;justify-content:space-between"><span style="color:#888">고용보험 (보수월액×${R.employLabel})</span><span>${won(empIns)}</span></div>`}
+    ${pensionRetro ? `<div style="display:flex;justify-content:space-between"><span style="color:#888">국민연금 소급분</span><span>${won(pensionRetro)}</span></div>` : ''}
+    ${ltcareAdj ? `<div style="display:flex;justify-content:space-between"><span style="color:#888">장기요양보험 정산</span><span>${won(ltcareAdj)}</span></div>` : ''}
+    ${empinsAdj ? `<div style="display:flex;justify-content:space-between"><span style="color:#888">고용보험 정산</span><span>${won(empinsAdj)}</span></div>` : ''}`;
   _piFinalize(gross,std,incomeTax,localTax,health,ltCare,pension,empIns,totalDed,net,yearEnd,healthAdj,healthAdjRetro,healthAdjYearend,ltcareAdjYearend,advance);
 }
 
@@ -5203,12 +5316,17 @@ function calcPIFixed(gross){
   const localTax = taxResult.localTax;
   const yearEnd=gv('pi-yearend'), healthAdj=0, healthAdjRetro=gv('pi-health-adj-retro');
   const healthAdjYearend=gv('pi-health-adj-yearend'), ltcareAdjYearend=gv('pi-ltcare-adj-yearend');
+  const pensionRetro=gv('pi-national-pension-retro'), ltcareAdj=gv('pi-ltcare-adj'), empinsAdj=gv('pi-empins-adj');
   const advance=gv('pi-advance');
-  const totalDed=pension+health+ltCare+empIns+incomeTax+localTax+yearEnd+healthAdj+healthAdjRetro+healthAdjYearend+ltcareAdjYearend+advance;
+  const totalDed=pension+health+ltCare+empIns+incomeTax+localTax+yearEnd+healthAdj+healthAdjRetro+healthAdjYearend+ltcareAdjYearend
+    +pensionRetro+ltcareAdj+empinsAdj+advance;
   const net=gross-totalDed;
   document.getElementById('pi-ded-detail-fixed').innerHTML=`
     <div style="display:flex;justify-content:space-between"><span style="color:#888">소득세 (부양가족 ${dependents}인, 자동${taxResult.fromTable?' · '+taxResult.usedYear+'년 간이세액표':(_isDailyTaxF?' · 일용 원천징수 (일당-15만)×6%':'')})</span><span>${won(incomeTax)}</span></div>
-    <div style="display:flex;justify-content:space-between"><span style="color:#888">주민세 (소득세×10%, 자동)</span><span>${won(localTax)}</span></div>`;
+    <div style="display:flex;justify-content:space-between"><span style="color:#888">주민세 (소득세×10%, 자동)</span><span>${won(localTax)}</span></div>
+    ${pensionRetro ? `<div style="display:flex;justify-content:space-between"><span style="color:#888">국민연금 소급분</span><span>${won(pensionRetro)}</span></div>` : ''}
+    ${ltcareAdj ? `<div style="display:flex;justify-content:space-between"><span style="color:#888">장기요양보험 정산</span><span>${won(ltcareAdj)}</span></div>` : ''}
+    ${empinsAdj ? `<div style="display:flex;justify-content:space-between"><span style="color:#888">고용보험 정산</span><span>${won(empinsAdj)}</span></div>` : ''}`;
   _piFinalize(gross,std,incomeTax,localTax,health,ltCare,pension,empIns,totalDed,net,yearEnd,healthAdj,healthAdjRetro,healthAdjYearend,ltcareAdjYearend,advance);
 }
 

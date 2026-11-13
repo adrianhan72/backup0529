@@ -133,6 +133,9 @@ async function _probAutoCreateAndSave(){
       health_insurance_adjust_yearend_memo: document.getElementById('pi-health-adj-yearend-memo')?.value || '',
       ltcare_adjust_yearend: gv('pi-ltcare-adj-yearend'),
       ltcare_adjust_yearend_memo: document.getElementById('pi-ltcare-adj-yearend-memo')?.value || '',
+      national_pension_retro:      gv('pi-national-pension-retro'),
+      ltcare_adjust:               gv('pi-ltcare-adj'),
+      employment_insurance_adjust: gv('pi-empins-adj'),
       advance_deduction:  gv('pi-advance'),
       advance_deduction_memo: document.getElementById('pi-advance-memo')?.value || '',
       total_deduction:    c.totalDed  || 0,
@@ -354,6 +357,8 @@ function editPayroll(payrollId){
   }
   // 지급·공제 필드 채우기 (공통 헬퍼로 위임)
   _fillPayrollFields(p, _editCfgCo);
+  // 계약서 ↔ 급여 기본급 불일치 경고 (필드 복원·계약 로드 경합 이후 최종 1회)
+  if(typeof _piCheckWageGapBanner === 'function') setTimeout(_piCheckWageGapBanner, 100);
   toast(`${emp.name||''} ${p.pay_year}년 ${p.pay_month}월 급여 수정 모드로 진입했습니다.`,'info');
   // 페이지 상단으로 스크롤
   window.scrollTo({top:0,behavior:'smooth'});
@@ -452,6 +457,9 @@ function _fillPayrollFields(p, cfgCo){
   setAmountVal('pi-ltcare-adj-yearend', p.ltcare_adjust_yearend);
   const _ltMemoEl = document.getElementById('pi-ltcare-adj-yearend-memo');
   if(_ltMemoEl) _ltMemoEl.value = p.ltcare_adjust_yearend_memo || '';
+  setAmountVal('pi-national-pension-retro', p.national_pension_retro);
+  setAmountVal('pi-ltcare-adj',             p.ltcare_adjust);
+  setAmountVal('pi-empins-adj',             p.employment_insurance_adjust);
   setAmountVal('pi-advance',     p.advance_deduction);
   const _advMemoEl = document.getElementById('pi-advance-memo');
   if(_advMemoEl) _advMemoEl.value = p.advance_deduction_memo || '';

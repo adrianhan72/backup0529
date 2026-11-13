@@ -1,11 +1,12 @@
 function _adjustPsStickyTop(){
-  requestAnimationFrame(() => {
+  const apply = () => {
     const header = document.querySelector('.app-header');
     const sf = document.querySelector('.ps-sticky-filters');
-    if(header && sf){
-      sf.style.top = header.offsetHeight + 'px';
-    }
-  });
+    if(header && sf){ sf.style.top = header.offsetHeight + 'px'; }
+  };
+  // 백그라운드 탭에서는 rAF가 실행되지 않으므로 즉시 1회 + 다음 프레임 1회 적용 (2026-11-13)
+  apply();
+  requestAnimationFrame(apply);
 }
 
 // ══ 근로계약 서브페이지 ══
@@ -639,10 +640,14 @@ function renderTrendChart(){
       gross, net,
       ded:   gross - net,
       extra: ps.reduce((a,p)=>a+(p.overtime_pay||0)+(p.night_pay||0)+(p.holiday_pay||0),0),
-      irreg: ps.reduce((a,p)=>a+(p.annual_leave_pay||0)+(p.other_pay||0),0),
+      irreg: ps.reduce((a,p)=>a+(typeof _v2IrregularPay==='function' ? _v2IrregularPay(p) : (Number(p.annual_leave_pay)||0)+(Number(p.other_pay)||0)),0),
       tax:   ps.reduce((a,p)=>a+(p.income_tax||0)+(p.local_income_tax||0),0),
       ins:   ps.reduce((a,p)=>a+(p.health_insurance||0)+(p.long_term_care||0)+(p.national_pension||0)+(p.employment_insurance||0),0),
-      adj:   ps.reduce((a,p)=>a+(p.year_end_tax_adjust||0)+(p.health_insurance_adjust||0)+(p.advance_deduction||0),0),
+      // 정산: 국민연금 소급분 + 연말정산 + 건강보험 정산 + 건강보험 연말정산분 + 장기요양보험 정산 + 장기요양 연말정산분 + 고용보험 정산
+      settle: ps.reduce((a,p)=>a+(Number(p.national_pension_retro)||0)+(Number(p.year_end_tax_adjust)||0)
+        +(Number(p.health_insurance_adjust)||0)+(Number(p.health_insurance_adjust_yearend)||0)
+        +(Number(p.ltcare_adjust)||0)+(Number(p.ltcare_adjust_yearend)||0)
+        +(Number(p.employment_insurance_adjust)||0),0),
     };
   });
 
@@ -652,9 +657,13 @@ function renderTrendChart(){
     borderColor: t.color,
     backgroundColor: t.color+'18',
     borderWidth:2.5,
-    pointRadius:3,
-    pointHoverRadius:6,
-    pointBackgroundColor: t.color,
+    borderDash: t.dash || [],
+    pointRadius:4,
+    pointHoverRadius:7,
+    pointStyle: t.pointStyle || 'circle',
+    pointBackgroundColor:'#fff',
+    pointBorderColor: t.color,
+    pointBorderWidth:2,
     fill:false,
     tension:.35
   }));

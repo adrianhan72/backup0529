@@ -3410,7 +3410,7 @@ async function openAmendPreview(){
     probation_amt:    isProbA?(parseFloat(document.getElementById('ct-probation-amt').value)||0):0,
     probation_basis:  isProbA?(document.querySelector('input[name="ct-probation-basis"]:checked')?.value||'salary'):'salary',
     probation_end_date: document.getElementById('ct-probation-end-date')?.value||null,
-    work_hours_per_day: hours_, work_days_per_week: isDailyA?0:days_,
+    work_hours_per_day: hours_, work_days_per_week: isDailyA?0:days_, work_days_per_month: isDailyA?0:Math.round((parseFloat(days_)||5)*4.345),
     schedule_json: (() => {
       const _newSch = getScheduleJSON();
       const _hasActive = Array.isArray(_newSch) && _newSch.some(d => d.active);
