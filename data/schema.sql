@@ -1,7 +1,7 @@
 -- =============================================================================
 -- 인사톡 노무톡 — SQLite Schema (한글 주석 포함)
 -- node dump_schema.js 로 자동 생성 (ALTER TABLE 반영)
--- 최종 갱신: 2026-09-19
+-- 최종 갱신: 2026-11-14
 -- 테이블 수: 29개
 -- =============================================================================
 
@@ -474,7 +474,10 @@ CREATE TABLE IF NOT EXISTS payrolls (
   custom_fixed_values TEXT DEFAULT NULL, -- 사용자정의 고정 값
   etc_allowance_items TEXT DEFAULT NULL, -- 기타 수당 항목
   employee_number TEXT, -- 사번 스냅샷 (급여 저장 당시)
-  daily_work_log TEXT -- 일별 근로실적(공수) 내역 (JSON)
+  daily_work_log TEXT, -- 일별 근로실적(공수) 내역 (JSON)
+  national_pension_retro REAL,
+  ltcare_adjust REAL,
+  employment_insurance_adjust REAL
 );
 
 CREATE INDEX IF NOT EXISTS idx_payrolls_employee ON payrolls(employee_id);
