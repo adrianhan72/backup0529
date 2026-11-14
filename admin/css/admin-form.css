@@ -1,6 +1,26 @@
-    /* ── 요일별 근무시간 테이블 ── */
+    /* 작업시간표(work-schedule)·근무시간 입력 스타일 */
+    /* ── 고객사 모달 입력필드 높이 통일: 기본 36px (input-std) ── */
+    #company-modal input[type="text"]:not(.input-slim),
+    #company-modal input[type="date"]:not(.input-slim),
+    #company-modal input[type="email"]:not(.input-slim),
+    #company-modal input[type="number"]:not(.input-slim),
+    #company-modal select:not(.input-slim) {
+      padding: 7px 12px; height: 36px; box-sizing: border-box;
+      font-size:13px;border:1px solid #d1d5db;border-radius:7px;background:#fff;color:#000;font-weight:400;
+    }
+    #company-modal select:not(.input-slim){padding-right:28px;}
+    #company-modal input:not([readonly]):not(:disabled):not([type="checkbox"]):not([type="radio"]):not([type="file"]):hover,
+    #company-modal select:not(:disabled):hover,
+    #company-modal textarea:not([readonly]):not(:disabled):hover { border-color:#6366f1; }
+    /* 조회 전용 등 disabled·readonly 통일 (지급일 스타일 기준) */
+    #company-modal input:disabled,#company-modal input[readonly],
+    #company-modal select:disabled,#company-modal select[readonly],
+    #company-modal textarea:disabled,#company-modal textarea[readonly] {
+      background:#f1f5f9!important;color:#555!important;border:1px solid #e8eaed!important;
+      -webkit-text-fill-color:#555!important;cursor:default;
+    }
     .work-schedule-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:4px;}
-    .work-schedule-table{width:100%;min-width:640px;border-collapse:collapse;font-size:12px;}
+    .work-schedule-table{width:100%;min-width:580px;border-collapse:collapse;font-size:12px;}
     .work-schedule-table th{background:#1e293b;color:#fff;padding:7px 6px;text-align:center;font-weight:600;font-size:11.5px;white-space:nowrap;}
     .work-schedule-table th.th-brk{background:#7c3aed;}
     .work-schedule-table td{padding:5px 4px;border-bottom:1px solid #f1f5f9;text-align:center;vertical-align:middle;}
@@ -10,51 +30,74 @@
     .work-schedule-table tr.day-sun td{background:#fff5f5;}
     .work-schedule-table tr.day-sun td.td-brk{background:#fce7f3;}
     .work-schedule-table tr:last-child td{border-bottom:none;}
-    .work-schedule-table input[type=time]{width:84px;border:1px solid #e2e8f0;border-radius:5px;padding:4px 5px;font-size:12px;font-family:inherit;background:#fff;text-align:center;}
-    .work-schedule-table input[type=time]:disabled{background:#f3f4f6;color:#9ca3af;}
-    .work-schedule-table input.brk-time{width:76px;border:1px solid #ddd6fe;border-radius:5px;padding:4px 5px;font-size:12px;font-family:inherit;background:#faf5ff;text-align:center;}
-    .work-schedule-table input.brk-time:disabled{background:#f3f4f6;color:#9ca3af;border-color:#e2e8f0;}
+    .work-schedule-table input[type=time]{width:92px;border:1px solid #d1d5db;border-radius:5px;padding:4px 2px;font-size:13px;font-family:inherit;background:#fff;text-align:center;color:#000}
+    .work-schedule-table input[type=time]:disabled{background:#f1f5f9;color:#555;border-color:#e8eaed;-webkit-text-fill-color:#555;}
+    .work-schedule-table input.brk-time{width:92px;border:1px solid #ddd6fe;border-radius:5px;padding:4px 2px;font-size:13px;font-family:inherit;background:#fff;text-align:center;}
+    .work-schedule-table input.brk-time:disabled{background:#f1f5f9;color:#555;border-color:#e8eaed;-webkit-text-fill-color:#555;}
     .work-schedule-table .brk-sep{font-size:11px;color:#7c3aed;font-weight:700;padding:0 1px;}
-    /* 복수 휴게슬롯 */
+    /* 복수 휴게시간 슬롯 */
     .brk-slots-wrap{display:flex;flex-direction:column;gap:3px;align-items:flex-start;min-width:210px;}
     .brk-slot-row{display:flex;align-items:center;gap:3px;}
-    .btn-brk-add{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;border:1.5px solid #7c3aed;background:#faf5ff;color:#7c3aed;font-size:13px;font-weight:700;cursor:pointer;line-height:1;flex-shrink:0;transition:background .12s;}
+    .btn-brk-add{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;border:1.5px solid #7c3aed;background:#fff;color:#7c3aed;font-size:13px;font-weight:700;cursor:pointer;line-height:1;flex-shrink:0;transition:background .12s;}
     .btn-brk-add:hover{background:#ede9fe;}
-    .btn-brk-add:disabled{border-color:#d1d5db;color:#d1d5db;background:#f9fafb;cursor:not-allowed;}
-    .btn-brk-del{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;border:1.5px solid #fca5a5;background:#fff5f5;color:#ef4444;font-size:12px;font-weight:700;cursor:pointer;line-height:1;flex-shrink:0;transition:background .12s;}
+    .btn-brk-add:disabled{border:1px solid #cccccc;color:#f2f2f2;background:#cccccc;cursor:not-allowed;}
+    .btn-brk-del{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;border:1.5px solid #fca5a5;background:#fff5f5;color:#e94560;font-size:12px;font-weight:700;cursor:pointer;line-height:1;flex-shrink:0;transition:background .12s;}
     .btn-brk-del:hover{background:#fee2e2;}
+    .btn-brk-del:disabled{border:1px solid #cccccc;color:#f2f2f2;background:#cccccc;cursor:not-allowed;}
     .work-schedule-table .day-toggle{width:16px;height:16px;cursor:pointer;accent-color:#3b82f6;}
-    /* 일괄 설정 바 */
-    .bulk-schedule-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 14px;background:linear-gradient(90deg,#f0f9ff 0%,#faf5ff 100%);border:1.5px solid #bae6fd;border-radius:9px;margin-bottom:8px;}
+    /* 일괄 적용 바 */
+    .bulk-schedule-bar{display:flex;flex-direction:column;gap:0;flex-wrap:wrap;padding:10px 14px;background:linear-gradient(90deg,#f0f9ff 0%,#faf5ff 100%);border:1.5px solid #bae6fd;border-radius:9px;margin-bottom:8px;}
     .bulk-schedule-bar .bulk-label{font-size:12px;font-weight:700;color:#0369a1;white-space:nowrap;display:flex;align-items:center;gap:4px;}
     .bulk-schedule-bar .bulk-sep{color:#cbd5e1;font-size:13px;margin:0 2px;}
-    .bulk-schedule-bar input[type=time]{width:90px;border:1px solid #bae6fd;border-radius:6px;padding:5px 7px;font-size:12.5px;font-family:inherit;background:#fff;color:#1e293b;text-align:center;}
-    .bulk-schedule-bar input.bulk-brk{border-color:#ddd6fe;background:#faf5ff;}
+    .bulk-schedule-bar input[type=time]{width:110px;border:1px solid #d1d5db;border-radius:6px;padding:5px 4px;font-size:13px;font-family:inherit;background:#fff;color:#000;text-align:center;}
+    .bulk-schedule-bar input[type=time]::-webkit-calendar-picker-indicator{margin-left:-4px;}
+    .bulk-schedule-bar input[type=time]::-webkit-inner-spin-button{display:none;}
+    .bulk-schedule-bar input.bulk-brk{border-color:#ddd6fe;background:#fff;}
     .bulk-schedule-bar .bulk-divider{width:1px;height:26px;background:#e2e8f0;margin:0 4px;}
-    .bulk-schedule-bar .btn-bulk-apply{
-      display:flex;align-items:center;gap:5px;
-      padding:6px 15px;
-      background:linear-gradient(135deg,#3b82f6,#6366f1);color:#fff;
-      border:none;border-radius:7px;font-size:12.5px;font-weight:700;
-      cursor:pointer;white-space:nowrap;font-family:inherit;
-      box-shadow:0 2px 6px rgba(99,102,241,.25);
-      transition:background .18s,box-shadow .18s,transform .15s;
-    }
-    .bulk-schedule-bar .btn-bulk-apply:hover:not(:disabled){
-      background:linear-gradient(135deg,#2563eb,#4f46e5);
-      box-shadow:0 4px 12px rgba(99,102,241,.38);
-      transform:translateY(-1px);
-    }
-    .bulk-schedule-bar .btn-bulk-apply:active:not(:disabled){transform:scale(.96) translateY(1px);}
-    .bulk-schedule-bar .btn-bulk-apply:disabled,.bulk-schedule-bar .btn-bulk-apply[disabled]{opacity:.42;cursor:not-allowed;pointer-events:none;box-shadow:none;}
-    .bulk-apply-target{display:flex;align-items:center;gap:6px;font-size:11.5px;color:#374151;white-space:nowrap;}
+    .bulk-schedule-bar .bulk-time-label{font-size:11.5px;color:#475569;white-space:nowrap;}
+    .bulk-schedule-bar .bulk-brk-label{font-size:11.5px;color:#7c3aed;white-space:nowrap;}
+    .bulk-schedule-bar .bulk-sep-label{font-size:11px;color:#94a3b8;}
+    .bulk-apply-target{display:flex;align-items:center;gap:6px;font-size:11.5px;color:#374151;white-space:nowrap;flex-wrap:wrap;}
     .bulk-apply-target label{display:flex;align-items:center;gap:3px;cursor:pointer;}
     .bulk-apply-target input[type=checkbox]{width:14px;height:14px;accent-color:#6366f1;}
     .bulk-schedule-tip{font-size:11px;color:#6b7280;margin-top:5px;padding-left:2px;}
+    .bulk-schedule-footer{display:flex;align-items:center;justify-content:space-between;margin:8px -14px -10px -14px;padding:8px 14px;border-top:1px solid #bae6fd;background:rgba(255,255,255,.5);border-radius:0 0 9px 9px;gap:10px;flex-wrap:wrap;}
+    .bulk-schedule-footer .bulk-schedule-tip{margin-top:0;}
     .work-schedule-table .day-label{font-weight:700;font-size:12.5px;}
     .work-schedule-table .computed-h{font-size:11.5px;color:#0369a1;font-weight:600;min-width:48px;display:inline-block;}
-    .wsh-total{font-size:12px;color:#374151;margin-top:8px;padding:7px 12px;background:#f8fafc;border-radius:7px;border:1px solid #e2e8f0;display:flex;gap:16px;flex-wrap:wrap;}
-    .wsh-total span{font-weight:700;color:#0369a1;}
+    /* 교대(시프트) 그룹 */
+    .td-shifts{padding:4px 2px!important;}
+    .shifts-container{display:flex;flex-direction:column;gap:4px;}
+    .shift-group{display:inline-flex;align-items:center;gap:2px;padding:2px 4px;background:#f8fafc;border-radius:6px;border:1px solid #e2e8f0;width:fit-content;font-size:10.5px;color:#6b7280;}
+    .shift-group .brk-slots-wrap{min-width:auto!important;}
+    .shift-group .shift-add{margin-left:10px;}
+    .shift-group .shift-del{margin-left:10px;}
+    .shift-group .shift-add+.shift-del{margin-left:0;}
+    /* time picker selects: 좁은 폭에 맞게 패딩 축소 */
+    .time-picker select.tp-h,
+    .time-picker select.tp-m {
+      padding: 2px 0 !important;
+      background: #fff !important;
+      background-image: none !important;
+      -webkit-appearance: none !important;
+      -moz-appearance: none !important;
+      appearance: none !important;
+    }
+    .time-picker select.tp-h:disabled,
+    .time-picker select.tp-m:disabled {
+      background: #f1f5f9 !important;
+      color: #555 !important;
+      border-color: #e8eaed !important;
+      -webkit-text-fill-color: #555 !important;
+    }
+    .shift-add{width:22px!important;height:22px!important;font-size:12px!important;line-height:1!important;padding:0!important;}
+    .shift-del{width:22px!important;height:22px!important;font-size:12px!important;line-height:1!important;padding:0!important;}
+    .wsh-total{font-size:12px;color:#374151;margin-top:8px;padding:7px 12px;background:#f8fafc;border-radius:7px;border:1px solid #e2e8f0;display:flex;flex-direction:column;gap:4px;}
+    .wsh-total .wsh-row{display:grid;grid-template-columns:repeat(3,1fr);gap:2px 8px;width:100%;}
+    .wsh-total .wsh-item{text-align:left;}
+    .wsh-total span{font-weight:400;color:#374151;}
+    .wsh-total .wsh-val{color:#0369a1;}
+    .wsh-total .wsh-extra{font-size:11.5px;}
     /* 스켈레톤 로딩 */
     .skel-text{display:inline-block;background:linear-gradient(90deg,#e2e8f0 25%,#f1f5f9 50%,#e2e8f0 75%);background-size:200% 100%;border-radius:4px;height:14px;vertical-align:middle;}
     @keyframes skelPulse{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
@@ -78,13 +121,13 @@
     .tbl-loading-overlay .tbl-spin{width:32px;height:32px;border:3px solid #e2e8f0;border-top-color:#6366f1;border-radius:50%;animation:tblSpin .7s linear infinite;}
     .tbl-loading-overlay .tbl-spin-txt{font-size:13px;color:#64748b;font-weight:500;}
     @keyframes tblSpin{to{transform:rotate(360deg);}}
-    /* ── 필수 입력 필드 하이라이트 ── */
+    /* 필수 입력 오류 카드 흔들림 애니메이션 */
     .ct-field-error input,
     .ct-field-error select,
     .ct-field-error textarea {
-      border: 2px solid #ef4444 !important;
-      background: #fff5f5 !important;
-      box-shadow: 0 0 0 3px rgba(239,68,68,.15) !important;
+      border: 1px solid #dc2626 !important;
+      background: #fef2f2 !important;
+      box-shadow: 0 0 0 2px rgba(220,38,38,.15) !important;
       animation: ctFieldShake .35s ease;
     }
     .ct-field-error label { color: #dc2626 !important; }
@@ -95,7 +138,7 @@
       60%{ transform:translateX(-4px); }
       80%{ transform:translateX(4px); }
     }
-    /* 필수 항목 안내 배너 */
+    /* 필수 입력 안내 배너 */
     #ct-validation-banner {
       display:none;
       margin: 0 0 14px;
@@ -121,3 +164,162 @@
       padding-left: 18px;
     }
     #ct-validation-banner ul li { margin-bottom: 2px; }
+    /* 고객사 정보 입력 섹션 */
+.cm-history-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  cursor: pointer;
+  user-select: none;
+  background: #f8fafc;
+  border-top: 1.5px solid #e5e7eb;
+  transition: background .15s;
+}
+.cm-history-toggle:hover { background: #f1f5f9; }
+
+.cm-hist-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #6366f1;
+  color: #fff;
+  border-radius: 20px;
+  font-size: 10.5px;
+  font-weight: 700;
+  min-width: 20px;
+  padding: 1px 6px;
+  line-height: 1.4;
+}
+
+.cm-history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-top: 8px;
+}
+.cm-history-table thead th {
+  background: #f1f5f9;
+  color: #475569;
+  font-weight: 700;
+  font-size: 11.5px;
+  padding: 7px 10px;
+  text-align: left;
+  border-bottom: 1.5px solid #e2e8f0;
+}
+.cm-history-table tbody tr { border-bottom: 1px solid #f1f5f9; }
+.cm-history-table tbody tr:last-child { border-bottom: none; }
+.cm-history-table tbody td {
+  padding: 6px 10px;
+  vertical-align: top;
+  color: #374151;
+  line-height: 1.5;
+}
+.cm-hist-date {
+  font-size: 11.5px;
+  color: #6b7280 !important;
+  white-space: nowrap;
+  vertical-align: middle !important;
+}
+.cm-hist-field {
+  font-weight: 600;
+  color: #4f46e5 !important;
+  white-space: nowrap;
+}
+.cm-hist-before {
+  color: #dc2626 !important;
+  max-width: 180px;
+  word-break: break-all;
+}
+.cm-hist-after {
+  color: #059669 !important;
+  max-width: 180px;
+  word-break: break-all;
+}
+.cm-hist-row-first td:not(.cm-hist-date) { border-top: 1px solid #e5e7eb; }
+.cm-hist-row-cont td { border-top: 1px dashed #f1f5f9; }
+
+.cm-hist-pager {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.cm-hist-page-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 7px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 6px;
+  background: #fff;
+  color: #374151;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.cm-hist-page-btn:hover:not(:disabled) { background: #eef2ff; border-color: #6366f1; color: #4f46e5; }
+.cm-hist-page-btn.active { background: #6366f1; border-color: #6366f1; color: #fff; font-weight: 700; }
+.cm-hist-page-btn:disabled { background:#cccccc;color:#f2f2f2;border:1px solid #cccccc;cursor:default;opacity:1; }
+.cm-hist-page-info {
+  font-size: 11.5px;
+  color: #9ca3af;
+  margin-left: 6px;
+}
+
+/* ── 등기임원 / 특수관계인 카드 ── */
+
+.cm-person-fg { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.cm-person-fg label { font-size: 11px; font-weight: 600; color: #6b7280; }
+.cm-person-fg input {
+  border: 1px solid #d1d5db; border-radius: 7px; padding: 6px 10px;
+  font-size: 13px; font-family: inherit; width: 100%; box-sizing: border-box;
+  background: #fff; color: #000; transition: border-color 0.2s;
+}
+.cm-person-fg input:focus:not([readonly]):not(:disabled) { border-color: #6366f1; outline: none; box-shadow: 0 0 0 2px rgba(99,102,241,0.12); }
+
+/* ── 근로계약 수당 섹션 구분 헤더 ── */
+.ct-allowance-section-header {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 20px 0 4px 0; margin: 0;
+  border-top: 1.5px dashed #cbd5e1;
+  font-size: 12.5px; font-weight: 700; color: #3730a3;
+}
+
+/* ── 계약서 폼 인라인 힌트 (span) ── */
+.ct-sub-hint { font-size: 11px; font-weight: 400; color: #6b7280; }
+.ct-req-star { color: #c00; font-weight: 900; font-size: 13px; margin-left: 1px; }
+.ct-text-danger { color: #ef4444; }
+.ct-formula { font-size: 10px; color: #6366f1; font-weight: 500; margin-left: 2px; white-space: nowrap; }
+.ct-formula-line { font-size: 10.5px; color: #6366f1; font-weight: 500; padding: 2px 0 0 2px; min-height: 18px; }
+.ct-biz-badge { font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 10px; white-space: nowrap; }
+.ct-biz-badge.small { background: #fef3c7; color: #92400e; }
+.ct-biz-badge.normal { background: #dbeafe; color: #1e40af; }
+.ct-fixed-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; grid-column: 1 / -1; align-items: center; }
+.ct-fixed-grid .form-group { min-width: 0; max-width: none; }
+.ct-biz-badge-cell { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; grid-column: 1 / -1; padding: 4px 0 8px; }
+.ct-biz-hint { font-size: 10.5px; color: #6b7280; }
+.ct-biz-transition { font-size: 10.5px; color: #dc2626; font-weight: 600; }
+
+/* ── 급여입력 계산식 힌트 ── */
+.pi-formula-line { font-size: 10px; color: #6366f1; font-weight: 500; padding: 1px 0 0 2px; min-height: 14px; }
+
+/* ── 계약서 유효성 검증 경고 배너 (동적 생성) ── */
+.ct-va-banner { font-weight: 700; margin-bottom: 4px; }
+.ct-va-banner-title { font-weight: 800; font-size: 12px; margin-bottom: 6px; color: #b91c1c; display: flex; align-items: center; gap: 7px; }
+.ct-va-banner-item { margin-bottom: 3px; }
+.ct-va-banner-detail { font-size: 11px; color: #b91c1c; margin-bottom: 3px; }
+.ct-va-banner-detail-plain { font-size: 11px; color: #b91c1c; }
+.ct-va-banner-box { background: #fff; border-radius: 6px; padding: 8px 10px; margin-bottom: 6px; font-size: 11.5px; line-height: 2; border: 1px dashed #fca5a5; }
+.ct-va-banner-danger { border-radius: 7px; padding: 9px 12px; font-size: 11.5px; line-height: 1.7; background: #fef2f2; border: 1.5px solid #fca5a5; color: #991b1b; }
+.ct-va-icon-danger { margin-right: 5px; color: #dc2626; }
+.ct-va-icon-danger-lg { color: #dc2626; font-size: 14px; }
+.ct-va-footer-note { font-size: 11px; color: #9f1239; line-height: 1.6; }
+/* ── 인라인 스타일 클래스화 (2026-09-01 — 계약서 워드 생성용 스타일 제외) ── */
+#hr-emp-form-modal .radio-custom { font-weight: 400; }
+#hr-emp-form-modal .fld-hint { margin-top: 4px; color: #9ca3af; }
+#hr-emp-form-modal label .lbl-req,
+#contract-modal label .lbl-req { color: #c00; font-weight: 900; font-size: 13px; margin-left: 1px; }

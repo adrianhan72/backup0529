@@ -1,0 +1,121 @@
+    <div id="page-probation-mgmt" class="page">
+
+      <!-- ① 고객사 선택 -->
+      <div id="probmgmt-company-select-card">
+        <div class="section-title">
+          <i class="fas fa-building"></i>
+          <span>고객사를 선택하세요</span>
+          <div class="filt-search-wrap" style="margin-left:auto;">
+            <i class="fas fa-search"></i>
+            <input type="text" id="probmgmt-company-search" class="filt-search" class="w-160" placeholder="고객사명 검색" oninput="renderProbMgmtCompanyList()" />
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:16px;overflow:hidden;">
+          <div id="probmgmt-company-chips" style="padding:20px;display:flex;flex-wrap:wrap;gap:8px;"></div>
+        </div>
+      </div>
+
+      <!-- ② 고객사 선택 후 콘텐츠 섹션 -->
+      <div id="probmgmt-content-section" style="display:none;">
+
+        <!-- 선택된 고객사 헤더 -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:12px 18px;background:linear-gradient(90deg,#1e1b4b,#312e81);border-radius:10px;">
+          <span id="probmgmt-selected-label" style="font-size:14px;font-weight:700;color:#fff;"></span>
+          <button onclick="clearProbMgmtCompany()" class="btn btn-icon-dark" title="고객사 선택 해제">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+
+        <!-- 요약 통계 -->
+        <div class="probmgmt-stat-grid" id="probmgmt-stat-grid">
+          <div class="probmgmt-stat-card" style="border-left:4px solid #0d9488;">
+            <div class="probmgmt-stat-label">전체 수습 근로자</div>
+            <div class="probmgmt-stat-val" id="probmgmt-stat-total" style="color:#0d9488;">0</div>
+            <div class="probmgmt-stat-sub">현재 수습 기간 중인 전체 인원</div>
+          </div>
+          <div class="probmgmt-stat-card" style="border-left:4px solid #dc2626;">
+            <div class="probmgmt-stat-label">해고 시 서면통지 대상자</div>
+            <div class="probmgmt-stat-val" id="probmgmt-stat-urgent" style="color:#dc2626;">0</div>
+            <div class="probmgmt-stat-sub">수습기간이 3개월을 초과하는 근로자는 만료일 30일전까지 서면 통지 의무</div>
+          </div>
+          <div class="probmgmt-stat-card" style="border-left:4px solid #f59e0b;">
+            <div class="probmgmt-stat-label">해고시 해고예고수당(30일치 급여) 지급 대상</div>
+            <div class="probmgmt-stat-val" id="probmgmt-stat-thismonth" style="color:#f59e0b;">0</div>
+            <div class="probmgmt-stat-sub">수습기간이 3개월을 초과하는 근로자 중 만료까지 30일 미만인 근로자</div>
+          </div>
+        </div>
+
+        <!-- 섹션 타이틀 + 검색 -->
+        <div class="section-title">
+          <i class="fas fa-user-clock" style="color:#0d9488;"></i>
+          <span>수습 근로자 전체 목록</span>
+          <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+            <div class="filt-search-wrap" style="margin:0;">
+              <i class="fas fa-search"></i>
+              <input type="text" id="probmgmt-search" class="filt-search" placeholder="근로자명 검색"
+                     oninput="renderProbationMgmtTable()" class="w-160" />
+            </div>
+          </div>
+        </div>
+
+        <!-- 검색 + 테이블 -->
+        <div class="card" style="padding:0;overflow:hidden;">
+          <div class="probmgmt-table-wrap">
+            <table class="probmgmt-table">
+              <thead>
+                <tr>
+                  <th>근로자명</th>
+                  <th>성별</th>
+                  <th>계약 유형</th>
+                  <th>계약 시작일</th>
+                  <th>수습기간</th>
+                  <th>수습 만료일</th>
+                  <th>D-day</th>
+                  <th style="text-align:center;">처리결과</th>
+                  <th style="text-align:center;">처리일시</th>
+                  <th style="text-align:center;">수습계약서</th>
+                  <th style="text-align:center;">관리</th>
+                </tr>
+              </thead>
+              <tbody id="probmgmt-table-body">
+                <tr><td colspan="11" class="cen-empty"><i class="fas fa-spinner fa-spin"></i> 데이터 불러오는 중...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div><!-- /probmgmt-content-section -->
+
+      <!-- 수습만료 통지 메시지 예시 -->
+      <div id="probmgmt-template-section" style="display:none;">
+        <div class="section-title" style="margin-top:24px;">
+          <i class="fas fa-comment-alt"></i>
+          <span>수습만료 통지 메시지 예시</span>
+          <span style="font-size:12px;color:#9ca3af;font-weight:400;">고객사 앱 알림함으로 발송 — 수습기간 3개월 초과 + 만료 30일 전 대상</span>
+        </div>
+        <div class="cen-tmpl-wrap" style="grid-template-columns:1fr;">
+          <div>
+            <div class="cen-tmpl-section-head">
+              <span class="cen-tmpl-section-badge inapp">
+                <i class="fas fa-bell"></i> 인앱 알림
+              </span>
+            </div>
+            <div class="cen-inapp-phone-wrap">
+              <div class="cen-inapp-phone-bar">
+                <span style="font-size:10px;color:#fff;opacity:.8;">알림함</span>
+                <i class="fas fa-bell" style="color:#fff;font-size:12px;"></i>
+              </div>
+              <div class="cen-inapp-notif-card unread" style="flex-direction:column;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <div class="cen-inapp-notif-icon"><i class="fas fa-user-clock"></i></div>
+                  <div id="probmgmt-tmpl-title" style="font-size:14px;font-weight:700;color:#111827;flex:1;">로딩 중...</div>
+                  <div class="cen-inapp-unread-dot"></div>
+                </div>
+                <div id="probmgmt-tmpl-plain" style="font-size:11.5px;color:#4b5563;line-height:1.6;white-space:pre-wrap;font-family:inherit;margin-top:8px;padding-left:44px;">로딩 중...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /page-probation-mgmt -->

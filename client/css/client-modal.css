@@ -78,4 +78,27 @@
     .emp-chips-wrap{display:flex;gap:7px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none;-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory;-ms-overflow-style:none}
     .emp-chips-wrap::-webkit-scrollbar{display:none}
 
+    /* ── 어드민과 동일한 버튼 스타일 (2026-09-21) ── */
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;border:1px solid #4b5563;background:#6b7280;color:#fff;font-family:inherit;transition:background .18s,border-color .18s,opacity .18s;position:relative;overflow:hidden;user-select:none;white-space:nowrap;box-sizing:border-box;}
+    .btn:hover:not(:disabled){background:#4b5563;}
+    .btn:active:not(:disabled){background:#374151;}
+    .btn:focus-visible{outline:2.5px solid currentColor;outline-offset:2px;}
+    .btn:disabled,.btn[disabled]{background:#cccccc;color:#f2f2f2;border:1px solid #cccccc;cursor:not-allowed;pointer-events:none;opacity:1;}
+    .btn-sm{padding:5px 10px;font-size:11.5px;border-radius:7px;min-height:28px;box-sizing:border-box;}
+    .btn-primary{background:#dc2626;border-color:#b91c1c;}
+    .btn-primary:hover:not(:disabled){background:#b91c1c;}
+    .btn-primary:active:not(:disabled){background:#991b1b;}
+    .btn-danger{background:#dc2626;border-color:#b91c1c;}
+    .btn-danger:hover:not(:disabled){background:#b91c1c;}
+    .btn-danger:active:not(:disabled){background:#991b1b;}
+    .btn-indigo{background:#4f46e5;border-color:#4338ca;}
+    .btn-indigo:hover:not(:disabled){background:#4338ca;}
+    .btn-indigo:active:not(:disabled){background:#3730a3;}
+    .btn-success{background:#10b981;border-color:#059669;}
+    .btn-success:hover:not(:disabled){background:#059669;}
+    .btn-success:active:not(:disabled){background:#047857;}
+    .btn-warning{background:#f59e0b;border-color:#d97706;}
+    .btn-warning:hover:not(:disabled){background:#d97706;}
+    .btn-warning:active:not(:disabled){background:#b45309;}
+
     /* ─ 계약현황 페이지 (구 헤더/필터 CSS 제거됨, ct-table 공통 스타일은 유지) ─ */

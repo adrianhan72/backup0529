@@ -1,72 +1,3 @@
-function setPsGroup(group, el){
-  psGroup  = group;
-  psSubVal = '__all__';
-  document.querySelectorAll('.ps-group-btn').forEach(b=>b.classList.remove('active'));
-  el.classList.add('active');
-  _buildPsSubChips();
-  renderPayslipList();
-}
-
-// ── 2단계 세부 칩 선택 ──
-function setPsSubVal(val){
-  psSubVal = val;
-  document.querySelectorAll('.ps-sub-chip').forEach(b=>{
-    b.classList.toggle('active', b.dataset.val === val);
-  });
-  renderPayslipList();
-}
-
-// ── 2단계 칩 목록 동적 생성 ──
-function _buildPsSubChips(){
-  const subBar   = document.getElementById('ps-sub-bar');
-  const chipsEl  = document.getElementById('ps-sub-chips');
-  const activeEmps = allEmployees.filter(e=>e.status==='재직'||e.status==='active');
-
-  if(psGroup === 'all'){
-    subBar.style.display = 'none';
-    chipsEl.innerHTML = '';
-    return;
-  }
-
-  // 세부 값 목록 추출
-  let values = [];
-  if(psGroup === 'cat'){
-    // 고용형태: 실제 데이터에 있는 것만, 정해진 순서로
-    const ORDER = ['정규직','정규직 수습','계약직','계약직 수습','일용직'];
-    const has = new Set(activeEmps.map(e=>e.employment_category).filter(Boolean));
-    values = ORDER.filter(v=>has.has(v));
-  } else if(psGroup === 'dept'){
-    values = [...new Set(activeEmps.map(e=>e.department||'미지정'))].sort((a,b)=>a.localeCompare(b,'ko'));
-  } else { // rank
-    values = [...new Set(activeEmps.map(e=>e.position||e.rank||'미지정'))].sort((a,b)=>a.localeCompare(b,'ko'));
-  }
-
-  subBar.style.display = '';
-
-  // 고용형태 색상 매핑 (칩 dot 표시용)
-  const catDotColor = {
-    '정규직':'#3b82f6','정규직 수습':'#10b981',
-    '계약직':'#f59e0b','계약직 수습':'#f97316','일용직':'#a855f7'
-  };
-
-  const makeChip = (val, label, isActive) => {
-    const dot = (psGroup === 'cat' && catDotColor[val])
-      ? `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${catDotColor[val]};margin-right:5px;flex-shrink:0;"></span>`
-      : '';
-    const cnt = val === '__all__'
-      ? activeEmps.length
-      : psGroup === 'cat'  ? activeEmps.filter(e=>(e.employment_category||'미지정')===val).length
-      : psGroup === 'dept' ? activeEmps.filter(e=>(e.department||'미지정')===val).length
-      : activeEmps.filter(e=>(e.position||e.rank||'미지정')===val).length;
-    return `<button class="ps-sub-chip${isActive?' active':''}" data-val="${val}" onclick="setPsSubVal('${val}')">${dot}${label}<span style="margin-left:4px;font-size:10px;opacity:.65;">${cnt}</span></button>`;
-  };
-
-  chipsEl.innerHTML = [
-    makeChip('__all__', '전체', true),
-    ...values.map(v => makeChip(v, v, false))
-  ].join('');
-}
-
 function changePsMonth(d){
   psMonth += d;
   if(psMonth>12){psMonth=1;psYear++;} if(psMonth<1){psMonth=12;psYear--;}
@@ -76,67 +7,30 @@ function changePsMonth(d){
 function renderPayslipList(){
   const el = document.getElementById('payslip-list-content');
 
-  // 재직 직원 기본 풀
-  let emps = allEmployees.filter(e=>e.status==='재직'||e.status==='active');
-
-  // 그룹·세부 필터 적용
-  if(psGroup !== 'all' && psSubVal !== '__all__'){
-    if(psGroup === 'cat')  emps = emps.filter(e=>(e.employment_category||'미지정')===psSubVal);
-    if(psGroup === 'dept') emps = emps.filter(e=>(e.department||'미지정')===psSubVal);
-    if(psGroup === 'rank') emps = emps.filter(e=>(e.position||e.rank||'미지정')===psSubVal);
-  }
+  // 재직 직원 전체를 사번순으로 표시 (그룹 필터 없음)
+  const emps = allEmployees.filter(e=>_isEmpActive(e));
 
   if(!emps.length){
-    el.innerHTML='<div class="no-data"><i class="fas fa-user-slash"></i><p>해당 조건의 재직 직원이 없습니다</p></div>';
+    el.innerHTML='<div class="no-data"><i class="fas fa-user-slash"></i><p>재직 중인 직원이 없습니다</p></div>';
     return;
   }
 
   // 선택 연월 급여 데이터
   const monthPays = allPayrolls.filter(p=>Number(p.pay_year)===psYear && Number(p.pay_month)===psMonth);
 
-  // 정렬: 그룹에 따라 기준 다르게
-  let sorted;
-  if(psGroup === 'dept'){
-    sorted = [...emps].sort((a,b)=>{
-      const da=(a.department||'미지정'), db=(b.department||'미지정');
-      return da.localeCompare(db,'ko') || (a.name||'').localeCompare(b.name||'','ko');
-    });
-  } else if(psGroup === 'rank'){
-    sorted = [...emps].sort((a,b)=>{
-      const ra=(a.position||a.rank||'미지정'), rb=(b.position||b.rank||'미지정');
-      return ra.localeCompare(rb,'ko') || (a.name||'').localeCompare(b.name||'','ko');
-    });
-  } else {
-    sorted = [...emps].sort((a,b)=>(a.name||'').localeCompare(b.name||'','ko'));
-  }
+  // 정렬: 사번 오름차순 (사번 없으면 이름순)
+  const empNo = e => {
+    const digits = String(e.employee_number == null ? '' : e.employee_number).replace(/[^0-9]/g, '');
+    return digits ? Number(digits) : Number.MAX_SAFE_INTEGER;
+  };
+  const sorted = [...emps].sort((a,b) =>
+    empNo(a) - empNo(b) || (a.name||'').localeCompare(b.name||'','ko'));
 
-  // 그룹 헤더를 삽입할 기준 키
-  const groupKeyFn = emp =>
-    psGroup==='dept' ? (emp.department||'미지정') :
-    psGroup==='rank' ? (emp.position||emp.rank||'미지정') :
-    psGroup==='cat'  ? (emp.employment_category||'기타') : null;
-
-  let lastGroupKey = null;
   const cards = sorted.map(emp => {
     const p = monthPays.find(x=>x.employee_id===emp.id);
-    const avatarColor = PS_CAT_COLOR[emp.employment_category]||'#6366f1';
+    const catLabel = contractTypeLabel_c(emp.employment_category);
+    const avatarColor = PS_CAT_COLOR[catLabel]||'#6366f1';
     const initial = (emp.name||'?').charAt(0);
-    const catLabel = emp.employment_category||'기타';
-
-    // 그룹 헤더 (세부 전체 선택 or 그룹 모드일 때)
-    let groupHeader = '';
-    if(psSubVal === '__all__' && psGroup !== 'all'){
-      const gk = groupKeyFn(emp);
-      if(gk !== lastGroupKey){
-        lastGroupKey = gk;
-        const gCount = sorted.filter(e=>groupKeyFn(e)===gk).length;
-        const gInputed = sorted.filter(e=>groupKeyFn(e)===gk && monthPays.find(x=>x.employee_id===e.id)).length;
-        groupHeader = `<div class="ps-group-header">
-          <span class="ps-group-header-name">${gk}</span>
-          <span class="ps-group-header-badge">${gCount}명 중 ${gInputed}명 입력</span>
-        </div>`;
-      }
-    }
 
     let payContent = '';
     if(p){
@@ -161,7 +55,7 @@ function renderPayslipList(){
       payContent = `<div class="ps-emp-no-pay"><i class="fas fa-file-invoice" style="color:#d1d5db;margin-right:5px;"></i>${psYear}년 ${psMonth}월 급여 미입력</div>`;
     }
 
-    const card = `<div class="ps-emp-card${!p?' ps-emp-card--unpaid':''}" onclick="${p?`openPayslipModal('${p.id}')`:'void(0)'}" style="${!p?'cursor:default;':''}">
+    return `<div class="ps-emp-card${!p?' ps-emp-card--unpaid':''}" onclick="${p?`openPayslipModal('${p.id}')`:'void(0)'}" style="${!p?'cursor:default;':''}">
       <div class="ps-emp-card-header">
         <div class="ps-emp-avatar" style="background:${avatarColor};">${initial}</div>
         <div class="ps-emp-info">
@@ -175,8 +69,6 @@ function renderPayslipList(){
       </div>
       ${payContent}
     </div>`;
-
-    return groupHeader + card;
   }).join('');
 
   const inputCount = sorted.filter(emp=>monthPays.find(x=>x.employee_id===emp.id)).length;
@@ -190,25 +82,31 @@ function renderPayslipList(){
     ${cards}`;
 }
 
-// renderEmpChips / setPsFilter – 하위호환 유지
+// 하위호환용 (그룹 필터 제거됨)
 function renderEmpChips(){ renderPayslipList(); }
-function setPsFilter(cat){ psGroup='all'; psSubVal='__all__'; renderPayslipList(); }
+function setPsFilter(){ renderPayslipList(); }
 
 // ─ Payslip Modal ─
 function openPayslipModal(payrollId){
   const p = allPayrolls.find(x=>x.id===payrollId); if(!p) return;
   const emp = allEmployees.find(x=>x.id===p.employee_id)||{};
-  const contract = allContracts.find(c=>c.employee_id===p.employee_id&&(c.status==='active'||c.status==='활성'));
+  const contract = allContracts.find(c=>c.employee_id===p.employee_id&&_isContractActive(c));
   const hw = contract?contract.hourly_wage:p.hourly_wage||0;
-  const gross=p.gross_pay||0, net=p.net_pay||0, ded=(p.total_deduction||(gross-net));
+  // 가불금 상환은 임금이 아니므로 임금통계(지급·공제·영수액)에서 제외
+  const gross=p.gross_pay||0;
+  const adv=Number(p.advance_deduction)||0;
+  const sevInt=Number(p.severance_interim_pay)||0;
+  const grossWage=gross-sevInt;
+  const ded=(p.total_deduction||(gross-(p.net_pay||0)))-adv;
+  const net=grossWage-ded;
 
   const payItems=[
     {label:'기본급',val:p.base_salary},
     {label:'주휴수당',val:p.weekly_holiday_pay},
     {label:'자격(직책)수당',val:p.position_allowance},
     {label:'연장근로수당',val:p.overtime_pay,sub:p.overtime_hours?`통상시급 ${won(hw)} × ${p.overtime_hours}h × 150%`:''},
-    {label:'야간근로수당',val:p.night_pay,sub:p.night_hours?`통상시급 × ${p.night_hours}h × 50%`:''},
-    {label:'휴일근로수당',val:p.holiday_pay,sub:p.holiday_hours?`통상시급 × ${p.holiday_hours}h × 150%`:''},
+    {label:'야간근로수당',val:p.night_pay,sub:p.night_hours?`통상시급 ${won(hw)} × ${p.night_hours}h × 50%(가산)`:''},
+    {label:'휴일근로수당',val:p.holiday_pay,sub:p.holiday_hours?`통상시급 ${won(hw)} × ${p.holiday_hours}h (8h내 150%, 초과 200%)`:''},
     {label:'차량유지비',val:p.car_maintenance},
     {label:'식대',val:p.meal_allowance},
     {label:'연차수당',val:p.annual_leave_pay},
@@ -223,7 +121,6 @@ function openPayslipModal(payrollId){
     {label:'고용보험',val:p.employment_insurance,sub:'보수월액 × 0.9%'},
     ...(p.year_end_tax_adjust?[{label:'연말정산'+(p.year_end_tax_adjust<0?' (환급)':' (추가납부)'),val:p.year_end_tax_adjust}]:[]),
     ...(p.health_insurance_adjust?[{label:'건강보험정산'+(p.health_insurance_adjust<0?' (환급)':' (추가납부)'),val:p.health_insurance_adjust}]:[]),
-    ...(p.advance_deduction?[{label:'기타(선지급) 공제',val:p.advance_deduction}]:[]),
   ];
 
   document.getElementById('payslip-modal-content').innerHTML = `
@@ -234,7 +131,7 @@ function openPayslipModal(payrollId){
       ${p.pay_date?`<div class="ps-date"><i class="fas fa-calendar-check"></i> ${p.pay_date} 지급</div>`:''}
     </div>
     <div class="ps-summary">
-      <div class="ps-sum-item"><div class="sl">지급합계</div><div class="sv plus">${won(gross)}</div></div>
+      <div class="ps-sum-item"><div class="sl">지급합계</div><div class="sv plus">${won(grossWage)}</div></div>
       <div class="ps-divider"></div>
       <div class="ps-sum-item"><div class="sl">공제합계</div><div class="sv minus">-${won(ded)}</div></div>
       <div class="ps-divider"></div>
@@ -248,7 +145,7 @@ function openPayslipModal(payrollId){
       <div class="ps-section-title blue"><i class="fas fa-plus-circle"></i> 지급 내역</div>
       ${payItems.map(i=>`<div class="ps-row"><span class="pl">${i.label}</span><div style="text-align:right"><span class="pv ${!i.val?'zero':''}">${won(i.val)}</span>${i.sub&&i.val?`<div class="pv sub">${i.sub}</div>`:''}</div></div>`).join('')}
     </div>
-    <div class="ps-total blue"><span>지급 합계</span><span>${won(gross)}</span></div>
+    <div class="ps-total blue"><span>지급 합계</span><span>${won(grossWage)}</span></div>
     <div class="ps-section">
       <div class="ps-section-title red"><i class="fas fa-minus-circle"></i> 공제 내역</div>
       ${dedItems.map(i=>`<div class="ps-row"><span class="pl">${i.label}</span><div style="text-align:right"><span class="pv ${!i.val?'zero':''}" style="${(i.val||0)<0?'color:#10b981':''}">${(i.val||0)<0?'-'+won(Math.abs(i.val)):won(i.val)}</span>${i.sub?`<div class="pv sub">${i.sub}</div>`:''}</div></div>`).join('')}
@@ -286,16 +183,18 @@ const DED_ITEMS_META = [
   {key:'employment_insurance',    label:'고용보험',     color:'#60a5fa'},
   {key:'year_end_tax_adjust',     label:'연말정산',     color:'#f59e0b'},
   {key:'health_insurance_adjust', label:'건보정산',     color:'#fbbf24'},
-  {key:'advance_deduction',       label:'기타공제',     color:'#a78bfa'},
 ];
 
 function openPayRatioModal(){
   const pays = allPayrolls.filter(p => p.pay_year==statsYear && p.pay_month==statsMonth);
 
-  // 헤더 정보
-  const gross = pays.reduce((s,p)=>s+(p.gross_pay||0),0);
-  const net   = pays.reduce((s,p)=>s+(p.net_pay||0),0);
-  const ded   = gross - net;
+  // 헤더 정보 — 가불금 상환·퇴직금 중간정산은 임금 외 항목이므로 임금 기준으로 계산
+  const grossRaw = pays.reduce((s,p)=>s+(p.gross_pay||0),0);
+  const sevSum   = pays.reduce((s,p)=>s+(Number(p.severance_interim_pay)||0),0);
+  const advance  = pays.reduce((s,p)=>s+(Number(p.advance_deduction)||0),0);
+  const gross    = grossRaw - sevSum;
+  const net      = pays.reduce((s,p)=>s+(p.net_pay||0),0) + advance - sevSum;
+  const ded      = gross - net;
   document.getElementById('pr-header-title').textContent = `${statsYear}년 ${statsMonth}월 · ${pays.length}명 급여`;
   document.getElementById('pr-header-amount').textContent = won(gross);
   document.getElementById('pr-header-meta').innerHTML = [

@@ -1,6 +1,3 @@
-// period-nav 없음 처리
-document.getElementById('period-nav') && (document.getElementById('period-nav').style.display='none');
-
 // ══════════════════════════════════════════════════════════════
 // 퇴직금 관리 (고객사 앱)
 // ══════════════════════════════════════════════════════════════
@@ -84,34 +81,40 @@ function renderClientSevHistory(){
   const list = document.getElementById('sev-history-list');
   if(!list || !currentCompany) return;
   const coId = currentCompany.id;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = fmtLocalDate(new Date());
 
   const resignedEmps = allEmployees.filter(e => {
     if(e.company_id !== coId) return false;
-    if(e.employment_category === '일용직') return false;
-    // 직원 status 우선: 퇴직/resigned
-    if(e.status === '퇴직' || e.status === 'resigned') return true;
-    // 직원 status가 재직이면 제외 (퇴직급여 미발생)
-    if(e.status === '재직' || e.status === 'active') return false;
+    if(e.employment_category === 'daily') return false;
+    if(e.status === 'resigned') return true;
+    if(e.status === 'active') return false;
     // status 없는 경우: 마지막 계약으로 판단
     const conts = allContracts.filter(c => c.employee_id === e.id && !c.is_draft)
       .sort((a,b) => (a.contract_start||'').localeCompare(b.contract_start||''));
     const last = conts[conts.length - 1];
     if(!last) return false;
-    return last.status === '해지' || last.status === '만료' ||
-           last.status === 'expired' || last.status === 'terminated';
+    const lastStatus = _normContractStatus(last.status);
+    return lastStatus === CONTRACT_STATUS.TERMINATED || lastStatus === CONTRACT_STATUS.EXPIRED;
   });
 
-  if(!resignedEmps.length){
+  // 임직원 현황에서 특정 퇴직자를 선택한 경우 → 해당 직원의 이력만 표시
+  const focusEmp = _clientSevEmpId
+    ? (resignedEmps.find(e => e.id === _clientSevEmpId)
+        || allEmployees.find(e => e.id === _clientSevEmpId && e.company_id === coId)
+        || null)
+    : null;
+  const targetEmps = focusEmp ? [focusEmp] : resignedEmps;
+
+  if(!targetEmps.length){
     list.innerHTML = `<div style="text-align:center;padding:48px 20px;color:#9ca3af;">
       <i class="fas fa-inbox" style="font-size:36px;margin-bottom:12px;display:block;"></i>
       <div style="font-size:14px;font-weight:600;">지급 발생 이력이 없습니다</div>
-      <div style="font-size:12px;margin-top:4px;">퇴직·만료된 근로자가 없습니다.</div>
+      <div style="font-size:14px;margin-top:4px;">퇴직·만료된 근로자가 없습니다.</div>
     </div>`;
     return;
   }
 
-  list.innerHTML = resignedEmps.sort((a,b)=>(a.name||'').localeCompare(b.name||'','ko')).map(emp => {
+  list.innerHTML = targetEmps.sort((a,b)=>(a.name||'').localeCompare(b.name||'','ko')).map(emp => {
     const conts = allContracts.filter(c => c.employee_id === emp.id && !c.is_draft)
       .sort((a,b) => (a.contract_start||'').localeCompare(b.contract_start||''));
     const lastC = conts[conts.length - 1];
@@ -120,18 +123,18 @@ function renderClientSevHistory(){
     const resignDate = lastC?.contract_end || emp.resign_date || today;
     const pays3 = _clientGetPrev3(emp.id, resignDate);
     const sev = _clientCalcSev(emp.id, hireDate, resignDate, pays3);
-    const statusBadge = lastC?.status === '해지'
-      ? `<span style="background:#fee2e2;color:#dc2626;padding:2px 7px;border-radius:12px;font-size:10px;font-weight:700;">해지</span>`
-      : `<span style="background:#fef3c7;color:#b45309;padding:2px 7px;border-radius:12px;font-size:10px;font-weight:700;">만료</span>`;
+    const statusBadge = _normContractStatus(lastC?.status) === CONTRACT_STATUS.TERMINATED
+      ? `<span style="background:#fee2e2;color:#dc2626;padding:2px 7px;border-radius:12px;font-size:13px;font-weight:700;">해지</span>`
+      : `<span style="background:#fef3c7;color:#b45309;padding:2px 7px;border-radius:12px;font-size:13px;font-weight:700;">만료</span>`;
 
-    return `<div style="background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.07);margin-bottom:10px;overflow:hidden;">
+    return `<div id="sev-emp-${emp.id}" style="background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.07);margin-bottom:10px;overflow:hidden;">
       <div style="padding:14px 16px;border-bottom:1px solid #f3f4f6;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
           <div style="display:flex;align-items:center;gap:8px;">
             <div style="width:34px;height:34px;background:linear-gradient(135deg,#fef3c7,#fde68a);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#92400e;">${(emp.name||'?').charAt(0)}</div>
             <div>
-              <div style="font-size:14px;font-weight:800;color:#1a1a2e;">${emp.name||'-'}</div>
-              <div style="font-size:11px;color:#6b7280;">${emp.department||''} ${emp.position||''} · ${emp.employment_category||'-'}</div>
+              <div style="font-size:16px;font-weight:800;color:#1a1a2e;">${emp.name||'-'}</div>
+              <div style="font-size:14px;color:#6b7280;">${emp.department||''} ${emp.position||''} · ${contractTypeLabel_c(emp.employment_category)}</div>
             </div>
           </div>
           ${statusBadge}
@@ -139,26 +142,26 @@ function renderClientSevHistory(){
       </div>
       <div style="padding:12px 16px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
         <div style="background:#f9fafb;border-radius:8px;padding:8px;">
-          <div style="font-size:10px;color:#9ca3af;">입사일</div>
-          <div style="font-size:12px;font-weight:600;color:#374151;">${hireDate||'-'}</div>
+          <div style="font-size:13px;color:#9ca3af;">입사일</div>
+          <div style="font-size:16px;font-weight:600;color:#374151;">${hireDate||'-'}</div>
         </div>
         <div style="background:#f9fafb;border-radius:8px;padding:8px;">
-          <div style="font-size:10px;color:#9ca3af;">퇴직·만료일</div>
-          <div style="font-size:12px;font-weight:600;color:#374151;">${resignDate||'-'}</div>
+          <div style="font-size:13px;color:#9ca3af;">퇴직·만료일</div>
+          <div style="font-size:16px;font-weight:600;color:#374151;">${resignDate||'-'}</div>
         </div>
         <div style="background:#f9fafb;border-radius:8px;padding:8px;">
-          <div style="font-size:10px;color:#9ca3af;">재직 기간</div>
-          <div style="font-size:12px;font-weight:600;color:#374151;">${sev.tenure.text}</div>
+          <div style="font-size:13px;color:#9ca3af;">재직 기간</div>
+          <div style="font-size:16px;font-weight:600;color:#374151;">${sev.tenure.text}</div>
         </div>
         <div style="background:#f9fafb;border-radius:8px;padding:8px;">
-          <div style="font-size:10px;color:#9ca3af;">1일 평균임금</div>
-          <div style="font-size:12px;font-weight:600;color:#374151;">${sev.under1yr ? '-' : (sev.daily1 ? Math.round(sev.daily1).toLocaleString()+'원' : '-')}</div>
+          <div style="font-size:13px;color:#9ca3af;">1일 평균임금</div>
+          <div style="font-size:16px;font-weight:600;color:#374151;">${sev.under1yr ? '-' : (sev.daily1 ? Math.round(sev.daily1).toLocaleString()+'원' : '-')}</div>
         </div>
       </div>
       <div style="padding:0 16px 14px;">
         <div style="background:${sev.under1yr?'#f9fafb':'linear-gradient(135deg,#fffbeb,#fef3c7)'};border-radius:10px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;">
           <div>
-            <div style="font-size:11px;color:#92400e;">퇴직금 추계</div>
+            <div style="font-size:14px;color:#92400e;">퇴직금 추계</div>
             <div style="font-size:9.5px;color:#9ca3af;margin-top:1px;">${pays3.length ? '' : '급여 데이터 없음'}</div>
           </div>
           <div style="font-size:20px;font-weight:900;color:${sev.under1yr?'#9ca3af':'#b45309'};">
@@ -176,13 +179,17 @@ function renderClientSevStatus(){
   const summaryCard = document.getElementById('sev-client-summary');
   if(!list || !currentCompany) return;
   const coId = currentCompany.id;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = fmtLocalDate(new Date());
 
   const activeEmps = allEmployees.filter(e => {
     if(e.company_id !== coId) return false;
-    if(e.employment_category === '일용직') return false;
-    return e.status === 'active' || e.status === '재직' || !e.status || e.status === '';
+    if(e.employment_category === 'daily') return false;
+    if(_clientSevEmpId) return e.id === _clientSevEmpId;   // 선택한 직원만 표시
+    return e.status === 'active' || !e.status || e.status === '';
   });
+
+  // 특정 직원을 보고 있는 경우 회사 전체 요약 카드는 숨긴다
+  if(summaryCard && _clientSevEmpId) summaryCard.style.display = 'none';
 
   if(!activeEmps.length){
     list.innerHTML = `<div style="text-align:center;padding:48px 20px;color:#9ca3af;"><i class="fas fa-users-slash" style="font-size:36px;margin-bottom:12px;display:block;"></i><div style="font-size:14px;font-weight:600;">재직 중인 근로자가 없습니다</div></div>`;
@@ -206,35 +213,35 @@ function renderClientSevStatus(){
     const amtColor = sev.under1yr ? '#9ca3af' : '#b45309';
     const bgGradient = sev.under1yr ? '#f9fafb' : 'linear-gradient(135deg,#fffbeb,#fef3c7)';
 
-    return `<div style="background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.07);overflow:hidden;">
-      <div style="padding:12px 14px;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;justify-content:space-between;">
+    return `<div id="sev-emp-${emp.id}" style="background:#fff;border-radius:14px;box-shadow:0 2px 10px rgba(17,24,39,.06);overflow:hidden;">
+      <div style="padding:12px 14px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;">
         <div style="display:flex;align-items:center;gap:8px;">
           <div style="width:32px;height:32px;background:linear-gradient(135deg,#fef3c7,#fde68a);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#92400e;">${(emp.name||'?').charAt(0)}</div>
           <div>
-            <div style="font-size:13px;font-weight:800;color:#1a1a2e;">${emp.name||'-'}</div>
-            <div style="font-size:11px;color:#6b7280;">${emp.department||''} ${emp.position||''}</div>
+            <div style="font-size:15px;font-weight:800;color:#1a1a2e;letter-spacing:-.2px;">${emp.name||'-'}</div>
+            <div style="font-size:12.5px;color:#9ca3af;">${emp.department||''} ${emp.position||''}</div>
           </div>
         </div>
         <div style="text-align:right;">
-          <div style="font-size:10px;color:#9ca3af;">재직 기간</div>
-          <div style="font-size:11px;font-weight:600;color:#374151;">${tenure.text}</div>
+          <div style="font-size:12px;color:#9ca3af;">재직 기간</div>
+          <div style="font-size:13px;font-weight:700;color:#374151;">${tenure.text}</div>
         </div>
       </div>
       <div style="padding:10px 14px;">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">
-          <div style="background:#f9fafb;border-radius:8px;padding:7px;">
-            <div style="font-size:10px;color:#9ca3af;">입사일</div>
-            <div style="font-size:11.5px;font-weight:600;color:#374151;">${hireDate||'-'}</div>
+          <div style="background:#f9fafb;border-radius:8px;padding:8px;">
+            <div style="font-size:11.5px;font-weight:600;color:#9ca3af;">입사일</div>
+            <div style="font-size:12.5px;font-weight:700;color:#374151;">${hireDate||'-'}</div>
           </div>
-          <div style="background:#f9fafb;border-radius:8px;padding:7px;">
-            <div style="font-size:10px;color:#9ca3af;">3개월 평균임금</div>
-            <div style="font-size:11.5px;font-weight:600;color:#374151;">${pays3.length && !sev.under1yr ? Math.round(sev.ordinary3/3).toLocaleString()+'원' : '-'}</div>
+          <div style="background:#f9fafb;border-radius:8px;padding:8px;">
+            <div style="font-size:11.5px;font-weight:600;color:#9ca3af;">3개월 평균임금</div>
+            <div style="font-size:12.5px;font-weight:700;color:#374151;">${pays3.length && !sev.under1yr ? Math.round(sev.ordinary3/3).toLocaleString()+'원' : '-'}</div>
           </div>
         </div>
-        <div style="background:${bgGradient};border-radius:10px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;">
-          <div style="font-size:11px;color:#92400e;font-weight:600;">퇴직급여 추계액</div>
-          <div style="font-size:18px;font-weight:900;color:${amtColor};">
-            ${sev.under1yr ? '<span style="font-size:12px;color:#9ca3af;">1년 미만</span>' : (pays3.length ? sev.amount.toLocaleString()+'원' : '<span style="font-size:11px;color:#9ca3af;">급여 데이터 없음</span>')}
+        <div style="background:${bgGradient};border-radius:8px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+          <div style="font-size:13px;color:#374151;">퇴직급여 추계액</div>
+          <div style="font-size:15px;font-weight:800;color:${amtColor};white-space:nowrap;">
+            ${sev.under1yr ? '<span style="font-size:12.5px;font-weight:600;color:#9ca3af;">1년 미만</span>' : (pays3.length ? sev.amount.toLocaleString()+'원' : '<span style="font-size:12.5px;font-weight:600;color:#9ca3af;">급여 데이터 없음</span>')}
           </div>
         </div>
       </div>
@@ -244,8 +251,9 @@ function renderClientSevStatus(){
   list.innerHTML = cards;
 
   if(summaryCard){
-    summaryCard.style.display = '';
-    const setT = (id, v) => { const el = document.getElementById(id); if(el) el.textContent = v; };
+    summaryCard.style.display = _clientSevEmpId ? 'none' : '';
+    const unit = '<span style="font-size:11.5px;font-weight:600;">명</span>';
+    const setT = (id, v) => { const el = document.getElementById(id); if(el) el.innerHTML = v + unit; };
     setT('sev-client-cnt', cntTarget);
     setT('sev-client-nodata', cntNodata);
     setT('sev-client-under1', cntUnder1);
@@ -282,8 +290,8 @@ function _doRenderClientAL(){
 
   const emps = allEmployees.filter(e =>
     e.company_id === coId &&
-    e.employment_category !== '일용직' &&
-    (e.status === 'active' || e.status === '재직' || !e.status || e.status === '')
+    e.employment_category !== 'daily' &&
+    (e.status === 'active' || !e.status || e.status === '')
   ).sort((a,b) => (a.name||'').localeCompare(b.name||'','ko'));
 
   if(!emps.length){
@@ -291,23 +299,25 @@ function _doRenderClientAL(){
     return;
   }
 
-  const basis = co.annual_leave_basis || '회계년도 기준';
+  // 연차 산정 기준: DB 저장값은 영문 코드 ('fiscal_year' 회계년도 / 'hire_date' 입사일)
+  const basis = co.annual_leave_basis || 'fiscal_year';
 
   const calcAL = (emp) => {
     const contract = allContracts.filter(c => c.employee_id === emp.id && !c.is_draft)
       .sort((a,b) => (b.contract_start||'').localeCompare(a.contract_start||''))
-      .find(c => c.status === '활성' || c.status === 'active') ||
+      .find(c => _normContractStatus(c.status) === CONTRACT_STATUS.ACTIVE) ||
       allContracts.filter(c => c.employee_id === emp.id && !c.is_draft)
         .sort((a,b) => (b.contract_start||'').localeCompare(a.contract_start||''))[0];
     if(!contract) return null;
 
     const hireDateStr = emp.hire_date || contract.contract_start || '';
     if(!hireDateStr) return null;
-    const hire = new Date(hireDateStr);
+    // 로컬 자정 파싱 (YYYY-MM-DD는 UTC로 해석돼 09:00 밀림 방지 — 2026-09-21)
+    const hire = new Date(hireDateStr + 'T00:00:00');
     if(isNaN(hire)) return null;
 
     let baseDate;
-    if(basis === '입사일 기준'){
+    if(basis === 'hire_date'){
       baseDate = new Date(refYear, hire.getMonth(), hire.getDate());
       const today = new Date(); today.setHours(0,0,0,0);
       if(baseDate > today) baseDate = new Date(refYear - 1, hire.getMonth(), hire.getDate());
@@ -332,7 +342,7 @@ function _doRenderClientAL(){
 
     const usedDays = allPayrolls.filter(p => {
       if(p.employee_id !== emp.id) return false;
-      if(basis === '입사일 기준'){
+      if(basis === 'hire_date'){
         const pDate = new Date(p.pay_year||0, (p.pay_month||1)-1, 1);
         const pStart = new Date(refYear-1, hire.getMonth(), hire.getDate());
         const pEnd   = new Date(refYear,   hire.getMonth(), hire.getDate());
@@ -351,7 +361,8 @@ function _doRenderClientAL(){
     const workHours = parseFloat(contract.work_hours_per_day) || 8;
     const leavePay = Math.round(hourlyWage * workHours * remainDays);
 
-    return { totalDays, usedDays, remainDays, leavePay, contract, basis };
+    return { totalDays, usedDays, remainDays, leavePay, contract, basis,
+             basisLabel: basis === 'hire_date' ? '입사일 기준' : '회계년도 기준' };
   };
 
   let sumTotal = 0, sumUsed = 0, sumRemain = 0, sumPay = 0;
@@ -366,37 +377,40 @@ function _doRenderClientAL(){
     const remainColor = al.remainDays <= 0 ? '#dc2626' : al.remainDays <= 3 ? '#d97706' : '#059669';
     const remainBg    = al.remainDays <= 0 ? '#fef2f2' : al.remainDays <= 3 ? '#fffbeb' : '#f0fdf4';
 
-    return `<div style="background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.07);overflow:hidden;">
-      <div style="padding:12px 14px;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;gap:10px;">
+    return `<div style="background:#fff;border-radius:14px;box-shadow:0 2px 10px rgba(17,24,39,.06);overflow:hidden;">
+      <div style="padding:12px 14px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:10px;">
         <div style="width:34px;height:34px;background:linear-gradient(135deg,#ecfdf5,#d1fae5);border:1.5px solid #a7f3d0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#065f46;">${(emp.name||'?').charAt(0)}</div>
-        <div style="flex:1;">
-          <div style="font-size:14px;font-weight:800;color:#1a1a2e;">${emp.name||'-'}</div>
-          <div style="font-size:11px;color:#6b7280;">${emp.department||''} ${emp.position||''} · ${emp.employment_category||'-'}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:15px;font-weight:800;color:#1a1a2e;letter-spacing:-.2px;">${emp.name||'-'}</div>
+          <div style="font-size:12.5px;color:#9ca3af;">${emp.department||''} ${emp.position||''} · ${contractTypeLabel_c(emp.employment_category)}</div>
         </div>
-        <div style="text-align:right;">
-          <div style="font-size:10px;color:#9ca3af;">${al.basis}</div>
-          <div style="font-size:11px;color:#374151;font-weight:600;">${emp.hire_date||'-'} 입사</div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-size:12px;color:#9ca3af;">${al.basisLabel}</div>
+          <div style="font-size:13px;color:#374151;font-weight:700;">${emp.hire_date||'-'} 입사</div>
         </div>
       </div>
       <div style="padding:10px 14px;">
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px;">
           <div style="background:#ecfdf5;border-radius:8px;padding:8px;text-align:center;">
-            <div style="font-size:10px;color:#059669;">총 발생</div>
-            <div style="font-size:16px;font-weight:800;color:#065f46;">${al.totalDays}<span style="font-size:10px;">일</span></div>
+            <div style="font-size:11.5px;font-weight:600;color:#059669;">총 발생</div>
+            <div style="font-size:15px;font-weight:800;color:#065f46;">${al.totalDays}<span style="font-size:11.5px;">일</span></div>
           </div>
           <div style="background:#f9fafb;border-radius:8px;padding:8px;text-align:center;">
-            <div style="font-size:10px;color:#6b7280;">사용</div>
-            <div style="font-size:16px;font-weight:800;color:#374151;">${al.usedDays}<span style="font-size:10px;">일</span></div>
+            <div style="font-size:11.5px;font-weight:600;color:#6b7280;">사용</div>
+            <div style="font-size:15px;font-weight:800;color:#374151;">${al.usedDays}<span style="font-size:11.5px;">일</span></div>
           </div>
           <div style="background:${remainBg};border-radius:8px;padding:8px;text-align:center;border:1px solid ${al.remainDays>0?'transparent':'#fecaca'};">
-            <div style="font-size:10px;color:${remainColor};font-weight:600;">잔여</div>
-            <div style="font-size:16px;font-weight:800;color:${remainColor};">${al.remainDays}<span style="font-size:10px;">일</span></div>
+            <div style="font-size:11.5px;color:${remainColor};font-weight:600;">잔여</div>
+            <div style="font-size:15px;font-weight:800;color:${remainColor};">${al.remainDays}<span style="font-size:11.5px;">일</span></div>
           </div>
         </div>
         ${al.leavePay > 0 ? `<div style="background:#faf5ff;border-radius:8px;padding:8px 10px;display:flex;align-items:center;justify-content:space-between;">
-          <div style="font-size:11px;color:#7c3aed;">잔여 연차 수당 추계</div>
-          <div style="font-size:14px;font-weight:800;color:#5b21b6;">${al.leavePay.toLocaleString()}원</div>
+          <div style="font-size:13px;color:#374151;">잔여 연차 수당 추계</div>
+          <div style="font-size:14px;font-weight:700;color:#111827;">${al.leavePay.toLocaleString()}원</div>
         </div>` : ''}
+        <button class="btn btn-sm btn-danger" onclick="openClientLeaveEditor('${emp.id}')" style="width:100%;margin-top:8px;">
+          <i class="fas fa-pen"></i> 연차 사용 기록
+        </button>
       </div>
     </div>`;
   }).join('');
@@ -415,5 +429,3 @@ function _doRenderClientAL(){
 // ═══════════════════════════════════════════════════════════════════════════════
 
 // ── INIT ──
-// period-nav 없음 처리
-// (위에서 이미 처리됨)

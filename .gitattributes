@@ -1,2 +1,18 @@
-# Auto detect text files and perform LF normalization
+# 모든 텍스트 파일 LF 정규화
 * text=auto
+
+# 소스 파일: UTF-8(No BOM), LF 줄바꿈
+*.js   text eol=lf
+*.html text eol=lf
+*.css  text eol=lf
+*.json text eol=lf
+*.md   text eol=lf
+*.sql  text eol=lf
+*.xlsx binary
+*.db   binary
+*.pdf  binary
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary

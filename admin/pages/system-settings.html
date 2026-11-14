@@ -1,0 +1,255 @@
+    <div id="page-system-settings" class="page">
+
+      <!-- 발신전용 이메일 계정 -->
+      <div class="section-title" style="margin-top:0;">
+        <i class="fas fa-envelope"></i>
+        <span>발신전용 이메일 계정</span>
+        <span style="font-size:12px;color:#9ca3af;font-weight:400;">시스템 알림 메일 발송에 사용되는 SMTP 계정 정보</span>
+      </div>
+      <div class="card" style="overflow:hidden;padding:20px;">
+        <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end;">
+          <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:180px;">
+            <label style="font-size:12px;font-weight:600;color:#374151;">발신 이메일 주소</label>
+            <input type="email" id="ss-oe-email" class="form-input" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" placeholder="예: noreply@example.com" />
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:180px;">
+            <label style="font-size:12px;font-weight:600;color:#374151;">비밀번호</label>
+            <input type="password" id="ss-oe-password" class="form-input" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" placeholder="이메일 계정 비밀번호" />
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:160px;">
+            <label style="font-size:12px;font-weight:600;color:#374151;">SMTP 서버</label>
+            <input type="text" id="ss-oe-smtp-host" class="form-input" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" placeholder="예: smtp.gmail.com" />
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;flex:0 0 100px;">
+            <label style="font-size:12px;font-weight:600;color:#374151;">포트</label>
+            <input type="text" id="ss-oe-smtp-port" class="form-input" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" placeholder="예: 587" />
+          </div>
+          <button id="ss-oe-save-btn" class="btn btn-primary input-std" onclick="ssSaveOutboundEmail()" style="padding:8px 20px;white-space:nowrap;">
+            <i class="fas fa-save"></i> 저장
+          </button>
+        </div>
+        <div id="ss-oe-saved-msg" style="margin-top:8px;font-size:12px;color:#059669;display:none;">
+          <i class="fas fa-check-circle"></i> 저장되었습니다.
+        </div>
+      </div>
+
+      <!-- 인앱 알림 푸터 미리보기 -->
+      <div style="margin-top:12px;">
+        <div style="font-size:11px;font-weight:600;color:#6b7280;margin-bottom:6px;">
+          <i class="fas fa-eye"></i> 인앱 알림 공통 푸터 미리보기
+        </div>
+        <div id="ss-footer-preview" style="background:#f5f3ff;border:1.5px solid #d1d5db;border-radius:9px;padding:14px 16px;font-size:12px;line-height:1.7;color:#1e293b;white-space:pre-wrap;font-family:'Noto Sans KR',sans-serif;">
+          로딩 중...
+        </div>
+      </div>
+
+      <!-- 인앱 알림 발송항목 설정 -->
+      <div class="section-title" style="margin-top:24px;">
+        <i class="fas fa-bell"></i>
+        <span>인앱 알림 발송항목 설정</span>
+        <span style="font-size:12px;color:#9ca3af;font-weight:400;">체크된 항목만 고객사 인앱 알림으로 발송됩니다 (크론 자동발송 포함)</span>
+      </div>
+      <div class="card" style="overflow:hidden;padding:20px;">
+        <div id="ss-inapp-checklist" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px 16px;margin-bottom:16px;">
+          <div style="font-size:12px;color:#9ca3af;">로딩 중...</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <button id="ss-inapp-save-btn" class="btn btn-primary input-std" onclick="ssSaveInappNoticeTypes()">
+            <i class="fas fa-save"></i> 설정 저장
+          </button>
+          <button id="ss-inapp-reset-btn" class="btn input-std" onclick="ssResetInappNoticeTypes()" style="padding:8px 16px;background:#f3f4f6;border:1px solid #d1d5db;border-radius:6px;font-size:13px;color:#374151;">
+            <i class="fas fa-undo"></i> 기본값으로 초기화
+          </button>
+          <span id="ss-inapp-saved-msg" style="font-size:12px;color:#059669;display:none;">
+            <i class="fas fa-check-circle"></i> 설정이 저장되었습니다.
+          </span>
+        </div>
+      </div>
+
+      <!-- 메시지 본문 규칙 관리 -->
+      <div class="section-title" style="margin-top:24px;">
+        <i class="fas fa-file-alt"></i>
+        <span>메시지 본문 규칙 관리</span>
+        <span style="font-size:12px;color:#9ca3af;font-weight:400;">발송 유형별 메시지 제목·본문 템플릿을 수정하면 이후 발송부터 적용됩니다</span>
+      </div>
+      <div class="card" style="overflow:hidden;padding:20px;">
+        <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
+          <label style="font-size:12px;font-weight:600;color:#374151;white-space:nowrap;">발송 수단:</label>
+          <select id="ss-rule-channel" class="form-input" style="padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;flex:1;max-width:200px;" onchange="ssOnChannelChange()">
+            <option value="">발송 수단 선택</option>
+            <option value="inapp">고객사 인앱 알림</option>
+            <option value="kakao">근로자 카카오 알림톡</option>
+            <option value="email">근로자 이메일</option>
+          </select>
+          <label style="font-size:12px;font-weight:600;color:#374151;white-space:nowrap;">메시지 유형:</label>
+          <select id="ss-rule-type" class="form-input" style="padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;flex:1;max-width:320px;" onchange="ssLoadMessageRule()" disabled>
+            <option value="">발송 수단을 먼저 선택하세요</option>
+          </select>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:12px;">
+          <label style="font-size:12px;font-weight:600;color:#374151;">알림 제목</label>
+          <input type="text" id="ss-rule-title" class="form-input" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" placeholder="예: [근로계약서 발송] {근로자명} — {고용형태} 근로계약서" />
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:12px;">
+          <label style="font-size:12px;font-weight:600;color:#374151;">알림 본문</label>
+          <textarea id="ss-rule-body" class="form-input" style="padding:10px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:12.5px;line-height:1.6;min-height:200px;resize:vertical;font-family:'Noto Sans KR',sans-serif;" placeholder="메시지 본문 템플릿..."></textarea>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:11px;color:#6b7280;background:#f9fafb;padding:8px 12px;border-radius:6px;">
+          <i class="fas fa-info-circle"></i>
+          <span>사용 가능한 치환자: <code>{회사명}</code> <code>{근로자명}</code> <code>{고용형태}</code> <code>{계약사유}</code> <code>{파일주소}</code> <code>{발송방법}</code> <code>{발송시각}</code> <code>{대표전화}</code> <code>{대표이메일}</code> <code>{대표팩스}</code></span>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button id="ss-rule-save-btn" class="btn btn-primary input-std" onclick="ssSaveMessageRule()">
+            <i class="fas fa-save"></i> 규칙 저장
+          </button>
+          <button id="ss-rule-reset-btn" class="btn input-std" onclick="ssResetMessageRule()" style="padding:8px 16px;background:#f3f4f6;border:1px solid #d1d5db;border-radius:6px;font-size:13px;color:#374151;">
+            <i class="fas fa-undo"></i> 기본값으로 초기화
+          </button>
+        </div>
+        <div id="ss-rule-saved-msg" style="margin-top:8px;font-size:12px;color:#059669;display:none;">
+          <i class="fas fa-check-circle"></i> 규칙이 저장되었습니다.
+        </div>
+      </div>
+
+      <!-- 메시지 푸터 (담당자) 관리 -->
+      <div class="section-title" style="margin-top:24px;">
+        <i class="fas fa-address-book"></i>
+        <span>메시지 푸터 (담당자 정보) 관리</span>
+        <span style="font-size:12px;color:#9ca3af;font-weight:400;">알림 메시지 및 안내문에 표시되는 담당자 연락처</span>
+      </div>
+      <div class="card" style="overflow:hidden;padding:20px;">
+        <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end;">
+          <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:180px;">
+            <label style="font-size:12px;font-weight:600;color:#374151;">전화번호</label>
+            <input type="text" id="ss-rc-phone" class="form-input" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" placeholder="예: 02)3487-8841" />
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:180px;">
+            <label style="font-size:12px;font-weight:600;color:#374151;">이메일</label>
+            <input type="email" id="ss-rc-email" class="form-input" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" placeholder="예: labor@example.com" />
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:180px;">
+            <label style="font-size:12px;font-weight:600;color:#374151;">팩스</label>
+            <input type="text" id="ss-rc-fax" class="form-input" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" placeholder="예: 02)3487-8882" />
+          </div>
+          <button id="ss-rc-save-btn" class="btn btn-primary input-std" onclick="ssSaveRepresentativeContact()" style="padding:8px 20px;white-space:nowrap;">
+            <i class="fas fa-save"></i> 저장
+          </button>
+        </div>
+        <div id="ss-rc-saved-msg" style="margin-top:8px;font-size:12px;color:#059669;display:none;">
+          <i class="fas fa-check-circle"></i> 저장되었습니다.
+        </div>
+      </div>
+
+      <!-- 시스템 기능 스위치 -->
+      <div class="section-title" style="margin-top:24px;">
+        <i class="fas fa-toggle-on"></i>
+        <span>시스템 기능 스위치</span>
+        <span style="font-size:12px;color:#9ca3af;font-weight:400;">ON/OFF 토글로 기능 활성화 여부를 즉시 제어합니다</span>
+      </div>
+      <div class="card" style="overflow:hidden;padding:20px;">
+        <!-- 수습근로자 관리 -->
+        <div class="ss-toggle-row">
+          <div>
+            <div style="font-size:13.5px;font-weight:700;color:#1e293b;">수습근로자 관리 기능</div>
+            <div style="font-size:11.5px;color:#6b7280;margin-top:2px;">
+              OFF 시: 정규직 수습·계약직 수습 계약/급여입력/알림/메시지 발송 전체 비활성화
+            </div>
+          </div>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex-shrink:0;">
+            <span id="ss-toggle-probation-label" style="font-size:12px;font-weight:600;color:#9ca3af;">OFF</span>
+            <div style="position:relative;width:44px;height:24px;">
+              <input type="checkbox" id="ss-toggle-probation" style="opacity:0;width:0;height:0;"
+                onchange="ssToggleProbation(this.checked)" />
+              <span id="ss-toggle-probation-slider" style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;
+                background:#cbd5e1;border-radius:24px;transition:.3s;"></span>
+              <span id="ss-toggle-probation-knob" style="position:absolute;content:'';height:18px;width:18px;left:3px;bottom:3px;
+                background:#fff;border-radius:50%;transition:.3s;box-shadow:0 1px 3px rgba(0,0,0,.15);"></span>
+            </div>
+          </label>
+        </div>
+
+        <!-- 계약만료 통지 발송 -->
+        <div class="ss-toggle-row">
+          <div>
+            <div style="font-size:13.5px;font-weight:700;color:#1e293b;">계약만료 통지 발송</div>
+            <div style="font-size:11.5px;color:#6b7280;margin-top:2px;">
+              OFF 시: 계약만료 통지 자동발송 중단 및 계약만료 통지 이력 메뉴 숨김
+            </div>
+          </div>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex-shrink:0;">
+            <span id="ss-toggle-ce-label" style="font-size:12px;font-weight:600;color:#9ca3af;">OFF</span>
+            <div style="position:relative;width:44px;height:24px;">
+              <input type="checkbox" id="ss-toggle-ce" style="opacity:0;width:0;height:0;"
+                onchange="ssToggleContractExpiry(this.checked)" />
+              <span id="ss-toggle-ce-slider" style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;
+                background:#cbd5e1;border-radius:24px;transition:.3s;"></span>
+              <span id="ss-toggle-ce-knob" style="position:absolute;content:'';height:18px;width:18px;left:3px;bottom:3px;
+                background:#fff;border-radius:50%;transition:.3s;box-shadow:0 1px 3px rgba(0,0,0,.15);"></span>
+            </div>
+          </label>
+        </div>
+
+        <!-- 정규직 전환 고지 발송 -->
+        <div class="ss-toggle-row">
+          <div>
+            <div style="font-size:13.5px;font-weight:700;color:#1e293b;">정규직 전환 고지 발송</div>
+            <div style="font-size:11.5px;color:#6b7280;margin-top:2px;">
+              OFF 시: 정규직 전환 고지 자동발송 중단 및 정규직전환 고지 이력 메뉴 숨김
+            </div>
+          </div>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex-shrink:0;">
+            <span id="ss-toggle-rc-label" style="font-size:12px;font-weight:600;color:#9ca3af;">OFF</span>
+            <div style="position:relative;width:44px;height:24px;">
+              <input type="checkbox" id="ss-toggle-rc" style="opacity:0;width:0;height:0;"
+                onchange="ssToggleRegularConversion(this.checked)" />
+              <span id="ss-toggle-rc-slider" style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;
+                background:#cbd5e1;border-radius:24px;transition:.3s;"></span>
+              <span id="ss-toggle-rc-knob" style="position:absolute;content:'';height:18px;width:18px;left:3px;bottom:3px;
+                background:#fff;border-radius:50%;transition:.3s;box-shadow:0 1px 3px rgba(0,0,0,.15);"></span>
+            </div>
+          </label>
+        </div>
+
+        <!-- 퇴직 관리 -->
+        <div class="ss-toggle-row">
+          <div>
+            <div style="font-size:13.5px;font-weight:700;color:#1e293b;">퇴직 관리 기능</div>
+            <div style="font-size:11.5px;color:#6b7280;margin-top:2px;">
+              OFF 시: 사이드바 퇴직 관리 메뉴 숨김, 대시보드 퇴직 카드 비표시, 4대보험·원천세·퇴직정산·해고예고수당 기능 비활성화
+            </div>
+          </div>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex-shrink:0;">
+            <span id="ss-toggle-retirement-label" style="font-size:12px;font-weight:600;color:#9ca3af;">OFF</span>
+            <div style="position:relative;width:44px;height:24px;">
+              <input type="checkbox" id="ss-toggle-retirement" style="opacity:0;width:0;height:0;"
+                onchange="ssToggleRetirement(this.checked)" />
+              <span id="ss-toggle-retirement-slider" style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;
+                background:#cbd5e1;border-radius:24px;transition:.3s;"></span>
+              <span id="ss-toggle-retirement-knob" style="position:absolute;content:'';height:18px;width:18px;left:3px;bottom:3px;
+                background:#fff;border-radius:50%;transition:.3s;box-shadow:0 1px 3px rgba(0,0,0,.15);"></span>
+            </div>
+          </label>
+        </div>
+
+        <!-- 고객사 사용료 수납관리 -->
+        <div class="ss-toggle-row">
+          <div>
+            <div style="font-size:13.5px;font-weight:700;color:#1e293b;">고객사 사용료 수납관리</div>
+            <div style="font-size:11.5px;color:#6b7280;margin-top:2px;">
+              ON 시: 사용료 관리 메뉴 표시 및 청구/수납 기능 활성화
+            </div>
+          </div>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex-shrink:0;">
+            <span id="ss-toggle-billing-label" style="font-size:12px;font-weight:600;color:#9ca3af;">OFF</span>
+            <div style="position:relative;width:44px;height:24px;">
+              <input type="checkbox" id="ss-toggle-billing" style="opacity:0;width:0;height:0;"
+                onchange="ssToggleBilling(this.checked)" />
+              <span id="ss-toggle-billing-slider" style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;
+                background:#cbd5e1;border-radius:24px;transition:.3s;"></span>
+              <span id="ss-toggle-billing-knob" style="position:absolute;content:'';height:18px;width:18px;left:3px;bottom:3px;
+                background:#fff;border-radius:50%;transition:.3s;box-shadow:0 1px 3px rgba(0,0,0,.15);"></span>
+            </div>
+          </label>
+        </div>
+      </div>
+    </div><!-- /page-system-settings -->
