@@ -170,8 +170,8 @@ function renderClientEmployees(){
     countByCat[c] = (countByCat[c] || 0) + 1;
   });
 
-  // 퇴직자/퇴사 예정자 집계
-  const coEmps = allEmployees.filter(e => e.company_id === currentCompany.id && _normContractType(e.employment_category) !== CONTRACT_TYPE.DAILY);
+  // 퇴직자/퇴사 예정자 집계 — 조회 시점·해당 월과 무관한 누적 기준(전 고용형태 포함)
+  const coEmps = allEmployees.filter(e => e.company_id === currentCompany.id);
   const today = fmtLocalDate(new Date());
   const upcomingResign = coEmps.filter(e => _isEmpActive(e) && e.resign_date && e.resign_date >= today);
   const retiredResign = coEmps.filter(e => _isEmpResigned(e) || (e.resign_date && e.resign_date < today));
@@ -199,7 +199,9 @@ function renderClientEmployees(){
   catWrap.innerHTML = chips.map(chip => {
     const sel = _v2EmpFilter === chip.key;
     const ic = _V2_EMP_ICONS[chip.key] || { fa:'fa-user', bg:'#94a3b8' };
-    return `<button class="emp-cat-chip${sel?' on':''}" onclick="setV2EmpFilter('${chip.key}')" ${chip.key !== 'all' && !chip.cnt ? 'disabled' : ''}>
+    // 퇴직자 칩은 누적 퇴직자 기준이라 항상 활성화한다
+    const off = chip.key !== 'all' && chip.key !== 'retired' && !chip.cnt;
+    return `<button class="emp-cat-chip${sel?' on':''}" onclick="setV2EmpFilter('${chip.key}')" ${off ? 'disabled' : ''}>
       <span class="emp-cat-icon" style="background:${ic.bg}"><i class="fas ${ic.fa}"></i></span>
       <span class="emp-cat-name">${chip.label.includes('수습') ? chip.label.replace(' 수습','<small> 수습</small>') : chip.label}</span>
       <span class="emp-cat-count">${chip.cnt}명</span>
@@ -287,12 +289,14 @@ function _renderClientRetired(listEl, upcomingResign, retiredResign){
   listEl.innerHTML = html;
 }
 
-/** 퇴직자/퇴사 예정자 선택 → 퇴직금 페이지로 이동 (퇴직자: 지급이력, 예정자: 추계 탭) */
+/** 퇴직자/퇴사 예정자 선택 → 퇴직금 페이지로 이동 (퇴직자: 지급이력, 예정자: 추계 탭)
+ *  선택한 직원의 내역만 보이도록 필터를 지정한다 */
 function openClientSevForEmp(empId){
   const emp = allEmployees.find(e => e.id === empId);
   if(!emp) return;
   const isResigned = _isEmpResigned(emp) || (emp.resign_date && emp.resign_date < fmtLocalDate(new Date()));
   _clientSevTab = isResigned ? 'history' : 'status';
+  _clientSevEmpId = emp.id;
   showPage('severance', null);
   setTimeout(() => {
     const card = document.getElementById('sev-emp-' + emp.id);
@@ -1610,7 +1614,15 @@ function _v2PaintNextMonth(){
 
 /** 임금통계 상단 고정 영역(월 선택기·4탭) — 앱 헤더 바로 아래에 붙이고 좌우를 화면 폭까지 확장
  *  (스크롤되는 카드가 고정 영역 옆으로 새어 보이지 않도록) */
+/** 앱 헤더 높이를 CSS 변수로 노출 (하위 페이지 탭 바가 헤더 아래에 붙도록) */
+function _v2SyncHeaderVar(){
+  const header = document.querySelector('.app-header');
+  if(!header) return;
+  document.documentElement.style.setProperty('--app-header-h', Math.round(header.getBoundingClientRect().height) + 'px');
+}
+
 function _v2SyncPsTopbar(){
+  _v2SyncHeaderVar();
   const bar = document.getElementById('ps-topbar');
   if(!bar) return;
   const header = document.querySelector('.app-header');

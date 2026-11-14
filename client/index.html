@@ -14,7 +14,7 @@
   <link rel="stylesheet" href="css/client-modal.css" />
   <link rel="stylesheet" href="css/client-billing.css" />
   <link rel="stylesheet" href="css/client-responsive.css" />
-  <link rel="stylesheet" href="css/client-v2.css?v=20261114e0" />
+  <link rel="stylesheet" href="css/client-v2.css?v=20261114e3" />
 </head>
 <body>
 
@@ -629,28 +629,13 @@
     </div>
   </div>
 
-  <!-- ⑦ 퇴직금 관리 -->
+  <!-- ⑦ 퇴직금 관리 (임직원 현황에서 선택한 직원의 내역만 표시) -->
   <div class="page" id="page-severance">
-    <div class="sub-page-header" style="background:linear-gradient(135deg,#f59e0b,#d97706);">
-      <button class="back-btn" style="color:#fff;" onclick="showPage('employees',document.getElementById('nav-employees'))">
-        <i class="fas fa-chevron-left"></i>임직원 현황
-      </button>
-      <span class="sub-page-badge" style="background:rgba(255,255,255,.2);color:#fff;"><i class="fas fa-hand-holding-usd" style="margin-right:4px;"></i>퇴직금 관리</span>
-    </div>
-    <!-- 탭 -->
-    <div style="display:flex;background:#fff;border-bottom:2px solid #f3f4f6;position:sticky;top:60px;z-index:50;">
-      <button id="sev-tab-btn-history" onclick="switchClientSevTab('history')" style="flex:1;padding:13px 0;border:none;background:none;font-size:13px;font-weight:700;color:#f59e0b;border-bottom:2px solid #f59e0b;cursor:pointer;font-family:inherit;">
-        <i class="fas fa-history" style="margin-right:5px;"></i>지급 발생 이력
-      </button>
-      <button id="sev-tab-btn-status" onclick="switchClientSevTab('status')" style="flex:1;padding:13px 0;border:none;background:none;font-size:13px;font-weight:600;color:#9ca3af;border-bottom:2px solid transparent;cursor:pointer;font-family:inherit;">
-        <i class="fas fa-users" style="margin-right:5px;"></i>퇴직급여 추계
-      </button>
-    </div>
-    <!-- 지급 발생 이력 탭 -->
+    <!-- 지급 발생 이력 -->
     <div id="sev-client-history" style="padding:0 0 80px;">
       <div id="sev-history-list" style="padding:12px;"></div>
     </div>
-    <!-- 퇴직급여 추계 탭 -->
+    <!-- 퇴직급여 추계 -->
     <div id="sev-client-status" style="display:none;padding:0 0 80px;">
       <!-- 요약 카드 -->
       <div id="sev-client-summary" style="margin:12px;padding:14px 16px;background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1.5px solid #fcd34d;border-radius:14px;display:none;">
@@ -661,7 +646,7 @@
           <div style="flex:1;text-align:right;"><div style="font-size:11.5px;font-weight:600;color:#92400e;">합계 추계액</div><div id="sev-client-total" style="font-size:15px;font-weight:900;color:#b45309;"></div></div>
         </div>
       </div>
-      <div id="sev-status-list" style="padding:0 12px 12px;"></div>
+      <div id="sev-status-list" style="padding:0 12px 12px;display:grid;gap:10px;"></div>
     </div>
   </div>
 
@@ -1196,6 +1181,6 @@
   <script src="js/client-chart.js?v=20261114c"></script>
   <script src="js/client-billing.js"></script>
   <script src="js/client-notice.js?v=20260901a"></script>
-  <script src="js/client-init.js?v=20261114a"></script>
-  <script src="js/client-attendance.js?v=20261114a"></script>    <script src="js/client-v2.js?v=20261114c9"></script></body>
+  <script src="js/client-init.js?v=20261114c"></script>
+  <script src="js/client-attendance.js?v=20261114a"></script>    <script src="js/client-v2.js?v=20261114d3"></script></body>
 </html>

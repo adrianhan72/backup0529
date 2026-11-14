@@ -460,6 +460,12 @@
   border-radius:9px;padding:7px 12px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;
 }
 
+/* ── 하위 페이지 탭 바 (앱 헤더 바로 아래 고정) ── */
+.sub-tab-bar{
+  display:flex;background:#fff;border-bottom:2px solid #f3f4f6;
+  position:sticky;top:var(--app-header-h,64px);z-index:50;
+}
+
 /* ── 임금대장 탭 ── */
 .ps-ledger-card{
   background:#fff;border-radius:0;padding:0;overflow:hidden;

@@ -97,7 +97,15 @@ function renderClientSevHistory(){
     return lastStatus === CONTRACT_STATUS.TERMINATED || lastStatus === CONTRACT_STATUS.EXPIRED;
   });
 
-  if(!resignedEmps.length){
+  // 임직원 현황에서 특정 퇴직자를 선택한 경우 → 해당 직원의 이력만 표시
+  const focusEmp = _clientSevEmpId
+    ? (resignedEmps.find(e => e.id === _clientSevEmpId)
+        || allEmployees.find(e => e.id === _clientSevEmpId && e.company_id === coId)
+        || null)
+    : null;
+  const targetEmps = focusEmp ? [focusEmp] : resignedEmps;
+
+  if(!targetEmps.length){
     list.innerHTML = `<div style="text-align:center;padding:48px 20px;color:#9ca3af;">
       <i class="fas fa-inbox" style="font-size:36px;margin-bottom:12px;display:block;"></i>
       <div style="font-size:14px;font-weight:600;">지급 발생 이력이 없습니다</div>
@@ -106,7 +114,7 @@ function renderClientSevHistory(){
     return;
   }
 
-  list.innerHTML = resignedEmps.sort((a,b)=>(a.name||'').localeCompare(b.name||'','ko')).map(emp => {
+  list.innerHTML = targetEmps.sort((a,b)=>(a.name||'').localeCompare(b.name||'','ko')).map(emp => {
     const conts = allContracts.filter(c => c.employee_id === emp.id && !c.is_draft)
       .sort((a,b) => (a.contract_start||'').localeCompare(b.contract_start||''));
     const lastC = conts[conts.length - 1];
@@ -176,8 +184,12 @@ function renderClientSevStatus(){
   const activeEmps = allEmployees.filter(e => {
     if(e.company_id !== coId) return false;
     if(e.employment_category === 'daily') return false;
+    if(_clientSevEmpId) return e.id === _clientSevEmpId;   // 선택한 직원만 표시
     return e.status === 'active' || !e.status || e.status === '';
   });
+
+  // 특정 직원을 보고 있는 경우 회사 전체 요약 카드는 숨긴다
+  if(summaryCard && _clientSevEmpId) summaryCard.style.display = 'none';
 
   if(!activeEmps.length){
     list.innerHTML = `<div style="text-align:center;padding:48px 20px;color:#9ca3af;"><i class="fas fa-users-slash" style="font-size:36px;margin-bottom:12px;display:block;"></i><div style="font-size:14px;font-weight:600;">재직 중인 근로자가 없습니다</div></div>`;
@@ -239,7 +251,7 @@ function renderClientSevStatus(){
   list.innerHTML = cards;
 
   if(summaryCard){
-    summaryCard.style.display = '';
+    summaryCard.style.display = _clientSevEmpId ? 'none' : '';
     const unit = '<span style="font-size:11.5px;font-weight:600;">명</span>';
     const setT = (id, v) => { const el = document.getElementById(id); if(el) el.innerHTML = v + unit; };
     setT('sev-client-cnt', cntTarget);

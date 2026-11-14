@@ -36,6 +36,7 @@ let _wlNotifications = []; // 임금대장 알림 (파일 경로 포함)
 let allRegisteredExecutives = []; // 등기임원 (직원 현황 역할 카드용)
 let allRelatedParties = [];       // 특수관계인 (직원 현황 역할 카드용)
 let _clientSevTab = 'history'; // severance tab state
+let _clientSevEmpId = null;    // 퇴직자 선택 시 해당 직원의 지급 이력만 표시
 let statsYear    = new Date().getFullYear();
 let statsMonth   = new Date().getMonth() + 1;
 let psEmpId = null;  // 명세서 모달용 (유지)
@@ -181,7 +182,7 @@ function closeHamburgerMenu(){
 function logout(){
   sessionStorage.removeItem('client_token');
   currentCompany=null; allEmployees=[]; allPayrolls=[]; allContracts=[]; allBillings=[];
-  psEmpId=null; psCatFilter='all'; [distChart,distDonutChart,trendChart].forEach(c=>{if(c)c.destroy()}); distChart=distDonutChart=trendChart=null;
+  psEmpId=null; psCatFilter='all'; _clientSevEmpId=null; _clientSevTab='history'; [distChart,distDonutChart,trendChart].forEach(c=>{if(c)c.destroy()}); distChart=distDonutChart=trendChart=null;
   // 알림 상태 초기화
   _clientNotices=[]; _notifDetailId=null;
   closeNotifModal(); closeNotifDetail();
