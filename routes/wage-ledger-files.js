@@ -573,11 +573,16 @@ module.exports = function(db, ROOT) {
 <title>[${co.company_name}] 임금대장 (신고용) — ${year}년 ${moStr}월</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:'Malgun Gothic','Noto Sans KR',sans-serif;background:#fff;padding:24px;color:#1e293b}
-  h1{font-size:18px;text-align:center;margin-bottom:18px;color:#1a1a2e}
-  .wl-ledger-wrap{overflow-x:auto}
-  table.wl-ledger-tbl{width:100%;border-collapse:collapse;font-size:11px;min-width:900px;table-layout:fixed}
-  table.wl-ledger-tbl thead tr th{border:1px solid #94a3b8;text-align:center;vertical-align:middle;white-space:nowrap;padding:4px 5px;font-weight:700;font-size:10.5px}
+  html,body{height:100%}
+  body{font-family:'Malgun Gothic','Noto Sans KR',sans-serif;background:#fff;padding:0;color:#1e293b}
+  .wl-ledger-wrap{position:absolute;top:0;right:0;bottom:0;left:0;overflow:auto;-webkit-overflow-scrolling:touch}
+  table.wl-ledger-tbl{width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed}
+  table.wl-ledger-tbl col.wl-c-empno{width:56px}
+  table.wl-ledger-tbl col.wl-c-name{width:66px}
+  table.wl-ledger-tbl col.wl-c-num{width:74px}
+  table.wl-ledger-tbl col.wl-c-sign{width:60px}
+  table.wl-ledger-tbl th,table.wl-ledger-tbl td{overflow-wrap:anywhere;word-break:keep-all;white-space:normal}
+  table.wl-ledger-tbl thead tr th{border:1px solid #94a3b8;text-align:center;vertical-align:middle;padding:4px 5px;font-weight:700;font-size:10.5px}
   .wl-th-group th{background:#1e293b;color:#f1f5f9;font-size:11px;padding:6px 5px;border-color:#334155}
   .wl-th-personal{background:#1e3a5f !important;color:#93c5fd !important}
   .wl-th-pay{background:#14532d !important;color:#86efac !important}
@@ -591,13 +596,13 @@ module.exports = function(db, ROOT) {
   .wl-th-ded-sum{background:#fee2e2 !important;color:#b91c1c !important;font-weight:800 !important;border:2px solid #b91c1c !important}
   .wl-th-net{background:#dbeafe !important;color:#1e40af !important;font-weight:800 !important;border:2px solid #1d4ed8 !important}
   .wl-ledger-tbl tbody td{border:1px solid #cbd5e1;vertical-align:middle;padding:3px 5px;font-size:11px;color:#1e293b;height:26px}
-  .wl-td-num{text-align:right;white-space:nowrap;background:#f8fbff}
+  .wl-td-num{text-align:right;background:#f8fbff}
   .wl-td-num strong{color:#1d4ed8}
-  .wl-td-gross{text-align:right;white-space:nowrap;background:#dcfce7 !important;color:#14532d !important;font-weight:700;border:2px solid #15803d !important}
+  .wl-td-gross{text-align:right;background:#dcfce7 !important;color:#14532d !important;font-weight:700;border:2px solid #15803d !important}
   .wl-td-gross strong{color:#14532d !important}
-  .wl-td-ded-sum{text-align:right;white-space:nowrap;background:#fee2e2 !important;color:#b91c1c !important;font-weight:700;border:2px solid #b91c1c !important}
+  .wl-td-ded-sum{text-align:right;background:#fee2e2 !important;color:#b91c1c !important;font-weight:700;border:2px solid #b91c1c !important}
   .wl-td-ded-sum strong{color:#b91c1c !important}
-  .wl-td-net{text-align:right;white-space:nowrap;background:#dbeafe !important;color:#1e40af !important;font-weight:700;border:2px solid #1d4ed8 !important}
+  .wl-td-net{text-align:right;background:#dbeafe !important;color:#1e40af !important;font-weight:700;border:2px solid #1d4ed8 !important}
   .wl-td-net strong{color:#1e40af !important}
   .wl-td-center{text-align:center;background:#f8fafc}
   .wl-td-empno{font-size:10px;color:#475569;background:#f1f5f9}
@@ -611,13 +616,13 @@ module.exports = function(db, ROOT) {
   tbody td.wl-td-name,tbody td.wl-td-gross{border-right:2px solid #475569 !important}
   tbody td[colspan="2"],tbody td.wl-td-pay-last{border-right:2px solid #475569 !important}
   thead th.wl-th-sign,tbody td.wl-td-sign{border-left:2px solid #475569 !important}
-  @media print{body{padding:0}}
+  @media print{html,body{height:auto}.wl-ledger-wrap{position:static}}
 </style>
 </head>
 <body>
-<h1>[${co.company_name}] 임금대장 (신고용) — ${year}년 ${moStr}월</h1>
 <div class="wl-ledger-wrap">
 <table class="wl-ledger-tbl">
+<colgroup><col class="wl-c-empno"><col class="wl-c-name">${'<col class="wl-c-num">'.repeat(10)}<col class="wl-c-sign"></colgroup>
 <thead>${thead}</thead>
 <tbody>${tbody}</tbody>
 </table>

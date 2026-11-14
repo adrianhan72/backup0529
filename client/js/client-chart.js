@@ -1,77 +1,3 @@
-function setPsGroup(group, el){
-  psGroup  = group;
-  psSubVal = '__all__';
-  document.querySelectorAll('.ps-group-btn').forEach(b=>b.classList.remove('active'));
-  el.classList.add('active');
-  _buildPsSubChips();
-  renderPayslipList();
-}
-
-// ── 2단계 세부 칩 선택 ──
-function setPsSubVal(val){
-  psSubVal = val;
-  document.querySelectorAll('.ps-sub-chip').forEach(b=>{
-    b.classList.toggle('active', b.dataset.val === val);
-  });
-  renderPayslipList();
-}
-
-// ── 2단계 칩 목록 동적 생성 ──
-function _buildPsSubChips(){
-  const subBar   = document.getElementById('ps-sub-bar');
-  const chipsEl  = document.getElementById('ps-sub-chips');
-  const activeEmps = allEmployees.filter(e=>_isEmpActive(e));
-
-  if(psGroup === 'all'){
-    subBar.style.display = 'none';
-    chipsEl.innerHTML = '';
-    return;
-  }
-
-  // 세부 값 목록 추출
-  let values = [];
-  let labelOf = v => v;
-  if(psGroup === 'cat'){
-    // 고용형태: 영문 코드 기준으로 매칭하고 라벨은 한글 (2026-11-13)
-    const ORDER = [CONTRACT_TYPE.REGULAR, CONTRACT_TYPE.REGULAR_PROBATION, CONTRACT_TYPE.FIXED, CONTRACT_TYPE.FIXED_PROBATION, CONTRACT_TYPE.DAILY];
-    const has = new Set(activeEmps.map(e=>_normContractType(e.employment_category)).filter(Boolean));
-    values = ORDER.filter(v=>has.has(v));
-    labelOf = v => CONTRACT_TYPE_LABEL[v] || v;
-  } else if(psGroup === 'dept'){
-    values = [...new Set(activeEmps.map(e=>e.department||'미지정'))].sort((a,b)=>a.localeCompare(b,'ko'));
-  } else { // rank
-    values = [...new Set(activeEmps.map(e=>e.position||e.rank||'미지정'))].sort((a,b)=>a.localeCompare(b,'ko'));
-  }
-
-  subBar.style.display = '';
-
-  // 고용형태 색상 매핑 (칩 dot 표시용) — 코드 기준
-  const catDotColor = {
-    [CONTRACT_TYPE.REGULAR]:           '#3b82f6',
-    [CONTRACT_TYPE.REGULAR_PROBATION]: '#22c55e',
-    [CONTRACT_TYPE.FIXED]:             '#f59e0b',
-    [CONTRACT_TYPE.FIXED_PROBATION]:   '#f97316',
-    [CONTRACT_TYPE.DAILY]:             '#a855f7',
-  };
-
-  const makeChip = (val, label, isActive) => {
-    const dot = (psGroup === 'cat' && catDotColor[val])
-      ? `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${catDotColor[val]};margin-right:5px;flex-shrink:0;"></span>`
-      : '';
-    const cnt = val === '__all__'
-      ? activeEmps.length
-      : psGroup === 'cat'  ? activeEmps.filter(e=>_normContractType(e.employment_category)===val).length
-      : psGroup === 'dept' ? activeEmps.filter(e=>(e.department||'미지정')===val).length
-      : activeEmps.filter(e=>(e.position||e.rank||'미지정')===val).length;
-    return `<button class="ps-sub-chip${isActive?' active':''}" data-val="${val}" onclick="setPsSubVal('${val}')">${dot}${label}<span style="margin-left:4px;font-size:10px;opacity:.65;">${cnt}</span></button>`;
-  };
-
-  chipsEl.innerHTML = [
-    makeChip('__all__', '전체', true),
-    ...values.map(v => makeChip(v, labelOf(v), false))
-  ].join('');
-}
-
 function changePsMonth(d){
   psMonth += d;
   if(psMonth>12){psMonth=1;psYear++;} if(psMonth<1){psMonth=12;psYear--;}
@@ -81,67 +7,30 @@ function changePsMonth(d){
 function renderPayslipList(){
   const el = document.getElementById('payslip-list-content');
 
-  // 재직 직원 기본 풀
-  let emps = allEmployees.filter(e=>_isEmpActive(e));
-
-  // 그룹·세부 필터 적용
-  if(psGroup !== 'all' && psSubVal !== '__all__'){
-    if(psGroup === 'cat')  emps = emps.filter(e=>_normContractType(e.employment_category)===psSubVal);
-    if(psGroup === 'dept') emps = emps.filter(e=>(e.department||'미지정')===psSubVal);
-    if(psGroup === 'rank') emps = emps.filter(e=>(e.position||e.rank||'미지정')===psSubVal);
-  }
+  // 재직 직원 전체를 사번순으로 표시 (그룹 필터 없음)
+  const emps = allEmployees.filter(e=>_isEmpActive(e));
 
   if(!emps.length){
-    el.innerHTML='<div class="no-data"><i class="fas fa-user-slash"></i><p>해당 조건의 재직 직원이 없습니다</p></div>';
+    el.innerHTML='<div class="no-data"><i class="fas fa-user-slash"></i><p>재직 중인 직원이 없습니다</p></div>';
     return;
   }
 
   // 선택 연월 급여 데이터
   const monthPays = allPayrolls.filter(p=>Number(p.pay_year)===psYear && Number(p.pay_month)===psMonth);
 
-  // 정렬: 그룹에 따라 기준 다르게
-  let sorted;
-  if(psGroup === 'dept'){
-    sorted = [...emps].sort((a,b)=>{
-      const da=(a.department||'미지정'), db=(b.department||'미지정');
-      return da.localeCompare(db,'ko') || (a.name||'').localeCompare(b.name||'','ko');
-    });
-  } else if(psGroup === 'rank'){
-    sorted = [...emps].sort((a,b)=>{
-      const ra=(a.position||a.rank||'미지정'), rb=(b.position||b.rank||'미지정');
-      return ra.localeCompare(rb,'ko') || (a.name||'').localeCompare(b.name||'','ko');
-    });
-  } else {
-    sorted = [...emps].sort((a,b)=>(a.name||'').localeCompare(b.name||'','ko'));
-  }
+  // 정렬: 사번 오름차순 (사번 없으면 이름순)
+  const empNo = e => {
+    const digits = String(e.employee_number == null ? '' : e.employee_number).replace(/[^0-9]/g, '');
+    return digits ? Number(digits) : Number.MAX_SAFE_INTEGER;
+  };
+  const sorted = [...emps].sort((a,b) =>
+    empNo(a) - empNo(b) || (a.name||'').localeCompare(b.name||'','ko'));
 
-  // 그룹 헤더를 삽입할 기준 키
-  const groupKeyFn = emp =>
-    psGroup==='dept' ? (emp.department||'미지정') :
-    psGroup==='rank' ? (emp.position||emp.rank||'미지정') :
-    psGroup==='cat'  ? contractTypeLabel_c(emp.employment_category) : null;
-
-  let lastGroupKey = null;
   const cards = sorted.map(emp => {
     const p = monthPays.find(x=>x.employee_id===emp.id);
     const catLabel = contractTypeLabel_c(emp.employment_category);
     const avatarColor = PS_CAT_COLOR[catLabel]||'#6366f1';
     const initial = (emp.name||'?').charAt(0);
-
-    // 그룹 헤더 (세부 전체 선택 or 그룹 모드일 때)
-    let groupHeader = '';
-    if(psSubVal === '__all__' && psGroup !== 'all'){
-      const gk = groupKeyFn(emp);
-      if(gk !== lastGroupKey){
-        lastGroupKey = gk;
-        const gCount = sorted.filter(e=>groupKeyFn(e)===gk).length;
-        const gInputed = sorted.filter(e=>groupKeyFn(e)===gk && monthPays.find(x=>x.employee_id===e.id)).length;
-        groupHeader = `<div class="ps-group-header">
-          <span class="ps-group-header-name">${gk}</span>
-          <span class="ps-group-header-badge">${gCount}명 중 ${gInputed}명 입력</span>
-        </div>`;
-      }
-    }
 
     let payContent = '';
     if(p){
@@ -166,7 +55,7 @@ function renderPayslipList(){
       payContent = `<div class="ps-emp-no-pay"><i class="fas fa-file-invoice" style="color:#d1d5db;margin-right:5px;"></i>${psYear}년 ${psMonth}월 급여 미입력</div>`;
     }
 
-    const card = `<div class="ps-emp-card${!p?' ps-emp-card--unpaid':''}" onclick="${p?`openPayslipModal('${p.id}')`:'void(0)'}" style="${!p?'cursor:default;':''}">
+    return `<div class="ps-emp-card${!p?' ps-emp-card--unpaid':''}" onclick="${p?`openPayslipModal('${p.id}')`:'void(0)'}" style="${!p?'cursor:default;':''}">
       <div class="ps-emp-card-header">
         <div class="ps-emp-avatar" style="background:${avatarColor};">${initial}</div>
         <div class="ps-emp-info">
@@ -180,8 +69,6 @@ function renderPayslipList(){
       </div>
       ${payContent}
     </div>`;
-
-    return groupHeader + card;
   }).join('');
 
   const inputCount = sorted.filter(emp=>monthPays.find(x=>x.employee_id===emp.id)).length;
@@ -195,9 +82,9 @@ function renderPayslipList(){
     ${cards}`;
 }
 
-// renderEmpChips / setPsFilter – 하위호환 유지
+// 하위호환용 (그룹 필터 제거됨)
 function renderEmpChips(){ renderPayslipList(); }
-function setPsFilter(cat){ psGroup='all'; psSubVal='__all__'; renderPayslipList(); }
+function setPsFilter(){ renderPayslipList(); }
 
 // ─ Payslip Modal ─
 function openPayslipModal(payrollId){

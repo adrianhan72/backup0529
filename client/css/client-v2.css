@@ -66,17 +66,7 @@
 .ps-month-today:active{background:#4f46e5}
 .ps-month-input{position:absolute;right:0;bottom:0;width:1px;height:1px;opacity:0;border:0;padding:0;pointer-events:none}
 
-/* ── 임금통계 카드: 헤더를 카드 바깥 위로 분리 ── */
-.ps-sum-head{
-  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px 8px;
-  padding:0 6px 6px;
-}
-.ps-sum-title{
-  display:inline-flex;align-items:center;gap:6px;min-width:0;
-  font-size:17px;font-weight:800;color:#1a1a2e;letter-spacing:-.3px;white-space:nowrap;
-}
-.ps-sum-title i{font-size:16px;color:#4f46e5}
-.ps-sum-meta{margin-left:auto;font-size:14px;font-weight:700;color:#6b7280;white-space:nowrap}
+/* ── 임금통계 카드 ── */
 .ps-card-group{display:flow-root;margin-bottom:14px}
 .ps-card-head{
   display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px 8px;
@@ -84,12 +74,14 @@
 }
 /* 첫 섹션은 탭 메뉴 여백을 그대로 사용 */
 .ps-card-group:first-child .ps-card-head{margin-top:0}
+/* 아코디언 묶음: 그룹 안 마지막 카드는 그룹 여백을 사용 */
+.ps-card-group > .ps-acc:last-of-type{margin-bottom:0}
 .ps-card-title{
   display:inline-flex;align-items:center;gap:6px;min-width:0;
   font-size:16px;font-weight:800;color:#1a1a2e;letter-spacing:-.3px;white-space:nowrap;
 }
 .ps-card-title i{font-size:16px;color:#4f46e5}
-.ps-card-meta{margin-left:auto;font-size:14px;font-weight:700;color:#6b7280;white-space:nowrap}
+.ps-card-meta{margin-left:auto;font-size:12px;font-weight:400;color:#9ca3af;white-space:nowrap}
 /* 카드 내부 헤더(지급총액·공제총액·실지급액) — 아이콘 없이 라벨 + 금액 */
 .pb-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
 .pb-head-label{font-size:24px;font-weight:800;color:#4b5563;letter-spacing:-.3px}
@@ -112,7 +104,6 @@
 @media (max-width:380px){
   .ps-card-title{font-size:15px;gap:4px}
   .ps-card-title i{display:none}
-  .ps-card-meta{font-size:14px}
 }
 
 /* ── 페이지 공통 ── */
@@ -254,6 +245,7 @@
 .ps-sumbar-row .v2-sum-label{font-size:16px;color:#4b5563}
 .ps-sumbar-row .v2-sum-val{font-size:20px;color:#1f2937}
 .ps-sumbar-row--ded .v2-sum-val{color:#b91c1c}
+.ps-sumbar-row--gross .v2-sum-val{color:#3730a3}
 .ps-sumbar-row--net .v2-sum-label{color:#111827}
 .ps-sumbar-row--net .v2-sum-val{color:#4338ca}
 @media (max-width:420px){
@@ -295,24 +287,48 @@
   padding:16px 14px;border:none;background:none;font-family:inherit;
   text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;
 }
-.ps-acc-name{flex:1 1 auto;min-width:0;font-size:17px;font-weight:800;color:#374151;letter-spacing:-.2px}
-.ps-acc-amt{flex:0 0 auto;font-size:19px;font-weight:900;color:#3730a3;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ps-acc-name{flex:1 1 auto;min-width:0;font-size:14px;font-weight:800;color:#374151;letter-spacing:-.2px}
+.ps-acc-amt{flex:0 0 auto;font-size:14px;font-weight:900;color:#3730a3;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 .ps-acc-chev{flex:0 0 auto;font-size:14px;color:#9ca3af;transition:transform .18s}
 .ps-acc.open .ps-acc-chev{transform:rotate(180deg)}
 .ps-acc-body{display:none;padding:4px 14px 14px;border-top:1px solid #f1f5f9}
 .ps-acc.open .ps-acc-body{display:block}
 .ps-acc-pie{margin:14px auto 6px}
+/* 금액 0원 — 비활성 카드 */
+.ps-acc.disabled{background:#f8fafc;border-color:#eef1f5;box-shadow:none}
+.ps-acc.disabled .ps-acc-head{cursor:default}
+.ps-acc.disabled .ps-acc-name{color:#9ca3af}
+.ps-acc.disabled .ps-acc-amt{color:#b0b7c3;font-weight:800}
+.ps-acc.disabled .ps-acc-chev{color:#d8dde5}
+.ps-acc.disabled .ps-acc-body{display:none}
 @media (max-width:420px){
   .ps-acc-head{padding:15px 12px}
-  .ps-acc-name{font-size:16px}
-  .ps-acc-amt{font-size:18px}
   .ps-acc-body{padding:2px 12px 12px}
 }
 
 /* ── 아코디언 세부항목 표 ── */
 .ps-paymix-table{margin-top:4px}
+/* ── 공제 세부내역: 아코디언 묶음 ── */
+.ps-card-group.ps-ded-group > .v2-sum-card,
+.ps-card-group.ps-ded-group > .ps-acc{margin-bottom:12px}
+.ps-card-group.ps-ded-group > *:last-child{margin-bottom:0}
+/* 공제 아코디언 합계는 공제 색상으로 통일 */
+.ps-ded-group .ps-acc-amt{color:#b91c1c}
+/* 공제 아코디언 본문 — 항목 목록 (헤더 구분선과 겹치지 않게) */
+.ps-ded-group .ps-acc-body .pay-breakdown{margin-top:0;border-top:none;padding-top:0}
+/* 지급세부내역(아코디언 표)과 동일한 타이포로 통일 */
+.ps-ded-group .ps-acc-body .pb-item{
+  padding:10px 0;font-size:16px;font-weight:400;color:#374151;
+  border-top:1px solid #f1f5f9;
+}
+.ps-ded-group .ps-acc-body .pb-item:first-child{border-top:none}
+.ps-ded-group .ps-acc-body .pb-item .pb-amt{font-size:16px;font-weight:700;color:#111827}
+@media (max-width:400px){
+  .ps-ded-group .ps-acc-body .pb-item{font-size:13px}
+  .ps-ded-group .ps-acc-body .pb-item .pb-amt{font-size:14px}
+}
 .ps-paymix-row{
-  display:grid;grid-template-columns:minmax(0,1fr) 62px 108px;column-gap:12px;align-items:baseline;
+  display:grid;grid-template-columns:minmax(0,1fr) 56px 98px;column-gap:10px;align-items:baseline;
 }
 .ps-paymix-row{padding:10px 0;border-top:1px solid #f1f5f9}
 .ps-paymix-name{
@@ -321,7 +337,37 @@
 }
 .ps-paymix-dot{flex:0 0 9px;height:9px;border-radius:50%;display:inline-block}
 .ps-paymix-pct{font-size:16px;font-weight:700;color:#374151;text-align:right;font-variant-numeric:tabular-nums}
+.ps-paymix-meta{font-size:16px;font-weight:700;color:#374151;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
 .ps-paymix-amt{font-size:16px;font-weight:700;color:#111827;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+/* 항목명이 길어도 잘리지 않도록 2줄 허용 (좁은 카드 대응) */
+.ps-acc-body .ps-paymix-row{align-items:center;column-gap:8px}
+.ps-acc-body .ps-paymix-name{
+  align-items:flex-start;white-space:normal;overflow:visible;text-overflow:clip;
+  word-break:keep-all;overflow-wrap:anywhere;line-height:1.3;
+}
+.ps-acc-body .ps-paymix-dot{margin-top:5px}
+@media (max-width:400px){
+  .ps-acc-body .ps-paymix-row{grid-template-columns:minmax(0,1fr) 48px 98px;column-gap:5px}
+  .ps-acc-body .ps-paymix-name,
+  .ps-acc-body .ps-paymix-pct{font-size:13px}
+  .ps-acc-body .ps-paymix-amt{font-size:14px}
+}
+@media (max-width:340px){
+  .ps-acc-body .ps-paymix-row{grid-template-columns:minmax(0,1fr) 42px 88px;column-gap:4px}
+  .ps-acc-body .ps-paymix-pct{font-size:12px}
+  .ps-acc-body .ps-paymix-amt{font-size:13px}
+}
+/* 근태 차감 표 — 시간/건수 열 */
+#ps-ded-att-table .ps-paymix-row{grid-template-columns:minmax(0,1fr) 66px 98px;column-gap:8px}
+#ps-ded-att-table .ps-paymix-row:first-child{border-top:none}
+@media (max-width:400px){
+  #ps-ded-att-table .ps-paymix-row{grid-template-columns:minmax(0,1fr) 56px 92px;column-gap:5px}
+  #ps-ded-att-table .ps-paymix-meta{font-size:13px}
+}
+@media (max-width:340px){
+  #ps-ded-att-table .ps-paymix-row{grid-template-columns:minmax(0,1fr) 52px 86px;column-gap:4px}
+  #ps-ded-att-table .ps-paymix-meta{font-size:12px}
+}
 
 /* ── 일자별 급여 내역 ── */
 .ps-daily-head,.ps-daily-row{
@@ -336,25 +382,23 @@
 .ps-daily-who{font-size:16px;color:#4b5563;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ps-daily-amt{font-size:16px;font-weight:700;color:#111827;font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
 
-/* ── 4대보험·산재보험 회사 부담금 ── */.ps-emp-rate{margin-left:6px;font-size:14px;font-weight:600;color:#6b7280}
-.ps-emp-total{
-  display:flex;align-items:baseline;justify-content:space-between;gap:10px;
-  margin-top:10px;padding-top:10px;border-top:1px dashed rgba(15,23,42,.16);
-  font-size:24px;font-weight:800;color:#4b5563;
-}
-.ps-emp-total-amt{font-size:24px;font-weight:900;color:#0f172a;font-variant-numeric:tabular-nums;white-space:nowrap}
-.ps-emp-note{margin-top:10px;font-size:14px;color:#4b5563;line-height:1.7}
-
 /* ── 12개월 추이: 항목 탭 + 월별 금액 표 ── */
-.ps-trend-tabs{display:flex;gap:6px;margin:0 0 14px}
+.ps-trend-tabs{display:flex;gap:5px;margin:0 0 14px}
 .ps-trend-tab{
   appearance:none;-webkit-appearance:none;flex:1 1 0;min-width:0;
-  min-height:44px;padding:10px 6px;border:1.5px solid #e2e8f0;border-radius:10px;
+  min-height:40px;padding:5px 3px;border:1.5px solid #e2e8f0;border-radius:10px;
   font-size:15px;font-weight:700;line-height:1.15;cursor:pointer;text-align:center;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   transition:background .15s,color .15s,border-color .15s;
 }
 .ps-trend-tab.active{box-shadow:0 2px 8px rgba(15,23,42,.14)}
+/* 상단 4탭(.v2-ps-tab)과 동일한 폰트·높이 스케일 유지 */
+@media (max-width:420px){
+  .ps-trend-tab{min-height:34px;padding:4px 3px;font-size:13px;letter-spacing:-.3px}
+}
+@media (max-width:340px){
+  .ps-trend-tab{min-height:32px;padding:4px 3px;font-size:12px;letter-spacing:-.4px}
+}
 .ps-trend-table{margin-top:16px}
 .ps-trend-trow{
   display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:8px;align-items:baseline;
@@ -363,15 +407,23 @@
 .ps-trend-month{font-size:16px;font-weight:700;color:#374151;font-variant-numeric:tabular-nums}
 .ps-trend-amt{font-size:16px;font-weight:700;color:#111827;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 
+/* ── 임금통계: 월 선택기 + 4탭 상단 고정 (탭 아래 본문만 스크롤) ── */
+.v2-ps-topbar{
+  position:sticky;top:56px;z-index:60;display:flow-root;
+  margin:-10px -12px 0;padding:10px 12px 0;
+  background:#f0f2f5;
+}
+.v2-ps-topbar.is-stuck{box-shadow:0 8px 14px -8px rgba(15,23,42,.28)}
+
 /* ── 임금통계: 상단 4탭 (모바일에서도 1행 유지) ── */
 .v2-ps-tabs{
   display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;
-  background:#fff;border-radius:14px;padding:5px;
-  box-shadow:0 1px 8px rgba(0,0,0,.06);margin-bottom:32px;
+  background:#fff;border-radius:14px;padding:4px;
+  box-shadow:0 1px 8px rgba(0,0,0,.06);margin-bottom:12px;
 }
 .v2-ps-tab{
   display:flex;align-items:center;justify-content:center;
-  min-height:48px;padding:8px 2px;border:none;border-radius:10px;
+  min-height:40px;padding:5px 2px;border:none;border-radius:10px;
   background:none;font-family:inherit;font-size:15px;font-weight:700;line-height:1.25;
   color:#6b7280;word-break:keep-all;overflow-wrap:anywhere;text-align:center;cursor:pointer;
   transition:background .15s,color .15s;
@@ -379,12 +431,12 @@
 }
 /* 좁은 화면: 4탭을 한 행에 유지하면서 2줄로 꺾이지 않도록 폰트·간격 축소 */
 @media (max-width: 420px){
-  .v2-ps-tabs{gap:3px;padding:4px}
-  .v2-ps-tab{min-height:46px;padding:7px 0;font-size:13px;letter-spacing:-.3px}
+  .v2-ps-tabs{gap:3px;padding:3px}
+  .v2-ps-tab{min-height:34px;padding:4px 0;font-size:13px;letter-spacing:-.3px}
 }
 @media (max-width: 340px){
   .v2-ps-tabs{gap:2px;padding:3px}
-  .v2-ps-tab{font-size:12px;letter-spacing:-.4px}
+  .v2-ps-tab{min-height:32px;font-size:12px;letter-spacing:-.4px}
 }
 .v2-ps-tab.active{background:linear-gradient(135deg,#4f46e5,#6366f1);color:#fff;box-shadow:0 2px 8px rgba(79,70,229,.28)}
 .v2-ps-tabs .v2-ps-tab.active{color:#fff}
@@ -409,23 +461,18 @@
 }
 
 /* ── 임금대장 탭 ── */
-.ps-ledger-head{
-  display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;
-  background:#fff;border-radius:12px;padding:12px 14px;margin-bottom:10px;
-  box-shadow:0 1px 8px rgba(0,0,0,.06);
+.ps-ledger-card{
+  background:#fff;border-radius:0;padding:0;overflow:hidden;
+  box-shadow:0 2px 10px rgba(17,24,39,.06);
 }
-.ps-ledger-title{font-size:16px;font-weight:800;color:#1a1a2e;display:flex;align-items:center;gap:6px}
-.ps-ledger-badge{font-size:14px;font-weight:700;color:#b45309;background:#fef3c7;border-radius:10px;padding:2px 9px;margin-left:2px}
-.ps-ledger-open{
-  display:inline-flex;align-items:center;gap:6px;text-decoration:none;
-  border:1px solid #ddd6fe;background:#f5f3ff;color:#4f46e5;border-radius:9px;
-  padding:8px 12px;font-size:14px;font-weight:700;
+.ps-top-notice{
+  font-size:13px;font-weight:400;color:#6b7280;line-height:1.65;text-align:left;
+  padding:10px 12px;margin:0 0 12px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;
 }
 .ps-ledger-frame{
-  width:100%;height:76vh;border:1px solid #e5e7eb;border-radius:12px;background:#fff;
-  box-shadow:0 1px 8px rgba(0,0,0,.06);
+  display:block;width:100%;height:76vh;
+  border:0;border-radius:0;background:#fff;
 }
-
 /* ── 급여통계: 고용형태별 (파이) ── */
 .v2-type-pie{display:block}
 .v2-pie-canvas{position:relative;width:100%;max-width:220px;height:200px;margin:6px auto 2px}
@@ -724,3 +771,98 @@
   padding:18px 14px calc(22px + env(safe-area-inset-bottom));
   background:#f4f6f9;
 }
+
+/* ══════════ 전 페이지 공통 카드 스킨 ══════════
+   임금통계에서 정리한 카드 규칙을 전체 고객사 앱에 동일하게 적용
+   ─ 카드: 흰 배경 · radius 14px · 옅은 그림자
+   ─ 카드 제목 15px/800 #1a1a2e · 카드 헤더(항목명) 14px/800 #374151
+   ─ 행 레이블 13px/400 #374151 · 행 값 14px/700 #111827 · 구분선 #f1f5f9 */
+.card,.chart-card,.stat-card,.v2-section,.info-card,.ps-emp-card,.legal-doc .legal-card{
+  background:#fff;border-radius:14px;box-shadow:0 2px 10px rgba(17,24,39,.06);
+}
+.card,.chart-card,.stat-card,.v2-section,.info-card,.ps-emp-card{margin-bottom:12px}
+.card-body,.v2-section,.chart-card{padding:14px}
+.sec-title,.chart-title,.v2-section-title,.info-card-title,.ps-list-title{
+  font-size:15px;font-weight:800;color:#1a1a2e;letter-spacing:-.2px;
+}
+.info-card-title{margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.sec-header{margin-bottom:12px}
+.chart-sub{font-size:12.5px;color:#9ca3af;margin-bottom:8px}
+
+/* 카드 내부 항목 행 */
+.info-row{padding:10px 0;border-bottom:1px solid #f1f5f9;font-size:13px;color:#374151;gap:8px}
+.info-row:last-child{border-bottom:none}
+.info-row .il{font-size:13px;font-weight:400;color:#374151}
+.info-row .iv{font-size:14px;font-weight:700;color:#111827;text-align:right}
+
+/* 요약 지표 타일 */
+.stat-card .sc-label{font-size:12px;font-weight:600;color:#6b7280;margin-bottom:5px}
+.stat-card .sc-val{font-size:19px;font-weight:900;color:#1f2937}
+.stat-card .sc-sub{font-size:11.5px;font-weight:400;color:#9ca3af}
+.pay-box-item .pb-label{font-size:11.5px;font-weight:600;color:#6b7280}
+.pay-box-item .pb-val{font-size:15px;font-weight:800}
+.pay-box-item .pb-sub{font-size:11px;color:#9ca3af}
+
+/* 임직원 목록 카드 */
+.emp-row-name{font-size:15px}
+.emp-row-meta{font-size:12.5px;color:#9ca3af}
+.emp-cat-name{font-size:14px}
+.emp-cat-count{font-size:13px;color:#9ca3af}
+
+/* 급여명세서 목록 카드 */
+.ps-list-title{font-size:15px}
+.ps-list-count{font-size:12.5px;color:#9ca3af}
+.ps-emp-name{font-size:15px;font-weight:800}
+.ps-emp-meta{font-size:12.5px;color:#9ca3af}
+.ps-emp-net{font-size:15px}
+.ps-emp-gross{font-size:12px}
+.ps-emp-row{font-size:13px;padding:9px 0;border-bottom:1px solid #f1f5f9}
+.ps-emp-row .pr-label{font-size:13px;font-weight:400;color:#374151}
+.ps-emp-row .pr-val{font-size:14px;font-weight:700;color:#111827}
+
+/* 비율·명세서 상세 모달 */
+.pr-item-name{font-size:13px;font-weight:400;color:#374151}
+.pr-item-pct{font-size:13px;font-weight:700;color:#111827}
+.pr-item-amt{font-size:12px;color:#9ca3af}
+.ps-section-title{font-size:13px;font-weight:700;color:#374151}
+.ps-row{font-size:13px;padding:10px 0;border-bottom:1px solid #f1f5f9}
+
+/* 임금통계 표 3종 — 아코디언 세부항목과 동일 타이포 */
+.v2-pie-name{font-size:13px;font-weight:400;color:#374151}
+.v2-pie-name em{font-size:12px;font-weight:600;color:#9ca3af}
+.v2-pie-pct{font-size:13px;font-weight:700;color:#374151}
+.v2-pie-amt{font-size:14px;font-weight:700;color:#111827;min-width:0}
+.ps-daily-head{font-size:12px;font-weight:600;color:#9ca3af;padding-bottom:6px}
+.ps-daily-date{font-size:13px;font-weight:400;color:#374151}
+.ps-daily-who{font-size:13px;color:#374151}
+.ps-daily-amt{font-size:14px;font-weight:700;color:#111827}
+.ps-trend-month{font-size:13px;font-weight:400;color:#374151}
+.ps-trend-amt{font-size:14px;font-weight:700;color:#111827}
+/* 카드 스킨 — 근로계약 카드 · 상세 모달 */
+.emp-contract-card{background:#fff;border-radius:14px;box-shadow:0 2px 10px rgba(17,24,39,.06)}
+.ecc-name{font-size:15px;font-weight:800;color:#1a1a2e}
+.ecc-meta{font-size:12.5px;color:#9ca3af}
+.cat-hero{border-radius:14px}
+.cat-hero-name{font-size:16px;font-weight:800}
+.cm-section-title{font-size:13px;font-weight:700;color:#374151;letter-spacing:0;text-transform:none}
+.cm-row{padding:11px 18px;border-bottom:1px solid #f1f5f9}
+.cm-label{font-size:13px;font-weight:400;color:#374151}
+.cm-value{font-size:14px;font-weight:700;color:#111827}
+
+/* 카드 스킨 — 안내/빈 상태 문구 */
+.no-data{font-size:13px;color:#9ca3af}
+.pb-empty,.emp-empty,.contracts-empty{font-size:13px;color:#9ca3af}
+/* 카드 스킨 — 지급예정 세부내역 등 공통 항목 행 (.pb-item) */
+.pb-item{padding:10px 0;font-size:13px;font-weight:400;color:#374151;border-top:1px solid #f1f5f9}
+.pb-item .pb-amt{font-size:14px;font-weight:700;color:#111827}
+.pay-breakdown > .pb-item:first-child{border-top:none}
+.pb-group-head{font-size:14px;font-weight:800;color:#374151}
+.pb-total{font-size:14px;font-weight:800;color:#1a1a2e}
+.pb-total .pb-amt{font-size:18px;font-weight:900;color:#3730a3}
+.pb-empty{font-size:13px;color:#9ca3af}
+.v2-sum-period{font-size:12px;color:#9ca3af;line-height:1.5}
+/* 카드 스킨 — 대시보드 카테고리 타일 */
+.cat-card .cc-label{font-size:11px;font-weight:600;color:#6b7280}
+.cat-card .cc-val{font-size:15px;font-weight:800}
+/* 좁은 화면(≤360)에서 임직원 목록 카드가 가로로 넘치지 않도록 */
+.emp-list > .emp-row{min-width:0}

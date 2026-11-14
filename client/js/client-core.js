@@ -40,8 +40,6 @@ let statsYear    = new Date().getFullYear();
 let statsMonth   = new Date().getMonth() + 1;
 let psEmpId = null;  // 명세서 모달용 (유지)
 let psCatFilter = 'all'; // 하위호환 유지
-let psGroup    = 'all'; // 1단계: all | cat | dept | rank
-let psSubVal   = '__all__'; // 2단계 세부 선택값 ('__all__' = 해당 그룹 전체)
 let psYear   = new Date().getFullYear(), psMonth   = new Date().getMonth() + 1;
 let billingYear  = new Date().getFullYear(), billingMonth  = new Date().getMonth() + 1;
 let _billingFeatureEnabled = false; // 사용료 수납관리 스위치 (시스템 설정)
@@ -183,7 +181,7 @@ function closeHamburgerMenu(){
 function logout(){
   sessionStorage.removeItem('client_token');
   currentCompany=null; allEmployees=[]; allPayrolls=[]; allContracts=[]; allBillings=[];
-  psEmpId=null; psCatFilter='all'; psGroup='all'; psSubVal='__all__'; [distChart,distDonutChart,trendChart].forEach(c=>{if(c)c.destroy()}); distChart=distDonutChart=trendChart=null;
+  psEmpId=null; psCatFilter='all'; [distChart,distDonutChart,trendChart].forEach(c=>{if(c)c.destroy()}); distChart=distDonutChart=trendChart=null;
   // 알림 상태 초기화
   _clientNotices=[]; _notifDetailId=null;
   closeNotifModal(); closeNotifDetail();
@@ -472,10 +470,10 @@ function renderClientMinWages(){
       const hlBg = i === 0 ? 'background:#f5f3ff;' : (i % 2 === 0 ? 'background:#faf5ff;' : '');
       const hlTx = i === 0 ? 'font-weight:800;color:#7c3aed;' : '';
       return `<tr style="${hlBg}">
-        <td style="padding:9px 12px;text-align:center;${hlTx}">${w.year}</td>
-        <td style="padding:9px 12px;text-align:right;${i===0?'font-weight:700;':''}">${fmt(w.hourly_wage)}원</td>
-        <td style="padding:9px 12px;text-align:right;">${fmt(w.monthly_wage)}원</td>
-        <td style="padding:9px 12px;text-align:right;">${_rateHtml(w, p)}</td>
+        <td style="padding:9px 6px 9px 12px;text-align:left;white-space:nowrap;${hlTx}">${w.year}</td>
+        <td style="padding:9px 6px;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;${i===0?'font-weight:700;':''}">${fmt(w.hourly_wage)}원</td>
+        <td style="padding:9px 6px;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;">${fmt(w.monthly_wage)}원</td>
+        <td style="padding:9px 12px 9px 6px;text-align:right;white-space:nowrap;">${_rateHtml(w, p)}</td>
       </tr>`;
     }).join('');
   }
@@ -515,7 +513,7 @@ function renderClientInsRates(){
     <div style="background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.07);padding:16px;margin-bottom:12px;">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
         <div style="width:36px;height:36px;background:${grad};border-radius:10px;display:flex;align-items:center;justify-content:center;"><i class="fas ${icon}" style="color:#fff;font-size:16px;"></i></div>
-        <div><div style="font-size:14px;font-weight:800;color:#1a1a2e;">${title}</div><div style="font-size:11px;color:#6b7280;">${en}</div></div>
+        <div><div style="font-size:15px;font-weight:800;color:#1a1a2e;letter-spacing:-.2px;">${title}</div><div style="font-size:11.5px;color:#9ca3af;">${en}</div></div>
       </div>
       ${bodyHtml}
     </div>`;

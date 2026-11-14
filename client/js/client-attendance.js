@@ -124,20 +124,20 @@ function _renderClientAttList(){
     const late   = led ? (parseInt(led.total_late_count)||0) : 0;
     const early  = led ? (parseInt(led.total_earlyleave_count)||0) : 0;
     const isSel  = _clientAttEmpId === emp.id;
-    return `<div style="background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.07);overflow:hidden;${isSel?'border:1.5px solid #0ea5e9;':''}">
+    return `<div style="background:#fff;border-radius:14px;box-shadow:0 2px 10px rgba(17,24,39,.06);overflow:hidden;${isSel?'border:1.5px solid #0ea5e9;':''}">
       <div style="padding:12px 14px;display:flex;align-items:center;gap:10px;">
         <div style="width:34px;height:34px;background:linear-gradient(135deg,#e0f2fe,#bae6fd);border:1.5px solid #7dd3fc;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#075985;">${(emp.name||'?').charAt(0)}</div>
         <div style="flex:1;">
-          <div style="font-size:16px;font-weight:800;color:#1a1a2e;">${emp.name||'-'}</div>
-          <div style="font-size:14px;color:#6b7280;">${emp.department||''} ${emp.position||''} · ${contractTypeLabel_c(emp.employment_category)}</div>
+          <div style="font-size:15px;font-weight:800;color:#1a1a2e;letter-spacing:-.2px;">${emp.name||'-'}</div>
+          <div style="font-size:12.5px;color:#9ca3af;">${emp.department||''} ${emp.position||''} · ${contractTypeLabel_c(emp.employment_category)}</div>
         </div>
         <button class="btn btn-sm btn-danger" onclick="openClientAttEditor('${emp.id}')">근태 기록</button>
       </div>
       <div style="padding:8px 14px 12px;display:flex;gap:6px;flex-wrap:wrap;">
-        <span style="font-size:10.5px;background:#fef2f2;color:#b91c1c;padding:3px 9px;border-radius:20px;">결근 ${absent}일</span>
-        <span style="font-size:10.5px;background:#fff7ed;color:#c2410c;padding:3px 9px;border-radius:20px;">지각 ${late}회</span>
-        <span style="font-size:10.5px;background:#eef2ff;color:#4338ca;padding:3px 9px;border-radius:20px;">조퇴 ${early}회</span>
-        ${!led ? '<span style="font-size:10.5px;color:#9ca3af;padding:3px 6px;">기록 없음</span>' : ''}
+        <span style="font-size:11.5px;background:#fef2f2;color:#b91c1c;padding:3px 9px;border-radius:20px;">결근 ${absent}일</span>
+        <span style="font-size:11.5px;background:#fff7ed;color:#c2410c;padding:3px 9px;border-radius:20px;">지각 ${late}회</span>
+        <span style="font-size:11.5px;background:#eef2ff;color:#4338ca;padding:3px 9px;border-radius:20px;">조퇴 ${early}회</span>
+        ${!led ? '<span style="font-size:11.5px;color:#9ca3af;padding:3px 6px;">기록 없음</span>' : ''}
       </div>
     </div>`;
   }).join('');

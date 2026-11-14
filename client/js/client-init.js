@@ -201,35 +201,35 @@ function renderClientSevStatus(){
     const amtColor = sev.under1yr ? '#9ca3af' : '#b45309';
     const bgGradient = sev.under1yr ? '#f9fafb' : 'linear-gradient(135deg,#fffbeb,#fef3c7)';
 
-    return `<div id="sev-emp-${emp.id}" style="background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.07);overflow:hidden;">
-      <div style="padding:12px 14px;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;justify-content:space-between;">
+    return `<div id="sev-emp-${emp.id}" style="background:#fff;border-radius:14px;box-shadow:0 2px 10px rgba(17,24,39,.06);overflow:hidden;">
+      <div style="padding:12px 14px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;">
         <div style="display:flex;align-items:center;gap:8px;">
           <div style="width:32px;height:32px;background:linear-gradient(135deg,#fef3c7,#fde68a);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#92400e;">${(emp.name||'?').charAt(0)}</div>
           <div>
-            <div style="font-size:16px;font-weight:800;color:#1a1a2e;">${emp.name||'-'}</div>
-            <div style="font-size:14px;color:#6b7280;">${emp.department||''} ${emp.position||''}</div>
+            <div style="font-size:15px;font-weight:800;color:#1a1a2e;letter-spacing:-.2px;">${emp.name||'-'}</div>
+            <div style="font-size:12.5px;color:#9ca3af;">${emp.department||''} ${emp.position||''}</div>
           </div>
         </div>
         <div style="text-align:right;">
-          <div style="font-size:13px;color:#9ca3af;">재직 기간</div>
-          <div style="font-size:14px;font-weight:600;color:#374151;">${tenure.text}</div>
+          <div style="font-size:12px;color:#9ca3af;">재직 기간</div>
+          <div style="font-size:13px;font-weight:700;color:#374151;">${tenure.text}</div>
         </div>
       </div>
       <div style="padding:10px 14px;">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">
-          <div style="background:#f9fafb;border-radius:8px;padding:7px;">
-            <div style="font-size:13px;color:#9ca3af;">입사일</div>
-            <div style="font-size:11.5px;font-weight:600;color:#374151;">${hireDate||'-'}</div>
+          <div style="background:#f9fafb;border-radius:8px;padding:8px;">
+            <div style="font-size:11.5px;font-weight:600;color:#9ca3af;">입사일</div>
+            <div style="font-size:12.5px;font-weight:700;color:#374151;">${hireDate||'-'}</div>
           </div>
-          <div style="background:#f9fafb;border-radius:8px;padding:7px;">
-            <div style="font-size:13px;color:#9ca3af;">3개월 평균임금</div>
-            <div style="font-size:11.5px;font-weight:600;color:#374151;">${pays3.length && !sev.under1yr ? Math.round(sev.ordinary3/3).toLocaleString()+'원' : '-'}</div>
+          <div style="background:#f9fafb;border-radius:8px;padding:8px;">
+            <div style="font-size:11.5px;font-weight:600;color:#9ca3af;">3개월 평균임금</div>
+            <div style="font-size:12.5px;font-weight:700;color:#374151;">${pays3.length && !sev.under1yr ? Math.round(sev.ordinary3/3).toLocaleString()+'원' : '-'}</div>
           </div>
         </div>
-        <div style="background:${bgGradient};border-radius:10px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;">
-          <div style="font-size:14px;color:#92400e;font-weight:600;">퇴직급여 추계액</div>
-          <div style="font-size:18px;font-weight:900;color:${amtColor};">
-            ${sev.under1yr ? '<span style="font-size:14px;color:#9ca3af;">1년 미만</span>' : (pays3.length ? sev.amount.toLocaleString()+'원' : '<span style="font-size:14px;color:#9ca3af;">급여 데이터 없음</span>')}
+        <div style="background:${bgGradient};border-radius:8px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+          <div style="font-size:13px;color:#374151;">퇴직급여 추계액</div>
+          <div style="font-size:15px;font-weight:800;color:${amtColor};white-space:nowrap;">
+            ${sev.under1yr ? '<span style="font-size:12.5px;font-weight:600;color:#9ca3af;">1년 미만</span>' : (pays3.length ? sev.amount.toLocaleString()+'원' : '<span style="font-size:12.5px;font-weight:600;color:#9ca3af;">급여 데이터 없음</span>')}
           </div>
         </div>
       </div>
@@ -240,7 +240,8 @@ function renderClientSevStatus(){
 
   if(summaryCard){
     summaryCard.style.display = '';
-    const setT = (id, v) => { const el = document.getElementById(id); if(el) el.textContent = v; };
+    const unit = '<span style="font-size:11.5px;font-weight:600;">명</span>';
+    const setT = (id, v) => { const el = document.getElementById(id); if(el) el.innerHTML = v + unit; };
     setT('sev-client-cnt', cntTarget);
     setT('sev-client-nodata', cntNodata);
     setT('sev-client-under1', cntUnder1);
@@ -348,7 +349,8 @@ function _doRenderClientAL(){
     const workHours = parseFloat(contract.work_hours_per_day) || 8;
     const leavePay = Math.round(hourlyWage * workHours * remainDays);
 
-    return { totalDays, usedDays, remainDays, leavePay, contract, basis };
+    return { totalDays, usedDays, remainDays, leavePay, contract, basis,
+             basisLabel: basis === 'hire_date' ? '입사일 기준' : '회계년도 기준' };
   };
 
   let sumTotal = 0, sumUsed = 0, sumRemain = 0, sumPay = 0;
@@ -363,36 +365,36 @@ function _doRenderClientAL(){
     const remainColor = al.remainDays <= 0 ? '#dc2626' : al.remainDays <= 3 ? '#d97706' : '#059669';
     const remainBg    = al.remainDays <= 0 ? '#fef2f2' : al.remainDays <= 3 ? '#fffbeb' : '#f0fdf4';
 
-    return `<div style="background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.07);overflow:hidden;">
-      <div style="padding:12px 14px;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;gap:10px;">
+    return `<div style="background:#fff;border-radius:14px;box-shadow:0 2px 10px rgba(17,24,39,.06);overflow:hidden;">
+      <div style="padding:12px 14px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:10px;">
         <div style="width:34px;height:34px;background:linear-gradient(135deg,#ecfdf5,#d1fae5);border:1.5px solid #a7f3d0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#065f46;">${(emp.name||'?').charAt(0)}</div>
-        <div style="flex:1;">
-          <div style="font-size:16px;font-weight:800;color:#1a1a2e;">${emp.name||'-'}</div>
-          <div style="font-size:14px;color:#6b7280;">${emp.department||''} ${emp.position||''} · ${contractTypeLabel_c(emp.employment_category)}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:15px;font-weight:800;color:#1a1a2e;letter-spacing:-.2px;">${emp.name||'-'}</div>
+          <div style="font-size:12.5px;color:#9ca3af;">${emp.department||''} ${emp.position||''} · ${contractTypeLabel_c(emp.employment_category)}</div>
         </div>
-        <div style="text-align:right;">
-          <div style="font-size:13px;color:#9ca3af;">${al.basis}</div>
-          <div style="font-size:14px;color:#374151;font-weight:600;">${emp.hire_date||'-'} 입사</div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-size:12px;color:#9ca3af;">${al.basisLabel}</div>
+          <div style="font-size:13px;color:#374151;font-weight:700;">${emp.hire_date||'-'} 입사</div>
         </div>
       </div>
       <div style="padding:10px 14px;">
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px;">
           <div style="background:#ecfdf5;border-radius:8px;padding:8px;text-align:center;">
-            <div style="font-size:13px;color:#059669;">총 발생</div>
-            <div style="font-size:16px;font-weight:800;color:#065f46;">${al.totalDays}<span style="font-size:13px;">일</span></div>
+            <div style="font-size:11.5px;font-weight:600;color:#059669;">총 발생</div>
+            <div style="font-size:15px;font-weight:800;color:#065f46;">${al.totalDays}<span style="font-size:11.5px;">일</span></div>
           </div>
           <div style="background:#f9fafb;border-radius:8px;padding:8px;text-align:center;">
-            <div style="font-size:13px;color:#6b7280;">사용</div>
-            <div style="font-size:16px;font-weight:800;color:#374151;">${al.usedDays}<span style="font-size:13px;">일</span></div>
+            <div style="font-size:11.5px;font-weight:600;color:#6b7280;">사용</div>
+            <div style="font-size:15px;font-weight:800;color:#374151;">${al.usedDays}<span style="font-size:11.5px;">일</span></div>
           </div>
           <div style="background:${remainBg};border-radius:8px;padding:8px;text-align:center;border:1px solid ${al.remainDays>0?'transparent':'#fecaca'};">
-            <div style="font-size:13px;color:${remainColor};font-weight:600;">잔여</div>
-            <div style="font-size:16px;font-weight:800;color:${remainColor};">${al.remainDays}<span style="font-size:13px;">일</span></div>
+            <div style="font-size:11.5px;color:${remainColor};font-weight:600;">잔여</div>
+            <div style="font-size:15px;font-weight:800;color:${remainColor};">${al.remainDays}<span style="font-size:11.5px;">일</span></div>
           </div>
         </div>
         ${al.leavePay > 0 ? `<div style="background:#faf5ff;border-radius:8px;padding:8px 10px;display:flex;align-items:center;justify-content:space-between;">
-          <div style="font-size:14px;color:#7c3aed;">잔여 연차 수당 추계</div>
-          <div style="font-size:14px;font-weight:800;color:#5b21b6;">${al.leavePay.toLocaleString()}원</div>
+          <div style="font-size:13px;color:#374151;">잔여 연차 수당 추계</div>
+          <div style="font-size:14px;font-weight:700;color:#111827;">${al.leavePay.toLocaleString()}원</div>
         </div>` : ''}
         <button class="btn btn-sm btn-danger" onclick="openClientLeaveEditor('${emp.id}')" style="width:100%;margin-top:8px;">
           <i class="fas fa-pen"></i> 연차 사용 기록

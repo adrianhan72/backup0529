@@ -6,10 +6,9 @@
 <title>[그린에너지 주식회사] 임금대장 (신고용) — 2025년 11월</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:'Malgun Gothic','Noto Sans KR',sans-serif;background:#fff;padding:24px;color:#1e293b}
-  h1{font-size:18px;text-align:center;margin-bottom:18px;color:#1a1a2e}
-  .wl-ledger-wrap{overflow-x:auto}
-  table.wl-ledger-tbl{width:100%;border-collapse:collapse;font-size:11px;min-width:900px;table-layout:fixed}
+  body{font-family:'Malgun Gothic','Noto Sans KR',sans-serif;background:#fff;padding:0;color:#1e293b}
+  .wl-ledger-wrap{position:absolute;top:0;right:0;bottom:0;left:0;overflow:auto;-webkit-overflow-scrolling:touch}
+  html,body{height:100%}
   table.wl-ledger-tbl thead tr th{border:1px solid #94a3b8;text-align:center;vertical-align:middle;white-space:nowrap;padding:4px 5px;font-weight:700;font-size:10.5px}
   .wl-th-group th{background:#1e293b;color:#f1f5f9;font-size:11px;padding:6px 5px;border-color:#334155}
   .wl-th-personal{background:#1e3a5f !important;color:#93c5fd !important}
@@ -44,13 +43,23 @@
   tbody td.wl-td-name,tbody td.wl-td-gross{border-right:2px solid #475569 !important}
   tbody td[colspan="2"],tbody td.wl-td-pay-last{border-right:2px solid #475569 !important}
   thead th.wl-th-sign,tbody td.wl-td-sign{border-left:2px solid #475569 !important}
-  @media print{body{padding:0}}
+  @media print{html,body{height:auto}.wl-ledger-wrap{position:static}}
+
+  table.wl-ledger-tbl{width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed;min-width:0}
+  table.wl-ledger-tbl col.wl-c-empno{width:56px}
+  table.wl-ledger-tbl col.wl-c-name{width:66px}
+  table.wl-ledger-tbl col.wl-c-num{width:74px}
+  table.wl-ledger-tbl col.wl-c-sign{width:60px}
+  table.wl-ledger-tbl thead tr th{white-space:normal}
+  table.wl-ledger-tbl tbody td{white-space:normal}
+  table.wl-ledger-tbl th,table.wl-ledger-tbl td{overflow-wrap:anywhere;word-break:keep-all}
 </style>
 </head>
 <body>
-<h1>[그린에너지 주식회사] 임금대장 (신고용) — 2025년 11월</h1>
 <div class="wl-ledger-wrap">
 <table class="wl-ledger-tbl">
+<colgroup><col class="wl-c-empno"><col class="wl-c-name"><col class="wl-c-num"><col class="wl-c-num"><col class="wl-c-num"><col class="wl-c-num"><col class="wl-c-num"><col class="wl-c-num"><col class="wl-c-num"><col class="wl-c-num"><col class="wl-c-num"><col class="wl-c-num"><col class="wl-c-sign"></colgroup>
+
 <thead><tr class="wl-th-group">
         <th colspan="2" class="wl-th-personal">인적사항</th>
         <th colspan="6" class="wl-th-pay">기본급여 및 제수당</th>

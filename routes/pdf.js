@@ -196,8 +196,15 @@ module.exports = function(db, ROOT) {
       return res.status(404).send('<h2>📋 아직 생성된 임금대장이 없습니다</h2>');
     }
 
-    const filePath = path.join(ROOT, notif.file_html_path.replace(/^\//, ''));
-    if (!fs.existsSync(filePath)) {
+    // 저장된 경로는 '/generated/...' URL + URL 인코딩된 한글 파일명
+    //  → 실제 파일은 data/generated 아래에 있으므로 디코딩 후 해당 경로로 조회
+    let relPath = String(notif.file_html_path);
+    try { relPath = decodeURIComponent(relPath); } catch (e) { /* 이미 디코딩된 값이면 그대로 사용 */ }
+    relPath = relPath.replace(/^\/+/, '').replace(/^generated\//, '');
+
+    const baseDir  = path.resolve(ROOT, 'data', 'generated');
+    const filePath = path.resolve(baseDir, relPath);
+    if (!filePath.startsWith(baseDir + path.sep) || !fs.existsSync(filePath)) {
       return res.status(404).send('<h2>📋 임금대장 파일을 찾을 수 없습니다</h2>');
     }
 

@@ -1,14 +1,3 @@
-function _adjustPsStickyTop(){
-  const apply = () => {
-    const header = document.querySelector('.app-header');
-    const sf = document.querySelector('.ps-sticky-filters');
-    if(header && sf){ sf.style.top = header.offsetHeight + 'px'; }
-  };
-  // 백그라운드 탭에서는 rAF가 실행되지 않으므로 즉시 1회 + 다음 프레임 1회 적용 (2026-11-13)
-  apply();
-  requestAnimationFrame(apply);
-}
-
 // ══ 근로계약 서브페이지 ══
 
 // 카테고리별 설정 (배경색, 아이콘, 텍스트색 등) — 대표자/등기임원/특수관계인/기타 포함
