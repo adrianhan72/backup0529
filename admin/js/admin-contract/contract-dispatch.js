@@ -650,10 +650,13 @@ const _CONTRACT_ALIMTALK = {
 function _contractViewUrl(contract){
   if(contract && contract.edited_file_url){
     const u = String(contract.edited_file_url);
-    if(u.startsWith('http')) return u;
-    if(u.startsWith('/'))    return location.origin + u;
+    if(/^https?:\/\//i.test(u)){
+      const parsed = new URL(u);
+      return `${parsed.pathname.replace(/^\/+/, '')}${parsed.search}${parsed.hash}`;
+    }
+    return u.replace(/^\/+/, '');
   }
-  return `${location.origin}/view/contracts/${contract.id}`;
+  return `view/contracts/${contract.id}`;
 }
 
 /** 근로계약서 알림톡 실제 발송 (성공 시 응답 반환, 실패 시 throw) */
@@ -1153,4 +1156,3 @@ function _getCompanyGreeting(){
   const repName = (Array.isArray(reps) && reps[0] && reps[0].name) ? reps[0].name : '';
   return repName ? `안녕하세요, ${repName}님.` : '안녕하세요.';
 }
-

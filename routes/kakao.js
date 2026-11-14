@@ -22,9 +22,20 @@ module.exports = function(db, solapi) {
       // 템플릿 ID 결정: templateKey(논리 키) 우선 → 서버 상수 매핑, 없으면 기존 templateId 통과
       const resolvedTemplateId = (() => {
         const key = String(templateKey || '').toUpperCase();
-        if (key && ALIMTALK_TPL_IDS[key]) return ALIMTALK_TPL_IDS[key];
-        return templateId || null;
+        const candidate = key && ALIMTALK_TPL_IDS[key]
+          ? ALIMTALK_TPL_IDS[key]
+          : templateId;
+        return candidate == null ? null : String(candidate).trim() || null;
       })();
+
+      if (type !== 'friendtalk' && type !== 'sms' &&
+          resolvedTemplateId?.toUpperCase() === 'N/A') {
+        return res.status(400).json({
+          ok: false,
+          code: 'TEMPLATE_NOT_CONFIGURED',
+          error: `알림톡 템플릿이 설정되지 않았습니다: ${templateKey || 'templateId'}`,
+        });
+      }
 
       let result;
 
